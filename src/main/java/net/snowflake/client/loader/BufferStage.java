@@ -1,0 +1,324 @@
+/*
+ * Copyright (c) 2012-2017 Snowflake Computing Inc. All rights reserved.
+ */
+
+package net.snowflake.client.loader;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.logging.Level;
+import java.util.zip.GZIPOutputStream;
+
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
+
+/**
+ * Class representing a unit of work for uploader. Corresponds to a collection 
+ * of data files for a single processing stage.
+ */
+public class BufferStage
+{
+  private static final SFLogger LOGGER = SFLoggerFactory.getLogger(
+          BufferStage.class);
+
+  public enum State
+  {
+
+    CREATED, LOADING, LOADED, EMPTY, UPLOADED, VALIDATED, VALIDATED_CLEANED,
+    ERROR, PROCESSED, CLEANED, REMOVED
+
+  };
+
+  
+  public static final int  FILE_BUCKET_SIZE = 64;   // threshold to schedule processing
+  public static final long FILE_SIZE = 50000000L;   // individual file, 50Mb
+  
+  private State _state;
+
+  private final File _directory;
+
+  private final String _location;
+  
+  private final String _stamp;
+
+  private final Operation _op;
+
+  private final long _csvFileBucketSize;
+
+  private final long _csvFileSize;
+
+  // Last stage in a loader gets to terminate
+  private volatile boolean _terminate = false;
+
+  private String _id;
+
+  // Data bytes (uncompressed) in the current file
+  private int _currentSize = 0;
+
+  // Total number of rows submitted to this stage
+  private int _rowCount = 0;
+
+  // Number of files in the stage
+  private int _fileCount = 0;
+  
+  // Counter for ID generation
+  private static AtomicLong MARK = new AtomicLong(1);
+
+  // Parent loader
+  private StreamLoader _loader;
+
+  // Current output stream
+  private OutputStream _outstream = null;
+  
+  // Current file
+  private File _file = null;
+  
+  // List of all scheduled uploaders
+  private ArrayList<FileUploader> _uploaders = new ArrayList<>();
+
+  private static SimpleDateFormat _sdf = new SimpleDateFormat(
+          "yyyyMMdd'_'HHmmss'_'SSS");
+
+  private BufferStage() {
+    _directory = null;
+    _location = null;
+    _stamp = null;
+    _op = null;
+    _csvFileBucketSize = 0;
+    _csvFileSize = 0;
+  }
+
+  public BufferStage(StreamLoader loader, Operation op, long csvFileBucketSize, long csvFileSize)
+  {
+    LOGGER.debug("Operation: {}", op);
+
+    _state = State.CREATED;
+    _loader = loader;
+    _stamp = _sdf.format(new Date());
+    _csvFileBucketSize = csvFileBucketSize;
+    _csvFileSize = csvFileSize;
+
+    long mark = MARK.getAndIncrement() % 10000000;
+
+    // Security Fix: A table name can include slashes and dots, so if a table
+    // name is used as part of a file name, the file can be created 
+    // outside of the given directory. This replaces slashes with underscores.
+    _location = BufferStage.escapeFileSeparatorChar(_loader.getTable())
+                + File.separatorChar
+                + op.name()
+                + File.separatorChar
+                + _stamp + "_" + _loader.getNoise() + '_' + mark;
+
+    _id = BufferStage.escapeFileSeparatorChar(_loader.getTable())
+          + "_" + _stamp + '_' + mark;
+
+    String localStageDirectory = _loader.getBase()
+                                 + File.separatorChar + _location;
+
+    _directory = new File(localStageDirectory);
+    if (!_directory.mkdirs()) {
+      RuntimeException ex = new RuntimeException(
+              "Could not initialize the local staging area. " +
+                      "Make sure the directory is writable and readable: " +
+                      localStageDirectory);
+
+      _loader.abort(ex);
+      throw ex;
+    }
+
+    _op = op;
+    
+    openFile();
+  }
+
+  /**
+   * Create local file for caching data before upload
+   */
+  private synchronized void openFile()
+  {
+    try {
+      String fName = _directory.getAbsolutePath()
+                     + File.separatorChar + StreamLoader.FILE_PREFIX
+                     + _stamp + _fileCount + StreamLoader.FILE_SUFFIX;
+      LOGGER.debug("openFile: {}", fName);
+
+      FileOutputStream outputFile = new FileOutputStream(fName);
+      _outstream = new GZIPOutputStream(outputFile, 64 * 1024, true);
+      _file = new File(fName);
+
+      _fileCount++;
+    }
+    catch (IOException ex) {
+      _loader.abort(new Loader.ConnectionError(Utils.getCause(ex)));
+    }
+
+  }
+  
+  private static byte[] newLineBytes = "\n".getBytes(UTF_8);
+
+  
+  // not thread safe
+  public boolean stageData(byte[] line, boolean newLine) throws IOException
+  {
+    if (this._rowCount % 10000 == 0) {
+      LOGGER.debug(
+              "rowCount: {}, currentSize: {}", this._rowCount, _currentSize);
+    }
+    _outstream.write(line);
+    _currentSize += line.length;
+
+    if (newLine) {
+      _outstream.write(newLineBytes);
+    }
+    this._rowCount++;
+
+    if (_loader._testRemoteBadCSV) {
+      // inject garbage for a negative test case
+      // The file will be uploaded to the stage, but COPY command will
+      // fail and raise LoaderError
+      _outstream.write(new byte[] { (byte)0x01, (byte)0x02});
+      _outstream.write(newLineBytes);
+      this._rowCount++;
+    }
+
+    if(_currentSize >= this._csvFileSize) {
+      LOGGER.debug("currentSize: {}, Threshold: {},"
+                      + " fileCount: {}, fileBucketSize: {}",
+              _currentSize, this._csvFileSize, _fileCount,
+              this._csvFileBucketSize);
+      _outstream.flush();
+      _outstream.close();
+      FileUploader fu = new FileUploader(_loader, _location, _file);
+      fu.upload();
+      _uploaders.add(fu);
+      openFile();
+      _currentSize = 0;
+    }
+    
+    return _fileCount > this._csvFileBucketSize;
+  }
+
+  
+  /**
+   * Wait for all files to finish uploading and schedule stage for processing
+   * @throws InterruptedException
+   * @throws IOException 
+   */
+  void completeUploading() throws InterruptedException, IOException
+  {
+    LOGGER.debug("CurrentSize: {}", _currentSize);
+
+    _outstream.flush();
+    _outstream.close();
+    //last file
+    if(_currentSize > 0)
+    {
+      FileUploader fu = new FileUploader(_loader, _location, _file);
+      fu.upload();
+      _uploaders.add(fu);
+    } else {
+      // delete empty file
+      _file.delete();
+    }
+    
+    
+    for(FileUploader fu: _uploaders)
+    {
+      // Finish all files being uploaded
+      fu.join();
+    }
+
+    // Delete the directory once we are done (for easier tracking
+    // of what is going on)
+    _directory.deleteOnExit();
+    
+    if (this._rowCount == 0)
+    {
+      setState(State.EMPTY);
+    }
+
+     return;
+  }
+
+  public String getRemoteLocation()
+  {
+    return remoteSeparator(_location);
+  }
+
+  public Operation getOp()
+  {
+    return _op;
+  }
+
+  public boolean isTerminate()
+  {
+    return _terminate;
+  }
+
+  public void setTerminate(boolean terminate)
+  {
+    this._terminate = terminate;
+  }
+
+  public String getId()
+  {
+    return _id;
+  }
+
+  public void setId(String _id)
+  {
+    this._id = _id;
+  }
+ 
+  public State state()
+  {
+    return _state;
+  }
+
+  public void setState(State state)
+  {
+    if (_state != state)
+    {
+      // Logging goes here
+      // Need to keep trace of states.
+      _state = state;
+    }
+  }
+
+  public int getRowCount()
+  {
+    return _rowCount;
+  }
+
+  // convert any back slashes to forward slashes if necessary when converting
+  // a local filename to a one suitable for S3
+  private String remoteSeparator(String fname)
+  {
+    if (File.separatorChar == '\\')
+      return fname.replace("\\", "/");
+    else
+      return fname;
+  }
+  
+  /**
+   * Escape file separator char to underscore. This prevents the file name
+   * from using file path separator.
+   * @param fname
+   * @return escaped file name
+   */
+  private final static String escapeFileSeparatorChar(String fname) {
+    if (File.separatorChar == '\\') {
+      return fname.replaceAll(File.separator + File.separator, "_");
+    } else {
+      return fname.replaceAll(File.separator, "_");
+    }
+  }
+}
