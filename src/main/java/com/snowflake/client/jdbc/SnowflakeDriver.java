@@ -7,10 +7,10 @@ package com.snowflake.client.jdbc;
 import java.sql.Driver;
 
 /**
- * This is a hack way of allowing customer to load com.snowflake.client.jdbc.
- * SnowflakeDriver since old customers are using this class. Ideally we want
- * to remove this class and have all customer using net.snowflake.client.
- * jdbc.SnowflakeDriver
+ * This is left in to ensure backward compatibility for old customers that
+ * are still using the legacy com.snowflake.client.jdbc.SnowflakeDriver.
+ * Ideally, we want to remove this class and have all customers move to
+ * net.snowflake.client.jdbc.SnowflakeDriver.
  *
  * Created by hyu on 10/10/16.
  */
