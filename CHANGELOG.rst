@@ -1,6 +1,6 @@
 **JDBC Driver 3.0.13**
 |SNOW-24601| Security patch for federated authentication in JDBC. 
-
+|SNOW-24184| Open sourced JDBC Driver on Github.
 
 **JDBC Driver 3.0.12**
 |SNOW-25540| Added support for binding timestamp variables as timestamp_ntz for applications that use the bind API to load data into datetime columns (which are equivalent to the timestamp_ntz data type).
