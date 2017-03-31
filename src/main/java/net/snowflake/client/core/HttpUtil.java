@@ -53,7 +53,7 @@ public class HttpUtil
   /**
    * Build an Http client using our set of default.
    *
-   * @return
+   * @return HttpClient object
    */
   public final static HttpClient buildHttpClient()
   {
@@ -94,7 +94,7 @@ public class HttpUtil
   /**
    * Accessor for the HTTP client singleton.
    *
-   * @return
+   * @return HttpClient object shared across all connections
    */
   public static HttpClient getHttpClient()
   {
@@ -117,7 +117,7 @@ public class HttpUtil
    * configuration of the shared HttpClient with a different socket timeout.
    *
    * @param soTimeoutMs - custom socket timeout in milli-seconds
-   * @return
+   * @return RequestConfig object
    */
   public static final RequestConfig
     getDefaultRequestConfigWithSocketTimeout(int soTimeoutMs)
@@ -132,7 +132,7 @@ public class HttpUtil
   /**
    * Accessor for the HTTP client singleton.
    *
-   * @return
+   * @return HTTP Client stats in string representation
    */
   public static String getHttpClientStats()
   {

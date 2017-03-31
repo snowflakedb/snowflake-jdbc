@@ -60,12 +60,14 @@ public class SFResultSet extends SFBaseResultSet
   /**
    * Constructor takes a result from the API response that we get from
    * executing a SQL statement.
-   * <p>
+   *
    * The constructor will initialize the ResultSetMetaData.
-   * <p>
-   * @param result
-   * @param statement
-   * @param sortResult
+   *
+   * @param result result data in JSON form
+   * @param statement statement object
+   * @param sortResult true if sort results otherwise false
+   * @throws SQLException exception raised from general SQL layers
+   * @throws SFException exception raised from Snowflake components
    */
   public SFResultSet(JsonNode result,
                      SFStatement statement,
@@ -227,9 +229,8 @@ public class SFResultSet extends SFBaseResultSet
 
   /**
    * Advance to next row
-   * <p>
+   *
    * @return true if next row exists, false otherwise
-   * <p>
    */
   @Override
   public boolean next() throws SFException, SnowflakeSQLException

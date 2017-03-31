@@ -161,12 +161,14 @@ public class SnowflakeChunkDownloader
    * @param chunkHeaders JSON object contains information about chunk headers
    * @param networkTimeoutInMilli network timeout
    * @param useJsonParser should JsonParser be used instead of object
+   * @param memoryLimit memory limit for chunk buffer
    * @param efficientChunkStorage use new efficient storage format
    */
   public SnowflakeChunkDownloader(int colCount,
                                   JsonNode chunksData,
                                   int prefetchThreads,
-                                  String qrmk, JsonNode chunkHeaders,
+                                  String qrmk,
+                                  JsonNode chunkHeaders,
                                   int networkTimeoutInMilli,
                                   boolean useJsonParser,
                                   long memoryLimit,

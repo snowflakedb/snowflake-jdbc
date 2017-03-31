@@ -407,6 +407,8 @@ public class SnowflakeUtil
   /**
    * Returns a new thread pool configured with the default settings.
    *
+   * @param threadNamePrefix prefix of the thread name
+   * @param parallel the number of concurrency
    * @return A new thread pool configured with the default settings.
    */
   static public ThreadPoolExecutor createDefaultExecutorService(

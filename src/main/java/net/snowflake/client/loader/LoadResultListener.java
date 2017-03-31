@@ -50,6 +50,7 @@ public interface LoadResultListener
 
   /**
    * Method to add to the the error count for a listener
+   * @param number the number of errors
    */
   void addErrorCount(int number);
 
@@ -67,6 +68,7 @@ public interface LoadResultListener
 
   /**
    * Method to add to the the error record count for a listener
+   * @param number the number of error records
    */
   void addErrorRecordCount(int number);
 
@@ -94,7 +96,7 @@ public interface LoadResultListener
   
   /**
    * Gets the number of submitted row
-   * @return 
+   * @return the number of submitted row
    */
   int getSubmittedRowCount();
 }

@@ -201,9 +201,9 @@ public class SFSession
    * Make sure a property is not added more than once and the number of
    * properties does not exceed limit.
    *
-   * @param propertyName
-   * @param propertyValue
-   * @throws SFException
+   * @param propertyName property name
+   * @param propertyValue property value
+   * @throws SFException exception raised from Snowflake components
    */
   public void addProperty(String propertyName, Object propertyValue)
       throws SFException
@@ -298,6 +298,7 @@ public class SFSession
    * Open a new database session
    *
    * @throws SFException  this is a runtime exception
+   * @throws SnowflakeSQLException exception raised from Snowfalke components
    */
   public synchronized void open() throws SFException, SnowflakeSQLException
   {
@@ -547,6 +548,8 @@ public class SFSession
 
   /**
    * Send heartbeat for the session
+   * @throws SFException exception raised from Snowflake
+   * @throws SQLException exception raised from SQL generic layers
    */
   protected void heartbeat() throws SFException, SQLException
   {

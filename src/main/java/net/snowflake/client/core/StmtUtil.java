@@ -206,11 +206,11 @@ public class StmtUtil
    * during retry we don't retry the query submission, but continue the
    * ping pong process.
    *
-   * @param stmtInput
-   * @return StmtOutput
+   * @param stmtInput input statement
+   * @return StmtOutput output statement
    *
-   * @throws SFException
-   * @throws SnowflakeSQLException
+   * @throws SFException exception raised from Snowflake components
+   * @throws SnowflakeSQLException exception raised from Snowflake components
    */
   public static StmtOutput execute(StmtInput stmtInput) throws SFException,
       SnowflakeSQLException
@@ -311,7 +311,7 @@ public class StmtUtil
 
       /**
        * Check response for error or for ping pong response
-       * <p>
+       *
        * For ping-pong: want to make sure our connection is not silently dropped
        * by middle players (e.g load balancer/VPN timeout) between client and GS
        */
@@ -485,9 +485,13 @@ public class StmtUtil
   /**
    * Issue get-result call to get query result given an in progress response.
    * <p>
-   * @param inProgressResponse
-   * @param previousGetResultPath
-   * @return
+   * @param inProgressResponse In pregress response in JSON form
+   * @param mediaType media type name
+   * @param previousGetResultPath previous get results path
+   * @param stmtInput input statement
+   * @return results in string form
+   * @throws SFException exception raised from Snowflake components
+   * @throws SnowflakeSQLException exception raised from Snowflake components
    */
   static protected String getQueryResult(JsonNode inProgressResponse,
                                         String mediaType,
@@ -562,7 +566,7 @@ public class StmtUtil
   /**
    * Cancel a statement identifiable by a request id
    *
-   * @param stmtInput
+   * @param stmtInput input statement
    * @throws SFException if there is an internal exception
    * @throws SnowflakeSQLException if failed to cancel the statement
    */

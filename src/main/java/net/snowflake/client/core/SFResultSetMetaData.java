@@ -268,6 +268,7 @@ public class SFResultSetMetaData
 
   /**
    * get the query id
+   * @return query id
    */
   public String getQueryId()
   {
@@ -276,7 +277,7 @@ public class SFResultSetMetaData
 
   /**
    * Get the list of column names
-   * @return
+   * @return column names in list
    */
   public List<String> getColumnNames()
   {
@@ -285,7 +286,8 @@ public class SFResultSetMetaData
 
   /**
    * Get the index of the column by name
-   * @return
+   * @param columnName column name
+   * @return index of the column that names matches the column name
    */
   public int getColumnIndex(String columnName)
   {

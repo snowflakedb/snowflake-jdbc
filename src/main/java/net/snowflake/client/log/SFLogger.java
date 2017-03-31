@@ -19,31 +19,31 @@ public interface SFLogger
 {
   /**
    * Is debug level enabled?
-   * @return
+   * @return true if the trace level is DEBUG
    */
   boolean isDebugEnabled();
 
   /**
    * Is error level enabled?
-   * @return
+   * @return true if the trace level is ERROR
    */
   boolean isErrorEnabled();
 
   /**
    * Is info level enabled?
-   * @return
+   * @return true if the trace level is INFO
    */
   boolean isInfoEnabled();
 
   /**
    * Is trace level enabled?
-   * @return
+   * @return true if the trace level is TRACE
    */
   boolean isTraceEnabled();
 
   /**
    * Is warn level enabled?
-   * @return
+   * @return true if the trace level is WARN
    */
   boolean isWarnEnabled();
 

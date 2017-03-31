@@ -156,9 +156,10 @@ public class SFStatement
    * Execute SQL query with an option for describe only
    *
    * @param sql sql statement
+   * @param describeOnly true if describe only
    * @return query result set
-   * @throws java.sql.SQLException if connection is already closed
-   * @throws SnowflakeSQLException if result set is null
+   * @throws SQLException if connection is already closed
+   * @throws SFException if result set is null
    */
   protected SFBaseResultSet executeQuery(String sql, boolean describeOnly)
       throws SQLException, SFException
@@ -184,8 +185,8 @@ public class SFStatement
    *
    * @param sql statement
    * @return metadata of statement including result set metadata and binding information
-   * @throws java.sql.SQLException if connection is already closed
-   * @throws SnowflakeSQLException if result set is null
+   * @throws SQLException if connection is already closed
+   * @throws SFException if result set is null
    */
   public SFStatementMetaData describe(String sql) throws SFException, SQLException
   {
@@ -199,8 +200,8 @@ public class SFStatement
    * Describe the statement
    *
    * @return metadata of statement including result set metadata and binding information
-   * @throws java.sql.SQLException if connection is already closed
-   * @throws SnowflakeSQLException if result set is null
+   * @throws SQLException if connection is already closed
+   * @throws SFException if result set is null
    */
   public SFStatementMetaData describe() throws SFException, SQLException
   {
@@ -214,8 +215,8 @@ public class SFStatement
    * @param parameterBindings binding information
    * @param describeOnly true if just showing result set metadata
    * @return snowflake query result set
-   * @throws java.sql.SQLException if connection is already closed
-   * @throws SnowflakeSQLException if result set is null
+   * @throws SQLException if connection is already closed
+   * @throws SFException if result set is null
    */
   protected SFBaseResultSet executeQueryInternal(String sql,
                                            Map<String, Map<String, Object>>
@@ -612,6 +613,7 @@ public class SFStatement
    * @param sql sql statement
    * @return whether there is result set or not
    * @throws java.sql.SQLException if failed to execute sql
+   * @throws SFException exception raised from Snowflake components
    */
   public SFBaseResultSet execute(String sql) throws SQLException, SFException
   {

@@ -73,6 +73,7 @@ public class IncidentUtil
    * @param session session that will generate incident
    * @param requestId request id
    * @param jobUuid job uuid
+   * @param signature incident signature for identification
    * @param errorCode error code that caused the incident
    * @param params option parameters
    * @return generated SFException

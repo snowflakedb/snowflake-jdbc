@@ -848,8 +848,8 @@ public class ResultUtil
   /**
    * Converst snowflake bool to java boolean
    *
-   * @param str
-   * @return boolean
+   * @param str boolean type in string representation
+   * @return true if the value indicates true otherwise false
    */
   public static boolean getBoolean(String str)
   {
@@ -888,9 +888,9 @@ public class ResultUtil
   /**
    * Given a list of String, do a case insensitive search for target string
    * Used by resultsetMetadata to search for target column name
-   * @param source
-   * @param target
-   * @return
+   * @param source source string list
+   * @param target target string to match
+   * @return index in the source string list that matches the target string
    */
   public static int listSearchCaseInsensitive(List<String> source, String target)
   {

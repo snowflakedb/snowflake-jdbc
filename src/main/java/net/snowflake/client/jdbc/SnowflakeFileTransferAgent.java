@@ -621,6 +621,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
    * @param parallel number of threads for parallel uploading
    * @param srcFile source file name
    * @param encMat not null if encryption is required
+   * @param stageRegion region name where stage persists
    * @return a callable that uploading file to s3
    */
   public static Callable<Void> getUploadFileCallable(
@@ -827,6 +828,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
    * @param command command string
    * @param encMat s3 encryption material
    * @param parallel number of parallel threads for downloading
+   * @param stageRegion region name where the stage persists
    * @return a callable responsible for downloading files
    */
   public static Callable<Void> getDownloadFileCallable(

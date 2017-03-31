@@ -1420,8 +1420,8 @@ public class SessionUtil
    * Helper function to parse a JsonNode from a GS response
    * containing CommonParameters, emitting an EnumMap of parameters
    *
-   * @param paramsNode
-   * @return
+   * @param paramsNode parameters in JSON form
+   * @return map object including key and value pairs
    */
   public static Map<String, Object> getCommonParams(JsonNode paramsNode)
   {

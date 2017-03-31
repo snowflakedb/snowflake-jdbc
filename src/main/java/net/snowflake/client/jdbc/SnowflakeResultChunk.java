@@ -95,7 +95,7 @@ public class SnowflakeResultChunk
   /**
    * Set the data when using the fasterxml json parser
    *
-   * @param resultData
+   * @param resultData result data in JSON form
    */
   @Deprecated
   public void setResultData(JsonNode resultData)

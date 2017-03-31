@@ -200,6 +200,7 @@ public class SnowflakeS3Client
    * @param parallelism number of threads for parallel downloading
    * @param bucketName s3 bucket name
    * @param stageFilePath stage file path
+   * @param stageRegion region name where the stage persists
    * @throws SnowflakeSQLException if download failed without an exception
    * @throws SnowflakeSQLException if failed to decrypt downloaded file
    * @throws SnowflakeSQLException if file metadata is incomplete
@@ -500,6 +501,7 @@ public class SnowflakeS3Client
    * @param inputStream stream used for uploading if fileBackedOutputStream is null
    * @param fileBackedOutputStream stream used for uploading if not null
    * @param meta object meta data
+   * @param stageRegion region name where the stage persists
    * @throws SnowflakeSQLException if upload failed even after retry
    */
   public static void upload(SnowflakeS3Client client,

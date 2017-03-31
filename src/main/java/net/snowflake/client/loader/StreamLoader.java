@@ -496,7 +496,7 @@ public class StreamLoader implements Loader, Runnable
   /**
    * Finishes loader
    * 
-   * @throws Exception 
+   * @throws Exception an exception raised in finishing loader
    */
   @Override
   public void finish() throws Exception
