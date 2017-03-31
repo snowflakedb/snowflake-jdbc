@@ -270,26 +270,31 @@ public class SFResultSet extends SFBaseResultSet
   @Override
   protected Object getObjectInternal(int columnIndex) throws SFException
   {
+    logger.debug("getObjectInternal: {}", columnIndex);
     if (columnIndex <= 0 || columnIndex > resultSetMetaData.getColumnCount())
     {
       throw new SFException(ErrorCode.COLUMN_DOES_NOT_EXIST, columnIndex);
     }
 
     final int internalColumnIndex = columnIndex - 1;
+    Object retValue = null;
     if (sortResult)
     {
-      return firstChunkSortedRowSet[currentChunkRowIndex][internalColumnIndex];
+      retValue = firstChunkSortedRowSet[
+              currentChunkRowIndex][internalColumnIndex];
     }
     else if (firstChunkRowset != null)
     {
-      return SnowflakeResultChunk.extractCell(firstChunkRowset,
-                                              currentChunkRowIndex,
-                                              internalColumnIndex);
+      retValue = SnowflakeResultChunk.extractCell(firstChunkRowset,
+              currentChunkRowIndex,
+              internalColumnIndex);
     }
     else
     {
-      return currentChunk.getCell(currentChunkRowIndex, internalColumnIndex);
+      retValue = currentChunk.getCell(currentChunkRowIndex, internalColumnIndex);
     }
+    wasNull = retValue == null;
+    return retValue;
   }
 
   private void sortResultSet() throws SnowflakeSQLException, SFException

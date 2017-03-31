@@ -934,11 +934,7 @@ public class SnowflakeBaseResultSet implements ResultSet
       throw new SQLException("Invalid column index: " + columnIndex);
     }
 
-    wasNull = false;
-    if (nextRow[columnIndex - 1] == null)
-    {
-      wasNull = true;
-    }
+    wasNull = nextRow[columnIndex - 1] == null;
 
     logger.debug(
                "Returning column: " + columnIndex + ": "
