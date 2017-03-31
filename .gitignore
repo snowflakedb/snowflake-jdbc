@@ -62,3 +62,4 @@ thin/*
 src/test/*
 mvn_settings.xml
 deploy.sh
+*-maven-metadata.xml
