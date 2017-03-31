@@ -143,6 +143,8 @@ public class SnowflakeChunkDownloader
               }
             });
 
+        thread.setDaemon(true);
+
         return thread;
       }
     };
