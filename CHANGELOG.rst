@@ -1,9 +1,11 @@
+**JDBC Driver 3.0.15**
+|SNOW-29141| Fix a null pointer exception when binding a null value in JDBC
+
+
+
 **JDBC Driver 3.0.14**
-|SNOW-28879| Mark chunk downloader thread as daemon to avoid it preventing jvm exit.
-|SNOW-28882| Fix the bug that wasNull flag is not set correctly. 
-
-
-
+|SNOW-28879| Fixed issue where the result chunk downloader thread prevented the JVM from exiting.
+|SNOW-28882| Fixed issue where null values were returned for 0 values cast to DOUBLE due to the ``wasNull`` flag not being set correctly. 
 **JDBC Driver 3.0.13**
 |SNOW-24601| Implemented security patch for federated authentication in JDBC.
 |SNOW-24184| Open-sourced JDBC Driver on Github.
