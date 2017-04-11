@@ -213,10 +213,17 @@ public class SnowflakePreparedStatementV1 implements PreparedStatement
     logger.debug(
         "setBigDecimal(int parameterIndex, BigDecimal x) throws SQLException");
 
-    Map<String, Object> binding = new HashMap<String, Object>();
-    binding.put("value", String.valueOf(x));
-    binding.put("type", SnowflakeUtil.javaTypeToSFTypeString(Types.DECIMAL));
-    parameterBindings.put(String.valueOf(parameterIndex), binding);
+    if (x == null)
+    {
+      setNull(parameterIndex, Types.DECIMAL);
+    }
+    else
+    {
+      Map<String, Object> binding = new HashMap<String, Object>();
+      binding.put("value", String.valueOf(x));
+      binding.put("type", SnowflakeUtil.javaTypeToSFTypeString(Types.DECIMAL));
+      parameterBindings.put(String.valueOf(parameterIndex), binding);
+    }
   }
 
   @Override
@@ -249,13 +256,20 @@ public class SnowflakePreparedStatementV1 implements PreparedStatement
     logger.debug(
         "setDate(int parameterIndex, Date x) throws SQLException");
 
-    Map<String, Object> binding = new HashMap<String, Object>();
+    if (x == null)
+    {
+      setNull(parameterIndex, Types.DATE);
+    }
+    else
+    {
+      Map<String, Object> binding = new HashMap<String, Object>();
 
-    // convert the date from being in local time zone to be in UTC timezone
-    binding.put("value", String.valueOf(x.getTime() +
-        TimeZone.getDefault().getOffset(x.getTime())));
-    binding.put("type", SnowflakeUtil.javaTypeToSFTypeString(Types.DATE));
-    parameterBindings.put(String.valueOf(parameterIndex), binding);
+      // convert the date from being in local time zone to be in UTC timezone
+      binding.put("value", String.valueOf(x.getTime() +
+          TimeZone.getDefault().getOffset(x.getTime())));
+      binding.put("type", SnowflakeUtil.javaTypeToSFTypeString(Types.DATE));
+      parameterBindings.put(String.valueOf(parameterIndex), binding);
+    }
   }
 
   @Override
@@ -264,18 +278,25 @@ public class SnowflakePreparedStatementV1 implements PreparedStatement
     logger.debug(
         "setTime(int parameterIndex, Time x) throws SQLException");
 
-    Map<String, Object> binding = new HashMap<String, Object>();
+    if (x == null)
+    {
+      setNull(parameterIndex, Types.TIME);
+    }
+    else
+    {
+      Map<String, Object> binding = new HashMap<String, Object>();
 
-    // Convert to nanoseconds since midnight using the input time mod 24 hours.
-    final long MS_IN_DAY = 86400 * 1000;
-    long msSinceEpoch = x.getTime();
-    // Use % + % instead of just % to get the nonnegative remainder.
-    // TODO(mkember): Change to use Math.floorMod when Client is on Java 8.
-    long msSinceMidnight = (msSinceEpoch % MS_IN_DAY + MS_IN_DAY) % MS_IN_DAY;
-    long nanosSinceMidnight = msSinceMidnight * 1000 * 1000;
-    binding.put("value", String.valueOf(nanosSinceMidnight));
-    binding.put("type", SnowflakeUtil.javaTypeToSFTypeString(Types.TIME));
-    parameterBindings.put(String.valueOf(parameterIndex), binding);
+      // Convert to nanoseconds since midnight using the input time mod 24 hours.
+      final long MS_IN_DAY = 86400 * 1000;
+      long msSinceEpoch = x.getTime();
+      // Use % + % instead of just % to get the nonnegative remainder.
+      // TODO(mkember): Change to use Math.floorMod when Client is on Java 8.
+      long msSinceMidnight = (msSinceEpoch % MS_IN_DAY + MS_IN_DAY) % MS_IN_DAY;
+      long nanosSinceMidnight = msSinceMidnight * 1000 * 1000;
+      binding.put("value", String.valueOf(nanosSinceMidnight));
+      binding.put("type", SnowflakeUtil.javaTypeToSFTypeString(Types.TIME));
+      parameterBindings.put(String.valueOf(parameterIndex), binding);
+    }
   }
 
   @Override
@@ -287,8 +308,9 @@ public class SnowflakePreparedStatementV1 implements PreparedStatement
     Map<String, Object> binding = new HashMap<String, Object>();
 
     // convert the timestamp from being in local time zone to be in UTC timezone
-    binding.put("value", String.valueOf(
-    BigDecimal.valueOf(x.getTime()/1000).
+    binding.put("value", x == null ? null :
+        String.valueOf(
+        BigDecimal.valueOf(x.getTime()/1000).
         scaleByPowerOfTen(9).add(BigDecimal.valueOf(x.getNanos()))));
 
     SnowflakeType sfType = SnowflakeUtil.javaTypeToSFType(Types.TIMESTAMP);
@@ -553,14 +575,21 @@ public class SnowflakePreparedStatementV1 implements PreparedStatement
   {
     logger.debug( "setDate(int parameterIndex, Date x, Calendar cal)");
 
-    Map<String, Object> binding = new HashMap<String, Object>();
+    if (x == null)
+    {
+      setNull(parameterIndex, Types.DATE);
+    }
+    else
+    {
+      Map<String, Object> binding = new HashMap<String, Object>();
 
-    // convert the date from to be in local time zone to be in UTC
-    binding.put("value", String.valueOf(x.getTime() +
-        cal.getTimeZone().getOffset(x.getTime())));
+      // convert the date from to be in local time zone to be in UTC
+      binding.put("value", String.valueOf(x.getTime() +
+          cal.getTimeZone().getOffset(x.getTime())));
 
-    binding.put("type", SnowflakeUtil.javaTypeToSFTypeString(Types.DATE));
-    parameterBindings.put(String.valueOf(parameterIndex), binding);
+      binding.put("type", SnowflakeUtil.javaTypeToSFTypeString(Types.DATE));
+      parameterBindings.put(String.valueOf(parameterIndex), binding);
+    }
   }
 
   @Override
@@ -580,13 +609,20 @@ public class SnowflakePreparedStatementV1 implements PreparedStatement
     Map<String, Object> binding = new HashMap<String, Object>();
 
     // convert the time from being in UTC to be in local time zone
-    long milliSecSinceEpoch = x.getTime();
-    milliSecSinceEpoch = milliSecSinceEpoch +
-        cal.getTimeZone().getOffset(milliSecSinceEpoch);
+    if (x != null)
+    {
+      long milliSecSinceEpoch = x.getTime();
+      milliSecSinceEpoch = milliSecSinceEpoch +
+          cal.getTimeZone().getOffset(milliSecSinceEpoch);
 
-    binding.put("value", String.valueOf(
-        BigDecimal.valueOf(milliSecSinceEpoch/1000).
-            scaleByPowerOfTen(9).add(BigDecimal.valueOf(x.getNanos()))));
+      binding.put("value", String.valueOf(
+          BigDecimal.valueOf(milliSecSinceEpoch / 1000).
+              scaleByPowerOfTen(9).add(BigDecimal.valueOf(x.getNanos()))));
+    }
+    else
+    {
+      binding.put("value", null);
+    }
 
     SnowflakeType sfType = SnowflakeUtil.javaTypeToSFType(Types.TIMESTAMP);
 
