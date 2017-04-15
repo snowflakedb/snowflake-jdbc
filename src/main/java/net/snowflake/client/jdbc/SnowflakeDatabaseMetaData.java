@@ -2668,7 +2668,6 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
             return true;
           }
         }
-        statement.execute("alter session set ENABLE_SHOW_FUNCTION_NEW_RETURN=default");
         statement.close();
         statement = null;
         return false;

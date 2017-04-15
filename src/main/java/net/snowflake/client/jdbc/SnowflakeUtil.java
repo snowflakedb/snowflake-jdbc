@@ -367,7 +367,7 @@ public class SnowflakeUtil
     // log the response
     if (response.getStatusLine() != null)
     {
-      logger.error("Response status line reason: {0}",
+      logger.error("Response status line reason: {}",
                  response.getStatusLine().getReasonPhrase());
     }
 
@@ -377,7 +377,7 @@ public class SnowflakeUtil
     {
       for (Header header : headers)
       {
-        logger.error("Header name: {0}, value: {1}",
+        logger.error("Header name: {}, value: {}",
                    new Object[]
                    {
                      header.getName(), header.getValue()
@@ -394,12 +394,12 @@ public class SnowflakeUtil
         BufferedReader bufferedReader = new BufferedReader(
                 new InputStreamReader((response.getEntity().getContent())));
         IOUtils.copy(bufferedReader, writer);
-        logger.error("Response content: {0}", writer.toString());
+        logger.error("Response content: {}", writer.toString());
       }
       catch (IOException ex)
       {
         logger.error("Failed to read content due to exception: "
-                               + "{0}", ex.getMessage());
+                               + "{}", ex.getMessage());
       }
     }
   }

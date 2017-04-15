@@ -260,6 +260,8 @@ public class RestRequest
         {
           try {
             Thread.sleep(backoffInMilli - elapsedMilliForLastCall);
+            elapsedMilliForTransientIssues +=
+                (backoffInMilli - elapsedMilliForLastCall);
           }
           catch (InterruptedException ex1)
           {
