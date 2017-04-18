@@ -1,8 +1,10 @@
+**JDBC Driver 3.0.16**
+|SNOW-29262| Fix the bug when calculating time spent on retry
+
+
+
 **JDBC Driver 3.0.15**
-|SNOW-29141| Fix a null pointer exception when binding a null value in JDBC
-
-
-
+|SNOW-29141| Fixed a null pointer exception when binding a null value in JDBC.
 **JDBC Driver 3.0.14**
 |SNOW-28879| Fixed issue where the result chunk downloader thread prevented the JVM from exiting.
 |SNOW-28882| Fixed issue where null values were returned for 0 values cast to DOUBLE due to the ``wasNull`` flag not being set correctly. 
