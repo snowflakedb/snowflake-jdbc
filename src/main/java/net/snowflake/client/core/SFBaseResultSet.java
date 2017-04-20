@@ -310,7 +310,17 @@ public abstract class SFBaseResultSet
 
     if (obj instanceof String)
     {
-      return Float.parseFloat((String) obj);
+      if ("inf".equals(obj))
+      {
+        return Float.POSITIVE_INFINITY;
+      }
+      else if ("-inf".equals(obj))
+      {
+        return Float.NEGATIVE_INFINITY; }
+      else
+      {
+        return Float.parseFloat((String) obj);
+      }
     }
     else
     {
@@ -331,7 +341,18 @@ public abstract class SFBaseResultSet
 
     if (obj instanceof String)
     {
-      return Double.parseDouble((String) obj);
+      if ("inf".equals(obj))
+      {
+        return Double.POSITIVE_INFINITY;
+      }
+      else if ("-inf".equals(obj))
+      {
+        return Double.NEGATIVE_INFINITY;
+      }
+      else
+      {
+        return Double.parseDouble((String) obj);
+      }
     }
     else
     {
