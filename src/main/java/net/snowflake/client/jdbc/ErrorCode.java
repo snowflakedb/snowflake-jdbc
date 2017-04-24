@@ -72,6 +72,7 @@ public enum ErrorCode
                        SqlState.SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION),
   IDP_INCORRECT_DESTINATION(200040,
                        SqlState.SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION),
+  CONNECTION_ESTABLISHED_WITH_DIFFERENT_PROP(200041, SqlState.WARNING)
   ;
 
   public final static String errorMessageResource =

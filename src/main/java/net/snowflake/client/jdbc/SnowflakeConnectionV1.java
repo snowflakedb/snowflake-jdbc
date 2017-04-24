@@ -36,10 +36,8 @@ import java.sql.Struct;
 import java.util.Properties;
 import java.util.Map;
 import java.util.List;
-import java.util.LinkedList;
 import java.util.HashMap;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -251,6 +249,37 @@ public class SnowflakeConnectionV1 implements Connection
       throw new SnowflakeSQLException(ex.getCause(), ex.getSqlState(),
           ex.getVendorCode(), ex.getParams());
     }
+
+    if (loginDatabaseName != null && !loginDatabaseName
+        .equalsIgnoreCase(sfSession.getDatabase()))
+    {
+      SQLWarning w = new SnowflakeSQLWarning(
+          ErrorCode.CONNECTION_ESTABLISHED_WITH_DIFFERENT_PROP.getSqlState(),
+          ErrorCode.CONNECTION_ESTABLISHED_WITH_DIFFERENT_PROP.getMessageCode(),
+          "Database", loginDatabaseName, sfSession.getDatabase());
+      appendWarning(w);
+    }
+
+    if (loginSchemaName != null && !loginSchemaName
+        .equalsIgnoreCase(sfSession.getSchema()))
+    {
+      SQLWarning w = new SnowflakeSQLWarning(
+          ErrorCode.CONNECTION_ESTABLISHED_WITH_DIFFERENT_PROP.getSqlState(),
+          ErrorCode.CONNECTION_ESTABLISHED_WITH_DIFFERENT_PROP.getMessageCode(),
+          "Schema", loginSchemaName, sfSession.getSchema());
+      appendWarning(w);
+    }
+
+    if (loginRole != null && !loginRole
+        .equalsIgnoreCase(sfSession.getRole()))
+    {
+      SQLWarning w = new SnowflakeSQLWarning(
+          ErrorCode.CONNECTION_ESTABLISHED_WITH_DIFFERENT_PROP.getSqlState(),
+          ErrorCode.CONNECTION_ESTABLISHED_WITH_DIFFERENT_PROP.getMessageCode(),
+          "Role", loginRole, sfSession.getRole());
+      appendWarning(w);
+    }
+
     isClosed = false;
   }
 
@@ -1713,7 +1742,7 @@ public class SnowflakeConnectionV1 implements Connection
     return sfSession;
   }
 
-  private void generateWarning(SQLWarning w)
+  private void appendWarning(SQLWarning w)
   {
     if (sqlWarnings == null)
     {
