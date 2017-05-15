@@ -1,9 +1,11 @@
-**JDBC Driver 3.0.17**
-|SNOW-28390| Fix the bug that JDBC fails to parse an infinite number
-|SNOW-26354| Return a SQLWarning if user specified a non-existed db/schema in connection property
+**JDBC Driver 3.0.18**
+|NO-SNOW| Shorten heartbeat interval to resolve some token expiration issue
 
+**JDBC Driver 3.0.17**
+|SNOW-28390| Fixed an issue where JDBC fails to parse an infinite number.
+|SNOW-26354| Returns a SQLWarning if a non-existent database or schema is specified in the connection properties.
 **JDBC Driver 3.0.16**
-|SNOW-29262| Fix an issue when calculating time spent on retry.
+|SNOW-29262| Fixed an issue when calculating time spent on retry.
 **JDBC Driver 3.0.15**
 |SNOW-29141| Fixed a null pointer exception when binding a null value in JDBC.
 **JDBC Driver 3.0.14**
