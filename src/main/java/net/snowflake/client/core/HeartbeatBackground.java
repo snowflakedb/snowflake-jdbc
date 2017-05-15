@@ -37,7 +37,7 @@ public class HeartbeatBackground implements Runnable
    *
    * in seconds
    */
-  private long heartbeatHeadroomBeforeTokenExpiration = 600;
+  private long heartbeatHeadroomBeforeTokenExpiration = 1800;
 
   /**
    * How often heartbeat executes is calculated based on master token validity
