@@ -1,5 +1,5 @@
 **JDBC Driver 3.0.18**
-|NO-SNOW| Shorten heartbeat interval to resolve some token expiration issue
+|SNOW-30146| Shorten heartbeat interval to resolve some token expiration issue
 
 **JDBC Driver 3.0.17**
 |SNOW-28390| Fixed an issue where JDBC fails to parse an infinite number.
