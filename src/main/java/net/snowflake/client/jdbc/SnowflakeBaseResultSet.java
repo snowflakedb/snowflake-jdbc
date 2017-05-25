@@ -206,7 +206,7 @@ public class SnowflakeBaseResultSet implements ResultSet
         // if date is on or before 1582-10-04, apply the difference
         // by (H-H/4-2) where H is the hundreds digit of the year according to:
         // http://en.wikipedia.org/wiki/Gregorian_calendar
-        Date adjustedDate = adjustDate(date);
+        Date adjustedDate = ResultUtil.adjustDate(date);
 
         dateStr = dateFormatter.format(adjustedDate, timeZoneUTC);
 
@@ -2417,20 +2417,5 @@ public class SnowflakeBaseResultSet implements ResultSet
                "public boolean isWrapperFor(Class<?> iface)");
 
     throw new SQLFeatureNotSupportedException();
-  }
-
-  private Date adjustDate(Date date)
-  {
-    long milliToAdjust = ResultUtil.calculateMilliToAdjust(date);
-
-    if (milliToAdjust != 0)
-    {
-    // add the difference to the new date
-      Date newDate = new Date(date.getTime() + milliToAdjust);
-
-      return newDate;
-    }
-    else
-      return date;
   }
 }

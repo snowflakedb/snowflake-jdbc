@@ -779,7 +779,7 @@ public class ResultUtil
    * @param date date before 1582-10-05
    * @return adjusted date
    */
-  static private Date adjustDate(Date date)
+  static public Date adjustDate(Date date)
   {
     long milliToAdjust = ResultUtil.calculateMilliToAdjust(date);
 
