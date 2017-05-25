@@ -51,6 +51,15 @@ Load Driver Class
 
     Class.forName("net.snowflake.client.jdbc.SnowflakeDriver")
 
+Datasource
+----------
+
+javax.sql.DataSource interface is implemented by class
+
+.. code-block:: java
+
+    net.snowflake.client.jdbc.SnowflakeBasicDataSource
+
 Connection String
 -----------------
 
