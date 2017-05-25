@@ -1,3 +1,7 @@
+**JDBC Driver 3.0.19**
+|SNOW-21314| Fixed Date value and validity for '0001-01-01'. Displays incorrect date output
+|SNOW-29998| Implemented of DataSource object
+
 **JDBC Driver 3.0.18**
 |SNOW-30146| Shorten heartbeat interval to resolve some token expiration issue
 
