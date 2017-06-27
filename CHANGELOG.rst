@@ -1,13 +1,14 @@
+**JDBC Driver 3.0.20**
+|SNOW-30700| Use Gregorian Calendar at all times for Date, Time and Timestamp in Loader API
+
 **JDBC Driver 3.0.19**
-|SNOW-21314| Fixed Date value and validity for '0001-01-01'. Displays incorrect date output
-|SNOW-29998| Implemented of DataSource object
-
+|SNOW-21314| Fixed Date value and validity for '0001-01-01'. Previously, it displayed incorrect date output.
+|SNOW-29998| Implemented the basic ``DataSource`` API, which produces a standard ``Connection`` object.
 **JDBC Driver 3.0.18**
-|SNOW-30146| Shorten heartbeat interval to resolve some token expiration issue
-
+|SNOW-30146| Shortened the heartbeat interval to resolve some token expiration issues.
 **JDBC Driver 3.0.17**
 |SNOW-28390| Fixed an issue where JDBC fails to parse an infinite number.
-|SNOW-26354| Returns a SQLWarning if a non-existent database or schema is specified in the connection properties.
+|SNOW-26354| Driver returns a ``SQLWarning`` if a non-existent database or schema is specified in the connection properties.
 **JDBC Driver 3.0.16**
 |SNOW-29262| Fixed an issue when calculating time spent on retry.
 **JDBC Driver 3.0.15**
