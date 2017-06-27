@@ -1,9 +1,12 @@
-**JDBC Driver 3.0.20**
-|SNOW-30700| Use Gregorian Calendar at all times for Date, Time and Timestamp in Loader API
+**JDBC Driver 3.0.21**
+|SNOW-15992| Support API Statement.addBatch(), executeBatch() and clearBatch()
 
+**JDBC Driver 3.0.20**
+|SNOW-30700| Driver now always uses Gregorian Calendar for DATE, TIME, and TIMESTAMP values in Loader API.
+|SNOW-18939| Added support for ORC file format in PUT command.
 **JDBC Driver 3.0.19**
-|SNOW-21314| Fixed Date value and validity for '0001-01-01'. Previously, it displayed incorrect date output.
 |SNOW-29998| Implemented the basic ``DataSource`` API, which produces a standard ``Connection`` object.
+|SNOW-21314| Fixed Date value and validity for '0001-01-01'. Previously, it displayed incorrect date output.
 **JDBC Driver 3.0.18**
 |SNOW-30146| Shortened the heartbeat interval to resolve some token expiration issues.
 **JDBC Driver 3.0.17**
@@ -14,8 +17,8 @@
 **JDBC Driver 3.0.15**
 |SNOW-29141| Fixed a null pointer exception when binding a null value in JDBC.
 **JDBC Driver 3.0.14**
-|SNOW-28879| Fixed issue where the result chunk downloader thread prevented the JVM from exiting.
 |SNOW-28882| Fixed issue where null values were returned for 0 values cast to DOUBLE due to the ``wasNull`` flag not being set correctly. 
+|SNOW-28879| Fixed issue where the result chunk downloader thread prevented the JVM from exiting.
 **JDBC Driver 3.0.13**
 |SNOW-24601| Implemented security patch for federated authentication in JDBC.
 |SNOW-24184| Open-sourced JDBC Driver on Github.
