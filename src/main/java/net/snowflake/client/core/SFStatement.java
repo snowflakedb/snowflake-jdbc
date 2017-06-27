@@ -266,9 +266,10 @@ public class SFStatement
     {
       resultSet = new SFResultSet((JsonNode) result, this, sortResult);
     }
-    catch (SnowflakeSQLException ex)
+    catch (SnowflakeSQLException | OutOfMemoryError ex)
     {
       // snow-24428: no need to generate incident for exceptions we generate
+      // snow-29403: or client OOM
       throw ex;
     }
     catch (Throwable ex)
