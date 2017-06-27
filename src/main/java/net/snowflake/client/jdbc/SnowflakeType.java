@@ -6,38 +6,51 @@ package net.snowflake.client.jdbc;
 
 import net.snowflake.common.core.SFBinary;
 import net.snowflake.common.core.SqlState;
+
 import java.math.BigDecimal;
-import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.TimeZone;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-
-
 /**
- *
+ * Type converters
  */
-public enum SnowflakeType
-{
+public enum SnowflakeType {
 
   TEXT, CHAR, INTEGER, FIXED, REAL, TIMESTAMP, TIMESTAMP_LTZ, TIMESTAMP_NTZ, TIMESTAMP_TZ,
   DATE, TIME, BOOLEAN, ARRAY, OBJECT, VARIANT, BINARY, ANY;
 
-  private static final String TIMESTAMP_FORMAT_PATTERN = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX";
-  private static final TimeZone TIMEZONE_UTC = TimeZone.getTimeZone("UTC");
+  private static GregorianCalendar CALENDAR_LOCAL;
 
-  public static SnowflakeType fromString(String name)
-  {
+  /**
+   * Resets local calendar with the default timezone. This is used in tests.
+   */
+  public static void resetLocalCalendar() {
+    CALENDAR_LOCAL = new GregorianCalendar(TimeZone.getDefault());
+    CALENDAR_LOCAL.clear();
+    CALENDAR_LOCAL.setGregorianChange(new Date(Long.MIN_VALUE));
+  }
+
+  private final static GregorianCalendar CALENDAR_UTC = new GregorianCalendar(
+      TimeZone.getTimeZone("UTC"));
+
+  static {
+    CALENDAR_UTC.clear();
+    CALENDAR_UTC.setGregorianChange(new Date(Long.MIN_VALUE));
+    resetLocalCalendar();
+  }
+
+  private static final String TIMESTAMP_FORMAT_PATTERN = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX";
+
+  public static SnowflakeType fromString(String name) {
     return SnowflakeType.valueOf(name.toUpperCase());
   }
 
-  public static JavaDataType getJavaType(SnowflakeType type)
-  {
-    switch (type)
-    {
+  public static JavaDataType getJavaType(SnowflakeType type) {
+    switch (type) {
       case TEXT:
         return JavaDataType.JAVA_STRING;
       case CHAR:
@@ -72,8 +85,7 @@ public enum SnowflakeType
     }
   }
 
-  public enum JavaDataType
-  {
+  public enum JavaDataType {
 
     JAVA_STRING(String.class),
     JAVA_LONG(Long.class),
@@ -84,26 +96,21 @@ public enum SnowflakeType
     JAVA_BOOLEAN(Boolean.class),
     JAVA_OBJECT(Object.class);
 
-    JavaDataType(Class c)
-    {
+    JavaDataType(Class c) {
       this._class = c;
     }
 
     private Class _class;
 
-    public Class getClazz()
-    {
+    public Class getClazz() {
       return _class;
     }
 
-    public String lexicalValue(Object o)
-    {
-      if (o == null)
-      {
+    public String lexicalValue(Object o) {
+      if (o == null) {
         return "";  // Questionable
       }
-      switch (this)
-      {
+      switch (this) {
         case JAVA_STRING:
         case JAVA_BIGDECIMAL:
           return (String) o;
@@ -115,9 +122,9 @@ public enum SnowflakeType
           SimpleDateFormat sdf = new SimpleDateFormat(TIMESTAMP_FORMAT_PATTERN);
           return sdf.format((Timestamp) o);
         case JAVA_BYTES:
-          return new SFBinary((byte[])o).toHex();
+          return new SFBinary((byte[]) o).toHex();
         case JAVA_BOOLEAN:
-          return Boolean.toString((Boolean)o);
+          return Boolean.toString((Boolean) o);
         case JAVA_OBJECT:
           return o.toString();
 
@@ -130,70 +137,46 @@ public enum SnowflakeType
   /**
    * Returns a lexical value of an object that is suitable for Snowflake import
    * serialization
-   * @param o Java object representing value in Snowflake
+   *
+   * @param o                Java object representing value in Snowflake
    * @param useLocalTimezone use local timezone instead of UTC
    * @return String representation of it that can be used for creating a load file
    */
-  public static String lexicalValue(Object o, boolean useLocalTimezone)
-  {
-
-    if (o == null)
-    {
+  public static String lexicalValue(Object o, boolean useLocalTimezone) {
+    if (o == null) {
       return "";
     }
 
     Class c = o.getClass();
 
-    if (c == Timestamp.class)
-    {
+    if (Date.class.isAssignableFrom(c)) {
       SimpleDateFormat sdf = new SimpleDateFormat(TIMESTAMP_FORMAT_PATTERN);
       if (!useLocalTimezone) {
-        sdf.setTimeZone(TIMEZONE_UTC);
+        sdf.setCalendar(CALENDAR_UTC);
+      } else {
+        sdf.setCalendar(CALENDAR_LOCAL);
       }
-      return sdf.format((Timestamp) o);
+      return sdf.format(o);
     }
 
-    if (c == Date.class)
-    {
-      SimpleDateFormat sdf = new SimpleDateFormat(TIMESTAMP_FORMAT_PATTERN);
-      if (!useLocalTimezone) {
-        sdf.setTimeZone(TIMEZONE_UTC);
-      }
-      return sdf.format((Date) o);
-    }
-
-    if (c == Time.class)
-    {
-      SimpleDateFormat sdf = new SimpleDateFormat(TIMESTAMP_FORMAT_PATTERN);
-      if (!useLocalTimezone) {
-        sdf.setTimeZone(TIMEZONE_UTC);
-      }
-      return sdf.format((Time) o);
-    }
-
-    if (c == Double.class)
-    {
+    if (c == Double.class) {
       return Double.toHexString((Double) o);
     }
 
-    if (c == Float.class)
-    {
+    if (c == Float.class) {
       return Float.toHexString((Float) o);
     }
 
-    if (c == Integer.class)
-    {
+    if (c == Integer.class) {
       return o.toString();
     }
 
-    if (c == BigDecimal.class)
-    {
+    if (c == BigDecimal.class) {
       return o.toString();
     }
 
-    if (c == byte[].class)
-    {
-      return new SFBinary((byte[])o).toHex();
+    if (c == byte[].class) {
+      return new SFBinary((byte[]) o).toHex();
     }
 
     String value = String.valueOf(o);
@@ -201,25 +184,19 @@ public enum SnowflakeType
     return value;
   }
 
-  public static String escapeForCSV(String value)
-  {
-      if (value.indexOf('"') >= 0 || value.indexOf('\n') >= 0
-          || value.indexOf(',') >= 0 || value.indexOf('\\') >= 0)
-      {
+  public static String escapeForCSV(String value) {
+    if (value.indexOf('"') >= 0 || value.indexOf('\n') >= 0
+        || value.indexOf(',') >= 0 || value.indexOf('\\') >= 0) {
 
-        return '"' + value.replaceAll("\"", "\"\"") + '"';
-      }
-      else
-      {
-        return value;
-      }
+      return '"' + value.replaceAll("\"", "\"\"") + '"';
+    } else {
+      return value;
+    }
   }
 
-  public static SnowflakeType javaTypeToSFType(int javaType) throws SnowflakeSQLException
-  {
+  public static SnowflakeType javaTypeToSFType(int javaType) throws SnowflakeSQLException {
 
-    switch (javaType)
-    {
+    switch (javaType) {
       case Types.INTEGER:
       case Types.BIGINT:
       case Types.DECIMAL:
@@ -256,9 +233,9 @@ public enum SnowflakeType
 
       default:
         throw new SnowflakeSQLException(SqlState.FEATURE_NOT_SUPPORTED,
-                                        ErrorCode.DATA_TYPE_NOT_SUPPORTED
-                                        .getMessageCode(),
-                                        javaType);
+            ErrorCode.DATA_TYPE_NOT_SUPPORTED
+                .getMessageCode(),
+            javaType);
     }
   }
 }
