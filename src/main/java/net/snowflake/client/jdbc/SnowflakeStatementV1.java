@@ -11,7 +11,9 @@ import net.snowflake.client.core.SFStatement;
 import net.snowflake.client.core.SFStatementType;
 import net.snowflake.common.core.SqlState;
 
+import java.sql.BatchUpdateException;
 import java.sql.ResultSetMetaData;
+import java.util.ArrayList;
 import java.util.List;
 
 import java.sql.Connection;
@@ -61,6 +63,9 @@ public class SnowflakeStatementV1 implements Statement
   private int maxFieldSize = 16777216;
 
   private SFStatement sfStatement;
+
+  /** batch of sql strings added by addBatch */
+  private final List<String> batch = new ArrayList<>();
 
   public SnowflakeStatementV1(SnowflakeConnectionV1 conn)
   {
@@ -145,6 +150,13 @@ public class SnowflakeStatementV1 implements Statement
     SnowflakeResultSetV1 rset = new SnowflakeResultSetV1(sfResultSet, this);
 
     updateCount = ResultUtil.calculateUpdateCount(rset, rset.getStatementTypeId());
+    if (updateCount == -1)
+    {
+      throw new SnowflakeSQLException(ErrorCode.
+          UNSUPPORTED_STATEMENT_TYPE_IN_EXECUTION_API,
+          sql.length() > 20 ? sql.substring(0, 20) + "..." : sql);
+
+    }
 
     return updateCount;
   }
@@ -394,12 +406,53 @@ public class SnowflakeStatementV1 implements Statement
     throw new SQLFeatureNotSupportedException();
   }
 
+  /**
+   * Batch Execute. If one of the commands in the batch failed, JDBC will
+   * continuing processing and throw BatchUpdateException after all commands
+   * are processed.
+   * @return
+   * @throws SQLException
+   */
   @Override
   public int[] executeBatch() throws SQLException
   {
     logger.debug("public int[] executeBatch()");
 
-    throw new SQLFeatureNotSupportedException();
+    if (isClosed)
+    {
+      throw new SnowflakeSQLException(ErrorCode.STATEMENT_CLOSED);
+    }
+
+    SQLException exceptionReturned = null;
+    int updateCounts[] = new int[batch.size()];
+
+    for (int i=0; i<batch.size(); i++)
+    {
+      try
+      {
+        updateCounts[i] = this.executeUpdate(batch.get(i));
+      }
+      catch(SQLException e)
+      {
+        if (exceptionReturned == null)
+        {
+          exceptionReturned = e;
+        }
+
+        updateCounts[i] = EXECUTE_FAILED;
+      }
+    }
+
+    if (exceptionReturned != null)
+    {
+      throw new BatchUpdateException(exceptionReturned.getLocalizedMessage(),
+                                     exceptionReturned.getSQLState(),
+                                     exceptionReturned.getErrorCode(),
+                                     updateCounts,
+                                     exceptionReturned);
+    }
+
+    return updateCounts;
   }
 
   @Override
@@ -731,6 +784,7 @@ public class SnowflakeStatementV1 implements Statement
     currentResultSet = null;
     resultSet = null;
     isClosed = true;
+    batch.clear();
 
     sfStatement.close();
   }
@@ -764,7 +818,12 @@ public class SnowflakeStatementV1 implements Statement
   {
     logger.debug("public void addBatch(String sql)");
 
-    throw new SQLFeatureNotSupportedException();
+    if (isClosed)
+    {
+      throw new SnowflakeSQLException(ErrorCode.STATEMENT_CLOSED);
+    }
+
+    batch.add(sql);
   }
 
   @Override
@@ -772,7 +831,12 @@ public class SnowflakeStatementV1 implements Statement
   {
     logger.debug("public void clearBatch()");
 
-    throw new SQLFeatureNotSupportedException();
+    if (isClosed)
+    {
+      throw new SnowflakeSQLException(ErrorCode.STATEMENT_CLOSED);
+    }
+
+    batch.clear();
   }
 
   public void executeSetProperty(final String sql)

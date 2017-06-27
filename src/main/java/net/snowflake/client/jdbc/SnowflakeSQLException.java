@@ -93,6 +93,14 @@ public class SnowflakeSQLException extends SQLException
                                    String.valueOf(vendorCode), params), ex);
   }
 
+  public SnowflakeSQLException(ErrorCode errorCode, Object... params)
+  {
+    super(errorResourceBundleManager.getLocalizedMessage(
+        String.valueOf(errorCode.getMessageCode()), params),
+        errorCode.getSqlState(),
+        errorCode.getMessageCode());
+  }
+
   public String getQueryId()
   {
     return queryId;
