@@ -430,7 +430,9 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
     COMPRESS(".Z", "application",
             Arrays.asList("compress", "x-compress"), false),
     PARQUET(".parquet", "snowflake",
-            Collections.singletonList("parquet"), true);
+            Collections.singletonList("parquet"), true),
+    ORC(".orc", "snowflake",
+            Collections.singletonList("orc"), true);
 
     private FileCompressionType(String fileExtension, String mimeType,
                      List<String> mimeSubTypes,
@@ -2663,10 +2665,17 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
               try (FileInputStream f = new FileInputStream(file))
               {
                 byte[] magic = new byte[4];
-                if (f.read(magic, 0, 4) == 4 &&
-                    Arrays.equals(magic, new byte[]{'P','A','R','1'}))
+                if (f.read(magic, 0, 4) == 4)
                 {
-                  mimeTypeStr = "snowflake/parquet";
+                  if (Arrays.equals(magic, new byte[]{'P','A','R','1'}))
+                  {
+                    mimeTypeStr = "snowflake/parquet";
+                  }
+                  else if (Arrays.equals(
+                      Arrays.copyOfRange(magic, 0, 3), new byte[]{'O','R','C'}))
+                  {
+                    mimeTypeStr = "snowflake/orc";
+                  }
                 }
               }
 
