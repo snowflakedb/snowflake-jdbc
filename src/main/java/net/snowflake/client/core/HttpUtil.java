@@ -14,6 +14,12 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpRequestBase;
+import org.apache.http.config.Registry;
+import org.apache.http.config.RegistryBuilder;
+import org.apache.http.conn.socket.ConnectionSocketFactory;
+import org.apache.http.conn.socket.PlainConnectionSocketFactory;
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+import org.apache.http.conn.ssl.SSLContexts;
 import org.apache.http.impl.client.DefaultRedirectStrategy;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
@@ -25,6 +31,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
+
+import javax.net.ssl.SSLContext;
 
 /**
  * Created by jhuang on 1/19/16.
@@ -55,7 +63,7 @@ public class HttpUtil
    *
    * @return HttpClient object
    */
-  public final static HttpClient buildHttpClient()
+  private static HttpClient buildHttpClient()
   {
     /*if (logger.isTraceEnabled()))
     {
@@ -73,8 +81,24 @@ public class HttpUtil
                      .setSocketTimeout(DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT)
                      .build();
 
+    // enforce using tlsv1.2
+    SSLContext sslContext = SSLContexts.createDefault();
+
+    SSLConnectionSocketFactory sslSocketFactory = new SSLConnectionSocketFactory(
+        sslContext,
+        new String[] {"TLSv1.2"},
+        null,
+        SSLConnectionSocketFactory.STRICT_HOSTNAME_VERIFIER);
+
+    Registry<ConnectionSocketFactory> registry =
+        RegistryBuilder.<ConnectionSocketFactory>create()
+                       .register("https", sslSocketFactory)
+                       .register("http",
+                           PlainConnectionSocketFactory.getSocketFactory())
+                       .build();
+
     // Build a connection manager with enough connections
-    connectionManager = new PoolingHttpClientConnectionManager();
+    connectionManager = new PoolingHttpClientConnectionManager(registry);
     connectionManager.setMaxTotal(DEFAULT_MAX_CONNECTIONS);
     connectionManager.setDefaultMaxPerRoute(DEFAULT_MAX_CONNECTIONS_PER_ROUTE);
 
