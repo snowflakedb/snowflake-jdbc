@@ -5,6 +5,7 @@
 package net.snowflake.client.core;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.sun.org.apache.regexp.internal.RE;
 import net.snowflake.common.core.SqlState;
 import net.snowflake.client.core.BasicEvent.QueryState;
 import net.snowflake.client.jdbc.ErrorCode;
@@ -56,6 +57,8 @@ public class SFResultSet extends SFBaseResultSet
   private SnowflakeChunkDownloader chunkDownloader;
 
   protected SFStatement statement;
+
+  private final boolean arrayBindSupported;
 
   /**
    * Constructor takes a result from the API response that we get from
@@ -109,6 +112,7 @@ public class SFResultSet extends SFBaseResultSet
     this.binaryFormatter = resultOutput.getBinaryFormatter();
     this.resultVersion = resultOutput.getResultVersion();
     this.numberOfBinds = resultOutput.getNumberOfBinds();
+    this.arrayBindSupported = resultOutput.isArrayBindSupported();
     this.isClosed = false;
 
     session.setDatabase(resultOutput.getFinalDatabaseName());
@@ -372,8 +376,15 @@ public class SFResultSet extends SFBaseResultSet
     }
   }
 
-  public long getStatementTypeId()
+  @Override
+  public SFStatementType getStatementType()
   {
-    return this.statementTypeId;
+    return SFStatementType.lookUpTypeById(statementTypeId);
+  }
+
+  @Override
+  public boolean isArrayBindSupported()
+  {
+    return this.arrayBindSupported;
   }
 }

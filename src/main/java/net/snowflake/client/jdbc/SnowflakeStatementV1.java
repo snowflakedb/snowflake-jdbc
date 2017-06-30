@@ -4,15 +4,13 @@
 
 package net.snowflake.client.jdbc;
 
+import net.snowflake.client.core.ParameterBindingDTO;
 import net.snowflake.client.core.ResultUtil;
 import net.snowflake.client.core.SFBaseResultSet;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SFStatement;
-import net.snowflake.client.core.SFStatementType;
-import net.snowflake.common.core.SqlState;
 
 import java.sql.BatchUpdateException;
-import java.sql.ResultSetMetaData;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -31,12 +29,12 @@ import net.snowflake.client.log.SFLoggerFactory;
  *
  * @author jhuang
  */
-public class SnowflakeStatementV1 implements Statement
+class SnowflakeStatementV1 implements Statement
 {
 
   static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeStatementV1.class);
 
-  private SnowflakeConnectionV1 connection;
+  protected SnowflakeConnectionV1 connection;
 
   /*
    * The maximum number of rows this statement ( should return (0 => all rows).
@@ -60,14 +58,16 @@ public class SnowflakeStatementV1 implements Statement
   private int queryTimeout = 0;
 
   // max field size limited to 16MB
-  private int maxFieldSize = 16777216;
+  private final int maxFieldSize = 16777216;
 
-  private SFStatement sfStatement;
+  protected SFStatement sfStatement;
 
   /** batch of sql strings added by addBatch */
-  private final List<String> batch = new ArrayList<>();
+  protected final List<BatchEntry> batch = new ArrayList<>();
 
-  public SnowflakeStatementV1(SnowflakeConnectionV1 conn)
+  protected SQLWarning sqlWarnings;
+
+  SnowflakeStatementV1(SnowflakeConnectionV1 conn)
   {
     logger.debug(
                " public SnowflakeStatement(SnowflakeConnectionV1 conn)");
@@ -87,18 +87,6 @@ public class SnowflakeStatementV1 implements Statement
   public ResultSet executeQuery(String sql) throws SQLException
   {
     return executeQueryInternal(sql, null);
-
-    /*
-    try
-    {
-      return new SnowflakeResultSetV1(sfStatement.executeQuery(sql));
-    }
-    catch (SFException ex)
-    {
-      throw new SnowflakeSQLException(ex.getCause(),
-          ex.getSqlState(), ex.getVendorCode(), ex.getParams());
-    }
-    */
   }
 
   /**
@@ -114,31 +102,16 @@ public class SnowflakeStatementV1 implements Statement
     return executeUpdateInternal(sql, null);
   }
 
-  public int executeUpdateInternal(String sql,
-                                   Map<String, Map<String, Object>> parameterBindings)
+  int executeUpdateInternal(String sql,
+                            Map<String, ParameterBindingDTO> parameterBindings)
           throws SQLException
   {
-    if (parameterBindings != null)
-    {
-      for (Map.Entry<String, Map<String, Object>> parameterBindingEntry :
-          parameterBindings.entrySet())
-      {
-        if (parameterBindingEntry.getValue().get("value") instanceof String)
-          sfStatement.setValue(parameterBindingEntry.getKey(),
-              (String) parameterBindingEntry.getValue().get("value"),
-              (String) parameterBindingEntry.getValue().get("type"));
-        else
-          sfStatement.setValues(parameterBindingEntry.getKey(),
-              (List<String>) parameterBindingEntry.getValue().get("value"),
-              (String) parameterBindingEntry.getValue().get("type"));
-      }
-    }
-
     SFBaseResultSet sfResultSet = null;
     try
     {
-      sfResultSet = sfStatement.execute(sql);
+      sfResultSet = sfStatement.execute(sql, parameterBindings);
       sfResultSet.setSession(this.connection.getSfSession());
+      updateCount = ResultUtil.calculateUpdateCount(sfResultSet);
     }
     catch (SFException ex)
     {
@@ -146,10 +119,6 @@ public class SnowflakeStatementV1 implements Statement
           ex.getSqlState(), ex.getVendorCode(), ex.getParams());
     }
 
-    // sum up the number of rows updated based on the type of statements
-    SnowflakeResultSetV1 rset = new SnowflakeResultSetV1(sfResultSet, this);
-
-    updateCount = ResultUtil.calculateUpdateCount(rset, rset.getStatementTypeId());
     if (updateCount == -1)
     {
       throw new SnowflakeSQLException(ErrorCode.
@@ -169,33 +138,15 @@ public class SnowflakeStatementV1 implements Statement
    * @return query result set
    * @throws SQLException if @link{SFStatement.execute(String)} throws exception
    */
-  protected ResultSet executeQueryInternal(
+   ResultSet executeQueryInternal(
       String sql,
-      Map<String, Map<String, Object>> parameterBindings)
+      Map<String, ParameterBindingDTO> parameterBindings)
       throws SQLException
   {
-    resetState();
-
-    if (parameterBindings != null)
-    {
-      for (Map.Entry<String, Map<String, Object>> parameterBindingEntry :
-          parameterBindings.entrySet())
-      {
-        if (parameterBindingEntry.getValue().get("value") instanceof String)
-          sfStatement.setValue(parameterBindingEntry.getKey(),
-              (String) parameterBindingEntry.getValue().get("value"),
-              (String) parameterBindingEntry.getValue().get("type"));
-        else
-          sfStatement.setValues(parameterBindingEntry.getKey(),
-              (List<String>) parameterBindingEntry.getValue().get("value"),
-              (String) parameterBindingEntry.getValue().get("type"));
-      }
-    }
-
     SFBaseResultSet sfResultSet = null;
     try
     {
-      sfResultSet = sfStatement.execute(sql);
+      sfResultSet = sfStatement.execute(sql, parameterBindings);
       sfResultSet.setSession(this.connection.getSfSession());
     }
     catch (SFException ex)
@@ -204,128 +155,12 @@ public class SnowflakeStatementV1 implements Statement
           ex.getSqlState(), ex.getVendorCode(), ex.getParams());
     }
 
+    currentResultSet = null;
     resultSet = new SnowflakeResultSetV1(sfResultSet, this);
 
     // Fix a bug with getMoreResults returning true after a client
     // calling executeQuery which has returned the result set already
     return getResultSet();
-  }
-
-  /**
-   * Internal method for describing a query with bindings accepted.
-   *
-   * @param sql sql statement
-   * @param parameterBindings parameter bindings
-   * @return query result set metadata
-   * @throws SQLException if failed to construct snowflake result set metadata
-   */
-  protected ResultSetMetaData describeQueryInternal(
-      String sql,
-      Map<String, Map<String, Object>> parameterBindings)
-      throws SQLException
-  {
-    if (parameterBindings != null)
-    {
-      for (Map.Entry<String, Map<String, Object>> parameterBindingEntry :
-          parameterBindings.entrySet())
-      {
-        if (parameterBindingEntry.getValue().get("value") instanceof String)
-          sfStatement.setValue(parameterBindingEntry.getKey(),
-              (String) parameterBindingEntry.getValue().get("value"),
-              (String) parameterBindingEntry.getValue().get("type"));
-        else
-          sfStatement.setValues(parameterBindingEntry.getKey(),
-              (List<String>) parameterBindingEntry.getValue().get("value"),
-              (String) parameterBindingEntry.getValue().get("type"));
-      }
-    }
-
-    try
-    {
-      return new SnowflakeResultSetMetaDataV1(
-          sfStatement.describe(sql).getResultSetMetaData());
-    }
-    catch (SFException ex)
-    {
-      throw new SnowflakeSQLException(ex.getCause(),
-          ex.getSqlState(), ex.getVendorCode(), ex.getParams());
-    }
-  }
-
-  /**
-   * A method to check if a sql is file upload statement with consideration for
-   * potential comments in front of put keyword.
-   *
-   * @param sql sql statement
-   * @return true if sql is file upload statement
-   */
-  public boolean isFileTransfer(String sql)
-  {
-    if (sql == null)
-    {
-      return false;
-    }
-
-    String trimmedSql = sql.trim();
-
-    // skip commenting prefixed with //
-    while (trimmedSql.startsWith("//"))
-    {
-      logger.debug("skipping // comments in: \n{}", trimmedSql);
-
-      if (trimmedSql.indexOf('\n') > 0)
-      {
-        trimmedSql = trimmedSql.substring(trimmedSql.indexOf('\n'));
-        trimmedSql = trimmedSql.trim();
-      }
-      else
-      {
-        break;
-      }
-
-      logger.debug("New sql after skipping // comments: \n{}",
-                               trimmedSql);
-
-    }
-
-    // skip commenting enclosed with /* */
-    while (trimmedSql.startsWith("/*"))
-    {
-      logger.debug("skipping /* */ comments in: \n{}", trimmedSql);
-
-      if (trimmedSql.indexOf("*/") > 0)
-      {
-        trimmedSql = trimmedSql.substring(trimmedSql.indexOf("*/") + 2);
-        trimmedSql = trimmedSql.trim();
-      }
-      else
-      {
-        break;
-
-      }
-      logger.debug("New sql after skipping /* */ comments: \n{}",
-                                trimmedSql);
-
-    }
-
-    return (trimmedSql.length() >= 4
-            && (trimmedSql.toLowerCase().startsWith("put ")
-                || trimmedSql.toLowerCase().startsWith("get ")));
-  }
-
-  /**
-   * Sanity check query text
-   * @param sql input sql
-   * @throws SQLException if sql statement is not valid
-   */
-  void sanityCheckQuery(String sql) throws SQLException
-  {
-    if (sql == null || sql.isEmpty())
-    {
-      throw new SnowflakeSQLException(SqlState.SQL_STATEMENT_NOT_YET_COMPLETE,
-          ErrorCode.INVALID_SQL.getMessageCode(), sql);
-
-    }
   }
 
   /**
@@ -335,11 +170,10 @@ public class SnowflakeStatementV1 implements Statement
    * @return whether there is result set or not
    * @throws java.sql.SQLException if @link{#executeQuery(String)} throws exception
    */
-  @Override
-  public boolean execute(String sql) throws SQLException
+  boolean executeInternal(String sql,
+                          Map<String, ParameterBindingDTO> parameterBindings)
+                          throws SQLException
   {
-    sanityCheckQuery(sql);
-
     connection.injectedDelay();
 
     logger.debug("execute: " + sql);
@@ -355,19 +189,48 @@ public class SnowflakeStatementV1 implements Statement
     }
     else
     {
-      SnowflakeResultSetV1 rSet = (SnowflakeResultSetV1) executeQuery(sql);
-      if (connection.getSfSession().isExecuteReturnCountForDML()){
-        if (SFStatementType.isDML(rSet.getStatementTypeId()) ||
-            SFStatementType.isDDL(rSet.getStatementTypeId())){
-          updateCount =
-          ResultUtil.calculateUpdateCount(rSet, rSet.getStatementTypeId());
-          resultSet = null;
-          currentResultSet = null;
-          return false;
+      SFBaseResultSet sfResultSet = null;
+      try
+      {
+        sfResultSet = sfStatement.execute(sql, parameterBindings);
+        sfResultSet.setSession(this.connection.getSfSession());
+        currentResultSet = null;
+        resultSet = new SnowflakeResultSetV1(sfResultSet, this);
+
+        if (connection.getSfSession().isExecuteReturnCountForDML())
+        {
+          if (sfResultSet.getStatementType().isDML() ||
+              sfResultSet.getStatementType().isDDL())
+          {
+            updateCount = ResultUtil.calculateUpdateCount(sfResultSet);
+            resultSet = null;
+            currentResultSet = null;
+            return false;
+          }
         }
+
+        updateCount = -1;
+        return true;
       }
-      return true;
+      catch (SFException ex)
+      {
+        throw new SnowflakeSQLException(ex.getCause(),
+            ex.getSqlState(), ex.getVendorCode(), ex.getParams());
+      }
     }
+  }
+
+  /**
+   * Execute sql
+   *
+   * @param sql sql statement
+   * @return whether there is result set or not
+   * @throws java.sql.SQLException if @link{#executeQuery(String)} throws exception
+   */
+  @Override
+  public boolean execute(String sql) throws SQLException
+  {
+    return executeInternal(sql, null);
   }
 
 
@@ -418,6 +281,21 @@ public class SnowflakeStatementV1 implements Statement
   {
     logger.debug("public int[] executeBatch()");
 
+    return executeBatchInternal();
+  }
+
+  /**
+   * This method will iterate through batch and provide sql and bindings to
+   * underlying SFStatement to get result set.
+   *
+   * Note, array binds use a different code path since only one network
+   * roundtrip in the array bind execution case.
+   *
+   * @return
+   * @throws SQLException
+   */
+  int[] executeBatchInternal() throws SQLException
+  {
     if (isClosed)
     {
       throw new SnowflakeSQLException(ErrorCode.STATEMENT_CLOSED);
@@ -430,15 +308,12 @@ public class SnowflakeStatementV1 implements Statement
     {
       try
       {
-        updateCounts[i] = this.executeUpdate(batch.get(i));
+        updateCounts[i] = this.executeUpdateInternal(
+            batch.get(i).getSql(), batch.get(i).getParameterBindings());
       }
       catch(SQLException e)
       {
-        if (exceptionReturned == null)
-        {
-          exceptionReturned = e;
-        }
-
+        exceptionReturned = exceptionReturned == null ? e : exceptionReturned;
         updateCounts[i] = EXECUTE_FAILED;
       }
     }
@@ -446,10 +321,10 @@ public class SnowflakeStatementV1 implements Statement
     if (exceptionReturned != null)
     {
       throw new BatchUpdateException(exceptionReturned.getLocalizedMessage(),
-                                     exceptionReturned.getSQLState(),
-                                     exceptionReturned.getErrorCode(),
-                                     updateCounts,
-                                     exceptionReturned);
+          exceptionReturned.getSQLState(),
+          exceptionReturned.getErrorCode(),
+          updateCounts,
+          exceptionReturned);
     }
 
     return updateCounts;
@@ -628,7 +503,7 @@ public class SnowflakeStatementV1 implements Statement
   {
     logger.debug("public SQLWarning getWarnings()");
 
-    return null;
+    return sqlWarnings;
   }
 
   @Override
@@ -760,7 +635,7 @@ public class SnowflakeStatementV1 implements Statement
     return (T) this;
   }
 
-  //@Override
+  @Override
   public void closeOnCompletion() throws SQLException
   {
     logger.debug("public void closeOnCompletion()");
@@ -768,7 +643,7 @@ public class SnowflakeStatementV1 implements Statement
     throw new SQLFeatureNotSupportedException();
   }
 
-  //@Override
+  @Override
   public boolean isCloseOnCompletion() throws SQLException
   {
     logger.debug("public boolean isCloseOnCompletion()");
@@ -810,7 +685,7 @@ public class SnowflakeStatementV1 implements Statement
   {
     logger.debug("public void clearWarnings()");
 
-    // warnings are not tracked yet.
+    sqlWarnings = null;
   }
 
   @Override
@@ -823,7 +698,7 @@ public class SnowflakeStatementV1 implements Statement
       throw new SnowflakeSQLException(ErrorCode.STATEMENT_CLOSED);
     }
 
-    batch.add(sql);
+    batch.add(new BatchEntry(sql, null));
   }
 
   @Override
@@ -839,7 +714,7 @@ public class SnowflakeStatementV1 implements Statement
     batch.clear();
   }
 
-  public void executeSetProperty(final String sql)
+  private void executeSetProperty(final String sql)
   {
     logger.debug("setting property");
 
@@ -874,18 +749,39 @@ public class SnowflakeStatementV1 implements Statement
     return sfStatement;
   }
 
-  public void setUpdateCount(int updateCount)
+  protected void appendWarning(SQLWarning w)
   {
-    this.updateCount = updateCount;
+    if (sqlWarnings == null)
+    {
+      sqlWarnings = w;
+    }
+    else
+    {
+      sqlWarnings.setNextWarning(w);
+    }
   }
 
-  private void resetState()
+  final class BatchEntry
   {
-    resultSet = null;
-    currentResultSet = null;
+    private final String sql;
 
-    isClosed = false;
-    updateCount = -1;
+    private final Map<String, ParameterBindingDTO> parameterBindings;
+
+    BatchEntry(String sql,
+               Map<String, ParameterBindingDTO> parameterBindings)
+    {
+      this.sql = sql;
+      this.parameterBindings = parameterBindings;
+    }
+
+    public String getSql()
+    {
+      return sql;
+    }
+
+    public Map<String, ParameterBindingDTO> getParameterBindings()
+    {
+      return parameterBindings;
+    }
   }
-
 }

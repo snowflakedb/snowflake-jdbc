@@ -36,8 +36,6 @@ public abstract class SFBaseResultSet
 
   protected boolean wasNull = false;
 
-  protected Object[] nextRow = null;
-
   protected SFResultSetMetaData resultSetMetaData = null;
 
   protected int row = 0;
@@ -655,8 +653,15 @@ public abstract class SFBaseResultSet
     return row == 1;
   }
 
+  public abstract SFStatementType getStatementType();
+
   public boolean isClosed()
   {
     return isClosed;
+  }
+
+  public boolean isArrayBindSupported()
+  {
+    return false;
   }
 }

@@ -56,13 +56,13 @@ public class StmtUtil
   /**
    * Input for executing a statement on server
    */
-  static public class StmtInput
+  static class StmtInput
   {
     String sql;
 
     // default to snowflake (a special json format for snowflake query result
     String mediaType = "application/snowflake";
-    Map<String, Map<String, Object>> bindValues;
+    Map<String, ParameterBindingDTO> bindValues;
     boolean describeOnly;
     String serverUrl;
     String requestId;
@@ -100,8 +100,7 @@ public class StmtUtil
     }
 
 
-    public StmtInput setBindValues(Map<String, Map<String, Object>>
-                                       bindValues)
+    public StmtInput setBindValues(Map<String, ParameterBindingDTO> bindValues)
     {
       this.bindValues = bindValues;
       return this;

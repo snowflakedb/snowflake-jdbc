@@ -5,11 +5,13 @@
 package net.snowflake.client.core;
 
 import net.snowflake.client.jdbc.ErrorCode;
+import net.snowflake.client.jdbc.SnowflakeFileTransferAgent.CommandType;
 import net.snowflake.client.jdbc.SnowflakeFixedView;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.common.core.SqlState;
 
 import java.util.List;
+
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 
@@ -27,11 +29,14 @@ public class SFFixedViewResultSet extends SFBaseResultSet
 
   private SnowflakeFixedView fixedView;
   private Object[] nextRow = null;
+  private final CommandType commandType;
 
-  public SFFixedViewResultSet(SnowflakeFixedView fixedView)
+  public SFFixedViewResultSet(SnowflakeFixedView fixedView,
+                              CommandType commandType)
           throws SnowflakeSQLException
   {
     this.fixedView = fixedView;
+    this.commandType = commandType;
 
     try
     {
@@ -125,5 +130,18 @@ public class SFFixedViewResultSet extends SFBaseResultSet
     // free the object so that they can be Garbage collected
     nextRow = null;
     fixedView = null;
+  }
+
+  @Override
+  public SFStatementType getStatementType()
+  {
+    if (this.commandType == CommandType.DOWNLOAD)
+    {
+      return SFStatementType.GET;
+    }
+    else
+    {
+      return SFStatementType.PUT;
+    }
   }
 }

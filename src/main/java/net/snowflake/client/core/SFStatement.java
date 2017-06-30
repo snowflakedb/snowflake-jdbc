@@ -10,7 +10,6 @@ import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeFileTransferAgent;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.common.core.SqlState;
-import java.util.List;
 
 import org.apache.http.client.methods.HttpRequestBase;
 
@@ -37,22 +36,9 @@ public class SFStatement
 
   private SFSession session;
 
-  /**
-   * map of bind values for batch query executions
-   *
-   * bind variable name ->
-   *                      value -> list of bind variable values or value
-   *                      type -> bind variable type
-   */
-  Map<String, Map<String, Object>> parameterBindings = new HashMap<String, Map<String, Object>>();
-
   private SFBaseResultSet resultSet = null;
 
-  private SFBaseResultSet currentResultSet = null;
-
   private HttpRequestBase httpRequest;
-
-  private int updateCount = -1;
 
   private Boolean isClosed = false;
 
@@ -62,7 +48,7 @@ public class SFStatement
 
   private String sqlText = null;
 
-  private AtomicBoolean canceling = new AtomicBoolean(false);
+  private final AtomicBoolean canceling = new AtomicBoolean(false);
 
   // timeout in seconds
   private int queryTimeout = 0;
@@ -72,11 +58,9 @@ public class SFStatement
   private SnowflakeFileTransferAgent transferAgent = null;
 
   // statement level parameters
-  Map<String, Object> statementParametersMap =  new HashMap<String, Object>();
+  private final Map<String, Object> statementParametersMap =  new HashMap<String, Object>();
 
   final private static int MAX_STATEMENT_PARAMETERS = 1000;
-
-  private String sql = null;
 
   /**
    * Add a statement parameter
@@ -109,18 +93,9 @@ public class SFStatement
 
   public SFStatement(SFSession session)
   {
-    this(session, null);
-
     logger.debug(" public SFStatement(SFSession session)");
-  }
-
-
-  public SFStatement(SFSession session, String sql)
-  {
-    logger.debug(" public SFStatement(SFSession session, String sql)");
 
     this.session = session;
-    this.sql = sql;
   }
 
   /**
@@ -128,7 +103,7 @@ public class SFStatement
    * @param sql
    * @throws java.sql.SQLException
    */
-  void sanityCheckQuery(String sql) throws SQLException
+  private void sanityCheckQuery(String sql) throws SQLException
   {
     if (sql == null || sql.isEmpty())
     {
@@ -136,20 +111,6 @@ public class SFStatement
           ErrorCode.INVALID_SQL.getMessageCode(), sql);
 
     }
-  }
-
-  /**
-   * Execute SQL query
-   *
-   * @param sql sql statement
-   * @return ResultSet
-   * @throws java.sql.SQLException if failed to execute the query
-   * @throws SFException if failed to execute the query
-   */
-  protected SFBaseResultSet executeQuery(String sql) throws SQLException,
-      SFException
-  {
-    return executeQuery(sql, false);
   }
 
   /**
@@ -161,7 +122,10 @@ public class SFStatement
    * @throws SQLException if connection is already closed
    * @throws SFException if result set is null
    */
-  protected SFBaseResultSet executeQuery(String sql, boolean describeOnly)
+  private SFBaseResultSet executeQuery(String sql,
+                                         Map<String, ParameterBindingDTO>
+                                                            parametersBinding,
+                                         boolean describeOnly)
       throws SQLException, SFException
   {
     sanityCheckQuery(sql);
@@ -177,7 +141,7 @@ public class SFStatement
       return executeFileTransfer(sql);
     }
 
-    return executeQueryInternal(sql, parameterBindings, describeOnly);
+    return executeQueryInternal(sql, parametersBinding, describeOnly);
   }
 
   /**
@@ -190,22 +154,12 @@ public class SFStatement
    */
   public SFStatementMetaData describe(String sql) throws SFException, SQLException
   {
-    SFBaseResultSet baseResultSet = executeQuery(sql, true);
+    SFBaseResultSet baseResultSet = executeQuery(sql, null, true);
 
     return new SFStatementMetaData(baseResultSet.getMetaData(),
-        baseResultSet.getNumberOfBinds());
-  }
-
-  /**
-   * Describe the statement
-   *
-   * @return metadata of statement including result set metadata and binding information
-   * @throws SQLException if connection is already closed
-   * @throws SFException if result set is null
-   */
-  public SFStatementMetaData describe() throws SFException, SQLException
-  {
-    return describe(sql);
+                                   baseResultSet.getStatementType(),
+                                   baseResultSet.getNumberOfBinds(),
+                                   baseResultSet.isArrayBindSupported());
   }
 
   /**
@@ -218,10 +172,10 @@ public class SFStatement
    * @throws SQLException if connection is already closed
    * @throws SFException if result set is null
    */
-  protected SFBaseResultSet executeQueryInternal(String sql,
-                                           Map<String, Map<String, Object>>
-                                               parameterBindings,
-                                           boolean describeOnly)
+  private SFBaseResultSet executeQueryInternal(String sql,
+                                                 Map<String, ParameterBindingDTO>
+                                                          parameterBindings,
+                                                 boolean describeOnly)
       throws SQLException, SFException
   {
     resetState();
@@ -302,9 +256,9 @@ public class SFStatement
     class TimeBombTask implements Callable<Void>
     {
 
-      final SFStatement statement;
+      private final SFStatement statement;
 
-      TimeBombTask(SFStatement statement)
+      private TimeBombTask(SFStatement statement)
       {
         this.statement = statement;
       }
@@ -336,13 +290,13 @@ public class SFStatement
    * @param mediaType media type
    * @param bindValues map of binding values
    * @param describeOnly whether only show the result set metadata
-   * @return query result set
+   * @return raw json response
    * @throws SFException if query is canceled
    * @throws SnowflakeSQLException if query is already running
    */
   public
   Object executeHelper(String sql, String mediaType,
-                                 Map<String, Map<String, Object>> bindValues,
+                                 Map<String, ParameterBindingDTO> bindValues,
                                  boolean describeOnly)
       throws SnowflakeSQLException, SFException
   {
@@ -501,7 +455,7 @@ public class SFStatement
    * @throws SnowflakeSQLException if failed to cancel the statement
    * @throws SFException if statement is already closed
    */
-  protected void cancelHelper(String sql, String mediaType)
+  private void cancelHelper(String sql, String mediaType)
       throws SnowflakeSQLException, SFException
   {
     synchronized (this)
@@ -535,19 +489,6 @@ public class SFStatement
     }
   }
 
-  protected void releaseConnection()
-  {
-    logger.debug("public void releaseConnection()");
-
-    if (httpRequest != null)
-    {
-      logger.debug("Release connection");
-      httpRequest.releaseConnection();
-
-      httpRequest = null;
-    }
-  }
-
   /**
    * A method to check if a sql is file upload statement with consideration for
    * potential comments in front of put keyword.
@@ -555,7 +496,7 @@ public class SFStatement
    * @param sql sql statement
    * @return true if the command is upload statement
    */
-  protected boolean isFileTransfer(String sql)
+  private boolean isFileTransfer(String sql)
   {
     if (sql == null)
     {
@@ -616,7 +557,10 @@ public class SFStatement
    * @throws java.sql.SQLException if failed to execute sql
    * @throws SFException exception raised from Snowflake components
    */
-  public SFBaseResultSet execute(String sql) throws SQLException, SFException
+  public SFBaseResultSet execute(String sql,
+                                 Map<String, ParameterBindingDTO>
+                                     parametersBinding)
+      throws SQLException, SFException
   {
     sanityCheckQuery(sql);
 
@@ -635,11 +579,11 @@ public class SFStatement
     }
     else
     {
-      return executeQuery(sql);
+      return executeQuery(sql, parametersBinding, false);
     }
   }
 
-  protected SFBaseResultSet executeFileTransfer(String sql) throws SQLException,
+  private SFBaseResultSet executeFileTransfer(String sql) throws SQLException,
       SFException
   {
     session.injectedDelay();
@@ -671,26 +615,6 @@ public class SFStatement
     }
   }
 
-  private int getQueryTimeout() throws SQLException
-  {
-    logger.debug("public int getQueryTimeout()");
-
-    return this.queryTimeout;
-  }
-
-  private SFBaseResultSet getResultSet() throws SQLException
-  {
-    logger.debug("public ResultSet getResultSet()");
-
-    if (currentResultSet == null)
-    {
-      currentResultSet = resultSet;
-      resultSet = null;
-    }
-
-    return currentResultSet;
-  }
-
   public void close() throws SQLException
   {
     logger.debug("public void close()");
@@ -701,7 +625,6 @@ public class SFStatement
           String.format(QueryState.QUERY_ENDED.getArgString(), requestId));
     }
 
-    currentResultSet = null;
     resultSet = null;
     isClosed = true;
 
@@ -758,7 +681,6 @@ public class SFStatement
   private void resetState()
   {
     resultSet = null;
-    currentResultSet = null;
 
     if (httpRequest != null)
     {
@@ -767,7 +689,6 @@ public class SFStatement
     }
 
     isClosed = false;
-    updateCount = -1;
     sequenceId = -1;
     requestId = null;
     sqlText = null;
@@ -803,40 +724,6 @@ public class SFStatement
         this.session.setSFSessionProperty("sort", false);
       }
     }
-  }
-
-  /**
-   * Bind the list of values with the given type for the parameter with the
-   * given index.
-   *
-   * @param parameterName parameter name in the query string
-   * @param values list of values bound to the parameter
-   * @param sqlType Snowflake SQL type name as defined in SnowflakeType.java
-   */
-  public void setValues(String parameterName, List<String> values, String sqlType)
-  {
-    Map<String, Object> newBindingValueAndType = new HashMap<String, Object>();
-    newBindingValueAndType.put("value", values);
-    newBindingValueAndType.put("type", sqlType);
-
-    parameterBindings.put(parameterName, newBindingValueAndType);
-  }
-
-  /**
-   * Bind value with the given type for the parameter with the
-   * given index.
-   *
-   * @param parameterName parameter name in the query string
-   * @param value value bound to the parameter
-   * @param sqlType: Snowflake SQL type name as defined in SnowflakeType.java
-   */
-  public void setValue(String parameterName, String value, String sqlType)
-  {
-    Map<String, Object> newBindingValueAndType = new HashMap<String, Object>();
-    newBindingValueAndType.put("value", value);
-    newBindingValueAndType.put("type", sqlType);
-
-    parameterBindings.put(parameterName, newBindingValueAndType);
   }
 
   protected SFSession getSession()

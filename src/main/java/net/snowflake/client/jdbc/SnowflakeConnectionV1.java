@@ -6,6 +6,7 @@ package net.snowflake.client.jdbc;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.snowflake.client.core.SFException;
+import net.snowflake.client.core.SFResultSetMetaData;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.core.SFSessionProperty;
 import net.snowflake.common.core.LoginInfoDTO;
@@ -54,7 +55,7 @@ import net.snowflake.client.log.SFLoggerFactory;
 public class SnowflakeConnectionV1 implements Connection
 {
 
-  static final
+  static private final
   SFLogger logger = SFLoggerFactory.getLogger(SnowflakeConnectionV1.class);
 
   private static final String JDBC_PROTOCOL_PREFIX = "jdbc:snowflake";
@@ -84,7 +85,7 @@ public class SnowflakeConnectionV1 implements Connection
 
   private String warehouse;
 
-  protected Level tracingLevel = Level.INFO;
+  private Level tracingLevel = Level.INFO;
 
   private String serverUrl;
 
@@ -155,7 +156,7 @@ public class SnowflakeConnectionV1 implements Connection
   private static String IMPLEMENTATION_VERSION_TESTING =
       Integer.MAX_VALUE + ".0.0";
 
-  static final ResourceBundleManager errorResourceBundleManager =
+  static private final ResourceBundleManager errorResourceBundleManager =
   ResourceBundleManager.getSingleton(ErrorCode.errorMessageResource);
 
   boolean internalTesting = false;

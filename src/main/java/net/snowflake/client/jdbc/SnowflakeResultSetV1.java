@@ -7,6 +7,7 @@ package net.snowflake.client.jdbc;
 import net.snowflake.client.core.SFBaseResultSet;
 import net.snowflake.client.core.SFResultSet;
 import net.snowflake.client.core.SFException;
+import net.snowflake.client.core.SFStatementType;
 
 import java.math.BigDecimal;
 import java.sql.Date;
@@ -308,11 +309,6 @@ public class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
   public Statement getStatement() throws SQLException
   {
     return this.statement;
-  }
-
-  public long getStatementTypeId()
-  {
-    return ((SFResultSet) sfBaseResultSet).getStatementTypeId();
   }
 
   public boolean isClosed() throws SQLException

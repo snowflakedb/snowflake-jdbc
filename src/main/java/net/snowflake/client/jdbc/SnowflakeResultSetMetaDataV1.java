@@ -17,14 +17,14 @@ import net.snowflake.client.log.SFLoggerFactory;
  *
  * @author jhuang
  */
-public class SnowflakeResultSetMetaDataV1 extends SnowflakeResultSetMetaData
+class SnowflakeResultSetMetaDataV1 extends SnowflakeResultSetMetaData
 {
   static final
   SFLogger logger = SFLoggerFactory.getLogger(SnowflakeResultSetMetaDataV1.class);
 
   private SFResultSetMetaData resultSetMetaData;
 
-  public SnowflakeResultSetMetaDataV1(SFResultSetMetaData resultSetMetaData)
+  SnowflakeResultSetMetaDataV1(SFResultSetMetaData resultSetMetaData)
           throws SnowflakeSQLException
   {
     this.resultSetMetaData = resultSetMetaData;

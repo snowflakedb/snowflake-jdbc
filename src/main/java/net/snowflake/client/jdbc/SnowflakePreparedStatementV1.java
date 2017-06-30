@@ -10,8 +10,9 @@
 
 package net.snowflake.client.jdbc;
 
-import net.snowflake.client.core.SFStatementType;
-import net.snowflake.client.core.ResultUtil;
+import net.snowflake.client.core.ParameterBindingDTO;
+import net.snowflake.client.core.SFException;
+import net.snowflake.client.core.SFStatementMetaData;
 import net.snowflake.common.core.SFBinary;
 import net.snowflake.common.core.SqlState;
 
@@ -22,7 +23,6 @@ import java.net.URL;
 import java.sql.Array;
 import java.sql.Blob;
 import java.sql.Clob;
-import java.sql.Connection;
 import java.sql.Date;
 import java.sql.NClob;
 import java.sql.ParameterMetaData;
@@ -32,7 +32,6 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.RowId;
 import java.sql.SQLException;
-import java.sql.SQLWarning;
 import java.sql.SQLXML;
 import java.sql.Time;
 import java.sql.Timestamp;
@@ -50,50 +49,55 @@ import net.snowflake.client.log.SFLoggerFactory;
  *
  * @author jhuang
  */
-public class SnowflakePreparedStatementV1 implements PreparedStatement
+final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
+                                         implements PreparedStatement
 {
   static final SFLogger logger = SFLoggerFactory.getLogger(
       SnowflakePreparedStatementV1.class);
 
-  private SnowflakeConnectionV1 connection;
-  private String sql;
-  private SnowflakeStatementV1 statement;
+  private final String sql;
 
-  // result metadata from describe phase
-  private ResultSetMetaData resultMetadata;
+  /** statement and result metadata from describe phase */
+  private SFStatementMetaData statementMetaData;
 
   /**
-   * map of bind values for single query execution
+   * map of bind name to bind values for single query execution
    *
-   * bind variable name ->
-   *                      value -> bind variable value
-   *                      type -> bind variable type
+   * Currently, bind name is just value index
    */
-  Map<String, Map<String, Object>> parameterBindings =
-      new HashMap<String, Map<String, Object>>();
+  private Map<String, ParameterBindingDTO> parameterBindings = new HashMap<>();
 
   /**
    * map of bind values for batch query executions
    *
-   * bind variable name ->
-   *                      value -> list of bind variable values
-   *                      type -> bind variable type
    */
-  Map<String, Map<String, Object>> batchParameterBindings =
-      new HashMap<String, Map<String, Object>>();
+  private Map<String, ParameterBindingDTO> batchParameterBindings =
+      new HashMap<>();
 
+  /**
+   * Counter for batch size if we are executing a statement with array bind
+   * supported
+   */
   private int batchSize = 0;
 
-  public SnowflakePreparedStatementV1(SnowflakeConnectionV1 conn,
-                                      String sql) throws SQLException
+  SnowflakePreparedStatementV1(SnowflakeConnectionV1 connection,
+                               String sql) throws SQLException
   {
-    logger.debug(
-        "SnowflakePreparedStatement(SnowflakeConnectionV1 conn,\n" +
-        "String sql) throws SQLException");
-
-    this.connection = conn;
+    super(connection);
     this.sql = sql;
-    this.statement = new SnowflakeStatementV1(conn);
+    try
+    {
+      this.statementMetaData = sfStatement.describe(sql);
+    }
+    catch (SFException | SQLException ex)
+    {
+      // return an empty metadata.
+      this.statementMetaData = SFStatementMetaData.emptyMetaData();
+
+      appendWarning(new SnowflakeSQLWarning(
+          ErrorCode.STATEMENT_PREPARE_FAILURE,
+          sql.length() > 20 ? sql.substring(0, 20) + "..." : sql));
+    }
   }
 
   @Override
@@ -101,12 +105,7 @@ public class SnowflakePreparedStatementV1 implements PreparedStatement
   {
     logger.debug("executeQuery() throws SQLException");
 
-    ResultSet resultSet = statement.executeQueryInternal(this.sql,
-        parameterBindings);
-
-    resultMetadata = resultSet.getMetaData();
-
-    return resultSet;
+    return executeQueryInternal(sql, parameterBindings);
   }
 
   @Override
@@ -114,7 +113,7 @@ public class SnowflakePreparedStatementV1 implements PreparedStatement
   {
     logger.debug( "executeUpdate() throws SQLException");
 
-    return statement.executeUpdateInternal(this.sql, parameterBindings);
+    return executeUpdateInternal(sql, parameterBindings);
   }
 
   @Override
@@ -123,9 +122,8 @@ public class SnowflakePreparedStatementV1 implements PreparedStatement
     logger.debug(
         "setNull(int parameterIndex, int sqlType) throws SQLException");
 
-    Map<String, Object> binding = new HashMap<String, Object>();
-    binding.put("value", null);
-    binding.put("type", SnowflakeUtil.javaTypeToSFTypeString(sqlType));
+    ParameterBindingDTO binding = new ParameterBindingDTO(
+                        SnowflakeUtil.javaTypeToSFTypeString(sqlType), null);
     parameterBindings.put(String.valueOf(parameterIndex), binding);
   }
 
@@ -134,9 +132,9 @@ public class SnowflakePreparedStatementV1 implements PreparedStatement
   {
     logger.debug(
                "setBoolean(int parameterIndex, boolean x) throws SQLException");
-    Map<String, Object> binding = new HashMap<>();
-    binding.put("value", String.valueOf(x));
-    binding.put("type", SnowflakeUtil.javaTypeToSFTypeString(Types.BOOLEAN));
+
+    ParameterBindingDTO binding = new ParameterBindingDTO(
+        SnowflakeUtil.javaTypeToSFTypeString(Types.BOOLEAN), String.valueOf(x));
     parameterBindings.put(String.valueOf(parameterIndex), binding);
   }
 
@@ -153,9 +151,8 @@ public class SnowflakePreparedStatementV1 implements PreparedStatement
     logger.debug(
         "setShort(int parameterIndex, short x) throws SQLException");
 
-    Map<String, Object> binding = new HashMap<String, Object>();
-    binding.put("value", String.valueOf(x));
-    binding.put("type", SnowflakeUtil.javaTypeToSFTypeString(Types.SMALLINT));
+    ParameterBindingDTO binding = new ParameterBindingDTO(SnowflakeUtil
+        .javaTypeToSFTypeString(Types.SMALLINT), String.valueOf(x));
     parameterBindings.put(String.valueOf(parameterIndex), binding);
   }
 
@@ -165,9 +162,8 @@ public class SnowflakePreparedStatementV1 implements PreparedStatement
     logger.debug(
         "setInt(int parameterIndex, int x) throws SQLException");
 
-    Map<String, Object> binding = new HashMap<String, Object>();
-    binding.put("value", String.valueOf(x));
-    binding.put("type", SnowflakeUtil.javaTypeToSFTypeString(Types.INTEGER));
+    ParameterBindingDTO binding = new ParameterBindingDTO(SnowflakeUtil
+                  .javaTypeToSFTypeString(Types.INTEGER), String.valueOf(x));
     parameterBindings.put(String.valueOf(parameterIndex), binding);
   }
 
@@ -177,9 +173,8 @@ public class SnowflakePreparedStatementV1 implements PreparedStatement
     logger.debug(
         "setLong(int parameterIndex, long x) throws SQLException");
 
-    Map<String, Object> binding = new HashMap<String, Object>();
-    binding.put("value", String.valueOf(x));
-    binding.put("type", SnowflakeUtil.javaTypeToSFTypeString(Types.BIGINT));
+    ParameterBindingDTO binding = new ParameterBindingDTO(
+         SnowflakeUtil.javaTypeToSFTypeString(Types.BIGINT), String.valueOf(x));
     parameterBindings.put(String.valueOf(parameterIndex), binding);
   }
 
@@ -189,9 +184,8 @@ public class SnowflakePreparedStatementV1 implements PreparedStatement
     logger.debug(
         "setFloat(int parameterIndex, float x) throws SQLException");
 
-    Map<String, Object> binding = new HashMap<String, Object>();
-    binding.put("value", String.valueOf(x));
-    binding.put("type", SnowflakeUtil.javaTypeToSFTypeString(Types.FLOAT));
+    ParameterBindingDTO binding = new ParameterBindingDTO(
+        SnowflakeUtil.javaTypeToSFTypeString(Types.FLOAT), String.valueOf(x));
     parameterBindings.put(String.valueOf(parameterIndex), binding);
   }
 
@@ -201,9 +195,8 @@ public class SnowflakePreparedStatementV1 implements PreparedStatement
     logger.debug(
         "setDouble(int parameterIndex, double x) throws SQLException");
 
-    Map<String, Object> binding = new HashMap<String, Object>();
-    binding.put("value", String.valueOf(x));
-    binding.put("type", SnowflakeUtil.javaTypeToSFTypeString(Types.DOUBLE));
+    ParameterBindingDTO binding = new ParameterBindingDTO(
+        SnowflakeUtil.javaTypeToSFTypeString(Types.DOUBLE), String.valueOf(x));
     parameterBindings.put(String.valueOf(parameterIndex), binding);
   }
 
@@ -219,9 +212,8 @@ public class SnowflakePreparedStatementV1 implements PreparedStatement
     }
     else
     {
-      Map<String, Object> binding = new HashMap<String, Object>();
-      binding.put("value", String.valueOf(x));
-      binding.put("type", SnowflakeUtil.javaTypeToSFTypeString(Types.DECIMAL));
+      ParameterBindingDTO binding = new ParameterBindingDTO(
+        SnowflakeUtil.javaTypeToSFTypeString(Types.DECIMAL), String.valueOf(x));
       parameterBindings.put(String.valueOf(parameterIndex), binding);
     }
   }
@@ -232,9 +224,8 @@ public class SnowflakePreparedStatementV1 implements PreparedStatement
     logger.debug(
         "setString(int parameterIndex, String x) throws SQLException");
 
-    Map<String, Object> binding = new HashMap<String, Object>();
-    binding.put("value", x);
-    binding.put("type", SnowflakeUtil.javaTypeToSFTypeString(Types.VARCHAR));
+    ParameterBindingDTO binding = new ParameterBindingDTO(
+        SnowflakeUtil.javaTypeToSFTypeString(Types.VARCHAR), x);
     parameterBindings.put(String.valueOf(parameterIndex), binding);
   }
 
@@ -244,9 +235,8 @@ public class SnowflakePreparedStatementV1 implements PreparedStatement
     logger.debug(
         "setBytes(int parameterIndex, byte[] x) throws SQLException");
 
-    Map<String, Object> binding = new HashMap<String, Object>();
-    binding.put("value", new SFBinary(x).toHex());
-    binding.put("type", SnowflakeUtil.javaTypeToSFTypeString(Types.BINARY));
+    ParameterBindingDTO binding = new ParameterBindingDTO(SnowflakeUtil
+        .javaTypeToSFTypeString(Types.BINARY), new SFBinary(x).toHex());
     parameterBindings.put(String.valueOf(parameterIndex), binding);
   }
 
@@ -262,12 +252,11 @@ public class SnowflakePreparedStatementV1 implements PreparedStatement
     }
     else
     {
-      Map<String, Object> binding = new HashMap<String, Object>();
-
-      // convert the date from being in local time zone to be in UTC timezone
-      binding.put("value", String.valueOf(x.getTime() +
+      ParameterBindingDTO binding = new ParameterBindingDTO(
+          SnowflakeUtil.javaTypeToSFTypeString(Types.DATE),
+          String.valueOf(x.getTime() +
           TimeZone.getDefault().getOffset(x.getTime())));
-      binding.put("type", SnowflakeUtil.javaTypeToSFTypeString(Types.DATE));
+
       parameterBindings.put(String.valueOf(parameterIndex), binding);
     }
   }
@@ -284,8 +273,6 @@ public class SnowflakePreparedStatementV1 implements PreparedStatement
     }
     else
     {
-      Map<String, Object> binding = new HashMap<String, Object>();
-
       // Convert to nanoseconds since midnight using the input time mod 24 hours.
       final long MS_IN_DAY = 86400 * 1000;
       long msSinceEpoch = x.getTime();
@@ -293,8 +280,11 @@ public class SnowflakePreparedStatementV1 implements PreparedStatement
       // TODO(mkember): Change to use Math.floorMod when Client is on Java 8.
       long msSinceMidnight = (msSinceEpoch % MS_IN_DAY + MS_IN_DAY) % MS_IN_DAY;
       long nanosSinceMidnight = msSinceMidnight * 1000 * 1000;
-      binding.put("value", String.valueOf(nanosSinceMidnight));
-      binding.put("type", SnowflakeUtil.javaTypeToSFTypeString(Types.TIME));
+
+      ParameterBindingDTO binding = new ParameterBindingDTO(
+                      SnowflakeUtil.javaTypeToSFTypeString(Types.TIME),
+                      String.valueOf(nanosSinceMidnight));
+
       parameterBindings.put(String.valueOf(parameterIndex), binding);
     }
   }
@@ -305,13 +295,11 @@ public class SnowflakePreparedStatementV1 implements PreparedStatement
     logger.debug(
         "setTimestamp(int parameterIndex, Timestamp x) throws SQLException");
 
-    Map<String, Object> binding = new HashMap<String, Object>();
-
     // convert the timestamp from being in local time zone to be in UTC timezone
-    binding.put("value", x == null ? null :
+    String value =  x == null ? null :
         String.valueOf(
         BigDecimal.valueOf(x.getTime()/1000).
-        scaleByPowerOfTen(9).add(BigDecimal.valueOf(x.getNanos()))));
+        scaleByPowerOfTen(9).add(BigDecimal.valueOf(x.getNanos())));
 
     SnowflakeType sfType = SnowflakeUtil.javaTypeToSFType(Types.TIMESTAMP);
 
@@ -320,7 +308,7 @@ public class SnowflakePreparedStatementV1 implements PreparedStatement
       sfType = connection.getSfSession().getTimestampMappedType();
     }
 
-    binding.put("type", sfType.name());
+    ParameterBindingDTO binding = new ParameterBindingDTO(sfType.name(), value);
     parameterBindings.put(String.valueOf(parameterIndex), binding);
   }
 
@@ -371,9 +359,9 @@ public class SnowflakePreparedStatementV1 implements PreparedStatement
       setTimestamp(parameterIndex, (Timestamp)x);
     else
     {
-      Map<String, Object> binding = new HashMap<String, Object>();
-      binding.put("value", String.valueOf(x));
-      binding.put("type", SnowflakeUtil.javaTypeToSFTypeString(targetSqlType));
+      ParameterBindingDTO binding = new ParameterBindingDTO(
+                        SnowflakeUtil.javaTypeToSFTypeString(targetSqlType),
+                        String.valueOf(x));
       parameterBindings.put(String.valueOf(parameterIndex), binding);
     }
   }
@@ -417,45 +405,7 @@ public class SnowflakePreparedStatementV1 implements PreparedStatement
   {
     logger.debug( "execute: {}", sql);
 
-    String trimmedSql = sql.trim();
-
-    // snowflake specific client side commands
-    if (statement.isFileTransfer(trimmedSql))
-    {
-      // PUT/GET command
-      logger.debug( "Executing file transfer locally: {}", sql);
-
-      ResultSet resultSet = statement.executeQuery(this.sql);
-      resultMetadata = resultSet.getMetaData();
-
-      return true;
-    }
-    else if (trimmedSql.length() >= 20
-        && trimmedSql.toLowerCase().startsWith(
-        "set-sf-property"))
-    {
-      statement.executeSetProperty(sql);
-      return false;
-    }
-    else
-    {
-      SnowflakeResultSetV1 resultSet = (SnowflakeResultSetV1)statement.executeQueryInternal(this.sql,
-          parameterBindings);
-
-      if (connection.getSfSession().isExecuteReturnCountForDML())
-      {
-        if (SFStatementType.isDDL(resultSet.getStatementTypeId())
-                || SFStatementType.isDML(resultSet.getStatementTypeId()))
-        {
-          statement.setUpdateCount(ResultUtil.calculateUpdateCount(resultSet, resultSet.getStatementTypeId()));
-          return false;
-        }
-      }
-
-      resultMetadata = resultSet.getMetaData();
-
-      return true;
-    }
+    return executeInternal(sql, parameterBindings);
   }
 
   @Override
@@ -463,60 +413,70 @@ public class SnowflakePreparedStatementV1 implements PreparedStatement
   {
     logger.debug( "addBatch() throws SQLException");
 
-    // move bind variables from single execution binding to batch execution
-    // binding
-    for(Map.Entry<String, Map<String, Object>> binding :
-        parameterBindings.entrySet())
+    if (isClosed())
     {
-      // get the entry for the bind variable in the batch binding map
-      Map<String, Object> bindingValueAndType =
-          batchParameterBindings.get(binding.getKey());
+      throw new SnowflakeSQLException(ErrorCode.STATEMENT_CLOSED);
+    }
 
-      List<String> values;
-
-      // create binding value and type for the first time
-      if (bindingValueAndType == null)
+    if (statementMetaData.isArrayBindSupported())
+    {
+      for(Map.Entry<String, ParameterBindingDTO> binding :
+          parameterBindings.entrySet())
       {
-        // create the map for value and type
-        bindingValueAndType = new HashMap<String, Object>();
+        // get the entry for the bind variable in the batch binding map
+        ParameterBindingDTO bindingValueAndType =
+            batchParameterBindings.get(binding.getKey());
 
-        // create the value list
-        values = new ArrayList<String>();
+        List<String> values;
 
-        bindingValueAndType.put("value", values);
-        bindingValueAndType.put("type", (String)binding.getValue().get("type"));
-
-        // put the new map into the batch
-        batchParameterBindings.put(binding.getKey(),
-            bindingValueAndType);
-      }
-      else
-      {
-        // make sure type matches except for null values
-        String prevType = (String) bindingValueAndType.get("type");
-        String newType = (String)binding.getValue().get("type");
-
-        // if previous type is null, replace it with new type
-        if (SnowflakeType.ANY.name().equalsIgnoreCase(prevType) &&
-            !SnowflakeType.ANY.name().equalsIgnoreCase(newType))
-          bindingValueAndType.put("type", newType);
-        else if (binding.getValue().get("value") != null &&
-            !prevType.equalsIgnoreCase(newType))
+        // create binding value and type for the first time
+        if (bindingValueAndType == null)
         {
-          throw new SnowflakeSQLException(SqlState.FEATURE_NOT_SUPPORTED,
-              ErrorCode.ARRAY_BIND_MIXED_TYPES_NOT_SUPPORTED.getMessageCode(),
-              SnowflakeType.getJavaType(SnowflakeType.fromString(prevType)).name(),
-              SnowflakeType.getJavaType(SnowflakeType.fromString(newType)).name());
+          // create the value list
+          values = new ArrayList<String>();
+
+          bindingValueAndType = new ParameterBindingDTO(
+              binding.getValue().getType(), values);
+
+          // put the new map into the batch
+          batchParameterBindings.put(binding.getKey(),
+              bindingValueAndType);
+        }
+        else
+        {
+          // make sure type matches except for null values
+          String prevType = bindingValueAndType.getType();
+          String newType = binding.getValue().getType();
+
+          // if previous type is null, replace it with new type
+          if (SnowflakeType.ANY.name().equalsIgnoreCase(prevType) &&
+              !SnowflakeType.ANY.name().equalsIgnoreCase(newType))
+          {
+            bindingValueAndType.setType(newType);
+          }
+          else if (binding.getValue().getValue() != null &&
+              !prevType.equalsIgnoreCase(newType))
+          {
+            throw new SnowflakeSQLException(SqlState.FEATURE_NOT_SUPPORTED,
+                ErrorCode.ARRAY_BIND_MIXED_TYPES_NOT_SUPPORTED.getMessageCode(),
+                SnowflakeType.getJavaType(SnowflakeType.fromString(prevType)).name(),
+                SnowflakeType.getJavaType(SnowflakeType.fromString(newType)).name());
+          }
+
+          // found the existing map so just get the value list
+          values = (List<String>) bindingValueAndType.getValue();
         }
 
-        // found the existing map so just get the value list
-        values = (List<String>) bindingValueAndType.get("value");
+        // add the value to the list of values in batch binding map
+        values.add((String)binding.getValue().getValue());
       }
-
-      // add the value to the list of values in batch binding map
-      values.add((String)binding.getValue().get("value"));
+      batchSize++;
     }
-    batchSize++;
+    else
+    {
+      batch.add(new BatchEntry(this.sql, parameterBindings));
+      parameterBindings = new HashMap<>();
+    }
   }
 
   @Override
@@ -560,13 +520,8 @@ public class SnowflakePreparedStatementV1 implements PreparedStatement
   {
     logger.debug( "getMetaData() throws SQLException");
 
-    if (resultMetadata == null)
-    {
-      resultMetadata = statement.describeQueryInternal(this.sql,
-          parameterBindings);
-    }
-
-    return resultMetadata;
+    return new SnowflakeResultSetMetaDataV1(
+        this.statementMetaData.getResultSetMetaData());
   }
 
   @Override
@@ -581,13 +536,12 @@ public class SnowflakePreparedStatementV1 implements PreparedStatement
     }
     else
     {
-      Map<String, Object> binding = new HashMap<String, Object>();
-
       // convert the date from to be in local time zone to be in UTC
-      binding.put("value", String.valueOf(x.getTime() +
-          cal.getTimeZone().getOffset(x.getTime())));
+      String value = String.valueOf(x.getTime() +
+                             cal.getTimeZone().getOffset(x.getTime()));
 
-      binding.put("type", SnowflakeUtil.javaTypeToSFTypeString(Types.DATE));
+      ParameterBindingDTO binding = new ParameterBindingDTO(
+          SnowflakeUtil.javaTypeToSFTypeString(Types.DATE), value);
       parameterBindings.put(String.valueOf(parameterIndex), binding);
     }
   }
@@ -606,22 +560,17 @@ public class SnowflakePreparedStatementV1 implements PreparedStatement
   {
     logger.debug( "setTimestamp(int parameterIndex, Timestamp x, Calendar cal)");
 
-    Map<String, Object> binding = new HashMap<String, Object>();
-
     // convert the time from being in UTC to be in local time zone
+    String value = null;
     if (x != null)
     {
       long milliSecSinceEpoch = x.getTime();
       milliSecSinceEpoch = milliSecSinceEpoch +
           cal.getTimeZone().getOffset(milliSecSinceEpoch);
 
-      binding.put("value", String.valueOf(
+      value = String.valueOf(
           BigDecimal.valueOf(milliSecSinceEpoch / 1000).
-              scaleByPowerOfTen(9).add(BigDecimal.valueOf(x.getNanos()))));
-    }
-    else
-    {
-      binding.put("value", null);
+              scaleByPowerOfTen(9).add(BigDecimal.valueOf(x.getNanos())));
     }
 
     SnowflakeType sfType = SnowflakeUtil.javaTypeToSFType(Types.TIMESTAMP);
@@ -631,7 +580,7 @@ public class SnowflakePreparedStatementV1 implements PreparedStatement
       sfType = connection.getSfSession().getTimestampMappedType();
     }
 
-    binding.put("type", sfType.name());
+    ParameterBindingDTO binding = new ParameterBindingDTO(sfType.name(), value);
     parameterBindings.put(String.valueOf(parameterIndex), binding);
   }
 
@@ -826,7 +775,9 @@ public class SnowflakePreparedStatementV1 implements PreparedStatement
   {
     logger.debug( "executeQuery(String sql) throws SQLException");
 
-    return statement.executeQuery(sql);
+    throw new SnowflakeSQLException(ErrorCode.
+        UNSUPPORTED_STATEMENT_TYPE_IN_EXECUTION_API,
+        sql.length() > 20 ? sql.substring(0, 20) + "..." : sql);
   }
 
   @Override
@@ -834,100 +785,9 @@ public class SnowflakePreparedStatementV1 implements PreparedStatement
   {
     logger.debug( "executeUpdate(String sql) throws SQLException");
 
-    return statement.executeUpdate(sql);
-  }
-
-  @Override
-  public void close() throws SQLException
-  {
-    logger.debug( "close() throws SQLException");
-
-    statement.close();
-  }
-
-  @Override
-  public int getMaxFieldSize() throws SQLException
-  {
-    logger.debug( "getMaxFieldSize() throws SQLException");
-
-    return statement.getMaxFieldSize();
-  }
-
-  @Override
-  public void setMaxFieldSize(int max) throws SQLException
-  {
-    throw new UnsupportedOperationException(
-        "setMaxFieldSize(int max) Not supported yet.");
-  }
-
-  @Override
-  public int getMaxRows() throws SQLException
-  {
-    logger.debug( "getMaxRows() throws SQLException");
-
-    return statement.getMaxRows();
-  }
-
-  @Override
-  public void setMaxRows(int max) throws SQLException
-  {
-    logger.debug( "setMaxRows(int max) throws SQLException");
-
-    statement.setMaxRows(max);
-  }
-
-  @Override
-  public void setEscapeProcessing(boolean enable) throws SQLException
-  {
-    throw new UnsupportedOperationException(
-        "setEscapeProcessing(boolean enable) Not supported yet.");
-  }
-
-  @Override
-  public int getQueryTimeout() throws SQLException
-  {
-    logger.debug( "getQueryTimeout() throws SQLException");
-
-    return statement.getQueryTimeout();
-  }
-
-  @Override
-  public void setQueryTimeout(int seconds) throws SQLException
-  {
-    logger.debug( "setQueryTimeout(int seconds) throws SQLException");
-
-    statement.setQueryTimeout(seconds);
-  }
-
-  @Override
-  public void cancel() throws SQLException
-  {
-    logger.debug( "cancel() throws SQLException");
-
-    statement.cancel();
-  }
-
-  @Override
-  public SQLWarning getWarnings() throws SQLException
-  {
-    logger.debug( "getWarnings() throws SQLException");
-
-    return statement.getWarnings();
-  }
-
-  @Override
-  public void clearWarnings() throws SQLException
-  {
-    logger.debug( "clearWarnings() throws SQLException");
-
-    statement.clearWarnings();
-  }
-
-  @Override
-  public void setCursorName(String name) throws SQLException
-  {
-    throw new UnsupportedOperationException(
-        "setCursorName(String name) Not supported yet.");
+    throw new SnowflakeSQLException(ErrorCode.
+        UNSUPPORTED_STATEMENT_TYPE_IN_EXECUTION_API,
+        sql.length() > 20 ? sql.substring(0, 20) + "..." : sql);
   }
 
   @Override
@@ -935,101 +795,23 @@ public class SnowflakePreparedStatementV1 implements PreparedStatement
   {
     logger.debug( "execute(String sql) throws SQLException");
 
-    boolean hasResult = statement.execute(sql);
-
-    if (hasResult)
-    {
-      ResultSet resultSet = statement.getResultSet();
-      resultMetadata = resultSet.getMetaData();
-      return true;
-    }
-    else
-      return false;
-  }
-
-  @Override
-  public ResultSet getResultSet() throws SQLException
-  {
-    logger.debug( "public ResultSet getResultSet()");
-
-    return statement.getResultSet();
-  }
-
-  @Override
-  public int getUpdateCount() throws SQLException
-  {
-    logger.debug( "getUpdateCount() throws SQLException");
-
-    return statement.getUpdateCount();
-  }
-
-  @Override
-  public boolean getMoreResults() throws SQLException
-  {
-    logger.debug( "getMoreResults() throws SQLException");
-
-    return statement.getMoreResults();
-  }
-
-  @Override
-  public void setFetchDirection(int direction) throws SQLException
-  {
-    logger.debug( "setFetchDirection(int direction) throws SQLException");
-
-    if (direction != ResultSet.FETCH_FORWARD)
-      throw new UnsupportedOperationException(
-          "setFetchDirection(int direction) Not supported yet.");
-  }
-
-  @Override
-  public int getFetchDirection() throws SQLException
-  {
-    logger.debug( "getFetchDirection() throws SQLException");
-
-    return ResultSet.FETCH_FORWARD;
-  }
-
-  @Override
-  public void setFetchSize(int rows) throws SQLException
-  {
-    logger.debug( "setFetchSize(int rows) throws SQLException");
-
-    // don't throw exception, but we don't really support fetch size
-  }
-
-  @Override
-  public int getFetchSize() throws SQLException
-  {
-    logger.debug( "getFetchSize() throws SQLException");
-
-    return statement.getFetchSize();
-  }
-
-  @Override
-  public int getResultSetConcurrency() throws SQLException
-  {
-    throw new UnsupportedOperationException(
-        "getResultSetConcurrency() Not supported yet.");
-  }
-
-  @Override
-  public int getResultSetType() throws SQLException
-  {
-    logger.debug( "getResultSetType() throws SQLException");
-
-    return statement.getResultSetType();
+    throw new SnowflakeSQLException(ErrorCode.
+        UNSUPPORTED_STATEMENT_TYPE_IN_EXECUTION_API,
+        sql.length() > 20 ? sql.substring(0, 20) + "..." : sql);
   }
 
   @Override
   public void addBatch(String sql) throws SQLException
   {
-    throw new UnsupportedOperationException(
-        "addBatch(String sql) Not supported yet.");
+    throw new SnowflakeSQLException(ErrorCode.
+        UNSUPPORTED_STATEMENT_TYPE_IN_EXECUTION_API,
+        sql.length() > 20 ? sql.substring(0, 20) + "..." : sql);
   }
 
   @Override
   public void clearBatch() throws SQLException
   {
+    super.clearBatch();
     batchParameterBindings.clear();
     batchSize = 0;
   }
@@ -1039,23 +821,37 @@ public class SnowflakePreparedStatementV1 implements PreparedStatement
   {
     logger.debug( "executeBatch() throws SQLException");
 
+    if (!this.statementMetaData.getStatementType().isDML())
+    {
+      throw new SnowflakeSQLException(ErrorCode.
+          UNSUPPORTED_STATEMENT_TYPE_IN_EXECUTION_API,
+          sql.length() > 20 ? sql.substring(0, 20) + "..." : sql);
+    }
+
     int[] updateCounts = null;
     try
     {
-      int updateCount = statement.executeUpdateInternal(this.sql,
-          batchParameterBindings);
-
-      // when update count is the same as the number of bindings in the batch,
-      // expand the update count into an array (SNOW-14034)
-      if (updateCount == batchSize)
+      if (this.statementMetaData.isArrayBindSupported())
       {
-        updateCounts = new int[updateCount];
-        for (int idx = 0; idx < updateCount; idx++)
-          updateCounts[idx] = 1;
+        int updateCount = executeUpdateInternal(
+                              this.sql, batchParameterBindings);
+
+        // when update count is the same as the number of bindings in the batch,
+        // expand the update count into an array (SNOW-14034)
+        if (updateCount == batchSize)
+        {
+          updateCounts = new int[updateCount];
+          for (int idx = 0; idx < updateCount; idx++)
+            updateCounts[idx] = 1;
+        }
+        else
+        {
+          updateCounts = new int[]{updateCount};
+        }
       }
       else
       {
-        updateCounts = new int[]{updateCount};
+        updateCounts = executeBatchInternal();
       }
     }
     finally
@@ -1064,28 +860,6 @@ public class SnowflakePreparedStatementV1 implements PreparedStatement
     }
 
     return updateCounts;
-  }
-
-  @Override
-  public Connection getConnection() throws SQLException
-  {
-    logger.debug( "getConnection() throws SQLException");
-
-    return connection;
-  }
-
-  @Override
-  public boolean getMoreResults(int current) throws SQLException
-  {
-    throw new UnsupportedOperationException(
-        "getMoreResults(int current) Not supported yet.");
-  }
-
-  @Override
-  public ResultSet getGeneratedKeys() throws SQLException
-  {
-    throw new UnsupportedOperationException(
-        "getGeneratedKeys() Not supported yet.");
   }
 
   @Override
@@ -1129,62 +903,5 @@ public class SnowflakePreparedStatementV1 implements PreparedStatement
   {
     throw new UnsupportedOperationException(
         "execute(String sql, String[] columnNames) Not supported yet.");
-  }
-
-  @Override
-  public int getResultSetHoldability() throws SQLException
-  {
-    throw new UnsupportedOperationException(
-        "getResultSetHoldability() Not supported yet.");
-  }
-
-  @Override
-  public boolean isClosed() throws SQLException
-  {
-    logger.debug( "isClosed() throws SQLException");
-
-    return statement.isClosed();
-  }
-
-  @Override
-  public void setPoolable(boolean poolable) throws SQLException
-  {
-    throw new UnsupportedOperationException(
-        "setPoolable(boolean poolable) Not supported yet.");
-  }
-
-  @Override
-  public boolean isPoolable() throws SQLException
-  {
-    throw new UnsupportedOperationException(
-        "isPoolable() Not supported yet.");
-  }
-
-  @Override
-  public void closeOnCompletion() throws SQLException
-  {
-    throw new UnsupportedOperationException(
-        "closeOnCompletion() Not supported yet.");
-  }
-
-  @Override
-  public boolean isCloseOnCompletion() throws SQLException
-  {
-    throw new UnsupportedOperationException(
-        "isCloseOnCompletion() Not supported yet.");
-  }
-
-  @Override
-  public <T> T unwrap(Class<T> iface) throws SQLException
-  {
-    throw new UnsupportedOperationException(
-        "unwrap(Class<T> iface)  Not supported yet.");
-  }
-
-  @Override
-  public boolean isWrapperFor(Class<?> iface) throws SQLException
-  {
-    throw new UnsupportedOperationException(
-        "isWrapperFor(Class<?> iface)  Not supported yet.");
   }
 }

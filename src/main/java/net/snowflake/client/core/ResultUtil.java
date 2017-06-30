@@ -101,6 +101,7 @@ public class ResultUtil
     int currentChunkRowCount;
     long resultVersion;
     int numberOfBinds;
+    boolean arrayBindSupported;
     SnowflakeChunkDownloader chunkDownloader;
     SnowflakeDateTimeFormat timestampNTZFormatter;
     SnowflakeDateTimeFormat timestampLTZFormatter;
@@ -114,7 +115,11 @@ public class ResultUtil
     public long getChunkCount()
     {
       return chunkCount;
+    }
 
+    public boolean isArrayBindSupported()
+    {
+      return arrayBindSupported;
     }
 
     public String getQueryId()
@@ -445,6 +450,11 @@ public class ResultUtil
 
     if (!numberOfBindsNode.isMissingNode())
       resultOutput.numberOfBinds = numberOfBindsNode.intValue();
+
+    JsonNode arrayBindSupported = rootNode.path("data")
+              .path("arrayBindSupported");
+    resultOutput.arrayBindSupported = !arrayBindSupported.isMissingNode()
+                                      && arrayBindSupported.asBoolean();
 
     logger.debug("result version={}", resultOutput.resultVersion);
 
@@ -857,19 +867,24 @@ public class ResultUtil
         str.equals("1");
   }
 
-  static public int calculateUpdateCount(ResultSet resultSet, long statementTypeId) throws SQLException{
+  static public int calculateUpdateCount(SFBaseResultSet resultSet)
+                                         throws SFException, SQLException
+  {
     int updateCount = 0;
-    if (SFStatementType.isDML(statementTypeId))
+    SFStatementType statementType = resultSet.getStatementType();
+    if (resultSet.getStatementType().isDML())
     {
       while (resultSet.next())
       {
-        if (statementTypeId == 0x3600)    // copy command
+        if (resultSet.getStatementType() == SFStatementType.COPY)
+        {
           updateCount += resultSet.getLong(4); // add up number of rows loaded
-        else if (statementTypeId == 0x3100 || // INSERT
-                 statementTypeId == 0x3200 ||  // UPDATE
-                 statementTypeId == 0x3300 ||  // DELETE
-                 statementTypeId == 0x3400 ||  // MERGE
-                 statementTypeId == 0x3500) // MULTI - INSERT
+        }
+        else if (statementType == SFStatementType.INSERT ||
+                 statementType == SFStatementType.UPDATE ||
+                 statementType == SFStatementType.DELETE ||
+                 statementType == SFStatementType.MERGE  ||
+                 statementType == SFStatementType.MULTI_INSERT)
         {
           int columnCount = resultSet.getMetaData().getColumnCount();
           for(int i=0; i<columnCount; i++)
@@ -877,8 +892,10 @@ public class ResultUtil
         }
       }
     }
-    else if (SFStatementType.isDDL(statementTypeId)) // ddl
+    else if (statementType.isDDL()) // ddl
+    {
       updateCount = 0;
+    }
     else
       updateCount = -1;
 

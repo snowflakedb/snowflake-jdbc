@@ -1,6 +1,8 @@
 package net.snowflake.client.jdbc;
 
 import java.sql.SQLWarning;
+import java.util.Objects;
+
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.ResourceBundleManager;
@@ -28,5 +30,10 @@ class SnowflakeSQLWarning extends SQLWarning
             String.valueOf(vendorCode), params),
         sqlState,
         vendorCode);
+  }
+
+  SnowflakeSQLWarning(ErrorCode errorCode, Object...params)
+  {
+    this(errorCode.getSqlState(), errorCode.getMessageCode(), params);
   }
 }

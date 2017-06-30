@@ -8,6 +8,8 @@ package net.snowflake.client.core;
  * Created by jhuang on 1/21/16.
  */
 
+import java.util.Collections;
+
 /**
  * Statement metadata which includes the result metadata and bind information.
  */
@@ -18,6 +20,21 @@ public class SFStatementMetaData
 
   // number of binds
   private int numberOfBinds;
+
+  private final SFStatementType statementType;
+
+  private final boolean arrayBindSupported;
+
+  SFStatementMetaData(SFResultSetMetaData resultSetMetaData,
+                      SFStatementType statementType,
+                      int numberOfBinds,
+                      boolean arrayBindSupported)
+  {
+    this.resultSetMetaData = resultSetMetaData;
+    this.statementType = statementType;
+    this.numberOfBinds = numberOfBinds;
+    this.arrayBindSupported = arrayBindSupported;
+  }
 
   public SFResultSetMetaData getResultSetMetaData()
   {
@@ -39,10 +56,31 @@ public class SFStatementMetaData
     this.numberOfBinds = numberOfBinds;
   }
 
-  public SFStatementMetaData(SFResultSetMetaData resultSetMetaData,
-                             int numberOfBinds)
+  /**
+   * According to StatementType, to decide whether array binds supported or not
+   *
+   * Currently, only INSERT supports array bind
+   */
+  public boolean isArrayBindSupported()
   {
-    this.resultSetMetaData = resultSetMetaData;
-    this.numberOfBinds = numberOfBinds;
+    return this.arrayBindSupported;
+  }
+
+  public SFStatementType getStatementType()
+  {
+    return this.statementType;
+  }
+
+  public static SFStatementMetaData emptyMetaData()
+  {
+    return new SFStatementMetaData(
+        new SFResultSetMetaData(0,
+                                Collections.<String>emptyList(),
+                                Collections.<String>emptyList(),
+                                Collections.<Integer>emptyList(),
+                                null),
+        SFStatementType.UNKNOWN,
+        0,
+        false);
   }
 }

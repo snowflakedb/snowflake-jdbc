@@ -3056,7 +3056,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
   public Object getResultSet()
           throws SnowflakeSQLException
   {
-    return new SFFixedViewResultSet(this);
+    return new SFFixedViewResultSet(this, this.commandType);
   }
 
   public CommandType getCommandType()
