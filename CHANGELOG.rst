@@ -1,6 +1,9 @@
-**JDBC Driver 3.0.21**
-|SNOW-15992| Support API Statement.addBatch(), executeBatch() and clearBatch()
+**JDBC Driver 3.1.0**
+|SNOW-31069| Enforce JDBC use TLSv1.2
+|SNOW-30962| Support executeBatch on prepared DML statement
 
+**JDBC Driver 3.0.21**
+|SNOW-15992| Support added for bulk updates using the APIs ``Statement.addBatch()``, ``executeBatch()``, and ``clearBatch()``.
 **JDBC Driver 3.0.20**
 |SNOW-30700| Driver now always uses Gregorian Calendar for DATE, TIME, and TIMESTAMP values in Loader API.
 |SNOW-18939| Added support for ORC file format in PUT command.
