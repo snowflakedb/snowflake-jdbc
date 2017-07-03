@@ -872,11 +872,15 @@ public class ResultUtil
   {
     int updateCount = 0;
     SFStatementType statementType = resultSet.getStatementType();
-    if (resultSet.getStatementType().isDML())
+    if (statementType == SFStatementType.SELECT)
+    {
+      updateCount = -1;
+    }
+    else if (statementType.isDML())
     {
       while (resultSet.next())
       {
-        if (resultSet.getStatementType() == SFStatementType.COPY)
+        if (statementType == SFStatementType.COPY)
         {
           updateCount += resultSet.getLong(4); // add up number of rows loaded
         }
@@ -892,12 +896,10 @@ public class ResultUtil
         }
       }
     }
-    else if (statementType.isDDL()) // ddl
+    else // ddl
     {
       updateCount = 0;
     }
-    else
-      updateCount = -1;
 
     return updateCount;
   }
