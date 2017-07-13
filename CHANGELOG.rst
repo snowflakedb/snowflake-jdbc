@@ -1,3 +1,6 @@
+**JDBC Driver 3.1.1**
+|SNOW-31425| Fix the missing statement type can be executed by executeUpdate
+
 **JDBC Driver 3.1.0**
 |SNOW-31069| Enforce JDBC use TLSv1.2
 |SNOW-30962| Support executeBatch on prepared DML statement
