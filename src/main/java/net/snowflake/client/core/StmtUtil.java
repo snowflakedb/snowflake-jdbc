@@ -654,4 +654,83 @@ public class StmtUtil
                             ex.getLocalizedMessage());
     }
   }
+
+  /**
+   * A simple function to check if the statement is related to manipulate stage.
+   * @return PUT/GET/LIST/RM if statment belongs to one of them, otherwise
+   *         return NULL
+   */
+  static public SFStatementType checkStageManageCommand(String sql)
+  {
+    if (sql == null)
+    {
+      return null;
+    }
+
+    String trimmedSql = sql.trim();
+
+    // skip commenting prefixed with //
+    while (trimmedSql.startsWith("//"))
+    {
+      logger.debug("skipping // comments in: \n{}", trimmedSql);
+
+      if (trimmedSql.indexOf('\n') > 0)
+      {
+        trimmedSql = trimmedSql.substring(trimmedSql.indexOf('\n'));
+        trimmedSql = trimmedSql.trim();
+      }
+      else
+      {
+        break;
+      }
+
+      logger.debug( "New sql after skipping // comments: \n{}",
+          trimmedSql);
+
+    }
+
+    // skip commenting enclosed with /* */
+    while (trimmedSql.startsWith("/*"))
+    {
+      logger.debug( "skipping /* */ comments in: \n{}", trimmedSql);
+
+      if (trimmedSql.indexOf("*/") > 0)
+      {
+        trimmedSql = trimmedSql.substring(trimmedSql.indexOf("*/") + 2);
+        trimmedSql = trimmedSql.trim();
+      }
+      else
+      {
+        break;
+
+      }
+      logger.debug( "New sql after skipping /* */ comments: \n{}", trimmedSql);
+
+    }
+
+    trimmedSql = trimmedSql.toLowerCase();
+
+    if (trimmedSql.startsWith("put "))
+    {
+      return SFStatementType.PUT;
+    }
+    else if (trimmedSql.startsWith("get "))
+    {
+      return SFStatementType.GET;
+    }
+    else if (trimmedSql.startsWith("ls ") ||
+             trimmedSql.startsWith("list "))
+    {
+      return SFStatementType.LIST;
+    }
+    else if (trimmedSql.startsWith("rm ") ||
+            trimmedSql.startsWith("remove "))
+    {
+      return SFStatementType.REMOVE;
+    }
+    else
+    {
+      return null;
+    }
+  }
 }

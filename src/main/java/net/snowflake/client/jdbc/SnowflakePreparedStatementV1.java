@@ -821,7 +821,7 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
   {
     logger.debug( "executeBatch() throws SQLException");
 
-    if (!this.statementMetaData.getStatementType().isDML())
+    if (this.statementMetaData.getStatementType().isGenerateResultSet())
     {
       throw new SnowflakeSQLException(ErrorCode.
           UNSUPPORTED_STATEMENT_TYPE_IN_EXECUTION_API,

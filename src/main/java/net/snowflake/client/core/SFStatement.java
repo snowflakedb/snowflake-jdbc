@@ -498,55 +498,9 @@ public class SFStatement
    */
   private boolean isFileTransfer(String sql)
   {
-    if (sql == null)
-    {
-      return false;
-    }
-
-    String trimmedSql = sql.trim();
-
-    // skip commenting prefixed with //
-    while (trimmedSql.startsWith("//"))
-    {
-      logger.debug("skipping // comments in: \n{}", trimmedSql);
-
-      if (trimmedSql.indexOf('\n') > 0)
-      {
-        trimmedSql = trimmedSql.substring(trimmedSql.indexOf('\n'));
-        trimmedSql = trimmedSql.trim();
-      }
-      else
-      {
-        break;
-      }
-
-      logger.debug( "New sql after skipping // comments: \n{}",
-                                trimmedSql);
-
-    }
-
-    // skip commenting enclosed with /* */
-    while (trimmedSql.startsWith("/*"))
-    {
-      logger.debug( "skipping /* */ comments in: \n{}", trimmedSql);
-
-      if (trimmedSql.indexOf("*/") > 0)
-      {
-        trimmedSql = trimmedSql.substring(trimmedSql.indexOf("*/") + 2);
-        trimmedSql = trimmedSql.trim();
-      }
-      else
-      {
-        break;
-
-      }
-      logger.debug( "New sql after skipping /* */ comments: \n{}", trimmedSql);
-
-    }
-
-    return (trimmedSql.length() >= 4
-            && (trimmedSql.toLowerCase().startsWith("put ")
-                || trimmedSql.toLowerCase().startsWith("get ")));
+    SFStatementType statementType = StmtUtil.checkStageManageCommand(sql);
+    return statementType == SFStatementType.PUT ||
+           statementType == SFStatementType.GET;
   }
 
   /**

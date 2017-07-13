@@ -890,14 +890,16 @@ public class ResultUtil
           for(int i=0; i<columnCount; i++)
             updateCount += resultSet.getLong(i+1); // add up number of rows updated
         }
+        else
+        {
+          updateCount = 0;
+        }
       }
     }
-    else if (statementType.isDDL()) // ddl
-    {
-      updateCount = 0;
-    }
     else
-      updateCount = -1;
+    {
+      updateCount = statementType.isGenerateResultSet() ? -1 : 0;
+    }
 
     return updateCount;
   }

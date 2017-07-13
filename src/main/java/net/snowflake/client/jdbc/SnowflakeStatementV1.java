@@ -21,6 +21,8 @@ import java.sql.SQLFeatureNotSupportedException;
 import java.sql.SQLWarning;
 import java.sql.Statement;
 import java.util.Map;
+
+import net.snowflake.client.core.StmtUtil;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 
@@ -106,6 +108,13 @@ class SnowflakeStatementV1 implements Statement
                             Map<String, ParameterBindingDTO> parameterBindings)
           throws SQLException
   {
+    if (StmtUtil.checkStageManageCommand(sql) != null)
+    {
+      throw new SnowflakeSQLException(ErrorCode.
+          UNSUPPORTED_STATEMENT_TYPE_IN_EXECUTION_API,
+          sql.length() > 20 ? sql.substring(0, 20) + "..." : sql);
+    }
+
     SFBaseResultSet sfResultSet = null;
     try
     {
@@ -197,16 +206,13 @@ class SnowflakeStatementV1 implements Statement
         currentResultSet = null;
         resultSet = new SnowflakeResultSetV1(sfResultSet, this);
 
-        if (connection.getSfSession().isExecuteReturnCountForDML())
+        if (connection.getSfSession().isExecuteReturnCountForDML() &&
+            !sfResultSet.getStatementType().isGenerateResultSet())
         {
-          if (sfResultSet.getStatementType().isDML() ||
-              sfResultSet.getStatementType().isDDL())
-          {
-            updateCount = ResultUtil.calculateUpdateCount(sfResultSet);
-            resultSet = null;
-            currentResultSet = null;
-            return false;
-          }
+          updateCount = ResultUtil.calculateUpdateCount(sfResultSet);
+          resultSet = null;
+          currentResultSet = null;
+          return false;
         }
 
         updateCount = -1;
