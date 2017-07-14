@@ -124,7 +124,11 @@ public class SnowflakeUtil
         break;
 
       case FIXED:
-        colType = Types.DECIMAL;
+        if (scale == 0) {
+          colType = Types.BIGINT;
+        } else {
+          colType = Types.DECIMAL;
+        }
         extColTypeName = "NUMBER";
         break;
 
