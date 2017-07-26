@@ -2873,16 +2873,6 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
                   clientConfig.getSocketTimeout(),
                   clientConfig.getMaxErrorRetry());
 
-    String httpsProxyHost = System.getProperty("https.proxyHost");
-    // set up http proxy from system properties
-    if (httpsProxyHost != null)
-    {
-      clientConfig.setProxyHost(httpsProxyHost);
-
-      clientConfig.setProxyPort(Integer.parseInt(
-              System.getProperty("https.proxyPort")));
-    }
-
     try
     {
       s3Client = new SnowflakeS3Client(awsCredentials, clientConfig, encMat, stageRegion);
