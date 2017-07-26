@@ -1,10 +1,13 @@
+**JDBC Driver 3.2.0**
+|SNOW-31749| Upgrade AWS SDK to 1.11.165 in JDBC
+|SNOW-31647| When scale is 0 for a number type of column, return BIGINT instead of DECIMAL in column metadata.
+|SNOW-30967| Use the latest S3 SDK so that it can honor proxy and nonProxy JVM options
+
 **JDBC Driver 3.1.1**
-|SNOW-31425| Fix the missing statement type can be executed by executeUpdate
-
+|SNOW-31425| Fixed an issue with a missing statement type for ``executeUpdate()``, which caused the statement to fail on USE commands.
 **JDBC Driver 3.1.0**
-|SNOW-31069| Enforce JDBC use TLSv1.2
-|SNOW-30962| Support executeBatch on prepared DML statement
-
+|SNOW-31069| Added support for enforcing JDBC driver to use TLS v1.2.
+|SNOW-30962| Added support for ``executeBatch()`` on prepared DML statements.
 **JDBC Driver 3.0.21**
 |SNOW-15992| Support added for bulk updates using the APIs ``Statement.addBatch()``, ``executeBatch()``, and ``clearBatch()``.
 **JDBC Driver 3.0.20**
