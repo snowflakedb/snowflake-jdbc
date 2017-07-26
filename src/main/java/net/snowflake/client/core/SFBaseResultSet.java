@@ -554,6 +554,9 @@ public abstract class SFBaseResultSet
       case Types.DECIMAL:
         return getBigDecimal(columnIndex);
 
+      case Types.BIGINT:
+        return getLong(columnIndex);
+
       case Types.DOUBLE:
         return getDouble(columnIndex);
 

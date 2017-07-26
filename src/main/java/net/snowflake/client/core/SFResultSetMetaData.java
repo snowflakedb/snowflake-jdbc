@@ -173,6 +173,7 @@ public class SFResultSetMetaData
         return columnMetadata.getLength();
       case Types.INTEGER:
       case Types.DECIMAL:
+      case Types.BIGINT:
         return columnMetadata.getPrecision();
       case Types.DATE:
         return dateStringLength;
@@ -201,8 +202,14 @@ public class SFResultSetMetaData
       case Types.BINARY:
         return columnMetadata.getLength();
       case Types.INTEGER:
+      case Types.BIGINT:
+        // + 1 because number can be negative, it could be -20 for number(2,0)
+        return columnMetadata.getPrecision() + 1;
       case Types.DECIMAL:
-        return columnMetadata.getPrecision();
+        // first + 1 because number can be negative, second + 1 because it always
+        // include decimal point.
+        // i.e. number(2, 1) could be -1.3
+        return columnMetadata.getPrecision() + 1 + 1;
       case Types.DOUBLE:
         // Hard code as 24 since the longest float
         // represented in char is
@@ -417,12 +424,10 @@ public class SFResultSetMetaData
   {
     logger.debug("public boolean isSigned(int column)");
 
-    if (columnTypes.get(column-1) == Types.INTEGER ||
+    return (columnTypes.get(column-1) == Types.INTEGER ||
         columnTypes.get(column-1) == Types.DECIMAL ||
-        columnTypes.get(column-1) == Types.DOUBLE)
-      return true;
-    else
-      return false;
+        columnTypes.get(column-1) == Types.BIGINT  ||
+        columnTypes.get(column-1) == Types.DOUBLE);
   }
 
   public String getColumnLabel(int column)

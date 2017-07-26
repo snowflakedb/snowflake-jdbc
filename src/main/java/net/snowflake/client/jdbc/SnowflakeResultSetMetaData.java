@@ -389,6 +389,9 @@ public class SnowflakeResultSetMetaData implements ResultSetMetaData
       case Types.BOOLEAN:
         return Boolean.class.getName();
 
+      case Types.BIGINT:
+        return Long.class.getName();
+
       default:
         throw new SQLFeatureNotSupportedException();
     }

@@ -1611,6 +1611,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
                       columnSize = columnMetadata.getLength();
                     }
                     else if (columnMetadata.getType() == Types.DECIMAL
+                             || columnMetadata.getType() == Types.BIGINT
                              || columnMetadata.getType() == Types.TIME
                              || columnMetadata.getType() == Types.TIMESTAMP)
                     {

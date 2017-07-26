@@ -971,6 +971,9 @@ public class SnowflakeBaseResultSet implements ResultSet
       case Types.DECIMAL:
         return getBigDecimal(columnIndex);
 
+      case Types.BIGINT:
+        return getLong(columnIndex);
+
       case Types.DOUBLE:
         return Double.valueOf(getDouble(columnIndex));
 
