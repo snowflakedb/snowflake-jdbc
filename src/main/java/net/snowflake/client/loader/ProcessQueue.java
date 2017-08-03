@@ -343,8 +343,8 @@ public class ProcessQueue implements Runnable
         break;
       }
       catch (Exception ex) {
-        String msg = String.format("State: %s, %s",
-                currentState, ex.getMessage());
+        String msg = String.format("State: %s, %s, %s",
+                currentState, currentCommand, ex.getMessage());
         _loader.abort(new Loader.ConnectionError(
                 msg, Utils.getCause(ex)));
         LOGGER.error(msg);

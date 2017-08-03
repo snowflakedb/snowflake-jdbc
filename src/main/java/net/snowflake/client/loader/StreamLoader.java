@@ -181,10 +181,18 @@ public class StreamLoader implements Loader, Runnable
         _batchRowSize = new Long((String)value);
         break;
       case csvFileBucketSize:
-        _csvFileBucketSize = new Long((String)value);
+        if (value instanceof String) {
+          _csvFileBucketSize = new Long((String) value);
+        } else if (value instanceof Long){
+          _csvFileBucketSize = (Long)value;
+        }
         break;
       case csvFileSize:
-        _csvFileSize = new Long((String)value);
+        if (value instanceof String) {
+          _csvFileSize = new Long((String) value);
+        } else if (value instanceof Long){
+          _csvFileSize = (Long)value;
+        }
         break;
       case preserveStageFile:
         _preserveStageFile = Boolean.valueOf(String.valueOf(value));
@@ -314,7 +322,7 @@ public class StreamLoader implements Loader, Runnable
       }
     } catch (Exception ex) {
       abort(new Loader.ConnectionError(
-              "Thowing Error", Utils.getCause(ex)));
+              "Throwing Error", Utils.getCause(ex)));
     }
 
     byte[] data = null;

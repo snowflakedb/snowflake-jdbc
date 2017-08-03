@@ -44,6 +44,7 @@ public enum SnowflakeType {
   }
 
   private static final String TIMESTAMP_FORMAT_PATTERN = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX";
+  private static final String TIME_FORMAT_PATTERN = "HH:MM:ss.SSS";
 
   public static SnowflakeType fromString(String name) {
     return SnowflakeType.valueOf(name.toUpperCase());
@@ -150,7 +151,11 @@ public enum SnowflakeType {
     Class c = o.getClass();
 
     if (Date.class.isAssignableFrom(c)) {
-      SimpleDateFormat sdf = new SimpleDateFormat(TIMESTAMP_FORMAT_PATTERN);
+      String fmt = TIMESTAMP_FORMAT_PATTERN;
+      if (c == java.sql.Time.class) {
+        fmt = TIME_FORMAT_PATTERN;
+      }
+      SimpleDateFormat sdf = new SimpleDateFormat(fmt);
       if (!useLocalTimezone) {
         sdf.setCalendar(CALENDAR_UTC);
       } else {
