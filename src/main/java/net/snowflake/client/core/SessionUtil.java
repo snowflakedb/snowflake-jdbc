@@ -9,7 +9,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeDriver;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
+import net.snowflake.client.jdbc.SnowflakeType;
 import net.snowflake.client.jdbc.SnowflakeUtil;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.ClientAuthnDTO;
 import net.snowflake.common.core.ClientAuthnParameter;
 import net.snowflake.common.core.SqlState;
@@ -25,6 +28,9 @@ import org.apache.http.message.HeaderGroup;
 import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.select.Elements;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -40,12 +46,6 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.UUID;
-import net.snowflake.client.jdbc.SnowflakeType;
-import net.snowflake.client.log.SFLogger;
-import net.snowflake.client.log.SFLoggerFactory;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.select.Elements;
 
 /**
  * Created by jhuang on 1/23/16.
@@ -62,7 +62,7 @@ public class SessionUtil
 
   public static final String SF_QUERY_REQUEST_ID = "requestId";
 
-  private static final String SF_PATH_AUTHENTICATOR_REQUEST
+  public static final String SF_PATH_AUTHENTICATOR_REQUEST
       = "/session/authenticator-request";
 
   private static final String SF_PATH_LOGIN_REQUEST =
@@ -93,32 +93,32 @@ public class SessionUtil
   SFLogger logger = SFLoggerFactory.getLogger(SessionUtil.class);
 
   private static Set<String> STRING_PARAMS = new HashSet<>(Arrays.asList(
-          "TIMEZONE",
-          "TIMESTAMP_OUTPUT_FORMAT",
-          "TIMESTAMP_NTZ_OUTPUT_FORMAT",
-          "TIMESTAMP_LTZ_OUTPUT_FORMAT",
-          "TIMESTAMP_TZ_OUTPUT_FORMAT",
-          "DATE_OUTPUT_FORMAT",
-          "TIME_OUTPUT_FORMAT",
-          "BINARY_OUTPUT_FORMAT",
-          "CLIENT_TIMESTAMP_TYPE_MAPPING"));
+      "TIMEZONE",
+      "TIMESTAMP_OUTPUT_FORMAT",
+      "TIMESTAMP_NTZ_OUTPUT_FORMAT",
+      "TIMESTAMP_LTZ_OUTPUT_FORMAT",
+      "TIMESTAMP_TZ_OUTPUT_FORMAT",
+      "DATE_OUTPUT_FORMAT",
+      "TIME_OUTPUT_FORMAT",
+      "BINARY_OUTPUT_FORMAT",
+      "CLIENT_TIMESTAMP_TYPE_MAPPING"));
 
   private static Set<String> INT_PARAMS = new HashSet<>(Arrays.asList(
-          "CLIENT_RESULT_PREFETCH_SLOTS",
-          "CLIENT_RESULT_PREFETCH_THREADS",
-          "CLIENT_PREFETCH_THREADS",
-          "CLIENT_MEMORY_LIMIT"));
+      "CLIENT_RESULT_PREFETCH_SLOTS",
+      "CLIENT_RESULT_PREFETCH_THREADS",
+      "CLIENT_PREFETCH_THREADS",
+      "CLIENT_MEMORY_LIMIT"));
 
   private static Set<String> BOOLEAN_PARAMS = new HashSet<>(Arrays.asList(
-          "CLIENT_HONOR_CLIENT_TZ_FOR_TIMESTAMP_NTZ",
-          "JDBC_EXECUTE_RETURN_COUNT_FOR_DML",
-          "CLIENT_DISABLE_INCIDENTS",
-          "CLIENT_SESSION_KEEP_ALIVE",
-          "JDBC_USE_JSON_PARSER",
-          "AUTOCOMMIT",
-          "JDBC_EFFICIENT_CHUNK_STORAGE",
-          "JDBC_RS_COLUMN_CASE_INSENSITIVE",
-          "CLIENT_METADATA_REQUEST_USE_CONNECTION_CTX"));
+      "CLIENT_HONOR_CLIENT_TZ_FOR_TIMESTAMP_NTZ",
+      "JDBC_EXECUTE_RETURN_COUNT_FOR_DML",
+      "CLIENT_DISABLE_INCIDENTS",
+      "CLIENT_SESSION_KEEP_ALIVE",
+      "JDBC_USE_JSON_PARSER",
+      "AUTOCOMMIT",
+      "JDBC_EFFICIENT_CHUNK_STORAGE",
+      "JDBC_RS_COLUMN_CASE_INSENSITIVE",
+      "CLIENT_METADATA_REQUEST_USE_CONNECTION_CTX"));
 
   /**
    * A class for holding all information required for login
@@ -147,7 +147,11 @@ public class SessionUtil
     private String masterToken;
     private Map<String, Object> sessionParameters;
 
-    public LoginInput() {};
+    public LoginInput()
+    {
+    }
+
+    ;
 
     public LoginInput setServerUrl(String serverUrl)
     {
@@ -399,9 +403,13 @@ public class SessionUtil
     String sessionDatabase;
     String sessionSchema;
     String sessionRole;
-    Map<String,Object> commonParams;
+    Map<String, Object> commonParams;
 
-    public LoginOutput() {};
+    public LoginOutput()
+    {
+    }
+
+    ;
 
     public LoginOutput(String sessionToken, String masterToken,
                        long masterTokenValidityInSeconds,
@@ -412,7 +420,7 @@ public class SessionUtil
                        String sessionDatabase,
                        String sessionSchema,
                        String sessionRole,
-                       Map<String,Object> commonParams)
+                       Map<String, Object> commonParams)
     {
       this.sessionToken = sessionToken;
       this.masterToken = masterToken;
@@ -484,7 +492,7 @@ public class SessionUtil
       return this;
     }
 
-    public LoginOutput setCommonParams(Map<String,Object> commonParams)
+    public LoginOutput setCommonParams(Map<String, Object> commonParams)
     {
       this.commonParams = commonParams;
       return this;
@@ -535,7 +543,7 @@ public class SessionUtil
       return httpClientSocketTimeout;
     }
 
-    public Map<String,Object> getCommonParams()
+    public Map<String, Object> getCommonParams()
     {
       return commonParams;
     }
@@ -572,11 +580,39 @@ public class SessionUtil
   }
 
   /**
+   * Returns Authenticator type
+   *
+   * @param loginInput login information
+   * @return Authenticator type
+   */
+  static private ClientAuthnDTO.AuthenticatorType getAuthenticator(
+      LoginInput loginInput)
+  {
+    if (loginInput.getAuthenticator() != null)
+    {
+      if (loginInput.getAuthenticator().equalsIgnoreCase(
+          ClientAuthnDTO.AuthenticatorType.EXTERNALBROWSER.name()))
+      {
+        // SAML 2.0 compliant service/application
+        return ClientAuthnDTO.AuthenticatorType.EXTERNALBROWSER;
+      }
+      else if (!loginInput.getAuthenticator().equalsIgnoreCase(
+          ClientAuthnDTO.AuthenticatorType.SNOWFLAKE.name()))
+      {
+        // OKTA authenticator v1. This will be deprecated once externalbrowser
+        // is in production.
+        return ClientAuthnDTO.AuthenticatorType.OKTA;
+      }
+    }
+    return ClientAuthnDTO.AuthenticatorType.SNOWFLAKE;
+  }
+
+  /**
    * Open a new session
    *
    * @param loginInput login information
    * @return information get after login such as token information
-   * @throws SFException if unexpected uri syntax
+   * @throws SFException           if unexpected uri syntax
    * @throws SnowflakeSQLException if failed to establish connection with snowflake
    */
   static public LoginOutput openSession(LoginInput loginInput)
@@ -587,9 +623,6 @@ public class SessionUtil
 
     AssertUtil.assertTrue(loginInput.getUserName() != null,
         "missing user name for opening session");
-
-    AssertUtil.assertTrue(loginInput.getPassword() != null,
-        "missing password for opening session");
 
     AssertUtil.assertTrue(loginInput.getAppId() != null,
         "missing app id for opening session");
@@ -604,14 +637,15 @@ public class SessionUtil
     URIBuilder uriBuilder;
     URI loginURI;
     String samlResponse = null;
+    String samlProofKey = null;
     HttpClient httpClient;
 
     String sessionToken;
     String masterToken;
-    String sessionDatabase = null;
-    String sessionSchema = null;
-    String sessionRole = null;
-    long    masterTokenValidityInSeconds;
+    String sessionDatabase;
+    String sessionSchema;
+    String sessionRole;
+    long masterTokenValidityInSeconds;
     String remMeToken;
     String databaseVersion = null;
     int databaseMajorVersion = 0;
@@ -619,7 +653,9 @@ public class SessionUtil
     String newClientForUpgrade = null;
     int healthCheckInterval = DEFAULT_HEALTH_CHECK_INTERVAL;
     int httpClientSocketTimeout = loginInput.getSocketTimeout();
-    Map<String,Object> commonParams;
+    Map<String, Object> commonParams;
+    final ClientAuthnDTO.AuthenticatorType authenticator = getAuthenticator(
+        loginInput);
 
     try
     {
@@ -646,11 +682,18 @@ public class SessionUtil
         uriBuilder.addParameter(SF_QUERY_ROLE, loginInput.getRole());
       }
 
-      if (loginInput.getAuthenticator() != null &&
-          !loginInput.getAuthenticator().equalsIgnoreCase(
-              ClientAuthnDTO.AuthenticatorType.SNOWFLAKE.name()))
+      if (authenticator == ClientAuthnDTO.AuthenticatorType.EXTERNALBROWSER)
       {
-        // only support okta for now
+        // SAML 2.0 compliant service/application
+        SessionUtilExternalBrowser s = new SessionUtilExternalBrowser(
+            loginInput);
+        s.authenticate();
+        samlResponse = s.getToken();
+        samlProofKey = s.getProofKey();
+      }
+      else if (authenticator == ClientAuthnDTO.AuthenticatorType.OKTA)
+      {
+        // okta authenticator v1
         samlResponse = getSamlResponseUsingOkta(loginInput);
       }
 
@@ -679,23 +722,29 @@ public class SessionUtil
       data.put(ClientAuthnParameter.CLIENT_APP_ID.name(), loginInput.getAppId());
 
       /*
-       * only include username and password information in the
-       * request to GS if federated authentication method is
-       * not specified.
-       * When specified, this username and password information
-       * is really to be used to authenticate with the IDP
-       * provider only, and GS should not have any trace
-       * for this information.
+       * username is always included regardless of authenticator to identify
+       * the user.
        */
-      if (loginInput.getAuthenticator() == null ||
-          loginInput.getAuthenticator().equalsIgnoreCase(
-              ClientAuthnDTO.AuthenticatorType.SNOWFLAKE.name()))
+      data.put(ClientAuthnParameter.LOGIN_NAME.name(),
+          loginInput.getUserName());
+
+      /*
+       * only include password information in the request to GS if federated
+       * authentication method is not specified.
+       * When specified, this password information is really to be used to
+       * authenticate with the IDP provider only, and GS should not have any
+       * trace for this information.
+       */
+      if (authenticator == ClientAuthnDTO.AuthenticatorType.SNOWFLAKE)
       {
-        data.put(ClientAuthnParameter.LOGIN_NAME.name(),
-            loginInput.getUserName());
         data.put(ClientAuthnParameter.PASSWORD.name(), loginInput.getPassword());
       }
-      else
+      else if (authenticator == ClientAuthnDTO.AuthenticatorType.EXTERNALBROWSER)
+      {
+        data.put(ClientAuthnParameter.SAML_RESPONSE.name(), samlResponse);
+        data.put(ClientAuthnParameter.PROOF_KEY.name(), samlProofKey);
+      }
+      else if (authenticator == ClientAuthnDTO.AuthenticatorType.OKTA)
       {
         data.put(ClientAuthnParameter.RAW_SAML_RESPONSE.name(), samlResponse);
       }
@@ -747,11 +796,11 @@ public class SessionUtil
         {
           clientInfoJSON = mapper.readTree(clientInfoJSONStr);
         }
-        catch(Throwable ex)
+        catch (Throwable ex)
         {
           logger.warn(
-                     "failed to process snowflake.client.info property as JSON: "
-                     + clientInfoJSONStr, ex);
+              "failed to process snowflake.client.info property as JSON: "
+                  + clientInfoJSONStr, ex);
         }
 
         if (clientInfoJSON != null)
@@ -773,7 +822,7 @@ public class SessionUtil
       if (sessionParameter != null)
       {
         data.put(ClientAuthnParameter.SESSION_PARAMETERS.name(), loginInput
-          .getSessionParameters());
+            .getSessionParameters());
       }
 
       if (loginInput.getAccountName() != null)
@@ -800,7 +849,7 @@ public class SessionUtil
 
       logger.debug(
           "implementation version = {}",
-              SnowflakeDriver.implementVersion);
+          SnowflakeDriver.implementVersion);
 
       data.put(ClientAuthnParameter.CLIENT_APP_VERSION.name(),
           loginInput.getAppVersion());
@@ -825,9 +874,9 @@ public class SessionUtil
           SF_HEADER_BASIC_AUTHTYPE);
 
       String theString = HttpUtil.executeRequest(postRequest,
-                                                 loginInput.getHttpClient(),
-                                                 loginInput.getLoginTimeout(),
-                                                 0, null);
+          loginInput.getHttpClient(),
+          loginInput.getLoginTimeout(),
+          0, null);
 
       logger.debug("login response: {}", theString);
 
@@ -852,7 +901,7 @@ public class SessionUtil
       masterToken = jsonNode.path("data").path("masterToken").asText();
       remMeToken = jsonNode.path("data").path("remMeToken").asText();
       masterTokenValidityInSeconds = jsonNode.path("data").
-              path("masterValidityInSeconds").asLong();
+          path("masterValidityInSeconds").asLong();
       String serverVersion =
           jsonNode.path("data").path("serverVersion").asText();
 
@@ -868,8 +917,7 @@ public class SessionUtil
 
       if (serverVersion != null)
       {
-
-        logger.debug("server version = {}" + serverVersion);
+        logger.debug("server version = {}", serverVersion);
 
         if (serverVersion.indexOf(" ") > 0)
           databaseVersion = serverVersion.substring(0,
@@ -878,7 +926,9 @@ public class SessionUtil
           databaseVersion = serverVersion;
       }
       else
+      {
         logger.warn("server version is null");
+      }
 
       if (databaseVersion != null)
       {
@@ -893,7 +943,7 @@ public class SessionUtil
           catch (Exception ex)
           {
             logger.error("Exception encountered when parsing server "
-                + "version: {} Exception: {}",
+                    + "version: {} Exception: {}",
                 databaseVersion, ex.getMessage());
           }
         }
@@ -939,7 +989,7 @@ public class SessionUtil
 
         logger.debug(
             "adjusted connection timeout to = {}",
-                loginInput.getConnectionTimeout());
+            loginInput.getConnectionTimeout());
 
         logger.debug(
             "adjusted socket timeout to = {}", httpClientSocketTimeout);
@@ -947,7 +997,7 @@ public class SessionUtil
     }
     catch (SnowflakeSQLException ex)
     {
-      throw ex;
+      throw ex; // must catch here to avoid Throwable to get the exception
     }
     catch (IOException ex)
     {
@@ -991,7 +1041,7 @@ public class SessionUtil
    *
    * @param loginInput login information
    * @return login output
-   * @throws SFException if unexpected uri information
+   * @throws SFException           if unexpected uri information
    * @throws SnowflakeSQLException if failed to renew the session
    */
   static public LoginOutput renewSession(LoginInput loginInput)
@@ -1106,7 +1156,7 @@ public class SessionUtil
    *
    * @param loginInput login information
    * @throws SnowflakeSQLException if failed to close session
-   * @throws SFException if failed to close session
+   * @throws SFException           if failed to close session
    */
   static public void closeSession(LoginInput loginInput)
       throws SFException, SnowflakeSQLException
@@ -1136,7 +1186,7 @@ public class SessionUtil
 
       uriBuilder.addParameter(SF_QUERY_SESSION_DELETE, "true");
       uriBuilder.addParameter(SFSession.SF_QUERY_REQUEST_ID,
-                              UUID.randomUUID().toString());
+          UUID.randomUUID().toString());
 
       uriBuilder.setPath(SF_PATH_SESSION);
 
@@ -1148,15 +1198,15 @@ public class SessionUtil
               + loginInput.getSessionToken() + "\"");
 
       String theString = HttpUtil.executeRequest(postRequest,
-                                                 loginInput.getHttpClient(),
-                                                 loginInput.getLoginTimeout(),
-                                                 0, null);
+          loginInput.getHttpClient(),
+          loginInput.getLoginTimeout(),
+          0, null);
 
       JsonNode rootNode;
 
       logger.debug(
-                 "connection close response: {}",
-                 theString);
+          "connection close response: {}",
+          theString);
 
       rootNode = mapper.readTree(theString);
 
@@ -1169,7 +1219,7 @@ public class SessionUtil
     catch (IOException ex)
     {
       logger.error("unexpected IO exception for: " + postRequest,
-                 ex);
+          ex);
     }
     catch (SnowflakeSQLException ex)
     {
@@ -1183,26 +1233,26 @@ public class SessionUtil
    * FEDERATED FLOW
    * 1. query GS to obtain IDP token url and IDP SSO url
    * 2. IMPORTANT Client side validation:
-   *    validate both token url and sso url contains same prefix
-   *    (protocol + host + port) as the given authenticator url.
-   *    Explanation:
-   *    This provides a way for the user to 'authenticate' the IDP it is
-   *    sending his/her credentials to.  Without such a check, the user could
-   *    be coerced to provide credentials to an IDP impersonator.
+   * validate both token url and sso url contains same prefix
+   * (protocol + host + port) as the given authenticator url.
+   * Explanation:
+   * This provides a way for the user to 'authenticate' the IDP it is
+   * sending his/her credentials to.  Without such a check, the user could
+   * be coerced to provide credentials to an IDP impersonator.
    * 3. query IDP token url to authenticate and retrieve access token
    * 4. given access token, query IDP URL snowflake app to get SAML response
    * 5. IMPORTANT Client side validation:
-   *    validate the post back url come back with the SAML response
-   *    contains the same prefix as the Snowflake's server url, which is the
-   *    intended destination url to Snowflake.
-   *    Explanation:
-   *    This emulates the behavior of IDP initiated login flow in the user
-   *    browser where the IDP instructs the browser to POST the SAML
-   *    assertion to the specific SP endpoint.  This is critical in
-   *    preventing a SAML assertion issued to one SP from being sent to
-   *    another SP.
-   *
-   *    See SNOW-27798 for additional details.
+   * validate the post back url come back with the SAML response
+   * contains the same prefix as the Snowflake's server url, which is the
+   * intended destination url to Snowflake.
+   * Explanation:
+   * This emulates the behavior of IDP initiated login flow in the user
+   * browser where the IDP instructs the browser to POST the SAML
+   * assertion to the specific SP endpoint.  This is critical in
+   * preventing a SAML assertion issued to one SP from being sent to
+   * another SP.
+   * <p>
+   * See SNOW-27798 for additional details.
    *
    * @return saml response
    * @throws SnowflakeSQLException
@@ -1213,8 +1263,6 @@ public class SessionUtil
     try
     {
       // step 1
-      HttpClient httpClient = loginInput.getHttpClient();
-
       String serverUrl = loginInput.getServerUrl();
       String authenticator = loginInput.getAuthenticator();
 
@@ -1273,7 +1321,7 @@ public class SessionUtil
           !isPrefixEqual(authenticator, ssoUrl))
       {
         logger.debug("The specified authenticator {} is not supported.",
-                     loginInput.getAuthenticator());
+            loginInput.getAuthenticator());
         throw new SnowflakeSQLException(
             SqlState.SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION,
             ErrorCode.IDP_CONNECTION_ERROR.getMessageCode());
@@ -1299,7 +1347,7 @@ public class SessionUtil
       postRequest = null;
 
       logger.debug("user is authenticated against {}.",
-                   loginInput.getAuthenticator());
+          loginInput.getAuthenticator());
 
       // general method, same as with data binding
       jsonNode = mapper.readTree(theString);
@@ -1330,8 +1378,8 @@ public class SessionUtil
       if (!isPrefixEqual(postBackUrl, serverUrl))
       {
         logger.debug("The specified authenticator {} and the destination URL " +
-                         "in the SAML assertion {} do not match.",
-                     loginInput.getAuthenticator(), postBackUrl);
+                "in the SAML assertion {} do not match.",
+            loginInput.getAuthenticator(), postBackUrl);
         throw new SnowflakeSQLException(
             SqlState.SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION,
             ErrorCode.IDP_INCORRECT_DESTINATION.getMessageCode());
@@ -1379,8 +1427,8 @@ public class SessionUtil
     URL aUrl = new URL(aUrlStr);
     URL bUrl = new URL(bUrlStr);
     return aUrl.getHost().equalsIgnoreCase(bUrl.getHost()) &&
-           aUrl.getProtocol().equalsIgnoreCase(bUrl.getProtocol()) &&
-           aUrl.getPort() == bUrl.getPort();
+        aUrl.getProtocol().equalsIgnoreCase(bUrl.getProtocol()) &&
+        aUrl.getPort() == bUrl.getPort();
   }
 
   /**
@@ -1406,8 +1454,8 @@ public class SessionUtil
    */
   static public boolean checkCRLSystemProperty()
   {
-    String enableCRLDP=System.getProperty("com.sun.security.enableCRLDP");
-    String checkRevocation=System.getProperty("com.sun.net.ssl.checkRevocation");
+    String enableCRLDP = System.getProperty("com.sun.security.enableCRLDP");
+    String checkRevocation = System.getProperty("com.sun.net.ssl.checkRevocation");
     boolean CRLEnabled = false;
 
     if ((enableCRLDP != null && "true".equalsIgnoreCase(enableCRLDP)) &&
@@ -1425,7 +1473,7 @@ public class SessionUtil
    */
   public static Map<String, Object> getCommonParams(JsonNode paramsNode)
   {
-    Map<String,Object> parameters = new HashMap<>();
+    Map<String, Object> parameters = new HashMap<>();
 
     for (JsonNode child : paramsNode)
     {
@@ -1433,7 +1481,7 @@ public class SessionUtil
       if (!child.hasNonNull("name"))
       {
         logger.error("Common Parameter JsonNode encountered with "
-                + "no parameter name!");
+            + "no parameter name!");
         continue;
       }
 
@@ -1444,7 +1492,7 @@ public class SessionUtil
       if (!child.hasNonNull("value"))
       {
         logger.debug("No value found for Common Parameter {}",
-                   child.path("name").asText());
+            child.path("name").asText());
         continue;
       }
 
@@ -1466,17 +1514,17 @@ public class SessionUtil
       }
 
       logger.debug("Parameter {}: {}",
-                 new Object[]{paramName, child.path("value").asText()});
+          new Object[]{paramName, child.path("value").asText()});
     }
 
     return parameters;
   }
 
   public static void updateSfDriverParamValues(
-          Map<String, Object> parameters,
-          SFSession session)
+      Map<String, Object> parameters,
+      SFSession session)
   {
-    for (Map.Entry<String,Object> entry : parameters.entrySet())
+    for (Map.Entry<String, Object> entry : parameters.entrySet())
     {
       logger.debug("processing parameter {}", entry.getKey());
 
@@ -1497,7 +1545,7 @@ public class SessionUtil
       {
         if (session != null)
         {
-          session.setEnableHeartbeat((Boolean)entry.getValue());
+          session.setEnableHeartbeat((Boolean) entry.getValue());
         }
       }
       else if (
@@ -1528,7 +1576,7 @@ public class SessionUtil
         if (session != null)
         {
           session.setTimestampMappedType(SnowflakeType.valueOf(
-                  ((String)entry.getValue()).toUpperCase()));
+              ((String) entry.getValue()).toUpperCase()));
         }
       }
     }

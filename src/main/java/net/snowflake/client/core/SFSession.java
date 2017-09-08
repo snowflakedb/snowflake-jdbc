@@ -8,7 +8,11 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
+import net.snowflake.client.jdbc.SnowflakeType;
 import net.snowflake.client.jdbc.SnowflakeUtil;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
+import net.snowflake.common.core.ClientAuthnDTO;
 import net.snowflake.common.core.ResourceBundleManager;
 import org.apache.http.HttpHeaders;
 import org.apache.http.client.HttpClient;
@@ -24,9 +28,6 @@ import java.util.Properties;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import net.snowflake.client.jdbc.SnowflakeType;
-import net.snowflake.client.log.SFLogger;
-import net.snowflake.client.log.SFLoggerFactory;
 
 /**
  * Snowflake session implementation
@@ -66,7 +67,7 @@ public class SFSession
 
   private String sessionToken;
   private String masterToken;
-  private long    masterTokenValidityInSeconds;
+  private long masterTokenValidityInSeconds;
   private String remMeToken;
 
   private String samlResponse;
@@ -87,7 +88,7 @@ public class SFSession
    * Amount of seconds a user is willing to tolerate for establishing the
    * connection with database. In our case, it means the first login
    * request to get authorization token.
-   *
+   * <p>
    * Default:60 seconds
    */
   private int loginTimeout = 60;
@@ -96,9 +97,9 @@ public class SFSession
    * Amount of milliseconds a user is willing to tolerate for network related
    * issues (e.g. HTTP 503/504) or database transient issues (e.g. GS
    * not responding)
-   *
+   * <p>
    * A value of 0 means no timeout
-   *
+   * <p>
    * Default: 0
    */
   private int networkTimeoutInMilli = 0; // in milliseconds
@@ -107,9 +108,9 @@ public class SFSession
    * Amount of seconds a user is willing to tolerate for an individual query.
    * Both network/GS issues and query processing itself can contribute
    * to the amount time spent for a query.
-   *
+   * <p>
    * A value of 0 means no timeout
-   *
+   * <p>
    * Default: 0
    */
   private int queryTimeout = 0; // in seconds
@@ -123,7 +124,7 @@ public class SFSession
   private final static ObjectMapper mapper = new ObjectMapper();
 
   static final ResourceBundleManager errorResourceBundleManager =
-  ResourceBundleManager.getSingleton(ErrorCode.errorMessageResource);
+      ResourceBundleManager.getSingleton(ErrorCode.errorMessageResource);
 
   private Properties clientInfo = new Properties();
 
@@ -136,7 +137,7 @@ public class SFSession
   private static int DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT = 300000; // millisec
 
   private int httpClientSocketTimeout =
-  DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT; // milliseconds
+      DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT; // milliseconds
 
   // TODO this should be set to Connection.TRANSACTION_READ_COMMITTED
   // TODO There may not be many implications here since the call to
@@ -191,17 +192,17 @@ public class SFSession
   private boolean metadataRequestUseConnectionCtx = false;
 
   private SnowflakeType timestampMappedType =
-  SnowflakeType.TIMESTAMP_LTZ;
+      SnowflakeType.TIMESTAMP_LTZ;
 
   /**
    * Add a property
    * If a property is known for connection, add it to connection properties
    * If not, add it as a dynamic session parameters
-   *
+   * <p>
    * Make sure a property is not added more than once and the number of
    * properties does not exceed limit.
    *
-   * @param propertyName property name
+   * @param propertyName  property name
    * @param propertyValue property value
    * @throws SFException exception raised from Snowflake components
    */
@@ -229,7 +230,7 @@ public class SFSession
       else
         connectionPropertiesMap.put(connectionProperty, propertyValue);
 
-      switch(connectionProperty)
+      switch (connectionProperty)
       {
         case LOGIN_TIMEOUT:
           if (propertyValue != null)
@@ -244,7 +245,8 @@ public class SFSession
           break;
 
         case USE_PROXY:
-          useProxy = (propertyValue != null && (Boolean)propertyValue);;
+          useProxy = (propertyValue != null && (Boolean) propertyValue);
+          ;
 
           break;
 
@@ -260,7 +262,7 @@ public class SFSession
           break;
 
         case PASSCODE_IN_PASSWORD:
-          passcodeInPassword = (propertyValue != null && (Boolean)propertyValue);
+          passcodeInPassword = (propertyValue != null && (Boolean) propertyValue);
           break;
 
         default:
@@ -288,16 +290,30 @@ public class SFSession
   {
     if (connectionPropertiesMap.containsKey(SFSessionProperty.SERVER_URL))
     {
-      return (String)connectionPropertiesMap.get(SFSessionProperty.SERVER_URL);
+      return (String) connectionPropertiesMap.get(SFSessionProperty.SERVER_URL);
     }
     else
       return null;
   }
 
   /**
+   * Is the authenticator Snowflake?
+   *
+   * @return true yes otherwise no
+   */
+  private boolean isSnowflakeAuthenticator()
+  {
+    String authenticator = (String) connectionPropertiesMap.get(
+        SFSessionProperty.AUTHENTICATOR);
+    return authenticator == null ||
+        authenticator.equalsIgnoreCase(
+            ClientAuthnDTO.AuthenticatorType.SNOWFLAKE.name());
+  }
+
+  /**
    * Open a new database session
    *
-   * @throws SFException  this is a runtime exception
+   * @throws SFException           this is a runtime exception
    * @throws SnowflakeSQLException exception raised from Snowfalke components
    */
   public synchronized void open() throws SFException, SnowflakeSQLException
@@ -332,12 +348,12 @@ public class SFSession
         .setClientInfo(this.getClientInfo())
         .setPasscodeInPassword(passcodeInPassword)
         .setPasscode(
-            (String)connectionPropertiesMap.get(SFSessionProperty.PASSCODE))
+            (String) connectionPropertiesMap.get(SFSessionProperty.PASSCODE))
         .setConnectionTimeout(httpClientConnectionTimeout)
         .setSocketTimeout(httpClientSocketTimeout)
-        .setAppId((String)connectionPropertiesMap.get(SFSessionProperty.APP_ID))
+        .setAppId((String) connectionPropertiesMap.get(SFSessionProperty.APP_ID))
         .setAppVersion(
-            (String)connectionPropertiesMap.get(SFSessionProperty.APP_VERSION))
+            (String) connectionPropertiesMap.get(SFSessionProperty.APP_VERSION))
         .setSessionParameters(sessionParametersMap);
 
     SessionUtil.LoginOutput loginOutput = SessionUtil.openSession(loginInput);
@@ -372,7 +388,8 @@ public class SFSession
     if (!connectionPropertiesMap.containsKey(SFSessionProperty.USER))
       throw new SFException(ErrorCode.MISSING_USERNAME);
 
-    if (!connectionPropertiesMap.containsKey(SFSessionProperty.PASSWORD))
+    if (isSnowflakeAuthenticator() &&
+        !connectionPropertiesMap.containsKey(SFSessionProperty.PASSWORD))
       throw new SFException(ErrorCode.MISSING_PASSWORD);
 
     for (SFSessionProperty property : SFSessionProperty.values())
@@ -385,7 +402,7 @@ public class SFSession
       }
     }
 
-    String userName = (String)connectionPropertiesMap.get(
+    String userName = (String) connectionPropertiesMap.get(
         SFSessionProperty.USER);
     // userName and password are expected
     if (userName == null || userName.isEmpty())
@@ -393,10 +410,10 @@ public class SFSession
       throw new SFException(ErrorCode.MISSING_USERNAME);
     }
 
-    String password = (String)connectionPropertiesMap.get(
+    String password = (String) connectionPropertiesMap.get(
         SFSessionProperty.PASSWORD);
 
-    if (password == null || password.isEmpty())
+    if (isSnowflakeAuthenticator() && (password == null || password.isEmpty()))
     {
       throw new SFException(ErrorCode.MISSING_PASSWORD);
     }
@@ -437,10 +454,10 @@ public class SFSession
    *
    * @param prevSessionToken the session token that has expired
    * @throws java.sql.SQLException if failed to renew the session
-   * @throws SFException if failed to renew the session
+   * @throws SFException           if failed to renew the session
    */
   synchronized void renewSession(String prevSessionToken)
-          throws SFException, SnowflakeSQLException
+      throws SFException, SnowflakeSQLException
   {
     // if session token has changed, don't renew again
     if (sessionToken != null &&
@@ -449,7 +466,7 @@ public class SFSession
 
     SessionUtil.LoginInput loginInput = new SessionUtil.LoginInput();
     loginInput.setServerUrl(
-        (String)connectionPropertiesMap.get(SFSessionProperty.SERVER_URL))
+        (String) connectionPropertiesMap.get(SFSessionProperty.SERVER_URL))
         .setSessionToken(sessionToken)
         .setMasterToken(masterToken)
         .setHttpClient(httpClient)
@@ -475,7 +492,7 @@ public class SFSession
    * Close the connection
    *
    * @throws SnowflakeSQLException if failed to close the connection
-   * @throws SFException if failed to close the connection
+   * @throws SFException           if failed to close the connection
    */
   public void close() throws SFException, SnowflakeSQLException
   {
@@ -491,7 +508,7 @@ public class SFSession
 
     SessionUtil.LoginInput loginInput = new SessionUtil.LoginInput();
     loginInput.setServerUrl(
-        (String)connectionPropertiesMap.get(SFSessionProperty.SERVER_URL))
+        (String) connectionPropertiesMap.get(SFSessionProperty.SERVER_URL))
         .setSessionToken(sessionToken)
         .setHttpClient(httpClient)
         .setLoginTimeout(loginTimeout);
@@ -503,7 +520,7 @@ public class SFSession
     }
     finally
     {
-      if(httpClient != null)
+      if (httpClient != null)
       {
         httpClient = null;
       }
@@ -518,10 +535,10 @@ public class SFSession
     if (enableHeartbeat)
     {
       logger.debug("start heartbeat, master token validity: " +
-                           masterTokenValidityInSeconds);
+          masterTokenValidityInSeconds);
 
       HeartbeatBackground.getInstance().addSession(this,
-                                                 masterTokenValidityInSeconds);
+          masterTokenValidityInSeconds);
     }
     else
     {
@@ -548,7 +565,8 @@ public class SFSession
 
   /**
    * Send heartbeat for the session
-   * @throws SFException exception raised from Snowflake
+   *
+   * @throws SFException  exception raised from Snowflake
    * @throws SQLException exception raised from SQL generic layers
    */
   protected void heartbeat() throws SFException, SQLException
@@ -574,7 +592,7 @@ public class SFSession
         URIBuilder uriBuilder;
 
         uriBuilder = new URIBuilder(
-                (String)connectionPropertiesMap.get(SFSessionProperty.SERVER_URL));
+            (String) connectionPropertiesMap.get(SFSessionProperty.SERVER_URL));
 
         uriBuilder.addParameter(SFSession.SF_QUERY_REQUEST_ID, requestId);
 
@@ -587,19 +605,19 @@ public class SFSession
         String prevSessionToken = sessionToken;
 
         postRequest.setHeader(SF_HEADER_AUTHORIZATION,
-                              SF_HEADER_SNOWFLAKE_AUTHTYPE + " "
-                              + SF_HEADER_TOKEN_TAG + "=\""
-                              + prevSessionToken + "\"");
+            SF_HEADER_SNOWFLAKE_AUTHTYPE + " "
+                + SF_HEADER_TOKEN_TAG + "=\""
+                + prevSessionToken + "\"");
 
         logger.debug("Executing heartbeat request: {}",
-                                postRequest.toString());
+            postRequest.toString());
 
         // the following will retry transient network issues
         String theResponse = HttpUtil.executeRequest(postRequest,
-                                                     httpClient,
-                                                     SF_HEARTBEAT_TIMEOUT,
-                                                     0,
-                                                     null);
+            httpClient,
+            SF_HEARTBEAT_TIMEOUT,
+            0,
+            null);
 
         JsonNode rootNode;
 
@@ -609,7 +627,7 @@ public class SFSession
 
         // check the response to see if it is session expiration response
         if (rootNode != null &&
-          (Constants.SESSION_EXPIRED_GS_CODE == rootNode.path("code").asInt()))
+            (Constants.SESSION_EXPIRED_GS_CODE == rootNode.path("code").asInt()))
         {
           logger.debug("renew session and retry");
           this.renewSession(prevSessionToken);
@@ -626,12 +644,12 @@ public class SFSession
       {
         // for snowflake exception, just rethrow it
         if (ex instanceof SnowflakeSQLException)
-          throw (SnowflakeSQLException)ex;
+          throw (SnowflakeSQLException) ex;
 
         logger.error("unexpected exception", ex);
 
         SFException sfe =
-        IncidentUtil.generateIncidentWithException(
+            IncidentUtil.generateIncidentWithException(
                 this,
                 requestId,
                 null,
@@ -642,13 +660,13 @@ public class SFSession
         throw sfe;
       }
     }
-    while(retry);
+    while (retry);
   }
 
   public void setClientInfo(Properties properties)
-          throws SQLClientInfoException
+      throws SQLClientInfoException
   {
-      logger.debug(" public void setClientInfo(Properties properties)");
+    logger.debug(" public void setClientInfo(Properties properties)");
 
     if (this.clientInfo == null)
       this.clientInfo = new Properties();
@@ -660,9 +678,9 @@ public class SFSession
   }
 
   public void setClientInfo(String name, String value)
-          throws SQLClientInfoException
+      throws SQLClientInfoException
   {
-      logger.debug(" public void setClientInfo(String name, String value)");
+    logger.debug(" public void setClientInfo(String name, String value)");
 
     if (this.clientInfo == null)
       this.clientInfo = new Properties();
@@ -672,7 +690,7 @@ public class SFSession
 
   public Properties getClientInfo()
   {
-      logger.debug(" public Properties getClientInfo()");
+    logger.debug(" public Properties getClientInfo()");
 
     if (this.clientInfo != null)
     {
@@ -689,7 +707,7 @@ public class SFSession
 
   public String getClientInfo(String name)
   {
-      logger.debug(" public String getClientInfo(String name)");
+    logger.debug(" public String getClientInfo(String name)");
 
     if (this.clientInfo != null)
       return this.clientInfo.getProperty(name);

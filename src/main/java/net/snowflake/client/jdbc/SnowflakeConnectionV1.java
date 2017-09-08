@@ -6,13 +6,15 @@ package net.snowflake.client.jdbc;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.snowflake.client.core.SFException;
-import net.snowflake.client.core.SFResultSetMetaData;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.core.SFSessionProperty;
+import net.snowflake.client.log.JDK14Logger;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
+import net.snowflake.common.core.ClientAuthnDTO;
 import net.snowflake.common.core.LoginInfoDTO;
 import net.snowflake.common.core.ResourceBundleManager;
 import net.snowflake.common.core.SqlState;
-import net.snowflake.client.log.JDK14Logger;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.InputStream;
@@ -34,18 +36,15 @@ import java.sql.SQLXML;
 import java.sql.Savepoint;
 import java.sql.Statement;
 import java.sql.Struct;
-import java.util.Properties;
-import java.util.Map;
-import java.util.List;
-import java.util.HashMap;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
-
-import net.snowflake.client.log.SFLogger;
-import net.snowflake.client.log.SFLoggerFactory;
 
 /**
  * Snowflake connection implementation
@@ -115,21 +114,21 @@ public class SnowflakeConnectionV1 implements Connection
    * Amount of seconds a user is willing to tolerate for establishing the
    * connection with database. In our case, it means the first login
    * request to get authorization token.
-   *
+   * <p>
    * A value of 0 means no timeout.
-   *
+   * <p>
    * Default: to login timeout in driver manager if set or 60 seconds
    */
-  private int loginTimeout = (DriverManager.getLoginTimeout() > 0)?
-                             DriverManager.getLoginTimeout() : 60;
+  private int loginTimeout = (DriverManager.getLoginTimeout() > 0) ?
+      DriverManager.getLoginTimeout() : 60;
 
   /**
    * Amount of milliseconds a user is willing to tolerate for network related
    * issues (e.g. HTTP 503/504) or database transient issues (e.g. GS
    * not responding)
-   *
+   * <p>
    * A value of 0 means no timeout
-   *
+   * <p>
    * Default: 300 seconds
    */
   private int networkTimeoutInMilli = 0; // in milliseconds
@@ -138,9 +137,9 @@ public class SnowflakeConnectionV1 implements Connection
    * Amount of seconds a user is willing to tolerate for an individual query.
    * Both network/GS issues and query processing itself can contribute
    * to the amount time spent for a query.
-   *
+   * <p>
    * A value of 0 means no timeout
-   *
+   * <p>
    * Default: 0
    */
   private int queryTimeout = 0; // in seconds
@@ -157,7 +156,7 @@ public class SnowflakeConnectionV1 implements Connection
       Integer.MAX_VALUE + ".0.0";
 
   static private final ResourceBundleManager errorResourceBundleManager =
-  ResourceBundleManager.getSingleton(ErrorCode.errorMessageResource);
+      ResourceBundleManager.getSingleton(ErrorCode.errorMessageResource);
 
   boolean internalTesting = false;
 
@@ -190,14 +189,14 @@ public class SnowflakeConnectionV1 implements Connection
   /**
    * A connection will establish a session token from snowflake
    *
-   * @param url server url used to create snowflake connection
+   * @param url  server url used to create snowflake connection
    * @param info properties about the snowflake connection
    * @throws java.sql.SQLException if failed to create a snowflake connection
-   *         i.e. username or password not specified
+   *                               i.e. username or password not specified
    */
   public SnowflakeConnectionV1(String url,
                                Properties info)
-          throws SQLException
+      throws SQLException
   {
     processParameters(url, info);
 
@@ -205,27 +204,27 @@ public class SnowflakeConnectionV1 implements Connection
     if (userName == null || userName.isEmpty())
     {
       throw new SQLException(
-              errorResourceBundleManager.getLocalizedMessage(
-                      ErrorCode.MISSING_USERNAME.getMessageCode().toString()));
+          errorResourceBundleManager.getLocalizedMessage(
+              ErrorCode.MISSING_USERNAME.getMessageCode().toString()));
     }
 
-    if (password == null || userName.isEmpty())
+    if (isSnowflakeAuthenticator() && (password == null || password.isEmpty()))
     {
       throw new SQLException(
-              errorResourceBundleManager.getLocalizedMessage(
-                      ErrorCode.MISSING_PASSWORD.getMessageCode().toString()));
+          errorResourceBundleManager.getLocalizedMessage(
+              ErrorCode.MISSING_PASSWORD.getMessageCode().toString()));
     }
 
     // replace protocol name
     serverUrl = serverUrl.replace(JDBC_PROTOCOL_PREFIX,
-                                  sslOn?SSL_NATIVE_PROTOCOL:NATIVE_PROTOCOL);
+        sslOn ? SSL_NATIVE_PROTOCOL : NATIVE_PROTOCOL);
 
     logger.debug("Connecting to: {} with userName={} " +
-                            "accountName={} " +
-                            "databaseName={} " +
-                            "schemaName={} " +
-                            "warehouse={} " +
-                            "ssl={}", 
+            "accountName={} " +
+            "databaseName={} " +
+            "schemaName={} " +
+            "warehouse={} " +
+            "ssl={}",
         serverUrl, userName, accountName, loginDatabaseName, loginSchemaName,
         warehouse, sslOn);
 
@@ -282,6 +281,18 @@ public class SnowflakeConnectionV1 implements Connection
     }
 
     isClosed = false;
+  }
+
+  /**
+   * Is the authenticator Snowflake?
+   *
+   * @return true yes otherwise no
+   */
+  private boolean isSnowflakeAuthenticator()
+  {
+    return authenticator == null ||
+        authenticator.equalsIgnoreCase(
+            ClientAuthnDTO.AuthenticatorType.SNOWFLAKE.name());
   }
 
   private void initSessionProperties() throws SFException
@@ -347,7 +358,7 @@ public class SnowflakeConnectionV1 implements Connection
         passcodeInPassword);
 
     // Now add the session parameters
-    for (String param_name: sessionParameters.keySet())
+    for (String param_name : sessionParameters.keySet())
     {
       Object param_value = sessionParameters.get(param_name);
       sfSession.addProperty(param_name, param_value);
@@ -373,9 +384,9 @@ public class SnowflakeConnectionV1 implements Connection
      */
     int queryParamsIndex = url.indexOf("?");
 
-    if(queryParamsIndex > 0)
+    if (queryParamsIndex > 0)
     {
-      String queryParams = url.substring(queryParamsIndex+1);
+      String queryParams = url.substring(queryParamsIndex + 1);
 
       String[] tokens = StringUtils.split(queryParams, "=&");
 
@@ -385,143 +396,143 @@ public class SnowflakeConnectionV1 implements Connection
       logger.debug("server url: {}", serverUrl);
 
       //assert that tokens lenth is even so that there is a value for each param
-      if(tokens.length%2 != 0)
+      if (tokens.length % 2 != 0)
       {
         throw new
-        IllegalArgumentException("Missing value for some query param");
+            IllegalArgumentException("Missing value for some query param");
       }
 
-      for(int paramIdx = 0; paramIdx < tokens.length; paramIdx=paramIdx+2)
+      for (int paramIdx = 0; paramIdx < tokens.length; paramIdx = paramIdx + 2)
       {
-        if("user".equalsIgnoreCase(tokens[paramIdx]))
+        if ("user".equalsIgnoreCase(tokens[paramIdx]))
         {
-          userName = tokens[paramIdx+1];
+          userName = tokens[paramIdx + 1];
 
           logger.debug("user name: {}", userName);
 
         }
-        else if("password".equalsIgnoreCase(tokens[paramIdx]))
+        else if ("password".equalsIgnoreCase(tokens[paramIdx]))
         {
-          password = tokens[paramIdx+1];
+          password = tokens[paramIdx + 1];
         }
-        else if("account".equalsIgnoreCase(tokens[paramIdx]))
+        else if ("account".equalsIgnoreCase(tokens[paramIdx]))
         {
-          accountName = tokens[paramIdx+1];
+          accountName = tokens[paramIdx + 1];
 
           logger.debug("account: {}", accountName);
 
         }
-        else if("db".equalsIgnoreCase(tokens[paramIdx]) ||
+        else if ("db".equalsIgnoreCase(tokens[paramIdx]) ||
             "database".equalsIgnoreCase(tokens[paramIdx]))
         {
-          loginDatabaseName = tokens[paramIdx+1];
+          loginDatabaseName = tokens[paramIdx + 1];
 
           logger.debug("db: {}", loginDatabaseName);
         }
-        else if("schema".equalsIgnoreCase(tokens[paramIdx]))
+        else if ("schema".equalsIgnoreCase(tokens[paramIdx]))
         {
-          loginSchemaName = tokens[paramIdx+1];
+          loginSchemaName = tokens[paramIdx + 1];
           logger.debug("schema: {}", loginSchemaName);
         }
-        else if("ssl".equalsIgnoreCase(tokens[paramIdx]))
+        else if ("ssl".equalsIgnoreCase(tokens[paramIdx]))
         {
-          sslOn = !("off".equalsIgnoreCase(tokens[paramIdx+1]) ||
-          "false".equalsIgnoreCase(tokens[paramIdx+1]));
+          sslOn = !("off".equalsIgnoreCase(tokens[paramIdx + 1]) ||
+              "false".equalsIgnoreCase(tokens[paramIdx + 1]));
 
-          logger.debug("ssl: {}", tokens[paramIdx+1]);
+          logger.debug("ssl: {}", tokens[paramIdx + 1]);
 
         }
-        else if("passcodeInPassword".equalsIgnoreCase(tokens[paramIdx]))
+        else if ("passcodeInPassword".equalsIgnoreCase(tokens[paramIdx]))
         {
-          passcodeInPassword = "on".equalsIgnoreCase(tokens[paramIdx+1]) ||
-              "true".equalsIgnoreCase(tokens[paramIdx+1]);
+          passcodeInPassword = "on".equalsIgnoreCase(tokens[paramIdx + 1]) ||
+              "true".equalsIgnoreCase(tokens[paramIdx + 1]);
 
-          logger.debug("passcodeInPassword: {}", tokens[paramIdx+1]);
+          logger.debug("passcodeInPassword: {}", tokens[paramIdx + 1]);
         }
-        else if("passcode".equalsIgnoreCase(tokens[paramIdx]))
+        else if ("passcode".equalsIgnoreCase(tokens[paramIdx]))
         {
-          passcode = tokens[paramIdx+1];
+          passcode = tokens[paramIdx + 1];
         }
-        else if("role".equalsIgnoreCase(tokens[paramIdx]))
+        else if ("role".equalsIgnoreCase(tokens[paramIdx]))
         {
-          loginRole = tokens[paramIdx+1];
+          loginRole = tokens[paramIdx + 1];
           logger.debug("role: {}", loginRole);
         }
-        else if("authenticator".equalsIgnoreCase(tokens[paramIdx]))
+        else if ("authenticator".equalsIgnoreCase(tokens[paramIdx]))
         {
-          authenticator = tokens[paramIdx+1];
+          authenticator = tokens[paramIdx + 1];
         }
-        else if("internal".equalsIgnoreCase(tokens[paramIdx]))
+        else if ("internal".equalsIgnoreCase(tokens[paramIdx]))
         {
-          internalTesting = "true".equalsIgnoreCase(tokens[paramIdx+1]);
+          internalTesting = "true".equalsIgnoreCase(tokens[paramIdx + 1]);
         }
-        else if("warehouse".equalsIgnoreCase(tokens[paramIdx]))
+        else if ("warehouse".equalsIgnoreCase(tokens[paramIdx]))
         {
-          warehouse = tokens[paramIdx+1];
+          warehouse = tokens[paramIdx + 1];
 
           logger.debug("warehouse: {}", warehouse);
         }
-        else if("loginTimeout".equalsIgnoreCase(tokens[paramIdx]))
+        else if ("loginTimeout".equalsIgnoreCase(tokens[paramIdx]))
         {
-          loginTimeout = Integer.parseInt(tokens[paramIdx+1]);
+          loginTimeout = Integer.parseInt(tokens[paramIdx + 1]);
 
           logger.debug("login timeout: {}", loginTimeout);
         }
-        else if("networkTimeout".equalsIgnoreCase(tokens[paramIdx]))
+        else if ("networkTimeout".equalsIgnoreCase(tokens[paramIdx]))
         {
-          networkTimeoutInMilli = Integer.parseInt(tokens[paramIdx+1]) * 1000;
+          networkTimeoutInMilli = Integer.parseInt(tokens[paramIdx + 1]) * 1000;
 
           logger.debug("network timeout in milli: {}",
               networkTimeoutInMilli);
         }
-        else if("queryTimeout".equalsIgnoreCase(tokens[paramIdx]))
+        else if ("queryTimeout".equalsIgnoreCase(tokens[paramIdx]))
         {
-          queryTimeout = Integer.parseInt(tokens[paramIdx+1]);
+          queryTimeout = Integer.parseInt(tokens[paramIdx + 1]);
 
           logger.debug("queryTimeout: {}", queryTimeout);
         }
-        else if("useProxy".equalsIgnoreCase(tokens[paramIdx]))
+        else if ("useProxy".equalsIgnoreCase(tokens[paramIdx]))
         {
-          useProxy = "on".equalsIgnoreCase(tokens[paramIdx+1]) ||
-              "true".equalsIgnoreCase(tokens[paramIdx+1]);
+          useProxy = "on".equalsIgnoreCase(tokens[paramIdx + 1]) ||
+              "true".equalsIgnoreCase(tokens[paramIdx + 1]);
 
-          logger.debug("useProxy: {}", tokens[paramIdx+1]);
+          logger.debug("useProxy: {}", tokens[paramIdx + 1]);
         }
-        else if("injectSocketTimeout".equalsIgnoreCase(tokens[paramIdx]))
+        else if ("injectSocketTimeout".equalsIgnoreCase(tokens[paramIdx]))
         {
-          injectSocketTimeout = Integer.parseInt(tokens[paramIdx+1]);
+          injectSocketTimeout = Integer.parseInt(tokens[paramIdx + 1]);
 
           logger.debug("injectSocketTimeout: {}",
               injectSocketTimeout);
         }
-        else if("injectClientPause".equalsIgnoreCase(tokens[paramIdx]))
+        else if ("injectClientPause".equalsIgnoreCase(tokens[paramIdx]))
         {
-          injectClientPause = Integer.parseInt(tokens[paramIdx+1]);
+          injectClientPause = Integer.parseInt(tokens[paramIdx + 1]);
 
           logger.debug("injectClientPause: {}", injectClientPause);
         }
-        else if("useV1QueryAPI".equalsIgnoreCase(tokens[paramIdx]))
+        else if ("useV1QueryAPI".equalsIgnoreCase(tokens[paramIdx]))
         {
-          if ("on".equalsIgnoreCase(tokens[paramIdx+1]) ||
-              "true".equalsIgnoreCase(tokens[paramIdx+1]))
+          if ("on".equalsIgnoreCase(tokens[paramIdx + 1]) ||
+              "true".equalsIgnoreCase(tokens[paramIdx + 1]))
             useV1QueryAPI = true;
 
-          logger.debug("useV1QueryAPI: {}", tokens[paramIdx+1]);
+          logger.debug("useV1QueryAPI: {}", tokens[paramIdx + 1]);
         }
-        else if("retryQuery".equalsIgnoreCase(tokens[paramIdx]))
+        else if ("retryQuery".equalsIgnoreCase(tokens[paramIdx]))
         {
-          if ("on".equalsIgnoreCase(tokens[paramIdx+1]) ||
-              "true".equalsIgnoreCase(tokens[paramIdx+1]))
+          if ("on".equalsIgnoreCase(tokens[paramIdx + 1]) ||
+              "true".equalsIgnoreCase(tokens[paramIdx + 1]))
             retryQuery = true;
 
-          logger.debug("retryQuery: {}", tokens[paramIdx+1]);
+          logger.debug("retryQuery: {}", tokens[paramIdx + 1]);
         }
-        else if("tracing".equalsIgnoreCase(tokens[paramIdx]))
+        else if ("tracing".equalsIgnoreCase(tokens[paramIdx]))
         {
           String tracingLevelStr = tokens[paramIdx + 1].toUpperCase();
 
           logger.debug("tracing level specified in connection url: {}",
-                                   tracingLevelStr);
+              tracingLevelStr);
 
           tracingLevel = Level.parse(tracingLevelStr);
           // tracingLevel is effective only if customer is using the new logging config/framework
@@ -539,14 +550,14 @@ public class SnowflakeConnectionV1 implements Connection
           String param_value = tokens[paramIdx + 1];
 
           logger.debug("parameter {} set to {}",
-                     new Object[]{param_name, param_value});
+              new Object[]{param_name, param_value});
           sessionParameters.put(param_name, param_value);
         }
       }
     }
 
     // the properties can be overriden
-    for (Object key: info.keySet())
+    for (Object key : info.keySet())
     {
       if (key.equals("user"))
       {
@@ -603,15 +614,15 @@ public class SnowflakeConnectionV1 implements Connection
       else if (key.equals("ssl"))
       {
         sslOn = !("off".equalsIgnoreCase(info.getProperty("ssl")) ||
-          "false".equalsIgnoreCase(info.getProperty("ssl")));
+            "false".equalsIgnoreCase(info.getProperty("ssl")));
 
         logger.debug("ssl property: {}", info.getProperty("ssl"));
       }
       else if (key.equals("passcodeInPassword"))
       {
         passcodeInPassword =
-          "on".equalsIgnoreCase(info.getProperty("passcodeInPassword")) ||
-              "true".equalsIgnoreCase(info.getProperty("passcodeInPassword"));
+            "on".equalsIgnoreCase(info.getProperty("passcodeInPassword")) ||
+                "true".equalsIgnoreCase(info.getProperty("passcodeInPassword"));
       }
       else if (key.equals("passcode"))
       {
@@ -628,7 +639,7 @@ public class SnowflakeConnectionV1 implements Connection
       else if (key.equals("netowrkTimeout"))
       {
         networkTimeoutInMilli =
-        Integer.parseInt(info.getProperty("networkTimeout")) * 1000;
+            Integer.parseInt(info.getProperty("networkTimeout")) * 1000;
       }
       else if (key.equals("queryTimeout"))
       {
@@ -637,12 +648,12 @@ public class SnowflakeConnectionV1 implements Connection
       else if (key.equals("injectSocketTimeout"))
       {
         injectSocketTimeout =
-          Integer.parseInt(info.getProperty("injectSocketTimeout"));
+            Integer.parseInt(info.getProperty("injectSocketTimeout"));
       }
       else if (key.equals("injectClientPause"))
       {
         injectClientPause =
-          Integer.parseInt(info.getProperty("injectClientPause"));
+            Integer.parseInt(info.getProperty("injectClientPause"));
       }
       else if (key.equals("useV1QueryAPI"))
       {
@@ -683,7 +694,7 @@ public class SnowflakeConnectionV1 implements Connection
         Object param_value = info.get(key);
         sessionParameters.put(param_name, param_value);
         logger.debug("parameter {} set to {}",
-                   new Object[]{param_name, param_value.toString()});
+            new Object[]{param_name, param_value.toString()});
       }
     }
 
@@ -692,7 +703,7 @@ public class SnowflakeConnectionV1 implements Connection
         serverUrl.indexOf(".") > 0 &&
         serverUrl.indexOf("://") > 0)
     {
-      accountName = serverUrl.substring(serverUrl.indexOf("://")+3,
+      accountName = serverUrl.substring(serverUrl.indexOf("://") + 3,
           serverUrl.indexOf("."));
 
       logger.debug("set account name to {}", accountName);
@@ -702,6 +713,7 @@ public class SnowflakeConnectionV1 implements Connection
   /**
    * Execute a statement where the result isn't needed, and the statement is
    * closed before this method returns
+   *
    * @param stmtText text of the statement
    * @throws java.sql.SQLException exception thrown it the statement fails to execute
    */
@@ -803,7 +815,7 @@ public class SnowflakeConnectionV1 implements Connection
   public DatabaseMetaData getMetaData() throws SQLException
   {
     logger.debug(
-               " public DatabaseMetaData getMetaData() throws SQLException");
+        " public DatabaseMetaData getMetaData() throws SQLException");
 
     return new SnowflakeDatabaseMetaData(this);
   }
@@ -812,8 +824,8 @@ public class SnowflakeConnectionV1 implements Connection
   public CallableStatement prepareCall(String sql) throws SQLException
   {
     logger.debug(
-               " public CallableStatement prepareCall(String sql) throws "
-                       + "SQLException");
+        " public CallableStatement prepareCall(String sql) throws "
+            + "SQLException");
 
     throw new SQLFeatureNotSupportedException();
   }
@@ -821,11 +833,11 @@ public class SnowflakeConnectionV1 implements Connection
   @Override
   public CallableStatement prepareCall(String sql, int resultSetType,
                                        int resultSetConcurrency)
-          throws SQLException
+      throws SQLException
   {
     logger.debug(
-               " public CallableStatement prepareCall(String sql, int "
-                       + "resultSetType,");
+        " public CallableStatement prepareCall(String sql, int "
+            + "resultSetType,");
 
     throw new SQLFeatureNotSupportedException();
   }
@@ -834,11 +846,11 @@ public class SnowflakeConnectionV1 implements Connection
   public CallableStatement prepareCall(String sql, int resultSetType,
                                        int resultSetConcurrency,
                                        int resultSetHoldability)
-          throws SQLException
+      throws SQLException
   {
     logger.debug(
-               " public CallableStatement prepareCall(String sql, int "
-                       + "resultSetType,");
+        " public CallableStatement prepareCall(String sql, int "
+            + "resultSetType,");
 
     throw new SQLFeatureNotSupportedException();
   }
@@ -847,7 +859,7 @@ public class SnowflakeConnectionV1 implements Connection
   public String nativeSQL(String sql) throws SQLException
   {
     logger.debug(
-               " public String nativeSQL(String sql) throws SQLException");
+        " public String nativeSQL(String sql) throws SQLException");
 
     return sql;
   }
@@ -856,13 +868,13 @@ public class SnowflakeConnectionV1 implements Connection
   public void setAutoCommit(boolean isAutoCommit) throws SQLException
   {
     logger.debug(
-               " public void setAutoCommit(boolean isAutoCommit) throws "
-                       + "SQLException");
+        " public void setAutoCommit(boolean isAutoCommit) throws "
+            + "SQLException");
 
     try
     {
       this.executeImmediate("alter session set autocommit=" +
-                            Boolean.toString(isAutoCommit));
+          Boolean.toString(isAutoCommit));
     }
     catch (SnowflakeSQLException sse)
     {
@@ -886,6 +898,7 @@ public class SnowflakeConnectionV1 implements Connection
    * Look up the GS metadata using sql command,
    * provide a list of column names
    * and return these column values in the row one of result set
+   *
    * @param querySQL,
    * @param columnNames
    * @return
@@ -926,7 +939,7 @@ public class SnowflakeConnectionV1 implements Connection
   public boolean getAutoCommit() throws SQLException
   {
     logger.debug(
-               " public boolean getAutoCommit() throws SQLException");
+        " public boolean getAutoCommit() throws SQLException");
 
     return sfSession.getAutoCommit();
   }
@@ -953,8 +966,8 @@ public class SnowflakeConnectionV1 implements Connection
   public void rollback(Savepoint savepoint) throws SQLException
   {
     logger.debug(
-               " public void rollback(Savepoint savepoint) throws "
-                       + "SQLException");
+        " public void rollback(Savepoint savepoint) throws "
+            + "SQLException");
 
     throw new SQLFeatureNotSupportedException();
   }
@@ -962,9 +975,9 @@ public class SnowflakeConnectionV1 implements Connection
   @Override
   public void setReadOnly(boolean readOnly) throws SQLException
   {
-      logger.debug(
-                 " public void setReadOnly(boolean readOnly) throws "
-              + "SQLException");
+    logger.debug(
+        " public void setReadOnly(boolean readOnly) throws "
+            + "SQLException");
 
     if (readOnly)
     {
@@ -983,8 +996,8 @@ public class SnowflakeConnectionV1 implements Connection
   @Override
   public void setCatalog(String catalog) throws SQLException
   {
-      logger.debug(
-                 " public void setCatalog(String catalog) throws SQLException");
+    logger.debug(
+        " public void setCatalog(String catalog) throws SQLException");
 
     // switch db by running "use db"
     this.executeImmediate("use database \"" + catalog + "\"");
@@ -1021,8 +1034,8 @@ public class SnowflakeConnectionV1 implements Connection
   @Override
   public int getTransactionIsolation() throws SQLException
   {
-      logger.debug(
-                 " public int getTransactionIsolation() throws SQLException");
+    logger.debug(
+        " public int getTransactionIsolation() throws SQLException");
 
     return this.transactionIsolation;
   }
@@ -1031,7 +1044,7 @@ public class SnowflakeConnectionV1 implements Connection
   public SQLWarning getWarnings() throws SQLException
   {
     logger.debug(
-               " public SQLWarning getWarnings() throws SQLException");
+        " public SQLWarning getWarnings() throws SQLException");
 
     return sqlWarnings;
   }
@@ -1046,14 +1059,14 @@ public class SnowflakeConnectionV1 implements Connection
 
   @Override
   public Statement createStatement(int resultSetType, int resultSetConcurrency)
-          throws SQLException
+      throws SQLException
   {
-      logger.debug(
-                 " public Statement createStatement(int resultSetType, "
-              + "int resultSetConcurrency)");
+    logger.debug(
+        " public Statement createStatement(int resultSetType, "
+            + "int resultSetConcurrency)");
 
-      logger.debug("resultSetType=" + resultSetType +
-                             "; resultSetConcurrency=" + resultSetConcurrency);
+    logger.debug("resultSetType=" + resultSetType +
+        "; resultSetConcurrency=" + resultSetConcurrency);
 
     if (resultSetType != ResultSet.TYPE_FORWARD_ONLY
         || resultSetConcurrency != ResultSet.CONCUR_READ_ONLY)
@@ -1066,11 +1079,11 @@ public class SnowflakeConnectionV1 implements Connection
   @Override
   public Statement createStatement(int resultSetType, int resultSetConcurrency,
                                    int resultSetHoldability)
-          throws SQLException
+      throws SQLException
   {
-      logger.debug(
-                 " public Statement createStatement(int resultSetType, "
-              + "int resultSetConcurrency,");
+    logger.debug(
+        " public Statement createStatement(int resultSetType, "
+            + "int resultSetConcurrency,");
 
     if (resultSetHoldability != ResultSet.CLOSE_CURSORS_AT_COMMIT)
     {
@@ -1083,41 +1096,41 @@ public class SnowflakeConnectionV1 implements Connection
   public PreparedStatement prepareStatement(String sql) throws SQLException
   {
     logger.debug(
-               " public PreparedStatement prepareStatement(String sql) "
-                       + "throws SQLException");
+        " public PreparedStatement prepareStatement(String sql) "
+            + "throws SQLException");
 
     return new SnowflakePreparedStatementV1(this, sql);
   }
 
   @Override
   public PreparedStatement prepareStatement(String sql, int autoGeneratedKeys)
-          throws SQLException
+      throws SQLException
   {
-      logger.debug(
-                 " public PreparedStatement prepareStatement(String sql, "
-              + "int autoGeneratedKeys)");
+    logger.debug(
+        " public PreparedStatement prepareStatement(String sql, "
+            + "int autoGeneratedKeys)");
 
     throw new SQLFeatureNotSupportedException();
   }
 
   @Override
   public PreparedStatement prepareStatement(String sql, int[] columnIndexes)
-          throws SQLException
+      throws SQLException
   {
-      logger.debug(
-                 " public PreparedStatement prepareStatement(String sql, "
-              + "int[] columnIndexes)");
+    logger.debug(
+        " public PreparedStatement prepareStatement(String sql, "
+            + "int[] columnIndexes)");
 
     throw new SQLFeatureNotSupportedException();
   }
 
   @Override
   public PreparedStatement prepareStatement(String sql, String[] columnNames)
-          throws SQLException
+      throws SQLException
   {
-      logger.debug(
-                 " public PreparedStatement prepareStatement(String sql, "
-              + "String[] columnNames)");
+    logger.debug(
+        " public PreparedStatement prepareStatement(String sql, "
+            + "String[] columnNames)");
 
     throw new SQLFeatureNotSupportedException();
   }
@@ -1125,19 +1138,19 @@ public class SnowflakeConnectionV1 implements Connection
   @Override
   public PreparedStatement prepareStatement(String sql, int resultSetType,
                                             int resultSetConcurrency)
-          throws SQLException
+      throws SQLException
   {
-      logger.debug(
-                 " public PreparedStatement prepareStatement(String sql, "
-              + "int resultSetType,");
+    logger.debug(
+        " public PreparedStatement prepareStatement(String sql, "
+            + "int resultSetType,");
 
     if (resultSetType != ResultSet.TYPE_FORWARD_ONLY
         || resultSetConcurrency != ResultSet.CONCUR_READ_ONLY)
     {
       logger.error(
-                 "result set type ({}) or result set concurrency ({}) "
-                         + "not supported",
-                 new Object[]{resultSetType, resultSetConcurrency});
+          "result set type ({}) or result set concurrency ({}) "
+              + "not supported",
+          new Object[]{resultSetType, resultSetConcurrency});
 
       throw new SQLFeatureNotSupportedException();
     }
@@ -1148,11 +1161,11 @@ public class SnowflakeConnectionV1 implements Connection
   public PreparedStatement prepareStatement(String sql, int resultSetType,
                                             int resultSetConcurrency,
                                             int resultSetHoldability)
-          throws SQLException
+      throws SQLException
   {
-      logger.debug(
-                 " public PreparedStatement prepareStatement(String sql, "
-              + "int resultSetType,");
+    logger.debug(
+        " public PreparedStatement prepareStatement(String sql, "
+            + "int resultSetType,");
 
     if (resultSetHoldability != ResultSet.CLOSE_CURSORS_AT_COMMIT)
     {
@@ -1164,9 +1177,9 @@ public class SnowflakeConnectionV1 implements Connection
   @Override
   public Map<String, Class<?>> getTypeMap() throws SQLException
   {
-      logger.debug(
-                 " public Map<String, Class<?>> getTypeMap() throws "
-              + "SQLException");
+    logger.debug(
+        " public Map<String, Class<?>> getTypeMap() throws "
+            + "SQLException");
 
     return Collections.emptyMap();
   }
@@ -1174,9 +1187,9 @@ public class SnowflakeConnectionV1 implements Connection
   @Override
   public void setTypeMap(Map<String, Class<?>> map) throws SQLException
   {
-      logger.debug(
-                 " public void setTypeMap(Map<String, Class<?>> map) "
-              + "throws SQLException");
+    logger.debug(
+        " public void setTypeMap(Map<String, Class<?>> map) "
+            + "throws SQLException");
 
     throw new SQLFeatureNotSupportedException();
   }
@@ -1184,9 +1197,9 @@ public class SnowflakeConnectionV1 implements Connection
   @Override
   public void setHoldability(int holdability) throws SQLException
   {
-      logger.debug(
-                 " public void setHoldability(int holdability) throws "
-              + "SQLException");
+    logger.debug(
+        " public void setHoldability(int holdability) throws "
+            + "SQLException");
 
     throw new SQLFeatureNotSupportedException();
   }
@@ -1194,7 +1207,7 @@ public class SnowflakeConnectionV1 implements Connection
   @Override
   public int getHoldability() throws SQLException
   {
-      logger.debug(" public int getHoldability() throws SQLException");
+    logger.debug(" public int getHoldability() throws SQLException");
 
     return ResultSet.CLOSE_CURSORS_AT_COMMIT;
   }
@@ -1202,8 +1215,8 @@ public class SnowflakeConnectionV1 implements Connection
   @Override
   public Savepoint setSavepoint() throws SQLException
   {
-      logger.debug(
-                 " public Savepoint setSavepoint() throws SQLException");
+    logger.debug(
+        " public Savepoint setSavepoint() throws SQLException");
 
     throw new SQLFeatureNotSupportedException();
   }
@@ -1211,9 +1224,9 @@ public class SnowflakeConnectionV1 implements Connection
   @Override
   public Savepoint setSavepoint(String name) throws SQLException
   {
-      logger.debug(
-                 " public Savepoint setSavepoint(String name) throws "
-              + "SQLException");
+    logger.debug(
+        " public Savepoint setSavepoint(String name) throws "
+            + "SQLException");
 
     throw new SQLFeatureNotSupportedException();
   }
@@ -1221,9 +1234,9 @@ public class SnowflakeConnectionV1 implements Connection
   @Override
   public void releaseSavepoint(Savepoint savepoint) throws SQLException
   {
-      logger.debug(
-                 " public void releaseSavepoint(Savepoint savepoint) throws "
-              + "SQLException");
+    logger.debug(
+        " public void releaseSavepoint(Savepoint savepoint) throws "
+            + "SQLException");
 
     throw new SQLFeatureNotSupportedException();
   }
@@ -1231,7 +1244,7 @@ public class SnowflakeConnectionV1 implements Connection
   @Override
   public Blob createBlob() throws SQLException
   {
-      logger.debug(" public Blob createBlob() throws SQLException");
+    logger.debug(" public Blob createBlob() throws SQLException");
 
     throw new SQLFeatureNotSupportedException();
   }
@@ -1239,7 +1252,7 @@ public class SnowflakeConnectionV1 implements Connection
   @Override
   public Clob createClob() throws SQLException
   {
-      logger.debug(" public Clob createClob() throws SQLException");
+    logger.debug(" public Clob createClob() throws SQLException");
 
     throw new SQLFeatureNotSupportedException();
   }
@@ -1247,7 +1260,7 @@ public class SnowflakeConnectionV1 implements Connection
   @Override
   public NClob createNClob() throws SQLException
   {
-      logger.debug(" public NClob createNClob() throws SQLException");
+    logger.debug(" public NClob createNClob() throws SQLException");
 
     throw new SQLFeatureNotSupportedException();
   }
@@ -1255,8 +1268,8 @@ public class SnowflakeConnectionV1 implements Connection
   @Override
   public SQLXML createSQLXML() throws SQLException
   {
-      logger.debug(
-                   " public SQLXML createSQLXML() throws SQLException");
+    logger.debug(
+        " public SQLXML createSQLXML() throws SQLException");
 
     throw new SQLFeatureNotSupportedException();
   }
@@ -1264,8 +1277,8 @@ public class SnowflakeConnectionV1 implements Connection
   @Override
   public boolean isValid(int timeout) throws SQLException
   {
-      logger.debug(
-                 " public boolean isValid(int timeout) throws SQLException");
+    logger.debug(
+        " public boolean isValid(int timeout) throws SQLException");
 
     // TODO: run query here or ping
     return !isClosed;
@@ -1273,10 +1286,10 @@ public class SnowflakeConnectionV1 implements Connection
 
   @Override
   public void setClientInfo(Properties properties)
-          throws SQLClientInfoException
+      throws SQLClientInfoException
   {
-      logger.debug(
-                   " public void setClientInfo(Properties properties)");
+    logger.debug(
+        " public void setClientInfo(Properties properties)");
 
     if (this.clientInfo == null)
       this.clientInfo = new Properties();
@@ -1292,9 +1305,9 @@ public class SnowflakeConnectionV1 implements Connection
 
   @Override
   public void setClientInfo(String name, String value)
-          throws SQLClientInfoException
+      throws SQLClientInfoException
   {
-      logger.debug(" public void setClientInfo(String name, String value)");
+    logger.debug(" public void setClientInfo(String name, String value)");
 
     if (this.clientInfo == null)
       this.clientInfo = new Properties();
@@ -1343,22 +1356,22 @@ public class SnowflakeConnectionV1 implements Connection
 
   @Override
   public Array createArrayOf(String typeName, Object[] elements)
-          throws SQLException
+      throws SQLException
   {
-      logger.debug(
-                 " public Array createArrayOf(String typeName, Object[] "
-              + "elements)");
+    logger.debug(
+        " public Array createArrayOf(String typeName, Object[] "
+            + "elements)");
 
     throw new SQLFeatureNotSupportedException();
   }
 
   @Override
   public Struct createStruct(String typeName, Object[] attributes)
-          throws SQLException
+      throws SQLException
   {
-      logger.debug(
-                 " public Struct createStruct(String typeName, Object[] "
-              + "attributes)");
+    logger.debug(
+        " public Struct createStruct(String typeName, Object[] "
+            + "attributes)");
 
     throw new SQLFeatureNotSupportedException();
   }
@@ -1366,8 +1379,8 @@ public class SnowflakeConnectionV1 implements Connection
   @Override
   public void setSchema(String schema) throws SQLException
   {
-      logger.debug(
-                 " public void setSchema(String schema) throws SQLException");
+    logger.debug(
+        " public void setSchema(String schema) throws SQLException");
 
     String databaseName = getCatalog();
 
@@ -1393,19 +1406,19 @@ public class SnowflakeConnectionV1 implements Connection
   @Override
   public void abort(Executor executor) throws SQLException
   {
-      logger.debug(
-                 " public void abort(Executor executor) throws SQLException");
+    logger.debug(
+        " public void abort(Executor executor) throws SQLException");
 
     close();
   }
 
   @Override
   public void setNetworkTimeout(Executor executor, int milliseconds)
-          throws SQLException
+      throws SQLException
   {
-      logger.debug(
-                 " public void setNetworkTimeout(Executor executor, int "
-              + "milliseconds)");
+    logger.debug(
+        " public void setNetworkTimeout(Executor executor, int "
+            + "milliseconds)");
 
     networkTimeoutInMilli = milliseconds;
   }
@@ -1413,8 +1426,8 @@ public class SnowflakeConnectionV1 implements Connection
   @Override
   public int getNetworkTimeout() throws SQLException
   {
-      logger.debug(
-                 " public int getNetworkTimeout() throws SQLException");
+    logger.debug(
+        " public int getNetworkTimeout() throws SQLException");
 
     return networkTimeoutInMilli;
   }
@@ -1422,9 +1435,9 @@ public class SnowflakeConnectionV1 implements Connection
   @Override
   public boolean isWrapperFor(Class<?> iface) throws SQLException
   {
-      logger.debug(
-                 " public boolean isWrapperFor(Class<?> iface) throws "
-              + "SQLException");
+    logger.debug(
+        " public boolean isWrapperFor(Class<?> iface) throws "
+            + "SQLException");
 
     return iface.isInstance(this);
   }
@@ -1433,14 +1446,14 @@ public class SnowflakeConnectionV1 implements Connection
   @Override
   public <T> T unwrap(Class<T> iface) throws SQLException
   {
-      logger.debug(
-                 " public <T> T unwrap(Class<T> iface) throws SQLException");
+    logger.debug(
+        " public <T> T unwrap(Class<T> iface) throws SQLException");
 
 
     if (!iface.isInstance(this))
     {
       throw new RuntimeException(this.getClass().getName()
-                                 + " not unwrappable from " + iface.getName());
+          + " not unwrappable from " + iface.getName());
     }
     return (T) this;
   }
@@ -1513,23 +1526,18 @@ public class SnowflakeConnectionV1 implements Connection
   /**
    * Method to put data from a stream at a stage location. The data will be
    * uploaded as one file. No splitting is done in this method.
-   *
+   * <p>
    * Stream size must match the total size of data in the input stream unless
    * compressData parameter is set to true.
-   *
+   * <p>
    * caller is responsible for passing the correct size for the data in the
    * stream and releasing the inputStream after the method is called.
    *
-   * @param stageName
-   *   stage name: e.g. ~ or table name or stage name
-   * @param destPrefix
-   *   path prefix under which the data should be uploaded on the stage
-   * @param inputStream
-   *   input stream from which the data will be uploaded
-   * @param destFileName
-   *   destination file name to use
-   * @param streamSize
-   *   data size in the stream
+   * @param stageName    stage name: e.g. ~ or table name or stage name
+   * @param destPrefix   path prefix under which the data should be uploaded on the stage
+   * @param inputStream  input stream from which the data will be uploaded
+   * @param destFileName destination file name to use
+   * @param streamSize   data size in the stream
    * @throws java.sql.SQLException failed to put data from a stream at stage
    */
   public void uploadStream(String stageName,
@@ -1546,24 +1554,20 @@ public class SnowflakeConnectionV1 implements Connection
   /**
    * Method to compress data from a stream and upload it at a stage location.
    * The data will be uploaded as one file. No splitting is done in this method.
-   *
+   * <p>
    * caller is responsible for releasing the inputStream after the method is
    * called.
    *
-   * @param stageName
-   *   stage name: e.g. ~ or table name or stage name
-   * @param destPrefix
-   *   path prefix under which the data should be uploaded on the stage
-   * @param inputStream
-   *   input stream from which the data will be uploaded
-   * @param destFileName
-   *   destination file name to use
+   * @param stageName    stage name: e.g. ~ or table name or stage name
+   * @param destPrefix   path prefix under which the data should be uploaded on the stage
+   * @param inputStream  input stream from which the data will be uploaded
+   * @param destFileName destination file name to use
    * @throws java.sql.SQLException failed to compress and put data from a stream at stage
    */
   public void compressAndUploadStream(String stageName,
-                                     String destPrefix,
-                                     InputStream inputStream,
-                                     String destFileName)
+                                      String destPrefix,
+                                      InputStream inputStream,
+                                      String destFileName)
       throws SQLException
   {
     uploadStreamInternal(stageName, destPrefix, inputStream,
@@ -1573,37 +1577,31 @@ public class SnowflakeConnectionV1 implements Connection
   /**
    * Method to put data from a stream at a stage location. The data will be
    * uploaded as one file. No splitting is done in this method.
-   *
+   * <p>
    * Stream size must match the total size of data in the input stream unless
    * compressData parameter is set to true.
-   *
+   * <p>
    * caller is responsible for passing the correct size for the data in the
    * stream and releasing the inputStream after the method is called.
    *
-   * @param stageName
-   *   stage name: e.g. ~ or table name or stage name
-   * @param destPrefix
-   *   path prefix under which the data should be uploaded on the stage
-   * @param inputStream
-   *   input stream from which the data will be uploaded
-   * @param destFileName
-   *   destination file name to use
-   * @param streamSize
-   *   data size in the stream
-   * @param compressData
-   *   whether compression is requested fore uploading data
+   * @param stageName    stage name: e.g. ~ or table name or stage name
+   * @param destPrefix   path prefix under which the data should be uploaded on the stage
+   * @param inputStream  input stream from which the data will be uploaded
+   * @param destFileName destination file name to use
+   * @param streamSize   data size in the stream
+   * @param compressData whether compression is requested fore uploading data
    * @throws java.sql.SQLException
    */
   private void uploadStreamInternal(String stageName,
-                           String destPrefix,
-                           InputStream inputStream,
-                           String destFileName,
-                           long streamSize,
-                           boolean compressData)
+                                    String destPrefix,
+                                    InputStream inputStream,
+                                    String destFileName,
+                                    long streamSize,
+                                    boolean compressData)
       throws SQLException
   {
     logger.debug("upload data from stream: stageName={}" +
-        ", destPrefix={}, destFileName={}",
+            ", destPrefix={}, destFileName={}",
         new Object[]{stageName, destPrefix, destFileName});
 
     if (stageName == null)
