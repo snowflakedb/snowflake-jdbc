@@ -48,7 +48,7 @@ public interface SnowflakeStorageClient
 
   /** Re-creates the encapsulated storage client with a fresh access token
    * @param stageCredentials a Map (as returned by GS) which contains the new credential properties
-   * @throws SnowflakeSQLException if any error occurs
+   * @throws SnowflakeSQLException failure to renew the storage client
    **/
   void renew(Map stageCredentials) throws SnowflakeSQLException;
 
@@ -63,7 +63,7 @@ public interface SnowflakeStorageClient
    * @param remoteStorageLocation location, i.e. bucket for S3
    * @param prefix the prefix to list
    * @return a collection of storage summary objects
-   * @throws StorageProviderException if any error occurs
+   * @throws StorageProviderException cloud storage provider error
    */
   StorageObjectSummaryCollection listObjects(String remoteStorageLocation, String prefix)
                                             throws StorageProviderException;
@@ -73,7 +73,7 @@ public interface SnowflakeStorageClient
    * @param remoteStorageLocation location, i.e. bucket for S3
    * @param prefix the prefix/path of the object to retrieve
    * @return storage metadata object
-   * @throws StorageProviderException if any error occurs
+   * @throws StorageProviderException cloud storage provider error
    */
   StorageObjectMetadata getObjectMetadata(String remoteStorageLocation, String prefix)
                                          throws StorageProviderException;
@@ -88,7 +88,7 @@ public interface SnowflakeStorageClient
    * @param remoteStorageLocation remote storage location, i.e. bucket for S3
    * @param stageFilePath stage file path
    * @param stageRegion region name where the stage persists
-   * @throws SnowflakeSQLException if any error occurs
+   * @throws SnowflakeSQLException download failure
    **/
 void download(SFSession connection, String command, String localLocation, String destFileName,
                 int parallelism, String remoteStorageLocation, String stageFilePath, String stageRegion)
@@ -121,7 +121,8 @@ void download(SFSession connection, String command, String localLocation, String
    *                  when the exception was raised, for example "upload"
    * @param connection the current SFSession object used by the client
    * @param command the command attempted at the time of the exception
-   * @throws SnowflakeSQLException if any error occurs
+   * @throws SnowflakeSQLException exceptions that were not handled, or retried past
+   *                               what the retry policy allows, are propagated
    */
   void handleStorageException(Exception ex, int retryCount, String operation, SFSession connection, String command)
           throws SnowflakeSQLException;

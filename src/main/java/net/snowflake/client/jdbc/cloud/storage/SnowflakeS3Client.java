@@ -94,28 +94,6 @@ public class SnowflakeS3Client implements SnowflakeStorageClient
 
   private static SecureRandom secRnd;
 
-  // Returns the Max number of retry attempts
-  @Override
-  public int getMaxRetries()
-  {
-    return 25;
-  }
-
-  // Returns the max exponent for multiplying backoff with the power of 2, the value
-  // of 4 will give us 16secs as the max number of time to sleep before retry
-  @Override
-  public int getRetryBackoffMaxExponent()
-  {
-    return 4;
-  }
-
-  // Returns the min number of milliseconds to sleep before retry
-  @Override
-  public int getRetryBackoffMin()
-  {
-    return 1000;
-  }
-
   private int encryptionKeySize = 0; // used for PUTs
   private AmazonS3Client amazonClient = null;
   private RemoteStoreFileEncryptionMaterial encMat = null;
@@ -220,6 +198,28 @@ public class SnowflakeS3Client implements SnowflakeStorageClient
     return secRnd;
   }
 
+  // Returns the Max number of retry attempts
+  @Override
+  public int getMaxRetries()
+  {
+    return 25;
+  }
+
+  // Returns the max exponent for multiplying backoff with the power of 2, the value
+  // of 4 will give us 16secs as the max number of time to sleep before retry
+  @Override
+  public int getRetryBackoffMaxExponent()
+  {
+    return 4;
+  }
+
+  // Returns the min number of milliseconds to sleep before retry
+  @Override
+  public int getRetryBackoffMin()
+  {
+    return 1000;
+  }
+  
   @Override
   public boolean isEncrypting()
   {
@@ -681,10 +681,10 @@ public class SnowflakeS3Client implements SnowflakeStorageClient
   public void handleStorageException(Exception ex, int retryCount, String operation,SFSession connection, String command)
           throws SnowflakeSQLException
   {
-    SnowflakeS3Client.handleS3Exception(ex, retryCount, operation, connection, command, this);
+      handleS3Exception(ex, retryCount, operation, connection, command, this);
   }
 
-  public static void handleS3Exception(
+  private static void handleS3Exception(
                           Exception ex,
                           int retryCount,
                           String operation,
@@ -696,25 +696,9 @@ public class SnowflakeS3Client implements SnowflakeStorageClient
     // no need to retry if it is invalid key exception
     if (ex.getCause() instanceof InvalidKeyException)
     {
-      // Most likely cause: Unlimited strength policy files not installed
-      String msg = "Strong encryption with Java JRE requires JCE " +
-          "Unlimited Strength Jurisdiction Policy files. " +
-          "Follow JDBC client installation instructions " +
-          "provided by Snowflake or contact Snowflake Support.";
-      logger.error(
-          "JCE Unlimited Strength policy files missing: {}. {}.",
-          ex.getMessage(), ex.getCause().getMessage());
-      String bootLib =
-          java.lang.System.getProperty("sun.boot.library.path");
-      if (bootLib != null)
-      {
-        msg += " The target directory on your system is: " +
-            Paths.get(bootLib,"security").toString();
-        logger.error(msg);
-      }
-      throw new SnowflakeSQLException(ex, SqlState.SYSTEM_ERROR,
-          ErrorCode.AWS_CLIENT_ERROR.getMessageCode(),
-          operation, msg);
+      // Most likely cause is that the unlimited strength policy files are not installed
+      // Log the error and throw a message that explains the cause
+      SnowflakeFileTransferAgent.throwJCEMissingError(operation, ex);
     }
 
     if (ex instanceof AmazonClientException)

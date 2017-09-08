@@ -61,6 +61,12 @@ public class S3ObjectMetadata implements StorageObjectMetadata
     objectMetadata.setContentEncoding(encoding);
   }
 
+  @Override
+  public String getContentEncoding()
+  {
+    return objectMetadata.getContentEncoding();
+  }
+
   /**
    * @return Returns the encapsulated AWS S3 metadata object
    */

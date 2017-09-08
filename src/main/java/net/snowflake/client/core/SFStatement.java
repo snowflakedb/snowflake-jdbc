@@ -100,7 +100,7 @@ public class SFStatement
 
   /**
    * Sanity check query text
-   * @param sql
+   * @param sql The SQL statement to check
    * @throws java.sql.SQLException
    */
   private void sanityCheckQuery(String sql) throws SQLException

@@ -28,7 +28,7 @@ public class StorageClientFactory
 
   /**
    * Creates or returns the single instance of the factory object
-   * @return a factory object
+   * @return the storage client instance
    */
   public static StorageClientFactory getFactory()
   {
@@ -40,32 +40,33 @@ public class StorageClientFactory
   /**
    * Creates a storage client based on the value of stageLocationType
    *
-   * @param stageLocationType The type of the stage, e.g. "S3"
-   * @param stageCredentials Map of stage credential properties
+   * @param stage the stage properties
    * @param parallel the degree of parallelism to be used by the client
    * @param encMat encryption material for the client
-   * @param stageRegion the region where our stage is located
    * @return a SnowflakeStorageClient interface to the instance created
    * @throws SnowflakeSQLException if any error occurs
    */
-  public SnowflakeStorageClient createClient(String stageLocationType,
-                                             Map stageCredentials,
+  public SnowflakeStorageClient createClient(StageInfo stage,
                                              int parallel,
-                                             RemoteStoreFileEncryptionMaterial encMat,
-                                             String stageRegion)
+                                             RemoteStoreFileEncryptionMaterial encMat)
                                              throws SnowflakeSQLException
   {
-    logger.debug("createClient client type={}", stageLocationType);
+    logger.debug("createClient client type={}", stage.getStageType().name());
 
-    if("S3".equalsIgnoreCase(stageLocationType))
+    switch (stage.getStageType())
     {
-      return createS3Client(stageCredentials, parallel, encMat, stageRegion);
-    }
-    else
-    {
-      // We don't create a storage client for FS_LOCAL,
-      // so we should only find ourselves here if an unsupported remote storage client type is specified
-      throw new IllegalArgumentException("Unsupported storage client specified");
+      case S3:
+        return createS3Client(stage.getCredentials(), parallel, encMat, stage.getRegion());
+
+      case AZURE:
+        return createAzureClient(stage, encMat);
+
+      default:
+        // We don't create a storage client for FS_LOCAL,
+        // so we should only find ourselves here if an unsupported
+        // remote storage client type is specified
+        throw new IllegalArgumentException("Unsupported storage client specified: "
+                + stage.getStageType().name());
     }
   }
 
@@ -78,6 +79,7 @@ public class StorageClientFactory
    * @param encMat encryption material for the client
    * @param stageRegion the region where the stage is located
    * @return the SnowflakeS3Client  instance created
+   * @throws SnowflakeSQLException failure to create the S3 client
    */
   private SnowflakeS3Client createS3Client(Map stageCredentials,
                                            int parallel,
@@ -106,7 +108,7 @@ public class StorageClientFactory
     {
       s3Client = new SnowflakeS3Client(stageCredentials, clientConfig, encMat, stageRegion);
     }
-    catch(Throwable ex)
+    catch(Exception ex)
     {
       logger.debug("Exception creating s3 client", ex);
       throw ex;
@@ -120,23 +122,60 @@ public class StorageClientFactory
    * Creates a storage provider specific metadata object,
    * accessible via the platform independent interface
    *
-   * @param stageLocationType determines the implementation to be created
+   * @param stageType determines the implementation to be created
    * @return the implementation of StorageObjectMetadata
    */
-  public StorageObjectMetadata createStorageMetadataObj(String stageLocationType)
+  public StorageObjectMetadata createStorageMetadataObj(StageInfo.StageType stageType)
   {
-    if("S3".equalsIgnoreCase(stageLocationType))
+    switch (stageType)
     {
-      return new S3ObjectMetadata();
-    }
-    else
-    {
-      // An unsupported remote storage client type was specified
-      // We don't create/implement a storage client for FS_LOCAL,
-      // so we should never end up here while running on local file system
-      throw new IllegalArgumentException("Unsupported stage type specified");
-    }
+      case S3:
+        return new S3ObjectMetadata();
 
+      case AZURE:
+        return new AzureObjectMetadata();
 
+      default:
+        // An unsupported remote storage client type was specified
+        // We don't create/implement a storage client for FS_LOCAL,
+        // so we should never end up here while running on local file system
+        throw new IllegalArgumentException("Unsupported stage type specified: "
+                + stageType.name());
+      }
   }
+
+  /**
+   * Creates a SnowflakeAzureClientObject which encapsulates
+   * the Azure Storage client
+   *
+   * @param stage Stage information
+   * @param encMat encryption material for the client
+   * @return the SnowflakeS3Client  instance created
+   */
+  private SnowflakeAzureClient createAzureClient(StageInfo stage,
+                                           RemoteStoreFileEncryptionMaterial encMat)
+                              throws SnowflakeSQLException
+  {
+    logger.debug("createAzureClient encryption={}", (encMat == null ? "no" : "yes"));
+
+    //TODO: implement support for encryption SNOW-33042
+
+    SnowflakeAzureClient azureClient;
+
+    try
+    {
+      azureClient = SnowflakeAzureClient.createSnowflakeAzureClient(stage, encMat);
+    }
+    catch(Exception ex)
+    {
+      logger.debug("Exception creating Azure Storage client", ex);
+      throw ex;
+    }
+    logger.debug("Azure Storage client created");
+
+    return azureClient;
+  }
+
+
 }
+

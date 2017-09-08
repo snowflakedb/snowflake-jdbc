@@ -35,8 +35,8 @@ public interface StorageObjectMetadata
 
   /**
    * Adds the key value pair of custom user-metadata for the associated object.
-   * @param key a key of user metadata
-   * @param value a value of user metadata
+   * @param key the key of user metadata
+   * @param value the value of user metadata
    */
   void addUserMetadata(String key, String value);
 
@@ -47,4 +47,9 @@ public interface StorageObjectMetadata
    * @param encoding the encoding name using in HTTP header Content-Encoding
    */
   void setContentEncoding(String encoding);
+
+  /*
+   * @return returns the content encoding type
+   */
+   String getContentEncoding();
 }
