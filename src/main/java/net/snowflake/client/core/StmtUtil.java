@@ -652,6 +652,8 @@ public class StmtUtil
 
   /**
    * A simple function to check if the statement is related to manipulate stage.
+   *
+   * @param sql a SQL statement/command
    * @return PUT/GET/LIST/RM if statment belongs to one of them, otherwise
    *         return NULL
    */

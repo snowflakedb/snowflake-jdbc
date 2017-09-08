@@ -1834,10 +1834,10 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
    * It retrieves a fresh token from GS and then calls .renew() on the storage
    * client to refresh itself with the new token
    *
-   * @param connection
-   * @param command
-   * @param client
-   * @throws SnowflakeSQLException
+   * @param connection a connection object
+   * @param command a command to be retried
+   * @param client a Snowflake Storage client object
+   * @throws SnowflakeSQLException if any error occurs
    */
   static public void renewExpiredToken(SFSession connection, String command,
                                 SnowflakeStorageClient client)
@@ -1894,7 +1894,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
    * For each returned object, we compare the size and digest with the local file
    * and if they are the same, we will not upload/download the file.
    *
-   * @throws SnowflakeSQLException
+   * @throws SnowflakeSQLException if any error occurs
    */
   private void filterExistingFiles() throws SnowflakeSQLException
   {
@@ -2075,7 +2075,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
 
           // Streams (potentially with temp files) to clean up
           final List<FileBackedOutputStream> fileBackedOutputStreams
-              = new ArrayList();
+              = new ArrayList<>();
           try
           {
             fileStream = new FileInputStream(localFile);

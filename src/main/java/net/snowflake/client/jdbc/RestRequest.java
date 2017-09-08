@@ -6,6 +6,7 @@ package net.snowflake.client.jdbc;
 
 import net.snowflake.client.core.Event;
 import net.snowflake.client.core.EventUtil;
+
 import java.io.IOException;
 
 import net.snowflake.client.log.SFLogger;
@@ -13,16 +14,19 @@ import net.snowflake.client.log.SFLoggerFactory;
 
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.common.core.SqlState;
+
 import java.net.URI;
+
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.utils.URIBuilder;
+
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * This is an abstraction on top of http client.
- *
+ * <p>
  * Currently it only has one method for retrying http request execution so that
  * the same logic doesn't have to be replicated at difference places where retry
  * is needed.
@@ -46,16 +50,15 @@ public class RestRequest
   /**
    * Execute an http request with retry logic.
    *
-   * @param httpClient client object used to communicate with other machine
-   * @param httpRequest request object contains all the request information
-   * @param retryTimeout : retry timeout (in seconds)
+   * @param httpClient          client object used to communicate with other machine
+   * @param httpRequest         request object contains all the request information
+   * @param retryTimeout        : retry timeout (in seconds)
    * @param injectSocketTimeout : simulate socket timeout
-   * @param canceling  canceling flag
+   * @param canceling           canceling flag
    * @return HttpResponse Object get from server
-   * @throws java.io.IOException jave io exception
-   * @throws net.snowflake.client.jdbc.SnowflakeSQLException
-   *         Request timeout Exception or Illegal State Exception i.e.
-   *         connection is already shutdown etc
+   * @throws java.io.IOException                             jave io exception
+   * @throws net.snowflake.client.jdbc.SnowflakeSQLException Request timeout Exception or Illegal State Exception i.e.
+   *                                                         connection is already shutdown etc
    */
   static public HttpResponse execute(
       HttpClient httpClient,
@@ -102,7 +105,7 @@ public class RestRequest
 
         // for first call, simulate a socket timeout by setting socket timeout
         // to the injected socket timeout value
-        if ((injectSocketTimeout !=0) && retryCount == 0)
+        if ((injectSocketTimeout != 0) && retryCount == 0)
         {
           logger.info("Injecting socket timeout by setting " +
               "socket timeout to {} millisecond ", injectSocketTimeout);
@@ -112,7 +115,7 @@ public class RestRequest
                   injectSocketTimeout));
         }
 
-        /**
+        /*
          * Add retry=true for the first retry request
          * GS can uses the parameter for optimization. Specifically GS
          * will only check metadata database to see if a query has been running
@@ -123,23 +126,22 @@ public class RestRequest
         if (retryCount == 1)
         {
           URI uri = (new URIBuilder(httpRequest.getURI())).
-                  addParameter("retry", "true").build();
+              addParameter("retry", "true").build();
 
           httpRequest.setURI(uri);
         }
 
         response = httpClient.execute(httpRequest);
-      }
-      catch(Exception ex)
+      } catch (Exception ex)
       {
         // if exception is caused by illegal state, e.g shutdown of http client
         // because of closing of connection, stop retrying
         if (ex instanceof IllegalStateException)
         {
           throw new SnowflakeSQLException(ex,
-                  ErrorCode.INVALID_STATE.getSqlState(),
-                  ErrorCode.INVALID_STATE.getMessageCode(),
-                  ((IllegalStateException)ex).getMessage());
+              ErrorCode.INVALID_STATE.getSqlState(),
+              ErrorCode.INVALID_STATE.getMessageCode(),
+              ex.getMessage());
         }
 
         savedEx = ex;
@@ -148,13 +150,12 @@ public class RestRequest
         if ((System.currentTimeMillis() - startTimePerRequest) > 300000)
         {
           logger.error("HTTP request took longer than 5 min: {} sec",
-              (System.currentTimeMillis() - startTimePerRequest)/1000);
+              (System.currentTimeMillis() - startTimePerRequest) / 1000);
         }
 
         logger.warn("Exception encountered for: " +
             httpRequest.toString(), ex);
-      }
-      finally
+      } finally
       {
         // Reset the socket timeout to its original value if it is not the
         // very first iteration.
@@ -166,7 +167,7 @@ public class RestRequest
         }
       }
 
-      /**
+      /*
        * If we got a response and the status code is not one of those
        * transient failures, no more retry
        *
@@ -174,7 +175,7 @@ public class RestRequest
        */
       if (response != null &&
           (response.getStatusLine().getStatusCode() < 500 || // service unavailable
-          response.getStatusLine().getStatusCode() >= 600) && // gateway timeout
+              response.getStatusLine().getStatusCode() >= 600) && // gateway timeout
           response.getStatusLine().getStatusCode() != 408 && // request timeout
           response.getStatusLine().getStatusCode() != 403) // intermittent AWS access issue
       {
@@ -184,10 +185,9 @@ public class RestRequest
         if (response.getStatusLine().getStatusCode() != 200)
         {
           logger.debug("Got error response which is not retriable, " +
-              "http status={}, request={}",
-                                   new Object[]{
-                                     response.getStatusLine().getStatusCode(),
-                                     httpRequest});
+                  "http status={}, request={}",
+              response.getStatusLine().getStatusCode(),
+              httpRequest);
           EventUtil.triggerBasicEvent(
               Event.EventType.NETWORK_ERROR,
               "StatusCode: " + response.getStatusLine().getStatusCode() +
@@ -198,21 +198,19 @@ public class RestRequest
         }
 
         break;
-      }
-      else
+      } else
       {
         if (response != null)
           logger.warn("HTTP response not ok: status code={}, "
                   + "request={}",
-                                 new Object[]{
-                                   response.getStatusLine().getStatusCode(),
-                                   httpRequest});
+                  response.getStatusLine().getStatusCode(),
+                  httpRequest);
         else
           logger.warn("Null response for request={}", httpRequest);
 
         // get the elapsed time for the last request
         elapsedMilliForLastCall =
-        System.currentTimeMillis() - startTimePerRequest;
+            System.currentTimeMillis() - startTimePerRequest;
 
         // check canceling flag
         if (canceling != null && canceling.get())
@@ -258,12 +256,12 @@ public class RestRequest
         // sleep for backoff - elapsed amount of time
         if (backoffInMilli > elapsedMilliForLastCall)
         {
-          try {
+          try
+          {
             Thread.sleep(backoffInMilli - elapsedMilliForLastCall);
             elapsedMilliForTransientIssues +=
                 (backoffInMilli - elapsedMilliForLastCall);
-          }
-          catch (InterruptedException ex1)
+          } catch (InterruptedException ex1)
           {
             logger.debug(
                 "Backoff sleep before retrying login got interrupted");
@@ -283,13 +281,12 @@ public class RestRequest
 
     if (response == null)
       logger.error("Returning null response for request: {}",
-                               httpRequest);
+          httpRequest);
     else if (response.getStatusLine().getStatusCode() != 200)
       logger.error("Got error response: " +
               "http status={}, request={}",
-                               new Object[]{
-                                 response.getStatusLine().getStatusCode(),
-                                 httpRequest});
+              response.getStatusLine().getStatusCode(),
+              httpRequest);
 
     return response;
   }

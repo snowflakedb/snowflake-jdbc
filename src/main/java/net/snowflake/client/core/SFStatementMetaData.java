@@ -60,6 +60,7 @@ public class SFStatementMetaData
    * According to StatementType, to decide whether array binds supported or not
    *
    * Currently, only INSERT supports array bind
+   * @return true if array binds is supported.
    */
   public boolean isArrayBindSupported()
   {

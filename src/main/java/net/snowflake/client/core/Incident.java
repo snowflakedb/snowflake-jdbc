@@ -116,8 +116,8 @@ public class Incident extends Event
       return;
     }
 
-    logger.error("Creating new HTTP request, token={}, URL={}",
-        new Object[]{sessionToken, incidentURI.toString()});
+    logger.debug("Creating new HTTP request, token={}, URL={}",
+        sessionToken, incidentURI.toString());
 
     postRequest = new HttpPost(incidentURI);
     postRequest.setHeader(SFSession.SF_HEADER_AUTHORIZATION,

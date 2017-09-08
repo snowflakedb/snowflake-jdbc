@@ -29,14 +29,14 @@ public interface StorageObjectMetadata
 
   /**
    * Sets size of the associated object in bytes
-   * @param contentLength
+   * @param contentLength the length of content
    */
   void setContentLength(long contentLength);
 
   /**
    * Adds the key value pair of custom user-metadata for the associated object.
-   * @param key
-   * @param value
+   * @param key a key of user metadata
+   * @param value a value of user metadata
    */
   void addUserMetadata(String key, String value);
 
@@ -44,7 +44,7 @@ public interface StorageObjectMetadata
    * Sets the optional Content-Encoding HTTP header specifying what content encodings,
    * have been applied to the object and what decoding mechanisms must be applied,
    * in order to obtain the media-type referenced by the Content-Type field.
-   * @param encoding
+   * @param encoding the encoding name using in HTTP header Content-Encoding
    */
   void setContentEncoding(String encoding);
 }

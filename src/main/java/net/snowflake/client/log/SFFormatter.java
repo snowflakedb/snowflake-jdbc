@@ -25,8 +25,6 @@ public class SFFormatter extends Formatter
 
   public static final String INFORMATICA_V1_CLASS_NAME_PREFIX =
           "com.snowflake";
-  public static final String INFORMATICA_V2_CLASS_NAME_PREFIX =
-          "com.unicosolution";
 
   @Override
   public String format(LogRecord record)
@@ -51,10 +49,6 @@ public class SFFormatter extends Formatter
     else if (className.startsWith(INFORMATICA_V1_CLASS_NAME_PREFIX)) {
       className = "c.s" + className.substring(
               INFORMATICA_V1_CLASS_NAME_PREFIX.length());
-    }
-    else if (className.startsWith(INFORMATICA_V2_CLASS_NAME_PREFIX)) {
-      className = "c.u" + className.substring(
-              INFORMATICA_V2_CLASS_NAME_PREFIX.length());
     }
 
     StringBuilder builder = new StringBuilder(1000);

@@ -28,7 +28,7 @@ public class StorageClientFactory
 
   /**
    * Creates or returns the single instance of the factory object
-   * @return
+   * @return a factory object
    */
   public static StorageClientFactory getFactory()
   {
@@ -46,6 +46,7 @@ public class StorageClientFactory
    * @param encMat encryption material for the client
    * @param stageRegion the region where our stage is located
    * @return a SnowflakeStorageClient interface to the instance created
+   * @throws SnowflakeSQLException if any error occurs
    */
   public SnowflakeStorageClient createClient(String stageLocationType,
                                              Map stageCredentials,

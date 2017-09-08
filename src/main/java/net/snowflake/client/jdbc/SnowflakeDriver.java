@@ -148,12 +148,6 @@ public class SnowflakeDriver implements Driver
         snowflakeLoggerInformaticaV1.setLevel(defaultLevel);
         snowflakeLoggerInformaticaV1.addHandler(SnowflakeDriver.fileHandler);
         snowflakeLoggerInformaticaV1.addHandler(eventHandler);
-
-        Logger snowflakeLoggerInformaticaV2 = Logger.getLogger(
-            SFFormatter.INFORMATICA_V2_CLASS_NAME_PREFIX);
-        snowflakeLoggerInformaticaV2.setLevel(defaultLevel);
-        snowflakeLoggerInformaticaV2.addHandler(SnowflakeDriver.fileHandler);
-        snowflakeLoggerInformaticaV2.addHandler(eventHandler);
       }
       else if (loggerImpl != null && (logger instanceof JDK14Logger))
       {

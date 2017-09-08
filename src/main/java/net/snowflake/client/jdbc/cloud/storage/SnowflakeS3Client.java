@@ -235,7 +235,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient
   /**
    * Renew the S3 client with fresh AWS credentials/access token
    * @param stageCredentials a Map of new AWS credential properties, to refresh the client with (as returned by GS)
-   * @throws SnowflakeSQLException
+   * @throws SnowflakeSQLException if any error occurs
    */
   @Override
   public void renew(Map stageCredentials)

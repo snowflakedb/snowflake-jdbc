@@ -490,10 +490,12 @@ public class SFStatement
   /**
    * Execute sql
    *
-   * @param sql sql statement
+   * @param sql sql statement.
+   * @param parametersBinding parameters to bind
    * @return whether there is result set or not
    * @throws java.sql.SQLException if failed to execute sql
    * @throws SFException exception raised from Snowflake components
+   * @throws SQLException if SQL error occurs
    */
   public SFBaseResultSet execute(String sql,
                                  Map<String, ParameterBindingDTO>
