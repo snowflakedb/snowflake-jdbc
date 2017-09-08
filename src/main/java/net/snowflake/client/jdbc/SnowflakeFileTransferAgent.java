@@ -136,6 +136,22 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
   // Index: Source file to encryption material
   HashMap<String, RemoteStoreFileEncryptionMaterial> srcFileToEncMat;
 
+  public Map getStageCredentials() {
+    return new HashMap(stageCredentials);
+    }
+  
+  public List<RemoteStoreFileEncryptionMaterial> getEncryptionMaterial() {
+    return new ArrayList(encryptionMaterial);
+    }
+
+  public Map<String, RemoteStoreFileEncryptionMaterial> getSrcToMaterialsMap() {
+    return new HashMap(srcFileToEncMat);
+    }
+  
+  public String getStageLocation() {
+    return stageLocation;
+    }
+
   private void initEncryptionMaterial(CommandType commandType, JsonNode jsonNode)
       throws SnowflakeSQLException, JsonProcessingException
   {
