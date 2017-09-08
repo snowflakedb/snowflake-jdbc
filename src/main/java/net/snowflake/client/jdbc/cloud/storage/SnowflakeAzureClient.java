@@ -284,6 +284,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient
         // we rely on Azure to handle the download, hence the "parallelism" parameter is ignored
         // in the Azure implementation of the method
         blob.download(outStream);
+        return;
 
         // TODO: support encryption - SNOW-32913
 
