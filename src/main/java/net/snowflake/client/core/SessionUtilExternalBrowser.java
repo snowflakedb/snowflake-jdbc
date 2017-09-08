@@ -5,10 +5,6 @@ package net.snowflake.client.core;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.sun.net.httpserver.Headers;
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpHandler;
-import com.sun.net.httpserver.HttpServer;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.log.SFLogger;
@@ -16,24 +12,24 @@ import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.ClientAuthnDTO;
 import net.snowflake.common.core.ClientAuthnParameter;
 import net.snowflake.common.core.SqlState;
-import org.apache.http.NameValuePair;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
-import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.entity.StringEntity;
 
 import java.awt.*;
+import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.net.BindException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.ServerSocket;
+import java.net.Socket;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URLDecoder;
 import java.nio.charset.Charset;
 import java.util.HashMap;
-import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -42,28 +38,12 @@ import java.util.Map;
  * 2. Listen a localhost port to accept Saml response
  * 3. Open a browser in the backend so that the user can type IdP username
  * and password.
- * 4. Return token and proofkey to the GS to gain access.
+ * 4. Return token and proof key to the GS to gain access.
  */
 class SessionUtilExternalBrowser
 {
   static final SFLogger logger = SFLoggerFactory.getLogger(
       SessionUtilExternalBrowser.class);
-
-  /**
-   * Web Server state class
-   * <p>
-   * Two variables are included. forceToStop is set to true if the
-   * Web Server receives the SAML token from GS such that the web server
-   * will be stopped.
-   * token is set to the value from GS.
-   */
-  class WebServerState
-  {
-    public volatile boolean forceToStop = false;
-    public volatile String token = "";
-  }
-
-  final WebServerState webServerState = new WebServerState();
 
   public interface AuthExternalBrowserHandlers
   {
@@ -132,6 +112,15 @@ class SessionUtilExternalBrowser
   String token;
   private String proofKey;
   private final AuthExternalBrowserHandlers handlers;
+  private static final String PREFIX_GET = "GET ";
+  private static final String PREFIX_USER_AGENT = "USER-AGENT: ";
+  private static final String PREFIX_TOKEN_PARAMETER = "/?token=";
+  private static Charset UTF8_CHARSET;
+
+  static
+  {
+    UTF8_CHARSET = Charset.forName("UTF-8");
+  }
 
   SessionUtilExternalBrowser(SessionUtil.LoginInput loginInput)
   {
@@ -154,22 +143,30 @@ class SessionUtilExternalBrowser
    * @return port number
    * @throws SFException raised if an error occurs.
    */
-  private int getPort() throws SFException
+  ServerSocket getServerSocket() throws SFException
   {
     try
     {
-      ServerSocket s = new ServerSocket(
+      return new ServerSocket(
           0, // free port
-          50, // default number of connections
+          0, // default number of connections
           InetAddress.getByName("localhost"));
-      int port = s.getLocalPort();
-      s.close();
-      return port;
     }
     catch (IOException ex)
     {
       throw new SFException(ex, ErrorCode.NETWORK_ERROR, ex.getMessage());
     }
+  }
+
+  /**
+   * Get a port listening
+   *
+   * @param ssocket server socket
+   * @return port number
+   */
+  int getLocalPort(ServerSocket ssocket)
+  {
+    return ssocket.getLocalPort();
   }
 
   /**
@@ -245,44 +242,20 @@ class SessionUtilExternalBrowser
     }
   }
 
+  /**
+   * Authenticate
+   *
+   * @throws SFException           if any error occurs
+   * @throws SnowflakeSQLException if any error occurs
+   */
   void authenticate() throws SFException, SnowflakeSQLException
   {
-    final int RETRY = 10;
-    HttpServer server = null;
-    int port = 0;
-
-    for (int i = 0; i < RETRY; ++i)
-    {
-      port = this.getPort(); // get a free port
-      try
-      {
-        // create a HTTP server instance
-        server = HttpServer.create(new InetSocketAddress(
-            InetAddress.getByName("localhost"), port), 0);
-        break;
-      }
-      catch (BindException ex)
-      {
-        logger.debug("Address already in use. port=%s, Retry...", port);
-      }
-      catch (IOException ex)
-      {
-        throw new SFException(ex, ErrorCode.NETWORK_ERROR, ex.getMessage());
-      }
-    }
-    if (server == null)
-    {
-      throw new SFException(ErrorCode.NETWORK_ERROR,
-          "Failed to start a web server that accepts a SAML token from Snowflake.");
-    }
-
-    HttpHandler handler = new WebServerHandler(this.webServerState);
-    Thread th = new Thread(new WebServer(server, handler));
-    th.start(); // run a web server in a separate thread
-
+    ServerSocket ssocket = this.getServerSocket();
     try
     {
       // main procedure
+      int port = this.getLocalPort(ssocket);
+      logger.debug("Listening localhost:{}", port);
       String ssoUrl = getSSOUrl(port);
       this.handlers.output(
           "Initiating login request with your identity provider. A " +
@@ -291,34 +264,121 @@ class SessionUtilExternalBrowser
               "or your OS settings. Press CTRL+C to abort and try again...");
       this.handlers.openBrowser(ssoUrl);
 
-      while (!this.webServerState.forceToStop)
-      {
-        try
-        {
-          logger.debug("waiting for GS to come back with SAML token.");
-          Thread.sleep(1000);
-        }
-        catch (InterruptedException ex)
-        {
-          throw new SFException(ex, ErrorCode.NETWORK_ERROR, ex.getMessage());
-        }
-      }
+      receiveSamlToken(ssocket);
+    }
+    catch (IOException ex)
+    {
+      throw new SFException(ex, ErrorCode.NETWORK_ERROR, ex.getMessage());
     }
     finally
     {
-      server.stop(1); // stop web server.
-      logger.debug("stopped the web server.");
-      this.token = this.webServerState.token;
       try
       {
-        logger.debug("stopping the web server thread.");
-        th.join(2000);
+        ssocket.close();
       }
-      catch (InterruptedException ex)
+      catch (IOException ex)
       {
         throw new SFException(ex, ErrorCode.NETWORK_ERROR, ex.getMessage());
       }
     }
+  }
+
+  /**
+   * Receives SAML token from Snowflake via web browser
+   *
+   * @param ssocket server socket
+   * @throws IOException if any IO error occurs
+   * @throws SFException if a HTTP request from browser is invalid
+   */
+  private void receiveSamlToken(ServerSocket ssocket) throws IOException, SFException
+  {
+    Socket socket = ssocket.accept(); // start accepting the request
+    try
+    {
+      BufferedReader in = new BufferedReader(
+          new InputStreamReader(socket.getInputStream(), UTF8_CHARSET));
+      char[] buf = new char[16384];
+      int strLen = in.read(buf);
+      String[] rets = new String(buf, 0, strLen).split("\r\n");
+      String targetLine = null;
+      String userAgent = null;
+      for (String line : rets)
+      {
+        if (line.length() > PREFIX_GET.length() &&
+            line.substring(0, PREFIX_GET.length()).equalsIgnoreCase(PREFIX_GET))
+        {
+          targetLine = line;
+        }
+        else if (line.length() > PREFIX_USER_AGENT.length() &&
+            line.substring(0, PREFIX_USER_AGENT.length()).equalsIgnoreCase(PREFIX_USER_AGENT))
+        {
+          userAgent = line;
+        }
+      }
+      if (targetLine == null)
+      {
+        throw new SFException(ErrorCode.NETWORK_ERROR,
+            "Invalid HTTP request. No token is given from the browser.");
+      }
+      if (userAgent != null)
+      {
+        logger.debug("{}", userAgent);
+      }
+
+      String[] elems = targetLine.split("\\s");
+      if (elems.length != 3 ||
+          !elems[0].toLowerCase(Locale.US).equalsIgnoreCase("GET") ||
+          !elems[2].startsWith("HTTP/1.") ||
+          !elems[1].startsWith(PREFIX_TOKEN_PARAMETER))
+      {
+        throw new SFException(ErrorCode.NETWORK_ERROR,
+            String.format(
+                "Invalid HTTP request. No token is given from the browser: %s",
+                targetLine));
+      }
+      this.token = URLDecoder.decode(
+          elems[1].substring(PREFIX_TOKEN_PARAMETER.length()), "UTF-8");
+
+      returnToBrowser(socket);
+    }
+    finally
+    {
+      socket.close();
+    }
+  }
+
+  /**
+   * Output the message to the browser
+   *
+   * @param socket client socket
+   * @throws IOException if any IO error occurs
+   */
+  private void returnToBrowser(Socket socket) throws IOException
+  {
+    PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+
+    String responseText =
+        "<!DOCTYPE html><html><head><meta charset=\"UTF-8\"/>" +
+            "<title>SAML Response for Snowflake</title></head>" +
+            "<body>Your identity was confirmed and propagated to " +
+            "Snowflake JDBC driver. You can close this window now and go back " +
+            "where you started from.</body></html>";
+    String[] content = new String[]{
+        "HTTP/1.0 200 OK",
+        "Content-Type: text/html",
+        String.format("Content-Length: %s", responseText.length()),
+        "",
+        responseText
+    };
+    for (int i = 0; i < content.length; ++i)
+    {
+      if (i > 0)
+      {
+        out.print("\r\n");
+      }
+      out.print(content[i]);
+    }
+    out.flush();
   }
 
   /**
@@ -340,76 +400,5 @@ class SessionUtilExternalBrowser
   String getProofKey()
   {
     return this.proofKey;
-  }
-
-  class WebServerHandler implements HttpHandler
-  {
-    private final WebServerState webServerState;
-
-    WebServerHandler(WebServerState webServerState)
-    {
-      this.webServerState = webServerState;
-    }
-
-    @Override
-    public void handle(HttpExchange t) throws IOException
-    {
-      List<NameValuePair> params = URLEncodedUtils.parse(t.getRequestURI(),
-          Charset.forName("utf-8"));
-      for (NameValuePair param : params)
-      {
-        if ("token".equals(param.getName()))
-        {
-          this.webServerState.token = param.getValue();
-          break;
-        }
-      }
-      this.webServerState.forceToStop = true;
-      Headers headers = t.getResponseHeaders();
-      headers.set("Content-Type", "text/html");
-      String responseText =
-          "<!DOCTYPE html><html><head><meta charset=\"UTF-8\"/>" +
-              "<title>SAML Response for Snowflake</title></head>" +
-              "<body>Your identity was confirmed and propagated to " +
-              "Snowflake JDBC driver. You can close this window now and go back " +
-              "where you started from.</body></html>";
-      OutputStream out = t.getResponseBody();
-
-      t.sendResponseHeaders(200, responseText.length());
-      out.write(responseText.getBytes());
-      out.close();
-    }
-
-    public String getToken()
-    {
-      return webServerState.token;
-    }
-  }
-
-  class WebServer implements Runnable
-  {
-    private final HttpServer server;
-    private final HttpHandler handler;
-    private String token;
-
-    WebServer(HttpServer server, HttpHandler handler)
-    {
-      this.server = server;
-      this.handler = handler;
-      this.token = "";
-    }
-
-    @Override
-    public void run()
-    {
-      server.createContext("/", handler);
-      server.setExecutor(null);
-      server.start();
-    }
-
-    public String getToken()
-    {
-      return this.token;
-    }
   }
 }
