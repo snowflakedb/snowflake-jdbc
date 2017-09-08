@@ -81,8 +81,7 @@ public abstract class SFBaseResultSet
 
   public void close()
   {
-    if (logger.isDebugEnabled())
-      logger.debug("Time: {} public void close()", System.currentTimeMillis());
+    logger.debug("public void close()");
 
     resultSetMetaData = null;
     isClosed = true;

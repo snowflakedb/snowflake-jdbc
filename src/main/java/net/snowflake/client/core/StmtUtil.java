@@ -374,8 +374,7 @@ public class StmtUtil
           retries = 0; // reset retry counter after a successful response
 
         // trace the response if requested
-        logger.debug("Time: {} Json response: {}",
-                System.currentTimeMillis(), resultAsString);
+        logger.debug("Json response: {}", resultAsString);
 
         if (pingPongResponseJson != null)
         // raise server side error as an exception if any
@@ -432,11 +431,7 @@ public class StmtUtil
       }
       while (queryInProgress);
 
-      if (logger.isDebugEnabled())
-      {
-        logger.debug("Time: {} Returning result",
-            System.currentTimeMillis());
-      }
+      logger.debug("Returning result");
 
       eventHandler.triggerStateTransition(BasicEvent.QueryState.PROCESSING_RESULT,
           String.format(QueryState.PROCESSING_RESULT.getArgString(), stmtInput.requestId));

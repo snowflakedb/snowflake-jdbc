@@ -180,11 +180,7 @@ public class SFStatement
   {
     resetState();
 
-    if (logger.isDebugEnabled())
-    {
-      logger.debug( "Time: {} executeQuery: {}",
-                 System.currentTimeMillis(), sql);
-    }
+    logger.debug( "executeQuery: {}", sql);
 
     if (session.isClosed())
     {
@@ -210,11 +206,7 @@ public class SFStatement
 
     sortResult = sortProperty != null && (Boolean) sortProperty;
 
-    if (logger.isDebugEnabled())
-    {
-      logger.debug( "Time: {} Creating result set",
-                 System.currentTimeMillis());
-    }
+    logger.debug( "Creating result set");
 
     try
     {
@@ -238,11 +230,7 @@ public class SFStatement
           ErrorCode.INTERNAL_ERROR,
           "exception creating result");
     }
-    if (logger.isDebugEnabled())
-    {
-      logger.debug( "Time: {} Done creating result set",
-                 System.currentTimeMillis());
-    }
+    logger.debug( "Done creating result set");
 
     return resultSet;
   }
@@ -425,11 +413,7 @@ public class SFStatement
         throw new SFException(ErrorCode.QUERY_CANCELED);
       }
 
-      if (logger.isDebugEnabled())
-      {
-        logger.debug( "Time: {} Returning from executeHelper",
-                   System.currentTimeMillis());
-      }
+      logger.debug( "Returning from executeHelper");
 
       return stmtOutput.getResult();
     }

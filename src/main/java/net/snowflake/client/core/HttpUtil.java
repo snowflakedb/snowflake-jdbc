@@ -193,9 +193,7 @@ public class HttpUtil
   {
     if (logger.isDebugEnabled())
     {
-      logger.debug(
-                 "-> Time: {} Pool: {} Executing: {}",
-                     System.currentTimeMillis(),
+      logger.debug("Pool: {} Executing: {}",
                      HttpUtil.getHttpClientStats(),
                      httpRequest);
     }
@@ -243,8 +241,7 @@ public class HttpUtil
     if (logger.isDebugEnabled())
     {
       logger.debug(
-                 "<- Time: {} Pool: {} Request returned for: {}",
-                     System.currentTimeMillis(),
+                 "Pool: {} Request returned for: {}",
                      HttpUtil.getHttpClientStats(),
                      httpRequest);
     }

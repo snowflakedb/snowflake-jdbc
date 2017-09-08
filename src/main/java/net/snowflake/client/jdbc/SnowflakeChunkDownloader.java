@@ -434,9 +434,9 @@ public class SnowflakeChunkDownloader
       logger.info("Total milliseconds waiting for chunks: {}, " +
               "Total memory used: {}, total download time: {} millisec, " +
               "total parsing time: {} milliseconds, total chunks: {}",
-          new Object[]{numberMillisWaitingForChunks,
+          numberMillisWaitingForChunks,
           Runtime.getRuntime().totalMemory(), totalMillisDownloadingChunks.get(),
-          totalMillisParsingChunks.get(), chunks.size()});
+          totalMillisParsingChunks.get(), chunks.size());
 
       if (executor != null)
       {
@@ -590,13 +590,7 @@ public class SnowflakeChunkDownloader
           startTime = System.currentTimeMillis();
 
           // trace the response if requested
-          if (logger.isDebugEnabled())
-            logger.debug(
-                     "Time: {} Json response: {}",
-                     new Object[] {
-                         System.currentTimeMillis(),
-                         response
-                     });
+          logger.debug("Json response: {}", response);
 
           JsonNode resultData = null;
 

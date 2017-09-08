@@ -102,8 +102,7 @@ public class SnowflakeBaseResultSet implements ResultSet
   @Override
   public void close() throws SQLException
   {
-    if (logger.isDebugEnabled())
-      logger.debug("Time: {} public void close()", System.currentTimeMillis());
+    logger.debug("public void close()");
 
     // free the object so that they can be Garbage collected
     nextRow = null;
