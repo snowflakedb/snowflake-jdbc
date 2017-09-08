@@ -100,7 +100,7 @@ public class FileUploader implements Runnable {
                               + (attempt > 0 ? "/* retry:"+attempt+" */ " : "")
                               + "file://" + _file.getCanonicalPath() + " '"
                               + remoteStage
-                              + "' parallel=4"
+                              + "' parallel=10"
                               + " auto_compress=false source_compression=gzip";
 
         Statement statement = _loader.getPutConnection().createStatement();

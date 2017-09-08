@@ -139,11 +139,13 @@ public enum SnowflakeType {
    * Returns a lexical value of an object that is suitable for Snowflake import
    * serialization
    *
-   * @param o                Java object representing value in Snowflake
-   * @param useLocalTimezone use local timezone instead of UTC
+   * @param o                  Java object representing value in Snowflake.
+   * @param useLocalTimezone   use local timezone instead of UTC.
+   * @param mapTimeToTimestamp map TIME to TIMESTAMP.
    * @return String representation of it that can be used for creating a load file
    */
-  public static String lexicalValue(Object o, boolean useLocalTimezone) {
+  public static String lexicalValue(
+      Object o, boolean useLocalTimezone, boolean mapTimeToTimestamp) {
     if (o == null) {
       return "";
     }
@@ -152,7 +154,7 @@ public enum SnowflakeType {
 
     if (Date.class.isAssignableFrom(c)) {
       String fmt = TIMESTAMP_FORMAT_PATTERN;
-      if (c == java.sql.Time.class) {
+      if (!mapTimeToTimestamp && c == java.sql.Time.class) {
         fmt = TIME_FORMAT_PATTERN;
       }
       SimpleDateFormat sdf = new SimpleDateFormat(fmt);

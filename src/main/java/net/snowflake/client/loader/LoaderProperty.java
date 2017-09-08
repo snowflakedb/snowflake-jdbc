@@ -29,6 +29,10 @@ public enum LoaderProperty
      csvFileSize,       // File size                                                  Long
      preserveStageFile, // Preserve stage files if error occurs                       Boolean
      useLocalTimezone,  // Use local timezone in converting TIMESTAMP                 Boolean
+
+     // compatibility parameters
+     mapTimeToTimestamp, // map TIME data type to TIMESTAMP. Informatica v1
+                         // connector behavior.                                       Boolean
      // test parameters
      testRemoteBadCSV   // TEST: Inject bad CSV in the remote stage                   Boolean
 }

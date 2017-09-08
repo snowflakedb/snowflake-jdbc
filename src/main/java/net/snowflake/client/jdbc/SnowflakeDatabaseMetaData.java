@@ -1299,7 +1299,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
       }
     }
 
-    logger.info("sql command to get table metadata: {}", showCommand);
+    logger.debug("sql command to get table metadata: {}", showCommand);
 
     resultSet = executeAndReturnEmptyResultIfNotFound(statement, showCommand, GET_TABLES);
 
@@ -1507,7 +1507,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
       }
     }
 
-    logger.info("sql command to get column metadata: {}",
+    logger.debug("sql command to get column metadata: {}",
                showColumnCommand);
 
     ResultSet resultSet = executeAndReturnEmptyResultIfNotFound(statement, showColumnCommand,
@@ -1785,7 +1785,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
     final String schemaIn = schema;
     final String tableIn = table;
 
-    logger.info("sql command to get primary key metadata: {}",
+    logger.debug("sql command to get primary key metadata: {}",
                showPKCommand);
 
     ResultSet resultSet = executeAndReturnEmptyResultIfNotFound(statement, showPKCommand, GET_PRIMARY_KEYS);
@@ -2515,7 +2515,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
       showSchemas += " in database \"" + catalog + "\"";
     }
 
-    logger.info("sql command to get schemas metadata: {}",
+    logger.debug("sql command to get schemas metadata: {}",
         showSchemas);
 
     ResultSet resultSet = executeAndReturnEmptyResultIfNotFound(statement, showSchemas, GET_SCHEMAS);
@@ -2629,7 +2629,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
       }
     }
 
-    logger.info("sql command to get column metadata: {}",
+    logger.debug("sql command to get column metadata: {}",
         showFunctionCommand);
 
     ResultSet resultSet = executeAndReturnEmptyResultIfNotFound(statement, showFunctionCommand, GET_FUNCTIONS);

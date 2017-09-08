@@ -253,7 +253,7 @@ public class RestRequest
           }
         }
 
-        logger.info("Retrying request: {}", httpRequest);
+        logger.debug("Retrying request: {}", httpRequest);
 
         // sleep for backoff - elapsed amount of time
         if (backoffInMilli > elapsedMilliForLastCall)
@@ -265,7 +265,7 @@ public class RestRequest
           }
           catch (InterruptedException ex1)
           {
-            logger.info(
+            logger.debug(
                 "Backoff sleep before retrying login got interrupted");
           }
         }

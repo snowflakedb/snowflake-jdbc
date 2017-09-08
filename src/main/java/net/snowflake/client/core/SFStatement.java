@@ -504,7 +504,7 @@ public class SFStatement
 
     session.injectedDelay();
 
-    logger.debug("execute: {}", sql);
+    logger.info("execute: {}", sql);
 
     String trimmedSql = sql.trim();
 
@@ -543,7 +543,7 @@ public class SFStatement
 
       logger.debug("Number of cols: {}",
                                resultSet.getMetaData().getColumnCount());
-
+      logger.info("Completed transferring data");
       return resultSet;
     }
     catch (SQLException ex)

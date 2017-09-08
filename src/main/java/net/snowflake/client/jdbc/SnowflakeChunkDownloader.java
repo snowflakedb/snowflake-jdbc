@@ -204,7 +204,7 @@ public class SnowflakeChunkDownloader
     // no chunk data
     if (chunksData == null)
     {
-      logger.info("no chunk data");
+      logger.debug("no chunk data");
       return;
     }
 
@@ -226,7 +226,7 @@ public class SnowflakeChunkDownloader
               chunkNode.path("uncompressedSize").asInt(),
               efficientChunkStorage);
 
-      logger.info("add chunk, url={} rowCount={}",
+      logger.debug("add chunk, url={} rowCount={}",
           new Object[]{chunk.getUrl(), chunk.getRowCount()});
 
       chunks.add(chunk);
@@ -234,10 +234,9 @@ public class SnowflakeChunkDownloader
     // prefetch threads and slots from parameter settings
     int effectiveThreads = Math.min(prefetchThreads, numChunks);
 
-    logger.info( 
+    logger.debug(
 	       "#chunks: {} #threads:{} #slots:{} -> pool:{}", 
-	        new Object[]{
-		   numChunks, prefetchThreads, prefetchSlots, effectiveThreads});
+		   numChunks, prefetchThreads, prefetchSlots, effectiveThreads);
 
     // create thread pool
     executor =
@@ -254,7 +253,7 @@ public class SnowflakeChunkDownloader
   private void startNextDownloaders()
   {
     // start downloading chunks up to number of slots
-    logger.info("Submit {} chunks to be pre-fetched",
+    logger.debug("Submit {} chunks to be pre-fetched",
                Math.min(prefetchSlots, chunks.size()));
 
     // submit the chunks to be downloaded up to the prefetch slot capacity
@@ -274,9 +273,8 @@ public class SnowflakeChunkDownloader
 
       currentMemoryUsage += neededChunkMemory;
 
-      logger.info("submit chunk #{} for downloading, url={}",
-                 new Object[]{this.nextChunkToDownload,
-                     nextChunk.getUrl()});
+      logger.debug("submit chunk #{} for downloading, url={}",
+                 this.nextChunkToDownload, nextChunk.getUrl());
 
       executor.submit(getDownloadChunkCallable(this,
                                                nextChunk,
@@ -315,7 +313,7 @@ public class SnowflakeChunkDownloader
       int prevChunk = this.nextChunkToConsume - 1;
 
       // free the chunk data for previous chunk
-      logger.info("free chunk data for chunk #{}",
+      logger.debug("free chunk data for chunk #{}",
                  prevChunk);
 
       // has to be before reusing the memory
@@ -340,7 +338,7 @@ public class SnowflakeChunkDownloader
     // if no more chunks, return null
     if (this.nextChunkToConsume >= this.chunks.size())
     {
-      logger.info("no more chunk");
+      logger.debug("no more chunk");
       return null;
     }
 
@@ -351,7 +349,7 @@ public class SnowflakeChunkDownloader
 
     if (currentChunk.getDownloadState() == DownloadState.SUCCESS)
     {
-      logger.info("chunk #{} is ready to consume", nextChunkToConsume);
+      logger.debug("chunk #{} is ready to consume", nextChunkToConsume);
       nextChunkToConsume++;
       return currentChunk;
     }
@@ -360,16 +358,16 @@ public class SnowflakeChunkDownloader
       // the chunk we want to consume is not ready yet, wait for it
       try
       {
-        logger.info("chunk #{} is not ready to consume",
+        logger.debug("chunk #{} is not ready to consume",
                    nextChunkToConsume);
 
         currentChunk.getLock().lock();
-        logger.info("consumer get lock to check chunk state");
+        logger.debug("consumer get lock to check chunk state");
 
         while (currentChunk.getDownloadState() != DownloadState.SUCCESS &&
             currentChunk.getDownloadState() != DownloadState.FAILURE)
         {
-          logger.info("wait for chunk #{} to be ready, current"
+          logger.debug("wait for chunk #{} to be ready, current"
                   + "chunk state is: {}",
               new Object[]{nextChunkToConsume, currentChunk.getDownloadState()});
 
@@ -383,7 +381,7 @@ public class SnowflakeChunkDownloader
           this.numberMillisWaitingForChunks +=
               (System.currentTimeMillis() - startTime);
 
-          logger.info(
+          logger.debug(
               "woken up from waiting for chunk #{} to be ready",
                      nextChunkToConsume);
         }
@@ -399,7 +397,7 @@ public class SnowflakeChunkDownloader
               currentChunk.getDownloadError());
         }
 
-        logger.info("chunk #{} is ready to consume",
+        logger.debug("chunk #{} is ready to consume",
                    nextChunkToConsume);
 
         nextChunkToConsume++;
@@ -409,14 +407,14 @@ public class SnowflakeChunkDownloader
       }
       finally
       {
-        logger.info("consumer free lock");
+        logger.debug("consumer free lock");
 
         boolean terminateDownloader = (currentChunk.getDownloadState() == DownloadState.FAILURE);
         // release the unlock always
         currentChunk.getLock().unlock();
         if (terminateDownloader)
         {
-          logger.info("Download result fail. Shut down the chunk downloader");
+          logger.debug("Download result fail. Shut down the chunk downloader");
           terminate();
         }
       }
@@ -431,7 +429,7 @@ public class SnowflakeChunkDownloader
     if (!terminated)
     {
 
-      logger.info("Total milliseconds waiting for chunks: {}, " +
+      logger.debug("Total milliseconds waiting for chunks: {}, " +
               "Total memory used: {}, total download time: {} millisec, " +
               "total parsing time: {} milliseconds, total chunks: {}",
           numberMillisWaitingForChunks,
@@ -504,7 +502,7 @@ public class SnowflakeChunkDownloader
             resultChunk.getLock().unlock();
           }
 
-          logger.info("Downloading chunk {}, url={}",
+          logger.debug("Downloading chunk {}, url={}",
                                  new Object[]{chunkIndex, resultChunk.getUrl()});
 
           long startTime = System.currentTimeMillis();
@@ -632,13 +630,12 @@ public class SnowflakeChunkDownloader
           // remember the result data (it can be null if using rowsets)
           resultChunk.setResultData(resultData);
 
-          if (logger.isInfoEnabled())
-            logger.info(
-                     "Finished preparing chunk data for {}, " +
-                      "total download time={}ms, total parse time={}ms",
-                       resultChunk.getUrl(),
-                       resultChunk.getDownloadTime(),
-                       resultChunk.getParseTime());
+          logger.debug(
+                   "Finished preparing chunk data for {}, " +
+                    "total download time={}ms, total parse time={}ms",
+                     resultChunk.getUrl(),
+                     resultChunk.getDownloadTime(),
+                     resultChunk.getParseTime());
 
           try
           {
@@ -665,20 +662,20 @@ public class SnowflakeChunkDownloader
         {
           try
           {
-            logger.info("get lock to set chunk download error");
+            logger.debug("get lock to set chunk download error");
             resultChunk.getLock().lock();
 
             resultChunk.setDownloadState(DownloadState.FAILURE);
             resultChunk.setDownloadError(ex.getLocalizedMessage());
 
-            logger.info(
+            logger.debug(
                 "wake up consumer if it is waiting for a chunk to be ready");
 
             resultChunk.getDownloadCondition().signal();
           }
           finally
           {
-            logger.info("Failed to download chunk {}, free lock",
+            logger.debug("Failed to download chunk {}, free lock",
                 chunkIndex);
             resultChunk.getLock().unlock();
           }
@@ -774,7 +771,7 @@ public class SnowflakeChunkDownloader
                                 0,
                                 null);
 
-        logger.info("Call returned for URL: {}",
+        logger.debug("Call returned for URL: {}",
                                chunkUrl);
         return response;
       }

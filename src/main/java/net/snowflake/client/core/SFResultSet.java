@@ -210,7 +210,7 @@ public class SFResultSet extends SFBaseResultSet
         currentChunkRowCount = nextChunk.getRowCount();
         currentChunk = nextChunk;
 
-        logger.info("Moving to chunk index {}, row count={}",
+        logger.debug("Moving to chunk index {}, row count={}",
                    nextChunkIndex, currentChunkRowCount);
 
         nextChunkIndex++;
@@ -224,7 +224,7 @@ public class SFResultSet extends SFBaseResultSet
     }
     else if (chunkCount > 0)
     {
-      logger.info("End of chunks");
+      logger.debug("End of chunks");
       chunkDownloader.terminate();
     }
 

@@ -98,6 +98,8 @@ public class StreamLoader implements Loader, Runnable
 
   boolean _useLocalTimezone = false; // use local timezone instead of UTC
 
+  boolean _mapTimeToTimestamp = false; // map TIME to TIMESTAMP. Informatica V1 connector behavior
+
   boolean _testMode = false;
 
   private final Connection _putConn;
@@ -178,7 +180,11 @@ public class StreamLoader implements Loader, Runnable
         _is_last_finish_call = Boolean.valueOf(String.valueOf(value));
         break;
       case batchRowSize:
-        _batchRowSize = new Long((String)value);
+        if (value instanceof String) {
+          _batchRowSize = new Long((String) value);
+        } else if (value instanceof Long){
+          _batchRowSize = (Long)value;
+        }
         break;
       case csvFileBucketSize:
         if (value instanceof String) {
@@ -199,6 +205,12 @@ public class StreamLoader implements Loader, Runnable
         break;
       case useLocalTimezone:
         _useLocalTimezone = Boolean.valueOf(String.valueOf(value));
+        break;
+      case mapTimeToTimestamp:
+        // NOTE: this is a special flag to change mapping
+        // from TIME. Informatica connector v1 maps to TIMESTAMP
+        // but a legitimate behavior is supposed to be to TIME.
+        _mapTimeToTimestamp = Boolean.valueOf(String.valueOf(value));
         break;
       case testRemoteBadCSV:
         _testRemoteBadCSV = Boolean.valueOf(String.valueOf(value));
@@ -353,7 +365,6 @@ public class StreamLoader implements Loader, Runnable
 
     if (_batchRowSize > 0 && _listener.getSubmittedRowCount() > 0 &&
         (_listener.getSubmittedRowCount() % _batchRowSize) == 0) {
-      // TODO: This is not working!
       LOGGER.debug("Flushing Queue: Submitted Row Count: {}, Batch Row Size: {}",
           _listener.getSubmittedRowCount(), _batchRowSize);
       // flush data loading
@@ -379,7 +390,7 @@ public class StreamLoader implements Loader, Runnable
   private void initQueues() {
     LOGGER.debug("Init Queues");
     if (_active.getAndSet(true)) {
-      // NOP if the loader is alread active
+      // NOP if the loader is already active
       return;
     }
     // start PUT and PROCESS queues
@@ -496,7 +507,8 @@ public class StreamLoader implements Loader, Runnable
     {
       if(i > 0) sb.append(',');
       sb.append(SnowflakeType.escapeForCSV(
-              SnowflakeType.lexicalValue(data[i], _useLocalTimezone)));
+              SnowflakeType.lexicalValue(data[i],
+                  _useLocalTimezone, _mapTimeToTimestamp)));
     }
     return sb.toString().getBytes(UTF_8);
   }
@@ -703,7 +715,7 @@ public class StreamLoader implements Loader, Runnable
   int throttleUp()
   {
     int open =  this._throttleCounter.incrementAndGet();
-    LOGGER.debug("Throttle Up: {}", open);
+    LOGGER.info("PUT Throttle Up: {}", open);
     if(open > 8) {
       LOGGER.info("Will retry scheduling file for upload after {} seconds",
                         (Math.pow(2, open - 7)));
@@ -722,7 +734,7 @@ public class StreamLoader implements Loader, Runnable
   int throttleDown()
   {
     int throttleLevel = this._throttleCounter.decrementAndGet();
-    LOGGER.debug("Throttle Down: {}", throttleLevel);
+    LOGGER.debug("PUT Throttle Down: {}", throttleLevel);
     if (throttleLevel < 0)
     {
       LOGGER.warn("Unbalanced throttle");

@@ -4,7 +4,7 @@
 
   <groupId>net.snowflake</groupId>
   <artifactId>snowflake-jdbc</artifactId>
-  <version>3.2.1</version>
+  <version>3.2.2</version>
   <packaging>jar</packaging>
 
   <name>snowflake-jdbc</name>
