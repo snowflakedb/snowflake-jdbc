@@ -1,11 +1,17 @@
+**JDBC Driver 3.2.3**
+|SNOW-32618| Rewrote ADFS integration for JDBC using socket API.
+
+**JDBC Driver 3.2.2**
+|SNOW-32618| Added support for SAML 2.0 compliant applications.
+|SNOW-31703| Added support for Azure.
 **JDBC Driver 3.2.1**
-|SNOW-32060| Added support binding java.sql.Time with TIME data type for Loader API and dropped support binding java.sql.Time with TIMESTAMP.
+|SNOW-32060| Added support in the Loader API for binding ``java.sql.Time`` with the TIME data type and dropped support for binding ``java.sql.Time`` with TIMESTAMP.
 **JDBC Driver 3.2.0**
 |SNOW-31749| Updated the driver to use AWS SDK 1.11.165.
-|SNOW-31647| Fixed issue with NUMBER columns that have a scale of 0 to return BIGINT instead of DECIMAL in the column metadata.
-|SNOW-30967| Updated the driver to use the latest S3 SDK to provide support for proxy and nonProxy JVM options.
+|SNOW-31647| Fixed issue with NUMBER columns that have a scale of 0; they now return BIGINT instead of DECIMAL in the column metadata.
+|SNOW-30967| Updated the driver to use the latest S3 SDK to provide support for ``proxy`` and ``nonProxy`` JVM options.
 **JDBC Driver 3.1.1**
-|SNOW-31425| Fixed an issue with a missing statement type for ``executeUpdate()``, which caused the statement to fail on USE commands.
+|SNOW-31425| Fixed an issue with a missing statement type for ``executeUpdate()``, which caused the statement to fail in USE commands.
 **JDBC Driver 3.1.0**
 |SNOW-31069| Added support for enforcing JDBC driver to use TLS v1.2.
 |SNOW-30962| Added support for ``executeBatch()`` on prepared DML statements.
