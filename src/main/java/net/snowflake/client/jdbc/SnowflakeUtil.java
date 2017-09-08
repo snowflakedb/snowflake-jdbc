@@ -11,8 +11,13 @@ import net.snowflake.common.util.FixedViewColumn;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.Field;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -24,7 +29,6 @@ import net.snowflake.client.log.SFLogger;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.Header;
 import org.apache.http.HttpResponse;
-
 /**
  *
  * @author jhuang
@@ -82,6 +86,16 @@ public class SnowflakeUtil
       {
         errorCode = ErrorCode.INTERNAL_ERROR.getMessageCode();
         errorMessage = "no_error_code_from_server";
+
+        try
+        {
+          PrintWriter writer = new PrintWriter("output.json", "UTF-8");
+          writer.print(rootNode.toString());
+        }
+        catch (Exception ex)
+        {
+         String s = ex.toString();
+        }
       }
     }
 

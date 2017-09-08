@@ -4,19 +4,7 @@
 
 package net.snowflake.client.jdbc;
 
-import com.amazonaws.AmazonClientException;
-import com.amazonaws.AmazonServiceException;
-import com.amazonaws.ClientConfiguration;
-import com.amazonaws.SDKGlobalConfiguration;
-import com.amazonaws.auth.AWSCredentials;
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.auth.BasicSessionCredentials;
-import com.amazonaws.services.s3.model.AmazonS3Exception;
-import com.amazonaws.services.s3.model.ObjectListing;
-import com.amazonaws.services.s3.model.ObjectMetadata;
-import com.amazonaws.services.s3.model.S3ObjectSummary;
-import com.amazonaws.regions.Region;
-import com.amazonaws.regions.RegionUtils;
+
 import com.amazonaws.util.Base64;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -28,10 +16,19 @@ import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SFFixedViewResultSet;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.core.SFStatement;
+import net.snowflake.client.jdbc.cloud.storage.*;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
+import net.snowflake.common.core.RemoteStoreFileEncryptionMaterial;
 import net.snowflake.common.core.SqlState;
 import net.snowflake.common.util.ClassUtil;
-import net.snowflake.common.core.S3FileEncryptionMaterial;
 import net.snowflake.common.util.FixedViewColumn;
+import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.filefilter.WildcardFileFilter;
+import javax.activation.MimeType;
+import javax.activation.MimeTypeParseException;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -39,11 +36,8 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.net.SocketTimeoutException;
 import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.security.DigestOutputStream;
-import java.security.InvalidKeyException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.SQLException;
@@ -79,26 +73,14 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
   final static SFLogger logger =
   SFLoggerFactory.getLogger(SnowflakeFileTransferAgent.class);
 
+  final static StorageClientFactory storageFactory = StorageClientFactory.getFactory();
+
   private static final ObjectMapper mapper = new ObjectMapper();
-
-  final static int S3_TRANSFER_MAX_RETRIES = 3;
-
-  final static int CLIENT_SIDE_MAX_RETRIES = 25;
-
-  // min number of milliseconds to sleep before retry
-  final static int CLIENT_SIDE_RETRY_BACKOFF_MIN = 1000;
-
-  // max exponent for multiplying backoff with the power of 2, the value
-  // of 4 will give us 16secs as the max number of time to sleep before retry
-  final static int CLIENT_SIDE_RETRY_BACKOFF_MAX_EXPONENT = 4;
 
   // We will allow buffering of upto 128M data before spilling to disk during
   // compression and digest computation
   final static int MAX_BUFFER_SIZE = 1 << 27;
   public static final String SRC_FILE_NAME_FOR_STREAM = "stream";
-
-  // expired AWS token error code
-  private static final String EXPIRED_AWS_TOKEN_ERROR_CODE = "ExpiredToken";
 
   private static final String FILE_PROTOCOL = "file://";
 
@@ -149,26 +131,10 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
 
 
   // Encryption material
-  private List<S3FileEncryptionMaterial> encryptionMaterial;
+  private List<RemoteStoreFileEncryptionMaterial> encryptionMaterial;
 
   // Index: Source file to encryption material
-  HashMap<String, S3FileEncryptionMaterial> srcFileToEncMat;
-
-  public Map getStageCredentials() {
-    return new HashMap(stageCredentials);
-  }
-
-  public List<S3FileEncryptionMaterial> getEncryptionMaterial() {
-    return new ArrayList(encryptionMaterial);
-  }
-
-  public Map<String, S3FileEncryptionMaterial> getSrcToMaterialsMap() {
-    return new HashMap(srcFileToEncMat);
-  }
-
-  public String getStageLocation() {
-    return stageLocation;
-  }
+  HashMap<String, RemoteStoreFileEncryptionMaterial> srcFileToEncMat;
 
   private void initEncryptionMaterial(CommandType commandType, JsonNode jsonNode)
       throws SnowflakeSQLException, JsonProcessingException
@@ -179,10 +145,10 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
     {
       logger.debug("initEncryptionMaterial: UPLOAD");
 
-      S3FileEncryptionMaterial encMat = null;
+      RemoteStoreFileEncryptionMaterial encMat = null;
       if (!rootNode.isMissingNode() && !rootNode.isNull())
       {
-        encMat = mapper.treeToValue(rootNode, S3FileEncryptionMaterial.class);
+        encMat = mapper.treeToValue(rootNode, RemoteStoreFileEncryptionMaterial.class);
       }
       encryptionMaterial.add(encMat);
 
@@ -194,7 +160,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
       if (!rootNode.isMissingNode() && !rootNode.isNull())
       {
         encryptionMaterial = Arrays.asList(
-            mapper.treeToValue(rootNode, S3FileEncryptionMaterial[].class));
+            mapper.treeToValue(rootNode, RemoteStoreFileEncryptionMaterial[].class));
       }
     }
   }
@@ -214,7 +180,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
   private int currentRowIndex;
   private List<Object> statusRows;
 
-  private SnowflakeS3Client s3Client = null;
+  private SnowflakeStorageClient storageClient = null;
 
   private static final String SOURCE_COMPRESSION_AUTO_DETECT = "auto_detect";
   private static final String SOURCE_COMPRESSION_NONE = "none";
@@ -253,17 +219,18 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
   }
 
   /**
-   * S3 locations consists of a bucket name and path
+   * Remote object location
+   * location: "bucket" for S3, "container" for Azure BLOB
    */
-  private static class S3Location
+  private static class remoteLocation
   {
-    String bucketName;
+    String location;
     String path;
 
-    public S3Location(String s3BucketName, String s3path)
+    public remoteLocation(String remoteStorageLocation, String remotePath)
     {
-      bucketName = s3BucketName;
-      path = s3path;
+      location = remoteStorageLocation;
+      path = remotePath;
     }
   }
 
@@ -634,7 +601,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
    * @param srcFilePath source file path
    * @param requireCompress boolean indicating if requiring compression
    * @param fileMetadataMap map where key is file name and value is metadata
-   * @param s3Client client object used to communicate with c3
+   * @param client client object used to communicate with c3
    * @param connection connection object
    * @param command command string
    * @param inputStream null if upload source is file
@@ -644,7 +611,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
    * @param srcFile source file name
    * @param encMat not null if encryption is required
    * @param stageRegion region name where stage persists
-   * @return a callable that uploading file to s3
+   * @return a callable that uploading file to the remote store
    */
   public static Callable<Void> getUploadFileCallable(
           final String stageLocationType,
@@ -652,7 +619,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
           final String srcFilePath,
           final boolean requireCompress,
           final Map<String, FileMetadata> fileMetadataMap,
-          final SnowflakeS3Client s3Client,
+          final SnowflakeStorageClient client,
           final SFSession connection,
           final String command,
           final InputStream inputStream,
@@ -660,7 +627,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
           final long sourceDataSize,
           final int parallel,
           final File srcFile,
-          final S3FileEncryptionMaterial encMat,
+          final RemoteStoreFileEncryptionMaterial encMat,
           final String stageRegion) {
     return new Callable<Void>() {
       public Void call() throws Exception {
@@ -771,10 +738,11 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
           }
           else if ("S3".equalsIgnoreCase(stageLocationType))
           {
-            pushFileToS3(stageLocation, srcFilePath, destFileName,
+            pushFileToRemoteStore(stageLocation, stageLocationType,
+                         srcFilePath, destFileName,
                          uploadStream, fileBackedOutputStream, uploadSize,
                          digest, metadata.destCompressionType,
-                         s3Client, connection, command, parallel, fileToUpload,
+                         client, connection, command, parallel, fileToUpload,
                          (fileToUpload == null), encMat, stageRegion);
             metadata.isEncrypted = encMat != null;
           }
@@ -835,7 +803,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
   }
 
   /**
-   * A callable that can be executed in a separate thread using exeuctor service.
+   * A callable that can be executed in a separate thread using executor service.
    *
    * The callable download files from a stage location to a local location
    *
@@ -845,10 +813,10 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
    * @param srcFilePath path that stores the downloaded file
    * @param localLocation local location
    * @param fileMetadataMap file metadata map
-   * @param s3Client s3 client
+   * @param client remote store client
    * @param connection connection object
    * @param command command string
-   * @param encMat s3 encryption material
+   * @param encMat remote store encryption material
    * @param parallel number of parallel threads for downloading
    * @param stageRegion region name where the stage persists
    * @return a callable responsible for downloading files
@@ -860,11 +828,11 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
           final String srcFilePath,
           final String localLocation,
           final Map<String, FileMetadata> fileMetadataMap,
-          final SnowflakeS3Client s3Client,
+          final SnowflakeStorageClient client,
           final SFSession connection,
           final String command,
           final int parallel,
-          final S3FileEncryptionMaterial encMat,
+          final RemoteStoreFileEncryptionMaterial encMat,
           final String stageRegion) {
     return new Callable<Void>() {
       public Void call() throws Exception {
@@ -897,11 +865,11 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
           }
           else if ("S3".equalsIgnoreCase(stageLocationType))
           {
-            pullFileFromS3(stageLocation,
+            pullFileFromRemoteStore(stageLocation,
                            srcFilePath,
                            destFileName,
                            localLocation,
-                           s3Client,
+                           client,
                            connection,
                            command,
                            parallel,
@@ -956,9 +924,9 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
 
     parseCommand();
 
-    if ("S3".equalsIgnoreCase(stageLocationType))
+    if (!"LOCAL_FS".equalsIgnoreCase(stageLocationType))
     {
-      s3Client = createS3Client(stageCredentials, parallel, null, stageRegion);
+      storageClient = storageFactory.createClient(stageLocationType, stageCredentials, parallel, null, stageRegion);
     }
   }
 
@@ -966,7 +934,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
    * Parse the put/get command.
    *
    * We send the command to the GS to do the parsing. In the future, we
-   * will delegate more work to GS such as copying files from HTTP to S3.
+   * will delegate more work to GS such as copying files from HTTP to the remote store.
    *
    * @throws SQLException
    */
@@ -1056,7 +1024,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
                 localLocation);
       }
 
-      // todo: replace ~userid with the home director of a given userid
+      // todo: replace ~userid with the home directory of a given userid
       // one idea is to get the home directory for current user and replace
       // the last user id with the given user id.
 
@@ -1294,9 +1262,9 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
 
     if (logger.isDebugEnabled())
     {
-      logger.debug("aws id: {}", stageCredentials.get("AWS_ID"));
-      logger.debug("aws key: {}", stageCredentials.get("AWS_KEY"));
-      logger.debug("aws token: {}", stageCredentials.get("AWS_TOKEN"));
+      logger.debug("stage creds - id: {}", stageCredentials.get("AWS_ID"));
+      logger.debug("stage creds - key: {}", stageCredentials.get("AWS_KEY"));
+      logger.debug("stage creds - token: {}", stageCredentials.get("AWS_TOKEN"));
     }
 
     return stageCredentials;
@@ -1382,9 +1350,9 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
     }
     finally
     {
-      if (s3Client != null)
+      if (storageClient != null)
       {
-        s3Client.shutdown();
+        storageClient.shutdown();
       }
     }
   }
@@ -1401,13 +1369,13 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
 
       FileMetadata fileMetadata = fileMetadataMap.get(SRC_FILE_NAME_FOR_STREAM);
 
-      S3FileEncryptionMaterial encMat = encryptionMaterial.get(0);
+      RemoteStoreFileEncryptionMaterial encMat = encryptionMaterial.get(0);
       if (commandType == CommandType.UPLOAD)
         threadExecutor.submit(getUploadFileCallable(
             stageLocationType, stageLocation, SRC_FILE_NAME_FOR_STREAM,
             compressSourceFromStream, fileMetadataMap,
-            ("S3".equalsIgnoreCase(stageLocationType)) ?
-               createS3Client(stageCredentials, parallel, encMat, stageRegion):null,
+            ("LOCAL_FS".equalsIgnoreCase(stageLocationType)) ?
+               null:storageFactory.createClient(stageLocationType, stageCredentials, parallel, encMat, stageRegion),
             connection, command,
             sourceStream, true, sourceStreamSize, parallel, null, encMat, stageRegion));
       else if (commandType == CommandType.DOWNLOAD)
@@ -1461,7 +1429,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
           continue;
         }
 
-        S3FileEncryptionMaterial encMat = srcFileToEncMat.get(srcFile);
+        RemoteStoreFileEncryptionMaterial encMat = srcFileToEncMat.get(srcFile);
         threadExecutor.submit(getDownloadFileCallable(
             stageLocationType,
             stageLocation,
@@ -1469,8 +1437,8 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
             srcFile,
             localLocation,
             fileMetadataMap,
-            ("S3".equalsIgnoreCase(stageLocationType)) ?
-              createS3Client(stageCredentials, parallel, encMat, stageRegion):null,
+            ("LOCAL_FS".equalsIgnoreCase(stageLocationType)) ?
+              null:storageFactory.createClient(stageLocationType, stageCredentials, parallel, encMat, stageRegion),
             connection,
             command,
             parallel,
@@ -1536,8 +1504,8 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
 
         /**
          * For small files, we upload files in parallel, so we don't
-         * want the s3 uploader to upload parts in parallel for each file.
-         * For large files, we upload them in serial, and we want s3 uploader
+         * want the remote store uploader to upload parts in parallel for each file.
+         * For large files, we upload them in serial, and we want remote store uploader
          * to upload parts in parallel for each file. This is the reason
          * for the parallel value.
          */
@@ -1546,9 +1514,8 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
         threadExecutor.submit(getUploadFileCallable(
             stageLocationType, stageLocation, srcFile,
             fileMetadata.requireCompress, fileMetadataMap,
-            ("S3".equalsIgnoreCase(stageLocationType)) ?
-               createS3Client(stageCredentials, parallel,encryptionMaterial.get(0), stageRegion):
-               null,
+            ("LOCAL_FS".equalsIgnoreCase(stageLocationType)) ?
+               null:storageFactory.createClient(stageLocationType, stageCredentials, parallel,encryptionMaterial.get(0), stageRegion),
             connection, command,
             null, false, srcFileObj.length(),
             (parallel > 1 ?  1: this.parallel), srcFileObj, encryptionMaterial.get(0), stageRegion));
@@ -1802,40 +1769,41 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
     return true;
   }
 
-  static private void pushFileToS3(String stageLocation,
-                                      String filePath,
-                                      String destFileName,
-                                      InputStream inputStream,
-                                      FileBackedOutputStream fileBackedOutStr,
-                                      long uploadSize,
-                                      String digest,
-                                      FileCompressionType compressionType,
-                                      SnowflakeS3Client initialS3Client,
-                                      SFSession connection,
-                                      String command,
-                                      int parallel,
-                                      File srcFile,
-                                      boolean uploadFromStream,
-                                      S3FileEncryptionMaterial encMat,
-                                      String stageRegion)
+  static private void pushFileToRemoteStore(String stageLocation,
+                                            String stageLocationType,
+                                            String filePath,
+                                            String destFileName,
+                                            InputStream inputStream,
+                                            FileBackedOutputStream fileBackedOutStr,
+                                            long uploadSize,
+                                            String digest,
+                                            FileCompressionType compressionType,
+                                            SnowflakeStorageClient initialClient,
+                                            SFSession connection,
+                                            String command,
+                                            int parallel,
+                                            File srcFile,
+                                            boolean uploadFromStream,
+                                            RemoteStoreFileEncryptionMaterial encMat,
+                                            String stageRegion)
       throws SQLException, IOException
   {
-    S3Location s3Location = extractBucketNameAndPath(stageLocation);
+    remoteLocation remoteLocation = extractLocationAndPath(stageLocation);
 
-    if (s3Location.path != null && !s3Location.path.isEmpty())
+    if (remoteLocation.path != null && !remoteLocation.path.isEmpty())
     {
-      destFileName = s3Location.path +
-                     (!s3Location.path.endsWith("/")?"/":"")
+      destFileName = remoteLocation.path +
+                     (!remoteLocation.path.endsWith("/")?"/":"")
                      + destFileName;
     }
     if (logger.isDebugEnabled())
     {
-      logger.debug("upload object. bucketName={}, key={}, srcFile={}, encryption={}",
-          s3Location.bucketName, destFileName, filePath, (encMat == null ? "NULL" :
+      logger.debug("upload object. location={}, key={}, srcFile={}, encryption={}",
+          remoteLocation.location, destFileName, filePath, (encMat == null ? "NULL" :
               Long.toString(encMat.getSmkId()) + "|" + encMat.getQueryId()));
     }
 
-    ObjectMetadata meta = new ObjectMetadata();
+    StorageObjectMetadata meta = storageFactory.createStorageMetadataObj(stageLocationType);
     meta.setContentLength(uploadSize);
     if (digest != null)
     {
@@ -1848,9 +1816,9 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
 
     try
     {
-      SnowflakeS3Client.upload(initialS3Client, connection, command, parallel,
-          CLIENT_SIDE_MAX_RETRIES, uploadFromStream,
-          s3Location.bucketName, srcFile, destFileName,
+      initialClient.upload(connection, command, parallel,
+              uploadFromStream,
+          remoteLocation.location, srcFile, destFileName,
           inputStream, fileBackedOutStr, meta, stageRegion);
     }
     finally
@@ -1860,204 +1828,62 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
     }
   }
 
+
   /**
-   * A helper method to handle exception when performing an S3 call:
-   * list, put or get
+   * This static method is called when we are handling an expired token exception
+   * It retrieves a fresh token from GS and then calls .renew() on the storage
+   * client to refresh itself with the new token
    *
-   * @param ex
-   * @param retryCount
-   * @param operation
-   * @param encMat
    * @param connection
    * @param command
-   * @param parallel
-   * @param s3Client
-   * @return
+   * @param client
    * @throws SnowflakeSQLException
    */
-  static private SnowflakeS3Client handleS3Exception(Exception ex,
-                                 int retryCount,
-                                 String operation,
-                                 S3FileEncryptionMaterial encMat,
-                                 SFSession connection,
-                                 String command,
-                                 int parallel,
-                                 SnowflakeS3Client s3Client,
-                                 String stageRegion)
-      throws SnowflakeSQLException
+  static public void renewExpiredToken(SFSession connection, String command,
+                                SnowflakeStorageClient client)
+                                throws SnowflakeSQLException
   {
-    // no need to retry if it is invalid key exception
-    if (ex.getCause() instanceof InvalidKeyException)
-    {
-      // Most likely cause: Unlimited strength policy files not installed
-      String msg = "Strong encryption with Java JRE requires JCE " +
-          "Unlimited Strength Jurisdiction Policy files. " +
-          "Follow JDBC client installation instructions " +
-          "provided by Snowflake or contact Snowflake Support.";
-      logger.error(
-          "JCE Unlimited Strength policy files missing: {}. {}.",
-          new Object[]{ex.getMessage(),
-              ex.getCause().getMessage()});
-      String bootLib =
-          java.lang.System.getProperty("sun.boot.library.path");
-      if (bootLib != null)
-      {
-        msg += " The target directory on your system is: " +
-            Paths.get(bootLib,"security").toString();
-        logger.error(msg);
-      }
-      throw new SnowflakeSQLException(ex, SqlState.SYSTEM_ERROR,
-          ErrorCode.AWS_CLIENT_ERROR.getMessageCode(),
-          operation, msg);
-    }
+      SFStatement statement = new SFStatement(connection);
+      JsonNode jsonNode = parseCommandInGS(statement, command);
+      Map stageCredentials = extractStageCreds(jsonNode);
 
-    if (ex instanceof AmazonClientException)
-    {
-      if (retryCount > CLIENT_SIDE_MAX_RETRIES)
-      {
-        String extendedRequestId = "none";
-
-        if (ex instanceof AmazonS3Exception)
-        {
-          AmazonS3Exception ex1 = (AmazonS3Exception) ex;
-          extendedRequestId = ex1.getExtendedRequestId();
-        }
-
-        if (ex instanceof AmazonServiceException)
-        {
-          AmazonServiceException ex1 = (AmazonServiceException) ex;
-          throw new SnowflakeSQLException(ex1, SqlState.SYSTEM_ERROR,
-              ErrorCode.S3_OPERATION_ERROR.getMessageCode(),
-              operation,
-              ex1.getErrorType().toString(),
-              ex1.getErrorCode(),
-              ex1.getMessage(), ex1.getRequestId(),
-              extendedRequestId);
-        }
-        else
-          throw new SnowflakeSQLException(ex, SqlState.SYSTEM_ERROR,
-              ErrorCode.AWS_CLIENT_ERROR.getMessageCode(),
-              operation, ex.getMessage());
-      }
-      else
-      {
-        logger.debug("Encountered exception ({}) during " +
-                operation + ", retry count: {}",
-            new Object[]{ex.getMessage(), retryCount});
-        logger.debug("Stack trace: ", ex);
-
-        // exponential backoff up to a limit
-        int backoffInMillis = CLIENT_SIDE_RETRY_BACKOFF_MIN;
-        if (retryCount > 1)
-          backoffInMillis <<= (Math.min(retryCount-1,
-              CLIENT_SIDE_RETRY_BACKOFF_MAX_EXPONENT));
-
-        try
-        {
-          logger.debug("Sleep for {} milliseconds before retry",
-              backoffInMillis);
-
-          Thread.sleep(backoffInMillis);
-        }
-        catch(InterruptedException ex1)
-        {
-          // ignore
-        }
-
-        return renewExpiredAWSToken(connection, command, parallel, s3Client,
-                (AmazonClientException) ex, encMat, stageRegion);
-      }
-    }
-    else
-    {
-      if (ex instanceof InterruptedException ||
-          SnowflakeUtil.getRootCause(ex) instanceof SocketTimeoutException)
-      {
-        if (retryCount > CLIENT_SIDE_MAX_RETRIES)
-          throw new SnowflakeSQLException(ex, SqlState.SYSTEM_ERROR,
-              ErrorCode.IO_ERROR.getMessageCode(),
-              "Encountered exception during " + operation +  ": " +
-                  ex.getMessage());
-        else
-        {
-          logger.debug("Encountered exception ({}) during " +
-                  operation + ", retry count: {}",
-              new Object[]{ex.getMessage(), retryCount});
-
-          return s3Client;
-        }
-      }
-      else
-        throw new SnowflakeSQLException(ex, SqlState.SYSTEM_ERROR,
-            ErrorCode.IO_ERROR.getMessageCode(),
-            "Encountered exception during " + operation + ": " +
-                ex.getMessage());
-    }
+      // renew client with the fresh token
+      logger.debug("Renewing expired access token");
+      client.renew(stageCredentials);
   }
 
-  /**
-   * @param connection
-   * @param command
-   * @param parallel
-   * @param s3Client
-   * @param ex
-   * @return
-   * @throws SnowflakeSQLException
-   */
-  static
-      SnowflakeS3Client
-      renewExpiredAWSToken(SFSession connection, String command,
-                           int parallel, SnowflakeS3Client s3Client,
-                           AmazonClientException ex, S3FileEncryptionMaterial encMat,
-                           String stageRegion)
-                                                    throws SnowflakeSQLException
-  {
-    if (ex instanceof AmazonS3Exception)
-    {
-      AmazonS3Exception s3ex = (AmazonS3Exception) ex;
-      if (s3ex.getErrorCode().equalsIgnoreCase(EXPIRED_AWS_TOKEN_ERROR_CODE))
-      {
-        SFStatement statement = new SFStatement(connection);
-        JsonNode jsonNode = parseCommandInGS(statement, command);
-        Map stageCredentials = extractStageCreds(jsonNode);
-        s3Client = createS3Client(stageCredentials, parallel, encMat, stageRegion);
-      }
-    }
-    return s3Client;
-  }
-
-  static private void pullFileFromS3(String stageLocation,
-                                        String filePath,
-                                        String destFileName,
-                                        String localLocation,
-                                        SnowflakeS3Client initialS3Client,
-                                        SFSession connection,
-                                        String command,
-                                        int parallel,
-                                        S3FileEncryptionMaterial encMat,
-                                        String stageRegion)
+  static private void pullFileFromRemoteStore(String stageLocation,
+                                              String filePath,
+                                              String destFileName,
+                                              String localLocation,
+                                              SnowflakeStorageClient initialClient,
+                                              SFSession connection,
+                                              String command,
+                                              int parallel,
+                                              RemoteStoreFileEncryptionMaterial encMat,
+                                              String stageRegion)
           throws SQLException
   {
-    S3Location s3Location = extractBucketNameAndPath(stageLocation);
+    remoteLocation remoteLocation = extractLocationAndPath(stageLocation);
 
     String stageFilePath = filePath;
 
-    if (!s3Location.path.isEmpty())
+    if (!remoteLocation.path.isEmpty())
     {
-      stageFilePath = SnowflakeUtil.concatFilePathNames(s3Location.path,
+      stageFilePath = SnowflakeUtil.concatFilePathNames(remoteLocation.path,
                                                          filePath, "/");
     }
     if (logger.isDebugEnabled())
     {
-      logger.debug("Download object. bucketName={}, key={}, srcFile={}, encryption={}",
-          s3Location.bucketName, stageFilePath, filePath,
+      logger.debug("Download object. location={}, key={}, srcFile={}, encryption={}",
+          remoteLocation.location, stageFilePath, filePath,
           (encMat == null ? "NULL" : Long.toString(encMat.getSmkId()) +
               "|" + encMat.getQueryId()));
     }
 
-    SnowflakeS3Client.download(initialS3Client, connection, command,
+    initialClient.download(connection, command,
                                localLocation, destFileName, parallel,
-                               s3Location.bucketName, stageFilePath,stageRegion);
+                               remoteLocation.location, stageFilePath,stageRegion);
   }
 
   /**
@@ -2112,7 +1938,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
       return;
 
     // determine greatest common prefix for all stage file names so that
-    // we can call s3 API to list the objects and get their digest to compare
+    // we can call remote store API to list the objects and get their digest to compare
     // with local files
     String[] stageFileNames;
 
@@ -2134,11 +1960,11 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
     // use the greatest common prefix to list objects under stage location
     if ("S3".equalsIgnoreCase(stageLocationType))
     {
-      logger.debug("check existing files on s3 for the common prefix");
+      logger.debug("check existing files on remote storage for the common prefix");
 
-      S3Location s3Location = extractBucketNameAndPath(stageLocation);
+      remoteLocation storeLocation = extractLocationAndPath(stageLocation);
 
-      ObjectListing objList = null;
+      StorageObjectSummaryCollection objectSummaries = null;
 
       int retryCount = 0;
 
@@ -2146,9 +1972,9 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
       {
         try
         {
-          objList = s3Client.listObjects(s3Location.bucketName,
+          objectSummaries = storageClient.listObjects(storeLocation.location,
               SnowflakeUtil.concatFilePathNames(
-                  s3Location.path,
+                  storeLocation.path,
                   greatestCommonPrefix, "/"));
 
           // exit retry loop
@@ -2159,31 +1985,28 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
           logger.warn("Listing objects for filtering encountered exception: {}",
               ex.getMessage());
 
-          s3Client = handleS3Exception(ex, ++retryCount, "listObjects",
-              null, connection, command, parallel, s3Client, stageRegion);
+          storageClient.handleStorageException(ex, ++retryCount, "listObjects", connection, command);
         }
       }
-      while(retryCount <= CLIENT_SIDE_MAX_RETRIES);
+      while(retryCount <= storageClient.getMaxRetries());
 
-      List<S3ObjectSummary> s3Objects = objList.getObjectSummaries();
-
-      for (S3ObjectSummary obj : s3Objects)
+      for (StorageObjectSummary obj : objectSummaries)
       {
         logger.debug(
             "Existing object: key={} size={} etag={}",
-            new Object[]{obj.getKey(), obj.getSize(), obj.getETag()});
+            obj.getKey(), obj.getSize(), obj.getETag());
 
         int idxOfLastFileSep = obj.getKey().lastIndexOf("/");
-        String s3ObjFileName = obj.getKey().substring(idxOfLastFileSep + 1);
+        String objFileName = obj.getKey().substring(idxOfLastFileSep + 1);
 
         // get the path to the local file so that we can calculate digest
-        String mappedSrcFile = destFileNameToSrcFileMap.get(s3ObjFileName);
+        String mappedSrcFile = destFileNameToSrcFileMap.get(objFileName);
 
         // skip objects that don't have a corresponding file to be uploaded
         if (mappedSrcFile == null)
           continue;
 
-        logger.debug("Next compare digest for {} against {} on S3", mappedSrcFile, s3ObjFileName);
+        logger.debug("Next compare digest for {} against {} on the remote store", mappedSrcFile, objFileName);
 
         String localFile = null;
         final boolean remoteEncrypted;
@@ -2191,7 +2014,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
         try
         {
           localFile = (commandType==CommandType.UPLOAD)?
-                             mappedSrcFile:(localLocation + s3ObjFileName);
+                             mappedSrcFile:(localLocation + objFileName);
 
           if (commandType == CommandType.DOWNLOAD &&
               !(new File(localFile)).exists())
@@ -2206,43 +2029,40 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
           if (!fileMetadataMap.get(mappedSrcFile).requireCompress &&
               Math.abs(obj.getSize() - (new File(localFile)).length()) > 16)
           {
-            logger.debug("Size diff between S3 and local, will {} {}", 
+            logger.debug("Size diff between remote and local, will {} {}",
                         commandType.name().toLowerCase(), mappedSrcFile);
             continue;
           }
 
-          // Get object metadata from S3
-
-          ObjectMetadata meta;
+          // Get object metadata from remote storage
+          //
+          StorageObjectMetadata meta;
 
           try
           {
-            meta = s3Client.getObjectMetadata(obj.getBucketName(),
+            meta = storageClient.getObjectMetadata(obj.getLocation(),
                 obj.getKey());
           }
-          catch(Exception ex)
+          catch(StorageProviderException spEx)
           {
-            if (ex instanceof AmazonS3Exception)
+            // SNOW-14521: when file is not found, ok to upload
+            if (spEx.isServiceException404())
             {
-              AmazonS3Exception s3Ex = (AmazonS3Exception)ex;
-              // SNOW-14521: when file is not found, ok to upload
-              if (s3Ex.getStatusCode() == 404)
-              {
-                // log it
-                logger.warn("File returned from listing but found missing {} when getting its" +
-                            " metadata. Bucket={}, key={}", 
-                            obj.getBucketName(), obj.getKey());
+              // log it
+              logger.warn("File returned from listing but found missing {} when getting its" +
+                          " metadata. Location={}, key={}",
+                          obj.getLocation(), obj.getKey());
 
-                // the file is not found, ok to upload
-                continue;
-              }
+              // the file is not found, ok to upload
+              continue;
             }
+
 
             // for any other exception, log an error
             logger.error("Fetching object metadata encountered exception: {}",
-                   ex.getMessage());
+                   spEx.getMessage());
 
-            throw ex;
+            throw spEx;
           }
 
           String objDigest = meta.getUserMetadata().get("sfc-digest");
@@ -2318,8 +2138,8 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
               (objDigest == null && !hashText.equals(obj.getETag()))) // ETag/MD5 mismatch
           {
             logger.debug(
-                "digest diff between S3 and local, will {} {}, " +
-                    "local digest: {}, s3 digest: {}",
+                "digest diff between remote store and local, will {} {}, " +
+                    "local digest: {}, remote store digest: {}",
                 new Object[]{commandType.name().toLowerCase(),
                     mappedSrcFile, hashText, obj.getETag()});
 
@@ -2333,10 +2153,10 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
               "Error reading: " + localFile);
         }
 
-        logger.debug("digest same between S3 and local, will not upload {} {}",
+        logger.debug("digest same between remote store and local, will not upload {} {}",
                       commandType.name().toLowerCase(), mappedSrcFile);
 
-        skipFile(mappedSrcFile, s3ObjFileName);
+        skipFile(mappedSrcFile, objFileName);
       }
     }
     else if ("LOCAL_FS".equalsIgnoreCase(stageLocationType))
@@ -2567,6 +2387,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
         FileMetadata fileMetadata = new FileMetadata();
         fileMetadataMap.put(sourceFile, fileMetadata);
         fileMetadata.srcFileName = sourceFile;
+
         fileMetadata.destFileName = sourceFile.substring(
                 sourceFile.lastIndexOf("/") + 1); // s3 uses / as separator
       }
@@ -2822,90 +2643,24 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
   }
 
   /**
-   * A small helper for creating an S3 client.
+   * A small helper for extracting location name and path from full location path
    *
-   * @return
+   * @param stageLocationPath stage location
+   * @return  remoteLocation object
    */
-  private static SnowflakeS3Client createS3Client(Map stageCredentials,
-                                                  int parallel,
-                                                  String stageRegion)
-          throws SnowflakeSQLException
+  static public remoteLocation extractLocationAndPath(String stageLocationPath)
   {
-    return createS3Client(stageCredentials, parallel, null, stageRegion);
-  }
+    String location = stageLocationPath;
+    String path = "";
 
-  /**
-   * A small helper for creating an S3 client.
-   *
-   * @return
-   */
-  private static SnowflakeS3Client createS3Client(Map stageCredentials,
-                                               int parallel,
-                                               S3FileEncryptionMaterial encMat,
-                                               String stageRegion)
-          throws SnowflakeSQLException
-  {
-    logger.debug("createS3Client encryption={}", (encMat == null ? "no" : "yes"));
-
-
-    SnowflakeS3Client s3Client;
-
-    String awsID = (String)stageCredentials.get("AWS_ID");
-    String awsKey = (String)stageCredentials.get("AWS_KEY");
-    String awsToken = (String)stageCredentials.get("AWS_TOKEN");
-
-    logger.debug("aws id={}, aws key={}, aws token={}",
-                awsID, awsKey, awsToken);
-
-    // initialize aws credentials
-    AWSCredentials awsCredentials = (awsToken != null) ?
-        new BasicSessionCredentials(awsID, awsKey, awsToken)
-      : new BasicAWSCredentials(awsID, awsKey);
-
-    ClientConfiguration clientConfig = new ClientConfiguration();
-    clientConfig.setMaxConnections(parallel+1);
-    clientConfig.setMaxErrorRetry(S3_TRANSFER_MAX_RETRIES);
-
-    logger.debug("s3 client configuration: maxConnection={}, connectionTimeout={}, " +
-                  "socketTimeout={}, maxErrorRetry={}",
-                  clientConfig.getMaxConnections(),
-                  clientConfig.getConnectionTimeout(),
-                  clientConfig.getSocketTimeout(),
-                  clientConfig.getMaxErrorRetry());
-
-    try
+    // split stage location as location name and path
+    if (stageLocationPath.contains("/"))
     {
-      s3Client = new SnowflakeS3Client(awsCredentials, clientConfig, encMat, stageRegion);
-    }
-    catch(Throwable ex)
-    {
-      logger.debug("Exception creating s3 client", ex);
-      throw ex;
-    }
-    logger.debug("s3 client created");
-
-    return s3Client;
-  }
-
-  /**
-   * A small helper for extracting bucket name and path from stage location.
-   *
-   * @param stageLocation stage location
-   * @return s3 location
-   */
-  static public S3Location extractBucketNameAndPath(String stageLocation)
-  {
-    String bucketName = stageLocation;
-    String s3path = "";
-
-    // split stage location as bucket name and path
-    if (stageLocation.contains("/"))
-    {
-      bucketName = stageLocation.substring(0, stageLocation.indexOf("/"));
-      s3path = stageLocation.substring(stageLocation.indexOf("/")+1);
+      location = stageLocationPath.substring(0, stageLocationPath.indexOf("/"));
+      path = stageLocationPath.substring(stageLocationPath.indexOf("/")+1);
     }
 
-    return new S3Location(bucketName, s3path);
+    return new remoteLocation(location, path);
   }
 
   /**
