@@ -118,7 +118,8 @@ public class SessionUtil
       "AUTOCOMMIT",
       "JDBC_EFFICIENT_CHUNK_STORAGE",
       "JDBC_RS_COLUMN_CASE_INSENSITIVE",
-      "CLIENT_METADATA_REQUEST_USE_CONNECTION_CTX"));
+      "CLIENT_METADATA_REQUEST_USE_CONNECTION_CTX",
+      "JDBC_TREAT_DECIMAL_AS_INT"));
 
   /**
    * A class for holding all information required for login
@@ -1577,6 +1578,13 @@ public class SessionUtil
         {
           session.setTimestampMappedType(SnowflakeType.valueOf(
               ((String) entry.getValue()).toUpperCase()));
+        }
+      }
+      else if ("JDBC_TREAT_DECIMAL_AS_INT".equalsIgnoreCase(entry.getKey()))
+      {
+        if (session != null)
+        {
+          session.setJdbcTreatDecimalAsInt((boolean) entry.getValue());
         }
       }
     }

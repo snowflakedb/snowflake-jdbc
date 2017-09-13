@@ -194,6 +194,8 @@ public class SFSession
   private SnowflakeType timestampMappedType =
       SnowflakeType.TIMESTAMP_LTZ;
 
+  private boolean jdbcTreatDecimalAsInt = true;
+
   /**
    * Add a property
    * If a property is known for connection, add it to connection properties
@@ -900,5 +902,13 @@ public class SFSession
     this.timestampMappedType = timestampMappedType;
   }
 
+  public boolean isJdbcTreatDecimalAsInt()
+  {
+    return jdbcTreatDecimalAsInt;
+  }
 
+  public void setJdbcTreatDecimalAsInt(boolean jdbcTreatDecimalAsInt)
+  {
+    this.jdbcTreatDecimalAsInt = jdbcTreatDecimalAsInt;
+  }
 }

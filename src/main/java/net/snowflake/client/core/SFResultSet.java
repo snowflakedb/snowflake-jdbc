@@ -90,7 +90,8 @@ public class SFResultSet extends SFBaseResultSet
         .setNetworkTimeoutInMilli(session.getNetworkTimeoutInMilli())
         .setUseProxy(session.isUseProxy());
 
-    ResultUtil.ResultOutput resultOutput = ResultUtil.processResult(resultInput);
+    ResultUtil.ResultOutput resultOutput = ResultUtil
+        .processResult(resultInput, statement.getSession());
 
     this.queryId = resultOutput.getQueryId();
     this.statementTypeId = resultOutput.getStatementTypeId();

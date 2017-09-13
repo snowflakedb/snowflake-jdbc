@@ -103,7 +103,9 @@ public class SnowflakeUtil
                                     errorCode);
   }
 
-  static public SnowflakeColumnMetadata extractColumnMetadata(JsonNode colNode)
+  static public SnowflakeColumnMetadata extractColumnMetadata(
+                                                  JsonNode colNode,
+                                                  boolean jdbcTreatDecimalAsInt)
           throws SnowflakeSQLException
   {
     String colName = colNode.path("name").asText();
@@ -138,7 +140,8 @@ public class SnowflakeUtil
         break;
 
       case FIXED:
-        colType = scale == 0 ? Types.BIGINT : Types.DECIMAL;
+        colType = jdbcTreatDecimalAsInt && scale == 0
+            ? Types.BIGINT : Types.DECIMAL;
         extColTypeName = "NUMBER";
         break;
 

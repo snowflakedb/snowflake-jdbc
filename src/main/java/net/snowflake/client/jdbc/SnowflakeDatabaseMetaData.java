@@ -1580,9 +1580,9 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
                     logger.debug("data type string: {}",
                                dataTypeStr);
 
-                    SnowflakeColumnMetadata columnMetadata
-                                            = SnowflakeUtil
-                    .extractColumnMetadata(jsonNode);
+                    SnowflakeColumnMetadata columnMetadata = SnowflakeUtil
+                                    .extractColumnMetadata(jsonNode,
+                                            session.isJdbcTreatDecimalAsInt());
 
                     logger.debug("nullable: {}",
                                columnMetadata.isNullable());

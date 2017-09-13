@@ -237,7 +237,8 @@ public class ResultUtil
    * @return processed result output
    * @throws SnowflakeSQLException if failed to get number of columns
    */
-  static public ResultOutput processResult(ResultInput resultData)
+  static public ResultOutput processResult(ResultInput resultData,
+                                           SFSession sfSession)
       throws SnowflakeSQLException
   {
     ResultOutput resultOutput = new ResultOutput();
@@ -276,7 +277,8 @@ public class ResultUtil
       JsonNode colNode = rootNode.path("data").path("rowtype").path(i);
 
       SnowflakeColumnMetadata columnMetadata
-          = SnowflakeUtil.extractColumnMetadata(colNode);
+          = SnowflakeUtil.extractColumnMetadata(
+              colNode, sfSession.isJdbcTreatDecimalAsInt());
 
       resultOutput.resultColumnMetadata.add(columnMetadata);
 
