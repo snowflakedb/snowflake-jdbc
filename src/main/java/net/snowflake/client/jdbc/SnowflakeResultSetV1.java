@@ -315,4 +315,22 @@ public class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
   {
     return sfBaseResultSet.isClosed();
   }
+
+  @Override
+  public boolean isLast() throws SQLException
+  {
+    return sfBaseResultSet.isLast();
+  }
+
+  @Override
+  public boolean isAfterLast() throws SQLException
+  {
+    return sfBaseResultSet.isAfterLast();
+  }
+
+  @Override
+  public boolean isBeforeFirst() throws SQLException
+  {
+    return sfBaseResultSet.isBeforeFirst();
+  }
 }

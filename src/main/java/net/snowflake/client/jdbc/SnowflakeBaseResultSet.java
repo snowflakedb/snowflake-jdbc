@@ -1094,14 +1094,7 @@ public class SnowflakeBaseResultSet implements ResultSet
   {
     logger.debug("public boolean isFirst()");
 
-    if (row == 1)
-    {
-      return true;
-    }
-    else
-    {
-      return false;
-    }
+    return row == 1;
   }
 
   @Override

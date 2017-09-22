@@ -13,7 +13,9 @@ import java.util.List;
  */
 public interface SnowflakeFixedView
 {
-  public List<SnowflakeColumnMetadata> describeColumns() throws Exception;
+  List<SnowflakeColumnMetadata> describeColumns() throws Exception;
 
-  public List<Object> getNextRow() throws Exception;
+  List<Object> getNextRow() throws Exception;
+
+  int getTotalRows();
 }

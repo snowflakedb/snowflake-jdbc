@@ -83,13 +83,13 @@ public class SFFixedViewResultSet extends SFBaseResultSet
                                         "Error getting next row from fixed view");
     }
 
+    row++;
+
     if (nextRowList == null)
     {
       logger.debug("end of result");
       return false;
     }
-
-    row++;
 
     if (nextRow == null)
     {
@@ -143,5 +143,17 @@ public class SFFixedViewResultSet extends SFBaseResultSet
     {
       return SFStatementType.PUT;
     }
+  }
+
+  @Override
+  public boolean isLast()
+  {
+    return row  == fixedView.getTotalRows();
+  }
+
+  @Override
+  public boolean isAfterLast()
+  {
+    return row > fixedView.getTotalRows();
   }
 }

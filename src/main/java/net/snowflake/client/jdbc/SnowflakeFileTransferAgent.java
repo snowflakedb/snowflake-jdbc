@@ -2870,4 +2870,9 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
             ErrorCode.AWS_CLIENT_ERROR.getMessageCode(), operation, msg);
   }
 
+  @Override
+  public int getTotalRows()
+  {
+    return statusRows.size();
+  }
 }

@@ -364,6 +364,20 @@ public class SFResultSet extends SFBaseResultSet
   }
 
   @Override
+  public boolean isLast()
+  {
+    return nextChunkIndex == chunkCount &&
+        currentChunkRowIndex + 1 == currentChunkRowCount;
+  }
+
+  @Override
+  public boolean isAfterLast()
+  {
+    return nextChunkIndex == chunkCount &&
+        currentChunkRowIndex >= currentChunkRowCount;
+  }
+
+  @Override
   public void close()
   {
     super.close();

@@ -66,6 +66,10 @@ public abstract class SFBaseResultSet
   // indicate whether the result set has been closed or not.
   protected boolean isClosed = true;
 
+  abstract public boolean isLast();
+
+  abstract public boolean isAfterLast();
+
   public void setSession(SFSession session)
   {
     this.session = session;
@@ -653,6 +657,11 @@ public abstract class SFBaseResultSet
     logger.debug("public boolean isFirst()");
 
     return row == 1;
+  }
+
+  public boolean isBeforeFirst()
+  {
+    return row == 0;
   }
 
   public abstract SFStatementType getStatementType();
