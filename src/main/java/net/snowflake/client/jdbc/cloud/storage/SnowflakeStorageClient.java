@@ -3,7 +3,6 @@
  */
 package net.snowflake.client.jdbc.cloud.storage;
 
-import com.amazonaws.services.s3.model.ObjectMetadata;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.jdbc.FileBackedOutputStream;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
@@ -11,7 +10,6 @@ import net.snowflake.client.jdbc.SnowflakeSQLException;
 import java.io.File;
 import java.io.InputStream;
 import java.util.Map;
-import net.snowflake.client.jdbc.MatDesc;
 
 /**
  * Interface for storage client provider implementations
@@ -129,23 +127,5 @@ void download(SFSession connection, String command, String localLocation, String
   void handleStorageException(Exception ex, int retryCount, String operation, SFSession connection, String command)
           throws SnowflakeSQLException;
 
-  /**
-   * Returns the material descriptor key
-   */
-  abstract String getMatdescKey();
 
-  /**
-   * Adds encryption metadata to the StorageObjectMetadata object
-   */
-  abstract void addEncryptionMetadata(StorageObjectMetadata meta, MatDesc matDesc, byte[] ivData, byte[] encKeK, long contentLength);
-
-  /**
-   * Adds digest metadata to the StorageObjectMetadata object
-   */
-  abstract void addDigestMetadata(StorageObjectMetadata meta, String digest);
-
-  /**
-   * Gets digest metadata to the StorageObjectMetadata object
-   */
-  abstract String getDigestMetadata(StorageObjectMetadata meta);
 }

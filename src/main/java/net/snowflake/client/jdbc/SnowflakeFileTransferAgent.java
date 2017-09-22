@@ -1818,7 +1818,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
     meta.setContentLength(uploadSize);
     if (digest != null)
     {
-      initialClient.addDigestMetadata(meta, digest);
+      meta.addUserMetadata("sfc-digest", digest);
     }
 
     if (compressionType != null &&
@@ -2076,10 +2076,11 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
             throw spEx;
           }
 
-          String objDigest = storageClient.getDigestMetadata(meta);
+          String objDigest = meta.getUserMetadata().get("sfc-digest");
 
+          // TODO: Support encryption for Azure, make this platform agnostic SNOW-33042
           remoteEncrypted = MatDesc.parse(
-              meta.getUserMetadata().get(storageClient.getMatdescKey())) != null;
+              meta.getUserMetadata().get("x-amz-matdesc")) != null;
 
           // calculate the digest hash of the local file
           InputStream fileStream = null;

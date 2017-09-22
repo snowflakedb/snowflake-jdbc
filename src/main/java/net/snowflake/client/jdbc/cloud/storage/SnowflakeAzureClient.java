@@ -1,17 +1,5 @@
-/*
- * Copyright (c) 2012-2017 Snowflake Computing Inc. All rights reserved.
- */
 package net.snowflake.client.jdbc.cloud.storage;
 
-import com.amazonaws.services.s3.model.CryptoConfiguration;
-import com.amazonaws.services.s3.model.CryptoMode;
-import com.amazonaws.services.s3.model.EncryptionMaterials;
-import com.amazonaws.services.s3.model.ObjectMetadata;
-import com.amazonaws.util.Base64;
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.microsoft.azure.storage.blob.BlobProperties;
 import com.microsoft.azure.storage.blob.CloudBlob;
 import com.microsoft.azure.storage.blob.CloudBlockBlob;
@@ -39,20 +27,17 @@ import org.apache.commons.lang3.tuple.Pair;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.SocketTimeoutException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.InvalidKeyException;
-import java.util.AbstractMap;
-import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import net.snowflake.client.jdbc.MatDesc;
-import org.apache.commons.lang3.StringUtils;
 
 /**
  * Encapsulates the Azure Storage client
@@ -64,10 +49,7 @@ import org.apache.commons.lang3.StringUtils;
 public class SnowflakeAzureClient implements SnowflakeStorageClient
 {
 
-  private final static String localFileSep = System.getProperty("file.separator");
-  private final static String AZ_ENCRYPTIONDATAPROP = "encryptiondata";
-
-  private int encryptionKeySize = 0; // used for PUTs
+  private final  static String localFileSep = System.getProperty("file.separator");
   private StageInfo stageInfo;
   private RemoteStoreFileEncryptionMaterial encMat;
   private CloudBlobClient azStorageClient;
@@ -84,7 +66,6 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient
    */
   public static SnowflakeAzureClient createSnowflakeAzureClient(StageInfo stage,
                                                                RemoteStoreFileEncryptionMaterial encMat)
-          throws SnowflakeSQLException
   {
     SnowflakeAzureClient azureClient = new SnowflakeAzureClient();
     azureClient.setupAzureClient(stage, encMat);
@@ -103,7 +84,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient
    * @throws IllegalArgumentException when invalid credentials are used
    */
   private void setupAzureClient(StageInfo stage, RemoteStoreFileEncryptionMaterial encMat)
-          throws IllegalArgumentException, SnowflakeSQLException
+          throws IllegalArgumentException
   {
     // Save the client creation parameters so that we can reuse them,
     // to reset the Azure client.
@@ -127,21 +108,6 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient
       {
         // Use anonymous authentication.
         azCreds = StorageCredentialsAnonymous.ANONYMOUS;
-      }
-
-      if (encMat != null)
-      {
-        byte[] decodedKey = Base64.decode(encMat.getQueryStageMasterKey());
-        encryptionKeySize = decodedKey.length*8;
-
-        if (encryptionKeySize != 128 &&
-            encryptionKeySize != 192 &&
-            encryptionKeySize != 256)
-        {
-          throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
-                ErrorCode.INTERNAL_ERROR.getMessageCode(),
-                "unsupported key size", encryptionKeySize);
-        }
       }
       this.azStorageClient = new CloudBlobClient(storageEndpoint, azCreds);
     }
@@ -178,7 +144,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient
    */
   public boolean isEncrypting()
   {
-    return encryptionKeySize > 0;
+    return false; //TODO: implement support for encryption SNOW-33042
   }
 
   /**
@@ -187,7 +153,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient
   @Override
   public int getEncryptionKeySize()
   {
-    return encryptionKeySize;
+    return 0; //TODO: implement support for encryption SNOW-33042
   }
 
   /**
@@ -258,8 +224,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient
     {
       // Get a reference to the BLOB, to retrieve its metadata
       CloudBlobContainer container = azStorageClient.getContainerReference(remoteStorageLocation);
-      CloudBlob blob = container.getBlockBlobReference(prefix);
-      blob.downloadAttributes();
+      CloudBlob blob = container.getAppendBlobReference(prefix);
 
       // Get the user-defined BLOB metadata
       Map<String, String> userDefinedMetadata = blob.getMetadata();
@@ -310,8 +275,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient
     {
       try
       {
-        String localFilePath = localLocation + localFileSep + destFileName;
-        File localFile = new File(localFilePath);
+        FileOutputStream outStream = new FileOutputStream(localLocation + localFileSep + destFileName);
         CloudBlobContainer container = azStorageClient.getContainerReference(remoteStorageLocation);
         CloudBlob blob = container.getBlockBlobReference(stageFilePath);
 
@@ -319,40 +283,10 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient
         // where the user has control of block size and parallelism
         // we rely on Azure to handle the download, hence the "parallelism" parameter is ignored
         // in the Azure implementation of the method
-        blob.downloadToFile(localFilePath);
-
-        // Pull object metadata from Azure
-        blob.downloadAttributes();
-
-        // Get the user-defined BLOB metadata
-        Map<String, String> userDefinedMetadata = blob.getMetadata();
-        AbstractMap.SimpleEntry<String, String> encryptionData =
-          parseEncryptionData(userDefinedMetadata.get(AZ_ENCRYPTIONDATAPROP));
-
-        String key = encryptionData.getKey();
-        String iv = encryptionData.getValue();
-
-        if (this.isEncrypting() && this.getEncryptionKeySize() < 256)
-        {
-          if (key == null || iv == null)
-          {
-            throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
-              ErrorCode.INTERNAL_ERROR.getMessageCode(),
-              "File metadata incomplete");
-          }
-
-          // Decrypt file
-          try
-          {
-            EncryptionProvider.decrypt(localFile, key, iv, this.encMat);
-          }
-          catch (Exception ex)
-          {
-            logger.error("Error decrypting file",ex);
-            throw ex;
-          }
-        }
+        blob.download(outStream);
         return;
+
+        // TODO: support encryption - SNOW-32913
 
       } catch (Exception ex)
       {
@@ -390,11 +324,9 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient
           throws SnowflakeSQLException
   {
     final List<FileInputStream> toClose = new ArrayList<>();
-    long originalContentLength = meta.getContentLength();
 
     Pair<InputStream, Boolean> uploadStreamInfo = createUploadStream(
-            srcFile, uploadFromStream, inputStream, meta, originalContentLength,
-            fileBackedOutputStream, toClose);
+            srcFile, uploadFromStream, inputStream, fileBackedOutputStream, toClose);
 
     if (!(meta instanceof AzureObjectMetadata))
       throw new IllegalArgumentException("Unexpected metadata object type");
@@ -421,8 +353,6 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient
                    );
         logger.debug("Upload successful");
 
-        blob.uploadMetadata();
-
         // close any open streams in the "toClose" list and return
         for (FileInputStream is : toClose)
           IOUtils.closeQuietly(is);
@@ -441,8 +371,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient
                           ex.getMessage() + "\nCannot retry upload from stream.");
         }
         uploadStreamInfo = createUploadStream(srcFile, uploadFromStream,
-                inputStream, meta, originalContentLength,
-                fileBackedOutputStream, toClose);
+                inputStream, fileBackedOutputStream, toClose);
       }
 
     }
@@ -478,8 +407,6 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient
           File srcFile,
           boolean uploadFromStream,
           InputStream inputStream,
-          StorageObjectMetadata meta,
-          long originalContentLength,
           FileBackedOutputStream fileBackedOutputStream,
           List<FileInputStream> toClose)
           throws SnowflakeSQLException
@@ -489,52 +416,24 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient
             this,srcFile,uploadFromStream,inputStream, fileBackedOutputStream,toClose);
 
     final InputStream stream;
-    FileInputStream srcFileStream = null;
     try
     {
-      if (isEncrypting() && getEncryptionKeySize() < 256)
+      if(uploadFromStream)
       {
-        try
+        if(fileBackedOutputStream!=null)
         {
-          final InputStream uploadStream = uploadFromStream ?
-              (fileBackedOutputStream != null ?
-                    fileBackedOutputStream.asByteSource().openStream() :
-                    inputStream) :
-              (srcFileStream = new FileInputStream(srcFile));
-          toClose.add(srcFileStream);
-
-          // Encrypt
-          stream = EncryptionProvider.encrypt(meta, originalContentLength,
-                                              uploadStream, this.encMat, this);
-          uploadFromStream = true;
+          stream = fileBackedOutputStream.asByteSource().openStream();
         }
-        catch (Exception ex)
+        else
         {
-          logger.error("Failed to encrypt input", ex);
-          throw new SnowflakeSQLException(ex, SqlState.INTERNAL_ERROR,
-                  ErrorCode.INTERNAL_ERROR.getMessageCode(),
-                  "Failed to encrypt input",ex.getMessage());
+          stream = inputStream;
         }
       }
       else
       {
-        if(uploadFromStream)
-        {
-          if(fileBackedOutputStream!=null)
-          {
-            stream = fileBackedOutputStream.asByteSource().openStream();
-          }
-          else
-          {
-            stream = inputStream;
-          }
-        }
-        else
-        {
-          srcFileStream = new FileInputStream(srcFile);
-          toClose.add(srcFileStream);
-          stream = srcFileStream;
-        }
+        final FileInputStream srcFileStream = new FileInputStream(srcFile);
+        toClose.add(srcFileStream);
+        stream = srcFileStream;
       }
     }
     catch (FileNotFoundException ex)
@@ -681,98 +580,4 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient
     return storageEndpoint;
   }
 
-  /*
-   * buildEncryptionMetadataJSON
-   * Takes the base64-encoded iv and key and creates the JSON block to be
-   * used as the encryptiondata metadata field on the blob.
-   */
-  private String buildEncryptionMetadataJSON(String iv64, String key64)
-  {
-    return String.format("{\"EncryptionMode\":\"FullBlob\",\"WrappedContentKey\""
-                         + ":{\"KeyId\":\"symmKey1\",\"EncryptedKey\":\"%s\""
-                         + ",\"Algorithm\":\"A192KW\"},\"EncryptionAgent\":"
-                         + "{\"Protocol\":\"1.0\",\"EncryptionAlgorithm\":"
-                         + "\"AES_CBC_256\"},\"ContentEncryptionIV\":\"%s\""
-                         + ",\"KeyWrappingMetadata\":{\"EncryptionLibrary\":"
-                         + "\"Java 5.3.0\"}}", key64, iv64);
-  }
-
-  /*
-   * parseEncryptionData
-   * Takes the json string in the encryptiondata metadata field of the encrypted
-   * blob and parses out the key and iv. Returns the pair as key = key, iv = value.
-   */
-  private SimpleEntry<String, String> parseEncryptionData(String jsonEncryptionData)
-          throws SnowflakeSQLException
-  {
-    ObjectMapper mapper = new ObjectMapper();
-    JsonFactory factory = mapper.getJsonFactory();
-    try
-    {
-      JsonParser parser = factory.createJsonParser(jsonEncryptionData);
-      JsonNode encryptionDataNode = mapper.readTree(parser);
-
-      String iv = encryptionDataNode.get("ContentEncryptionIV").asText();
-      String key = encryptionDataNode.get("WrappedContentKey").get("EncryptedKey").asText();
-
-      return new SimpleEntry<String, String>(key, iv);
-    }
-    catch (Exception ex)
-    {
-      throw new SnowflakeSQLException(ex, SqlState.SYSTEM_ERROR,
-            ErrorCode.IO_ERROR.getMessageCode(),
-            "Error parsing encryption data as json" + ": " +
-                    ex.getMessage());
-    }
-  }
-
-  /**
-   * Returns the material descriptor key
-   */
-  @Override
-  public String getMatdescKey()
-  {
-    return "matdesc";
-  }
-
-  /**
-   * Adds encryption metadata to the StorageObjectMetadata object
-   */
-   @Override
-   public void addEncryptionMetadata(StorageObjectMetadata meta,
-                              MatDesc matDesc,
-                              byte[] ivData,
-                              byte[] encKeK,
-                              long contentLength)
-   {
-      meta.addUserMetadata(getMatdescKey(),
-                           matDesc.toString());
-      meta.addUserMetadata(AZ_ENCRYPTIONDATAPROP, buildEncryptionMetadataJSON(
-                            Base64.encodeAsString(ivData),
-                            Base64.encodeAsString(encKeK))
-                          );
-      meta.setContentLength(contentLength);
-   }
-
-  /**
-   * Adds digest metadata to the StorageObjectMetadata object
-   */
-   @Override
-   public void addDigestMetadata(StorageObjectMetadata meta, String digest)
-   {
-     if (!StringUtils.isBlank(digest))
-     {
-       // Azure doesn't allow hyphens in the name of a metadata field.
-       meta.addUserMetadata("sfcdigest", digest);
-     }
-   }
-
-  /**
-   * Gets digest metadata to the StorageObjectMetadata object
-   */
-   @Override
-   public String getDigestMetadata(StorageObjectMetadata meta)
-   {
-     return meta.getUserMetadata().get("sfcdigest");
-   }
 }

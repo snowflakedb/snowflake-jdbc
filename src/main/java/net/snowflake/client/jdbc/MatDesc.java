@@ -9,7 +9,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 /**
- * A class to handle S3 material descriptor metadata entries (matdesc).
+ * A class to handle S3 material descriptor metadata entries (x-amz-matdesc).
  * @author ffunke
  */
 public class MatDesc
