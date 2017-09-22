@@ -40,36 +40,18 @@ import net.snowflake.common.core.SqlState;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
-import javax.crypto.BadPaddingException;
-import javax.crypto.Cipher;
-import javax.crypto.CipherInputStream;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
-import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.SocketTimeoutException;
-import java.nio.channels.FileChannel;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
-import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-
-import static java.nio.file.StandardOpenOption.CREATE;
-import static java.nio.file.StandardOpenOption.READ;
 
 /**
  * Wrapper around AmazonS3Client.
@@ -82,17 +64,11 @@ public class SnowflakeS3Client implements SnowflakeStorageClient
   private final  static String localFileSep =
       System.getProperty("file.separator");
   private final  static String AES = "AES";
-  private final  static String AMZ_MATDESC = "x-amz-matdesc";
   private final  static String AMZ_KEY = "x-amz-key";
   private final  static String AMZ_IV = "x-amz-iv";
-  private final  static String FILE_CIPHER = "AES/CBC/PKCS5Padding";
-  private final  static String KEY_CIPHER = "AES/ECB/PKCS5Padding";
-  private final  static int BUFFER_SIZE = 2*1024*1024; // 2 MB
 
   // expired AWS token error code
   private final static String EXPIRED_AWS_TOKEN_ERROR_CODE = "ExpiredToken";
-
-  private static SecureRandom secRnd;
 
   private int encryptionKeySize = 0; // used for PUTs
   private AmazonS3Client amazonClient = null;
@@ -183,19 +159,6 @@ public class SnowflakeS3Client implements SnowflakeStorageClient
         amazonClient.setRegion(region);
       }
     }
-  }
-
-  private static synchronized SecureRandom getSecRnd()
-          throws NoSuchAlgorithmException,
-                 NoSuchProviderException
-  {
-    if (secRnd == null)
-    {
-      secRnd = SecureRandom.getInstance("SHA1PRNG", "SUN");
-      byte[] bytes = new byte[10];
-      secRnd.nextBytes(bytes);
-    }
-    return secRnd;
   }
 
   // Returns the Max number of retry attempts
@@ -332,7 +295,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient
           // Decrypt file
           try
           {
-            decrypt(localFile, key, iv);
+            EncryptionProvider.decrypt(localFile, key, iv, this.encMat);
           }
           catch (Exception ex)
           {
@@ -475,136 +438,6 @@ public class SnowflakeS3Client implements SnowflakeStorageClient
             "Unexpected: upload unsuccessful without exception!");
   }
 
-
-  private void decrypt(File file, String keyBase64, String ivBase64)
-          throws NoSuchAlgorithmException,
-                 NoSuchPaddingException,
-                 InvalidKeyException,
-                 IllegalBlockSizeException,
-                 BadPaddingException,
-                 InvalidAlgorithmParameterException,
-                 IOException
-  {
-    byte[] keyBytes = Base64.decode(keyBase64);
-    byte[] ivBytes = Base64.decode(ivBase64);
-    byte[] qsmkBytes = Base64.decode(encMat.getQueryStageMasterKey());
-    final SecretKey fileKey;
-
-    // Decrypt file key
-    {
-      final Cipher keyCipher = Cipher.getInstance(KEY_CIPHER);
-      SecretKey queryStageMasterKey =
-          new SecretKeySpec(qsmkBytes, 0, qsmkBytes.length, AES);
-      keyCipher.init(Cipher.DECRYPT_MODE, queryStageMasterKey);
-      byte[] fileKeyBytes = keyCipher.doFinal(keyBytes);
-
-      // NB: we assume qsmk.length == fileKey.length
-      //     (fileKeyBytes.length may be bigger due to padding)
-      fileKey = new SecretKeySpec(fileKeyBytes, 0, qsmkBytes.length, AES);
-    }
-
-
-
-    // Decrypt file
-    {
-      final Cipher fileCipher = Cipher.getInstance(FILE_CIPHER);
-      final IvParameterSpec iv = new IvParameterSpec(ivBytes);
-      final byte[] buffer = new byte[BUFFER_SIZE];
-      fileCipher.init(Cipher.DECRYPT_MODE, fileKey, iv);
-
-      long totalBytesRead = 0;
-      // Overwrite file contents buffer-wise with decrypted data
-      try (InputStream is = Files.newInputStream(file.toPath(), READ);
-           InputStream cis = new CipherInputStream(is, fileCipher);
-           OutputStream os = Files.newOutputStream(file.toPath(), CREATE);)
-      {
-        int bytesRead;
-        while ((bytesRead = cis.read(buffer)) > -1)
-        {
-          os.write(buffer, 0, bytesRead);
-          totalBytesRead += bytesRead;
-        }
-      }
-
-      // Discard any padding that the encrypted file had
-      try (FileChannel fc = new FileOutputStream(file, true).getChannel())
-      {
-        fc.truncate(totalBytesRead);
-      }
-    }
-  }
-
-  private CipherInputStream encrypt(ObjectMetadata meta,
-                                    long originalContentLength,
-                                    InputStream src)
-          throws InvalidKeyException,
-                 InvalidAlgorithmParameterException,
-                 NoSuchAlgorithmException,
-                 NoSuchProviderException,
-                 NoSuchPaddingException,
-                 FileNotFoundException,
-                 IllegalBlockSizeException,
-                 BadPaddingException
-  {
-    final byte[] decodedKey = Base64.decode(encMat.getQueryStageMasterKey());
-    final int keySize = decodedKey.length;
-    final byte[] fileKeyBytes = new byte[keySize];
-    final byte[] ivData;
-    final CipherInputStream cis;
-    final int blockSz;
-    {
-      final Cipher fileCipher = Cipher.getInstance(FILE_CIPHER);
-      blockSz = fileCipher.getBlockSize();
-
-      // Create IV
-      ivData = new byte[blockSz];
-      getSecRnd().nextBytes(ivData);
-      final IvParameterSpec iv = new IvParameterSpec(ivData);
-
-      // Create file key
-      getSecRnd().nextBytes(fileKeyBytes);
-      SecretKey fileKey = new SecretKeySpec(fileKeyBytes, 0, keySize, AES);
-
-
-
-      // Init cipher
-      fileCipher.init(Cipher.ENCRYPT_MODE, fileKey, iv);
-
-      // Create encrypting input stream
-      cis = new CipherInputStream(src, fileCipher);
-    }
-
-
-    // Encrypt the file key with the QRMK
-    {
-      final Cipher keyCipher =  Cipher.getInstance(KEY_CIPHER);
-      SecretKey queryStageMasterKey =
-          new SecretKeySpec(decodedKey, 0, keySize, AES);
-
-      // Init cipher
-      keyCipher.init(Cipher.ENCRYPT_MODE, queryStageMasterKey);
-      byte[] encKeK = keyCipher.doFinal(fileKeyBytes);
-
-      // Store metadata
-      MatDesc matDesc =
-          new MatDesc(encMat.getSmkId(), encMat.getQueryId(), keySize * 8);
-      meta.addUserMetadata(AMZ_MATDESC,
-                           matDesc.toString());
-      meta.addUserMetadata(AMZ_KEY,
-                           Base64.encodeAsString(encKeK));
-      meta.addUserMetadata(AMZ_IV,
-                           Base64.encodeAsString(ivData));
-      // Round up length to next multiple of the block size
-      // Sizes that are multiples of the block size need to be padded to next
-      // multiple
-      meta.setContentLength(
-              ((originalContentLength + blockSz) / blockSz) * blockSz);
-
-    }
-
-    return cis;
-  }
-
   private Pair<InputStream, Boolean>
         createUploadStream( File srcFile,
                             boolean uploadFromStream,
@@ -635,7 +468,9 @@ public class SnowflakeS3Client implements SnowflakeStorageClient
           toClose.add(srcFileStream);
 
           // Encrypt
-          result = encrypt(meta, originalContentLength, uploadStream);
+          S3StorageObjectMetadata s3Metadata = new S3StorageObjectMetadata(meta);
+          result = EncryptionProvider.encrypt(s3Metadata, originalContentLength,
+                                              uploadStream, this.encMat, this);
           uploadFromStream = true;
         }
         catch (Exception ex)
@@ -786,4 +621,49 @@ public class SnowflakeS3Client implements SnowflakeStorageClient
     }
   }
 
+  /**
+   * Returns the material descriptor key
+   */
+  @Override
+  public String getMatdescKey()
+  {
+    return "x-amz-matdesc";
+  }
+
+  /**
+   * Adds encryption metadata to the StorageObjectMetadata object
+   */
+   @Override
+   public void addEncryptionMetadata(StorageObjectMetadata meta,
+                              MatDesc matDesc,
+                              byte[] ivData,
+                              byte[] encKeK,
+                              long contentLength)
+   {
+      meta.addUserMetadata(getMatdescKey(),
+                           matDesc.toString());
+      meta.addUserMetadata(AMZ_KEY,
+                           Base64.encodeAsString(encKeK));
+      meta.addUserMetadata(AMZ_IV,
+                           Base64.encodeAsString(ivData));
+      meta.setContentLength(contentLength);
+   }
+
+  /**
+   * Adds digest metadata to the StorageObjectMetadata object
+   */
+   @Override
+   public void addDigestMetadata(StorageObjectMetadata meta, String digest)
+   {
+     meta.addUserMetadata("sfc-digest", digest);
+   }
+
+  /**
+   * Gets digest metadata to the StorageObjectMetadata object
+   */
+   @Override
+   public String getDigestMetadata(StorageObjectMetadata meta)
+   {
+     return meta.getUserMetadata().get("sfc-digest");
+   }
 }
