@@ -666,6 +666,8 @@ public abstract class SFBaseResultSet
 
   public abstract SFStatementType getStatementType();
 
+  public abstract String getQueryId();
+
   public boolean isClosed()
   {
     return isClosed;

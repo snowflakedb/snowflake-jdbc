@@ -39,13 +39,22 @@ import net.snowflake.client.log.SFLoggerFactory;
 public class StmtUtil
 {
   static final EventHandler eventHandler = EventUtil.getEventHandlerInstance();
+
   static final ObjectMapper mapper = new ObjectMapper();
-  public static final String SF_PATH_QUERY_V1 = "/queries/v1/query-request";
-  public static final String SF_PATH_ABORT_REQUEST_V1 = "/queries/v1/abort-request";
-  public static final String SF_QUERY_REQUEST_ID = "requestId";
-  public static final String SF_HEADER_AUTHORIZATION = HttpHeaders.AUTHORIZATION;
-  public static final String SF_HEADER_SNOWFLAKE_AUTHTYPE = "Snowflake";
-  public static final String SF_HEADER_TOKEN_TAG = "Token";
+
+  private static final String SF_PATH_QUERY_V1 = "/queries/v1/query-request";
+
+  private static final String SF_PATH_ABORT_REQUEST_V1 = "/queries/v1/abort-request";
+
+  private static final String SF_QUERY_REQUEST_ID = "requestId";
+
+  private static final String SF_QUERY_COMBINE_DESCRIBE_EXECUTE = "combinedDescribe";
+
+  private static final String SF_HEADER_AUTHORIZATION = HttpHeaders.AUTHORIZATION;
+
+  private static final String SF_HEADER_SNOWFLAKE_AUTHTYPE = "Snowflake";
+
+  private static final String SF_HEADER_TOKEN_TAG = "Token";
 
   // we don't want to retry canceling forever so put a limit which is
   // twice as much as our default socket timeout
@@ -78,6 +87,10 @@ public class StmtUtil
     AtomicBoolean canceling = null; // canceling flag
     boolean retry;
     String prevGetResultURL = null; // previous get result URL from ping pong
+
+    boolean combineDescribe = false;
+
+    String describedJobId;
 
     public StmtInput() {};
 
@@ -172,11 +185,23 @@ public class StmtUtil
       return this;
     }
 
-    public void setRetry(boolean retry)
+    public StmtInput setRetry(boolean retry)
     {
       this.retry = retry;
+      return this;
     }
 
+    public StmtInput setCombineDescribe(boolean combineDescribe)
+    {
+      this.combineDescribe = combineDescribe;
+      return this;
+    }
+
+    public StmtInput setDescribedJobId(String describedJobId)
+    {
+      this.describedJobId = describedJobId;
+      return this;
+    }
   }
 
   /**
@@ -252,25 +277,28 @@ public class StmtUtil
 
         uriBuilder.setPath(SF_PATH_QUERY_V1);
         uriBuilder.addParameter(SF_QUERY_REQUEST_ID, stmtInput.requestId);
+
+        if (stmtInput.combineDescribe)
+        {
+          uriBuilder.addParameter(SF_QUERY_COMBINE_DESCRIBE_EXECUTE, "true");
+        }
+
         httpRequest = new HttpPost(uriBuilder.build());
 
         /**
          * sequence id is only needed for old query API, when old query API
          * is deprecated, we can remove sequence id.
          */
-        Map sqlJsonBody = new HashMap<String, Object>();
-        sqlJsonBody.put("sqlText", stmtInput.sql);
-        sqlJsonBody.put("sequenceId", Integer.valueOf(stmtInput.sequenceId));
+        QueryExecDTO sqlJsonBody = new QueryExecDTO(
+            stmtInput.sql,
+            stmtInput.describeOnly,
+            Integer.valueOf(stmtInput.sequenceId),
+            stmtInput.bindValues,
+            stmtInput.parametersMap);
 
-        if (stmtInput.bindValues != null)
-          sqlJsonBody.put("bindings", stmtInput.bindValues);
-
-        sqlJsonBody.put("describeOnly", stmtInput.describeOnly);
-
-        // add statement parameters
-        if (stmtInput.parametersMap != null && !stmtInput.parametersMap.isEmpty())
+        if (stmtInput.combineDescribe && !stmtInput.describeOnly)
         {
-          sqlJsonBody.put("parameters", stmtInput.parametersMap);
+          sqlJsonBody.setDescribedJobId(stmtInput.describedJobId);
         }
 
         String json = mapper.writeValueAsString(sqlJsonBody);

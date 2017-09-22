@@ -62,6 +62,9 @@ public class SFStatement
 
   final private static int MAX_STATEMENT_PARAMETERS = 1000;
 
+  /** id used in combine describe and execute */
+  private String describeJobUUID;
+
   /**
    * Add a statement parameter
    *
@@ -155,6 +158,8 @@ public class SFStatement
   public SFStatementMetaData describe(String sql) throws SFException, SQLException
   {
     SFBaseResultSet baseResultSet = executeQuery(sql, null, true);
+
+    describeJobUUID = baseResultSet.getQueryId();
 
     return new SFStatementMetaData(baseResultSet.getMetaData(),
                                    baseResultSet.getStatementType(),
@@ -336,7 +341,9 @@ public class SFStatement
           .setInjectSocketTimeout(session.getInjectSocketTimeout())
           .setInjectClientPause(session.getInjectClientPause())
           .setCanceling(canceling)
-          .setRetry(false);
+          .setRetry(false)
+          .setDescribedJobId(describeJobUUID)
+          .setCombineDescribe(session.getEnableCombineDescribe());
 
       if (canceling.get())
       {

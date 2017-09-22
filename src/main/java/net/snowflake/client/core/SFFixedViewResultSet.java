@@ -156,4 +156,10 @@ public class SFFixedViewResultSet extends SFBaseResultSet
   {
     return row > fixedView.getTotalRows();
   }
+
+  @Override
+  public String getQueryId()
+  {
+    return "";
+  }
 }

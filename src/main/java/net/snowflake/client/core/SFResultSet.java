@@ -402,4 +402,10 @@ public class SFResultSet extends SFBaseResultSet
   {
     return this.arrayBindSupported;
   }
+
+  @Override
+  public String getQueryId()
+  {
+    return queryId;
+  }
 }

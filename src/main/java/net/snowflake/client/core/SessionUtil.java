@@ -119,7 +119,8 @@ public class SessionUtil
       "JDBC_EFFICIENT_CHUNK_STORAGE",
       "JDBC_RS_COLUMN_CASE_INSENSITIVE",
       "CLIENT_METADATA_REQUEST_USE_CONNECTION_CTX",
-      "JDBC_TREAT_DECIMAL_AS_INT"));
+      "JDBC_TREAT_DECIMAL_AS_INT",
+      "JDBC_ENABLE_COMBINED_DESCRIBE"));
 
   /**
    * A class for holding all information required for login
@@ -1585,6 +1586,13 @@ public class SessionUtil
         if (session != null)
         {
           session.setJdbcTreatDecimalAsInt((boolean) entry.getValue());
+        }
+      }
+      else if ("JDBC_ENABLE_COMBINED_DESCRIBE".equalsIgnoreCase(entry.getKey()))
+      {
+        if (session != null)
+        {
+          session.setEnableCombineDescribe((boolean)entry.getValue());
         }
       }
     }

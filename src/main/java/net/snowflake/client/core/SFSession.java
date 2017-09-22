@@ -104,6 +104,8 @@ public class SFSession
    */
   private int networkTimeoutInMilli = 0; // in milliseconds
 
+  private boolean enableCombineDescribe = false;
+
   /**
    * Amount of seconds a user is willing to tolerate for an individual query.
    * Both network/GS issues and query processing itself can contribute
@@ -910,5 +912,15 @@ public class SFSession
   public void setJdbcTreatDecimalAsInt(boolean jdbcTreatDecimalAsInt)
   {
     this.jdbcTreatDecimalAsInt = jdbcTreatDecimalAsInt;
+  }
+
+  public void setEnableCombineDescribe(boolean enable)
+  {
+    this.enableCombineDescribe = enable;
+  }
+
+  public boolean getEnableCombineDescribe()
+  {
+    return this.enableCombineDescribe;
   }
 }
