@@ -1,12 +1,15 @@
-**JDBC Driver 3.2.4**
-|SNOW-33042| Add support for PUT/GET over encrypted stage files in JDBC for Azure
-|SNOW-33371| Internal tempStage transfer feature does not work in the Spark Connector with JDBC 3.2.2
+**JDBC Driver 3.2.5**
+|SNOW-33566| Add support for ResultSet.isLast(), isBeforeFirsrt(), isAfterLast()
+|SNOW-30962| Optimize by combining describe and execute when there is no bind.
 
+**JDBC Driver 3.2.4**
+|SNOW-33042| Added support to driver for PUT/GET over encrypted staged files for MS Azure.
+|SNOW-33371| Fixed issue with v3.2.2 of the JDBC driver not working with the internal stage transfer feature for the Spark Connector.
 **JDBC Driver 3.2.3**
-|SNOW-32618| Rewrote ADFS integration for JDBC using socket API.
+|SNOW-32618| JDBC driver ADFS integration rewritten using socket API.
 **JDBC Driver 3.2.2**
 |SNOW-32618| Added support for SAML 2.0-compliant applications.
-|SNOW-31703| Added support for Microsoft Azure.
+|SNOW-31703| Added support for MS Azure.
 **JDBC Driver 3.2.1**
 |SNOW-32060| Added support in the Loader API for binding ``java.sql.Time`` with the TIME data type and dropped support for binding ``java.sql.Time`` with TIMESTAMP.
 **JDBC Driver 3.2.0**
