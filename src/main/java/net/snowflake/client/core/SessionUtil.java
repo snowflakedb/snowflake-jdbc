@@ -638,7 +638,7 @@ public class SessionUtil
     // build URL for login request
     URIBuilder uriBuilder;
     URI loginURI;
-    String samlResponse = null;
+    String tokenOrSamlResponse = null;
     String samlProofKey = null;
     HttpClient httpClient;
 
@@ -690,13 +690,13 @@ public class SessionUtil
         SessionUtilExternalBrowser s = new SessionUtilExternalBrowser(
             loginInput);
         s.authenticate();
-        samlResponse = s.getToken();
+        tokenOrSamlResponse = s.getToken();
         samlProofKey = s.getProofKey();
       }
       else if (authenticator == ClientAuthnDTO.AuthenticatorType.OKTA)
       {
         // okta authenticator v1
-        samlResponse = getSamlResponseUsingOkta(loginInput);
+        tokenOrSamlResponse = getSamlResponseUsingOkta(loginInput);
       }
 
       uriBuilder.addParameter(SF_QUERY_REQUEST_ID, UUID.randomUUID().toString());
@@ -743,12 +743,14 @@ public class SessionUtil
       }
       else if (authenticator == ClientAuthnDTO.AuthenticatorType.EXTERNALBROWSER)
       {
-        data.put(ClientAuthnParameter.SAML_RESPONSE.name(), samlResponse);
+        data.put(ClientAuthnParameter.AUTHENTICATOR.name(),
+            ClientAuthnDTO.AuthenticatorType.EXTERNALBROWSER.name());
         data.put(ClientAuthnParameter.PROOF_KEY.name(), samlProofKey);
+        data.put(ClientAuthnParameter.TOKEN.name(), tokenOrSamlResponse);
       }
       else if (authenticator == ClientAuthnDTO.AuthenticatorType.OKTA)
       {
-        data.put(ClientAuthnParameter.RAW_SAML_RESPONSE.name(), samlResponse);
+        data.put(ClientAuthnParameter.RAW_SAML_RESPONSE.name(), tokenOrSamlResponse);
       }
 
       Map<String, Object> clientEnv = new HashMap<String, Object>();
@@ -1592,7 +1594,7 @@ public class SessionUtil
       {
         if (session != null)
         {
-          session.setEnableCombineDescribe((boolean)entry.getValue());
+          session.setEnableCombineDescribe((boolean) entry.getValue());
         }
       }
     }
