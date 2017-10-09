@@ -4,6 +4,7 @@
 
 package net.snowflake.client.jdbc;
 
+import net.snowflake.client.core.SFException;
 import net.snowflake.common.core.ResourceBundleManager;
 import java.sql.SQLException;
 import net.snowflake.client.log.SFLogger;
@@ -99,6 +100,11 @@ public class SnowflakeSQLException extends SQLException
         String.valueOf(errorCode.getMessageCode()), params),
         errorCode.getSqlState(),
         errorCode.getMessageCode());
+  }
+
+  public SnowflakeSQLException(SFException e)
+  {
+    this(e.getQueryId(), e.getMessage(), e.getSqlState(), e.getVendorCode());
   }
 
   public String getQueryId()

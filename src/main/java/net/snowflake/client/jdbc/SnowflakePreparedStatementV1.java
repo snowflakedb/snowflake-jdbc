@@ -37,10 +37,13 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TimeZone;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -80,23 +83,41 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
    */
   private int batchSize = 0;
 
+  /** Error code returned when describing a statement that is binding table name*/
+  private final Integer ERROR_CODE_TABLE_BIND_VARIABLE_NOT_SET = 2128;
+
+  /**
+   * A hash set that contains the error code that will not lead to exception
+   * in describe mode
+   */
+  private final Set<Integer> errorCodesIgnoredInDescribeMode
+      = new HashSet<>(Arrays.asList(new Integer[]
+      {ERROR_CODE_TABLE_BIND_VARIABLE_NOT_SET}));
+
   SnowflakePreparedStatementV1(SnowflakeConnectionV1 connection,
                                String sql) throws SQLException
   {
     super(connection);
     this.sql = sql;
+
     try
     {
       this.statementMetaData = sfStatement.describe(sql);
     }
-    catch (SFException | SQLException ex)
+    catch(SFException e)
     {
-      // return an empty metadata.
-      this.statementMetaData = SFStatementMetaData.emptyMetaData();
-
-      appendWarning(new SnowflakeSQLWarning(
-          ErrorCode.STATEMENT_PREPARE_FAILURE,
-          sql.length() > 20 ? sql.substring(0, 20) + "..." : sql));
+      throw new SnowflakeSQLException(e);
+    }
+    catch(SnowflakeSQLException e)
+    {
+      if (!errorCodesIgnoredInDescribeMode.contains(e.getErrorCode()))
+      {
+        throw e;
+      }
+      else
+      {
+        statementMetaData = SFStatementMetaData.emptyMetaData();
+      }
     }
   }
 
