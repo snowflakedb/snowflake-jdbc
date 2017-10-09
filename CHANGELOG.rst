@@ -1,7 +1,10 @@
-**JDBC Driver 3.2.5**
-|SNOW-33566| Add support for ResultSet.isLast(), isBeforeFirsrt(), isAfterLast()
-|SNOW-30962| Optimize by combining describe and execute when there is no bind.
+**JDBC Driver 3.2.6**
+|SNOW-31633| Changed SFTimestamp to accommodate the full range of timestamps representable in Snowflake.
+|SNOW-34059| Shade Azure jars in JDBC.
 
+**JDBC Driver 3.2.5**
+|SNOW-33566| Added support for ``ResultSet.isLast()``, ``isBeforeFirsrt()``, ``isAfterLast()``.
+|SNOW-30962| Optimized by combining describe and execute when there is no bind.
 **JDBC Driver 3.2.4**
 |SNOW-33042| Added support to driver for PUT/GET over encrypted staged files for MS Azure.
 |SNOW-33371| Fixed issue with v3.2.2 of the JDBC driver not working with the internal stage transfer feature for the Spark Connector.
