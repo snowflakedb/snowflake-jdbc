@@ -1,16 +1,17 @@
+**JDBC Driver 3.3.0**
+|SNOW-32656| Throw the exception if statement cannot be prepared 
+
 **JDBC Driver 3.2.7**
-|SNOW-32618| Updating Fed/SSO parameters for JDBC. This change is required to connect to the server 2.15.0 with externalbrowser authenticator
-
+|SNOW-32618| Added support for SAML 2.0-compliant services/applications for federated authentication by adding ``externalbrowser`` option to authenticator connection parameter.
 **JDBC Driver 3.2.6**
-|SNOW-31633| Changed SFTimestamp to accommodate the full range of timestamps representable in Snowflake.
-|SNOW-34059| Shade Azure jars in JDBC.
-
+|SNOW-31633| Changed ``SFTimestamp`` to accommodate the full range of timestamps supported in Snowflake.
 **JDBC Driver 3.2.5**
-|SNOW-33566| Added support for ``ResultSet.isLast()``, ``isBeforeFirsrt()``, ``isAfterLast()``.
-|SNOW-30962| Optimized by combining describe and execute when there is no bind.
+|SNOW-33566| Added support for ``ResultSet.isLast()``, ``isBeforeFirsrt()``, and ``isAfterLast()``.
+|SNOW-30962| Optimized the driver by combining ``describe`` and ``execute`` methods when there is no bind.
 **JDBC Driver 3.2.4**
-|SNOW-33042| Added support to driver for PUT/GET over encrypted staged files for MS Azure.
 |SNOW-33371| Fixed issue with v3.2.2 of the JDBC driver not working with the internal stage transfer feature for the Spark Connector.
+|SNOW-33227| Added support for new session parameter, JDBC_TREAT_DECIMAL_AS_INT, which, if set to TRUE (default value) instructs the driver to treat a column whose scale is zero as BIGINT instead of DECIMAL.
+|SNOW-33042| Added support to driver for PUT/GET over encrypted staged files for MS Azure.
 **JDBC Driver 3.2.3**
 |SNOW-32618| JDBC driver ADFS integration rewritten using socket API.
 **JDBC Driver 3.2.2**
