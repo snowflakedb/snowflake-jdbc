@@ -765,11 +765,25 @@ public class ResultUtil
                                         "missing timestamp formatter");
     }
 
-    Timestamp adjustedTimestamp =
-        ResultUtil.adjustTimestamp(sfTS.getTimestamp());
+    try
+    {
+      Timestamp adjustedTimestamp =
+          ResultUtil.adjustTimestamp(sfTS.getTimestamp());
 
-    return formatter.format(
-        adjustedTimestamp, sfTS.getTimeZone(), scale);
+      return formatter.format(
+          adjustedTimestamp, sfTS.getTimeZone(), scale);
+    }
+    catch (SFTimestamp.TimestampOperationNotAvailableException e)
+    {
+      // this timestamp doesn't fit into a Java timestamp, and therefore we
+      // can't format it (for now). Just print it out as seconds since epoch.
+
+      BigDecimal nanosSinceEpoch = sfTS.getNanosSinceEpoch();
+
+      BigDecimal secondsSinceEpoch = nanosSinceEpoch.scaleByPowerOfTen(-9);
+
+      return secondsSinceEpoch.setScale(scale).toPlainString();
+    }
   }
 
   /**
