@@ -1282,6 +1282,9 @@ public class SessionUtil
       data.put(ClientAuthnParameter.ACCOUNT_NAME.name(),
           loginInput.getAccountName());
       data.put(ClientAuthnParameter.AUTHENTICATOR.name(), authenticator);
+      data.put(ClientAuthnParameter.CLIENT_APP_ID.name(), loginInput.getAppId());
+      data.put(ClientAuthnParameter.CLIENT_APP_VERSION.name(),
+          loginInput.getAppVersion());
 
       authnData.setData(data);
       String json = mapper.writeValueAsString(authnData);

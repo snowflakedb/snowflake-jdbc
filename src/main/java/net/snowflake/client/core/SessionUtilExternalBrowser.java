@@ -199,6 +199,9 @@ class SessionUtilExternalBrowser
           loginInput.getUserName());
       data.put(ClientAuthnParameter.BROWSER_MODE_REDIRECT_PORT.name(),
           Integer.toString(port));
+      data.put(ClientAuthnParameter.CLIENT_APP_ID.name(), loginInput.getAppId());
+      data.put(ClientAuthnParameter.CLIENT_APP_VERSION.name(),
+          loginInput.getAppVersion());
 
       authnData.setData(data);
       String json = mapper.writeValueAsString(authnData);
