@@ -1,3 +1,6 @@
+**JDBC Driver 3.2.7**
+|SNOW-32618| Updating Fed/SSO parameters for JDBC. This change is required to connect to the server 2.15.0 with externalbrowser authenticator
+
 **JDBC Driver 3.2.6**
 |SNOW-31633| Changed SFTimestamp to accommodate the full range of timestamps representable in Snowflake.
 |SNOW-34059| Shade Azure jars in JDBC.
