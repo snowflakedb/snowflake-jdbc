@@ -415,6 +415,10 @@
                        <shadedPattern>${shadeBase}.amazonaws</shadedPattern>
                      </relocation>
                      <relocation>
+                       <pattern>com.microsoft.azure</pattern>
+                       <shadedPattern>${shadeBase}.microsoft.azure</shadedPattern>
+                     </relocation>
+                     <relocation>
                        <pattern>com.fasterxml</pattern>
                        <shadedPattern>${shadeBase}.fasterxml</shadedPattern>
                      </relocation>
