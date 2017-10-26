@@ -1,8 +1,10 @@
-**JDBC Driver 3.3.0**
-|SNOW-32656| Throw the exception if statement cannot be prepared 
+**JDBC Driver 3.3.1**
+|SNOW-30511| Fixed the bug that Okta token is cached in cookies.
 
+**JDBC Driver 3.3.0**
+|SNOW-32656| Driver behavior changed to throw an exception if SQL statement cannot be prepared.
 **JDBC Driver 3.2.7**
-|SNOW-32618| Added support for SAML 2.0-compliant services/applications for federated authentication by adding ``externalbrowser`` option to authenticator connection parameter.
+|SNOW-32618| Added support for SAML 2.0-compliant services/applications for federated authentication by adding the ``externalbrowser`` option to the ``authenticator`` connection parameter.
 **JDBC Driver 3.2.6**
 |SNOW-31633| Changed ``SFTimestamp`` to accommodate the full range of timestamps supported in Snowflake.
 **JDBC Driver 3.2.5**
@@ -75,7 +77,7 @@
 |SNOW-18243| Added support for case-insensitive searches on column names in result sets. By default, searches are case-sensitive. To request enabling case-insensitive search for your account, please email support@snowflake.net.
 **JDBC Driver 3.0.2**
 |SNOW-25029| Fixed binding support for the TIME data type in the ``PreparedStatement`` API implementation.
-|SNOW-25024, SNOW-24868| Implemented a fix to generate a user error when the client calls the ``getData``, `getTimestamp``, or ``getTime`` methods on columns with invalid data types.
+|SNOW-25024, SNOW-24868| Implemented a fix to generate a user error when the client calls the ``getData``, ``getTimestamp``, or ``getTime`` methods on columns with invalid data types.
 |SNOW-24947| Fixed issue with GET command when it ends with a semicolon.
 |SNOW-24610| Updated javadoc related to an issue that caused the Informatica Cloud Snowflake Connector (v1) to fail with the following error: ``invalid data encountered during decompression for file...``.
 |SNOW-24884| Updated javadoc related to an issue where the Informatica Cloud Snowflake Connector (v1) treated all timestamps as UTC.
