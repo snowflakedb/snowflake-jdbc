@@ -1,7 +1,5 @@
 package net.snowflake.client.jdbc.cloud.storage;
 
-import javafx.stage.Stage;
-
 import java.util.Map;
 
 /**
