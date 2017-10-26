@@ -132,7 +132,8 @@ public class RestRequest
         }
 
         response = httpClient.execute(httpRequest);
-      } catch (Exception ex)
+      }
+      catch (Exception ex)
       {
         // if exception is caused by illegal state, e.g shutdown of http client
         // because of closing of connection, stop retrying
@@ -198,15 +199,20 @@ public class RestRequest
         }
 
         break;
-      } else
+      }
+      else
       {
         if (response != null)
-          logger.warn("HTTP response not ok: status code={}, "
-                  + "request={}",
-                  response.getStatusLine().getStatusCode(),
-                  httpRequest);
+        {
+          logger.warn(
+              "HTTP response not ok: status code={}, request={}",
+              response.getStatusLine().getStatusCode(),
+              httpRequest);
+        }
         else
+        {
           logger.warn("Null response for request={}", httpRequest);
+        }
 
         // get the elapsed time for the last request
         elapsedMilliForLastCall =
@@ -261,7 +267,8 @@ public class RestRequest
             Thread.sleep(backoffInMilli - elapsedMilliForLastCall);
             elapsedMilliForTransientIssues +=
                 (backoffInMilli - elapsedMilliForLastCall);
-          } catch (InterruptedException ex1)
+          }
+          catch (InterruptedException ex1)
           {
             logger.debug(
                 "Backoff sleep before retrying login got interrupted");
@@ -270,7 +277,9 @@ public class RestRequest
 
         // increment backoff unless it is already the max
         if (backoffInMilli < maxBackoffInMilli)
+        {
           backoffInMilli *= 2;
+        }
 
         // release connection before retry
         httpRequest.releaseConnection();

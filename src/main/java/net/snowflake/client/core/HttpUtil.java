@@ -58,6 +58,7 @@ public class HttpUtil
 
   /** default request configuration, to be copied on individual requests. */
   private static RequestConfig DefaultRequestConfig = null;
+
   /**
    * Build an Http client using our set of default.
    *
@@ -65,13 +66,6 @@ public class HttpUtil
    */
   private static HttpClient buildHttpClient()
   {
-    /*if (logger.isTraceEnabled()))
-    {
-      Logger httpClientLogger = LoggerFactory.getLogger("org.apache.http");
-      if (httpClientLogger != null)
-        httpClientLogger.setLevel(Level.FINEST);
-    }*/
-
     // set timeout so that we don't wait forever.
     // Setup the default configuration for all requests on this client
     DefaultRequestConfig =
@@ -132,7 +126,6 @@ public class HttpUtil
         }
       }
     }
-
     return httpClient;
   }
 

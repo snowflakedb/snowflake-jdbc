@@ -4,6 +4,7 @@
 
 package net.snowflake.client.core;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.snowflake.client.jdbc.ErrorCode;
@@ -33,6 +34,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -1234,50 +1236,172 @@ public class SessionUtil
   }
 
   /**
-   * FEDERATED FLOW
-   * 1. query GS to obtain IDP token url and IDP SSO url
-   * 2. IMPORTANT Client side validation:
-   * validate both token url and sso url contains same prefix
-   * (protocol + host + port) as the given authenticator url.
+   * Given access token, query IDP URL snowflake app to get SAML response
+   * We also need to perform important client side validation:
+   *  validate the post back url come back with the SAML response
+   *  contains the same prefix as the Snowflake's server url, which is the
+   *  intended destination url to Snowflake.
    * Explanation:
-   * This provides a way for the user to 'authenticate' the IDP it is
-   * sending his/her credentials to.  Without such a check, the user could
-   * be coerced to provide credentials to an IDP impersonator.
-   * 3. query IDP token url to authenticate and retrieve access token
-   * 4. given access token, query IDP URL snowflake app to get SAML response
-   * 5. IMPORTANT Client side validation:
-   * validate the post back url come back with the SAML response
-   * contains the same prefix as the Snowflake's server url, which is the
-   * intended destination url to Snowflake.
-   * Explanation:
-   * This emulates the behavior of IDP initiated login flow in the user
-   * browser where the IDP instructs the browser to POST the SAML
-   * assertion to the specific SP endpoint.  This is critical in
-   * preventing a SAML assertion issued to one SP from being sent to
-   * another SP.
-   * <p>
-   * See SNOW-27798 for additional details.
-   *
-   * @return saml response
+   *  This emulates the behavior of IDP initiated login flow in the user
+   *  browser where the IDP instructs the browser to POST the SAML
+   *  assertion to the specific SP endpoint.  This is critical in
+   *  preventing a SAML assertion issued to one SP from being sent to
+   *  another SP.
+   * @param loginInput
+   * @param ssoUrl
+   * @param oneTimeToken
+   * @return
    * @throws SnowflakeSQLException
    */
-  static private String getSamlResponseUsingOkta(LoginInput loginInput)
+  private static String federatedFlowStep4(
+      LoginInput loginInput,
+      String ssoUrl,
+      String oneTimeToken) throws SnowflakeSQLException
+  {
+    String responseHtml = "";
+    try
+    {
+
+      final URL url = new URL(ssoUrl);
+      URI oktaGetUri = new URIBuilder()
+          .setScheme(url.getProtocol())
+          .setHost(url.getHost())
+          .setPath(url.getPath())
+          .setParameter("RelayState", "%2Fsome%2Fdeep%2Flink")
+          .setParameter("onetimetoken", oneTimeToken).build();
+      HttpGet httpGet = new HttpGet(oktaGetUri);
+
+      HeaderGroup headers = new HeaderGroup();
+      headers.addHeader(new BasicHeader("Accept", "*/*"));
+      httpGet.setHeaders(headers.getAllHeaders());
+
+      responseHtml = HttpUtil.executeRequest(httpGet,
+          loginInput.getHttpClient(), loginInput.getLoginTimeout(), 0, null);
+
+      // step 5
+      String postBackUrl = getPostBackUrlFromHTML(responseHtml);
+      if (!isPrefixEqual(postBackUrl, loginInput.getServerUrl()))
+      {
+        logger.debug("The specified authenticator {} and the destination URL " +
+                "in the SAML assertion {} do not match.",
+            loginInput.getAuthenticator(), postBackUrl);
+        throw new SnowflakeSQLException(
+            SqlState.SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION,
+            ErrorCode.IDP_INCORRECT_DESTINATION.getMessageCode());
+      }
+    }
+    catch (IOException | URISyntaxException ex)
+    {
+      handleFederatedFlowError(loginInput, ex);
+    }
+    return responseHtml;
+  }
+
+  /**
+   * Query IDP token url to authenticate and retrieve access token
+   * @param loginInput
+   * @param tokenUrl
+   * @return
+   * @throws SnowflakeSQLException
+   */
+  private static String federatedFlowStep3(LoginInput loginInput, String tokenUrl)
       throws SnowflakeSQLException
+
+  {
+    String oneTimeToken = "";
+    try
+    {
+      URL url = new URL(tokenUrl);
+      URI tokenUri = url.toURI();
+      final HttpPost postRequest = new HttpPost(tokenUri);
+
+      StringEntity params = new StringEntity("{\"username\":\"" +
+          loginInput.getUserName() + "\",\"password\":\"" +
+          loginInput.getPassword() + "\"}");
+      postRequest.setEntity(params);
+
+      HeaderGroup headers = new HeaderGroup();
+      headers.addHeader(new BasicHeader("Accept", "application/json"));
+      headers.addHeader(new BasicHeader("Content-Type", "application/json"));
+      postRequest.setHeaders(headers.getAllHeaders());
+
+      final String idpResponse = HttpUtil.executeRequest(postRequest,
+          loginInput.getHttpClient(), loginInput.getLoginTimeout(), 0, null);
+
+      logger.debug("user is authenticated against {}.",
+          loginInput.getAuthenticator());
+
+      final JsonNode jsonNode;
+      jsonNode = mapper.readTree(idpResponse);
+      // session token is in the data field of the returned json response
+      oneTimeToken = jsonNode.get("cookieToken").asText();
+    }
+    catch (IOException | URISyntaxException ex)
+    {
+      handleFederatedFlowError(loginInput, ex);
+    }
+    return oneTimeToken;
+  }
+
+  /**
+   * Perform important client side validation:
+   *  validate both token url and sso url contains same prefix
+   *  (protocol + host + port) as the given authenticator url.
+   * Explanation:
+   *  This provides a way for the user to 'authenticate' the IDP it is
+   *  sending his/her credentials to.  Without such a check, the user could
+   *  be coerced to provide credentials to an IDP impersonator.
+   * @param loginInput
+   * @param tokenUrl
+   * @param ssoUrl
+   * @throws SnowflakeSQLException
+   */
+  private static void federatedFlowStep2(
+      LoginInput loginInput,
+      String tokenUrl,
+      String ssoUrl) throws SnowflakeSQLException
   {
     try
     {
-      // step 1
+      if (!isPrefixEqual(loginInput.getAuthenticator(), tokenUrl) ||
+          !isPrefixEqual(loginInput.getAuthenticator(), ssoUrl))
+      {
+        logger.debug("The specified authenticator {} is not supported.",
+            loginInput.getAuthenticator());
+        throw new SnowflakeSQLException(
+            SqlState.SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION,
+            ErrorCode.IDP_CONNECTION_ERROR.getMessageCode());
+      }
+    }
+    catch (MalformedURLException ex)
+    {
+      handleFederatedFlowError(loginInput, ex);
+    }
+  }
+
+  /**
+   * Query Snowflake to obtain IDP token url and IDP SSO url
+   * @param loginInput
+   * @throws SnowflakeSQLException
+   */
+  private static JsonNode federatedFlowStep1(LoginInput loginInput)
+      throws SnowflakeSQLException
+  {
+    JsonNode dataNode = null;
+    try
+    {
       String serverUrl = loginInput.getServerUrl();
       String authenticator = loginInput.getAuthenticator();
 
-      URIBuilder fedUriBuilder = new URIBuilder(serverUrl);
+      URIBuilder fedUriBuilder;
+      fedUriBuilder = new URIBuilder(serverUrl);
       fedUriBuilder.setPath(SF_PATH_AUTHENTICATOR_REQUEST);
       URI fedUrlUri = fedUriBuilder.build();
 
       HttpPost postRequest = new HttpPost(fedUrlUri);
 
       ClientAuthnDTO authnData = new ClientAuthnDTO();
-      Map<String, Object> data = new HashMap<String, Object>();
+      Map<String, Object> data = new HashMap<>();
 
       data.put(ClientAuthnParameter.ACCOUNT_NAME.name(),
           loginInput.getAccountName());
@@ -1293,131 +1417,81 @@ public class SessionUtil
       StringEntity input = new StringEntity(json, Charset.forName("UTF-8"));
       input.setContentType("application/json");
       postRequest.setEntity(input);
-
       postRequest.addHeader("accept", "application/json");
 
-      String theString = HttpUtil.executeRequest(postRequest,
+      final String gsResponse = HttpUtil.executeRequest(postRequest,
           loginInput.getHttpClient(), loginInput.getLoginTimeout(), 0, null);
-
-      logger.debug("authenticator-request response: {}", theString);
-
-      // general method, same as with data binding
-      JsonNode jsonNode = mapper.readTree(theString);
+      logger.debug("authenticator-request response: {}", gsResponse);
+      JsonNode jsonNode = mapper.readTree(gsResponse);
 
       // check the success field first
       if (!jsonNode.path("success").asBoolean())
       {
-        logger.debug("response = {}", theString);
-
+        logger.debug("response = {}", gsResponse);
         String errorCode = jsonNode.path("code").asText();
-
         throw new SnowflakeSQLException(
             SqlState.SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION,
             ErrorCode.CONNECTION_ERROR.getMessageCode(),
             errorCode, jsonNode.path("message").asText());
       }
 
-      JsonNode dataNode = jsonNode.path("data");
-
       // session token is in the data field of the returned json response
-      String tokenUrl = dataNode.path("tokenUrl").asText();
-      String ssoUrl = dataNode.path("ssoUrl").asText();
-
-      // step 2
-      if (!isPrefixEqual(authenticator, tokenUrl) ||
-          !isPrefixEqual(authenticator, ssoUrl))
-      {
-        logger.debug("The specified authenticator {} is not supported.",
-            loginInput.getAuthenticator());
-        throw new SnowflakeSQLException(
-            SqlState.SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION,
-            ErrorCode.IDP_CONNECTION_ERROR.getMessageCode());
-      }
-
-      // step 3
-      URL url = new URL(tokenUrl);
-      URI tokenUri = url.toURI();
-      postRequest = new HttpPost(tokenUri);
-
-      StringEntity params = new StringEntity("{\"username\":\""
-          + loginInput.getUserName() + "\",\"password\":\"" +
-          loginInput.getPassword() + "\"}");
-      postRequest.setEntity(params);
-
-      HeaderGroup headers = new HeaderGroup();
-      headers.addHeader(new BasicHeader("Accept", "application/json"));
-      headers.addHeader(new BasicHeader("Content-Type", "application/json"));
-      postRequest.setHeaders(headers.getAllHeaders());
-
-      theString = HttpUtil.executeRequest(postRequest,
-          loginInput.getHttpClient(), loginInput.getLoginTimeout(), 0, null);
-      postRequest = null;
-
-      logger.debug("user is authenticated against {}.",
-          loginInput.getAuthenticator());
-
-      // general method, same as with data binding
-      jsonNode = mapper.readTree(theString);
-
-      // session token is in the data field of the returned json response
-      String oneTimeToken = jsonNode.get("cookieToken").asText();
-
-      // step 4
-      // GET SAML RESPONSE
-      url = new URL(ssoUrl);
-      URI oktaGetUri = new URIBuilder()
-          .setScheme(url.getProtocol())
-          .setHost(url.getHost())
-          .setPath(url.getPath())
-          .setParameter("RelayState", "%2Fsome%2Fdeep%2Flink")
-          .setParameter("onetimetoken", oneTimeToken).build();
-      HttpGet httpGet = new HttpGet(oktaGetUri);
-
-      headers.clear();
-      headers.addHeader(new BasicHeader("Accept", "*/*"));
-      httpGet.setHeaders(headers.getAllHeaders());
-
-      String responseHtml = HttpUtil.executeRequest(httpGet,
-          loginInput.getHttpClient(), loginInput.getLoginTimeout(), 0, null);
-
-      // step 5
-      String postBackUrl = getPostBackUrlFromHTML(responseHtml);
-      if (!isPrefixEqual(postBackUrl, serverUrl))
-      {
-        logger.debug("The specified authenticator {} and the destination URL " +
-                "in the SAML assertion {} do not match.",
-            loginInput.getAuthenticator(), postBackUrl);
-        throw new SnowflakeSQLException(
-            SqlState.SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION,
-            ErrorCode.IDP_INCORRECT_DESTINATION.getMessageCode());
-      }
-
-      return responseHtml;
+      dataNode = jsonNode.path("data");
     }
-    catch (SnowflakeSQLException ex)
+    catch (IOException | URISyntaxException ex)
     {
-      throw ex;
+      handleFederatedFlowError(loginInput, ex);
     }
-    catch (IOException ex)
+    return dataNode;
+  }
+
+  /**
+   * Logs an error generated during the federated authentication flow and
+   * re-throws it as a SnowflakeSQLException.
+   * Note that we seperate IOExceptions since those tend to be network related.
+   * @param loginInput
+   * @param ex
+   * @throws SnowflakeSQLException
+   */
+  private static void handleFederatedFlowError(LoginInput loginInput, Exception ex)
+      throws SnowflakeSQLException
+
+  {
+    if (ex instanceof IOException)
     {
       logger.error("IOException when authenticating with " +
           loginInput.getAuthenticator(), ex);
-
       throw new SnowflakeSQLException(ex, SqlState.IO_ERROR,
           ErrorCode.NETWORK_ERROR.getMessageCode(),
           "Exception encountered when opening connection: " +
               ex.getMessage());
     }
-    catch (Throwable ex)
-    {
-      logger.error("Exception when authenticating with " +
-          loginInput.getAuthenticator(), ex);
+    logger.error("Exception when authenticating with " +
+        loginInput.getAuthenticator(), ex);
+    throw new SnowflakeSQLException(ex,
+        SqlState.SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION,
+        ErrorCode.CONNECTION_ERROR.getMessageCode(),
+        ErrorCode.CONNECTION_ERROR.getMessageCode(), ex.getMessage());
+  }
 
-      throw new SnowflakeSQLException(ex,
-          SqlState.SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION,
-          ErrorCode.CONNECTION_ERROR.getMessageCode(),
-          ErrorCode.CONNECTION_ERROR.getMessageCode(), ex.getMessage());
-    }
+  /**
+   * FEDERATED FLOW
+   * See SNOW-27798 for additional details.
+   *
+   * @return saml response
+   * @throws SnowflakeSQLException
+   */
+  static private String getSamlResponseUsingOkta(LoginInput loginInput)
+      throws SnowflakeSQLException
+  {
+    JsonNode dataNode = federatedFlowStep1(loginInput);
+    String tokenUrl = dataNode.path("tokenUrl").asText();
+    String ssoUrl = dataNode.path("ssoUrl").asText();
+    federatedFlowStep2(loginInput, tokenUrl, ssoUrl);
+    final String oneTimeToken = federatedFlowStep3(loginInput, tokenUrl);
+    final String responseHtml = federatedFlowStep4(
+        loginInput, ssoUrl, oneTimeToken);
+    return responseHtml;
   }
 
   /**

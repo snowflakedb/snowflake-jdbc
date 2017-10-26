@@ -365,17 +365,18 @@ public class SnowflakeConnectionV1 implements Connection
     }
   }
 
+  /**
+   * Processes parameters given in the connection string. This extracts
+   * accountName, databaseName, schemaName from
+   * the URL if it is specified there, where the URL is of the form:
+   *
+   * jdbc:snowflake://host:port/?user=v&password=v&account=v&
+   * db=v&schema=v&ssl=v&[passcode=v|passcodeInPassword=on]
+   * @param url
+   * @param info
+   */
   private void processParameters(String url, Properties info)
   {
-    /*
-     * Extract accountName, databaseName, schemaName from
-     * the URL if it is specified there
-     *
-     * URL is in the form of:
-     * jdbc:snowflake://host:port/?user=v&password=v&account=v&
-     * db=v&schema=v&ssl=v&[passcode=v|passcodeInPassword=on]
-     */
-
     serverUrl = url;
 
     /*
@@ -395,7 +396,8 @@ public class SnowflakeConnectionV1 implements Connection
 
       logger.debug("server url: {}", serverUrl);
 
-      //assert that tokens lenth is even so that there is a value for each param
+      // assert that tokens length is even so that there is a
+      // value for each param
       if (tokens.length % 2 != 0)
       {
         throw new
@@ -556,7 +558,7 @@ public class SnowflakeConnectionV1 implements Connection
       }
     }
 
-    // the properties can be overriden
+    // the properties can be overridden
     for (Object key : info.keySet())
     {
       if (key.equals("user"))

@@ -37,25 +37,17 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class SFSession
 {
 
-  static final
-  SFLogger logger = SFLoggerFactory.getLogger(SFSession.class);
+  static final SFLogger logger = SFLoggerFactory.getLogger(SFSession.class);
 
   private static final String SF_PATH_SESSION_HEARTBEAT = "/session/heartbeat";
-
-  private static final String SF_PATH_AUTHENTICATOR_REQUEST
-      = "/session/authenticator-request";
 
   public static final String SF_QUERY_REQUEST_ID = "requestId";
 
   public static final String SF_HEADER_AUTHORIZATION = HttpHeaders.AUTHORIZATION;
 
-  public static final String SF_HEADER_BASIC_AUTHTYPE = "Basic";
-
   public static final String SF_HEADER_SNOWFLAKE_AUTHTYPE = "Snowflake";
 
   public static final String SF_HEADER_TOKEN_TAG = "Token";
-
-  // heartbeat retry timeout in seconds
 
   // increase heartbeat timeout from 60 sec to 300 sec
   // per https://support-snowflake.zendesk.com/agent/tickets/6629
@@ -69,8 +61,6 @@ public class SFSession
   private String masterToken;
   private long masterTokenValidityInSeconds;
   private String remMeToken;
-
-  private String samlResponse;
 
   private String newClientForUpdate;
 
@@ -106,27 +96,11 @@ public class SFSession
 
   private boolean enableCombineDescribe = false;
 
-  /**
-   * Amount of seconds a user is willing to tolerate for an individual query.
-   * Both network/GS issues and query processing itself can contribute
-   * to the amount time spent for a query.
-   * <p>
-   * A value of 0 means no timeout
-   * <p>
-   * Default: 0
-   */
-  private int queryTimeout = 0; // in seconds
-
   private boolean useProxy = false;
-
-  private boolean abortDetachedQuery = true;
 
   private Map<String, Object> sessionProperties = new HashMap<>(1);
 
   private final static ObjectMapper mapper = new ObjectMapper();
-
-  static final ResourceBundleManager errorResourceBundleManager =
-      ResourceBundleManager.getSingleton(ErrorCode.errorMessageResource);
 
   private Properties clientInfo = new Properties();
 
@@ -141,11 +115,6 @@ public class SFSession
   private int httpClientSocketTimeout =
       DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT; // milliseconds
 
-  // TODO this should be set to Connection.TRANSACTION_READ_COMMITTED
-  // TODO There may not be many implications here since the call to
-  // TODO setTransactionIsolation doesn't do anything.
-  private int transactionIsolation = Connection.TRANSACTION_NONE;
-
   //--- Simulated failures for testing
 
   // whether we try to simulate a socket timeout (a default value of 0 means
@@ -159,10 +128,7 @@ public class SFSession
   //Generate exception while uploading file with a given name
   private String injectFileUploadFailure = null;
 
-  private HeartbeatBackground heartbeatBackground;
-
-  Map<SFSessionProperty, Object> connectionPropertiesMap =
-      new HashMap<SFSessionProperty, Object>();
+  Map<SFSessionProperty, Object> connectionPropertiesMap = new HashMap<>();
 
   // session parameters
   Map<String, Object> sessionParametersMap = new HashMap<String, Object>();
@@ -296,8 +262,7 @@ public class SFSession
     {
       return (String) connectionPropertiesMap.get(SFSessionProperty.SERVER_URL);
     }
-    else
-      return null;
+    return null;
   }
 
   /**
@@ -318,7 +283,7 @@ public class SFSession
    * Open a new database session
    *
    * @throws SFException           this is a runtime exception
-   * @throws SnowflakeSQLException exception raised from Snowfalke components
+   * @throws SnowflakeSQLException exception raised from Snowflake components
    */
   public synchronized void open() throws SFException, SnowflakeSQLException
   {

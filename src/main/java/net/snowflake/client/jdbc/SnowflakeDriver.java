@@ -343,8 +343,7 @@ public class SnowflakeDriver implements Driver
     {
       return new SnowflakeConnectionV1(url, info);
     }
-    else
-      return null;
+    return null;
   }
 
   @Override
