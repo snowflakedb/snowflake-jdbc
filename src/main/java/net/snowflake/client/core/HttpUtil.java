@@ -20,6 +20,7 @@ import org.apache.http.conn.socket.ConnectionSocketFactory;
 import org.apache.http.conn.socket.PlainConnectionSocketFactory;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.conn.ssl.SSLContexts;
+import org.apache.http.cookie.CookieSpec;
 import org.apache.http.impl.client.DefaultRedirectStrategy;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
@@ -33,6 +34,9 @@ import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 
 import javax.net.ssl.SSLContext;
+
+import static org.apache.http.client.config.CookieSpecs.DEFAULT;
+import static org.apache.http.client.config.CookieSpecs.IGNORE_COOKIES;
 
 /**
  * Created by jhuang on 1/19/16.
@@ -134,16 +138,33 @@ public class HttpUtil
    * configuration of the shared HttpClient with a different socket timeout.
    *
    * @param soTimeoutMs - custom socket timeout in milli-seconds
+   * @param withoutCookies - whether this request should ignore cookies or not
    * @return RequestConfig object
    */
   public static final RequestConfig
-    getDefaultRequestConfigWithSocketTimeout(int soTimeoutMs)
+    getDefaultRequestConfigWithSocketTimeout(int soTimeoutMs,
+                                             boolean withoutCookies)
   {
     getHttpClient();
-
+    final String cookieSpec = withoutCookies ? IGNORE_COOKIES : DEFAULT;
     return RequestConfig.copy(DefaultRequestConfig)
                         .setSocketTimeout(soTimeoutMs)
+                        .setCookieSpec(cookieSpec)
                         .build();
+  }
+
+  /**
+   * Return a request configuration inheriting from the default request
+   * configuration of the shared HttpClient with the coopkie spec set to ignore.
+   *
+   * @return RequestConfig object
+   */
+  public static final RequestConfig getRequestConfigWithoutcookies()
+  {
+    getHttpClient();
+    return RequestConfig.copy(DefaultRequestConfig)
+        .setCookieSpec(IGNORE_COOKIES)
+        .build();
   }
 
   /**
@@ -153,13 +174,63 @@ public class HttpUtil
    */
   public static String getHttpClientStats()
   {
-    if (connectionManager == null)
-    {
-      return "";
-    }
-
-    return connectionManager.getTotalStats().toString();
+    return connectionManager == null ?
+        "" :
+        connectionManager.getTotalStats().toString();
   }
+
+  /**
+   * Executes a HTTP request with the cookie spec set to IGNORE_COOKIES
+   * @param httpRequest
+   * @param httpClient
+   * @param retryTimeout
+   * @param injectSocketTimeout
+   * @param canceling
+   * @return
+   */
+  static String executeRequestWithoutCookies(HttpRequestBase httpRequest,
+                                             HttpClient httpClient,
+                                             int retryTimeout,
+                                             int injectSocketTimeout,
+                                             AtomicBoolean canceling)
+      throws SnowflakeSQLException, IOException
+  {
+    return executeRequestInternal(
+        httpRequest,
+        httpClient,
+        retryTimeout,
+        injectSocketTimeout,
+        canceling,
+        true);
+  }
+
+  /**
+   * Executes a HTTP request for Snowflake.
+   * @param httpRequest
+   * @param httpClient
+   * @param retryTimeout
+   * @param injectSocketTimeout
+   * @param canceling
+   * @return
+   * @throws SnowflakeSQLException
+   * @throws IOException
+   */
+  static String executeRequest(HttpRequestBase httpRequest,
+                               HttpClient httpClient,
+                               int retryTimeout,
+                               int injectSocketTimeout,
+                               AtomicBoolean canceling)
+      throws SnowflakeSQLException, IOException
+  {
+    return executeRequestInternal(
+        httpRequest,
+        httpClient,
+        retryTimeout,
+        injectSocketTimeout,
+        canceling,
+        false);
+  }
+
   /**
    * Helper to execute a request with retry and check and throw exception if
    * response is not success.
@@ -173,15 +244,17 @@ public class HttpUtil
    * @param retryTimeout retry timeout (in seconds)
    * @param injectSocketTimeout simulate socket timeout
    * @param canceling canceling flag
+   * @param withoutCookies whether this request should ignore cookies
    * @return response in String
    * @throws net.snowflake.client.jdbc.SnowflakeSQLException
    * @throws java.io.IOException
    */
-  static String executeRequest(HttpRequestBase httpRequest,
-                               HttpClient httpClient,
-                               int retryTimeout,
-                               int injectSocketTimeout,
-                               AtomicBoolean canceling)
+  private static String executeRequestInternal(HttpRequestBase httpRequest,
+                                               HttpClient httpClient,
+                                               int retryTimeout,
+                                               int injectSocketTimeout,
+                                               AtomicBoolean canceling,
+                                               boolean withoutCookies)
       throws SnowflakeSQLException, IOException
   {
     if (logger.isDebugEnabled())
@@ -199,7 +272,8 @@ public class HttpUtil
                                                   httpRequest,
                                                   retryTimeout,
                                                   injectSocketTimeout,
-                                                  canceling);
+                                                  canceling,
+                                                  withoutCookies);
 
       if (response == null ||
               response.getStatusLine().getStatusCode() != 200)

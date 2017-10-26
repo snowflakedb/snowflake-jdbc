@@ -55,8 +55,10 @@ public class RestRequest
    * @param retryTimeout        : retry timeout (in seconds)
    * @param injectSocketTimeout : simulate socket timeout
    * @param canceling           canceling flag
+   * @param withoutCookies      whether the cookie spec should be set to IGNORE
+   *                            or not
    * @return HttpResponse Object get from server
-   * @throws java.io.IOException                             jave io exception
+   * @throws java.io.IOException                             java io exception
    * @throws net.snowflake.client.jdbc.SnowflakeSQLException Request timeout Exception or Illegal State Exception i.e.
    *                                                         connection is already shutdown etc
    */
@@ -65,7 +67,8 @@ public class RestRequest
       HttpRequestBase httpRequest,
       long retryTimeout,
       int injectSocketTimeout,
-      AtomicBoolean canceling) throws IOException, SnowflakeSQLException
+      AtomicBoolean canceling,
+      boolean withoutCookies) throws IOException, SnowflakeSQLException
   {
     HttpResponse response = null;
 
@@ -103,16 +106,20 @@ public class RestRequest
         // update start time
         startTimePerRequest = System.currentTimeMillis();
 
+        if (withoutCookies)
+        {
+          httpRequest.setConfig(HttpUtil.getRequestConfigWithoutcookies());
+        }
+
         // for first call, simulate a socket timeout by setting socket timeout
         // to the injected socket timeout value
         if ((injectSocketTimeout != 0) && retryCount == 0)
         {
           logger.info("Injecting socket timeout by setting " +
               "socket timeout to {} millisecond ", injectSocketTimeout);
-
           httpRequest.setConfig(
               HttpUtil.getDefaultRequestConfigWithSocketTimeout(
-                  injectSocketTimeout));
+                  injectSocketTimeout, withoutCookies));
         }
 
         /*
@@ -156,7 +163,8 @@ public class RestRequest
 
         logger.warn("Exception encountered for: " +
             httpRequest.toString(), ex);
-      } finally
+      }
+      finally
       {
         // Reset the socket timeout to its original value if it is not the
         // very first iteration.
@@ -164,7 +172,7 @@ public class RestRequest
         {
           httpRequest.setConfig(
               HttpUtil.getDefaultRequestConfigWithSocketTimeout(
-                  origSocketTimeout));
+                  origSocketTimeout, withoutCookies));
         }
       }
 

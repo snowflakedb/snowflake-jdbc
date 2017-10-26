@@ -1325,15 +1325,14 @@ public class SessionUtil
       headers.addHeader(new BasicHeader("Content-Type", "application/json"));
       postRequest.setHeaders(headers.getAllHeaders());
 
-      final String idpResponse = HttpUtil.executeRequest(postRequest,
+      final String idpResponse = HttpUtil.executeRequestWithoutCookies(postRequest,
           loginInput.getHttpClient(), loginInput.getLoginTimeout(), 0, null);
 
       logger.debug("user is authenticated against {}.",
           loginInput.getAuthenticator());
 
-      final JsonNode jsonNode;
-      jsonNode = mapper.readTree(idpResponse);
       // session token is in the data field of the returned json response
+      final JsonNode jsonNode = mapper.readTree(idpResponse);
       oneTimeToken = jsonNode.get("cookieToken").asText();
     }
     catch (IOException | URISyntaxException ex)
@@ -1390,32 +1389,27 @@ public class SessionUtil
     JsonNode dataNode = null;
     try
     {
-      String serverUrl = loginInput.getServerUrl();
-      String authenticator = loginInput.getAuthenticator();
-
-      URIBuilder fedUriBuilder;
-      fedUriBuilder = new URIBuilder(serverUrl);
+      URIBuilder fedUriBuilder = new URIBuilder(loginInput.getServerUrl());
       fedUriBuilder.setPath(SF_PATH_AUTHENTICATOR_REQUEST);
       URI fedUrlUri = fedUriBuilder.build();
 
-      HttpPost postRequest = new HttpPost(fedUrlUri);
-
-      ClientAuthnDTO authnData = new ClientAuthnDTO();
       Map<String, Object> data = new HashMap<>();
-
       data.put(ClientAuthnParameter.ACCOUNT_NAME.name(),
           loginInput.getAccountName());
-      data.put(ClientAuthnParameter.AUTHENTICATOR.name(), authenticator);
+      data.put(ClientAuthnParameter.AUTHENTICATOR.name(),
+          loginInput.getAuthenticator());
       data.put(ClientAuthnParameter.CLIENT_APP_ID.name(), loginInput.getAppId());
       data.put(ClientAuthnParameter.CLIENT_APP_VERSION.name(),
           loginInput.getAppVersion());
 
+      ClientAuthnDTO authnData = new ClientAuthnDTO();
       authnData.setData(data);
       String json = mapper.writeValueAsString(authnData);
 
       // attach the login info json body to the post request
       StringEntity input = new StringEntity(json, Charset.forName("UTF-8"));
       input.setContentType("application/json");
+      HttpPost postRequest = new HttpPost(fedUrlUri);
       postRequest.setEntity(input);
       postRequest.addHeader("accept", "application/json");
 
