@@ -705,9 +705,10 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
 
             logger.debug("New size after compression: {}", uploadSize);
           }
-          else if (encMat != null)
+          else if(stage.getStageType() != StageInfo.StageType.LOCAL_FS)
           {
-            // If encryption is on, we store our digest in the metadata
+            // If it's not local_fs, we store our digest in the metadata
+            // In local_fs, we don't need digest, and if we turn it on, we will consume whole uploadStream, which local_fs uses.
             InputStreamWithMetadata result = computeDigest(uploadStream,
                                                            sourceFromStream);
             digest = result.digest;
@@ -720,7 +721,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
           }
           else
           {
-            if (!sourceFromStream && (srcFile !=null))
+            if (!sourceFromStream && (srcFile != null))
               fileToUpload = srcFile;
           }
 
