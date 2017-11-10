@@ -1277,13 +1277,6 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
               ") due to exception: " + ex.getMessage());
     }
 
-    if (logger.isDebugEnabled())
-    {
-      logger.debug("stage creds - id: {}", stageCredentials.get("AWS_ID"));
-      logger.debug("stage creds - key: {}", stageCredentials.get("AWS_KEY"));
-      logger.debug("stage creds - token: {}", stageCredentials.get("AWS_TOKEN"));
-    }
-
     return stageCredentials;
   }
 

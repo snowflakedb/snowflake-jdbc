@@ -3,7 +3,6 @@
  */
 package net.snowflake.client.jdbc.cloud.storage;
 
-import com.amazonaws.services.s3.model.ObjectMetadata;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.jdbc.FileBackedOutputStream;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
@@ -131,21 +130,31 @@ void download(SFSession connection, String command, String localLocation, String
 
   /**
    * Returns the material descriptor key
+   * @return the material descriptor key
    */
-  abstract String getMatdescKey();
+   String getMatdescKey();
 
   /**
    * Adds encryption metadata to the StorageObjectMetadata object
+   * @param meta the storage metadata object to add the encyption info to
+   * @param matDesc the material decriptor
+   * @param ivData the initialization vector
+   * @param encKeK the key encryption key
+   * @param contentLength the length of the encrypted content
    */
-  abstract void addEncryptionMetadata(StorageObjectMetadata meta, MatDesc matDesc, byte[] ivData, byte[] encKeK, long contentLength);
+   void addEncryptionMetadata(StorageObjectMetadata meta, MatDesc matDesc, byte[] ivData, byte[] encKeK, long contentLength);
 
   /**
    * Adds digest metadata to the StorageObjectMetadata object
+   * @param meta the storage metadata object to add the digest to
+   * @param digest the digest metadata to add
    */
-  abstract void addDigestMetadata(StorageObjectMetadata meta, String digest);
+   void addDigestMetadata(StorageObjectMetadata meta, String digest);
 
   /**
    * Gets digest metadata to the StorageObjectMetadata object
+   * @param meta the metadata object to extract the digest metadata from
+   * @return the digest metadata value
    */
-  abstract String getDigestMetadata(StorageObjectMetadata meta);
+   String getDigestMetadata(StorageObjectMetadata meta);
 }

@@ -102,8 +102,8 @@ public class SnowflakeS3Client implements SnowflakeStorageClient
     logger.debug("Setting up AWS client ");
 
     // Retrieve S3 stage credentials
-    String awsID = (String)stageCredentials.get("AWS_ID");
-    String awsKey = (String)stageCredentials.get("AWS_KEY");
+    String awsID = (String)stageCredentials.get("AWS_KEY_ID");
+    String awsKey = (String)stageCredentials.get("AWS_SECRET_KEY");
     String awsToken = (String)stageCredentials.get("AWS_TOKEN");
     
     // initialize aws credentials

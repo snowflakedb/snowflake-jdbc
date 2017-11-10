@@ -234,6 +234,7 @@ public class ResultUtil
    * A common helper to process result response
    *
    * @param resultData wrapper object over simple json result
+   * @param sfSession the Snowflake session
    * @return processed result output
    * @throws SnowflakeSQLException if failed to get number of columns
    */
