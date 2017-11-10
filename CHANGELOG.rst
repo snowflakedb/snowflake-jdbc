@@ -1,6 +1,9 @@
-**JDBC Driver 3.3.1**
-|SNOW-30511| Fixed the bug that Okta token is cached in cookies.
+**JDBC Driver 3.3.2**
+|SNOW-32282| Set blob metadata to specify that they upload their files using AES CBC key encryption for Azure support
+|SNOW-32001| Replace AWS_ID and AWS_KEY with their newer versions
 
+**JDBC Driver 3.3.1**
+|SNOW-30511| Fixed issue where Okta returned a 403 error (during federated authentication) due to the driver caching the Okta token in a cookie.
 **JDBC Driver 3.3.0**
 |SNOW-32656| Driver behavior changed to throw an exception if SQL statement cannot be prepared.
 **JDBC Driver 3.2.7**
