@@ -690,7 +690,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient
   {
     return String.format("{\"EncryptionMode\":\"FullBlob\",\"WrappedContentKey\""
                          + ":{\"KeyId\":\"symmKey1\",\"EncryptedKey\":\"%s\""
-                         + ",\"Algorithm\":\"A192KW\"},\"EncryptionAgent\":"
+                         + ",\"Algorithm\":\"AES_CBC_256\"},\"EncryptionAgent\":"
                          + "{\"Protocol\":\"1.0\",\"EncryptionAlgorithm\":"
                          + "\"AES_CBC_256\"},\"ContentEncryptionIV\":\"%s\""
                          + ",\"KeyWrappingMetadata\":{\"EncryptionLibrary\":"
