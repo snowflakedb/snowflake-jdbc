@@ -21,6 +21,7 @@ public enum SFSessionProperty
   SCHEMA("schema", false, String.class),
   PASSCODE_IN_PASSWORD("passcodeInPassword", false, Boolean.class),
   PASSCODE("passcode", false, String.class),
+  TOKEN("token", false, String.class),
   ROLE("role", false, String.class),
   AUTHENTICATOR("authenticator", false, String.class),
   WAREHOUSE("warehouse", false, String.class),

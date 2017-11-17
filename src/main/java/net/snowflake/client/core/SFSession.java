@@ -314,6 +314,8 @@ public class SFSession
             (String) connectionPropertiesMap.get(SFSessionProperty.USER))
         .setPassword(
             (String) connectionPropertiesMap.get(SFSessionProperty.PASSWORD))
+        .setToken(
+            (String) connectionPropertiesMap.get(SFSessionProperty.TOKEN))
         .setClientInfo(this.getClientInfo())
         .setPasscodeInPassword(passcodeInPassword)
         .setPasscode(

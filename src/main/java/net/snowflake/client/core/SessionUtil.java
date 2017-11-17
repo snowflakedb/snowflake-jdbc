@@ -143,6 +143,7 @@ public class SessionUtil
     private Properties clientInfo;
     private boolean passcodeInPassword;
     private String passcode;
+    private String token;
     private int connectionTimeout = DEFAULT_HTTP_CLIENT_CONNECTION_TIMEOUT;
     private int socketTimeout = DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT;
     private String appId;
@@ -220,6 +221,12 @@ public class SessionUtil
     public LoginInput setPassword(String password)
     {
       this.password = password;
+      return this;
+    }
+
+    public LoginInput setToken(String token)
+    {
+      this.token = token;
       return this;
     }
 
@@ -346,6 +353,11 @@ public class SessionUtil
     public String getPasscode()
     {
       return passcode;
+    }
+
+    public String getToken()
+    {
+      return token;
     }
 
     public int getConnectionTimeout()
@@ -600,6 +612,12 @@ public class SessionUtil
         // SAML 2.0 compliant service/application
         return ClientAuthnDTO.AuthenticatorType.EXTERNALBROWSER;
       }
+      else if (loginInput.getAuthenticator().equalsIgnoreCase(
+          ClientAuthnDTO.AuthenticatorType.OAUTH.name()))
+      {
+        // OAuth Authentication
+        return ClientAuthnDTO.AuthenticatorType.OAUTH;
+      }
       else if (!loginInput.getAuthenticator().equalsIgnoreCase(
           ClientAuthnDTO.AuthenticatorType.SNOWFLAKE.name()))
       {
@@ -753,6 +771,12 @@ public class SessionUtil
       else if (authenticator == ClientAuthnDTO.AuthenticatorType.OKTA)
       {
         data.put(ClientAuthnParameter.RAW_SAML_RESPONSE.name(), tokenOrSamlResponse);
+      }
+      else if (authenticator == ClientAuthnDTO.AuthenticatorType.OAUTH)
+      {
+        data.put(ClientAuthnParameter.AUTHENTICATOR.name(),
+            ClientAuthnDTO.AuthenticatorType.OAUTH.name());
+        data.put(ClientAuthnParameter.TOKEN.name(), loginInput.getToken());
       }
 
       Map<String, Object> clientEnv = new HashMap<String, Object>();
