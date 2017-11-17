@@ -37,7 +37,6 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.DigestOutputStream;
-import java.security.InvalidKeyException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.SQLException;
@@ -54,14 +53,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.zip.GZIPOutputStream;
-import javax.activation.MimeType;
-import javax.activation.MimeTypeParseException;
-import org.apache.commons.codec.digest.DigestUtils;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.io.filefilter.WildcardFileFilter;
-import net.snowflake.client.log.SFLogger;
-import net.snowflake.client.log.SFLoggerFactory;
+
 /**
  * Class for uploading/downloading files
  *
@@ -1998,8 +1990,8 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
       for (StorageObjectSummary obj : objectSummaries)
       {
         logger.debug(
-            "Existing object: key={} size={} etag={}",
-            obj.getKey(), obj.getSize(), obj.getETag());
+            "Existing object: key={} size={} md5={}",
+            obj.getKey(), obj.getSize(), obj.getMD5());
 
         int idxOfLastFileSep = obj.getKey().lastIndexOf("/");
         String objFileName = obj.getKey().substring(idxOfLastFileSep + 1);
@@ -2141,13 +2133,13 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
           // continue so that we will upload the file
           if (hashText == null || // remote is encrypted & has no digest
               (objDigest != null && !hashText.equals(objDigest)) || // digest mismatch
-              (objDigest == null && !hashText.equals(obj.getETag()))) // ETag/MD5 mismatch
+              (objDigest == null && !hashText.equals(obj.getMD5()))) // ETag/MD5 mismatch
           {
             logger.debug(
                 "digest diff between remote store and local, will {} {}, " +
-                    "local digest: {}, remote store digest: {}",
+                    "local digest: {}, remote store md5: {}",
                 new Object[]{commandType.name().toLowerCase(),
-                    mappedSrcFile, hashText, obj.getETag()});
+                    mappedSrcFile, hashText, obj.getMD5()});
 
             continue;
           }

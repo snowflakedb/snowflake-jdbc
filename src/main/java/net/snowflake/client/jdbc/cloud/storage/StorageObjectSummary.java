@@ -4,6 +4,7 @@
 package net.snowflake.client.jdbc.cloud.storage;
 
 import com.amazonaws.services.s3.model.S3ObjectSummary;
+import com.amazonaws.util.Base64;
 import com.microsoft.azure.storage.StorageException;
 import com.microsoft.azure.storage.blob.BlobProperties;
 import com.microsoft.azure.storage.blob.CloudBlob;
@@ -20,7 +21,7 @@ public class StorageObjectSummary
 {
   private String location;      // location translates to "bucket" for S3
   private String key;
-  private String eTag;
+  private String md5;
   private long size;
 
 
@@ -28,11 +29,11 @@ public class StorageObjectSummary
    * Contructs a StorageObjectSummary object from the S3 equivalent S3ObjectSummary
    * @param
    */
-  private StorageObjectSummary(String location, String key, String eTag, long size)
+  private StorageObjectSummary(String location, String key, String md5, long size)
   {
     this.location = location;
     this.key = key;
-    this.eTag = eTag;
+    this.md5 = md5;
     this.size = size;
   }
 
@@ -47,6 +48,9 @@ public class StorageObjectSummary
     return new StorageObjectSummary(
                   objSummary.getBucketName(),
                   objSummary.getKey(),
+                  // S3 ETag is not always MD5, but since this code path is only
+                  // used in skip duplicate files in PUT command, It's not
+                  // critical to guarantee that it's MD5
                   objSummary.getETag(),
                   objSummary.getSize()
                   );
@@ -62,7 +66,7 @@ public class StorageObjectSummary
   public static StorageObjectSummary createFromAzureListBlobItem(ListBlobItem listBlobItem)
     throws StorageProviderException
   {
-    String location, key, eTag;
+    String location, key, md5;
     long size;
 
     // Retrieve the BLOB properties that we need for the Summary
@@ -78,7 +82,9 @@ public class StorageObjectSummary
       key = cloudBlob.getName();
 
       BlobProperties blobProperties = cloudBlob.getProperties();
-      eTag = blobProperties.getEtag();
+      // the content md5 property is not always the actual md5 of the file. But for here, it's only
+      // used for skipping file on PUT command, hense is ok.
+      md5 = convertBase64ToHex(blobProperties.getContentMD5());
       size = blobProperties.getLength();
     }
     catch (URISyntaxException | StorageException ex)
@@ -88,8 +94,23 @@ public class StorageObjectSummary
       // and its a lazy operation
       throw new StorageProviderException(ex);
     }
-    return new StorageObjectSummary(location, key, eTag, size);
+    return new StorageObjectSummary(location, key, md5, size);
 
+  }
+
+  private static String convertBase64ToHex(String base64String){
+    try{
+      byte[] bytes = Base64.decode(base64String);
+    
+      final StringBuilder builder = new StringBuilder();
+      for(byte b : bytes) {
+        builder.append(String.format("%02x", b));
+      }
+      return builder.toString();
+    // return empty string if input is not a valid Base64 string
+    }catch(Exception e){
+      return "";
+    }
   }
   
   /**
@@ -108,11 +129,11 @@ public class StorageObjectSummary
   }
 
   /**
-   * @return returns the ETag property of the object
+   * @return returns the MD5 hash of the object
    */
-  public String getETag()
+  public String getMD5()
   {
-    return eTag;
+    return md5;
   }
 
   /**
