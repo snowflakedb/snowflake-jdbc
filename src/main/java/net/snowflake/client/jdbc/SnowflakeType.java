@@ -31,15 +31,15 @@ public enum SnowflakeType {
   public static void resetLocalCalendar() {
     CALENDAR_LOCAL = new GregorianCalendar(TimeZone.getDefault());
     CALENDAR_LOCAL.clear();
-    CALENDAR_LOCAL.setGregorianChange(new Date(Long.MIN_VALUE));
   }
 
   private final static GregorianCalendar CALENDAR_UTC = new GregorianCalendar(
       TimeZone.getTimeZone("UTC"));
 
   static {
+    // no need to adjust date before 1582 because JDBC will adjust
+    // when fetching data from server side
     CALENDAR_UTC.clear();
-    CALENDAR_UTC.setGregorianChange(new Date(Long.MIN_VALUE));
     resetLocalCalendar();
   }
 

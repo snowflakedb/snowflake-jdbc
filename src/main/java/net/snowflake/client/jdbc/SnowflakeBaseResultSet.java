@@ -4,13 +4,6 @@
 
 package net.snowflake.client.jdbc;
 
-import net.snowflake.client.core.ResultUtil;
-import net.snowflake.client.core.SFException;
-import net.snowflake.common.core.SFBinary;
-import net.snowflake.common.core.SFBinaryFormat;
-import net.snowflake.common.core.SFTime;
-import net.snowflake.common.core.SFTimestamp;
-import net.snowflake.common.core.SnowflakeDateTimeFormat;
 import net.snowflake.common.core.SqlState;
 import java.io.InputStream;
 import java.io.Reader;
@@ -46,20 +39,14 @@ import net.snowflake.client.log.SFLoggerFactory;
  *
  * @author jhuang
  */
-public class SnowflakeBaseResultSet implements ResultSet
+abstract class SnowflakeBaseResultSet implements ResultSet
 {
 
   static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeBaseResultSet.class);
 
-  static final int[] powersOfTen =
-  {
-    1, 10, 100, 1000, 10000,
-    100000, 1000000, 10000000, 100000000, 1000000000
-  };
-
   protected Statement statement;
 
-  protected boolean wasNull = false;
+  private boolean wasNull = false;
 
   protected Object[] nextRow = null;
 
@@ -67,48 +54,15 @@ public class SnowflakeBaseResultSet implements ResultSet
 
   protected int row = 0;
 
-  protected boolean endOfResult = false;
-
   protected Map<String, Object> parameters = new HashMap<>();
 
-  protected TimeZone timeZone;
-
-  // Timezone used for TimestampNTZ
-  protected TimeZone timeZoneUTC;
-
-  // Formatters for different datatypes
-  protected SnowflakeDateTimeFormat timestampNTZFormatter;
-  protected SnowflakeDateTimeFormat timestampLTZFormatter;
-  protected SnowflakeDateTimeFormat timestampTZFormatter;
-  protected SnowflakeDateTimeFormat dateFormatter;
-  protected SnowflakeDateTimeFormat timeFormatter;
-  protected boolean honorClientTZForTimestampNTZ = true;
-  protected SFBinaryFormat binaryFormatter;
-
-  protected int fetchSize = 0;
-
-  protected int fetchDirection = ResultSet.FETCH_FORWARD;
-
-  protected long resultVersion = 0;
+  private int fetchSize = 0;
 
   @Override
-  public boolean next() throws SQLException
-  {
-    logger.debug("public boolean next()");
-
-    return false;
-  }
+  abstract public boolean next() throws SQLException;
 
   @Override
-  public void close() throws SQLException
-  {
-    logger.debug("public void close()");
-
-    // free the object so that they can be Garbage collected
-    nextRow = null;
-    statement = null;
-    resultSetMetaData = null;
-  }
+  abstract public void close() throws SQLException;
 
   @Override
   public boolean wasNull() throws SQLException
@@ -125,150 +79,8 @@ public class SnowflakeBaseResultSet implements ResultSet
 
     // Column index starts from 1, not 0.
     Object obj = getObjectInternal(columnIndex);
-    if (obj == null)
-    {
-      return null;
-    }
 
-    // print timestamp in string format
-    int columnType = resultSetMetaData.getInternalColumnType(columnIndex);
-    switch (columnType)
-    {
-      case Types.BOOLEAN:
-        if (obj.toString().equals("1"))
-        {
-          return "TRUE";
-        }
-        else if (obj.toString().equals("0"))
-        {
-          return "FALSE";
-        }
-        break;
-
-      case Types.TIMESTAMP:
-      case SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_LTZ:
-      case SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_TZ:
-
-        SFTimestamp sfTS = getSFTimestamp(columnIndex);
-        int columnScale = resultSetMetaData.getScale(columnIndex);
-
-        String timestampStr= null;
-
-        // Derive the timestamp formatter to use
-        SnowflakeDateTimeFormat formatter;
-        if (columnType == Types.TIMESTAMP)
-        {
-          formatter = timestampNTZFormatter;
-        }
-        else if (columnType == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_LTZ)
-        {
-          formatter = timestampLTZFormatter;
-        }
-        else // TZ
-        {
-          formatter = timestampTZFormatter;
-        }
-
-        if (formatter == null)
-        {
-          throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
-              ErrorCode.INTERNAL_ERROR
-                  .getMessageCode(),
-              "missing timestamp formatter");
-        }
-
-        Timestamp adjustedTimestamp =
-            ResultUtil.adjustTimestamp(sfTS.getTimestamp());
-
-        timestampStr = formatter.format(
-            adjustedTimestamp, sfTS.getTimeZone(), columnScale);
-
-        if (logger.isDebugEnabled())
-          logger.debug("Converting timestamp to string from: {} to: {}",
-              obj.toString(), timestampStr);
-
-        return timestampStr;
-
-      case Types.DATE:
-        Date date = getDate(columnIndex, timeZoneUTC);
-
-        if (dateFormatter == null)
-        {
-          throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
-                                          ErrorCode.INTERNAL_ERROR
-                                          .getMessageCode(),
-                                          "missing date formatter");
-        }
-
-        String dateStr = null;
-
-        // if date is on or before 1582-10-04, apply the difference
-        // by (H-H/4-2) where H is the hundreds digit of the year according to:
-        // http://en.wikipedia.org/wiki/Gregorian_calendar
-        Date adjustedDate = ResultUtil.adjustDate(date);
-
-        dateStr = dateFormatter.format(adjustedDate, timeZoneUTC);
-
-        if (logger.isDebugEnabled())
-        {
-          String prevDateStr = dateFormatter.format(date, timeZoneUTC);
-
-          logger.debug(
-              "Adjust date from {} to {}",
-              prevDateStr, dateStr);
-        }
-
-        if (logger.isDebugEnabled())
-          logger.debug("Converting date to string from: {} to: {}",
-                      obj.toString(), dateStr);
-        return dateStr;
-
-      case Types.TIME:
-        SFTime sfTime = getSFTime(columnIndex);
-
-        if (timeFormatter == null)
-        {
-          throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
-                                          ErrorCode.INTERNAL_ERROR
-                                          .getMessageCode(),
-                                          "missing time formatter");
-        }
-
-        int scale = resultSetMetaData.getScale(columnIndex);
-        String timeStr = null;
-
-
-        timeStr = timeFormatter.format(sfTime, scale);
-
-        if (logger.isDebugEnabled())
-          logger.debug("Converting time to string from: {} to: {}",
-              obj.toString(), timeStr);
-        return timeStr;
-
-      case Types.BINARY:
-        if (binaryFormatter == null)
-        {
-          throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
-                                          ErrorCode.INTERNAL_ERROR
-                                          .getMessageCode(),
-                                          "missing binary formatter");
-        }
-
-        if (binaryFormatter == SFBinaryFormat.HEX)
-        {
-          // Shortcut: the values are already passed with hex encoding, so just
-          // return the string unchanged rather than constructing an SFBinary.
-          return obj.toString();
-        }
-
-        SFBinary sfb = new SFBinary(getBytes(columnIndex));
-        return binaryFormatter.format(sfb);
-
-      default:
-        break;
-    }
-
-    return obj.toString();
+    return obj == null ? null : obj.toString();
   }
 
   @Override
@@ -454,69 +266,9 @@ public class SnowflakeBaseResultSet implements ResultSet
   }
 
   @Override
-  public byte[] getBytes(int columnIndex) throws SQLException
-  {
-    logger.debug("public byte[] getBytes(int columnIndex)");
+  abstract public byte[] getBytes(int columnIndex) throws SQLException;
 
-    // Column index starts from 1, not 0.
-    Object obj = getObjectInternal(columnIndex);
-
-    if (obj == null)
-      return null;
-
-    try
-    {
-      return SFBinary.fromHex(obj.toString()).getBytes();
-    }
-    catch (IllegalArgumentException ex)
-    {
-      throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
-          ErrorCode.INTERNAL_ERROR.getMessageCode(),
-          "Invalid binary value: " + obj.toString());
-    }
-  }
-
-  public Date getDate(int columnIndex, TimeZone tz) throws SQLException
-  {
-    if (tz == null)
-    {
-      tz = TimeZone.getDefault();
-    }
-
-    logger.debug("public Date getDate(int columnIndex)");
-
-    // Column index starts from 1, not 0.
-    Object obj = getObjectInternal(columnIndex);
-
-    try
-    {
-      if (obj == null)
-      {
-        return null;
-      }
-
-      long milliSecsSinceEpoch = Long.valueOf(obj.toString()) * 86400000;
-
-      SFTimestamp tsInUTC = SFTimestamp.fromDate(new Date(milliSecsSinceEpoch),
-          0, TimeZone.getTimeZone("UTC"));
-
-      SFTimestamp tsInClientTZ = tsInUTC.moveToTimeZone(tz);
-
-      if (logger.isDebugEnabled())
-        logger.debug(
-          "getDate: tz offset = {}",
-              tsInClientTZ.getTimeZone().getOffset(tsInClientTZ.getTime()));
-
-      // return the date adjusted to the JVM default time zone
-      return new Date(tsInClientTZ.getTime());
-    }
-    catch (NumberFormatException ex)
-    {
-      throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
-          ErrorCode.INTERNAL_ERROR.getMessageCode(),
-          "Invalid date value: " + obj.toString());
-    }
-  }
+  abstract public Date getDate(int columnIndex, TimeZone tz) throws SQLException;
 
   @Override
   public Date getDate(int columnIndex) throws SQLException
@@ -525,16 +277,7 @@ public class SnowflakeBaseResultSet implements ResultSet
   }
 
   @Override
-  public Time getTime(int columnIndex) throws SQLException
-  {
-    SFTime sfTime = getSFTime(columnIndex);
-    if (sfTime == null)
-    {
-      return null;
-    }
-
-    return new Time(sfTime.getFractionalSeconds(3));
-  }
+  abstract public Time getTime(int columnIndex) throws SQLException;
 
   @Override
   public Timestamp getTimestamp(int columnIndex) throws SQLException
@@ -542,34 +285,8 @@ public class SnowflakeBaseResultSet implements ResultSet
     return getTimestamp(columnIndex, TimeZone.getDefault());
   }
 
-  public Timestamp getTimestamp(int columnIndex, TimeZone tz)
-      throws SQLException
-  {
-    SFTimestamp sfTS = getSFTimestamp(columnIndex);
-
-    if (sfTS == null)
-    {
-      return null;
-    }
-
-    Timestamp res = sfTS.getTimestamp();
-
-    if (res == null)
-    {
-      return null;
-    }
-
-    // SNOW-14777: for timestamp_ntz, we should treat the time as in client time
-    // zone so adjust the timestamp by subtracting the offset of the client
-    // timezone
-    if (honorClientTZForTimestampNTZ &&
-        resultSetMetaData.getInternalColumnType(columnIndex) == Types.TIMESTAMP)
-    {
-      return sfTS.moveToTimeZone(tz).getTimestamp();
-    }
-
-    return res;
-  }
+  abstract public Timestamp getTimestamp(int columnIndex, TimeZone tz)
+      throws SQLException;
 
   /**
    * Parse seconds since epoch with both seconds and fractional seconds after
@@ -594,119 +311,6 @@ public class SnowflakeBaseResultSet implements ResultSet
       // Note: can actually contain timezone in the lowest part
       // Example: fractionsSinceEpoch is 123456
       return secondsSinceEpoch.scaleByPowerOfTen(scale);
-  }
-
-  public SFTimestamp getSFTimestamp(int columnIndex) throws SQLException
-  {
-    logger.debug(
-               "public Timestamp getTimestamp(int columnIndex)");
-
-    Object obj = getObjectInternal(columnIndex);
-
-    try
-    {
-      if (obj == null)
-      {
-        return null;
-      }
-
-      int scale = resultSetMetaData.getScale(columnIndex);
-
-      BigDecimal fractionsSinceEpoch;
-
-        // Derive the used timezone - if NULL, will be extracted from the number.
-      TimeZone tz;
-      switch (resultSetMetaData.getInternalColumnType(columnIndex))
-      {
-        case Types.TIMESTAMP:
-          fractionsSinceEpoch = parseSecondsSinceEpoch(obj.toString(), scale);
-          // Always in UTC
-          tz = timeZoneUTC;
-          break;
-        case SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_TZ:
-          String timestampStr = obj.toString();
-
-          /**
-           * For new result version, timestamp with timezone is formatted as
-           * the seconds since epoch with fractional part in the decimal
-           * followed by time zone index. E.g.: "123.456 1440". Here 123.456
-           * is the number of seconds since epoch and 1440 is the timezone
-           * index.
-           */
-          if (resultVersion > 0)
-          {
-            logger.trace(
-                "Handle timestamp with timezone new encoding: {}",
-                timestampStr);
-
-            int indexForSeparator = timestampStr.indexOf(' ');
-            String secondsSinceEpochStr =
-                timestampStr.substring(0, indexForSeparator);
-            String timezoneIndexStr =
-                timestampStr.substring(indexForSeparator + 1);
-
-            fractionsSinceEpoch = parseSecondsSinceEpoch(secondsSinceEpochStr,
-                scale);
-
-            tz = SFTimestamp.convertTimezoneIndexToTimeZone(Integer.parseInt(
-                timezoneIndexStr));
-          }
-          else
-          {
-            logger.trace(
-                "Handle timestamp with timezone old encoding: {}",
-                timestampStr);
-
-            fractionsSinceEpoch = parseSecondsSinceEpoch(timestampStr, scale);
-
-            // Timezone needs to be derived from the binary value for old
-            // result version
-            tz = null;
-          }
-          break;
-        default:
-          // Timezone from the environment
-          assert resultSetMetaData.getInternalColumnType(columnIndex)
-              == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_LTZ;
-          fractionsSinceEpoch = parseSecondsSinceEpoch(obj.toString(), scale);
-
-          tz = timeZone;
-          break;
-      }
-
-      // Construct a timestamp in the proper timezone
-      return SFTimestamp.fromBinary(fractionsSinceEpoch, scale, tz);
-    }
-    catch (NumberFormatException ex)
-    {
-      throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
-          ErrorCode.INTERNAL_ERROR.getMessageCode(),
-          "Invalid timestamp value: " + obj.toString());
-    }
-  }
-
-  public SFTime getSFTime(int columnIndex) throws SQLException
-  {
-    Object obj = getObjectInternal(columnIndex);
-
-    try
-    {
-      if (obj == null)
-      {
-        return null;
-      }
-
-      int scale = resultSetMetaData.getScale(columnIndex);
-      long fractionsSinceMidnight =
-          parseSecondsSinceEpoch(obj.toString(), scale).longValue();
-      return SFTime.fromFractionalSeconds(fractionsSinceMidnight, scale);
-    }
-    catch (NumberFormatException ex)
-    {
-      throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
-          ErrorCode.INTERNAL_ERROR.getMessageCode(),
-          "Invalid time value: " + obj.toString());
-    }
   }
 
   @Override
@@ -918,7 +522,7 @@ public class SnowflakeBaseResultSet implements ResultSet
     return resultSetMetaData;
   }
 
-  public Object getObjectInternal(int columnIndex) throws SQLException
+  protected Object getObjectInternal(int columnIndex) throws SQLException
   {
     logger.debug(
                "public Object getObjectInternal(int columnIndex)");
@@ -1184,7 +788,7 @@ public class SnowflakeBaseResultSet implements ResultSet
   {
     logger.debug("public int getFetchDirection()");
 
-    return fetchDirection;
+    return ResultSet.FETCH_FORWARD;
   }
 
   @Override

@@ -6,10 +6,15 @@ package net.snowflake.client.jdbc;
 
 import net.snowflake.client.core.SFSession;
 
+import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Time;
+import java.sql.Timestamp;
 import java.util.List;
+import java.util.TimeZone;
+
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.log.SFLogger;
 
@@ -17,7 +22,7 @@ import net.snowflake.client.log.SFLogger;
  *
  * @author jhuang
  */
-public class SnowflakeDatabaseMetaDataResultSet extends
+class SnowflakeDatabaseMetaDataResultSet extends
         SnowflakeBaseResultSet
 {
   protected ResultSet showObjectResultSet;
@@ -114,6 +119,7 @@ public class SnowflakeDatabaseMetaDataResultSet extends
         metadataType.getColumnTypes(), rows, statement);
   }
 
+  @Override
   public boolean next() throws SQLException
   {
     logger.debug("public boolean next()");
@@ -132,6 +138,7 @@ public class SnowflakeDatabaseMetaDataResultSet extends
     return false;
   }
 
+  @Override
   public void close() throws SQLException
   {
     if(statement != null)
@@ -139,7 +146,68 @@ public class SnowflakeDatabaseMetaDataResultSet extends
       statement.close();
       statement = null;
     }
+  }
 
+  @Override
+  public byte[] getBytes(int columnIndex) throws SQLException
+  {
+    String str = this.getString(columnIndex);
+    if (str != null)
+    {
+      return str.getBytes();
+    }
+    else
+    {
+      throw new SQLException("Cannot get bytes on null column");
+    }
+  }
+
+  @Override
+  public Time getTime(int columnIndex) throws SQLException
+  {
+    Object obj = getObjectInternal(columnIndex);
+
+    if (obj instanceof Time)
+    {
+      return (Time)obj;
+    }
+    else
+    {
+      throw new SnowflakeSQLException(ErrorCode.INVALID_VALUE_CONVERT,
+          obj.getClass().getName(), "TIME", obj);
+    }
+  }
+
+  @Override
+  public Timestamp getTimestamp(int columnIndex, TimeZone tz) throws SQLException
+  {
+    Object obj = getObjectInternal(columnIndex);
+
+    if (obj instanceof Timestamp)
+    {
+      return (Timestamp)obj;
+    }
+    else
+    {
+      throw new SnowflakeSQLException(ErrorCode.INVALID_VALUE_CONVERT,
+          obj.getClass().getName(), "TIMESTAMP", obj);
+    }
+  }
+
+  @Override
+  public Date getDate(int columnIndex, TimeZone tz) throws SQLException
+  {
+    Object obj = getObjectInternal(columnIndex);
+
+    if (obj instanceof Date)
+    {
+      return (Date)obj;
+    }
+    else
+    {
+      throw new SnowflakeSQLException(ErrorCode.INVALID_VALUE_CONVERT,
+          obj.getClass().getName(), "DATE", obj);
+    }
   }
 
   static ResultSet getEmptyResultSet(DBMetadataResultSetMetadata metadataType, Statement statement)

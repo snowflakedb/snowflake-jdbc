@@ -24,7 +24,7 @@ import java.util.logging.Level;
  * <p>
  * @author jhuang
  */
-public class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
+class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
 {
   private SFBaseResultSet sfBaseResultSet;
   private Statement statement;
@@ -41,7 +41,7 @@ public class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
    * @param statement query statement that generates this result set
    * @throws SQLException if failed to construct snowflake result set metadata
    */
-  public SnowflakeResultSetV1(SFBaseResultSet sfBaseResultSet, Statement statement)
+  SnowflakeResultSetV1(SFBaseResultSet sfBaseResultSet, Statement statement)
           throws SQLException
   {
     this.sfBaseResultSet = sfBaseResultSet;
@@ -196,11 +196,6 @@ public class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
     }
   }
 
-  public Date getDate(int columnIndex) throws SQLException
-  {
-    return getDate(columnIndex, TimeZone.getDefault());
-  }
-
   public Time getTime(int columnIndex) throws SQLException
   {
     try
@@ -212,11 +207,6 @@ public class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
       throw new SnowflakeSQLException(ex.getCause(),
           ex.getSqlState(), ex.getVendorCode(), ex.getParams());
     }
-  }
-
-  public Timestamp getTimestamp(int columnIndex) throws SQLException
-  {
-    return getTimestamp(columnIndex, TimeZone.getDefault());
   }
 
   public Timestamp getTimestamp(int columnIndex, TimeZone tz)
