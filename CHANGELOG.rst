@@ -1,7 +1,10 @@
-**JDBC Driver 3.3.2**
-|SNOW-32282| Set blob metadata to specify that they upload their files using AES CBC key encryption for Azure support
-|SNOW-32001| Replace AWS_ID and AWS_KEY with their newer versions
+**JDBC Driver 3.3.3**
+|SNOW-36917| Fix the issue that loader api is converting timestamp before 1582
+|SNOW-35613| OAuth support in JDBC support
 
+**JDBC Driver 3.3.2**
+|SNOW-32282| For PUT and GET support (pending) in Azure, BLOB metadata is set to specify that files are uploaded and downloaded using AES CBC key encryption.
+|SNOW-32001| Replaced AWS_ID and AWS_KEY with newer versions.
 **JDBC Driver 3.3.1**
 |SNOW-30511| Fixed issue where Okta returned a 403 error (during federated authentication) due to the driver caching the Okta token in a cookie.
 **JDBC Driver 3.3.0**
