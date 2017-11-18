@@ -102,7 +102,7 @@ public class SnowflakeBasicDataSource implements DataSource
   @Override
   public void setLoginTimeout(int seconds) throws SQLException
   {
-    properties.put("loginTimeout", seconds);
+    properties.put("loginTimeout", Integer.toString(seconds));
   }
 
   @Override
