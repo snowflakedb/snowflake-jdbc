@@ -87,13 +87,17 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
   /** Error code returned when describing a statement that is binding table name*/
   private final Integer ERROR_CODE_TABLE_BIND_VARIABLE_NOT_SET = 2128;
 
+  /** Error code returned when describing a ddl command */
+  private final Integer ERROR_CODE_STATEMENT_CANNOT_BE_PREPARED = 7;
+
   /**
    * A hash set that contains the error code that will not lead to exception
    * in describe mode
    */
   private final Set<Integer> errorCodesIgnoredInDescribeMode
       = new HashSet<>(Arrays.asList(new Integer[]
-      {ERROR_CODE_TABLE_BIND_VARIABLE_NOT_SET}));
+      {ERROR_CODE_TABLE_BIND_VARIABLE_NOT_SET,
+       ERROR_CODE_STATEMENT_CANNOT_BE_PREPARED}));
 
   SnowflakePreparedStatementV1(SnowflakeConnectionV1 connection,
                                String sql) throws SQLException
