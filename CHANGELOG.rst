@@ -1,9 +1,13 @@
-**JDBC Driver 3.3.3**
-|SNOW-36917| Fix the issue that loader api is converting timestamp before 1582
-|SNOW-35613| OAuth support in JDBC support
+**JDBC Driver 3.4.0**
+|SNOW-37276| Fix the issue that JDBC cannot use TLS1.2 cipher suites in JDK1.7
+|SNOW-37186| Fix the number format issue in JDBC SnowflakeBasicaDataSource.java
+|SNOW-37242| Allow prepare all kinds of statements
 
+**JDBC Driver 3.3.3**
+|SNOW-36917| Fixed an issue where the loader API incorrectly converted timestamp dates earlier than 1582-Oct-04 due to differences between the Julian and Gregorian calendar.
+|SNOW-35613| Internal infrastructure change to add support for pending feature.
 **JDBC Driver 3.3.2**
-|SNOW-32282| For PUT and GET support (pending) in Azure, BLOB metadata is set to specify that files are uploaded and downloaded using AES CBC key encryption.
+|SNOW-32282| To support PUT and GET for Azure (pending), BLOB metadata is set to specify that files are uploaded and downloaded using AES CBC key encryption.
 |SNOW-32001| Replaced AWS_ID and AWS_KEY with newer versions.
 **JDBC Driver 3.3.1**
 |SNOW-30511| Fixed issue where Okta returned a 403 error (during federated authentication) due to the driver caching the Okta token in a cookie.
