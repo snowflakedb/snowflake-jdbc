@@ -415,6 +415,10 @@
                        <shadedPattern>${shadeBase}.amazonaws</shadedPattern>
                      </relocation>
                      <relocation>
+                       <pattern>software.amazon.ion</pattern>
+                       <shadedPattern>${shadeBase}.software.amazon.ion</shadedPattern>
+                     </relocation>
+                     <relocation>
                        <pattern>com.microsoft.azure</pattern>
                        <shadedPattern>${shadeBase}.microsoft.azure</shadedPattern>
                      </relocation>
