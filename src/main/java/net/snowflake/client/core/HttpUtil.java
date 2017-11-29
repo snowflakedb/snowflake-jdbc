@@ -20,7 +20,6 @@ import org.apache.http.conn.socket.ConnectionSocketFactory;
 import org.apache.http.conn.socket.PlainConnectionSocketFactory;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.conn.ssl.SSLContexts;
-import org.apache.http.cookie.CookieSpec;
 import org.apache.http.impl.client.DefaultRedirectStrategy;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
@@ -28,12 +27,14 @@ import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
+import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLServerSocketFactory;
 
 import static org.apache.http.client.config.CookieSpecs.DEFAULT;
 import static org.apache.http.client.config.CookieSpecs.IGNORE_COOKIES;
@@ -82,10 +83,18 @@ public class HttpUtil
     // enforce using tlsv1.2
     SSLContext sslContext = SSLContexts.createDefault();
 
+    // cipher suites need to be picked up in code explicitly for jdk 1.7
+    // https://stackoverflow.com/questions/44378970/
+    String[] cipherSuites = decideCipherSuites();
+    if (logger.isTraceEnabled())
+    {
+      logger.trace("Cipher suites used: {}", Arrays.toString(cipherSuites));
+    }
+
     SSLConnectionSocketFactory sslSocketFactory = new SSLConnectionSocketFactory(
         sslContext,
         new String[] {"TLSv1.2"},
-        null,
+        cipherSuites,
         SSLConnectionSocketFactory.STRICT_HOSTNAME_VERIFIER);
 
     Registry<ConnectionSocketFactory> registry =
@@ -392,4 +401,19 @@ public class HttpUtil
       return httpIn.markSupported();
     }
   };
+
+  /**
+   * Decide cipher suites that will be passed into the SSLConnectionSocketFactory
+   *
+   * @return List of cipher suites.
+   */
+  private static String[] decideCipherSuites()
+  {
+    String sysCipherSuites = System.getProperty("https.cipherSuites");
+
+    return sysCipherSuites != null ? sysCipherSuites.split(",") :
+      // use jdk default cipher suites
+        ((SSLServerSocketFactory)SSLServerSocketFactory.getDefault())
+            .getDefaultCipherSuites();
+  }
 }
