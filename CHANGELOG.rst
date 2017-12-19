@@ -1,6 +1,9 @@
-**JDBC Driver 3.4.1**
-|SNOW-37400| Shade amazon ion package
+**JDBC Driver 3.4.2**
+|SNOW-37755| Refactor the fix for SNOW-36580 in client side
+|SNOW-37184| Support binding object name in JDBC 
 
+**JDBC Driver 3.4.1**
+|SNOW-37400| Added shaded amazon.ion package.
 **JDBC Driver 3.4.0**
 |SNOW-37276| Fixed an issue where the driver could not use the TLS 1.2 cipher suites in JDK1.7.
 |SNOW-37242| Allow preparing all types of statements (reverts a change introduced in v3.3.0).
