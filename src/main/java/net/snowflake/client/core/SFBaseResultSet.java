@@ -485,10 +485,12 @@ public abstract class SFBaseResultSet
       if (honorClientTZForTimestampNTZ &&
           resultSetMetaData.getInternalColumnType(columnIndex) == Types.TIMESTAMP)
       {
-        return sfTS.moveToTimeZone(tz).getTimestamp();
+        res = sfTS.moveToTimeZone(tz).getTimestamp();
       }
 
-      return res;
+      Timestamp adjustedTimestamp = ResultUtil.adjustTimestamp(res);
+
+      return adjustedTimestamp;
     }
     else if (Types.DATE == columnType)
     {

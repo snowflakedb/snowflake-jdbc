@@ -11,6 +11,7 @@
 package net.snowflake.client.jdbc;
 
 import net.snowflake.client.core.ParameterBindingDTO;
+import net.snowflake.client.core.ResultUtil;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SFStatementMetaData;
 import net.snowflake.common.core.SFBinary;
@@ -286,7 +287,7 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
           SnowflakeUtil.javaTypeToSFTypeString(Types.DATE),
           String.valueOf(x.getTime() +
           TimeZone.getDefault().getOffset(x.getTime())-
-          TimeUtil.msDiffJulianToGregorian(x)));
+          ResultUtil.msDiffJulianToGregorian(x)));
 
       parameterBindings.put(String.valueOf(parameterIndex), binding);
     }
@@ -329,7 +330,7 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
     // convert the timestamp from being in local time zone to be in UTC timezone
     String value =  x == null ? null :
         String.valueOf(
-        BigDecimal.valueOf((x.getTime() - TimeUtil.msDiffJulianToGregorian(x))/1000).
+        BigDecimal.valueOf((x.getTime() - ResultUtil.msDiffJulianToGregorian(x))/1000).
         scaleByPowerOfTen(9).add(BigDecimal.valueOf(x.getNanos())));
 
     SnowflakeType sfType = SnowflakeUtil.javaTypeToSFType(Types.TIMESTAMP);

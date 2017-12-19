@@ -538,6 +538,78 @@ public class ResultUtil
   }
 
   /**
+   * Adjust timestamp for dates before 1582-10-05
+   *
+   * @param timestamp needs to be adjusted
+   * @return adjusted timestamp
+   */
+  static public Timestamp adjustTimestamp(Timestamp timestamp)
+  {
+    long milliToAdjust = ResultUtil.msDiffJulianToGregorian(timestamp);
+
+    if (milliToAdjust != 0)
+    {
+
+      if (logger.isDebugEnabled())
+        logger.debug("adjust timestamp by {} days", milliToAdjust / 86400000);
+
+      Timestamp newTimestamp = new Timestamp(timestamp.getTime()
+           + milliToAdjust);
+
+      newTimestamp.setNanos(timestamp.getNanos());
+
+      return newTimestamp;
+    }
+	  else
+    {
+      return timestamp;
+    }
+  }
+
+  /**
+   * For dates before 1582-10-05, calculate the number of millis to adjust.
+   *
+   * @param date date before 1582-10-05
+   * @return millis needs to be adjusted
+   */
+  static public long msDiffJulianToGregorian(java.util.Date date)
+  {
+    // get the year of the date
+    Calendar cal = Calendar.getInstance();
+    cal.setTime(date);
+    int year = cal.get(Calendar.YEAR);
+    int month = cal.get(Calendar.MONTH);
+    int dayOfMonth = cal.get(Calendar.DAY_OF_MONTH);
+
+    // if date is before 1582-10-05, apply the difference
+    // by (H-(H/4)-2) where H is the hundreds digit of the year according to:
+    // http://en.wikipedia.org/wiki/Gregorian_calendar
+    if (date.getTime() < -12220156800000L)
+    {
+      // for dates on or before 02/28, use the previous year otherwise use
+      // current year.
+      // TODO: we need to revisit this since there is a potential issue using
+      // the year/month/day from the calendar since that may not be the same
+      // year/month/day as the original date (which is the problem we are
+      // trying to solve here).
+
+      if (month == 0 || (month == 1 && dayOfMonth <= 28))
+      {
+        year = year - 1;
+      }
+
+      int hundreds = year / 100;
+      int differenceInDays = hundreds - (hundreds / 4) - 2;
+
+      return differenceInDays * 86400000;
+    }
+    else
+    {
+      return 0;
+    }
+  }
+
+  /**
    * Convert a timestamp internal value (scaled number of seconds + fractional
    * seconds) into a SFTimestamp.
    *
@@ -698,7 +770,11 @@ public class ResultUtil
 
     try
     {
-      return formatter.format(sfTS.getTimestamp(), sfTS.getTimeZone(), scale);
+      Timestamp adjustedTimestamp =
+          ResultUtil.adjustTimestamp(sfTS.getTimestamp());
+
+      return formatter.format(
+          adjustedTimestamp, sfTS.getTimeZone(), scale);
     }
     catch (SFTimestamp.TimestampOperationNotAvailableException e)
     {
@@ -727,6 +803,27 @@ public class ResultUtil
   }
 
   /**
+   * Adjust date for before 1582-10-05
+   *
+   * @param date date before 1582-10-05
+   * @return adjusted date
+   */
+   static public Date adjustDate(Date date)
+   {
+     long milliToAdjust = ResultUtil.msDiffJulianToGregorian(date);
+
+     if (milliToAdjust != 0)
+     {
+       // add the difference to the new date
+       return new Date(date.getTime() + milliToAdjust);
+     }
+     else
+     {
+       return date;
+     }
+   }
+
+  /**
    * Convert a date internal object to a Date object in specified timezone.
    *
    * @param str snowflake date object
@@ -751,8 +848,19 @@ public class ResultUtil
         logger.debug("getDate: tz offset={}",
             tsInClientTZ.getTimeZone().getOffset(tsInClientTZ.getTime()));
       }
+      // return the date adjusted to the JVM default time zone
+      Date preDate = new Date(tsInClientTZ.getTime());
 
-      return tsInClientTZ.getDate();
+      // if date is on or before 1582-10-04, apply the difference
+      // by (H-H/4-2) where H is the hundreds digit of the year according to:
+      // http://en.wikipedia.org/wiki/Gregorian_calendar
+      Date newDate = adjustDate(preDate);
+      if (logger.isDebugEnabled())
+      {
+        logger.debug("Adjust date from {} to {}",
+            preDate.toString(), newDate.toString());
+      }
+      return newDate;
     }
     catch (NumberFormatException ex)
     {
