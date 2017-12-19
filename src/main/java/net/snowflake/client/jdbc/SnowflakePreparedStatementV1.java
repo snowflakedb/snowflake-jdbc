@@ -87,6 +87,9 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
   /** Error code returned when describing a statement that is binding table name*/
   private final Integer ERROR_CODE_TABLE_BIND_VARIABLE_NOT_SET = 2128;
 
+  /** Error code when preparing statement with binding object names */
+  private final Integer ERROR_CODE_OBJECT_BIND_NOT_SET = 2129;
+
   /** Error code returned when describing a ddl command */
   private final Integer ERROR_CODE_STATEMENT_CANNOT_BE_PREPARED = 7;
 
@@ -97,7 +100,8 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
   private final Set<Integer> errorCodesIgnoredInDescribeMode
       = new HashSet<>(Arrays.asList(new Integer[]
       {ERROR_CODE_TABLE_BIND_VARIABLE_NOT_SET,
-       ERROR_CODE_STATEMENT_CANNOT_BE_PREPARED}));
+       ERROR_CODE_STATEMENT_CANNOT_BE_PREPARED,
+       ERROR_CODE_OBJECT_BIND_NOT_SET}));
 
   SnowflakePreparedStatementV1(SnowflakeConnectionV1 connection,
                                String sql) throws SQLException

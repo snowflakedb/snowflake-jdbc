@@ -600,6 +600,27 @@ class SnowflakeStatementV1 implements Statement
     }
   }
 
+  /**
+   * Sets a parameter at the statement level. Used for internal testing.
+   * @throws Exception
+   */
+  public void setParameter(String name, Object value) throws Exception
+  {
+    logger.debug("public void setParameter");
+
+    try
+    {
+      if (this.sfStatement != null)
+      {
+        this.sfStatement.addProperty(name, value);
+      }
+    }
+    catch (SFException ex)
+    {
+      throw new SnowflakeSQLException(ex);
+    }
+  }
+
   @Override
   public void setQueryTimeout(int seconds) throws SQLException
   {
