@@ -13,14 +13,12 @@ import net.snowflake.client.jdbc.SnowflakeUtil;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.ClientAuthnDTO;
-import net.snowflake.common.core.ResourceBundleManager;
 import org.apache.http.HttpHeaders;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
 
 import java.security.PrivateKey;
-import java.sql.Connection;
 import java.sql.SQLClientInfoException;
 import java.sql.SQLException;
 import java.util.HashMap;
@@ -61,7 +59,6 @@ public class SFSession
   private String sessionToken;
   private String masterToken;
   private long masterTokenValidityInSeconds;
-  private String remMeToken;
 
   private String newClientForUpdate;
 
@@ -282,7 +279,7 @@ public class SFSession
 
     return (authenticator == null && privateKey == null) ||
         ClientAuthnDTO.AuthenticatorType.SNOWFLAKE.name()
-          .equalsIgnoreCase(authenticator);
+            .equalsIgnoreCase(authenticator);
   }
 
   /**
@@ -297,7 +294,9 @@ public class SFSession
 
     if (httpClient == null)
     {
-      httpClient = HttpUtil.getHttpClient();
+      httpClient = HttpUtil.getHttpClient(
+          (Boolean) connectionPropertiesMap.get(SFSessionProperty.INSECURE_MODE),
+          null);
     }
 
     SessionUtil.LoginInput loginInput = new SessionUtil.LoginInput();
@@ -339,7 +338,6 @@ public class SFSession
 
     sessionToken = loginOutput.getSessionToken();
     masterToken = loginOutput.getMasterToken();
-    remMeToken = loginOutput.getRemMeToken();
     databaseVersion = loginOutput.getDatabaseVersion();
     databaseMajorVersion = loginOutput.getDatabaseMajorVersion();
     databaseMinorVersion = loginOutput.getDatabaseMinorVersion();

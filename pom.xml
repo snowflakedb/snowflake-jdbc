@@ -42,7 +42,6 @@
         <artifactId>maven-compiler-plugin</artifactId>
         <version>3.0</version>
         <configuration>
-          <skipMain>${skipInstall}</skipMain>
           <showDeprecation>true</showDeprecation>
           <showWarnings>true</showWarnings>
           <executable>javac</executable>
@@ -56,7 +55,6 @@
         <artifactId>maven-jar-plugin</artifactId>
         <version>2.4</version>
         <configuration>
-          <skip>${skipInstall}</skip>
           <archive>
             <manifest>
               <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
@@ -81,7 +79,6 @@
               <goal>copy</goal>
             </goals>
             <configuration>
-              <skip>${skipInstall}</skip>
               <artifactItems>
                 <artifactItem>
                   <groupId>${project.groupId}</groupId>
@@ -136,7 +133,7 @@
     <maven.build.timestamp.format>yyyyMMddHHmm</maven.build.timestamp.format>
     <!-- building a string of two variables for use in the RPM release field.  The RPM plugin does not allow
          evaluation of two variables into the <release> property.  Ugly, I know - jc -->
-    <sfrelease>999999_${buildNumber.timestamp}_${env.USER}</sfrelease>
+    <sfrelease>999999_${env.USER}</sfrelease>
     <shadeBase>net.snowflake.client.jdbc.internal</shadeBase>
   </properties>
 
@@ -278,14 +275,7 @@
     <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-lang3</artifactId>
-      <version>3.1</version>
-      <type>jar</type>
-    </dependency>
-    <dependency>
-      <groupId>net.sourceforge.cobertura</groupId>
-      <artifactId>cobertura</artifactId>
-      <version>2.0.3</version>
-      <scope>test</scope>
+      <version>3.7</version>
       <type>jar</type>
     </dependency>
     <dependency>
@@ -352,6 +342,16 @@
       <artifactId>azure-storage</artifactId>
       <version>5.0.0</version>
     </dependency>
+    <dependency>
+      <groupId>org.bouncycastle</groupId>
+      <artifactId>bcprov-jdk15on</artifactId>
+      <version>1.59</version>
+    </dependency>
+    <dependency>
+      <groupId>org.bouncycastle</groupId>
+      <artifactId>bcpkix-jdk15on</artifactId>
+      <version>1.59</version>
+    </dependency>
   </dependencies>
 
   <profiles>
@@ -377,7 +377,6 @@
               </execution>
            </executions>
            <configuration>
-             <skip>${skipInstall}</skip>
              <timestampFormat>yyyyMMddHHmmss</timestampFormat>
              <timestampPropertyName>buildNumber.timestamp</timestampPropertyName>
              <doCheck>false</doCheck>
@@ -448,6 +447,10 @@
                      <relocation>
                        <pattern>org.jsoup</pattern>
                        <shadedPattern>${shadeBase}.org.jsoup</shadedPattern>
+                     </relocation>
+                     <relocation>
+                       <pattern>org.bouncycastle</pattern>
+                       <shadedPattern>${shadeBase}.org.bouncycastle</shadedPattern>
                      </relocation>
                      <relocation>
                        <pattern>com.nimbusds</pattern>
@@ -565,57 +568,6 @@
            </plugin>
        </plugins>
       </build>
-    </profile>
-    <profile>
-      <id>cobertura-build</id>
-      <activation>
-        <property>
-          <name>cobertura-build</name>
-        </property>
-      </activation>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.codehaus.mojo</groupId>
-            <artifactId>cobertura-maven-plugin</artifactId>
-            <version>2.6</version>
-            <executions>
-              <execution>
-                <id>instrument-code</id>
-                <phase>process-classes</phase>
-                <goals>
-                  <goal>instrument</goal>
-                </goals>
-                <configuration>
-                  <maxmem>2048m</maxmem>
-                  <attach>true</attach>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-          <plugin>
-            <artifactId>maven-source-plugin</artifactId>
-            <executions>
-              <execution>
-                <id>attach-sources</id>
-                <goals>
-                  <goal>jar</goal>
-                </goals>
-              </execution>
-            </executions>
-            <inherited>true</inherited>
-          </plugin>
-        </plugins>
-      </build>
-      <dependencies>
-        <dependency>
-          <groupId>net.sourceforge.cobertura</groupId>
-          <artifactId>cobertura</artifactId>
-          <version>2.0.3</version>
-          <scope>provided</scope>
-          <type>jar</type>
-        </dependency>
-      </dependencies>
     </profile>
     <profile>
       <id>gpg-signing</id>

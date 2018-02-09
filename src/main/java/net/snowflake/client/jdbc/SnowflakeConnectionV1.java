@@ -147,11 +147,16 @@ public class SnowflakeConnectionV1 implements Connection
 
   private boolean useProxy = false;
 
+  /**
+   * Insecure mode will skip OCSP revocation check.
+   *
+   * NOTE true by default at the moment but will change to false later
+   */
+  private boolean insecureMode = true;
+
   private AtomicInteger sequenceId = new AtomicInteger(0);
 
   private Map sessionProperties = new HashMap<String, Object>(1);
-
-  private final static ObjectMapper mapper = new ObjectMapper();
 
   private static String IMPLEMENTATION_VERSION_TESTING =
       Integer.MAX_VALUE + ".0.0";
@@ -180,8 +185,6 @@ public class SnowflakeConnectionV1 implements Connection
 
   //Generate exception while uploading file with a given name
   private String injectFileUploadFailure = null;
-
-  private boolean useV1QueryAPI = false;
 
   private boolean retryQuery = false;
 
@@ -336,12 +339,41 @@ public class SnowflakeConnectionV1 implements Connection
     sfSession.addProperty(SFSessionProperty.PRIVATE_KEY.getPropertyKey(),
         privateKey);
 
+    sfSession.addProperty(SFSessionProperty.INSECURE_MODE.getPropertyKey(),
+        insecureMode);
     // Now add the session parameters
     for (String param_name : sessionParameters.keySet())
     {
       Object param_value = sessionParameters.get(param_name);
       sfSession.addProperty(param_name, param_value);
     }
+  }
+
+  private boolean getBooleanTrueByDefault(Object value)
+  {
+    if (value instanceof String) {
+      final String value0 = (String)value;
+      return !("off".equalsIgnoreCase(value0) || "false".equalsIgnoreCase(value0));
+    }
+    else if (value instanceof Boolean)
+    {
+      return (boolean)value;
+    }
+    return true;
+  }
+
+  private boolean getBooleanFalseByDefault(Object value)
+  {
+    if (value instanceof String)
+    {
+      final String value0 = (String) value;
+      return "on".equalsIgnoreCase(value0) || "true".equalsIgnoreCase(value0);
+    }
+    else if (value instanceof Boolean)
+    {
+      return (boolean)value;
+    }
+    return false;
   }
 
   /**
@@ -418,16 +450,12 @@ public class SnowflakeConnectionV1 implements Connection
         }
         else if ("ssl".equalsIgnoreCase(tokens[paramIdx]))
         {
-          sslOn = !("off".equalsIgnoreCase(tokens[paramIdx + 1]) ||
-              "false".equalsIgnoreCase(tokens[paramIdx + 1]));
-
+          sslOn = getBooleanTrueByDefault(tokens[paramIdx + 1]);
           logger.debug("ssl: {}", tokens[paramIdx + 1]);
-
         }
         else if ("passcodeInPassword".equalsIgnoreCase(tokens[paramIdx]))
         {
-          passcodeInPassword = "on".equalsIgnoreCase(tokens[paramIdx + 1]) ||
-              "true".equalsIgnoreCase(tokens[paramIdx + 1]);
+          passcodeInPassword = getBooleanFalseByDefault(tokens[paramIdx + 1]);
 
           logger.debug("passcodeInPassword: {}", tokens[paramIdx + 1]);
         }
@@ -475,8 +503,7 @@ public class SnowflakeConnectionV1 implements Connection
         }
         else if ("useProxy".equalsIgnoreCase(tokens[paramIdx]))
         {
-          useProxy = "on".equalsIgnoreCase(tokens[paramIdx + 1]) ||
-              "true".equalsIgnoreCase(tokens[paramIdx + 1]);
+          useProxy = getBooleanFalseByDefault(tokens[paramIdx + 1]);
 
           logger.debug("useProxy: {}", tokens[paramIdx + 1]);
         }
@@ -493,20 +520,9 @@ public class SnowflakeConnectionV1 implements Connection
 
           logger.debug("injectClientPause: {}", injectClientPause);
         }
-        else if ("useV1QueryAPI".equalsIgnoreCase(tokens[paramIdx]))
-        {
-          if ("on".equalsIgnoreCase(tokens[paramIdx + 1]) ||
-              "true".equalsIgnoreCase(tokens[paramIdx + 1]))
-            useV1QueryAPI = true;
-
-          logger.debug("useV1QueryAPI: {}", tokens[paramIdx + 1]);
-        }
         else if ("retryQuery".equalsIgnoreCase(tokens[paramIdx]))
         {
-          if ("on".equalsIgnoreCase(tokens[paramIdx + 1]) ||
-              "true".equalsIgnoreCase(tokens[paramIdx + 1]))
-            retryQuery = true;
-
+          retryQuery = getBooleanFalseByDefault(tokens[paramIdx + 1]);
           logger.debug("retryQuery: {}", tokens[paramIdx + 1]);
         }
         else if ("tracing".equalsIgnoreCase(tokens[paramIdx]))
@@ -524,6 +540,12 @@ public class SnowflakeConnectionV1 implements Connection
             JDK14Logger.setLevel(tracingLevel);
           }
         }
+        else if (SFSessionProperty.INSECURE_MODE.getPropertyKey().equalsIgnoreCase(tokens[paramIdx]))
+        {
+          // TODO: this should be flipped after OCSP check is included by default
+          insecureMode = getBooleanTrueByDefault(tokens[paramIdx + 1]);
+          logger.debug("{}: {}", SFSessionProperty.INSECURE_MODE.getPropertyKey(), tokens[paramIdx + 1]);
+        }
         // If the name of the parameter does not match any of the built in
         // names, assume it is a session level parameter
         else
@@ -531,8 +553,7 @@ public class SnowflakeConnectionV1 implements Connection
           String param_name = tokens[paramIdx];
           String param_value = tokens[paramIdx + 1];
 
-          logger.debug("parameter {} set to {}",
-              new Object[]{param_name, param_value});
+          logger.debug("parameter {} set to {}", param_name, param_value);
           sessionParameters.put(param_name, param_value);
         }
       }
@@ -609,16 +630,13 @@ public class SnowflakeConnectionV1 implements Connection
       }
       else if (key.equals("ssl"))
       {
-        sslOn = !("off".equalsIgnoreCase(info.getProperty("ssl")) ||
-            "false".equalsIgnoreCase(info.getProperty("ssl")));
-
+        sslOn = getBooleanTrueByDefault(info.getProperty("ssl"));
         logger.debug("ssl property: {}", info.getProperty("ssl"));
       }
       else if (key.equals("passcodeInPassword"))
       {
-        passcodeInPassword =
-            "on".equalsIgnoreCase(info.getProperty("passcodeInPassword")) ||
-                "true".equalsIgnoreCase(info.getProperty("passcodeInPassword"));
+        passcodeInPassword = getBooleanFalseByDefault(
+            info.getProperty("passcodeInPassword"));
       }
       else if (key.equals("passcode"))
       {
@@ -626,7 +644,7 @@ public class SnowflakeConnectionV1 implements Connection
       }
       else if (key.equals("internal"))
       {
-        internalTesting = "true".equalsIgnoreCase(info.getProperty("internal"));
+        internalTesting = getBooleanFalseByDefault(info.getProperty("internal"));
       }
       else if (key.equals("loginTimeout"))
       {
@@ -651,23 +669,10 @@ public class SnowflakeConnectionV1 implements Connection
         injectClientPause =
             Integer.parseInt(info.getProperty("injectClientPause"));
       }
-      else if (key.equals("useV1QueryAPI"))
-      {
-        String val = info.getProperty("useV1QueryAPI");
-        if ("on".equalsIgnoreCase(val) ||
-            "true".equalsIgnoreCase(val))
-          useV1QueryAPI = true;
-
-        logger.debug("useV1QueryAPI property: {}", val);
-      }
       else if (key.equals("retryQuery"))
       {
-        String val = info.getProperty("retryQuery");
-        if ("on".equalsIgnoreCase(val) ||
-            "true".equalsIgnoreCase(val))
-          retryQuery = true;
-
-        logger.debug("retryQuery property: {}", val);
+        retryQuery = getBooleanFalseByDefault(info.getProperty("retryQuery"));
+        logger.debug("retryQuery property: {}", retryQuery);
       }
       else if (key.equals("tracing"))
       {
@@ -682,6 +687,11 @@ public class SnowflakeConnectionV1 implements Connection
         logger.debug("tracingLevel property: {}",
             info.getProperty("tracing"));
       }
+      else if (SFSessionProperty.INSECURE_MODE.getPropertyKey().equalsIgnoreCase((String)key))
+      {
+        insecureMode = getBooleanTrueByDefault(info.get(key));
+        logger.debug("insecureMode property: {}", insecureMode);
+      }
       // If the key does not match any of the built in values, assume it's a
       // session level parameter
       else
@@ -689,8 +699,7 @@ public class SnowflakeConnectionV1 implements Connection
         String param_name = key.toString();
         Object param_value = info.get(key);
         sessionParameters.put(param_name, param_value);
-        logger.debug("parameter {} set to {}",
-            new Object[]{param_name, param_value.toString()});
+        logger.debug("parameter {} set to {}", param_name, param_value);
       }
     }
 
@@ -1683,16 +1692,6 @@ public class SnowflakeConnectionV1 implements Connection
       sfSession.setInjectSocketTimeout(injectSocketTimeout);
 
     this.injectSocketTimeout = injectSocketTimeout;
-  }
-
-  public boolean isUseV1QueryAPI()
-  {
-    return useV1QueryAPI;
-  }
-
-  public void setUseV1QueryAPI(boolean useV1QueryAPI)
-  {
-    this.useV1QueryAPI = useV1QueryAPI;
   }
 
   public boolean isRetryQuery()

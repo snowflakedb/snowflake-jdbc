@@ -34,7 +34,8 @@ public enum SFSessionProperty
   INJECT_SOCKET_TIMEOUT("injectSocketTimeout", false, Integer.class),
   INJECT_CLIENT_PAUSE("injectClientPause", false, Integer.class),
   APP_ID("appId", false, String.class),
-  APP_VERSION("appVersion", false, String.class);
+  APP_VERSION("appVersion", false, String.class),
+  INSECURE_MODE("insecureMode", true, Boolean.class);
 
   private String propertyKey;
   private boolean required;

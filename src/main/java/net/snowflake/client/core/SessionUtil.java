@@ -156,8 +156,6 @@ public class SessionUtil
     {
     }
 
-    ;
-
     public LoginInput setServerUrl(String serverUrl)
     {
       this.serverUrl = serverUrl;
@@ -743,8 +741,8 @@ public class SessionUtil
       else if (authenticator == ClientAuthnDTO.AuthenticatorType.SNOWFLAKE_JWT)
       {
         SessionUtilKeyPair s = new SessionUtilKeyPair(loginInput.getPrivateKey(),
-                                                      loginInput.getAccountName(),
-                                                      loginInput.getUserName());
+            loginInput.getAccountName(),
+            loginInput.getUserName());
 
         loginInput.setToken(s.issueJwtToken());
       }
@@ -926,7 +924,7 @@ public class SessionUtil
 
       postRequest.addHeader("accept", "application/json");
 
-      /**
+      /*
        * HttpClient should take authorization header from char[] instead of
        * String.
        */
@@ -1292,15 +1290,16 @@ public class SessionUtil
   /**
    * Given access token, query IDP URL snowflake app to get SAML response
    * We also need to perform important client side validation:
-   *  validate the post back url come back with the SAML response
-   *  contains the same prefix as the Snowflake's server url, which is the
-   *  intended destination url to Snowflake.
+   * validate the post back url come back with the SAML response
+   * contains the same prefix as the Snowflake's server url, which is the
+   * intended destination url to Snowflake.
    * Explanation:
-   *  This emulates the behavior of IDP initiated login flow in the user
-   *  browser where the IDP instructs the browser to POST the SAML
-   *  assertion to the specific SP endpoint.  This is critical in
-   *  preventing a SAML assertion issued to one SP from being sent to
-   *  another SP.
+   * This emulates the behavior of IDP initiated login flow in the user
+   * browser where the IDP instructs the browser to POST the SAML
+   * assertion to the specific SP endpoint.  This is critical in
+   * preventing a SAML assertion issued to one SP from being sent to
+   * another SP.
+   *
    * @param loginInput
    * @param ssoUrl
    * @param oneTimeToken
@@ -1326,7 +1325,7 @@ public class SessionUtil
       HttpGet httpGet = new HttpGet(oktaGetUri);
 
       HeaderGroup headers = new HeaderGroup();
-      headers.addHeader(new BasicHeader("Accept", "*/*"));
+      headers.addHeader(new BasicHeader(HttpHeaders.ACCEPT, "*/*"));
       httpGet.setHeaders(headers.getAllHeaders());
 
       responseHtml = HttpUtil.executeRequest(httpGet,
@@ -1353,6 +1352,7 @@ public class SessionUtil
 
   /**
    * Query IDP token url to authenticate and retrieve access token
+   *
    * @param loginInput
    * @param tokenUrl
    * @return
@@ -1375,8 +1375,8 @@ public class SessionUtil
       postRequest.setEntity(params);
 
       HeaderGroup headers = new HeaderGroup();
-      headers.addHeader(new BasicHeader("Accept", "application/json"));
-      headers.addHeader(new BasicHeader("Content-Type", "application/json"));
+      headers.addHeader(new BasicHeader(HttpHeaders.ACCEPT, "application/json"));
+      headers.addHeader(new BasicHeader(HttpHeaders.CONTENT_TYPE, "application/json"));
       postRequest.setHeaders(headers.getAllHeaders());
 
       final String idpResponse = HttpUtil.executeRequestWithoutCookies(postRequest,
@@ -1398,12 +1398,13 @@ public class SessionUtil
 
   /**
    * Perform important client side validation:
-   *  validate both token url and sso url contains same prefix
-   *  (protocol + host + port) as the given authenticator url.
+   * validate both token url and sso url contains same prefix
+   * (protocol + host + port) as the given authenticator url.
    * Explanation:
-   *  This provides a way for the user to 'authenticate' the IDP it is
-   *  sending his/her credentials to.  Without such a check, the user could
-   *  be coerced to provide credentials to an IDP impersonator.
+   * This provides a way for the user to 'authenticate' the IDP it is
+   * sending his/her credentials to.  Without such a check, the user could
+   * be coerced to provide credentials to an IDP impersonator.
+   *
    * @param loginInput
    * @param tokenUrl
    * @param ssoUrl
@@ -1434,6 +1435,7 @@ public class SessionUtil
 
   /**
    * Query Snowflake to obtain IDP token url and IDP SSO url
+   *
    * @param loginInput
    * @throws SnowflakeSQLException
    */
@@ -1497,6 +1499,7 @@ public class SessionUtil
    * Logs an error generated during the federated authentication flow and
    * re-throws it as a SnowflakeSQLException.
    * Note that we seperate IOExceptions since those tend to be network related.
+   *
    * @param loginInput
    * @param ex
    * @throws SnowflakeSQLException

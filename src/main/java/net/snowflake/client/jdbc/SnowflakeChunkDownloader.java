@@ -747,8 +747,7 @@ public class SnowflakeChunkDownloader
           for (Map.Entry<String, String> entry : chunkHeadersMap.entrySet())
           {
             logger.debug("Adding header key={}, value={}",
-                       new Object[]{entry.getKey(),
-                                     entry.getValue()});
+                       entry.getKey(), entry.getValue());
             httpRequest.addHeader(entry.getKey(), entry.getValue());
           }
         }
