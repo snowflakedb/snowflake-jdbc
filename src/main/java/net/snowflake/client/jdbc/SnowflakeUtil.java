@@ -252,6 +252,11 @@ public class SnowflakeUtil
   {
     String leftPathTrimmed = leftPath.trim();
     String rightPathTrimmed = rightPath.trim();
+    
+    if (leftPathTrimmed.isEmpty())
+    {
+      return rightPath;
+    }
 
     if (leftPathTrimmed.endsWith(fileSep)
         && rightPathTrimmed.startsWith(fileSep))
