@@ -2,8 +2,8 @@
 |SNOW-34464| Prototype: support key pair authentication in JDBC
 
 **JDBC Driver 3.4.2**
-|SNOW-37755| Refactor the fix for SNOW-36580 in client side
-|SNOW-37184| Support binding object name in JDBC 
+|SNOW-37755| Refactored the fix for SNOW-36580 on the client side.
+|SNOW-37184| Added support for binding object identifiers.
 **JDBC Driver 3.4.1**
 |SNOW-37400| Added shaded amazon.ion package.
 **JDBC Driver 3.4.0**
