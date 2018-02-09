@@ -5,7 +5,6 @@
 package net.snowflake.client.core;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.sun.org.apache.regexp.internal.RE;
 import net.snowflake.common.core.SqlState;
 import net.snowflake.client.core.BasicEvent.QueryState;
 import net.snowflake.client.jdbc.ErrorCode;

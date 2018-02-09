@@ -187,7 +187,7 @@ public class EncryptionProvider
   {
     if (secRnd == null)
     {
-      secRnd = SecureRandom.getInstance("SHA1PRNG", "SUN");
+      secRnd = SecureRandom.getInstance("SHA1PRNG");
       byte[] bytes = new byte[10];
       secRnd.nextBytes(bytes);
     }
