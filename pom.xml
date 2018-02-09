@@ -528,7 +528,7 @@
                <!-- architecture set explicitly because henplus is including x86_64 shared libraries-->
                <needarch>x86_64</needarch>
                <name>Client</name>
-               <copyright>2015-2017, Snowflake Computing, Inc</copyright>
+               <copyright>2015-2018, Snowflake Computing, Inc</copyright>
                <group>Application/Database</group>
                <version>${project.version}</version>
                <!-- sfrelease is a property set at the top of the pom, this field won't take more than one
