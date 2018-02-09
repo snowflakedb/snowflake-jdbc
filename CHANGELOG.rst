@@ -1,3 +1,7 @@
+**JDBC Driver 3.5.0**
+|SNOW-38486| Use OCSP revocation check for JDBC.
+|SNOW-37766| Get SecureRandom instances by not specifing provider name since jdbc could be run under ibm jdk
+
 **JDBC Driver 3.4.3**
 |SNOW-34464| Prototype: support key pair authentication in JDBC
 
