@@ -19,6 +19,7 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
 
+import java.security.PrivateKey;
 import java.sql.Connection;
 import java.sql.SQLClientInfoException;
 import java.sql.SQLException;
@@ -266,17 +267,22 @@ public class SFSession
   }
 
   /**
-   * Is the authenticator Snowflake?
+   * If authenticator is null and private key is specified, jdbc will assume
+   * key pair authentication
    *
-   * @return true yes otherwise no
+   * @return true if authenticator type is SNOWFLAKE (meaning password)
    */
   private boolean isSnowflakeAuthenticator()
   {
     String authenticator = (String) connectionPropertiesMap.get(
         SFSessionProperty.AUTHENTICATOR);
-    return authenticator == null ||
-        authenticator.equalsIgnoreCase(
-            ClientAuthnDTO.AuthenticatorType.SNOWFLAKE.name());
+
+    PrivateKey privateKey = (PrivateKey) connectionPropertiesMap.get(
+        SFSessionProperty.PRIVATE_KEY);
+
+    return (authenticator == null && privateKey == null) ||
+        ClientAuthnDTO.AuthenticatorType.SNOWFLAKE.name()
+          .equalsIgnoreCase(authenticator);
   }
 
   /**
@@ -325,7 +331,9 @@ public class SFSession
         .setAppId((String) connectionPropertiesMap.get(SFSessionProperty.APP_ID))
         .setAppVersion(
             (String) connectionPropertiesMap.get(SFSessionProperty.APP_VERSION))
-        .setSessionParameters(sessionParametersMap);
+        .setSessionParameters(sessionParametersMap)
+        .setPrivateKey((PrivateKey) connectionPropertiesMap.get(
+            SFSessionProperty.PRIVATE_KEY));
 
     SessionUtil.LoginOutput loginOutput = SessionUtil.openSession(loginInput);
 

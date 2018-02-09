@@ -18,6 +18,7 @@ import net.snowflake.common.core.SqlState;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.InputStream;
+import java.security.PrivateKey;
 import java.sql.Array;
 import java.sql.Blob;
 import java.sql.CallableStatement;
@@ -186,6 +187,8 @@ public class SnowflakeConnectionV1 implements Connection
 
   private SFSession sfSession;
 
+  private PrivateKey privateKey;
+
   /**
    * A connection will establish a session token from snowflake
    *
@@ -199,21 +202,6 @@ public class SnowflakeConnectionV1 implements Connection
       throws SQLException
   {
     processParameters(url, info);
-
-    // userName and password are expected
-    if (userName == null || userName.isEmpty())
-    {
-      throw new SQLException(
-          errorResourceBundleManager.getLocalizedMessage(
-              ErrorCode.MISSING_USERNAME.getMessageCode().toString()));
-    }
-
-    if (isSnowflakeAuthenticator() && (password == null || password.isEmpty()))
-    {
-      throw new SQLException(
-          errorResourceBundleManager.getLocalizedMessage(
-              ErrorCode.MISSING_PASSWORD.getMessageCode().toString()));
-    }
 
     // replace protocol name
     serverUrl = serverUrl.replace(JDBC_PROTOCOL_PREFIX,
@@ -283,18 +271,6 @@ public class SnowflakeConnectionV1 implements Connection
     isClosed = false;
   }
 
-  /**
-   * Is the authenticator Snowflake?
-   *
-   * @return true yes otherwise no
-   */
-  private boolean isSnowflakeAuthenticator()
-  {
-    return authenticator == null ||
-        authenticator.equalsIgnoreCase(
-            ClientAuthnDTO.AuthenticatorType.SNOWFLAKE.name());
-  }
-
   private void initSessionProperties() throws SFException
   {
     sfSession.addProperty(
@@ -357,6 +333,9 @@ public class SnowflakeConnectionV1 implements Connection
         SFSessionProperty.PASSCODE_IN_PASSWORD.getPropertyKey(),
         passcodeInPassword);
 
+    sfSession.addProperty(SFSessionProperty.PRIVATE_KEY.getPropertyKey(),
+        privateKey);
+
     // Now add the session parameters
     for (String param_name : sessionParameters.keySet())
     {
@@ -376,6 +355,7 @@ public class SnowflakeConnectionV1 implements Connection
    * @param info
    */
   private void processParameters(String url, Properties info)
+      throws SnowflakeSQLException
   {
     serverUrl = url;
 
@@ -612,6 +592,20 @@ public class SnowflakeConnectionV1 implements Connection
         authenticator = info.getProperty("authenticator");
 
         logger.debug("authenticator property: {}", authenticator);
+      }
+      else if (key.equals("privateKey"))
+      {
+        Object val = info.get("privateKey");
+        if (val instanceof PrivateKey)
+        {
+          privateKey = (PrivateKey) val;
+        }
+        else
+        {
+          throw new SnowflakeSQLException(ErrorCode.
+              INVALID_OR_UNSUPPORTED_PRIVATE_KEY, "Please use java.security." +
+              "PrivateKey.class");
+        }
       }
       else if (key.equals("ssl"))
       {

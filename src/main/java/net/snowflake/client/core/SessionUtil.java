@@ -4,7 +4,6 @@
 
 package net.snowflake.client.core;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.snowflake.client.jdbc.ErrorCode;
@@ -34,12 +33,12 @@ import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.Charset;
+import java.security.PrivateKey;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -151,6 +150,7 @@ public class SessionUtil
     private String sessionToken;
     private String masterToken;
     private Map<String, Object> sessionParameters;
+    private PrivateKey privateKey;
 
     public LoginInput()
     {
@@ -290,6 +290,12 @@ public class SessionUtil
       return this;
     }
 
+    public LoginInput setPrivateKey(PrivateKey privateKey)
+    {
+      this.privateKey = privateKey;
+      return this;
+    }
+
     public HttpClient getHttpClient()
     {
       return httpClient;
@@ -398,6 +404,11 @@ public class SessionUtil
     public Map<String, Object> getSessionParameters()
     {
       return sessionParameters;
+    }
+
+    public PrivateKey getPrivateKey()
+    {
+      return privateKey;
     }
   }
 
@@ -618,6 +629,11 @@ public class SessionUtil
         // OAuth Authentication
         return ClientAuthnDTO.AuthenticatorType.OAUTH;
       }
+      else if (loginInput.getAuthenticator().equalsIgnoreCase(
+          ClientAuthnDTO.AuthenticatorType.SNOWFLAKE_JWT.name()))
+      {
+        return ClientAuthnDTO.AuthenticatorType.SNOWFLAKE_JWT;
+      }
       else if (!loginInput.getAuthenticator().equalsIgnoreCase(
           ClientAuthnDTO.AuthenticatorType.SNOWFLAKE.name()))
       {
@@ -626,7 +642,13 @@ public class SessionUtil
         return ClientAuthnDTO.AuthenticatorType.OKTA;
       }
     }
-    return ClientAuthnDTO.AuthenticatorType.SNOWFLAKE;
+
+    // authenticator is null, then jdbc will decide authenticator depends on
+    // if privateKey is specified or not. If yes, authenticator type will be
+    // SNOWFLAKE_JWT, otherwise it will use SNOWFLAKE.
+    return loginInput.getPrivateKey() != null ?
+        ClientAuthnDTO.AuthenticatorType.SNOWFLAKE_JWT :
+        ClientAuthnDTO.AuthenticatorType.SNOWFLAKE;
   }
 
   /**
@@ -718,6 +740,14 @@ public class SessionUtil
         // okta authenticator v1
         tokenOrSamlResponse = getSamlResponseUsingOkta(loginInput);
       }
+      else if (authenticator == ClientAuthnDTO.AuthenticatorType.SNOWFLAKE_JWT)
+      {
+        SessionUtilKeyPair s = new SessionUtilKeyPair(loginInput.getPrivateKey(),
+                                                      loginInput.getAccountName(),
+                                                      loginInput.getUserName());
+
+        loginInput.setToken(s.issueJwtToken());
+      }
 
       uriBuilder.addParameter(SF_QUERY_REQUEST_ID, UUID.randomUUID().toString());
 
@@ -772,10 +802,10 @@ public class SessionUtil
       {
         data.put(ClientAuthnParameter.RAW_SAML_RESPONSE.name(), tokenOrSamlResponse);
       }
-      else if (authenticator == ClientAuthnDTO.AuthenticatorType.OAUTH)
+      else if (authenticator == ClientAuthnDTO.AuthenticatorType.OAUTH ||
+          authenticator == ClientAuthnDTO.AuthenticatorType.SNOWFLAKE_JWT)
       {
-        data.put(ClientAuthnParameter.AUTHENTICATOR.name(),
-            ClientAuthnDTO.AuthenticatorType.OAUTH.name());
+        data.put(ClientAuthnParameter.AUTHENTICATOR.name(), authenticator.name());
         data.put(ClientAuthnParameter.TOKEN.name(), loginInput.getToken());
       }
 

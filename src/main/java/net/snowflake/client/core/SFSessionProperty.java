@@ -8,6 +8,8 @@ package net.snowflake.client.core;
  * Created by jhuang on 11/3/15.
  */
 
+import java.security.PrivateKey;
+
 /**
  * session properties accepted for opening a new session.
  */
@@ -24,6 +26,7 @@ public enum SFSessionProperty
   TOKEN("token", false, String.class),
   ROLE("role", false, String.class),
   AUTHENTICATOR("authenticator", false, String.class),
+  PRIVATE_KEY("privateKey", false, PrivateKey.class),
   WAREHOUSE("warehouse", false, String.class),
   LOGIN_TIMEOUT("loginTimeout", false, Integer.class),
   NETWORK_TIMEOUT("networkTimeout", false, Integer.class),

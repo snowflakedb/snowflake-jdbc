@@ -150,10 +150,9 @@
 
   <dependencies>
     <dependency>
-      <groupId>org.bitbucket.b_c</groupId>
-      <artifactId>jose4j</artifactId>
-      <version>0.5.2</version>
-      <scope>test</scope>
+      <groupId>com.nimbusds</groupId>
+      <artifactId>nimbus-jose-jwt</artifactId>
+      <version>5.4</version>
     </dependency>
     <dependency>
       <groupId>org.apache.maven.plugins</groupId>
@@ -449,6 +448,10 @@
                      <relocation>
                        <pattern>org.jsoup</pattern>
                        <shadedPattern>${shadeBase}.org.jsoup</shadedPattern>
+                     </relocation>
+                     <relocation>
+                       <pattern>com.nimbusds</pattern>
+                       <shadedPattern>${shadeBase}.com.nimbusds</shadedPattern>
                      </relocation>
                    </relocations>
                    <filters>
