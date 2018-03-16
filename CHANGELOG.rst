@@ -1,3 +1,7 @@
+**JDBC Driver 3.5.3**
+|SNOW-40230| Remove common-lang3 dependency
+
+
 **JDBC Driver 3.5.2**
 |SNOW-38455| upgraded HttpClient to 4.5.5
 |SNOW-38454| upgrade Jackson Json packages to 2.9.4
