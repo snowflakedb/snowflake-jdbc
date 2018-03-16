@@ -52,7 +52,6 @@ public class ResultUtil
     int connectionTimeout;
     int socketTimeout;
     int networkTimeoutInMilli;
-    boolean useProxy;
 
     public ResultInput setResultJSON(JsonNode resultJSON)
     {
@@ -75,12 +74,6 @@ public class ResultUtil
     public ResultInput setNetworkTimeoutInMilli(int networkTimeoutInMilli)
     {
       this.networkTimeoutInMilli = networkTimeoutInMilli;
-      return this;
-    }
-
-    public ResultInput setUseProxy(boolean useProxy)
-    {
-      this.useProxy = useProxy;
       return this;
     }
   }

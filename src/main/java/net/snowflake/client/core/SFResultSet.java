@@ -86,8 +86,7 @@ public class SFResultSet extends SFBaseResultSet
     resultInput.setResultJSON(result)
         .setConnectionTimeout(session.getHttpClientConnectionTimeout())
         .setSocketTimeout(session.getHttpClientSocketTimeout())
-        .setNetworkTimeoutInMilli(session.getNetworkTimeoutInMilli())
-        .setUseProxy(session.isUseProxy());
+        .setNetworkTimeoutInMilli(session.getNetworkTimeoutInMilli());
 
     ResultUtil.ResultOutput resultOutput = ResultUtil
         .processResult(resultInput, statement.getSession());

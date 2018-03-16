@@ -18,6 +18,7 @@ import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -454,5 +455,38 @@ public class SnowflakeUtil
     }
 
     return cause;
+  }
+
+  static public boolean isBlank(String input)
+  {
+    if ("".equals(input) || input == null)
+    {
+      return true;
+    }
+
+    for(char c : input.toCharArray())
+    {
+      if (!Character.isWhitespace(c))
+      {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  private static final String ALPHA_NUMERIC_STRING =
+      "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+
+  public static String randomAlphaNumeric(int count)
+  {
+    StringBuilder builder = new StringBuilder();
+    Random random = new Random();
+    while (count-- != 0)
+    {
+      int character = random.nextInt(ALPHA_NUMERIC_STRING.length());
+      builder.append(ALPHA_NUMERIC_STRING.charAt(character));
+    }
+    return builder.toString();
   }
 }

@@ -8,7 +8,10 @@ package net.snowflake.client.core;
  * Created by jhuang on 11/3/15.
  */
 
+import net.snowflake.client.jdbc.ErrorCode;
+
 import java.security.PrivateKey;
+import java.util.Set;
 
 /**
  * session properties accepted for opening a new session.
@@ -19,7 +22,7 @@ public enum SFSessionProperty
   USER("user", true, String.class),
   PASSWORD("password", true, String.class),
   ACCOUNT("account", true, String.class),
-  DATABASE("database", false, String.class),
+  DATABASE("database", false, String.class, "db"),
   SCHEMA("schema", false, String.class),
   PASSCODE_IN_PASSWORD("passcodeInPassword", false, Boolean.class),
   PASSCODE("passcode", false, String.class),
@@ -30,16 +33,25 @@ public enum SFSessionProperty
   WAREHOUSE("warehouse", false, String.class),
   LOGIN_TIMEOUT("loginTimeout", false, Integer.class),
   NETWORK_TIMEOUT("networkTimeout", false, Integer.class),
-  USE_PROXY("useProxy", false, Boolean.class),
   INJECT_SOCKET_TIMEOUT("injectSocketTimeout", false, Integer.class),
   INJECT_CLIENT_PAUSE("injectClientPause", false, Integer.class),
   APP_ID("appId", false, String.class),
   APP_VERSION("appVersion", false, String.class),
-  INSECURE_MODE("insecureMode", true, Boolean.class);
+  INSECURE_MODE("insecureMode", false, Boolean.class),
+  QUERY_TIMEOUT("queryTimeout", false, Integer.class),
+  TRACING("tracing", false, String.class);
 
+  // property key in string
   private String propertyKey;
+
+  // if required  when establishing connection
   private boolean required;
+
+  // value type
   private Class valueType;
+
+  // alias to property key
+  private String[] aliases;
 
   public boolean isRequired()
   {
@@ -58,11 +70,13 @@ public enum SFSessionProperty
 
   SFSessionProperty(String propertyKey,
                     boolean required,
-                    Class valueType)
+                    Class valueType,
+                    String... aliases)
   {
     this.propertyKey = propertyKey;
     this.required = required;
     this.valueType = valueType;
+    this.aliases = aliases;
   }
 
   static SFSessionProperty lookupByKey(String propertyKey)
@@ -70,9 +84,73 @@ public enum SFSessionProperty
     for (SFSessionProperty property : SFSessionProperty.values())
     {
       if (property.propertyKey.equalsIgnoreCase(propertyKey))
+      {
         return property;
+      }
+      else
+      {
+        for(String alias : property.aliases)
+        {
+          if (alias.equalsIgnoreCase(propertyKey))
+          {
+            return property;
+          }
+        }
+      }
+    }
+    return  null;
+  }
+
+  /**
+   * Check if property value is desired class. Convert if possible
+   * @param property
+   * @param propertyValue
+   * @return
+   * @throws SFException
+   */
+  static Object checkPropertyValue(SFSessionProperty property,
+                                   Object propertyValue)
+      throws SFException
+  {
+    if (propertyValue == null)
+    {
+      return null;
     }
 
-    return  null;
+    if (property.getValueType().isAssignableFrom(propertyValue.getClass()))
+    {
+      return propertyValue;
+    }
+    else
+    {
+      if (property.getValueType() == Boolean.class &&
+          propertyValue instanceof String)
+      {
+        if ("on".equalsIgnoreCase((String) propertyValue) ||
+            "true".equalsIgnoreCase((String) propertyValue))
+        {
+          return true;
+        }
+        else if ("off".equalsIgnoreCase((String) propertyValue) ||
+            "false".equalsIgnoreCase((String) propertyValue))
+        {
+          return false;
+        }
+      }
+      else if (property.getValueType() == Integer.class &&
+          propertyValue instanceof String)
+      {
+        return Integer.valueOf((String)propertyValue);
+      }
+    }
+
+    throw new SFException(ErrorCode.INVALID_PARAMETER_TYPE,
+        propertyValue.getClass().getName(),
+        property.getValueType().getName());
+  }
+
+  static void checkPropertyKey(Set<SFSessionProperty> propertyKeys)
+      throws SFException
+  {
   }
 }

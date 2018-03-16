@@ -13,6 +13,7 @@ import net.snowflake.client.jdbc.SnowflakeUtil;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.ClientAuthnDTO;
+import net.snowflake.client.log.JDK14Logger;
 import org.apache.http.HttpHeaders;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
@@ -21,12 +22,16 @@ import org.apache.http.client.utils.URIBuilder;
 import java.security.PrivateKey;
 import java.sql.SQLClientInfoException;
 import java.sql.SQLException;
+import java.sql.SQLWarning;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
 
 /**
  * Snowflake session implementation
@@ -94,7 +99,6 @@ public class SFSession
 
   private boolean enableCombineDescribe = false;
 
-  private boolean useProxy = false;
 
   private Map<String, Object> sessionProperties = new HashMap<>(1);
 
@@ -126,10 +130,10 @@ public class SFSession
   //Generate exception while uploading file with a given name
   private String injectFileUploadFailure = null;
 
-  Map<SFSessionProperty, Object> connectionPropertiesMap = new HashMap<>();
+  private Map<SFSessionProperty, Object> connectionPropertiesMap = new HashMap<>();
 
   // session parameters
-  Map<String, Object> sessionParametersMap = new HashMap<String, Object>();
+  private Map<String, Object> sessionParametersMap = new HashMap<String, Object>();
 
   final private static int MAX_SESSION_PARAMETERS = 1000;
 
@@ -162,6 +166,18 @@ public class SFSession
 
   private boolean jdbcTreatDecimalAsInt = true;
 
+  // deprecated
+  private Level tracingLevel = Level.INFO;
+
+  private List<SFException> sqlWarnings = new ArrayList<>();
+
+  public void addProperty(SFSessionProperty sfSessionProperty,
+                          Object propertyValue)
+      throws SFException
+  {
+    addProperty(sfSessionProperty.getPropertyKey(), propertyValue);
+  }
+
   /**
    * Add a property
    * If a property is known for connection, add it to connection properties
@@ -183,39 +199,29 @@ public class SFSession
     if (connectionProperty != null)
     {
       // check if the value type is as expected
-      if (propertyValue != null &&
-          !connectionProperty.getValueType().isAssignableFrom(
-              propertyValue.getClass()))
-      {
-        throw new SFException(ErrorCode.INVALID_PARAMETER_TYPE,
-            propertyValue.getClass().getName(),
-            connectionProperty.getValueType().getName());
-      }
+      propertyValue = SFSessionProperty
+          .checkPropertyValue(connectionProperty, propertyValue);
 
       if (connectionPropertiesMap.containsKey(connectionProperty))
+      {
         throw new SFException(ErrorCode.DUPLICATE_CONNECTION_PROPERTY_SPECIFIED,
             propertyName);
+      }
       else
+      {
         connectionPropertiesMap.put(connectionProperty, propertyValue);
+      }
 
       switch (connectionProperty)
       {
         case LOGIN_TIMEOUT:
           if (propertyValue != null)
             loginTimeout = (Integer) propertyValue;
-
           break;
 
         case NETWORK_TIMEOUT:
           if (propertyValue != null)
             networkTimeoutInMilli = (Integer) propertyValue;
-
-          break;
-
-        case USE_PROXY:
-          useProxy = (propertyValue != null && (Boolean) propertyValue);
-          ;
-
           break;
 
         case INJECT_CLIENT_PAUSE:
@@ -226,11 +232,23 @@ public class SFSession
         case INJECT_SOCKET_TIMEOUT:
           if (propertyValue != null)
             injectSocketTimeout = (Integer) propertyValue;
-
           break;
 
         case PASSCODE_IN_PASSWORD:
           passcodeInPassword = (propertyValue != null && (Boolean) propertyValue);
+          break;
+
+        case TRACING:
+          if (propertyValue != null)
+          {
+            tracingLevel = Level.parse(((String)propertyValue).toUpperCase());
+            // tracingLevel is effective only if customer is using the new logging config/framework
+            if (tracingLevel != null && System.getProperty("snowflake.jdbc.loggerImpl") == null
+                && logger instanceof JDK14Logger)
+            {
+              JDK14Logger.setLevel(tracingLevel);
+            }
+          }
           break;
 
         default:
@@ -294,9 +312,12 @@ public class SFSession
 
     if (httpClient == null)
     {
-      httpClient = HttpUtil.getHttpClient(
-          (Boolean) connectionPropertiesMap.get(SFSessionProperty.INSECURE_MODE),
-          null);
+      Boolean insecureMode = (Boolean)connectionPropertiesMap.get(
+          SFSessionProperty.INSECURE_MODE);
+
+      httpClient = HttpUtil.getHttpClient(insecureMode != null ?
+                                          insecureMode : false,
+                                          null);
     }
 
     SessionUtil.LoginInput loginInput = new SessionUtil.LoginInput();
@@ -351,6 +372,38 @@ public class SFSession
     // Update common parameter values for this session
     SessionUtil.updateSfDriverParamValues(loginOutput.getCommonParams(), this);
 
+    String loginDatabaseName = (String)connectionPropertiesMap.get(
+        SFSessionProperty.DATABASE);
+    String loginSchemaName = (String)connectionPropertiesMap.get(
+        SFSessionProperty.SCHEMA);
+    String loginRole = (String)connectionPropertiesMap.get(
+        SFSessionProperty.ROLE);
+
+
+    if (loginDatabaseName != null && !loginDatabaseName
+        .equalsIgnoreCase(database))
+    {
+      sqlWarnings.add(new SFException(ErrorCode
+          .CONNECTION_ESTABLISHED_WITH_DIFFERENT_PROP,
+          "Database", loginDatabaseName, database));
+    }
+
+    if (loginSchemaName != null && !loginSchemaName
+        .equalsIgnoreCase(schema))
+    {
+      sqlWarnings.add(new SFException(ErrorCode.
+          CONNECTION_ESTABLISHED_WITH_DIFFERENT_PROP,
+          "Schema", loginSchemaName, schema));
+    }
+
+    if (loginRole != null && !loginRole
+        .equalsIgnoreCase(role))
+    {
+      sqlWarnings.add(new SFException(ErrorCode.
+          CONNECTION_ESTABLISHED_WITH_DIFFERENT_PROP,
+          "Role", loginRole, role));
+    }
+
     // start heartbeat for this session so that the master token will not expire
     startHeartbeatForThisSession();
     isClosed = false;
@@ -358,30 +411,39 @@ public class SFSession
 
   private void performSanityCheckOnProperties() throws SFException
   {
-    // validate that serverURL, user and password are specified
-    if (!connectionPropertiesMap.containsKey(SFSessionProperty.SERVER_URL))
-      throw new SFException(ErrorCode.MISSING_SERVER_URL);
-
-    if (!connectionPropertiesMap.containsKey(SFSessionProperty.USER))
-      throw new SFException(ErrorCode.MISSING_USERNAME);
-
-    if (isSnowflakeAuthenticator() &&
-        !connectionPropertiesMap.containsKey(SFSessionProperty.PASSWORD))
-      throw new SFException(ErrorCode.MISSING_PASSWORD);
-
     for (SFSessionProperty property : SFSessionProperty.values())
     {
       if (property.isRequired() &&
           !connectionPropertiesMap.containsKey(property))
       {
-        throw new SFException(ErrorCode.MISSING_CONNECTION_PROPERTY,
-            property.getPropertyKey());
+        switch (property)
+        {
+          case SERVER_URL:
+            throw new SFException(ErrorCode.MISSING_SERVER_URL);
+
+          case USER:
+            throw new SFException(ErrorCode.MISSING_PASSWORD);
+
+          case PASSWORD:
+            if (isSnowflakeAuthenticator())
+            {
+              throw new SFException(ErrorCode.MISSING_PASSWORD);
+            }
+            else
+            {
+              break;
+            }
+
+          default:
+            throw new SFException(ErrorCode.MISSING_CONNECTION_PROPERTY,
+                property.getPropertyKey());
+        }
       }
     }
 
+    // userName and password are expected
     String userName = (String) connectionPropertiesMap.get(
         SFSessionProperty.USER);
-    // userName and password are expected
     if (userName == null || userName.isEmpty())
     {
       throw new SFException(ErrorCode.MISSING_USERNAME);
@@ -389,7 +451,6 @@ public class SFSession
 
     String password = (String) connectionPropertiesMap.get(
         SFSessionProperty.PASSWORD);
-
     if (isSnowflakeAuthenticator() && (password == null || password.isEmpty()))
     {
       throw new SFException(ErrorCode.MISSING_PASSWORD);
@@ -777,11 +838,6 @@ public class SFSession
     return httpClientSocketTimeout;
   }
 
-  protected boolean isUseProxy()
-  {
-    return useProxy;
-  }
-
   protected int getAndIncrementSequenceId()
   {
     return sequenceId.getAndIncrement();
@@ -895,5 +951,30 @@ public class SFSession
   public boolean getEnableCombineDescribe()
   {
     return this.enableCombineDescribe;
+  }
+
+  public Integer getQueryTimeout()
+  {
+    return (Integer)this.connectionPropertiesMap.get(SFSessionProperty.QUERY_TIMEOUT);
+  }
+
+  public String getUser()
+  {
+    return (String)this.connectionPropertiesMap.get(SFSessionProperty.USER);
+  }
+
+  public String getUrl()
+  {
+    return (String)this.connectionPropertiesMap.get(SFSessionProperty.SERVER_URL);
+  }
+
+  public List<SFException> getSqlWarnings()
+  {
+    return sqlWarnings;
+  }
+
+  public void clearSqlWarnings()
+  {
+    sqlWarnings.clear();
   }
 }

@@ -257,7 +257,7 @@
     <dependency>
       <groupId>net.snowflake</groupId>
       <artifactId>snowflake-common</artifactId>
-      <version>3.1.15</version>
+      <version>3.1.16</version>
       <type>jar</type>
       <scope>compile</scope>
     </dependency>
@@ -279,6 +279,7 @@
       <artifactId>commons-lang3</artifactId>
       <version>3.7</version>
       <type>jar</type>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.codehaus.mojo</groupId>
@@ -480,14 +481,6 @@
                           <include>com/google/common/io/**</include>
                           <include>com/google/common/base/**</include>
                           <include>com/google/common/hash/**</include>
-                        </includes>
-                      </filter>
-                      <filter>
-                        <artifact>org.apache.commons:commons-lang3</artifact>
-                        <includes>
-                          <include>org/apache/commons/lang3/tuple/**</include>
-                          <include>org/apache/commons/lang3/StringUtils*</include>
-                          <include>org/apache/commons/lang3/RandomStringUtils*</include>
                         </includes>
                       </filter>
                       <filter>

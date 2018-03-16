@@ -99,6 +99,8 @@ public class SFStatement
     logger.debug(" public SFStatement(SFSession session)");
 
     this.session = session;
+    Integer queryTimeout = session == null ? null : session.getQueryTimeout();
+    this.queryTimeout =  queryTimeout != null ? queryTimeout : this.queryTimeout;
   }
 
   /**

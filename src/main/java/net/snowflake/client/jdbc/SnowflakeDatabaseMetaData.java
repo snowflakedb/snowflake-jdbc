@@ -8,7 +8,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.snowflake.common.core.SqlState;
 import net.snowflake.client.core.SFSession;
-import org.apache.commons.lang3.StringUtils;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -26,7 +25,6 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 import net.snowflake.common.util.Wildcard;
-import net.snowflake.common.core.SqlState;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 
@@ -125,7 +123,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   {
     logger.debug("public String getURL()");
 
-    return ((SnowflakeConnectionV1)connection).getURL();
+    return session.getUrl();
   }
 
   @Override
@@ -133,7 +131,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   {
     logger.debug("public String getUserName()");
 
-    return ((SnowflakeConnectionV1)connection).getUserName();
+    return session.getUser();
   }
 
   @Override
@@ -1196,12 +1194,15 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
                              String tableNamePattern, String[] types)
           throws SQLException
   {
-    logger.debug(
-               "public ResultSet getTables(String catalog={}, String "
-               + "schemaPattern={}, String tableNamePattern={}, " +
-                   "String[] types={})",
-        new Object[]{catalog, schemaPattern, tableNamePattern,
-        StringUtils.join(types, ",")});
+    if (logger.isDebugEnabled())
+    {
+      logger.debug(
+          "public ResultSet getTables(String catalog={}, String "
+              + "schemaPattern={}, String tableNamePattern={}, " +
+              "String[] types={})",
+          new Object[]{catalog, schemaPattern, tableNamePattern,
+              Arrays.toString(types)});
+    }
 
     Set<String> supportedTableTypes = new HashSet<>();
     ResultSet resultSet = getTableTypes();

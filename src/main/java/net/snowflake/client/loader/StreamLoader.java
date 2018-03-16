@@ -5,9 +5,9 @@
 package net.snowflake.client.loader;
 
 import net.snowflake.client.jdbc.SnowflakeType;
+import net.snowflake.client.jdbc.SnowflakeUtil;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
-import org.apache.commons.lang3.RandomStringUtils;
 
 import java.io.IOException;
 import java.sql.Connection;
@@ -129,7 +129,7 @@ public class StreamLoader implements Loader, Runnable
       setProperty((LoaderProperty) e.getKey(), e.getValue());
     }
 
-    _noise = RandomStringUtils.randomAlphanumeric(6);
+    _noise = SnowflakeUtil.randomAlphaNumeric(6);
   }
 
   @Override

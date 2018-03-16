@@ -3,10 +3,6 @@
  */
 package net.snowflake.client.jdbc.cloud.storage;
 
-import com.amazonaws.services.s3.model.CryptoConfiguration;
-import com.amazonaws.services.s3.model.CryptoMode;
-import com.amazonaws.services.s3.model.EncryptionMaterials;
-import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.util.Base64;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
@@ -30,11 +26,10 @@ import com.microsoft.azure.storage.blob.ListBlobItem;
 import net.snowflake.client.jdbc.SnowflakeUtil;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
+import net.snowflake.client.util.SFPair;
 import net.snowflake.common.core.RemoteStoreFileEncryptionMaterial;
 import net.snowflake.common.core.SqlState;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.Pair;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -52,7 +47,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import net.snowflake.client.jdbc.MatDesc;
-import org.apache.commons.lang3.StringUtils;
 
 /**
  * Encapsulates the Azure Storage client
@@ -392,7 +386,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient
     final List<FileInputStream> toClose = new ArrayList<>();
     long originalContentLength = meta.getContentLength();
 
-    Pair<InputStream, Boolean> uploadStreamInfo = createUploadStream(
+    SFPair<InputStream, Boolean> uploadStreamInfo = createUploadStream(
             srcFile, uploadFromStream, inputStream, meta, originalContentLength,
             fileBackedOutputStream, toClose);
 
@@ -405,7 +399,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient
       try
       {
         logger.debug("Starting upload");
-        InputStream fileInputStream = uploadStreamInfo.getLeft();
+        InputStream fileInputStream = uploadStreamInfo.left;
         CloudBlobContainer container = azStorageClient.getContainerReference(remoteStorageLocation);
         CloudBlockBlob blob = container.getBlockBlobReference(destFileName);
 
@@ -474,7 +468,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient
     handleAzureException(ex, retryCount, operation, connection, command, this);
   }
 
-  private Pair<InputStream, Boolean> createUploadStream(
+  private SFPair<InputStream, Boolean> createUploadStream(
           File srcFile,
           boolean uploadFromStream,
           InputStream inputStream,
@@ -552,7 +546,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient
               "Failed to open input stream",ex.getMessage());
     }
 
-    return new ImmutablePair<>(stream, uploadFromStream);
+    return SFPair.of(stream, uploadFromStream);
   }
 
   /**
@@ -760,7 +754,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient
    @Override
    public void addDigestMetadata(StorageObjectMetadata meta, String digest)
    {
-     if (!StringUtils.isBlank(digest))
+     if (!SnowflakeUtil.isBlank(digest))
      {
        // Azure doesn't allow hyphens in the name of a metadata field.
        meta.addUserMetadata("sfcdigest", digest);

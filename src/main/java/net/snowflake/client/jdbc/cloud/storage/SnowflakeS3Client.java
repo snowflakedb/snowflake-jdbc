@@ -35,11 +35,10 @@ import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.jdbc.SnowflakeUtil;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
+import net.snowflake.client.util.SFPair;
 import net.snowflake.common.core.RemoteStoreFileEncryptionMaterial;
 import net.snowflake.common.core.SqlState;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.Pair;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.File;
@@ -356,7 +355,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient
   {
     final long originalContentLength = meta.getContentLength();
     final List<FileInputStream> toClose = new ArrayList<>();
-    Pair<InputStream, Boolean> uploadStreamInfo =
+    SFPair<InputStream, Boolean> uploadStreamInfo =
             createUploadStream( srcFile, uploadFromStream,
                     inputStream, fileBackedOutputStream,
                     ((S3ObjectMetadata)meta).getS3ObjectMetadata(),
@@ -386,10 +385,10 @@ public class SnowflakeS3Client implements SnowflakeStorageClient
 
         final Upload myUpload;
 
-        if (uploadStreamInfo.getRight())
+        if (uploadStreamInfo.right)
         {
           myUpload = tx.upload(remoteStorageLocation, destFileName,
-                  uploadStreamInfo.getLeft(), s3Meta);
+                  uploadStreamInfo.left, s3Meta);
         }
         else
         {
@@ -438,7 +437,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient
             "Unexpected: upload unsuccessful without exception!");
   }
 
-  private Pair<InputStream, Boolean>
+  private SFPair<InputStream, Boolean>
         createUploadStream( File srcFile,
                             boolean uploadFromStream,
                             InputStream inputStream,
@@ -508,7 +507,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient
                   "Failed to open input stream",ex.getMessage());
         }
       }
-      return new ImmutablePair(result, uploadFromStream);
+      return SFPair.of(result, uploadFromStream);
   }
 
 

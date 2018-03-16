@@ -11,9 +11,9 @@ import com.fasterxml.jackson.databind.node.JsonNodeType;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
+import net.snowflake.client.util.SFPair;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
@@ -280,7 +280,7 @@ class SFTrustManager implements X509TrustManager
   /**
    * OCSP Response cache
    */
-  private final static Map<OcspResponseCacheKey, ImmutablePair<Long, OCSPResp>> OCSP_RESPONSE_CACHE = new HashMap<>();
+  private final static Map<OcspResponseCacheKey, SFPair<Long, OCSPResp>> OCSP_RESPONSE_CACHE = new HashMap<>();
   private final static Object OCSP_RESPONSE_CACHE_LOCK = new Object();
   private static boolean WAS_CACHE_UPDATED = false;
   private static boolean WAS_CACHE_READ = false;
@@ -424,7 +424,7 @@ class SFTrustManager implements X509TrustManager
   void validateRevocationStatus(X509Certificate[] chain) throws CertificateException
   {
     final List<Certificate> bcChain = convertToBouncyCastleCertificate(chain);
-    final List<ImmutablePair<Certificate, Certificate>> pairIssuerSubjectList =
+    final List<SFPair<Certificate, Certificate>> pairIssuerSubjectList =
         getPairIssuerSubject(bcChain);
     synchronized (OCSP_RESPONSE_CACHE_LOCK)
     {
@@ -455,13 +455,13 @@ class SFTrustManager implements X509TrustManager
    * @throws CertificateException raises if any error occurs.
    */
   private void executeRevocationStatusChecks(
-      List<ImmutablePair<Certificate, Certificate>> pairIssuerSubjectList)
+      List<SFPair<Certificate, Certificate>> pairIssuerSubjectList)
       throws CertificateException
   {
     long currentTimeSecond = new Date().getTime() / 1000L;
     try
     {
-      for (ImmutablePair<Certificate, Certificate> pairIssuerSubject : pairIssuerSubjectList)
+      for (SFPair<Certificate, Certificate> pairIssuerSubject : pairIssuerSubjectList)
       {
         OCSPReq req = createRequest(pairIssuerSubject);
         CertID cid = req.getRequestList()[0].getCertID().toASN1Primitive();
@@ -469,12 +469,12 @@ class SFTrustManager implements X509TrustManager
             cid.getIssuerNameHash().getEncoded(),
             cid.getIssuerKeyHash().getEncoded(),
             cid.getSerialNumber().getValue());
-        ImmutablePair<Long, OCSPResp> value0 = OCSP_RESPONSE_CACHE.get(k);
+        SFPair<Long, OCSPResp> value0 = OCSP_RESPONSE_CACHE.get(k);
         OCSPResp ocspResp;
         if (value0 == null)
         {
           ocspResp = fetchOcspResponse(pairIssuerSubject, req);
-          OCSP_RESPONSE_CACHE.put(k, ImmutablePair.of(currentTimeSecond, ocspResp));
+          OCSP_RESPONSE_CACHE.put(k, SFPair.of(currentTimeSecond, ocspResp));
           WAS_CACHE_UPDATED = true;
         }
         else
@@ -498,13 +498,13 @@ class SFTrustManager implements X509TrustManager
    * @param pairIssuerSubjectList a list of pair of issuer and subject certificates
    * @return true if all of OCSP response are cached else false
    */
-  private boolean isCached(List<ImmutablePair<Certificate, Certificate>> pairIssuerSubjectList)
+  private boolean isCached(List<SFPair<Certificate, Certificate>> pairIssuerSubjectList)
   {
     long currentTimeSecond = new Date().getTime() / 1000L;
     boolean isCached = true;
     try
     {
-      for (ImmutablePair<Certificate, Certificate> pairIssuerSubject : pairIssuerSubjectList)
+      for (SFPair<Certificate, Certificate> pairIssuerSubject : pairIssuerSubjectList)
       {
         OCSPReq req = createRequest(pairIssuerSubject);
         CertificateID certificateId = req.getRequestList()[0].getCertID();
@@ -515,7 +515,7 @@ class SFTrustManager implements X509TrustManager
             cid.getIssuerKeyHash().getEncoded(),
             cid.getSerialNumber().getValue());
 
-        ImmutablePair<Long, OCSPResp> res = OCSP_RESPONSE_CACHE.get(k);
+        SFPair<Long, OCSPResp> res = OCSP_RESPONSE_CACHE.get(k);
         if (res == null)
         {
           LOGGER.debug("Not all OCSP responses for the certificate is in the cache.");
@@ -560,7 +560,7 @@ class SFTrustManager implements X509TrustManager
    * @param elem A JSON element
    * @return OcspResponseCacheKey object
    */
-  private static ImmutablePair<OcspResponseCacheKey, ImmutablePair<Long, OCSPResp>>
+  private static SFPair<OcspResponseCacheKey, SFPair<Long, OCSPResp>>
   decodeCacheFromJSON(Map.Entry<String, JsonNode> elem) throws IOException
   {
     long currentTimeSecond = new Date().getTime() / 1000;
@@ -586,12 +586,12 @@ class SFTrustManager implements X509TrustManager
     {
       // add cache
       OCSPResp v0 = new OCSPResp(ocspRespDer);
-      return ImmutablePair.of(k, ImmutablePair.of(producedAt, v0));
+      return SFPair.of(k, SFPair.of(producedAt, v0));
     }
     else
     {
       // delete cache
-      return ImmutablePair.of(k, ImmutablePair.of(producedAt, (OCSPResp) null));
+      return SFPair.of(k, SFPair.of(producedAt, (OCSPResp) null));
     }
   }
 
@@ -605,11 +605,11 @@ class SFTrustManager implements X509TrustManager
     try
     {
       ObjectNode out = OBJECT_MAPPER.createObjectNode();
-      for (Map.Entry<OcspResponseCacheKey, ImmutablePair<Long, OCSPResp>> elem :
+      for (Map.Entry<OcspResponseCacheKey, SFPair<Long, OCSPResp>> elem :
           OCSP_RESPONSE_CACHE.entrySet())
       {
         OcspResponseCacheKey key = elem.getKey();
-        ImmutablePair<Long, OCSPResp> value0 = elem.getValue();
+        SFPair<Long, OCSPResp> value0 = elem.getValue();
         long currentTimeSecond = value0.left;
         OCSPResp value = value0.right;
 
@@ -737,7 +737,7 @@ class SFTrustManager implements X509TrustManager
     }
     for (Iterator<Map.Entry<String, JsonNode>> itr = m.fields(); itr.hasNext(); )
     {
-      ImmutablePair<OcspResponseCacheKey, ImmutablePair<Long, OCSPResp>> ky =
+      SFPair<OcspResponseCacheKey, SFPair<Long, OCSPResp>> ky =
           decodeCacheFromJSON(itr.next());
       if (ky != null && ky.right != null && ky.right.right != null)
       {
@@ -918,7 +918,7 @@ class SFTrustManager implements X509TrustManager
    * @throws CertificateEncodingException if any other error occurs
    */
   private OCSPResp fetchOcspResponse(
-      ImmutablePair<Certificate, Certificate> pairIssuerSubject, OCSPReq req)
+      SFPair<Certificate, Certificate> pairIssuerSubject, OCSPReq req)
       throws CertificateEncodingException
   {
     try
@@ -995,7 +995,7 @@ class SFTrustManager implements X509TrustManager
    * @throws CertificateException raises if any other error occurs
    */
   private void validateRevocationStatusMain(
-      ImmutablePair<Certificate, Certificate> pairIssuerSubject,
+      SFPair<Certificate, Certificate> pairIssuerSubject,
       OCSPResp ocspResp) throws CertificateException
   {
     try
@@ -1163,7 +1163,7 @@ class SFTrustManager implements X509TrustManager
    * @return OCSPReq object
    */
   private OCSPReq createRequest(
-      ImmutablePair<Certificate, Certificate> pairIssuerSubject)
+      SFPair<Certificate, Certificate> pairIssuerSubject)
   {
     Certificate issuer = pairIssuerSubject.left;
     Certificate subject = pairIssuerSubject.right;
@@ -1214,10 +1214,10 @@ class SFTrustManager implements X509TrustManager
    * @param bcChain a list of bouncy castle Certificate
    * @return a list of paif of Issuer and Subject certificates
    */
-  private List<ImmutablePair<Certificate, Certificate>> getPairIssuerSubject(
+  private List<SFPair<Certificate, Certificate>> getPairIssuerSubject(
       List<Certificate> bcChain)
   {
-    List<ImmutablePair<Certificate, Certificate>> pairIssuerSubject = new ArrayList<>();
+    List<SFPair<Certificate, Certificate>> pairIssuerSubject = new ArrayList<>();
     for (int i = 0, len = bcChain.size(); i < len; ++i)
     {
       Certificate bcCert = bcChain.get(i);
@@ -1227,7 +1227,7 @@ class SFTrustManager implements X509TrustManager
       }
       if (i < len - 1)
       {
-        pairIssuerSubject.add(ImmutablePair.of(bcChain.get(i + 1), bcChain.get(i)));
+        pairIssuerSubject.add(SFPair.of(bcChain.get(i + 1), bcChain.get(i)));
       }
       else
       {
@@ -1240,7 +1240,7 @@ class SFTrustManager implements X509TrustManager
           {
             throw new RuntimeException("Failed to find the root CA.");
           }
-          pairIssuerSubject.add(ImmutablePair.of(issuer, bcChain.get(i)));
+          pairIssuerSubject.add(SFPair.of(issuer, bcChain.get(i)));
         }
       }
     }
