@@ -1,15 +1,18 @@
+**JDBC Driver 3.5.2**
+|SNOW-38455| upgraded HttpClient to 4.5.5
+|SNOW-38454| upgrade Jackson Json packages to 2.9.4
+
+
 **JDBC Driver 3.5.0**
-|SNOW-38486| Use OCSP revocation check for JDBC.
-|SNOW-37766| Get SecureRandom instances by not specifing provider name since jdbc could be run under ibm jdk
-
+|SNOW-38486| Added support for checking for OCSP revocation.
+|SNOW-37766| Added support for getting ``SecureRandom`` instances without specifying a provider name; this is required because the driver could be running under the IBM JDK.
 **JDBC Driver 3.4.3**
-|SNOW-34464| Prototype: support key pair authentication in JDBC
-
+|SNOW-34464| Internal feature (pending release).
 **JDBC Driver 3.4.2**
-|SNOW-37755| Refactored the fix for SNOW-36580 on the client side.
+|SNOW-37755| Refactored a server-side fix (SNOW-36580) on the client side.
 |SNOW-37184| Added support for binding object identifiers.
 **JDBC Driver 3.4.1**
-|SNOW-37400| Added shaded amazon.ion package.
+|SNOW-37400| Added shaded ``amazon.ion`` package.
 **JDBC Driver 3.4.0**
 |SNOW-37276| Fixed an issue where the driver could not use the TLS 1.2 cipher suites in JDK1.7.
 |SNOW-37242| Allow preparing all types of statements (reverts a change introduced in v3.3.0).
