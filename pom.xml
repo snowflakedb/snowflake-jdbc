@@ -9,6 +9,17 @@
 
   <name>snowflake-jdbc</name>
   <url>http://maven.apache.org</url>
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <jackson.version>2.9.4</jackson.version>
+    <!-- the following fields are for setting unique information in the RPM Release field
+         Note: setting timestamp without hyphens for use in the RPM release field (hypens not allowed) -->
+    <maven.build.timestamp.format>yyyyMMddHHmm</maven.build.timestamp.format>
+    <!-- building a string of two variables for use in the RPM release field.  The RPM plugin does not allow
+         evaluation of two variables into the <release> property.  Ugly, I know - jc -->
+    <sfrelease>999999_${env.USER}</sfrelease>
+    <shadeBase>net.snowflake.client.jdbc.internal</shadeBase>
+  </properties>
 
   <dependencyManagement>
     <dependencies>
@@ -126,16 +137,6 @@
     </resources>
   </build>
 
-  <properties>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <!-- the following fields are for setting unique information in the RPM Release field
-         Note: setting timestamp without hyphens for use in the RPM release field (hypens not allowed) -->
-    <maven.build.timestamp.format>yyyyMMddHHmm</maven.build.timestamp.format>
-    <!-- building a string of two variables for use in the RPM release field.  The RPM plugin does not allow
-         evaluation of two variables into the <release> property.  Ugly, I know - jc -->
-    <sfrelease>999999_${env.USER}</sfrelease>
-    <shadeBase>net.snowflake.client.jdbc.internal</shadeBase>
-  </properties>
 
   <!-- dummy scm connection required to get the buildnumber plugin working -->
   <scm>
@@ -234,17 +235,17 @@
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
       <type>jar</type>
-      <version>2.8.9</version>
+      <version>${jackson.version}</version>
     </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-core</artifactId>
-      <version>2.8.9</version>
+      <version>${jackson.version}</version>
     </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-annotations</artifactId>
-      <version>2.8.9</version>
+      <version>${jackson.version}</version>
     </dependency>
     <dependency>
       <groupId>com.google.guava</groupId>
@@ -255,7 +256,7 @@
     <dependency>
       <groupId>net.snowflake</groupId>
       <artifactId>snowflake-common</artifactId>
-      <version>3.1.13</version>
+      <version>3.1.14</version>
       <type>jar</type>
       <scope>compile</scope>
     </dependency>
@@ -303,7 +304,7 @@
     <dependency>
       <groupId>com.fasterxml.jackson.datatype</groupId>
       <artifactId>jackson-datatype-joda</artifactId>
-      <version>2.1.2</version>
+      <version>${jackson.version}</version>
     </dependency>
     <dependency>
       <groupId>javax.servlet</groupId>
