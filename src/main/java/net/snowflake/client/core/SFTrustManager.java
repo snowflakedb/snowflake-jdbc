@@ -87,6 +87,7 @@ import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.text.MessageFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -97,13 +98,14 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TimeZone;
 
 
 /**
  * SFTrustManager is a composite of TrustManager of the default JVM
  * TrustManager and Snowflake OCSP revocation status checker. Use this
  * when initializing SSLContext object.
- * <p>
+ *
  * <pre>
  * {@code
  * TrustManager[] trustManagers = {new SFTrustManager()};
@@ -211,6 +213,11 @@ class SFTrustManager implements X509TrustManager
   private static final long MAX_CLOCK_SKEW = 900000L;
 
   /**
+   * Minimum cache warm up time (ms)
+   */
+  private static final long MIN_CACHE_WARMUP_TIME = 18000000L;
+
+  /**
    * OCSP response cache entry expiration time (s)
    */
   private static final long CACHE_EXPIRATION = 86400L;
@@ -284,6 +291,16 @@ class SFTrustManager implements X509TrustManager
   private final static Object OCSP_RESPONSE_CACHE_LOCK = new Object();
   private static boolean WAS_CACHE_UPDATED = false;
   private static boolean WAS_CACHE_READ = false;
+
+  /**
+   * Date and timestamp format
+   */
+  private final static SimpleDateFormat DATE_FORMAT_UTC = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
+  static
+  {
+    DATE_FORMAT_UTC.setTimeZone(TimeZone.getTimeZone("UTC"));
+  }
 
   /**
    * The default JVM Trust manager.
@@ -463,18 +480,49 @@ class SFTrustManager implements X509TrustManager
     {
       for (SFPair<Certificate, Certificate> pairIssuerSubject : pairIssuerSubjectList)
       {
-        OCSPReq req = createRequest(pairIssuerSubject);
-        CertID cid = req.getRequestList()[0].getCertID().toASN1Primitive();
-        OcspResponseCacheKey k = new OcspResponseCacheKey(
-            cid.getIssuerNameHash().getEncoded(),
-            cid.getIssuerKeyHash().getEncoded(),
-            cid.getSerialNumber().getValue());
-        SFPair<Long, OCSPResp> value0 = OCSP_RESPONSE_CACHE.get(k);
-        OCSPResp ocspResp;
+        executeOneRevoctionStatusCheck(pairIssuerSubject, currentTimeSecond);
+      }
+    }
+    catch (IOException ex)
+    {
+      LOGGER.debug("Failed to decode CertID. Ignored.");
+    }
+  }
+
+  /**
+   * Executes a single revocation status check
+   *
+   * @param pairIssuerSubject a pair of issuer and subject certificate
+   * @param currentTimeSecond the current timestamp
+   * @throws IOException          raises if encoding fails.
+   * @throws CertificateException if certificate exception is raised.
+   */
+  private void executeOneRevoctionStatusCheck(
+      SFPair<Certificate, Certificate> pairIssuerSubject, long currentTimeSecond)
+      throws IOException, CertificateException
+  {
+    OCSPReq req = createRequest(pairIssuerSubject);
+    CertID cid = req.getRequestList()[0].getCertID().toASN1Primitive();
+    OcspResponseCacheKey keyOcspResponse = new OcspResponseCacheKey(
+        cid.getIssuerNameHash().getEncoded(),
+        cid.getIssuerKeyHash().getEncoded(),
+        cid.getSerialNumber().getValue());
+
+    long sleepTime = INITIAL_SLEEPING_TIME;
+    CertificateException error = null;
+    boolean success = false;
+    for (int retry = 0; retry < MAX_RETRY_COUNTER; ++retry)
+    {
+      SFPair<Long, OCSPResp> value0 = OCSP_RESPONSE_CACHE.get(keyOcspResponse);
+      OCSPResp ocspResp;
+      try
+      {
         if (value0 == null)
         {
+          LOGGER.debug("not hit cache.");
           ocspResp = fetchOcspResponse(pairIssuerSubject, req);
-          OCSP_RESPONSE_CACHE.put(k, SFPair.of(currentTimeSecond, ocspResp));
+          OCSP_RESPONSE_CACHE.put(
+              keyOcspResponse, SFPair.of(currentTimeSecond, ocspResp));
           WAS_CACHE_UPDATED = true;
         }
         else
@@ -482,13 +530,37 @@ class SFTrustManager implements X509TrustManager
           LOGGER.debug("hit cache.");
           ocspResp = value0.right;
         }
-        LOGGER.debug("validating. {}", CertificateIDToString(req.getRequestList()[0].getCertID()));
+        LOGGER.debug("validating. {}",
+            CertificateIDToString(req.getRequestList()[0].getCertID()));
         validateRevocationStatusMain(pairIssuerSubject, ocspResp);
+        success = true;
+        break;
       }
-    }
-    catch (IOException ex)
-    {
-      LOGGER.debug("Failed to decode CertID. Ignored.");
+      catch (CertificateException ex)
+      {
+        if (OCSP_RESPONSE_CACHE.containsKey(keyOcspResponse))
+        {
+          LOGGER.debug("deleting the invalid OCSP cache.");
+          OCSP_RESPONSE_CACHE.remove(keyOcspResponse);
+          WAS_CACHE_UPDATED = true;
+        }
+        error = ex;
+        LOGGER.debug("Retrying {}/{} after sleeping {}(ms)",
+            retry + 1, MAX_RETRY_COUNTER, sleepTime);
+        try
+        {
+          Thread.sleep(sleepTime);
+          sleepTime = maxLong(MAX_SLEEPING_TIME, sleepTime * 2);
+        }
+        catch (InterruptedException ex0)
+        { // nop
+        }
+      }
+      if (!success)
+      {
+        // still not success, raise an error.
+        throw error;
+      }
     }
   }
 
@@ -1077,7 +1149,7 @@ class SFTrustManager implements X509TrustManager
           throw new CertificateEncodingException(
               String.format(
                   "The certificate has been revoked. Reason: %d, Time: %s",
-                  reason, revocationTime));
+                  reason, DATE_FORMAT_UTC.format(revocationTime)));
         }
         else
         {
@@ -1089,7 +1161,12 @@ class SFTrustManager implements X509TrustManager
       if (!isValidityRange(currentTime, thisUpdate, nextUpdate))
       {
         throw new CertificateEncodingException(
-            "The validity is out of range.");
+            String.format(
+                "The validity is out of range: " +
+                    "Current Time: %s, This Update: %s, Next Update: %s",
+                DATE_FORMAT_UTC.format(currentTime),
+                DATE_FORMAT_UTC.format(thisUpdate),
+                DATE_FORMAT_UTC.format(nextUpdate)));
       }
     }
     LOGGER.debug("OK. Verified the certificate revocation status.");
@@ -1319,7 +1396,7 @@ class SFTrustManager implements X509TrustManager
   private static long calculateTolerableVadility(Date thisUpdate, Date nextUpdate)
   {
     return maxLong((long) ((float) (nextUpdate.getTime() - thisUpdate.getTime()) *
-        TOLERABLE_VALIDITY_RANGE_RATIO), MAX_CLOCK_SKEW);
+        TOLERABLE_VALIDITY_RANGE_RATIO), MIN_CACHE_WARMUP_TIME);
   }
 
   /**
