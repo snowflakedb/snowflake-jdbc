@@ -1548,19 +1548,32 @@ public class SessionUtil
   /**
    * Verify if two input urls have the same protocol, host, and port.
    *
-   * @param aUrlStr
-   * @param bUrlStr
-   * @return
-   * @throws MalformedURLException
+   * @param aUrlStr a source URL string
+   * @param bUrlStr a target URL string
+   * @return true if matched otherwise false
+   * @throws MalformedURLException raises if a URL string is not valid.
    */
-  static private boolean isPrefixEqual(String aUrlStr, String bUrlStr)
+  static boolean isPrefixEqual(String aUrlStr, String bUrlStr)
       throws MalformedURLException
   {
     URL aUrl = new URL(aUrlStr);
     URL bUrl = new URL(bUrlStr);
+    int aPort = aUrl.getPort();
+    int bPort = bUrl.getPort();
+    if (aPort == -1 && "https".equals(aUrl.getProtocol()))
+    {
+      // default port number for HTTPS
+      aPort = 443;
+    }
+    if (bPort == -1 && "https".equals(bUrl.getProtocol()))
+    {
+      // default port number for HTTPS
+      bPort = 443;
+    }
+    // no default port number for HTTP is supported.
     return aUrl.getHost().equalsIgnoreCase(bUrl.getHost()) &&
         aUrl.getProtocol().equalsIgnoreCase(bUrl.getProtocol()) &&
-        aUrl.getPort() == bUrl.getPort();
+        aPort == bPort;
   }
 
   /**
