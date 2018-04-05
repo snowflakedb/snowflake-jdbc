@@ -1,12 +1,13 @@
+**JDBC Driver 3.5.4**
+|SNOW-41484| Fixed OKTA authentication. SnowflakeSQLException: Identity provider configuration for the specified authenticator does not match with your Snowflake account configuration (destination URL mismatch)
+
 **JDBC Driver 3.5.3**
-|SNOW-40230| Remove common-lang3 dependency
-
-
+|SNOW-40230| Removed dependency on ``commons-lang3`` package.
 **JDBC Driver 3.5.2**
-|SNOW-38455| upgraded HttpClient to 4.5.5
-|SNOW-38454| upgrade Jackson Json packages to 2.9.4
-
-
+|SNOW-38455| Upgraded HttpClient to 4.5.5.
+|SNOW-38454| Upgraded Jackson JSON packages to 2.9.4.
+**JDBC Driver 3.5.1**
+|N/A| Private release (for internal purposes only; no changes)
 **JDBC Driver 3.5.0**
 |SNOW-38486| Added support for checking for OCSP revocation.
 |SNOW-37766| Added support for getting ``SecureRandom`` instances without specifying a provider name; this is required because the driver could be running under the IBM JDK.
