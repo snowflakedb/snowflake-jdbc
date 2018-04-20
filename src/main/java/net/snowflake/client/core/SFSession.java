@@ -353,7 +353,9 @@ public class SFSession
             (String) connectionPropertiesMap.get(SFSessionProperty.APP_VERSION))
         .setSessionParameters(sessionParametersMap)
         .setPrivateKey((PrivateKey) connectionPropertiesMap.get(
-            SFSessionProperty.PRIVATE_KEY));
+            SFSessionProperty.PRIVATE_KEY))
+        .setApplication((String) connectionPropertiesMap.get(
+            SFSessionProperty.APPLICATION));
 
     SessionUtil.LoginOutput loginOutput = SessionUtil.openSession(loginInput);
 

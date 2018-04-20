@@ -79,7 +79,8 @@ public enum ErrorCode
    AZURE_SERVICE_ERROR(200044, SqlState.SYSTEM_ERROR),
 
   INVALID_OR_UNSUPPORTED_PRIVATE_KEY(200045, SqlState.SYNTAX_ERROR),
-  FAILED_TO_GENERATE_JWT(200046, SqlState.SYNTAX_ERROR)
+  FAILED_TO_GENERATE_JWT(200046, SqlState.SYNTAX_ERROR),
+  INVALID_PARAMETER_VALUE(200047, SqlState.INVALID_PARAMETER_VALUE)
   ;
 
   public final static String errorMessageResource =
@@ -98,7 +99,7 @@ public enum ErrorCode
    * <p/>
    * @param messageCode
    */
-  private ErrorCode(Integer messageCode, String sqlState)
+  ErrorCode(Integer messageCode, String sqlState)
   {
     this.messageCode = messageCode;
     this.sqlState = sqlState;
@@ -119,20 +120,5 @@ public enum ErrorCode
   {
     return "ErrorCode{" + "messageCode=" + messageCode + ", sqlState=" +
         sqlState + '}';
-  }
-
-  private static Map<Integer, ErrorCode> errorCodeMap = new HashMap<Integer, ErrorCode>();
-
-  static
-  {
-    for (ErrorCode errorCode : ErrorCode.values())
-    {
-      errorCodeMap.put(errorCode.getMessageCode(), errorCode);
-    }
-  }
-
-  public static ErrorCode getByErrorCode(String errorCode)
-  {
-    return errorCodeMap.get(errorCode);
   }
 }

@@ -11,7 +11,7 @@ package net.snowflake.client.core;
 import net.snowflake.client.jdbc.ErrorCode;
 
 import java.security.PrivateKey;
-import java.util.Set;
+import java.util.regex.Pattern;
 
 /**
  * session properties accepted for opening a new session.
@@ -39,6 +39,7 @@ public enum SFSessionProperty
   APP_VERSION("appVersion", false, String.class),
   INSECURE_MODE("insecureMode", false, Boolean.class),
   QUERY_TIMEOUT("queryTimeout", false, Integer.class),
+  APPLICATION("application", false, String.class),
   TRACING("tracing", false, String.class);
 
   // property key in string
@@ -52,6 +53,9 @@ public enum SFSessionProperty
 
   // alias to property key
   private String[] aliases;
+
+  // application name matcher
+  static Pattern APPLICATION_REGEX = Pattern.compile("^[A-Za-z][A-Za-z0-9\\.\\-_]{1,50}$");
 
   public boolean isRequired()
   {
@@ -119,7 +123,21 @@ public enum SFSessionProperty
 
     if (property.getValueType().isAssignableFrom(propertyValue.getClass()))
     {
-      return propertyValue;
+      switch (property)
+      {
+        case APPLICATION:
+          if (APPLICATION_REGEX.matcher((String)propertyValue).find())
+          {
+            return propertyValue;
+          }
+          else
+          {
+            throw new SFException(ErrorCode.INVALID_PARAMETER_VALUE,
+                propertyValue, property);
+          }
+        default:
+          return propertyValue;
+      }
     }
     else
     {
@@ -147,10 +165,5 @@ public enum SFSessionProperty
     throw new SFException(ErrorCode.INVALID_PARAMETER_TYPE,
         propertyValue.getClass().getName(),
         property.getValueType().getName());
-  }
-
-  static void checkPropertyKey(Set<SFSessionProperty> propertyKeys)
-      throws SFException
-  {
   }
 }

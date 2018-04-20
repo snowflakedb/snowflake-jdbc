@@ -151,6 +151,7 @@ public class SessionUtil
     private String masterToken;
     private Map<String, Object> sessionParameters;
     private PrivateKey privateKey;
+    private String application;
 
     public LoginInput()
     {
@@ -294,6 +295,12 @@ public class SessionUtil
       return this;
     }
 
+    public LoginInput setApplication(String application)
+    {
+      this.application = application;
+      return this;
+    }
+
     public HttpClient getHttpClient()
     {
       return httpClient;
@@ -407,6 +414,11 @@ public class SessionUtil
     public PrivateKey getPrivateKey()
     {
       return privateKey;
+    }
+
+    public String getApplication()
+    {
+      return application;
     }
   }
 
@@ -820,17 +832,24 @@ public class SessionUtil
       boolean CRLEnabled = SessionUtil.checkCRLSystemProperty();
       clientEnv.put("CRL_ENABLED", CRLEnabled);
 
-      // When you add new client environment info, please add new keys to
-      // messages_en_US.src.json so that they can be displayed properly in UI
-      // detect app name
-      String appName = System.getProperty("sun.java.command");
-      // remove the arguments
-      if (appName != null)
+      if (loginInput.getApplication() != null)
       {
-        if (appName.indexOf(" ") > 0)
-          appName = appName.substring(0, appName.indexOf(" "));
+        clientEnv.put("APPLICATION", loginInput.getApplication());
+      }
+      else
+      {
+        // When you add new client environment info, please add new keys to
+        // messages_en_US.src.json so that they can be displayed properly in UI
+        // detect app name
+        String appName = System.getProperty("sun.java.command");
+        // remove the arguments
+        if (appName != null)
+        {
+          if (appName.indexOf(" ") > 0)
+            appName = appName.substring(0, appName.indexOf(" "));
 
-        clientEnv.put("APPLICATION", appName);
+          clientEnv.put("APPLICATION", appName);
+        }
       }
 
       // add properties from client info
