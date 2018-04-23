@@ -1,6 +1,11 @@
-**JDBC Driver 3.5.4**
-|SNOW-41484| Fixed OKTA authentication. SnowflakeSQLException: Identity provider configuration for the specified authenticator does not match with your Snowflake account configuration (destination URL mismatch)
+**JDBC Driver 3.5.5**
+|SNOW-42722| SF_OCSP_RESPONSE_CACHE_DIR is used to specify the OCSP cache file location.
+|SNOW-39872| Add APPLICATION connection property to allow partner to set the application name.
 
+
+
+**JDBC Driver 3.5.4**
+|SNOW-41484| Fixed URL mismatch error that occurred when using OKTA authentication and the JDBC connection URL contains a port number. 
 **JDBC Driver 3.5.3**
 |SNOW-40230| Removed dependency on ``commons-lang3`` package.
 **JDBC Driver 3.5.2**
@@ -12,7 +17,7 @@
 |SNOW-38486| Added support for checking for OCSP revocation.
 |SNOW-37766| Added support for getting ``SecureRandom`` instances without specifying a provider name; this is required because the driver could be running under the IBM JDK.
 **JDBC Driver 3.4.3**
-|SNOW-34464| Internal feature (pending release).
+|SNOW-34464| Internal feature.
 **JDBC Driver 3.4.2**
 |SNOW-37755| Refactored a server-side fix (SNOW-36580) on the client side.
 |SNOW-37184| Added support for binding object identifiers.
@@ -26,7 +31,7 @@
 |SNOW-36917| Fixed an issue where the loader API incorrectly converted timestamp dates earlier than 1582-Oct-04 due to differences between the Julian and Gregorian calendar.
 |SNOW-35613| Internal infrastructure change to add support for pending feature.
 **JDBC Driver 3.3.2**
-|SNOW-32282| To support PUT and GET for Azure (pending), BLOB metadata is set to specify that files are uploaded and downloaded using AES CBC key encryption.
+|SNOW-32282| To support PUT and GET in Azure (pending feature), BLOB metadata is set to specify that files are uploaded and downloaded using AES CBC key encryption.
 |SNOW-32001| Replaced AWS_ID and AWS_KEY with newer versions.
 **JDBC Driver 3.3.1**
 |SNOW-30511| Fixed issue where Okta returned a 403 error (during federated authentication) due to the driver caching the Okta token in a cookie.
