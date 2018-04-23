@@ -133,50 +133,77 @@ class SFTrustManager implements X509TrustManager
   private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
   /**
+   * OCSP response cache file name. Should be identical to other driver's
+   * cache file name.
+   */
+  public static final String OCSP_CACHE_FILE_NAME = "ocsp_response_cache.json";
+
+  /**
    * OCSP response file cache directory
    */
   private static final File CACHE_DIR;
 
   static
   {
-    // use user home directory to store the OCSP cache file
-    String homeDir = System.getProperty("user.home");
-    if (homeDir == null)
+    // SF_OCSP_RESPONSE_CACHE_DIR is used to specify the directory including
+    // OCSP response cache file.
+    String cacheDir = System.getenv("SF_OCSP_RESPONSE_CACHE_DIR");
+    if (cacheDir != null)
     {
-      // use tmp dir if not exists.
-      homeDir = System.getProperty("java.io.tmpdir");
-    }
-    if (Constants.getOS() == Constants.OS.WINDOWS)
-    {
-      CACHE_DIR = new File(
-          new File(new File(new File(homeDir,
-              "AppData"), "Local"), "Snowflake"), "Caches");
-    }
-    else if (Constants.getOS() == Constants.OS.MAC)
-    {
-      CACHE_DIR = new File(new File(new File(homeDir,
-          "Library"), "Caches"), "Snowflake");
+      CACHE_DIR = new File(cacheDir);
     }
     else
     {
-      CACHE_DIR = new File(new File(homeDir, ".cache"), "snowflake");
+      // use user home directory to store the OCSP cache file
+      String homeDir = System.getProperty("user.home");
+      if (homeDir == null)
+      {
+        // use tmp dir if not exists.
+        homeDir = System.getProperty("java.io.tmpdir");
+      }
+      if (Constants.getOS() == Constants.OS.WINDOWS)
+      {
+        CACHE_DIR = new File(
+            new File(new File(new File(homeDir,
+                "AppData"), "Local"), "Snowflake"), "Caches");
+      }
+      else if (Constants.getOS() == Constants.OS.MAC)
+      {
+        CACHE_DIR = new File(new File(new File(homeDir,
+            "Library"), "Caches"), "Snowflake");
+      }
+      else
+      {
+        CACHE_DIR = new File(new File(homeDir, ".cache"), "snowflake");
+      }
     }
     if (!CACHE_DIR.exists() && !CACHE_DIR.mkdirs())
     {
       throw new RuntimeException(
           String.format(
-              "Failed to create the OCSP response cache directory: %s", CACHE_DIR)
+              "Failed to locate or create the OCSP response cache directory: %s", CACHE_DIR)
+      );
+    }
+    File cacheFileTmp = new File(CACHE_DIR, OCSP_CACHE_FILE_NAME);
+    try
+    {
+      // create an empty file if not exists and return true.
+      // If exists. the method returns false.
+      // In this particular case, it doesn't matter as long as the file is
+      // writable.
+      cacheFileTmp.createNewFile();
+    }
+    catch (IOException | SecurityException ex)
+    {
+      throw new RuntimeException(
+          String.format(
+              "Failed to touch the OCSP response cache file: %s",
+              cacheFileTmp.getAbsoluteFile())
       );
     }
   }
 
   private static final Charset DEFAULT_FILE_ENCODING = Charset.forName("UTF-8");
-
-  /**
-   * OCSP response cache file name. Should be identical to other driver's
-   * cache file name.
-   */
-  private static final String OCSP_CACHE_FILE_NAME = "ocsp_response_cache.json";
 
   /**
    * OCSP response cache server URL.
@@ -322,7 +349,8 @@ class SFTrustManager implements X509TrustManager
    * Constructor with the cache file. If not specified, the default cachefile
    * is used.
    *
-   * @param cacheFile cache file
+   * @param cacheFile                  cache file.
+   * @param useOcspResponseCacheServer true if use OCSP response cache server is used.
    */
   SFTrustManager(File cacheFile, boolean useOcspResponseCacheServer)
   {
@@ -335,6 +363,8 @@ class SFTrustManager implements X509TrustManager
     }
     else
     {
+      // Mainly for tests. In order to change the location of cache directory
+      //
       cacheFileTmp = cacheFile;
     }
     String canonicalPath = null;
