@@ -12,13 +12,15 @@ import com.fasterxml.jackson.databind.MappingJsonFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.jdbc.SnowflakeResultChunk.DownloadState;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SqlState;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.impl.client.CloseableHttpClient;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -40,8 +42,6 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.zip.GZIPInputStream;
-import net.snowflake.client.log.SFLogger;
-import net.snowflake.client.log.SFLoggerFactory;
 
 /**
  * Class for managing async download of offline result chunks
@@ -760,7 +760,7 @@ public class SnowflakeChunkDownloader
         }
 
         logger.debug("Fetching result: {}", resultChunk.getUrl());
-        HttpClient httpClient = HttpUtil.getHttpClient();
+        CloseableHttpClient httpClient = HttpUtil.getHttpClient();
 
         // fetch the result chunk
         HttpResponse response =

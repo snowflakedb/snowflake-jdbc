@@ -18,6 +18,7 @@ import org.apache.http.HttpHeaders;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.impl.client.CloseableHttpClient;
 
 import java.security.PrivateKey;
 import java.sql.SQLClientInfoException;
@@ -57,7 +58,7 @@ public class SFSession
   // per https://support-snowflake.zendesk.com/agent/tickets/6629
   private static int SF_HEARTBEAT_TIMEOUT = 300;
 
-  private HttpClient httpClient;
+  private CloseableHttpClient httpClient;
 
   private boolean isClosed = true;
 
@@ -459,7 +460,7 @@ public class SFSession
     }
   }
 
-  protected HttpClient getHttpClient()
+  protected CloseableHttpClient getHttpClient()
   {
     return httpClient;
   }

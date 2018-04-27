@@ -10,16 +10,19 @@ import net.snowflake.client.core.BasicEvent.QueryState;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.jdbc.SnowflakeUtil;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.api.QueryInProgressResponse;
-import java.io.ByteArrayOutputStream;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
@@ -28,10 +31,6 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.zip.GZIPOutputStream;
-import org.apache.http.entity.ByteArrayEntity;
-
-import net.snowflake.client.log.SFLogger;
-import net.snowflake.client.log.SFLoggerFactory;
 
 /**
  * Created by jhuang on 1/28/16.
@@ -79,7 +78,7 @@ public class StmtUtil
 
     Map<String, Object> parametersMap;
     String sessionToken;
-    HttpClient httpClient;
+    CloseableHttpClient httpClient;
     int networkTimeoutInMillis;
     int injectSocketTimeout; // seconds
     int injectClientPause; // seconds
@@ -155,7 +154,7 @@ public class StmtUtil
       return this;
     }
 
-    public StmtInput setHttpClient(HttpClient httpClient)
+    public StmtInput setHttpClient(CloseableHttpClient httpClient)
     {
       this.httpClient = httpClient;
       return this;

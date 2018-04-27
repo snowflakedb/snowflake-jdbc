@@ -19,8 +19,10 @@ import java.net.URI;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.impl.client.CloseableHttpClient;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -62,15 +64,15 @@ public class RestRequest
    * @throws net.snowflake.client.jdbc.SnowflakeSQLException Request timeout Exception or Illegal State Exception i.e.
    *                                                         connection is already shutdown etc
    */
-  static public HttpResponse execute(
-      HttpClient httpClient,
+  static public CloseableHttpResponse execute(
+      CloseableHttpClient httpClient,
       HttpRequestBase httpRequest,
       long retryTimeout,
       int injectSocketTimeout,
       AtomicBoolean canceling,
       boolean withoutCookies) throws IOException, SnowflakeSQLException
   {
-    HttpResponse response = null;
+    CloseableHttpResponse response = null;
 
     // start time for each request,
     // used for keeping track how much time we have spent

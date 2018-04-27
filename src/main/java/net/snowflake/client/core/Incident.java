@@ -21,6 +21,7 @@ import org.apache.http.entity.ByteArrayEntity;
 
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
+import org.apache.http.impl.client.CloseableHttpClient;
 
 /**
  * Incident Event class for triggering and registering Incidents with GS
@@ -64,7 +65,7 @@ public class Incident extends Event
     ObjectMapper mapper = new ObjectMapper();
     String json;
     String response;
-    HttpClient httpClient;
+    CloseableHttpClient httpClient;
     URI incidentURI;
     HttpPost postRequest;
 
