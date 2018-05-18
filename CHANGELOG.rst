@@ -1,3 +1,7 @@
+**JDBC Driver 3.6.0**
+|SNOW-42908| Enabled automatic class loader for SnowflakeDriver class 
+|SNOW-39684| Enable OCSP Response Cache Server by default
+
 **JDBC Driver 3.5.5**
 |SNOW-42722| SF_OCSP_RESPONSE_CACHE_DIR is used to specify the OCSP cache file location.
 |SNOW-39872| Add APPLICATION connection property to allow partner to set the application name.
