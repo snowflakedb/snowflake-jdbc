@@ -523,7 +523,7 @@ public class SFSession
    *
    * @return session token
    */
-  protected String getSessionToken()
+  public String getSessionToken()
   {
     return sessionToken;
   }
@@ -815,7 +815,7 @@ public class SFSession
     return networkTimeoutInMilli;
   }
 
-  protected boolean isClosed()
+  public boolean isClosed()
   {
     return isClosed;
   }
