@@ -48,6 +48,8 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.UUID;
 
+import static net.snowflake.client.core.SFTrustManager.resetOCSPResponseCacherServerURL;
+
 /**
  * Created by jhuang on 1/23/16.
  */
@@ -771,6 +773,29 @@ public class SessionUtil
 
       throw new SFException(ex, ErrorCode.INTERNAL_ERROR,
           "unexpected URI syntax exception:1");
+    }
+
+    if (loginInput.getServerUrl().indexOf(".privatelink.snowflakecomputing.com") > 0)
+    {
+      // Privatelink uses special OCSP Cache server
+      try
+      {
+        URL url = new URL(loginInput.getServerUrl());
+        String host = url.getHost();
+        logger.debug("HOST: {}", host);
+        String ocspCacheServerUrl = String.format(
+            "http://ocsp%s/%s",
+            host.substring(host.indexOf('.')),
+            SFTrustManager.OCSP_CACHE_FILE_NAME);
+        logger.debug("OCSP Cache Server for Privatelink: {}",
+            ocspCacheServerUrl);
+        resetOCSPResponseCacherServerURL(ocspCacheServerUrl);
+      }
+      catch (IOException ex)
+      {
+        throw new SFException(ex, ErrorCode.INTERNAL_ERROR,
+            "unexpected URL syntax exception");
+      }
     }
 
     httpClient = loginInput.getHttpClient();
