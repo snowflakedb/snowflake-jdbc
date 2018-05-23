@@ -1,17 +1,17 @@
+**JDBC Driver 3.6.1**
+|SNOW-43215| Updated JDBC to support OCSP dynamic cache server.
+
 **JDBC Driver 3.6.0**
-|SNOW-42908| Enabled automatic class loader for SnowflakeDriver class 
-|SNOW-39684| Enable OCSP Response Cache Server by default
-
+|SNOW-42908| Enabled the automatic class loader for ``SnowflakeDriver`` class. 
+|SNOW-39684| Enabled the OCSP Response Cache Server by default.
 **JDBC Driver 3.5.5**
-|SNOW-42722| SF_OCSP_RESPONSE_CACHE_DIR is used to specify the OCSP cache file location.
-|SNOW-39872| Add APPLICATION connection property to allow partner to set the application name.
-
-
-
+|SNOW-42722| Added support for SF_OCSP_RESPONSE_CACHE_DIR environment variable to specify the OCSP cache file location.
+|SNOW-39872| Added APPLICATION connection property to allow setting the name for 3rd-party applications.
 **JDBC Driver 3.5.4**
 |SNOW-41484| Fixed URL mismatch error that occurred when using OKTA authentication and the JDBC connection URL contains a port number. 
 **JDBC Driver 3.5.3**
 |SNOW-40230| Removed dependency on ``commons-lang3`` package.
+|SNOW-34464| Added support for key pair authentication.
 **JDBC Driver 3.5.2**
 |SNOW-38455| Upgraded HttpClient to 4.5.5.
 |SNOW-38454| Upgraded Jackson JSON packages to 2.9.4.
@@ -21,7 +21,7 @@
 |SNOW-38486| Added support for checking for OCSP revocation.
 |SNOW-37766| Added support for getting ``SecureRandom`` instances without specifying a provider name; this is required because the driver could be running under the IBM JDK.
 **JDBC Driver 3.4.3**
-|SNOW-34464| Internal feature.
+|SNOW-34464| Internal change for pending feature.
 **JDBC Driver 3.4.2**
 |SNOW-37755| Refactored a server-side fix (SNOW-36580) on the client side.
 |SNOW-37184| Added support for binding object identifiers.
@@ -33,9 +33,9 @@
 |SNOW-37186| Fixed an issue with the NUMBER format in JDBC ``SnowflakeBasicaDataSource.java``.
 **JDBC Driver 3.3.3**
 |SNOW-36917| Fixed an issue where the loader API incorrectly converted timestamp dates earlier than 1582-Oct-04 due to differences between the Julian and Gregorian calendar.
-|SNOW-35613| Internal infrastructure change to add support for pending feature.
+|SNOW-35613| Internal change for pending feature.
 **JDBC Driver 3.3.2**
-|SNOW-32282| To support PUT and GET in Azure (pending feature), BLOB metadata is set to specify that files are uploaded and downloaded using AES CBC key encryption.
+|SNOW-32282| Internal change for pending feature.
 |SNOW-32001| Replaced AWS_ID and AWS_KEY with newer versions.
 **JDBC Driver 3.3.1**
 |SNOW-30511| Fixed issue where Okta returned a 403 error (during federated authentication) due to the driver caching the Okta token in a cookie.
