@@ -92,6 +92,8 @@ public class StmtUtil
 
     String describedJobId;
 
+    long querySubmissionTime; // millis since epoch
+
     public StmtInput() {};
 
     public StmtInput setSql(String sql)
@@ -202,6 +204,12 @@ public class StmtUtil
       this.describedJobId = describedJobId;
       return this;
     }
+
+    public StmtInput setQuerySubmissionTime(long querySubmissionTime)
+    {
+      this.querySubmissionTime = querySubmissionTime;
+      return this;
+    }
   }
 
   /**
@@ -294,7 +302,8 @@ public class StmtUtil
             stmtInput.describeOnly,
             Integer.valueOf(stmtInput.sequenceId),
             stmtInput.bindValues,
-            stmtInput.parametersMap);
+            stmtInput.parametersMap,
+            stmtInput.querySubmissionTime);
 
         if (stmtInput.combineDescribe && !stmtInput.describeOnly)
         {

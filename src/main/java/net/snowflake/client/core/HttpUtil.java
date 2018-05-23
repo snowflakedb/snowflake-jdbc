@@ -274,7 +274,7 @@ public class HttpUtil
    * @throws SnowflakeSQLException if Snowflake error occurs
    * @throws IOException raises if a general IO error occurs
    */
-  static String executeRequest(HttpRequestBase httpRequest,
+  public static String executeRequest(HttpRequestBase httpRequest,
                                HttpClient httpClient,
                                int retryTimeout,
                                int injectSocketTimeout,
