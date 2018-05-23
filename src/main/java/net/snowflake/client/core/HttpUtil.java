@@ -181,7 +181,7 @@ public class HttpUtil
           httpClient = buildHttpClient(
               insecureMode,
               ocspCacheFile,
-              flag != null && !"false".equalsIgnoreCase(flag));
+              flag == null || !"false".equalsIgnoreCase(flag));
         }
       }
     }
