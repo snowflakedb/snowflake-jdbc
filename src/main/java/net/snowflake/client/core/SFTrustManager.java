@@ -14,13 +14,10 @@ import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.util.SFPair;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.IOUtils;
-import org.apache.http.HttpHeaders;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.ssl.SSLInitializationException;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Integer;
@@ -125,8 +122,6 @@ class SFTrustManager implements X509TrustManager
   private static final ASN1ObjectIdentifier SHA256RSA = new ASN1ObjectIdentifier("1.2.840.113549.1.1.11").intern();
   private static final ASN1ObjectIdentifier SHA384RSA = new ASN1ObjectIdentifier("1.2.840.113549.1.1.12").intern();
   private static final ASN1ObjectIdentifier SHA512RSA = new ASN1ObjectIdentifier("1.2.840.113549.1.1.13").intern();
-
-  private static final String CONTENT_TYPE_VALUE = "application/ocsp-request";
   /**
    * Object mapper for JSON encoding and decoding
    */
@@ -206,28 +201,20 @@ class SFTrustManager implements X509TrustManager
   private static final Charset DEFAULT_FILE_ENCODING = Charset.forName("UTF-8");
 
   /**
+   * Default OCSP Cache server host name
+   */
+  public static final String DEFAULT_OCSP_CACHE_HOST = "http://ocsp.snowflakecomputing.com";
+
+  /**
    * OCSP response cache server URL.
    */
-  private static final String SF_OCSP_RESPONSE_CACHE_SERVER_URL;
+  private static String SF_OCSP_RESPONSE_CACHE_SERVER_URL = String.format(
+      "%s/%s", DEFAULT_OCSP_CACHE_HOST, OCSP_CACHE_FILE_NAME);
 
-  static
-  {
-    String url = System.getenv("SF_OCSP_RESPONSE_CACHE_SERVER_URL");
-    if (url == null)
-    {
-      url = System.getProperty(
-          "net.snowflake.jdbc.ocsp_response_cache_server_url");
-    }
-    if (url == null)
-    {
-      SF_OCSP_RESPONSE_CACHE_SERVER_URL = String.format(
-          "http://ocsp.snowflakecomputing.com/%s", OCSP_CACHE_FILE_NAME);
-    }
-    else
-    {
-      SF_OCSP_RESPONSE_CACHE_SERVER_URL = url;
-    }
-  }
+  /**
+   * OCSP Response Cache server Retry URL pattern
+   */
+  private static String SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN;
 
   /**
    * Tolerable validity date range ratio.
@@ -391,6 +378,51 @@ class SFTrustManager implements X509TrustManager
       }
     }
     this.useOcspResponseCacheServer = useOcspResponseCacheServer;
+  }
+
+  /**
+   * Reset OCSP Cache server URL
+   *
+   * @param ocspCacheServerUrl OCSP Cache server URL
+   */
+  public static void resetOCSPResponseCacherServerURL(String ocspCacheServerUrl)
+  {
+    if (ocspCacheServerUrl == null || SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN != null)
+    {
+      return;
+    }
+    SF_OCSP_RESPONSE_CACHE_SERVER_URL = ocspCacheServerUrl;
+    if (!SF_OCSP_RESPONSE_CACHE_SERVER_URL.startsWith(DEFAULT_OCSP_CACHE_HOST))
+    {
+      try
+      {
+        URL url = new URL(SF_OCSP_RESPONSE_CACHE_SERVER_URL);
+        if (url.getPort() > 0)
+        {
+          SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN =
+              String.format("%s://%s:%d/retry/",
+                  url.getProtocol(), url.getHost(), url.getPort()) + "%s/%s";
+        }
+        else
+        {
+          SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN =
+              String.format("%s://%s/retry/",
+                  url.getProtocol(), url.getHost()) + "%s/%s";
+        }
+      }
+      catch (IOException e)
+      {
+        throw new RuntimeException(
+            String.format(
+                "Failed to parse SF_OCSP_RESPONSE_CACHE_SERVER_URL: %s",
+                SF_OCSP_RESPONSE_CACHE_SERVER_URL));
+      }
+    }
+    else
+    {
+      // default OCSP doesn't support retry endpoint yet
+      SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN = null;
+    }
   }
 
   /**
@@ -1025,25 +1057,34 @@ class SFTrustManager implements X509TrustManager
   {
     try
     {
+      byte[] ocspReqDer = req.getEncoded();
+      String ocspReqDerBase64 = Base64.encodeBase64String(ocspReqDer);
+
       Set<String> ocspUrls = getOcspUrls(pairIssuerSubject.right);
       String ocspUrl = ocspUrls.iterator().next(); // first one
-      LOGGER.debug("not hit cache. Fetching OCSP response from CA OCSP server. {0}", ocspUrl);
-      byte[] ocspReqDer = req.getEncoded();
+      URL url;
+      if (SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN != null)
+      {
+        url = new URL(SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN.format(
+            ocspUrl, ocspReqDerBase64
+        ));
+      }
+      else
+      {
+        url = new URL(String.format("%s/%s", ocspUrl, ocspReqDerBase64));
+      }
+      LOGGER.debug(
+          "not hit cache. Fetching OCSP response from CA OCSP server. {0}", url.toString());
 
       long sleepTime = INITIAL_SLEEPING_TIME;
       boolean success = false;
       HttpResponse response = null;
+
       for (int retry = 0; retry < MAX_RETRY_COUNTER; ++retry)
       {
         HttpClient client = getHttpClient();
-        HttpPost post = new HttpPost(ocspUrl);
-        URL url = new URL(ocspUrl);
-
-        post.setHeader(HttpHeaders.CONTENT_TYPE, CONTENT_TYPE_VALUE);
-        post.setHeader(HttpHeaders.HOST, url.getHost());
-        post.setEntity(new ByteArrayEntity(ocspReqDer));
-
-        response = client.execute(post);
+        HttpGet get = new HttpGet(url.toString());
+        response = client.execute(get);
         if (response != null && response.getStatusLine().getStatusCode() == HttpStatus.SC_OK)
         {
           success = true;
