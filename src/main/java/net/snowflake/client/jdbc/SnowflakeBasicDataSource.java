@@ -177,6 +177,11 @@ public class SnowflakeBasicDataSource implements DataSource
   {
     this.properties.put("ssl", String.valueOf(ssl));
   }
+  
+  public void setAuthenticator(String authenticator)
+  {
+    this.properties.put("authenticator", authenticator);
+  }
 
   public String getUrl()
   {
