@@ -21,7 +21,7 @@ import net.snowflake.client.log.SFLoggerFactory;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
- * Class representing a unit of work for uploader. Corresponds to a collection 
+ * Class representing a unit of work for uploader. Corresponds to a collection
  * of data files for a single processing stage.
  */
 public class BufferStage
@@ -37,16 +37,16 @@ public class BufferStage
 
   };
 
-  
+
   public static final int  FILE_BUCKET_SIZE = 64;   // threshold to schedule processing
   public static final long FILE_SIZE = 50000000L;   // individual file, 50Mb
-  
+
   private State _state;
 
   private final File _directory;
 
   private final String _location;
-  
+
   private final String _stamp;
 
   private final Operation _op;
@@ -68,7 +68,7 @@ public class BufferStage
 
   // Number of files in the stage
   private int _fileCount = 0;
-  
+
   // Counter for ID generation
   private static AtomicLong MARK = new AtomicLong(1);
 
@@ -77,15 +77,12 @@ public class BufferStage
 
   // Current output stream
   private OutputStream _outstream = null;
-  
+
   // Current file
   private File _file = null;
-  
+
   // List of all scheduled uploaders
   private ArrayList<FileUploader> _uploaders = new ArrayList<>();
-
-  private static SimpleDateFormat _sdf = new SimpleDateFormat(
-          "yyyyMMdd'_'HHmmss'_'SSS");
 
   private BufferStage() {
     _directory = null;
@@ -102,7 +99,9 @@ public class BufferStage
 
     _state = State.CREATED;
     _loader = loader;
-    _stamp = _sdf.format(new Date());
+
+    _stamp = new SimpleDateFormat(
+        "yyyyMMdd'_'HHmmss'_'SSS").format(new Date());
     _csvFileBucketSize = csvFileBucketSize;
     _csvFileSize = csvFileSize;
 
@@ -135,7 +134,7 @@ public class BufferStage
     }
 
     _op = op;
-    
+
     openFile();
   }
 
@@ -161,10 +160,10 @@ public class BufferStage
     }
 
   }
-  
+
   private static byte[] newLineBytes = "\n".getBytes(UTF_8);
 
-  
+
   // not thread safe
   public boolean stageData(byte[] line, boolean newLine) throws IOException
   {
@@ -202,15 +201,15 @@ public class BufferStage
       openFile();
       _currentSize = 0;
     }
-    
+
     return _fileCount > this._csvFileBucketSize;
   }
 
-  
+
   /**
    * Wait for all files to finish uploading and schedule stage for processing
    * @throws InterruptedException
-   * @throws IOException 
+   * @throws IOException
    */
   void completeUploading() throws InterruptedException, IOException
   {
@@ -228,8 +227,8 @@ public class BufferStage
       // delete empty file
       _file.delete();
     }
-    
-    
+
+
     for(FileUploader fu: _uploaders)
     {
       // Finish all files being uploaded
@@ -239,7 +238,7 @@ public class BufferStage
     // Delete the directory once we are done (for easier tracking
     // of what is going on)
     _directory.deleteOnExit();
-    
+
     if (this._rowCount == 0)
     {
       setState(State.EMPTY);
@@ -277,7 +276,7 @@ public class BufferStage
   {
     this._id = _id;
   }
- 
+
   public State state()
   {
     return _state;
@@ -307,7 +306,7 @@ public class BufferStage
     else
       return fname;
   }
-  
+
   /**
    * Escape file separator char to underscore. This prevents the file name
    * from using file path separator.

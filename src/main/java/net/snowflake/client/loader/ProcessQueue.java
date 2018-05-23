@@ -117,7 +117,10 @@ public class ProcessQueue implements Runnable
                   + "\" FROM '" + remoteStage
                   + "' on_error='continue'"
                   + " file_format=("
-                  + "field_optionally_enclosed_by='\"')";
+                  + "field_optionally_enclosed_by='\"'"
+                  + "empty_field_as_null="
+                  + Boolean.toString(!_loader._copyEmptyFieldAsEmpty)
+                  + ")";
           ResultSet rs = conn.createStatement().executeQuery(currentCommand);
 
           while(rs.next()) {
@@ -152,7 +155,10 @@ public class ProcessQueue implements Runnable
                       + "\" FROM '" + remoteStage
                       + "' validation_mode='return_all_errors'"
                       + " file_format=("
-                      + "field_optionally_enclosed_by='\"')";
+                      + "field_optionally_enclosed_by='\"'"
+                      + "empty_field_as_null="
+                      + Boolean.toString(!_loader._copyEmptyFieldAsEmpty)
+                      + ")";
               ResultSet errorsSet = conn.createStatement()
                       .executeQuery(currentCommand);
 

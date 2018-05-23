@@ -100,6 +100,8 @@ public class StreamLoader implements Loader, Runnable
 
   boolean _mapTimeToTimestamp = false; // map TIME to TIMESTAMP. Informatica V1 connector behavior
 
+  boolean _copyEmptyFieldAsEmpty = false; // COPY command option to set EMPTY_FIELD_AS_NULL = false
+
   boolean _testMode = false;
 
   private final Connection _putConn;
@@ -205,6 +207,9 @@ public class StreamLoader implements Loader, Runnable
         break;
       case useLocalTimezone:
         _useLocalTimezone = Boolean.valueOf(String.valueOf(value));
+        break;
+      case copyEmptyFieldAsEmpty:
+        _copyEmptyFieldAsEmpty = Boolean.valueOf(String.valueOf(value));
         break;
       case mapTimeToTimestamp:
         // NOTE: this is a special flag to change mapping
