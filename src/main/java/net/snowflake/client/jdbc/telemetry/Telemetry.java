@@ -259,8 +259,17 @@ public class Telemetry
    * For test use only
    * @return the number of cached logs
    */
-  int bufferSize()
+  public int bufferSize()
   {
     return this.logBatch.size();
+  }
+
+  /**
+   * For test use only
+   * @return a copy of the logs currently in the buffer
+   */
+  public LinkedList<TelemetryData> logBuffer()
+  {
+    return new LinkedList<>(this.logBatch);
   }
 }

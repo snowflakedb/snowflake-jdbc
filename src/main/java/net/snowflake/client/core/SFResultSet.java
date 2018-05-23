@@ -5,6 +5,10 @@
 package net.snowflake.client.core;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import net.snowflake.client.jdbc.telemetry.Telemetry;
+import net.snowflake.client.jdbc.telemetry.TelemetryData;
+import net.snowflake.client.jdbc.telemetry.TelemetryField;
+import net.snowflake.client.jdbc.telemetry.TelemetryUtil;
 import net.snowflake.common.core.SqlState;
 import net.snowflake.client.core.BasicEvent.QueryState;
 import net.snowflake.client.jdbc.ErrorCode;
@@ -12,6 +16,7 @@ import net.snowflake.client.jdbc.SnowflakeChunkDownloader;
 import net.snowflake.client.jdbc.SnowflakeResultChunk;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 
+import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -28,20 +33,6 @@ import static net.snowflake.client.core.StmtUtil.eventHandler;
 public class SFResultSet extends SFBaseResultSet
 {
   static final SFLogger logger = SFLoggerFactory.getLogger(SFResultSet.class);
-
-  // field names for telemetry logging
-  private enum JobField
-  {
-    TIME_CONSUME_FIRST_RESULT("time_consume_first_result"),
-    TIME_CONSUME_LAST_RESULT("time_consume_last_result");
-
-    public final String field;
-
-    JobField(String field)
-    {
-      this.field = field;
-    }
-  }
 
   private int columnCount = 0;
 
@@ -76,6 +67,9 @@ public class SFResultSet extends SFBaseResultSet
 
   private final boolean arrayBindSupported;
 
+  private Telemetry telemetryClient;
+
+
   /**
    * Constructor takes a result from the API response that we get from
    * executing a SQL statement.
@@ -99,6 +93,7 @@ public class SFResultSet extends SFBaseResultSet
     this.firstChunkTime = System.currentTimeMillis();
 
     SFSession session = this.statement.getSession();
+    this.telemetryClient = session.getTelemetryClient();
 
     ResultUtil.ResultInput resultInput = new ResultUtil.ResultInput();
     resultInput.setResultJSON(result)
@@ -150,11 +145,12 @@ public class SFResultSet extends SFBaseResultSet
       sortResultSet();
     }
 
-//    if (resultOutput.sendResultTime != 0)
-//    {
-//      // TODO log to telemetry
-//      long timeConsumeFirstResult = this.firstChunkTime - resultOutput.sendResultTime;
-//    }
+    // if server gives a send time, log time it took to arrive
+    if (resultOutput.sendResultTime != 0)
+    {
+      long timeConsumeFirstResult = this.firstChunkTime - resultOutput.sendResultTime;
+      logMetric(TelemetryField.TIME_CONSUME_FIRST_RESULT, timeConsumeFirstResult);
+    }
 
     eventHandler.triggerStateTransition(BasicEvent.QueryState.CONSUMING_RESULT,
         String.format(QueryState.CONSUMING_RESULT.getArgString(), queryId, 0));
@@ -248,10 +244,34 @@ public class SFResultSet extends SFBaseResultSet
     else if (chunkCount > 0)
     {
       logger.debug("End of chunks");
-      chunkDownloader.terminate();
+      SnowflakeChunkDownloader.Metrics metrics = chunkDownloader.terminate();
+      logChunkDownloaderMetrics(metrics);
     }
 
     return false;
+  }
+
+  private void logMetric(TelemetryField field, long value)
+  {
+    TelemetryData data = TelemetryUtil.buildJobData(this.queryId, field, value);
+    try
+    {
+      this.telemetryClient.addLogToBatch(data);
+    }
+    catch (IOException ex)
+    {
+      logger.warn("Exception encountered while sending metrics to telemetry endpoint.");
+    }
+  }
+
+  private void logChunkDownloaderMetrics(SnowflakeChunkDownloader.Metrics metrics)
+  {
+    if (metrics != null)
+    {
+      logMetric(TelemetryField.TIME_WAITING_FOR_CHUNKS, metrics.millisWaiting);
+      logMetric(TelemetryField.TIME_DOWNLOADING_CHUNKS, metrics.millisDownloading);
+      logMetric(TelemetryField.TIME_PARSING_CHUNKS, metrics.millisParsing);
+    }
   }
 
   /**
@@ -271,6 +291,11 @@ public class SFResultSet extends SFBaseResultSet
     if (fetchNextRow())
     {
       row++;
+      if (isLast())
+      {
+        long timeConsumeLastResult = System.currentTimeMillis() - this.firstChunkTime;
+        logMetric(TelemetryField.TIME_CONSUME_LAST_RESULT, timeConsumeLastResult);
+      }
       return true;
     }
     else
@@ -406,7 +431,8 @@ public class SFResultSet extends SFBaseResultSet
 
     if (chunkDownloader != null)
     {
-      chunkDownloader.terminate();
+      SnowflakeChunkDownloader.Metrics metrics = chunkDownloader.terminate();
+      logChunkDownloaderMetrics(metrics);
       firstChunkSortedRowSet = null;
       firstChunkRowset = null;
       currentChunk = null;

@@ -13,6 +13,7 @@ import net.snowflake.common.core.SqlState;
 
 import org.apache.http.client.methods.HttpRequestBase;
 
+import java.io.IOException;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
@@ -584,6 +585,15 @@ public class SFStatement
 
       httpRequest.releaseConnection();
       httpRequest = null;
+    }
+
+    try
+    {
+      session.getTelemetryClient().sendBatch();
+    }
+    catch (IOException ex)
+    {
+      logger.warn("Telemetry client failed to send batch metrics.");
     }
 
     isFileTransfer = false;

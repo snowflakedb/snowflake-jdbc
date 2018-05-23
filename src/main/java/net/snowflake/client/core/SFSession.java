@@ -20,6 +20,7 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
 
+import java.io.IOException;
 import java.security.PrivateKey;
 import java.sql.SQLClientInfoException;
 import java.sql.SQLException;
@@ -560,6 +561,7 @@ public class SFSession
     try
     {
       SessionUtil.closeSession(loginInput);
+      closeTelemetryClient();
       isClosed = true;
     }
     finally
@@ -998,5 +1000,20 @@ public class SFSession
       telemetryClient = Telemetry.createTelemetry(this);
     }
     return telemetryClient;
+  }
+
+  public void closeTelemetryClient()
+  {
+    if (telemetryClient != null)
+    {
+      try
+      {
+        telemetryClient.close();
+      }
+      catch (IOException ex)
+      {
+        logger.warn("Telemetry client failed to submit metrics on close.");
+      }
+    }
   }
 }
