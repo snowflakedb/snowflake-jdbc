@@ -23,6 +23,7 @@ public enum SnowflakeType {
   TEXT, CHAR, INTEGER, FIXED, REAL, TIMESTAMP, TIMESTAMP_LTZ, TIMESTAMP_NTZ, TIMESTAMP_TZ,
   DATE, TIME, BOOLEAN, ARRAY, OBJECT, VARIANT, BINARY, ANY;
 
+  private static Object LOCK_CALENDAR = new Object();
   private static GregorianCalendar CALENDAR_LOCAL;
 
   /**
@@ -163,7 +164,10 @@ public enum SnowflakeType {
       } else {
         sdf.setCalendar(CALENDAR_LOCAL);
       }
-      return sdf.format(o);
+      synchronized(LOCK_CALENDAR)
+      {
+        return sdf.format(o);
+      }
     }
 
     if (c == Double.class) {
