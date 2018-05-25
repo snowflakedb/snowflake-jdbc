@@ -11,9 +11,11 @@ import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.StringEntity;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.rmi.UnexpectedException;
 import java.sql.Connection;
 import java.util.LinkedList;
@@ -52,9 +54,14 @@ public class Telemetry
   private Telemetry(SFSession session, int flushSize)
   {
     this.session = session;
-
     this.serverUrl = session.getUrl();
-    this.telemetryUrl = this.serverUrl + SF_PATH_TELEMETRY;
+
+    if(this.serverUrl.endsWith("/"))
+      this.telemetryUrl =
+          this.serverUrl.substring(0, this.serverUrl.length()-1)
+              + SF_PATH_TELEMETRY;
+    else this.telemetryUrl = this.serverUrl + SF_PATH_TELEMETRY;
+
     this.logBatch = new LinkedList<>();
     this.isClosed = false;
     this.forceFlushSize = flushSize;
