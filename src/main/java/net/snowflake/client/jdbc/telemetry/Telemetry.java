@@ -21,9 +21,8 @@ import java.util.LinkedList;
 
 /**
  * Copyright (c) 2018 Snowflake Computing Inc. All rights reserved.
- *
+ * <p>
  * Telemetry Service Interface
- *
  */
 public class Telemetry
 {
@@ -31,6 +30,13 @@ public class Telemetry
       SFLoggerFactory.getLogger(SFSession.class);
 
   private static final String SF_PATH_TELEMETRY = "/telemetry/send";
+
+  // if the number of cached logs is larger than this threshold,
+  // the telemetry connector will flush the buffer automatically.
+  private final int forceFlushSize;
+
+  private static final int DEFAULT_FORCE_FLUSH_SIZE = 100;
+
   private final String serverUrl;
   private final String telemetryUrl;
 
@@ -39,34 +45,44 @@ public class Telemetry
   private LinkedList<TelemetryData> logBatch;
   private static final ObjectMapper mapper = new ObjectMapper();
 
+  private boolean isClosed;
+
   private Object locker = new Object();
 
-  private Telemetry(SFSession session)
+  private Telemetry(SFSession session, int flushSize)
   {
     this.session = session;
 
     this.serverUrl = session.getUrl();
     this.telemetryUrl = this.serverUrl + SF_PATH_TELEMETRY;
     this.logBatch = new LinkedList<>();
+    this.isClosed = false;
+    this.forceFlushSize = flushSize;
 
   }
 
 
   /**
    * Initialize the telemetry connector
+   *
    * @param conn
    * @return
    */
-  public static Telemetry createTelemetry(Connection conn)
+  public static Telemetry createTelemetry(Connection conn, int flushSize)
   {
-    if(conn instanceof SnowflakeConnectionV1)
+    if (conn instanceof SnowflakeConnectionV1)
     {
-      return createTelemetry(((SnowflakeConnectionV1) conn).getSfSession());
+      return createTelemetry(((SnowflakeConnectionV1) conn).getSfSession(), flushSize);
     }
     logger.debug("input connection is not a SnowflakeConnection");
     return null;
-
   }
+
+  public static Telemetry createTelemetry(Connection conn)
+  {
+    return createTelemetry(conn, DEFAULT_FORCE_FLUSH_SIZE);
+  }
+
 
   /**
    * Initialize the telemetry connector
@@ -75,31 +91,77 @@ public class Telemetry
    */
   public static Telemetry createTelemetry(SFSession session)
   {
-    return new Telemetry(session);
+    return createTelemetry(session, DEFAULT_FORCE_FLUSH_SIZE);
+  }
+
+  public static Telemetry createTelemetry(SFSession session, int flushSize)
+  {
+    return new Telemetry(session, flushSize);
   }
 
   /**
    * Add a log data to batch
    */
-  public void addLogToBatch(TelemetryData log)
+  public void addLogToBatch(TelemetryData log) throws IOException
   {
+    if (isClosed)
+    {
+      throw new IOException("Telemetry connector is closed");
+    }
     synchronized (locker)
     {
       this.logBatch.add(log);
     }
+
+    if (this.logBatch.size() >= this.forceFlushSize)
+    {
+      this.sendBatch();
+    }
   }
 
-  public void addLogToBatch(ObjectNode message, long timeStamp)
+  public void addLogToBatch(ObjectNode message, long timeStamp) throws
+      IOException
   {
-    this.addLogToBatch(new TelemetryData(message,timeStamp));
+    this.addLogToBatch(new TelemetryData(message, timeStamp));
+  }
+
+  /**
+   * close telemetry connector, send all cached logs
+   */
+  public void close() throws IOException
+  {
+    if (isClosed)
+    {
+      throw new IOException("Telemetry connector is closed");
+    }
+    try
+    {
+      this.sendBatch();
+    } catch (IOException e)
+    {
+      logger.error("Send logs failed on closing", e);
+    } finally
+    {
+      this.isClosed = true;
+    }
+  }
+
+  public boolean isClosed()
+  {
+    return this.isClosed;
   }
 
   /**
    * Send all cached logs to server
+   *
    * @throws IOException
    */
   public boolean sendBatch() throws IOException
   {
+    if (isClosed)
+    {
+      throw new IOException("Telemetry connector is closed");
+    }
     LinkedList<TelemetryData> tmpList;
     synchronized (locker)
     {
@@ -107,39 +169,42 @@ public class Telemetry
       this.logBatch = new LinkedList<>();
     }
 
-    if(session.isClosed())
+    if (session.isClosed())
     {
       throw new UnexpectedException("Session is closed when sending log");
     }
 
-    //session shared with JDBC
-    String sessionToken = this.session.getSessionToken();
-    HttpClient httpClient = HttpUtil.getHttpClient();
-
-    HttpPost post = new HttpPost(this.telemetryUrl);
-    post.setEntity(new StringEntity(logsToString(tmpList)));
-    post.setHeader("Content-type", "application/json");
-    post.setHeader("Authorization","Snowflake Token=\""+sessionToken+"\"");
-
-    String response = null;
-
-    try
+    if (!tmpList.isEmpty())
     {
-      response = HttpUtil.executeRequest(post,httpClient,1000,0,null);
-    } catch (SnowflakeSQLException e)
-    {
-      logger.error(
-          "Telemetry request failed, " +
-              "response: {}, exception: {}", response, e.getMessage());
+      //session shared with JDBC
+      String sessionToken = this.session.getSessionToken();
+      HttpClient httpClient = HttpUtil.getHttpClient();
 
-      //if failed, add telemetry data back to list
-      for (TelemetryData data: tmpList)
+      HttpPost post = new HttpPost(this.telemetryUrl);
+      post.setEntity(new StringEntity(logsToString(tmpList)));
+      post.setHeader("Content-type", "application/json");
+      post.setHeader("Authorization", "Snowflake Token=\"" + sessionToken +
+          "\"");
+
+      String response = null;
+
+      try
       {
-        this.addLogToBatch(data);
-      }
-      return false;
-    }
+        response = HttpUtil.executeRequest(post, httpClient, 1000, 0, null);
+      } catch (SnowflakeSQLException e)
+      {
+        logger.error(
+            "Telemetry request failed, " +
+                "response: {}, exception: {}", response, e.getMessage());
 
+        //if failed, add telemetry data back to list
+        for (TelemetryData data : tmpList)
+        {
+          this.addLogToBatch(data);
+        }
+        return false;
+      }
+    }
     return true;
   }
 
@@ -162,6 +227,7 @@ public class Telemetry
 
   /**
    * convert a list of log to a JSON object
+   *
    * @param telemetryData a list of log
    * @return the result json string
    */
@@ -169,22 +235,32 @@ public class Telemetry
   {
     ObjectNode node = mapper.createObjectNode();
     ArrayNode logs = mapper.createArrayNode();
-    for (TelemetryData data: telemetryData)
+    for (TelemetryData data : telemetryData)
     {
       logs.add(data.toJson());
     }
-    node.set("logs",logs);
+    node.set("logs", logs);
 
     return node;
   }
 
   /**
    * convert a list of log to a JSON String
+   *
    * @param telemetryData a list of log
    * @return the result json string
    */
   static String logsToString(LinkedList<TelemetryData> telemetryData)
   {
     return logsToJson(telemetryData).toString();
+  }
+
+  /**
+   * For test use only
+   * @return the number of cached logs
+   */
+  int bufferSize()
+  {
+    return this.logBatch.size();
   }
 }
