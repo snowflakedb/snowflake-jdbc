@@ -152,6 +152,20 @@ public class SnowflakeChunkDownloader
                                                              threadFactory);
   }
 
+  public class Metrics
+  {
+    public final long millisWaiting;
+    public final long millisDownloading;
+    public final long millisParsing;
+    private Metrics()
+    {
+      SnowflakeChunkDownloader outer = SnowflakeChunkDownloader.this;
+      millisWaiting = outer.numberMillisWaitingForChunks;
+      millisDownloading = outer.totalMillisDownloadingChunks.get();
+      millisParsing = outer.totalMillisParsingChunks.get();
+    }
+  }
+
   /**
    * Constructor to initialize downloader
    * @param colCount number of columns to expect
@@ -424,7 +438,7 @@ public class SnowflakeChunkDownloader
   /**
    * terminate the downloader
    */
-  public void terminate()
+  public Metrics terminate()
   {
     if (!terminated)
     {
@@ -445,7 +459,9 @@ public class SnowflakeChunkDownloader
       chunkDataCache.clear();
 
       terminated = true;
+      return new Metrics();
     }
+    return null;
   }
 
   /**
