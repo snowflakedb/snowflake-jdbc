@@ -99,7 +99,7 @@ public class FileUploader implements Runnable {
         String putStatement = "PUT "
                               + (attempt > 0 ? "/* retry:"+attempt+" */ " : "")
                               + "'file://"
-                              + _file.getCanonicalPath().replaceAll("\\\\\\\\", "\\\\")
+                              + _file.getCanonicalPath().replaceAll("\\\\", "\\\\\\\\")
                               + "' '"
                               + remoteStage
                               + "' parallel=10"        // upload chunks in parallel
