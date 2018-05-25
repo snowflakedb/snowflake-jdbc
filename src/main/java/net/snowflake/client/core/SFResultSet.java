@@ -29,6 +29,20 @@ public class SFResultSet extends SFBaseResultSet
 {
   static final SFLogger logger = SFLoggerFactory.getLogger(SFResultSet.class);
 
+  // field names for telemetry logging
+  private enum JobField
+  {
+    TIME_CONSUME_FIRST_RESULT("time_consume_first_result"),
+    TIME_CONSUME_LAST_RESULT("time_consume_last_result");
+
+    public final String field;
+
+    JobField(String field)
+    {
+      this.field = field;
+    }
+  }
+
   private int columnCount = 0;
 
   private int currentChunkRowCount = 0;
@@ -48,6 +62,9 @@ public class SFResultSet extends SFBaseResultSet
   private boolean sortResult = false;
 
   private Object[][] firstChunkSortedRowSet;
+
+  // time the first chunk is consumed at (timestamp taken at object creation)
+  private final long firstChunkTime;
 
   private long chunkCount = 0;
 
@@ -79,6 +96,7 @@ public class SFResultSet extends SFBaseResultSet
     this.statement = statement;
     this.columnCount = 0;
     this.sortResult = sortResult;
+    this.firstChunkTime = System.currentTimeMillis();
 
     SFSession session = this.statement.getSession();
 
@@ -131,6 +149,12 @@ public class SFResultSet extends SFBaseResultSet
 
       sortResultSet();
     }
+
+//    if (resultOutput.sendResultTime != 0)
+//    {
+//      // TODO log to telemetry
+//      long timeConsumeFirstResult = this.firstChunkTime - resultOutput.sendResultTime;
+//    }
 
     eventHandler.triggerStateTransition(BasicEvent.QueryState.CONSUMING_RESULT,
         String.format(QueryState.CONSUMING_RESULT.getArgString(), queryId, 0));

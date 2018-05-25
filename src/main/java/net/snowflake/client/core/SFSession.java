@@ -10,6 +10,7 @@ import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.jdbc.SnowflakeType;
 import net.snowflake.client.jdbc.SnowflakeUtil;
+import net.snowflake.client.jdbc.telemetry.Telemetry;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.ClientAuthnDTO;
@@ -170,6 +171,9 @@ public class SFSession
   private Level tracingLevel = Level.INFO;
 
   private List<SFException> sqlWarnings = new ArrayList<>();
+
+  // client to log session metrics to telemetry in GS
+  private Telemetry telemetryClient;
 
   public void addProperty(SFSessionProperty sfSessionProperty,
                           Object propertyValue)
@@ -978,5 +982,21 @@ public class SFSession
   public void clearSqlWarnings()
   {
     sqlWarnings.clear();
+  }
+
+  public synchronized Telemetry getTelemetryClient()
+  {
+    // initialize for the first time. this should only be done after session
+    // properties have been set, else the client won't properly resolve the URL.
+    if (telemetryClient == null)
+    {
+      if (getUrl() == null)
+      {
+        logger.error("Telemetry client created before session properties set.");
+        return null;
+      }
+      telemetryClient = Telemetry.createTelemetry(this);
+    }
+    return telemetryClient;
   }
 }

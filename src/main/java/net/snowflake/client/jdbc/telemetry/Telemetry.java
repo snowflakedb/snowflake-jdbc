@@ -59,12 +59,23 @@ public class Telemetry
    */
   public static Telemetry createTelemetry(Connection conn)
   {
-    if(conn instanceof SnowflakeConnectionV1){
-      return new Telemetry(((SnowflakeConnectionV1) conn).getSfSession());
+    if(conn instanceof SnowflakeConnectionV1)
+    {
+      return createTelemetry(((SnowflakeConnectionV1) conn).getSfSession());
     }
     logger.debug("input connection is not a SnowflakeConnection");
     return null;
 
+  }
+
+  /**
+   * Initialize the telemetry connector
+   * @param session
+   * @return
+   */
+  public static Telemetry createTelemetry(SFSession session)
+  {
+    return new Telemetry(session);
   }
 
   /**
@@ -96,7 +107,8 @@ public class Telemetry
       this.logBatch = new LinkedList<>();
     }
 
-    if(session.isClosed()){
+    if(session.isClosed())
+    {
       throw new UnexpectedException("Session is closed when sending log");
     }
 

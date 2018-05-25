@@ -26,17 +26,21 @@ class QueryExecDTO
 
   private String describedJobId;
 
+  private long querySubmissionTime;
+
   QueryExecDTO(String sqlText,
                boolean describeOnly,
                Integer sequenceId,
                Map<String, ParameterBindingDTO> bindings,
-               Map<String, Object> parameters)
+               Map<String, Object> parameters,
+               long querySubmissionTime)
   {
     this.sqlText = sqlText;
     this.describeOnly = describeOnly;
     this.sequenceId = sequenceId;
     this.bindings = bindings;
     this.parameters = parameters;
+    this.querySubmissionTime = querySubmissionTime;
   }
 
   public String getSqlText()
@@ -99,5 +103,15 @@ class QueryExecDTO
   public void setDescribedJobId(String describedJobId)
   {
     this.describedJobId = describedJobId;
+  }
+
+  public long getQuerySubmissionTime()
+  {
+    return querySubmissionTime;
+  }
+
+  public void setQuerySubmissionTime(long querySubmissionTime)
+  {
+    this.querySubmissionTime = querySubmissionTime;
   }
 }

@@ -104,6 +104,7 @@ public class ResultUtil
     TimeZone timeZone;
     boolean honorClientTZForTimestampNTZ;
     SFBinaryFormat binaryFormatter;
+    long sendResultTime;
 
     public long getChunkCount()
     {
@@ -220,6 +221,11 @@ public class ResultUtil
     public SFBinaryFormat getBinaryFormatter()
     {
       return binaryFormatter;
+    }
+
+    public long getSendResultTime()
+    {
+      return sendResultTime;
     }
   }
 
@@ -451,6 +457,13 @@ public class ResultUtil
               .path("arrayBindSupported");
     resultOutput.arrayBindSupported = !arrayBindSupported.isMissingNode()
                                       && arrayBindSupported.asBoolean();
+
+    // time result sent by GS (epoch time in millis)
+    JsonNode sendResultTimeNode = rootNode.path("data").path("sendResultTime");
+    if (!sendResultTimeNode.isMissingNode())
+    {
+      resultOutput.sendResultTime = sendResultTimeNode.longValue();
+    }
 
     logger.debug("result version={}", resultOutput.resultVersion);
 

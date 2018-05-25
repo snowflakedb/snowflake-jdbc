@@ -345,7 +345,8 @@ public class SFStatement
           .setCanceling(canceling)
           .setRetry(false)
           .setDescribedJobId(describeJobUUID)
-          .setCombineDescribe(session.getEnableCombineDescribe());
+          .setCombineDescribe(session.getEnableCombineDescribe())
+          .setQuerySubmissionTime(System.currentTimeMillis());
 
       if (canceling.get())
       {
