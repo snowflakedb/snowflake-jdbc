@@ -1,6 +1,9 @@
+**JDBC Driver 3.6.2**
+|SNOW-44536| Fixed Loader API to support CSV filenames including spaces.
+|SNOW-44497| Fixed Loader API to suppress race condigion in date formatting
+|SNOW-44405| Added copyEmptyFieldAsEmpty to Loader API to support EMPTY_FIELD_AS_NULL=false option for COPY command.
 **JDBC Driver 3.6.1**
 |SNOW-43215| Updated JDBC to support OCSP dynamic cache server.
-
 **JDBC Driver 3.6.0**
 |SNOW-42908| Enabled the automatic class loader for ``SnowflakeDriver`` class. 
 |SNOW-39684| Enabled the OCSP Response Cache Server by default.
