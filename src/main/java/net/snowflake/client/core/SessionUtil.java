@@ -22,6 +22,7 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.SystemDefaultHttpClient;
 import org.apache.http.message.BasicHeader;
 import org.apache.http.message.HeaderGroup;
@@ -137,7 +138,7 @@ public class SessionUtil
     private String warehouse;
     private String role;
     private String authenticator;
-    private HttpClient httpClient;
+    private CloseableHttpClient httpClient;
     private String accountName;
     private int loginTimeout = -1; // default is invalid
     private String userName;
@@ -196,7 +197,7 @@ public class SessionUtil
       return this;
     }
 
-    public LoginInput setHttpClient(HttpClient httpClient)
+    public LoginInput setHttpClient(CloseableHttpClient httpClient)
     {
       this.httpClient = httpClient;
       return this;
@@ -304,7 +305,7 @@ public class SessionUtil
       return this;
     }
 
-    public HttpClient getHttpClient()
+    public CloseableHttpClient getHttpClient()
     {
       return httpClient;
     }
