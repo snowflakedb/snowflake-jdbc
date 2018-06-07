@@ -39,7 +39,7 @@ public class BufferStage
 
 
   public static final int  FILE_BUCKET_SIZE = 64;   // threshold to schedule processing
-  public static final long FILE_SIZE = 50000000L;   // individual file, 50Mb
+  public static final long FILE_SIZE = 50L * 1024L * 1024L;   // individual file, 50Mb
 
   private State _state;
 
