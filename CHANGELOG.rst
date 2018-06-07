@@ -1,9 +1,13 @@
+**JDBC Driver 3.6.3**
+|SNOW-43251| Fixed JDBC Driver Raising Erroneous Exception when COPY DML Loads 0 Files
+
+
 **JDBC Driver 3.6.2**
-|SNOW-44536| Fixed Loader API to support CSV filenames including spaces.
-|SNOW-44497| Fixed Loader API to suppress race condigion in date formatting
-|SNOW-44405| Added copyEmptyFieldAsEmpty to Loader API to support EMPTY_FIELD_AS_NULL=false option for COPY command.
+|SNOW-44536| Fixed Loader API to support CSV filenames that contain spaces.
+|SNOW-44497| Fixed Loader API to suppress race conditions for date formatting.
+|SNOW-44405| Added ``copyEmptyFieldAsEmpty`` to Loader API to support ``EMPTY_FIELD_AS_NULL=false`` option for COPY command.
 **JDBC Driver 3.6.1**
-|SNOW-43215| Updated JDBC to support OCSP dynamic cache server.
+|SNOW-43215| Updated the driver to support OCSP dynamic cache server for PrivateLink.
 **JDBC Driver 3.6.0**
 |SNOW-42908| Enabled the automatic class loader for ``SnowflakeDriver`` class. 
 |SNOW-39684| Enabled the OCSP Response Cache Server by default.
@@ -11,7 +15,7 @@
 |SNOW-42722| Added support for SF_OCSP_RESPONSE_CACHE_DIR environment variable to specify the OCSP cache file location.
 |SNOW-39872| Added APPLICATION connection property to allow setting the name for 3rd-party applications.
 **JDBC Driver 3.5.4**
-|SNOW-41484| Fixed URL mismatch error that occurred when using OKTA authentication and the JDBC connection URL contains a port number. 
+|SNOW-41484| Fixed URL mismatch error that occurred when using OKTA authentication and the JDBC connection URL contains a port number.
 **JDBC Driver 3.5.3**
 |SNOW-40230| Removed dependency on ``commons-lang3`` package.
 |SNOW-34464| Added support for key pair authentication.
