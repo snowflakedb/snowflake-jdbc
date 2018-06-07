@@ -19,8 +19,8 @@ import java.util.regex.Pattern;
 public enum SFSessionProperty
 {
   SERVER_URL("serverURL", true, String.class),
-  USER("user", true, String.class),
-  PASSWORD("password", true, String.class),
+  USER("user", false, String.class),
+  PASSWORD("password", false, String.class),
   ACCOUNT("account", true, String.class),
   DATABASE("database", false, String.class, "db"),
   SCHEMA("schema", false, String.class),
