@@ -117,6 +117,9 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
 
   private String destFileNameForStreamSource;
 
+  public StageInfo getStageInfo() {
+    return this.stageInfo;
+  }
 
   // Encryption material
   private List<RemoteStoreFileEncryptionMaterial> encryptionMaterial;
