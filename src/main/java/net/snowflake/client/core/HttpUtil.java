@@ -355,7 +355,11 @@ public class HttpUtil
       }
 
       writer = new StringWriter();
-      IOUtils.copy(response.getEntity().getContent(), writer, "UTF-8");
+      try (InputStream ins = response.getEntity().getContent())
+      {
+        IOUtils.copy(ins, writer, "UTF-8");
+      }
+
       theString = writer.toString();
     }
     finally
