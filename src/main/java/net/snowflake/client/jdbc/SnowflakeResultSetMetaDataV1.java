@@ -47,7 +47,7 @@ class SnowflakeResultSetMetaDataV1 extends SnowflakeResultSetMetaData
   }
 
   /**
-   * @return index of the column by name
+   * @return index of the column by name, index starts from zero
    */
   public int getColumnIndex(String columnName)
   {

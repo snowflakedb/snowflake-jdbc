@@ -902,7 +902,10 @@ public class ResultUtil
       {
         if (resultSet.getStatementType() == SFStatementType.COPY)
         {
-          updateCount += resultSet.getLong(4); // add up number of rows loaded
+          SFResultSetMetaData resultSetMetaData = resultSet.getMetaData();
+
+          int columnIndex = resultSetMetaData.getColumnIndex("rows_loaded");
+          updateCount += columnIndex == -1 ? 0 : resultSet.getInt(columnIndex + 1);
         }
         else if (statementType == SFStatementType.INSERT ||
                  statementType == SFStatementType.UPDATE ||
@@ -934,6 +937,7 @@ public class ResultUtil
    * @param source source string list
    * @param target target string to match
    * @return index in the source string list that matches the target string
+   *         index starts from zero
    */
   public static int listSearchCaseInsensitive(List<String> source, String target)
   {
