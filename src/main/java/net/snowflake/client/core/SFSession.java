@@ -176,6 +176,9 @@ public class SFSession
   // client to log session metrics to telemetry in GS
   private Telemetry telemetryClient;
 
+  //default value is false will be updated when login
+  private boolean clientTelemetryEnabled = false;
+
   public void addProperty(SFSessionProperty sfSessionProperty,
                           Object propertyValue)
       throws SFException
@@ -385,7 +388,6 @@ public class SFSession
         SFSessionProperty.SCHEMA);
     String loginRole = (String)connectionPropertiesMap.get(
         SFSessionProperty.ROLE);
-
 
     if (loginDatabaseName != null && !loginDatabaseName
         .equalsIgnoreCase(database))
@@ -1016,4 +1018,14 @@ public class SFSession
       }
     }
   }
+
+  public boolean isClientTelemetryEnabled()
+  {
+    return this.clientTelemetryEnabled;
+  }
+  public void setClientTelemetryEnabled(boolean clientTelemetryEnabled)
+  {
+    this.clientTelemetryEnabled = clientTelemetryEnabled;
+  }
+
 }

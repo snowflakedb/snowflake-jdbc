@@ -117,6 +117,7 @@ public class SessionUtil
       "JDBC_EXECUTE_RETURN_COUNT_FOR_DML",
       "CLIENT_DISABLE_INCIDENTS",
       "CLIENT_SESSION_KEEP_ALIVE",
+      "CLIENT_TELEMETRY_ENABLED",
       "JDBC_USE_JSON_PARSER",
       "AUTOCOMMIT",
       "JDBC_EFFICIENT_CHUNK_STORAGE",
@@ -1780,6 +1781,13 @@ public class SessionUtil
         if (session != null)
         {
           session.setEnableCombineDescribe((boolean) entry.getValue());
+        }
+      }
+      else if ("CLIENT_TELEMETRY_ENABLED".equalsIgnoreCase(entry.getKey()))
+      {
+        if (session != null)
+        {
+          session.setClientTelemetryEnabled((boolean) entry.getValue());
         }
       }
     }

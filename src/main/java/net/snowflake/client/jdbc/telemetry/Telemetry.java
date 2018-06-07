@@ -11,11 +11,9 @@ import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.StringEntity;
 
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.rmi.UnexpectedException;
 import java.sql.Connection;
 import java.util.LinkedList;
@@ -51,6 +49,9 @@ public class Telemetry
 
   private Object locker = new Object();
 
+  //false if meet any error when sending metrics
+  private boolean isTelemetryServiceAvailable = true;
+
   private Telemetry(SFSession session, int flushSize)
   {
     this.session = session;
@@ -66,6 +67,15 @@ public class Telemetry
     this.isClosed = false;
     this.forceFlushSize = flushSize;
 
+  }
+
+
+  public boolean isTelemetryEnabled()
+  {
+    return this.session.isClientTelemetryEnabled() && this.isTelemetryServiceAvailable;
+  }
+  public void disableTelemetry(){
+    this.isTelemetryServiceAvailable = false;
   }
 
 
@@ -103,7 +113,7 @@ public class Telemetry
 
   public static Telemetry createTelemetry(SFSession session, int flushSize)
   {
-    return new Telemetry(session, flushSize);
+    return  new Telemetry(session, flushSize);
   }
 
   /**
@@ -115,6 +125,8 @@ public class Telemetry
     {
       throw new IOException("Telemetry connector is closed");
     }
+    if (!isTelemetryEnabled()) return; // if disable, do nothing
+
     synchronized (locker)
     {
       this.logBatch.add(log);
@@ -169,6 +181,8 @@ public class Telemetry
     {
       throw new IOException("Telemetry connector is closed");
     }
+    if (!isTelemetryEnabled()) return false;
+
     LinkedList<TelemetryData> tmpList;
     synchronized (locker)
     {
@@ -200,15 +214,10 @@ public class Telemetry
         response = HttpUtil.executeRequest(post, httpClient, 1000, 0, null);
       } catch (SnowflakeSQLException e)
       {
+        disableTelemetry(); // when got error like 404 or bad request, disable telemetry in this telemetry instance
         logger.error(
             "Telemetry request failed, " +
                 "response: {}, exception: {}", response, e.getMessage());
-
-        //if failed, add telemetry data back to list
-        for (TelemetryData data : tmpList)
-        {
-          this.addLogToBatch(data);
-        }
         return false;
       }
     }
