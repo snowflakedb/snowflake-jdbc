@@ -1,7 +1,12 @@
+**JDBC Driver 3.6.4**
+|SNOW-41096| Add a parameter to control Telemetry service.
+|SNOW-45484| Fix 50MB calculation.
+|SNOW-45612| Add authenticator setting to SnowflakeBasicDatasource
+|SNOW-45600| Close http response stream to allow http client to reuse socket.
+
+
 **JDBC Driver 3.6.3**
-|SNOW-43251| Fixed JDBC Driver Raising Erroneous Exception when COPY DML Loads 0 Files
-
-
+|SNOW-43251| Fixed erroneous exception raised when COPY statement loads 0 files.
 **JDBC Driver 3.6.2**
 |SNOW-44536| Fixed Loader API to support CSV filenames that contain spaces.
 |SNOW-44497| Fixed Loader API to suppress race conditions for date formatting.
