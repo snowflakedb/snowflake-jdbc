@@ -9,7 +9,6 @@ import net.snowflake.client.jdbc.SnowflakeConnectionV1;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
-import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 
@@ -199,7 +198,6 @@ public class Telemetry
     {
       //session shared with JDBC
       String sessionToken = this.session.getSessionToken();
-      HttpClient httpClient = HttpUtil.getHttpClient();
 
       HttpPost post = new HttpPost(this.telemetryUrl);
       post.setEntity(new StringEntity(logsToString(tmpList)));
@@ -211,7 +209,7 @@ public class Telemetry
 
       try
       {
-        response = HttpUtil.executeRequest(post, httpClient, 1000, 0, null);
+        response = HttpUtil.executeRequest(post, 1000, 0, null);
       } catch (SnowflakeSQLException e)
       {
         disableTelemetry(); // when got error like 404 or bad request, disable telemetry in this telemetry instance

@@ -14,13 +14,13 @@ import java.net.URISyntaxException;
 import java.util.Map;
 import java.util.Random;
 import java.util.zip.GZIPOutputStream;
-import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.ByteArrayEntity;
 
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
+import org.apache.http.impl.client.CloseableHttpClient;
 
 /**
  * Incident Event class for triggering and registering Incidents with GS
@@ -64,7 +64,7 @@ public class Incident extends Event
     ObjectMapper mapper = new ObjectMapper();
     String json;
     String response;
-    HttpClient httpClient;
+    CloseableHttpClient httpClient;
     URI incidentURI;
     HttpPost postRequest;
 
@@ -100,8 +100,6 @@ public class Incident extends Event
 
     // Sanity check...
     Preconditions.checkNotNull(json);
-
-    httpClient = HttpUtil.getHttpClient();
 
     try
     {
@@ -151,7 +149,6 @@ public class Incident extends Event
     try
     {
       response = HttpUtil.executeRequest(postRequest,
-                                         httpClient,
                                          1000, 0,
                                          null);
     }

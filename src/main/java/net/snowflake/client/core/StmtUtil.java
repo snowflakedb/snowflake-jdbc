@@ -10,16 +10,19 @@ import net.snowflake.client.core.BasicEvent.QueryState;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.jdbc.SnowflakeUtil;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.api.QueryInProgressResponse;
-import java.io.ByteArrayOutputStream;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
@@ -28,10 +31,6 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.zip.GZIPOutputStream;
-import org.apache.http.entity.ByteArrayEntity;
-
-import net.snowflake.client.log.SFLogger;
-import net.snowflake.client.log.SFLoggerFactory;
 
 /**
  * Created by jhuang on 1/28/16.
@@ -79,7 +78,6 @@ public class StmtUtil
 
     Map<String, Object> parametersMap;
     String sessionToken;
-    HttpClient httpClient;
     int networkTimeoutInMillis;
     int injectSocketTimeout; // seconds
     int injectClientPause; // seconds
@@ -154,12 +152,6 @@ public class StmtUtil
     public StmtInput setSessionToken(String sessionToken)
     {
       this.sessionToken = sessionToken;
-      return this;
-    }
-
-    public StmtInput setHttpClient(HttpClient httpClient)
-    {
-      this.httpClient = httpClient;
       return this;
     }
 
@@ -264,9 +256,6 @@ public class StmtUtil
     AssertUtil.assertTrue(stmtInput.mediaType != null,
         "Missing media type for statement execution");
 
-    AssertUtil.assertTrue(stmtInput.httpClient != null,
-        "Missing http client for statement execution");
-
     try
     {
       String resultAsString = null;
@@ -339,7 +328,6 @@ public class StmtUtil
 
         resultAsString =
             HttpUtil.executeRequest(httpRequest,
-                                    stmtInput.httpClient,
                                     stmtInput.networkTimeoutInMillis / 1000,
                                     stmtInput.injectSocketTimeout,
                                     stmtInput.canceling);
@@ -576,7 +564,6 @@ public class StmtUtil
 
       String resultAsString =
           HttpUtil.executeRequest(httpRequest,
-                                  stmtInput.httpClient,
                                   stmtInput.networkTimeoutInMillis/1000,
                                   0,
                                   stmtInput.canceling);
@@ -618,9 +605,6 @@ public class StmtUtil
     AssertUtil.assertTrue(stmtInput.requestId != null,
         "Missing request id for statement execution");
 
-    AssertUtil.assertTrue(stmtInput.httpClient != null,
-        "Missing http client for statement execution");
-
     AssertUtil.assertTrue(stmtInput.sessionToken != null,
         "Missing session token for statement execution");
 
@@ -661,7 +645,6 @@ public class StmtUtil
 
       String jsonString =
           HttpUtil.executeRequest(httpRequest,
-                                  stmtInput.httpClient,
                                   SF_CANCELING_RETRY_TIMEOUT_IN_MILLIS,
                                   0, null);
 

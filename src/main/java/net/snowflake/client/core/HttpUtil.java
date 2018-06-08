@@ -12,19 +12,20 @@ import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SqlState;
 import org.apache.commons.io.IOUtils;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.config.Registry;
 import org.apache.http.config.RegistryBuilder;
 import org.apache.http.conn.socket.ConnectionSocketFactory;
 import org.apache.http.conn.socket.PlainConnectionSocketFactory;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.DefaultRedirectStrategy;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.ssl.SSLInitializationException;
+import org.apache.http.util.EntityUtils;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLServerSocketFactory;
@@ -58,7 +59,7 @@ public class HttpUtil
    * The unique httpClient shared by all connections, this will benefit long
    * lived clients
    */
-  private static HttpClient httpClient = null;
+  private static CloseableHttpClient httpClient = null;
 
   /**
    * Handle on the static connection manager, to gather statistics mainly
@@ -78,7 +79,7 @@ public class HttpUtil
    *                      OCSP response file will be used.
    * @return HttpClient object
    */
-  static HttpClient buildHttpClient(
+  static CloseableHttpClient buildHttpClient(
       boolean insecureMode, File ocspCacheFile, boolean useOcspCacheServer)
   {
     // set timeout so that we don't wait forever.
@@ -151,9 +152,9 @@ public class HttpUtil
    *
    * @return HttpClient object shared across all connections
    */
-  public static HttpClient getHttpClient()
+  public static CloseableHttpClient getHttpClient()
   {
-    return getHttpClient(true, null);
+    return initHttpClient(true, null);
   }
 
   /**
@@ -164,7 +165,7 @@ public class HttpUtil
    *                      file will be used.
    * @return HttpClient object shared across all connections
    */
-  public static HttpClient getHttpClient(boolean insecureMode, File ocspCacheFile)
+  public static CloseableHttpClient initHttpClient(boolean insecureMode, File ocspCacheFile)
   {
     if (httpClient == null)
     {
@@ -238,7 +239,6 @@ public class HttpUtil
    * Executes a HTTP request with the cookie spec set to IGNORE_COOKIES
    *
    * @param httpRequest HttpRequestBase
-   * @param httpClient HttpClient
    * @param retryTimeout retry timeout
    * @param injectSocketTimeout injecting socket timeout
    * @param canceling canceling?
@@ -247,7 +247,6 @@ public class HttpUtil
    * @return response
    */
   static String executeRequestWithoutCookies(HttpRequestBase httpRequest,
-                                             HttpClient httpClient,
                                              int retryTimeout,
                                              int injectSocketTimeout,
                                              AtomicBoolean canceling)
@@ -255,7 +254,6 @@ public class HttpUtil
   {
     return executeRequestInternal(
         httpRequest,
-        httpClient,
         retryTimeout,
         injectSocketTimeout,
         canceling,
@@ -266,7 +264,6 @@ public class HttpUtil
    * Executes a HTTP request for Snowflake.
    *
    * @param httpRequest HttpRequestBase
-   * @param httpClient HttpClient
    * @param retryTimeout retry timeout
    * @param injectSocketTimeout injecting socket timeout
    * @param canceling canceling?
@@ -275,15 +272,13 @@ public class HttpUtil
    * @throws IOException raises if a general IO error occurs
    */
   public static String executeRequest(HttpRequestBase httpRequest,
-                               HttpClient httpClient,
-                               int retryTimeout,
-                               int injectSocketTimeout,
-                               AtomicBoolean canceling)
+                                      int retryTimeout,
+                                      int injectSocketTimeout,
+                                      AtomicBoolean canceling)
       throws SnowflakeSQLException, IOException
   {
     return executeRequestInternal(
         httpRequest,
-        httpClient,
         retryTimeout,
         injectSocketTimeout,
         canceling,
@@ -299,7 +294,6 @@ public class HttpUtil
    * Connection under the httpRequest is released.
    *
    * @param httpRequest         request object contains all the information
-   * @param httpClient          client object used to communicate with other machine
    * @param retryTimeout        retry timeout (in seconds)
    * @param injectSocketTimeout simulate socket timeout
    * @param canceling           canceling flag
@@ -309,7 +303,6 @@ public class HttpUtil
    * @throws IOException raises if a general IO error occurs
    */
   private static String executeRequestInternal(HttpRequestBase httpRequest,
-                                               HttpClient httpClient,
                                                int retryTimeout,
                                                int injectSocketTimeout,
                                                AtomicBoolean canceling,
@@ -325,9 +318,10 @@ public class HttpUtil
 
     String theString;
     StringWriter writer = null;
+    CloseableHttpResponse response = null;
     try
     {
-      HttpResponse response = RestRequest.execute(httpClient,
+      response = RestRequest.execute(getHttpClient(),
           httpRequest,
           retryTimeout,
           injectSocketTimeout,
@@ -342,6 +336,11 @@ public class HttpUtil
 
         SnowflakeUtil.logResponseDetails(response, logger);
 
+        if (response != null)
+        {
+          EntityUtils.consume(response.getEntity());
+        }
+
         throw new SnowflakeSQLException(SqlState.IO_ERROR,
             ErrorCode.NETWORK_ERROR.getMessageCode(),
             "HTTP status="
@@ -351,17 +350,17 @@ public class HttpUtil
       }
 
       writer = new StringWriter();
-      IOUtils.copy(response.getEntity().getContent(), writer, "UTF-8");
+      try (InputStream ins = response.getEntity().getContent())
+      {
+        IOUtils.copy(ins, writer, "UTF-8");
+      }
+
       theString = writer.toString();
     }
     finally
     {
-      // Make sure the connection is released
-      httpRequest.releaseConnection();
-      if (writer != null)
-      {
-        writer.close();
-      }
+      IOUtils.closeQuietly(writer);
+      IOUtils.closeQuietly(response);
     }
 
     if (logger.isDebugEnabled())
