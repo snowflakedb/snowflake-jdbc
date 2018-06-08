@@ -356,6 +356,9 @@ public class HttpUtil
       }
 
       theString = writer.toString();
+
+      // Marking the http request as completed, so that the underlying connection can be reused after the release
+      httpRequest.completed();
     }
     finally
     {
