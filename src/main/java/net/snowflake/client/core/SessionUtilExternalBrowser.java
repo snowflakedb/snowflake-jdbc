@@ -214,8 +214,7 @@ class SessionUtilExternalBrowser
       postRequest.addHeader("accept", "application/json");
 
       String theString = HttpUtil.executeRequest(postRequest,
-          loginInput.getHttpClient(), loginInput.getLoginTimeout(),
-          0, null);
+          loginInput.getLoginTimeout(), 0, null);
 
       logger.debug("authenticator-request response: {}", theString);
 

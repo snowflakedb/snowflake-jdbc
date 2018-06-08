@@ -154,7 +154,7 @@ public class HttpUtil
    */
   public static CloseableHttpClient getHttpClient()
   {
-    return getHttpClient(true, null);
+    return initHttpClient(true, null);
   }
 
   /**
@@ -165,7 +165,7 @@ public class HttpUtil
    *                      file will be used.
    * @return HttpClient object shared across all connections
    */
-  public static CloseableHttpClient getHttpClient(boolean insecureMode, File ocspCacheFile)
+  public static CloseableHttpClient initHttpClient(boolean insecureMode, File ocspCacheFile)
   {
     if (httpClient == null)
     {
@@ -239,7 +239,6 @@ public class HttpUtil
    * Executes a HTTP request with the cookie spec set to IGNORE_COOKIES
    *
    * @param httpRequest HttpRequestBase
-   * @param httpClient HttpClient
    * @param retryTimeout retry timeout
    * @param injectSocketTimeout injecting socket timeout
    * @param canceling canceling?
@@ -248,7 +247,6 @@ public class HttpUtil
    * @return response
    */
   static String executeRequestWithoutCookies(HttpRequestBase httpRequest,
-                                             CloseableHttpClient httpClient,
                                              int retryTimeout,
                                              int injectSocketTimeout,
                                              AtomicBoolean canceling)
@@ -256,7 +254,6 @@ public class HttpUtil
   {
     return executeRequestInternal(
         httpRequest,
-        httpClient,
         retryTimeout,
         injectSocketTimeout,
         canceling,
@@ -267,7 +264,6 @@ public class HttpUtil
    * Executes a HTTP request for Snowflake.
    *
    * @param httpRequest HttpRequestBase
-   * @param httpClient HttpClient
    * @param retryTimeout retry timeout
    * @param injectSocketTimeout injecting socket timeout
    * @param canceling canceling?
@@ -275,16 +271,14 @@ public class HttpUtil
    * @throws SnowflakeSQLException if Snowflake error occurs
    * @throws IOException raises if a general IO error occurs
    */
-  static String executeRequest(HttpRequestBase httpRequest,
-                               CloseableHttpClient httpClient,
-                               int retryTimeout,
-                               int injectSocketTimeout,
-                               AtomicBoolean canceling)
+  public static String executeRequest(HttpRequestBase httpRequest,
+                                      int retryTimeout,
+                                      int injectSocketTimeout,
+                                      AtomicBoolean canceling)
       throws SnowflakeSQLException, IOException
   {
     return executeRequestInternal(
         httpRequest,
-        httpClient,
         retryTimeout,
         injectSocketTimeout,
         canceling,
@@ -300,7 +294,6 @@ public class HttpUtil
    * Connection under the httpRequest is released.
    *
    * @param httpRequest         request object contains all the information
-   * @param httpClient          client object used to communicate with other machine
    * @param retryTimeout        retry timeout (in seconds)
    * @param injectSocketTimeout simulate socket timeout
    * @param canceling           canceling flag
@@ -310,7 +303,6 @@ public class HttpUtil
    * @throws IOException raises if a general IO error occurs
    */
   private static String executeRequestInternal(HttpRequestBase httpRequest,
-                                               CloseableHttpClient httpClient,
                                                int retryTimeout,
                                                int injectSocketTimeout,
                                                AtomicBoolean canceling,
@@ -329,7 +321,7 @@ public class HttpUtil
     CloseableHttpResponse response = null;
     try
     {
-      response = RestRequest.execute(httpClient,
+      response = RestRequest.execute(getHttpClient(),
           httpRequest,
           retryTimeout,
           injectSocketTimeout,
@@ -344,7 +336,10 @@ public class HttpUtil
 
         SnowflakeUtil.logResponseDetails(response, logger);
 
-        EntityUtils.consume(response.getEntity());
+        if (response != null)
+        {
+          EntityUtils.consume(response.getEntity());
+        }
 
         throw new SnowflakeSQLException(SqlState.IO_ERROR,
             ErrorCode.NETWORK_ERROR.getMessageCode(),
@@ -366,7 +361,7 @@ public class HttpUtil
     {
       IOUtils.closeQuietly(writer);
       IOUtils.closeQuietly(response);
-   }
+    }
 
     if (logger.isDebugEnabled())
     {

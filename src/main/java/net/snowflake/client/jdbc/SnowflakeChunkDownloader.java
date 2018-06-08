@@ -776,6 +776,9 @@ public class SnowflakeChunkDownloader
         }
 
         logger.debug("Fetching result: {}", resultChunk.getUrl());
+
+        //TODO move this s3 request to HttpUtil class. In theory, upper layer
+        //TODO does not need to know about http client
         CloseableHttpClient httpClient = HttpUtil.getHttpClient();
 
         // fetch the result chunk

@@ -338,7 +338,6 @@ public class SFStatement
           .setSequenceId(sequenceId)
           .setParametersMap(statementParametersMap)
           .setSessionToken(session.getSessionToken())
-          .setHttpClient(session.getHttpClient())
           .setNetworkTimeoutInMillis(session.getNetworkTimeoutInMilli())
           .setInjectSocketTimeout(session.getInjectSocketTimeout())
           .setInjectClientPause(session.getInjectClientPause())
@@ -466,7 +465,6 @@ public class SFStatement
         .setSql(sql)
         .setMediaType(mediaType)
         .setRequestId(requestId)
-        .setHttpClient(session.getHttpClient())
         .setSessionToken(session.getSessionToken());
 
     StmtUtil.cancel(stmtInput);

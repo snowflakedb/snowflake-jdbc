@@ -14,7 +14,6 @@ import java.net.URISyntaxException;
 import java.util.Map;
 import java.util.Random;
 import java.util.zip.GZIPOutputStream;
-import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.ByteArrayEntity;
@@ -102,8 +101,6 @@ public class Incident extends Event
     // Sanity check...
     Preconditions.checkNotNull(json);
 
-    httpClient = HttpUtil.getHttpClient();
-
     try
     {
       URIBuilder uriBuilder = new URIBuilder(serverUrl);
@@ -152,7 +149,6 @@ public class Incident extends Event
     try
     {
       response = HttpUtil.executeRequest(postRequest,
-                                         httpClient,
                                          1000, 0,
                                          null);
     }

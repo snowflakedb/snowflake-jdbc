@@ -22,7 +22,6 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.SystemDefaultHttpClient;
 import org.apache.http.message.BasicHeader;
 import org.apache.http.message.HeaderGroup;
@@ -138,7 +137,6 @@ public class SessionUtil
     private String warehouse;
     private String role;
     private String authenticator;
-    private CloseableHttpClient httpClient;
     private String accountName;
     private int loginTimeout = -1; // default is invalid
     private String userName;
@@ -194,12 +192,6 @@ public class SessionUtil
     public LoginInput setAuthenticator(String authenticator)
     {
       this.authenticator = authenticator;
-      return this;
-    }
-
-    public LoginInput setHttpClient(CloseableHttpClient httpClient)
-    {
-      this.httpClient = httpClient;
       return this;
     }
 
@@ -303,11 +295,6 @@ public class SessionUtil
     {
       this.application = application;
       return this;
-    }
-
-    public CloseableHttpClient getHttpClient()
-    {
-      return httpClient;
     }
 
     public String getServerUrl()
@@ -685,9 +672,6 @@ public class SessionUtil
     AssertUtil.assertTrue(loginInput.getAppId() != null,
         "missing app id for opening session");
 
-    AssertUtil.assertTrue(loginInput.getHttpClient() != null,
-        "missing http client for opening session");
-
     AssertUtil.assertTrue(loginInput.getLoginTimeout() >= 0,
         "negative login timeout for opening session");
 
@@ -799,8 +783,6 @@ public class SessionUtil
             "unexpected URL syntax exception");
       }
     }
-
-    httpClient = loginInput.getHttpClient();
 
     HttpPost postRequest = null;
 
@@ -978,7 +960,6 @@ public class SessionUtil
           SF_HEADER_BASIC_AUTHTYPE);
 
       String theString = HttpUtil.executeRequest(postRequest,
-          loginInput.getHttpClient(),
           loginInput.getLoginTimeout(),
           0, null);
 
@@ -1089,7 +1070,7 @@ public class SessionUtil
         HttpConnectionParams.setSoTimeout(httpParams,
             httpClientSocketTimeout);
 
-        ((SystemDefaultHttpClient) httpClient).setParams(httpParams);
+        ((SystemDefaultHttpClient) HttpUtil.getHttpClient()).setParams(httpParams);
 
         logger.debug(
             "adjusted connection timeout to = {}",
@@ -1160,9 +1141,6 @@ public class SessionUtil
     AssertUtil.assertTrue(loginInput.getMasterToken() != null,
         "missing master token for renewing session");
 
-    AssertUtil.assertTrue(loginInput.getHttpClient() != null,
-        "missing http client for renewing session");
-
     AssertUtil.assertTrue(loginInput.getLoginTimeout() >= 0,
         "negative login timeout for renewing session");
 
@@ -1212,7 +1190,7 @@ public class SessionUtil
           loginInput.getSessionToken(), loginInput.getMasterToken());
 
       String theString = HttpUtil.executeRequest(postRequest,
-          loginInput.getHttpClient(), loginInput.getLoginTimeout(), 0, null);
+          loginInput.getLoginTimeout(), 0, null);
 
       // general method, same as with data binding
       JsonNode jsonNode = mapper.readTree(theString);
@@ -1274,9 +1252,6 @@ public class SessionUtil
     AssertUtil.assertTrue(loginInput.getSessionToken() != null,
         "missing session token for closing session");
 
-    AssertUtil.assertTrue(loginInput.getHttpClient() != null,
-        "missing http client for closing session");
-
     AssertUtil.assertTrue(loginInput.getLoginTimeout() >= 0,
         "missing login timeout for closing session");
 
@@ -1302,7 +1277,6 @@ public class SessionUtil
               + loginInput.getSessionToken() + "\"");
 
       String theString = HttpUtil.executeRequest(postRequest,
-          loginInput.getHttpClient(),
           loginInput.getLoginTimeout(),
           0, null);
 
@@ -1375,7 +1349,7 @@ public class SessionUtil
       httpGet.setHeaders(headers.getAllHeaders());
 
       responseHtml = HttpUtil.executeRequest(httpGet,
-          loginInput.getHttpClient(), loginInput.getLoginTimeout(), 0, null);
+          loginInput.getLoginTimeout(), 0, null);
 
       // step 5
       String postBackUrl = getPostBackUrlFromHTML(responseHtml);
@@ -1426,7 +1400,7 @@ public class SessionUtil
       postRequest.setHeaders(headers.getAllHeaders());
 
       final String idpResponse = HttpUtil.executeRequestWithoutCookies(postRequest,
-          loginInput.getHttpClient(), loginInput.getLoginTimeout(), 0, null);
+          loginInput.getLoginTimeout(), 0, null);
 
       logger.debug("user is authenticated against {}.",
           loginInput.getAuthenticator());
@@ -1516,7 +1490,7 @@ public class SessionUtil
       postRequest.addHeader("accept", "application/json");
 
       final String gsResponse = HttpUtil.executeRequest(postRequest,
-          loginInput.getHttpClient(), loginInput.getLoginTimeout(), 0, null);
+          loginInput.getLoginTimeout(), 0, null);
       logger.debug("authenticator-request response: {}", gsResponse);
       JsonNode jsonNode = mapper.readTree(gsResponse);
 

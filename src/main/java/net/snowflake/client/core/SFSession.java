@@ -16,16 +16,13 @@ import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.ClientAuthnDTO;
 import net.snowflake.client.log.JDK14Logger;
 import org.apache.http.HttpHeaders;
-import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
-import org.apache.http.impl.client.CloseableHttpClient;
 
 import java.io.IOException;
 import java.security.PrivateKey;
 import java.sql.SQLClientInfoException;
 import java.sql.SQLException;
-import java.sql.SQLWarning;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -59,8 +56,6 @@ public class SFSession
   // increase heartbeat timeout from 60 sec to 300 sec
   // per https://support-snowflake.zendesk.com/agent/tickets/6629
   private static int SF_HEARTBEAT_TIMEOUT = 300;
-
-  private CloseableHttpClient httpClient;
 
   private boolean isClosed = true;
 
@@ -319,15 +314,10 @@ public class SFSession
   {
     performSanityCheckOnProperties();
 
-    if (httpClient == null)
-    {
-      Boolean insecureMode = (Boolean)connectionPropertiesMap.get(
-          SFSessionProperty.INSECURE_MODE);
+    Boolean insecureMode = (Boolean)connectionPropertiesMap.get(
+        SFSessionProperty.INSECURE_MODE);
 
-      httpClient = HttpUtil.getHttpClient(insecureMode != null ?
-                                          insecureMode : false,
-                                          null);
-    }
+    HttpUtil.initHttpClient(insecureMode != null ? insecureMode : false, null);
 
     SessionUtil.LoginInput loginInput = new SessionUtil.LoginInput();
     loginInput.setServerUrl(
@@ -341,7 +331,6 @@ public class SFSession
         .setRole((String) connectionPropertiesMap.get(SFSessionProperty.ROLE))
         .setAuthenticator(
             (String) connectionPropertiesMap.get(SFSessionProperty.AUTHENTICATOR))
-        .setHttpClient(httpClient)
         .setAccountName(
             (String) connectionPropertiesMap.get(SFSessionProperty.ACCOUNT))
         .setLoginTimeout(loginTimeout)
@@ -467,11 +456,6 @@ public class SFSession
     }
   }
 
-  protected CloseableHttpClient getHttpClient()
-  {
-    return httpClient;
-  }
-
   public String getNewClientForUpdate()
   {
     return newClientForUpdate;
@@ -517,7 +501,6 @@ public class SFSession
         (String) connectionPropertiesMap.get(SFSessionProperty.SERVER_URL))
         .setSessionToken(sessionToken)
         .setMasterToken(masterToken)
-        .setHttpClient(httpClient)
         .setLoginTimeout(loginTimeout);
 
     SessionUtil.LoginOutput loginOutput = SessionUtil.renewSession(loginInput);
@@ -558,22 +541,11 @@ public class SFSession
     loginInput.setServerUrl(
         (String) connectionPropertiesMap.get(SFSessionProperty.SERVER_URL))
         .setSessionToken(sessionToken)
-        .setHttpClient(httpClient)
         .setLoginTimeout(loginTimeout);
 
-    try
-    {
-      SessionUtil.closeSession(loginInput);
-      closeTelemetryClient();
-      isClosed = true;
-    }
-    finally
-    {
-      if (httpClient != null)
-      {
-        httpClient = null;
-      }
-    }
+    SessionUtil.closeSession(loginInput);
+    closeTelemetryClient();
+    isClosed = true;
   }
 
   /**
@@ -663,7 +635,6 @@ public class SFSession
 
         // the following will retry transient network issues
         String theResponse = HttpUtil.executeRequest(postRequest,
-            httpClient,
             SF_HEARTBEAT_TIMEOUT,
             0,
             null);
