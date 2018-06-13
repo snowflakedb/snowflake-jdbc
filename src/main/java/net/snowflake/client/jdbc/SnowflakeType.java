@@ -148,7 +148,7 @@ public enum SnowflakeType {
   public static String lexicalValue(
       Object o, boolean useLocalTimezone, boolean mapTimeToTimestamp) {
     if (o == null) {
-      return "";
+      return null;
     }
 
     Class c = o.getClass();
@@ -196,11 +196,22 @@ public enum SnowflakeType {
   }
 
   public static String escapeForCSV(String value) {
+    if (value == null)
+    {
+      return ""; // null => an empty string without quotes
+    }
+    if (value.isEmpty())
+    {
+      return "\"\""; // an empty string => an empty string with quotes
+    }
     if (value.indexOf('"') >= 0 || value.indexOf('\n') >= 0
-        || value.indexOf(',') >= 0 || value.indexOf('\\') >= 0) {
-
+        || value.indexOf(',') >= 0 || value.indexOf('\\') >= 0)
+    {
+      // anything else including double quotes or commas will have quotes
       return '"' + value.replaceAll("\"", "\"\"") + '"';
-    } else {
+    }
+    else
+    {
       return value;
     }
   }
