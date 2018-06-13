@@ -408,6 +408,12 @@ public class SFSession
     isClosed = false;
   }
 
+  /**
+   * Performs a sanity check on properties. Sanity checking includes:
+   * - verifying that a server url is present
+   * - verifying various combinations of properties given the authenticator
+   * @throws SFException
+   */
   private void performSanityCheckOnProperties() throws SFException
   {
     for (SFSessionProperty property : SFSessionProperty.values())
@@ -420,19 +426,6 @@ public class SFSession
           case SERVER_URL:
             throw new SFException(ErrorCode.MISSING_SERVER_URL);
 
-          case USER:
-            throw new SFException(ErrorCode.MISSING_PASSWORD);
-
-          case PASSWORD:
-            if (isSnowflakeAuthenticator())
-            {
-              throw new SFException(ErrorCode.MISSING_PASSWORD);
-            }
-            else
-            {
-              break;
-            }
-
           default:
             throw new SFException(ErrorCode.MISSING_CONNECTION_PROPERTY,
                 property.getPropertyKey());
@@ -440,19 +433,27 @@ public class SFSession
       }
     }
 
-    // userName and password are expected
-    String userName = (String) connectionPropertiesMap.get(
-        SFSessionProperty.USER);
-    if (userName == null || userName.isEmpty())
+    String authenticator = (String) connectionPropertiesMap.get(
+        SFSessionProperty.AUTHENTICATOR);
+    if (isSnowflakeAuthenticator() ||
+        ClientAuthnDTO.AuthenticatorType.OKTA.name().equalsIgnoreCase(
+            authenticator))
     {
-      throw new SFException(ErrorCode.MISSING_USERNAME);
-    }
+      // userName and password are expected for both Snowflake and Okta.
+      String userName = (String) connectionPropertiesMap.get(
+          SFSessionProperty.USER);
+      if (userName == null || userName.isEmpty())
+      {
+        throw new SFException(ErrorCode.MISSING_USERNAME);
+      }
 
-    String password = (String) connectionPropertiesMap.get(
-        SFSessionProperty.PASSWORD);
-    if (isSnowflakeAuthenticator() && (password == null || password.isEmpty()))
-    {
-      throw new SFException(ErrorCode.MISSING_PASSWORD);
+      String password = (String) connectionPropertiesMap.get(
+          SFSessionProperty.PASSWORD);
+      if (password == null || password.isEmpty())
+
+      {
+        throw new SFException(ErrorCode.MISSING_PASSWORD);
+      }
     }
   }
 

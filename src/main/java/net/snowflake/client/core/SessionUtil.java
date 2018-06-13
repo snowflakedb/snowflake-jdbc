@@ -699,6 +699,13 @@ public class SessionUtil
     final ClientAuthnDTO.AuthenticatorType authenticator = getAuthenticator(
         loginInput);
 
+    if (!authenticator.equals(ClientAuthnDTO.AuthenticatorType.OAUTH))
+    {
+      // OAuth does not require a username
+      AssertUtil.assertTrue(loginInput.getUserName() != null,
+          "missing user name for opening session");
+    }
+
     try
     {
       uriBuilder = new URIBuilder(loginInput.getServerUrl());
