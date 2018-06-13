@@ -81,3 +81,9 @@ Documentation
 =============
 
 For detailed documentation, please refer to https://docs.snowflake.net/manuals/user-guide/jdbc.html
+
+Support
+=============
+
+Feel free to file an issue or submit a PR here for general cases. For official support, contact Snowflake support at:
+https://support.snowflake.net/s/snowflake-support
