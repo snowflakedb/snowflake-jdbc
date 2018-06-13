@@ -1,5 +1,6 @@
 sudo: required
 language: java
+install: /bin/true
 script:
   - ./scripts/run_travis.sh
 matrix:
