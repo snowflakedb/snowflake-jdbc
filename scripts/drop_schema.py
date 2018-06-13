@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Create test schema
+# Drop test schema
 #
 import os
 import sys
