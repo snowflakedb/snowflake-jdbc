@@ -28,9 +28,19 @@ function finish {
     travis_fold_end
 }
 
-# build
+travis_fold_start pythonvenv "Set up Python Virtualenv (pyenv)"
+pip install -U snowflake-connector-python
+travis_fold_end
+
+trap finish EXIT
+
+source $DIR/env.sh
+
+travis_fold_start create_schema "Create test schema"
+python $DIR/create_schema.py
+travis_fold_end
+
 travis_fold_start build "Build JDBC driver"
 mvn install -DskipTests=true -Dmaven.javadoc.skip=true -B -V
 travis_fold_end
 
-trap finish EXIT
