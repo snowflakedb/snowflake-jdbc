@@ -1,0 +1,36 @@
+sudo: required
+language: java
+install: "/bin/true"
+script:
+- "./scripts/run_travis.sh"
+matrix:
+  include:
+  - os: linux
+    jdk: oraclejdk8
+    before_install:
+      - eval "${MATRIX_EVAL}"
+      - sudo apt-get update
+      - openssl aes-256-cbc -k "$super_secret_password" -in parameters.json.enc -out parameters.json -d
+      - pyenv local 3.6
+      - curl -O https://bootstrap.pypa.io/get-pip.py
+      - python get-pip.py
+      - pip --version
+      - pip install -U virtualenv
+      - virtualenv env
+      - source env/bin/activate
+  - os: linux
+    jdk: oraclejdk9
+    before_install:
+      - eval "${MATRIX_EVAL}"
+      - sudo apt-get update
+      - openssl aes-256-cbc -k "$super_secret_password" -in parameters.json.enc -out parameters.json -d
+      - pyenv local 3.6
+      - curl -O https://bootstrap.pypa.io/get-pip.py
+      - python get-pip.py
+      - pip --version
+      - pip install -U virtualenv
+      - virtualenv env
+      - source env/bin/activate
+env:
+  global:
+    secure: wjiJ49wxh/pRQHfjcvmIhjgGWCe3sS08tOzmZsJGdCBCDx0XEtV7SAMQWIAC7QxSrfgNvllaIpXrlQvWYmdULKVG4t/YbL83CoGnp9wqzAwQFeceh/Z+FStfy3yVpuqMd+4PiTWIbguYwDfZrRxg4beSQdH3IX3Z7g4sWXglVhyTQLTFZ2d8Xw668AooNNxuztC8hC2sxvalz7HXF1HardNXPM/4Jaxz63YlyhwVZw2WP/Hunby/t5RXBQSzOL080Eo+pAiN5BNo/gc1iFqqp2rrrMcEqOI3Lu0fJBHKXDxR3QFenwDkCLFU4JsIKE5fFMkem0TTHRsfahAbxbf7D8RaBW50odKOSo4/aTqKd/YG6CZFtlvtO3+7ntTMPdlxBPAgUOlShV84I59JSOLznHV47ujUhZCJgOIEusyX05KKSbZJrUr7/2rKFQvq40U80lXyVr61ZR96b3iaHP724G/Vw5TpDWtcNq5k1FlK/MNhXMj4V3TzW+KbX5rZMXu668KP6vkgsFkED+nlWznTp6CrzqEl8uCEV/oFQsVgebcq1qXec2r/XQ3BRSpg4fyqhUiQVbuadg6CF6DPcmbYbeGtWssjmQqPwHZLf6Jl/w1wCXRCMJgpaVawO3ozvNFOOysFwmdrgF2Fs1CGyF9FpuqWkT1H0QZ34EZFYtpXEaM=

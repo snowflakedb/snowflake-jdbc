@@ -53,7 +53,6 @@ henplus/*
 login.defaults
 make_client_package.sh
 rt_build.sh
-scripts/*
 sfsql
 sfsql.cmd
 snowflake.jceks
@@ -64,3 +63,4 @@ mvn_settings.xml
 deploy.sh
 *-maven-metadata.xml
 Dockerfile.build
+parameters.json
