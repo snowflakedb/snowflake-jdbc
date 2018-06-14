@@ -41,6 +41,6 @@ python $DIR/create_schema.py
 travis_fold_end
 
 travis_fold_start build "Build JDBC driver"
-mvn install -DskipTests=true -Dmaven.javadoc.skip=true -B -V
+mvn install -DskipTests=true --batch-mode --show-version
 travis_fold_end
 
