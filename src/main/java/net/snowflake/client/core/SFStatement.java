@@ -6,6 +6,8 @@ package net.snowflake.client.core;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import net.snowflake.client.core.BasicEvent.QueryState;
+import net.snowflake.client.core.bind.BindException;
+import net.snowflake.client.core.bind.BindUploader;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeFileTransferAgent;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
@@ -64,6 +66,13 @@ public class SFStatement
 
   /** id used in combine describe and execute */
   private String describeJobUUID;
+
+
+  // when uploading binds to stage, we use a table scan which, at the moment,
+  // cannot explicitly parse timestamp/time/date from a ns/ms epoch.
+  // the workaround is to not upload binds to stage if they are present.
+  // TODO remove this when ns/ms timestamps/times/dates supported
+  private boolean hasUnsupportedStageBind = false;
 
   /**
    * Add a statement parameter
@@ -328,10 +337,32 @@ public class SFStatement
       EventUtil.triggerStateTransition(BasicEvent.QueryState.QUERY_STARTED,
           String.format(QueryState.QUERY_STARTED.getArgString(), requestId));
 
+      // if there are a large number of bind values, we should upload them to stage
+      // instead of passing them in the payload (if enabled)
+      int numBinds = BindUploader.arrayBindValueCount(bindValues);
+      String bindStagePath = null;
+      if (0 < session.getArrayBindStageThreshold()
+          && session.getArrayBindStageThreshold() <= numBinds
+          && !describeOnly
+          && !hasUnsupportedStageBind
+          && BindUploader.isArrayBind(bindValues))
+      {
+        try (BindUploader uploader = BindUploader.newInstance(session, requestId))
+        {
+          uploader.upload(bindValues);
+          bindStagePath = uploader.getStagePath();
+        }
+        catch (BindException ex)
+        {
+          logger.warn("Exception encountered trying to upload binds to stage. Attaching binds in payload instead. ", ex);
+          IncidentUtil.generateIncident(session, "Failed to upload binds to stage",
+              null, requestId, null, ex);
+        }
+      }
+
       StmtUtil.StmtInput stmtInput = new StmtUtil.StmtInput();
       stmtInput.setSql(sql)
           .setMediaType(mediaType)
-          .setBindValues(bindValues)
           .setDescribeOnly(describeOnly)
           .setServerUrl(session.getServerUrl())
           .setRequestId(requestId)
@@ -346,6 +377,17 @@ public class SFStatement
           .setDescribedJobId(describeJobUUID)
           .setCombineDescribe(session.getEnableCombineDescribe())
           .setQuerySubmissionTime(System.currentTimeMillis());
+
+      if (bindStagePath != null)
+      {
+        stmtInput.setBindValues(null)
+            .setBindStage(bindStagePath);
+      }
+      else
+      {
+        stmtInput.setBindValues(bindValues)
+            .setBindStage(null);
+      }
 
       if (canceling.get())
       {
@@ -686,5 +728,10 @@ public class SFStatement
   protected SFSession getSession()
   {
     return session;
+  }
+
+  public void setHasUnsupportedStageBind(boolean hasUnsupportedStageBind)
+  {
+    this.hasUnsupportedStageBind = hasUnsupportedStageBind;
   }
 }

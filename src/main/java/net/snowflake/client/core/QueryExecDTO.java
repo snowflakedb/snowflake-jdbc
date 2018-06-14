@@ -20,6 +20,8 @@ class QueryExecDTO
 
   private Map<String, ParameterBindingDTO> bindings;
 
+  private String bindStage;
+
   private boolean describeOnly;
 
   private Map<String, Object> parameters;
@@ -32,6 +34,7 @@ class QueryExecDTO
                boolean describeOnly,
                Integer sequenceId,
                Map<String, ParameterBindingDTO> bindings,
+               String bindStage,
                Map<String, Object> parameters,
                long querySubmissionTime)
   {
@@ -39,6 +42,7 @@ class QueryExecDTO
     this.describeOnly = describeOnly;
     this.sequenceId = sequenceId;
     this.bindings = bindings;
+    this.bindStage = bindStage;
     this.parameters = parameters;
     this.querySubmissionTime = querySubmissionTime;
   }
@@ -73,6 +77,16 @@ class QueryExecDTO
   public void setBindings(Map<String, ParameterBindingDTO> bindings)
   {
     this.bindings = bindings;
+  }
+
+  public String getBindStage()
+  {
+    return bindStage;
+  }
+
+  public void setBindStage(String bindStage)
+  {
+    this.bindStage = bindStage;
   }
 
   public boolean isDescribeOnly()
