@@ -48,7 +48,6 @@ import java.util.Set;
 import java.util.TimeZone;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
-import net.snowflake.common.util.TimeUtil;
 
 /**
  *
@@ -290,6 +289,7 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
           ResultUtil.msDiffJulianToGregorian(x)));
 
       parameterBindings.put(String.valueOf(parameterIndex), binding);
+      sfStatement.setHasUnsupportedStageBind(true);
     }
   }
 
@@ -318,6 +318,7 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
                       String.valueOf(nanosSinceMidnight));
 
       parameterBindings.put(String.valueOf(parameterIndex), binding);
+      sfStatement.setHasUnsupportedStageBind(true);
     }
   }
 
@@ -342,6 +343,7 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
 
     ParameterBindingDTO binding = new ParameterBindingDTO(sfType.name(), value);
     parameterBindings.put(String.valueOf(parameterIndex), binding);
+    sfStatement.setHasUnsupportedStageBind(true);
   }
 
   @Override
@@ -373,6 +375,10 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
   public void clearParameters() throws SQLException
   {
     parameterBindings.clear();
+    if (batchParameterBindings.isEmpty())
+    {
+      sfStatement.setHasUnsupportedStageBind(false);
+    }
   }
 
   @Override
@@ -846,6 +852,7 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
     super.clearBatch();
     batchParameterBindings.clear();
     batchSize = 0;
+    sfStatement.setHasUnsupportedStageBind(false);
   }
 
   @Override
@@ -935,5 +942,11 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
   {
     throw new UnsupportedOperationException(
         "execute(String sql, String[] columnNames) Not supported yet.");
+  }
+
+  // For testing use only
+  Map<String, ParameterBindingDTO> getBatchParameterBindings()
+  {
+    return batchParameterBindings;
   }
 }
