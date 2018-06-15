@@ -110,7 +110,8 @@ public class SessionUtil
       "CLIENT_RESULT_PREFETCH_SLOTS",
       "CLIENT_RESULT_PREFETCH_THREADS",
       "CLIENT_PREFETCH_THREADS",
-      "CLIENT_MEMORY_LIMIT"));
+      "CLIENT_MEMORY_LIMIT",
+      "CLIENT_STAGE_ARRAY_BINDING_THRESHOLD"));
 
   private static Set<String> BOOLEAN_PARAMS = new HashSet<>(Arrays.asList(
       "CLIENT_HONOR_CLIENT_TZ_FOR_TIMESTAMP_NTZ",
@@ -1770,6 +1771,13 @@ public class SessionUtil
         if (session != null)
         {
           session.setClientTelemetryEnabled((boolean) entry.getValue());
+        }
+      }
+      else if ("CLIENT_STAGE_ARRAY_BINDING_THRESHOLD".equalsIgnoreCase(entry.getKey()))
+      {
+        if (session != null)
+        {
+          session.setArrayBindStageThreshold((int) entry.getValue());
         }
       }
     }

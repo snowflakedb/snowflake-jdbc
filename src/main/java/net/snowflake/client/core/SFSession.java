@@ -175,6 +175,13 @@ public class SFSession
   //default value is false will be updated when login
   private boolean clientTelemetryEnabled = false;
 
+  // The server can read array binds from a stage instead of query payload.
+  // When there as many bind values as this threshold, we should upload them to a stage.
+  private int arrayBindStageThreshold = 0;
+
+  // name of temporary stage to upload array binds to; null if none has been created yet
+  private String arrayBindStage = null;
+
   public void addProperty(SFSessionProperty sfSessionProperty,
                           Object propertyValue)
       throws SFException
@@ -1001,4 +1008,23 @@ public class SFSession
     this.clientTelemetryEnabled = clientTelemetryEnabled;
   }
 
+  public int getArrayBindStageThreshold()
+  {
+    return arrayBindStageThreshold;
+  }
+
+  public void setArrayBindStageThreshold(int arrayBindStageThreshold)
+  {
+    this.arrayBindStageThreshold = arrayBindStageThreshold;
+  }
+
+  public String getArrayBindStage()
+  {
+    return arrayBindStage;
+  }
+
+  public void setArrayBindStage(String arrayBindStage)
+  {
+    this.arrayBindStage = arrayBindStage;
+  }
 }

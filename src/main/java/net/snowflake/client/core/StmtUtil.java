@@ -71,6 +71,7 @@ public class StmtUtil
     // default to snowflake (a special json format for snowflake query result
     String mediaType = "application/snowflake";
     Map<String, ParameterBindingDTO> bindValues;
+    String bindStage;
     boolean describeOnly;
     String serverUrl;
     String requestId;
@@ -116,6 +117,12 @@ public class StmtUtil
     public StmtInput setBindValues(Map<String, ParameterBindingDTO> bindValues)
     {
       this.bindValues = bindValues;
+      return this;
+    }
+
+    public StmtInput setBindStage(String bindStage)
+    {
+      this.bindStage = bindStage;
       return this;
     }
 
@@ -291,6 +298,7 @@ public class StmtUtil
             stmtInput.describeOnly,
             Integer.valueOf(stmtInput.sequenceId),
             stmtInput.bindValues,
+            stmtInput.bindStage,
             stmtInput.parametersMap,
             stmtInput.querySubmissionTime);
 
