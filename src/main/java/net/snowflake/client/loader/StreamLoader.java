@@ -104,6 +104,12 @@ public class StreamLoader implements Loader, Runnable
 
   boolean _testMode = false;
 
+  private CopyIntoOnError _onError = CopyIntoOnError.CONTINUE;
+
+  private long _onErrorNum;
+
+  private int _onErrorNumPercents;
+
   private final Connection _putConn;
   private final Connection _processConn;
 
@@ -220,6 +226,12 @@ public class StreamLoader implements Loader, Runnable
       case testRemoteBadCSV:
         _testRemoteBadCSV = Boolean.valueOf(String.valueOf(value));
         break;
+      case onError:
+        _onError = (CopyIntoOnError) value;
+      case onErrorNum:
+        _onErrorNum = (Long) value;
+      case onErrorNumPercents:
+        _onErrorNumPercents = (Integer) value;
       default:
         // nop, this should ever happens
     }
@@ -663,6 +675,19 @@ public class StreamLoader implements Loader, Runnable
   List<String> getColumns()
   {
     return this._columns;
+  }
+
+  CopyIntoOnError getOnError()
+  {
+      return this._onError;
+  }
+
+  long getOnErrorNum() {
+      return this._onErrorNum;
+  }
+
+  int getOnErrorNumPercents() {
+      return this._onErrorNumPercents;
   }
 
   String getColumnsAsString()
