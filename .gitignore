@@ -58,7 +58,6 @@ sfsql.cmd
 snowflake.jceks
 thin/*
 .svnignore
-src/test/*
 mvn_settings.xml
 deploy.sh
 *-maven-metadata.xml
