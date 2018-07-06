@@ -16,7 +16,6 @@ import net.snowflake.client.jdbc.SnowflakeChunkDownloader;
 import net.snowflake.client.jdbc.SnowflakeResultChunk;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 
-import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -254,14 +253,7 @@ public class SFResultSet extends SFBaseResultSet
   private void logMetric(TelemetryField field, long value)
   {
     TelemetryData data = TelemetryUtil.buildJobData(this.queryId, field, value);
-    try
-    {
-      this.telemetryClient.addLogToBatch(data);
-    }
-    catch (IOException ex)
-    {
-      logger.warn("Exception encountered while sending metrics to telemetry endpoint.");
-    }
+    this.telemetryClient.tryAddLogToBatch(data);
   }
 
   private void logChunkDownloaderMetrics(SnowflakeChunkDownloader.Metrics metrics)

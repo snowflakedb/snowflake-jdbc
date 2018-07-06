@@ -11,6 +11,8 @@ import net.snowflake.client.core.bind.BindUploader;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeFileTransferAgent;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
+import net.snowflake.client.jdbc.telemetry.TelemetryData;
+import net.snowflake.client.jdbc.telemetry.TelemetryUtil;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SqlState;
@@ -67,11 +69,8 @@ public class SFStatement
   /** id used in combine describe and execute */
   private String describeJobUUID;
 
-
-  // when uploading binds to stage, we use a table scan which, at the moment,
-  // cannot explicitly parse timestamp/time/date from a ns/ms epoch.
-  // the workaround is to not upload binds to stage if they are present.
-  // TODO remove this when ns/ms timestamps/times/dates supported
+  // when uploading binds to stage, we use a table scan which cannot parse times from ms
+  // so, if the user binds time values, we don't upload to stage
   private boolean hasUnsupportedStageBind = false;
 
   /**
@@ -355,6 +354,8 @@ public class SFStatement
         catch (BindException ex)
         {
           logger.warn("Exception encountered trying to upload binds to stage. Attaching binds in payload instead. ", ex);
+          TelemetryData errorLog = TelemetryUtil.buildJobData(this.requestId, ex.type.field, 1);
+          this.session.getTelemetryClient().tryAddLogToBatch(errorLog);
           IncidentUtil.generateIncident(session, "Failed to upload binds to stage",
               null, requestId, null, ex);
         }
@@ -382,6 +383,8 @@ public class SFStatement
       {
         stmtInput.setBindValues(null)
             .setBindStage(bindStagePath);
+        // use the new SQL format for this query so dates/timestamps are parsed correctly
+        setUseNewSqlFormat(true);
       }
       else
       {
@@ -479,6 +482,8 @@ public class SFStatement
       {
         executor.shutdownNow();
       }
+      // if this query enabled the new SQL format, re-disable it now
+      setUseNewSqlFormat(false);
     }
   }
 
@@ -733,5 +738,11 @@ public class SFStatement
   public void setHasUnsupportedStageBind(boolean hasUnsupportedStageBind)
   {
     this.hasUnsupportedStageBind = hasUnsupportedStageBind;
+  }
+
+  // *NOTE* this new SQL format is incomplete. It should only be used under certain circumstances.
+  private void setUseNewSqlFormat(boolean useNewSqlFormat) throws SFException
+  {
+    this.addProperty("NEW_SQL_FORMAT", useNewSqlFormat);
   }
 }

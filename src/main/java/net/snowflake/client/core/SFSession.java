@@ -1025,6 +1025,7 @@ public class SFSession
 
   public void setArrayBindStage(String arrayBindStage)
   {
-    this.arrayBindStage = arrayBindStage;
+    this.arrayBindStage = String.format("%s.%s.%s",
+        this.getDatabase(), this.getSchema(), arrayBindStage);
   }
 }
