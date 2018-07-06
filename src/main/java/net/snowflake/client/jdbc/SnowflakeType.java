@@ -109,8 +109,9 @@ public enum SnowflakeType {
     }
 
     public String lexicalValue(Object o) {
-      if (o == null) {
-        return "";  // Questionable
+      if (o == null)
+      {
+        return null;
       }
       switch (this) {
         case JAVA_STRING:
@@ -147,7 +148,8 @@ public enum SnowflakeType {
    */
   public static String lexicalValue(
       Object o, boolean useLocalTimezone, boolean mapTimeToTimestamp) {
-    if (o == null) {
+    if (o == null)
+    {
       return null;
     }
 
