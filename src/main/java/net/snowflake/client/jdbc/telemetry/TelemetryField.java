@@ -7,7 +7,12 @@ public enum TelemetryField
   TIME_CONSUME_LAST_RESULT("client_time_consume_last_result"),
   TIME_WAITING_FOR_CHUNKS("client_time_waiting_for_chunks"),
   TIME_DOWNLOADING_CHUNKS("client_time_downloading_chunks"),
-  TIME_PARSING_CHUNKS("client_time_parsing_chunks");
+  TIME_PARSING_CHUNKS("client_time_parsing_chunks"),
+
+  FAILED_BIND_SERIALIZATION("client_failed_bind_serialization"),
+  FAILED_BIND_UPLOAD("client_failed_bind_upload"),
+  FAILED_BIND_OTHER("client_failed_bind_other"),
+  ;
 
   public final String field;
 

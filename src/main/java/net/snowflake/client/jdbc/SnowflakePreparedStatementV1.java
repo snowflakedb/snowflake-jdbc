@@ -289,7 +289,6 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
           ResultUtil.msDiffJulianToGregorian(x)));
 
       parameterBindings.put(String.valueOf(parameterIndex), binding);
-      sfStatement.setHasUnsupportedStageBind(true);
     }
   }
 
@@ -343,7 +342,6 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
 
     ParameterBindingDTO binding = new ParameterBindingDTO(sfType.name(), value);
     parameterBindings.put(String.valueOf(parameterIndex), binding);
-    sfStatement.setHasUnsupportedStageBind(true);
   }
 
   @Override

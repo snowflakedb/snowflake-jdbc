@@ -144,6 +144,21 @@ public class Telemetry
   }
 
   /**
+   * Same behaviour as addLogToBatch, but suppress exceptions
+   */
+  public void tryAddLogToBatch(TelemetryData log)
+  {
+    try
+    {
+      addLogToBatch(log);
+    }
+    catch (IOException ex)
+    {
+      logger.warn("Exception encountered while sending metrics to telemetry endpoint.", ex);
+    }
+  }
+
+  /**
    * close telemetry connector, send all cached logs
    */
   public void close() throws IOException

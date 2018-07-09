@@ -37,7 +37,18 @@ public class BindUploader implements Closeable
 
   private static final String STAGE_NAME = "SYSTEM$BIND";
 
-  private static final String CREATE_STAGE_STMT = "CREATE TEMPORARY STAGE " + STAGE_NAME;
+  // Date binds are saved as millis, timestamp binds are saved as nanos (and times are not supported)
+  private static final String DATE_FORMAT = "ES3";
+  private static final String TS_FORMAT = "ES9";
+
+  private static final String CREATE_STAGE_STMT = "CREATE TEMPORARY STAGE "
+      + STAGE_NAME
+      + " file_format=("
+        + " type=csv"
+        + " date_format=" + DATE_FORMAT
+        + " timestamp_format=" + TS_FORMAT
+        + " field_optionally_enclosed_by='\"'"
+      + ")";
 
   private static final String PUT_STMT = "PUT"
       + " 'file://%s%s*'"           // argument 1: folder, argument 2: separator
@@ -95,7 +106,7 @@ public class BindUploader implements Closeable
     catch(IOException ex)
     {
       throw new BindException(
-          String.format("Failed to create temporary directory: %s", ex.getMessage()));
+          String.format("Failed to create temporary directory: %s", ex.getMessage()), BindException.Type.OTHER);
     }
   }
 
@@ -142,7 +153,7 @@ public class BindUploader implements Closeable
       if (!bindValues.containsKey(key))
       {
         throw new BindException(
-            String.format("Bind map with %d columns should contain key \"%d\"", bindValues.size(), i));
+            String.format("Bind map with %d columns should contain key \"%d\"", bindValues.size(), i), BindException.Type.SERIALIZATION);
       }
 
       ParameterBindingDTO value = bindValues.get(key);
@@ -153,7 +164,7 @@ public class BindUploader implements Closeable
       }
       catch (ClassCastException ex)
       {
-        throw new BindException("Value in binding DTO could not be cast to a list");
+        throw new BindException("Value in binding DTO could not be cast to a list", BindException.Type.SERIALIZATION);
       }
     }
     return columns;
@@ -173,7 +184,7 @@ public class BindUploader implements Closeable
     // columns should have binds
     if (columns.get(0).isEmpty())
     {
-      throw new BindException("No binds found in first column");
+      throw new BindException("No binds found in first column", BindException.Type.SERIALIZATION);
     }
 
     int numRows = columns.get(0).size();
@@ -184,7 +195,7 @@ public class BindUploader implements Closeable
       if (columns.get(i).size() != numRows)
       {
         throw new BindException(
-            String.format("Column %d has a different number of binds (%d) than column 1 (%d)", i, iNumRows, numRows));
+            String.format("Column %d has a different number of binds (%d) than column 1 (%d)", i, iNumRows, numRows), BindException.Type.SERIALIZATION);
       }
     }
 
@@ -231,7 +242,7 @@ public class BindUploader implements Closeable
       catch (IOException ex)
       {
         throw new BindException(
-            String.format("Exception encountered while writing to file: %s", ex.getMessage()));
+            String.format("Exception encountered while writing to file: %s", ex.getMessage()), BindException.Type.SERIALIZATION);
       }
     }
   }
@@ -261,7 +272,7 @@ public class BindUploader implements Closeable
     catch (IOException ex)
     {
       throw new BindException(
-          String.format("Failed to create output file %s: %s", file.toString(), ex.getMessage()));
+          String.format("Failed to create output file %s: %s", file.toString(), ex.getMessage()), BindException.Type.SERIALIZATION);
     }
   }
 
@@ -332,7 +343,7 @@ public class BindUploader implements Closeable
     }
 
     // if we haven't returned (on success), throw exception
-    throw new BindException("Failed to PUT files to stage.");
+    throw new BindException("Failed to PUT files to stage.", BindException.Type.UPLOAD);
   }
 
   /**
@@ -363,7 +374,7 @@ public class BindUploader implements Closeable
           // optimization if we fail to create stage for some reason
           session.setArrayBindStageThreshold(0);
           throw new BindException(
-              String.format("Failed to create temporary stage for array binds. %s", ex.getMessage()));
+              String.format("Failed to create temporary stage for array binds. %s", ex.getMessage()),BindException.Type.UPLOAD);
         }
       }
     }

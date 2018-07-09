@@ -1,3 +1,9 @@
+**JDBC Driver 3.6.5**
+|SNOW-45631| Improved Array binding
+|SNOW-45545| Fixed a data to cvs converter for Loader API. NULL and empty are now converted to NULL and empty, respectively.
+|SNOW-45021| Removing username requirement for oAuth
+
+
 **JDBC Driver 3.6.4**
 |SNOW-41096| Add a parameter to control Telemetry service.
 |SNOW-45484| Fix 50MB calculation.
