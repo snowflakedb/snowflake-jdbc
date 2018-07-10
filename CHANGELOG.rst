@@ -1,16 +1,15 @@
+**JDBC Driver 3.6.6**
+|SNOW-50032| Fixed retry OCSP check that doesn't occur if validity check fails. 
+
 **JDBC Driver 3.6.5**
-|SNOW-45631| Improved Array binding
-|SNOW-45545| Fixed a data to cvs converter for Loader API. NULL and empty are now converted to NULL and empty, respectively.
-|SNOW-45021| Removing username requirement for oAuth
-
-
+|SNOW-45631| Improved array binding when routing bind values through stage.
+|SNOW-45545| Fixed issue with the data-to-CSV converter for the ``Loader`` API. ``NULL`` and empty values are now correctly converted to ``NULL`` and empty, respectively.
+|SNOW-45021| Removed login name requirement when authenticating with an OAuth access token.
 **JDBC Driver 3.6.4**
-|SNOW-41096| Add a parameter to control Telemetry service.
-|SNOW-45484| Fix 50MB calculation.
-|SNOW-45612| Add authenticator setting to SnowflakeBasicDatasource
-|SNOW-45600| Close http response stream to allow http client to reuse socket.
-
-
+|SNOW-45612| Added ``authenticator`` setting to ``SnowflakeBasicDatasource``.
+|SNOW-45600| Driver now closes the HTTP response stream to allow HTTP client to reuse socket.
+|SNOW-45484| Fixed calculation for 50MB file size.
+|SNOW-41096| Added a parameter to control Telemetry service (for pending feature in the Spark Connector).
 **JDBC Driver 3.6.3**
 |SNOW-43251| Fixed erroneous exception raised when COPY statement loads 0 files.
 **JDBC Driver 3.6.2**
@@ -130,7 +129,7 @@
 **JDBC Driver 3.0.4**
 |SNOW-14445| Added support for pointing JDBC logger path to a directory other than ``tmp`` to prevent file permission issues.
 **JDBC Driver 3.0.3**
-|SNOW-18243| Added support for case-insensitive searches on column names in result sets. By default, searches are case-sensitive. To request enabling case-insensitive search for your account, please email support@snowflake.net.
+|SNOW-18243| Added support for case-insensitive searches on column names in result sets. By default, searches are case-sensitive. To request enabling case-insensitive search for your account, please contact `Snowflake Support <https://support.snowflake.net/s/snowflake-support>`_.
 **JDBC Driver 3.0.2**
 |SNOW-25029| Fixed binding support for the TIME data type in the ``PreparedStatement`` API implementation.
 |SNOW-25024, SNOW-24868| Implemented a fix to generate a user error when the client calls the ``getData``, ``getTimestamp``, or ``getTime`` methods on columns with invalid data types.
