@@ -244,7 +244,7 @@ class SFTrustManager implements X509TrustManager
   /**
    * Maximum retry counter (times)
    */
-  private static final int MAX_RETRY_COUNTER = 100;
+  private static final int MAX_RETRY_COUNTER = 10;
 
   /**
    * Initial sleeping time in retry (ms)
@@ -612,17 +612,17 @@ class SFTrustManager implements X509TrustManager
         try
         {
           Thread.sleep(sleepTime);
-          sleepTime = maxLong(MAX_SLEEPING_TIME, sleepTime * 2);
+          sleepTime = minLong(MAX_SLEEPING_TIME, sleepTime * 2);
         }
         catch (InterruptedException ex0)
         { // nop
         }
       }
-      if (!success)
-      {
-        // still not success, raise an error.
-        throw error;
-      }
+    }
+    if (!success)
+    {
+      // still not success, raise an error.
+      throw error;
     }
   }
 
@@ -850,7 +850,7 @@ class SFTrustManager implements X509TrustManager
         try
         {
           Thread.sleep(sleepTime);
-          sleepTime = maxLong(MAX_SLEEPING_TIME, sleepTime * 2);
+          sleepTime = minLong(MAX_SLEEPING_TIME, sleepTime * 2);
         }
         catch (InterruptedException ex0)
         { // nop
@@ -1098,7 +1098,7 @@ class SFTrustManager implements X509TrustManager
         try
         {
           Thread.sleep(sleepTime);
-          sleepTime = maxLong(MAX_SLEEPING_TIME, sleepTime * 2);
+          sleepTime = minLong(MAX_SLEEPING_TIME, sleepTime * 2);
         }
         catch (InterruptedException ex0)
         { // nop
@@ -1447,6 +1447,11 @@ class SFTrustManager implements X509TrustManager
   {
     // using the default HTTP client
     return HttpUtil.getHttpClient();
+  }
+
+  private static long minLong(long v1, long v2)
+  {
+    return v1 < v2 ? v1 : v2;
   }
 
   private static long maxLong(long v1, long v2)
