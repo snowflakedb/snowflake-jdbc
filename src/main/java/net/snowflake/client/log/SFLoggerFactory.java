@@ -64,6 +64,11 @@ public class SFLoggerFactory
         loggerImplementation = slf4jImplExist() ? LoggerImpl.SLF4JLOGGER
             : LoggerImpl.JDK14LOGGER;
       }
+
+      if (loggerImplementation == LoggerImpl.JDK14LOGGER)
+      {
+        JDK14Logger.defaultInit();
+      }
     }
 
     switch (loggerImplementation)

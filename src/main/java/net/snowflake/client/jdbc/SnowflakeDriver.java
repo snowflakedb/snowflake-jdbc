@@ -88,7 +88,15 @@ public class SnowflakeDriver implements Driver
       EventUtil.initEventHandlerInstance(1000, 10000);
       EventHandler eventHandler = EventUtil.getEventHandlerInstance();
 
-      // if this system property is not set and logger is staill jdk logger, then we are
+      if (logger instanceof JDK14Logger)
+      {
+        eventHandler.setLevel(Level.ALL);
+        eventHandler.setFormatter(new SimpleFormatter());
+
+        JDK14Logger.addHandler(eventHandler);
+      }
+
+      // if this system property is not set and logger is still jdk logger, then we are
       // assuming the customer is using the old logging config
       if (loggerImpl == null && (logger instanceof JDK14Logger))
       {
@@ -134,34 +142,15 @@ public class SnowflakeDriver implements Driver
         fileHandler.setLevel(Level.ALL);
         fileHandler.setFormatter(new SFFormatter());
 
-        eventHandler.setLevel(Level.ALL);
-        eventHandler.setFormatter(new SimpleFormatter());
-
         // set default level and add handler for snowflake logger
-        Logger snowflakeLogger = Logger.getLogger(SFFormatter.CLASS_NAME_PREFIX);
-        snowflakeLogger.setLevel(defaultLevel);
-        snowflakeLogger.addHandler(SnowflakeDriver.fileHandler);
-        snowflakeLogger.addHandler(eventHandler);
+        JDK14Logger.setLevel(defaultLevel);
+        JDK14Logger.addHandler(SnowflakeDriver.fileHandler);
 
         Logger snowflakeLoggerInformaticaV1 = Logger.getLogger(
             SFFormatter.INFORMATICA_V1_CLASS_NAME_PREFIX);
         snowflakeLoggerInformaticaV1.setLevel(defaultLevel);
         snowflakeLoggerInformaticaV1.addHandler(SnowflakeDriver.fileHandler);
         snowflakeLoggerInformaticaV1.addHandler(eventHandler);
-      }
-      else if (loggerImpl != null && (logger instanceof JDK14Logger))
-      {
-        JDK14Logger.addHandler(eventHandler);
-        if (!hasLoggingConfig())
-        {
-          // if no logging.properties has been set
-          // then by default just use this default setting
-          JDK14Logger.disableDefaultHandler();
-          Handler console = new ConsoleHandler();
-          console.setFormatter(new SFFormatter());
-          console.setLevel(Level.WARNING);
-          JDK14Logger.addHandler(console);
-        }
       }
 
       logger.debug("registered driver");
@@ -392,33 +381,4 @@ public class SnowflakeDriver implements Driver
         throttleIncidents;
   }
 
-  /**
-   * If using java.util.logging, this method is used to check whether a logging.properties
-   * exists or not.
-   *
-   * It will first check where $JRE/lib/logging.properties exist or not,
-   * Then check if two system property
-   *    - java.util.logging.config.class
-   *    - java.util.logging.config.file
-   * has been set or not.
-   *
-   * If yes, return true. If none of the above is set, return false
-   */
-  private static boolean hasLoggingConfig()
-  {
-    String JRE = System.getProperty("java.home");
-    String filePath = JRE + "/lib/logging.properties";
-    File file = new File(filePath);
-    if (file.exists())
-    {
-      return true;
-    }
-    else
-    {
-      String configClass = System.getProperty("java.util.logging.config.class");
-      String configFile = System.getProperty("java.util.logging.config.file");
-
-      return (configClass != null) || (configFile != null);
-    }
-  }
 }

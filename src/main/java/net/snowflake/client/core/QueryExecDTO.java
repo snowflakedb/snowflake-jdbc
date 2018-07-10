@@ -30,6 +30,8 @@ class QueryExecDTO
 
   private long querySubmissionTime;
 
+  private boolean isInternal;
+
   QueryExecDTO(String sqlText,
                boolean describeOnly,
                Integer sequenceId,
@@ -45,6 +47,7 @@ class QueryExecDTO
     this.bindStage = bindStage;
     this.parameters = parameters;
     this.querySubmissionTime = querySubmissionTime;
+    this.isInternal = describeOnly;
   }
 
   public String getSqlText()
@@ -127,5 +130,15 @@ class QueryExecDTO
   public void setQuerySubmissionTime(long querySubmissionTime)
   {
     this.querySubmissionTime = querySubmissionTime;
+  }
+
+  public void setIsInternal(boolean isInternal)
+  {
+    this.isInternal = isInternal;
+  }
+
+  public boolean getIsInternal()
+  {
+    return this.isInternal;
   }
 }
