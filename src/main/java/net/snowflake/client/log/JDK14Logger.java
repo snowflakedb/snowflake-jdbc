@@ -3,12 +3,16 @@
  */
 package net.snowflake.client.log;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.util.logging.Handler;
+import java.util.logging.StreamHandler;
 
 /**
  * Use java.util.logging to implements SFLogger.
@@ -173,12 +177,6 @@ public class JDK14Logger implements SFLogger
     snowflakeLogger.setLevel(level);
   }
 
-  public static void disableDefaultHandler()
-  {
-    Logger snowflakeLogger = Logger.getLogger("net.snowflake");
-    snowflakeLogger.setUseParentHandlers(false);
-  }
-
   /**
    * Since we use SLF4J ways of formatting string we need to refactor message string
    * if we have arguments.
@@ -247,5 +245,47 @@ public class JDK14Logger implements SFLogger
       }
     }
     return results;
+  }
+
+  static void defaultInit()
+  {
+    if (!hasLoggingConfig())
+    {
+      java.util.logging.Logger sfRootLogger = java.util.logging.Logger
+          .getLogger("net.snowflake");
+      // disable parent's default console handler
+      sfRootLogger.setUseParentHandlers(false);
+      // change to use Stream handler print to stdout
+      sfRootLogger.addHandler(new StreamHandler(System.out,
+          new SFFormatter()));
+    }
+  }
+
+  /**
+   * Check whether a logging.properties exists or not.
+   *
+   * It will first check where $JRE/lib/logging.properties exist or not,
+   * Then check if two system property
+   *    - java.util.logging.config.class
+   *    - java.util.logging.config.file
+   * has been set or not.
+   *
+   * If yes, return true. If none of the above is set, return false
+   */
+  private static boolean hasLoggingConfig()
+  {
+    String JRE = System.getProperty("java.home");
+    Path configFilePath = Paths.get(JRE, "lib", "logging.properties");
+    if (Files.exists(configFilePath))
+    {
+      return true;
+    }
+    else
+    {
+      String configClass = System.getProperty("java.util.logging.config.class");
+      String configFile = System.getProperty("java.util.logging.config.file");
+
+      return (configClass != null) || (configFile != null);
+    }
   }
 }
