@@ -386,13 +386,21 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
         "setObject(int parameterIndex, Object x, int targetSqlType)");
 
     if (x == null)
+    {
       setNull(parameterIndex, targetSqlType);
+    }
     else if (targetSqlType == Types.DATE)
-      setDate(parameterIndex, (Date)x);
+    {
+      setDate(parameterIndex, (Date) x);
+    }
     else if (targetSqlType == Types.TIME)
-      setTime(parameterIndex, (Time)x);
+    {
+      setTime(parameterIndex, (Time) x);
+    }
     else if (targetSqlType == Types.TIMESTAMP)
-      setTimestamp(parameterIndex, (Timestamp)x);
+    {
+      setTimestamp(parameterIndex, (Timestamp) x);
+    }
     else
     {
       ParameterBindingDTO binding = new ParameterBindingDTO(
@@ -406,32 +414,57 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
   public void setObject(int parameterIndex, Object x) throws SQLException
   {
     if (x == null)
+    {
       setNull(parameterIndex, Types.NULL);
+    }
     else if (x instanceof String)
+    {
       setString(parameterIndex, (String) x);
+    }
     else if (x instanceof BigDecimal)
+    {
       setBigDecimal(parameterIndex, (BigDecimal) x);
+    }
     else if (x instanceof Short)
-      setShort(parameterIndex, ((Short) x).shortValue());
+    {
+      setShort(parameterIndex, (Short)x);
+    }
     else if (x instanceof Integer)
-      setInt(parameterIndex, ((Integer) x).intValue());
+    {
+      setInt(parameterIndex, (Integer) x);
+    }
     else if (x instanceof Long)
-      setLong(parameterIndex, ((Long) x).longValue());
+    {
+      setLong(parameterIndex, (Long) x);
+    }
     else if (x instanceof Float)
-      setFloat(parameterIndex, ((Float) x).floatValue());
+    {
+      setFloat(parameterIndex, (Float) x);
+    }
     else if (x instanceof Double)
-      setDouble(parameterIndex, ((Double) x).doubleValue());
+    {
+      setDouble(parameterIndex, (Double) x);
+    }
     else if (x instanceof Date)
-      setDate(parameterIndex, (Date)x);
+    {
+      setDate(parameterIndex, (Date) x);
+    }
     else if (x instanceof Time)
-      setTime(parameterIndex, (Time)x);
+    {
+      setTime(parameterIndex, (Time) x);
+    }
     else if (x instanceof Timestamp)
-      setTimestamp(parameterIndex, (Timestamp)x);
+    {
+      setTimestamp(parameterIndex, (Timestamp) x);
+    }
+    else if (x instanceof Boolean)
+    {
+      setBoolean(parameterIndex, (Boolean)x);
+    }
     else
     {
       throw new SnowflakeSQLException(SqlState.FEATURE_NOT_SUPPORTED,
-          ErrorCode.DATA_TYPE_NOT_SUPPORTED
-              .getMessageCode(),
+          ErrorCode.DATA_TYPE_NOT_SUPPORTED.getMessageCode(),
           "Object type: " + x.getClass());
     }
   }
