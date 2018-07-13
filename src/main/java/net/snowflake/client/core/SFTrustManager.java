@@ -55,23 +55,12 @@ import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.Reader;
-import java.io.Writer;
 import java.math.BigInteger;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.nio.charset.Charset;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.security.InvalidKeyException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
@@ -128,6 +117,21 @@ class SFTrustManager implements X509TrustManager
   private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
   /**
+   * OCSP response cache entry expiration time (s)
+   */
+  private static final long CACHE_EXPIRATION = 86400L;
+
+  /**
+   * OCSP response cache lock file expiration time (ms)
+   */
+  private static final long CACHE_FILE_LOCK_EXPIRATION = 60000L;
+
+  /**
+   * Default OCSP Cache server host name
+   */
+  public static final String DEFAULT_OCSP_CACHE_HOST = "http://ocsp.snowflakecomputing.com";
+
+  /**
    * OCSP response cache file name. Should be identical to other driver's
    * cache file name.
    */
@@ -136,74 +140,17 @@ class SFTrustManager implements X509TrustManager
   /**
    * OCSP response file cache directory
    */
-  private static final File CACHE_DIR;
+  private static final FileCacheManager fileCacheManager;
 
   static
   {
-    // SF_OCSP_RESPONSE_CACHE_DIR is used to specify the directory including
-    // OCSP response cache file.
-    String cacheDir = System.getenv("SF_OCSP_RESPONSE_CACHE_DIR");
-    if (cacheDir != null)
-    {
-      CACHE_DIR = new File(cacheDir);
-    }
-    else
-    {
-      // use user home directory to store the OCSP cache file
-      String homeDir = System.getProperty("user.home");
-      if (homeDir == null)
-      {
-        // use tmp dir if not exists.
-        homeDir = System.getProperty("java.io.tmpdir");
-      }
-      if (Constants.getOS() == Constants.OS.WINDOWS)
-      {
-        CACHE_DIR = new File(
-            new File(new File(new File(homeDir,
-                "AppData"), "Local"), "Snowflake"), "Caches");
-      }
-      else if (Constants.getOS() == Constants.OS.MAC)
-      {
-        CACHE_DIR = new File(new File(new File(homeDir,
-            "Library"), "Caches"), "Snowflake");
-      }
-      else
-      {
-        CACHE_DIR = new File(new File(homeDir, ".cache"), "snowflake");
-      }
-    }
-    if (!CACHE_DIR.exists() && !CACHE_DIR.mkdirs())
-    {
-      throw new RuntimeException(
-          String.format(
-              "Failed to locate or create the OCSP response cache directory: %s", CACHE_DIR)
-      );
-    }
-    File cacheFileTmp = new File(CACHE_DIR, OCSP_CACHE_FILE_NAME);
-    try
-    {
-      // create an empty file if not exists and return true.
-      // If exists. the method returns false.
-      // In this particular case, it doesn't matter as long as the file is
-      // writable.
-      cacheFileTmp.createNewFile();
-    }
-    catch (IOException | SecurityException ex)
-    {
-      throw new RuntimeException(
-          String.format(
-              "Failed to touch the OCSP response cache file: %s",
-              cacheFileTmp.getAbsoluteFile())
-      );
-    }
+    fileCacheManager = FileCacheManager
+        .builder()
+        .setCacheDirectoryEnvironmentVariable("SF_OCSP_RESPONSE_CACHE_DIR")
+        .setBaseCacheFileName(OCSP_CACHE_FILE_NAME)
+        .setCacheExpiration(CACHE_EXPIRATION)
+        .setCacheFileLockExpiration(CACHE_FILE_LOCK_EXPIRATION).build();
   }
-
-  private static final Charset DEFAULT_FILE_ENCODING = Charset.forName("UTF-8");
-
-  /**
-   * Default OCSP Cache server host name
-   */
-  public static final String DEFAULT_OCSP_CACHE_HOST = "http://ocsp.snowflakecomputing.com";
 
   /**
    * OCSP response cache server URL.
@@ -230,16 +177,6 @@ class SFTrustManager implements X509TrustManager
    * Minimum cache warm up time (ms)
    */
   private static final long MIN_CACHE_WARMUP_TIME = 18000000L;
-
-  /**
-   * OCSP response cache entry expiration time (s)
-   */
-  private static final long CACHE_EXPIRATION = 86400L;
-
-  /**
-   * OCSP response cache lock file expiration time (ms)
-   */
-  private static final long CACHE_FILE_LOCK_EXPIRATION = 60000L;
 
   /**
    * Maximum retry counter (times)
@@ -322,12 +259,6 @@ class SFTrustManager implements X509TrustManager
   private final X509TrustManager trustManager;
 
   /**
-   * OCSP response cache file
-   */
-  private final File cacheFile;
-  private final File cacheFileLock;
-
-  /**
    * Use OCSP response cache server?
    */
   private final boolean useOcspResponseCacheServer;
@@ -343,37 +274,18 @@ class SFTrustManager implements X509TrustManager
   {
     this.trustManager = getTrustManager(
         KeyManagerFactory.getDefaultAlgorithm());
-    File cacheFileTmp;
-    if (cacheFile == null)
-    {
-      cacheFileTmp = new File(CACHE_DIR, OCSP_CACHE_FILE_NAME);
-    }
-    else
-    {
-      // Mainly for tests. In order to change the location of cache directory
-      //
-      cacheFileTmp = cacheFile;
-    }
-    String canonicalPath = null;
-    try
-    {
-      canonicalPath = cacheFileTmp.getCanonicalPath();
-    }
-    catch (IOException ex)
-    {
-      LOGGER.debug("Failed to get the canonical location of the OCSP " +
-          "cache file. No cache will be used.");
-    }
-
-    this.cacheFile = canonicalPath != null ? new File(canonicalPath) : null;
-    this.cacheFileLock = canonicalPath != null ? new File(canonicalPath + ".lck") : null;
 
     synchronized (OCSP_RESPONSE_CACHE_LOCK)
     {
+      if (cacheFile != null)
+      {
+        fileCacheManager.overrideCacheFile(cacheFile);
+      }
       if (!WAS_CACHE_READ)
       {
         // read cache file once
-        readOcspResponseCacheFile(this.cacheFile, this.cacheFileLock);
+        JsonNode res = fileCacheManager.readCacheFile();
+        readJsonStoreCache(res);
         WAS_CACHE_READ = true;
       }
     }
@@ -385,7 +297,7 @@ class SFTrustManager implements X509TrustManager
    *
    * @param ocspCacheServerUrl OCSP Cache server URL
    */
-  public static void resetOCSPResponseCacherServerURL(String ocspCacheServerUrl)
+  static void resetOCSPResponseCacherServerURL(String ocspCacheServerUrl)
   {
     if (ocspCacheServerUrl == null || SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN != null)
     {
@@ -521,7 +433,8 @@ class SFTrustManager implements X509TrustManager
       executeRevocationStatusChecks(pairIssuerSubjectList);
       if (WAS_CACHE_UPDATED)
       {
-        writeOcspResponseCacheFile(this.cacheFile, this.cacheFileLock);
+        JsonNode input = encodeCacheToJSON();
+        fileCacheManager.writeCacheFile(input);
         WAS_CACHE_UPDATED = false;
       }
     }
@@ -770,44 +683,6 @@ class SFTrustManager implements X509TrustManager
   }
 
   /**
-   * Reads the OCSP response cache file.
-   * <p>
-   * Must be synchronized by OCSP_RESPONSE_CACHE_LOCK.
-   */
-  private static void readOcspResponseCacheFile(File cacheFile, File cacheFileLock)
-  {
-    if (cacheFile == null || !checkCacheLockFile(cacheFile, cacheFileLock))
-    {
-      // no cache or the cache is not valid.
-      return;
-    }
-    try
-    {
-      if (!cacheFile.exists())
-      {
-        LOGGER.debug(
-            "OCSP response cache file doesn't exists. File: {}", cacheFile);
-        return;
-      }
-
-      try (Reader reader = new InputStreamReader(
-          new FileInputStream(cacheFile), DEFAULT_FILE_ENCODING))
-      {
-        JsonNode m = OBJECT_MAPPER.readTree(reader);
-        readJsonStoreCache(m);
-      }
-    }
-    catch (IOException ex)
-    {
-      LOGGER.debug(
-          "Failed to read the OCSP response cache file. " +
-              "No worry. It will fetch OCSP from the Snowflake cache server " +
-              "or CA server. File: {}, Err: {}",
-          cacheFile, ex);
-    }
-  }
-
-  /**
    * Reads the OCSP response cache from the server.
    * <p>
    * Must be synchronized by OCSP_RESPONSE_CACHE_LOCK.
@@ -862,185 +737,36 @@ class SFTrustManager implements X509TrustManager
             "Server: {}, Err: {}", SF_OCSP_RESPONSE_CACHE_SERVER_URL, error);
   }
 
-  private static void readJsonStoreCache(JsonNode m) throws IOException
+  private static void readJsonStoreCache(JsonNode m)
   {
     if (m == null || !m.getNodeType().equals(JsonNodeType.OBJECT))
     {
       LOGGER.debug("Invalid cache file format.");
       return;
     }
-    for (Iterator<Map.Entry<String, JsonNode>> itr = m.fields(); itr.hasNext(); )
-    {
-      SFPair<OcspResponseCacheKey, SFPair<Long, OCSPResp>> ky =
-          decodeCacheFromJSON(itr.next());
-      if (ky != null && ky.right != null && ky.right.right != null)
-      {
-        // valid range. cache the result in memory
-        OCSP_RESPONSE_CACHE.put(ky.left, ky.right);
-      }
-      else if (ky != null && OCSP_RESPONSE_CACHE.containsKey(ky.left))
-      {
-        // delete it from the cache if no OCSP response is back.
-        OCSP_RESPONSE_CACHE.remove(ky.left);
-        WAS_CACHE_UPDATED = true;
-      }
-    }
-  }
-
-  /**
-   * Lock cache file by creating a lock directory
-   *
-   * @return true if success or false
-   */
-  private static boolean lockCacheFile(File cacheFileLock)
-  {
-    return cacheFileLock.mkdirs();
-  }
-
-  /**
-   * Unlock cache file by deleting a lock directory
-   *
-   * @return true if success or false
-   */
-  private static boolean unlockCacheFile(File cacheFileLock)
-  {
-    return cacheFileLock.delete();
-  }
-
-  /**
-   * Delete old lock cache directory if exists. If no lock file exists,
-   * this method returns true.
-   *
-   * @return true if ok to read the cache file or false
-   */
-  private static boolean checkCacheLockFile(File cacheFile, File cacheFileLock)
-  {
-    long currentTime = new Date().getTime();
-    long cacheFileTs = fileCreationTime(cacheFile);
-
-    if (!cacheFileLock.exists() && cacheFileTs > 0 && currentTime - CACHE_EXPIRATION <= cacheFileTs)
-    {
-      LOGGER.debug("No cache file lock directory exists and cache file is up to date.");
-      return true;
-    }
-
-    long lockFileTs = fileCreationTime(cacheFileLock);
-    if (lockFileTs < 0)
-    {
-      // failed to get the timestamp of lock directory
-      return false;
-    }
-    if (lockFileTs < currentTime - CACHE_FILE_LOCK_EXPIRATION)
-    {
-      // old lock file
-      if (!cacheFileLock.delete())
-      {
-        LOGGER.debug(
-            "Failed to delete the directory. Dir: {}",
-            cacheFileLock);
-        return false;
-      }
-      LOGGER.debug("Deleted the cache lock directory, because it was old.");
-      return currentTime - CACHE_EXPIRATION <= cacheFileTs;
-    }
-    LOGGER.debug("");
-    return false;
-  }
-
-  /**
-   * Gets file/dir creation time in epoch (ms)
-   *
-   * @return epoch time in ms
-   */
-  private static long fileCreationTime(File targetFile)
-  {
-    if (!targetFile.exists())
-    {
-      LOGGER.debug("File not exists. File: {}", targetFile);
-      return -1;
-    }
     try
     {
-      Path cacheFileLockPath = Paths.get(targetFile.getAbsolutePath());
-      BasicFileAttributes attr = Files.readAttributes(
-          cacheFileLockPath, BasicFileAttributes.class);
-      return attr.creationTime().toMillis();
-    }
-    catch (IOException ex)
-    {
-      LOGGER.debug(
-          "Failed to get creation time. File/Dir: {}, Err: {}",
-          targetFile, ex);
-    }
-    return -1;
-  }
-
-  /**
-   * Writes OCSP response cache file.
-   */
-  private static void writeOcspResponseCacheFile(File cacheFile, File cacheFileLock)
-  {
-    LOGGER.debug("Writing OCSP response cache file. File={}", cacheFile);
-    if (cacheFile == null || !tryLockCacheFile(cacheFileLock))
-    {
-      // no cache file or it failed to lock file
-      return;
-    }
-    // NOTE: must unlock cache file
-    try
-    {
-      ObjectNode json = encodeCacheToJSON();
-      if (json == null)
+      for (Iterator<Map.Entry<String, JsonNode>> itr = m.fields(); itr.hasNext(); )
       {
-        return;
-      }
-      try (Writer writer = new OutputStreamWriter(
-          new FileOutputStream(cacheFile), DEFAULT_FILE_ENCODING))
-      {
-        writer.write(json.toString());
+        SFPair<OcspResponseCacheKey, SFPair<Long, OCSPResp>> ky =
+            decodeCacheFromJSON(itr.next());
+        if (ky != null && ky.right != null && ky.right.right != null)
+        {
+          // valid range. cache the result in memory
+          OCSP_RESPONSE_CACHE.put(ky.left, ky.right);
+        }
+        else if (ky != null && OCSP_RESPONSE_CACHE.containsKey(ky.left))
+        {
+          // delete it from the cache if no OCSP response is back.
+          OCSP_RESPONSE_CACHE.remove(ky.left);
+          WAS_CACHE_UPDATED = true;
+        }
       }
     }
     catch (IOException ex)
     {
-      LOGGER.debug(
-          "Failed to write the OCSP response cache file. File: {}",
-          cacheFile);
+      LOGGER.debug("Failed to decode the cache file");
     }
-    finally
-    {
-      if (!unlockCacheFile(cacheFileLock))
-      {
-        LOGGER.debug("Failed to unlock cache file");
-      }
-    }
-  }
-
-  /**
-   * Tries to lock the cache file
-   *
-   * @return true if success or false
-   */
-  private static boolean tryLockCacheFile(File cacheFileLock)
-  {
-    int cnt = 0;
-    boolean locked = false;
-    while (cnt < 100 && !(locked = lockCacheFile(cacheFileLock)))
-    {
-      try
-      {
-        Thread.sleep(100);
-      }
-      catch (InterruptedException ex)
-      {
-        // doesn't matter
-      }
-      ++cnt;
-    }
-    if (!locked)
-    {
-      LOGGER.debug("Failed to lock the OCSP response cache file.");
-    }
-    return locked;
   }
 
   /**
