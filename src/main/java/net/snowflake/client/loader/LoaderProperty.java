@@ -35,5 +35,9 @@ public enum LoaderProperty
   mapTimeToTimestamp, // map TIME data type to TIMESTAMP. Informatica v1
                       // connector behavior.                                       Boolean
   // test parameters
-  testRemoteBadCSV   // TEST: Inject bad CSV in the remote stage                   Boolean
+  testRemoteBadCSV,   // TEST: Inject bad CSV in the remote stage                  Boolean
+
+  onError,            // action to perform when an error is encountered            Enum CopyIntoOnError
+  onErrorNum,         // number of errors to skip the file                         Long
+  onErrorNumPercents  // percentage of errors to skip the file                     Integer
 }

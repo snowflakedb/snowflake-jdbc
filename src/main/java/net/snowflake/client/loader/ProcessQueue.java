@@ -112,11 +112,20 @@ public class ProcessQueue implements Runnable
                              + " stage={},"
                              + " name={}", remoteStage, stage.getId());
           currentState = State.COPY_INTO_TABLE;
+          String onError;
+          if (_loader.getOnErrorNum() > 0) {
+              onError = CopyIntoOnError.SKIP_FILE.name() + '_' + _loader.getOnErrorNum();
+          } else if (_loader.getOnErrorNumPercents() > 0) {
+              onError = CopyIntoOnError.SKIP_FILE.name() + '_' + _loader.getOnErrorNumPercents() + '%';
+          } else {
+              onError = _loader.getOnError().name();
+          }
           currentCommand = "COPY INTO \""
                   + stage.getId()
                   + "\" FROM '" + remoteStage
-                  + "' on_error='continue'"
-                  + " file_format=("
+                  + "' on_error='"
+                  + onError
+                  + "' file_format=("
                   + "field_optionally_enclosed_by='\"'"
                   + "empty_field_as_null="
                   + Boolean.toString(!_loader._copyEmptyFieldAsEmpty)
