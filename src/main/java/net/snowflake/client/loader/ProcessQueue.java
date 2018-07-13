@@ -115,7 +115,8 @@ public class ProcessQueue implements Runnable
           currentCommand = "COPY INTO \""
                   + stage.getId()
                   + "\" FROM '" + remoteStage
-                  + "' on_error='continue'"
+                  + "' on_error="
+                  + _loader.getOnError()
                   + " file_format=("
                   + "field_optionally_enclosed_by='\"'"
                   + "empty_field_as_null="

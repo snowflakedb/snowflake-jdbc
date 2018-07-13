@@ -104,6 +104,8 @@ public class StreamLoader implements Loader, Runnable
 
   boolean _testMode = false;
 
+  private String _onError = "continue";
+
   private final Connection _putConn;
   private final Connection _processConn;
 
@@ -220,6 +222,8 @@ public class StreamLoader implements Loader, Runnable
       case testRemoteBadCSV:
         _testRemoteBadCSV = Boolean.valueOf(String.valueOf(value));
         break;
+      case onError:
+        _onError = (String) value;
       default:
         // nop, this should ever happens
     }
@@ -663,6 +667,11 @@ public class StreamLoader implements Loader, Runnable
   List<String> getColumns()
   {
     return this._columns;
+  }
+
+  String getOnError()
+  {
+    return this._onError;
   }
 
   String getColumnsAsString()
