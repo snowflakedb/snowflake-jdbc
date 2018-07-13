@@ -115,10 +115,10 @@ public class ProcessQueue implements Runnable
           currentCommand = "COPY INTO \""
                   + stage.getId()
                   + "\" FROM '" + remoteStage
-                  + "' on_error='continue'"
+                  + "' on_error='" + _loader._onError + "'"
                   + " file_format=("
-                  + "field_optionally_enclosed_by='\"'"
-                  + "empty_field_as_null="
+                  + " field_optionally_enclosed_by='\"'"
+                  + " empty_field_as_null="
                   + Boolean.toString(!_loader._copyEmptyFieldAsEmpty)
                   + ")";
           ResultSet rs = conn.createStatement().executeQuery(currentCommand);
