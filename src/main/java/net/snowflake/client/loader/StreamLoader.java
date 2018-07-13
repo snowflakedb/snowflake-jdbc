@@ -96,9 +96,11 @@ public class StreamLoader implements Loader, Runnable
 
   boolean _preserveStageFile = false; // reserve stage file
 
-  boolean _useLocalTimezone = false; // use local timezone instead of UTC
+  private boolean _useLocalTimezone = false; // use local timezone instead of UTC
 
-  boolean _mapTimeToTimestamp = false; // map TIME to TIMESTAMP. Informatica V1 connector behavior
+  private boolean _mapTimeToTimestamp = false; // map TIME to TIMESTAMP. Informatica V1 connector behavior
+
+  String _onError = OnError.DEFAULT;
 
   boolean _copyEmptyFieldAsEmpty = false; // COPY command option to set EMPTY_FIELD_AS_NULL = false
 
@@ -118,7 +120,7 @@ public class StreamLoader implements Loader, Runnable
   private RuntimeException _abortCause =  new ConnectionError(
           "Unknown exception");
 
-  AtomicInteger _throttleCounter = new AtomicInteger(0);
+  private AtomicInteger _throttleCounter = new AtomicInteger(0);
 
   public StreamLoader(Map<LoaderProperty, Object> properties,
                       Connection putConnection,
@@ -217,6 +219,10 @@ public class StreamLoader implements Loader, Runnable
         // but a legitimate behavior is supposed to be to TIME.
         _mapTimeToTimestamp = Boolean.valueOf(String.valueOf(value));
         break;
+      case onError:
+        String v = String.valueOf(value);
+        _onError = OnError.validate(v) ? v : OnError.DEFAULT;
+        break;
       case testRemoteBadCSV:
         _testRemoteBadCSV = Boolean.valueOf(String.valueOf(value));
         break;
@@ -284,7 +290,7 @@ public class StreamLoader implements Loader, Runnable
     }
   }
 
-  public String getNoise()
+  String getNoise()
   {
     return _noise;
   }
@@ -307,7 +313,7 @@ public class StreamLoader implements Loader, Runnable
     }
   }
 
-  public boolean isAborted() {
+  boolean isAborted() {
     synchronized(this) {
       // don't synchronize unless the caller does
       return _aborted.get();
@@ -474,7 +480,7 @@ public class StreamLoader implements Loader, Runnable
   }
 
 
-  void truncateTargetTable() {
+  private void truncateTargetTable() {
     try {
       // TODO: could be replaced with TRUNCATE?
       _processConn.createStatement().execute(
@@ -504,7 +510,7 @@ public class StreamLoader implements Loader, Runnable
     }
   }
 
-  private byte[] createCSVRecord(Object[] data) throws Exception
+  private byte[] createCSVRecord(Object[] data)
   {
     StringBuilder sb = new StringBuilder(1024);
 
@@ -521,7 +527,7 @@ public class StreamLoader implements Loader, Runnable
   /**
    * Finishes loader
    * 
-   * @throws Exception an exception raised in finishing loader
+   * @throws Exception an exception raised in finishing loader.
    */
   @Override
   public void finish() throws Exception
@@ -678,7 +684,7 @@ public class StreamLoader implements Loader, Runnable
     return sb.toString();
   }
 
-  public String getFullTableName()
+  String getFullTableName()
   {
     return (_database == null ? "" : ("\"" + _database + "\"."))
            + (_schema == null ? "" : ("\"" + _schema + "\"."))
@@ -848,7 +854,7 @@ public class StreamLoader implements Loader, Runnable
 
   };
 
-  public void setTestMode(boolean mode)
+  void setTestMode(boolean mode)
   {
     this._testMode = mode;
   }

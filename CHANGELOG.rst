@@ -1,3 +1,8 @@
+**JDBC Driver 3.6.7**
+|SNOW-50141| Fix setObject did not handle boolean datatype
+|SNOW-49982| Add onError parameter for COPY in Loader API
+|SNOW-49850| Upgrade AWS SDK for JDBC
+
 **JDBC Driver 3.6.6**
 |SNOW-50032| Fixed retry OCSP check that doesn't occur if validity check fails. 
 
