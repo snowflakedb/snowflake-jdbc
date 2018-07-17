@@ -104,29 +104,36 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
        ERROR_CODE_OBJECT_BIND_NOT_SET}));
 
   SnowflakePreparedStatementV1(SnowflakeConnectionV1 connection,
-                               String sql) throws SQLException
+                               String sql, boolean skipParsing) throws SQLException
   {
     super(connection);
     this.sql = sql;
 
-    try
+    if (!skipParsing)
     {
-      this.statementMetaData = sfStatement.describe(sql);
-    }
-    catch(SFException e)
-    {
-      throw new SnowflakeSQLException(e);
-    }
-    catch(SnowflakeSQLException e)
-    {
-      if (!errorCodesIgnoredInDescribeMode.contains(e.getErrorCode()))
+      try
       {
-        throw e;
+        this.statementMetaData = sfStatement.describe(sql);
       }
-      else
+      catch (SFException e)
       {
-        statementMetaData = SFStatementMetaData.emptyMetaData();
+        throw new SnowflakeSQLException(e);
       }
+      catch (SnowflakeSQLException e)
+      {
+        if (!errorCodesIgnoredInDescribeMode.contains(e.getErrorCode()))
+        {
+          throw e;
+        }
+        else
+        {
+          statementMetaData = SFStatementMetaData.emptyMetaData();
+        }
+      }
+    }
+    else
+    {
+      statementMetaData = SFStatementMetaData.emptyMetaData();
     }
   }
 
