@@ -330,6 +330,18 @@ public class ResultUtil
           resultPrefetchThreads =
               (int) resultOutput.parameters.get(
                   "CLIENT_PREFETCH_THREADS");
+        } 
+        else if (System.getProperty("snowflake.jdbc.client.prefetch_threads")
+                 != null)
+        {
+          try
+          {
+            resultPrefetchThreads = 
+                Integer.parseInt(System.getProperty("snowflake.jdbc.client.prefetch_threads"));
+          } 
+          catch (NumberFormatException e)
+          {
+          }
         }
 
         /*
@@ -347,6 +359,17 @@ public class ResultUtil
         {
           memoryUsage =
               (int) resultOutput.parameters.get("CLIENT_MEMORY_LIMIT");
+        }
+        else if (System.getProperty("snowflake.jdbc.client.memory_limit") != null)
+        {
+          try
+          {
+            memoryUsage = 
+                Integer.parseInt(System.getProperty("snowflake.jdbc.client.memory_limit"));
+          } 
+          catch (NumberFormatException e)
+          {
+          }
         }
 
         boolean efficientChunkStorage = false;
