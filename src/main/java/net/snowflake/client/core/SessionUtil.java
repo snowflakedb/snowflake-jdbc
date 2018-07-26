@@ -6,7 +6,11 @@ package net.snowflake.client.core;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.JsonNodeType;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.common.base.Strings;
 import net.snowflake.client.jdbc.ErrorCode;
+import net.snowflake.client.jdbc.SnowflakeReauthenticationRequest;
 import net.snowflake.client.jdbc.SnowflakeDriver;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.jdbc.SnowflakeType;
@@ -17,7 +21,6 @@ import net.snowflake.common.core.ClientAuthnDTO;
 import net.snowflake.common.core.ClientAuthnParameter;
 import net.snowflake.common.core.SqlState;
 import org.apache.http.HttpHeaders;
-import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
@@ -92,6 +95,8 @@ public class SessionUtil
   private static int DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT = 300000; // millisec
 
   private static int DEFAULT_HEALTH_CHECK_INTERVAL = 45; // sec
+
+  public static final String CLIENT_STORE_TEMPORARY_CREDENTIAL = "CLIENT_STORE_TEMPORARY_CREDENTIAL";
   static final
   SFLogger logger = SFLoggerFactory.getLogger(SessionUtil.class);
 
@@ -119,6 +124,7 @@ public class SessionUtil
       "CLIENT_DISABLE_INCIDENTS",
       "CLIENT_SESSION_KEEP_ALIVE",
       "CLIENT_TELEMETRY_ENABLED",
+      CLIENT_STORE_TEMPORARY_CREDENTIAL,
       "JDBC_USE_JSON_PARSER",
       "AUTOCOMMIT",
       "JDBC_EFFICIENT_CHUNK_STORAGE",
@@ -126,6 +132,40 @@ public class SessionUtil
       "CLIENT_METADATA_REQUEST_USE_CONNECTION_CTX",
       "JDBC_TREAT_DECIMAL_AS_INT",
       "JDBC_ENABLE_COMBINED_DESCRIBE"));
+
+  enum TokenRequestType
+  {
+    RENEW("RENEW"),
+    CLONE("CLONE"),
+    ISSUE("ISSUE");
+
+    private String value;
+
+    TokenRequestType(String value)
+    {
+      this.value = value;
+    }
+  }
+
+  private static final String CACHE_DIR_ENV = "SF_TEMPORARY_CREDENTIAL_CACHE_DIR";
+  public static final String CACHE_FILE_NAME = "temporary_credential.json";
+  private static final long CACHE_EXPIRATION_IN_SECONDS = 86400L;
+  private static final long CACHE_FILE_LOCK_EXPIRATION_IN_SECONDS = 60L;
+
+  protected static final FileCacheManager fileCacheManager;
+
+  static
+  {
+    fileCacheManager = FileCacheManager
+        .builder()
+        .setCacheDirectoryEnvironmentVariable(CACHE_DIR_ENV)
+        .setBaseCacheFileName(CACHE_FILE_NAME)
+        .setCacheExpirationInSeconds(CACHE_EXPIRATION_IN_SECONDS)
+        .setCacheFileLockExpirationInSeconds(CACHE_FILE_LOCK_EXPIRATION_IN_SECONDS).build();
+  }
+
+  private final static Map<String, Map<String,String>> ID_TOKEN_CACHE = new HashMap<>();
+  private final static Object ID_TOKEN_CACHE_LOCK = new Object();
 
   /**
    * A class for holding all information required for login
@@ -155,6 +195,8 @@ public class SessionUtil
     private Map<String, Object> sessionParameters;
     private PrivateKey privateKey;
     private String application;
+    private String idToken;
+    private String idTokenPassword;
 
     public LoginInput()
     {
@@ -280,6 +322,12 @@ public class SessionUtil
       return this;
     }
 
+    public LoginInput setIdToken(String idToken)
+    {
+      this.idToken = idToken;
+      return this;
+    }
+
     public LoginInput setSessionParameters(Map<String, Object> sessionParameters)
     {
       this.sessionParameters = sessionParameters;
@@ -397,6 +445,15 @@ public class SessionUtil
     {
       return masterToken;
     }
+    public String getIdToken()
+    {
+      return idToken;
+    }
+
+    public String getIdTokenPassword()
+    {
+      return idTokenPassword;
+    }
 
     public Map<String, Object> getSessionParameters()
     {
@@ -423,6 +480,8 @@ public class SessionUtil
     String masterToken;
     long masterTokenValidityInSeconds;
     String remMeToken;
+    String idToken;
+    String idTokenPassword;
     String databaseVersion;
     int databaseMajorVersion;
     int databaseMinorVersion;
@@ -432,28 +491,35 @@ public class SessionUtil
     String sessionDatabase;
     String sessionSchema;
     String sessionRole;
+    String sessionWarehouse;
     Map<String, Object> commonParams;
+    boolean updatedByTokenRequest;
+    boolean updatedByTokenRequestIssue;
 
     public LoginOutput()
     {
     }
 
-    ;
-
     public LoginOutput(String sessionToken, String masterToken,
                        long masterTokenValidityInSeconds,
-                       String remMeToken, String databaseVersion,
+                       String remMeToken,
+                       String idToken,
+                       String idTokenPassword,
+                       String databaseVersion,
                        int databaseMajorVersion, int databaseMinorVersion,
                        String newClientForUpgrade, int healthCheckInterval,
                        int httpClientSocketTimeout,
                        String sessionDatabase,
                        String sessionSchema,
                        String sessionRole,
+                       String sessionWarehouse,
                        Map<String, Object> commonParams)
     {
       this.sessionToken = sessionToken;
       this.masterToken = masterToken;
       this.remMeToken = remMeToken;
+      this.idToken = idToken;
+      this.idTokenPassword = idTokenPassword;
       this.databaseVersion = databaseVersion;
       this.databaseMajorVersion = databaseMajorVersion;
       this.databaseMinorVersion = databaseMinorVersion;
@@ -463,6 +529,7 @@ public class SessionUtil
       this.sessionDatabase = sessionDatabase;
       this.sessionSchema = sessionSchema;
       this.sessionRole = sessionRole;
+      this.sessionWarehouse = sessionWarehouse;
       this.commonParams = commonParams;
       this.masterTokenValidityInSeconds = masterTokenValidityInSeconds;
     }
@@ -476,6 +543,12 @@ public class SessionUtil
     public LoginOutput setMasterToken(String masterToken)
     {
       this.masterToken = masterToken;
+      return this;
+    }
+
+    public LoginOutput setIdToken(String idToken)
+    {
+      this.idToken = idToken;
       return this;
     }
 
@@ -542,6 +615,16 @@ public class SessionUtil
       return remMeToken;
     }
 
+    public String getIdToken()
+    {
+      return idToken;
+    }
+
+    public String getIdTokenPassword()
+    {
+      return idTokenPassword;
+    }
+
     public String getDatabaseVersion()
     {
       return databaseVersion;
@@ -597,14 +680,51 @@ public class SessionUtil
       this.sessionSchema = sessionSchema;
     }
 
+    void setSessionRole(String sessionRole)
+    {
+      this.sessionRole = sessionRole;
+    }
+
     public String getSessionRole()
     {
       return sessionRole;
     }
 
+    void setSessionWarehouse(String sessionWarehouse)
+    {
+      this.sessionWarehouse = sessionWarehouse;
+    }
+
+    String getSessionWarehouse()
+    {
+      return sessionWarehouse;
+    }
+
     public long getMasterTokenValidityInSeconds()
     {
       return masterTokenValidityInSeconds;
+    }
+
+    boolean isUpdatedByTokenRequest()
+    {
+      return updatedByTokenRequest;
+    }
+
+    LoginOutput setUpdatedByTokenRequest(boolean updatedByTokenRequest)
+    {
+      this.updatedByTokenRequest = updatedByTokenRequest;
+      return this;
+    }
+
+    boolean isUpdatedByTokenRequestIssue()
+    {
+      return updatedByTokenRequestIssue;
+    }
+
+    LoginOutput setUpdatedByTokenRequestIssue(boolean updatedByTokenRequestIssue)
+    {
+      this.updatedByTokenRequestIssue = updatedByTokenRequestIssue;
+      return this;
     }
   }
 
@@ -676,36 +796,180 @@ public class SessionUtil
     AssertUtil.assertTrue(loginInput.getLoginTimeout() >= 0,
         "negative login timeout for opening session");
 
-    // build URL for login request
-    URIBuilder uriBuilder;
-    URI loginURI;
-    String tokenOrSamlResponse = null;
-    String samlProofKey = null;
-    HttpClient httpClient;
-
-    String sessionToken;
-    String masterToken;
-    String sessionDatabase;
-    String sessionSchema;
-    String sessionRole;
-    long masterTokenValidityInSeconds;
-    String remMeToken;
-    String databaseVersion = null;
-    int databaseMajorVersion = 0;
-    int databaseMinorVersion = 0;
-    String newClientForUpgrade = null;
-    int healthCheckInterval = DEFAULT_HEALTH_CHECK_INTERVAL;
-    int httpClientSocketTimeout = loginInput.getSocketTimeout();
-    Map<String, Object> commonParams;
     final ClientAuthnDTO.AuthenticatorType authenticator = getAuthenticator(
         loginInput);
-
     if (!authenticator.equals(ClientAuthnDTO.AuthenticatorType.OAUTH))
     {
       // OAuth does not require a username
       AssertUtil.assertTrue(loginInput.getUserName() != null,
           "missing user name for opening session");
     }
+    if (authenticator.equals(ClientAuthnDTO.AuthenticatorType.EXTERNALBROWSER))
+    {
+      // force to set the flag.
+      loginInput.sessionParameters.put(CLIENT_STORE_TEMPORARY_CREDENTIAL, true);
+    }
+    else
+    {
+      // TODO: patch for now. We should update mergeProperteis
+      // to normalize all parameters using STRING_PARAMS, INT_PARAMS and
+      // BOOLEAN_PARAMS.
+      Object value = loginInput.sessionParameters.get(
+          CLIENT_STORE_TEMPORARY_CREDENTIAL);
+      if (value != null)
+      {
+        loginInput.sessionParameters.put(
+            CLIENT_STORE_TEMPORARY_CREDENTIAL, asBoolean(value));
+      }
+    }
+
+    boolean isClientStoreTemporaryCredential = asBoolean(
+        loginInput.sessionParameters.get(CLIENT_STORE_TEMPORARY_CREDENTIAL));
+    LoginOutput loginOutput;
+    if (isClientStoreTemporaryCredential &&
+        (loginOutput = readTemporaryCredential(loginInput)) != null)
+    {
+      return loginOutput;
+    }
+    return newSession(loginInput);
+  }
+
+  static private LoginOutput readTemporaryCredential(LoginInput loginInput)
+      throws SFException, SnowflakeSQLException
+  {
+    String idToken;
+    synchronized(ID_TOKEN_CACHE_LOCK)
+    {
+      JsonNode res = fileCacheManager.readCacheFile();
+      readJsonStoreCache(res);
+
+      Map<String, String> userMap = ID_TOKEN_CACHE.get(
+          loginInput.getAccountName().toUpperCase());
+      if (userMap == null)
+      {
+        return null;
+      }
+      idToken = userMap.get(loginInput.getUserName().toUpperCase());
+    }
+    if (idToken == null)
+    {
+      return null;
+    }
+    loginInput.setIdToken(idToken);
+    try
+    {
+      return issueSession(loginInput);
+    }
+    catch(SnowflakeReauthenticationRequest ex)
+    {
+      logger.debug("The token expired. errorCode. Reauthenticating...");
+    }
+    return null;
+  }
+
+  static private void readJsonStoreCache(JsonNode m)
+  {
+    if (m == null || !m.getNodeType().equals(JsonNodeType.OBJECT))
+    {
+      logger.debug("Invalid cache file format.");
+      return;
+    }
+    for (Iterator<Map.Entry<String, JsonNode>> itr = m.fields(); itr.hasNext();)
+    {
+      Map.Entry<String, JsonNode> accountMap = itr.next();
+      String account = accountMap.getKey();
+      if (!ID_TOKEN_CACHE.containsKey(account))
+      {
+        ID_TOKEN_CACHE.put(account, new HashMap<String, String>());
+      }
+      JsonNode userJsonNode = accountMap.getValue();
+      for (Iterator<Map.Entry<String, JsonNode>> itr0 = userJsonNode.fields(); itr0.hasNext();)
+      {
+        Map.Entry<String, JsonNode> userMap = itr0.next();
+        ID_TOKEN_CACHE.get(account).put(
+            userMap.getKey(), userMap.getValue().asText());
+      }
+    }
+  }
+
+  static private void writeTemporaryCredential(
+      LoginInput loginInput, LoginOutput loginOutput)
+  {
+    if (Strings.isNullOrEmpty(loginOutput.getIdToken()))
+    {
+      return; // no idToken
+    }
+    synchronized (ID_TOKEN_CACHE_LOCK)
+    {
+      String currentAccount = loginInput.getAccountName().toUpperCase();
+      Map<String, String> currentUserMap = ID_TOKEN_CACHE.get(currentAccount);
+      if (currentUserMap == null)
+      {
+        currentUserMap = new HashMap<>();
+        ID_TOKEN_CACHE.put(currentAccount, currentUserMap);
+      }
+      currentUserMap.put(loginInput.getUserName().toUpperCase(), loginOutput.getIdToken());
+
+      ObjectNode out = mapper.createObjectNode();
+      for (Map.Entry<String, Map<String, String>> elem: ID_TOKEN_CACHE.entrySet())
+      {
+        String account = elem.getKey();
+        Map<String, String> userMap = elem.getValue();
+        ObjectNode userNode = mapper.createObjectNode();
+        for (Map.Entry<String, String> elem0: userMap.entrySet())
+        {
+          userNode.put(elem0.getKey(), elem0.getValue());
+        }
+        out.set(account, userNode);
+      }
+      fileCacheManager.writeCacheFile(out);
+    }
+  }
+
+  static private boolean asBoolean(Object value)
+  {
+    if (value == null)
+    {
+      return false;
+    }
+    switch(value.getClass().getName())
+    {
+      case "java.lang.Boolean":
+        return (Boolean)value;
+      case "java.lang.String":
+        return Boolean.valueOf((String)value);
+    }
+    return false;
+  }
+
+  static private LoginOutput newSession(LoginInput loginInput)
+      throws SFException, SnowflakeSQLException
+  {
+    // build URL for login request
+    URIBuilder uriBuilder;
+    URI loginURI;
+    String tokenOrSamlResponse = null;
+    String samlProofKey = null;
+
+    String sessionToken;
+    String masterToken;
+    String sessionDatabase;
+    String sessionSchema;
+    String sessionRole;
+    String sessionWarehouse;
+    long masterTokenValidityInSeconds;
+    String remMeToken;
+    String idToken;
+    String idTokenPassword;
+    String databaseVersion = null;
+    int databaseMajorVersion = 0;
+    int databaseMinorVersion = 0;
+    String newClientForUpgrade = null;
+    int healthCheckInterval = DEFAULT_HEALTH_CHECK_INTERVAL;
+    int httpClientSocketTimeout = loginInput.getSocketTimeout();
+    final ClientAuthnDTO.AuthenticatorType authenticator = getAuthenticator(
+        loginInput);
+    Map<String, Object> commonParams;
 
     try
     {
@@ -735,8 +999,8 @@ public class SessionUtil
       if (authenticator == ClientAuthnDTO.AuthenticatorType.EXTERNALBROWSER)
       {
         // SAML 2.0 compliant service/application
-        SessionUtilExternalBrowser s = new SessionUtilExternalBrowser(
-            loginInput);
+        SessionUtilExternalBrowser s =
+            SessionUtilExternalBrowser.createInstance(loginInput);
         s.authenticate();
         tokenOrSamlResponse = s.getToken();
         samlProofKey = s.getProofKey();
@@ -780,7 +1044,7 @@ public class SessionUtil
         String ocspCacheServerUrl = String.format(
             "http://ocsp%s/%s",
             host.substring(host.indexOf('.')),
-            SFTrustManager.OCSP_CACHE_FILE_NAME);
+            SFTrustManager.CACHE_FILE_NAME);
         logger.debug("OCSP Cache Server for Privatelink: {}",
             ocspCacheServerUrl);
         resetOCSPResponseCacherServerURL(ocspCacheServerUrl);
@@ -797,7 +1061,7 @@ public class SessionUtil
     try
     {
       ClientAuthnDTO authnData = new ClientAuthnDTO();
-      Map<String, Object> data = new HashMap<String, Object>();
+      Map<String, Object> data = new HashMap<>();
       data.put(ClientAuthnParameter.CLIENT_APP_ID.name(), loginInput.getAppId());
 
       /*
@@ -986,13 +1250,17 @@ public class SessionUtil
         throw new SnowflakeSQLException(
             SqlState.SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION,
             ErrorCode.CONNECTION_ERROR.getMessageCode(),
-            errorCode, jsonNode.path("message").asText());
+              errorCode, jsonNode.path("message").asText());
       }
 
       // session token is in the data field of the returned json response
       sessionToken = jsonNode.path("data").path("token").asText();
       masterToken = jsonNode.path("data").path("masterToken").asText();
       remMeToken = jsonNode.path("data").path("remMeToken").asText();
+      idToken = nullStringAsEmptyString(
+          jsonNode.path("data").path("idToken").asText());
+      idTokenPassword = nullStringAsEmptyString(
+          jsonNode.path("data").path("idTokenPassword").asText());
       masterTokenValidityInSeconds = jsonNode.path("data").
           path("masterValidityInSeconds").asLong();
       String serverVersion =
@@ -1004,6 +1272,8 @@ public class SessionUtil
       sessionSchema = schemaNode.isNull() ? null : schemaNode.asText();
       JsonNode roleNode = jsonNode.path("data").path("sessionInfo").path("roleName");
       sessionRole = roleNode.isNull() ? null : roleNode.asText();
+      JsonNode warehouseNode = jsonNode.path("data").path("sessionInfo").path("warehouseName");
+      sessionWarehouse = warehouseNode.isNull() ? null : warehouseNode.asText();
 
       commonParams =
           SessionUtil.getCommonParams(jsonNode.path("data").path("parameters"));
@@ -1113,10 +1383,12 @@ public class SessionUtil
           ErrorCode.CONNECTION_ERROR.getMessageCode(), ex.getMessage());
     }
 
-    return new LoginOutput(sessionToken,
+    LoginOutput ret = new LoginOutput(sessionToken,
         masterToken,
         masterTokenValidityInSeconds,
         remMeToken,
+        idToken,
+        idTokenPassword,
         databaseVersion,
         databaseMajorVersion,
         databaseMinorVersion,
@@ -1126,11 +1398,46 @@ public class SessionUtil
         sessionDatabase,
         sessionSchema,
         sessionRole,
+        sessionWarehouse,
         commonParams);
+    ret.setUpdatedByTokenRequest(false);
+
+    writeTemporaryCredential(loginInput, ret);
+    return ret;
+  }
+
+  static private String nullStringAsEmptyString(String value)
+  {
+    if (Strings.isNullOrEmpty(value) || "null".equals(value))
+    {
+      return "";
+    }
+    return value;
+  }
+
+
+  /**
+   * Delete the id token cache
+   */
+  static public void deleteIdTokenCache()
+  {
+    fileCacheManager.deleteCacheFile();
   }
 
   /**
-   * Renew a session
+   * Renew a session.
+   *
+   * Use cases:
+   * - Session and Master tokens are provided. No Id token:
+   *     - succeed in getting a new Session token.
+   *     - fail and raise SnowflakeReauthenticationRequest because Master
+   *       token expires. Since no id token exists, the exception is thrown
+   *       to the upstream.
+   * - Session and Id tokens are provided. No Master token:
+   *     - fail and raise SnowflakeReauthenticationRequest and
+   *       issue a new Session token
+   *     - fail and raise SnowflakeReauthenticationRequest and fail
+   *       to issue a new Session token as the
    *
    * @param loginInput login information
    * @return login output
@@ -1140,21 +1447,60 @@ public class SessionUtil
   static public LoginOutput renewSession(LoginInput loginInput)
       throws SFException, SnowflakeSQLException
   {
+    try
+    {
+      return tokenRequest(loginInput, TokenRequestType.RENEW);
+    }
+    catch (SnowflakeReauthenticationRequest ex)
+    {
+      if (Strings.isNullOrEmpty(loginInput.getIdToken()))
+      {
+        throw ex;
+      }
+      return tokenRequest(loginInput, TokenRequestType.ISSUE);
+    }
+  }
+
+  /**
+   * Issue a session
+   *
+   * @param loginInput login information
+   * @return login output
+   * @throws SFException           if unexpected uri information
+   * @throws SnowflakeSQLException if failed to renew the session
+   */
+  static public LoginOutput issueSession(LoginInput loginInput)
+      throws SFException, SnowflakeSQLException
+  {
+    return tokenRequest(loginInput, TokenRequestType.ISSUE);
+  }
+
+  static private LoginOutput tokenRequest(
+      LoginInput loginInput, TokenRequestType requestType)
+      throws SFException, SnowflakeSQLException
+  {
     AssertUtil.assertTrue(loginInput.getServerUrl() != null,
-        "missing server URL for renewing session");
+        "missing server URL for tokenRequest");
 
-    AssertUtil.assertTrue(loginInput.getSessionToken() != null,
-        "missing session token for renewing session");
-
-    AssertUtil.assertTrue(loginInput.getMasterToken() != null,
-        "missing master token for renewing session");
+    if (requestType == TokenRequestType.RENEW)
+    {
+      AssertUtil.assertTrue(loginInput.getMasterToken() != null,
+          "missing master token for tokenRequest");
+      AssertUtil.assertTrue(loginInput.getSessionToken() != null,
+          "missing session token for tokenRequest");
+    }
+    else if (requestType == TokenRequestType.ISSUE)
+    {
+      AssertUtil.assertTrue(loginInput.getIdToken() != null,
+          "missing id token for tokenRequest");
+    }
 
     AssertUtil.assertTrue(loginInput.getLoginTimeout() >= 0,
-        "negative login timeout for renewing session");
+        "negative login timeout for tokenRequest");
 
     // build URL for login request
     URIBuilder uriBuilder;
-    HttpPost postRequest = null;
+    HttpPost postRequest;
     String sessionToken;
     String masterToken;
 
@@ -1180,8 +1526,20 @@ public class SessionUtil
     {
       // input json with old session token and request type, notice the
       // session token needs to be quoted.
-      String json = "{\"oldSessionToken\":\"" + loginInput.getSessionToken() +
-          "\", \"requestType\":" + 0 + "}";
+      Map<String, String> payload = new HashMap<>();
+      String headerToken;
+      if (requestType == TokenRequestType.RENEW)
+      {
+        headerToken = loginInput.getMasterToken();
+        payload.put("oldSessionToken", loginInput.getSessionToken());
+      }
+      else
+      {
+        headerToken = loginInput.getIdToken();
+        payload.put("idToken", loginInput.getIdToken());
+      }
+      payload.put("requestType", requestType.value);
+      String json = mapper.writeValueAsString(payload);
 
       // attach the login info json body to the post request
       StringEntity input = new StringEntity(json, Charset.forName("UTF-8"));
@@ -1190,12 +1548,18 @@ public class SessionUtil
 
       postRequest.addHeader("accept", "application/json");
 
-      postRequest.setHeader(SF_HEADER_AUTHORIZATION,
-          SF_HEADER_SNOWFLAKE_AUTHTYPE + " " + SF_HEADER_TOKEN_TAG + "=\"" +
-              loginInput.getMasterToken() + "\"");
+      postRequest.setHeader(
+          SF_HEADER_AUTHORIZATION,
+          SF_HEADER_SNOWFLAKE_AUTHTYPE + " " +
+              SF_HEADER_TOKEN_TAG + "=\"" + headerToken + "\"");
 
-      logger.debug("old session token: {}, request type: 0, master token: {}",
-          loginInput.getSessionToken(), loginInput.getMasterToken());
+      logger.debug(
+          "request type: {}, old session token: {}, " +
+              "master token: {}, id token: {}",
+          requestType.value,
+          loginInput.getSessionToken() != null ? "******" : null,
+          loginInput.getMasterToken() != null ? "******" : null,
+          loginInput.getIdToken() != null ? "******" : null);
 
       String theString = HttpUtil.executeRequest(postRequest,
           loginInput.getLoginTimeout(), 0, null);
@@ -1217,7 +1581,7 @@ public class SessionUtil
                 + errorCode + ", message=" + message,
             true);
 
-        SnowflakeUtil.checkErrorAndThrowException(jsonNode);
+        SnowflakeUtil.checkErrorAndThrowExceptionIncludingReauth(jsonNode);
       }
 
       // session token is in the data field of the returned json response
@@ -1235,8 +1599,11 @@ public class SessionUtil
     }
 
     LoginOutput loginOutput = new LoginOutput();
-    loginOutput.setSessionToken(sessionToken)
-        .setMasterToken(masterToken);
+    loginOutput
+        .setSessionToken(sessionToken)
+        .setMasterToken(masterToken)
+        .setUpdatedByTokenRequest(true)
+        .setUpdatedByTokenRequestIssue(requestType == TokenRequestType.ISSUE);
 
     return loginOutput;
   }
@@ -1687,7 +2054,7 @@ public class SessionUtil
       }
 
       logger.debug("Parameter {}: {}",
-          new Object[]{paramName, child.path("value").asText()});
+          paramName, child.path("value").asText());
     }
 
     return parameters;
@@ -1778,6 +2145,13 @@ public class SessionUtil
         if (session != null)
         {
           session.setArrayBindStageThreshold((int) entry.getValue());
+        }
+      }
+      else if (CLIENT_STORE_TEMPORARY_CREDENTIAL.equalsIgnoreCase(entry.getKey()))
+      {
+        if (session != null)
+        {
+          session.setStoreTemporaryCredential((boolean) entry.getValue());
         }
       }
     }

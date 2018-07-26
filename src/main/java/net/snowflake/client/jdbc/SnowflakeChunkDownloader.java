@@ -437,6 +437,7 @@ public class SnowflakeChunkDownloader
 
   /**
    * terminate the downloader
+   * @return chunk downloader metrics collected over instance lifetime
    */
   public Metrics terminate()
   {
@@ -788,6 +789,7 @@ public class SnowflakeChunkDownloader
                                 networkTimeoutInMilli / 1000,
                                 0,
                                 null,
+                                false,
                                 false);
 
         logger.debug("Call returned for URL: {}",

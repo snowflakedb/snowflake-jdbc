@@ -185,44 +185,42 @@ class SnowflakeStatementV1 implements Statement
   {
     connection.injectedDelay();
 
-    logger.debug("execute: " + sql);
+    logger.debug("execute: {}", sql);
 
     String trimmedSql = sql.trim();
 
     if (trimmedSql.length() >= 20
-        && trimmedSql.toLowerCase().startsWith(
-        "set-sf-property"))
+        && trimmedSql.toLowerCase().startsWith("set-sf-property"))
     {
+      // deprecated: sfsql
       executeSetProperty(sql);
       return false;
     }
-    else
+
+    SFBaseResultSet sfResultSet = null;
+    try
     {
-      SFBaseResultSet sfResultSet = null;
-      try
+      sfResultSet = sfStatement.execute(sql, parameterBindings);
+      sfResultSet.setSession(this.connection.getSfSession());
+      currentResultSet = null;
+      resultSet = new SnowflakeResultSetV1(sfResultSet, this);
+
+      if (connection.getSfSession().isExecuteReturnCountForDML() &&
+          !sfResultSet.getStatementType().isGenerateResultSet())
       {
-        sfResultSet = sfStatement.execute(sql, parameterBindings);
-        sfResultSet.setSession(this.connection.getSfSession());
+        updateCount = ResultUtil.calculateUpdateCount(sfResultSet);
+        resultSet = null;
         currentResultSet = null;
-        resultSet = new SnowflakeResultSetV1(sfResultSet, this);
-
-        if (connection.getSfSession().isExecuteReturnCountForDML() &&
-            !sfResultSet.getStatementType().isGenerateResultSet())
-        {
-          updateCount = ResultUtil.calculateUpdateCount(sfResultSet);
-          resultSet = null;
-          currentResultSet = null;
-          return false;
-        }
-
-        updateCount = -1;
-        return true;
+        return false;
       }
-      catch (SFException ex)
-      {
-        throw new SnowflakeSQLException(ex.getCause(),
-            ex.getSqlState(), ex.getVendorCode(), ex.getParams());
-      }
+
+      updateCount = -1;
+      return true;
+    }
+    catch (SFException ex)
+    {
+      throw new SnowflakeSQLException(ex.getCause(),
+          ex.getSqlState(), ex.getVendorCode(), ex.getParams());
     }
   }
 

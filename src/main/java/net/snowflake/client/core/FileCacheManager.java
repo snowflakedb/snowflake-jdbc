@@ -38,8 +38,8 @@ class FileCacheManager
 
   private String cacheDirectoryEnvironmentVariable;
   private String baseCacheFileName;
-  private long cacheExpiration;
-  private long cacheFileLockExpiration;
+  private long cacheExpirationInMilliseconds;
+  private long cacheFileLockExpirationInMilliseconds;
 
   private File cacheFile;
   private File cacheLockFile;
@@ -67,15 +67,16 @@ class FileCacheManager
     return this;
   }
 
-  FileCacheManager setCacheExpiration(long cacheExpiration)
+  FileCacheManager setCacheExpirationInSeconds(long cacheExpirationInSeconds)
   {
-    this.cacheExpiration = cacheExpiration;
+    // converting from seconds to milliseconds
+    this.cacheExpirationInMilliseconds = cacheExpirationInSeconds * 1000;
     return this;
   }
 
-  FileCacheManager setCacheFileLockExpiration(long cacheFileLockExpiration)
+  FileCacheManager setCacheFileLockExpirationInSeconds(long cacheFileLockExpirationInSeconds)
   {
-    this.cacheFileLockExpiration = cacheFileLockExpiration;
+    this.cacheFileLockExpirationInMilliseconds = cacheFileLockExpirationInSeconds * 1000;
     return this;
   }
 
@@ -160,8 +161,6 @@ class FileCacheManager
    */
   JsonNode readCacheFile()
   {
-    // File cacheFile = fileCacheManager.getCacheFile();
-    // File cacheFileLock = fileCacheManager.getCacheLockFile();
     if (cacheFile == null || !this.checkCacheLockFile())
     {
       // no cache or the cache is not valid.
@@ -193,7 +192,7 @@ class FileCacheManager
 
   void writeCacheFile(JsonNode input)
   {
-    LOGGER.debug("Writing OCSP response cache file. File={}", cacheFile);
+    LOGGER.debug("Writing cache file. File={}", cacheFile);
     if (cacheFile == null || !tryLockCacheFile())
     {
       // no cache file or it failed to lock file
@@ -215,7 +214,7 @@ class FileCacheManager
     catch (IOException ex)
     {
       LOGGER.debug(
-          "Failed to write the OCSP response cache file. File: {}",
+          "Failed to write the cache file. File: {}",
           cacheFile);
     }
     finally
@@ -224,6 +223,18 @@ class FileCacheManager
       {
         LOGGER.debug("Failed to unlock cache file");
       }
+    }
+  }
+
+  void deleteCacheFile()
+  {
+    LOGGER.debug("Deleting cache file. File={}, Lock File={}",
+        cacheFile, cacheLockFile);
+
+    unlockCacheFile();
+    if (!cacheFile.delete())
+    {
+      LOGGER.debug("Failed to delete the file: {}", cacheFile);
     }
   }
 
@@ -250,7 +261,7 @@ class FileCacheManager
     }
     if (!locked)
     {
-      LOGGER.debug("Failed to lock the OCSP response cache file.");
+      LOGGER.debug("Failed to lock the cache file.");
     }
     return locked;
   }
@@ -281,7 +292,7 @@ class FileCacheManager
     long cacheFileTs = fileCreationTime(cacheFile);
 
     if (!cacheLockFile.exists() && cacheFileTs > 0 && currentTime -
-        this.cacheExpiration <= cacheFileTs)
+        this.cacheExpirationInMilliseconds <= cacheFileTs)
     {
       LOGGER.debug("No cache file lock directory exists and cache file is up to date.");
       return true;
@@ -293,7 +304,7 @@ class FileCacheManager
       // failed to get the timestamp of lock directory
       return false;
     }
-    if (lockFileTs < currentTime - this.cacheFileLockExpiration)
+    if (lockFileTs < currentTime - this.cacheFileLockExpirationInMilliseconds)
     {
       // old lock file
       if (!cacheLockFile.delete())
@@ -304,7 +315,7 @@ class FileCacheManager
         return false;
       }
       LOGGER.debug("Deleted the cache lock directory, because it was old.");
-      return currentTime - this.cacheExpiration <= cacheFileTs;
+      return currentTime - this.cacheExpirationInMilliseconds <= cacheFileTs;
     }
     LOGGER.debug("Failed to lock the file. Ignored.");
     return false;

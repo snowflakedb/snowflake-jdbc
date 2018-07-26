@@ -15,8 +15,6 @@ import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.common.core.SqlState;
 
-import java.net.URI;
-
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.utils.URIBuilder;
@@ -57,6 +55,8 @@ public class RestRequest
    * @param canceling           canceling flag
    * @param withoutCookies      whether the cookie spec should be set to IGNORE
    *                            or not
+   * @param includeRetryParameters whether to include retry parameters in retried
+   *                               requests
    * @return HttpResponse Object get from server
    * @throws java.io.IOException                             java io exception
    * @throws net.snowflake.client.jdbc.SnowflakeSQLException Request timeout Exception or Illegal State Exception i.e.
@@ -68,16 +68,20 @@ public class RestRequest
       long retryTimeout,
       int injectSocketTimeout,
       AtomicBoolean canceling,
-      boolean withoutCookies) throws IOException, SnowflakeSQLException
+      boolean withoutCookies,
+      boolean includeRetryParameters) throws IOException, SnowflakeSQLException
   {
     CloseableHttpResponse response = null;
+
+    // time the client started attempting to submit request
+    final long startTime = System.currentTimeMillis();
 
     // start time for each request,
     // used for keeping track how much time we have spent
     // due to network issues so that we can compare against the user
     // specified network timeout to make sure we do not retry infinitely
     // when there are transient network/GS issues.
-    long startTimePerRequest = System.currentTimeMillis();
+    long startTimePerRequest = startTime;
 
     // total elapsed time due to transient issues.
     long elapsedMilliForTransientIssues = 0;
@@ -123,19 +127,25 @@ public class RestRequest
         }
 
         /*
-         * Add retry=true for the first retry request
+         * Add retryCount if the first request failed
          * GS can uses the parameter for optimization. Specifically GS
          * will only check metadata database to see if a query has been running
          * for a retry request. This way for the majority of query requests
          * which are not part of retry we don't have to pay the performance
          * overhead of looking up in metadata database.
          */
-        if (retryCount == 1)
+        if (retryCount > 0)
         {
-          URI uri = (new URIBuilder(httpRequest.getURI())).
-              addParameter("retry", "true").build();
+          URIBuilder builder = new URIBuilder(httpRequest.getURI());
 
-          httpRequest.setURI(uri);
+          builder.setParameter(
+              "retryCount", String.valueOf(retryCount));
+          if (includeRetryParameters)
+          {
+            builder.setParameter(
+                "clientStartTime", String.valueOf(startTime));
+          }
+          httpRequest.setURI(builder.build());
         }
 
         response = httpClient.execute(httpRequest);

@@ -1231,7 +1231,11 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
     try
     {
       result = statement.executeHelper(command,
-          "application/json", null, false);
+          "application/json",
+          null, // bindValues
+          false, // describeOnly
+          false // internal
+      );
     }
     catch (SFException ex)
     {

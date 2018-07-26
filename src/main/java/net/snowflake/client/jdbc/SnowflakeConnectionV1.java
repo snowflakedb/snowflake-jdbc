@@ -190,8 +190,8 @@ public class SnowflakeConnectionV1 implements Connection
         int sep = entry.indexOf("=");
         if (sep > 0)
         {
-          properties.put(entry.substring(0, sep).toUpperCase(),
-              entry.substring(sep + 1));
+          String key = entry.substring(0, sep).toUpperCase();
+          properties.put(key, entry.substring(sep + 1));
         }
       }
     }
@@ -526,8 +526,6 @@ public class SnowflakeConnectionV1 implements Connection
   @Override
   public String getCatalog() throws SQLException
   {
-    logger.debug(" public String getCatalog() throws SQLException");
-
     return sfSession.getDatabase();
   }
 
@@ -671,7 +669,7 @@ public class SnowflakeConnectionV1 implements Connection
       logger.error(
           "result set type ({}) or result set concurrency ({}) "
               + "not supported",
-          new Object[]{resultSetType, resultSetConcurrency});
+          resultSetType, resultSetConcurrency);
 
       throw new SQLFeatureNotSupportedException();
     }
@@ -698,109 +696,72 @@ public class SnowflakeConnectionV1 implements Connection
   @Override
   public Map<String, Class<?>> getTypeMap() throws SQLException
   {
-    logger.debug(
-        " public Map<String, Class<?>> getTypeMap() throws "
-            + "SQLException");
-
-    return Collections.emptyMap();
+    return Collections.emptyMap(); // nop
   }
 
   @Override
   public void setTypeMap(Map<String, Class<?>> map) throws SQLException
   {
-    logger.debug(
-        " public void setTypeMap(Map<String, Class<?>> map) "
-            + "throws SQLException");
-
     throw new SQLFeatureNotSupportedException();
   }
 
   @Override
   public void setHoldability(int holdability) throws SQLException
   {
-    logger.debug(
-        " public void setHoldability(int holdability) throws "
-            + "SQLException");
-
     throw new SQLFeatureNotSupportedException();
   }
 
   @Override
   public int getHoldability() throws SQLException
   {
-    logger.debug(" public int getHoldability() throws SQLException");
-
-    return ResultSet.CLOSE_CURSORS_AT_COMMIT;
+    return ResultSet.CLOSE_CURSORS_AT_COMMIT; // nop
   }
 
   @Override
   public Savepoint setSavepoint() throws SQLException
   {
-    logger.debug(
-        " public Savepoint setSavepoint() throws SQLException");
-
     throw new SQLFeatureNotSupportedException();
   }
 
   @Override
   public Savepoint setSavepoint(String name) throws SQLException
   {
-    logger.debug(
-        " public Savepoint setSavepoint(String name) throws "
-            + "SQLException");
-
     throw new SQLFeatureNotSupportedException();
   }
 
   @Override
   public void releaseSavepoint(Savepoint savepoint) throws SQLException
   {
-    logger.debug(
-        " public void releaseSavepoint(Savepoint savepoint) throws "
-            + "SQLException");
-
     throw new SQLFeatureNotSupportedException();
   }
 
   @Override
   public Blob createBlob() throws SQLException
   {
-    logger.debug(" public Blob createBlob() throws SQLException");
-
     throw new SQLFeatureNotSupportedException();
   }
 
   @Override
   public Clob createClob() throws SQLException
   {
-    logger.debug(" public Clob createClob() throws SQLException");
-
     throw new SQLFeatureNotSupportedException();
   }
 
   @Override
   public NClob createNClob() throws SQLException
   {
-    logger.debug(" public NClob createNClob() throws SQLException");
-
     throw new SQLFeatureNotSupportedException();
   }
 
   @Override
   public SQLXML createSQLXML() throws SQLException
   {
-    logger.debug(
-        " public SQLXML createSQLXML() throws SQLException");
-
     throw new SQLFeatureNotSupportedException();
   }
 
   @Override
   public boolean isValid(int timeout) throws SQLException
   {
-    logger.debug(
-        " public boolean isValid(int timeout) throws SQLException");
-
     // TODO: run query here or ping
     return !isClosed;
   }
@@ -919,8 +880,6 @@ public class SnowflakeConnectionV1 implements Connection
   @Override
   public String getSchema() throws SQLException
   {
-    logger.debug(" public String getSchema() throws SQLException");
-
     return sfSession.getSchema();
   }
 

@@ -10,6 +10,7 @@ import net.snowflake.client.core.bind.BindException;
 import net.snowflake.client.core.bind.BindUploader;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeFileTransferAgent;
+import net.snowflake.client.jdbc.SnowflakeReauthenticationRequest;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.jdbc.telemetry.TelemetryData;
 import net.snowflake.client.jdbc.telemetry.TelemetryUtil;
@@ -135,10 +136,10 @@ public class SFStatement
    * @throws SQLException if connection is already closed
    * @throws SFException if result set is null
    */
-  private SFBaseResultSet executeQuery(String sql,
-                                         Map<String, ParameterBindingDTO>
-                                                            parametersBinding,
-                                         boolean describeOnly)
+  private SFBaseResultSet executeQuery(
+      String sql,
+      Map<String, ParameterBindingDTO> parametersBinding,
+      boolean describeOnly)
       throws SQLException, SFException
   {
     sanityCheckQuery(sql);
@@ -154,7 +155,11 @@ public class SFStatement
       return executeFileTransfer(sql);
     }
 
-    return executeQueryInternal(sql, parametersBinding, describeOnly);
+    // NOTE: It is intentional two describeOnly parameters are specified.
+    return executeQueryInternal(sql, parametersBinding,
+        describeOnly,
+        describeOnly // internal query if describeOnly is true
+    );
   }
 
   /**
@@ -183,14 +188,17 @@ public class SFStatement
    * @param sql sql statement
    * @param parameterBindings binding information
    * @param describeOnly true if just showing result set metadata
+   * @param internal true if internal command not showing up in the history
    * @return snowflake query result set
    * @throws SQLException if connection is already closed
    * @throws SFException if result set is null
    */
-  private SFBaseResultSet executeQueryInternal(String sql,
-                                                 Map<String, ParameterBindingDTO>
-                                                          parameterBindings,
-                                                 boolean describeOnly)
+  SFBaseResultSet executeQueryInternal(
+      String sql,
+      Map<String, ParameterBindingDTO>
+      parameterBindings,
+      boolean describeOnly,
+      boolean internal)
       throws SQLException, SFException
   {
     resetState();
@@ -202,8 +210,11 @@ public class SFStatement
       throw new SQLException("connection is closed");
     }
 
-    Object result = executeHelper(sql, "application/snowflake",
-                                  parameterBindings, describeOnly);
+    Object result = executeHelper(sql,
+        "application/snowflake",
+        parameterBindings,
+        describeOnly,
+        internal);
 
     if (result == null)
     {
@@ -212,14 +223,12 @@ public class SFStatement
                                       "got null result");
     }
 
-    boolean sortResult = false;
-
     /*
      * we sort the result if the connection is in sorting mode
      */
     Object sortProperty = session.getSFSessionProperty("sort");
 
-    sortResult = sortProperty != null && (Boolean) sortProperty;
+    boolean sortResult = sortProperty != null && (Boolean) sortProperty;
 
     logger.debug( "Creating result set");
 
@@ -293,14 +302,17 @@ public class SFStatement
    * @param mediaType media type
    * @param bindValues map of binding values
    * @param describeOnly whether only show the result set metadata
+   * @param internal run internal query not showing up in history
    * @return raw json response
    * @throws SFException if query is canceled
    * @throws SnowflakeSQLException if query is already running
    */
   public
-  Object executeHelper(String sql, String mediaType,
-                                 Map<String, ParameterBindingDTO> bindValues,
-                                 boolean describeOnly)
+  Object executeHelper(String sql,
+                       String mediaType,
+                       Map<String, ParameterBindingDTO> bindValues,
+                       boolean describeOnly,
+                       boolean internal)
       throws SnowflakeSQLException, SFException
   {
     ScheduledExecutorService executor = null;
@@ -364,6 +376,7 @@ public class SFStatement
       StmtUtil.StmtInput stmtInput = new StmtUtil.StmtInput();
       stmtInput.setSql(sql)
           .setMediaType(mediaType)
+          .setInternal(internal)
           .setDescribeOnly(describeOnly)
           .setServerUrl(session.getServerUrl())
           .setRequestId(requestId)
@@ -422,8 +435,22 @@ public class SFStatement
         {
           if (ex.getErrorCode() == Constants.SESSION_EXPIRED_GS_CODE)
           {
-            // renew the session
-            session.renewSession(stmtInput.sessionToken);
+            try
+            {
+              // renew the session
+              session.renewSession(stmtInput.sessionToken);
+            }
+            catch(SnowflakeReauthenticationRequest ex0)
+            {
+              if (session.isExternalbrowserAuthenticator())
+              {
+                reauthenticate();
+              }
+              else
+              {
+                throw ex0;
+              }
+            }
             // SNOW-18822: reset session token for the statement
             stmtInput.setSessionToken(session.getSessionToken());
             stmtInput.setRetry(true);
@@ -485,6 +512,21 @@ public class SFStatement
       // if this query enabled the new SQL format, re-disable it now
       setUseNewSqlFormat(false);
     }
+  }
+
+  private void reauthenticate() throws SFException, SnowflakeSQLException
+  {
+    SessionUtil.LoginInput input = new SessionUtil.LoginInput();
+    SessionUtil.LoginOutput output = new SessionUtil.LoginOutput();
+    output.setSessionToken(session.getSessionToken());
+    input.setRole(session.getRole());
+    input.setWarehouse(session.getWarehouse());
+    input.setDatabaseName(session.getDatabase());
+    input.setSchemaName(session.getSchema());
+
+    session.open();
+    session.setCurrentObjects(input, output);
+    // output is not used here.
   }
 
   /**
@@ -572,10 +614,7 @@ public class SFStatement
       executeSetProperty(sql);
       return null;
     }
-    else
-    {
-      return executeQuery(sql, parametersBinding, false);
-    }
+    return executeQuery(sql, parametersBinding, false);
   }
 
   private SFBaseResultSet executeFileTransfer(String sql) throws SQLException,
