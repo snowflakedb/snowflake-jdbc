@@ -266,7 +266,8 @@ public class HttpUtil
         retryTimeout,
         injectSocketTimeout,
         canceling,
-        true);
+        true,
+        false);
   }
 
   /**
@@ -286,12 +287,41 @@ public class HttpUtil
                                       AtomicBoolean canceling)
       throws SnowflakeSQLException, IOException
   {
-    return executeRequestInternal(
+    return executeRequest(
         httpRequest,
         retryTimeout,
         injectSocketTimeout,
         canceling,
         false);
+  }
+
+  /**
+   * Executes a HTTP request for Snowflake.
+   *
+   * @param httpRequest HttpRequestBase
+   * @param retryTimeout retry timeout
+   * @param injectSocketTimeout injecting socket timeout
+   * @param canceling canceling?
+   * @param includeRetryParameters whether to include retry parameters in
+   *                               retried requests
+   * @return response
+   * @throws SnowflakeSQLException if Snowflake error occurs
+   * @throws IOException raises if a general IO error occurs
+   */
+  public static String executeRequest(HttpRequestBase httpRequest,
+                                      int retryTimeout,
+                                      int injectSocketTimeout,
+                                      AtomicBoolean canceling,
+                                      boolean includeRetryParameters)
+      throws SnowflakeSQLException, IOException
+  {
+    return executeRequestInternal(
+        httpRequest,
+        retryTimeout,
+        injectSocketTimeout,
+        canceling,
+        false,
+        includeRetryParameters);
   }
 
   /**
@@ -307,6 +337,8 @@ public class HttpUtil
    * @param injectSocketTimeout simulate socket timeout
    * @param canceling           canceling flag
    * @param withoutCookies      whether this request should ignore cookies
+   * @param includeRetryParameters whether to include retry parameters in
+   *                               retried requests
    * @return response in String
    * @throws SnowflakeSQLException if Snowflake error occurs
    * @throws IOException raises if a general IO error occurs
@@ -315,7 +347,8 @@ public class HttpUtil
                                                int retryTimeout,
                                                int injectSocketTimeout,
                                                AtomicBoolean canceling,
-                                               boolean withoutCookies)
+                                               boolean withoutCookies,
+                                               boolean includeRetryParameters)
       throws SnowflakeSQLException, IOException
   {
     if (logger.isDebugEnabled())
@@ -335,7 +368,8 @@ public class HttpUtil
           retryTimeout,
           injectSocketTimeout,
           canceling,
-          withoutCookies);
+          withoutCookies,
+          includeRetryParameters);
 
       if (response == null ||
           response.getStatusLine().getStatusCode() != 200)

@@ -789,6 +789,7 @@ public class SnowflakeChunkDownloader
                                 networkTimeoutInMilli / 1000,
                                 0,
                                 null,
+                                false,
                                 false);
 
         logger.debug("Call returned for URL: {}",
