@@ -4,12 +4,11 @@
 package net.snowflake.client.jdbc;
 
 /**
- * SnowflakeReauthenticateException signals the reauthentication mainly used
- * for SSO
+ * SnowflakeReauthenticationRequest signals the reauthentication used for SSO
  */
-public class SnowflakeReauthenticateException extends SnowflakeSQLException
+public class SnowflakeReauthenticationRequest extends SnowflakeSQLException
 {
-  public SnowflakeReauthenticateException(String queryId,
+  public SnowflakeReauthenticationRequest(String queryId,
                                           String reason,
                                           String sqlState,
                                           int vendorCode)

@@ -91,16 +91,16 @@ public class HttpUtil
             .setSocketTimeout(DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT)
             .build();
 
-    TrustManager[] trustManagers;
+    TrustManager[] trustManagers = null;
     if (!insecureMode)
     {
+      // A custom TrustManager is required only if insecureMode is disabled,
+      // which is by default in the production. insecureMode can be enabled
+      // 1) OCSP service is down for reasons, 2) PowerMock test tht doesn't
+      // care OCSP checks.
       TrustManager[] tm = {
           new SFTrustManager(ocspCacheFile, useOcspCacheServer)};
       trustManagers = tm;
-    }
-    else
-    {
-      trustManagers = null;
     }
     try
     {

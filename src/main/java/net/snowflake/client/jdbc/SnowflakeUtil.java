@@ -45,6 +45,7 @@ public class SnowflakeUtil
   private static final int SESSION_NOT_EXIST_GS_CODE = 390111;
   private static final int MASTER_TOKEN_NOTFOUND = 390113;
   private static final int MASTER_EXPIRED_GS_CODE = 390114;
+  private static final int MASTER_TOKEN_INVALID_GS_CODE = 390115;
 
 
   static public void checkErrorAndThrowExceptionIncludingReauth(JsonNode rootNode)
@@ -64,7 +65,7 @@ public class SnowflakeUtil
    * information extracted from the node.
    *
    * @param rootNode json object contains error information
-   * @param raiseReauthenticateError raises SnowflakeReauthenticateException
+   * @param raiseReauthenticateError raises SnowflakeReauthenticationRequest
    *                                if true
    * @throws SnowflakeSQLException the exception get from the error in the json
    */
@@ -126,7 +127,8 @@ public class SnowflakeUtil
         case SESSION_NOT_EXIST_GS_CODE:
         case MASTER_TOKEN_NOTFOUND:
         case MASTER_EXPIRED_GS_CODE:
-          throw new SnowflakeReauthenticateException(
+        case MASTER_TOKEN_INVALID_GS_CODE:
+          throw new SnowflakeReauthenticationRequest(
               queryId, errorMessage, sqlState, errorCode);
       }
     }

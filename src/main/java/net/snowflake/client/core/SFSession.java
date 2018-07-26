@@ -320,6 +320,18 @@ public class SFSession
   }
 
   /**
+   * Returns true If authenticator is EXTERNALBROWSER.
+   * @return true if authenticator type is EXTERNALBROWSER
+   */
+  boolean isExternalbrowserAuthenticator()
+  {
+    String authenticator = (String) connectionPropertiesMap.get(
+        SFSessionProperty.AUTHENTICATOR);
+    return ClientAuthnDTO.AuthenticatorType.EXTERNALBROWSER.name()
+        .equalsIgnoreCase(authenticator);
+  }
+
+  /**
    * Open a new database session
    *
    * @throws SFException           this is a runtime exception
@@ -1091,7 +1103,15 @@ public class SFSession
     this.storeTemporaryCredential = storeTemporaryCredential;
   }
 
-  private void setCurrentObjects(
+  /**
+   * Sets the current objects if the session is not up to date. It can happen
+   * if the session is created by the id token, which doesn't carry the current
+   * objects.
+   *
+   * @param loginInput
+   * @param loginOutput
+   */
+  void setCurrentObjects(
       SessionUtil.LoginInput loginInput, SessionUtil.LoginOutput loginOutput)
   {
     this.sessionToken = loginOutput.sessionToken; // used to run the commands.
@@ -1103,23 +1123,29 @@ public class SFSession
         "USE DATABASE IDENTIFIER(?)", loginInput.getDatabaseName());
     runInternalCommand(
         "USE SCHEMA IDENTIFIER(?)", loginInput.getSchemaName());
-    runInternalCommand(
-        "SELECT ?", "1");
+    // This ensures the session returns the current objects and refresh
+    // the local cache.
+    SFBaseResultSet result = runInternalCommand("SELECT ?", "1");
+
     // refresh the current objects
     loginOutput.setSessionDatabase(this.database);
     loginOutput.setSessionSchema(this.schema);
     loginOutput.setSessionWarehouse(this.warehouse);
     loginOutput.setSessionRole(this.role);
     loginOutput.setIdToken(loginInput.getIdToken());
+
     // no common parameter is updated.
-    loginOutput.setCommonParams(Collections.<String, Object>emptyMap());
+    if (result != null)
+    {
+      loginOutput.setCommonParams(result.parameters);
+    }
   }
 
-  private void runInternalCommand(String sql, String value)
+  private SFBaseResultSet runInternalCommand(String sql, String value)
   {
     if (value == null)
     {
-      return;
+      return null;
     }
 
     try
@@ -1127,16 +1153,18 @@ public class SFSession
       Map<String, ParameterBindingDTO> bindValues = new HashMap<>();
       bindValues.put("1", new ParameterBindingDTO("TEXT", value));
       SFStatement statement = new SFStatement(this);
-      statement.executeQueryInternal(
+      SFBaseResultSet result = statement.executeQueryInternal(
           sql, bindValues,
           false, // not describe only
           true // internal
       );
+      return result;
     }
     catch(SFException | SQLException ex)
     {
       logger.warn("Failed to run a command: {}, err={}", sql, ex);
     }
+    return null;
   }
 
 

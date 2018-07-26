@@ -190,8 +190,8 @@ public class SnowflakeConnectionV1 implements Connection
         int sep = entry.indexOf("=");
         if (sep > 0)
         {
-          properties.put(entry.substring(0, sep).toUpperCase(),
-              entry.substring(sep + 1));
+          String key = entry.substring(0, sep).toUpperCase();
+          properties.put(key, entry.substring(sep + 1));
         }
       }
     }

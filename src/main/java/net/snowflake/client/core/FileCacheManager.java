@@ -38,8 +38,8 @@ class FileCacheManager
 
   private String cacheDirectoryEnvironmentVariable;
   private String baseCacheFileName;
-  private long cacheExpiration;
-  private long cacheFileLockExpiration;
+  private long cacheExpirationInMilliseconds;
+  private long cacheFileLockExpirationInMilliseconds;
 
   private File cacheFile;
   private File cacheLockFile;
@@ -67,16 +67,16 @@ class FileCacheManager
     return this;
   }
 
-  FileCacheManager setCacheExpiration(long cacheExpiration)
+  FileCacheManager setCacheExpirationInSeconds(long cacheExpirationInSeconds)
   {
     // converting from seconds to milliseconds
-    this.cacheExpiration = cacheExpiration * 1000;
+    this.cacheExpirationInMilliseconds = cacheExpirationInSeconds * 1000;
     return this;
   }
 
-  FileCacheManager setCacheFileLockExpiration(long cacheFileLockExpiration)
+  FileCacheManager setCacheFileLockExpirationInSeconds(long cacheFileLockExpirationInSeconds)
   {
-    this.cacheFileLockExpiration = cacheFileLockExpiration;
+    this.cacheFileLockExpirationInMilliseconds = cacheFileLockExpirationInSeconds * 1000;
     return this;
   }
 
@@ -292,7 +292,7 @@ class FileCacheManager
     long cacheFileTs = fileCreationTime(cacheFile);
 
     if (!cacheLockFile.exists() && cacheFileTs > 0 && currentTime -
-        this.cacheExpiration <= cacheFileTs)
+        this.cacheExpirationInMilliseconds <= cacheFileTs)
     {
       LOGGER.debug("No cache file lock directory exists and cache file is up to date.");
       return true;
@@ -304,7 +304,7 @@ class FileCacheManager
       // failed to get the timestamp of lock directory
       return false;
     }
-    if (lockFileTs < currentTime - this.cacheFileLockExpiration)
+    if (lockFileTs < currentTime - this.cacheFileLockExpirationInMilliseconds)
     {
       // old lock file
       if (!cacheLockFile.delete())
@@ -315,7 +315,7 @@ class FileCacheManager
         return false;
       }
       LOGGER.debug("Deleted the cache lock directory, because it was old.");
-      return currentTime - this.cacheExpiration <= cacheFileTs;
+      return currentTime - this.cacheExpirationInMilliseconds <= cacheFileTs;
     }
     LOGGER.debug("Failed to lock the file. Ignored.");
     return false;

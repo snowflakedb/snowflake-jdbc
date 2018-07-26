@@ -5,14 +5,12 @@
 package net.snowflake.client.core;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import net.snowflake.client.core.BasicEvent.QueryState;
 import net.snowflake.client.core.bind.BindException;
 import net.snowflake.client.core.bind.BindUploader;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeFileTransferAgent;
-import net.snowflake.client.jdbc.SnowflakeReauthenticateException;
+import net.snowflake.client.jdbc.SnowflakeReauthenticationRequest;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.jdbc.telemetry.TelemetryData;
 import net.snowflake.client.jdbc.telemetry.TelemetryUtil;
@@ -437,8 +435,22 @@ public class SFStatement
         {
           if (ex.getErrorCode() == Constants.SESSION_EXPIRED_GS_CODE)
           {
-            // renew the session
-            session.renewSession(stmtInput.sessionToken);
+            try
+            {
+              // renew the session
+              session.renewSession(stmtInput.sessionToken);
+            }
+            catch(SnowflakeReauthenticationRequest ex0)
+            {
+              if (session.isExternalbrowserAuthenticator())
+              {
+                reauthenticate();
+              }
+              else
+              {
+                throw ex0;
+              }
+            }
             // SNOW-18822: reset session token for the statement
             stmtInput.setSessionToken(session.getSessionToken());
             stmtInput.setRetry(true);
@@ -500,6 +512,21 @@ public class SFStatement
       // if this query enabled the new SQL format, re-disable it now
       setUseNewSqlFormat(false);
     }
+  }
+
+  private void reauthenticate() throws SFException, SnowflakeSQLException
+  {
+    SessionUtil.LoginInput input = new SessionUtil.LoginInput();
+    SessionUtil.LoginOutput output = new SessionUtil.LoginOutput();
+    output.setSessionToken(session.getSessionToken());
+    input.setRole(session.getRole());
+    input.setWarehouse(session.getWarehouse());
+    input.setDatabaseName(session.getDatabase());
+    input.setSchemaName(session.getSchema());
+
+    session.open();
+    session.setCurrentObjects(input, output);
+    // output is not used here.
   }
 
   /**

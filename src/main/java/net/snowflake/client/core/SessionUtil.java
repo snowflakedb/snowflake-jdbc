@@ -10,7 +10,7 @@ import com.fasterxml.jackson.databind.node.JsonNodeType;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Strings;
 import net.snowflake.client.jdbc.ErrorCode;
-import net.snowflake.client.jdbc.SnowflakeReauthenticateException;
+import net.snowflake.client.jdbc.SnowflakeReauthenticationRequest;
 import net.snowflake.client.jdbc.SnowflakeDriver;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.jdbc.SnowflakeType;
@@ -147,9 +147,10 @@ public class SessionUtil
     }
   }
 
+  private static final String CACHE_DIR_ENV = "SF_TEMPORARY_CREDENTIAL_CACHE_DIR";
   public static final String CACHE_FILE_NAME = "temporary_credential.json";
-  private static final long CACHE_EXPIRATION = 86400L;
-  private static final long CACHE_FILE_LOCK_EXPIRATION = 60000L;
+  private static final long CACHE_EXPIRATION_IN_SECONDS = 86400L;
+  private static final long CACHE_FILE_LOCK_EXPIRATION_IN_SECONDS = 60L;
 
   protected static final FileCacheManager fileCacheManager;
 
@@ -157,10 +158,10 @@ public class SessionUtil
   {
     fileCacheManager = FileCacheManager
         .builder()
-        .setCacheDirectoryEnvironmentVariable("SF_OCSP_RESPONSE_CACHE_DIR")
+        .setCacheDirectoryEnvironmentVariable(CACHE_DIR_ENV)
         .setBaseCacheFileName(CACHE_FILE_NAME)
-        .setCacheExpiration(CACHE_EXPIRATION)
-        .setCacheFileLockExpiration(CACHE_FILE_LOCK_EXPIRATION).build();
+        .setCacheExpirationInSeconds(CACHE_EXPIRATION_IN_SECONDS)
+        .setCacheFileLockExpirationInSeconds(CACHE_FILE_LOCK_EXPIRATION_IN_SECONDS).build();
   }
 
   private final static Map<String, Map<String,String>> ID_TOKEN_CACHE = new HashMap<>();
@@ -808,9 +809,22 @@ public class SessionUtil
       // force to set the flag.
       loginInput.sessionParameters.put(CLIENT_STORE_TEMPORARY_CREDENTIAL, true);
     }
+    else
+    {
+      // TODO: patch for now. We should update mergeProperteis
+      // to normalize all parameters using STRING_PARAMS, INT_PARAMS and
+      // BOOLEAN_PARAMS.
+      Object value = loginInput.sessionParameters.get(
+          CLIENT_STORE_TEMPORARY_CREDENTIAL);
+      if (value != null)
+      {
+        loginInput.sessionParameters.put(
+            CLIENT_STORE_TEMPORARY_CREDENTIAL, asBoolean(value));
+      }
+    }
 
-    boolean isClientStoreTemporaryCredential = asBoolean(loginInput.sessionParameters.get(
-        CLIENT_STORE_TEMPORARY_CREDENTIAL));
+    boolean isClientStoreTemporaryCredential = asBoolean(
+        loginInput.sessionParameters.get(CLIENT_STORE_TEMPORARY_CREDENTIAL));
     LoginOutput loginOutput;
     if (isClientStoreTemporaryCredential &&
         (loginOutput = readTemporaryCredential(loginInput)) != null)
@@ -846,9 +860,9 @@ public class SessionUtil
     {
       return issueSession(loginInput);
     }
-    catch(SnowflakeReauthenticateException ex)
+    catch(SnowflakeReauthenticationRequest ex)
     {
-      logger.debug("The token expired. errorCode. Reauthenticating");
+      logger.debug("The token expired. errorCode. Reauthenticating...");
     }
     return null;
   }
@@ -881,7 +895,7 @@ public class SessionUtil
   static private void writeTemporaryCredential(
       LoginInput loginInput, LoginOutput loginOutput)
   {
-    if (loginOutput.getIdToken() == null)
+    if (Strings.isNullOrEmpty(loginOutput.getIdToken()))
     {
       return; // no idToken
     }
@@ -1411,7 +1425,19 @@ public class SessionUtil
   }
 
   /**
-   * Renew a session
+   * Renew a session.
+   *
+   * Use cases:
+   * - Session and Master tokens are provided. No Id token:
+   *     - succeed in getting a new Session token.
+   *     - fail and raise SnowflakeReauthenticationRequest because Master
+   *       token expires. Since no id token exists, the exception is thrown
+   *       to the upstream.
+   * - Session and Id tokens are provided. No Master token:
+   *     - fail and raise SnowflakeReauthenticationRequest and
+   *       issue a new Session token
+   *     - fail and raise SnowflakeReauthenticationRequest and fail
+   *       to issue a new Session token as the
    *
    * @param loginInput login information
    * @return login output
@@ -1425,7 +1451,7 @@ public class SessionUtil
     {
       return tokenRequest(loginInput, TokenRequestType.RENEW);
     }
-    catch (SnowflakeReauthenticateException ex)
+    catch (SnowflakeReauthenticationRequest ex)
     {
       if (Strings.isNullOrEmpty(loginInput.getIdToken()))
       {
@@ -1477,7 +1503,6 @@ public class SessionUtil
     HttpPost postRequest;
     String sessionToken;
     String masterToken;
-    String idToken;
 
     try
     {
@@ -1562,7 +1587,6 @@ public class SessionUtil
       // session token is in the data field of the returned json response
       sessionToken = jsonNode.path("data").path("sessionToken").asText();
       masterToken = jsonNode.path("data").path("masterToken").asText();
-      idToken = jsonNode.path("data").path("idToken").asText();
     }
     catch (IOException ex)
     {
@@ -1578,7 +1602,6 @@ public class SessionUtil
     loginOutput
         .setSessionToken(sessionToken)
         .setMasterToken(masterToken)
-        .setIdToken(idToken)
         .setUpdatedByTokenRequest(true)
         .setUpdatedByTokenRequestIssue(requestType == TokenRequestType.ISSUE);
 
