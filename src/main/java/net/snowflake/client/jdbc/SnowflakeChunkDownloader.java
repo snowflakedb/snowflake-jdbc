@@ -437,6 +437,7 @@ public class SnowflakeChunkDownloader
 
   /**
    * terminate the downloader
+   * @return chunk downloader metrics collected over instance lifetime
    */
   public Metrics terminate()
   {

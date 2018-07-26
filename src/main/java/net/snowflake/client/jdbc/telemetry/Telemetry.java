@@ -68,11 +68,18 @@ public class Telemetry
 
   }
 
-
+  /**
+   * Return whether the client can be used to add/send metrics
+   * @return whether client is enabled
+   */
   public boolean isTelemetryEnabled()
   {
     return this.session.isClientTelemetryEnabled() && this.isTelemetryServiceAvailable;
   }
+
+  /**
+   * Disable any use of the client to add/send metrics
+   */
   public void disableTelemetry(){
     this.isTelemetryServiceAvailable = false;
   }
@@ -81,8 +88,9 @@ public class Telemetry
   /**
    * Initialize the telemetry connector
    *
-   * @param conn
-   * @return
+   * @param conn connection with the session to use for the connector
+   * @param flushSize maximum size of telemetry batch before flush
+   * @return a telemetry connector
    */
   public static Telemetry createTelemetry(Connection conn, int flushSize)
   {
@@ -94,6 +102,12 @@ public class Telemetry
     return null;
   }
 
+  /**
+   * Initialize the telemetry connector
+   *
+   * @param conn connection with the session to use for the connector
+   * @return a telemetry connector
+   */
   public static Telemetry createTelemetry(Connection conn)
   {
     return createTelemetry(conn, DEFAULT_FORCE_FLUSH_SIZE);
@@ -102,21 +116,30 @@ public class Telemetry
 
   /**
    * Initialize the telemetry connector
-   * @param session
-   * @return
+   * @param session session to use for telemetry dumps
+   * @return a telemetry connector
    */
   public static Telemetry createTelemetry(SFSession session)
   {
     return createTelemetry(session, DEFAULT_FORCE_FLUSH_SIZE);
   }
 
+  /**
+   * Initialize the telemetry connector
+   * @param session session to use for telemetry dumps
+   * @param flushSize maximum size of telemetry batch before flush
+   * @return a telemetry connector
+   */
   public static Telemetry createTelemetry(SFSession session, int flushSize)
   {
-    return  new Telemetry(session, flushSize);
+    return new Telemetry(session, flushSize);
   }
 
   /**
-   * Add a log data to batch
+   * Add log to batch to be submitted to telemetry. Send batch if forceFlushSize
+   * reached
+   * @param log entry to add
+   * @throws IOException if closed or uploading batch fails
    */
   public void addLogToBatch(TelemetryData log) throws IOException
   {
@@ -137,6 +160,13 @@ public class Telemetry
     }
   }
 
+  /**
+   * Add log to batch to be submitted to telemetry. Send batch if forceFlushSize
+   * reached
+   * @param message json node of log
+   * @param timeStamp timestamp to use for log
+   * @throws IOException if closed or uploading batch fails
+   */
   public void addLogToBatch(ObjectNode message, long timeStamp) throws
       IOException
   {
@@ -144,7 +174,9 @@ public class Telemetry
   }
 
   /**
-   * Same behaviour as addLogToBatch, but suppress exceptions
+   * Attempt to add log to batch, and suppress exceptions thrown in case of
+   * failure
+   * @param log entry to add
    */
   public void tryAddLogToBatch(TelemetryData log)
   {
@@ -159,7 +191,8 @@ public class Telemetry
   }
 
   /**
-   * close telemetry connector, send all cached logs
+   * Close telemetry connector and send any unsubmitted logs
+   * @throws IOException if closed or uploading batch fails
    */
   public void close() throws IOException
   {
@@ -179,6 +212,10 @@ public class Telemetry
     }
   }
 
+  /**
+   * Return whether the client has been closed
+   * @return whether client is closed
+   */
   public boolean isClosed()
   {
     return this.isClosed;
@@ -186,8 +223,8 @@ public class Telemetry
 
   /**
    * Send all cached logs to server
-   *
-   * @throws IOException
+   * @return whether the logs were sent successfully
+   * @throws IOException if closed or uploading batch fails
    */
   public boolean sendBatch() throws IOException
   {
@@ -239,9 +276,10 @@ public class Telemetry
 
 
   /**
-   * Send a log data to server
-   *
-   * @throws IOException
+   * Send a log to the server, along with any existing logs waiting to be sent
+   * @param log entry to send
+   * @return whether the logs were sent successfully
+   * @throws IOException if closed or uploading batch fails
    */
   public boolean sendLog(TelemetryData log) throws IOException
   {
@@ -249,6 +287,13 @@ public class Telemetry
     return sendBatch();
   }
 
+  /**
+   * Send a log to the server, along with any existing logs waiting to be sent
+   * @param message json node of log
+   * @param timeStamp timestamp to use for log
+   * @return whether the logs were sent successfully
+   * @throws IOException if closed or uploading batch fails
+   */
   public boolean sendLog(ObjectNode message, long timeStamp) throws IOException
   {
     return this.sendLog(new TelemetryData(message, timeStamp));
