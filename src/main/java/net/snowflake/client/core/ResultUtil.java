@@ -84,6 +84,8 @@ public class ResultUtil
     String queryId;
     String finalDatabaseName;
     String finalSchemaName;
+    String finalRoleName;
+    String finalWarehouseName;
     long statementTypeId;
     boolean totalRowCountTruncated;
     Map<String, Object> parameters = new HashMap<>();
@@ -129,6 +131,16 @@ public class ResultUtil
     public String getFinalSchemaName()
     {
       return finalSchemaName;
+    }
+
+    String getFinalRoleName()
+    {
+      return finalRoleName;
+    }
+
+    String getFinalWarehouseName()
+    {
+      return finalWarehouseName;
     }
 
     public long getStatementTypeId()
@@ -256,6 +268,12 @@ public class ResultUtil
 
     JsonNode schemaNode = rootNode.path("data").path("finalSchemaName");
     resultOutput.finalSchemaName = schemaNode.isNull() ? null : schemaNode.asText();
+
+    JsonNode roleNode = rootNode.path("data").path("finalRoleName");
+    resultOutput.finalRoleName = roleNode.isNull() ? null : roleNode.asText();
+
+    JsonNode warehouseNode = rootNode.path("data").path("finalWarehouseName");
+    resultOutput.finalWarehouseName = warehouseNode.isNull() ? null : warehouseNode.asText();
 
     resultOutput.statementTypeId = rootNode.path("data").path("statementTypeId").asLong();
 

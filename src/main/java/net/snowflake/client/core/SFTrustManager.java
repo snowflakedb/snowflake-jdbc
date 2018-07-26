@@ -135,7 +135,7 @@ class SFTrustManager implements X509TrustManager
    * OCSP response cache file name. Should be identical to other driver's
    * cache file name.
    */
-  public static final String OCSP_CACHE_FILE_NAME = "ocsp_response_cache.json";
+  public static final String CACHE_FILE_NAME = "ocsp_response_cache.json";
 
   /**
    * OCSP response file cache directory
@@ -147,7 +147,7 @@ class SFTrustManager implements X509TrustManager
     fileCacheManager = FileCacheManager
         .builder()
         .setCacheDirectoryEnvironmentVariable("SF_OCSP_RESPONSE_CACHE_DIR")
-        .setBaseCacheFileName(OCSP_CACHE_FILE_NAME)
+        .setBaseCacheFileName(CACHE_FILE_NAME)
         .setCacheExpiration(CACHE_EXPIRATION)
         .setCacheFileLockExpiration(CACHE_FILE_LOCK_EXPIRATION).build();
   }
@@ -156,7 +156,7 @@ class SFTrustManager implements X509TrustManager
    * OCSP response cache server URL.
    */
   private static String SF_OCSP_RESPONSE_CACHE_SERVER_URL = String.format(
-      "%s/%s", DEFAULT_OCSP_CACHE_HOST, OCSP_CACHE_FILE_NAME);
+      "%s/%s", DEFAULT_OCSP_CACHE_HOST, CACHE_FILE_NAME);
 
   /**
    * OCSP Response Cache server Retry URL pattern

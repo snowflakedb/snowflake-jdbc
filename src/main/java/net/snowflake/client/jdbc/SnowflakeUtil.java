@@ -40,15 +40,37 @@ public class SnowflakeUtil
 
   public final static int EXTRA_TYPES_TIMESTAMP_TZ = 50001;
 
+  // reauthenticate
+  private static final int ID_TOKEN_EXPIRED_GS_CODE = 390110;
+  private static final int SESSION_NOT_EXIST_GS_CODE = 390111;
+  private static final int MASTER_TOKEN_NOTFOUND = 390113;
+  private static final int MASTER_EXPIRED_GS_CODE = 390114;
+
+
+  static public void checkErrorAndThrowExceptionIncludingReauth(JsonNode rootNode)
+      throws SnowflakeSQLException
+  {
+    checkErrorAndThrowExceptionSub(rootNode, true);
+  }
+
+  static public void checkErrorAndThrowException(JsonNode rootNode)
+      throws SnowflakeSQLException
+  {
+    checkErrorAndThrowExceptionSub(rootNode, false);
+  }
+
   /**
    * Check the error in the JSON node and generate an exception based on
    * information extracted from the node.
    *
    * @param rootNode json object contains error information
+   * @param raiseReauthenticateError raises SnowflakeReauthenticateException
+   *                                if true
    * @throws SnowflakeSQLException the exception get from the error in the json
    */
-  static public void checkErrorAndThrowException(JsonNode rootNode)
-          throws SnowflakeSQLException
+  static private void checkErrorAndThrowExceptionSub(
+      JsonNode rootNode, boolean raiseReauthenticateError)
+      throws SnowflakeSQLException
   {
     // no need to throw exception if success
     if (rootNode.path("success").asBoolean())
@@ -91,11 +113,23 @@ public class SnowflakeUtil
         }
         catch (Exception ex)
         {
-         String s = ex.toString();
+          String s = ex.toString();
         }
       }
     }
 
+    if (raiseReauthenticateError)
+    {
+      switch(errorCode)
+      {
+        case ID_TOKEN_EXPIRED_GS_CODE:
+        case SESSION_NOT_EXIST_GS_CODE:
+        case MASTER_TOKEN_NOTFOUND:
+        case MASTER_EXPIRED_GS_CODE:
+          throw new SnowflakeReauthenticateException(
+              queryId, errorMessage, sqlState, errorCode);
+      }
+    }
     throw new SnowflakeSQLException(queryId, errorMessage, sqlState,
                                     errorCode);
   }
@@ -249,7 +283,7 @@ public class SnowflakeUtil
   {
     String leftPathTrimmed = leftPath.trim();
     String rightPathTrimmed = rightPath.trim();
-    
+
     if (leftPathTrimmed.isEmpty())
     {
       return rightPath;

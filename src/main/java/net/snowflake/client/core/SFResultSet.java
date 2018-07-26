@@ -128,6 +128,9 @@ public class SFResultSet extends SFBaseResultSet
 
     session.setDatabase(resultOutput.getFinalDatabaseName());
     session.setSchema(resultOutput.getFinalSchemaName());
+    session.setRole(resultOutput.getFinalRoleName());
+    session.setWarehouse(resultOutput.getFinalWarehouseName());
+
     // update the driver/session with common parameters from GS
     SessionUtil.updateSfDriverParamValues(this.parameters, statement.getSession());
 

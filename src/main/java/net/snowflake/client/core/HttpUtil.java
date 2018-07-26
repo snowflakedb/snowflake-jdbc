@@ -91,15 +91,24 @@ public class HttpUtil
             .setSocketTimeout(DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT)
             .build();
 
-    TrustManager[] trustManagers = {
-        new SFTrustManager(ocspCacheFile, useOcspCacheServer)};
+    TrustManager[] trustManagers;
+    if (!insecureMode)
+    {
+      TrustManager[] tm = {
+          new SFTrustManager(ocspCacheFile, useOcspCacheServer)};
+      trustManagers = tm;
+    }
+    else
+    {
+      trustManagers = null;
+    }
     try
     {
       // enforce using tlsv1.2
       SSLContext sslContext = SSLContext.getInstance("TLSv1.2");
       sslContext.init(
           null, // key manager
-          insecureMode ? null : trustManagers, // trust manager
+          trustManagers, // trust manager
           null); // secure random
 
       // cipher suites need to be picked up in code explicitly for jdk 1.7

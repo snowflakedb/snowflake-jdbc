@@ -41,11 +41,11 @@ public class StmtUtil
 
   static final ObjectMapper mapper = new ObjectMapper();
 
-  private static final String SF_PATH_QUERY_V1 = "/queries/v1/query-request";
+  static final String SF_PATH_QUERY_V1 = "/queries/v1/query-request";
 
   private static final String SF_PATH_ABORT_REQUEST_V1 = "/queries/v1/abort-request";
 
-  private static final String SF_QUERY_REQUEST_ID = "requestId";
+  static final String SF_QUERY_REQUEST_ID = "requestId";
 
   private static final String SF_QUERY_COMBINE_DESCRIBE_EXECUTE = "combinedDescribe";
 
@@ -76,6 +76,7 @@ public class StmtUtil
     String serverUrl;
     String requestId;
     int sequenceId = -1;
+    boolean internal = false;
 
     Map<String, Object> parametersMap;
     String sessionToken;
@@ -129,6 +130,12 @@ public class StmtUtil
     public StmtInput setDescribeOnly(boolean describeOnly)
     {
       this.describeOnly = describeOnly;
+      return this;
+    }
+
+    public StmtInput setInternal(boolean internal)
+    {
+      this.internal = internal;
       return this;
     }
 
@@ -296,11 +303,12 @@ public class StmtUtil
         QueryExecDTO sqlJsonBody = new QueryExecDTO(
             stmtInput.sql,
             stmtInput.describeOnly,
-            Integer.valueOf(stmtInput.sequenceId),
+            stmtInput.sequenceId,
             stmtInput.bindValues,
             stmtInput.bindStage,
             stmtInput.parametersMap,
-            stmtInput.querySubmissionTime);
+            stmtInput.querySubmissionTime,
+            stmtInput.describeOnly || stmtInput.internal);
 
         if (stmtInput.combineDescribe && !stmtInput.describeOnly)
         {

@@ -40,7 +40,7 @@ import java.util.Map;
  * and password.
  * 4. Return token and proof key to the GS to gain access.
  */
-class SessionUtilExternalBrowser
+public class SessionUtilExternalBrowser
 {
   static final SFLogger logger = SFLoggerFactory.getLogger(
       SessionUtilExternalBrowser.class);
@@ -57,7 +57,7 @@ class SessionUtilExternalBrowser
     void output(String msg);
   }
 
-  class DefaultAuthExternalBrowserHandlers implements AuthExternalBrowserHandlers
+  static class DefaultAuthExternalBrowserHandlers implements AuthExternalBrowserHandlers
   {
     @Override
     public HttpPost build(URI uri)
@@ -111,7 +111,7 @@ class SessionUtilExternalBrowser
 
   String token;
   private String proofKey;
-  private final AuthExternalBrowserHandlers handlers;
+  private AuthExternalBrowserHandlers handlers;
   private static final String PREFIX_GET = "GET ";
   private static final String PREFIX_USER_AGENT = "USER-AGENT: ";
   private static final String PREFIX_TOKEN_PARAMETER = "/?token=";
@@ -122,15 +122,13 @@ class SessionUtilExternalBrowser
     UTF8_CHARSET = Charset.forName("UTF-8");
   }
 
-  SessionUtilExternalBrowser(SessionUtil.LoginInput loginInput)
+  public static SessionUtilExternalBrowser createInstance(SessionUtil.LoginInput loginInput)
   {
-    this.mapper = new ObjectMapper();
-    this.loginInput = loginInput;
-    this.handlers = new DefaultAuthExternalBrowserHandlers();
+    return new SessionUtilExternalBrowser(
+        loginInput, new DefaultAuthExternalBrowserHandlers());
   }
 
-  SessionUtilExternalBrowser(
-      SessionUtil.LoginInput loginInput, AuthExternalBrowserHandlers handlers)
+  public SessionUtilExternalBrowser(SessionUtil.LoginInput loginInput, AuthExternalBrowserHandlers handlers)
   {
     this.mapper = new ObjectMapper();
     this.loginInput = loginInput;
@@ -143,7 +141,7 @@ class SessionUtilExternalBrowser
    * @return port number
    * @throws SFException raised if an error occurs.
    */
-  ServerSocket getServerSocket() throws SFException
+  protected ServerSocket getServerSocket() throws SFException
   {
     try
     {
@@ -164,7 +162,7 @@ class SessionUtilExternalBrowser
    * @param ssocket server socket
    * @return port number
    */
-  int getLocalPort(ServerSocket ssocket)
+  protected int getLocalPort(ServerSocket ssocket)
   {
     return ssocket.getLocalPort();
   }

@@ -6,6 +6,7 @@ package net.snowflake.client.core;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Strings;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.jdbc.SnowflakeType;
@@ -24,6 +25,7 @@ import java.security.PrivateKey;
 import java.sql.SQLClientInfoException;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,8 +37,6 @@ import java.util.logging.Level;
 
 /**
  * Snowflake session implementation
- *
- * @author jhuang
  */
 public class SFSession
 {
@@ -62,6 +62,8 @@ public class SFSession
   private String sessionToken;
   private String masterToken;
   private long masterTokenValidityInSeconds;
+
+  private String idToken;
 
   private String newClientForUpdate;
 
@@ -131,7 +133,7 @@ public class SFSession
   private Map<SFSessionProperty, Object> connectionPropertiesMap = new HashMap<>();
 
   // session parameters
-  private Map<String, Object> sessionParametersMap = new HashMap<String, Object>();
+  private Map<String, Object> sessionParametersMap = new HashMap<>();
 
   final private static int MAX_SESSION_PARAMETERS = 1000;
 
@@ -153,6 +155,9 @@ public class SFSession
 
   // role that current session is on
   private String role;
+
+  // warehouse on the current session
+  private String warehouse;
 
   // For Metadata request(i.e. DatabaseMetadata.getTables or
   // DatabaseMetadata.getSchemas,), whether to use connection ctx to
@@ -181,6 +186,9 @@ public class SFSession
 
   // name of temporary stage to upload array binds to; null if none has been created yet
   private String arrayBindStage = null;
+
+  // store the temporary credential
+  private boolean storeTemporaryCredential = false;
 
   public void addProperty(SFSessionProperty sfSessionProperty,
                           Object propertyValue)
@@ -347,6 +355,8 @@ public class SFSession
             (String) connectionPropertiesMap.get(SFSessionProperty.PASSWORD))
         .setToken(
             (String) connectionPropertiesMap.get(SFSessionProperty.TOKEN))
+        .setIdToken(
+            (String)connectionPropertiesMap.get(SFSessionProperty.ID_TOKEN))
         .setClientInfo(this.getClientInfo())
         .setPasscodeInPassword(passcodeInPassword)
         .setPasscode(
@@ -363,9 +373,16 @@ public class SFSession
             SFSessionProperty.APPLICATION));
 
     SessionUtil.LoginOutput loginOutput = SessionUtil.openSession(loginInput);
+    isClosed = false;
+
+    if (loginOutput.isUpdatedByTokenRequest())
+    {
+      setCurrentObjects(loginInput, loginOutput);
+    }
 
     sessionToken = loginOutput.getSessionToken();
     masterToken = loginOutput.getMasterToken();
+    idToken = loginOutput.getIdToken();
     databaseVersion = loginOutput.getDatabaseVersion();
     databaseMajorVersion = loginOutput.getDatabaseMajorVersion();
     databaseMinorVersion = loginOutput.getDatabaseMinorVersion();
@@ -375,6 +392,7 @@ public class SFSession
     database = loginOutput.getSessionDatabase();
     schema = loginOutput.getSessionSchema();
     role = loginOutput.getSessionRole();
+    warehouse = loginOutput.getSessionWarehouse();
 
     // Update common parameter values for this session
     SessionUtil.updateSfDriverParamValues(loginOutput.getCommonParams(), this);
@@ -385,6 +403,8 @@ public class SFSession
         SFSessionProperty.SCHEMA);
     String loginRole = (String)connectionPropertiesMap.get(
         SFSessionProperty.ROLE);
+    String loginWarehouse = (String)connectionPropertiesMap.get(
+        SFSessionProperty.WAREHOUSE);
 
     if (loginDatabaseName != null && !loginDatabaseName
         .equalsIgnoreCase(database))
@@ -410,9 +430,16 @@ public class SFSession
           "Role", loginRole, role));
     }
 
+    if (loginWarehouse != null && !loginWarehouse
+        .equalsIgnoreCase(warehouse))
+    {
+      sqlWarnings.add(new SFException(ErrorCode.
+          CONNECTION_ESTABLISHED_WITH_DIFFERENT_PROP,
+          "Warehouse", loginWarehouse, warehouse));
+    }
+
     // start heartbeat for this session so that the master token will not expire
     startHeartbeatForThisSession();
-    isClosed = false;
   }
 
   /**
@@ -493,26 +520,37 @@ public class SFSession
    * A helper function to call global service and renew session.
    *
    * @param prevSessionToken the session token that has expired
-   * @throws java.sql.SQLException if failed to renew the session
+   * @throws SnowflakeSQLException if failed to renew the session
    * @throws SFException           if failed to renew the session
    */
   synchronized void renewSession(String prevSessionToken)
       throws SFException, SnowflakeSQLException
   {
-    // if session token has changed, don't renew again
     if (sessionToken != null &&
         !sessionToken.equals(prevSessionToken))
+    {
+      logger.debug("not renew session because session token has not been updated.");
       return;
+    }
 
     SessionUtil.LoginInput loginInput = new SessionUtil.LoginInput();
     loginInput.setServerUrl(
         (String) connectionPropertiesMap.get(SFSessionProperty.SERVER_URL))
         .setSessionToken(sessionToken)
         .setMasterToken(masterToken)
-        .setLoginTimeout(loginTimeout);
+        .setIdToken(idToken)
+        .setLoginTimeout(loginTimeout)
+        .setDatabaseName(this.getDatabase())
+        .setSchemaName(this.getSchema())
+        .setRole(this.getRole())
+        .setWarehouse(this.getWarehouse());
 
     SessionUtil.LoginOutput loginOutput = SessionUtil.renewSession(loginInput);
 
+    if (loginOutput.isUpdatedByTokenRequestIssue())
+    {
+      setCurrentObjects(loginInput, loginOutput);
+    }
     sessionToken = loginOutput.getSessionToken();
     masterToken = loginOutput.getMasterToken();
   }
@@ -561,7 +599,7 @@ public class SFSession
    */
   protected void startHeartbeatForThisSession()
   {
-    if (enableHeartbeat)
+    if (enableHeartbeat && !Strings.isNullOrEmpty(masterToken))
     {
       logger.debug("start heartbeat, master token validity: " +
           masterTokenValidityInSeconds);
@@ -580,7 +618,7 @@ public class SFSession
    */
   protected void stopHeartbeatForThisSession()
   {
-    if (enableHeartbeat)
+    if (enableHeartbeat && !Strings.isNullOrEmpty(masterToken))
     {
       logger.debug("stop heartbeat");
 
@@ -903,6 +941,16 @@ public class SFSession
     this.role = role;
   }
 
+  public String getWarehouse()
+  {
+    return warehouse;
+  }
+
+  public void setWarehouse(String warehouse)
+  {
+    this.warehouse = warehouse;
+  }
+
   public void setMetadataRequestUseConnectionCtx(boolean enabled)
   {
     this.metadataRequestUseConnectionCtx = enabled;
@@ -1028,4 +1076,68 @@ public class SFSession
     this.arrayBindStage = String.format("%s.%s.%s",
         this.getDatabase(), this.getSchema(), arrayBindStage);
   }
+
+  public String getIdToken()
+  {
+    return idToken;
+  }
+
+  public boolean isStoreTemporaryCredential()
+  {
+    return this.storeTemporaryCredential;
+  }
+  public void setStoreTemporaryCredential(boolean storeTemporaryCredential)
+  {
+    this.storeTemporaryCredential = storeTemporaryCredential;
+  }
+
+  private void setCurrentObjects(
+      SessionUtil.LoginInput loginInput, SessionUtil.LoginOutput loginOutput)
+  {
+    this.sessionToken = loginOutput.sessionToken; // used to run the commands.
+    runInternalCommand(
+        "USE ROLE IDENTIFIER(?)", loginInput.getRole());
+    runInternalCommand(
+        "USE WAREHOUSE IDENTIFIER(?)", loginInput.getWarehouse());
+    runInternalCommand(
+        "USE DATABASE IDENTIFIER(?)", loginInput.getDatabaseName());
+    runInternalCommand(
+        "USE SCHEMA IDENTIFIER(?)", loginInput.getSchemaName());
+    runInternalCommand(
+        "SELECT ?", "1");
+    // refresh the current objects
+    loginOutput.setSessionDatabase(this.database);
+    loginOutput.setSessionSchema(this.schema);
+    loginOutput.setSessionWarehouse(this.warehouse);
+    loginOutput.setSessionRole(this.role);
+    loginOutput.setIdToken(loginInput.getIdToken());
+    // no common parameter is updated.
+    loginOutput.setCommonParams(Collections.<String, Object>emptyMap());
+  }
+
+  private void runInternalCommand(String sql, String value)
+  {
+    if (value == null)
+    {
+      return;
+    }
+
+    try
+    {
+      Map<String, ParameterBindingDTO> bindValues = new HashMap<>();
+      bindValues.put("1", new ParameterBindingDTO("TEXT", value));
+      SFStatement statement = new SFStatement(this);
+      statement.executeQueryInternal(
+          sql, bindValues,
+          false, // not describe only
+          true // internal
+      );
+    }
+    catch(SFException | SQLException ex)
+    {
+      logger.warn("Failed to run a command: {}, err={}", sql, ex);
+    }
+  }
+
+
 }

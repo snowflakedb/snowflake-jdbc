@@ -215,9 +215,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
     versionBuilder.append(".");
     versionBuilder.append(SnowflakeDriver.changeVersion);
 
-    String newClientForUpdate = "";
-
-    newClientForUpdate =
+    String newClientForUpdate =
         ((SnowflakeConnectionV1)connection).getNewClientForUpdate();
 
     // add new client version if current is older
