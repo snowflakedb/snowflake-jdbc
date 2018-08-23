@@ -1,16 +1,18 @@
+**JDBC Driver 3.6.9**
+|SNOW-51691| Support specifying file cache directories as JVM system properties
+|SNOW-49850| Add client support for disabling SOCKS proxy for JDBC traffic
+|SNOW-41673| Add retryCount and clientStartTime to query-request requests on JDBC
+
 **JDBC Driver 3.6.8**
 |SNOW-49653| Cache ID token in a file.
 |SNOW-41673| Add retryCount and clientStartTime to query-request requests on JDBC
-
 **JDBC Driver 3.6.7**
-|SNOW-50141| Fix setObject did not handle boolean datatype
-|SNOW-49982| Add onError parameter for COPY in Loader API
-|SNOW-49850| Upgrade AWS SDK for JDBC
-|SNOW-49653| Added Cache id token feature for private preview.
-
+|SNOW-50141| Fixed issue with ``setObject`` not handling BOOLEAN data type.
+|SNOW-49982| Added ``onError`` parameter in the ``Loader`` API; corresponds to the ``ON_ERROR`` option in the COPY INTO *<table>* command.
+|SNOW-49850| Upgraded AWS SDK to enable support for disabling socket proxy.
+|SNOW-49653| Internal change for pending feature.
 **JDBC Driver 3.6.6**
-|SNOW-50032| Fixed retry OCSP check that doesn't occur if validity check fails. 
-
+|SNOW-50032| Fixed issue with the OCSP retry check, which wasn't performed if the validity check failed. 
 **JDBC Driver 3.6.5**
 |SNOW-45631| Improved array binding when routing bind values through stage.
 |SNOW-45545| Fixed issue with the data-to-CSV converter for the ``Loader`` API. ``NULL`` and empty values are now correctly converted to ``NULL`` and empty, respectively.
