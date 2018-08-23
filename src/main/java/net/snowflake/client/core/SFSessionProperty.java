@@ -42,7 +42,9 @@ public enum SFSessionProperty
   INSECURE_MODE("insecureMode", false, Boolean.class),
   QUERY_TIMEOUT("queryTimeout", false, Integer.class),
   APPLICATION("application", false, String.class),
-  TRACING("tracing", false, String.class);
+  TRACING("tracing", false, String.class),
+  DISABLE_SOCKS_PROXY("disableSocksProxy", false, Boolean.class),
+  ;
 
   // property key in string
   private String propertyKey;
