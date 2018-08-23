@@ -270,6 +270,12 @@ public class SFSession
           }
           break;
 
+        case DISABLE_SOCKS_PROXY:
+          // note: if any session has this parameter, it will be used for all
+          // sessions on the current JVM.
+          if (propertyValue != null)
+            HttpUtil.setSocksProxyDisabled((Boolean) propertyValue);
+
         default:
           break;
       }

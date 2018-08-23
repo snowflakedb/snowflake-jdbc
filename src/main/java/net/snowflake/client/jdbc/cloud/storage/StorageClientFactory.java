@@ -2,6 +2,7 @@
  * Copyright (c) 2012-2018 Snowflake Computing Inc. All rights reserved.
  */
 package net.snowflake.client.jdbc.cloud.storage;
+import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.log.SFLogger;
 import com.amazonaws.ClientConfiguration;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
@@ -96,6 +97,7 @@ public class StorageClientFactory
     ClientConfiguration clientConfig = new ClientConfiguration();
     clientConfig.setMaxConnections(parallel+1);
     clientConfig.setMaxErrorRetry(S3_TRANSFER_MAX_RETRIES);
+    clientConfig.setDisableSocketProxy(HttpUtil.isSocksProxyDisabled());
 
     logger.debug("s3 client configuration: maxConnection={}, connectionTimeout={}, " +
                     "socketTimeout={}, maxErrorRetry={}",

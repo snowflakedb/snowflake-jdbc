@@ -24,6 +24,7 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.DefaultRedirectStrategy;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+import org.apache.http.protocol.HttpContext;
 import org.apache.http.ssl.SSLInitializationException;
 import org.apache.http.util.EntityUtils;
 
@@ -34,6 +35,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
+import java.net.Proxy;
+import java.net.Socket;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
@@ -54,6 +57,7 @@ public class HttpUtil
   static final int DEFAULT_CONNECTION_TIMEOUT = 60000;
   static final int DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT = 300000; // ms
 
+  private static final String SSL_VERSION = "TLSv1.2";
 
   /**
    * The unique httpClient shared by all connections, this will benefit long
@@ -70,6 +74,9 @@ public class HttpUtil
    * default request configuration, to be copied on individual requests.
    */
   private static RequestConfig DefaultRequestConfig = null;
+
+
+  private static boolean socksProxyDisabled = false;
 
   /**
    * Build an Http client using our set of default.
@@ -104,8 +111,8 @@ public class HttpUtil
     }
     try
     {
-      // enforce using tlsv1.2
-      SSLContext sslContext = SSLContext.getInstance("TLSv1.2");
+      // enforce using SSL_VERSION
+      SSLContext sslContext = SSLContext.getInstance(SSL_VERSION);
       sslContext.init(
           null, // key manager
           trustManagers, // trust manager
@@ -119,18 +126,12 @@ public class HttpUtil
         logger.trace("Cipher suites used: {}", Arrays.toString(cipherSuites));
       }
 
-      SSLConnectionSocketFactory sslSocketFactory = new SSLConnectionSocketFactory(
-          sslContext,
-          new String[]{"TLSv1.2"},
-          cipherSuites,
-          SSLConnectionSocketFactory.getDefaultHostnameVerifier());
-
       Registry<ConnectionSocketFactory> registry =
           RegistryBuilder.<ConnectionSocketFactory>create()
               .register("https",
-                  sslSocketFactory)
+                  new SFSSLConnectionSocketFactory(sslContext, cipherSuites))
               .register("http",
-                  PlainConnectionSocketFactory.getSocketFactory())
+                  new SFConnectionSocketFactory())
               .build();
 
       // Build a connection manager with enough connections
@@ -242,6 +243,24 @@ public class HttpUtil
     return connectionManager == null ?
         "" :
         connectionManager.getTotalStats().toString();
+  }
+
+  /**
+   * Enables/disables use of the SOCKS proxy when creating sockets
+   * @param socksProxyDisabled new value
+   */
+  public static void setSocksProxyDisabled(boolean socksProxyDisabled)
+  {
+    HttpUtil.socksProxyDisabled = socksProxyDisabled;
+  }
+
+  /**
+   * Returns whether the SOCKS proxy is disabled for this JVM
+   * @return whether the SOCKS proxy is disabled
+   */
+  public static boolean isSocksProxyDisabled()
+  {
+    return HttpUtil.socksProxyDisabled;
   }
 
   /**
@@ -493,6 +512,46 @@ public class HttpUtil
       return httpIn.markSupported();
     }
   }
+
+  private final static class SFSSLConnectionSocketFactory
+  extends SSLConnectionSocketFactory
+  {
+    public SFSSLConnectionSocketFactory(SSLContext sslContext,
+                                        String[] cipherSuites)
+    {
+      super(
+          sslContext,
+          new String[]{SSL_VERSION},
+          cipherSuites,
+          SSLConnectionSocketFactory.getDefaultHostnameVerifier()
+      );
+    }
+
+    @Override
+    public Socket createSocket(HttpContext ctx) throws IOException
+    {
+      if (socksProxyDisabled)
+      {
+        return new Socket(Proxy.NO_PROXY);
+      }
+      return super.createSocket(ctx);
+    }
+  }
+
+  private final static class SFConnectionSocketFactory
+  extends PlainConnectionSocketFactory
+  {
+    @Override
+    public Socket createSocket(HttpContext ctx) throws IOException
+    {
+      if (socksProxyDisabled)
+      {
+        return new Socket(Proxy.NO_PROXY);
+      }
+      return super.createSocket(ctx);
+    }
+  }
+
 
   /**
    * Decide cipher suites that will be passed into the SSLConnectionSocketFactory

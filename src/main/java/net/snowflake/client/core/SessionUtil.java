@@ -146,7 +146,7 @@ public class SessionUtil
       this.value = value;
     }
   }
-
+  private static final String CACHE_DIR_PROP = "net.snowflake.jdbc.temporaryCredentialCacheDir";
   private static final String CACHE_DIR_ENV = "SF_TEMPORARY_CREDENTIAL_CACHE_DIR";
   public static final String CACHE_FILE_NAME = "temporary_credential.json";
   private static final long CACHE_EXPIRATION_IN_SECONDS = 86400L;
@@ -158,6 +158,7 @@ public class SessionUtil
   {
     fileCacheManager = FileCacheManager
         .builder()
+        .setCacheDirectorySystemProperty(CACHE_DIR_PROP)
         .setCacheDirectoryEnvironmentVariable(CACHE_DIR_ENV)
         .setBaseCacheFileName(CACHE_FILE_NAME)
         .setCacheExpirationInSeconds(CACHE_EXPIRATION_IN_SECONDS)
