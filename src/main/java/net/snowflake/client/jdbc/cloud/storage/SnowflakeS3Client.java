@@ -14,6 +14,7 @@ import com.amazonaws.regions.Region;
 import com.amazonaws.regions.RegionUtils;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.AmazonS3EncryptionClient;
+import com.amazonaws.services.s3.S3ClientOptions;
 import com.amazonaws.services.s3.model.AmazonS3Exception;
 import com.amazonaws.services.s3.model.CryptoConfiguration;
 import com.amazonaws.services.s3.model.CryptoMode;
@@ -170,6 +171,8 @@ public class SnowflakeS3Client implements SnowflakeStorageClient
         amazonClient.setRegion(region);
       }
     }
+    // Explicitly force to use virtual address style
+    amazonClient.setS3ClientOptions(S3ClientOptions.builder().setPathStyleAccess(false).build());
   }
 
   // Returns the Max number of retry attempts
