@@ -50,6 +50,10 @@ public class SFLoggerFactory
     }
   }
 
+  /**
+   * @param clazz Class type that the logger is instantiated
+   * @return An SFLogger instance given the name of the class
+   */
   public static SFLogger getLogger(Class<?> clazz)
   {
     // only need to determine the logger implementation only once
