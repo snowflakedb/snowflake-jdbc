@@ -117,7 +117,12 @@ class SFTrustManager implements X509TrustManager
   private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
   /**
-   * Environment name to specify the cache directory.
+   * System property name to specify cache directory.
+   */
+  public static final String CACHE_DIR_PROP = "net.snowflake.jdbc.ocspResponseCacheDir";
+
+  /**
+   * Environment name to specify the cache directory. Used if system property not set.
    */
   private static final String CACHE_DIR_ENV = "SF_OCSP_RESPONSE_CACHE_DIR";
 
@@ -151,6 +156,7 @@ class SFTrustManager implements X509TrustManager
   {
     fileCacheManager = FileCacheManager
         .builder()
+        .setCacheDirectorySystemProperty(CACHE_DIR_PROP)
         .setCacheDirectoryEnvironmentVariable(CACHE_DIR_ENV)
         .setBaseCacheFileName(CACHE_FILE_NAME)
         .setCacheExpirationInSeconds(CACHE_EXPIRATION_IN_SECONDS)

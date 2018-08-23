@@ -36,6 +36,7 @@ class FileCacheManager
 
   private static final Charset DEFAULT_FILE_ENCODING = Charset.forName("UTF-8");
 
+  private String cacheDirectorySystemProperty;
   private String cacheDirectoryEnvironmentVariable;
   private String baseCacheFileName;
   private long cacheExpirationInMilliseconds;
@@ -53,6 +54,12 @@ class FileCacheManager
   static FileCacheManager builder()
   {
     return new FileCacheManager();
+  }
+
+  FileCacheManager setCacheDirectorySystemProperty(String cacheDirectorySystemProperty)
+  {
+    this.cacheDirectorySystemProperty = cacheDirectorySystemProperty;
+    return this;
   }
 
   FileCacheManager setCacheDirectoryEnvironmentVariable(String cacheDirectoryEnvironmentVariable)
@@ -94,10 +101,20 @@ class FileCacheManager
 
   FileCacheManager build()
   {
-    String cacheDir = System.getenv(this.cacheDirectoryEnvironmentVariable);
-    if (cacheDir != null)
+    // try to get cacheDir from system property or environment variable
+    String cacheDirPath = this.cacheDirectorySystemProperty != null ?
+        System.getProperty(this.cacheDirectorySystemProperty)
+        : null;
+    if (cacheDirPath == null)
     {
-      this.cacheDir = new File(cacheDir);
+      cacheDirPath = this.cacheDirectoryEnvironmentVariable != null ?
+          System.getenv(this.cacheDirectoryEnvironmentVariable)
+          : null;
+    }
+
+    if (cacheDirPath != null)
+    {
+      this.cacheDir = new File(cacheDirPath);
     }
     else
     {
