@@ -19,7 +19,6 @@ import org.apache.http.config.Registry;
 import org.apache.http.config.RegistryBuilder;
 import org.apache.http.conn.socket.ConnectionSocketFactory;
 import org.apache.http.conn.socket.PlainConnectionSocketFactory;
-import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.DefaultRedirectStrategy;
 import org.apache.http.impl.client.HttpClientBuilder;
@@ -28,8 +27,6 @@ import org.apache.http.protocol.HttpContext;
 import org.apache.http.ssl.SSLInitializationException;
 import org.apache.http.util.EntityUtils;
 
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.TrustManager;
 import java.io.File;
 import java.io.IOException;
@@ -39,7 +36,6 @@ import java.net.Proxy;
 import java.net.Socket;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
-import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.apache.http.client.config.CookieSpecs.DEFAULT;
@@ -56,8 +52,6 @@ public class HttpUtil
   static final int DEFAULT_MAX_CONNECTIONS_PER_ROUTE = 100;
   static final int DEFAULT_CONNECTION_TIMEOUT = 60000;
   static final int DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT = 300000; // ms
-
-  private static final String SSL_VERSION = "TLSv1.2";
 
   /**
    * The unique httpClient shared by all connections, this will benefit long
@@ -111,25 +105,10 @@ public class HttpUtil
     }
     try
     {
-      // enforce using SSL_VERSION
-      SSLContext sslContext = SSLContext.getInstance(SSL_VERSION);
-      sslContext.init(
-          null, // key manager
-          trustManagers, // trust manager
-          null); // secure random
-
-      // cipher suites need to be picked up in code explicitly for jdk 1.7
-      // https://stackoverflow.com/questions/44378970/
-      String[] cipherSuites = decideCipherSuites();
-      if (logger.isTraceEnabled())
-      {
-        logger.trace("Cipher suites used: {}", Arrays.toString(cipherSuites));
-      }
-
       Registry<ConnectionSocketFactory> registry =
           RegistryBuilder.<ConnectionSocketFactory>create()
               .register("https",
-                  new SFSSLConnectionSocketFactory(sslContext, cipherSuites))
+                  new SFSSLConnectionSocketFactory(trustManagers, socksProxyDisabled))
               .register("http",
                   new SFConnectionSocketFactory())
               .build();
@@ -513,31 +492,6 @@ public class HttpUtil
     }
   }
 
-  private final static class SFSSLConnectionSocketFactory
-  extends SSLConnectionSocketFactory
-  {
-    public SFSSLConnectionSocketFactory(SSLContext sslContext,
-                                        String[] cipherSuites)
-    {
-      super(
-          sslContext,
-          new String[]{SSL_VERSION},
-          cipherSuites,
-          SSLConnectionSocketFactory.getDefaultHostnameVerifier()
-      );
-    }
-
-    @Override
-    public Socket createSocket(HttpContext ctx) throws IOException
-    {
-      if (socksProxyDisabled)
-      {
-        return new Socket(Proxy.NO_PROXY);
-      }
-      return super.createSocket(ctx);
-    }
-  }
-
   private final static class SFConnectionSocketFactory
   extends PlainConnectionSocketFactory
   {
@@ -553,18 +507,4 @@ public class HttpUtil
   }
 
 
-  /**
-   * Decide cipher suites that will be passed into the SSLConnectionSocketFactory
-   *
-   * @return List of cipher suites.
-   */
-  private static String[] decideCipherSuites()
-  {
-    String sysCipherSuites = System.getProperty("https.cipherSuites");
-
-    return sysCipherSuites != null ? sysCipherSuites.split(",") :
-        // use jdk default cipher suites
-        ((SSLServerSocketFactory) SSLServerSocketFactory.getDefault())
-            .getDefaultCipherSuites();
-  }
 }
