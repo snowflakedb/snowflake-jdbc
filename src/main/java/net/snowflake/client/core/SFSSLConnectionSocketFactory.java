@@ -24,7 +24,8 @@ import java.util.Arrays;
  */
 public class SFSSLConnectionSocketFactory extends SSLConnectionSocketFactory
 {
-  static final SFLogger logger = SFLoggerFactory.getLogger(HttpUtil.class);
+  static final SFLogger logger = SFLoggerFactory.getLogger(
+      SFSSLConnectionSocketFactory.class);
 
   private static final String SSL_VERSION = "TLSv1.2";
 

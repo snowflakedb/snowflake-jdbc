@@ -126,6 +126,7 @@ public class HttpUtil
               .useSystemProperties()
               .setRedirectStrategy(new DefaultRedirectStrategy())
               .setUserAgent("-")     // needed for Okta
+              .disableCookieManagement() // SNOW-39748
               .build();
 
       return httpClient;
