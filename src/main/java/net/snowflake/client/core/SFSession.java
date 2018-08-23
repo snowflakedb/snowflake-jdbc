@@ -1159,12 +1159,13 @@ public class SFSession
       Map<String, ParameterBindingDTO> bindValues = new HashMap<>();
       bindValues.put("1", new ParameterBindingDTO("TEXT", value));
       SFStatement statement = new SFStatement(this);
-      SFBaseResultSet result = statement.executeQueryInternal(
-          sql, bindValues,
+      return statement.executeQueryInternal(
+          sql,
+          bindValues,
           false, // not describe only
-          true // internal
+          true, // internal
+          null // caller isn't a JDBC interface method
       );
-      return result;
     }
     catch(SFException | SQLException ex)
     {

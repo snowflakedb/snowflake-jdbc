@@ -325,7 +325,7 @@ public class BindUploader implements Closeable
       try
       {
         SFStatement statement = new SFStatement(session);
-        SFBaseResultSet putResult = statement.execute(putStatement, null);
+        SFBaseResultSet putResult = statement.execute(putStatement, null, null);
         putResult.next();
 
         // metadata is 0-based, result set is 1-based
@@ -368,7 +368,7 @@ public class BindUploader implements Closeable
         try
         {
           SFStatement statement = new SFStatement(session);
-          statement.execute(CREATE_STAGE_STMT, null);
+          statement.execute(CREATE_STAGE_STMT, null, null);
           session.setArrayBindStage(STAGE_NAME);
         }
         catch (SFException | SQLException ex)
