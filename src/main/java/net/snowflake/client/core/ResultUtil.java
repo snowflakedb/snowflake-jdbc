@@ -915,6 +915,8 @@ public class ResultUtil
    *
    * @param resultSet result set to extract update count from
    * @return the number of rows updated
+   * @throws SFException if failed to calculate update count
+   * @throws SQLException if failed to calculate update count
    */
   static public int calculateUpdateCount(SFBaseResultSet resultSet)
                                          throws SFException, SQLException
@@ -1022,8 +1024,12 @@ public class ResultUtil
   /**
    * Return the list of child results provided in a result, if available; otherwise
    * return an empty list
+   * @param session the current session
+   * @param requestId the current request id
    * @param result result json
    * @return list of child results
+   * @throws SFException if the number of child IDs does not match
+   *   child statement types
    */
   public static List<SFChildResult> getChildResults(SFSession session,
                                                     String requestId,

@@ -350,7 +350,9 @@ public class StmtUtil
             HttpUtil.executeRequest(httpRequest,
                                     stmtInput.networkTimeoutInMillis / 1000,
                                     stmtInput.injectSocketTimeout,
-                                    stmtInput.canceling);
+                                    stmtInput.canceling,
+                                    true // include retry parameters
+                                  );
       }
 
       return pollForOutput(resultAsString, stmtInput, httpRequest);

@@ -631,6 +631,7 @@ public class SFStatement
    *
    * @param sql sql statement.
    * @param parametersBinding parameters to bind
+   * @param caller the JDBC interface method that called this method, if any
    * @return whether there is result set or not
    * @throws java.sql.SQLException if failed to execute sql
    * @throws SFException exception raised from Snowflake components
