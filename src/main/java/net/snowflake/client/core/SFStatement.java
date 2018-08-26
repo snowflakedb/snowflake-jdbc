@@ -21,7 +21,10 @@ import org.apache.http.client.methods.HttpRequestBase;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.Callable;
@@ -37,6 +40,13 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class SFStatement
 {
+  public enum CallingMethod
+  {
+    EXECUTE,
+    EXECUTE_UPDATE,
+    EXECUTE_QUERY
+  }
+
   static final SFLogger logger = SFLoggerFactory.getLogger(SFStatement.class);
 
   private SFSession session;
@@ -74,6 +84,8 @@ public class SFStatement
   // so, if the user binds time values, we don't upload to stage
   private boolean hasUnsupportedStageBind = false;
 
+  // list of child result objects for queries called by the current query, if any
+  private List<SFChildResult> childResults = null;
   /**
    * Add a statement parameter
    *
@@ -139,7 +151,8 @@ public class SFStatement
   private SFBaseResultSet executeQuery(
       String sql,
       Map<String, ParameterBindingDTO> parametersBinding,
-      boolean describeOnly)
+      boolean describeOnly,
+      CallingMethod caller)
       throws SQLException, SFException
   {
     sanityCheckQuery(sql);
@@ -156,9 +169,12 @@ public class SFStatement
     }
 
     // NOTE: It is intentional two describeOnly parameters are specified.
-    return executeQueryInternal(sql, parametersBinding,
+    return executeQueryInternal(
+        sql,
+        parametersBinding,
         describeOnly,
-        describeOnly // internal query if describeOnly is true
+        describeOnly, // internal query if describeOnly is true
+        caller
     );
   }
 
@@ -172,7 +188,7 @@ public class SFStatement
    */
   public SFStatementMetaData describe(String sql) throws SFException, SQLException
   {
-    SFBaseResultSet baseResultSet = executeQuery(sql, null, true);
+    SFBaseResultSet baseResultSet = executeQuery(sql, null, true, null);
 
     describeJobUUID = baseResultSet.getQueryId();
 
@@ -189,16 +205,17 @@ public class SFStatement
    * @param parameterBindings binding information
    * @param describeOnly true if just showing result set metadata
    * @param internal true if internal command not showing up in the history
+   * @param caller the JDBC method that called this function, null if none
    * @return snowflake query result set
    * @throws SQLException if connection is already closed
    * @throws SFException if result set is null
    */
   SFBaseResultSet executeQueryInternal(
       String sql,
-      Map<String, ParameterBindingDTO>
-      parameterBindings,
+      Map<String, ParameterBindingDTO> parameterBindings,
       boolean describeOnly,
-      boolean internal)
+      boolean internal,
+      CallingMethod caller)
       throws SQLException, SFException
   {
     resetState();
@@ -234,7 +251,32 @@ public class SFStatement
 
     try
     {
-      resultSet = new SFResultSet((JsonNode) result, this, sortResult);
+      JsonNode jsonResult = (JsonNode) result;
+      resultSet = new SFResultSet(jsonResult, this, sortResult);
+      childResults = ResultUtil.getChildResults(session, requestId, jsonResult);
+
+      // if child results are available, skip over this result set and set the
+      // current result to the first child's result.
+      // we still construct the first result set for its side effects.
+      if (!childResults.isEmpty())
+      {
+        SFStatementType type = childResults.get(0).type;
+
+        // ensure first query type matches the calling JDBC method, if exists
+        if (caller == CallingMethod.EXECUTE_QUERY && !type.isGenerateResultSet())
+        {
+          throw new SnowflakeSQLException(
+              ErrorCode.QUERY_FIRST_RESULT_NOT_RESULT_SET);
+        }
+        else if (caller == CallingMethod.EXECUTE_UPDATE && type.isGenerateResultSet())
+        {
+          throw new SnowflakeSQLException(
+              ErrorCode.UPDATE_FIRST_RESULT_NOT_UPDATE_COUNT);
+        }
+
+        // this will update resultSet to point to the first child result before we return it
+        getMoreResults();
+      }
     }
     catch (SnowflakeSQLException | OutOfMemoryError ex)
     {
@@ -589,6 +631,7 @@ public class SFStatement
    *
    * @param sql sql statement.
    * @param parametersBinding parameters to bind
+   * @param caller the JDBC interface method that called this method, if any
    * @return whether there is result set or not
    * @throws java.sql.SQLException if failed to execute sql
    * @throws SFException exception raised from Snowflake components
@@ -596,7 +639,8 @@ public class SFStatement
    */
   public SFBaseResultSet execute(String sql,
                                  Map<String, ParameterBindingDTO>
-                                     parametersBinding)
+                                     parametersBinding,
+                                 CallingMethod caller)
       throws SQLException, SFException
   {
     sanityCheckQuery(sql);
@@ -614,7 +658,7 @@ public class SFStatement
       executeSetProperty(sql);
       return null;
     }
-    return executeQuery(sql, parametersBinding, false);
+    return executeQuery(sql, parametersBinding, false, caller);
   }
 
   private SFBaseResultSet executeFileTransfer(String sql) throws SQLException,
@@ -636,6 +680,7 @@ public class SFStatement
       logger.debug("setting result set");
 
       resultSet = (SFFixedViewResultSet)transferAgent.getResultSet();
+      childResults = Collections.emptyList();
 
       logger.debug("Number of cols: {}",
                                resultSet.getMetaData().getColumnCount());
@@ -660,6 +705,7 @@ public class SFStatement
     }
 
     resultSet = null;
+    childResults = null;
     isClosed = true;
 
     if (httpRequest != null)
@@ -724,6 +770,7 @@ public class SFStatement
   private void resetState()
   {
     resultSet = null;
+    childResults = null;
 
     if (httpRequest != null)
     {
@@ -783,5 +830,69 @@ public class SFStatement
   private void setUseNewSqlFormat(boolean useNewSqlFormat) throws SFException
   {
     this.addProperty("NEW_SQL_FORMAT", useNewSqlFormat);
+  }
+
+  public boolean getMoreResults() throws SQLException
+  {
+    return getMoreResults(Statement.CLOSE_CURRENT_RESULT);
+  }
+
+  /**
+   * Sets the result set to the next one, if available.
+   * @param current What to do with the current result.
+   *        One of Statement.CLOSE_CURRENT_RESULT,
+   *               Statement.CLOSE_ALL_RESULTS, or
+   *               Statement.KEEP_CURRENT_RESULT
+   * @return true if there is a next result and it's a result set
+   *         false if there are no more results, or there is a next result
+   *           and it's an update count
+   * @throws SQLException if something fails while getting the next result
+   */
+  public boolean getMoreResults(int current) throws SQLException
+  {
+    // clean up current result, if exists
+    if (resultSet != null &&
+        (current == Statement.CLOSE_CURRENT_RESULT ||
+        current == Statement.CLOSE_ALL_RESULTS))
+    {
+      resultSet.close();
+    }
+    resultSet = null;
+
+    // verify if more results exist
+    if (childResults == null || childResults.isEmpty())
+    {
+      return false;
+    }
+
+    // fetch next result using the query id
+    SFChildResult nextResult = childResults.remove(0);
+    try
+    {
+      JsonNode result = StmtUtil.getQueryResultJSON(
+          nextResult.getId(), session);
+      Object sortProperty = session.getSFSessionProperty("sort");
+      boolean sortResult = sortProperty != null && (Boolean) sortProperty;
+      resultSet = new SFResultSet(result, this, sortResult);
+      // override statement type so we can treat the result set like a result of
+      // the original statement called (and not the result scan)
+      resultSet.setStatementType(nextResult.getType());
+
+      return nextResult.getType().isGenerateResultSet();
+    }
+    catch (SFException ex)
+    {
+      throw new SnowflakeSQLException(ex);
+    }
+  }
+
+  public SFBaseResultSet getResultSet()
+  {
+    return resultSet;
+  }
+
+  public boolean hasChildren()
+  {
+    return !childResults.isEmpty();
   }
 }

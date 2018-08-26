@@ -908,6 +908,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
     this.command = command;
     this.connection = connection;
     this.statement = statement;
+    this.statusRows = new ArrayList<>();
 
     // parse the command
     logger.debug("Start parsing");
@@ -1352,8 +1353,8 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
         }
       }
 
-      // create status rows to be returned to the client
-      createStatusRows();
+      // populate status rows to be returned to the client
+      populateStatusRows();
 
       return true;
     }
@@ -2697,10 +2698,8 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
   /**
    * Generate status rows for each file
    */
-  private void createStatusRows()
+  private void populateStatusRows()
   {
-    statusRows = new ArrayList<Object>();
-
     for (Map.Entry<String, FileMetadata> entry : fileMetadataMap.entrySet())
     {
       FileMetadata fileMetadata = entry.getValue();

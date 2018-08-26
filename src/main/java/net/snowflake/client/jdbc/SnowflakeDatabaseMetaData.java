@@ -2686,7 +2686,8 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
                + "String schemaPattern,String functionNamePattern,"
                + "String columnNamePattern)");
 
-    throw new SQLFeatureNotSupportedException();
+    return SnowflakeDatabaseMetaDataResultSet.getEmptyResultSet(
+        GET_FUNCTION_COLUMNS, connection.createStatement());
   }
 
   //@Override

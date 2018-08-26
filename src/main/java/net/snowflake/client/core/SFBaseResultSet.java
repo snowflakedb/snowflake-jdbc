@@ -668,6 +668,11 @@ public abstract class SFBaseResultSet
 
   public abstract SFStatementType getStatementType();
 
+  // this is useful to override the initial statement type if it is incorrect
+  // (e.g. result scan yields a query type, but the results are from a DML statement)
+  public abstract void setStatementType(SFStatementType statementType) throws
+      SQLException;
+
   public abstract String getQueryId();
 
   public boolean isClosed()

@@ -10,6 +10,8 @@ import net.snowflake.client.jdbc.SnowflakeFixedView;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.common.core.SqlState;
 
+import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
 import java.util.List;
 
 import net.snowflake.client.log.SFLogger;
@@ -143,6 +145,13 @@ public class SFFixedViewResultSet extends SFBaseResultSet
     {
       return SFStatementType.PUT;
     }
+  }
+
+  @Override
+  public void setStatementType(SFStatementType statementType)
+      throws SQLException
+  {
+    throw new SQLFeatureNotSupportedException();
   }
 
   @Override

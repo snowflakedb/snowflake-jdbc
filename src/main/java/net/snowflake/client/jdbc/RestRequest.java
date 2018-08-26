@@ -20,6 +20,7 @@ import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
 
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -282,9 +283,15 @@ public class RestRequest
         {
           try
           {
-            Thread.sleep(backoffInMilli - elapsedMilliForLastCall);
-            elapsedMilliForTransientIssues +=
-                (backoffInMilli - elapsedMilliForLastCall);
+            long backoffTime = backoffInMilli - elapsedMilliForLastCall;
+            // use decorrelated jitter in retry time
+            // see https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/
+            backoffInMilli = Math.min(
+                maxBackoffInMilli,
+                ThreadLocalRandom.current().nextLong(1000, 3*backoffTime)
+            );
+            Thread.sleep(backoffInMilli);
+            elapsedMilliForTransientIssues += backoffInMilli;
           }
           catch (InterruptedException ex1)
           {
