@@ -36,5 +36,6 @@ if protocol:
 
 con = snowflake.connector.connect(**params)
 con.cursor().execute("create or replace schema {0}".format(test_schema))
+os.environ["SNOWFLAKE_TEST_SCHEMA"]=test_schema
 
 sys.exit(0)
