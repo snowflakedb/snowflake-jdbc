@@ -1,4 +1,3 @@
-BaseJDBCTest.java
 BindUploaderIT.java
 ConnectionManual.java
 ConnectionPoolingIT.java
