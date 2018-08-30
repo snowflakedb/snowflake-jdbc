@@ -51,6 +51,6 @@ echo "JDK Version: $TRAVIS_JDK_VERSION"
 [[ -n "$JACOCO_COVERAGE" ]] && PARAMS+=("-Djacoco.skip.instrument=false")
 # integration-test phase is after test phase, which means both unit test 
 # and integration test will be run
-mvn "${PARAMS[@]}" integration-test --batch-mode
+mvn "${PARAMS[@]}" verify --batch-mode
 
 travis_fold_end
