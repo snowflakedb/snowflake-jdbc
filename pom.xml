@@ -725,11 +725,27 @@
               <includes>
                 <include>**/ConnectionIT.java</include>
               </includes>
+              <argLine>
+                -Dnet.snowflake.jdbc.loggerImpl=net.snowflake.client.log.JDK14Logger
+                -Djava.logging.config.file=/home/hyu/travis_it_logging.properties
+              </argLine>
             </configuration>
             <executions>
               <execution>
                 <goals>
                   <goal>integration-test</goal>
+                </goals>
+                <configuration>
+                <argLine>
+                  -Djava.util.logging.config.file=travis_it_logging.properties
+                </argLine>
+                </configuration>
+              </execution>
+              <execution>
+                <id>verify_travis_it</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>verify</goal>
                 </goals>
               </execution>
             </executions>
