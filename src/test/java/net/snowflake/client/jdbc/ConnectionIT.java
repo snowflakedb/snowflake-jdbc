@@ -147,6 +147,7 @@ public class ConnectionIT extends BaseJDBCTest
     assertEquals(database, con.getCatalog());
     assertEquals(schema, con.getSchema());
 
+    statement.execute(String.format("drop database if exists %s", SECOND_DATABASE));
     con.close();
   }
 
