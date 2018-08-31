@@ -47,6 +47,7 @@ travis_fold_end
 travis_fold_start build "Test JDBC driver"
 PARAMS=()
 PARAMS+=("-DtravisIT")
+PARAMS+=("-Dnot-self-contained-jar")
 echo "JDK Version: $TRAVIS_JDK_VERSION"
 [[ -n "$JACOCO_COVERAGE" ]] && PARAMS+=("-Djacoco.skip.instrument=false")
 # integration-test phase is after test phase, which means both unit test 
