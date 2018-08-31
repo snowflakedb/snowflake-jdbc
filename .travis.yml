@@ -6,36 +6,38 @@ matrix:
   - os: linux
     jdk: oraclejdk8
     env:
-      - JACOCO_COVERAGE=true
+    - JACOCO_COVERAGE=true
     before_install:
-      - eval "${MATRIX_EVAL}"
-      - sudo apt-get update
-      - openssl aes-256-cbc -k "$super_secret_password" -in parameters.json.enc -out parameters.json -d
-      - pyenv local 3.6
-      - curl -O https://bootstrap.pypa.io/get-pip.py
-      - python get-pip.py
-      - pip --version
-      - pip install -U virtualenv
-      - virtualenv env
-      - source env/bin/activate
+    - eval "${MATRIX_EVAL}"
+    - sudo apt-get update
+    - openssl aes-256-cbc -k "$super_secret_password" -in parameters.json.enc -out
+      parameters.json -d
+    - pyenv local 3.6
+    - curl -O https://bootstrap.pypa.io/get-pip.py
+    - python get-pip.py
+    - pip --version
+    - pip install -U virtualenv
+    - virtualenv env
+    - source env/bin/activate
     script:
-      - ./scripts/run_travis.sh
-      - bash <(curl -s https://codecov.io/bash)
+    - "./scripts/run_travis.sh"
+    - bash <(curl -s https://codecov.io/bash)
   - os: linux
     jdk: oraclejdk9
     before_install:
-      - eval "${MATRIX_EVAL}"
-      - sudo apt-get update
-      - openssl aes-256-cbc -k "$super_secret_password" -in parameters.json.enc -out parameters.json -d
-      - pyenv local 3.6
-      - curl -O https://bootstrap.pypa.io/get-pip.py
-      - python get-pip.py
-      - pip --version
-      - pip install -U virtualenv
-      - virtualenv env
-      - source env/bin/activate
+    - eval "${MATRIX_EVAL}"
+    - sudo apt-get update
+    - openssl aes-256-cbc -k "$super_secret_password" -in parameters.json.enc -out
+      parameters.json -d
+    - pyenv local 3.6
+    - curl -O https://bootstrap.pypa.io/get-pip.py
+    - python get-pip.py
+    - pip --version
+    - pip install -U virtualenv
+    - virtualenv env
+    - source env/bin/activate
     script:
-      - ./scripts/run_travis.sh
+    - "./scripts/run_travis.sh"
 env:
   global:
-    secure: wjiJ49wxh/pRQHfjcvmIhjgGWCe3sS08tOzmZsJGdCBCDx0XEtV7SAMQWIAC7QxSrfgNvllaIpXrlQvWYmdULKVG4t/YbL83CoGnp9wqzAwQFeceh/Z+FStfy3yVpuqMd+4PiTWIbguYwDfZrRxg4beSQdH3IX3Z7g4sWXglVhyTQLTFZ2d8Xw668AooNNxuztC8hC2sxvalz7HXF1HardNXPM/4Jaxz63YlyhwVZw2WP/Hunby/t5RXBQSzOL080Eo+pAiN5BNo/gc1iFqqp2rrrMcEqOI3Lu0fJBHKXDxR3QFenwDkCLFU4JsIKE5fFMkem0TTHRsfahAbxbf7D8RaBW50odKOSo4/aTqKd/YG6CZFtlvtO3+7ntTMPdlxBPAgUOlShV84I59JSOLznHV47ujUhZCJgOIEusyX05KKSbZJrUr7/2rKFQvq40U80lXyVr61ZR96b3iaHP724G/Vw5TpDWtcNq5k1FlK/MNhXMj4V3TzW+KbX5rZMXu668KP6vkgsFkED+nlWznTp6CrzqEl8uCEV/oFQsVgebcq1qXec2r/XQ3BRSpg4fyqhUiQVbuadg6CF6DPcmbYbeGtWssjmQqPwHZLf6Jl/w1wCXRCMJgpaVawO3ozvNFOOysFwmdrgF2Fs1CGyF9FpuqWkT1H0QZ34EZFYtpXEaM=
+  - secure: pPK8xlDKO5l/lGvSym81fVGyfoIBPvPeaUVMZRFqcgVhSO6XHCS0Ktn2t8Y6VgT1MN9njLS5ewQ3uDX/7iZ9a3t3iHFstU6FLAQTxdahn0WLi3T9Dfj7aOpC+JaTUr4eWHZZNHs6635OFfOXEw7XoMIJIZ5jjexuRwnUf+RJ7siN3qbeTozxFHY95VjJKNZZ4ga3GyXeuvpJTVlYJT2JfvJUpMPJQV6cjdVOhAn8LiusNXieKrURdTbemCYgO0+Fe9kUusMKfJPdMEfufcvKnE4jk4XC61J47QCBQl9CRtkGi2uCOepwOlIXXsR3nZtGP9SB/INDkpzlbpx2e2f2sBkFXuM74bbcLfrAAbdgjjhJTI5f0aD+/FC+mQ2AsA97nrlqltbEXsml/rS+vUvCn3N9mmFQuAHVPSx5LNzD0bOmAKNDElIqIrCNXvu/DR+CYvrwosKK+YHcmBmrl5ZlY/WT7Mm2FVENww4P7e8AJrVFQaOVA1rOyMu/9/Vc6NvHHQs3ha/zU6OBtR5v2g5qBxdrDaPh1H0O0N4U6cr3wNett8cT8CbmqRDxvqyl46697kgj3Xzf5V8BJnyiGb8qgJ89IBD6AqxTaFvMpkGhTTKRzYzYnZwsZJ66gMRmLCGIljeObaEx+FR9Kqodr4CCpmYCrI3LK0KWG7pIBdm47Y0=

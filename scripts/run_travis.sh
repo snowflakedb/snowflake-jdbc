@@ -46,7 +46,13 @@ travis_fold_end
 
 travis_fold_start build "Test JDBC driver"
 PARAMS=()
+PARAMS+=("-DtravisIT")
+# code coverage plugin jacoco did not work when running with self-contained-jar
+PARAMS+=("-Dnot-self-contained-jar")
 echo "JDK Version: $TRAVIS_JDK_VERSION"
 [[ -n "$JACOCO_COVERAGE" ]] && PARAMS+=("-Djacoco.skip.instrument=false")
-mvn "${PARAMS[@]}" test --batch-mode
+# verify phase is after test/integration-test phase, which means both unit test 
+# and integration test will be run
+mvn "${PARAMS[@]}" verify --batch-mode
+
 travis_fold_end
