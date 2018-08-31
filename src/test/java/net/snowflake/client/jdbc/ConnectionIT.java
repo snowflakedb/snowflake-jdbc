@@ -333,8 +333,10 @@ public class ConnectionIT extends BaseJDBCTest
     // get connection by server name
     // this is used by ibm cast iron studio
     ds = new SnowflakeBasicDataSource();
-    // TODO: removed hardcoded username and password
     ds.setServerName(params.get("host"));
+    ds.setSsl("on". equals(ssl));
+    ds.setAccount(account);
+    ds.setPortNumber(Integer.parseInt(port));
     connection = ds.getConnection(params.get("user"), params.get("password"));
     resultSet = connection.createStatement()
         .executeQuery("select 1");
