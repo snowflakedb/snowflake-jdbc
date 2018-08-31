@@ -55,7 +55,7 @@ public class ConnectionIT extends BaseJDBCTest
    *
    * @throws SQLException
    */
-  //@Test
+  @Test
   public void testLoginTimeoutViaDataSource() throws SQLException
   {
     SnowflakeBasicDataSource ds = new SnowflakeBasicDataSource();
@@ -85,7 +85,7 @@ public class ConnectionIT extends BaseJDBCTest
    * Use fake username and password but correct url
    * Expectation is receiving incorrect username or password response from server
    */
-  //@Test
+  @Test
   public void testProdConnectivity() throws SQLException
   {
     String[] deploymentUrls = {
@@ -114,8 +114,8 @@ public class ConnectionIT extends BaseJDBCTest
     }
   }
 
-  //@Test
-  //@ConditionalIgnore(condition = RunningOnTravisCI.class)
+  @Test
+  @ConditionalIgnore(condition = RunningOnTravisCI.class)
   public void testConnectionGetAndSetDBAndSchema() throws SQLException
   {
     Connection con = getConnection();
@@ -150,7 +150,7 @@ public class ConnectionIT extends BaseJDBCTest
     con.close();
   }
 
-  //@Test
+  @Test
   public void testConnectionClientInfo() throws SQLException
   {
     Connection con = getConnection();
@@ -185,7 +185,7 @@ public class ConnectionIT extends BaseJDBCTest
   }
 
   // only support get and set
-  //@Test
+  @Test
   public void testNetworkTimeout() throws SQLException
   {
     Connection con = getConnection();
@@ -196,7 +196,7 @@ public class ConnectionIT extends BaseJDBCTest
     con.close();
   }
 
-  //@Test
+  @Test
   public void testAbort() throws SQLException
   {
     Connection con = getConnection();
@@ -205,7 +205,7 @@ public class ConnectionIT extends BaseJDBCTest
     assertTrue(con.isClosed());
   }
 
-  //@Test
+  @Test
   public void testSetQueryTimeoutInConnectionStr() throws SQLException
   {
     Properties properties = new Properties();
@@ -226,7 +226,7 @@ public class ConnectionIT extends BaseJDBCTest
     connection.close();
   }
 
-  //@Test
+  @Test
   public void testLoginTimeout() throws SQLException
   {
     long connStart = 0, conEnd;
@@ -254,7 +254,7 @@ public class ConnectionIT extends BaseJDBCTest
     fail();
   }
 
-  //@Test
+  @Test
   public void testWrongHostNameTimeout() throws SQLException
   {
     long connStart = 0, conEnd;
@@ -282,7 +282,7 @@ public class ConnectionIT extends BaseJDBCTest
     fail();
   }
 
-  //@Test
+  @Test
   public void testInvalidDbOrSchemaOrRole() throws SQLException
   {
     Properties properties = new Properties();
@@ -302,7 +302,7 @@ public class ConnectionIT extends BaseJDBCTest
     assertEquals(null, connection.getWarnings());
   }
 
-  //@Test
+  @Test
   public void testConnectViaDataSource() throws SQLException
   {
     SnowflakeBasicDataSource ds = new SnowflakeBasicDataSource();
@@ -343,8 +343,8 @@ public class ConnectionIT extends BaseJDBCTest
     connection.close();
   }
 
-  //@Test
-  //@ConditionalIgnore(condition = RunningOnTravisCI.class)
+  @Test
+  @ConditionalIgnore(condition = RunningOnTravisCI.class)
   public void testConnectUsingKeyPair() throws Exception
   {
     Map<String, String> parameters = getConnectionParameters();
@@ -418,7 +418,7 @@ public class ConnectionIT extends BaseJDBCTest
     connection.close();
   }
 
-  //@Test
+  @Test
   public void testBadPrivateKey() throws Exception
   {
     Map<String, String> parameters = getConnectionParameters();
@@ -459,8 +459,8 @@ public class ConnectionIT extends BaseJDBCTest
     }
   }
 
-  //@Test
-  //@ConditionalIgnore(condition = RunningOnTravisCI.class)
+  @Test
+  @ConditionalIgnore(condition = RunningOnTravisCI.class)
   public void testDifferentKeyLength() throws Exception
   {
     Map<String, String> parameters = getConnectionParameters();
@@ -512,7 +512,7 @@ public class ConnectionIT extends BaseJDBCTest
   /**
    * Test production connectivity with insecure mode disabled.
    */
-  //@Test
+  @Test
   public void testInsecureMode() throws SQLException
   {
     String deploymentUrl =
