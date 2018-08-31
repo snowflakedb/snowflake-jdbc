@@ -24,6 +24,7 @@
          evaluation of two variables into the <release> property.  Ugly, I know - jc -->
     <sfrelease>999999_${env.USER}</sfrelease>
     <shadeBase>net.snowflake.client.jdbc.internal</shadeBase>
+    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
   </properties>
 
   <dependencyManagement>
@@ -72,17 +73,13 @@
         <version>${jacoco.version}</version>
         <executions>
           <execution>
-            <id>prepare-agent</id>
+            <id>pre-unit-test</id>
             <goals>
               <goal>prepare-agent</goal>
             </goals>
-          </execution>
-          <execution>
-            <id>report</id>
-            <phase>prepare-package</phase>
-            <goals>
-              <goal>report</goal>
-            </goals>
+            <configuration>
+              <destFile>target/jacoco-ut.exec</destFile>
+            </configuration>
           </execution>
           <execution>
             <id>post-unit-test</id>
@@ -90,26 +87,13 @@
             <goals>
               <goal>report</goal>
             </goals>
-          </execution>
-          <execution>
-            <id>pre-integration-test</id>
-            <phase>pre-integration-test</phase>
-            <goals>
-              <goal>prepare-agent</goal>
-            </goals>
-          </execution>
-          <execution>
-            <id>post-integration-test</id>
-            <phase>post-integration-test</phase>
-            <goals>
-              <goal>report</goal>
-            </goals>
+            <configuration>
+              <dataFile>target/jacoco-ut.exec</dataFile>
+              <outputDirectory>target/jacoco-ut</outputDirectory>
+            </configuration>
           </execution>
         </executions>
         <configuration>
-          <systemPropertyVariables>
-            <jacoco-agent.destfile>target/jacoco.exec</jacoco-agent.destfile>
-          </systemPropertyVariables>
           <skip>${jacoco.skip.instrument}</skip>
         </configuration>
       </plugin>
@@ -739,10 +723,6 @@
               <includes>
                 <include>**/ConnectionIT.java</include>
               </includes>
-              <argLine>
-                -Dnet.snowflake.jdbc.loggerImpl=net.snowflake.client.log.JDK14Logger
-                -Djava.logging.config.file=/home/hyu/travis_it_logging.properties
-              </argLine>
             </configuration>
             <executions>
               <execution>
@@ -750,9 +730,9 @@
                   <goal>integration-test</goal>
                 </goals>
                 <configuration>
-                <argLine>
-                  -Djava.util.logging.config.file=travis_it_logging.properties
-                </argLine>
+                  <argLine>
+                    @{argLine} -Djava.util.logging.config.file=travis_it_logging.properties
+                  </argLine>
                 </configuration>
               </execution>
               <execution>
@@ -763,6 +743,37 @@
                 </goals>
               </execution>
             </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.jacoco</groupId>
+            <artifactId>jacoco-maven-plugin</artifactId>
+            <version>${jacoco.version}</version>
+            <executions>
+              <execution>
+                <id>pre-integration-test</id>
+                <phase>pre-integration-test</phase>
+                <goals>
+                  <goal>prepare-agent</goal>
+                </goals>
+                <configuration>
+                  <destFile>target/jacoco-it.exec</destFile>
+                </configuration>
+              </execution>
+              <execution>
+                <id>post-integration-test</id>
+                <phase>post-integration-test</phase>
+                <goals>
+                  <goal>report</goal>
+                </goals>
+                <configuration>
+                  <dataFile>target/jacoco-it.exec</dataFile>
+                  <outputDirectory>target/jacoco-it</outputDirectory>
+                </configuration>
+              </execution>
+            </executions>
+            <configuration>
+              <skip>${jacoco.skip.instrument}</skip>
+            </configuration>
           </plugin>
         </plugins>
       </build>
