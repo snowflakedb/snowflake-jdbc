@@ -77,7 +77,7 @@ public class ConnectionIT extends BaseJDBCTest
     }
     long endLoginTime = System.currentTimeMillis();
 
-    assertTrue(endLoginTime - startLoginTime < 25000);
+    assertTrue(endLoginTime - startLoginTime < 30000);
   }
 
   /**
