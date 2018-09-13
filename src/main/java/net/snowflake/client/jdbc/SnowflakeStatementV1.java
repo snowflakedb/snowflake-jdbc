@@ -36,6 +36,8 @@ class SnowflakeStatementV1 implements Statement
 
   static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeStatementV1.class);
 
+  static final int NO_UPDATES = -1;
+
   protected SnowflakeConnectionV1 connection;
 
   /*
@@ -43,15 +45,14 @@ class SnowflakeStatementV1 implements Statement
    */
   private int maxRows = 0;
 
+  // result set currently in use
   private ResultSet resultSet = null;
-
-  private ResultSet currentResultSet = null;
 
   private int fetchSize = 50;
 
   private Boolean isClosed = false;
 
-  private int updateCount = -1;
+  private int updateCount = NO_UPDATES;
 
   // TODO: escape processing for sql statement
   private boolean escapeProcessing = false;
@@ -118,9 +119,11 @@ class SnowflakeStatementV1 implements Statement
     SFBaseResultSet sfResultSet = null;
     try
     {
-      sfResultSet = sfStatement.execute(sql, parameterBindings);
+      sfResultSet = sfStatement.execute(sql, parameterBindings,
+          SFStatement.CallingMethod.EXECUTE_UPDATE);
       sfResultSet.setSession(this.connection.getSfSession());
       updateCount = ResultUtil.calculateUpdateCount(sfResultSet);
+      resultSet = null;
     }
     catch (SFException ex)
     {
@@ -128,7 +131,7 @@ class SnowflakeStatementV1 implements Statement
           ex.getSqlState(), ex.getVendorCode(), ex.getParams());
     }
 
-    if (updateCount == -1)
+    if (getUpdateCount() == NO_UPDATES)
     {
       throw new SnowflakeSQLException(ErrorCode.
           UNSUPPORTED_STATEMENT_TYPE_IN_EXECUTION_API,
@@ -136,7 +139,7 @@ class SnowflakeStatementV1 implements Statement
 
     }
 
-    return updateCount;
+    return getUpdateCount();
   }
 
   /**
@@ -155,7 +158,8 @@ class SnowflakeStatementV1 implements Statement
     SFBaseResultSet sfResultSet = null;
     try
     {
-      sfResultSet = sfStatement.execute(sql, parameterBindings);
+      sfResultSet = sfStatement.execute(sql, parameterBindings,
+          SFStatement.CallingMethod.EXECUTE_QUERY);
       sfResultSet.setSession(this.connection.getSfSession());
     }
     catch (SFException ex)
@@ -164,11 +168,8 @@ class SnowflakeStatementV1 implements Statement
           ex.getSqlState(), ex.getVendorCode(), ex.getParams());
     }
 
-    currentResultSet = null;
     resultSet = new SnowflakeResultSetV1(sfResultSet, this);
 
-    // Fix a bug with getMoreResults returning true after a client
-    // calling executeQuery which has returned the result set already
     return getResultSet();
   }
 
@@ -176,6 +177,7 @@ class SnowflakeStatementV1 implements Statement
    * Execute sql
    *
    * @param sql sql statement
+   * @param parameterBindings a map of binds to use for this query
    * @return whether there is result set or not
    * @throws java.sql.SQLException if @link{#executeQuery(String)} throws exception
    */
@@ -185,44 +187,46 @@ class SnowflakeStatementV1 implements Statement
   {
     connection.injectedDelay();
 
-    logger.debug("execute: " + sql);
+    logger.debug("execute: {}", sql);
 
     String trimmedSql = sql.trim();
 
     if (trimmedSql.length() >= 20
-        && trimmedSql.toLowerCase().startsWith(
-        "set-sf-property"))
+        && trimmedSql.toLowerCase().startsWith("set-sf-property"))
     {
+      // deprecated: sfsql
       executeSetProperty(sql);
       return false;
     }
-    else
+
+    SFBaseResultSet sfResultSet = null;
+    try
     {
-      SFBaseResultSet sfResultSet = null;
-      try
-      {
-        sfResultSet = sfStatement.execute(sql, parameterBindings);
-        sfResultSet.setSession(this.connection.getSfSession());
-        currentResultSet = null;
-        resultSet = new SnowflakeResultSetV1(sfResultSet, this);
+      sfResultSet = sfStatement.execute(sql, parameterBindings,
+          SFStatement.CallingMethod.EXECUTE);
+      sfResultSet.setSession(this.connection.getSfSession());
+      resultSet = new SnowflakeResultSetV1(sfResultSet, this);
 
-        if (connection.getSfSession().isExecuteReturnCountForDML() &&
-            !sfResultSet.getStatementType().isGenerateResultSet())
-        {
-          updateCount = ResultUtil.calculateUpdateCount(sfResultSet);
-          resultSet = null;
-          currentResultSet = null;
-          return false;
-        }
-
-        updateCount = -1;
-        return true;
-      }
-      catch (SFException ex)
+      // Legacy behavior treats update counts as result sets for single-
+      // statement execute, so we only treat update counts as update counts
+      // if JDBC_EXECUTE_RETURN_COUNT_FOR_DML is set, or if a statement
+      // is multi-statement
+      if (!sfResultSet.getStatementType().isGenerateResultSet() &&
+          (connection.getSfSession().isExecuteReturnCountForDML() ||
+           sfStatement.hasChildren()))
       {
-        throw new SnowflakeSQLException(ex.getCause(),
-            ex.getSqlState(), ex.getVendorCode(), ex.getParams());
+        updateCount = ResultUtil.calculateUpdateCount(sfResultSet);
+        resultSet = null;
+        return false;
       }
+
+      updateCount = NO_UPDATES;
+      return true;
+    }
+    catch (SFException ex)
+    {
+      throw new SnowflakeSQLException(ex.getCause(),
+          ex.getSqlState(), ex.getVendorCode(), ex.getParams());
     }
   }
 
@@ -426,20 +430,7 @@ class SnowflakeStatementV1 implements Statement
   {
     logger.debug("public boolean getMoreResults()");
 
-    if (currentResultSet != null)
-    {
-      currentResultSet.close();
-      currentResultSet = null;
-    }
-
-    if (resultSet != null)
-    {
-      currentResultSet = resultSet;
-      resultSet = null;
-      return true;
-    }
-
-    return false;
+    return getMoreResults(Statement.CLOSE_CURRENT_RESULT);
   }
 
   @Override
@@ -447,7 +438,43 @@ class SnowflakeStatementV1 implements Statement
   {
     logger.debug("public boolean getMoreResults(int current)");
 
-    throw new SQLFeatureNotSupportedException();
+    // clean up the current result set, if it exists
+    if (resultSet != null &&
+        (current == Statement.CLOSE_CURRENT_RESULT ||
+        current == Statement.CLOSE_ALL_RESULTS))
+    {
+      resultSet.close();
+    }
+
+
+    boolean hasResultSet = sfStatement.getMoreResults(current);
+    SFBaseResultSet sfResultSet = sfStatement.getResultSet();
+
+    if (hasResultSet) // result set returned
+    {
+      sfResultSet.setSession(this.connection.getSfSession());
+      resultSet = new SnowflakeResultSetV1(sfResultSet, this);
+      updateCount = NO_UPDATES;
+      return true;
+    }
+    else if (sfResultSet != null) // update count returned
+    {
+      resultSet = null;
+      try
+      {
+        updateCount = ResultUtil.calculateUpdateCount(sfResultSet);
+      }
+      catch (SFException ex)
+      {
+        throw new SnowflakeSQLException(ex);
+      }
+      return false;
+    }
+    else // no more results
+    {
+      updateCount = NO_UPDATES;
+      return false;
+    }
   }
 
   @Override
@@ -463,13 +490,7 @@ class SnowflakeStatementV1 implements Statement
   {
     logger.debug("public ResultSet getResultSet()");
 
-    if (currentResultSet == null)
-    {
-      currentResultSet = resultSet;
-      resultSet = null;
-    }
-
-    return currentResultSet;
+    return resultSet;
   }
 
   @Override
@@ -683,7 +704,6 @@ class SnowflakeStatementV1 implements Statement
   {
     logger.debug("public void close()");
 
-    currentResultSet = null;
     resultSet = null;
     isClosed = true;
     batch.clear();

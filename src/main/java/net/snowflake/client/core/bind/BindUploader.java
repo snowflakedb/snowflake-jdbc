@@ -78,8 +78,9 @@ public class BindUploader implements Closeable
   /**
    * Create a new BindUploader which will write binds to the *existing*
    * bindDir and upload them to the given stageDir
-   * @param stageDir
-   * @param bindDir
+   * @param session the session to use for uploading binds
+   * @param stageDir the stage path to upload to
+   * @param bindDir the local directory to serialize binds to
    */
   private BindUploader(SFSession session, String stageDir, Path bindDir)
   {
@@ -89,11 +90,12 @@ public class BindUploader implements Closeable
   }
 
   /**
-   * Create a new BindUploader which will upload to the given stage name
-   * Ensures temporary directory for file writing exists
-   * @param stageDir
-   * @return BindUploader
-   * @throws BindException
+   * Create a new BindUploader which will upload to the given stage path
+   * Ensure temporary directory for file writing exists
+   * @param session the session to use for uploading binds
+   * @param stageDir the stage path to upload to
+   * @return BindUploader instance
+   * @throws BindException if temporary directory could not be created
    */
   public synchronized static BindUploader newInstance(SFSession session, String stageDir)
       throws BindException
@@ -112,8 +114,9 @@ public class BindUploader implements Closeable
 
   /**
    * Upload the bindValues to stage
-   * @param bindValues
-   * @throws BindException
+   * @param bindValues the bind map to upload
+   * @throws BindException if the bind map could not be serialized or upload
+   *  fails
    */
   public void upload(Map<String, ParameterBindingDTO> bindValues) throws BindException
   {
@@ -126,8 +129,8 @@ public class BindUploader implements Closeable
 
   /**
    * Save the binds to disk
-   * @param bindValues
-   * @throws BindException
+   * @param bindValues the bind map to serialize
+   * @throws BindException if bind map improperly formed or writing binds fails
    */
   private void serializeBinds(Map<String, ParameterBindingDTO> bindValues) throws BindException
   {
@@ -137,11 +140,11 @@ public class BindUploader implements Closeable
   }
 
   /**
-   * Convert binding map to a list of values for each column
+   * Convert bind map to a list of values for each column
    * Perform necessary type casts and invariant checks
-   * @param bindValues binding map
+   * @param bindValues the bind map to convert
    * @return list of values for each column
-   * @throws BindException
+   * @throws BindException if bind map is improperly formed
    */
   private List<List<String>> getColumnValues(Map<String, ParameterBindingDTO> bindValues) throws BindException
   {
@@ -172,9 +175,9 @@ public class BindUploader implements Closeable
 
   /**
    * Transpose a list of columns and their values to a list of rows
-   * @param columns
+   * @param columns the list of columns to transpose
    * @return list of rows
-   * @throws BindException
+   * @throws BindException if columns improperly formed
    */
   private List<String[]> buildRows(List<List<String>> columns) throws BindException
   {
@@ -214,8 +217,8 @@ public class BindUploader implements Closeable
 
   /**
    * Write the list of rows to compressed CSV files in the temporary directory
-   * @param rows
-   * @throws BindException
+   * @param rows the list of rows to write out to a file
+   * @throws BindException if exception occurs while writing rows out
    */
   private void writeRowsToCSV(List<String[]> rows) throws BindException
   {
@@ -248,8 +251,8 @@ public class BindUploader implements Closeable
   }
 
   /**
-   * Creates a File object for the given fileNum under the temporary directory
-   * @param fileNum
+   * Create a File object for the given fileNum under the temporary directory
+   * @param fileNum the number to use as the file name
    * @return
    */
   private File getFile(int fileNum)
@@ -258,8 +261,8 @@ public class BindUploader implements Closeable
   }
 
   /**
-   * Creates a new output stream for the given file
-   * @param file
+   * Create a new output stream for the given file
+   * @param file the file to write out to
    * @return output stream
    * @throws BindException
    */
@@ -279,7 +282,7 @@ public class BindUploader implements Closeable
   /**
    * Serialize row to a csv
    * Duplicated from StreamLoader class
-   * @param data row
+   * @param data the row to create a csv record from
    * @return serialized csv for row
    */
   private byte[] createCSVRecord(String[] data)
@@ -296,9 +299,9 @@ public class BindUploader implements Closeable
   }
 
   /**
-   * Build PUT statement string. Handles filesystem differences and escaping backslashes.
-   * @param bindDir
-   * @param stagePath
+   * Build PUT statement string. Handle filesystem differences and escaping backslashes.
+   * @param bindDir the local directory which contains files with binds
+   * @param stagePath the stage path to upload to
    * @return put statement for files in bindDir to stagePath
    */
   private String getPutStmt(String bindDir, String stagePath)
@@ -309,7 +312,7 @@ public class BindUploader implements Closeable
 
   /**
    * Upload binds from local file to stage
-   * @throws BindException
+   * @throws BindException if uploading the binds fails
    */
   private void putBinds() throws BindException
   {
@@ -322,7 +325,7 @@ public class BindUploader implements Closeable
       try
       {
         SFStatement statement = new SFStatement(session);
-        SFBaseResultSet putResult = statement.execute(putStatement, null);
+        SFBaseResultSet putResult = statement.execute(putStatement, null, null);
         putResult.next();
 
         // metadata is 0-based, result set is 1-based
@@ -349,7 +352,7 @@ public class BindUploader implements Closeable
   /**
    * Check whether the session's temporary stage has been created, and create it
    * if not.
-   * @throws BindException
+   * @throws BindException if creating the stage fails
    */
   private void createStageIfNeeded() throws BindException
   {
@@ -365,7 +368,7 @@ public class BindUploader implements Closeable
         try
         {
           SFStatement statement = new SFStatement(session);
-          statement.execute(CREATE_STAGE_STMT, null);
+          statement.execute(CREATE_STAGE_STMT, null, null);
           session.setArrayBindStage(STAGE_NAME);
         }
         catch (SFException | SQLException ex)
@@ -413,16 +416,28 @@ public class BindUploader implements Closeable
     }
   }
 
+  /**
+   * Set the approximate maximum size in bytes for a single bind file
+   * @param fileSize size in bytes
+   */
   public void setFileSize(int fileSize)
   {
     this.fileSize = fileSize;
   }
 
+  /**
+   * Return the stage path to which binds are uploaded
+   * @return the stage path
+   */
   public String getStagePath()
   {
     return this.stagePath;
   }
 
+  /**
+   * Return the local path to which binds are serialized
+   * @return the local path
+   */
   public Path getBindDir()
   {
     return this.bindDir;
@@ -449,6 +464,11 @@ public class BindUploader implements Closeable
     }
   }
 
+  /**
+   * Return whether the bind map uses array binds
+   * @param bindValues the bind map
+   * @return whether the bind map uses array binds
+   */
   public static boolean isArrayBind(Map<String, ParameterBindingDTO> bindValues)
   {
     if (bindValues == null || bindValues.size() == 0)

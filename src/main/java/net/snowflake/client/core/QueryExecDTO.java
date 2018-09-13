@@ -38,7 +38,8 @@ class QueryExecDTO
                Map<String, ParameterBindingDTO> bindings,
                String bindStage,
                Map<String, Object> parameters,
-               long querySubmissionTime)
+               long querySubmissionTime,
+               boolean internal)
   {
     this.sqlText = sqlText;
     this.describeOnly = describeOnly;
@@ -47,7 +48,7 @@ class QueryExecDTO
     this.bindStage = bindStage;
     this.parameters = parameters;
     this.querySubmissionTime = querySubmissionTime;
-    this.isInternal = describeOnly;
+    this.isInternal = internal;
   }
 
   public String getSqlText()

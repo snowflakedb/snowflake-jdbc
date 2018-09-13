@@ -1,11 +1,24 @@
+**JDBC Driver 3.6.10**
+|SNOW-39748| Disable cookie management.
+|SNOW-45149| Fixed the heartbeat frequency to hourly to mitigate token expiration issue.
+|SNOW-50717| Fixed SQLException in getFunctionColumns API call.
+|SNOW-50766| Enforce virtual host style for S3 URLs used in drivers.
+|SNOW-52486| Fixed clientStartTime and retryCount metrics in query-request.
+
+
+**JDBC Driver 3.6.9**
+|SNOW-51691| Added support for specifying file cache directories as environment variables or JVM system properties.
+|SNOW-49850| Added support for disabling SOCKS proxy for JDBC traffic using a new connection parameter (``disableSocksProxy``).
+|SNOW-41673| Added ``retryCount`` and ``clientStartTime`` parameters to ``query-request`` requests for JDBC.
+**JDBC Driver 3.6.8**
+|SNOW-49653| Internal change for pending feature.
 **JDBC Driver 3.6.7**
-|SNOW-50141| Fix setObject did not handle boolean datatype
-|SNOW-49982| Add onError parameter for COPY in Loader API
-|SNOW-49850| Upgrade AWS SDK for JDBC
-
+|SNOW-50141| Fixed issue with ``setObject`` not handling BOOLEAN data type.
+|SNOW-49982| Added ``onError`` parameter in the ``Loader`` API; corresponds to the ``ON_ERROR`` option in the COPY INTO *<table>* command.
+|SNOW-49850| Upgraded AWS SDK to enable support for disabling socket proxy.
+|SNOW-49653| Internal change for pending feature.
 **JDBC Driver 3.6.6**
-|SNOW-50032| Fixed retry OCSP check that doesn't occur if validity check fails. 
-
+|SNOW-50032| Fixed issue with the OCSP retry check, which wasn't performed if the validity check failed. 
 **JDBC Driver 3.6.5**
 |SNOW-45631| Improved array binding when routing bind values through stage.
 |SNOW-45545| Fixed issue with the data-to-CSV converter for the ``Loader`` API. ``NULL`` and empty values are now correctly converted to ``NULL`` and empty, respectively.

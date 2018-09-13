@@ -19,24 +19,23 @@ import org.apache.http.config.Registry;
 import org.apache.http.config.RegistryBuilder;
 import org.apache.http.conn.socket.ConnectionSocketFactory;
 import org.apache.http.conn.socket.PlainConnectionSocketFactory;
-import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.DefaultRedirectStrategy;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+import org.apache.http.protocol.HttpContext;
 import org.apache.http.ssl.SSLInitializationException;
 import org.apache.http.util.EntityUtils;
 
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.TrustManager;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
+import java.net.Proxy;
+import java.net.Socket;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
-import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.apache.http.client.config.CookieSpecs.DEFAULT;
@@ -54,7 +53,6 @@ public class HttpUtil
   static final int DEFAULT_CONNECTION_TIMEOUT = 60000;
   static final int DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT = 300000; // ms
 
-
   /**
    * The unique httpClient shared by all connections, this will benefit long
    * lived clients
@@ -70,6 +68,9 @@ public class HttpUtil
    * default request configuration, to be copied on individual requests.
    */
   private static RequestConfig DefaultRequestConfig = null;
+
+
+  private static boolean socksProxyDisabled = false;
 
   /**
    * Build an Http client using our set of default.
@@ -91,37 +92,25 @@ public class HttpUtil
             .setSocketTimeout(DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT)
             .build();
 
-    TrustManager[] trustManagers = {
-        new SFTrustManager(ocspCacheFile, useOcspCacheServer)};
+    TrustManager[] trustManagers = null;
+    if (!insecureMode)
+    {
+      // A custom TrustManager is required only if insecureMode is disabled,
+      // which is by default in the production. insecureMode can be enabled
+      // 1) OCSP service is down for reasons, 2) PowerMock test tht doesn't
+      // care OCSP checks.
+      TrustManager[] tm = {
+          new SFTrustManager(ocspCacheFile, useOcspCacheServer)};
+      trustManagers = tm;
+    }
     try
     {
-      // enforce using tlsv1.2
-      SSLContext sslContext = SSLContext.getInstance("TLSv1.2");
-      sslContext.init(
-          null, // key manager
-          insecureMode ? null : trustManagers, // trust manager
-          null); // secure random
-
-      // cipher suites need to be picked up in code explicitly for jdk 1.7
-      // https://stackoverflow.com/questions/44378970/
-      String[] cipherSuites = decideCipherSuites();
-      if (logger.isTraceEnabled())
-      {
-        logger.trace("Cipher suites used: {}", Arrays.toString(cipherSuites));
-      }
-
-      SSLConnectionSocketFactory sslSocketFactory = new SSLConnectionSocketFactory(
-          sslContext,
-          new String[]{"TLSv1.2"},
-          cipherSuites,
-          SSLConnectionSocketFactory.getDefaultHostnameVerifier());
-
       Registry<ConnectionSocketFactory> registry =
           RegistryBuilder.<ConnectionSocketFactory>create()
               .register("https",
-                  sslSocketFactory)
+                  new SFSSLConnectionSocketFactory(trustManagers, socksProxyDisabled))
               .register("http",
-                  PlainConnectionSocketFactory.getSocketFactory())
+                  new SFConnectionSocketFactory())
               .build();
 
       // Build a connection manager with enough connections
@@ -137,6 +126,7 @@ public class HttpUtil
               .useSystemProperties()
               .setRedirectStrategy(new DefaultRedirectStrategy())
               .setUserAgent("-")     // needed for Okta
+              .disableCookieManagement() // SNOW-39748
               .build();
 
       return httpClient;
@@ -236,6 +226,24 @@ public class HttpUtil
   }
 
   /**
+   * Enables/disables use of the SOCKS proxy when creating sockets
+   * @param socksProxyDisabled new value
+   */
+  public static void setSocksProxyDisabled(boolean socksProxyDisabled)
+  {
+    HttpUtil.socksProxyDisabled = socksProxyDisabled;
+  }
+
+  /**
+   * Returns whether the SOCKS proxy is disabled for this JVM
+   * @return whether the SOCKS proxy is disabled
+   */
+  public static boolean isSocksProxyDisabled()
+  {
+    return HttpUtil.socksProxyDisabled;
+  }
+
+  /**
    * Executes a HTTP request with the cookie spec set to IGNORE_COOKIES
    *
    * @param httpRequest HttpRequestBase
@@ -257,7 +265,8 @@ public class HttpUtil
         retryTimeout,
         injectSocketTimeout,
         canceling,
-        true);
+        true,
+        false);
   }
 
   /**
@@ -277,12 +286,41 @@ public class HttpUtil
                                       AtomicBoolean canceling)
       throws SnowflakeSQLException, IOException
   {
-    return executeRequestInternal(
+    return executeRequest(
         httpRequest,
         retryTimeout,
         injectSocketTimeout,
         canceling,
         false);
+  }
+
+  /**
+   * Executes a HTTP request for Snowflake.
+   *
+   * @param httpRequest HttpRequestBase
+   * @param retryTimeout retry timeout
+   * @param injectSocketTimeout injecting socket timeout
+   * @param canceling canceling?
+   * @param includeRetryParameters whether to include retry parameters in
+   *                               retried requests
+   * @return response
+   * @throws SnowflakeSQLException if Snowflake error occurs
+   * @throws IOException raises if a general IO error occurs
+   */
+  public static String executeRequest(HttpRequestBase httpRequest,
+                                      int retryTimeout,
+                                      int injectSocketTimeout,
+                                      AtomicBoolean canceling,
+                                      boolean includeRetryParameters)
+      throws SnowflakeSQLException, IOException
+  {
+    return executeRequestInternal(
+        httpRequest,
+        retryTimeout,
+        injectSocketTimeout,
+        canceling,
+        false,
+        includeRetryParameters);
   }
 
   /**
@@ -298,6 +336,8 @@ public class HttpUtil
    * @param injectSocketTimeout simulate socket timeout
    * @param canceling           canceling flag
    * @param withoutCookies      whether this request should ignore cookies
+   * @param includeRetryParameters whether to include retry parameters in
+   *                               retried requests
    * @return response in String
    * @throws SnowflakeSQLException if Snowflake error occurs
    * @throws IOException raises if a general IO error occurs
@@ -306,7 +346,8 @@ public class HttpUtil
                                                int retryTimeout,
                                                int injectSocketTimeout,
                                                AtomicBoolean canceling,
-                                               boolean withoutCookies)
+                                               boolean withoutCookies,
+                                               boolean includeRetryParameters)
       throws SnowflakeSQLException, IOException
   {
     if (logger.isDebugEnabled())
@@ -326,7 +367,8 @@ public class HttpUtil
           retryTimeout,
           injectSocketTimeout,
           canceling,
-          withoutCookies);
+          withoutCookies,
+          includeRetryParameters);
 
       if (response == null ||
           response.getStatusLine().getStatusCode() != 200)
@@ -451,18 +493,19 @@ public class HttpUtil
     }
   }
 
-  /**
-   * Decide cipher suites that will be passed into the SSLConnectionSocketFactory
-   *
-   * @return List of cipher suites.
-   */
-  private static String[] decideCipherSuites()
+  private final static class SFConnectionSocketFactory
+  extends PlainConnectionSocketFactory
   {
-    String sysCipherSuites = System.getProperty("https.cipherSuites");
-
-    return sysCipherSuites != null ? sysCipherSuites.split(",") :
-        // use jdk default cipher suites
-        ((SSLServerSocketFactory) SSLServerSocketFactory.getDefault())
-            .getDefaultCipherSuites();
+    @Override
+    public Socket createSocket(HttpContext ctx) throws IOException
+    {
+      if (socksProxyDisabled)
+      {
+        return new Socket(Proxy.NO_PROXY);
+      }
+      return super.createSocket(ctx);
+    }
   }
+
+
 }

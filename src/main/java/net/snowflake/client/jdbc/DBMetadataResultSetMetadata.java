@@ -97,7 +97,23 @@ public enum DBMetadataResultSetMetadata
           "FUNCTION_NAME", "REMARKS", "FUNCTION_TYPE", "SPECIFIC_NAME"),
       Arrays.asList("TEXT", "TEXT", "TEXT", "TEXT", "SHORT", "TEXT"),
       Arrays.asList(Types.VARCHAR, Types.VARCHAR, Types.VARCHAR,
-                Types.VARCHAR, Types.SMALLINT, Types.VARCHAR));
+                Types.VARCHAR, Types.SMALLINT, Types.VARCHAR)),
+
+  GET_FUNCTION_COLUMNS(
+      Arrays.asList("FUNCTION_CAT", "FUNCTION_SCHEM", "FUNCTION_NAME",
+          "COLUMN_NAME", "COLUMN_TYPE", "DATA_TYPE", "TYPE_NAME", "PRECISION",
+          "LENGTH", "SCALE", "RADIX", "NULLABLE", "REMARKS", "CHAR_OCTET_LENGTH",
+          "ORDINAL_POSITION", "IS_NULLABLE", "SPECIFIC_NAME"),
+      Arrays.asList("TEXT", "TEXT", "TEXT", "TEXT", "SHORT", "INTEGER", "TEXT",
+          "INTEGER", "INTEGER", "SHORT", "SHORT", "SHORT", "TEXT", "INTEGER",
+          "INTEGER", "TEXT", "TEXT"),
+      Arrays.asList(Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR,
+          Types.SMALLINT, Types.INTEGER, Types.VARCHAR, Types.INTEGER,
+          Types.INTEGER, Types.SMALLINT, Types.SMALLINT, Types.SMALLINT,
+          Types.VARCHAR, Types.INTEGER, Types.INTEGER, Types.VARCHAR,
+          Types.VARCHAR)),
+
+  ;
 
 
   private List<String> columnNames;

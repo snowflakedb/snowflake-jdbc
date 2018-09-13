@@ -45,7 +45,7 @@ public class SFResultSet extends SFBaseResultSet
 
   private String queryId;
 
-  private long statementTypeId;
+  private SFStatementType statementType;
 
   private boolean totalRowCountTruncated;
 
@@ -104,7 +104,7 @@ public class SFResultSet extends SFBaseResultSet
         .processResult(resultInput, statement.getSession());
 
     this.queryId = resultOutput.getQueryId();
-    this.statementTypeId = resultOutput.getStatementTypeId();
+    this.statementType = resultOutput.getStatementType();
     this.totalRowCountTruncated = resultOutput.isTotalRowCountTruncated();
     this.parameters = resultOutput.getParameters();
     this.columnCount = resultOutput.getColumnCount();
@@ -128,6 +128,9 @@ public class SFResultSet extends SFBaseResultSet
 
     session.setDatabase(resultOutput.getFinalDatabaseName());
     session.setSchema(resultOutput.getFinalSchemaName());
+    session.setRole(resultOutput.getFinalRoleName());
+    session.setWarehouse(resultOutput.getFinalWarehouseName());
+
     // update the driver/session with common parameters from GS
     SessionUtil.updateSfDriverParamValues(this.parameters, statement.getSession());
 
@@ -145,9 +148,9 @@ public class SFResultSet extends SFBaseResultSet
     }
 
     // if server gives a send time, log time it took to arrive
-    if (resultOutput.sendResultTime != 0)
+    if (resultOutput.getSendResultTime() != 0)
     {
-      long timeConsumeFirstResult = this.firstChunkTime - resultOutput.sendResultTime;
+      long timeConsumeFirstResult = this.firstChunkTime - resultOutput.getSendResultTime();
       logMetric(TelemetryField.TIME_CONSUME_FIRST_RESULT, timeConsumeFirstResult);
     }
 
@@ -434,7 +437,13 @@ public class SFResultSet extends SFBaseResultSet
   @Override
   public SFStatementType getStatementType()
   {
-    return SFStatementType.lookUpTypeById(statementTypeId);
+    return statementType;
+  }
+
+  @Override
+  public void setStatementType(SFStatementType statementType)
+  {
+    this.statementType = statementType;
   }
 
   @Override

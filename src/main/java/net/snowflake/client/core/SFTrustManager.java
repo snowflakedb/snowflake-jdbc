@@ -117,14 +117,24 @@ class SFTrustManager implements X509TrustManager
   private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
   /**
-   * OCSP response cache entry expiration time (s)
+   * System property name to specify cache directory.
    */
-  private static final long CACHE_EXPIRATION = 86400L;
+  public static final String CACHE_DIR_PROP = "net.snowflake.jdbc.ocspResponseCacheDir";
 
   /**
-   * OCSP response cache lock file expiration time (ms)
+   * Environment name to specify the cache directory. Used if system property not set.
    */
-  private static final long CACHE_FILE_LOCK_EXPIRATION = 60000L;
+  private static final String CACHE_DIR_ENV = "SF_OCSP_RESPONSE_CACHE_DIR";
+
+  /**
+   * OCSP response cache entry expiration time (s)
+   */
+  private static final long CACHE_EXPIRATION_IN_SECONDS = 86400L;
+
+  /**
+   * OCSP response cache lock file expiration time (s)
+   */
+  private static final long CACHE_FILE_LOCK_EXPIRATION_IN_SECONDS = 60L;
 
   /**
    * Default OCSP Cache server host name
@@ -135,7 +145,7 @@ class SFTrustManager implements X509TrustManager
    * OCSP response cache file name. Should be identical to other driver's
    * cache file name.
    */
-  public static final String OCSP_CACHE_FILE_NAME = "ocsp_response_cache.json";
+  public static final String CACHE_FILE_NAME = "ocsp_response_cache.json";
 
   /**
    * OCSP response file cache directory
@@ -146,17 +156,18 @@ class SFTrustManager implements X509TrustManager
   {
     fileCacheManager = FileCacheManager
         .builder()
-        .setCacheDirectoryEnvironmentVariable("SF_OCSP_RESPONSE_CACHE_DIR")
-        .setBaseCacheFileName(OCSP_CACHE_FILE_NAME)
-        .setCacheExpiration(CACHE_EXPIRATION)
-        .setCacheFileLockExpiration(CACHE_FILE_LOCK_EXPIRATION).build();
+        .setCacheDirectorySystemProperty(CACHE_DIR_PROP)
+        .setCacheDirectoryEnvironmentVariable(CACHE_DIR_ENV)
+        .setBaseCacheFileName(CACHE_FILE_NAME)
+        .setCacheExpirationInSeconds(CACHE_EXPIRATION_IN_SECONDS)
+        .setCacheFileLockExpirationInSeconds(CACHE_FILE_LOCK_EXPIRATION_IN_SECONDS).build();
   }
 
   /**
    * OCSP response cache server URL.
    */
   private static String SF_OCSP_RESPONSE_CACHE_SERVER_URL = String.format(
-      "%s/%s", DEFAULT_OCSP_CACHE_HOST, OCSP_CACHE_FILE_NAME);
+      "%s/%s", DEFAULT_OCSP_CACHE_HOST, CACHE_FILE_NAME);
 
   /**
    * OCSP Response Cache server Retry URL pattern
@@ -171,12 +182,12 @@ class SFTrustManager implements X509TrustManager
   /**
    * Maximum clocktime skew (ms)
    */
-  private static final long MAX_CLOCK_SKEW = 900000L;
+  private static final long MAX_CLOCK_SKEW_IN_MILLISECONDS = 900000L;
 
   /**
    * Minimum cache warm up time (ms)
    */
-  private static final long MIN_CACHE_WARMUP_TIME = 18000000L;
+  private static final long MIN_CACHE_WARMUP_TIME_IN_MILLISECONDS = 18000000L;
 
   /**
    * Maximum retry counter (times)
@@ -186,11 +197,11 @@ class SFTrustManager implements X509TrustManager
   /**
    * Initial sleeping time in retry (ms)
    */
-  private static final long INITIAL_SLEEPING_TIME = 1000L;
+  private static final long INITIAL_SLEEPING_TIME_IN_MILLISECONDS = 1000L;
   /**
    * Maximum sleeping time in retry (ms)
    */
-  private static final long MAX_SLEEPING_TIME = 16000L;
+  private static final long MAX_SLEEPING_TIME_IN_MILLISECONDS = 16000L;
 
   /**
    * Map from signature algorithm ASN1 object to the name.
@@ -483,7 +494,7 @@ class SFTrustManager implements X509TrustManager
         cid.getIssuerKeyHash().getEncoded(),
         cid.getSerialNumber().getValue());
 
-    long sleepTime = INITIAL_SLEEPING_TIME;
+    long sleepTime = INITIAL_SLEEPING_TIME_IN_MILLISECONDS;
     CertificateException error = null;
     boolean success = false;
     for (int retry = 0; retry < MAX_RETRY_COUNTER; ++retry)
@@ -525,7 +536,7 @@ class SFTrustManager implements X509TrustManager
         try
         {
           Thread.sleep(sleepTime);
-          sleepTime = minLong(MAX_SLEEPING_TIME, sleepTime * 2);
+          sleepTime = minLong(MAX_SLEEPING_TIME_IN_MILLISECONDS, sleepTime * 2);
         }
         catch (InterruptedException ex0)
         { // nop
@@ -569,7 +580,7 @@ class SFTrustManager implements X509TrustManager
           isCached = false;
           break;
         }
-        else if (currentTimeSecond - CACHE_EXPIRATION > res.left)
+        else if (currentTimeSecond - CACHE_EXPIRATION_IN_SECONDS > res.left)
         {
           LOGGER.debug("Cache for CertID expired.");
           isCached = false;
@@ -629,7 +640,7 @@ class SFTrustManager implements X509TrustManager
     }
     long producedAt = ocspRespBase64.get(0).asLong();
     byte[] ocspRespDer = Base64.decodeBase64(ocspRespBase64.get(1).asText());
-    if (currentTimeSecond - CACHE_EXPIRATION <= producedAt)
+    if (currentTimeSecond - CACHE_EXPIRATION_IN_SECONDS <= producedAt)
     {
       // add cache
       OCSPResp v0 = new OCSPResp(ocspRespDer);
@@ -689,7 +700,7 @@ class SFTrustManager implements X509TrustManager
    */
   private static void readOcspResponseCacheServer()
   {
-    long sleepTime = INITIAL_SLEEPING_TIME;
+    long sleepTime = INITIAL_SLEEPING_TIME_IN_MILLISECONDS;
     Exception error = null;
     for (int retry = 0; retry < MAX_RETRY_COUNTER; ++retry)
     {
@@ -725,7 +736,7 @@ class SFTrustManager implements X509TrustManager
         try
         {
           Thread.sleep(sleepTime);
-          sleepTime = minLong(MAX_SLEEPING_TIME, sleepTime * 2);
+          sleepTime = minLong(MAX_SLEEPING_TIME_IN_MILLISECONDS, sleepTime * 2);
         }
         catch (InterruptedException ex0)
         { // nop
@@ -802,7 +813,7 @@ class SFTrustManager implements X509TrustManager
       LOGGER.debug(
           "not hit cache. Fetching OCSP response from CA OCSP server. {0}", url.toString());
 
-      long sleepTime = INITIAL_SLEEPING_TIME;
+      long sleepTime = INITIAL_SLEEPING_TIME_IN_MILLISECONDS;
       boolean success = false;
       HttpResponse response = null;
 
@@ -824,7 +835,7 @@ class SFTrustManager implements X509TrustManager
         try
         {
           Thread.sleep(sleepTime);
-          sleepTime = minLong(MAX_SLEEPING_TIME, sleepTime * 2);
+          sleepTime = minLong(MAX_SLEEPING_TIME_IN_MILLISECONDS, sleepTime * 2);
         }
         catch (InterruptedException ex0)
         { // nop
@@ -1198,7 +1209,7 @@ class SFTrustManager implements X509TrustManager
   private static long calculateTolerableVadility(Date thisUpdate, Date nextUpdate)
   {
     return maxLong((long) ((float) (nextUpdate.getTime() - thisUpdate.getTime()) *
-        TOLERABLE_VALIDITY_RANGE_RATIO), MIN_CACHE_WARMUP_TIME);
+        TOLERABLE_VALIDITY_RANGE_RATIO), MIN_CACHE_WARMUP_TIME_IN_MILLISECONDS);
   }
 
   /**
@@ -1212,7 +1223,7 @@ class SFTrustManager implements X509TrustManager
   private static boolean isValidityRange(Date currentTime, Date thisUpdate, Date nextUpdate)
   {
     long tolerableValidity = calculateTolerableVadility(thisUpdate, nextUpdate);
-    return thisUpdate.getTime() - MAX_CLOCK_SKEW <= currentTime.getTime() &&
+    return thisUpdate.getTime() - MAX_CLOCK_SKEW_IN_MILLISECONDS <= currentTime.getTime() &&
         currentTime.getTime() <= nextUpdate.getTime() + tolerableValidity;
   }
 

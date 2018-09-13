@@ -32,19 +32,10 @@ public class HeartbeatBackground implements Runnable
   private long masterTokenValidityInSecs = 4 * 3600;
 
   /**
-   * Headroom between master token validity and heartbeat interval to make sure
-   * heartbeat happens before master token expires
-   *
-   * in seconds
-   */
-  private long heartbeatHeadroomBeforeTokenExpiration = 1800;
-
-  /**
    * How often heartbeat executes is calculated based on master token validity
    * and the headroom
    */
-  private long heartBeatIntervalInSecs =
-  (masterTokenValidityInSecs - heartbeatHeadroomBeforeTokenExpiration);
+  private long heartBeatIntervalInSecs = masterTokenValidityInSecs/4;
 
   // Scheduler handling the main heartbeat background
   private ScheduledExecutorService scheduler = null;
@@ -99,15 +90,7 @@ public class HeartbeatBackground implements Runnable
       long oldMasterTokenValidityInSecs = this.masterTokenValidityInSecs;
       long oldHeartbeatIntervalInSecs = this.heartBeatIntervalInSecs;
 
-      /**
-       * Calculate heartbeat interval. If the master token validity is very
-       * small, do something special, which is only used for testing purpose.
-       */
-      this.heartBeatIntervalInSecs = (masterTokenValidityInSecs >
-                                     heartbeatHeadroomBeforeTokenExpiration)?
-                                    (masterTokenValidityInSecs-
-                                    heartbeatHeadroomBeforeTokenExpiration):
-                                    (masterTokenValidityInSecs/2);
+      this.heartBeatIntervalInSecs = masterTokenValidityInSecs/4;
 
       // save master token validity
       this.masterTokenValidityInSecs = masterTokenValidityInSecs;

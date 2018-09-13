@@ -7,6 +7,7 @@ import net.snowflake.client.jdbc.SnowflakeDriver;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.TimeZone;
 import java.util.logging.Formatter;
 import java.util.logging.Handler;
 import java.util.logging.LogRecord;
@@ -18,8 +19,12 @@ public class SFFormatter extends Formatter
 {
   private static final DateFormat df = new SimpleDateFormat(
           "yyyy-MM-dd HH:mm:ss.SSS");
-  
-  public static final String CLASS_NAME_PREFIX = 
+  static
+  {
+    df.setTimeZone(TimeZone.getTimeZone("UTC"));
+  }
+
+  public static final String CLASS_NAME_PREFIX =
     SnowflakeDriver.class.getPackage().getName().substring(0,
     SnowflakeDriver.class.getPackage().getName().lastIndexOf('.'));
 

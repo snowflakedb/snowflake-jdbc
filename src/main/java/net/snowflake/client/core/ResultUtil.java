@@ -10,22 +10,21 @@ import net.snowflake.client.jdbc.SnowflakeChunkDownloader;
 import net.snowflake.client.jdbc.SnowflakeColumnMetadata;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.jdbc.SnowflakeUtil;
-import net.snowflake.common.core.SFBinary;
 import net.snowflake.common.core.SFBinaryFormat;
 import net.snowflake.common.core.SFTime;
 import net.snowflake.common.core.SFTimestamp;
 import net.snowflake.common.core.SnowflakeDateTimeFormat;
-import net.snowflake.common.core.SqlState;
 import net.snowflake.common.util.TimeUtil;
 
 import java.math.BigDecimal;
 import java.sql.Date;
 import java.sql.Timestamp;
 import java.sql.Types;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -84,7 +83,9 @@ public class ResultUtil
     String queryId;
     String finalDatabaseName;
     String finalSchemaName;
-    long statementTypeId;
+    String finalRoleName;
+    String finalWarehouseName;
+    SFStatementType statementType;
     boolean totalRowCountTruncated;
     Map<String, Object> parameters = new HashMap<>();
     int columnCount;
@@ -131,9 +132,19 @@ public class ResultUtil
       return finalSchemaName;
     }
 
-    public long getStatementTypeId()
+    String getFinalRoleName()
     {
-      return statementTypeId;
+      return finalRoleName;
+    }
+
+    String getFinalWarehouseName()
+    {
+      return finalWarehouseName;
+    }
+
+    public SFStatementType getStatementType()
+    {
+      return statementType;
     }
 
     public boolean isTotalRowCountTruncated()
@@ -257,7 +268,14 @@ public class ResultUtil
     JsonNode schemaNode = rootNode.path("data").path("finalSchemaName");
     resultOutput.finalSchemaName = schemaNode.isNull() ? null : schemaNode.asText();
 
-    resultOutput.statementTypeId = rootNode.path("data").path("statementTypeId").asLong();
+    JsonNode roleNode = rootNode.path("data").path("finalRoleName");
+    resultOutput.finalRoleName = roleNode.isNull() ? null : roleNode.asText();
+
+    JsonNode warehouseNode = rootNode.path("data").path("finalWarehouseName");
+    resultOutput.finalWarehouseName = warehouseNode.isNull() ? null : warehouseNode.asText();
+
+    resultOutput.statementType = SFStatementType.lookUpTypeById(
+        rootNode.path("data").path("statementTypeId").asLong());
 
     resultOutput.totalRowCountTruncated
         = rootNode.path("data").path("totalTruncated").asBoolean();
@@ -880,7 +898,7 @@ public class ResultUtil
   }
 
   /**
-   * Converst snowflake bool to java boolean
+   * Convert snowflake bool to java boolean
    *
    * @param str boolean type in string representation
    * @return true if the value indicates true otherwise false
@@ -891,16 +909,25 @@ public class ResultUtil
         str.equals("1");
   }
 
+  /**
+   * Calculate number of rows updated given a result set
+   * Interpret result format based on result set's statement type
+   *
+   * @param resultSet result set to extract update count from
+   * @return the number of rows updated
+   * @throws SFException if failed to calculate update count
+   * @throws SQLException if failed to calculate update count
+   */
   static public int calculateUpdateCount(SFBaseResultSet resultSet)
                                          throws SFException, SQLException
   {
     int updateCount = 0;
     SFStatementType statementType = resultSet.getStatementType();
-    if (resultSet.getStatementType().isDML())
+    if (statementType.isDML())
     {
       while (resultSet.next())
       {
-        if (resultSet.getStatementType() == SFStatementType.COPY)
+        if (statementType == SFStatementType.COPY)
         {
           SFResultSetMetaData resultSetMetaData = resultSet.getMetaData();
 
@@ -947,5 +974,87 @@ public class ResultUtil
         return i;
     }
     return -1;
+  }
+
+  /**
+   * Return the list of result IDs provided in a result, if available; otherwise
+   * return an empty list.
+   * @param result result json
+   * @return list of result IDs which can be used for result scans
+   */
+  private static List<String> getResultIds(JsonNode result)
+  {
+    JsonNode resultIds = result.path("data").path("resultIds");
+    if (resultIds.isNull() ||
+        resultIds.isMissingNode() ||
+        resultIds.asText().isEmpty())
+    {
+      return Collections.emptyList();
+    }
+    return new ArrayList<>(Arrays.asList(resultIds.asText().split(",")));
+  }
+
+  /**
+   * Return the list of result types provided in a result, if available; otherwise
+   * return an empty list.
+   * @param result result json
+   * @return list of result IDs which can be used for result scans
+   */
+  private static List<SFStatementType> getResultTypes(JsonNode result)
+  {
+    JsonNode resultTypes = result.path("data").path("resultTypes");
+    if (resultTypes.isNull() ||
+        resultTypes.isMissingNode() ||
+        resultTypes.asText().isEmpty())
+    {
+      return Collections.emptyList();
+    }
+
+    String[] typeStrs = resultTypes.asText().split(",");
+
+    List<SFStatementType> res = new ArrayList<>();
+    for (String typeStr : typeStrs)
+    {
+      long typeId = Long.valueOf(typeStr);
+      res.add(SFStatementType.lookUpTypeById(typeId));
+    }
+    return res;
+  }
+
+  /**
+   * Return the list of child results provided in a result, if available; otherwise
+   * return an empty list
+   * @param session the current session
+   * @param requestId the current request id
+   * @param result result json
+   * @return list of child results
+   * @throws SFException if the number of child IDs does not match
+   *   child statement types
+   */
+  public static List<SFChildResult> getChildResults(SFSession session,
+                                                    String requestId,
+                                                    JsonNode result)
+  throws SFException
+  {
+    List<String> ids = getResultIds(result);
+    List<SFStatementType> types = getResultTypes(result);
+
+    if (ids.size() != types.size())
+    {
+      throw IncidentUtil.
+          generateIncidentWithException(
+              session, requestId, null,
+              ErrorCode.CHILD_RESULT_IDS_AND_TYPES_DIFFERENT_SIZES,
+              ids.size(),
+              types.size());
+    }
+
+    List<SFChildResult> res = new ArrayList<>();
+    for (int i = 0; i < ids.size(); i++)
+    {
+      res.add(new SFChildResult(ids.get(i), types.get(i)));
+    }
+
+    return res;
   }
 }

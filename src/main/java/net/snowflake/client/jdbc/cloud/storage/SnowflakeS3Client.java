@@ -14,6 +14,7 @@ import com.amazonaws.regions.Region;
 import com.amazonaws.regions.RegionUtils;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.AmazonS3EncryptionClient;
+import com.amazonaws.services.s3.S3ClientOptions;
 import com.amazonaws.services.s3.model.AmazonS3Exception;
 import com.amazonaws.services.s3.model.CryptoConfiguration;
 import com.amazonaws.services.s3.model.CryptoMode;
@@ -26,6 +27,8 @@ import com.amazonaws.services.s3.transfer.Download;
 import com.amazonaws.services.s3.transfer.TransferManager;
 import com.amazonaws.services.s3.transfer.Upload;
 import com.amazonaws.util.Base64;
+import net.snowflake.client.core.HttpUtil;
+import net.snowflake.client.core.SFSSLConnectionSocketFactory;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.FileBackedOutputStream;
@@ -39,6 +42,9 @@ import net.snowflake.client.util.SFPair;
 import net.snowflake.common.core.RemoteStoreFileEncryptionMaterial;
 import net.snowflake.common.core.SqlState;
 import org.apache.commons.io.IOUtils;
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+import org.apache.http.conn.ssl.SSLInitializationException;
+
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.File;
@@ -48,6 +54,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.SocketTimeoutException;
 import java.security.InvalidKeyException;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -74,6 +82,9 @@ public class SnowflakeS3Client implements SnowflakeStorageClient
   private RemoteStoreFileEncryptionMaterial encMat = null;
   private ClientConfiguration clientConfig = null;
   private String stageRegion = null;
+
+  // socket factory used by s3 client's http client.
+  private static SSLConnectionSocketFactory s3ConnectionSocketFactory = null;
 
   public SnowflakeS3Client(Map stageCredentials,
                            ClientConfiguration clientConfig,
@@ -112,6 +123,8 @@ public class SnowflakeS3Client implements SnowflakeStorageClient
 
 
     clientConfig.withSignerOverride("AWSS3V4SignerType");
+    clientConfig.getApacheHttpClientConfig().setSslSocketFactory(
+        getSSLConnectionSocketFactory());
     if (encMat != null)
     {
       byte[] decodedKey = Base64.decode(encMat.getQueryStageMasterKey());
@@ -158,6 +171,8 @@ public class SnowflakeS3Client implements SnowflakeStorageClient
         amazonClient.setRegion(region);
       }
     }
+    // Explicitly force to use virtual address style
+    amazonClient.setS3ClientOptions(S3ClientOptions.builder().setPathStyleAccess(false).build());
   }
 
   // Returns the Max number of retry attempts
@@ -665,4 +680,30 @@ public class SnowflakeS3Client implements SnowflakeStorageClient
    {
      return meta.getUserMetadata().get("sfc-digest");
    }
+
+  private static SSLConnectionSocketFactory getSSLConnectionSocketFactory()
+  {
+    if (s3ConnectionSocketFactory == null)
+    {
+      synchronized (SnowflakeS3Client.class)
+      {
+        if (s3ConnectionSocketFactory == null)
+        {
+          try
+          {
+            // trust manager is set to null, which will use default ones
+            // instead of SFTrustManager (which enables ocsp checking)
+            s3ConnectionSocketFactory = new SFSSLConnectionSocketFactory(null,
+                HttpUtil.isSocksProxyDisabled());
+          }
+          catch (KeyManagementException | NoSuchAlgorithmException e)
+          {
+            throw new SSLInitializationException(e.getMessage(), e);
+          }
+        }
+      }
+    }
+
+    return s3ConnectionSocketFactory;
+  }
 }

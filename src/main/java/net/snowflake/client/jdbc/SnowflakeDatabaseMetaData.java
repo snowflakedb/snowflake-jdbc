@@ -215,9 +215,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
     versionBuilder.append(".");
     versionBuilder.append(SnowflakeDriver.changeVersion);
 
-    String newClientForUpdate = "";
-
-    newClientForUpdate =
+    String newClientForUpdate =
         ((SnowflakeConnectionV1)connection).getNewClientForUpdate();
 
     // add new client version if current is older
@@ -2688,7 +2686,8 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
                + "String schemaPattern,String functionNamePattern,"
                + "String columnNamePattern)");
 
-    throw new SQLFeatureNotSupportedException();
+    return SnowflakeDatabaseMetaDataResultSet.getEmptyResultSet(
+        GET_FUNCTION_COLUMNS, connection.createStatement());
   }
 
   //@Override

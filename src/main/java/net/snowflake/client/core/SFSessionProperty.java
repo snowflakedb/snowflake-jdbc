@@ -27,6 +27,8 @@ public enum SFSessionProperty
   PASSCODE_IN_PASSWORD("passcodeInPassword", false, Boolean.class),
   PASSCODE("passcode", false, String.class),
   TOKEN("token", false, String.class),
+  ID_TOKEN("id_token", false, String.class),
+  ID_TOKEN_PASSWORD("id_token_password", false, String.class),
   ROLE("role", false, String.class),
   AUTHENTICATOR("authenticator", false, String.class),
   PRIVATE_KEY("privateKey", false, PrivateKey.class),
@@ -40,7 +42,9 @@ public enum SFSessionProperty
   INSECURE_MODE("insecureMode", false, Boolean.class),
   QUERY_TIMEOUT("queryTimeout", false, Integer.class),
   APPLICATION("application", false, String.class),
-  TRACING("tracing", false, String.class);
+  TRACING("tracing", false, String.class),
+  DISABLE_SOCKS_PROXY("disableSocksProxy", false, Boolean.class),
+  ;
 
   // property key in string
   private String propertyKey;
