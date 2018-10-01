@@ -104,6 +104,7 @@
         <configuration>
           <archive>
             <manifest>
+              <mainClass>net.snowflake.client.jdbc.SnowflakeDriver</mainClass>
               <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
             </manifest>
           </archive>
