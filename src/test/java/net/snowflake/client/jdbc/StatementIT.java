@@ -3,6 +3,7 @@
  */
 package net.snowflake.client.jdbc;
 
+import net.snowflake.client.AbstractDriverIT;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnTravisCI;
 import net.snowflake.client.core.SFSession;
@@ -469,7 +470,7 @@ public class StatementIT extends BaseJDBCTest
         "rm @~/testfile",
         "select 1",
         "show databases",
-        "desc database testdb"
+        "desc database " + AbstractDriverIT.getConnectionParameters().get("database")
     };
 
     for (String testCommand : testCommands)
