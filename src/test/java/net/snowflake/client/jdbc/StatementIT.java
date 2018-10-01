@@ -522,9 +522,13 @@ public class StatementIT extends BaseJDBCTest
     Connection connection = getConnection();
     enableMultiStmt(connection);
     Statement statement = connection.createStatement();
+
+    statement.execute("create or replace table test_multi_txn(c1 number, c2 string)" +
+        " as select 10, 'z'");
+
     String multiStmtQuery = "begin;\n" +
-        "delete from jdbc_statement;\n" +
-        "insert into jdbc_statement values (1, 'a'), (2, 'b');\n" +
+        "delete from test_multi_txn;\n" +
+        "insert into test_multi_txn values (1, 'a'), (2, 'b');\n" +
         "commit";
 
     boolean hasResultSet = statement.execute(multiStmtQuery);
@@ -536,7 +540,7 @@ public class StatementIT extends BaseJDBCTest
     // second statement
     assertFalse(statement.getMoreResults());
     assertNull(statement.getResultSet());
-    assertEquals(3, statement.getUpdateCount());
+    assertEquals(1, statement.getUpdateCount());
 
     // third statement
     assertFalse(statement.getMoreResults());
@@ -552,6 +556,8 @@ public class StatementIT extends BaseJDBCTest
     assertEquals(-1, statement.getUpdateCount());
 
     statement.close();
+
+    statement.execute("drop table if exists test_multi_txn");
     connection.close();
   }
 
@@ -562,10 +568,14 @@ public class StatementIT extends BaseJDBCTest
     Connection connection = getConnection();
     enableMultiStmt(connection);
     Statement statement = connection.createStatement();
+
+    statement.execute("create or replace table test_multi_txn_rb(c1 number, c2 string)" +
+        " as select 10, 'z'");
+
     String multiStmtQuery = "begin;\n" +
-        "delete from jdbc_statement;\n" +
+        "delete from test_multi_txn_rb;\n" +
         "rollback;\n" +
-        "select count(*) from jdbc_statement";
+        "select count(*) from test_multi_txn_rb";
 
     boolean hasResultSet = statement.execute(multiStmtQuery);
     // first statement
@@ -576,7 +586,7 @@ public class StatementIT extends BaseJDBCTest
     // second statement
     assertFalse(statement.getMoreResults());
     assertNull(statement.getResultSet());
-    assertEquals(3, statement.getUpdateCount());
+    assertEquals(1, statement.getUpdateCount());
 
     // third statement
     assertFalse(statement.getMoreResults());
@@ -588,12 +598,13 @@ public class StatementIT extends BaseJDBCTest
     assertEquals(-1, statement.getUpdateCount());
     ResultSet rs = statement.getResultSet();
     assertTrue(rs.next());
-    assertEquals(3, rs.getInt(1));
+    assertEquals(1, rs.getInt(1));
     assertFalse(rs.next());
 
     assertFalse(statement.getMoreResults());
     assertEquals(-1, statement.getUpdateCount());
 
+    statement.execute("drop table if exists test_multi_txn_rb");
     statement.close();
     connection.close();
   }
