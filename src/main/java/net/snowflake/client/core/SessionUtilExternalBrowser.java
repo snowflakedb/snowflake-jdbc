@@ -114,6 +114,7 @@ public class SessionUtilExternalBrowser
   private String proofKey;
   private AuthExternalBrowserHandlers handlers;
   private static final String PREFIX_GET = "GET ";
+  private static final String PREFIX_POST = "POST ";
   private static final String PREFIX_USER_AGENT = "USER-AGENT: ";
   private static Charset UTF8_CHARSET;
 
@@ -302,12 +303,19 @@ public class SessionUtilExternalBrowser
       String[] rets = new String(buf, 0, strLen).split("\r\n");
       String targetLine = null;
       String userAgent = null;
+      boolean isPost = false;
       for (String line : rets)
       {
         if (line.length() > PREFIX_GET.length() &&
             line.substring(0, PREFIX_GET.length()).equalsIgnoreCase(PREFIX_GET))
         {
           targetLine = line;
+        }
+        else if (line.length() > PREFIX_POST.length() &&
+            line.substring(0, PREFIX_POST.length()).equalsIgnoreCase(PREFIX_POST))
+        {
+          targetLine = rets[rets.length-1];
+          isPost = true;
         }
         else if (line.length() > PREFIX_USER_AGENT.length() &&
             line.substring(0, PREFIX_USER_AGENT.length()).equalsIgnoreCase(PREFIX_USER_AGENT))
@@ -325,21 +333,14 @@ public class SessionUtilExternalBrowser
         logger.debug("{}", userAgent);
       }
 
-      String[] elems = targetLine.split("\\s");
-      if (elems.length != 3 ||
-          !elems[0].toLowerCase(Locale.US).equalsIgnoreCase("GET") ||
-          !elems[2].startsWith("HTTP/1."))
-      {
-        throw new SFException(ErrorCode.NETWORK_ERROR,
-            String.format(
-                "Invalid HTTP request. No token is given from the browser: %s",
-                targetLine));
-      }
+      String parameters = isPost ?
+          extractTokenFromPostRequest(targetLine) :
+          extractTokenFromGetRequest(targetLine);
 
       try
       {
         this.token = null;
-        URI inputParameter = new URI(elems[1]);
+        URI inputParameter = new URI(parameters);
         for (NameValuePair urlParam: URLEncodedUtils.parse(
             inputParameter, UTF8_CHARSET)) {
           if ("token".equals(urlParam.getName())) {
@@ -369,6 +370,26 @@ public class SessionUtilExternalBrowser
     {
       socket.close();
     }
+  }
+
+  private String extractTokenFromPostRequest(String targetLine)
+  {
+    return "/?" + targetLine;
+  }
+
+  private String extractTokenFromGetRequest(String targetLine) throws SFException
+  {
+    String[] elems = targetLine.split("\\s");
+    if (elems.length != 3 ||
+        !elems[0].toLowerCase(Locale.US).equalsIgnoreCase("GET") ||
+        !elems[2].startsWith("HTTP/1."))
+    {
+      throw new SFException(ErrorCode.NETWORK_ERROR,
+          String.format(
+              "Invalid HTTP request. No token is given from the browser: %s",
+              targetLine));
+    }
+    return elems[1];
   }
 
   /**
