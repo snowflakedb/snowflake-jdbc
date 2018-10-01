@@ -1,13 +1,15 @@
+**JDBC Driver 3.6.12**
+|SNOW-26324| --version returns the Snowflake JDBC driver version
+
+
 **JDBC Driver 3.6.11**
-|SNOW-53452| Internal change for pending feature.
 |SNOW-53650| Internal change for pending feature.
-
-
+|SNOW-53452| Internal change for pending feature.
 **JDBC Driver 3.6.10**
 |SNOW-52486| Fixed ``clientStartTime`` and ``retryCount`` metrics in ``query-request``.
 |SNOW-50766| Updated driver to enforce virtual host style for S3 URLs.
 |SNOW-50717| Fixed ``SQLException`` in ``getFunctionColumns`` API call.
-|SNOW-45149| Changed the heartbeat frequency to hourly to mitigate issue with token expiration.
+|SNOW-45419| Changed the heartbeat frequency to hourly to mitigate issue with token expiration.
 |SNOW-39748| Disabled cookie management.
 **JDBC Driver 3.6.9**
 |SNOW-51691| Added support for specifying file cache directories as environment variables or JVM system properties.

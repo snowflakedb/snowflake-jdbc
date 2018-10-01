@@ -63,3 +63,5 @@ deploy.sh
 *-maven-metadata.xml
 Dockerfile.build
 parameters.json
+snowflake-whitelist
+Golang

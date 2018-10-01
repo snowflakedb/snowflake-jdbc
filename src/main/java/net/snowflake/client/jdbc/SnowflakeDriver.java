@@ -381,4 +381,15 @@ public class SnowflakeDriver implements Driver
         throttleIncidents;
   }
 
+  public final static void main(String[] args)
+  {
+    if (args.length > 0 && "--version".equals(args[0]))
+    {
+      Package pkg = Package.getPackage("net.snowflake.client.jdbc");
+      if (pkg != null)
+      {
+        System.out.println(pkg.getImplementationVersion());
+      }
+    }
+  }
 }

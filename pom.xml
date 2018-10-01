@@ -4,7 +4,7 @@
 
   <groupId>net.snowflake</groupId>
   <artifactId>snowflake-jdbc</artifactId>
-  <version>3.6.11</version>
+  <version>3.6.12</version>
   <packaging>jar</packaging>
 
   <name>snowflake-jdbc</name>
@@ -104,6 +104,7 @@
         <configuration>
           <archive>
             <manifest>
+              <mainClass>net.snowflake.client.jdbc.SnowflakeDriver</mainClass>
               <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
             </manifest>
           </archive>
@@ -285,7 +286,7 @@
     <dependency>
       <groupId>net.snowflake</groupId>
       <artifactId>snowflake-common</artifactId>
-      <version>3.1.21</version>
+      <version>3.1.23</version>
       <type>jar</type>
       <scope>compile</scope>
     </dependency>
