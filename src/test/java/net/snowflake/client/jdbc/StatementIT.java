@@ -35,13 +35,11 @@ import static org.junit.Assert.fail;
  */
 public class StatementIT extends BaseJDBCTest
 {
-  public void enableMultiStmt() throws SQLException
+  public void enableMultiStmt(Connection connection) throws SQLException
   {
-    Connection connection = getConnection();
     Statement statement = connection.createStatement();
     statement.execute("alter session set ENABLE_MULTISTATEMENT=true");
     statement.close();
-    connection.close();
   }
 
   @Test
@@ -521,8 +519,8 @@ public class StatementIT extends BaseJDBCTest
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
   public void testMultiStmtTransaction() throws SQLException
   {
-    enableMultiStmt();
     Connection connection = getConnection();
+    enableMultiStmt(connection);
     Statement statement = connection.createStatement();
     String multiStmtQuery = "begin;\n" +
         "delete from jdbc_statement;\n" +
@@ -561,8 +559,8 @@ public class StatementIT extends BaseJDBCTest
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
   public void testMultiStmtTransactionRollback() throws SQLException
   {
-    enableMultiStmt();
     Connection connection = getConnection();
+    enableMultiStmt(connection);
     Statement statement = connection.createStatement();
     String multiStmtQuery = "begin;\n" +
         "delete from jdbc_statement;\n" +
@@ -604,8 +602,8 @@ public class StatementIT extends BaseJDBCTest
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
   public void testMultiStmtExecute() throws SQLException
   {
-    enableMultiStmt();
     Connection connection = getConnection();
+    enableMultiStmt(connection);
     Statement statement = connection.createStatement();
     String multiStmtQuery = "create or replace temporary table test_multi (cola int);\n" +
         "insert into test_multi VALUES (1), (2);\n" +
@@ -643,8 +641,8 @@ public class StatementIT extends BaseJDBCTest
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
   public void testMultiStmtExecuteUpdate() throws SQLException
   {
-    enableMultiStmt();
     Connection connection = getConnection();
+    enableMultiStmt(connection);
     Statement statement = connection.createStatement();
     String multiStmtQuery = "create or replace temporary table test_multi (cola int);\n" +
         "insert into test_multi VALUES (1), (2);\n" +
@@ -682,8 +680,8 @@ public class StatementIT extends BaseJDBCTest
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
   public void testMultiStmtExecuteQuery() throws SQLException
   {
-    enableMultiStmt();
     Connection connection = getConnection();
+    enableMultiStmt(connection);
     Statement statement = connection.createStatement();
     String multiStmtQuery = "select 1;\n" +
         "create or replace temporary table test_multi (cola int);\n" +
@@ -730,8 +728,8 @@ public class StatementIT extends BaseJDBCTest
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
   public void testMultiStmtExecuteUpdateFail() throws SQLException
   {
-    enableMultiStmt();
     Connection connection = getConnection();
+    enableMultiStmt(connection);
     Statement statement = connection.createStatement();
     String multiStmtQuery = "select 1;\n" +
         "create or replace temporary table test_multi (cola int);\n" +
@@ -754,8 +752,8 @@ public class StatementIT extends BaseJDBCTest
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
   public void testMultiStmtExecuteQueryFail() throws SQLException
   {
-    enableMultiStmt();
     Connection connection = getConnection();
+    enableMultiStmt(connection);
     Statement statement = connection.createStatement();
     String multiStmtQuery = "create or replace temporary table test_multi (cola int);\n" +
         "insert into test_multi VALUES (1), (2);\n" +
@@ -777,8 +775,8 @@ public class StatementIT extends BaseJDBCTest
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
   public void testMultiStmtSetUnset() throws SQLException
   {
-    enableMultiStmt();
     Connection connection = getConnection();
+    enableMultiStmt(connection);
     Statement statement = connection.createStatement();
 
     // setting session variable should propagate outside of query
@@ -817,8 +815,8 @@ public class StatementIT extends BaseJDBCTest
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
   public void testMultiStmtParseError() throws SQLException
   {
-    enableMultiStmt();
     Connection connection = getConnection();
+    enableMultiStmt(connection);
     Statement statement = connection.createStatement();
 
     statement.execute("set testvar = 1");
@@ -844,8 +842,8 @@ public class StatementIT extends BaseJDBCTest
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
   public void testMultiStmtExecError() throws SQLException
   {
-    enableMultiStmt();
     Connection connection = getConnection();
+    enableMultiStmt(connection);
     Statement statement = connection.createStatement();
 
     try
@@ -870,8 +868,8 @@ public class StatementIT extends BaseJDBCTest
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
   public void testMultiStmtTempTable() throws SQLException
   {
-    enableMultiStmt();
     Connection connection = getConnection();
+    enableMultiStmt(connection);
     Statement statement = connection.createStatement();
 
     String entry = "success";
@@ -889,8 +887,8 @@ public class StatementIT extends BaseJDBCTest
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
   public void testMultiStmtUseStmt() throws SQLException
   {
-    enableMultiStmt();
     Connection connection = getConnection();
+    enableMultiStmt(connection);
     Statement statement = connection.createStatement();
 
     statement.execute("use schema public; select 1");
@@ -919,8 +917,8 @@ public class StatementIT extends BaseJDBCTest
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
   public void testMultiStmtAlterSessionParams() throws SQLException
   {
-    enableMultiStmt();
     Connection connection = getConnection();
+    enableMultiStmt(connection);
     Statement statement = connection.createStatement();
 
     SFSession session = ((SnowflakeConnectionV1) statement.getConnection()).getSfSession();
@@ -940,8 +938,8 @@ public class StatementIT extends BaseJDBCTest
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
   public void testMultiStmtMultiLine() throws SQLException
   {
-    enableMultiStmt();
     Connection connection = getConnection();
+    enableMultiStmt(connection);
     Statement statement = connection.createStatement();
 
     // these statements should not fail
@@ -957,10 +955,9 @@ public class StatementIT extends BaseJDBCTest
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
   public void testMultiStmtQuotes() throws SQLException
   {
-    enableMultiStmt();
     // test various quotation usage and ensure they succeed
-
     Connection connection = getConnection();
+    enableMultiStmt(connection);
     Statement statement = connection.createStatement();
 
     statement.execute("create or replace temporary table \"test_multi\" (cola string); select * from \"test_multi\"");
@@ -976,9 +973,8 @@ public class StatementIT extends BaseJDBCTest
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
   public void testMultiStmtCommitRollback() throws SQLException
   {
-    enableMultiStmt();
-
     Connection connection = getConnection();
+    enableMultiStmt(connection);
     Statement statement = connection.createStatement();
 
     statement.execute("create or replace table test_multi (cola string)");
@@ -1027,9 +1023,8 @@ public class StatementIT extends BaseJDBCTest
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
   public void testMultiStmtCommitRollbackNoAutocommit() throws SQLException
   {
-    enableMultiStmt();
-
     Connection connection = getConnection();
+    enableMultiStmt(connection);
     connection.setAutoCommit(false);
     Statement statement = connection.createStatement();
 
@@ -1102,9 +1097,8 @@ public class StatementIT extends BaseJDBCTest
     // this test verifies that multiple-statement support does not break
     // with many statements
     // it also ensures that results are returned in the correct order
-    enableMultiStmt();
-
     Connection connection = getConnection();
+    enableMultiStmt(connection);
     Statement statement = connection.createStatement();
     StringBuilder multiStmtBuilder = new StringBuilder();
     String query = "SELECT %d;";
