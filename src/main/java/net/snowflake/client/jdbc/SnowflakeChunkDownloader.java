@@ -61,6 +61,9 @@ public class SnowflakeChunkDownloader
   // SSE-C algorithm value
   private static final String SSE_C_AES = "AES256";
 
+  // tracking all memory used by all instances of this class
+  private static final AtomicLong chunkMemoryUsage = new AtomicLong(0);
+
   // object mapper for deserialize JSON
   private static final ObjectMapper mapper = new ObjectMapper();
 
@@ -109,7 +112,6 @@ public class SnowflakeChunkDownloader
   private final int networkTimeoutInMilli;
 
   private long memoryLimit;
-  private long currentMemoryUsage = 0;
 
   /** Timeout that main thread wait for downloading */
   private final long downloadedConditionTimeoutInSeconds = 3600;
@@ -278,14 +280,17 @@ public class SnowflakeChunkDownloader
       // check if memory limit allows more prefetching
       final SnowflakeResultChunk nextChunk = chunks.get(nextChunkToDownload);
       final long neededChunkMemory = nextChunk.computeNeededChunkMemory();
-      if (currentMemoryUsage + neededChunkMemory > memoryLimit &&
+      if (chunkMemoryUsage.get() + neededChunkMemory > memoryLimit &&
           nextChunkToDownload - nextChunkToConsume > 0)
       {
+        logger.debug("Chunk memory consumption {} may exceed the limit {}, so pause downloading of this chunk.",
+            chunkMemoryUsage.get(), memoryLimit);
         break;
       }
+
       nextChunk.tryReuse(chunkDataCache);
 
-      currentMemoryUsage += neededChunkMemory;
+      chunkMemoryUsage.addAndGet(neededChunkMemory);
 
       logger.debug("submit chunk #{} for downloading, url={}",
                  this.nextChunkToDownload, nextChunk.getUrl());
@@ -331,7 +336,7 @@ public class SnowflakeChunkDownloader
                  prevChunk);
 
       // has to be before reusing the memory
-      currentMemoryUsage -= chunks.get(prevChunk).computeNeededChunkMemory();
+      chunkMemoryUsage.addAndGet(chunks.get(prevChunk).computeNeededChunkMemory() * -1);
 
       if (this.nextChunkToDownload < this.chunks.size())
       {
