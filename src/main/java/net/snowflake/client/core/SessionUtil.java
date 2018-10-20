@@ -969,6 +969,7 @@ public class SessionUtil
     URI loginURI;
     String tokenOrSamlResponse = null;
     String samlProofKey = null;
+    boolean consentCacheIdToken = true;
 
     String sessionToken;
     String masterToken;
@@ -1023,6 +1024,7 @@ public class SessionUtil
         s.authenticate();
         tokenOrSamlResponse = s.getToken();
         samlProofKey = s.getProofKey();
+        consentCacheIdToken = s.isConsentCacheIdToken();
       }
       else if (authenticator == ClientAuthnDTO.AuthenticatorType.OKTA)
       {
@@ -1423,7 +1425,10 @@ public class SessionUtil
         commonParams);
     ret.setUpdatedByTokenRequest(false);
 
-    writeTemporaryCredential(loginInput, ret);
+    if (consentCacheIdToken)
+    {
+      writeTemporaryCredential(loginInput, ret);
+    }
     return ret;
   }
 
