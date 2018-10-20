@@ -108,7 +108,7 @@ public class ProcessQueue implements Runnable
           conn.createStatement().execute(currentCommand);
 
           // Load data there
-          LOGGER.info("Copying data in the stage to table:"
+          LOGGER.info("COPY data in the stage to table:"
                              + " stage={},"
                              + " name={}", remoteStage, stage.getId());
           currentState = State.COPY_INTO_TABLE;
@@ -142,12 +142,16 @@ public class ProcessQueue implements Runnable
           if (loaded == stage.getRowCount())
           {
             // successfully loaded everything
-            LOGGER.info("COPY command successfully finished");
+            LOGGER.info("COPY command successfully finished:"
+                + " stage={},"
+                + " name={}", remoteStage, stage.getId());
             listener.addErrorCount(0);
           }
           else
           {
-            LOGGER.info("Found errors in COPY command");
+            LOGGER.info("Found errors in COPY command:"
+                + " stage={},"
+                + " name={}", remoteStage, stage.getId());
             if (listener.needErrors())
             {
               currentState = State.COPY_INTO_TABLE_ERROR;

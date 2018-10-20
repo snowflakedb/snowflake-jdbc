@@ -4,6 +4,7 @@
 
 package net.snowflake.client.core;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.snowflake.client.core.BasicEvent.QueryState;
@@ -463,7 +464,18 @@ public class StmtUtil
         retries = 0; // reset retry counter after a successful response
 
       // trace the response if requested
-      logger.debug("Json response: {}", resultAsString);
+      if (logger.isDebugEnabled())
+      {
+        try
+        {
+          String json = mapper.writeValueAsString(resultAsString);
+          logger.debug("Response: {}", json);
+        }
+        catch(JsonProcessingException ex)
+        {
+          logger.debug("Response: {}", resultAsString);
+        }
+      }
 
       if (pingPongResponseJson != null)
       // raise server side error as an exception if any
