@@ -493,6 +493,26 @@
                        <pattern>com.nimbusds</pattern>
                        <shadedPattern>${shadeBase}.com.nimbusds</shadedPattern>
                      </relocation>
+                     <relocation>
+                       <pattern>javax.activation</pattern>
+                       <shadedPattern>${shadeBase}.javax.activation</shadedPattern>
+                     </relocation>
+                     <relocation>
+                       <pattern>net.jcip</pattern>
+                       <shadedPattern>${shadeBase}.net.jcip</shadedPattern>
+                     </relocation>
+                     <relocation>
+                       <pattern>net.minidev</pattern>
+                       <shadedPattern>${shadeBase}.net.minidev</shadedPattern>
+                     </relocation>
+                     <relocation>
+                       <pattern>org.objectweb</pattern>
+                       <shadedPattern>${shadeBase}.org.objectweb</shadedPattern>
+                     </relocation>
+                     <relocation>
+                       <pattern>com.sun</pattern>
+                       <shadedPattern>${shadeBase}.com.sun</shadedPattern>
+                     </relocation>
                    </relocations>
                    <filters>
                       <filter>
