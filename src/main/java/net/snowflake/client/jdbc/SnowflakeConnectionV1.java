@@ -1042,7 +1042,7 @@ public class SnowflakeConnectionV1 implements Connection
   {
     logger.debug("upload data from stream: stageName={}" +
             ", destPrefix={}, destFileName={}",
-        new Object[]{stageName, destPrefix, destFileName});
+            stageName, destPrefix, destFileName);
 
     if (stageName == null)
       throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
