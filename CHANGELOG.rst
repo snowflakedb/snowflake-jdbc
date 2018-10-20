@@ -1,7 +1,12 @@
-**JDBC Driver 3.6.13**
-|SNOW-54926| Added compressFileByPut, compressDataBeforePut, compressLevel to Loader API
-|SNOW-55138| Upgraded dependency to fix known Vulnerabilities.
+**JDBC Driver 3.6.14**
+|SSNOW-55075| Introduced CLIENT_RESULT_COLUMN_CASE_INSENSITIVE to match column names case-insensitively in ResultSet
 
+**JDBC Driver 3.6.13**
+|SNOW-54926| Added ``compressFileByPut``, ``compressDataBeforePut``, ``compressLevel`` to Loader API.
+|SNOW-55138| Upgraded dependency to fix known vulnerabilities.
+|SNOW-55868| Added service name support for multi GS clustering.
+|SNOW-55035| Added ``request_guid`` for HTTP request tracing.
+|SNOW-55095| Internal change for pending feature.
 **JDBC Driver 3.6.12**
 |SNOW-26324| Added ``--version`` option to return the JDBC driver version and additional information.
 **JDBC Driver 3.6.11**

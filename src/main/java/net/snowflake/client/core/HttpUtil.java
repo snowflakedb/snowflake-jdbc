@@ -266,7 +266,8 @@ public class HttpUtil
         injectSocketTimeout,
         canceling,
         true,
-        false);
+        false,
+        true);
   }
 
   /**
@@ -320,7 +321,8 @@ public class HttpUtil
         injectSocketTimeout,
         canceling,
         false,
-        includeRetryParameters);
+        includeRetryParameters,
+        true);
   }
 
   /**
@@ -338,6 +340,7 @@ public class HttpUtil
    * @param withoutCookies      whether this request should ignore cookies
    * @param includeRetryParameters whether to include retry parameters in
    *                               retried requests
+   * @param includeRequestGuid whether to include request_guid
    * @return response in String
    * @throws SnowflakeSQLException if Snowflake error occurs
    * @throws IOException raises if a general IO error occurs
@@ -347,7 +350,8 @@ public class HttpUtil
                                                int injectSocketTimeout,
                                                AtomicBoolean canceling,
                                                boolean withoutCookies,
-                                               boolean includeRetryParameters)
+                                               boolean includeRetryParameters,
+                                               boolean includeRequestGuid)
       throws SnowflakeSQLException, IOException
   {
     if (logger.isDebugEnabled())
@@ -368,7 +372,8 @@ public class HttpUtil
           injectSocketTimeout,
           canceling,
           withoutCookies,
-          includeRetryParameters);
+          includeRetryParameters,
+          includeRequestGuid);
 
       if (response == null ||
           response.getStatusLine().getStatusCode() != 200)

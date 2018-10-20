@@ -20,6 +20,7 @@ import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
 
+import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -35,6 +36,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class RestRequest
 {
   static final SFLogger logger = SFLoggerFactory.getLogger(RestRequest.class);
+
+  // Request guid per HTTP request
+  private static final String SF_REQUEST_GUID = "request_guid";
 
   // min backoff in milli before we retry due to transient issues
   static private long minBackoffInMilli = 1000;
@@ -58,6 +62,7 @@ public class RestRequest
    *                            or not
    * @param includeRetryParameters whether to include retry parameters in retried
    *                               requests
+   * @param includeRequestGuid whether to include request_guid parameter
    * @return HttpResponse Object get from server
    * @throws java.io.IOException                             java io exception
    * @throws net.snowflake.client.jdbc.SnowflakeSQLException Request timeout Exception or Illegal State Exception i.e.
@@ -70,7 +75,8 @@ public class RestRequest
       int injectSocketTimeout,
       AtomicBoolean canceling,
       boolean withoutCookies,
-      boolean includeRetryParameters) throws IOException, SnowflakeSQLException
+      boolean includeRetryParameters,
+      boolean includeRequestGuid) throws IOException, SnowflakeSQLException
   {
     CloseableHttpResponse response = null;
 
@@ -135,10 +141,9 @@ public class RestRequest
          * which are not part of retry we don't have to pay the performance
          * overhead of looking up in metadata database.
          */
+        URIBuilder builder = new URIBuilder(httpRequest.getURI());
         if (retryCount > 0)
         {
-          URIBuilder builder = new URIBuilder(httpRequest.getURI());
-
           builder.setParameter(
               "retryCount", String.valueOf(retryCount));
           if (includeRetryParameters)
@@ -146,8 +151,15 @@ public class RestRequest
             builder.setParameter(
                 "clientStartTime", String.valueOf(startTime));
           }
-          httpRequest.setURI(builder.build());
         }
+
+        if (includeRequestGuid)
+        {
+          // Add request_guid for better tracing
+          builder.setParameter(SF_REQUEST_GUID, UUID.randomUUID().toString());
+        }
+
+        httpRequest.setURI(builder.build());
 
         response = httpClient.execute(httpRequest);
       }
@@ -283,12 +295,18 @@ public class RestRequest
         {
           try
           {
-            long backoffTime = backoffInMilli - elapsedMilliForLastCall;
+            final long backoffOrigin = 1000L;
+            long backoffBound = (backoffInMilli - elapsedMilliForLastCall)*3;
+
+            // guarantee bound is greater than origin
+            long newOrigin = Math.min(backoffOrigin, backoffBound);
+            long newBound = Math.max(backoffOrigin, backoffBound);
+
             // use decorrelated jitter in retry time
             // see https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/
             backoffInMilli = Math.min(
                 maxBackoffInMilli,
-                ThreadLocalRandom.current().nextLong(1000, 3*backoffTime)
+                ThreadLocalRandom.current().nextLong(newOrigin, newBound)
             );
             Thread.sleep(backoffInMilli);
             elapsedMilliForTransientIssues += backoffInMilli;

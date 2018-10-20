@@ -7,6 +7,7 @@ package net.snowflake.client.core;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Strings;
 import net.snowflake.client.core.BasicEvent.QueryState;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
@@ -18,6 +19,7 @@ import org.apache.http.HttpHeaders;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.entity.StringEntity;
@@ -58,7 +60,7 @@ public class StmtUtil
 
   private static final String SF_HEADER_TOKEN_TAG = "Token";
 
-  private static final String SF_MEDIA_TYPE = "application/snowflake";
+  static final String SF_MEDIA_TYPE = "application/snowflake";
 
   // we don't want to retry canceling forever so put a limit which is
   // twice as much as our default socket timeout
@@ -98,6 +100,8 @@ public class StmtUtil
     String describedJobId;
 
     long querySubmissionTime; // millis since epoch
+
+    String serviceName;
 
     public StmtInput() {};
 
@@ -219,6 +223,12 @@ public class StmtUtil
     public StmtInput setQuerySubmissionTime(long querySubmissionTime)
     {
       this.querySubmissionTime = querySubmissionTime;
+      return this;
+    }
+
+    public StmtInput setServiceName(String serviceName)
+    {
+      this.serviceName = serviceName;
       return this;
     }
   }
@@ -344,6 +354,7 @@ public class StmtUtil
             SF_HEADER_SNOWFLAKE_AUTHTYPE + " " + SF_HEADER_TOKEN_TAG
                 + "=\"" + stmtInput.sessionToken + "\"");
 
+        setServiceNameHeader(stmtInput, httpRequest);
         eventHandler.triggerStateTransition(BasicEvent.QueryState.SENDING_QUERY,
             String.format(QueryState.SENDING_QUERY.getArgString(), stmtInput.requestId));
 
@@ -392,6 +403,15 @@ public class StmtUtil
       {
         httpRequest.releaseConnection();
       }
+    }
+  }
+
+  private static void setServiceNameHeader(StmtInput stmtInput, HttpRequestBase httpRequest)
+  {
+    if (!Strings.isNullOrEmpty(stmtInput.serviceName))
+    {
+      httpRequest.setHeader(
+          SessionUtil.SF_HEADER_SERVICE_NAME, stmtInput.serviceName);
     }
   }
 
@@ -623,6 +643,8 @@ public class StmtUtil
           SF_HEADER_SNOWFLAKE_AUTHTYPE + " " + SF_HEADER_TOKEN_TAG
               + "=\"" + stmtInput.sessionToken + "\"");
 
+      setServiceNameHeader(stmtInput, httpRequest);
+
       return HttpUtil.executeRequest(httpRequest,
           stmtInput.networkTimeoutInMillis/1000,
           0,
@@ -657,7 +679,8 @@ public class StmtUtil
         .setServerUrl(session.getServerUrl())
         .setSessionToken(session.getSessionToken())
         .setNetworkTimeoutInMillis(session.getNetworkTimeoutInMilli())
-        .setMediaType(SF_MEDIA_TYPE);
+        .setMediaType(SF_MEDIA_TYPE)
+        .setServiceName(session.getServiceName());
 
     String resultAsString = getQueryResult(getResultPath, stmtInput);
 
@@ -704,7 +727,7 @@ public class StmtUtil
 
       httpRequest = new HttpPost(uriBuilder.build());
 
-      /**
+      /*
        * The JSON input has two fields: sqlText and requestId
        */
       Map sqlJsonBody = new HashMap<String, Object>();
@@ -725,7 +748,7 @@ public class StmtUtil
           SF_HEADER_SNOWFLAKE_AUTHTYPE + " " + SF_HEADER_TOKEN_TAG
               + "=\"" + stmtInput.sessionToken + "\"");
 
-      HttpResponse response;
+      setServiceNameHeader(stmtInput, httpRequest);
 
       String jsonString =
           HttpUtil.executeRequest(httpRequest,

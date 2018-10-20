@@ -25,7 +25,6 @@ import java.security.PrivateKey;
 import java.sql.SQLClientInfoException;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -145,7 +144,7 @@ public class SFSession
 
   private AtomicBoolean autoCommit = new AtomicBoolean(true);
 
-  private boolean rsColumnCaseInsensitive = false;
+  private boolean resultColumnCaseInsensitive = false;
 
   // database that current session is on
   private String database;
@@ -189,6 +188,9 @@ public class SFSession
 
   // store the temporary credential
   private boolean storeTemporaryCredential = false;
+
+  // service name for multi clustering support
+  private String serviceName;
 
   public void addProperty(SFSessionProperty sfSessionProperty,
                           Object propertyValue)
@@ -388,7 +390,8 @@ public class SFSession
         .setPrivateKey((PrivateKey) connectionPropertiesMap.get(
             SFSessionProperty.PRIVATE_KEY))
         .setApplication((String) connectionPropertiesMap.get(
-            SFSessionProperty.APPLICATION));
+            SFSessionProperty.APPLICATION))
+        .setServiceName(this.getServiceName());
 
     SessionUtil.LoginOutput loginOutput = SessionUtil.openSession(loginInput);
     isClosed = false;
@@ -919,14 +922,14 @@ public class SFSession
     this.autoCommit.set(autoCommit);
   }
 
-  public void setRsColumnCaseInsensitive(boolean rsColumnCaseInsensitive)
+  public void setResultColumnCaseInsensitive(boolean resultColumnCaseInsensitive)
   {
-    this.rsColumnCaseInsensitive = rsColumnCaseInsensitive;
+    this.resultColumnCaseInsensitive = resultColumnCaseInsensitive;
   }
 
-  public boolean getRsColumnCaseInsensitive()
+  public boolean isResultColumnCaseInsensitive()
   {
-    return this.rsColumnCaseInsensitive;
+    return this.resultColumnCaseInsensitive;
   }
 
   public String getDatabase()
@@ -1107,6 +1110,24 @@ public class SFSession
   public void setStoreTemporaryCredential(boolean storeTemporaryCredential)
   {
     this.storeTemporaryCredential = storeTemporaryCredential;
+  }
+
+  /**
+   * Sets the service name provided from GS.
+   * @param serviceName service name
+   */
+  public void setServiceName(String serviceName)
+  {
+    this.serviceName = serviceName;
+  }
+
+  /**
+   * Gets the service name provided from GS.
+   * @return the service name
+   */
+  public String getServiceName()
+  {
+    return serviceName;
   }
 
   /**

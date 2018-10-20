@@ -9,7 +9,6 @@ import net.snowflake.client.core.EventHandler;
 import net.snowflake.client.core.EventUtil;
 import net.snowflake.common.core.SqlState;
 
-import java.io.File;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URL;
@@ -24,7 +23,6 @@ import java.util.jar.Attributes;
 import java.util.jar.JarInputStream;
 import java.util.jar.Manifest;
 import java.util.logging.Handler;
-import java.util.logging.ConsoleHandler;
 import java.util.logging.FileHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;

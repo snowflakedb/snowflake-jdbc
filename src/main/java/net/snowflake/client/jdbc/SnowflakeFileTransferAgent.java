@@ -2146,9 +2146,8 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
             logger.debug(
                 "digest diff between remote store and local, will {} {}, " +
                     "local digest: {}, remote store md5: {}",
-                new Object[]{commandType.name().toLowerCase(),
-                    mappedSrcFile, hashText, obj.getMD5()});
-
+                    commandType.name().toLowerCase(),
+                    mappedSrcFile, hashText, obj.getMD5());
             continue;
           }
         }

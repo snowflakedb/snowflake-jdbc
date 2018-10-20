@@ -31,16 +31,16 @@ public class StreamLoader implements Loader, Runnable
   private static final SFLogger LOGGER = SFLoggerFactory.getLogger(
           StreamLoader.class);
 
-  public final static String SYSTEM_PARAMETER_PREFIX = "net.snowflake.client.loader.";
+  final static String SYSTEM_PARAMETER_PREFIX = "net.snowflake.client.loader.";
 
-  public final static String FILE_PREFIX = "stream_";
+  final static String FILE_PREFIX = "stream_";
 
-  public final static String FILE_SUFFIX = ".gz";
+  final static String FILE_SUFFIX = ".gz";
   
   /**
    * Default batch row size
    */
-  public final static long DEFAULT_BATCH_ROW_SIZE = -1L;
+  final static long DEFAULT_BATCH_ROW_SIZE = -1L;
 
   public static DatabaseMetaData metadata;
 
@@ -256,7 +256,7 @@ public class StreamLoader implements Loader, Runnable
     }
     else if (value instanceof Integer)
     {
-      ret = Integer.valueOf((Integer)value);
+      ret = Long.valueOf((Integer)value);
     }
     else
     {
@@ -425,7 +425,7 @@ public class StreamLoader implements Loader, Runnable
   }
 
   @Override
-  public void submitRow(Object[] row) {
+  public void submitRow(final Object[] row) {
     try {
       if (_aborted.get()) {
         if (_listener.throwOnError()) {
@@ -550,7 +550,7 @@ public class StreamLoader implements Loader, Runnable
     }
   }
   
-  private void writeBytes(byte[] data) throws IOException, InterruptedException
+  private void writeBytes(final byte[] data) throws IOException, InterruptedException
   {
     // this loader was aborted
     if (_aborted.get())
@@ -558,7 +558,7 @@ public class StreamLoader implements Loader, Runnable
       return;
     }
 
-    boolean full = _stage.stageData(data, true);
+    boolean full = _stage.stageData(data);
 
     if (full && !_oneBatch)
     {
@@ -600,9 +600,9 @@ public class StreamLoader implements Loader, Runnable
     }
   }
 
-  private byte[] createCSVRecord(Object[] data)
+  private byte[] createCSVRecord(final Object[] data)
   {
-    StringBuilder sb = new StringBuilder(1024);
+    StringBuilder sb = new StringBuilder();
 
     for (int i = 0; i < data.length; ++i)
     {
@@ -792,7 +792,7 @@ public class StreamLoader implements Loader, Runnable
     this._listener = _listener;
   }
 
-  void queuePut(BufferStage stage) throws InterruptedException
+  private void queuePut(BufferStage stage) throws InterruptedException
   {
     _queuePut.put(stage);
   }
@@ -813,7 +813,7 @@ public class StreamLoader implements Loader, Runnable
     return _queueProcess.take();
   }
 
-  int throttleUp()
+  void throttleUp()
   {
     int open =  this._throttleCounter.incrementAndGet();
     LOGGER.info("PUT Throttle Up: {}", open);
@@ -829,13 +829,12 @@ public class StreamLoader implements Loader, Runnable
         LOGGER.error("Exception occurs while waiting", ex);
       }
     }
-    return open;
   }
 
-  int throttleDown()
+  void throttleDown()
   {
     int throttleLevel = this._throttleCounter.decrementAndGet();
-    LOGGER.debug("PUT Throttle Down: {}", throttleLevel);
+    LOGGER.info("PUT Throttle Down: {}", throttleLevel);
     if (throttleLevel < 0)
     {
       LOGGER.warn("Unbalanced throttle");
@@ -843,7 +842,6 @@ public class StreamLoader implements Loader, Runnable
     }
 
     LOGGER.debug("Connector throttle {}", throttleLevel);
-    return throttleLevel;
   }
 
   private LoadResultListener _listener = new LoadResultListener()

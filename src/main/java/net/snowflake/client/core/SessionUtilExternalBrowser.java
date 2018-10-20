@@ -5,6 +5,7 @@ package net.snowflake.client.core;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Strings;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.log.SFLogger;
@@ -18,7 +19,6 @@ import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.entity.StringEntity;
 
-import java.awt.Desktop;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -29,9 +29,14 @@ import java.net.Socket;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.TimeZone;
 
 /**
  * SAML 2.0 Compliant service/application federated authentication
@@ -72,10 +77,10 @@ public class SessionUtilExternalBrowser
       try
       {
         // start web browser
-        if (Desktop.isDesktopSupported())
+        if (java.awt.Desktop.isDesktopSupported())
         {
           URI uri = new URI(ssoUrl);
-          Desktop.getDesktop().browse(uri);
+          java.awt.Desktop.getDesktop().browse(uri);
         }
         else
         {
@@ -111,10 +116,13 @@ public class SessionUtilExternalBrowser
   private final SessionUtil.LoginInput loginInput;
 
   String token;
+  private boolean consentCacheIdToken;
   private String proofKey;
+  private String origin;
   private AuthExternalBrowserHandlers handlers;
   private static final String PREFIX_GET = "GET ";
   private static final String PREFIX_POST = "POST ";
+  private static final String PREFIX_OPTIONS = "OPTIONS ";
   private static final String PREFIX_USER_AGENT = "USER-AGENT: ";
   private static Charset UTF8_CHARSET;
 
@@ -134,6 +142,8 @@ public class SessionUtilExternalBrowser
     this.mapper = new ObjectMapper();
     this.loginInput = loginInput;
     this.handlers = handlers;
+    this.consentCacheIdToken = true; // true by default
+    this.origin = null;
   }
 
   /**
@@ -265,7 +275,27 @@ public class SessionUtilExternalBrowser
               "or your OS settings. Press CTRL+C to abort and try again...");
       this.handlers.openBrowser(ssoUrl);
 
-      receiveSamlToken(ssocket);
+      while (true)
+      {
+        Socket socket = ssocket.accept(); // start accepting the request
+        try
+        {
+          BufferedReader in = new BufferedReader(
+              new InputStreamReader(socket.getInputStream(), UTF8_CHARSET));
+          char[] buf = new char[16384];
+          int strLen = in.read(buf);
+          String[] rets = new String(buf, 0, strLen).split("\r\n");
+          if (!processOptions(rets, socket))
+          {
+            processSamlToken(rets, socket);
+            break;
+          }
+        }
+        finally
+        {
+          socket.close();
+        }
+      }
     }
     catch (IOException ex)
     {
@@ -284,92 +314,188 @@ public class SessionUtilExternalBrowser
     }
   }
 
+  private boolean processOptions(String[] rets, Socket socket) throws IOException
+  {
+    String targetLine = null;
+    String userAgent = null;
+    String requestedHeaderLine = null;
+    for (String line : rets)
+    {
+      if (line.length() > PREFIX_OPTIONS.length() &&
+          line.substring(0, PREFIX_OPTIONS.length()).equalsIgnoreCase(PREFIX_OPTIONS))
+      {
+        targetLine = line;
+      }
+      else if (line.length() > PREFIX_USER_AGENT.length() &&
+          line.substring(0, PREFIX_USER_AGENT.length()).equalsIgnoreCase(PREFIX_USER_AGENT))
+      {
+        userAgent = line;
+      }
+      else if (line.startsWith("Access-Control-Request-Method"))
+      {
+        String[] kv = line.split(":");
+        if (kv.length != 2)
+        {
+          logger.error(
+              "no value for HTTP header: Access-Control-Request-Method. line={}", line);
+          return false;
+        }
+        if (!kv[1].trim().contains("POST"))
+        {
+          return false;
+        }
+      }
+      else if (line.startsWith("Access-Control-Request-Headers"))
+      {
+        String[] kv = line.split(":");
+        if (kv.length != 2)
+        {
+          logger.error(
+              "no value for HTTP header: Access-Control-Request-Method. line={}", line);
+          return false;
+        }
+        requestedHeaderLine = kv[1].trim();
+      }
+      else if (line.startsWith("Origin"))
+      {
+        String[] kv = line.split(":");
+        if (kv.length < 2)
+        {
+          logger.error(
+              "no value for HTTP header: Origin. line={}", line);
+          return false;
+        }
+        this.origin = line.substring(line.indexOf(':') + 1).trim();
+      }
+    }
+    if (userAgent != null)
+    {
+      logger.debug("{}", userAgent);
+    }
+    if (Strings.isNullOrEmpty(targetLine) ||
+        Strings.isNullOrEmpty(requestedHeaderLine) ||
+        Strings.isNullOrEmpty(this.origin))
+    {
+      return false;
+    }
+    returnToBrowserForOptions(requestedHeaderLine, socket);
+    return true;
+  }
+
+  private void returnToBrowserForOptions(String requestedHeader, Socket socket) throws IOException
+  {
+    PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+    SimpleDateFormat fmt = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss");
+    fmt.setTimeZone(TimeZone.getTimeZone("UTC"));
+    String[] content = {
+        "HTTP/1.1 200 OK",
+        String.format("Date: %s", fmt.format(new Date()) + " GMT"),
+        "Access-Control-Allow-Methods: POST, GET",
+        String.format("Access-Control-Allow-Headers: %s", requestedHeader),
+        "Access-Control-Max-Age: 86400",
+        String.format("Access-Control-Allow-Origin: %s", this.origin),
+        "",
+        ""
+    };
+    for (int i = 0; i < content.length; ++i)
+    {
+      if (i > 0)
+      {
+        out.print("\r\n");
+      }
+      out.print(content[i]);
+    }
+    out.flush();
+  }
+
   /**
    * Receives SAML token from Snowflake via web browser
    *
-   * @param ssocket server socket
+   * @param socket socket
    * @throws IOException if any IO error occurs
    * @throws SFException if a HTTP request from browser is invalid
    */
-  private void receiveSamlToken(ServerSocket ssocket) throws IOException, SFException
+  private void processSamlToken(String[] rets, Socket socket) throws IOException, SFException
   {
-    Socket socket = ssocket.accept(); // start accepting the request
+    String targetLine = null;
+    String userAgent = null;
+    boolean isPost = false;
+    for (String line : rets)
+    {
+      if (line.length() > PREFIX_GET.length() &&
+          line.substring(0, PREFIX_GET.length()).equalsIgnoreCase(PREFIX_GET))
+      {
+        targetLine = line;
+      }
+      else if (line.length() > PREFIX_POST.length() &&
+          line.substring(0, PREFIX_POST.length()).equalsIgnoreCase(PREFIX_POST))
+      {
+        targetLine = rets[rets.length - 1];
+        isPost = true;
+      }
+      else if (line.length() > PREFIX_USER_AGENT.length() &&
+          line.substring(0, PREFIX_USER_AGENT.length()).equalsIgnoreCase(PREFIX_USER_AGENT))
+      {
+        userAgent = line;
+      }
+    }
+    if (targetLine == null)
+    {
+      throw new SFException(ErrorCode.NETWORK_ERROR,
+          "Invalid HTTP request. No token is given from the browser.");
+    }
+    if (userAgent != null)
+    {
+      logger.debug("{}", userAgent);
+    }
+
     try
     {
-      BufferedReader in = new BufferedReader(
-          new InputStreamReader(socket.getInputStream(), UTF8_CHARSET));
-      char[] buf = new char[16384];
-      int strLen = in.read(buf);
-      String[] rets = new String(buf, 0, strLen).split("\r\n");
-      String targetLine = null;
-      String userAgent = null;
-      boolean isPost = false;
-      for (String line : rets)
-      {
-        if (line.length() > PREFIX_GET.length() &&
-            line.substring(0, PREFIX_GET.length()).equalsIgnoreCase(PREFIX_GET))
-        {
-          targetLine = line;
-        }
-        else if (line.length() > PREFIX_POST.length() &&
-            line.substring(0, PREFIX_POST.length()).equalsIgnoreCase(PREFIX_POST))
-        {
-          targetLine = rets[rets.length-1];
-          isPost = true;
-        }
-        else if (line.length() > PREFIX_USER_AGENT.length() &&
-            line.substring(0, PREFIX_USER_AGENT.length()).equalsIgnoreCase(PREFIX_USER_AGENT))
-        {
-          userAgent = line;
-        }
-      }
-      if (targetLine == null)
-      {
-        throw new SFException(ErrorCode.NETWORK_ERROR,
-            "Invalid HTTP request. No token is given from the browser.");
-      }
-      if (userAgent != null)
-      {
-        logger.debug("{}", userAgent);
-      }
-
+      // attempt to get JSON response
+      extractJsonTokenFromPostRequest(targetLine);
+    }
+    catch (IOException ex)
+    {
       String parameters = isPost ?
           extractTokenFromPostRequest(targetLine) :
           extractTokenFromGetRequest(targetLine);
-
       try
       {
-        this.token = null;
         URI inputParameter = new URI(parameters);
-        for (NameValuePair urlParam: URLEncodedUtils.parse(
-            inputParameter, UTF8_CHARSET)) {
-          if ("token".equals(urlParam.getName())) {
+        for (NameValuePair urlParam : URLEncodedUtils.parse(
+            inputParameter, UTF8_CHARSET))
+        {
+          if ("token".equals(urlParam.getName()))
+          {
             this.token = urlParam.getValue();
             break;
           }
         }
-        if (this.token == null)
-        {
-          throw new SFException(ErrorCode.NETWORK_ERROR,
-              String.format(
-                  "Invalid HTTP request. No token is given from the browser: %s",
-                  targetLine));
-        }
       }
-      catch(URISyntaxException ex)
+      catch (URISyntaxException ex0)
       {
         throw new SFException(ErrorCode.NETWORK_ERROR,
             String.format(
-                "Invalid HTTP request. No token is given from the browser: %s",
-                targetLine));
+                "Invalid HTTP request. No token is given from the browser. %s, err: %s",
+                targetLine, ex0));
       }
-
-      returnToBrowser(socket);
     }
-    finally
+    if (this.token == null)
     {
-      socket.close();
+      throw new SFException(ErrorCode.NETWORK_ERROR,
+          String.format(
+              "Invalid HTTP request. No token is given from the browser: %s",
+              targetLine));
     }
+
+    returnToBrowser(socket);
+  }
+
+  private void extractJsonTokenFromPostRequest(String targetLine) throws IOException
+  {
+    JsonNode jsonNode = mapper.readTree(targetLine);
+    this.token = jsonNode.get("token").asText();
+    this.consentCacheIdToken = jsonNode.get("consent").asBoolean();
   }
 
   private String extractTokenFromPostRequest(String targetLine)
@@ -402,26 +528,40 @@ public class SessionUtilExternalBrowser
   {
     PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
 
-    String responseText =
-        "<!DOCTYPE html><html><head><meta charset=\"UTF-8\"/>" +
-            "<title>SAML Response for Snowflake</title></head>" +
-            "<body>Your identity was confirmed and propagated to " +
-            "Snowflake JDBC driver. You can close this window now and go back " +
-            "where you started from.</body></html>";
-    String[] content = new String[]{
-        "HTTP/1.0 200 OK",
-        "Content-Type: text/html",
-        String.format("Content-Length: %s", responseText.length()),
-        "",
-        responseText
-    };
-    for (int i = 0; i < content.length; ++i)
+    List<String> content = new ArrayList<>();
+    content.add("HTTP/1.0 200 OK");
+    content.add("Content-Type: text/html");
+    String responseText;
+    if (this.origin != null)
+    {
+      content.add(
+          String.format("Access-Control-Allow-Origin: %s", this.origin));
+      content.add("Vary: Accept-Encoding, Origin");
+      Map<String, Object> data = new HashMap<>();
+      data.put("consent", this.consentCacheIdToken);
+      responseText = mapper.writeValueAsString(data);
+    }
+    else
+    {
+      responseText =
+          "<!DOCTYPE html><html><head><meta charset=\"UTF-8\"/>" +
+              "<title>SAML Response for Snowflake</title></head>" +
+              "<body>Your identity was confirmed and propagated to " +
+              "Snowflake JDBC driver. You can close this window now and go back " +
+              "where you started from.</body></html>";
+
+    }
+    content.add(String.format("Content-Length: %s", responseText.length()));
+    content.add("");
+    content.add(responseText);
+
+    for (int i = 0; i < content.size(); ++i)
     {
       if (i > 0)
       {
         out.print("\r\n");
       }
-      out.print(content[i]);
+      out.print(content.get(i));
     }
     out.flush();
   }
@@ -445,5 +585,14 @@ public class SessionUtilExternalBrowser
   String getProofKey()
   {
     return this.proofKey;
+  }
+
+  /**
+   * True if the user consented to cache id token
+   * @return true or false
+   */
+  boolean isConsentCacheIdToken()
+  {
+    return this.consentCacheIdToken;
   }
 }

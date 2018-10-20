@@ -26,7 +26,7 @@ public class FileUploader implements Runnable {
   private final String _stage;
   private final File _file;
 
-  public FileUploader(StreamLoader loader, String stage, File file) {
+  FileUploader(StreamLoader loader, String stage, File file) {
     LOGGER.debug("");
     _loader = loader;
     _thread = new Thread(this);
@@ -190,7 +190,7 @@ public class FileUploader implements Runnable {
    * convert any back slashes to forward slashes if necessary when converting
    * a local filename to a one suitable for S3
    * 
-   * @param fname
+   * @param fname a file name to PUT
    * @return A fname string for S3
    */
   private String remoteSeparator(String fname) {
@@ -203,7 +203,7 @@ public class FileUploader implements Runnable {
   /**
    * convert any forward slashes to back slashes if necessary when converting
    * a S3 file name to a local file name
-   * @param fname
+   * @param fname a file name to PUT
    * @return A fname string for the local FS (Windows/other Unix like OS)
    */
   private String localSeparator(String fname) {
