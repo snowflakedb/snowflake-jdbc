@@ -4,6 +4,7 @@
 
 package net.snowflake.client.loader;
 
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -13,6 +14,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
+import java.util.zip.Deflater;
+import java.util.zip.DeflaterOutputStream;
 import java.util.zip.GZIPOutputStream;
 
 import net.snowflake.client.log.SFLogger;
@@ -146,11 +149,29 @@ public class BufferStage
     try {
       String fName = _directory.getAbsolutePath()
                      + File.separatorChar + StreamLoader.FILE_PREFIX
-                     + _stamp + _fileCount + StreamLoader.FILE_SUFFIX;
-      LOGGER.debug("openFile: {}", fName);
+                     + _stamp + _fileCount;
+      if (_loader._compressDataBeforePut)
+      {
+        fName += StreamLoader.FILE_SUFFIX;
+      }
+      LOGGER.info("openFile: {}", fName);
 
-      FileOutputStream outputFile = new FileOutputStream(fName);
-      _outstream = new GZIPOutputStream(outputFile, 64 * 1024, true);
+      OutputStream fileStream = new FileOutputStream(fName);
+      if (_loader._compressDataBeforePut)
+      {
+        OutputStream gzipOutputStream = new GZIPOutputStream(
+            fileStream, 64 * 1024,  true) {
+          {
+            def.setLevel((int)_loader._compressLevel);
+          }
+        };
+        _outstream = new BufferedOutputStream(gzipOutputStream);
+      }
+      else
+      {
+        _outstream = new BufferedOutputStream(fileStream);
+      }
+
       _file = new File(fName);
 
       _fileCount++;
@@ -158,7 +179,6 @@ public class BufferStage
     catch (IOException ex) {
       _loader.abort(new Loader.ConnectionError(Utils.getCause(ex)));
     }
-
   }
 
   private static byte[] newLineBytes = "\n".getBytes(UTF_8);
@@ -189,9 +209,9 @@ public class BufferStage
     }
 
     if(_currentSize >= this._csvFileSize) {
-      LOGGER.debug("currentSize: {}, Threshold: {},"
+      LOGGER.info("name: {}, currentSize: {}, Threshold: {},"
                       + " fileCount: {}, fileBucketSize: {}",
-              _currentSize, this._csvFileSize, _fileCount,
+              _file.getAbsolutePath(), _currentSize, this._csvFileSize, _fileCount,
               this._csvFileBucketSize);
       _outstream.flush();
       _outstream.close();
@@ -211,9 +231,13 @@ public class BufferStage
    * @throws InterruptedException
    * @throws IOException
    */
-  void completeUploading() throws InterruptedException, IOException
+  void completeUploading() throws IOException
   {
-    LOGGER.debug("CurrentSize: {}", _currentSize);
+    LOGGER.debug("name: {}, currentSize: {}, Threshold: {},"
+            + " fileCount: {}, fileBucketSize: {}",
+        _file.getAbsolutePath(),
+        _currentSize, this._csvFileSize, _fileCount,
+        this._csvFileBucketSize);
 
     _outstream.flush();
     _outstream.close();

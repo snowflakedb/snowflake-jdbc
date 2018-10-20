@@ -39,7 +39,7 @@ public class FileUploader implements Runnable {
     // throttle up will wait if too many files are uploading
     LOGGER.debug("");
     _loader.throttleUp();
-     _thread.start();
+    _thread.start();
   }
 
   @Override
@@ -103,14 +103,27 @@ public class FileUploader implements Runnable {
                               + "' '"
                               + remoteStage
                               + "' parallel=10"        // upload chunks in parallel
-                              + " overwrite=true"      // skip file existence check
-                              + " auto_compress=false"
-                              + " source_compression=gzip";
+                              + " overwrite=true";     // skip file existence check
+        if (_loader._compressDataBeforePut)
+        {
+          putStatement += " auto_compress=false"
+                        + " SOURCE_COMPRESSION=gzip";
+        }
+        else if (_loader._compressFileByPut)
+        {
+          putStatement += " auto_compress=true";
+        }
+        else
+        {
+          // don't compress file at all
+          putStatement += " auto_compress=false";
+        }
 
         Statement statement = _loader.getPutConnection().createStatement();
         try {
-          LOGGER.debug("Put Statement: {}", putStatement);
+          LOGGER.info("Put Statement start: {}", putStatement);
           statement.execute(putStatement);
+          LOGGER.info("Put Statement end: {}", putStatement);
           ResultSet putResult = statement.getResultSet();
 
           putResult.next();

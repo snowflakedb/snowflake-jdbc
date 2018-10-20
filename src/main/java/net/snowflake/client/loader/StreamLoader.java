@@ -15,9 +15,11 @@ import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.zip.Deflater;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -28,6 +30,8 @@ public class StreamLoader implements Loader, Runnable
 {
   private static final SFLogger LOGGER = SFLoggerFactory.getLogger(
           StreamLoader.class);
+
+  public final static String SYSTEM_PARAMETER_PREFIX = "net.snowflake.client.loader.";
 
   public final static String FILE_PREFIX = "stream_";
 
@@ -99,6 +103,12 @@ public class StreamLoader implements Loader, Runnable
   private boolean _useLocalTimezone = false; // use local timezone instead of UTC
 
   private boolean _mapTimeToTimestamp = false; // map TIME to TIMESTAMP. Informatica V1 connector behavior
+
+  boolean _compressDataBeforePut = true; // compress data before PUT
+
+  boolean _compressFileByPut = false; // compress file by PUT
+
+  long _compressLevel = Deflater.BEST_SPEED; // compression level used to compress data before PUT
 
   String _onError = OnError.DEFAULT;
 
@@ -184,25 +194,13 @@ public class StreamLoader implements Loader, Runnable
         _is_last_finish_call = Boolean.valueOf(String.valueOf(value));
         break;
       case batchRowSize:
-        if (value instanceof String) {
-          _batchRowSize = new Long((String) value);
-        } else if (value instanceof Long){
-          _batchRowSize = (Long)value;
-        }
+        _batchRowSize = parseLongValue(LoaderProperty.batchRowSize, value);
         break;
       case csvFileBucketSize:
-        if (value instanceof String) {
-          _csvFileBucketSize = new Long((String) value);
-        } else if (value instanceof Long){
-          _csvFileBucketSize = (Long)value;
-        }
+        _csvFileBucketSize = parseLongValue(LoaderProperty.csvFileBucketSize, value);
         break;
       case csvFileSize:
-        if (value instanceof String) {
-          _csvFileSize = new Long((String) value);
-        } else if (value instanceof Long){
-          _csvFileSize = (Long)value;
-        }
+        _csvFileSize = parseLongValue(LoaderProperty.csvFileSize, value);
         break;
       case preserveStageFile:
         _preserveStageFile = Boolean.valueOf(String.valueOf(value));
@@ -219,6 +217,20 @@ public class StreamLoader implements Loader, Runnable
         // but a legitimate behavior is supposed to be to TIME.
         _mapTimeToTimestamp = Boolean.valueOf(String.valueOf(value));
         break;
+      case compressDataBeforePut:
+        _compressDataBeforePut = Boolean.valueOf(String.valueOf(value));
+        break;
+      case compressFileByPut:
+        _compressFileByPut = Boolean.valueOf(String.valueOf(value));
+        break;
+      case compressLevel:
+        _compressLevel = parseLongValue(LoaderProperty.compressLevel, value);
+        if ((_compressLevel < Deflater.BEST_SPEED ||
+            _compressLevel > Deflater.BEST_COMPRESSION) &&
+            _compressLevel != Deflater.DEFAULT_COMPRESSION)
+        {
+          throw new IllegalArgumentException("invalid compression level");
+        }
       case onError:
         String v = String.valueOf(value);
         _onError = OnError.validate(v) ? v : OnError.DEFAULT;
@@ -228,6 +240,69 @@ public class StreamLoader implements Loader, Runnable
         break;
       default:
         // nop, this should ever happens
+    }
+  }
+
+  private long parseLongValue(LoaderProperty name, Object value)
+  {
+    long ret;
+    if (value instanceof String)
+    {
+      ret = new Long((String) value);
+    }
+    else if (value instanceof Long)
+    {
+      ret = (Long)value;
+    }
+    else if (value instanceof Integer)
+    {
+      ret = Integer.valueOf((Integer)value);
+    }
+    else
+    {
+      throw new IllegalArgumentException(
+          String.format("'%s' Must be a LONG value", name.toString()));
+    }
+    return ret;
+  }
+
+  private void setPropertyBySystemProperty()
+  {
+    final String BATCH_ROW_SIZE_KEY = SYSTEM_PARAMETER_PREFIX + "batchRowSize";
+    final String CSV_FILE_BUCKET_SIZE = SYSTEM_PARAMETER_PREFIX + "csvFileBucketSize";
+    final String CSV_FILE_SIZE = SYSTEM_PARAMETER_PREFIX + "csvFileSize";
+    final String COMPRESS_DATA_BEFORE_PUT_KEY = SYSTEM_PARAMETER_PREFIX + "compressDataBeforePut";
+    final String COMPRESS_FILE_BY_PUT_KEY = SYSTEM_PARAMETER_PREFIX + "compressFileByPut";
+    final String COMPRESS_LEVEL = SYSTEM_PARAMETER_PREFIX + "compressLevel";
+
+    Properties props = System.getProperties();
+    for (String propKey: props.stringPropertyNames())
+    {
+      String value = props.getProperty(propKey);
+      if (BATCH_ROW_SIZE_KEY.equals(propKey))
+      {
+        _batchRowSize = parseLongValue(LoaderProperty.batchRowSize, value);
+      }
+      else if (CSV_FILE_BUCKET_SIZE.equals(propKey))
+      {
+        _csvFileBucketSize = parseLongValue(LoaderProperty.csvFileBucketSize, value);
+      }
+      else if (CSV_FILE_SIZE.equals(propKey))
+      {
+        _csvFileSize = parseLongValue(LoaderProperty.csvFileSize, value);
+      }
+      else if (COMPRESS_DATA_BEFORE_PUT_KEY.equals(propKey))
+      {
+        _compressDataBeforePut = Boolean.valueOf(value);
+      }
+      else if (COMPRESS_FILE_BY_PUT_KEY.equals(propKey))
+      {
+        _compressFileByPut = Boolean.valueOf(value);
+      }
+      else if (COMPRESS_LEVEL.equals(propKey))
+      {
+        _compressLevel = Long.valueOf(value);
+      }
     }
   }
 
@@ -288,6 +363,21 @@ public class StreamLoader implements Loader, Runnable
         throw new ConnectionError("Updating operations require keys");
       }
     }
+    setPropertyBySystemProperty();
+    LOGGER.info("Database Name: {}, Schema Name: {}, Table Name: {}, " +
+        "Remote Stage: {}, Columns: {}, Keys: {}, Operation: {}, " +
+        "Start Transaction: {}, OneBatch: {}, Truncate Table: {}, " +
+        "Execute Before: {}, Execute After: {}, Batch Row Size: {}, " +
+        "CSV File Bucket Size: {}, CSV File Size: {}, Preserve Stage File: {}, " +
+        "Use Local TimeZone: {}, Copy Empty Field As Empty: {}, " +
+        "MapTimeToTimestamp: {}, Compress Data before PUT: {}, " +
+        "Compress File By Put: {}, Compress Level: {}, OnError: {}",
+        _database, _schema, _table, _remoteStage, _columns, _keys, _op,
+        _startTransaction, _oneBatch, _truncate, _before, _after,
+        _batchRowSize, _csvFileBucketSize, _csvFileSize, _preserveStageFile,
+        _useLocalTimezone, _copyEmptyFieldAsEmpty, _mapTimeToTimestamp,
+        _compressDataBeforePut, _compressFileByPut, _compressLevel, _onError
+    );
   }
 
   String getNoise()

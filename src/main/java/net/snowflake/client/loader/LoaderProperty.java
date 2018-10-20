@@ -25,17 +25,24 @@ public enum LoaderProperty
   isFirstStartCall,  // skip deleting data. Used in multiple calls of loader.start Boolean
   isLastFinishCall,  // skip commit. Used in multiple calls of loader.finish       Boolean
   batchRowSize,      // Batch row size. Flush queues when it reaches this          Long
-  csvFileBucketSize, // File bucket size                                           Long
-  csvFileSize,       // File size                                                  Long
+  onError,           // on_error option                                            String
+  csvFileBucketSize, // File bucket size. 64 by default.                           Long
+  csvFileSize,       // File size. 50MB by default.                                Long
   preserveStageFile, // Preserve stage files if error occurs                       Boolean
   useLocalTimezone,  // Use local timezone in converting TIMESTAMP                 Boolean
-  copyEmptyFieldAsEmpty, // EMPTY_FIELD_AS_NULL = true by default                  Boolean
+  compressFileByPut, // Compress file by PUT. false by default                     Boolean
+  compressDataBeforePut, // Compress data before PUT. true by default              Boolean
+  compressLevel,     // Compress level: 1 (Speed) to 9 (Compression) for
+                     // compressDataBeforePut option. No impact to
+                     // compressFileByPut.  1 by default.                          Long
 
   // compatibility parameters
   mapTimeToTimestamp, // map TIME data type to TIMESTAMP. Informatica v1
                       // connector behavior.                                       Boolean
 
-  onError,            // on_error option                                           String
+  // deprecated. to be removed.
+  copyEmptyFieldAsEmpty, // EMPTY_FIELD_AS_NULL = true by default                  Boolean
+
   // test parameters
   testRemoteBadCSV   // TEST: Inject bad CSV in the remote stage                   Boolean
 }
