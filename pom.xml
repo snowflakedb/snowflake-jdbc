@@ -4,7 +4,7 @@
 
   <groupId>net.snowflake</groupId>
   <artifactId>snowflake-jdbc</artifactId>
-  <version>3.6.14</version>
+  <version>3.6.15</version>
   <packaging>jar</packaging>
 
   <name>snowflake-jdbc</name>
@@ -13,7 +13,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <slf4j.version>1.7.25</slf4j.version>
     <jsoup.version>1.11.3</jsoup.version>
-    <tika.version>1.18</tika.version>
+    <tika.version>1.19.1</tika.version>
     <jackson.version>2.9.6</jackson.version>
     <httpclient.version>4.5.5</httpclient.version>
     <powermock.version>1.7.4</powermock.version>
@@ -492,6 +492,26 @@
                      <relocation>
                        <pattern>com.nimbusds</pattern>
                        <shadedPattern>${shadeBase}.com.nimbusds</shadedPattern>
+                     </relocation>
+                     <relocation>
+                       <pattern>javax.activation</pattern>
+                       <shadedPattern>${shadeBase}.javax.activation</shadedPattern>
+                     </relocation>
+                     <relocation>
+                       <pattern>net.jcip</pattern>
+                       <shadedPattern>${shadeBase}.net.jcip</shadedPattern>
+                     </relocation>
+                     <relocation>
+                       <pattern>net.minidev</pattern>
+                       <shadedPattern>${shadeBase}.net.minidev</shadedPattern>
+                     </relocation>
+                     <relocation>
+                       <pattern>org.objectweb</pattern>
+                       <shadedPattern>${shadeBase}.org.objectweb</shadedPattern>
+                     </relocation>
+                     <relocation>
+                       <pattern>com.sun</pattern>
+                       <shadedPattern>${shadeBase}.com.sun</shadedPattern>
                      </relocation>
                    </relocations>
                    <filters>

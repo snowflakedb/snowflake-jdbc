@@ -1,3 +1,8 @@
+**JDBC Driver 3.6.15**
+|SNOW-56771| Shade more dependency to a new location to mitigate package conflict
+|SNOW-57051| Fixed CVE-2018-11761
+|SNOW-56836| Support nanoseconds precision for TIMESTAMP data in Loader API.
+
 **JDBC Driver 3.6.14**
 |SSNOW-55075| Introduced CLIENT_RESULT_COLUMN_CASE_INSENSITIVE to match column names case-insensitively in ResultSet
 
