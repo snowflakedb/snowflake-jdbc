@@ -1,7 +1,9 @@
+**JDBC Driver 3.6.13**
+|SNOW-54926| Added compressFileByPut, compressDataBeforePut, compressLevel to Loader API
+|SNOW-55138| Upgraded dependency to fix known Vulnerabilities.
+
 **JDBC Driver 3.6.12**
-|SNOW-26324| --version returns the Snowflake JDBC driver version
-
-
+|SNOW-26324| Added ``--version`` option to return the JDBC driver version and additional information.
 **JDBC Driver 3.6.11**
 |SNOW-53650| Internal change for pending feature.
 |SNOW-53452| Internal change for pending feature.
