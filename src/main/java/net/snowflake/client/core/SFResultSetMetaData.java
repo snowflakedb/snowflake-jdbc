@@ -298,7 +298,7 @@ public class SFResultSetMetaData
    */
   public int getColumnIndex(String columnName)
   {
-    boolean caseInsensitive = session != null && session.getRsColumnCaseInsensitive();
+    boolean caseInsensitive = session != null && session.isResultColumnCaseInsensitive();
     columnName = caseInsensitive ? columnName.toUpperCase() : columnName;
     Map<String, Integer> nameToIndexMap = caseInsensitive ?
                     columnNameUpperCasePositionMap : columnNamePositionMap;

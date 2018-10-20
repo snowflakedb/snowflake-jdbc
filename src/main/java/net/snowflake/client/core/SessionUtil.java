@@ -10,8 +10,8 @@ import com.fasterxml.jackson.databind.node.JsonNodeType;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Strings;
 import net.snowflake.client.jdbc.ErrorCode;
-import net.snowflake.client.jdbc.SnowflakeReauthenticationRequest;
 import net.snowflake.client.jdbc.SnowflakeDriver;
+import net.snowflake.client.jdbc.SnowflakeReauthenticationRequest;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.jdbc.SnowflakeType;
 import net.snowflake.client.jdbc.SnowflakeUtil;
@@ -100,6 +100,8 @@ public class SessionUtil
 
   public static final String CLIENT_STORE_TEMPORARY_CREDENTIAL = "CLIENT_STORE_TEMPORARY_CREDENTIAL";
   public static final String SERVICE_NAME = "SERVICE_NAME";
+  public static final String CLIENT_RESULT_COLUMN_CASE_INSENSITIVE = "CLIENT_RESULT_COLUMN_CASE_INSENSITIVE";
+  public static final String JDBC_RS_COLUMN_CASE_INSENSITIVE = "JDBC_RS_COLUMN_CASE_INSENSITIVE";
 
   static final
   SFLogger logger = SFLoggerFactory.getLogger(SessionUtil.class);
@@ -133,7 +135,8 @@ public class SessionUtil
       "JDBC_USE_JSON_PARSER",
       "AUTOCOMMIT",
       "JDBC_EFFICIENT_CHUNK_STORAGE",
-      "JDBC_RS_COLUMN_CASE_INSENSITIVE",
+      JDBC_RS_COLUMN_CASE_INSENSITIVE,
+      CLIENT_RESULT_COLUMN_CASE_INSENSITIVE,
       "CLIENT_METADATA_REQUEST_USE_CONNECTION_CTX",
       "JDBC_TREAT_DECIMAL_AS_INT",
       "JDBC_ENABLE_COMBINED_DESCRIBE"));
@@ -151,6 +154,7 @@ public class SessionUtil
       this.value = value;
     }
   }
+
   private static final String CACHE_DIR_PROP = "net.snowflake.jdbc.temporaryCredentialCacheDir";
   private static final String CACHE_DIR_ENV = "SF_TEMPORARY_CREDENTIAL_CACHE_DIR";
   public static final String CACHE_FILE_NAME = "temporary_credential.json";
@@ -170,7 +174,7 @@ public class SessionUtil
         .setCacheFileLockExpirationInSeconds(CACHE_FILE_LOCK_EXPIRATION_IN_SECONDS).build();
   }
 
-  private final static Map<String, Map<String,String>> ID_TOKEN_CACHE = new HashMap<>();
+  private final static Map<String, Map<String, String>> ID_TOKEN_CACHE = new HashMap<>();
   private final static Object ID_TOKEN_CACHE_LOCK = new Object();
 
   /**
@@ -458,6 +462,7 @@ public class SessionUtil
     {
       return masterToken;
     }
+
     public String getIdToken()
     {
       return idToken;
@@ -857,7 +862,7 @@ public class SessionUtil
       throws SFException, SnowflakeSQLException
   {
     String idToken;
-    synchronized(ID_TOKEN_CACHE_LOCK)
+    synchronized (ID_TOKEN_CACHE_LOCK)
     {
       JsonNode res = fileCacheManager.readCacheFile();
       readJsonStoreCache(res);
@@ -879,7 +884,7 @@ public class SessionUtil
     {
       return issueSession(loginInput);
     }
-    catch(SnowflakeReauthenticationRequest ex)
+    catch (SnowflakeReauthenticationRequest ex)
     {
       logger.debug("The token expired. errorCode. Reauthenticating...");
     }
@@ -893,7 +898,7 @@ public class SessionUtil
       logger.debug("Invalid cache file format.");
       return;
     }
-    for (Iterator<Map.Entry<String, JsonNode>> itr = m.fields(); itr.hasNext();)
+    for (Iterator<Map.Entry<String, JsonNode>> itr = m.fields(); itr.hasNext(); )
     {
       Map.Entry<String, JsonNode> accountMap = itr.next();
       String account = accountMap.getKey();
@@ -902,7 +907,7 @@ public class SessionUtil
         ID_TOKEN_CACHE.put(account, new HashMap<String, String>());
       }
       JsonNode userJsonNode = accountMap.getValue();
-      for (Iterator<Map.Entry<String, JsonNode>> itr0 = userJsonNode.fields(); itr0.hasNext();)
+      for (Iterator<Map.Entry<String, JsonNode>> itr0 = userJsonNode.fields(); itr0.hasNext(); )
       {
         Map.Entry<String, JsonNode> userMap = itr0.next();
         ID_TOKEN_CACHE.get(account).put(
@@ -930,12 +935,12 @@ public class SessionUtil
       currentUserMap.put(loginInput.getUserName().toUpperCase(), loginOutput.getIdToken());
 
       ObjectNode out = mapper.createObjectNode();
-      for (Map.Entry<String, Map<String, String>> elem: ID_TOKEN_CACHE.entrySet())
+      for (Map.Entry<String, Map<String, String>> elem : ID_TOKEN_CACHE.entrySet())
       {
         String account = elem.getKey();
         Map<String, String> userMap = elem.getValue();
         ObjectNode userNode = mapper.createObjectNode();
-        for (Map.Entry<String, String> elem0: userMap.entrySet())
+        for (Map.Entry<String, String> elem0 : userMap.entrySet())
         {
           userNode.put(elem0.getKey(), elem0.getValue());
         }
@@ -951,12 +956,12 @@ public class SessionUtil
     {
       return false;
     }
-    switch(value.getClass().getName())
+    switch (value.getClass().getName())
     {
       case "java.lang.Boolean":
-        return (Boolean)value;
+        return (Boolean) value;
       case "java.lang.String":
-        return Boolean.valueOf((String)value);
+        return Boolean.valueOf((String) value);
     }
     return false;
   }
@@ -1273,7 +1278,7 @@ public class SessionUtil
         throw new SnowflakeSQLException(
             SqlState.SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION,
             ErrorCode.CONNECTION_ERROR.getMessageCode(),
-              errorCode, jsonNode.path("message").asText());
+            errorCode, jsonNode.path("message").asText());
       }
 
       // session token is in the data field of the returned json response
@@ -1462,18 +1467,18 @@ public class SessionUtil
 
   /**
    * Renew a session.
-   *
+   * <p>
    * Use cases:
    * - Session and Master tokens are provided. No Id token:
-   *     - succeed in getting a new Session token.
-   *     - fail and raise SnowflakeReauthenticationRequest because Master
-   *       token expires. Since no id token exists, the exception is thrown
-   *       to the upstream.
+   * - succeed in getting a new Session token.
+   * - fail and raise SnowflakeReauthenticationRequest because Master
+   * token expires. Since no id token exists, the exception is thrown
+   * to the upstream.
    * - Session and Id tokens are provided. No Master token:
-   *     - fail and raise SnowflakeReauthenticationRequest and
-   *       issue a new Session token
-   *     - fail and raise SnowflakeReauthenticationRequest and fail
-   *       to issue a new Session token as the
+   * - fail and raise SnowflakeReauthenticationRequest and
+   * issue a new Session token
+   * - fail and raise SnowflakeReauthenticationRequest and fail
+   * to issue a new Session token as the
    *
    * @param loginInput login information
    * @return login output
@@ -2137,11 +2142,13 @@ public class SessionUtil
           session.setAutoCommit(autoCommit);
         }
       }
-      else if ("JDBC_RS_COLUMN_CASE_INSENSITIVE".equalsIgnoreCase(entry.getKey()))
+      else if (
+          JDBC_RS_COLUMN_CASE_INSENSITIVE.equalsIgnoreCase(entry.getKey()) ||
+              CLIENT_RESULT_COLUMN_CASE_INSENSITIVE.equalsIgnoreCase(entry.getKey()))
       {
-        if (session != null)
+        if (session != null && !session.isResultColumnCaseInsensitive())
         {
-          session.setRsColumnCaseInsensitive((boolean) entry.getValue());
+          session.setResultColumnCaseInsensitive((boolean) entry.getValue());
         }
       }
       else if ("CLIENT_METADATA_REQUEST_USE_CONNECTION_CTX".equalsIgnoreCase(entry.getKey()))

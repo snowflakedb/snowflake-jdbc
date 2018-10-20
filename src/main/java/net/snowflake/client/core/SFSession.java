@@ -144,7 +144,7 @@ public class SFSession
 
   private AtomicBoolean autoCommit = new AtomicBoolean(true);
 
-  private boolean rsColumnCaseInsensitive = false;
+  private boolean resultColumnCaseInsensitive = false;
 
   // database that current session is on
   private String database;
@@ -922,14 +922,14 @@ public class SFSession
     this.autoCommit.set(autoCommit);
   }
 
-  public void setRsColumnCaseInsensitive(boolean rsColumnCaseInsensitive)
+  public void setResultColumnCaseInsensitive(boolean resultColumnCaseInsensitive)
   {
-    this.rsColumnCaseInsensitive = rsColumnCaseInsensitive;
+    this.resultColumnCaseInsensitive = resultColumnCaseInsensitive;
   }
 
-  public boolean getRsColumnCaseInsensitive()
+  public boolean isResultColumnCaseInsensitive()
   {
-    return this.rsColumnCaseInsensitive;
+    return this.resultColumnCaseInsensitive;
   }
 
   public String getDatabase()

@@ -17,7 +17,6 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
 import java.util.List;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import net.snowflake.client.log.SFLogger;
@@ -94,7 +93,7 @@ public class SnowflakeResultSetMetaData implements ResultSetMetaData
    */
   public int getColumnIndex(String columnName)
   {
-    boolean caseInsensitive = session != null && session.getRsColumnCaseInsensitive();
+    boolean caseInsensitive = session != null && session.isResultColumnCaseInsensitive();
     columnName = caseInsensitive ? columnName.toUpperCase() : columnName;
     Map<String, Integer> nameToIndexMap = caseInsensitive ?
         columnNameUpperCasePositionMap : columnNamePositionMap;
