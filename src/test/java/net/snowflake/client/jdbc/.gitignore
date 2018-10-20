@@ -9,6 +9,7 @@ PutUnescapeBackslashIT.java
 RestRequestIT.java
 ResultSetIT.java
 SSOConnectionTest.java
+ServiceNameTest.java
 SessionVariablesIT.java
 SnowflakeConnectionV1Test.java
 SnowflakeDriverConnectionStressTest.java
