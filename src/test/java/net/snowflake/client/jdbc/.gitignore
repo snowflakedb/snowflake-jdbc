@@ -12,6 +12,5 @@ ServiceNameTest.java
 SessionVariablesIT.java
 SnowflakeDriverConnectionStressTest.java
 SnowflakeDriverIT.java
-SnowflakeFileUploaderTest.java
 VersionIT.java
 telemetry
