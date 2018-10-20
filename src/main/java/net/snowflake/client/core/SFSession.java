@@ -190,6 +190,9 @@ public class SFSession
   // store the temporary credential
   private boolean storeTemporaryCredential = false;
 
+  // service name for multi clustering support
+  private String serviceName;
+
   public void addProperty(SFSessionProperty sfSessionProperty,
                           Object propertyValue)
       throws SFException
@@ -388,7 +391,8 @@ public class SFSession
         .setPrivateKey((PrivateKey) connectionPropertiesMap.get(
             SFSessionProperty.PRIVATE_KEY))
         .setApplication((String) connectionPropertiesMap.get(
-            SFSessionProperty.APPLICATION));
+            SFSessionProperty.APPLICATION))
+        .setServiceName(this.getServiceName());
 
     SessionUtil.LoginOutput loginOutput = SessionUtil.openSession(loginInput);
     isClosed = false;
@@ -1107,6 +1111,24 @@ public class SFSession
   public void setStoreTemporaryCredential(boolean storeTemporaryCredential)
   {
     this.storeTemporaryCredential = storeTemporaryCredential;
+  }
+
+  /**
+   * Sets the service name provided from GS.
+   * @param serviceName service name
+   */
+  public void setServiceName(String serviceName)
+  {
+    this.serviceName = serviceName;
+  }
+
+  /**
+   * Gets the service name provided from GS.
+   * @return the service name
+   */
+  public String getServiceName()
+  {
+    return serviceName;
   }
 
   /**

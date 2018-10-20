@@ -228,7 +228,7 @@ public class SFStatement
     }
 
     Object result = executeHelper(sql,
-        "application/snowflake",
+        StmtUtil.SF_MEDIA_TYPE,
         parameterBindings,
         describeOnly,
         internal);
@@ -432,7 +432,8 @@ public class SFStatement
           .setRetry(false)
           .setDescribedJobId(describeJobUUID)
           .setCombineDescribe(session.getEnableCombineDescribe())
-          .setQuerySubmissionTime(System.currentTimeMillis());
+          .setQuerySubmissionTime(System.currentTimeMillis())
+          .setServiceName(session.getServiceName());
 
       if (bindStagePath != null)
       {
@@ -596,7 +597,8 @@ public class SFStatement
         .setSql(sql)
         .setMediaType(mediaType)
         .setRequestId(requestId)
-        .setSessionToken(session.getSessionToken());
+        .setSessionToken(session.getSessionToken())
+        .setServiceName(session.getServiceName());
 
     StmtUtil.cancel(stmtInput);
 
@@ -763,7 +765,7 @@ public class SFStatement
       }
 
       // cancel the query on the server side if it has been issued
-      cancelHelper(this.sqlText, "application/snowflake");
+      cancelHelper(this.sqlText, StmtUtil.SF_MEDIA_TYPE);
     }
   }
 

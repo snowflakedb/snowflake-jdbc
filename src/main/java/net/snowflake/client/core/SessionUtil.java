@@ -90,6 +90,8 @@ public class SessionUtil
 
   public static final String SF_HEADER_TOKEN_TAG = "Token";
 
+  static final String SF_HEADER_SERVICE_NAME = "X-Snowflake-Service";
+
   private static int DEFAULT_HTTP_CLIENT_CONNECTION_TIMEOUT = 60000; // millisec
 
   private static int DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT = 300000; // millisec
@@ -97,6 +99,8 @@ public class SessionUtil
   private static int DEFAULT_HEALTH_CHECK_INTERVAL = 45; // sec
 
   public static final String CLIENT_STORE_TEMPORARY_CREDENTIAL = "CLIENT_STORE_TEMPORARY_CREDENTIAL";
+  public static final String SERVICE_NAME = "SERVICE_NAME";
+
   static final
   SFLogger logger = SFLoggerFactory.getLogger(SessionUtil.class);
 
@@ -109,7 +113,8 @@ public class SessionUtil
       "DATE_OUTPUT_FORMAT",
       "TIME_OUTPUT_FORMAT",
       "BINARY_OUTPUT_FORMAT",
-      "CLIENT_TIMESTAMP_TYPE_MAPPING"));
+      "CLIENT_TIMESTAMP_TYPE_MAPPING",
+      SERVICE_NAME));
 
   private static Set<String> INT_PARAMS = new HashSet<>(Arrays.asList(
       "CLIENT_RESULT_PREFETCH_SLOTS",
@@ -198,6 +203,7 @@ public class SessionUtil
     private String application;
     private String idToken;
     private String idTokenPassword;
+    private String serviceName;
 
     public LoginInput()
     {
@@ -347,6 +353,12 @@ public class SessionUtil
       return this;
     }
 
+    public LoginInput setServiceName(String serviceName)
+    {
+      this.serviceName = serviceName;
+      return this;
+    }
+
     public String getServerUrl()
     {
       return serverUrl;
@@ -470,6 +482,12 @@ public class SessionUtil
     {
       return application;
     }
+
+    public String getServiceName()
+    {
+      return serviceName;
+    }
+
   }
 
   /**
@@ -1232,6 +1250,8 @@ public class SessionUtil
       postRequest.setHeader(SF_HEADER_AUTHORIZATION,
           SF_HEADER_BASIC_AUTHTYPE);
 
+      setServiceNameHeader(loginInput, postRequest);
+
       String theString = HttpUtil.executeRequest(postRequest,
           loginInput.getLoginTimeout(),
           0, null);
@@ -1407,6 +1427,16 @@ public class SessionUtil
     return ret;
   }
 
+  private static void setServiceNameHeader(LoginInput loginInput, HttpPost postRequest)
+  {
+    if (!Strings.isNullOrEmpty(loginInput.getServiceName()))
+    {
+      // service name is used to route a request to appropriate cluster.
+      postRequest.setHeader(SF_HEADER_SERVICE_NAME,
+          loginInput.getServiceName());
+    }
+  }
+
   static private String nullStringAsEmptyString(String value)
   {
     if (Strings.isNullOrEmpty(value) || "null".equals(value))
@@ -1554,6 +1584,8 @@ public class SessionUtil
           SF_HEADER_SNOWFLAKE_AUTHTYPE + " " +
               SF_HEADER_TOKEN_TAG + "=\"" + headerToken + "\"");
 
+      setServiceNameHeader(loginInput, postRequest);
+
       logger.debug(
           "request type: {}, old session token: {}, " +
               "master token: {}, id token: {}",
@@ -1651,6 +1683,8 @@ public class SessionUtil
           SF_HEADER_SNOWFLAKE_AUTHTYPE + " "
               + SF_HEADER_TOKEN_TAG + "=\""
               + loginInput.getSessionToken() + "\"");
+
+      setServiceNameHeader(loginInput, postRequest);
 
       String theString = HttpUtil.executeRequest(postRequest,
           loginInput.getLoginTimeout(),
@@ -2153,6 +2187,13 @@ public class SessionUtil
         if (session != null)
         {
           session.setStoreTemporaryCredential((boolean) entry.getValue());
+        }
+      }
+      else if (SERVICE_NAME.equalsIgnoreCase(entry.getKey()))
+      {
+        if (session != null)
+        {
+          session.setServiceName((String) entry.getValue());
         }
       }
     }

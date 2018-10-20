@@ -283,12 +283,18 @@ public class RestRequest
         {
           try
           {
-            long backoffTime = backoffInMilli - elapsedMilliForLastCall;
+            final long backoffOrigin = 1000L;
+            long backoffBound = (backoffInMilli - elapsedMilliForLastCall)*3;
+
+            // guarantee bound is greater than origin
+            long newOrigin = Math.min(backoffOrigin, backoffBound);
+            long newBound = Math.max(backoffOrigin, backoffBound);
+
             // use decorrelated jitter in retry time
             // see https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/
             backoffInMilli = Math.min(
                 maxBackoffInMilli,
-                ThreadLocalRandom.current().nextLong(1000, 3*backoffTime)
+                ThreadLocalRandom.current().nextLong(newOrigin, newBound)
             );
             Thread.sleep(backoffInMilli);
             elapsedMilliForTransientIssues += backoffInMilli;
