@@ -13,9 +13,14 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.TimeZone;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -29,18 +34,18 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 public class StreamLoader implements Loader, Runnable
 {
   private static final SFLogger LOGGER = SFLoggerFactory.getLogger(
-          StreamLoader.class);
+      StreamLoader.class);
 
-  final static String SYSTEM_PARAMETER_PREFIX = "net.snowflake.client.loader.";
+  private final static String SYSTEM_PARAMETER_PREFIX = "net.snowflake.client.loader.";
 
   final static String FILE_PREFIX = "stream_";
 
   final static String FILE_SUFFIX = ".gz";
-  
+
   /**
    * Default batch row size
    */
-  final static long DEFAULT_BATCH_ROW_SIZE = -1L;
+  private final static long DEFAULT_BATCH_ROW_SIZE = -1L;
 
   public static DatabaseMetaData metadata;
 
@@ -57,11 +62,11 @@ public class StreamLoader implements Loader, Runnable
   // force not to commit or rollback in case where loader.finish is called
   // in multiple times in a single job.
   private boolean _is_last_finish_call = true;
-    
+
   private boolean _oneBatch = false;
 
   private boolean _truncate = false;
-  
+
   private String _before = null;
 
   private String _after = null;
@@ -89,7 +94,7 @@ public class StreamLoader implements Loader, Runnable
   private List<String> _columns;
 
   private List<String> _keys;
-  
+
   private long _batchRowSize = DEFAULT_BATCH_ROW_SIZE;
 
   private long _csvFileBucketSize = BufferStage.FILE_BUCKET_SIZE;
@@ -127,10 +132,30 @@ public class StreamLoader implements Loader, Runnable
   // Track fatal errors
   private AtomicBoolean _active = new AtomicBoolean(false);
   private AtomicBoolean _aborted = new AtomicBoolean(false);
-  private RuntimeException _abortCause =  new ConnectionError(
-          "Unknown exception");
+  private RuntimeException _abortCause = new ConnectionError(
+      "Unknown exception");
 
   private AtomicInteger _throttleCounter = new AtomicInteger(0);
+
+  private final GregorianCalendar _calendarUTC = new GregorianCalendar(
+      TimeZone.getTimeZone("UTC"));
+
+  private GregorianCalendar _calendarLocal;
+
+  /**
+   * Resets calendar when start the job.
+   */
+  private void resetCalendar()
+  {
+    _calendarUTC.clear();
+    _calendarLocal = new GregorianCalendar(TimeZone.getDefault());
+    _calendarLocal.clear();
+  }
+
+  private DateFormat _dateFormat;
+  private DateFormat _timeFormat;
+  private DateFormat _timestampFormat;
+  private DateFormat _timestampTzFormat;
 
   public StreamLoader(Map<LoaderProperty, Object> properties,
                       Connection putConnection,
@@ -138,7 +163,7 @@ public class StreamLoader implements Loader, Runnable
   {
     _putConn = putConnection;
     _processConn = processConnection;
-    for(Map.Entry e: properties.entrySet())
+    for (Map.Entry e : properties.entrySet())
     {
       setProperty((LoaderProperty) e.getKey(), e.getValue());
     }
@@ -188,7 +213,7 @@ public class StreamLoader implements Loader, Runnable
         _after = String.valueOf(value);
         break;
       case isFirstStartCall:
-         _is_first_start_call = Boolean.valueOf(String.valueOf(value));
+        _is_first_start_call = Boolean.valueOf(String.valueOf(value));
         break;
       case isLastFinishCall:
         _is_last_finish_call = Boolean.valueOf(String.valueOf(value));
@@ -252,11 +277,11 @@ public class StreamLoader implements Loader, Runnable
     }
     else if (value instanceof Long)
     {
-      ret = (Long)value;
+      ret = (Long) value;
     }
     else if (value instanceof Integer)
     {
-      ret = Long.valueOf((Integer)value);
+      ret = Long.valueOf((Integer) value);
     }
     else
     {
@@ -276,7 +301,7 @@ public class StreamLoader implements Loader, Runnable
     final String COMPRESS_LEVEL = SYSTEM_PARAMETER_PREFIX + "compressLevel";
 
     Properties props = System.getProperties();
-    for (String propKey: props.stringPropertyNames())
+    for (String propKey : props.stringPropertyNames())
     {
       String value = props.getProperty(propKey);
       if (BATCH_ROW_SIZE_KEY.equals(propKey))
@@ -306,6 +331,30 @@ public class StreamLoader implements Loader, Runnable
     }
   }
 
+  private void initDateFormats()
+  {
+    resetCalendar();
+
+    _dateFormat = new SimpleDateFormat(SnowflakeType.DATE_OR_TIME_FORMAT_PATTERN);
+    if (_mapTimeToTimestamp)
+    {
+      // same format for TIME to TIMESTAMP
+      _timeFormat = _dateFormat;
+    }
+    else
+    {
+      _timeFormat = new SimpleDateFormat(SnowflakeType.TIME_FORMAT_PATTERN);
+    }
+    _timestampFormat = new SimpleDateFormat(SnowflakeType.TIMESTAMP_FORMAT_PATTERN);
+    _timestampTzFormat = new SimpleDateFormat(SnowflakeType.TIMESTAMP_FORMAT_TZ_PATTERN);
+
+    Calendar cal = !_useLocalTimezone ? _calendarUTC : _calendarLocal;
+    _dateFormat.setCalendar(cal);
+    _timeFormat.setCalendar(cal);
+    _timestampFormat.setCalendar(cal);
+    _timestampTzFormat.setCalendar(cal);
+  }
+
   /**
    * Starts the loader
    */
@@ -316,62 +365,79 @@ public class StreamLoader implements Loader, Runnable
     // validate parameters
     validateParameters();
 
-    if (_op == null) {
+    if (_op == null)
+    {
       this.abort(new ConnectionError("Loader started with no operation"));
       return;
     }
-    
+
+    initDateFormats();
+
     initQueues();
 
-    if (_is_first_start_call) {
+    if (_is_first_start_call)
+    {
       // is this the first start call?
 
-      try {
-        if (_startTransaction) {
+      try
+      {
+        if (_startTransaction)
+        {
           LOGGER.info("Begin Transaction");
           _processConn.createStatement().execute("begin transaction");
-        } else {
+        }
+        else
+        {
           LOGGER.info("No Transaction started");
         }
-      } catch (SQLException ex) {
+      }
+      catch (SQLException ex)
+      {
         abort(new Loader.ConnectionError("Failed to start Transaction",
-                Utils.getCause(ex)));
+            Utils.getCause(ex)));
       }
 
-      if (_truncate) {
+      if (_truncate)
+      {
         truncateTargetTable();
       }
 
-      try {
-        if(_before != null) {
+      try
+      {
+        if (_before != null)
+        {
           LOGGER.info("Running Execute Before SQL");
           _processConn.createStatement().execute(_before);
         }
       }
-      catch (SQLException ex) {
+      catch (SQLException ex)
+      {
         abort(new Loader.ConnectionError(
-                String.format("Execute Before SQL failed to run: %s", _before),
-                Utils.getCause(ex)));
+            String.format("Execute Before SQL failed to run: %s", _before),
+            Utils.getCause(ex)));
       }
     }
   }
 
-  private void validateParameters() {
+  private void validateParameters()
+  {
     LOGGER.debug("Validate Parameters");
-    if(Operation.INSERT != this._op) {
-      if(this._keys == null || this._keys.isEmpty()) {
+    if (Operation.INSERT != this._op)
+    {
+      if (this._keys == null || this._keys.isEmpty())
+      {
         throw new ConnectionError("Updating operations require keys");
       }
     }
     setPropertyBySystemProperty();
     LOGGER.info("Database Name: {}, Schema Name: {}, Table Name: {}, " +
-        "Remote Stage: {}, Columns: {}, Keys: {}, Operation: {}, " +
-        "Start Transaction: {}, OneBatch: {}, Truncate Table: {}, " +
-        "Execute Before: {}, Execute After: {}, Batch Row Size: {}, " +
-        "CSV File Bucket Size: {}, CSV File Size: {}, Preserve Stage File: {}, " +
-        "Use Local TimeZone: {}, Copy Empty Field As Empty: {}, " +
-        "MapTimeToTimestamp: {}, Compress Data before PUT: {}, " +
-        "Compress File By Put: {}, Compress Level: {}, OnError: {}",
+            "Remote Stage: {}, Columns: {}, Keys: {}, Operation: {}, " +
+            "Start Transaction: {}, OneBatch: {}, Truncate Table: {}, " +
+            "Execute Before: {}, Execute After: {}, Batch Row Size: {}, " +
+            "CSV File Bucket Size: {}, CSV File Size: {}, Preserve Stage File: {}, " +
+            "Use Local TimeZone: {}, Copy Empty Field As Empty: {}, " +
+            "MapTimeToTimestamp: {}, Compress Data before PUT: {}, " +
+            "Compress File By Put: {}, Compress Level: {}, OnError: {}",
         _database, _schema, _table, _remoteStage, _columns, _keys, _op,
         _startTransaction, _oneBatch, _truncate, _before, _after,
         _batchRowSize, _csvFileBucketSize, _csvFileSize, _preserveStageFile,
@@ -384,17 +450,21 @@ public class StreamLoader implements Loader, Runnable
   {
     return _noise;
   }
-  
-  public void abort(RuntimeException t) {
-    synchronized(this) {
+
+  public void abort(RuntimeException t)
+  {
+    synchronized (this)
+    {
       // Abort once, keep first error.
       LOGGER.warn("Exception received. Aborting...", t);
 
-      if (_aborted.getAndSet(true)) {
+      if (_aborted.getAndSet(true))
+      {
         return;
       }
 
-      if (t != null) {
+      if (t != null)
+      {
         _abortCause = t;
       }
 
@@ -403,94 +473,121 @@ public class StreamLoader implements Loader, Runnable
     }
   }
 
-  boolean isAborted() {
-    synchronized(this) {
+  boolean isAborted()
+  {
+    synchronized (this)
+    {
       // don't synchronize unless the caller does
       return _aborted.get();
     }
   }
 
   @Override
-  public void rollback() {
+  public void rollback()
+  {
     LOGGER.debug("Rollback");
-    try {
+    try
+    {
       terminate();
 
       LOGGER.warn("Rollback");
       this._processConn.createStatement().execute("rollback");
     }
-    catch (SQLException ex) {
+    catch (SQLException ex)
+    {
       LOGGER.error(ex.getMessage(), ex);
     }
   }
 
   @Override
-  public void submitRow(final Object[] row) {
-    try {
-      if (_aborted.get()) {
-        if (_listener.throwOnError()) {
+  public void submitRow(final Object[] row)
+  {
+    try
+    {
+      if (_aborted.get())
+      {
+        if (_listener.throwOnError())
+        {
           throw _abortCause;
         }
         return;
       }
-    } catch (Exception ex) {
+    }
+    catch (Exception ex)
+    {
       abort(new Loader.ConnectionError(
-              "Throwing Error", Utils.getCause(ex)));
+          "Throwing Error", Utils.getCause(ex)));
     }
 
     byte[] data = null;
-    try {
-      if (!_active.get()) {
+    try
+    {
+      if (!_active.get())
+      {
         LOGGER.warn("Inactive loader. Row ignored");
         return;
       }
 
       data = createCSVRecord(row);
 
-    } catch (Exception ex) {
+    }
+    catch (Exception ex)
+    {
       abort(new Loader.ConnectionError(
-              "Creating data set for CSV", Utils.getCause(ex)));
+          "Creating data set for CSV", Utils.getCause(ex)));
     }
 
-    try {
+    try
+    {
       writeBytes(data);
       _listener.addSubmittedRowCount(1);
 
-      if (_listener.needSuccessRecords()) {
+      if (_listener.needSuccessRecords())
+      {
         _listener.recordProvided(_op, row);
       }
-    } catch (Exception ex) {
+    }
+    catch (Exception ex)
+    {
       abort(new Loader.ConnectionError(
-              "Writing Bytes to CSV files", Utils.getCause(ex)));
+          "Writing Bytes to CSV files", Utils.getCause(ex)));
     }
 
     if (_batchRowSize > 0 && _listener.getSubmittedRowCount() > 0 &&
-        (_listener.getSubmittedRowCount() % _batchRowSize) == 0) {
+        (_listener.getSubmittedRowCount() % _batchRowSize) == 0)
+    {
       LOGGER.debug("Flushing Queue: Submitted Row Count: {}, Batch Row Size: {}",
           _listener.getSubmittedRowCount(), _batchRowSize);
       // flush data loading
-      try {
+      try
+      {
         flushQueues();
-      } catch (Exception ex) {
-        abort(new Loader.ConnectionError(
-                "Flush Queues", Utils.getCause(ex)));
       }
-      try {
-        initQueues();
-      } catch (Exception ex) {
+      catch (Exception ex)
+      {
         abort(new Loader.ConnectionError(
-                "Init Queues", Utils.getCause(ex)));
+            "Flush Queues", Utils.getCause(ex)));
+      }
+      try
+      {
+        initQueues();
+      }
+      catch (Exception ex)
+      {
+        abort(new Loader.ConnectionError(
+            "Init Queues", Utils.getCause(ex)));
       }
     }
   }
 
   /**
    * Initializes queues
-   * 
    */
-  private void initQueues() {
+  private void initQueues()
+  {
     LOGGER.debug("Init Queues");
-    if (_active.getAndSet(true)) {
+    if (_active.getAndSet(true))
+    {
       // NOP if the loader is already active
       return;
     }
@@ -511,9 +608,10 @@ public class StreamLoader implements Loader, Runnable
   }
 
   /**
-   * Flushes data by joining PUT and PROCESS queues 
+   * Flushes data by joining PUT and PROCESS queues
    */
-  private void flushQueues() {
+  private void flushQueues()
+  {
     // Terminate data loading thread.
     LOGGER.debug("Flush Queues");
     try
@@ -549,7 +647,7 @@ public class StreamLoader implements Loader, Runnable
       throw _abortCause;
     }
   }
-  
+
   private void writeBytes(final byte[] data) throws IOException, InterruptedException
   {
     // this loader was aborted
@@ -570,12 +668,16 @@ public class StreamLoader implements Loader, Runnable
   }
 
 
-  private void truncateTargetTable() {
-    try {
+  private void truncateTargetTable()
+  {
+    try
+    {
       // TODO: could be replaced with TRUNCATE?
       _processConn.createStatement().execute(
-              "DELETE FROM " + this.getFullTableName());
-    } catch (SQLException ex) {
+          "DELETE FROM " + this.getFullTableName());
+    }
+    catch (SQLException ex)
+    {
       LOGGER.error(ex.getMessage(), ex);
       abort(new Loader.ConnectionError(Utils.getCause(ex)));
     }
@@ -584,17 +686,22 @@ public class StreamLoader implements Loader, Runnable
   @Override
   public void run()
   {
-    try {
-      while (true) {
+    try
+    {
+      while (true)
+      {
         byte[] data = this._queueData.take();
 
-        if (data.length == 0) {
+        if (data.length == 0)
+        {
           break;
         }
 
         this.writeBytes(data);
       }
-    } catch (Exception ex) {
+    }
+    catch (Exception ex)
+    {
       LOGGER.error(ex.getMessage(), ex);
       abort(new Loader.ConnectionError(Utils.getCause(ex)));
     }
@@ -606,17 +713,21 @@ public class StreamLoader implements Loader, Runnable
 
     for (int i = 0; i < data.length; ++i)
     {
-      if(i > 0) sb.append(',');
+      if (i > 0) sb.append(',');
       sb.append(SnowflakeType.escapeForCSV(
-              SnowflakeType.lexicalValue(data[i],
-                  _useLocalTimezone, _mapTimeToTimestamp)));
+          SnowflakeType.lexicalValue(
+              data[i],
+              _dateFormat,
+              _timeFormat,
+              _timestampFormat,
+              _timestampTzFormat)));
     }
     return sb.toString().getBytes(UTF_8);
   }
 
   /**
    * Finishes loader
-   * 
+   *
    * @throws Exception an exception raised in finishing loader.
    */
   @Override
@@ -625,10 +736,11 @@ public class StreamLoader implements Loader, Runnable
     LOGGER.debug("Finish Loading");
     flushQueues();
 
-    if (_is_last_finish_call) {
+    if (_is_last_finish_call)
+    {
       try
       {
-        if(_after != null)
+        if (_after != null)
         {
           LOGGER.info("Running Execute After SQL");
           _processConn.createStatement().execute(_after);
@@ -637,14 +749,18 @@ public class StreamLoader implements Loader, Runnable
         _processConn.createStatement().execute("commit");
         LOGGER.info("Committed");
       }
-      catch (SQLException ex) {
-        try {
+      catch (SQLException ex)
+      {
+        try
+        {
           _processConn.createStatement().execute("rollback");
-        } catch(SQLException ex0) {
+        }
+        catch (SQLException ex0)
+        {
           LOGGER.warn("Failed to rollback");
         }
         LOGGER.warn(String.format("Execute After SQL failed to run: %s", _after),
-                ex);
+            ex);
         throw new Loader.ConnectionError(Utils.getCause(ex));
       }
     }
@@ -678,16 +794,19 @@ public class StreamLoader implements Loader, Runnable
 
     if (!active) return;  // No-op
 
-    if (_stage == null) {
+    if (_stage == null)
+    {
       _stage = new BufferStage(this, Operation.INSERT, _csvFileBucketSize, _csvFileSize);
     }
 
     _stage.setTerminate(true);
 
-    try {
+    try
+    {
       queuePut(_stage);
     }
-    catch (InterruptedException ex) {
+    catch (InterruptedException ex)
+    {
       LOGGER.error("Unknown Error", ex);
     }
 
@@ -765,9 +884,9 @@ public class StreamLoader implements Loader, Runnable
   {
     // comma separate list of column names
     StringBuilder sb = new StringBuilder("\"");
-    for(int i = 0; i < _columns.size(); i++)
+    for (int i = 0; i < _columns.size(); i++)
     {
-      if(i > 0) sb.append("\",\"");
+      if (i > 0) sb.append("\",\"");
       sb.append(_columns.get(i));
     }
     sb.append("\"");
@@ -777,8 +896,8 @@ public class StreamLoader implements Loader, Runnable
   String getFullTableName()
   {
     return (_database == null ? "" : ("\"" + _database + "\"."))
-           + (_schema == null ? "" : ("\"" + _schema + "\"."))
-           + "\"" + _table + "\"";
+        + (_schema == null ? "" : ("\"" + _schema + "\"."))
+        + "\"" + _table + "\"";
   }
 
   public LoadResultListener getListener()
@@ -815,14 +934,15 @@ public class StreamLoader implements Loader, Runnable
 
   void throttleUp()
   {
-    int open =  this._throttleCounter.incrementAndGet();
+    int open = this._throttleCounter.incrementAndGet();
     LOGGER.info("PUT Throttle Up: {}", open);
-    if(open > 8) {
+    if (open > 8)
+    {
       LOGGER.info("Will retry scheduling file for upload after {} seconds",
-                        (Math.pow(2, open - 7)));
+          (Math.pow(2, open - 7)));
       try
       {
-        Thread.sleep(1000 * ((int)Math.pow(2, open - 7)));
+        Thread.sleep(1000 * ((int) Math.pow(2, open - 7)));
       }
       catch (InterruptedException ex)
       {
@@ -850,17 +970,17 @@ public class StreamLoader implements Loader, Runnable
     final private AtomicInteger errorCount = new AtomicInteger(0);
     final private AtomicInteger errorRecordCount = new AtomicInteger(0);
     final private AtomicInteger submittedRowCount = new AtomicInteger(0);
-    
+
     @Override
     public boolean needErrors()
     {
-        return false;
+      return false;
     }
 
     @Override
     public boolean needSuccessRecords()
     {
-        return false;
+      return false;
     }
 
     @Override
@@ -893,50 +1013,54 @@ public class StreamLoader implements Loader, Runnable
     @Override
     public int getErrorCount()
     {
-        return errorCount.get();
+      return errorCount.get();
     }
 
     @Override
     public int getErrorRecordCount()
     {
-        return errorRecordCount.get();
+      return errorRecordCount.get();
     }
 
     @Override
     public void resetErrorCount()
     {
-        errorCount.set(0);
+      errorCount.set(0);
     }
 
     @Override
     public void resetErrorRecordCount()
     {
-        errorRecordCount.set(0);
+      errorRecordCount.set(0);
     }
 
     @Override
     public void addErrorCount(int count)
     {
-        errorCount.addAndGet(count);
+      errorCount.addAndGet(count);
     }
 
     @Override
-    public void addErrorRecordCount(int count) {
-        errorRecordCount.addAndGet(count);
+    public void addErrorRecordCount(int count)
+    {
+      errorRecordCount.addAndGet(count);
     }
 
     @Override
-    public void resetSubmittedRowCount() {
+    public void resetSubmittedRowCount()
+    {
       submittedRowCount.set(0);
     }
-    
+
     @Override
-    public void addSubmittedRowCount(int count) {
+    public void addSubmittedRowCount(int count)
+    {
       submittedRowCount.addAndGet(count);
     }
-    
+
     @Override
-    public int getSubmittedRowCount() {
+    public int getSubmittedRowCount()
+    {
       return submittedRowCount.get();
     }
 
