@@ -786,11 +786,12 @@ public class SnowflakeChunkDownloader
         HttpResponse response =
             RestRequest.execute(httpClient,
                                 httpRequest,
-                                networkTimeoutInMilli / 1000,
-                                0,
-                                null,
-                                false,
-                                false);
+                                networkTimeoutInMilli / 1000, // retry timeout
+                                0, // no socketime injection
+                                null, // no canceling
+                                false, // no cookie
+                                false, // no retry
+                                false); // no request_guid
 
         logger.debug("Call returned for URL: {}",
                                chunkUrl);
