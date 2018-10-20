@@ -1,6 +1,5 @@
 BindUploaderIT.java
 ConnectionManual.java
-ConnectionPoolingIT.java
 DatabaseMetaDataIT.java
 HeartbeatIT.java
 OpenGroupCLIFuncIT.java
