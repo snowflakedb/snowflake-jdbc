@@ -4,7 +4,6 @@ DatabaseMetaDataIT.java
 HeartbeatIT.java
 OpenGroupCLIFuncIT.java
 PreparedStatementIT.java
-PutUnescapeBackslashIT.java
 ResultSetIT.java
 SSOConnectionTest.java
 ServiceNameTest.java
@@ -12,4 +11,3 @@ SessionVariablesIT.java
 SnowflakeDriverConnectionStressTest.java
 SnowflakeDriverIT.java
 VersionIT.java
-telemetry
