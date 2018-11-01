@@ -85,48 +85,63 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
   private int batchSize = 0;
 
   /** Error code returned when describing a statement that is binding table name*/
-  private final Integer ERROR_CODE_TABLE_BIND_VARIABLE_NOT_SET = 2128;
+  private static final Integer ERROR_CODE_TABLE_BIND_VARIABLE_NOT_SET = 2128;
 
   /** Error code when preparing statement with binding object names */
-  private final Integer ERROR_CODE_OBJECT_BIND_NOT_SET = 2129;
+  private static final Integer ERROR_CODE_OBJECT_BIND_NOT_SET = 2129;
 
   /** Error code returned when describing a ddl command */
-  private final Integer ERROR_CODE_STATEMENT_CANNOT_BE_PREPARED = 7;
+  private static final Integer ERROR_CODE_STATEMENT_CANNOT_BE_PREPARED = 7;
 
   /**
    * A hash set that contains the error code that will not lead to exception
    * in describe mode
    */
-  private final Set<Integer> errorCodesIgnoredInDescribeMode
-      = new HashSet<>(Arrays.asList(new Integer[]
-      {ERROR_CODE_TABLE_BIND_VARIABLE_NOT_SET,
+  private static final Set<Integer> errorCodesIgnoredInDescribeMode
+      = new HashSet<>(Arrays.asList(
+       ERROR_CODE_TABLE_BIND_VARIABLE_NOT_SET,
        ERROR_CODE_STATEMENT_CANNOT_BE_PREPARED,
-       ERROR_CODE_OBJECT_BIND_NOT_SET}));
+       ERROR_CODE_OBJECT_BIND_NOT_SET));
 
+  /**
+   * Construct SnowflakePreparedStatementV1
+   * @param connection connection object
+   * @param sql sql
+   * @param skipParsing true if the applications want to skip parsing
+   *                   to get metadata. false by default.
+   * @throws SQLException
+   */
   SnowflakePreparedStatementV1(SnowflakeConnectionV1 connection,
-                               String sql) throws SQLException
+                               String sql, boolean skipParsing) throws SQLException
   {
     super(connection);
     this.sql = sql;
 
-    try
+    if (!skipParsing)
     {
-      this.statementMetaData = sfStatement.describe(sql);
-    }
-    catch(SFException e)
-    {
-      throw new SnowflakeSQLException(e);
-    }
-    catch(SnowflakeSQLException e)
-    {
-      if (!errorCodesIgnoredInDescribeMode.contains(e.getErrorCode()))
+      try
       {
-        throw e;
+        this.statementMetaData = sfStatement.describe(sql);
       }
-      else
+      catch(SFException e)
       {
-        statementMetaData = SFStatementMetaData.emptyMetaData();
+        throw new SnowflakeSQLException(e);
       }
+      catch(SnowflakeSQLException e)
+      {
+        if (!errorCodesIgnoredInDescribeMode.contains(e.getErrorCode()))
+        {
+          throw e;
+        }
+        else
+        {
+          statementMetaData = SFStatementMetaData.emptyMetaData();
+        }
+      }
+    }
+    else
+    {
+      statementMetaData = SFStatementMetaData.emptyMetaData();
     }
   }
 

@@ -618,7 +618,7 @@ public class SnowflakeConnectionV1 implements Connection
         " public PreparedStatement prepareStatement(String sql) "
             + "throws SQLException");
 
-    return new SnowflakePreparedStatementV1(this, sql);
+    return prepareStatement(sql, false);
   }
 
   @Override
@@ -691,6 +691,15 @@ public class SnowflakeConnectionV1 implements Connection
       throw new SQLFeatureNotSupportedException();
     }
     return prepareStatement(sql, resultSetType, resultSetConcurrency);
+  }
+
+  public PreparedStatement prepareStatement(String sql, boolean skipParsing)
+      throws SQLException
+  {
+    logger.debug(
+        " public PreparedStatement prepareStatement(String sql, "
+            + "boolean skipParsing)");
+    return new SnowflakePreparedStatementV1(this, sql, skipParsing);
   }
 
   @Override
