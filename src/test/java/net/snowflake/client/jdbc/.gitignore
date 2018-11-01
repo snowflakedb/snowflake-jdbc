@@ -1,4 +1,5 @@
 BindUploaderIT.java
+ClientMemoryLimitParallelIT.java
 ConnectionManual.java
 DatabaseMetaDataIT.java
 HeartbeatIT.java
