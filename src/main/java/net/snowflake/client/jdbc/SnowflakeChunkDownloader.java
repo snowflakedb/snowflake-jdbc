@@ -39,6 +39,7 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
@@ -114,6 +115,14 @@ public class SnowflakeChunkDownloader
   // the current memory usage across JVM
   private static Long currentMemoryUsage = 0L;
 
+  // The parameters used to wait for available memory:
+  // starting waiting time will be BASE_WAITING_MS * WAITING_SECS_MULTIPLIER = 100 ms
+  private long BASE_WAITING_MS = 50;
+  private long WAITING_SECS_MULTIPLIER = 2;
+  // the maximum waiting time
+  private long MAX_WAITING_MS = 30*1000;
+  // the default jitter ratio 10%
+  private long WAITING_JITTER_RATIO = 10;
   /** Timeout that main thread wait for downloading */
   private final long downloadedConditionTimeoutInSeconds = 3600;
 
@@ -190,6 +199,7 @@ public class SnowflakeChunkDownloader
                                   boolean useJsonParser,
                                   long memoryLimit,
                                   boolean efficientChunkStorage)
+  throws SnowflakeSQLException
   {
     this.qrmk = qrmk;
     this.networkTimeoutInMilli = networkTimeoutInMilli;
@@ -267,11 +277,13 @@ public class SnowflakeChunkDownloader
    * Submit download chunk tasks to executor.
    * Number depends on thread and memory limit
    */
-  private void startNextDownloaders()
+  private void startNextDownloaders() throws SnowflakeSQLException
   {
     // start downloading chunks up to number of slots
     logger.debug("Submit {} chunks to be pre-fetched",
                Math.min(prefetchSlots, chunks.size()));
+
+    long waitingTime = BASE_WAITING_MS;
 
     // submit the chunks to be downloaded up to the prefetch slot capacity
     // and limited by memory
@@ -285,33 +297,94 @@ public class SnowflakeChunkDownloader
       // each time only one thread can enter this block
       synchronized (currentMemoryUsage)
       {
+        // make sure memoryLimit > neededChunkMemory; otherwise, the thread hangs
+        if (neededChunkMemory > memoryLimit)
+        {
+          logger.debug("{}: reset memoryLimit from {} MB to current chunk size {} MB",
+              Thread.currentThread().getName(),
+              memoryLimit/1024/1024,
+              neededChunkMemory/1024/1024);
+          memoryLimit = neededChunkMemory;
+        }
+
+        // no memory allocate when memory is not enough for prefetch
         if (currentMemoryUsage + neededChunkMemory > memoryLimit &&
             nextChunkToDownload - nextChunkToConsume > 0)
         {
           break;
         }
-        nextChunk.tryReuse(chunkDataCache);
 
-        currentMemoryUsage += neededChunkMemory;
-        logger.debug("currentMemoryUsage in MB: " + currentMemoryUsage/1024/1024);
+        // only allocate memory when the future usage is less than the limit
+        if (currentMemoryUsage + neededChunkMemory <= memoryLimit)
+        {
+          nextChunk.tryReuse(chunkDataCache);
+
+          currentMemoryUsage += neededChunkMemory;
+          logger.debug("{}: currentMemoryUsage in MB: {}, nextD: {}, nextC: {}, allocated: {} ",
+              Thread.currentThread().getName(),
+              currentMemoryUsage/1024/1024,
+              nextChunkToDownload,
+              nextChunkToConsume,
+              neededChunkMemory);
+
+          logger.debug("submit chunk #{} for downloading, url={}",
+              this.nextChunkToDownload, nextChunk.getUrl());
+
+          executor.submit(getDownloadChunkCallable(this,
+              nextChunk,
+              qrmk, nextChunkToDownload,
+              chunkHeadersMap,
+              networkTimeoutInMilli));
+
+          // increment next chunk to download
+          nextChunkToDownload++;
+          // make sure reset waiting time
+          waitingTime = BASE_WAITING_MS;
+          // go to next chunk
+          continue;
+        }
       }
 
-      logger.debug("submit chunk #{} for downloading, url={}",
-                 this.nextChunkToDownload, nextChunk.getUrl());
-
-      executor.submit(getDownloadChunkCallable(this,
-                                               nextChunk,
-                                               qrmk, nextChunkToDownload,
-                                               chunkHeadersMap,
-                                               networkTimeoutInMilli));
-
-      // increment next chunk to download
-      nextChunkToDownload++;
+      // waiting when nextChunkToDownload is equal to nextChunkToConsume but reach memory limit
+      try{
+        waitingTime *= WAITING_SECS_MULTIPLIER;
+        waitingTime = waitingTime > MAX_WAITING_MS ? MAX_WAITING_MS: waitingTime;
+        long jitter = ThreadLocalRandom.current().nextLong(0, waitingTime/WAITING_JITTER_RATIO);
+        waitingTime += jitter;
+        logger.debug("{} waiting for {} s: currentMemoryUsage in MB: {}, needed: {}, nextD: {}, nextC: {} ",
+            Thread.currentThread().getName(),
+            waitingTime/1000.0,
+            currentMemoryUsage/1024/1024,
+            neededChunkMemory/1024/1024,
+            nextChunkToDownload,
+            nextChunkToConsume);
+        Thread.sleep(waitingTime);
+      } catch (InterruptedException ie)
+      {
+        throw new SnowflakeSQLException(
+            SqlState.INTERNAL_ERROR,
+            ErrorCode.INTERNAL_ERROR.getMessageCode(),
+            "Waiting SnowflakeChunkDownloader has been interrupted.");
+      }
     }
 
     // clear the cache, we can't download more at the moment
     // so we won't need them in the near future
     chunkDataCache.clear();
+  }
+
+  private void releaseCurrentMemoryUsage(int chunk)
+  {
+    synchronized (currentMemoryUsage)
+    {
+      // has to be before reusing the memory
+      currentMemoryUsage -= chunks.get(chunk).computeNeededChunkMemory();
+      logger.debug("{}: currentMemoryUsage in MB: {}, released: {}, chunk: {}",
+          Thread.currentThread().getName(),
+          currentMemoryUsage/1024/1024,
+          chunks.get(chunk).computeNeededChunkMemory(),
+          chunk);
+    }
   }
 
   /**
@@ -339,12 +412,7 @@ public class SnowflakeChunkDownloader
       logger.debug("free chunk data for chunk #{}",
                  prevChunk);
 
-      synchronized (currentMemoryUsage)
-      {
-        // has to be before reusing the memory
-        currentMemoryUsage -= chunks.get(prevChunk).computeNeededChunkMemory();
-        logger.debug("currentMemoryUsage in MB: " + currentMemoryUsage/1024/1024);
-      }
+      releaseCurrentMemoryUsage(prevChunk);
 
       if (this.nextChunkToDownload < this.chunks.size())
       {
@@ -378,6 +446,11 @@ public class SnowflakeChunkDownloader
     {
       logger.debug("chunk #{} is ready to consume", nextChunkToConsume);
       nextChunkToConsume++;
+      if (nextChunkToConsume == this.chunks.size())
+      {
+        // make sure to release the last chunk
+        releaseCurrentMemoryUsage(nextChunkToConsume-1);
+      }
       return currentChunk;
     }
     else
@@ -439,6 +512,11 @@ public class SnowflakeChunkDownloader
         boolean terminateDownloader = (currentChunk.getDownloadState() == DownloadState.FAILURE);
         // release the unlock always
         currentChunk.getLock().unlock();
+        if (nextChunkToConsume == this.chunks.size())
+        {
+          // make sure to release the last chunk
+          releaseCurrentMemoryUsage(nextChunkToConsume-1);
+        }
         if (terminateDownloader)
         {
           logger.debug("Download result fail. Shut down the chunk downloader");
