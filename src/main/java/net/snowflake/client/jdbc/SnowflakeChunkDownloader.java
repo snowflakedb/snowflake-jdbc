@@ -109,7 +109,9 @@ public class SnowflakeChunkDownloader
   private final int networkTimeoutInMilli;
 
   private long memoryLimit;
-  private long currentMemoryUsage = 0;
+
+  // the current memory usage across JVM
+  private static Long currentMemoryUsage = 0L;
 
   /** Timeout that main thread wait for downloading */
   private final long downloadedConditionTimeoutInSeconds = 3600;
@@ -278,14 +280,20 @@ public class SnowflakeChunkDownloader
       // check if memory limit allows more prefetching
       final SnowflakeResultChunk nextChunk = chunks.get(nextChunkToDownload);
       final long neededChunkMemory = nextChunk.computeNeededChunkMemory();
-      if (currentMemoryUsage + neededChunkMemory > memoryLimit &&
-          nextChunkToDownload - nextChunkToConsume > 0)
-      {
-        break;
-      }
-      nextChunk.tryReuse(chunkDataCache);
 
-      currentMemoryUsage += neededChunkMemory;
+      // each time only one thread can enter this block
+      synchronized (currentMemoryUsage)
+      {
+        if (currentMemoryUsage + neededChunkMemory > memoryLimit &&
+            nextChunkToDownload - nextChunkToConsume > 0)
+        {
+          break;
+        }
+        nextChunk.tryReuse(chunkDataCache);
+
+        currentMemoryUsage += neededChunkMemory;
+        logger.debug("currentMemoryUsage in MB: " + currentMemoryUsage/1024/1024);
+      }
 
       logger.debug("submit chunk #{} for downloading, url={}",
                  this.nextChunkToDownload, nextChunk.getUrl());
@@ -330,8 +338,12 @@ public class SnowflakeChunkDownloader
       logger.debug("free chunk data for chunk #{}",
                  prevChunk);
 
-      // has to be before reusing the memory
-      currentMemoryUsage -= chunks.get(prevChunk).computeNeededChunkMemory();
+      synchronized (currentMemoryUsage)
+      {
+        // has to be before reusing the memory
+        currentMemoryUsage -= chunks.get(prevChunk).computeNeededChunkMemory();
+        logger.debug("currentMemoryUsage in MB: " + currentMemoryUsage/1024/1024);
+      }
 
       if (this.nextChunkToDownload < this.chunks.size())
       {
