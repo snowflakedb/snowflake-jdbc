@@ -168,6 +168,22 @@
           </execution>
         </executions>
       </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>check-shaded-content</id>
+            <phase>verify</phase>
+            <goals>
+              <goal>exec</goal>
+            </goals>
+            <configuration>
+              <executable>${basedir}/scripts/check_content.sh</executable>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
     <resources>
       <resource>
