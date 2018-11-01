@@ -28,6 +28,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.SequenceInputStream;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -597,9 +598,11 @@ public class SnowflakeChunkDownloader
             jsonInputStream =
                 new SequenceInputStream(
                     Collections.enumeration(Arrays.asList(
-                        new ByteArrayInputStream("[".getBytes()),
+                        new ByteArrayInputStream("[".getBytes(
+                            StandardCharsets.UTF_8)),
                         is,
-                        new ByteArrayInputStream("]".getBytes()))));
+                        new ByteArrayInputStream("]".getBytes(
+                            StandardCharsets.UTF_8)))));
           }
           catch (Exception ex)
           {
