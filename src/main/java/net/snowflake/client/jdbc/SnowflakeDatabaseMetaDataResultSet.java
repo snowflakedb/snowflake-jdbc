@@ -6,6 +6,7 @@ package net.snowflake.client.jdbc;
 
 import net.snowflake.client.core.SFSession;
 
+import java.nio.charset.StandardCharsets;
 import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -154,7 +155,7 @@ class SnowflakeDatabaseMetaDataResultSet extends
     String str = this.getString(columnIndex);
     if (str != null)
     {
-      return str.getBytes();
+      return str.getBytes(StandardCharsets.UTF_8);
     }
     else
     {

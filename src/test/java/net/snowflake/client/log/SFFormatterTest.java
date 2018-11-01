@@ -7,6 +7,7 @@ package net.snowflake.client.log;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -54,12 +55,21 @@ public class SFFormatterTest
   @Test
   public void testUTCTimeStampSimple() throws ParseException
   {
-    String record = recordGenerator.generateLogRecordString(Level.INFO, "TestMessage");
+    TimeZone originalTz = TimeZone.getDefault();
+    TimeZone.setDefault(TimeZone.getTimeZone("Europe/Berlin"));
+    try
+    {
+      String record = recordGenerator.generateLogRecordString(Level.INFO, "TestMessage");
 
-    Date date = extractDate(record);
-    long nowInMs = Calendar.getInstance(TimeZone.getTimeZone("UTC")).getTimeInMillis();
-    assertTrue("Time difference boundary should be less than " + TIME_DIFFERENCE_BOUNDARY + "ms",
-         nowInMs - date.getTime() < TIME_DIFFERENCE_BOUNDARY);
+      Date date = extractDate(record);
+      long nowInMs = Calendar.getInstance(TimeZone.getTimeZone("UTC")).getTimeInMillis();
+      assertTrue("Time difference boundary should be less than " + TIME_DIFFERENCE_BOUNDARY + "ms",
+          nowInMs - date.getTime() < TIME_DIFFERENCE_BOUNDARY);
+    }
+    finally
+    {
+      TimeZone.setDefault(originalTz);
+    }
   }
 
   /**
@@ -138,7 +148,10 @@ public class SFFormatterTest
    */
   private Date extractDate(String string) throws ParseException
   {
-    Date date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").parse(string);
+    DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+    Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+    df.setCalendar(cal);
+    Date date = df.parse(string);
     return date;
   }
 

@@ -1,11 +1,14 @@
+**JDBC Driver 3.6.16**
+|SNOW-57107| Ensure all dependency is shaded in a jar
+|SNOW-56603| CLIENT_MEMORY_LIMIT governs the total memory used for chunk downloader per process not per query
+
 **JDBC Driver 3.6.15**
-|SNOW-56771| Shade more dependency to a new location to mitigate package conflict
-|SNOW-57051| Fixed CVE-2018-11761
-|SNOW-56836| Support nanoseconds precision for TIMESTAMP data in Loader API.
-
+|SNOW-56771| Implemented shading of additional dependencies to a new location to mitigate package conflicts.
+|SNOW-57051| Fixed CVE-2018-11761.
+|SNOW-56836| Added support for nanoseconds precision for TIMESTAMP data in Loader API.
+|SNOW-56604| Added ``skipParsing`` option to ``prepareStatement`` method to skip fetching metadata.
 **JDBC Driver 3.6.14**
-|SSNOW-55075| Introduced CLIENT_RESULT_COLUMN_CASE_INSENSITIVE to match column names case-insensitively in ResultSet
-
+|SNOW-55075| Introduced the CLIENT_RESULT_COLUMN_CASE_INSENSITIVE session parameter to enable matching case-sensitivity for column names in ``ResultSet``.
 **JDBC Driver 3.6.13**
 |SNOW-54926| Added ``compressFileByPut``, ``compressDataBeforePut``, ``compressLevel`` to Loader API.
 |SNOW-55138| Upgraded dependency to fix known vulnerabilities.
