@@ -42,7 +42,7 @@ Build from Source Code
 
 .. code-block:: bash
 
-    git clone git@github.com:snowflakedb/snowflake-jdbc
+    git clone https://github.com/snowflakedb/snowflake-jdbc.git
 
 2. Build the driver by running:
 
