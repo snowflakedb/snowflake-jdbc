@@ -184,6 +184,13 @@
           </execution>
         </executions>
       </plugin>
+      <!-- skip default deployment plugin -->
+      <plugin>
+        <artifactId>maven-deploy-plugin</artifactId>
+        <configuration>
+          <skip>true</skip>
+        </configuration>
+      </plugin>
     </plugins>
     <resources>
       <resource>
@@ -192,7 +199,6 @@
       </resource>
     </resources>
   </build>
-
 
   <!-- dummy scm connection required to get the buildnumber plugin working -->
   <scm>
@@ -573,31 +579,6 @@
       </build>
     </profile>
     <profile>
-      <id>gpg-signing</id>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-gpg-plugin</artifactId>
-            <version>1.6</version>
-            <executions>
-              <execution>
-                <id>sign-artifacts</id>
-                <phase>verify</phase>
-                <goals>
-                  <goal>sign</goal>
-                </goals>
-                <configuration>
-                  <keyName>${gpg.keyname}</keyName>
-                  <passphrase>${gpg.passphrase}</passphrase>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-    <profile>
       <id>make-sfsql</id>
       <build>
         <plugins>
@@ -741,6 +722,42 @@
             <configuration>
               <skip>${jacoco.skip.instrument}</skip>
             </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <!-- profiles deployed into ossrh stage area -->
+    <profile>
+      <id>ossrh-deploy</id>
+      <activation>
+        <property>
+          <name>ossrhDeploy</name>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-gpg-plugin</artifactId>
+            <version>1.6</version>
+            <executions>
+              <execution>
+                <phase>deploy</phase>
+                <goals>
+                  <goal>sign-and-deploy-file</goal>
+                </goals>
+                <configuration>
+                  <file>target/${project.artifactId}.jar</file>
+                  <repositoryId>ossrh</repositoryId>
+                  <url>https://oss.sonatype.org/service/local/staging/deploy/maven2</url>
+                  <pomFile>generated_public_pom.xml</pomFile>
+                  <javadoc>target/${project.artifactId}-javadoc.jar</javadoc>
+                  <sources>target/${project.artifactId}-sources.jar</sources>
+                  <keyname>${env.GPG_KEY_ID}</keyname>
+                  <passphrase>${env.GPG_KEY_PASSPHRASE}</passphrase>
+                </configuration>
+              </execution>
+            </executions>
           </plugin>
         </plugins>
       </build>
