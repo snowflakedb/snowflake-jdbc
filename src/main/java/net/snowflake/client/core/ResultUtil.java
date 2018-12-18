@@ -395,7 +395,7 @@ public class ResultUtil
                                          chunkHeaders,
                                          resultData.networkTimeoutInMilli,
                                          useJsonParser,
-                                         memoryUsage * 1024 * 1024,
+                            (long) memoryUsage * 1024 * 1024,
                                          efficientChunkStorage);
       }
     }

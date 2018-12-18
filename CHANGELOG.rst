@@ -1,3 +1,6 @@
+**JDBC Driver 3.6.20**
+|SNOW-61209| Fixed result set download performance issue.
+
 **JDBC Driver 3.6.19**
 |SNOW-44393| Catch exception for prepareStatement so that execution can continue
 
