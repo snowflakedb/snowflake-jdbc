@@ -22,9 +22,15 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Map;
+import java.util.TimeZone;
 import java.util.zip.GZIPOutputStream;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -39,15 +45,15 @@ public class BindUploader implements Closeable
 
   // Date binds are saved as millis, timestamp binds are saved as nanos (and times are not supported)
   private static final String DATE_FORMAT = "ES3";
-  private static final String TS_FORMAT = "ES9";
+  private static final String TS_FORMAT = "YYYY-MM-DD HH24:MI:SS.FF9 TZH:TZM";
 
   private static final String CREATE_STAGE_STMT = "CREATE TEMPORARY STAGE "
       + STAGE_NAME
       + " file_format=("
-        + " type=csv"
-        + " date_format=" + DATE_FORMAT
-        + " timestamp_format=" + TS_FORMAT
-        + " field_optionally_enclosed_by='\"'"
+      + " type=csv"
+      + " date_format=" + DATE_FORMAT
+      + " timestamp_format='" + TS_FORMAT + "'"
+      + " field_optionally_enclosed_by='\"'"
       + ")";
 
   private static final String PUT_STMT = "PUT"
@@ -75,24 +81,77 @@ public class BindUploader implements Closeable
   // size (bytes) per file in upload, 100MB default
   private long fileSize = 100 * 1024 * 1024;
 
+  private final DateFormat timestampFormat;
+
+  static class ColumnTypeDataPair
+  {
+    public String type;
+    public List<String> data;
+
+    ColumnTypeDataPair(String type, List<String> data)
+    {
+      this.type = type;
+      this.data = data;
+    }
+  }
+
   /**
    * Create a new BindUploader which will write binds to the *existing*
    * bindDir and upload them to the given stageDir
-   * @param session the session to use for uploading binds
+   *
+   * @param session  the session to use for uploading binds
    * @param stageDir the stage path to upload to
-   * @param bindDir the local directory to serialize binds to
+   * @param bindDir  the local directory to serialize binds to
    */
   private BindUploader(SFSession session, String stageDir, Path bindDir)
   {
     this.session = session;
     this.stagePath = "@" + STAGE_NAME + "/" + stageDir;
     this.bindDir = bindDir;
+    Calendar calendarUTC = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
+    calendarUTC.clear();
+
+    this.timestampFormat = new SimpleDateFormat(
+        "yyyy-MM-dd HH:mm:ss.");
+    this.timestampFormat.setCalendar(calendarUTC);
+  }
+
+  private synchronized String synchronizedTimestampFormat(String o)
+  {
+    boolean isNegative = o.length() > 0 && o.charAt(0) == '-';
+    String inpString = o;
+    if (isNegative)
+    {
+      inpString = o.substring(1);
+    }
+
+    long sec;
+    int nano;
+    if (inpString.length() < 10)
+    {
+      sec = 0;
+      nano = Integer.parseInt(inpString);
+    }
+    else
+    {
+      sec = Long.parseLong(inpString.substring(0, inpString.length() - 9));
+      nano = Integer.parseInt(inpString.substring(inpString.length() - 9));
+    }
+    if (isNegative)
+    {
+      // adjust the timestamp
+      sec = -1 * sec - 1L;
+      nano = 1000000000 - nano;
+    }
+    Timestamp v1 = new Timestamp(sec * 1000);
+    return timestampFormat.format(v1) + String.format("%09d", nano) + " +00:00";
   }
 
   /**
    * Create a new BindUploader which will upload to the given stage path
    * Ensure temporary directory for file writing exists
-   * @param session the session to use for uploading binds
+   *
+   * @param session  the session to use for uploading binds
    * @param stageDir the stage path to upload to
    * @return BindUploader instance
    * @throws BindException if temporary directory could not be created
@@ -105,7 +164,7 @@ public class BindUploader implements Closeable
       Path bindDir = Files.createTempDirectory(PREFIX);
       return new BindUploader(session, stageDir, bindDir);
     }
-    catch(IOException ex)
+    catch (IOException ex)
     {
       throw new BindException(
           String.format("Failed to create temporary directory: %s", ex.getMessage()), BindException.Type.OTHER);
@@ -114,9 +173,10 @@ public class BindUploader implements Closeable
 
   /**
    * Upload the bindValues to stage
+   *
    * @param bindValues the bind map to upload
    * @throws BindException if the bind map could not be serialized or upload
-   *  fails
+   *                       fails
    */
   public void upload(Map<String, ParameterBindingDTO> bindValues) throws BindException
   {
@@ -129,12 +189,13 @@ public class BindUploader implements Closeable
 
   /**
    * Save the binds to disk
+   *
    * @param bindValues the bind map to serialize
    * @throws BindException if bind map improperly formed or writing binds fails
    */
   private void serializeBinds(Map<String, ParameterBindingDTO> bindValues) throws BindException
   {
-    List<List<String>> columns = getColumnValues(bindValues);
+    List<ColumnTypeDataPair> columns = getColumnValues(bindValues);
     List<String[]> rows = buildRows(columns);
     writeRowsToCSV(rows);
   }
@@ -142,13 +203,14 @@ public class BindUploader implements Closeable
   /**
    * Convert bind map to a list of values for each column
    * Perform necessary type casts and invariant checks
+   *
    * @param bindValues the bind map to convert
    * @return list of values for each column
    * @throws BindException if bind map is improperly formed
    */
-  private List<List<String>> getColumnValues(Map<String, ParameterBindingDTO> bindValues) throws BindException
+  private List<ColumnTypeDataPair> getColumnValues(Map<String, ParameterBindingDTO> bindValues) throws BindException
   {
-    List<List<String>> columns = new ArrayList<>(bindValues.size());
+    List<ColumnTypeDataPair> columns = new ArrayList<>(bindValues.size());
     for (int i = 1; i <= bindValues.size(); i++)
     {
       // bindValues should have n entries with string keys 1 ... n and list values
@@ -162,8 +224,21 @@ public class BindUploader implements Closeable
       ParameterBindingDTO value = bindValues.get(key);
       try
       {
+        String type = value.getType();
         List<String> list = (List<String>) value.getValue();
-        columns.add(i-1, list);
+        List<String> convertedList = new ArrayList<>(list.size());
+        if ("TIMESTAMP_LTZ".equals(type) || "TIMESTAMP_NTZ".equals(type))
+        {
+          for (int j = 0, len = list.size(); j < len; ++j)
+          {
+            convertedList.add(synchronizedTimestampFormat(list.get(j)));
+          }
+        }
+        else
+        {
+          convertedList = list;
+        }
+        columns.add(i - 1, new ColumnTypeDataPair(type, convertedList));
       }
       catch (ClassCastException ex)
       {
@@ -175,27 +250,28 @@ public class BindUploader implements Closeable
 
   /**
    * Transpose a list of columns and their values to a list of rows
+   *
    * @param columns the list of columns to transpose
    * @return list of rows
    * @throws BindException if columns improperly formed
    */
-  private List<String[]> buildRows(List<List<String>> columns) throws BindException
+  private List<String[]> buildRows(List<ColumnTypeDataPair> columns) throws BindException
   {
     List<String[]> rows = new ArrayList<>();
 
     int numColumns = columns.size();
     // columns should have binds
-    if (columns.get(0).isEmpty())
+    if (columns.get(0).data.isEmpty())
     {
       throw new BindException("No binds found in first column", BindException.Type.SERIALIZATION);
     }
 
-    int numRows = columns.get(0).size();
+    int numRows = columns.get(0).data.size();
     // every column should have the same number of binds
     for (int i = 0; i < numColumns; i++)
     {
-      int iNumRows = columns.get(i).size();
-      if (columns.get(i).size() != numRows)
+      int iNumRows = columns.get(i).data.size();
+      if (columns.get(i).data.size() != numRows)
       {
         throw new BindException(
             String.format("Column %d has a different number of binds (%d) than column 1 (%d)", i, iNumRows, numRows), BindException.Type.SERIALIZATION);
@@ -207,7 +283,7 @@ public class BindUploader implements Closeable
       String[] row = new String[numColumns];
       for (int colIdx = 0; colIdx < numColumns; colIdx++)
       {
-        row[colIdx] = columns.get(colIdx).get(rowIdx);
+        row[colIdx] = columns.get(colIdx).data.get(rowIdx);
       }
       rows.add(row);
     }
@@ -217,6 +293,7 @@ public class BindUploader implements Closeable
 
   /**
    * Write the list of rows to compressed CSV files in the temporary directory
+   *
    * @param rows the list of rows to write out to a file
    * @throws BindException if exception occurs while writing rows out
    */
@@ -226,7 +303,7 @@ public class BindUploader implements Closeable
     int rowNum = 0;
     int fileCount = 0;
 
-    while(rowNum < rows.size())
+    while (rowNum < rows.size())
     {
       File file = getFile(++fileCount);
 
@@ -234,7 +311,7 @@ public class BindUploader implements Closeable
       {
         // until we reach the last row or the file is too big, write to the file
         numBytes = 0;
-        while(numBytes < fileSize && rowNum < rows.size())
+        while (numBytes < fileSize && rowNum < rows.size())
         {
           byte[] csv = createCSVRecord(rows.get(rowNum));
           numBytes += csv.length;
@@ -252,6 +329,7 @@ public class BindUploader implements Closeable
 
   /**
    * Create a File object for the given fileNum under the temporary directory
+   *
    * @param fileNum the number to use as the file name
    * @return
    */
@@ -262,6 +340,7 @@ public class BindUploader implements Closeable
 
   /**
    * Create a new output stream for the given file
+   *
    * @param file the file to write out to
    * @return output stream
    * @throws BindException
@@ -282,6 +361,7 @@ public class BindUploader implements Closeable
   /**
    * Serialize row to a csv
    * Duplicated from StreamLoader class
+   *
    * @param data the row to create a csv record from
    * @return serialized csv for row
    */
@@ -291,7 +371,7 @@ public class BindUploader implements Closeable
 
     for (int i = 0; i < data.length; ++i)
     {
-      if(i > 0) sb.append(',');
+      if (i > 0) sb.append(',');
       sb.append(SnowflakeType.escapeForCSV(data[i]));
     }
     sb.append('\n');
@@ -300,7 +380,8 @@ public class BindUploader implements Closeable
 
   /**
    * Build PUT statement string. Handle filesystem differences and escaping backslashes.
-   * @param bindDir the local directory which contains files with binds
+   *
+   * @param bindDir   the local directory which contains files with binds
    * @param stagePath the stage path to upload to
    * @return put statement for files in bindDir to stagePath
    */
@@ -312,6 +393,7 @@ public class BindUploader implements Closeable
 
   /**
    * Upload binds from local file to stage
+   *
    * @throws BindException if uploading the binds fails
    */
   private void putBinds() throws BindException
@@ -352,6 +434,7 @@ public class BindUploader implements Closeable
   /**
    * Check whether the session's temporary stage has been created, and create it
    * if not.
+   *
    * @throws BindException if creating the stage fails
    */
   private void createStageIfNeeded() throws BindException
@@ -360,7 +443,7 @@ public class BindUploader implements Closeable
     {
       return;
     }
-    synchronized(session)
+    synchronized (session)
     {
       // another thread may have created the session by the time we enter this block
       if (session.getArrayBindStage() == null)
@@ -377,7 +460,7 @@ public class BindUploader implements Closeable
           // optimization if we fail to create stage for some reason
           session.setArrayBindStageThreshold(0);
           throw new BindException(
-              String.format("Failed to create temporary stage for array binds. %s", ex.getMessage()),BindException.Type.UPLOAD);
+              String.format("Failed to create temporary stage for array binds. %s", ex.getMessage()), BindException.Type.UPLOAD);
         }
       }
     }
@@ -385,7 +468,7 @@ public class BindUploader implements Closeable
 
   /**
    * Close uploader, deleting the local temporary directory
-   *
+   * <p>
    * This class can be used in a try-with-resources statement, which ensures that
    * the temporary directory is cleaned up even when exceptions occur
    */
@@ -418,6 +501,7 @@ public class BindUploader implements Closeable
 
   /**
    * Set the approximate maximum size in bytes for a single bind file
+   *
    * @param fileSize size in bytes
    */
   public void setFileSize(int fileSize)
@@ -427,6 +511,7 @@ public class BindUploader implements Closeable
 
   /**
    * Return the stage path to which binds are uploaded
+   *
    * @return the stage path
    */
   public String getStagePath()
@@ -436,6 +521,7 @@ public class BindUploader implements Closeable
 
   /**
    * Return the local path to which binds are serialized
+   *
    * @return the local path
    */
   public Path getBindDir()
@@ -448,11 +534,11 @@ public class BindUploader implements Closeable
    *
    * @param bindValues the bind map
    * @return 0 if bindValues is null, has no binds, or is not an array bind
-   *         n otherwise, where n is the number of binds in the array bind
+   * n otherwise, where n is the number of binds in the array bind
    */
   public static int arrayBindValueCount(Map<String, ParameterBindingDTO> bindValues)
   {
-    if(!isArrayBind(bindValues))
+    if (!isArrayBind(bindValues))
     {
       return 0;
     }
@@ -466,6 +552,7 @@ public class BindUploader implements Closeable
 
   /**
    * Return whether the bind map uses array binds
+   *
    * @param bindValues the bind map
    * @return whether the bind map uses array binds
    */
