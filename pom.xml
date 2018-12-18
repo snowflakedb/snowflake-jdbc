@@ -4,7 +4,7 @@
 
   <groupId>net.snowflake</groupId>
   <artifactId>snowflake-jdbc</artifactId>
-  <version>3.6.18</version>
+  <version>3.6.19</version>
   <packaging>jar</packaging>
 
   <name>snowflake-jdbc</name>
@@ -406,13 +406,6 @@
             </configuration>
           </execution>
         </executions>
-      </plugin>
-      <!-- skip default deployment plugin -->
-      <plugin>
-        <artifactId>maven-deploy-plugin</artifactId>
-        <configuration>
-          <skip>true</skip>
-        </configuration>
       </plugin>
     </plugins>
   </build>

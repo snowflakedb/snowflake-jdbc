@@ -93,6 +93,9 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
   /** Error code returned when describing a ddl command */
   private static final Integer ERROR_CODE_STATEMENT_CANNOT_BE_PREPARED = 7;
 
+  /** snow-44393 Workaround for compiler cannot prepare to_timestamp(?, 3)*/
+  private static final Integer ERROR_CODE_FORMAT_ARGUMENT_NOT_STRING = 1026;
+
   /**
    * A hash set that contains the error code that will not lead to exception
    * in describe mode
@@ -101,7 +104,8 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
       = new HashSet<>(Arrays.asList(
        ERROR_CODE_TABLE_BIND_VARIABLE_NOT_SET,
        ERROR_CODE_STATEMENT_CANNOT_BE_PREPARED,
-       ERROR_CODE_OBJECT_BIND_NOT_SET));
+       ERROR_CODE_OBJECT_BIND_NOT_SET,
+       ERROR_CODE_FORMAT_ARGUMENT_NOT_STRING));
 
   /**
    * Construct SnowflakePreparedStatementV1

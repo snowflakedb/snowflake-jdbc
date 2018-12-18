@@ -1,9 +1,11 @@
-**JDBC Driver 3.6.17**
-|SNOW-59862| Add JVM properties for CLIENT_PREFETCH_THREADS, CLIENT_MEMORY_LIMIT and CLIENT_RESULT_CHUNK_SIZE.
-|SNOW-56081| Added a support of CLOB datatype mapping to STRING.
-|SNOW-58812| Fixed parallel parameter for PUT and GET.
-|SNOW-59802| Fixed wrong TIME format for loader API.
+**JDBC Driver 3.6.19**
+|SNOW-44393| Catch exception for prepareStatement so that execution can continue
 
+**JDBC Driver 3.6.17**
+|SNOW-59862| Added JVM properties for CLIENT_PREFETCH_THREADS, CLIENT_MEMORY_LIMIT, and CLIENT_RESULT_CHUNK_SIZE.
+|SNOW-58812| Fixed issue with PARALLEL parameter for PUT and GET commands.
+|SNOW-59802| Fixed issue with wrong TIME format for the Loader API.
+|SNOW-56081| CLOB data type now mapped to STRING data type in Snowflake.
 **JDBC Driver 3.6.16**
 |SNOW-57107| Driver now checks to ensure all dependencies are correctly shaded.
 |SNOW-56603| As announced previously, the CLIENT_MEMORY_LIMIT parameter now governs the total memory used per process instead of per query.
@@ -15,11 +17,11 @@
 **JDBC Driver 3.6.14**
 |SNOW-55075| Introduced the CLIENT_RESULT_COLUMN_CASE_INSENSITIVE session parameter to enable matching case-sensitivity for column names in ``ResultSet``.
 **JDBC Driver 3.6.13**
-|SNOW-54926| Added ``compressFileByPut``, ``compressDataBeforePut``, ``compressLevel`` to Loader API.
+|SNOW-55868| Added service name support for multi-GS clustering (internal feature).
 |SNOW-55138| Upgraded dependency to fix known vulnerabilities.
-|SNOW-55868| Added service name support for multi GS clustering.
-|SNOW-55035| Added ``request_guid`` for HTTP request tracing.
 |SNOW-55095| Internal change for pending feature.
+|SNOW-54926| Added ``compressFileByPut``, ``compressDataBeforePut``, ``compressLevel`` to Loader API.
+|SNOW-55035| Added ``request_guid`` for HTTP request tracing.
 **JDBC Driver 3.6.12**
 |SNOW-26324| Added ``--version`` option to return the JDBC driver version and additional information.
 **JDBC Driver 3.6.11**
@@ -39,14 +41,14 @@
 |SNOW-49653| Internal change for pending feature.
 **JDBC Driver 3.6.7**
 |SNOW-50141| Fixed issue with ``setObject`` not handling BOOLEAN data type.
-|SNOW-49982| Added ``onError`` parameter in the ``Loader`` API; corresponds to the ``ON_ERROR`` option in the COPY INTO *<table>* command.
+|SNOW-49982| Added ``onError`` parameter in the Loader API; corresponds to the ``ON_ERROR`` option in the COPY INTO *<table>* command.
 |SNOW-49850| Upgraded AWS SDK to enable support for disabling socket proxy.
 |SNOW-49653| Internal change for pending feature.
 **JDBC Driver 3.6.6**
 |SNOW-50032| Fixed issue with the OCSP retry check, which wasn't performed if the validity check failed. 
 **JDBC Driver 3.6.5**
 |SNOW-45631| Improved array binding when routing bind values through stage.
-|SNOW-45545| Fixed issue with the data-to-CSV converter for the ``Loader`` API. ``NULL`` and empty values are now correctly converted to ``NULL`` and empty, respectively.
+|SNOW-45545| Fixed issue with the data-to-CSV converter for the Loader API. ``NULL`` and empty values are now correctly converted to ``NULL`` and empty, respectively.
 |SNOW-45021| Removed login name requirement when authenticating with an OAuth access token.
 **JDBC Driver 3.6.4**
 |SNOW-45612| Added ``authenticator`` setting to ``SnowflakeBasicDatasource``.
@@ -56,9 +58,9 @@
 **JDBC Driver 3.6.3**
 |SNOW-43251| Fixed erroneous exception raised when COPY statement loads 0 files.
 **JDBC Driver 3.6.2**
-|SNOW-44536| Fixed Loader API to support CSV filenames that contain spaces.
-|SNOW-44497| Fixed Loader API to suppress race conditions for date formatting.
-|SNOW-44405| Added ``copyEmptyFieldAsEmpty`` to Loader API to support ``EMPTY_FIELD_AS_NULL=false`` option for COPY command.
+|SNOW-44536| Fixed the Loader API to support CSV filenames that contain spaces.
+|SNOW-44497| Fixed the Loader API to suppress race conditions for date formatting.
+|SNOW-44405| Added ``copyEmptyFieldAsEmpty`` to the Loader API to support ``EMPTY_FIELD_AS_NULL=false`` option for COPY command.
 **JDBC Driver 3.6.1**
 |SNOW-43215| Updated the driver to support OCSP dynamic cache server for PrivateLink.
 **JDBC Driver 3.6.0**
@@ -92,7 +94,7 @@
 |SNOW-37242| Allow preparing all types of statements (reverts a change introduced in v3.3.0).
 |SNOW-37186| Fixed an issue with the NUMBER format in JDBC ``SnowflakeBasicaDataSource.java``.
 **JDBC Driver 3.3.3**
-|SNOW-36917| Fixed an issue where the loader API incorrectly converted timestamp dates earlier than 1582-Oct-04 due to differences between the Julian and Gregorian calendar.
+|SNOW-36917| Fixed an issue where the Loader API incorrectly converted timestamp dates earlier than 1582-Oct-04 due to differences between the Julian and Gregorian calendar.
 |SNOW-35613| Internal change for pending feature.
 **JDBC Driver 3.3.2**
 |SNOW-32282| Internal change for pending feature.
