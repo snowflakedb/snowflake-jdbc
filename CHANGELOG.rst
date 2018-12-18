@@ -1,3 +1,7 @@
+**JDBC Driver 3.6.21**
+|SNOW-61862| use YYYY-MM-DD HH24:MI:SS.FF9 TZH:TZM for timestamp array binding
+
+
 **JDBC Driver 3.6.20**
 |SNOW-61209| Fixed result set download performance issue.
 
