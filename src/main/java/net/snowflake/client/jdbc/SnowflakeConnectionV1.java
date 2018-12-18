@@ -41,6 +41,8 @@ import java.util.Properties;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static net.snowflake.client.core.SessionUtil.JVM_PARAMS_TO_PARAMS;
+
 /**
  * Snowflake connection implementation
  *
@@ -236,6 +238,16 @@ public class SnowflakeConnectionV1 implements Connection
     sfSession.addProperty(SFSessionProperty.APP_ID, LoginInfoDTO.SF_JDBC_APP_ID);
     sfSession.addProperty(SFSessionProperty.APP_VERSION,
           SnowflakeDriver.implementVersion);
+
+    // Set the corresponding session parameters to the JVM properties
+    for (Map.Entry<String, String> entry: JVM_PARAMS_TO_PARAMS.entrySet())
+    {
+      String value = System.getProperty(entry.getKey());
+      if (value != null && !sfSession.containProperty(entry.getValue()))
+      {
+        sfSession.addProperty(entry.getValue(), value);
+      }
+    }
   }
 
   private static boolean getBooleanTrueByDefault(Object value)

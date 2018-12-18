@@ -103,6 +103,13 @@ public class SessionUtil
   public static final String CLIENT_RESULT_COLUMN_CASE_INSENSITIVE = "CLIENT_RESULT_COLUMN_CASE_INSENSITIVE";
   public static final String JDBC_RS_COLUMN_CASE_INSENSITIVE = "JDBC_RS_COLUMN_CASE_INSENSITIVE";
 
+  public static final String CLIENT_RESULT_CHUNK_SIZE_JVM = "net.snowflake.jdbc.clientResultChunkSize";
+  public static final String CLIENT_RESULT_CHUNK_SIZE = "CLIENT_RESULT_CHUNK_SIZE";
+  public static final String CLIENT_MEMORY_LIMIT_JVM = "net.snowflake.jdbc.clientMemoryLimit";
+  public static final String CLIENT_MEMORY_LIMIT = "CLIENT_MEMORY_LIMIT";
+  public static final String CLIENT_PREFETCH_THREADS_JVM = "net.snowflake.jdbc.clientPrefetchThreads";
+  public static final String CLIENT_PREFETCH_THREADS = "CLIENT_PREFETCH_THREADS";
+
   static final
   SFLogger logger = SFLoggerFactory.getLogger(SessionUtil.class);
 
@@ -121,8 +128,9 @@ public class SessionUtil
   private static Set<String> INT_PARAMS = new HashSet<>(Arrays.asList(
       "CLIENT_RESULT_PREFETCH_SLOTS",
       "CLIENT_RESULT_PREFETCH_THREADS",
-      "CLIENT_PREFETCH_THREADS",
-      "CLIENT_MEMORY_LIMIT",
+      CLIENT_PREFETCH_THREADS,
+      CLIENT_MEMORY_LIMIT,
+      CLIENT_RESULT_CHUNK_SIZE,
       "CLIENT_STAGE_ARRAY_BINDING_THRESHOLD"));
 
   private static Set<String> BOOLEAN_PARAMS = new HashSet<>(Arrays.asList(
@@ -141,6 +149,15 @@ public class SessionUtil
       "JDBC_TREAT_DECIMAL_AS_INT",
       "JDBC_ENABLE_COMBINED_DESCRIBE"));
 
+  public static Map<String, String> JVM_PARAMS_TO_PARAMS = new HashMap<>();
+  static {
+    JVM_PARAMS_TO_PARAMS.put(
+        CLIENT_RESULT_CHUNK_SIZE_JVM, CLIENT_RESULT_CHUNK_SIZE);
+    JVM_PARAMS_TO_PARAMS.put(
+        CLIENT_MEMORY_LIMIT_JVM, CLIENT_MEMORY_LIMIT);
+    JVM_PARAMS_TO_PARAMS.put(
+        CLIENT_PREFETCH_THREADS_JVM, CLIENT_PREFETCH_THREADS);
+  }
   enum TokenRequestType
   {
     RENEW("RENEW"),
