@@ -752,6 +752,13 @@
               </execution>
             </executions>
           </plugin>
+          <!-- skip default deploy plugin if we use gpg plugin to deploy -->
+          <plugin>
+            <artifactId>maven-deploy-plugin</artifactId>
+            <configuration>
+              <skip>true</skip>
+            </configuration>
+          </plugin>
         </plugins>
       </build>
     </profile>
