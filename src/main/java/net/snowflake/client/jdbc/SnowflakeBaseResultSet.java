@@ -7,6 +7,7 @@ package net.snowflake.client.jdbc;
 import net.snowflake.common.core.SqlState;
 import java.io.InputStream;
 import java.io.Reader;
+import java.io.StringReader;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.net.URL;
@@ -639,7 +640,7 @@ abstract class SnowflakeBaseResultSet implements ResultSet
     logger.debug(
                "public Reader getCharacterStream(String columnLabel)");
 
-    throw new SQLFeatureNotSupportedException();
+    return getCharacterStream(findColumn(columnLabel));
   }
 
   @Override
