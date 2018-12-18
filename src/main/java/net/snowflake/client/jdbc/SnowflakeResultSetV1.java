@@ -9,6 +9,8 @@ import net.snowflake.client.core.SFResultSet;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SFStatementType;
 
+import java.io.Reader;
+import java.io.StringReader;
 import java.math.BigDecimal;
 import java.sql.Clob;
 import java.sql.Date;
@@ -338,5 +340,19 @@ class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
   public boolean isBeforeFirst() throws SQLException
   {
     return sfBaseResultSet.isBeforeFirst();
+  }
+
+  @Override
+  public Reader getCharacterStream(int columnIndex) throws SQLException
+  {
+    try
+    {
+      return new StringReader(sfBaseResultSet.getString(columnIndex));
+    }
+    catch (SFException ex)
+    {
+      throw new SnowflakeSQLException(ex.getCause(),
+          ex.getSqlState(), ex.getVendorCode(), ex.getParams());
+    }
   }
 }
