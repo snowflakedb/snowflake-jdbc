@@ -753,7 +753,7 @@ public class SnowflakeConnectionV1 implements Connection
   @Override
   public Clob createClob() throws SQLException
   {
-    throw new SQLFeatureNotSupportedException();
+    return new SnowflakeClob();
   }
 
   @Override

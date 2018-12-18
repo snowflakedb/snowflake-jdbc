@@ -1350,7 +1350,7 @@ abstract class SnowflakeBaseResultSet implements ResultSet
   {
     logger.debug("public Clob getClob(String columnLabel)");
 
-    throw new SQLFeatureNotSupportedException();
+    return new SnowflakeClob(getString(columnLabel));
   }
 
   @Override

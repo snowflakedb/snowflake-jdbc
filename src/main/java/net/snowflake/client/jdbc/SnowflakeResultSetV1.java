@@ -10,6 +10,7 @@ import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SFStatementType;
 
 import java.math.BigDecimal;
+import java.sql.Clob;
 import java.sql.Date;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
@@ -96,6 +97,21 @@ class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
     try
     {
       return sfBaseResultSet.getString(columnIndex);
+    }
+    catch (SFException ex)
+    {
+      throw new SnowflakeSQLException(ex.getCause(),
+          ex.getSqlState(), ex.getVendorCode(), ex.getParams());
+    }
+  }
+
+  public Clob getClob(int columnIndex) throws SQLException
+  {
+    try
+    {
+      String content = sfBaseResultSet.getString(columnIndex);
+      Clob clob = new SnowflakeClob(content);
+      return clob;
     }
     catch (SFException ex)
     {
