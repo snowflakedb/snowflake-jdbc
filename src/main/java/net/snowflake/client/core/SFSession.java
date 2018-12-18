@@ -299,6 +299,11 @@ public class SFSession
     }
   }
 
+  public boolean containProperty(String key)
+  {
+    return sessionParametersMap.containsKey(key);
+  }
+
   protected String getServerUrl()
   {
     if (connectionPropertiesMap.containsKey(SFSessionProperty.SERVER_URL))

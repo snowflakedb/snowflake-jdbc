@@ -25,7 +25,7 @@ public enum SnowflakeType
   public static final String DATE_OR_TIME_FORMAT_PATTERN = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX";
   public static final String TIMESTAMP_FORMAT_PATTERN = "yyyy-MM-dd'T'HH:mm:ss.";
   public static final String TIMESTAMP_FORMAT_TZ_PATTERN = "XXX";
-  public static final String TIME_FORMAT_PATTERN = "HH:MM:ss.SSS";
+  public static final String TIME_FORMAT_PATTERN = "HH:mm:ss.SSS";
 
   public static SnowflakeType fromString(String name)
   {

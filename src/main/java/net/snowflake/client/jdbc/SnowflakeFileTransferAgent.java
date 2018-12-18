@@ -1043,7 +1043,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
     String stageLocation = jsonNode.path("data").path("stageInfo").
                     path("location").asText();
 
-    int parallel = jsonNode.path("data").path("parallel").asInt();
+    parallel = jsonNode.path("data").path("parallel").asInt();
 
     overwrite = jsonNode.path("data").path("overwrite").asBoolean(false);
 

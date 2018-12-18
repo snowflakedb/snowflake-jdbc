@@ -351,7 +351,7 @@ public class SnowflakeChunkDownloader
         waitingTime = waitingTime > MAX_WAITING_MS ? MAX_WAITING_MS: waitingTime;
         long jitter = ThreadLocalRandom.current().nextLong(0, waitingTime/WAITING_JITTER_RATIO);
         waitingTime += jitter;
-        logger.debug("{} waiting for {} s: currentMemoryUsage in MB: {}, needed: {}, nextD: {}, nextC: {} ",
+        logger.debug("{} waiting for {}s: currentMemoryUsage in MB: {}, needed: {}, nextD: {}, nextC: {} ",
             Thread.currentThread().getName(),
             waitingTime/1000.0,
             currentMemoryUsage/1024/1024,

@@ -588,8 +588,7 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
   @Override
   public void setClob(int parameterIndex, Clob x) throws SQLException
   {
-    throw new UnsupportedOperationException(
-        "setClob(int parameterIndex, Clob x) Not supported yet.");
+    setString(parameterIndex, x.toString());
   }
 
   @Override

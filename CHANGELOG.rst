@@ -1,7 +1,12 @@
-**JDBC Driver 3.6.16**
-|SNOW-57107| Ensure all dependency is shaded in a jar
-|SNOW-56603| CLIENT_MEMORY_LIMIT governs the total memory used for chunk downloader per process not per query
+**JDBC Driver 3.6.17**
+|SNOW-59862| Add JVM properties for CLIENT_PREFETCH_THREADS, CLIENT_MEMORY_LIMIT and CLIENT_RESULT_CHUNK_SIZE.
+|SNOW-56081| Added a support of CLOB datatype mapping to STRING.
+|SNOW-58812| Fixed parallel parameter for PUT and GET.
+|SNOW-59802| Fixed wrong TIME format for loader API.
 
+**JDBC Driver 3.6.16**
+|SNOW-57107| Driver now checks to ensure all dependencies are correctly shaded.
+|SNOW-56603| As announced previously, the CLIENT_MEMORY_LIMIT parameter now governs the total memory used per process instead of per query.
 **JDBC Driver 3.6.15**
 |SNOW-56771| Implemented shading of additional dependencies to a new location to mitigate package conflicts.
 |SNOW-57051| Fixed CVE-2018-11761.

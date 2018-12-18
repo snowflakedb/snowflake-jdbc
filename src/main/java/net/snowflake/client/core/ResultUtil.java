@@ -32,6 +32,9 @@ import java.util.TimeZone;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 
+import static net.snowflake.client.core.SessionUtil.CLIENT_MEMORY_LIMIT;
+import static net.snowflake.client.core.SessionUtil.CLIENT_PREFETCH_THREADS;
+
 /**
  * Created by jhuang on 2/1/16.
  */
@@ -342,12 +345,10 @@ public class ResultUtil
 
         // prefetch threads
         int resultPrefetchThreads = 4;
-        if (resultOutput.parameters.get("CLIENT_PREFETCH_THREADS")
-            != null)
+        if (resultOutput.parameters.get(CLIENT_PREFETCH_THREADS) != null)
         {
           resultPrefetchThreads =
-              (int) resultOutput.parameters.get(
-                  "CLIENT_PREFETCH_THREADS");
+              (int) resultOutput.parameters.get(CLIENT_PREFETCH_THREADS);
         }
 
         /*
@@ -361,10 +362,10 @@ public class ResultUtil
         }
 
         int memoryUsage = 1536;
-        if (resultOutput.parameters.get("CLIENT_MEMORY_LIMIT") != null)
+        if (resultOutput.parameters.get(CLIENT_MEMORY_LIMIT) != null)
         {
           memoryUsage =
-              (int) resultOutput.parameters.get("CLIENT_MEMORY_LIMIT");
+              (int) resultOutput.parameters.get(CLIENT_MEMORY_LIMIT);
         }
 
         boolean efficientChunkStorage = false;

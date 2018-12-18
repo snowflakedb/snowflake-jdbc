@@ -22,6 +22,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.SQLWarning;
 import java.sql.Statement;
+import java.util.Enumeration;
 import java.util.Map;
 import java.util.Properties;
 
@@ -334,7 +335,7 @@ public class ConnectionIT extends BaseJDBCTest
     // this is used by ibm cast iron studio
     ds = new SnowflakeBasicDataSource();
     ds.setServerName(params.get("host"));
-    ds.setSsl("on". equals(ssl));
+    ds.setSsl("on".equals(ssl));
     ds.setAccount(account);
     ds.setPortNumber(Integer.parseInt(port));
     connection = ds.getConnection(params.get("user"), params.get("password"));
@@ -556,6 +557,118 @@ public class ConnectionIT extends BaseJDBCTest
       assertThat(e.getErrorCode(), is(
           ErrorCode.CONNECTION_ERROR.getMessageCode()));
     }
+  }
 
+  /**
+   * Verify the passed memory parameters are set in the session
+   */
+  @Test
+  public void testClientMemoryParameters() throws Exception
+  {
+    Properties paramProperties = new Properties();
+    paramProperties.put("CLIENT_PREFETCH_THREADS", "6");
+    paramProperties.put("CLIENT_RESULT_CHUNK_SIZE", 48);
+    paramProperties.put("CLIENT_MEMORY_LIMIT", 1000);
+    Connection connection = getConnection(paramProperties);
+
+    for (Enumeration<String> enums = (Enumeration<String>) paramProperties.propertyNames();
+         enums.hasMoreElements(); )
+    {
+      String key = enums.nextElement();
+      ResultSet rs = connection.createStatement().executeQuery(
+          String.format("show parameters like '%s'", key));
+      rs.next();
+      String value = rs.getString("value");
+      assertThat(key, value, equalTo(paramProperties.get(key).toString()));
+    }
+  }
+
+  /**
+   * Verify the JVM memory parameters are set in the session
+   */
+  @Test
+  public void testClientMemoryJvmParameteres() throws Exception
+  {
+    Properties paramProperties = new Properties();
+    paramProperties.put("CLIENT_PREFETCH_THREADS", "6");
+    paramProperties.put("CLIENT_RESULT_CHUNK_SIZE", 48);
+    paramProperties.put("CLIENT_MEMORY_LIMIT", 1000L);
+
+    // set JVM parameters
+    System.setProperty("net.snowflake.jdbc.clientPrefetchThreads",
+        paramProperties.get("CLIENT_PREFETCH_THREADS").toString());
+    System.setProperty("net.snowflake.jdbc.clientResultChunkSize",
+        paramProperties.get("CLIENT_RESULT_CHUNK_SIZE").toString());
+    System.setProperty("net.snowflake.jdbc.clientMemoryLimit",
+        paramProperties.get("CLIENT_MEMORY_LIMIT").toString());
+
+    try
+    {
+      Connection connection = getConnection();
+
+      for (Enumeration<String> enums = (Enumeration<String>) paramProperties.propertyNames();
+           enums.hasMoreElements(); )
+      {
+        String key = enums.nextElement();
+        ResultSet rs = connection.createStatement().executeQuery(
+            String.format("show parameters like '%s'", key));
+        rs.next();
+        String value = rs.getString("value");
+        assertThat(key, value, equalTo(paramProperties.get(key).toString()));
+      }
+    }
+    finally
+    {
+      System.clearProperty("net.snowflake.jdbc.clientPrefetchThreads");
+      System.clearProperty("net.snowflake.jdbc.clientResultChunkSize");
+      System.clearProperty("net.snowflake.jdbc.clientMemoryLimit");
+    }
+  }
+
+  /**
+   * Verify the connection and JVM memory parameters are set in the session.
+   * The connection parameters take precedence over JVM.
+   */
+  @Test
+  public void testClientMixedMemoryJvmParameteres() throws Exception
+  {
+    Properties paramProperties = new Properties();
+    paramProperties.put("CLIENT_PREFETCH_THREADS", "6");
+    paramProperties.put("CLIENT_RESULT_CHUNK_SIZE", 48);
+    paramProperties.put("CLIENT_MEMORY_LIMIT", 1000L);
+
+    // set JVM parameters
+    System.setProperty("net.snowflake.jdbc.clientPrefetchThreads",
+        paramProperties.get("CLIENT_PREFETCH_THREADS").toString());
+    System.setProperty("net.snowflake.jdbc.clientResultChunkSize",
+        paramProperties.get("CLIENT_RESULT_CHUNK_SIZE").toString());
+    System.setProperty("net.snowflake.jdbc.clientMemoryLimit",
+        paramProperties.get("CLIENT_MEMORY_LIMIT").toString());
+
+    paramProperties.put("CLIENT_PREFETCH_THREADS", "8");
+    paramProperties.put("CLIENT_RESULT_CHUNK_SIZE", 64);
+    paramProperties.put("CLIENT_MEMORY_LIMIT", 2000L);
+
+    try
+    {
+      Connection connection = getConnection(paramProperties);
+
+      for (Enumeration<String> enums = (Enumeration<String>) paramProperties.propertyNames();
+           enums.hasMoreElements(); )
+      {
+        String key = enums.nextElement();
+        ResultSet rs = connection.createStatement().executeQuery(
+            String.format("show parameters like '%s'", key));
+        rs.next();
+        String value = rs.getString("value");
+        assertThat(key, value, equalTo(paramProperties.get(key).toString()));
+      }
+    }
+    finally
+    {
+      System.clearProperty("net.snowflake.jdbc.clientPrefetchThreads");
+      System.clearProperty("net.snowflake.jdbc.clientResultChunkSize");
+      System.clearProperty("net.snowflake.jdbc.clientMemoryLimit");
+    }
   }
 }
