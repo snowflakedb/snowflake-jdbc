@@ -586,6 +586,19 @@ class SFTrustManager implements X509TrustManager
           isCached = false;
           break;
         }
+        else
+        {
+          try
+          {
+            validateRevocationStatusMain(pairIssuerSubject, res.right);
+          }
+          catch (CertificateException ex)
+          {
+            LOGGER.debug("Cache includes invalid OCSPResponse. " +
+                "Will download the OCSP cache from Snowflake OCSP server");
+            isCached = false;
+          }
+        }
       }
     }
     catch (IOException ex)
@@ -802,9 +815,10 @@ class SFTrustManager implements X509TrustManager
       URL url;
       if (SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN != null)
       {
-        url = new URL(SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN.format(
-            ocspUrl, ocspReqDerBase64
-        ));
+        url = new URL(
+            SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN.format(
+                ocspUrl, ocspReqDerBase64
+            ));
       }
       else
       {
