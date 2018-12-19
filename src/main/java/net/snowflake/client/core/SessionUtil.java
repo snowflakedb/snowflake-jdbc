@@ -1250,10 +1250,6 @@ public class SessionUtil
         data.put(ClientAuthnParameter.EXT_AUTHN_DUO_METHOD.name(), "push");
       }
 
-      logger.debug(
-          "implementation version = {}",
-          SnowflakeDriver.implementVersion);
-
       data.put(ClientAuthnParameter.CLIENT_APP_VERSION.name(),
           loginInput.getAppVersion());
 
