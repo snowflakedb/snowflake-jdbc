@@ -205,8 +205,7 @@ public class SnowflakeChunkDownloader
     this.networkTimeoutInMilli = networkTimeoutInMilli;
     this.prefetchSlots = prefetchThreads * 2;
     this.useJsonParser = useJsonParser;
-    this.memoryLimit = Math.min(memoryLimit, (long)(Runtime.getRuntime().maxMemory() * .8));
-
+    this.memoryLimit = memoryLimit;
     logger.debug( "qrmk = {}", qrmk);
 
     if (chunkHeaders != null && !chunkHeaders.isMissingNode())

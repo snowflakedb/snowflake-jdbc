@@ -98,6 +98,8 @@ public class SessionUtil
 
   private static int DEFAULT_HEALTH_CHECK_INTERVAL = 45; // sec
 
+  public static long DEFAULT_CLIENT_MEMORY_LIMIT = 1536; // MB
+
   public static final String CLIENT_STORE_TEMPORARY_CREDENTIAL = "CLIENT_STORE_TEMPORARY_CREDENTIAL";
   public static final String SERVICE_NAME = "SERVICE_NAME";
   public static final String CLIENT_RESULT_COLUMN_CASE_INSENSITIVE = "CLIENT_RESULT_COLUMN_CASE_INSENSITIVE";

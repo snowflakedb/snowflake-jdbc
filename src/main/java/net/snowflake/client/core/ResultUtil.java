@@ -286,7 +286,7 @@ public class ResultUtil
     if (logger.isDebugEnabled())
       logger.debug("query id: {}", resultOutput.queryId);
 
-    // extrace parameters
+    // extract parameters
     resultOutput.parameters =
         SessionUtil.getCommonParams(rootNode.path("data").path("parameters"));
 
@@ -361,13 +361,6 @@ public class ResultUtil
               (boolean) resultOutput.parameters.get("JDBC_USE_JSON_PARSER");
         }
 
-        int memoryUsage = 1536;
-        if (resultOutput.parameters.get(CLIENT_MEMORY_LIMIT) != null)
-        {
-          memoryUsage =
-              (int) resultOutput.parameters.get(CLIENT_MEMORY_LIMIT);
-        }
-
         boolean efficientChunkStorage = false;
         if (resultOutput.parameters.get("JDBC_EFFICIENT_CHUNK_STORAGE") != null)
         {
@@ -395,7 +388,7 @@ public class ResultUtil
                                          chunkHeaders,
                                          resultData.networkTimeoutInMilli,
                                          useJsonParser,
-                            (long) memoryUsage * 1024 * 1024,
+                                         initMemoryLimit(resultOutput),
                                          efficientChunkStorage);
       }
     }
@@ -489,6 +482,38 @@ public class ResultUtil
     return resultOutput;
   }
 
+  /**
+   * initialize memory limit in bytes
+   * @param resultOutput
+   * @return memory limit in bytes
+   */
+  private static long initMemoryLimit(final ResultOutput resultOutput)
+  {
+    // default setting
+    long memoryLimit = SessionUtil.DEFAULT_CLIENT_MEMORY_LIMIT * 1024 * 1024;
+    if (resultOutput.parameters.get(CLIENT_MEMORY_LIMIT) != null)
+    {
+      // use the settings from the customer
+      memoryLimit =
+          (int)resultOutput.parameters.get(CLIENT_MEMORY_LIMIT) * 1024L * 1024L;
+    }
+
+    long maxMemoryToUse = Runtime.getRuntime().maxMemory() * 8 / 10;
+    if ((int)resultOutput.parameters.get(CLIENT_MEMORY_LIMIT)
+        == SessionUtil.DEFAULT_CLIENT_MEMORY_LIMIT)
+    {
+      // if the memory limit is the default value and best effort memory is enabled
+      // set the memory limit to 80% of the maximum as the best effort
+      memoryLimit = Math.max(memoryLimit, maxMemoryToUse);
+    }
+
+    // always make sure memoryLimit <= 80% of the maximum
+    memoryLimit = Math.min(memoryLimit, maxMemoryToUse);
+
+    logger.info("Set allowed memory usage to {} bytes", memoryLimit);
+    return memoryLimit;
+  }
+
   // Map of default parameter values, used by effectiveParamValue().
   private static final Map<String, Object> defaultParameters;
   static
@@ -509,7 +534,6 @@ public class ResultUtil
     map.put("JDBC_EXECUTE_RETURN_COUNT_FOR_DML", Boolean.FALSE);
     map.put("CLIENT_DISABLE_INCIDENTS", Boolean.TRUE);
     map.put("BINARY_OUTPUT_FORMAT", "HEX");
-
     defaultParameters = map;
   }
 
