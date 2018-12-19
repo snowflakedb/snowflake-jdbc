@@ -125,16 +125,16 @@ class SnowflakeDatabaseMetaDataResultSet extends
   {
     logger.debug("public boolean next()");
 
-    // iterate throw the show table result until we find an entry
-    // that matches the table name
-    while (row < rows.length)
+    if (row < rows.length)
     {
       nextRow = rows[row++];
       return true;
     }
 
-    statement.close();
-    statement = null;
+    if(statement != null) {
+      statement.close();
+      statement = null;
+    }
 
     return false;
   }
