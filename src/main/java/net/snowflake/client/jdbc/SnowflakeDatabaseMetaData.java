@@ -123,7 +123,9 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   {
     logger.debug("public String getURL()");
 
-    return session.getUrl();
+    String url = session.getUrl();
+    return url.startsWith("http://") ? url.replace("http://","jdbc:snowflake://")
+        : url.replace("https://", "jdbc:snowflake://");
   }
 
   @Override
