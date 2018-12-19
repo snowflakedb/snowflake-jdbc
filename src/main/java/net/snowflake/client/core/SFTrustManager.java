@@ -811,21 +811,21 @@ class SFTrustManager implements X509TrustManager
       String ocspReqDerBase64 = Base64.encodeBase64String(ocspReqDer);
 
       Set<String> ocspUrls = getOcspUrls(pairIssuerSubject.right);
-      String ocspUrl = ocspUrls.iterator().next(); // first one
+      String ocspUrlStr = ocspUrls.iterator().next(); // first one
       URL url;
       if (SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN != null)
       {
-        url = new URL(
-            SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN.format(
-                ocspUrl, ocspReqDerBase64
-            ));
+        URL ocspUrl = new URL(ocspUrlStr);
+        url = new URL(String.format(
+            SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN,
+                ocspUrl.getHost(), ocspReqDerBase64));
       }
       else
       {
-        url = new URL(String.format("%s/%s", ocspUrl, ocspReqDerBase64));
+        url = new URL(String.format("%s/%s", ocspUrlStr, ocspReqDerBase64));
       }
       LOGGER.debug(
-          "not hit cache. Fetching OCSP response from CA OCSP server. {0}", url.toString());
+          "not hit cache. Fetching OCSP response from CA OCSP server. {}", url.toString());
 
       long sleepTime = INITIAL_SLEEPING_TIME_IN_MILLISECONDS;
       boolean success = false;
@@ -861,7 +861,7 @@ class SFTrustManager implements X509TrustManager
             String.format(
                 "Failed to get OCSP response. StatusCode: %d, URL: %s",
                 response == null ? null : response.getStatusLine().getStatusCode(),
-                ocspUrl));
+                ocspUrlStr));
       }
       ByteArrayOutputStream out = new ByteArrayOutputStream();
       IOUtils.copy(response.getEntity().getContent(), out);
