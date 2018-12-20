@@ -175,14 +175,14 @@ public class SnowflakeDriver implements Driver
     {
       implementVersion = versionResourceBundleManager.getLocalizedMessage("version");
 
-      logger.debug("implement version: {}", implementVersion);
+      logger.debug("Snowflake JDBC Version: {}", implementVersion);
 
       // parse implementation version major.minor.change
       if (implementVersion != null)
       {
         String[] versionBreakdown = implementVersion.split("\\.");
 
-        if (versionBreakdown != null && versionBreakdown.length == 3)
+        if (versionBreakdown.length == 3)
         {
           majorVersion = Integer.parseInt(versionBreakdown[0]);
           minorVersion = Integer.parseInt(versionBreakdown[1]);
@@ -191,17 +191,15 @@ public class SnowflakeDriver implements Driver
         else
           throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
               ErrorCode.INTERNAL_ERROR.getMessageCode(),
-              "Invalid implementation version: " + implementVersion);
+              "Invalid Snowflake JDBC Version: " + implementVersion);
       }
       else
+      {
         throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
             ErrorCode.INTERNAL_ERROR.getMessageCode(),
-            "Null implementation version");
-
-      logger.debug("implementation_version = {}", implementVersion);
-      logger.debug("major version = {}", majorVersion);
-      logger.debug("minor version = {}", minorVersion);
-      logger.debug("change version = {}", changeVersion);
+            "Snowflake JDBC Version is not set. " +
+                "Ensure version.properties is included.");
+      }
     }
     catch (Exception ex)
     {
