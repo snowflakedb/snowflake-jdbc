@@ -5,13 +5,14 @@
 |SNOW-61424| Remove useless version logs
 |SNOW-54606| Java Spring Boot, JDBC + Snowflake: running the application however causes an exception: Caused by: java.lang.IllegalArgumentException: URL must start with 'jdbc'
 |SNOW-63163| Fixed NPE when fetching data
-
 **JDBC Driver 3.6.21**
 |SNOW-61862| Driver now uses ``YYYY-MM-DD HH24:MI:SS.FF9 TZH:TZM`` for timestamp array binding.
 **JDBC Driver 3.6.20**
 |SNOW-61209| Fixed performance issue with result set download.
 **JDBC Driver 3.6.19**
 |SNOW-44393| Driver now catches exceptions for ``prepareStatement`` so that execution can continue.
+**JDBC Driver 3.6.18**
+|SNOW-56535| Support ResultSet.getCharacterStream
 **JDBC Driver 3.6.17**
 |SNOW-59862| Added JVM properties for CLIENT_PREFETCH_THREADS, CLIENT_MEMORY_LIMIT, and CLIENT_RESULT_CHUNK_SIZE.
 |SNOW-58812| Fixed issue with PARALLEL parameter for PUT and GET commands.
