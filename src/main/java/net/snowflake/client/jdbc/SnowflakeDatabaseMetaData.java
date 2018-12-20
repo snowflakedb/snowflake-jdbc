@@ -1355,8 +1355,10 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
                   }
                 }
 
-                statement.close();
-                statement = null;
+                if (statement != null) {
+                  statement.close();
+                  statement = null;
+                }
 
                 return false;
               }
@@ -1395,8 +1397,10 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
                   return true;
                 }
 
-                statement.close();
-                statement = null;
+                if (statement != null) {
+                  statement.close();
+                  statement = null;
+                }
 
                 return false;
               }
@@ -1654,8 +1658,10 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
                   }
                 }
 
-                statement.close();
-                statement = null;
+                if (statement != null) {
+                  statement.close();
+                  statement = null;
+                }
                 return false;
               }
             };
@@ -1823,8 +1829,10 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
           }
         }
 
-        statement.close();
-        statement = null;
+        if (statement != null) {
+          statement.close();
+          statement = null;
+        }
 
         return false;
       }
@@ -1990,8 +1998,10 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
           }
         }
 
-        statement.close();
-        statement = null;
+        if (statement != null) {
+          statement.close();
+          statement = null;
+        }
 
         return false;
       }
@@ -2542,8 +2552,10 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
           }
         }
 
-        statement.close();
-        statement = null;
+        if (statement != null) {
+          statement.close();
+          statement = null;
+        }
 
         return false;
       }
@@ -2670,8 +2682,12 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
             return true;
           }
         }
-        statement.close();
-        statement = null;
+
+        if (statement != null) {
+          statement.close();
+          statement = null;
+        }
+
         return false;
       }
     };
