@@ -3,84 +3,77 @@
  */
 package net.snowflake.client.jdbc.cloud.storage;
 
-import net.snowflake.client.core.SFSession;
-import net.snowflake.client.jdbc.FileBackedOutputStream;
-import net.snowflake.client.jdbc.SnowflakeSQLException;
-
 import java.io.File;
 import java.io.InputStream;
 import java.util.Map;
+import net.snowflake.client.core.SFSession;
+import net.snowflake.client.jdbc.FileBackedOutputStream;
 import net.snowflake.client.jdbc.MatDesc;
+import net.snowflake.client.jdbc.SnowflakeSQLException;
 
 /**
  * Interface for storage client provider implementations
  *
  * @author lgiakoumakis
  */
-public interface SnowflakeStorageClient
-{
-  /**
-   * @return Returns the Max number of retry attempts
-   */
+public interface SnowflakeStorageClient {
+  /** @return Returns the Max number of retry attempts */
   int getMaxRetries();
 
   /**
-   * Returns the max exponent for multiplying backoff with the power of 2, the value
-   * of 4 will give us 16secs as the max number of time to sleep before retry
+   * Returns the max exponent for multiplying backoff with the power of 2, the value of 4 will give
+   * us 16secs as the max number of time to sleep before retry
    *
    * @return Returns the exponent
    */
   int getRetryBackoffMaxExponent();
 
-  /**
-   * @return  Returns the min number of milliseconds to sleep before retry
-   */
-   int getRetryBackoffMin();
+  /** @return Returns the min number of milliseconds to sleep before retry */
+  int getRetryBackoffMin();
 
-  /**
-   * @return Returns true if encryption is enabled
-   */
+  /** @return Returns true if encryption is enabled */
   boolean isEncrypting();
 
-  /**
-   * @return Returns the size of the encryption key
-   */
+  /** @return Returns the size of the encryption key */
   int getEncryptionKeySize();
 
-  /** Re-creates the encapsulated storage client with a fresh access token
+  /**
+   * Re-creates the encapsulated storage client with a fresh access token
+   *
    * @param stageCredentials a Map (as returned by GS) which contains the new credential properties
    * @throws SnowflakeSQLException failure to renew the storage client
-   **/
+   */
   void renew(Map stageCredentials) throws SnowflakeSQLException;
 
-  /**
-   *   shuts down the client
-   */
+  /** shuts down the client */
   void shutdown();
 
   /**
-   * For a set of remote storage objects under a remote location and a given prefix/path
-   * returns their properties wrapped in ObjectSummary objects
+   * For a set of remote storage objects under a remote location and a given prefix/path returns
+   * their properties wrapped in ObjectSummary objects
+   *
    * @param remoteStorageLocation location, i.e. bucket for S3
    * @param prefix the prefix to list
    * @return a collection of storage summary objects
    * @throws StorageProviderException cloud storage provider error
    */
   StorageObjectSummaryCollection listObjects(String remoteStorageLocation, String prefix)
-                                            throws StorageProviderException;
+      throws StorageProviderException;
 
   /**
    * Returns the metadata properties for a remote storage object
+   *
    * @param remoteStorageLocation location, i.e. bucket for S3
    * @param prefix the prefix/path of the object to retrieve
    * @return storage metadata object
    * @throws StorageProviderException cloud storage provider error
    */
   StorageObjectMetadata getObjectMetadata(String remoteStorageLocation, String prefix)
-                                         throws StorageProviderException;
+      throws StorageProviderException;
 
   /**
    * Download a file from remote storage.
+   *
    * @param connection connection object
    * @param command command to download file
    * @param localLocation local file path
@@ -90,13 +83,21 @@ public interface SnowflakeStorageClient
    * @param stageFilePath stage file path
    * @param stageRegion region name where the stage persists
    * @throws SnowflakeSQLException download failure
-   **/
-void download(SFSession connection, String command, String localLocation, String destFileName,
-                int parallelism, String remoteStorageLocation, String stageFilePath, String stageRegion)
-                throws SnowflakeSQLException;
+   */
+  void download(
+      SFSession connection,
+      String command,
+      String localLocation,
+      String destFileName,
+      int parallelism,
+      String remoteStorageLocation,
+      String stageFilePath,
+      String stageRegion)
+      throws SnowflakeSQLException;
 
   /**
    * Upload a file (-stream) to remote storage
+   *
    * @param connection connection object
    * @param command upload command
    * @param parallelism number of threads do parallel uploading
@@ -110,51 +111,71 @@ void download(SFSession connection, String command, String localLocation, String
    * @param stageRegion region name where the stage persists
    * @throws SnowflakeSQLException if upload failed even after retry
    */
-  void upload(SFSession connection, String command, int parallelism, boolean uploadFromStream,
-              String remoteStorageLocation, File srcFile, String destFileName, InputStream inputStream,
-              FileBackedOutputStream fileBackedOutputStream, StorageObjectMetadata meta, String stageRegion)
-                throws SnowflakeSQLException;
+  void upload(
+      SFSession connection,
+      String command,
+      int parallelism,
+      boolean uploadFromStream,
+      String remoteStorageLocation,
+      File srcFile,
+      String destFileName,
+      InputStream inputStream,
+      FileBackedOutputStream fileBackedOutputStream,
+      StorageObjectMetadata meta,
+      String stageRegion)
+      throws SnowflakeSQLException;
   /**
    * Handles exceptions thrown by the remote storage provider
+   *
    * @param ex the exception to handle
    * @param retryCount current number of retries, incremented by the caller before each call
-   * @param operation string that indicates the function/operation that was taking place,
-   *                  when the exception was raised, for example "upload"
+   * @param operation string that indicates the function/operation that was taking place, when the
+   *     exception was raised, for example "upload"
    * @param connection the current SFSession object used by the client
    * @param command the command attempted at the time of the exception
-   * @throws SnowflakeSQLException exceptions that were not handled, or retried past
-   *                               what the retry policy allows, are propagated
+   * @throws SnowflakeSQLException exceptions that were not handled, or retried past what the retry
+   *     policy allows, are propagated
    */
-  void handleStorageException(Exception ex, int retryCount, String operation, SFSession connection, String command)
-          throws SnowflakeSQLException;
+  void handleStorageException(
+      Exception ex, int retryCount, String operation, SFSession connection, String command)
+      throws SnowflakeSQLException;
 
   /**
    * Returns the material descriptor key
+   *
    * @return the material descriptor key
    */
-   String getMatdescKey();
+  String getMatdescKey();
 
   /**
    * Adds encryption metadata to the StorageObjectMetadata object
+   *
    * @param meta the storage metadata object to add the encyption info to
    * @param matDesc the material decriptor
    * @param ivData the initialization vector
    * @param encKeK the key encryption key
    * @param contentLength the length of the encrypted content
    */
-   void addEncryptionMetadata(StorageObjectMetadata meta, MatDesc matDesc, byte[] ivData, byte[] encKeK, long contentLength);
+  void addEncryptionMetadata(
+      StorageObjectMetadata meta,
+      MatDesc matDesc,
+      byte[] ivData,
+      byte[] encKeK,
+      long contentLength);
 
   /**
    * Adds digest metadata to the StorageObjectMetadata object
+   *
    * @param meta the storage metadata object to add the digest to
    * @param digest the digest metadata to add
    */
-   void addDigestMetadata(StorageObjectMetadata meta, String digest);
+  void addDigestMetadata(StorageObjectMetadata meta, String digest);
 
   /**
    * Gets digest metadata to the StorageObjectMetadata object
+   *
    * @param meta the metadata object to extract the digest metadata from
    * @return the digest metadata value
    */
-   String getDigestMetadata(StorageObjectMetadata meta);
+  String getDigestMetadata(StorageObjectMetadata meta);
 }

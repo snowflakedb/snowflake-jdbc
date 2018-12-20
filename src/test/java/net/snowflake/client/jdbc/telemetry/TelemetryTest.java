@@ -1,22 +1,18 @@
 package net.snowflake.client.jdbc.telemetry;
 
+import static org.junit.Assert.assertEquals;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import java.util.LinkedList;
 import org.junit.Test;
 
-import java.util.LinkedList;
-
-
-import static org.junit.Assert.assertEquals;
-
-public class TelemetryTest
-{
+public class TelemetryTest {
   private ObjectMapper mapper = new ObjectMapper();
 
   @Test
-  public void testJsonConversion()
-  {
+  public void testJsonConversion() {
 
     ObjectNode log1 = mapper.createObjectNode();
     log1.put("type", "query");
@@ -36,14 +32,14 @@ public class TelemetryTest
     ObjectNode expect = mapper.createObjectNode();
     ArrayNode logs = mapper.createArrayNode();
     ObjectNode message1 = mapper.createObjectNode();
-    message1.put("timestamp",timestamp1+"");
-    message1.set("message",log1);
+    message1.put("timestamp", timestamp1 + "");
+    message1.set("message", log1);
     logs.add(message1);
     ObjectNode message2 = mapper.createObjectNode();
-    message2.put("timestamp",timestamp2+"");
-    message2.set("message",log2);
+    message2.put("timestamp", timestamp2 + "");
+    message2.set("message", log2);
     logs.add(message2);
-    expect.set("logs",logs);
+    expect.set("logs", logs);
 
     assertEquals(expect.toString(), result);
   }

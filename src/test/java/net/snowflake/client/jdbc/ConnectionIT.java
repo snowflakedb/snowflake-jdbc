@@ -3,13 +3,12 @@
  */
 package net.snowflake.client.jdbc;
 
-import net.snowflake.client.ConditionalIgnoreRule.ConditionalIgnore;
-import net.snowflake.client.RunningOnTravisCI;
-import net.snowflake.common.core.SqlState;
-import org.apache.commons.codec.binary.Base64;
-import org.junit.Assert;
-import org.junit.Ignore;
-import org.junit.Test;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -25,22 +24,18 @@ import java.sql.Statement;
 import java.util.Enumeration;
 import java.util.Map;
 import java.util.Properties;
+import net.snowflake.client.ConditionalIgnoreRule.ConditionalIgnore;
+import net.snowflake.client.RunningOnTravisCI;
+import net.snowflake.common.core.SqlState;
+import org.apache.commons.codec.binary.Base64;
+import org.junit.Assert;
+import org.junit.Ignore;
+import org.junit.Test;
 
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-/**
- * Connection integration tests
- */
-public class ConnectionIT extends BaseJDBCTest
-{
+/** Connection integration tests */
+public class ConnectionIT extends BaseJDBCTest {
   @Test
-  public void testSimpleConnection() throws SQLException
-  {
+  public void testSimpleConnection() throws SQLException {
     Connection con = getConnection();
     Statement statement = con.createStatement();
     ResultSet resultSet = statement.executeQuery("show parameters");
@@ -57,8 +52,7 @@ public class ConnectionIT extends BaseJDBCTest
    * @throws SQLException
    */
   @Test
-  public void testLoginTimeoutViaDataSource() throws SQLException
-  {
+  public void testLoginTimeoutViaDataSource() throws SQLException {
     SnowflakeBasicDataSource ds = new SnowflakeBasicDataSource();
     ds.setUrl("jdbc:snowflake://fakeaccount.snowflakecomputing.com");
     ds.setUser("fakeUser");
@@ -67,13 +61,10 @@ public class ConnectionIT extends BaseJDBCTest
     ds.setLoginTimeout(10);
 
     long startLoginTime = System.currentTimeMillis();
-    try
-    {
+    try {
       ds.getConnection();
       fail();
-    }
-    catch (SQLException e)
-    {
+    } catch (SQLException e) {
       assertThat(e.getErrorCode(), is(ErrorCode.NETWORK_ERROR.getMessageCode()));
     }
     long endLoginTime = System.currentTimeMillis();
@@ -82,17 +73,17 @@ public class ConnectionIT extends BaseJDBCTest
   }
 
   /**
-   * Test production connectivity in case cipher suites or tls protocol change
-   * Use fake username and password but correct url
-   * Expectation is receiving incorrect username or password response from server
+   * Test production connectivity in case cipher suites or tls protocol change Use fake username and
+   * password but correct url Expectation is receiving incorrect username or password response from
+   * server
    */
   @Test
-  public void testProdConnectivity() throws SQLException
-  {
+  public void testProdConnectivity() throws SQLException {
     String[] deploymentUrls = {
-        "jdbc:snowflake://sfcsupport.snowflakecomputing.com",
-        "jdbc:snowflake://sfcsupportva.us-east-1.snowflakecomputing.com",
-        "jdbc:snowflake://sfcsupporteu.eu-central-1.snowflakecomputing.com"};
+      "jdbc:snowflake://sfcsupport.snowflakecomputing.com",
+      "jdbc:snowflake://sfcsupportva.us-east-1.snowflakecomputing.com",
+      "jdbc:snowflake://sfcsupporteu.eu-central-1.snowflakecomputing.com"
+    };
 
     Properties properties = new Properties();
 
@@ -100,25 +91,19 @@ public class ConnectionIT extends BaseJDBCTest
     properties.put("password", "fakepwd");
     properties.put("account", "fakeaccount");
 
-    for (String url : deploymentUrls)
-    {
-      try
-      {
+    for (String url : deploymentUrls) {
+      try {
         DriverManager.getConnection(url, properties);
         fail();
-      }
-      catch (SQLException e)
-      {
-        assertThat(e.getErrorCode(), is(
-            ErrorCode.CONNECTION_ERROR.getMessageCode()));
+      } catch (SQLException e) {
+        assertThat(e.getErrorCode(), is(ErrorCode.CONNECTION_ERROR.getMessageCode()));
       }
     }
   }
 
   @Test
   @ConditionalIgnore(condition = RunningOnTravisCI.class)
-  public void testConnectionGetAndSetDBAndSchema() throws SQLException
-  {
+  public void testConnectionGetAndSetDBAndSchema() throws SQLException {
     Connection con = getConnection();
 
     final String database = System.getenv("SNOWFLAKE_TEST_DATABASE").toUpperCase();
@@ -153,8 +138,7 @@ public class ConnectionIT extends BaseJDBCTest
   }
 
   @Test
-  public void testConnectionClientInfo() throws SQLException
-  {
+  public void testConnectionClientInfo() throws SQLException {
     Connection con = getConnection();
     Properties property = con.getClientInfo();
     assertEquals(0, property.size());
@@ -173,8 +157,7 @@ public class ConnectionIT extends BaseJDBCTest
 
   @Ignore("not supported yet")
   @Test
-  public void testReadOnlyConneciton() throws SQLException
-  {
+  public void testReadOnlyConneciton() throws SQLException {
     Connection con = getConnection();
     assertTrue(!con.isReadOnly());
     con.setReadOnly(true);
@@ -188,8 +171,7 @@ public class ConnectionIT extends BaseJDBCTest
 
   // only support get and set
   @Test
-  public void testNetworkTimeout() throws SQLException
-  {
+  public void testNetworkTimeout() throws SQLException {
     Connection con = getConnection();
     int millis = con.getNetworkTimeout();
     assertEquals(0, millis);
@@ -199,8 +181,7 @@ public class ConnectionIT extends BaseJDBCTest
   }
 
   @Test
-  public void testAbort() throws SQLException
-  {
+  public void testAbort() throws SQLException {
     Connection con = getConnection();
     assertTrue(!con.isClosed());
     con.abort(null);
@@ -208,18 +189,14 @@ public class ConnectionIT extends BaseJDBCTest
   }
 
   @Test
-  public void testSetQueryTimeoutInConnectionStr() throws SQLException
-  {
+  public void testSetQueryTimeoutInConnectionStr() throws SQLException {
     Properties properties = new Properties();
     properties.put("queryTimeout", "5");
     Connection connection = getConnection(properties);
     Statement statement = connection.createStatement();
-    try
-    {
+    try {
       statement.executeQuery("select count(*) from table(generator(timeLimit => 1000000))");
-    }
-    catch (SQLException e)
-    {
+    } catch (SQLException e) {
       assertTrue(true);
       assertEquals(SqlState.QUERY_CANCELED, e.getSQLState());
       assertEquals("SQL execution canceled", e.getMessage());
@@ -229,64 +206,56 @@ public class ConnectionIT extends BaseJDBCTest
   }
 
   @Test
-  public void testLoginTimeout() throws SQLException
-  {
+  public void testLoginTimeout() throws SQLException {
     long connStart = 0, conEnd;
     Properties properties = new Properties();
     properties.put("account", "wrongaccount");
     properties.put("loginTimeout", "20");
     properties.put("user", "fakeuser");
     properties.put("password", "fakepassword");
-    try
-    {
+    try {
       connStart = System.currentTimeMillis();
       DriverManager.getConnection(
           "jdbc:snowflake://wrongaccount.snowflakecomputing.com", properties);
-    }
-    catch (SQLException e)
-    {
-      assertThat("Communication error", e.getErrorCode(),
+    } catch (SQLException e) {
+      assertThat(
+          "Communication error",
+          e.getErrorCode(),
           equalTo(ErrorCode.NETWORK_ERROR.getMessageCode()));
 
       conEnd = System.currentTimeMillis();
-      assertThat("Login time out not taking effective",
-          conEnd - connStart < 60000);
+      assertThat("Login time out not taking effective", conEnd - connStart < 60000);
       return;
     }
     fail();
   }
 
   @Test
-  public void testWrongHostNameTimeout() throws SQLException
-  {
+  public void testWrongHostNameTimeout() throws SQLException {
     long connStart = 0, conEnd;
     Properties properties = new Properties();
     properties.put("account", "testaccount");
     properties.put("loginTimeout", "20");
     properties.put("user", "fakeuser");
     properties.put("password", "fakepassword");
-    try
-    {
+    try {
       connStart = System.currentTimeMillis();
-      DriverManager.getConnection(
-          "jdbc:snowflake://testaccount.wronghostname.com", properties);
-    }
-    catch (SQLException e)
-    {
-      assertThat("Communication error", e.getErrorCode(),
+      DriverManager.getConnection("jdbc:snowflake://testaccount.wronghostname.com", properties);
+    } catch (SQLException e) {
+      assertThat(
+          "Communication error",
+          e.getErrorCode(),
           equalTo(ErrorCode.NETWORK_ERROR.getMessageCode()));
 
       conEnd = System.currentTimeMillis();
-      assertThat("Login time out not taking effective",
-          conEnd - connStart < 60000);
+      assertThat("Login time out not taking effective", conEnd - connStart < 60000);
       return;
     }
     fail();
   }
 
   @Test
-  public void testInvalidDbOrSchemaOrRole() throws SQLException
-  {
+  public void testInvalidDbOrSchemaOrRole() throws SQLException {
     Properties properties = new Properties();
 
     properties.put("db", "invalid_db");
@@ -305,8 +274,7 @@ public class ConnectionIT extends BaseJDBCTest
   }
 
   @Test
-  public void testConnectViaDataSource() throws SQLException
-  {
+  public void testConnectViaDataSource() throws SQLException {
     SnowflakeBasicDataSource ds = new SnowflakeBasicDataSource();
 
     Map<String, String> params = getConnectionParameters();
@@ -324,8 +292,7 @@ public class ConnectionIT extends BaseJDBCTest
     ds.setSsl("on".equals(ssl));
 
     Connection connection = ds.getConnection(user, password);
-    ResultSet resultSet = connection.createStatement()
-        .executeQuery("select 1");
+    ResultSet resultSet = connection.createStatement().executeQuery("select 1");
     resultSet.next();
     assertThat("select 1", resultSet.getInt(1), equalTo(1));
 
@@ -339,8 +306,7 @@ public class ConnectionIT extends BaseJDBCTest
     ds.setAccount(account);
     ds.setPortNumber(Integer.parseInt(port));
     connection = ds.getConnection(params.get("user"), params.get("password"));
-    resultSet = connection.createStatement()
-        .executeQuery("select 1");
+    resultSet = connection.createStatement().executeQuery("select 1");
     resultSet.next();
     assertThat("select 1", resultSet.getInt(1), equalTo(1));
 
@@ -349,8 +315,7 @@ public class ConnectionIT extends BaseJDBCTest
 
   @Test
   @ConditionalIgnore(condition = RunningOnTravisCI.class)
-  public void testConnectUsingKeyPair() throws Exception
-  {
+  public void testConnectUsingKeyPair() throws Exception {
     Map<String, String> parameters = getConnectionParameters();
     String testUser = parameters.get("user");
 
@@ -368,8 +333,8 @@ public class ConnectionIT extends BaseJDBCTest
 
     String encodePublicKey = Base64.encodeBase64String(publicKey.getEncoded());
 
-    statement.execute(String.format(
-        "alter user %s set rsa_public_key='%s'", testUser, encodePublicKey));
+    statement.execute(
+        String.format("alter user %s set rsa_public_key='%s'", testUser, encodePublicKey));
 
     connection.close();
 
@@ -391,13 +356,10 @@ public class ConnectionIT extends BaseJDBCTest
     PublicKey publicKey2 = keyPair.getPublic();
     PrivateKey privateKey2 = keyPair.getPrivate();
     properties.put("privateKey", privateKey2);
-    try
-    {
+    try {
       connection = DriverManager.getConnection(uri, properties);
       fail();
-    }
-    catch (SQLException e)
-    {
+    } catch (SQLException e) {
       Assert.assertEquals(200002, e.getErrorCode());
     }
 
@@ -408,8 +370,8 @@ public class ConnectionIT extends BaseJDBCTest
 
     String encodePublicKey2 = Base64.encodeBase64String(publicKey2.getEncoded());
 
-    statement.execute(String.format(
-        "alter user %s set rsa_public_key_2='%s'", testUser, encodePublicKey2));
+    statement.execute(
+        String.format("alter user %s set rsa_public_key_2='%s'", testUser, encodePublicKey2));
     connection.close();
 
     connection = DriverManager.getConnection(uri, properties);
@@ -423,8 +385,7 @@ public class ConnectionIT extends BaseJDBCTest
   }
 
   @Test
-  public void testBadPrivateKey() throws Exception
-  {
+  public void testBadPrivateKey() throws Exception {
     Map<String, String> parameters = getConnectionParameters();
     String testUser = parameters.get("user");
 
@@ -438,35 +399,27 @@ public class ConnectionIT extends BaseJDBCTest
     KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("DSA");
     PrivateKey dsaPrivateKey = keyPairGenerator.generateKeyPair().getPrivate();
 
-    try
-    {
+    try {
       properties.put("privateKey", "bad string");
       DriverManager.getConnection(uri, properties);
       fail();
-    }
-    catch (SQLException e)
-    {
-      assertThat(e.getErrorCode(), is(
-          ErrorCode.INVALID_PARAMETER_TYPE.getMessageCode()));
+    } catch (SQLException e) {
+      assertThat(e.getErrorCode(), is(ErrorCode.INVALID_PARAMETER_TYPE.getMessageCode()));
     }
 
-    try
-    {
+    try {
       properties.put("privateKey", dsaPrivateKey);
       DriverManager.getConnection(uri, properties);
       fail();
-    }
-    catch (SQLException e)
-    {
-      assertThat(e.getErrorCode(), is(
-          ErrorCode.INVALID_OR_UNSUPPORTED_PRIVATE_KEY.getMessageCode()));
+    } catch (SQLException e) {
+      assertThat(
+          e.getErrorCode(), is(ErrorCode.INVALID_OR_UNSUPPORTED_PRIVATE_KEY.getMessageCode()));
     }
   }
 
   @Test
   @ConditionalIgnore(condition = RunningOnTravisCI.class)
-  public void testDifferentKeyLength() throws Exception
-  {
+  public void testDifferentKeyLength() throws Exception {
     Map<String, String> parameters = getConnectionParameters();
     String testUser = parameters.get("user");
 
@@ -475,8 +428,7 @@ public class ConnectionIT extends BaseJDBCTest
     KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
     SecureRandom random = SecureRandom.getInstance("SHA1PRNG", "SUN");
 
-    for (Integer keyLength : testCases)
-    {
+    for (Integer keyLength : testCases) {
       keyPairGenerator.initialize(keyLength, random);
 
       KeyPair keyPair = keyPairGenerator.generateKeyPair();
@@ -489,8 +441,8 @@ public class ConnectionIT extends BaseJDBCTest
 
       String encodePublicKey = Base64.encodeBase64String(publicKey.getEncoded());
 
-      statement.execute(String.format(
-          "alter user %s set rsa_public_key='%s'", testUser, encodePublicKey));
+      statement.execute(
+          String.format("alter user %s set rsa_public_key='%s'", testUser, encodePublicKey));
 
       connection.close();
 
@@ -507,20 +459,17 @@ public class ConnectionIT extends BaseJDBCTest
       properties.put("privateKey", privateKey);
       connection = DriverManager.getConnection(uri, properties);
 
-      connection.createStatement().execute(
-          String.format("alter user %s unset rsa_public_key", testUser));
+      connection
+          .createStatement()
+          .execute(String.format("alter user %s unset rsa_public_key", testUser));
       connection.close();
     }
   }
 
-  /**
-   * Test production connectivity with insecure mode disabled.
-   */
+  /** Test production connectivity with insecure mode disabled. */
   @Test
-  public void testInsecureMode() throws SQLException
-  {
-    String deploymentUrl =
-        "jdbc:snowflake://sfcsupport.snowflakecomputing.com";
+  public void testInsecureMode() throws SQLException {
+    String deploymentUrl = "jdbc:snowflake://sfcsupport.snowflakecomputing.com";
 
     Properties properties = new Properties();
 
@@ -528,43 +477,31 @@ public class ConnectionIT extends BaseJDBCTest
     properties.put("password", "fakepwd");
     properties.put("account", "fakeaccount");
     properties.put("insecureMode", false);
-    try
-    {
+    try {
       DriverManager.getConnection(deploymentUrl, properties);
       fail();
-    }
-    catch (SQLException e)
-    {
-      assertThat(e.getErrorCode(), is(
-          ErrorCode.CONNECTION_ERROR.getMessageCode()));
+    } catch (SQLException e) {
+      assertThat(e.getErrorCode(), is(ErrorCode.CONNECTION_ERROR.getMessageCode()));
     }
 
-    deploymentUrl =
-        "jdbc:snowflake://sfcsupport.snowflakecomputing.com?insecureMode=false";
+    deploymentUrl = "jdbc:snowflake://sfcsupport.snowflakecomputing.com?insecureMode=false";
 
     properties = new Properties();
 
     properties.put("user", "fakesuer");
     properties.put("password", "fakepwd");
     properties.put("account", "fakeaccount");
-    try
-    {
+    try {
       DriverManager.getConnection(deploymentUrl, properties);
       fail();
-    }
-    catch (SQLException e)
-    {
-      assertThat(e.getErrorCode(), is(
-          ErrorCode.CONNECTION_ERROR.getMessageCode()));
+    } catch (SQLException e) {
+      assertThat(e.getErrorCode(), is(ErrorCode.CONNECTION_ERROR.getMessageCode()));
     }
   }
 
-  /**
-   * Verify the passed memory parameters are set in the session
-   */
+  /** Verify the passed memory parameters are set in the session */
   @Test
-  public void testClientMemoryParameters() throws Exception
-  {
+  public void testClientMemoryParameters() throws Exception {
     Properties paramProperties = new Properties();
     paramProperties.put("CLIENT_PREFETCH_THREADS", "6");
     paramProperties.put("CLIENT_RESULT_CHUNK_SIZE", 48);
@@ -572,53 +509,52 @@ public class ConnectionIT extends BaseJDBCTest
     Connection connection = getConnection(paramProperties);
 
     for (Enumeration<String> enums = (Enumeration<String>) paramProperties.propertyNames();
-         enums.hasMoreElements(); )
-    {
+        enums.hasMoreElements(); ) {
       String key = enums.nextElement();
-      ResultSet rs = connection.createStatement().executeQuery(
-          String.format("show parameters like '%s'", key));
+      ResultSet rs =
+          connection
+              .createStatement()
+              .executeQuery(String.format("show parameters like '%s'", key));
       rs.next();
       String value = rs.getString("value");
       assertThat(key, value, equalTo(paramProperties.get(key).toString()));
     }
   }
 
-  /**
-   * Verify the JVM memory parameters are set in the session
-   */
+  /** Verify the JVM memory parameters are set in the session */
   @Test
-  public void testClientMemoryJvmParameteres() throws Exception
-  {
+  public void testClientMemoryJvmParameteres() throws Exception {
     Properties paramProperties = new Properties();
     paramProperties.put("CLIENT_PREFETCH_THREADS", "6");
     paramProperties.put("CLIENT_RESULT_CHUNK_SIZE", 48);
     paramProperties.put("CLIENT_MEMORY_LIMIT", 1000L);
 
     // set JVM parameters
-    System.setProperty("net.snowflake.jdbc.clientPrefetchThreads",
+    System.setProperty(
+        "net.snowflake.jdbc.clientPrefetchThreads",
         paramProperties.get("CLIENT_PREFETCH_THREADS").toString());
-    System.setProperty("net.snowflake.jdbc.clientResultChunkSize",
+    System.setProperty(
+        "net.snowflake.jdbc.clientResultChunkSize",
         paramProperties.get("CLIENT_RESULT_CHUNK_SIZE").toString());
-    System.setProperty("net.snowflake.jdbc.clientMemoryLimit",
+    System.setProperty(
+        "net.snowflake.jdbc.clientMemoryLimit",
         paramProperties.get("CLIENT_MEMORY_LIMIT").toString());
 
-    try
-    {
+    try {
       Connection connection = getConnection();
 
       for (Enumeration<String> enums = (Enumeration<String>) paramProperties.propertyNames();
-           enums.hasMoreElements(); )
-      {
+          enums.hasMoreElements(); ) {
         String key = enums.nextElement();
-        ResultSet rs = connection.createStatement().executeQuery(
-            String.format("show parameters like '%s'", key));
+        ResultSet rs =
+            connection
+                .createStatement()
+                .executeQuery(String.format("show parameters like '%s'", key));
         rs.next();
         String value = rs.getString("value");
         assertThat(key, value, equalTo(paramProperties.get(key).toString()));
       }
-    }
-    finally
-    {
+    } finally {
       System.clearProperty("net.snowflake.jdbc.clientPrefetchThreads");
       System.clearProperty("net.snowflake.jdbc.clientResultChunkSize");
       System.clearProperty("net.snowflake.jdbc.clientMemoryLimit");
@@ -626,46 +562,46 @@ public class ConnectionIT extends BaseJDBCTest
   }
 
   /**
-   * Verify the connection and JVM memory parameters are set in the session.
-   * The connection parameters take precedence over JVM.
+   * Verify the connection and JVM memory parameters are set in the session. The connection
+   * parameters take precedence over JVM.
    */
   @Test
-  public void testClientMixedMemoryJvmParameteres() throws Exception
-  {
+  public void testClientMixedMemoryJvmParameteres() throws Exception {
     Properties paramProperties = new Properties();
     paramProperties.put("CLIENT_PREFETCH_THREADS", "6");
     paramProperties.put("CLIENT_RESULT_CHUNK_SIZE", 48);
     paramProperties.put("CLIENT_MEMORY_LIMIT", 1000L);
 
     // set JVM parameters
-    System.setProperty("net.snowflake.jdbc.clientPrefetchThreads",
+    System.setProperty(
+        "net.snowflake.jdbc.clientPrefetchThreads",
         paramProperties.get("CLIENT_PREFETCH_THREADS").toString());
-    System.setProperty("net.snowflake.jdbc.clientResultChunkSize",
+    System.setProperty(
+        "net.snowflake.jdbc.clientResultChunkSize",
         paramProperties.get("CLIENT_RESULT_CHUNK_SIZE").toString());
-    System.setProperty("net.snowflake.jdbc.clientMemoryLimit",
+    System.setProperty(
+        "net.snowflake.jdbc.clientMemoryLimit",
         paramProperties.get("CLIENT_MEMORY_LIMIT").toString());
 
     paramProperties.put("CLIENT_PREFETCH_THREADS", "8");
     paramProperties.put("CLIENT_RESULT_CHUNK_SIZE", 64);
     paramProperties.put("CLIENT_MEMORY_LIMIT", 2000L);
 
-    try
-    {
+    try {
       Connection connection = getConnection(paramProperties);
 
       for (Enumeration<String> enums = (Enumeration<String>) paramProperties.propertyNames();
-           enums.hasMoreElements(); )
-      {
+          enums.hasMoreElements(); ) {
         String key = enums.nextElement();
-        ResultSet rs = connection.createStatement().executeQuery(
-            String.format("show parameters like '%s'", key));
+        ResultSet rs =
+            connection
+                .createStatement()
+                .executeQuery(String.format("show parameters like '%s'", key));
         rs.next();
         String value = rs.getString("value");
         assertThat(key, value, equalTo(paramProperties.get(key).toString()));
       }
-    }
-    finally
-    {
+    } finally {
       System.clearProperty("net.snowflake.jdbc.clientPrefetchThreads");
       System.clearProperty("net.snowflake.jdbc.clientResultChunkSize");
       System.clearProperty("net.snowflake.jdbc.clientMemoryLimit");

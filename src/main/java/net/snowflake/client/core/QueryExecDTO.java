@@ -9,14 +9,12 @@ import java.util.Map;
 /**
  * Body of a query request
  *
- * Created by hyu on 6/30/17.
+ * <p>Created by hyu on 6/30/17.
  */
-class QueryExecDTO
-{
+class QueryExecDTO {
   private String sqlText;
 
-  @Deprecated
-  private Integer sequenceId;
+  @Deprecated private Integer sequenceId;
 
   private Map<String, ParameterBindingDTO> bindings;
 
@@ -32,15 +30,15 @@ class QueryExecDTO
 
   private boolean isInternal;
 
-  QueryExecDTO(String sqlText,
-               boolean describeOnly,
-               Integer sequenceId,
-               Map<String, ParameterBindingDTO> bindings,
-               String bindStage,
-               Map<String, Object> parameters,
-               long querySubmissionTime,
-               boolean internal)
-  {
+  QueryExecDTO(
+      String sqlText,
+      boolean describeOnly,
+      Integer sequenceId,
+      Map<String, ParameterBindingDTO> bindings,
+      String bindStage,
+      Map<String, Object> parameters,
+      long querySubmissionTime,
+      boolean internal) {
     this.sqlText = sqlText;
     this.describeOnly = describeOnly;
     this.sequenceId = sequenceId;
@@ -51,95 +49,77 @@ class QueryExecDTO
     this.isInternal = internal;
   }
 
-  public String getSqlText()
-  {
+  public String getSqlText() {
     return sqlText;
   }
 
-  public void setSqlText(String sqlText)
-  {
+  public void setSqlText(String sqlText) {
     this.sqlText = sqlText;
   }
 
   @Deprecated
-  public Integer getSequenceId()
-  {
+  public Integer getSequenceId() {
     return sequenceId;
   }
 
   @Deprecated
-  public void setSequenceId(Integer sequenceId)
-  {
+  public void setSequenceId(Integer sequenceId) {
     this.sequenceId = sequenceId;
   }
 
-  public Map<String, ParameterBindingDTO> getBindings()
-  {
+  public Map<String, ParameterBindingDTO> getBindings() {
     return bindings;
   }
 
-  public void setBindings(Map<String, ParameterBindingDTO> bindings)
-  {
+  public void setBindings(Map<String, ParameterBindingDTO> bindings) {
     this.bindings = bindings;
   }
 
-  public String getBindStage()
-  {
+  public String getBindStage() {
     return bindStage;
   }
 
-  public void setBindStage(String bindStage)
-  {
+  public void setBindStage(String bindStage) {
     this.bindStage = bindStage;
   }
 
-  public boolean isDescribeOnly()
-  {
+  public boolean isDescribeOnly() {
     return describeOnly;
   }
 
-  public void setDescribeOnly(boolean describeOnly)
-  {
+  public void setDescribeOnly(boolean describeOnly) {
     this.describeOnly = describeOnly;
   }
 
-  public Map<String, Object> getParameters()
-  {
+  public Map<String, Object> getParameters() {
     return parameters;
   }
 
-  public void setParameters(Map<String, Object> parameters)
-  {
+  public void setParameters(Map<String, Object> parameters) {
     this.parameters = parameters;
   }
 
-  public String getDescribedJobId()
-  {
+  public String getDescribedJobId() {
     return describedJobId;
   }
 
-  public void setDescribedJobId(String describedJobId)
-  {
+  public void setDescribedJobId(String describedJobId) {
     this.describedJobId = describedJobId;
   }
 
-  public long getQuerySubmissionTime()
-  {
+  public long getQuerySubmissionTime() {
     return querySubmissionTime;
   }
 
-  public void setQuerySubmissionTime(long querySubmissionTime)
-  {
+  public void setQuerySubmissionTime(long querySubmissionTime) {
     this.querySubmissionTime = querySubmissionTime;
   }
 
-  public void setIsInternal(boolean isInternal)
-  {
+  public void setIsInternal(boolean isInternal) {
     this.isInternal = isInternal;
   }
 
-  public boolean getIsInternal()
-  {
+  public boolean getIsInternal() {
     return this.isInternal;
   }
 }

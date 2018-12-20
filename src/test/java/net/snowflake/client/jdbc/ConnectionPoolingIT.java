@@ -3,16 +3,11 @@
  */
 package net.snowflake.client.jdbc;
 
+import static org.junit.Assert.assertEquals;
+
 import com.mchange.v2.c3p0.ComboPooledDataSource;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
-import org.apache.commons.dbcp.BasicDataSource;
-import org.apache.commons.dbcp.PoolingDataSource;
-import org.apache.commons.pool.impl.GenericObjectPool;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
 import java.beans.PropertyVetoException;
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -20,14 +15,15 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Map;
 import java.util.Properties;
+import org.apache.commons.dbcp.BasicDataSource;
+import org.apache.commons.dbcp.PoolingDataSource;
+import org.apache.commons.pool.impl.GenericObjectPool;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
-
-/**
- * @author hyu
- */
-public class ConnectionPoolingIT
-{
+/** @author hyu */
+public class ConnectionPoolingIT {
   private BasicDataSource bds = null;
   private ComboPooledDataSource cpds = null;
   private final String connectStr;
@@ -38,10 +34,8 @@ public class ConnectionPoolingIT
   private final String schema;
   private final String ssl;
 
-  public ConnectionPoolingIT()
-  {
-    try
-    {
+  public ConnectionPoolingIT() {
+    try {
       Map<String, String> params = BaseJDBCTest.getConnectionParameters();
       connectStr = params.get("uri");
       account = params.get("account");
@@ -50,15 +44,13 @@ public class ConnectionPoolingIT
       database = params.get("database");
       schema = params.get("schema");
       ssl = params.get("ssl");
-    } catch (SQLException e)
-    {
+    } catch (SQLException e) {
       throw new RuntimeException(e.getCause());
     }
   }
 
   @Before
-  public void setUp() throws SQLException
-  {
+  public void setUp() throws SQLException {
     Connection connection = BaseJDBCTest.getConnection();
     Statement statement = connection.createStatement();
     statement.execute("create or replace table test_pooling(colA string)");
@@ -68,8 +60,7 @@ public class ConnectionPoolingIT
   }
 
   @After
-  public void tearDown() throws SQLException
-  {
+  public void tearDown() throws SQLException {
     Connection connection = BaseJDBCTest.getConnection();
     Statement statement = connection.createStatement();
     statement.execute("drop table if exists TEST_POOLING");
@@ -78,27 +69,24 @@ public class ConnectionPoolingIT
   }
 
   /*  Testing DBCP Library */
-  private void setUpDBCPConnection()
-  {
+  private void setUpDBCPConnection() {
     bds = new BasicDataSource();
     bds.setDriverClassName(BaseJDBCTest.DRIVER_CLASS);
     bds.setUsername(this.user);
     bds.setPassword(this.password);
     bds.setUrl(connectStr);
 
-    String propertyString = String.format(
-        "ssl=%s;db=%s;schema=%s;account=%s;",
-        this.ssl, this.database, this.schema, this.account
-    );
+    String propertyString =
+        String.format(
+            "ssl=%s;db=%s;schema=%s;account=%s;",
+            this.ssl, this.database, this.schema, this.account);
     bds.setConnectionProperties(propertyString);
   }
 
   @Test
-  public void testDBCPConnection() throws SQLException, Exception
-  {
+  public void testDBCPConnection() throws SQLException, Exception {
     setUpDBCPConnection();
-    for (int i = 0; i < 10; i++)
-    {
+    for (int i = 0; i < 10; i++) {
       Thread t = new Thread(new queryUsingPool(bds));
       t.join();
     }
@@ -106,33 +94,28 @@ public class ConnectionPoolingIT
 
   private GenericObjectPool connectionPool = null;
 
-  private PoolingDataSource setUpPoolingDataSource() throws Exception
-  {
+  private PoolingDataSource setUpPoolingDataSource() throws Exception {
     Class.forName(BaseJDBCTest.DRIVER_CLASS);
     connectionPool = new GenericObjectPool();
     connectionPool.setMaxActive(20);
     return new PoolingDataSource(connectionPool);
   }
 
-  public GenericObjectPool getConnectionPool()
-  {
+  public GenericObjectPool getConnectionPool() {
     return connectionPool;
   }
 
   @Test
-  public void testPoolingDataSource() throws Exception, SQLException
-  {
+  public void testPoolingDataSource() throws Exception, SQLException {
     PoolingDataSource pds = setUpPoolingDataSource();
-    for (int i = 0; i < 10; i++)
-    {
+    for (int i = 0; i < 10; i++) {
       Thread t = new Thread(new queryUsingPool(pds));
       t.join();
     }
   }
 
   /* Test C3P0 Library */
-  private void setUpC3P0Connection() throws PropertyVetoException, SQLException
-  {
+  private void setUpC3P0Connection() throws PropertyVetoException, SQLException {
     Properties connectionProperties = setUpConnectionProperty();
     cpds = new ComboPooledDataSource();
     cpds.setDriverClass(BaseJDBCTest.DRIVER_CLASS);
@@ -141,30 +124,25 @@ public class ConnectionPoolingIT
   }
 
   @Test
-  public void testC3P0ConnectionPool() throws Exception
-  {
+  public void testC3P0ConnectionPool() throws Exception {
     setUpC3P0Connection();
 
-    for (int i = 0; i < 10; i++)
-    {
+    for (int i = 0; i < 10; i++) {
       Thread t = new Thread(new queryUsingPool(cpds));
       t.join();
     }
   }
 
   @Test
-  public void testHikariConnectionPool() throws Exception
-  {
+  public void testHikariConnectionPool() throws Exception {
     HikariDataSource ds = initHikariDataSource();
-    for (int i = 0; i < 10; i++)
-    {
+    for (int i = 0; i < 10; i++) {
       Thread t = new Thread(new queryUsingPool(ds));
       t.join();
     }
   }
 
-  private HikariDataSource initHikariDataSource() throws SQLException
-  {
+  private HikariDataSource initHikariDataSource() throws SQLException {
     HikariConfig config = new HikariConfig();
     config.setDriverClassName(BaseJDBCTest.DRIVER_CLASS);
     config.setDataSourceProperties(setUpConnectionProperty());
@@ -172,73 +150,56 @@ public class ConnectionPoolingIT
     return new HikariDataSource(config);
   }
 
-  private static class queryUsingPool implements Runnable
-  {
+  private static class queryUsingPool implements Runnable {
     ComboPooledDataSource cpds = null;
     BasicDataSource bds = null;
     PoolingDataSource pds = null;
     HikariDataSource hds = null;
 
-    queryUsingPool(ComboPooledDataSource cpds)
-    {
+    queryUsingPool(ComboPooledDataSource cpds) {
       this.cpds = cpds;
     }
 
-    queryUsingPool(BasicDataSource bds)
-    {
+    queryUsingPool(BasicDataSource bds) {
       this.bds = bds;
     }
 
-    queryUsingPool(PoolingDataSource pds)
-    {
+    queryUsingPool(PoolingDataSource pds) {
       this.pds = pds;
     }
 
-    queryUsingPool(HikariDataSource hds)
-    {
+    queryUsingPool(HikariDataSource hds) {
       this.hds = hds;
     }
 
     @Override
-    public void run()
-    {
+    public void run() {
       Connection con = null;
-      try
-      {
-        if (cpds != null)
-          con = cpds.getConnection();
-        else if (bds != null)
-          con = bds.getConnection();
-        else if (pds != null)
-          con = pds.getConnection();
-        else if (hds != null)
-          con = hds.getConnection();
+      try {
+        if (cpds != null) con = cpds.getConnection();
+        else if (bds != null) con = bds.getConnection();
+        else if (pds != null) con = pds.getConnection();
+        else if (hds != null) con = hds.getConnection();
 
         Statement st = con.createStatement();
         ResultSet resultSet = st.executeQuery("SELECT * FROM test_pooling");
 
-        while (resultSet.next())
-        {
+        while (resultSet.next()) {
           assertEquals("test_str", resultSet.getString(1));
         }
-      } catch (Exception e)
-      {
+      } catch (Exception e) {
         System.out.println(e);
-      } finally
-      {
-        try
-        {
+      } finally {
+        try {
           con.close();
-        } catch (Exception e)
-        {
+        } catch (Exception e) {
           System.out.println(e);
         }
       }
     }
   }
 
-  private Properties setUpConnectionProperty()
-  {
+  private Properties setUpConnectionProperty() {
     Properties properties = new Properties();
     // use the default connection string if it is not set in environment
     properties.put("user", this.user);

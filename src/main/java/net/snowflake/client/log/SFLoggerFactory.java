@@ -10,38 +10,29 @@ import java.util.Enumeration;
 /**
  * Used to create SFLogger instance
  *
- * Created by hyu on 11/17/16.
+ * <p>Created by hyu on 11/17/16.
  */
-public class SFLoggerFactory
-{
+public class SFLoggerFactory {
   public static LoggerImpl loggerImplementation;
 
-  enum LoggerImpl
-  {
+  enum LoggerImpl {
     SLF4JLOGGER("net.snowflake.client.log.SLF4JLogger"),
     JDK14LOGGER("net.snowflake.client.log.JDK14Logger");
 
     private String loggerImplClassName;
 
-    LoggerImpl(String loggerClass)
-    {
+    LoggerImpl(String loggerClass) {
       this.loggerImplClassName = loggerClass;
     }
 
-    public String getLoggerImplClassName()
-    {
+    public String getLoggerImplClassName() {
       return this.loggerImplClassName;
     }
 
-    public static LoggerImpl fromString(String loggerImplClassName)
-    {
-      if (loggerImplClassName != null)
-      {
-        for (LoggerImpl imp : LoggerImpl.values())
-        {
-          if (loggerImplClassName.equalsIgnoreCase(
-              imp.getLoggerImplClassName()))
-          {
+    public static LoggerImpl fromString(String loggerImplClassName) {
+      if (loggerImplClassName != null) {
+        for (LoggerImpl imp : LoggerImpl.values()) {
+          if (loggerImplClassName.equalsIgnoreCase(imp.getLoggerImplClassName())) {
             return imp;
           }
         }
@@ -54,29 +45,24 @@ public class SFLoggerFactory
    * @param clazz Class type that the logger is instantiated
    * @return An SFLogger instance given the name of the class
    */
-  public static SFLogger getLogger(Class<?> clazz)
-  {
+  public static SFLogger getLogger(Class<?> clazz) {
     // only need to determine the logger implementation only once
-    if (loggerImplementation == null)
-    {
+    if (loggerImplementation == null) {
       String logger = System.getProperty("net.snowflake.jdbc.loggerImpl");
 
       loggerImplementation = LoggerImpl.fromString(logger);
 
       if (loggerImplementation == null) {
         // try to load slf4j implementation class first
-        loggerImplementation = slf4jImplExist() ? LoggerImpl.SLF4JLOGGER
-            : LoggerImpl.JDK14LOGGER;
+        loggerImplementation = slf4jImplExist() ? LoggerImpl.SLF4JLOGGER : LoggerImpl.JDK14LOGGER;
       }
 
-      if (loggerImplementation == LoggerImpl.JDK14LOGGER)
-      {
+      if (loggerImplementation == LoggerImpl.JDK14LOGGER) {
         JDK14Logger.defaultInit();
       }
     }
 
-    switch (loggerImplementation)
-    {
+    switch (loggerImplementation) {
       case SLF4JLOGGER:
         return new SLF4JLogger(clazz);
       case JDK14LOGGER:
@@ -85,34 +71,26 @@ public class SFLoggerFactory
     }
   }
 
-  private static final String STATIC_LOGGER_BINDER_PATH="org/slf4j/impl/StaticLoggerBinder.class";
+  private static final String STATIC_LOGGER_BINDER_PATH = "org/slf4j/impl/StaticLoggerBinder.class";
   /**
-   * Methods used to determine if the slf4j implementation exist
-   * or not.
+   * Methods used to determine if the slf4j implementation exist or not.
    *
-   * The way to determine is to figure out if org.slf4j.StaticLoggerBinder
-   * is in the classpath or not. If not, then there is no implementation,
-   * switch to JDKLogger by default;
+   * <p>The way to determine is to figure out if org.slf4j.StaticLoggerBinder is in the classpath or
+   * not. If not, then there is no implementation, switch to JDKLogger by default;
+   *
    * @return
    */
-  private static boolean slf4jImplExist()
-  {
-    try
-    {
+  private static boolean slf4jImplExist() {
+    try {
       ClassLoader loggerFactoryClassLoader = SFLoggerFactory.class.getClassLoader();
       Enumeration<URL> paths;
-      if (loggerFactoryClassLoader == null)
-      {
+      if (loggerFactoryClassLoader == null) {
         paths = ClassLoader.getSystemResources(STATIC_LOGGER_BINDER_PATH);
-      }
-      else
-      {
+      } else {
         paths = loggerFactoryClassLoader.getResources(STATIC_LOGGER_BINDER_PATH);
       }
       return paths.hasMoreElements();
-    }
-    catch (IOException e)
-    {
+    } catch (IOException e) {
       System.err.println(e);
     }
     return false;

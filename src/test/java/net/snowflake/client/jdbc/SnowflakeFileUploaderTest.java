@@ -3,34 +3,19 @@
  */
 package net.snowflake.client.jdbc;
 
-import java.sql.Timestamp;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Set;
-import java.util.TimeZone;
+import static org.junit.Assert.*;
 
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
-import org.joda.time.format.DateTimeFormat;
-import org.joda.time.format.DateTimeFormatter;
+import java.util.Set;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
-import static org.junit.Assert.*;
-
-/**
- * @author jhuang
- */
-public class SnowflakeFileUploaderTest
-{
-  @Rule
-  public TemporaryFolder folder = new TemporaryFolder();
+/** @author jhuang */
+public class SnowflakeFileUploaderTest {
+  @Rule public TemporaryFolder folder = new TemporaryFolder();
 
   @Test
-  public void testProcessFileNames() throws Exception
-  {
+  public void testProcessFileNames() throws Exception {
     folder.newFile("TestFileA");
     folder.newFile("TestFileB");
 
@@ -38,12 +23,9 @@ public class SnowflakeFileUploaderTest
     System.setProperty("user.dir", folderName);
     System.setProperty("user.home", folderName);
 
-    String[] locations =
-        {
-            folderName + "/Tes*Fil*A",
-            folderName + "/TestFil?B",
-            "~/TestFileC", "TestFileD"
-        };
+    String[] locations = {
+      folderName + "/Tes*Fil*A", folderName + "/TestFil?B", "~/TestFileC", "TestFileD"
+    };
 
     Set<String> files = SnowflakeFileTransferAgent.expandFileNames(locations);
 

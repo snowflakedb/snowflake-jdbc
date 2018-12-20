@@ -4,8 +4,6 @@
 
 package net.snowflake.client.jdbc;
 
-import net.snowflake.client.core.SFSession;
-
 import java.nio.charset.StandardCharsets;
 import java.sql.Date;
 import java.sql.ResultSet;
@@ -15,33 +13,25 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.List;
 import java.util.TimeZone;
-
-import net.snowflake.client.log.SFLoggerFactory;
+import net.snowflake.client.core.SFSession;
 import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
 
-/**
- *
- * @author jhuang
- */
-class SnowflakeDatabaseMetaDataResultSet extends
-        SnowflakeBaseResultSet
-{
+/** @author jhuang */
+class SnowflakeDatabaseMetaDataResultSet extends SnowflakeBaseResultSet {
   protected ResultSet showObjectResultSet;
   protected Statement statement;
   protected Object[][] rows;
 
-  static final SFLogger logger = SFLoggerFactory.getLogger(
-          SnowflakeDatabaseMetaDataResultSet.class);
+  static final SFLogger logger =
+      SFLoggerFactory.getLogger(SnowflakeDatabaseMetaDataResultSet.class);
 
-  /**
-   * Used for creating an empty result set
-   */
-  public SnowflakeDatabaseMetaDataResultSet()
-  {
-  }
+  /** Used for creating an empty result set */
+  public SnowflakeDatabaseMetaDataResultSet() {}
 
   /**
    * DatabaseMetadataResultSet based on result from show command
+   *
    * @param columnNames column names
    * @param columnTypeNames column type names
    * @param columnTypes column types
@@ -49,31 +39,29 @@ class SnowflakeDatabaseMetaDataResultSet extends
    * @param statement show command statement
    * @throws SQLException if failed to construct snowflake database metadata result set
    */
- 	public SnowflakeDatabaseMetaDataResultSet(
-          final List<String> columnNames,
-          final List<String> columnTypeNames,
-          final List<Integer> columnTypes,
-          final ResultSet showObjectResultSet,
-          final Statement statement)
-          throws SQLException
-  {
+  public SnowflakeDatabaseMetaDataResultSet(
+      final List<String> columnNames,
+      final List<String> columnTypeNames,
+      final List<Integer> columnTypes,
+      final ResultSet showObjectResultSet,
+      final Statement statement)
+      throws SQLException {
     this.showObjectResultSet = showObjectResultSet;
 
-    SFSession session = ((SnowflakeConnectionV1)statement.getConnection()).getSfSession();
+    SFSession session = ((SnowflakeConnectionV1) statement.getConnection()).getSfSession();
 
-    this.resultSetMetaData = new SnowflakeResultSetMetaData(columnNames.size(),
-                                                            columnNames,
-                                                            columnTypeNames,
-                                                            columnTypes,
-                                                            session);
+    this.resultSetMetaData =
+        new SnowflakeResultSetMetaData(
+            columnNames.size(), columnNames, columnTypeNames, columnTypes, session);
 
     this.nextRow = new Object[columnNames.size()];
 
     this.statement = statement;
- 	}
+  }
 
   /**
    * DatabaseMetadataResultSet based on a constant rowset.
+   *
    * @param columnNames column name
    * @param columnTypeNames column types name
    * @param columnTypes column type
@@ -81,57 +69,58 @@ class SnowflakeDatabaseMetaDataResultSet extends
    * @param statement show command statement
    * @throws SQLException if failed to construct snowflake database metadata result set
    */
- 	public SnowflakeDatabaseMetaDataResultSet(
-          final List<String> columnNames,
-          final List<String> columnTypeNames,
-          final List<Integer> columnTypes,
-          final Object[][] rows,
-          final Statement statement)
-          throws SQLException
-  {
+  public SnowflakeDatabaseMetaDataResultSet(
+      final List<String> columnNames,
+      final List<String> columnTypeNames,
+      final List<Integer> columnTypes,
+      final Object[][] rows,
+      final Statement statement)
+      throws SQLException {
     this.rows = rows;
-    
-    SFSession session = ((SnowflakeConnectionV1)statement.getConnection()).getSfSession();
 
-    this.resultSetMetaData = new SnowflakeResultSetMetaData(columnNames.size(),
-                                                            columnNames,
-                                                            columnTypeNames,
-                                                            columnTypes,
-                                                            session);
+    SFSession session = ((SnowflakeConnectionV1) statement.getConnection()).getSfSession();
+
+    this.resultSetMetaData =
+        new SnowflakeResultSetMetaData(
+            columnNames.size(), columnNames, columnTypeNames, columnTypes, session);
 
     this.nextRow = new Object[columnNames.size()];
 
     this.statement = statement;
- 	}
-
- 	public SnowflakeDatabaseMetaDataResultSet(DBMetadataResultSetMetadata metadataType,
-                                            ResultSet resultSet,
-                                            Statement statement) throws SQLException
-  {
-    this(metadataType.getColumnNames(), metadataType.getColumnTypeNames(),
-        metadataType.getColumnTypes(), resultSet, statement);
   }
 
-  public SnowflakeDatabaseMetaDataResultSet(DBMetadataResultSetMetadata metadataType,
-                                            Object[][] rows,
-                                            Statement statement) throws SQLException
-  {
-    this(metadataType.getColumnNames(), metadataType.getColumnTypeNames(),
-        metadataType.getColumnTypes(), rows, statement);
+  public SnowflakeDatabaseMetaDataResultSet(
+      DBMetadataResultSetMetadata metadataType, ResultSet resultSet, Statement statement)
+      throws SQLException {
+    this(
+        metadataType.getColumnNames(),
+        metadataType.getColumnTypeNames(),
+        metadataType.getColumnTypes(),
+        resultSet,
+        statement);
+  }
+
+  public SnowflakeDatabaseMetaDataResultSet(
+      DBMetadataResultSetMetadata metadataType, Object[][] rows, Statement statement)
+      throws SQLException {
+    this(
+        metadataType.getColumnNames(),
+        metadataType.getColumnTypeNames(),
+        metadataType.getColumnTypes(),
+        rows,
+        statement);
   }
 
   @Override
-  public boolean next() throws SQLException
-  {
+  public boolean next() throws SQLException {
     logger.debug("public boolean next()");
 
-    if (row < rows.length)
-    {
+    if (row < rows.length) {
       nextRow = rows[row++];
       return true;
     }
 
-    if(statement != null) {
+    if (statement != null) {
       statement.close();
       statement = null;
     }
@@ -140,80 +129,61 @@ class SnowflakeDatabaseMetaDataResultSet extends
   }
 
   @Override
-  public void close() throws SQLException
-  {
-    if(statement != null)
-    {
+  public void close() throws SQLException {
+    if (statement != null) {
       statement.close();
       statement = null;
     }
   }
 
   @Override
-  public byte[] getBytes(int columnIndex) throws SQLException
-  {
+  public byte[] getBytes(int columnIndex) throws SQLException {
     String str = this.getString(columnIndex);
-    if (str != null)
-    {
+    if (str != null) {
       return str.getBytes(StandardCharsets.UTF_8);
-    }
-    else
-    {
+    } else {
       throw new SQLException("Cannot get bytes on null column");
     }
   }
 
   @Override
-  public Time getTime(int columnIndex) throws SQLException
-  {
+  public Time getTime(int columnIndex) throws SQLException {
     Object obj = getObjectInternal(columnIndex);
 
-    if (obj instanceof Time)
-    {
-      return (Time)obj;
-    }
-    else
-    {
-      throw new SnowflakeSQLException(ErrorCode.INVALID_VALUE_CONVERT,
-          obj.getClass().getName(), "TIME", obj);
+    if (obj instanceof Time) {
+      return (Time) obj;
+    } else {
+      throw new SnowflakeSQLException(
+          ErrorCode.INVALID_VALUE_CONVERT, obj.getClass().getName(), "TIME", obj);
     }
   }
 
   @Override
-  public Timestamp getTimestamp(int columnIndex, TimeZone tz) throws SQLException
-  {
+  public Timestamp getTimestamp(int columnIndex, TimeZone tz) throws SQLException {
     Object obj = getObjectInternal(columnIndex);
 
-    if (obj instanceof Timestamp)
-    {
-      return (Timestamp)obj;
-    }
-    else
-    {
-      throw new SnowflakeSQLException(ErrorCode.INVALID_VALUE_CONVERT,
-          obj.getClass().getName(), "TIMESTAMP", obj);
+    if (obj instanceof Timestamp) {
+      return (Timestamp) obj;
+    } else {
+      throw new SnowflakeSQLException(
+          ErrorCode.INVALID_VALUE_CONVERT, obj.getClass().getName(), "TIMESTAMP", obj);
     }
   }
 
   @Override
-  public Date getDate(int columnIndex, TimeZone tz) throws SQLException
-  {
+  public Date getDate(int columnIndex, TimeZone tz) throws SQLException {
     Object obj = getObjectInternal(columnIndex);
 
-    if (obj instanceof Date)
-    {
-      return (Date)obj;
-    }
-    else
-    {
-      throw new SnowflakeSQLException(ErrorCode.INVALID_VALUE_CONVERT,
-          obj.getClass().getName(), "DATE", obj);
+    if (obj instanceof Date) {
+      return (Date) obj;
+    } else {
+      throw new SnowflakeSQLException(
+          ErrorCode.INVALID_VALUE_CONVERT, obj.getClass().getName(), "DATE", obj);
     }
   }
 
   static ResultSet getEmptyResultSet(DBMetadataResultSetMetadata metadataType, Statement statement)
-      throws SQLException
-  {
-    return new SnowflakeDatabaseMetaDataResultSet(metadataType, new Object[][]{}, statement);
+      throws SQLException {
+    return new SnowflakeDatabaseMetaDataResultSet(metadataType, new Object[][] {}, statement);
   }
 }

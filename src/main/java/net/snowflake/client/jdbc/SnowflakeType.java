@@ -4,38 +4,45 @@
 
 package net.snowflake.client.jdbc;
 
-import net.snowflake.common.core.SFBinary;
-import net.snowflake.common.core.SqlState;
-
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.sql.Types;
 import java.text.DateFormat;
 import java.util.Date;
+import net.snowflake.common.core.SFBinary;
+import net.snowflake.common.core.SqlState;
 
-/**
- * Type converters
- */
-public enum SnowflakeType
-{
-
-  TEXT, CHAR, INTEGER, FIXED, REAL, TIMESTAMP, TIMESTAMP_LTZ, TIMESTAMP_NTZ, TIMESTAMP_TZ,
-  DATE, TIME, BOOLEAN, ARRAY, OBJECT, VARIANT, BINARY, ANY;
+/** Type converters */
+public enum SnowflakeType {
+  TEXT,
+  CHAR,
+  INTEGER,
+  FIXED,
+  REAL,
+  TIMESTAMP,
+  TIMESTAMP_LTZ,
+  TIMESTAMP_NTZ,
+  TIMESTAMP_TZ,
+  DATE,
+  TIME,
+  BOOLEAN,
+  ARRAY,
+  OBJECT,
+  VARIANT,
+  BINARY,
+  ANY;
 
   public static final String DATE_OR_TIME_FORMAT_PATTERN = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX";
   public static final String TIMESTAMP_FORMAT_PATTERN = "yyyy-MM-dd'T'HH:mm:ss.";
   public static final String TIMESTAMP_FORMAT_TZ_PATTERN = "XXX";
   public static final String TIME_FORMAT_PATTERN = "HH:mm:ss.SSS";
 
-  public static SnowflakeType fromString(String name)
-  {
+  public static SnowflakeType fromString(String name) {
     return SnowflakeType.valueOf(name.toUpperCase());
   }
 
-  public static JavaDataType getJavaType(SnowflakeType type)
-  {
-    switch (type)
-    {
+  public static JavaDataType getJavaType(SnowflakeType type) {
+    switch (type) {
       case TEXT:
         return JavaDataType.JAVA_STRING;
       case CHAR:
@@ -70,9 +77,7 @@ public enum SnowflakeType
     }
   }
 
-  public enum JavaDataType
-  {
-
+  public enum JavaDataType {
     JAVA_STRING(String.class),
     JAVA_LONG(Long.class),
     JAVA_DOUBLE(Double.class),
@@ -82,8 +87,7 @@ public enum SnowflakeType
     JAVA_BOOLEAN(Boolean.class),
     JAVA_OBJECT(Object.class);
 
-    JavaDataType(Class c)
-    {
+    JavaDataType(Class c) {
       this._class = c;
     }
 
@@ -91,13 +95,12 @@ public enum SnowflakeType
   }
 
   /**
-   * Returns a lexical value of an object that is suitable for Snowflake import
-   * serialization
+   * Returns a lexical value of an object that is suitable for Snowflake import serialization
    *
-   * @param o                 Java object representing value in Snowflake.
-   * @param dateFormat        java.sql.Date or java.sqlTime format
-   * @param timeFormat        java.sql.Time format
-   * @param timestampFormat   first part of java.sql.Timestamp format
+   * @param o Java object representing value in Snowflake.
+   * @param dateFormat java.sql.Date or java.sqlTime format
+   * @param timeFormat java.sql.Time format
+   * @param timestampFormat first part of java.sql.Timestamp format
    * @param timestampTzFormat last part of java.sql.Timestamp format
    * @return String representation of it that can be used for creating a load file
    */
@@ -106,94 +109,76 @@ public enum SnowflakeType
       DateFormat dateFormat,
       DateFormat timeFormat,
       DateFormat timestampFormat,
-      DateFormat timestampTzFormat)
-  {
-    if (o == null)
-    {
+      DateFormat timestampTzFormat) {
+    if (o == null) {
       return null;
     }
 
     Class c = o.getClass();
 
-    if (c == Date.class || c == java.sql.Date.class)
-    {
+    if (c == Date.class || c == java.sql.Date.class) {
       return synchronizeFormat(o, dateFormat);
     }
 
-    if (c == java.sql.Time.class)
-    {
+    if (c == java.sql.Time.class) {
       return synchronizeFormat(o, timeFormat);
     }
 
-    if (c == java.sql.Timestamp.class)
-    {
+    if (c == java.sql.Timestamp.class) {
       String stdFmt = o.toString();
       String nanos = stdFmt.substring(stdFmt.indexOf('.') + 1);
       String ret1 = synchronizeFormat(o, timestampFormat);
       String ret2 = synchronizeFormat(o, timestampTzFormat);
       return ret1 + nanos + ret2;
     }
-    if (c == Double.class)
-    {
+    if (c == Double.class) {
       return Double.toHexString((Double) o);
     }
 
-    if (c == Float.class)
-    {
+    if (c == Float.class) {
       return Float.toHexString((Float) o);
     }
 
-    if (c == Integer.class)
-    {
+    if (c == Integer.class) {
       return o.toString();
     }
 
-    if (c == BigDecimal.class)
-    {
+    if (c == BigDecimal.class) {
       return o.toString();
     }
 
-    if (c == byte[].class)
-    {
+    if (c == byte[].class) {
       return new SFBinary((byte[]) o).toHex();
     }
 
     return String.valueOf(o);
   }
 
-  private static synchronized String synchronizeFormat(
-      Object o, DateFormat sdf)
-  {
+  private static synchronized String synchronizeFormat(Object o, DateFormat sdf) {
     return sdf.format(o);
   }
 
-  public static String escapeForCSV(String value)
-  {
-    if (value == null)
-    {
+  public static String escapeForCSV(String value) {
+    if (value == null) {
       return ""; // null => an empty string without quotes
     }
-    if (value.isEmpty())
-    {
+    if (value.isEmpty()) {
       return "\"\""; // an empty string => an empty string with quotes
     }
-    if (value.indexOf('"') >= 0 || value.indexOf('\n') >= 0
-        || value.indexOf(',') >= 0 || value.indexOf('\\') >= 0)
-    {
+    if (value.indexOf('"') >= 0
+        || value.indexOf('\n') >= 0
+        || value.indexOf(',') >= 0
+        || value.indexOf('\\') >= 0) {
       // anything else including double quotes or commas will have quotes
       return '"' + value.replaceAll("\"", "\"\"") + '"';
-    }
-    else
-    {
+    } else {
       return value;
     }
   }
 
-  public static SnowflakeType javaTypeToSFType(int javaType) throws SnowflakeSQLException
-  {
+  public static SnowflakeType javaTypeToSFType(int javaType) throws SnowflakeSQLException {
 
-    switch (javaType)
-    {
+    switch (javaType) {
       case Types.INTEGER:
       case Types.BIGINT:
       case Types.DECIMAL:
@@ -229,9 +214,9 @@ public enum SnowflakeType
         return ANY;
 
       default:
-        throw new SnowflakeSQLException(SqlState.FEATURE_NOT_SUPPORTED,
-            ErrorCode.DATA_TYPE_NOT_SUPPORTED
-                .getMessageCode(),
+        throw new SnowflakeSQLException(
+            SqlState.FEATURE_NOT_SUPPORTED,
+            ErrorCode.DATA_TYPE_NOT_SUPPORTED.getMessageCode(),
             javaType);
     }
   }

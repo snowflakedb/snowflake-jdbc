@@ -3,18 +3,14 @@
  */
 package net.snowflake.client.jdbc;
 
-import org.junit.Test;
-
 import static org.junit.Assert.assertTrue;
 
-/**
- * Driver unit test
- */
-public class SnowflakeDriverTest
-{
+import org.junit.Test;
+
+/** Driver unit test */
+public class SnowflakeDriverTest {
   @Test
-  public void testAcceptUrls() throws Exception
-  {
+  public void testAcceptUrls() throws Exception {
     SnowflakeDriver snowflakeDriver = SnowflakeDriver.INSTANCE;
 
     // positive tests

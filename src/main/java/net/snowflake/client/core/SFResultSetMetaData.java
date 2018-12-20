@@ -4,13 +4,6 @@
 
 package net.snowflake.client.core;
 
-import net.snowflake.client.jdbc.ErrorCode;
-import net.snowflake.client.jdbc.SnowflakeColumnMetadata;
-import net.snowflake.client.jdbc.SnowflakeUtil;
-import net.snowflake.common.core.SFTime;
-import net.snowflake.common.core.SFTimestamp;
-import net.snowflake.common.core.SnowflakeDateTimeFormat;
-
 import java.sql.Date;
 import java.sql.ResultSetMetaData;
 import java.sql.Types;
@@ -19,18 +12,22 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
+import net.snowflake.client.jdbc.ErrorCode;
+import net.snowflake.client.jdbc.SnowflakeColumnMetadata;
+import net.snowflake.client.jdbc.SnowflakeUtil;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
+import net.snowflake.common.core.SFTime;
+import net.snowflake.common.core.SFTimestamp;
+import net.snowflake.common.core.SnowflakeDateTimeFormat;
 
 /**
  * Snowflake ResultSetMetaData
  *
  * @author jhuang
  */
-public class SFResultSetMetaData
-{
-  static final SFLogger logger =
-      SFLoggerFactory.getLogger(SFResultSetMetaData.class);
+public class SFResultSetMetaData {
+  static final SFLogger logger = SFLoggerFactory.getLogger(SFResultSetMetaData.class);
 
   private int columnCount = 0;
 
@@ -86,12 +83,12 @@ public class SFResultSetMetaData
 
   private int dateStringLength = 10;
 
-  public SFResultSetMetaData(int columnCount,
-                             List<String> columnNames,
-                             List<String> columnTypeNames,
-                             List<Integer> columnTypes,
-                             SFSession session)
-  {
+  public SFResultSetMetaData(
+      int columnCount,
+      List<String> columnNames,
+      List<String> columnTypeNames,
+      List<Integer> columnTypes,
+      SFSession session) {
     this.columnCount = columnCount;
     this.columnNames = columnNames;
     this.columnTypeNames = columnTypeNames;
@@ -99,31 +96,34 @@ public class SFResultSetMetaData
     this.session = session;
   }
 
-  public SFResultSetMetaData(List<SnowflakeColumnMetadata> columnMetadata,
-                             SFSession session,
-                             SnowflakeDateTimeFormat timestampNTZFormatter,
-                             SnowflakeDateTimeFormat timestampLTZFormatter,
-                             SnowflakeDateTimeFormat timestampTZFormatter,
-                             SnowflakeDateTimeFormat dateFormatter,
-                             SnowflakeDateTimeFormat timeFormatter)
-  {
-    this(columnMetadata, "none", session, timestampNTZFormatter,
-          timestampLTZFormatter,
-          timestampTZFormatter,
-          dateFormatter,
-          timeFormatter);
+  public SFResultSetMetaData(
+      List<SnowflakeColumnMetadata> columnMetadata,
+      SFSession session,
+      SnowflakeDateTimeFormat timestampNTZFormatter,
+      SnowflakeDateTimeFormat timestampLTZFormatter,
+      SnowflakeDateTimeFormat timestampTZFormatter,
+      SnowflakeDateTimeFormat dateFormatter,
+      SnowflakeDateTimeFormat timeFormatter) {
+    this(
+        columnMetadata,
+        "none",
+        session,
+        timestampNTZFormatter,
+        timestampLTZFormatter,
+        timestampTZFormatter,
+        dateFormatter,
+        timeFormatter);
   }
 
-  public SFResultSetMetaData(List<SnowflakeColumnMetadata> columnMetadata,
-                             String queryId,
-                             SFSession session,
-                             SnowflakeDateTimeFormat timestampNTZFormatter,
-                             SnowflakeDateTimeFormat timestampLTZFormatter,
-                             SnowflakeDateTimeFormat timestampTZFormatter,
-                             SnowflakeDateTimeFormat dateFormatter,
-                             SnowflakeDateTimeFormat timeFormatter
-                             )
-  {
+  public SFResultSetMetaData(
+      List<SnowflakeColumnMetadata> columnMetadata,
+      String queryId,
+      SFSession session,
+      SnowflakeDateTimeFormat timestampNTZFormatter,
+      SnowflakeDateTimeFormat timestampLTZFormatter,
+      SnowflakeDateTimeFormat timestampTZFormatter,
+      SnowflakeDateTimeFormat dateFormatter,
+      SnowflakeDateTimeFormat timeFormatter) {
     this.columnCount = columnMetadata.size();
     this.queryId = queryId;
     this.timestampNTZFormatter = timestampNTZFormatter;
@@ -144,15 +144,16 @@ public class SFResultSetMetaData
     this.columnSrcTables = new ArrayList<String>(this.columnCount);
     this.columnDisplaySizes = new ArrayList<Integer>(this.columnCount);
 
-    for(int colIdx = 0; colIdx < columnCount; colIdx ++)
-    {
+    for (int colIdx = 0; colIdx < columnCount; colIdx++) {
       columnNames.add(columnMetadata.get(colIdx).getName());
       columnTypeNames.add(columnMetadata.get(colIdx).getTypeName());
       precisions.add(calculatePrecision(columnMetadata.get(colIdx)));
       columnTypes.add(columnMetadata.get(colIdx).getType());
       scales.add(columnMetadata.get(colIdx).getScale());
-      nullables.add(columnMetadata.get(colIdx).isNullable() ?
-        ResultSetMetaData.columnNullable : ResultSetMetaData.columnNoNulls);
+      nullables.add(
+          columnMetadata.get(colIdx).isNullable()
+              ? ResultSetMetaData.columnNullable
+              : ResultSetMetaData.columnNoNulls);
       columnSrcDatabases.add(columnMetadata.get(colIdx).getColumnSrcDatabase());
       columnSrcSchemas.add(columnMetadata.get(colIdx).getColumnSrcSchema());
       columnSrcTables.add(columnMetadata.get(colIdx).getColumnSrcTable());
@@ -162,11 +163,9 @@ public class SFResultSetMetaData
     this.session = session;
   }
 
-  private Integer calculatePrecision(SnowflakeColumnMetadata columnMetadata)
-  {
+  private Integer calculatePrecision(SnowflakeColumnMetadata columnMetadata) {
     int columnType = columnMetadata.getType();
-    switch(columnType)
-    {
+    switch (columnType) {
       case Types.CHAR:
       case Types.VARCHAR:
       case Types.BINARY:
@@ -185,18 +184,16 @@ public class SFResultSetMetaData
         return timestampTZStringLength;
       case Types.TIMESTAMP:
         return timestampNTZStringLength;
-      // for double and boolean
-      // Precision is not applicable hence return 0
+        // for double and boolean
+        // Precision is not applicable hence return 0
       default:
         return 0;
     }
   }
 
-  private Integer calculateDisplaySize(SnowflakeColumnMetadata columnMetadata)
-  {
+  private Integer calculateDisplaySize(SnowflakeColumnMetadata columnMetadata) {
     int columnType = columnMetadata.getType();
-    switch(columnType)
-    {
+    switch (columnType) {
       case Types.CHAR:
       case Types.VARCHAR:
       case Types.BINARY:
@@ -234,84 +231,97 @@ public class SFResultSetMetaData
     }
   }
 
-  private void calculateDateTimeStringLength()
-  {
-    SFTimestamp ts = SFTimestamp.fromMilliseconds(System.currentTimeMillis(), TimeZone.getDefault());
-    try
-    {
-      if (timestampNTZFormatter != null)
-      {
-        String tsNTZStr = ResultUtil.getSFTimestampAsString(ts, Types.TIMESTAMP, 9, timestampNTZFormatter,
-            timestampLTZFormatter, timestampTZFormatter, session);
+  private void calculateDateTimeStringLength() {
+    SFTimestamp ts =
+        SFTimestamp.fromMilliseconds(System.currentTimeMillis(), TimeZone.getDefault());
+    try {
+      if (timestampNTZFormatter != null) {
+        String tsNTZStr =
+            ResultUtil.getSFTimestampAsString(
+                ts,
+                Types.TIMESTAMP,
+                9,
+                timestampNTZFormatter,
+                timestampLTZFormatter,
+                timestampTZFormatter,
+                session);
         timestampNTZStringLength = tsNTZStr.length();
       }
-      if (timestampLTZFormatter != null)
-      {
-        String tsLTZStr = ResultUtil.getSFTimestampAsString(ts, SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_LTZ, 9,
-            timestampNTZFormatter, timestampLTZFormatter, timestampTZFormatter, session);
+      if (timestampLTZFormatter != null) {
+        String tsLTZStr =
+            ResultUtil.getSFTimestampAsString(
+                ts,
+                SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_LTZ,
+                9,
+                timestampNTZFormatter,
+                timestampLTZFormatter,
+                timestampTZFormatter,
+                session);
         timestampLTZStringLength = tsLTZStr.length();
       }
-      if (timestampTZFormatter != null)
-      {
-        String tsTZStr = ResultUtil.getSFTimestampAsString(ts, SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_TZ, 9,
-            timestampNTZFormatter, timestampLTZFormatter, timestampTZFormatter, session);
+      if (timestampTZFormatter != null) {
+        String tsTZStr =
+            ResultUtil.getSFTimestampAsString(
+                ts,
+                SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_TZ,
+                9,
+                timestampNTZFormatter,
+                timestampLTZFormatter,
+                timestampTZFormatter,
+                session);
         timestampTZStringLength = tsTZStr.length();
       }
 
       SFTime time = SFTime.fromTimestamp(ts);
-      if (timeFormatter != null)
-      {
+      if (timeFormatter != null) {
         timeStringLength = ResultUtil.getSFTimeAsString(time, 9, timeFormatter).length();
       }
-      if (dateFormatter != null)
-      {
-        dateStringLength = ResultUtil.getDateAsString(new Date(2015, 11, 11), dateFormatter).length();
+      if (dateFormatter != null) {
+        dateStringLength =
+            ResultUtil.getDateAsString(new Date(2015, 11, 11), dateFormatter).length();
       }
-    } catch (SFException e)
-    {
+    } catch (SFException e) {
       logger.warn("Failed to calculate the display size. Use default one.");
     }
   }
 
   /**
    * get the query id
+   *
    * @return query id
    */
-  public String getQueryId()
-  {
+  public String getQueryId() {
     return queryId;
   }
 
   /**
    * Get the list of column names
+   *
    * @return column names in list
    */
-  public List<String> getColumnNames()
-  {
+  public List<String> getColumnNames() {
     return columnNames;
   }
 
   /**
    * Get the index of the column by name
+   *
    * @param columnName column name
    * @return index of the column that names matches the column name
    */
-  public int getColumnIndex(String columnName)
-  {
+  public int getColumnIndex(String columnName) {
     boolean caseInsensitive = session != null && session.isResultColumnCaseInsensitive();
     columnName = caseInsensitive ? columnName.toUpperCase() : columnName;
-    Map<String, Integer> nameToIndexMap = caseInsensitive ?
-                    columnNameUpperCasePositionMap : columnNamePositionMap;
+    Map<String, Integer> nameToIndexMap =
+        caseInsensitive ? columnNameUpperCasePositionMap : columnNamePositionMap;
 
-    if (nameToIndexMap.get(columnName) != null)
-    {
+    if (nameToIndexMap.get(columnName) != null) {
       return nameToIndexMap.get(columnName);
-    }
-    else
-    {
-      int columnIndex = caseInsensitive ?
-          ResultUtil.listSearchCaseInsensitive(columnNames, columnName) :
-          columnNames.indexOf(columnName);
+    } else {
+      int columnIndex =
+          caseInsensitive
+              ? ResultUtil.listSearchCaseInsensitive(columnNames, columnName)
+              : columnNames.indexOf(columnName);
       nameToIndexMap.put(columnName, columnIndex);
       return columnIndex;
     }
@@ -322,159 +332,132 @@ public class SFResultSetMetaData
    *
    * @return column count
    */
-  public int getColumnCount()
-  {
+  public int getColumnCount() {
     logger.debug("public int getColumnCount()");
 
     return columnCount;
   }
 
-  public int getColumnType(int column) throws SFException
-  {
+  public int getColumnType(int column) throws SFException {
     logger.debug("public int getColumnType(int column)");
 
     int internalColumnType = getInternalColumnType(column);
 
     int externalColumnType = internalColumnType;
 
-    if (internalColumnType == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_LTZ ||
-        internalColumnType == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_TZ)
+    if (internalColumnType == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_LTZ
+        || internalColumnType == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_TZ)
       externalColumnType = Types.TIMESTAMP;
 
-      logger.debug("column type = {}", externalColumnType);
+    logger.debug("column type = {}", externalColumnType);
 
     return externalColumnType;
   }
 
-  public int getInternalColumnType(int column) throws SFException
-  {
+  public int getInternalColumnType(int column) throws SFException {
     logger.debug("public int getInternalColumnType(int column)");
 
-    int columnIdx = column-1;
-    if (column < 1 || column > columnTypes.size())
-    {
+    int columnIdx = column - 1;
+    if (column < 1 || column > columnTypes.size()) {
       throw new SFException(ErrorCode.COLUMN_DOES_NOT_EXIST, column);
     }
 
-    if(columnTypes.get(columnIdx) == null)
-    {
+    if (columnTypes.get(columnIdx) == null) {
       throw IncidentUtil.generateIncidentWithSignatureAndException(
-              session, null, queryId,
-              "Missing column type",
-              ErrorCode.INTERNAL_ERROR,
-              "Missing column type for column " + column);
+          session,
+          null,
+          queryId,
+          "Missing column type",
+          ErrorCode.INTERNAL_ERROR,
+          "Missing column type for column " + column);
     }
 
     return columnTypes.get(columnIdx);
   }
 
-  public String getColumnTypeName(int column) throws SFException
-  {
+  public String getColumnTypeName(int column) throws SFException {
     logger.debug("public String getColumnTypeName(int column)");
 
-    if (column < 1 || column > columnTypeNames.size())
-    {
+    if (column < 1 || column > columnTypeNames.size()) {
       throw new SFException(ErrorCode.COLUMN_DOES_NOT_EXIST, column);
     }
 
-    if(columnTypeNames == null || columnTypeNames.get(column-1) == null)
-    {
-      throw
-          IncidentUtil.generateIncidentWithSignatureAndException(
-                  session, null, queryId,
-                  "Missing column type",
-                  ErrorCode.INTERNAL_ERROR,
-                  "Missing column type for column " + column);
+    if (columnTypeNames == null || columnTypeNames.get(column - 1) == null) {
+      throw IncidentUtil.generateIncidentWithSignatureAndException(
+          session,
+          null,
+          queryId,
+          "Missing column type",
+          ErrorCode.INTERNAL_ERROR,
+          "Missing column type for column " + column);
     }
 
-    return columnTypeNames.get(column-1);
+    return columnTypeNames.get(column - 1);
   }
 
-  public int getScale(int column)
-  {
+  public int getScale(int column) {
     logger.debug("public int getScale(int column)");
 
-    if (scales != null && scales.size() >= column)
-    {
-      return scales.get(column-1);
-    }
-    else
-    {
+    if (scales != null && scales.size() >= column) {
+      return scales.get(column - 1);
+    } else {
       // TODO: fix this later to use different defaults for number or timestamp
       return 9;
     }
   }
 
-  public int getPrecision(int column)
-  {
+  public int getPrecision(int column) {
     logger.debug("public int getPrecision(int column)");
 
-    if (precisions != null && precisions.size() >= column)
-    {
-      return precisions.get(column-1);
-    }
-    else
-    {
+    if (precisions != null && precisions.size() >= column) {
+      return precisions.get(column - 1);
+    } else {
       // TODO: fix this later to use different defaults for number or timestamp
       return 9;
     }
   }
 
-  public boolean isSigned(int column)
-  {
+  public boolean isSigned(int column) {
     logger.debug("public boolean isSigned(int column)");
 
-    return (columnTypes.get(column-1) == Types.INTEGER ||
-        columnTypes.get(column-1) == Types.DECIMAL ||
-        columnTypes.get(column-1) == Types.BIGINT  ||
-        columnTypes.get(column-1) == Types.DOUBLE);
+    return (columnTypes.get(column - 1) == Types.INTEGER
+        || columnTypes.get(column - 1) == Types.DECIMAL
+        || columnTypes.get(column - 1) == Types.BIGINT
+        || columnTypes.get(column - 1) == Types.DOUBLE);
   }
 
-  public String getColumnLabel(int column)
-  {
+  public String getColumnLabel(int column) {
     logger.debug("public String getColumnLabel(int column)");
 
-    if(columnNames != null)
-      return columnNames.get(column-1);
-    else
-      return "C" + Integer.toString(column-1);
+    if (columnNames != null) return columnNames.get(column - 1);
+    else return "C" + Integer.toString(column - 1);
   }
 
-  public String getColumnName(int column)
-  {
+  public String getColumnName(int column) {
     logger.debug("public String getColumnName(int column)");
 
-    if(columnNames != null)
-      return columnNames.get(column-1);
-    else
-      return "C" + Integer.toString(column-1);
+    if (columnNames != null) return columnNames.get(column - 1);
+    else return "C" + Integer.toString(column - 1);
   }
 
-  public int isNullable(int column)
-  {
-    if (nullables != null)
-      return nullables.get(column-1);
-    else
-      return ResultSetMetaData.columnNullableUnknown;
+  public int isNullable(int column) {
+    if (nullables != null) return nullables.get(column - 1);
+    else return ResultSetMetaData.columnNullableUnknown;
   }
 
-  public String getCatalogName(int column)
-  {
-    return columnSrcDatabases.get(column-1);
+  public String getCatalogName(int column) {
+    return columnSrcDatabases.get(column - 1);
   }
 
-  public String getSchemaName(int column)
-  {
-    return columnSrcSchemas.get(column-1);
+  public String getSchemaName(int column) {
+    return columnSrcSchemas.get(column - 1);
   }
 
-  public String getTableName(int column)
-  {
-    return columnSrcTables.get(column-1);
+  public String getTableName(int column) {
+    return columnSrcTables.get(column - 1);
   }
 
-  public Integer getColumnDisplaySize(int column)
-  {
-    return columnDisplaySizes.get(column-1);
+  public Integer getColumnDisplaySize(int column) {
+    return columnDisplaySizes.get(column - 1);
   }
 }

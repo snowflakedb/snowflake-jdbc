@@ -3,6 +3,9 @@
  */
 package net.snowflake.client.jdbc.cloud.storage;
 
+import static java.nio.file.StandardOpenOption.CREATE;
+import static java.nio.file.StandardOpenOption.READ;
+
 import com.amazonaws.util.Base64;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -28,38 +31,27 @@ import javax.crypto.spec.SecretKeySpec;
 import net.snowflake.client.jdbc.MatDesc;
 import net.snowflake.common.core.RemoteStoreFileEncryptionMaterial;
 
-import static java.nio.file.StandardOpenOption.CREATE;
-import static java.nio.file.StandardOpenOption.READ;
-
 /**
  * Handles encryption and decryption using AES.
  *
  * @author ppaulus
  */
-public class EncryptionProvider
-{
-  private final static String AES = "AES";
-  private final static String FILE_CIPHER = "AES/CBC/PKCS5Padding";
-  private final static String KEY_CIPHER = "AES/ECB/PKCS5Padding";
-  private final static int BUFFER_SIZE = 2*1024*1024; // 2 MB
+public class EncryptionProvider {
+  private static final String AES = "AES";
+  private static final String FILE_CIPHER = "AES/CBC/PKCS5Padding";
+  private static final String KEY_CIPHER = "AES/ECB/PKCS5Padding";
+  private static final int BUFFER_SIZE = 2 * 1024 * 1024; // 2 MB
   private static SecureRandom secRnd;
 
   /*
    * decrypt
    * Decrypts a file given the key and iv. Uses AES decryption.
    */
-  public static void decrypt(File file,
-                             String keyBase64,
-                             String ivBase64,
-                             RemoteStoreFileEncryptionMaterial encMat)
-          throws NoSuchAlgorithmException,
-                 NoSuchPaddingException,
-                 InvalidKeyException,
-                 IllegalBlockSizeException,
-                 BadPaddingException,
-                 InvalidAlgorithmParameterException,
-                 IOException
-  {
+  public static void decrypt(
+      File file, String keyBase64, String ivBase64, RemoteStoreFileEncryptionMaterial encMat)
+      throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException,
+          IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException,
+          IOException {
     byte[] keyBytes = Base64.decode(keyBase64);
     byte[] ivBytes = Base64.decode(ivBase64);
     byte[] qsmkBytes = Base64.decode(encMat.getQueryStageMasterKey());
@@ -68,8 +60,7 @@ public class EncryptionProvider
     // Decrypt file key
     {
       final Cipher keyCipher = Cipher.getInstance(KEY_CIPHER);
-      SecretKey queryStageMasterKey =
-          new SecretKeySpec(qsmkBytes, 0, qsmkBytes.length, AES);
+      SecretKey queryStageMasterKey = new SecretKeySpec(qsmkBytes, 0, qsmkBytes.length, AES);
       keyCipher.init(Cipher.DECRYPT_MODE, queryStageMasterKey);
       byte[] fileKeyBytes = keyCipher.doFinal(keyBytes);
 
@@ -88,20 +79,17 @@ public class EncryptionProvider
       long totalBytesRead = 0;
       // Overwrite file contents buffer-wise with decrypted data
       try (InputStream is = Files.newInputStream(file.toPath(), READ);
-           InputStream cis = new CipherInputStream(is, fileCipher);
-           OutputStream os = Files.newOutputStream(file.toPath(), CREATE);)
-      {
+          InputStream cis = new CipherInputStream(is, fileCipher);
+          OutputStream os = Files.newOutputStream(file.toPath(), CREATE); ) {
         int bytesRead;
-        while ((bytesRead = cis.read(buffer)) > -1)
-        {
+        while ((bytesRead = cis.read(buffer)) > -1) {
           os.write(buffer, 0, bytesRead);
           totalBytesRead += bytesRead;
         }
       }
 
       // Discard any padding that the encrypted file had
-      try (FileChannel fc = new FileOutputStream(file, true).getChannel())
-      {
+      try (FileChannel fc = new FileOutputStream(file, true).getChannel()) {
         fc.truncate(totalBytesRead);
       }
     }
@@ -114,20 +102,15 @@ public class EncryptionProvider
    * The key and iv are added to the JSON block in the encryptionData
    * metadata object.
    */
-  public static CipherInputStream encrypt(StorageObjectMetadata meta,
-                                    long originalContentLength,
-                                    InputStream src,
-                                    RemoteStoreFileEncryptionMaterial encMat,
-                                    SnowflakeStorageClient client)
-          throws InvalidKeyException,
-                 InvalidAlgorithmParameterException,
-                 NoSuchAlgorithmException,
-                 NoSuchProviderException,
-                 NoSuchPaddingException,
-                 FileNotFoundException,
-                 IllegalBlockSizeException,
-                 BadPaddingException
-  {
+  public static CipherInputStream encrypt(
+      StorageObjectMetadata meta,
+      long originalContentLength,
+      InputStream src,
+      RemoteStoreFileEncryptionMaterial encMat,
+      SnowflakeStorageClient client)
+      throws InvalidKeyException, InvalidAlgorithmParameterException, NoSuchAlgorithmException,
+          NoSuchProviderException, NoSuchPaddingException, FileNotFoundException,
+          IllegalBlockSizeException, BadPaddingException {
     final byte[] decodedKey = Base64.decode(encMat.getQueryStageMasterKey());
     final int keySize = decodedKey.length;
     final byte[] fileKeyBytes = new byte[keySize];
@@ -156,17 +139,15 @@ public class EncryptionProvider
 
     // Encrypt the file key with the QRMK
     {
-      final Cipher keyCipher =  Cipher.getInstance(KEY_CIPHER);
-      SecretKey queryStageMasterKey =
-          new SecretKeySpec(decodedKey, 0, keySize, AES);
+      final Cipher keyCipher = Cipher.getInstance(KEY_CIPHER);
+      SecretKey queryStageMasterKey = new SecretKeySpec(decodedKey, 0, keySize, AES);
 
       // Init cipher
       keyCipher.init(Cipher.ENCRYPT_MODE, queryStageMasterKey);
       byte[] encKeK = keyCipher.doFinal(fileKeyBytes);
 
       // Store metadata
-      MatDesc matDesc =
-          new MatDesc(encMat.getSmkId(), encMat.getQueryId(), keySize * 8);
+      MatDesc matDesc = new MatDesc(encMat.getSmkId(), encMat.getQueryId(), keySize * 8);
       // Round up length to next multiple of the block size
       // Sizes that are multiples of the block size need to be padded to next
       // multiple
@@ -182,16 +163,12 @@ public class EncryptionProvider
    * Gets a random number for encryption purposes.
    */
   private static synchronized SecureRandom getSecRnd()
-          throws NoSuchAlgorithmException,
-                 NoSuchProviderException
-  {
-    if (secRnd == null)
-    {
+      throws NoSuchAlgorithmException, NoSuchProviderException {
+    if (secRnd == null) {
       secRnd = SecureRandom.getInstance("SHA1PRNG");
       byte[] bytes = new byte[10];
       secRnd.nextBytes(bytes);
     }
     return secRnd;
   }
-
 }

@@ -5,12 +5,11 @@
 package net.snowflake.client.core;
 
 /**
- * Base Event class for events that don't need to deviate from the default
- * flush behavior.
+ * Base Event class for events that don't need to deviate from the default flush behavior.
+ *
  * @author jrosen
  */
-public class BasicEvent extends Event
-{
+public class BasicEvent extends Event {
   // Format strings for query state transitions
   private static final String requestId = "requestId: %s";
   private static final String numPings = "numberPings: %d";
@@ -20,37 +19,32 @@ public class BasicEvent extends Event
   private static final String EVENT_DUMP_PROP = "snowflake.dump_events";
   private static final Boolean doDump = System.getProperty(EVENT_DUMP_PROP) != null;
 
-  public enum QueryState
-  {
-    QUERY_STARTED      (1, "Query Started", "{" + requestId + "}"),
-    SENDING_QUERY      (2, "Sending Query", "{" + requestId + "}"),
-    WAITING_FOR_RESULT (3, "Waiting for Result", "{" + requestId + "," + numPings + "}"),
-    PROCESSING_RESULT  (4, "Processing Result", "{" + requestId + "}"),
-    CONSUMING_RESULT   (5, "Consuming Result", "{" + jobId + "," + chunkIdx + "}"),
-    QUERY_ENDED        (6, "Query ended", "{" + requestId + "}"),
-    GETTING_FILES      (8, "Getting Files", "{" + requestId + "}"),
-    PUTTING_FILES      (9, "Putting Files", "{" + requestId + "}"),
+  public enum QueryState {
+    QUERY_STARTED(1, "Query Started", "{" + requestId + "}"),
+    SENDING_QUERY(2, "Sending Query", "{" + requestId + "}"),
+    WAITING_FOR_RESULT(3, "Waiting for Result", "{" + requestId + "," + numPings + "}"),
+    PROCESSING_RESULT(4, "Processing Result", "{" + requestId + "}"),
+    CONSUMING_RESULT(5, "Consuming Result", "{" + jobId + "," + chunkIdx + "}"),
+    QUERY_ENDED(6, "Query ended", "{" + requestId + "}"),
+    GETTING_FILES(8, "Getting Files", "{" + requestId + "}"),
+    PUTTING_FILES(9, "Putting Files", "{" + requestId + "}"),
     ;
 
-    QueryState(int id, String description, String argString)
-    {
+    QueryState(int id, String description, String argString) {
       this.id = id;
       this.description = description;
       this.argString = argString;
     }
 
-    public int getId()
-    {
+    public int getId() {
       return id;
     }
 
-    public String getDescription()
-    {
+    public String getDescription() {
       return description;
     }
 
-    public String getArgString()
-    {
+    public String getArgString() {
       return argString;
     }
 
@@ -59,17 +53,14 @@ public class BasicEvent extends Event
     private final String argString;
   }
 
-  public BasicEvent(Event.EventType type, String message)
-  {
+  public BasicEvent(Event.EventType type, String message) {
     super(type, message);
   }
 
   @Override
-  public void flush()
-  {
-    if (doDump)
-    {
-      //this.writeEventDumpLine("Event: " + getType() + "; Message: " + getMessage());
+  public void flush() {
+    if (doDump) {
+      // this.writeEventDumpLine("Event: " + getType() + "; Message: " + getMessage());
     }
   }
 }

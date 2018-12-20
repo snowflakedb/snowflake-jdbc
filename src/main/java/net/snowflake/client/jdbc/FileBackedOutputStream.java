@@ -17,10 +17,7 @@
 package net.snowflake.client.jdbc;
 
 import com.google.common.annotations.Beta;
-import com.google.common.annotations.VisibleForTesting;
-
 import com.google.common.io.ByteSource;
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -31,12 +28,12 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 /**
- * An {@link OutputStream} that starts buffering to a byte array, but
- * switches to file buffering once the data reaches a configurable size.
+ * An {@link OutputStream} that starts buffering to a byte array, but switches to file buffering
+ * once the data reaches a configurable size.
  *
  * <p>This class is thread-safe.
  *
- * Adapted by Snowflake to return File object when file is spilled to disk.
+ * <p>Adapted by Snowflake to return File object when file is spilled to disk.
  *
  * @author Chris Nokleberg
  * @since 1.0
@@ -63,35 +60,28 @@ public final class FileBackedOutputStream extends OutputStream {
     }
   }
 
-  /**
-   * @return the file holding the data (possibly null).
-   */
+  /** @return the file holding the data (possibly null). */
   public synchronized File getFile() {
     return file;
   }
 
   /**
-   * Creates a new instance that uses the given file threshold, and does
-   * not reset the data when the {@link ByteSource} returned by
-   * {@link #asByteSource} is finalized.
+   * Creates a new instance that uses the given file threshold, and does not reset the data when the
+   * {@link ByteSource} returned by {@link #asByteSource} is finalized.
    *
-   * @param fileThreshold the number of bytes before the stream should
-   *     switch to buffering to a file
+   * @param fileThreshold the number of bytes before the stream should switch to buffering to a file
    */
   public FileBackedOutputStream(int fileThreshold) {
     this(fileThreshold, false);
   }
 
   /**
-   * Creates a new instance that uses the given file threshold, and
-   * optionally resets the data when the {@link ByteSource} returned
-   * by {@link #asByteSource} is finalized.
+   * Creates a new instance that uses the given file threshold, and optionally resets the data when
+   * the {@link ByteSource} returned by {@link #asByteSource} is finalized.
    *
-   * @param fileThreshold the number of bytes before the stream should
-   *     switch to buffering to a file
-   * @param resetOnFinalize if true, the {@link #reset} method will
-   *     be called when the {@link ByteSource} returned by {@link
-   *     #asByteSource} is finalized
+   * @param fileThreshold the number of bytes before the stream should switch to buffering to a file
+   * @param resetOnFinalize if true, the {@link #reset} method will be called when the {@link
+   *     ByteSource} returned by {@link #asByteSource} is finalized
    */
   public FileBackedOutputStream(int fileThreshold, boolean resetOnFinalize) {
     this.fileThreshold = fileThreshold;
@@ -100,34 +90,35 @@ public final class FileBackedOutputStream extends OutputStream {
     out = memory;
 
     if (resetOnFinalize) {
-      source = new ByteSource() {
-        @Override
-        public InputStream openStream() throws IOException {
-          return openInputStream();
-        }
+      source =
+          new ByteSource() {
+            @Override
+            public InputStream openStream() throws IOException {
+              return openInputStream();
+            }
 
-        @Override protected void finalize() {
-          try {
-            reset();
-          } catch (Throwable t) {
-            t.printStackTrace(System.err);
-          }
-        }
-      };
+            @Override
+            protected void finalize() {
+              try {
+                reset();
+              } catch (Throwable t) {
+                t.printStackTrace(System.err);
+              }
+            }
+          };
     } else {
-      source = new ByteSource() {
-        @Override
-        public InputStream openStream() throws IOException {
-          return openInputStream();
-        }
-      };
+      source =
+          new ByteSource() {
+            @Override
+            public InputStream openStream() throws IOException {
+              return openInputStream();
+            }
+          };
     }
   }
 
   /**
-   * @return a readable {@link ByteSource} view of the data that has been
-   * written to this stream.
-   *
+   * @return a readable {@link ByteSource} view of the data that has been written to this stream.
    * @since 15.0
    */
   public ByteSource asByteSource() {
@@ -138,15 +129,13 @@ public final class FileBackedOutputStream extends OutputStream {
     if (file != null) {
       return new FileInputStream(file);
     } else {
-      return new ByteArrayInputStream(
-          memory.getBuffer(), 0, memory.getCount());
+      return new ByteArrayInputStream(memory.getBuffer(), 0, memory.getCount());
     }
   }
 
   /**
-   * Calls {@link #close} if not already closed, and then resets this
-   * object back to its initial state, for reuse. If data was buffered
-   * to a file, it will be deleted.
+   * Calls {@link #close} if not already closed, and then resets this object back to its initial
+   * state, for reuse. If data was buffered to a file, it will be deleted.
    *
    * @throws IOException if an I/O error occurred while deleting the file buffer
    */
@@ -170,32 +159,36 @@ public final class FileBackedOutputStream extends OutputStream {
     }
   }
 
-  @Override public synchronized void write(int b) throws IOException {
+  @Override
+  public synchronized void write(int b) throws IOException {
     update(1);
     out.write(b);
   }
 
-  @Override public synchronized void write(byte[] b) throws IOException {
+  @Override
+  public synchronized void write(byte[] b) throws IOException {
     write(b, 0, b.length);
   }
 
-  @Override public synchronized void write(byte[] b, int off, int len)
-      throws IOException {
+  @Override
+  public synchronized void write(byte[] b, int off, int len) throws IOException {
     update(len);
     out.write(b, off, len);
   }
 
-  @Override public synchronized void close() throws IOException {
+  @Override
+  public synchronized void close() throws IOException {
     out.close();
   }
 
-  @Override public synchronized void flush() throws IOException {
+  @Override
+  public synchronized void flush() throws IOException {
     out.flush();
   }
 
   /**
-   * Checks if writing {@code len} bytes would go over threshold, and
-   * switches to file buffering if so.
+   * Checks if writing {@code len} bytes would go over threshold, and switches to file buffering if
+   * so.
    */
   private void update(int len) throws IOException {
     if (file == null && (memory.getCount() + len > fileThreshold)) {

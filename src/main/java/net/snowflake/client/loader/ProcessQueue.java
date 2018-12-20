@@ -8,27 +8,23 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.List;
-
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 
 /**
- *  This class is responsible for processing a collection of uploaded data files
- *  represented by BufferStage class
+ * This class is responsible for processing a collection of uploaded data files represented by
+ * BufferStage class
  */
-public class ProcessQueue implements Runnable
-{
-  private static final SFLogger LOGGER = SFLoggerFactory.getLogger(
-          ProcessQueue.class);
+public class ProcessQueue implements Runnable {
+  private static final SFLogger LOGGER = SFLoggerFactory.getLogger(ProcessQueue.class);
 
   private final Thread _thread;
 
   private final StreamLoader _loader;
 
-  public ProcessQueue(StreamLoader loader)
-  {
+  public ProcessQueue(StreamLoader loader) {
     LOGGER.debug("");
-    
+
     _loader = loader;
     _thread = new Thread(this);
     _thread.setName("ProcessQueueThread");
@@ -36,8 +32,7 @@ public class ProcessQueue implements Runnable
   }
 
   @Override
-  public void run()
-  {
+  public void run() {
 
     while (true) {
 
@@ -62,16 +57,13 @@ public class ProcessQueue implements Runnable
         // No double quote is added _loader.getRemoteStage(), since
         // it is mostly likely to be "~". If not, we may need to double quote
         // them.
-        String remoteStage = "@" + _loader.getRemoteStage() + "/" + stage
-                .getRemoteLocation();
+        String remoteStage = "@" + _loader.getRemoteStage() + "/" + stage.getRemoteLocation();
         // process uploaded files
         // Loader.abort() and finish() are also synchronized on this
         synchronized (_loader) {
-
           String updateKeys = getOn(_loader.getKeys(), "T", "S");
           if (stage.getOp() != Operation.INSERT && updateKeys.isEmpty()) {
-            _loader.abort(new RuntimeException(
-                    "No update key column is specified for the job."));
+            _loader.abort(new RuntimeException("No update key column is specified for the job."));
           }
 
           if (_loader.isAborted()) {
@@ -80,8 +72,10 @@ public class ProcessQueue implements Runnable
               LOGGER.info(currentCommand);
               conn.createStatement().execute(currentCommand);
             } else {
-              LOGGER.warn("Error occurred. The remote stage is preserved for " +
-                  "further investigation: {}", remoteStage);
+              LOGGER.warn(
+                  "Error occurred. The remote stage is preserved for "
+                      + "further investigation: {}",
+                  remoteStage);
             }
             if (stage.isTerminate()) {
               break;
@@ -101,21 +95,30 @@ public class ProcessQueue implements Runnable
           // Create temp table to load data (may has a subset of columns)
           LOGGER.info("Creating Temporary Table: name={}", stage.getId());
           currentState = State.CREATE_TEMP_TABLE;
-          currentCommand = "CREATE TEMPORARY TABLE \""
-                  + stage.getId() + "\" AS SELECT "
+          currentCommand =
+              "CREATE TEMPORARY TABLE \""
+                  + stage.getId()
+                  + "\" AS SELECT "
                   + _loader.getColumnsAsString()
-                  + " FROM " + _loader.getFullTableName() + " WHERE FALSE";
+                  + " FROM "
+                  + _loader.getFullTableName()
+                  + " WHERE FALSE";
           conn.createStatement().execute(currentCommand);
 
           // Load data there
-          LOGGER.info("COPY data in the stage to table:"
-                             + " stage={},"
-                             + " name={}", remoteStage, stage.getId());
+          LOGGER.info(
+              "COPY data in the stage to table:" + " stage={}," + " name={}",
+              remoteStage,
+              stage.getId());
           currentState = State.COPY_INTO_TABLE;
-          currentCommand = "COPY INTO \""
+          currentCommand =
+              "COPY INTO \""
                   + stage.getId()
-                  + "\" FROM '" + remoteStage
-                  + "' on_error='" + _loader._onError + "'"
+                  + "\" FROM '"
+                  + remoteStage
+                  + "' on_error='"
+                  + _loader._onError
+                  + "'"
                   + " file_format=("
                   + " field_optionally_enclosed_by='\"'"
                   + " empty_field_as_null="
@@ -123,7 +126,7 @@ public class ProcessQueue implements Runnable
                   + ")";
           ResultSet rs = conn.createStatement().executeQuery(currentCommand);
 
-          while(rs.next()) {
+          while (rs.next()) {
             // Get the number of rows actually loaded
             loaded += rs.getInt("rows_loaded");
             // Get the number of rows parsed
@@ -131,54 +134,52 @@ public class ProcessQueue implements Runnable
           }
 
           int errorRecordCount = parsed - loaded;
-          LOGGER.info("errorRecordCount=[{}],"
-                             + " parsed=[{}],"
-                             + " loaded=[{}]",
-                             errorRecordCount, parsed, loaded);
+          LOGGER.info(
+              "errorRecordCount=[{}]," + " parsed=[{}]," + " loaded=[{}]",
+              errorRecordCount,
+              parsed,
+              loaded);
 
           LoadResultListener listener = _loader.getListener();
           listener.addErrorRecordCount(errorRecordCount);
 
-          if (loaded == stage.getRowCount())
-          {
+          if (loaded == stage.getRowCount()) {
             // successfully loaded everything
-            LOGGER.info("COPY command successfully finished:"
-                + " stage={},"
-                + " name={}", remoteStage, stage.getId());
+            LOGGER.info(
+                "COPY command successfully finished:" + " stage={}," + " name={}",
+                remoteStage,
+                stage.getId());
             listener.addErrorCount(0);
-          }
-          else
-          {
-            LOGGER.info("Found errors in COPY command:"
-                + " stage={},"
-                + " name={}", remoteStage, stage.getId());
-            if (listener.needErrors())
-            {
+          } else {
+            LOGGER.info(
+                "Found errors in COPY command:" + " stage={}," + " name={}",
+                remoteStage,
+                stage.getId());
+            if (listener.needErrors()) {
               currentState = State.COPY_INTO_TABLE_ERROR;
-              currentCommand = "COPY INTO \"" + stage.getId()
-                      + "\" FROM '" + remoteStage
+              currentCommand =
+                  "COPY INTO \""
+                      + stage.getId()
+                      + "\" FROM '"
+                      + remoteStage
                       + "' validation_mode='return_all_errors'"
                       + " file_format=("
                       + "field_optionally_enclosed_by='\"'"
                       + "empty_field_as_null="
                       + Boolean.toString(!_loader._copyEmptyFieldAsEmpty)
                       + ")";
-              ResultSet errorsSet = conn.createStatement()
-                      .executeQuery(currentCommand);
+              ResultSet errorsSet = conn.createStatement().executeQuery(currentCommand);
 
               Loader.DataError dataError = null;
 
               while (errorsSet.next()) {
                 errorCount++;
-                String rn = errorsSet.getString(
-                        LoadingError.ErrorProperty.ROW_NUMBER
-                        .name());
+                String rn = errorsSet.getString(LoadingError.ErrorProperty.ROW_NUMBER.name());
                 if (rn != null && !lastErrorRow.equals(rn)) {
                   // de-duping records with multiple errors
                   lastErrorRow = rn;
                 }
-                LoadingError loadError = new LoadingError(
-                        errorsSet, stage, _loader);
+                LoadingError loadError = new LoadingError(errorsSet, stage, _loader);
 
                 listener.addError(loadError);
                 if (dataError == null) {
@@ -196,8 +197,10 @@ public class ProcessQueue implements Runnable
                   LOGGER.debug("RM: {}", remoteStage);
                   conn.createStatement().execute("RM '" + remoteStage + "'");
                 } else {
-                  LOGGER.error("Error occurred. The remote stage is preserved for " +
-                      "further investigation: {}", remoteStage);
+                  LOGGER.error(
+                      "Error occurred. The remote stage is preserved for "
+                          + "further investigation: {}",
+                      remoteStage);
                 }
                 if (stage.isTerminate()) {
                   break;
@@ -213,8 +216,7 @@ public class ProcessQueue implements Runnable
           // Generate set and values statement
           StringBuilder setStatement = null;
           StringBuilder valueStatement = null;
-          if (stage.getOp() != Operation.INSERT
-              && stage.getOp() != Operation.DELETE) {
+          if (stage.getOp() != Operation.INSERT && stage.getOp() != Operation.DELETE) {
 
             setStatement = new StringBuilder(" ");
             valueStatement = new StringBuilder("(");
@@ -225,12 +227,13 @@ public class ProcessQueue implements Runnable
                 setStatement.append(", ");
                 valueStatement.append(" , ");
               }
-              setStatement.append("T.\"")
-                      .append(column)
-                      .append("\"=")
-                      .append("S.\"")
-                      .append(column)
-                      .append("\"");
+              setStatement
+                  .append("T.\"")
+                  .append(column)
+                  .append("\"=")
+                  .append("S.\"")
+                  .append(column)
+                  .append("\"");
               valueStatement.append("S.\"").append(column).append("\"");
             }
             valueStatement.append(")");
@@ -239,46 +242,61 @@ public class ProcessQueue implements Runnable
           // generate statement for processing
           currentState = State.INGEST_DATA;
           String loadStatement;
-          switch (stage.getOp())
-          {
+          switch (stage.getOp()) {
             case INSERT:
-            {
-              loadStatement = "INSERT INTO "
-                              + _loader.getFullTableName()
-                              + "(" + _loader.getColumnsAsString() + ")"
-                              + " SELECT * FROM \"" + stage.getId() + "\"";
-              break;
-            }
+              {
+                loadStatement =
+                    "INSERT INTO "
+                        + _loader.getFullTableName()
+                        + "("
+                        + _loader.getColumnsAsString()
+                        + ")"
+                        + " SELECT * FROM \""
+                        + stage.getId()
+                        + "\"";
+                break;
+              }
             case DELETE:
-            {
-              loadStatement = "DELETE FROM " + _loader.getFullTableName()
-                              + " T USING \""
-                              + stage.getId() + "\" AS S WHERE "
-                              + updateKeys;
-              break;
-            }
+              {
+                loadStatement =
+                    "DELETE FROM "
+                        + _loader.getFullTableName()
+                        + " T USING \""
+                        + stage.getId()
+                        + "\" AS S WHERE "
+                        + updateKeys;
+                break;
+              }
             case MODIFY:
-            {
-              loadStatement = "MERGE INTO " + _loader.getFullTableName()
-                              + " T USING \""
-                              + stage.getId() + "\" AS S ON "
-                              + updateKeys
-                              + " WHEN MATCHED THEN UPDATE SET " + setStatement;
-              break;
-            }
+              {
+                loadStatement =
+                    "MERGE INTO "
+                        + _loader.getFullTableName()
+                        + " T USING \""
+                        + stage.getId()
+                        + "\" AS S ON "
+                        + updateKeys
+                        + " WHEN MATCHED THEN UPDATE SET "
+                        + setStatement;
+                break;
+              }
             case UPSERT:
-            {
-
-              loadStatement = "MERGE INTO " + _loader.getFullTableName()
-                              + " T USING \""
-                              + stage.getId() + "\" AS S ON "
-                              + updateKeys
-                              + " WHEN MATCHED THEN UPDATE SET " + setStatement
-                              + " WHEN NOT MATCHED THEN INSERT("
-                              + _loader.getColumnsAsString() + ") VALUES"
-                              + valueStatement;
-              break;
-            }
+              {
+                loadStatement =
+                    "MERGE INTO "
+                        + _loader.getFullTableName()
+                        + " T USING \""
+                        + stage.getId()
+                        + "\" AS S ON "
+                        + updateKeys
+                        + " WHEN MATCHED THEN UPDATE SET "
+                        + setStatement
+                        + " WHEN NOT MATCHED THEN INSERT("
+                        + _loader.getColumnsAsString()
+                        + ") VALUES"
+                        + valueStatement;
+                break;
+              }
             default:
               loadStatement = "";
           }
@@ -293,70 +311,57 @@ public class ProcessQueue implements Runnable
           stage.setState(BufferStage.State.PROCESSED);
           currentState = State.FINISH;
           currentCommand = null;
-          switch (stage.getOp())
-          {
+          switch (stage.getOp()) {
             case INSERT:
-            {
-              _loader.getListener().addProcessedRecordCount(
-                      stage.getOp(), stage.getRowCount());
+              {
+                _loader.getListener().addProcessedRecordCount(stage.getOp(), stage.getRowCount());
 
-              _loader.getListener().addOperationRecordCount(
-                      Operation.INSERT, prs.getInt(1));
-              break;
-            }
+                _loader.getListener().addOperationRecordCount(Operation.INSERT, prs.getInt(1));
+                break;
+              }
             case DELETE:
-            {
-              // the number of successful DELETE is the number 
-              // of processed rows and not the number of given
-              // rows.
-              _loader.getListener().addProcessedRecordCount(
-                      stage.getOp(), prs.getInt(1));
+              {
+                // the number of successful DELETE is the number
+                // of processed rows and not the number of given
+                // rows.
+                _loader.getListener().addProcessedRecordCount(stage.getOp(), prs.getInt(1));
 
-              _loader.getListener().addOperationRecordCount(
-                      Operation.DELETE, prs.getInt(1));
-              break;
-            }
+                _loader.getListener().addOperationRecordCount(Operation.DELETE, prs.getInt(1));
+                break;
+              }
             case MODIFY:
-            {
-              // the number of successful UPDATE
-              _loader.getListener().addProcessedRecordCount(
-                      stage.getOp(), prs.getInt(1));
+              {
+                // the number of successful UPDATE
+                _loader.getListener().addProcessedRecordCount(stage.getOp(), prs.getInt(1));
 
-              _loader.getListener().addOperationRecordCount(
-                      Operation.MODIFY, prs.getInt(1));
-              break;
-            }
+                _loader.getListener().addOperationRecordCount(Operation.MODIFY, prs.getInt(1));
+                break;
+              }
             case UPSERT:
-            {
-              _loader.getListener().addProcessedRecordCount(
-                      stage.getOp(), stage.getRowCount());
+              {
+                _loader.getListener().addProcessedRecordCount(stage.getOp(), stage.getRowCount());
 
-              _loader.getListener().addOperationRecordCount(
-                      Operation.UPSERT, prs.getInt(1) + prs.getInt(2));
-              break;
-            }
-
+                _loader
+                    .getListener()
+                    .addOperationRecordCount(Operation.UPSERT, prs.getInt(1) + prs.getInt(2));
+                break;
+              }
           }
 
           // delete stage file if all success
           conn.createStatement().execute("RM '" + remoteStage + "'");
 
-          if (stage.isTerminate())
-          {
+          if (stage.isTerminate()) {
             break;
           }
-
         }
-      }
-      catch (InterruptedException ex) {
+      } catch (InterruptedException ex) {
         LOGGER.error("Interrupted", ex);
         break;
-      }
-      catch (Exception ex) {
-        String msg = String.format("State: %s, %s, %s",
-                currentState, currentCommand, ex.getMessage());
-        _loader.abort(new Loader.ConnectionError(
-                msg, Utils.getCause(ex)));
+      } catch (Exception ex) {
+        String msg =
+            String.format("State: %s, %s, %s", currentState, currentCommand, ex.getMessage());
+        _loader.abort(new Loader.ConnectionError(msg, Utils.getCause(ex)));
         LOGGER.error(msg);
         if (stage == null || stage.isTerminate()) {
           break;
@@ -365,18 +370,14 @@ public class ProcessQueue implements Runnable
     }
   }
 
-  private String getOn(List<String> keys, String L, String R)
-  {
+  private String getOn(List<String> keys, String L, String R) {
     if (keys == null) {
       return "";
     }
     // L and R don't need to be quoted.
-    StringBuilder sb = keys.size() > 1 ?
-                       new StringBuilder(64) : new StringBuilder();
-    for (int i = 0; i < keys.size(); i++)
-    {
-      if (i > 0)
-      {
+    StringBuilder sb = keys.size() > 1 ? new StringBuilder(64) : new StringBuilder();
+    for (int i = 0; i < keys.size(); i++) {
+      if (i > 0) {
         sb.append("AND ");
       }
       sb.append(L);
@@ -391,15 +392,11 @@ public class ProcessQueue implements Runnable
     return sb.toString();
   }
 
-  public void join()
-  {
+  public void join() {
     LOGGER.debug("");
-    try
-    {
+    try {
       _thread.join(0);
-    }
-    catch (InterruptedException ex)
-    {
+    } catch (InterruptedException ex) {
       LOGGER.debug("Exception: ", ex);
     }
   }
