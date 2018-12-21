@@ -1,9 +1,16 @@
+**JDBC Driver 3.6.22**
+|SNOW-63026| Invalidate outdated OCSP response when checking cache hit
+|SNOW-62996| Fixed Intermittent JDBC connection failure in privatelink
+|SNOW-62140| Improve the default setting for CLIENT_MEMORY_LIMIT
+|SNOW-61424| Remove useless version logs
+|SNOW-54606| Java Spring Boot, JDBC + Snowflake: running the application however causes an exception: Caused by: java.lang.IllegalArgumentException: URL must start with 'jdbc'
+|SNOW-63163| Fixed NPE when fetching data
 **JDBC Driver 3.6.21**
-|SNOW-61862| use YYYY-MM-DD HH24:MI:SS.FF9 TZH:TZM for timestamp array binding
+|SNOW-61862| Driver now uses ``YYYY-MM-DD HH24:MI:SS.FF9 TZH:TZM`` for timestamp array binding.
 **JDBC Driver 3.6.20**
-|SNOW-61209| Fixed result set download performance issue.
+|SNOW-61209| Fixed performance issue with result set download.
 **JDBC Driver 3.6.19**
-|SNOW-44393| Catch exception for prepareStatement so that execution can continue
+|SNOW-44393| Driver now catches exceptions for ``prepareStatement`` so that execution can continue.
 **JDBC Driver 3.6.18**
 |SNOW-56535| Support ResultSet.getCharacterStream
 **JDBC Driver 3.6.17**
