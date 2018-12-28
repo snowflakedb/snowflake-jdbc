@@ -110,9 +110,7 @@ public class SFFixedViewResultSet extends SFBaseResultSet
 
     if (nextRow == null)
     {
-      throw IncidentUtil.
-          generateIncidentWithException(session, null, null,
-                                        ErrorCode.ROW_DOES_NOT_EXIST);
+      throw new SFException(ErrorCode.ROW_DOES_NOT_EXIST);
     }
 
     if (columnIndex <= 0 || columnIndex > nextRow.length)

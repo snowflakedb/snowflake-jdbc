@@ -21,7 +21,9 @@ import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.sql.Statement;
 
+import static net.snowflake.client.jdbc.ErrorCode.ROW_DOES_NOT_EXIST;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -317,7 +319,8 @@ public class StatementIT extends BaseJDBCTest
   @Test
   public void testCopyAndUpload() throws Exception
   {
-    URL resource = StatementIT.class.getResource("test_copy.csv");
+    String fileName = "test_copy.csv";
+    URL resource = StatementIT.class.getResource(fileName);
 
     Connection connection = getConnection();
     Statement statement = connection.createStatement();
@@ -325,11 +328,26 @@ public class StatementIT extends BaseJDBCTest
     statement.execute("create or replace table test_copy(c1 number, c2 number, c3 string)");
 
     // put files
-    boolean status =
-        statement.execute("PUT file://" + resource.getFile() + " @%test_copy");
-
-    assertTrue("put command fails", status);
-
+    ResultSet rset =
+        statement.executeQuery("PUT file://" + resource.getFile() + " @%test_copy");
+    try
+    {
+      rset.getString(1);
+      fail("Should raise No row found exception");
+    }
+    catch(SQLException ex)
+    {
+      assertThat("No row found error", ex.getErrorCode(),
+          equalTo(ROW_DOES_NOT_EXIST.getMessageCode()));
+    }
+    int cnt = 0;
+    while(rset.next())
+    {
+      assertThat("uploaded file name",
+          rset.getString(1), equalTo(fileName));
+      ++cnt;
+    }
+    assertThat("number of files", cnt, equalTo(1));
     int numRows =
         statement.executeUpdate("copy into test_copy");
     assertEquals(2, numRows);
