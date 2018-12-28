@@ -7,12 +7,11 @@ package net.snowflake.client.jdbc;
 import net.snowflake.client.core.Event;
 import net.snowflake.client.core.EventUtil;
 
-import java.io.IOException;
-
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 
 import net.snowflake.client.core.HttpUtil;
+import net.snowflake.client.util.DecorrelatedJitterBackoff;
 import net.snowflake.common.core.SqlState;
 
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -21,7 +20,6 @@ import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
 
 import java.util.UUID;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -64,7 +62,6 @@ public class RestRequest
    *                               requests
    * @param includeRequestGuid whether to include request_guid parameter
    * @return HttpResponse Object get from server
-   * @throws java.io.IOException                             java io exception
    * @throws net.snowflake.client.jdbc.SnowflakeSQLException Request timeout Exception or Illegal State Exception i.e.
    *                                                         connection is already shutdown etc
    */
@@ -76,7 +73,7 @@ public class RestRequest
       AtomicBoolean canceling,
       boolean withoutCookies,
       boolean includeRetryParameters,
-      boolean includeRequestGuid) throws IOException, SnowflakeSQLException
+      boolean includeRequestGuid) throws SnowflakeSQLException
   {
     CloseableHttpResponse response = null;
 
@@ -93,13 +90,14 @@ public class RestRequest
     // total elapsed time due to transient issues.
     long elapsedMilliForTransientIssues = 0;
 
+    // retry timeout (ms)
+    long retryTimeoutInMilliseconds = retryTimeout * 1000;
+
     // amount of time to wait for backing off before retry
     long backoffInMilli = minBackoffInMilli;
 
-    // elapsed in millisecond for last call, used for calculating the
-    // remaining amount of time to sleep:
-    // (backoffInMilli - elapsedMilliForLastCall)
-    long elapsedMilliForLastCall = 0;
+    DecorrelatedJitterBackoff backoff = new DecorrelatedJitterBackoff(
+        backoffInMilli, maxBackoffInMilli);
 
     int retryCount = 0;
 
@@ -124,7 +122,7 @@ public class RestRequest
 
         // for first call, simulate a socket timeout by setting socket timeout
         // to the injected socket timeout value
-        if ((injectSocketTimeout != 0) && retryCount == 0)
+        if (injectSocketTimeout != 0 && retryCount == 0)
         {
           logger.info("Injecting socket timeout by setting " +
               "socket timeout to {} millisecond ", injectSocketTimeout);
@@ -216,8 +214,8 @@ public class RestRequest
 
         if (response.getStatusLine().getStatusCode() != 200)
         {
-          logger.debug("Got error response which is not retriable, " +
-                  "http status={}, request={}",
+          logger.debug("Error response not retriable, " +
+                  "HTTP Response Code={}, request={}",
               response.getStatusLine().getStatusCode(),
               httpRequest);
           EventUtil.triggerBasicEvent(
@@ -246,7 +244,10 @@ public class RestRequest
         }
 
         // get the elapsed time for the last request
-        elapsedMilliForLastCall =
+        // elapsed in millisecond for last call, used for calculating the
+        // remaining amount of time to sleep:
+        // (backoffInMilli - elapsedMilliForLastCall)
+        long elapsedMilliForLastCall =
             System.currentTimeMillis() - startTimePerRequest;
 
         // check canceling flag
@@ -257,7 +258,7 @@ public class RestRequest
           break;
         }
 
-        if (retryTimeout > 0)
+        if (retryTimeoutInMilliseconds > 0)
         {
           // increment total elapsed due to transient issues
           elapsedMilliForTransientIssues += elapsedMilliForLastCall;
@@ -265,15 +266,14 @@ public class RestRequest
           // check if the total elapsed time for transient issues has exceeded
           // the retry timeout and we retry at least the min, if so, we will not
           // retry
-          if (((elapsedMilliForTransientIssues / 1000) > retryTimeout) &&
+          if (elapsedMilliForTransientIssues > retryTimeoutInMilliseconds &&
               retryCount >= MIN_RETRY_COUNT)
           {
             logger.error(
-                "Stop retrying since elapsed time due to network "
-                    + "issues has reached timeout. Elapsed=" +
-                    elapsedMilliForTransientIssues +
-                    " milliseconds, timeout=" +
-                    retryTimeout + " seconds");
+                "Stop retrying since elapsed time due to network " +
+                    "issues has reached timeout. " +
+                    "Elapsed={}(ms), timeout={}(ms)",
+            elapsedMilliForTransientIssues, retryTimeoutInMilliseconds);
 
             // rethrow the timeout exception
             if (response == null && savedEx != null)
@@ -295,33 +295,16 @@ public class RestRequest
         {
           try
           {
-            final long backoffOrigin = 1000L;
-            long backoffBound = (backoffInMilli - elapsedMilliForLastCall)*3;
-
-            // guarantee bound is greater than origin
-            long newOrigin = Math.min(backoffOrigin, backoffBound);
-            long newBound = Math.max(backoffOrigin, backoffBound);
-
-            // use decorrelated jitter in retry time
-            // see https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/
-            backoffInMilli = Math.min(
-                maxBackoffInMilli,
-                ThreadLocalRandom.current().nextLong(newOrigin, newBound)
-            );
+            logger.debug("sleeping in {}(ms)", backoffInMilli);
             Thread.sleep(backoffInMilli);
             elapsedMilliForTransientIssues += backoffInMilli;
+            backoffInMilli = backoff.nextSleepTime(backoffInMilli);
           }
           catch (InterruptedException ex1)
           {
             logger.debug(
                 "Backoff sleep before retrying login got interrupted");
           }
-        }
-
-        // increment backoff unless it is already the max
-        if (backoffInMilli < maxBackoffInMilli)
-        {
-          backoffInMilli *= 2;
         }
 
         // release connection before retry
@@ -332,14 +315,17 @@ public class RestRequest
     }
 
     if (response == null)
+    {
       logger.error("Returning null response for request: {}",
           httpRequest);
+    }
     else if (response.getStatusLine().getStatusCode() != 200)
-      logger.error("Got error response: " +
-              "http status={}, request={}",
-              response.getStatusLine().getStatusCode(),
-              httpRequest);
-
+    {
+      logger.error(
+          "Error response: HTTP Response code={}, request={}",
+          response.getStatusLine().getStatusCode(),
+          httpRequest);
+    }
     return response;
   }
 }

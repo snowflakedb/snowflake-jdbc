@@ -11,6 +11,7 @@ import com.fasterxml.jackson.databind.node.JsonNodeType;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
+import net.snowflake.client.util.DecorrelatedJitterBackoff;
 import net.snowflake.client.util.SFPair;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.IOUtils;
@@ -495,6 +496,8 @@ class SFTrustManager implements X509TrustManager
         cid.getSerialNumber().getValue());
 
     long sleepTime = INITIAL_SLEEPING_TIME_IN_MILLISECONDS;
+    DecorrelatedJitterBackoff backoff = new DecorrelatedJitterBackoff(
+        sleepTime, MAX_SLEEPING_TIME_IN_MILLISECONDS);
     CertificateException error = null;
     boolean success = false;
     for (int retry = 0; retry < MAX_RETRY_COUNTER; ++retry)
@@ -536,7 +539,7 @@ class SFTrustManager implements X509TrustManager
         try
         {
           Thread.sleep(sleepTime);
-          sleepTime = minLong(MAX_SLEEPING_TIME_IN_MILLISECONDS, sleepTime * 2);
+          sleepTime = backoff.nextSleepTime(sleepTime);
         }
         catch (InterruptedException ex0)
         { // nop
@@ -714,6 +717,8 @@ class SFTrustManager implements X509TrustManager
   private static void readOcspResponseCacheServer()
   {
     long sleepTime = INITIAL_SLEEPING_TIME_IN_MILLISECONDS;
+    DecorrelatedJitterBackoff backoff = new DecorrelatedJitterBackoff(
+        sleepTime, MAX_SLEEPING_TIME_IN_MILLISECONDS);
     Exception error = null;
     for (int retry = 0; retry < MAX_RETRY_COUNTER; ++retry)
     {
@@ -749,7 +754,7 @@ class SFTrustManager implements X509TrustManager
         try
         {
           Thread.sleep(sleepTime);
-          sleepTime = minLong(MAX_SLEEPING_TIME_IN_MILLISECONDS, sleepTime * 2);
+          sleepTime = backoff.nextSleepTime(sleepTime);
         }
         catch (InterruptedException ex0)
         { // nop
@@ -818,7 +823,7 @@ class SFTrustManager implements X509TrustManager
         URL ocspUrl = new URL(ocspUrlStr);
         url = new URL(String.format(
             SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN,
-                ocspUrl.getHost(), ocspReqDerBase64));
+            ocspUrl.getHost(), ocspReqDerBase64));
       }
       else
       {
@@ -828,6 +833,8 @@ class SFTrustManager implements X509TrustManager
           "not hit cache. Fetching OCSP response from CA OCSP server. {}", url.toString());
 
       long sleepTime = INITIAL_SLEEPING_TIME_IN_MILLISECONDS;
+      DecorrelatedJitterBackoff backoff = new DecorrelatedJitterBackoff(
+          sleepTime, MAX_SLEEPING_TIME_IN_MILLISECONDS);
       boolean success = false;
       HttpResponse response = null;
 
@@ -849,7 +856,7 @@ class SFTrustManager implements X509TrustManager
         try
         {
           Thread.sleep(sleepTime);
-          sleepTime = minLong(MAX_SLEEPING_TIME_IN_MILLISECONDS, sleepTime * 2);
+          sleepTime = backoff.nextSleepTime(sleepTime);
         }
         catch (InterruptedException ex0)
         { // nop
@@ -1198,11 +1205,6 @@ class SFTrustManager implements X509TrustManager
   {
     // using the default HTTP client
     return HttpUtil.getHttpClient();
-  }
-
-  private static long minLong(long v1, long v2)
-  {
-    return v1 < v2 ? v1 : v2;
   }
 
   private static long maxLong(long v1, long v2)
