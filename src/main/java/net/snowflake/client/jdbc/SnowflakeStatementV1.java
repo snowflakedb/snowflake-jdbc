@@ -102,11 +102,12 @@ class SnowflakeStatementV1 implements Statement
   @Override
   public int executeUpdate(String sql) throws SQLException
   {
-    return executeUpdateInternal(sql, null);
+    return executeUpdateInternal(sql, null, true);
   }
 
   int executeUpdateInternal(String sql,
-                            Map<String, ParameterBindingDTO> parameterBindings)
+                            Map<String, ParameterBindingDTO> parameterBindings,
+                            boolean updateQueryRequired)
           throws SQLException
   {
     if (StmtUtil.checkStageManageCommand(sql) != null)
@@ -131,12 +132,11 @@ class SnowflakeStatementV1 implements Statement
           ex.getSqlState(), ex.getVendorCode(), ex.getParams());
     }
 
-    if (getUpdateCount() == NO_UPDATES)
+    if (getUpdateCount() == NO_UPDATES && updateQueryRequired)
     {
       throw new SnowflakeSQLException(ErrorCode.
           UNSUPPORTED_STATEMENT_TYPE_IN_EXECUTION_API,
           sql.length() > 20 ? sql.substring(0, 20) + "..." : sql);
-
     }
 
     return getUpdateCount();
@@ -318,8 +318,15 @@ class SnowflakeStatementV1 implements Statement
     {
       try
       {
-        updateCounts[i] = this.executeUpdateInternal(
-            batch.get(i).getSql(), batch.get(i).getParameterBindings());
+        int cnt = this.executeUpdateInternal(
+            batch.get(i).getSql(), batch.get(i).getParameterBindings(), false);
+        if (cnt == NO_UPDATES)
+        {
+          // in executeBatch we set updateCount to SUCCESS_NO_INFO
+          // for successful query with no updates
+          cnt = SUCCESS_NO_INFO;
+        }
+        updateCounts[i] = cnt;
       }
       catch(SQLException e)
       {

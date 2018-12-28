@@ -375,6 +375,7 @@ public class StatementIT extends BaseJDBCTest
     {
       statement.addBatch("insert into test_batch values('str3', 3)");
       statement.addBatch("select * from test_batch");
+      statement.addBatch("select * from test_batch_not_exist");
       statement.addBatch("insert into test_batch values('str4', 4)");
 
       statement.executeBatch();
@@ -384,11 +385,11 @@ public class StatementIT extends BaseJDBCTest
     {
       updateCounts = e.getUpdateCounts();
       assertThat(e.getErrorCode(), is(
-          ErrorCode.UNSUPPORTED_STATEMENT_TYPE_IN_EXECUTION_API
-              .getMessageCode()));
+          ERROR_CODE_DOMAIN_OBJECT_DOES_NOT_EXIST));
       assertThat(updateCounts[0], is(1));
-      assertThat(updateCounts[1], is(Statement.EXECUTE_FAILED));
-      assertThat(updateCounts[0], is(1));
+      assertThat(updateCounts[1], is(Statement.SUCCESS_NO_INFO));
+      assertThat(updateCounts[2], is(Statement.EXECUTE_FAILED));
+      assertThat(updateCounts[3], is(1));
 
       connection.rollback();
     }
