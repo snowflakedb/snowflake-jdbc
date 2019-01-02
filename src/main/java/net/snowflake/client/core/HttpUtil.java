@@ -41,9 +41,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static org.apache.http.client.config.CookieSpecs.DEFAULT;
 import static org.apache.http.client.config.CookieSpecs.IGNORE_COOKIES;
 
-/**
- * Created by jhuang on 1/19/16.
- */
 public class HttpUtil
 {
   static final SFLogger logger = SFLoggerFactory.getLogger(HttpUtil.class);

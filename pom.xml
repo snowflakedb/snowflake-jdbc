@@ -22,7 +22,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <slf4j.version>1.7.25</slf4j.version>
     <jsoup.version>1.11.3</jsoup.version>
-    <tika.version>1.19.1</tika.version>
+    <tika.version>1.20</tika.version>
     <jackson.version>2.9.6</jackson.version>
     <httpclient.version>4.5.5</httpclient.version>
     <powermock.version>1.7.4</powermock.version>

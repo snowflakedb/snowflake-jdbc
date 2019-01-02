@@ -162,7 +162,7 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
   {
     logger.debug( "executeUpdate() throws SQLException");
 
-    return executeUpdateInternal(sql, parameterBindings);
+    return executeUpdateInternal(sql, parameterBindings, true);
   }
 
   @Override
@@ -922,7 +922,7 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
       if (this.statementMetaData.isArrayBindSupported())
       {
         int updateCount = executeUpdateInternal(
-                              this.sql, batchParameterBindings);
+                              this.sql, batchParameterBindings, false);
 
         // when update count is the same as the number of bindings in the batch,
         // expand the update count into an array (SNOW-14034)

@@ -6,8 +6,11 @@ package net.snowflake.client.jdbc;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import net.snowflake.common.core.SqlState;
 import net.snowflake.client.core.SFSession;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
+import net.snowflake.common.core.SqlState;
+import net.snowflake.common.util.Wildcard;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -17,29 +20,29 @@ import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.sql.Statement;
 import java.sql.Types;
-import java.util.List;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-import net.snowflake.common.util.Wildcard;
-import net.snowflake.client.log.SFLogger;
-import net.snowflake.client.log.SFLoggerFactory;
+import static net.snowflake.client.jdbc.DBMetadataResultSetMetadata.GET_CATALOGS;
+import static net.snowflake.client.jdbc.DBMetadataResultSetMetadata.GET_COLUMNS;
+import static net.snowflake.client.jdbc.DBMetadataResultSetMetadata.GET_COLUMNS_EXTENDED_SET;
+import static net.snowflake.client.jdbc.DBMetadataResultSetMetadata.GET_FOREIGN_KEYS;
+import static net.snowflake.client.jdbc.DBMetadataResultSetMetadata.GET_FUNCTIONS;
+import static net.snowflake.client.jdbc.DBMetadataResultSetMetadata.GET_FUNCTION_COLUMNS;
+import static net.snowflake.client.jdbc.DBMetadataResultSetMetadata.GET_PRIMARY_KEYS;
+import static net.snowflake.client.jdbc.DBMetadataResultSetMetadata.GET_SCHEMAS;
+import static net.snowflake.client.jdbc.DBMetadataResultSetMetadata.GET_TABLES;
 
-import static net.snowflake.client.jdbc.DBMetadataResultSetMetadata.*;
-
-/**
- *
- * @author jhuang
- */
 public class SnowflakeDatabaseMetaData implements DatabaseMetaData
 {
 
   static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeDatabaseMetaData.class);
 
-  static final ObjectMapper mapper = new ObjectMapper();
+  private static final ObjectMapper mapper = new ObjectMapper();
 
   static final private String DatabaseProductName = "Snowflake";
 
@@ -94,10 +97,10 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public SnowflakeDatabaseMetaData(Connection connection)
   {
     logger.debug(
-               "public SnowflakeDatabaseMetaData(SnowflakeConnection connection)");
+        "public SnowflakeDatabaseMetaData(SnowflakeConnection connection)");
 
     this.connection = connection;
-    this.session = ((SnowflakeConnectionV1)connection).getSfSession();
+    this.session = ((SnowflakeConnectionV1) connection).getSfSession();
     this.metadataRequestUseConnectionCtx = session.getMetadataRequestUseConnectionCtx();
   }
 
@@ -105,7 +108,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public boolean allProceduresAreCallable() throws SQLException
   {
     logger.debug(
-               "public boolean allProceduresAreCallable()");
+        "public boolean allProceduresAreCallable()");
 
     return false;
   }
@@ -124,7 +127,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
     logger.debug("public String getURL()");
 
     String url = session.getUrl();
-    return url.startsWith("http://") ? url.replace("http://","jdbc:snowflake://")
+    return url.startsWith("http://") ? url.replace("http://", "jdbc:snowflake://")
         : url.replace("https://", "jdbc:snowflake://");
   }
 
@@ -191,7 +194,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
 
     // We will use the same version numbers for client, GS and XP +
 
-    return ((SnowflakeConnectionV1)connection).getDatabaseVersion() +
+    return ((SnowflakeConnectionV1) connection).getDatabaseVersion() +
         " (" + getDriverVersion() + ")";
   }
 
@@ -218,7 +221,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
     versionBuilder.append(SnowflakeDriver.changeVersion);
 
     String newClientForUpdate =
-        ((SnowflakeConnectionV1)connection).getNewClientForUpdate();
+        ((SnowflakeConnectionV1) connection).getNewClientForUpdate();
 
     // add new client version if current is older
     if (newClientForUpdate != null)
@@ -266,7 +269,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public boolean supportsMixedCaseIdentifiers() throws SQLException
   {
     logger.debug(
-               "public boolean supportsMixedCaseIdentifiers()");
+        "public boolean supportsMixedCaseIdentifiers()");
 
     return false;
   }
@@ -275,7 +278,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public boolean storesUpperCaseIdentifiers() throws SQLException
   {
     logger.debug(
-               "public boolean storesUpperCaseIdentifiers()");
+        "public boolean storesUpperCaseIdentifiers()");
 
     return true;
   }
@@ -284,7 +287,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public boolean storesLowerCaseIdentifiers() throws SQLException
   {
     logger.debug(
-               "public boolean storesLowerCaseIdentifiers()");
+        "public boolean storesLowerCaseIdentifiers()");
 
     return false;
   }
@@ -293,7 +296,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public boolean storesMixedCaseIdentifiers() throws SQLException
   {
     logger.debug(
-               "public boolean storesMixedCaseIdentifiers()");
+        "public boolean storesMixedCaseIdentifiers()");
 
     return false;
   }
@@ -302,7 +305,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public boolean supportsMixedCaseQuotedIdentifiers() throws SQLException
   {
     logger.debug(
-               "public boolean supportsMixedCaseQuotedIdentifiers()");
+        "public boolean supportsMixedCaseQuotedIdentifiers()");
 
     return true;
   }
@@ -311,7 +314,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public boolean storesUpperCaseQuotedIdentifiers() throws SQLException
   {
     logger.debug(
-               "public boolean storesUpperCaseQuotedIdentifiers()");
+        "public boolean storesUpperCaseQuotedIdentifiers()");
 
     return false;
   }
@@ -320,7 +323,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public boolean storesLowerCaseQuotedIdentifiers() throws SQLException
   {
     logger.debug(
-               "public boolean storesLowerCaseQuotedIdentifiers()");
+        "public boolean storesLowerCaseQuotedIdentifiers()");
 
     return false;
   }
@@ -329,7 +332,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public boolean storesMixedCaseQuotedIdentifiers() throws SQLException
   {
     logger.debug(
-               "public boolean storesMixedCaseQuotedIdentifiers()");
+        "public boolean storesMixedCaseQuotedIdentifiers()");
 
     return true;
   }
@@ -338,7 +341,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public String getIdentifierQuoteString() throws SQLException
   {
     logger.debug(
-               "public String getIdentifierQuoteString()");
+        "public String getIdentifierQuoteString()");
 
     return "\"";
   }
@@ -403,7 +406,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public boolean supportsAlterTableWithAddColumn() throws SQLException
   {
     logger.debug(
-               "public boolean supportsAlterTableWithAddColumn()");
+        "public boolean supportsAlterTableWithAddColumn()");
 
     return true;
   }
@@ -412,7 +415,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public boolean supportsAlterTableWithDropColumn() throws SQLException
   {
     logger.debug(
-               "public boolean supportsAlterTableWithDropColumn()");
+        "public boolean supportsAlterTableWithDropColumn()");
 
     return true;
   }
@@ -445,7 +448,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public boolean supportsConvert(int fromType, int toType) throws SQLException
   {
     logger.debug(
-               "public boolean supportsConvert(int fromType, int toType)");
+        "public boolean supportsConvert(int fromType, int toType)");
 
     return false;
   }
@@ -454,7 +457,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public boolean supportsTableCorrelationNames() throws SQLException
   {
     logger.debug(
-               "public boolean supportsTableCorrelationNames()");
+        "public boolean supportsTableCorrelationNames()");
 
     return true;
   }
@@ -463,7 +466,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public boolean supportsDifferentTableCorrelationNames() throws SQLException
   {
     logger.debug(
-               "public boolean supportsDifferentTableCorrelationNames()");
+        "public boolean supportsDifferentTableCorrelationNames()");
 
     return false;
   }
@@ -472,7 +475,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public boolean supportsExpressionsInOrderBy() throws SQLException
   {
     logger.debug(
-               "public boolean supportsExpressionsInOrderBy()");
+        "public boolean supportsExpressionsInOrderBy()");
 
     return true;
   }
@@ -481,7 +484,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public boolean supportsOrderByUnrelated() throws SQLException
   {
     logger.debug(
-               "public boolean supportsOrderByUnrelated()");
+        "public boolean supportsOrderByUnrelated()");
 
     return true;
   }
@@ -498,7 +501,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public boolean supportsGroupByUnrelated() throws SQLException
   {
     logger.debug(
-               "public boolean supportsGroupByUnrelated()");
+        "public boolean supportsGroupByUnrelated()");
 
     return false;
   }
@@ -507,7 +510,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public boolean supportsGroupByBeyondSelect() throws SQLException
   {
     logger.debug(
-               "public boolean supportsGroupByBeyondSelect()");
+        "public boolean supportsGroupByBeyondSelect()");
 
     return true;
   }
@@ -516,7 +519,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public boolean supportsLikeEscapeClause() throws SQLException
   {
     logger.debug(
-               "public boolean supportsLikeEscapeClause()");
+        "public boolean supportsLikeEscapeClause()");
 
     return false;
   }
@@ -525,7 +528,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public boolean supportsMultipleResultSets() throws SQLException
   {
     logger.debug(
-               "public boolean supportsMultipleResultSets()");
+        "public boolean supportsMultipleResultSets()");
 
     return false;
   }
@@ -534,7 +537,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public boolean supportsMultipleTransactions() throws SQLException
   {
     logger.debug(
-               "public boolean supportsMultipleTransactions()");
+        "public boolean supportsMultipleTransactions()");
 
     return true;
   }
@@ -543,7 +546,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public boolean supportsNonNullableColumns() throws SQLException
   {
     logger.debug(
-               "public boolean supportsNonNullableColumns()");
+        "public boolean supportsNonNullableColumns()");
 
     return true;
   }
@@ -552,7 +555,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public boolean supportsMinimumSQLGrammar() throws SQLException
   {
     logger.debug(
-               "public boolean supportsMinimumSQLGrammar()");
+        "public boolean supportsMinimumSQLGrammar()");
 
     return false;
   }
@@ -569,7 +572,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public boolean supportsExtendedSQLGrammar() throws SQLException
   {
     logger.debug(
-               "public boolean supportsExtendedSQLGrammar()");
+        "public boolean supportsExtendedSQLGrammar()");
 
     return false;
   }
@@ -578,7 +581,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public boolean supportsANSI92EntryLevelSQL() throws SQLException
   {
     logger.debug(
-               "public boolean supportsANSI92EntryLevelSQL()");
+        "public boolean supportsANSI92EntryLevelSQL()");
 
     return true;
   }
@@ -587,7 +590,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public boolean supportsANSI92IntermediateSQL() throws SQLException
   {
     logger.debug(
-               "public boolean supportsANSI92IntermediateSQL()");
+        "public boolean supportsANSI92IntermediateSQL()");
 
     return false;
   }
@@ -604,7 +607,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public boolean supportsIntegrityEnhancementFacility() throws SQLException
   {
     logger.debug(
-               "public boolean supportsIntegrityEnhancementFacility()");
+        "public boolean supportsIntegrityEnhancementFacility()");
 
     return false;
   }
@@ -629,7 +632,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public boolean supportsLimitedOuterJoins() throws SQLException
   {
     logger.debug(
-               "public boolean supportsLimitedOuterJoins()");
+        "public boolean supportsLimitedOuterJoins()");
 
     return true;
   }
@@ -678,7 +681,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public boolean supportsSchemasInDataManipulation() throws SQLException
   {
     logger.debug(
-               "public boolean supportsSchemasInDataManipulation()");
+        "public boolean supportsSchemasInDataManipulation()");
 
     return true;
   }
@@ -687,7 +690,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public boolean supportsSchemasInProcedureCalls() throws SQLException
   {
     logger.debug(
-               "public boolean supportsSchemasInProcedureCalls()");
+        "public boolean supportsSchemasInProcedureCalls()");
 
     return false;
   }
@@ -696,7 +699,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public boolean supportsSchemasInTableDefinitions() throws SQLException
   {
     logger.debug(
-               "public boolean supportsSchemasInTableDefinitions()");
+        "public boolean supportsSchemasInTableDefinitions()");
 
     return true;
   }
@@ -705,7 +708,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public boolean supportsSchemasInIndexDefinitions() throws SQLException
   {
     logger.debug(
-               "public boolean supportsSchemasInIndexDefinitions()");
+        "public boolean supportsSchemasInIndexDefinitions()");
 
     return false;
   }
@@ -714,7 +717,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public boolean supportsSchemasInPrivilegeDefinitions() throws SQLException
   {
     logger.debug(
-               "public boolean supportsSchemasInPrivilegeDefinitions()");
+        "public boolean supportsSchemasInPrivilegeDefinitions()");
 
     return false;
   }
@@ -723,7 +726,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public boolean supportsCatalogsInDataManipulation() throws SQLException
   {
     logger.debug(
-               "public boolean supportsCatalogsInDataManipulation()");
+        "public boolean supportsCatalogsInDataManipulation()");
 
     return true;
   }
@@ -732,7 +735,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public boolean supportsCatalogsInProcedureCalls() throws SQLException
   {
     logger.debug(
-               "public boolean supportsCatalogsInProcedureCalls()");
+        "public boolean supportsCatalogsInProcedureCalls()");
 
     return false;
   }
@@ -741,7 +744,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public boolean supportsCatalogsInTableDefinitions() throws SQLException
   {
     logger.debug(
-               "public boolean supportsCatalogsInTableDefinitions()");
+        "public boolean supportsCatalogsInTableDefinitions()");
 
     return true;
   }
@@ -750,7 +753,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public boolean supportsCatalogsInIndexDefinitions() throws SQLException
   {
     logger.debug(
-               "public boolean supportsCatalogsInIndexDefinitions()");
+        "public boolean supportsCatalogsInIndexDefinitions()");
 
     return false;
   }
@@ -759,7 +762,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public boolean supportsCatalogsInPrivilegeDefinitions() throws SQLException
   {
     logger.debug(
-               "public boolean supportsCatalogsInPrivilegeDefinitions()");
+        "public boolean supportsCatalogsInPrivilegeDefinitions()");
 
     return false;
   }
@@ -768,7 +771,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public boolean supportsPositionedDelete() throws SQLException
   {
     logger.debug(
-               "public boolean supportsPositionedDelete()");
+        "public boolean supportsPositionedDelete()");
 
     return false;
   }
@@ -777,7 +780,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public boolean supportsPositionedUpdate() throws SQLException
   {
     logger.debug(
-               "public boolean supportsPositionedUpdate()");
+        "public boolean supportsPositionedUpdate()");
 
     return false;
   }
@@ -786,7 +789,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public boolean supportsSelectForUpdate() throws SQLException
   {
     logger.debug(
-               "public boolean supportsSelectForUpdate()");
+        "public boolean supportsSelectForUpdate()");
 
     return false;
   }
@@ -795,7 +798,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public boolean supportsStoredProcedures() throws SQLException
   {
     logger.debug(
-               "public boolean supportsStoredProcedures()");
+        "public boolean supportsStoredProcedures()");
 
     return false;
   }
@@ -804,7 +807,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public boolean supportsSubqueriesInComparisons() throws SQLException
   {
     logger.debug(
-               "public boolean supportsSubqueriesInComparisons()");
+        "public boolean supportsSubqueriesInComparisons()");
 
     return true;
   }
@@ -813,7 +816,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public boolean supportsSubqueriesInExists() throws SQLException
   {
     logger.debug(
-               "public boolean supportsSubqueriesInExists()");
+        "public boolean supportsSubqueriesInExists()");
 
     return true;
   }
@@ -822,7 +825,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public boolean supportsSubqueriesInIns() throws SQLException
   {
     logger.debug(
-               "public boolean supportsSubqueriesInIns()");
+        "public boolean supportsSubqueriesInIns()");
 
     return true;
   }
@@ -831,7 +834,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public boolean supportsSubqueriesInQuantifieds() throws SQLException
   {
     logger.debug(
-               "public boolean supportsSubqueriesInQuantifieds()");
+        "public boolean supportsSubqueriesInQuantifieds()");
 
     return false;
   }
@@ -840,7 +843,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public boolean supportsCorrelatedSubqueries() throws SQLException
   {
     logger.debug(
-               "public boolean supportsCorrelatedSubqueries()");
+        "public boolean supportsCorrelatedSubqueries()");
 
     return true;
   }
@@ -865,7 +868,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public boolean supportsOpenCursorsAcrossCommit() throws SQLException
   {
     logger.debug(
-               "public boolean supportsOpenCursorsAcrossCommit()");
+        "public boolean supportsOpenCursorsAcrossCommit()");
 
     return false;
   }
@@ -874,7 +877,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public boolean supportsOpenCursorsAcrossRollback() throws SQLException
   {
     logger.debug(
-               "public boolean supportsOpenCursorsAcrossRollback()");
+        "public boolean supportsOpenCursorsAcrossRollback()");
 
     return false;
   }
@@ -883,7 +886,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public boolean supportsOpenStatementsAcrossCommit() throws SQLException
   {
     logger.debug(
-               "public boolean supportsOpenStatementsAcrossCommit()");
+        "public boolean supportsOpenStatementsAcrossCommit()");
 
     return false;
   }
@@ -892,7 +895,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public boolean supportsOpenStatementsAcrossRollback() throws SQLException
   {
     logger.debug(
-               "public boolean supportsOpenStatementsAcrossRollback()");
+        "public boolean supportsOpenStatementsAcrossRollback()");
 
     return false;
   }
@@ -1021,7 +1024,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public boolean doesMaxRowSizeIncludeBlobs() throws SQLException
   {
     logger.debug(
-               "public boolean doesMaxRowSizeIncludeBlobs()");
+        "public boolean doesMaxRowSizeIncludeBlobs()");
 
     return true;
   }
@@ -1070,7 +1073,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public int getDefaultTransactionIsolation() throws SQLException
   {
     logger.debug(
-               "public int getDefaultTransactionIsolation()");
+        "public int getDefaultTransactionIsolation()");
 
     return Connection.TRANSACTION_READ_COMMITTED;
   }
@@ -1085,10 +1088,10 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
 
   @Override
   public boolean supportsTransactionIsolationLevel(int level)
-          throws SQLException
+      throws SQLException
   {
     logger.debug(
-               "public boolean supportsTransactionIsolationLevel(int level)");
+        "public boolean supportsTransactionIsolationLevel(int level)");
 
     return (level == Connection.TRANSACTION_NONE)
         || (level == Connection.TRANSACTION_READ_COMMITTED);
@@ -1096,11 +1099,11 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
 
   @Override
   public boolean supportsDataDefinitionAndDataManipulationTransactions()
-          throws SQLException
+      throws SQLException
   {
     logger.debug(
-               "public boolean "
-               + "supportsDataDefinitionAndDataManipulationTransactions()");
+        "public boolean "
+            + "supportsDataDefinitionAndDataManipulationTransactions()");
 
     return true;
   }
@@ -1109,7 +1112,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public boolean supportsDataManipulationTransactionsOnly() throws SQLException
   {
     logger.debug(
-               "public boolean supportsDataManipulationTransactionsOnly()");
+        "public boolean supportsDataManipulationTransactionsOnly()");
 
     return false;
   }
@@ -1118,7 +1121,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public boolean dataDefinitionCausesTransactionCommit() throws SQLException
   {
     logger.debug(
-               "public boolean dataDefinitionCausesTransactionCommit()");
+        "public boolean dataDefinitionCausesTransactionCommit()");
 
     return true;
   }
@@ -1127,7 +1130,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public boolean dataDefinitionIgnoredInTransactions() throws SQLException
   {
     logger.debug(
-               "public boolean dataDefinitionIgnoredInTransactions()");
+        "public boolean dataDefinitionIgnoredInTransactions()");
 
     return false;
   }
@@ -1135,23 +1138,23 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   @Override
   public ResultSet getProcedures(String catalog, String schemaPattern,
                                  String procedureNamePattern)
-          throws SQLException
+      throws SQLException
   {
     logger.debug(
-               "public ResultSet getProcedures(String catalog, "
-               + "String schemaPattern,String procedureNamePattern)");
+        "public ResultSet getProcedures(String catalog, "
+            + "String schemaPattern,String procedureNamePattern)");
 
     Statement statement = connection.createStatement();
 
     // Return empty result set since we don't have primary keys yet
     return new SnowflakeDatabaseMetaDataResultSet(
-            Arrays.asList("PROCEDURE_CAT", "PROCEDURE_SCHEM", "PROCEDURE_NAME",
-                          "REMARKS", "PROCEDURE_TYPE", "SPECIFIC_NAME"),
-            Arrays.asList("TEXT", "TEXT", "TEXT", "TEXT",
-                          "SHORT", "TEXT"),
-            Arrays.asList(Types.VARCHAR, Types.VARCHAR, Types.VARCHAR,
-                          Types.VARCHAR, Types.SMALLINT, Types.VARCHAR),
-            new Object[][]
+        Arrays.asList("PROCEDURE_CAT", "PROCEDURE_SCHEM", "PROCEDURE_NAME",
+            "REMARKS", "PROCEDURE_TYPE", "SPECIFIC_NAME"),
+        Arrays.asList("TEXT", "TEXT", "TEXT", "TEXT",
+            "SHORT", "TEXT"),
+        Arrays.asList(Types.VARCHAR, Types.VARCHAR, Types.VARCHAR,
+            Types.VARCHAR, Types.SMALLINT, Types.VARCHAR),
+        new Object[][]
             {
             }, statement);
   }
@@ -1160,30 +1163,30 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public ResultSet getProcedureColumns(String catalog, String schemaPattern,
                                        String procedureNamePattern,
                                        String columnNamePattern)
-          throws SQLException
+      throws SQLException
   {
     logger.debug(
-               "public ResultSet getProcedureColumns(String catalog, "
-               + "String schemaPattern,String procedureNamePattern,"
-               + "String columnNamePattern)");
+        "public ResultSet getProcedureColumns(String catalog, "
+            + "String schemaPattern,String procedureNamePattern,"
+            + "String columnNamePattern)");
 
     Statement statement = connection.createStatement();
     //throw new SQLFeatureNotSupportedException();
     return new SnowflakeDatabaseMetaDataResultSet(
         Arrays.asList("PROCEDURE_CAT", "PROCEDURE_SCHEM", "PROCEDURE_NAME",
-                      "COLUMN_NAME", "COLUMN_TYPE", "DATA_TYPE", "TYPE_NAME",
-                      "PRECISION", "LENGTH", "SCALE", "RADIX", "NULLABLE",
-                      "REMARKS", "COLUMN_DEF", "SQL_DATA_TYPE", "SQL_DATETIME_SUB",
-                      "CHAR_OCTET_LENGTH", "ORDINAL_POSITION", "IS_NULLABLE",
-                      "SPECIFIC_NAME"),
+            "COLUMN_NAME", "COLUMN_TYPE", "DATA_TYPE", "TYPE_NAME",
+            "PRECISION", "LENGTH", "SCALE", "RADIX", "NULLABLE",
+            "REMARKS", "COLUMN_DEF", "SQL_DATA_TYPE", "SQL_DATETIME_SUB",
+            "CHAR_OCTET_LENGTH", "ORDINAL_POSITION", "IS_NULLABLE",
+            "SPECIFIC_NAME"),
         Arrays.asList("TEXT", "TEXT", "TEXT", "TEXT", "SHORT", "INTEGER", "TEXT",
-                      "INTEGER", "INTEGER", "SHORT", "SHORT", "SHORT", "TEXT",
-                      "TEXT", "INTEGER", "INTEGER", "INTEGER", "INTEGER", "TEXT", "TEXT"),
+            "INTEGER", "INTEGER", "SHORT", "SHORT", "SHORT", "TEXT",
+            "TEXT", "INTEGER", "INTEGER", "INTEGER", "INTEGER", "TEXT", "TEXT"),
         Arrays.asList(Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR,
-                      Types.SMALLINT, Types.INTEGER, Types.VARCHAR, Types.INTEGER,
-                      Types.INTEGER, Types.SMALLINT, Types.SMALLINT, Types.SMALLINT,
-                      Types.VARCHAR, Types.VARCHAR, Types.INTEGER, Types.INTEGER,
-                      Types.INTEGER, Types.INTEGER, Types.VARCHAR, Types.VARCHAR),
+            Types.SMALLINT, Types.INTEGER, Types.VARCHAR, Types.INTEGER,
+            Types.INTEGER, Types.SMALLINT, Types.SMALLINT, Types.SMALLINT,
+            Types.VARCHAR, Types.VARCHAR, Types.INTEGER, Types.INTEGER,
+            Types.INTEGER, Types.INTEGER, Types.VARCHAR, Types.VARCHAR),
         new Object[][]{},
         statement
     );
@@ -1192,7 +1195,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   @Override
   public ResultSet getTables(String catalog, String schemaPattern,
                              String tableNamePattern, String[] types)
-          throws SQLException
+      throws SQLException
   {
     if (logger.isDebugEnabled())
     {
@@ -1200,13 +1203,13 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
           "public ResultSet getTables(String catalog={}, String "
               + "schemaPattern={}, String tableNamePattern={}, " +
               "String[] types={})",
-          new Object[]{catalog, schemaPattern, tableNamePattern,
-              Arrays.toString(types)});
+          catalog, schemaPattern, tableNamePattern,
+              Arrays.toString(types));
     }
 
     Set<String> supportedTableTypes = new HashSet<>();
     ResultSet resultSet = getTableTypes();
-    while(resultSet.next())
+    while (resultSet.next())
     {
       supportedTableTypes.add(resultSet.getString("TABLE_TYPE"));
     }
@@ -1216,8 +1219,10 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
     // then filter on the input table types;
     if (types != null)
     {
-      for (int i = 0; i < types.length; i++) {
-        if (supportedTableTypes.contains(types[i])) {
+      for (int i = 0; i < types.length; i++)
+      {
+        if (supportedTableTypes.contains(types[i]))
+        {
           inputValidTableTypes.add(types[i]);
         }
       }
@@ -1246,9 +1251,9 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
 
     String showCommand = null;
     final boolean viewOnly = inputValidTableTypes.size() == 1
-                             && "VIEW".equalsIgnoreCase(inputValidTableTypes.get(0));
+        && "VIEW".equalsIgnoreCase(inputValidTableTypes.get(0));
     final boolean tableOnly = inputValidTableTypes.size() == 1
-                             && "TABLE".equalsIgnoreCase(inputValidTableTypes.get(0));
+        && "TABLE".equalsIgnoreCase(inputValidTableTypes.get(0));
     if (viewOnly)
     {
       showCommand = "show /* JDBC:DatabaseMetaData.getTables() */ views";
@@ -1296,7 +1301,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
       {
         schemaPattern = schemaPattern.replace("\\", "");
         showCommand += " in schema \"" + catalog + "\".\"" +
-              schemaPattern + "\"";
+            schemaPattern + "\"";
       }
     }
 
@@ -1305,62 +1310,64 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
     resultSet = executeAndReturnEmptyResultIfNotFound(statement, showCommand, GET_TABLES);
 
     return new SnowflakeDatabaseMetaDataResultSet(GET_TABLES, resultSet, statement)
-            {
-              public boolean next() throws SQLException
-              {
-                logger.debug("public boolean next()");
+    {
+      public boolean next() throws SQLException
+      {
+        logger.debug("public boolean next()");
 
-                // iterate throw the show table result until we find an entry
-                // that matches the table name
-                while (showObjectResultSet.next())
-                {
-                  String tableName = showObjectResultSet.getString(2);
+        // iterate throw the show table result until we find an entry
+        // that matches the table name
+        while (showObjectResultSet.next())
+        {
+          String tableName = showObjectResultSet.getString(2);
 
-                  String dbName;
-                  String schemaName;
-                  String kind;
-                  String comment;
+          String dbName;
+          String schemaName;
+          String kind;
+          String comment;
 
-                  if (viewOnly)
-                  {
-                    dbName = showObjectResultSet.getString(4);
-                    schemaName = showObjectResultSet.getString(5);
-                    kind = "VIEW";
-                    comment = showObjectResultSet.getString(7);
-                  }
-                  else
-                  {
-                    dbName = showObjectResultSet.getString(3);
-                    schemaName = showObjectResultSet.getString(4);
-                    kind = showObjectResultSet.getString(5);
-                    comment = showObjectResultSet.getString(6);
-                  }
+          if (viewOnly)
+          {
+            dbName = showObjectResultSet.getString(4);
+            schemaName = showObjectResultSet.getString(5);
+            kind = "VIEW";
+            comment = showObjectResultSet.getString(7);
+          }
+          else
+          {
+            dbName = showObjectResultSet.getString(3);
+            schemaName = showObjectResultSet.getString(4);
+            kind = showObjectResultSet.getString(5);
+            comment = showObjectResultSet.getString(6);
+          }
 
-                  if ((compiledTablePattern == null
-                       || compiledTablePattern.matcher(tableName).matches())
-                      && (compiledSchemaPattern == null
-                          || compiledSchemaPattern.matcher(schemaName).matches()))
-                  {
-                    nextRow[0] = dbName;
-                    nextRow[1] = schemaName;
-                    nextRow[2] = tableName;
-                    nextRow[3] = kind;
-                    nextRow[4] = comment;
-                    nextRow[5] = null;
-                    nextRow[6] = null;
-                    nextRow[7] = null;
-                    nextRow[8] = null;
-                    nextRow[9] = null;
-                    return true;
-                  }
-                }
+          if ((compiledTablePattern == null
+              || compiledTablePattern.matcher(tableName).matches())
+              && (compiledSchemaPattern == null
+              || compiledSchemaPattern.matcher(schemaName).matches()))
+          {
+            nextRow[0] = dbName;
+            nextRow[1] = schemaName;
+            nextRow[2] = tableName;
+            nextRow[3] = kind;
+            nextRow[4] = comment;
+            nextRow[5] = null;
+            nextRow[6] = null;
+            nextRow[7] = null;
+            nextRow[8] = null;
+            nextRow[9] = null;
+            return true;
+          }
+        }
 
-                statement.close();
-                statement = null;
-
-                return false;
-              }
-            };
+        if (statement != null)
+        {
+          statement.close();
+          statement = null;
+        }
+        return false;
+      }
+    };
   }
 
   @Override
@@ -1380,27 +1387,29 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
 
     Statement statement = connection.createStatement();
     return new SnowflakeDatabaseMetaDataResultSet(GET_CATALOGS,
-            statement.executeQuery(showDB), statement)
-            {
-              public boolean next() throws SQLException
-              {
-                logger.debug("public boolean next()");
+        statement.executeQuery(showDB), statement)
+    {
+      public boolean next() throws SQLException
+      {
+        logger.debug("public boolean next()");
 
-                // iterate throw the show databases result
-                while (showObjectResultSet.next())
-                {
-                  String dbName = showObjectResultSet.getString(2);
+        // iterate throw the show databases result
+        while (showObjectResultSet.next())
+        {
+          String dbName = showObjectResultSet.getString(2);
 
-                  nextRow[0] = dbName;
-                  return true;
-                }
+          nextRow[0] = dbName;
+          return true;
+        }
 
-                statement.close();
-                statement = null;
-
-                return false;
-              }
-            };
+        if (statement != null)
+        {
+          statement.close();
+          statement = null;
+        }
+        return false;
+      }
+    };
   }
 
   @Override
@@ -1412,17 +1421,17 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
 
     // TODO: We should really get the list of table types from GS
     return new SnowflakeDatabaseMetaDataResultSet(
-            Arrays.asList("TABLE_TYPE"),
-            Arrays.asList("TEXT"),
-            Arrays.asList(Types.VARCHAR),
-            new Object[][]
+        Arrays.asList("TABLE_TYPE"),
+        Arrays.asList("TEXT"),
+        Arrays.asList(Types.VARCHAR),
+        new Object[][]
             {
-              {
-                "TABLE"
-              },
-              {
-                "VIEW"
-              }
+                {
+                    "TABLE"
+                },
+                {
+                    "VIEW"
+                }
             }, statement);
   }
 
@@ -1430,17 +1439,17 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public ResultSet getColumns(String catalog, String schemaPattern,
                               String tableNamePattern,
                               String columnNamePattern)
-          throws SQLException
+      throws SQLException
   {
     return getColumns(catalog, schemaPattern, tableNamePattern,
-                      columnNamePattern, false);
+        columnNamePattern, false);
   }
 
   public ResultSet getColumns(String catalog, String schemaPattern,
                               String tableNamePattern,
                               String columnNamePattern,
                               final boolean extendedSet)
-          throws SQLException
+      throws SQLException
   {
     Statement statement = connection.createStatement();
     logger.debug("public ResultSet getColumns(String catalog={}, String schemaPattern={}" +
@@ -1509,201 +1518,204 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
     }
 
     logger.debug("sql command to get column metadata: {}",
-               showColumnCommand);
+        showColumnCommand);
 
     ResultSet resultSet = executeAndReturnEmptyResultIfNotFound(statement, showColumnCommand,
         extendedSet ? GET_COLUMNS_EXTENDED_SET : GET_COLUMNS);
 
     return new SnowflakeDatabaseMetaDataResultSet(
-            extendedSet ? GET_COLUMNS_EXTENDED_SET : GET_COLUMNS,
-            resultSet, statement)
+        extendedSet ? GET_COLUMNS_EXTENDED_SET : GET_COLUMNS,
+        resultSet, statement)
+    {
+      int ordinalPosition = 0;
+
+      String currentTableName = null;
+
+      public boolean next() throws SQLException
+      {
+        logger.debug("public boolean next()");
+
+        // iterate throw the show table result until we find an entry
+        // that matches the table name
+        while (showObjectResultSet.next())
+        {
+          String tableName = showObjectResultSet.getString(1);
+          String schemaName = showObjectResultSet.getString(2);
+          String columnName = showObjectResultSet.getString(3);
+          String dataTypeStr = showObjectResultSet.getString(4);
+          String defaultValue = showObjectResultSet.getString(6);
+          String comment = showObjectResultSet.getString(9);
+          String catalogName = showObjectResultSet.getString(10);
+          String autoIncrement = showObjectResultSet.getString(11);
+
+          if ((compiledTablePattern == null
+              || compiledTablePattern.matcher(tableName).matches())
+              && (compiledSchemaPattern == null
+              || compiledSchemaPattern.matcher(schemaName).matches())
+              && (compiledColumnPattern == null
+              || compiledColumnPattern.matcher(columnName).matches()))
+          {
+            logger.debug(
+                "Found a matched column:" + tableName
+                    + "." + columnName);
+
+            // reset ordinal position for new table
+            if (!tableName.equals(currentTableName))
             {
-              int ordinalPosition = 0;
+              ordinalPosition = 1;
+              currentTableName = tableName;
+            }
+            else
+            {
+              ordinalPosition++;
+            }
 
-              String currentTableName = null;
+            JsonNode jsonNode;
+            try
+            {
+              jsonNode = mapper.readTree(dataTypeStr);
+            }
+            catch (Exception ex)
+            {
+              logger.error("Exeception when parsing column"
+                  + " result", ex);
 
-              public boolean next() throws SQLException
-              {
-                logger.debug("public boolean next()");
+              throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
+                  ErrorCode.INTERNAL_ERROR
+                      .getMessageCode(),
+                  "error parsing data type: "
+                      + dataTypeStr);
+            }
 
-                // iterate throw the show table result until we find an entry
-                // that matches the table name
-                while (showObjectResultSet.next())
-                {
-                  String tableName = showObjectResultSet.getString(1);
-                  String schemaName = showObjectResultSet.getString(2);
-                  String columnName = showObjectResultSet.getString(3);
-                  String dataTypeStr = showObjectResultSet.getString(4);
-                  String defaultValue = showObjectResultSet.getString(6);
-                  String comment = showObjectResultSet.getString(9);
-                  String catalogName = showObjectResultSet.getString(10);
-                  String autoIncrement = showObjectResultSet.getString(11);
+            logger.debug("data type string: {}",
+                dataTypeStr);
 
-                  if ((compiledTablePattern == null
-                       || compiledTablePattern.matcher(tableName).matches())
-                      && (compiledSchemaPattern == null
-                          || compiledSchemaPattern.matcher(schemaName).matches())
-                      && (compiledColumnPattern == null
-                          || compiledColumnPattern.matcher(columnName).matches()))
-                  {
-                    logger.debug(
-                               "Found a matched column:" + tableName
-                               + "." + columnName);
+            SnowflakeColumnMetadata columnMetadata = SnowflakeUtil
+                .extractColumnMetadata(jsonNode,
+                    session.isJdbcTreatDecimalAsInt());
 
-                    // reset ordinal position for new table
-                    if (!tableName.equals(currentTableName))
-                    {
-                      ordinalPosition = 1;
-                      currentTableName = tableName;
-                    }
-                    else
-                    {
-                      ordinalPosition++;
-                    }
+            logger.debug("nullable: {}",
+                columnMetadata.isNullable());
 
-                    JsonNode jsonNode;
-                    try
-                    {
-                      jsonNode = mapper.readTree(dataTypeStr);
-                    }
-                    catch (Exception ex)
-                    {
-                      logger.error("Exeception when parsing column"
-                              + " result", ex);
+            // SNOW-16881: add catalog name
+            nextRow[0] = catalogName;
+            nextRow[1] = schemaName;
+            nextRow[2] = tableName;
+            nextRow[3] = columnName;
 
-                      throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
-                                                      ErrorCode.INTERNAL_ERROR
-                                                      .getMessageCode(),
-                                                      "error parsing data type: "
-                                                      + dataTypeStr);
-                    }
+            int internalColumnType = columnMetadata.getType();
+            int externalColumnType = internalColumnType;
 
-                    logger.debug("data type string: {}",
-                               dataTypeStr);
+            if (internalColumnType == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_LTZ ||
+                internalColumnType == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_TZ)
+              externalColumnType = Types.TIMESTAMP;
 
-                    SnowflakeColumnMetadata columnMetadata = SnowflakeUtil
-                                    .extractColumnMetadata(jsonNode,
-                                            session.isJdbcTreatDecimalAsInt());
+            nextRow[4] = new Integer(externalColumnType);
+            nextRow[5] = columnMetadata.getTypeName();
 
-                    logger.debug("nullable: {}",
-                               columnMetadata.isNullable());
+            int columnSize = 0;
 
-                    // SNOW-16881: add catalog name
-                    nextRow[0] = catalogName;
-                    nextRow[1] = schemaName;
-                    nextRow[2] = tableName;
-                    nextRow[3] = columnName;
+            if (columnMetadata.getType() == Types.VARCHAR
+                || columnMetadata.getType() == Types.CHAR)
+            {
+              columnSize = columnMetadata.getLength();
+            }
+            else if (columnMetadata.getType() == Types.DECIMAL
+                || columnMetadata.getType() == Types.BIGINT
+                || columnMetadata.getType() == Types.TIME
+                || columnMetadata.getType() == Types.TIMESTAMP)
+            {
+              columnSize = columnMetadata.getPrecision();
+            }
 
-                    int internalColumnType = columnMetadata.getType();
-                    int externalColumnType = internalColumnType;
+            nextRow[6] = new Integer(columnSize);
+            nextRow[7] = null;
+            nextRow[8] = new Integer(columnMetadata.getScale());
+            nextRow[9] = null;
+            nextRow[10] = (columnMetadata.isNullable()
+                ? columnNullable : columnNoNulls);
 
-                    if (internalColumnType == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_LTZ ||
-                        internalColumnType == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_TZ)
-                      externalColumnType = Types.TIMESTAMP;
+            logger.debug("returning nullable: {}",
+                nextRow[10]);
 
-                    nextRow[4] = new Integer(externalColumnType);
-                    nextRow[5] = columnMetadata.getTypeName();
+            nextRow[11] = comment;
+            nextRow[12] = defaultValue;
+            // snow-10597: sql data type is integer instead of string
+            nextRow[13] = externalColumnType;
+            nextRow[14] = null;
+            nextRow[15] = (columnMetadata.getType() == Types.VARCHAR
+                || columnMetadata.getType() == Types.CHAR)
+                ? new Integer(columnMetadata.getLength()) : null;
+            nextRow[16] = new Integer(ordinalPosition);
 
-                    int columnSize = 0;
+            nextRow[17] = (columnMetadata.isNullable() ? "YES" : "NO");
+            nextRow[18] = null;
+            nextRow[19] = null;
+            nextRow[20] = null;
+            nextRow[21] = null;
+            nextRow[22] = "".equals(autoIncrement) ? "NO" : "YES";
+            nextRow[23] = "NO";
+            if (extendedSet)
+            {
+              nextRow[24] = columnMetadata.getBase().name();
+            }
+            return true;
+          }
+        }
 
-                    if (columnMetadata.getType() == Types.VARCHAR
-                        || columnMetadata.getType() == Types.CHAR)
-                    {
-                      columnSize = columnMetadata.getLength();
-                    }
-                    else if (columnMetadata.getType() == Types.DECIMAL
-                             || columnMetadata.getType() == Types.BIGINT
-                             || columnMetadata.getType() == Types.TIME
-                             || columnMetadata.getType() == Types.TIMESTAMP)
-                    {
-                      columnSize = columnMetadata.getPrecision();
-                    }
-
-                    nextRow[6] = new Integer(columnSize);
-                    nextRow[7] = null;
-                    nextRow[8] = new Integer(columnMetadata.getScale());
-                    nextRow[9] = null;
-                    nextRow[10] = (columnMetadata.isNullable()
-                                   ? columnNullable : columnNoNulls);
-
-                    logger.debug("returning nullable: {}",
-                               nextRow[10]);
-
-                    nextRow[11] = comment;
-                    nextRow[12] = defaultValue;
-                    // snow-10597: sql data type is integer instead of string
-                    nextRow[13] = externalColumnType;
-                    nextRow[14] = null;
-                    nextRow[15] = (columnMetadata.getType() == Types.VARCHAR
-                                   || columnMetadata.getType() == Types.CHAR)
-                                  ? new Integer(columnMetadata.getLength()) : null;
-                    nextRow[16] = new Integer(ordinalPosition);
-
-                    nextRow[17] = (columnMetadata.isNullable() ? "YES" : "NO");
-                    nextRow[18] = null;
-                    nextRow[19] = null;
-                    nextRow[20] = null;
-                    nextRow[21] = null;
-                    nextRow[22] = "".equals(autoIncrement) ? "NO" : "YES";
-                    nextRow[23] = "NO";
-                    if (extendedSet)
-                    {
-                      nextRow[24] = columnMetadata.getBase().name();
-                    }
-                    return true;
-                  }
-                }
-
-                statement.close();
-                statement = null;
-                return false;
-              }
-            };
+        if (statement != null)
+        {
+          statement.close();
+          statement = null;
+        }
+        return false;
+      }
+    };
   }
 
   @Override
   public ResultSet getColumnPrivileges(String catalog, String schema,
                                        String table, String columnNamePattern)
-          throws SQLException
+      throws SQLException
   {
     logger.debug(
-               "public ResultSet getColumnPrivileges(String catalog, "
-               + "String schema,String table, String columnNamePattern)");
+        "public ResultSet getColumnPrivileges(String catalog, "
+            + "String schema,String table, String columnNamePattern)");
 
     Statement statement = connection.createStatement();
     return new SnowflakeDatabaseMetaDataResultSet(
         Arrays.asList("TABLE_CAT", "TABLE_SCHEM", "TABLE_NAME", "COLUMN_NAME",
-                      "GRANTOR", "GRANTEE", "PRIVILEGE", "IS_GRANTABLE"),
+            "GRANTOR", "GRANTEE", "PRIVILEGE", "IS_GRANTABLE"),
         Arrays.asList("TEXT", "TEXT", "TEXT", "TEXT",
-                      "TEXT", "TEXT", "TEXT", "TEXT"),
+            "TEXT", "TEXT", "TEXT", "TEXT"),
         Arrays.asList(Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR,
-                      Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR),
+            Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR),
         new Object[][]
-        {
-        }, statement);
+            {
+            }, statement);
   }
 
   @Override
   public ResultSet getTablePrivileges(String catalog, String schemaPattern,
                                       String tableNamePattern)
-          throws SQLException
+      throws SQLException
   {
     logger.debug(
-               "public ResultSet getTablePrivileges(String catalog, "
-               + "String schemaPattern,String tableNamePattern)");
+        "public ResultSet getTablePrivileges(String catalog, "
+            + "String schemaPattern,String tableNamePattern)");
 
     Statement statement = connection.createStatement();
 
     // Return empty result set since we don't have primary keys yet
     return new SnowflakeDatabaseMetaDataResultSet(
-            Arrays.asList("TABLE_CAT", "TABLE_SCHEM", "TABLE_NAME", "GRANTOR",
-                          "GRANTEE", "PRIVILEGE", "IS_GRANTABLE"),
-            Arrays.asList("TEXT", "TEXT", "TEXT", "TEXT", "TEXT",
-                          "TEXT", "TEXT"),
-            Arrays.asList(Types.VARCHAR, Types.VARCHAR, Types.VARCHAR,
-                          Types.VARCHAR, Types.VARCHAR, Types.VARCHAR,
-                          Types.VARCHAR),
-            new Object[][]
+        Arrays.asList("TABLE_CAT", "TABLE_SCHEM", "TABLE_NAME", "GRANTOR",
+            "GRANTEE", "PRIVILEGE", "IS_GRANTABLE"),
+        Arrays.asList("TEXT", "TEXT", "TEXT", "TEXT", "TEXT",
+            "TEXT", "TEXT"),
+        Arrays.asList(Types.VARCHAR, Types.VARCHAR, Types.VARCHAR,
+            Types.VARCHAR, Types.VARCHAR, Types.VARCHAR,
+            Types.VARCHAR),
+        new Object[][]
             {
             }, statement);
   }
@@ -1714,8 +1726,8 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
                                         boolean nullable) throws SQLException
   {
     logger.debug(
-               "public ResultSet getBestRowIdentifier(String catalog, "
-               + "String schema,String table, int scope,boolean nullable)");
+        "public ResultSet getBestRowIdentifier(String catalog, "
+            + "String schema,String table, int scope,boolean nullable)");
 
     throw new SQLFeatureNotSupportedException();
   }
@@ -1725,21 +1737,20 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
                                      String table) throws SQLException
   {
     logger.debug(
-               "public ResultSet getVersionColumns(String catalog, "
-               + "String schema, String table)");
+        "public ResultSet getVersionColumns(String catalog, "
+            + "String schema, String table)");
 
     throw new SQLFeatureNotSupportedException();
   }
 
   @Override
   public ResultSet getPrimaryKeys(String catalog, String schema, final String table)
-          throws SQLException
+      throws SQLException
   {
     Statement statement = connection.createStatement();
     logger.debug(
-               "public ResultSet getPrimaryKeys(String catalog={}, "
-               + "String schema={}, String table={})",
-              new Object[]{catalog, schema, table});
+        "public ResultSet getPrimaryKeys(String catalog={}, "
+            + "String schema={}, String table={})", catalog, schema, table);
     String showPKCommand = "show /* JDBC:DatabaseMetaData.getPrimaryKeys() */ primary keys in ";
 
     if (catalog == null && schema == null && metadataRequestUseConnectionCtx)
@@ -1777,7 +1788,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
         else
         {
           showPKCommand += "table \"" + catalog + "\".\"" + schema + "\".\"" +
-                            table + "\"";
+              table + "\"";
         }
       }
     }
@@ -1787,7 +1798,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
     final String tableIn = table;
 
     logger.debug("sql command to get primary key metadata: {}",
-               showPKCommand);
+        showPKCommand);
 
     ResultSet resultSet = executeAndReturnEmptyResultIfNotFound(statement, showPKCommand, GET_PRIMARY_KEYS);
     // Return empty result set since we don't have primary keys yet
@@ -1822,17 +1833,17 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
             return true;
           }
         }
-
-        statement.close();
-        statement = null;
-
+        if (statement != null)
+        {
+          statement.close();
+          statement = null;
+        }
         return false;
       }
     };
   }
 
   /**
-   *
    * @param client
    * @param parentCatalog
    * @param parentSchema
@@ -1886,7 +1897,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
         if (parentTable == null)
         {
           commandBuilder.append("schema \"" + parentCatalog + "\".\"" +
-                                    parentSchema + "\"");
+              parentSchema + "\"");
         }
         else if (parentTable.isEmpty())
         {
@@ -1895,7 +1906,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
         else
         {
           commandBuilder.append("table \"" + parentCatalog + "\".\"" +
-                                 parentSchema + "\".\"" + parentTable + "\"");
+              parentSchema + "\".\"" + parentTable + "\"");
         }
       }
     }
@@ -1962,11 +1973,11 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
                 (finalParentSchema == null || finalParentSchema.equals(pktable_schem)) &&
                 (parentTable == null || parentTable.equals(pktable_name)) &&
                 (foreignCatalog == null ||
-                 foreignCatalog.equals(fktable_cat)) &&
+                    foreignCatalog.equals(fktable_cat)) &&
                 (foreignSchema == null ||
-                 foreignSchema.equals(fktable_schem)) &&
+                    foreignSchema.equals(fktable_schem)) &&
                 (foreignTable == null ||
-                 foreignTable.equals(fktable_name)))
+                    foreignTable.equals(fktable_name)))
               passedFilter = true;
           }
 
@@ -1990,9 +2001,11 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
           }
         }
 
-        statement.close();
-        statement = null;
-
+        if (statement != null)
+        {
+          statement.close();
+          statement = null;
+        }
         return false;
       }
     };
@@ -2001,6 +2014,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   /**
    * Returns the ODBC standard property string for the property string used
    * in our show constraint commands
+   *
    * @param property_name
    * @param property
    * @return
@@ -2037,24 +2051,22 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
 
   @Override
   public ResultSet getImportedKeys(String catalog, String schema, String table)
-          throws SQLException
+      throws SQLException
   {
     logger.debug(
-               "public ResultSet getImportedKeys(String catalog={}, "
-               + "String schema={}, String table={})",
-               new Object[]{catalog, schema, table});
+        "public ResultSet getImportedKeys(String catalog={}, "
+            + "String schema={}, String table={})", catalog, schema, table);
 
     return getForeignKeys("import", catalog, schema, table, null, null, null);
   }
 
   @Override
   public ResultSet getExportedKeys(String catalog, String schema, String table)
-          throws SQLException
+      throws SQLException
   {
     logger.debug(
-               "public ResultSet getExportedKeys(String catalog={}, "
-               + "String schema={}, String table={})",
-               new Object[]{catalog, schema, table});
+        "public ResultSet getExportedKeys(String catalog={}, "
+            + "String schema={}, String table={})", catalog, schema, table);
 
     return getForeignKeys("export", catalog, schema, table, null, null, null);
   }
@@ -2063,18 +2075,18 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public ResultSet getCrossReference(String parentCatalog, String parentSchema,
                                      String parentTable, String foreignCatalog,
                                      String foreignSchema, String foreignTable)
-          throws SQLException
+      throws SQLException
   {
     logger.debug(
-               "public ResultSet getCrossReference(String parentCatalog={}, "
-               + "String parentSchema={}, String parentTable={}, "
-               + "String foreignCatalog={}, String foreignSchema={}, "
-               + "String foreignTable={})",
-               new Object[]{parentCatalog, parentSchema, parentTable,
-                            foreignCatalog, foreignSchema, foreignTable});
+        "public ResultSet getCrossReference(String parentCatalog={}, "
+            + "String parentSchema={}, String parentTable={}, "
+            + "String foreignCatalog={}, String foreignSchema={}, "
+            + "String foreignTable={})",
+        parentCatalog, parentSchema, parentTable,
+        foreignCatalog, foreignSchema, foreignTable);
 
     return getForeignKeys("cross", parentCatalog, parentSchema, parentTable,
-                          foreignCatalog, foreignSchema, foreignTable);
+        foreignCatalog, foreignSchema, foreignTable);
   }
 
   @Override
@@ -2086,95 +2098,95 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
 
     // Return empty result set since we don't have primary keys yet
     return new SnowflakeDatabaseMetaDataResultSet(
-            Arrays.asList("TYPE_NAME", "DATA_TYPE", "PRECISION",
-                          "LITERAL_PREFIX", "LITERAL_SUFFIX", "CREATE_PARAMS",
-                          "NULLABLE", "CASE_SENSITIVE", "SEARCHABLE",
-                          "UNSIGNED_ATTRIBUTE", "FIXED_PREC_SCALE",
-                          "AUTO_INCREMENT", "LOCAL_TYPE_NAME", "MINIMUM_SCALE",
-                          "MAXIMUM_SCALE", "SQL_DATA_TYPE", "SQL_DATETIME_SUB",
-                          "NUM_PREC_RADIX"),
-            Arrays.asList("TEXT", "INTEGER", "INTEGER", "TEXT", "TEXT",
-                          "TEXT", "SHORT", "BOOLEAN", "SHORT", "BOOLEAN",
-                          "BOOLEAN", "BOOLEAN", "TEXT", "SHORT", "SHORT",
-                          "INTEGER", "INTEGER", "INTEGER"),
-            Arrays.asList(Types.VARCHAR, Types.INTEGER, Types.INTEGER,
-                          Types.VARCHAR, Types.VARCHAR, Types.VARCHAR,
-                          Types.SMALLINT, Types.BOOLEAN, Types.SMALLINT,
-                          Types.BOOLEAN, Types.BOOLEAN, Types.BOOLEAN,
-                          Types.VARCHAR, Types.SMALLINT, Types.SMALLINT,
-                          Types.INTEGER, Types.INTEGER, Types.INTEGER),
-            new Object[][]
+        Arrays.asList("TYPE_NAME", "DATA_TYPE", "PRECISION",
+            "LITERAL_PREFIX", "LITERAL_SUFFIX", "CREATE_PARAMS",
+            "NULLABLE", "CASE_SENSITIVE", "SEARCHABLE",
+            "UNSIGNED_ATTRIBUTE", "FIXED_PREC_SCALE",
+            "AUTO_INCREMENT", "LOCAL_TYPE_NAME", "MINIMUM_SCALE",
+            "MAXIMUM_SCALE", "SQL_DATA_TYPE", "SQL_DATETIME_SUB",
+            "NUM_PREC_RADIX"),
+        Arrays.asList("TEXT", "INTEGER", "INTEGER", "TEXT", "TEXT",
+            "TEXT", "SHORT", "BOOLEAN", "SHORT", "BOOLEAN",
+            "BOOLEAN", "BOOLEAN", "TEXT", "SHORT", "SHORT",
+            "INTEGER", "INTEGER", "INTEGER"),
+        Arrays.asList(Types.VARCHAR, Types.INTEGER, Types.INTEGER,
+            Types.VARCHAR, Types.VARCHAR, Types.VARCHAR,
+            Types.SMALLINT, Types.BOOLEAN, Types.SMALLINT,
+            Types.BOOLEAN, Types.BOOLEAN, Types.BOOLEAN,
+            Types.VARCHAR, Types.SMALLINT, Types.SMALLINT,
+            Types.INTEGER, Types.INTEGER, Types.INTEGER),
+        new Object[][]
             {
-              {
-                "NUMBER", Types.DECIMAL, 38, null, null, null, typeNullable,
-                false, typeSearchable, false, true, true, null, 0, 37, -1,
-                -1, -1
-              },
-              {
-                "INTEGER", Types.INTEGER, 38, null, null, null, typeNullable,
-                false, typeSearchable, false, true, true, null, 0, 0, -1,
-                -1, -1
-              },
-              {
-                "DOUBLE", Types.DOUBLE, 38, null, null, null, typeNullable,
-                false, typeSearchable, false, true, true, null, 0, 37, -1,
-                -1, -1
-              },
-              {
-                "VARCHAR", Types.VARCHAR, -1, null, null, null, typeNullable,
-                false, typeSearchable, false, true, true, null, -1, -1, -1,
-                -1, -1
-              },
-              {
-                "DATE", Types.DATE, -1, null, null, null, typeNullable,
-                false, typeSearchable, false, true, true, null, -1, -1, -1,
-                -1, -1
-              },
-              {
-                "TIME", Types.TIME, -1, null, null, null, typeNullable,
-                false, typeSearchable, false, true, true, null, -1, -1, -1,
-                -1, -1
-              },
-              {
-                "TIMESTAMP", Types.TIMESTAMP, -1, null, null, null, typeNullable,
-                false, typeSearchable, false, true, true, null, -1, -1, -1,
-                -1, -1
-              },
-              {
-                "BOOLEAN", Types.BOOLEAN, -1, null, null, null, typeNullable,
-                false, typeSearchable, false, true, true, null, -1, -1, -1,
-                -1, -1
-              }
+                {
+                    "NUMBER", Types.DECIMAL, 38, null, null, null, typeNullable,
+                    false, typeSearchable, false, true, true, null, 0, 37, -1,
+                    -1, -1
+                },
+                {
+                    "INTEGER", Types.INTEGER, 38, null, null, null, typeNullable,
+                    false, typeSearchable, false, true, true, null, 0, 0, -1,
+                    -1, -1
+                },
+                {
+                    "DOUBLE", Types.DOUBLE, 38, null, null, null, typeNullable,
+                    false, typeSearchable, false, true, true, null, 0, 37, -1,
+                    -1, -1
+                },
+                {
+                    "VARCHAR", Types.VARCHAR, -1, null, null, null, typeNullable,
+                    false, typeSearchable, false, true, true, null, -1, -1, -1,
+                    -1, -1
+                },
+                {
+                    "DATE", Types.DATE, -1, null, null, null, typeNullable,
+                    false, typeSearchable, false, true, true, null, -1, -1, -1,
+                    -1, -1
+                },
+                {
+                    "TIME", Types.TIME, -1, null, null, null, typeNullable,
+                    false, typeSearchable, false, true, true, null, -1, -1, -1,
+                    -1, -1
+                },
+                {
+                    "TIMESTAMP", Types.TIMESTAMP, -1, null, null, null, typeNullable,
+                    false, typeSearchable, false, true, true, null, -1, -1, -1,
+                    -1, -1
+                },
+                {
+                    "BOOLEAN", Types.BOOLEAN, -1, null, null, null, typeNullable,
+                    false, typeSearchable, false, true, true, null, -1, -1, -1,
+                    -1, -1
+                }
             }, statement);
   }
 
   @Override
   public ResultSet getIndexInfo(String catalog, String schema, String table,
                                 boolean unique, boolean approximate)
-          throws SQLException
+      throws SQLException
   {
     logger.debug(
-               "public ResultSet getIndexInfo(String catalog, String schema, "
-               + "String table,boolean unique, boolean approximate)");
+        "public ResultSet getIndexInfo(String catalog, String schema, "
+            + "String table,boolean unique, boolean approximate)");
 
     Statement statement = connection.createStatement();
 
     // Return empty result set since we don't have primary keys yet
     return new SnowflakeDatabaseMetaDataResultSet(
-            Arrays.asList("TABLE_CAT", "TABLE_SCHEM", "TABLE_NAME",
-                          "NON_UNIQUE", "INDEX_QUALIFIER", "INDEX_NAME",
-                          "TYPE", "ORDINAL_POSITION", "COLUMN_NAME",
-                          "ASC_OR_DESC", "CARDINALITY", "PAGES",
-                          "FILTER_CONDITION"),
-            Arrays.asList("TEXT", "TEXT", "TEXT", "BOOLEAN", "TEXT", "TEXT",
-                          "SHORT", "SHORT", "TEXT", "TEXT", "INTEGER",
-                          "INTEGER", "TEXT"),
-            Arrays.asList(Types.VARCHAR, Types.VARCHAR, Types.VARCHAR,
-                          Types.BOOLEAN, Types.VARCHAR, Types.VARCHAR,
-                          Types.SMALLINT, Types.SMALLINT, Types.VARCHAR,
-                          Types.VARCHAR, Types.INTEGER, Types.INTEGER,
-                          Types.VARCHAR),
-            new Object[][]
+        Arrays.asList("TABLE_CAT", "TABLE_SCHEM", "TABLE_NAME",
+            "NON_UNIQUE", "INDEX_QUALIFIER", "INDEX_NAME",
+            "TYPE", "ORDINAL_POSITION", "COLUMN_NAME",
+            "ASC_OR_DESC", "CARDINALITY", "PAGES",
+            "FILTER_CONDITION"),
+        Arrays.asList("TEXT", "TEXT", "TEXT", "BOOLEAN", "TEXT", "TEXT",
+            "SHORT", "SHORT", "TEXT", "TEXT", "INTEGER",
+            "INTEGER", "TEXT"),
+        Arrays.asList(Types.VARCHAR, Types.VARCHAR, Types.VARCHAR,
+            Types.BOOLEAN, Types.VARCHAR, Types.VARCHAR,
+            Types.SMALLINT, Types.SMALLINT, Types.VARCHAR,
+            Types.VARCHAR, Types.INTEGER, Types.INTEGER,
+            Types.VARCHAR),
+        new Object[][]
             {
             }, statement);
   }
@@ -2183,28 +2195,28 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public boolean supportsResultSetType(int type) throws SQLException
   {
     logger.debug(
-               "public boolean supportsResultSetType(int type)");
+        "public boolean supportsResultSetType(int type)");
 
     return (type == ResultSet.TYPE_FORWARD_ONLY);
   }
 
   @Override
   public boolean supportsResultSetConcurrency(int type, int concurrency)
-          throws SQLException
+      throws SQLException
   {
     logger.debug(
-               "public boolean supportsResultSetConcurrency(int type, "
-               + "int concurrency)");
+        "public boolean supportsResultSetConcurrency(int type, "
+            + "int concurrency)");
 
     return (type == ResultSet.TYPE_FORWARD_ONLY
-            && concurrency == ResultSet.CONCUR_READ_ONLY);
+        && concurrency == ResultSet.CONCUR_READ_ONLY);
   }
 
   @Override
   public boolean ownUpdatesAreVisible(int type) throws SQLException
   {
     logger.debug(
-               "public boolean ownUpdatesAreVisible(int type)");
+        "public boolean ownUpdatesAreVisible(int type)");
 
     return false;
   }
@@ -2213,7 +2225,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public boolean ownDeletesAreVisible(int type) throws SQLException
   {
     logger.debug(
-               "public boolean ownDeletesAreVisible(int type)");
+        "public boolean ownDeletesAreVisible(int type)");
 
     return false;
   }
@@ -2222,7 +2234,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public boolean ownInsertsAreVisible(int type) throws SQLException
   {
     logger.debug(
-               "public boolean ownInsertsAreVisible(int type)");
+        "public boolean ownInsertsAreVisible(int type)");
 
     return false;
   }
@@ -2231,7 +2243,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public boolean othersUpdatesAreVisible(int type) throws SQLException
   {
     logger.debug(
-               "public boolean othersUpdatesAreVisible(int type)");
+        "public boolean othersUpdatesAreVisible(int type)");
 
     return false;
   }
@@ -2240,7 +2252,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public boolean othersDeletesAreVisible(int type) throws SQLException
   {
     logger.debug(
-               "public boolean othersDeletesAreVisible(int type)");
+        "public boolean othersDeletesAreVisible(int type)");
 
     return false;
   }
@@ -2249,7 +2261,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public boolean othersInsertsAreVisible(int type) throws SQLException
   {
     logger.debug(
-               "public boolean othersInsertsAreVisible(int type)");
+        "public boolean othersInsertsAreVisible(int type)");
 
     return false;
   }
@@ -2258,7 +2270,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public boolean updatesAreDetected(int type) throws SQLException
   {
     logger.debug(
-               "public boolean updatesAreDetected(int type)");
+        "public boolean updatesAreDetected(int type)");
 
     return false;
   }
@@ -2267,7 +2279,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public boolean deletesAreDetected(int type) throws SQLException
   {
     logger.debug(
-               "public boolean deletesAreDetected(int type)");
+        "public boolean deletesAreDetected(int type)");
 
     return false;
   }
@@ -2276,7 +2288,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public boolean insertsAreDetected(int type) throws SQLException
   {
     logger.debug(
-               "public boolean insertsAreDetected(int type)");
+        "public boolean insertsAreDetected(int type)");
 
     return false;
   }
@@ -2292,11 +2304,11 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   @Override
   public ResultSet getUDTs(String catalog, String schemaPattern,
                            String typeNamePattern, int[] types)
-          throws SQLException
+      throws SQLException
   {
     logger.debug(
-               "public ResultSet getUDTs(String catalog, "
-               + "String schemaPattern,String typeNamePattern, int[] types)");
+        "public ResultSet getUDTs(String catalog, "
+            + "String schemaPattern,String typeNamePattern, int[] types)");
 
     // We don't user-defined types, so return an empty result set
     Statement statement = connection.createStatement();
@@ -2332,7 +2344,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public boolean supportsNamedParameters() throws SQLException
   {
     logger.debug(
-               "public boolean supportsNamedParameters()");
+        "public boolean supportsNamedParameters()");
 
     return false;
   }
@@ -2341,7 +2353,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public boolean supportsMultipleOpenResults() throws SQLException
   {
     logger.debug(
-               "public boolean supportsMultipleOpenResults()");
+        "public boolean supportsMultipleOpenResults()");
 
     return false;
   }
@@ -2350,7 +2362,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public boolean supportsGetGeneratedKeys() throws SQLException
   {
     logger.debug(
-               "public boolean supportsGetGeneratedKeys()");
+        "public boolean supportsGetGeneratedKeys()");
 
     return false;
   }
@@ -2360,8 +2372,8 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
                                  String typeNamePattern) throws SQLException
   {
     logger.debug(
-               "public ResultSet getSuperTypes(String catalog, "
-               + "String schemaPattern,String typeNamePattern)");
+        "public ResultSet getSuperTypes(String catalog, "
+            + "String schemaPattern,String typeNamePattern)");
 
     throw new SQLFeatureNotSupportedException();
   }
@@ -2371,8 +2383,8 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
                                   String tableNamePattern) throws SQLException
   {
     logger.debug(
-               "public ResultSet getSuperTables(String catalog, "
-               + "String schemaPattern,String tableNamePattern)");
+        "public ResultSet getSuperTables(String catalog, "
+            + "String schemaPattern,String tableNamePattern)");
 
     throw new SQLFeatureNotSupportedException();
   }
@@ -2381,22 +2393,22 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public ResultSet getAttributes(String catalog, String schemaPattern,
                                  String typeNamePattern,
                                  String attributeNamePattern)
-          throws SQLException
+      throws SQLException
   {
     logger.debug(
-               "public ResultSet getAttributes(String catalog, String "
-               + "schemaPattern,"
-               + "String typeNamePattern,String attributeNamePattern)");
+        "public ResultSet getAttributes(String catalog, String "
+            + "schemaPattern,"
+            + "String typeNamePattern,String attributeNamePattern)");
 
     throw new SQLFeatureNotSupportedException();
   }
 
   @Override
   public boolean supportsResultSetHoldability(int holdability)
-          throws SQLException
+      throws SQLException
   {
     logger.debug(
-               "public boolean supportsResultSetHoldability(int holdability)");
+        "public boolean supportsResultSetHoldability(int holdability)");
 
     return false;
   }
@@ -2414,7 +2426,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   {
     logger.debug("public int getDatabaseMajorVersion()");
 
-    return ((SnowflakeConnectionV1)connection).getDatabaseMajorVersion();
+    return ((SnowflakeConnectionV1) connection).getDatabaseMajorVersion();
   }
 
   @Override
@@ -2422,7 +2434,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   {
     logger.debug("public int getDatabaseMinorVersion()");
 
-    return ((SnowflakeConnectionV1)connection).getDatabaseMinorVersion();
+    return ((SnowflakeConnectionV1) connection).getDatabaseMinorVersion();
   }
 
   @Override
@@ -2461,7 +2473,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public boolean supportsStatementPooling() throws SQLException
   {
     logger.debug(
-               "public boolean supportsStatementPooling()");
+        "public boolean supportsStatementPooling()");
 
     return false;
   }
@@ -2476,12 +2488,11 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
 
   @Override
   public ResultSet getSchemas(String catalog, String schemaPattern)
-          throws SQLException
+      throws SQLException
   {
     logger.debug(
-               "public ResultSet getSchemas(String catalog={}, String "
-               + "schemaPattern={})",
-        new Object[]{catalog, schemaPattern});
+        "public ResultSet getSchemas(String catalog={}, String "
+            + "schemaPattern={})", catalog, schemaPattern);
 
     // try to determine if to use session database and schema
     if (catalog == null && schemaPattern == null && metadataRequestUseConnectionCtx)
@@ -2542,9 +2553,11 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
           }
         }
 
-        statement.close();
-        statement = null;
-
+        if (statement != null)
+        {
+          statement.close();
+          statement = null;
+        }
         return false;
       }
     };
@@ -2554,7 +2567,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public boolean supportsStoredFunctionsUsingCallSyntax() throws SQLException
   {
     logger.debug(
-               "public boolean supportsStoredFunctionsUsingCallSyntax()");
+        "public boolean supportsStoredFunctionsUsingCallSyntax()");
 
     return false;
   }
@@ -2563,7 +2576,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public boolean autoCommitFailureClosesAllResultSets() throws SQLException
   {
     logger.debug(
-               "public boolean autoCommitFailureClosesAllResultSets()");
+        "public boolean autoCommitFailureClosesAllResultSets()");
 
     throw new SQLFeatureNotSupportedException();
   }
@@ -2572,7 +2585,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public ResultSet getClientInfoProperties() throws SQLException
   {
     logger.debug(
-               "public ResultSet getClientInfoProperties()");
+        "public ResultSet getClientInfoProperties()");
 
     throw new SQLFeatureNotSupportedException();
   }
@@ -2626,7 +2639,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
       {
         schemaPattern = schemaPattern.replace("\\", "");
         showFunctionCommand += " in schema \"" + catalog + "\".\"" +
-            schemaPattern +  "\"";
+            schemaPattern + "\"";
       }
     }
 
@@ -2650,7 +2663,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
           String functionName = showObjectResultSet.getString(2);
           String remarks = showObjectResultSet.getString(10);
           int functionType = ("Y".equals(showObjectResultSet.getString(12)) ?
-                                functionReturnsTable : functionNoTable);
+              functionReturnsTable : functionNoTable);
           String specificName = functionName;
           if ((compiledFunctionPattern == null
               || compiledFunctionPattern.matcher(functionName).matches())
@@ -2670,8 +2683,11 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
             return true;
           }
         }
-        statement.close();
-        statement = null;
+        if (statement != null)
+        {
+          statement.close();
+          statement = null;
+        }
         return false;
       }
     };
@@ -2681,12 +2697,12 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public ResultSet getFunctionColumns(String catalog, String schemaPattern,
                                       String functionNamePattern,
                                       String columnNamePattern)
-          throws SQLException
+      throws SQLException
   {
     logger.debug(
-               "public ResultSet getFunctionColumns(String catalog, "
-               + "String schemaPattern,String functionNamePattern,"
-               + "String columnNamePattern)");
+        "public ResultSet getFunctionColumns(String catalog, "
+            + "String schemaPattern,String functionNamePattern,"
+            + "String columnNamePattern)");
 
     return SnowflakeDatabaseMetaDataResultSet.getEmptyResultSet(
         GET_FUNCTION_COLUMNS, connection.createStatement());
@@ -2696,12 +2712,12 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public ResultSet getPseudoColumns(String catalog, String schemaPattern,
                                     String tableNamePattern,
                                     String columnNamePattern)
-          throws SQLException
+      throws SQLException
   {
     logger.debug(
-               "public ResultSet getPseudoColumns(String catalog, "
-               + "String schemaPattern,String tableNamePattern,"
-               + "String columnNamePattern)");
+        "public ResultSet getPseudoColumns(String catalog, "
+            + "String schemaPattern,String tableNamePattern,"
+            + "String columnNamePattern)");
 
     throw new SQLFeatureNotSupportedException();
   }
@@ -2710,14 +2726,14 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public boolean generatedKeyAlwaysReturned() throws SQLException
   {
     logger.debug(
-               "public boolean generatedKeyAlwaysReturned()");
+        "public boolean generatedKeyAlwaysReturned()");
 
     throw new SQLFeatureNotSupportedException();
   }
 
   @Override
   public <T> T unwrap(
-          Class<T> iface) throws SQLException
+      Class<T> iface) throws SQLException
   {
     logger.debug("public <T> T unwrap(Class<T> iface)");
 
@@ -2726,10 +2742,10 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
 
   @Override
   public boolean isWrapperFor(
-          Class<?> iface) throws SQLException
+      Class<?> iface) throws SQLException
   {
     logger.debug(
-               "public boolean isWrapperFor(Class<?> iface)");
+        "public boolean isWrapperFor(Class<?> iface)");
 
     throw new SQLFeatureNotSupportedException();
   }
@@ -2748,7 +2764,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
     {
       resultSet = statement.executeQuery(sql);
     }
-    catch(SnowflakeSQLException e)
+    catch (SnowflakeSQLException e)
     {
       if (e.getSQLState().equals(SqlState.NO_DATA))
       {

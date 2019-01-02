@@ -5,6 +5,8 @@
 package net.snowflake.client.jdbc;
 
 import net.snowflake.client.core.SFSession;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
 
 import java.nio.charset.StandardCharsets;
 import java.sql.Date;
@@ -16,105 +18,94 @@ import java.sql.Timestamp;
 import java.util.List;
 import java.util.TimeZone;
 
-import net.snowflake.client.log.SFLoggerFactory;
-import net.snowflake.client.log.SFLogger;
-
-/**
- *
- * @author jhuang
- */
-class SnowflakeDatabaseMetaDataResultSet extends
-        SnowflakeBaseResultSet
+class SnowflakeDatabaseMetaDataResultSet extends SnowflakeBaseResultSet
 {
-  protected ResultSet showObjectResultSet;
+  ResultSet showObjectResultSet;
   protected Statement statement;
   protected Object[][] rows;
 
   static final SFLogger logger = SFLoggerFactory.getLogger(
-          SnowflakeDatabaseMetaDataResultSet.class);
-
-  /**
-   * Used for creating an empty result set
-   */
-  public SnowflakeDatabaseMetaDataResultSet()
-  {
-  }
+      SnowflakeDatabaseMetaDataResultSet.class);
 
   /**
    * DatabaseMetadataResultSet based on result from show command
-   * @param columnNames column names
-   * @param columnTypeNames column type names
-   * @param columnTypes column types
+   *
+   * @param columnNames         column names
+   * @param columnTypeNames     column type names
+   * @param columnTypes         column types
    * @param showObjectResultSet result set after issuing a show command
-   * @param statement show command statement
+   * @param statement           show command statement
    * @throws SQLException if failed to construct snowflake database metadata result set
    */
- 	public SnowflakeDatabaseMetaDataResultSet(
-          final List<String> columnNames,
-          final List<String> columnTypeNames,
-          final List<Integer> columnTypes,
-          final ResultSet showObjectResultSet,
-          final Statement statement)
-          throws SQLException
+  private SnowflakeDatabaseMetaDataResultSet(
+      final List<String> columnNames,
+      final List<String> columnTypeNames,
+      final List<Integer> columnTypes,
+      final ResultSet showObjectResultSet,
+      final Statement statement)
+      throws SQLException
   {
     this.showObjectResultSet = showObjectResultSet;
 
-    SFSession session = ((SnowflakeConnectionV1)statement.getConnection()).getSfSession();
+    SFSession session = ((SnowflakeConnectionV1) statement.getConnection()).getSfSession();
 
     this.resultSetMetaData = new SnowflakeResultSetMetaData(columnNames.size(),
-                                                            columnNames,
-                                                            columnTypeNames,
-                                                            columnTypes,
-                                                            session);
+        columnNames,
+        columnTypeNames,
+        columnTypes,
+        session);
 
     this.nextRow = new Object[columnNames.size()];
 
     this.statement = statement;
- 	}
+  }
 
   /**
    * DatabaseMetadataResultSet based on a constant rowset.
-   * @param columnNames column name
+   *
+   * @param columnNames     column name
    * @param columnTypeNames column types name
-   * @param columnTypes column type
-   * @param rows returned value of database metadata
-   * @param statement show command statement
+   * @param columnTypes     column type
+   * @param rows            returned value of database metadata
+   * @param statement       show command statement
    * @throws SQLException if failed to construct snowflake database metadata result set
    */
- 	public SnowflakeDatabaseMetaDataResultSet(
-          final List<String> columnNames,
-          final List<String> columnTypeNames,
-          final List<Integer> columnTypes,
-          final Object[][] rows,
-          final Statement statement)
-          throws SQLException
+  SnowflakeDatabaseMetaDataResultSet(
+      final List<String> columnNames,
+      final List<String> columnTypeNames,
+      final List<Integer> columnTypes,
+      final Object[][] rows,
+      final Statement statement)
+      throws SQLException
   {
     this.rows = rows;
-    
-    SFSession session = ((SnowflakeConnectionV1)statement.getConnection()).getSfSession();
+
+    SFSession session = ((SnowflakeConnectionV1) statement.getConnection()).getSfSession();
 
     this.resultSetMetaData = new SnowflakeResultSetMetaData(columnNames.size(),
-                                                            columnNames,
-                                                            columnTypeNames,
-                                                            columnTypes,
-                                                            session);
+        columnNames,
+        columnTypeNames,
+        columnTypes,
+        session);
 
     this.nextRow = new Object[columnNames.size()];
 
     this.statement = statement;
- 	}
+  }
 
- 	public SnowflakeDatabaseMetaDataResultSet(DBMetadataResultSetMetadata metadataType,
-                                            ResultSet resultSet,
-                                            Statement statement) throws SQLException
+  SnowflakeDatabaseMetaDataResultSet(
+      DBMetadataResultSetMetadata metadataType,
+      ResultSet resultSet,
+      Statement statement) throws SQLException
   {
     this(metadataType.getColumnNames(), metadataType.getColumnTypeNames(),
         metadataType.getColumnTypes(), resultSet, statement);
   }
 
-  public SnowflakeDatabaseMetaDataResultSet(DBMetadataResultSetMetadata metadataType,
-                                            Object[][] rows,
-                                            Statement statement) throws SQLException
+  private SnowflakeDatabaseMetaDataResultSet(
+      DBMetadataResultSetMetadata metadataType,
+      Object[][] rows,
+      Statement statement) throws SQLException
   {
     this(metadataType.getColumnNames(), metadataType.getColumnTypeNames(),
         metadataType.getColumnTypes(), rows, statement);
@@ -131,7 +122,8 @@ class SnowflakeDatabaseMetaDataResultSet extends
       return true;
     }
 
-    if(statement != null) {
+    if (statement != null)
+    {
       statement.close();
       statement = null;
     }
@@ -142,7 +134,7 @@ class SnowflakeDatabaseMetaDataResultSet extends
   @Override
   public void close() throws SQLException
   {
-    if(statement != null)
+    if (statement != null)
     {
       statement.close();
       statement = null;
@@ -170,7 +162,7 @@ class SnowflakeDatabaseMetaDataResultSet extends
 
     if (obj instanceof Time)
     {
-      return (Time)obj;
+      return (Time) obj;
     }
     else
     {
@@ -186,7 +178,7 @@ class SnowflakeDatabaseMetaDataResultSet extends
 
     if (obj instanceof Timestamp)
     {
-      return (Timestamp)obj;
+      return (Timestamp) obj;
     }
     else
     {
@@ -202,7 +194,7 @@ class SnowflakeDatabaseMetaDataResultSet extends
 
     if (obj instanceof Date)
     {
-      return (Date)obj;
+      return (Date) obj;
     }
     else
     {

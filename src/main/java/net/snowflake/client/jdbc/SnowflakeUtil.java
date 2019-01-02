@@ -5,6 +5,7 @@
 package net.snowflake.client.jdbc;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SqlState;
 import net.snowflake.common.util.ClassUtil;
 import net.snowflake.common.util.FixedViewColumn;
@@ -32,6 +33,7 @@ import org.apache.http.HttpResponse;
  */
 public class SnowflakeUtil
 {
+  static final SFLogger logger = SFLoggerFactory.getLogger(RestRequest.class);
 
   /**
    * Additional data types not covered by standard JDBC
@@ -114,7 +116,7 @@ public class SnowflakeUtil
         }
         catch (Exception ex)
         {
-          String s = ex.toString();
+          logger.debug("{}", ex);
         }
       }
     }
@@ -252,13 +254,13 @@ public class SnowflakeUtil
                                        colSrcSchema, colSrcTable);
   }
 
-  public static String javaTypeToSFTypeString(int javaType)
+  static String javaTypeToSFTypeString(int javaType)
           throws SnowflakeSQLException
   {
     return SnowflakeType.javaTypeToSFType(javaType).name();
   }
 
-  public static SnowflakeType javaTypeToSFType(int javaType)
+  static SnowflakeType javaTypeToSFType(int javaType)
           throws SnowflakeSQLException
   {
     return SnowflakeType.javaTypeToSFType(javaType);
@@ -279,7 +281,7 @@ public class SnowflakeUtil
    * @param fileSep file separator
    * @return concatenated file path
    */
-  static public String concatFilePathNames(String leftPath,
+  static String concatFilePathNames(String leftPath,
                                            String rightPath,
                                            String fileSep)
   {
@@ -307,7 +309,7 @@ public class SnowflakeUtil
     }
   }
 
-  static public String greatestCommonPrefix(String val1, String val2)
+  static String greatestCommonPrefix(String val1, String val2)
   {
     if (val1 == null || val2 == null)
     {
@@ -333,7 +335,7 @@ public class SnowflakeUtil
     return greatestCommonPrefix.toString();
   }
 
-  public static List<SnowflakeColumnMetadata> describeFixedViewColumns(
+  static List<SnowflakeColumnMetadata> describeFixedViewColumns(
           Class clazz) throws SnowflakeSQLException
   {
     Field[] columns
