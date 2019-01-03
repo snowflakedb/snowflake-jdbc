@@ -12,3 +12,6 @@ SessionVariablesIT.java
 SnowflakeDriverConnectionStressTest.java
 SnowflakeDriverIT.java
 VersionIT.java
+telemetry/TelemetryServiceIT.java
+DownloadStreamIT.java
+telemetryV2

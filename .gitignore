@@ -65,3 +65,4 @@ Dockerfile.build
 parameters.json
 snowflake-whitelist
 Golang
+ClientTelemetryFramework
