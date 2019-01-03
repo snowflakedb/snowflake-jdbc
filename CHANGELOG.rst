@@ -1,18 +1,25 @@
+**JDBC Driver 3.6.23**
+| SNOW-63481| Security: Update tika-core to 1.20
+| SNOW-63341| Disable incident for the user error no row found
+| SNOW-63240 | Add more null check in statements
+| SNOW-63137 | Turn default drivers' log level from ALL to INFO in the example logging.properties
+| SNOW-63067 | Customer is seeing intermittent error in JDBC driver when the query is successful on query details page
+| SNOW-61210 | Improved OCSP Cert Auth and Handshake retry.
+| SNOW-45402 | Add  256 bits encryption for azure stage
+
 **JDBC Driver 3.6.22**
-|SNOW-63026| Invalidate outdated OCSP response when checking cache hit
-|SNOW-62996| Fixed Intermittent JDBC connection failure in privatelink
-|SNOW-62140| Improve the default setting for CLIENT_MEMORY_LIMIT
-|SNOW-61424| Remove useless version logs
-|SNOW-54606| Java Spring Boot, JDBC + Snowflake: running the application however causes an exception: Caused by: java.lang.IllegalArgumentException: URL must start with 'jdbc'
-|SNOW-63163| Fixed NPE when fetching data
+|SNOW-63026| Driver now invalidates outdated OCSP responses when checking the cache.
+|SNOW-62996| Fixed intermittent JDBC connection failure in PrivateLink.
+|SNOW-62140| The default setting for CLIENT_MEMORY_LIMIT parameter is now dynamic, based on the amount of system memory available.
+|SNOW-61424| Removed unnecessary/redundant version logs.
+|SNOW-54606| Fixed issue that caused the following exception when using the driver with Java Spring Boot: ``Caused by: java.lang.IllegalArgumentException: URL must start with 'jdbc'``.
+|SNOW-63163| Fixed NPE when fetching data.
 **JDBC Driver 3.6.21**
 |SNOW-61862| Driver now uses ``YYYY-MM-DD HH24:MI:SS.FF9 TZH:TZM`` for timestamp array binding.
 **JDBC Driver 3.6.20**
 |SNOW-61209| Fixed performance issue with result set download.
 **JDBC Driver 3.6.19**
 |SNOW-44393| Driver now catches exceptions for ``prepareStatement`` so that execution can continue.
-**JDBC Driver 3.6.18**
-|SNOW-56535| Support ResultSet.getCharacterStream
 **JDBC Driver 3.6.17**
 |SNOW-59862| Added JVM properties for CLIENT_PREFETCH_THREADS, CLIENT_MEMORY_LIMIT, and CLIENT_RESULT_CHUNK_SIZE.
 |SNOW-58812| Fixed issue with PARALLEL parameter for PUT and GET commands.
