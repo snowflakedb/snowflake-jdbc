@@ -88,7 +88,7 @@ public class SnowflakeDriver implements Driver
 
       if (logger instanceof JDK14Logger)
       {
-        eventHandler.setLevel(Level.ALL);
+        eventHandler.setLevel(Level.INFO);
         eventHandler.setFormatter(new SimpleFormatter());
 
         JDK14Logger.addHandler(eventHandler);
@@ -137,7 +137,7 @@ public class SnowflakeDriver implements Driver
             defaultLevel = Level.WARNING;
         }
 
-        fileHandler.setLevel(Level.ALL);
+        fileHandler.setLevel(defaultLevel);
         fileHandler.setFormatter(new SFFormatter());
 
         // set default level and add handler for snowflake logger
