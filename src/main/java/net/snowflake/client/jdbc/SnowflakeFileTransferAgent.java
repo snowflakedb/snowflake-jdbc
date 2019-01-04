@@ -1417,6 +1417,38 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
   }
 
   /**
+   * Download a file from remote, and return an input stream
+   */
+  InputStream downloadStream(String fileName) throws SnowflakeSQLException
+  {
+    if (stageInfo.getStageType() == StageInfo.StageType.LOCAL_FS)
+    {
+      logger.error("downloadStream function doesn't support local file system");
+
+      throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
+          ErrorCode.INTERNAL_ERROR.getMessageCode(),
+          "downloadStream function only supported in remote stages");
+    }
+
+    remoteLocation remoteLocation =
+        extractLocationAndPath(stageInfo.getLocation());
+
+    String stageFilePath = fileName;
+
+    if (!remoteLocation.path.isEmpty())
+    {
+      stageFilePath = SnowflakeUtil.concatFilePathNames(remoteLocation.path,
+          fileName, "/");
+    }
+
+    RemoteStoreFileEncryptionMaterial encMat = srcFileToEncMat.get(fileName);
+
+    return storageFactory.createClient(stageInfo, parallel, encMat)
+        .downloadToStream(connection, command, parallel, remoteLocation.location,
+            stageFilePath, stageInfo.getRegion());
+  }
+
+  /**
    * Helper to download files from remote
    */
   private void downloadFiles() throws SnowflakeSQLException

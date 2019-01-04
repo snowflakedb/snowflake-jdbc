@@ -44,6 +44,45 @@ public class EncryptionProvider
   private final static int BUFFER_SIZE = 2*1024*1024; // 2 MB
   private static SecureRandom secRnd;
 
+  /**
+   * Decrypt a InputStream
+   */
+  public static InputStream decryptStream(InputStream inputStream,
+                                          String keyBase64,
+                                          String ivBase64,
+                                          RemoteStoreFileEncryptionMaterial encMat)
+      throws NoSuchPaddingException, NoSuchAlgorithmException,
+      InvalidKeyException, BadPaddingException, IllegalBlockSizeException,
+      InvalidAlgorithmParameterException
+  {
+    byte[] decodedKey = Base64.decode(encMat.getQueryStageMasterKey());
+
+    byte[] keyBytes = Base64.decode(keyBase64);
+
+    byte[] ivBytes = Base64.decode(ivBase64);
+
+    SecretKey queryStageMasterKey =
+        new SecretKeySpec(decodedKey, 0, decodedKey.length, AES);
+
+    Cipher keyCipher = Cipher.getInstance(KEY_CIPHER);
+
+    keyCipher.init(Cipher.DECRYPT_MODE, queryStageMasterKey);
+
+    byte[] fileKeyBytes = keyCipher.doFinal(keyBytes);
+
+    SecretKey fileKey =
+        new SecretKeySpec(fileKeyBytes, 0, decodedKey.length, AES);
+
+    Cipher dataCipher = Cipher.getInstance(FILE_CIPHER);
+
+    IvParameterSpec ivy = new IvParameterSpec(ivBytes);
+
+    dataCipher.init(Cipher.DECRYPT_MODE, fileKey, ivy);
+
+    return new CipherInputStream(inputStream, dataCipher);
+
+  }
+
   /*
    * decrypt
    * Decrypts a file given the key and iv. Uses AES decryption.
