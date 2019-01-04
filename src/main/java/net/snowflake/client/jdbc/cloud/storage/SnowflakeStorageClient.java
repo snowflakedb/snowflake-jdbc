@@ -96,6 +96,21 @@ void download(SFSession connection, String command, String localLocation, String
                 throws SnowflakeSQLException;
 
   /**
+   * Download a file from remote storage
+   * @param connection connection object
+   * @param command command to download file
+   * @param parallelism number of threads for parallel downloading
+   * @param remoteStorageLocation remote storage location, i.e. bucket for s3
+   * @param stageFilePath stage file path
+   * @param stageRegion region name where the stage persists
+   * @return input file stream
+   * @throws SnowflakeSQLException when download failure
+   */
+  InputStream downloadToStream(SFSession connection, String command, int parallelism,
+                       String remoteStorageLocation, String stageFilePath,
+                       String stageRegion) throws SnowflakeSQLException;
+
+  /**
    * Upload a file (-stream) to remote storage
    * @param connection connection object
    * @param command upload command

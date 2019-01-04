@@ -13,6 +13,7 @@ import net.snowflake.common.core.LoginInfoDTO;
 import net.snowflake.common.core.ResourceBundleManager;
 import net.snowflake.common.core.SqlState;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.sql.Array;
 import java.sql.Blob;
@@ -40,6 +41,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.zip.GZIPInputStream;
 
 import static net.snowflake.client.core.SessionUtil.JVM_PARAMS_TO_PARAMS;
 
@@ -1107,6 +1109,87 @@ public class SnowflakeConnectionV1 implements Connection
     transferAgent.execute();
 
     stmt.close();
+  }
+
+  /**
+   * Download file from the given stage and return an input stream
+   * @param stageName stage name
+   * @param sourceFileName file path in stage
+   * @param decompress true if file compressed
+   * @return an input stream
+   * @throws SnowflakeSQLException
+   */
+  public InputStream downloadStream(String stageName, String sourceFileName,
+                                    boolean decompress) throws SnowflakeSQLException
+
+  {
+    logger.debug("download data to stream: stageName={}" +
+            ", sourceFileName={}",
+        stageName, sourceFileName);
+
+    if (stageName == null || stageName.isEmpty())
+    {
+      throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
+          ErrorCode.INTERNAL_ERROR.getMessageCode(),
+          "stage name is null or empty");
+    }
+
+    if (sourceFileName == null || sourceFileName.isEmpty())
+    {
+      throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
+          ErrorCode.INTERNAL_ERROR.getMessageCode(),
+          "source file name is null or empty");
+    }
+
+    SnowflakeStatementV1 stmt = new SnowflakeStatementV1(this);
+
+    StringBuilder getCommand = new StringBuilder();
+
+    getCommand.append("get ");
+
+    if (!stageName.startsWith("@"))
+    {
+      getCommand.append("@");
+    }
+
+    getCommand.append(stageName);
+
+    getCommand.append("/");
+
+    if (sourceFileName.startsWith("/"))
+    {
+      sourceFileName = sourceFileName.substring(1);
+    }
+
+    getCommand.append(sourceFileName);
+
+    //this is a fake path, used to form Get query and retrieve stage info,
+    //no file will be downloaded to this location
+    getCommand.append(" file:///tmp/ /*jdbc download stream*/");
+
+
+    SnowflakeFileTransferAgent transferAgent =
+        new SnowflakeFileTransferAgent(getCommand.toString(), sfSession,
+            stmt.getSfStatement());
+
+    InputStream stream = transferAgent.downloadStream(sourceFileName);
+
+    if (decompress)
+    {
+      try
+      {
+        return new GZIPInputStream(stream);
+      } catch (IOException ex)
+      {
+        throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
+            ErrorCode.INTERNAL_ERROR.getMessageCode(),
+            ex.getMessage());
+      }
+    }
+    else
+    {
+      return stream;
+    }
   }
 
   public void setInjectedDelay(int delay)

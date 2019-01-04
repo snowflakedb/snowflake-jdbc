@@ -22,6 +22,7 @@ import com.amazonaws.services.s3.model.EncryptionMaterials;
 import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
+import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.StaticEncryptionMaterialsProvider;
 import com.amazonaws.services.s3.transfer.Download;
 import com.amazonaws.services.s3.transfer.TransferManager;
@@ -45,7 +46,10 @@ import org.apache.commons.io.IOUtils;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.conn.ssl.SSLInitializationException;
 
+import javax.crypto.Cipher;
+import javax.crypto.CipherInputStream;
 import javax.crypto.SecretKey;
+import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.File;
 import java.io.FileInputStream;
@@ -333,6 +337,78 @@ public class SnowflakeS3Client implements SnowflakeStorageClient
       }
     }
     while (retryCount <= getMaxRetries());
+
+    throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
+        ErrorCode.INTERNAL_ERROR.getMessageCode(),
+        "Unexpected: download unsuccessful without exception!");
+  }
+
+  /**
+   * Download a file from remote storage
+   * @param connection connection object
+   * @param command command to download file
+   * @param parallelism number of threads for parallel downloading
+   * @param remoteStorageLocation remote storage location, i.e. bucket for s3
+   * @param stageFilePath stage file path
+   * @param stageRegion region name where the stage persists
+   * @return input file stream
+   * @throws SnowflakeSQLException when download failure
+   */
+  @Override
+  public InputStream downloadToStream(SFSession connection, String command, int parallelism,
+                              String remoteStorageLocation, String stageFilePath,
+                              String stageRegion) throws SnowflakeSQLException
+  {
+    int retryCount = 0;
+    do
+    {
+      try
+      {
+        S3Object file =
+            amazonClient.getObject(remoteStorageLocation, stageFilePath);
+
+        ObjectMetadata meta =
+            amazonClient.getObjectMetadata(remoteStorageLocation, stageFilePath);
+
+        InputStream stream = file.getObjectContent();
+
+        Map<String, String> metaMap = meta.getUserMetadata();
+
+        String key = metaMap.get(AMZ_KEY);
+        String iv = metaMap.get(AMZ_IV);
+
+        if (this.isEncrypting() && this.getEncryptionKeySize() <256)
+        {
+          if (key == null || iv == null)
+          {
+            throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
+                ErrorCode.INTERNAL_ERROR.getMessageCode(),
+                "File metadata incomplete");
+          }
+
+          try
+          {
+
+            return EncryptionProvider.decryptStream(stream, key, iv, encMat);
+
+          }
+          catch (Exception ex)
+          {
+            logger.error("Error in decrypting file", ex);
+            throw ex;
+          }
+        }
+        else
+        {
+          return stream;
+        }
+      }
+      catch (Exception ex)
+      {
+        handleS3Exception(ex, ++retryCount, "download", connection, command,
+            this);
+      }
+    } while (retryCount <= getMaxRetries());
 
     throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
         ErrorCode.INTERNAL_ERROR.getMessageCode(),
