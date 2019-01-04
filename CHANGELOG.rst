@@ -6,6 +6,7 @@
 | SNOW-63067 | Customer is seeing intermittent error in JDBC driver when the query is successful on query details page
 | SNOW-61210 | Improved OCSP Cert Auth and Handshake retry.
 | SNOW-45402 | Add  256 bits encryption for azure stage
+| SNOW-63523 | Remove hardcoded Level.ALL for logger initialization
 
 **JDBC Driver 3.6.22**
 |SNOW-63026| Driver now invalidates outdated OCSP responses when checking the cache.
