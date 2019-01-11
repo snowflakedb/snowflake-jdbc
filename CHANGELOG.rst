@@ -1,13 +1,17 @@
-**JDBC Driver 3.6.23**
-| SNOW-63481| Security: Update tika-core to 1.20
-| SNOW-63341| Disable incident for the user error no row found
-| SNOW-63240 | Add more null check in statements
-| SNOW-63137 | Turn default drivers' log level from ALL to INFO in the example logging.properties
-| SNOW-63067 | Customer is seeing intermittent error in JDBC driver when the query is successful on query details page
-| SNOW-61210 | Improved OCSP Cert Auth and Handshake retry.
-| SNOW-45402 | Add  256 bits encryption for azure stage
-| SNOW-63523 | Remove hardcoded Level.ALL for logger initialization
+**JDBC Driver 3.6.24**
+| SNOW-63844 | Security vulnerability: com.fasterxml.jackson.core:jackson-databind >= 2.9.0, < 2.9.8
+| SNOW-62247 | Add enum REJECTED_RECORD in class LoadingError
+| SNOW-61650 | Support Dell boomi cloud
 
+**JDBC Driver 3.6.23**
+|SNOW-63523| Removed hard-coded ``Level.ALL`` for logger initialization.
+|SNOW-63481| Security enhancement: Updated ``tika-core`` to 1.20.
+|SNOW-63341| Driver no longer throws an incident for a ``no row found`` user error.
+|SNOW-63240| Added additional null checks in statements.
+|SNOW-63137| Changed default driver log level from ``ALL`` to ``INFO`` in the ``logging.properties`` example (in the Snowflake documentation).
+|SNOW-63067| Fixed issue with intermittent error in driver even though the **Query Details** page (in the web interface) shows the query was successful.
+|SNOW-61210| Improved OCSP Cert Auth and Handshake retry.
+|SNOW-45402| Added support for 256-bit encryption for Azure stages.
 **JDBC Driver 3.6.22**
 |SNOW-63026| Driver now invalidates outdated OCSP responses when checking the cache.
 |SNOW-62996| Fixed intermittent JDBC connection failure in PrivateLink.
@@ -194,7 +198,7 @@
 **JDBC Driver 3.0.4**
 |SNOW-14445| Added support for pointing JDBC logger path to a directory other than ``tmp`` to prevent file permission issues.
 **JDBC Driver 3.0.3**
-|SNOW-18243| Added support for case-insensitive searches on column names in result sets. By default, searches are case-sensitive. To request enabling case-insensitive search for your account, please contact `Snowflake Support <https://community.snowflake.com/s/article/How-To-Submit-a-Support-Case-in-Snowflake-Lodge>`_.
+|SNOW-18243| Added support for case-insensitive searches on column names in result sets. By default, searches are case-sensitive. To request enabling case-insensitive search for your account, please contact `Snowflake Support <https://support.snowflake.net/s/snowflake-support>`_.
 **JDBC Driver 3.0.2**
 |SNOW-25029| Fixed binding support for the TIME data type in the ``PreparedStatement`` API implementation.
 |SNOW-25024, SNOW-24868| Implemented a fix to generate a user error when the client calls the ``getData``, ``getTimestamp``, or ``getTime`` methods on columns with invalid data types.
