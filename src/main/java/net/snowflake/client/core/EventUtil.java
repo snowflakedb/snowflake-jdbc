@@ -30,6 +30,10 @@ public class EventUtil
   private static AtomicReference<EventHandler> eventHandler =
       new AtomicReference<>(null);
 
+  private static int MAX_ENTRIES = 1000;
+
+  private static int FLUSH_PERIOD_MS = 10000;
+
   /**
    * Initializes the common eventHandler instance for all sessions/threads
    * @param maxEntries - maximum number of buffered events before flush
@@ -50,6 +54,11 @@ public class EventUtil
    */
   public static EventHandler getEventHandlerInstance()
   {
+    if (eventHandler.get() == null)
+    {
+      initEventHandlerInstance(MAX_ENTRIES, FLUSH_PERIOD_MS);
+    }
+
     return eventHandler.get();
   }
 
