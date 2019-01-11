@@ -194,7 +194,7 @@
 **JDBC Driver 3.0.4**
 |SNOW-14445| Added support for pointing JDBC logger path to a directory other than ``tmp`` to prevent file permission issues.
 **JDBC Driver 3.0.3**
-|SNOW-18243| Added support for case-insensitive searches on column names in result sets. By default, searches are case-sensitive. To request enabling case-insensitive search for your account, please contact `Snowflake Support <https://support.snowflake.net/s/snowflake-support>`_.
+|SNOW-18243| Added support for case-insensitive searches on column names in result sets. By default, searches are case-sensitive. To request enabling case-insensitive search for your account, please contact `Snowflake Support <https://community.snowflake.com/s/article/How-To-Submit-a-Support-Case-in-Snowflake-Lodge>`_.
 **JDBC Driver 3.0.2**
 |SNOW-25029| Fixed binding support for the TIME data type in the ``PreparedStatement`` API implementation.
 |SNOW-25024, SNOW-24868| Implemented a fix to generate a user error when the client calls the ``getData``, ``getTimestamp``, or ``getTime`` methods on columns with invalid data types.
