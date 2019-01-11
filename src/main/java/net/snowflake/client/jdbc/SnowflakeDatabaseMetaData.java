@@ -2766,7 +2766,8 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
     }
     catch (SnowflakeSQLException e)
     {
-      if (e.getSQLState().equals(SqlState.NO_DATA))
+      if (e.getSQLState().equals(SqlState.NO_DATA) ||
+          e.getSQLState().equals(SqlState.BASE_TABLE_OR_VIEW_NOT_FOUND))
       {
         return SnowflakeDatabaseMetaDataResultSet.getEmptyResultSet(metadataType, statement);
       }
