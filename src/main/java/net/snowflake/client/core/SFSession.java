@@ -263,11 +263,9 @@ public class SFSession
           if (propertyValue != null)
           {
             tracingLevel = Level.parse(((String)propertyValue).toUpperCase());
-            // tracingLevel is effective only if customer is using the new logging config/framework
-            if (tracingLevel != null && System.getProperty("snowflake.jdbc.loggerImpl") == null
-                && logger instanceof JDK14Logger)
+            if (tracingLevel != null && logger instanceof JDK14Logger)
             {
-              JDK14Logger.setLevel(tracingLevel);
+              JDK14Logger.honorTracingParameter(tracingLevel);
             }
           }
           break;

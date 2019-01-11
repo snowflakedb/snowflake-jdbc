@@ -3,15 +3,21 @@
  */
 package net.snowflake.client.log;
 
+import net.snowflake.client.core.EventHandler;
+import net.snowflake.client.core.EventUtil;
+
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.logging.FileHandler;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.util.logging.Handler;
+import java.util.logging.SimpleFormatter;
 import java.util.logging.StreamHandler;
 
 /**
@@ -178,6 +184,28 @@ public class JDK14Logger implements SFLogger
   }
 
   /**
+   * This is legacy way of enable logging in JDBC (through TRACING parameter)
+   * Only effective when java.util.logging.config.file is not specified
+   */
+  @Deprecated
+  public static void honorTracingParameter(Level level)
+  {
+    if (System.getProperty("java.util.logging.config.file") == null)
+    {
+      // update logger level
+      setLevel(level);
+
+      // update all handler's level, in this case, only FileHanlder to tmp
+      // directory will be honored
+      Logger snowflakeLogger = Logger.getLogger(SFFormatter.CLASS_NAME_PREFIX);
+      for (Handler h : snowflakeLogger.getHandlers())
+      {
+        h.setLevel(level);
+      }
+    }
+  }
+
+  /**
    * Since we use SLF4J ways of formatting string we need to refactor message string
    * if we have arguments.
    * For example, in sl4j, this string can be formatted with 2 arguments
@@ -249,43 +277,75 @@ public class JDK14Logger implements SFLogger
 
   static void defaultInit()
   {
-    if (!hasLoggingConfig())
-    {
-      java.util.logging.Logger sfRootLogger = java.util.logging.Logger
-          .getLogger("net.snowflake");
-      // disable parent's default console handler
-      sfRootLogger.setUseParentHandlers(false);
-      // change to use Stream handler print to stdout
-      sfRootLogger.addHandler(new StreamHandler(System.out,
-          new SFFormatter()));
-    }
-  }
+    // get logging level
+    String defaultLevelVal = System.getProperty("snowflake.jdbc.log.level");
 
-  /**
-   * Check whether a logging.properties exists or not.
-   *
-   * It will first check where $JRE/lib/logging.properties exist or not,
-   * Then check if two system property
-   *    - java.util.logging.config.class
-   *    - java.util.logging.config.file
-   * has been set or not.
-   *
-   * If yes, return true. If none of the above is set, return false
-   */
-  private static boolean hasLoggingConfig()
-  {
-    String JRE = System.getProperty("java.home");
-    Path configFilePath = Paths.get(JRE, "lib", "logging.properties");
-    if (Files.exists(configFilePath))
-    {
-      return true;
-    }
-    else
-    {
-      String configClass = System.getProperty("java.util.logging.config.class");
-      String configFile = System.getProperty("java.util.logging.config.file");
+    Level defaultLevel = Level.WARNING;
 
-      return (configClass != null) || (configFile != null);
+    if (defaultLevelVal != null)
+    {
+      defaultLevel = Level.parse(defaultLevelVal.toUpperCase());
+
+      if (defaultLevel == null)
+        defaultLevel = Level.WARNING;
+    }
+
+    // get log count and size
+    String defaultLogSizeVal = System.getProperty("snowflake.jdbc.log.size");
+    String defaultLogCountVal = System.getProperty("snowflake.jdbc.log.count");
+
+    // default log size to 1 GB
+    int logSize = 1000000000;
+
+    // default number of log files to rotate to 2
+    int logCount = 2;
+
+    if (defaultLogSizeVal != null) {
+      try {
+        logSize = Integer.parseInt(defaultLogSizeVal);
+      } catch (Exception ex) {
+        ;
+      }
+    }
+
+    if (defaultLogCountVal != null) {
+      try {
+        logCount = Integer.parseInt(defaultLogCountVal);
+      } catch (Exception ex) {
+        ;
+      }
+    }
+
+    // setup event handler
+    EventHandler eventHandler = EventUtil.getEventHandlerInstance();
+    eventHandler.setLevel(Level.INFO);
+    eventHandler.setFormatter(new SimpleFormatter());
+    JDK14Logger.addHandler(eventHandler);
+
+    Logger snowflakeLoggerInformaticaV1 = Logger.getLogger(
+        SFFormatter.INFORMATICA_V1_CLASS_NAME_PREFIX);
+    snowflakeLoggerInformaticaV1.setLevel(defaultLevel);
+    snowflakeLoggerInformaticaV1.addHandler(eventHandler);
+
+    if (System.getProperty("java.util.logging.config.file") == null)
+    {
+      // write log file to tmp directory
+      try
+      {
+        FileHandler fileHandler = new FileHandler("%t/snowflake_jdbc%u.log",
+                                                  logSize, logCount, true);
+        fileHandler.setFormatter(new SFFormatter());
+        fileHandler.setLevel(defaultLevel);
+        JDK14Logger.addHandler(fileHandler);
+
+        // set default level and add handler for snowflake logger
+        JDK14Logger.setLevel(defaultLevel);
+
+        snowflakeLoggerInformaticaV1.addHandler(fileHandler);
+      }
+      catch (IOException e)
+      {
+      }
     }
   }
 }

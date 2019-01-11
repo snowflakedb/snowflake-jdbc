@@ -160,20 +160,37 @@ public class HttpUtil
       {
         if (httpClient == null)
         {
-          String flag = System.getenv("SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED");
-          if (flag == null)
-          {
-            flag = System.getProperty(
-                "net.snowflake.jdbc.ocsp_response_cache_server_enabled");
-          }
           httpClient = buildHttpClient(
               insecureMode,
               ocspCacheFile,
-              flag == null || !"false".equalsIgnoreCase(flag));
+              enableOcspResponseCacheServer());
         }
       }
     }
     return httpClient;
+  }
+
+  private static boolean enableOcspResponseCacheServer()
+  {
+    String flag = null;
+    try
+    {
+      flag = System.getenv("SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED");
+    }
+    catch (Throwable ex)
+    {
+      // for boomi clound since they did not allowed System.getenv
+      // enable ocsp cache server by default
+      logger.info("Failed to get environment variable " +
+                      "SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED. Skip");
+    }
+    if (flag == null)
+    {
+      flag = System.getProperty(
+          "net.snowflake.jdbc.ocsp_response_cache_server_enabled");
+    }
+
+    return !"false".equalsIgnoreCase(flag);
   }
 
   /**

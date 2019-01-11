@@ -136,6 +136,8 @@ public class SnowflakeConnectionV1 implements Connection
                                Properties info)
       throws SQLException
   {
+    logger.info("Trying to establish session, JDBC driver version: {}",
+                SnowflakeDriver.implementVersion);
     // open connection to GS
     sfSession = new SFSession();
 

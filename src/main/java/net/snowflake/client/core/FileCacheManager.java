@@ -107,9 +107,20 @@ class FileCacheManager
         : null;
     if (cacheDirPath == null)
     {
-      cacheDirPath = this.cacheDirectoryEnvironmentVariable != null ?
-          System.getenv(this.cacheDirectoryEnvironmentVariable)
-          : null;
+      try
+      {
+        cacheDirPath = this.cacheDirectoryEnvironmentVariable != null ?
+            System.getenv(this.cacheDirectoryEnvironmentVariable)
+            : null;
+      }
+      catch(Throwable ex)
+      {
+        LOGGER.info("Cannot get environment variable for cache directory, " +
+                        "skip using cache");
+        // In Boomi cloud, System.getenv is not allowed due to policy,
+        // so we catch the exception and skip cache completely
+        return this;
+      }
     }
 
     if (cacheDirPath != null)
@@ -247,6 +258,11 @@ class FileCacheManager
   {
     LOGGER.debug("Deleting cache file. File={}, Lock File={}",
         cacheFile, cacheLockFile);
+
+    if (cacheFile == null)
+    {
+      return;
+    }
 
     unlockCacheFile();
     if (!cacheFile.delete())
