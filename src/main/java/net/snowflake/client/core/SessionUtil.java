@@ -225,7 +225,6 @@ public class SessionUtil
     private PrivateKey privateKey;
     private String application;
     private String idToken;
-    private String idTokenPassword;
     private String serviceName;
 
     public LoginInput()
@@ -487,11 +486,6 @@ public class SessionUtil
       return idToken;
     }
 
-    public String getIdTokenPassword()
-    {
-      return idTokenPassword;
-    }
-
     public Map<String, Object> getSessionParameters()
     {
       return sessionParameters;
@@ -524,7 +518,6 @@ public class SessionUtil
     long masterTokenValidityInSeconds;
     String remMeToken;
     String idToken;
-    String idTokenPassword;
     String databaseVersion;
     int databaseMajorVersion;
     int databaseMinorVersion;
@@ -547,7 +540,6 @@ public class SessionUtil
                        long masterTokenValidityInSeconds,
                        String remMeToken,
                        String idToken,
-                       String idTokenPassword,
                        String databaseVersion,
                        int databaseMajorVersion, int databaseMinorVersion,
                        String newClientForUpgrade, int healthCheckInterval,
@@ -562,7 +554,6 @@ public class SessionUtil
       this.masterToken = masterToken;
       this.remMeToken = remMeToken;
       this.idToken = idToken;
-      this.idTokenPassword = idTokenPassword;
       this.databaseVersion = databaseVersion;
       this.databaseMajorVersion = databaseMajorVersion;
       this.databaseMinorVersion = databaseMinorVersion;
@@ -661,11 +652,6 @@ public class SessionUtil
     public String getIdToken()
     {
       return idToken;
-    }
-
-    public String getIdTokenPassword()
-    {
-      return idTokenPassword;
     }
 
     public String getDatabaseVersion()
@@ -1004,7 +990,6 @@ public class SessionUtil
     long masterTokenValidityInSeconds;
     String remMeToken;
     String idToken;
-    String idTokenPassword;
     String databaseVersion = null;
     int databaseMajorVersion = 0;
     int databaseMinorVersion = 0;
@@ -1302,8 +1287,6 @@ public class SessionUtil
       remMeToken = jsonNode.path("data").path("remMeToken").asText();
       idToken = nullStringAsEmptyString(
           jsonNode.path("data").path("idToken").asText());
-      idTokenPassword = nullStringAsEmptyString(
-          jsonNode.path("data").path("idTokenPassword").asText());
       masterTokenValidityInSeconds = jsonNode.path("data").
           path("masterValidityInSeconds").asLong();
       String serverVersion =
@@ -1431,7 +1414,6 @@ public class SessionUtil
         masterTokenValidityInSeconds,
         remMeToken,
         idToken,
-        idTokenPassword,
         databaseVersion,
         databaseMajorVersion,
         databaseMinorVersion,
