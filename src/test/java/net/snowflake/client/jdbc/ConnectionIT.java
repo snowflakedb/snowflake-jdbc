@@ -3,11 +3,17 @@
  */
 package net.snowflake.client.jdbc;
 
+import net.minidev.json.JSONObject;
 import net.snowflake.client.ConditionalIgnoreRule.ConditionalIgnore;
 import net.snowflake.client.RunningOnTravisCI;
+import net.snowflake.client.jdbc.telemetry.Telemetry;
+import net.snowflake.client.jdbc.telemetryV2.TelemetryEvent;
+import net.snowflake.client.jdbc.telemetryV2.TelemetryService;
 import net.snowflake.common.core.SqlState;
 import org.apache.commons.codec.binary.Base64;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -25,6 +31,7 @@ import java.sql.Statement;
 import java.util.Enumeration;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
@@ -38,6 +45,44 @@ import static org.junit.Assert.fail;
  */
 public class ConnectionIT extends BaseJDBCTest
 {
+  private boolean defaultState;
+  private String defaultDeployment;
+
+  @Before
+  public void setUp()
+  {
+    TelemetryService service = TelemetryService.getInstance();
+    try
+    {
+      TelemetryService.getInstance().updateContext(getConnectionParameters());
+    }
+    catch (SQLException e)
+    {
+      e.printStackTrace();
+    }
+    defaultState = service.isEnabled();
+    defaultDeployment = service.getServerDeploymentName();
+    service.enable();
+  }
+
+  @After
+  public void tearDown() throws InterruptedException
+  {
+    TelemetryService service = TelemetryService.getInstance();
+    service.flush();
+    // wait 5 seconds while the service is flushing
+    TimeUnit.SECONDS.sleep(5);
+
+    if (defaultState)
+    {
+      service.enable();
+    }
+    else
+    {
+      service.disable();
+    }
+  }
+
   @Test
   public void testSimpleConnection() throws SQLException
   {
@@ -237,11 +282,17 @@ public class ConnectionIT extends BaseJDBCTest
     properties.put("loginTimeout", "20");
     properties.put("user", "fakeuser");
     properties.put("password", "fakepassword");
+    int queueSize = TelemetryService.getInstance().size();
     try
     {
       connStart = System.currentTimeMillis();
-      DriverManager.getConnection(
-          "jdbc:snowflake://wrongaccount.snowflakecomputing.com", properties);
+      Map<String, String> params = getConnectionParameters();
+      // use wrongaccount in url
+      String host = params.get("host");
+      String[] hostItems = host.split("\\.");
+      String wrongUri = params.get("uri").replace("://" + hostItems[0], "://wrongaccount");
+
+      DriverManager.getConnection(wrongUri, properties);
     }
     catch (SQLException e)
     {
@@ -251,6 +302,14 @@ public class ConnectionIT extends BaseJDBCTest
       conEnd = System.currentTimeMillis();
       assertThat("Login time out not taking effective",
           conEnd - connStart < 60000);
+
+      assertThat("telemetry log created",
+          TelemetryService.getInstance().size() - queueSize == 1);
+      TelemetryEvent te = TelemetryService.getInstance().getEvent(queueSize);
+      JSONObject values =  (JSONObject)te.get("Value");
+      assertThat("Communication error",
+          values.get("errorCode").toString().compareTo(
+              ErrorCode.NETWORK_ERROR.getMessageCode().toString()) == 0);
       return;
     }
     fail();
@@ -265,11 +324,18 @@ public class ConnectionIT extends BaseJDBCTest
     properties.put("loginTimeout", "20");
     properties.put("user", "fakeuser");
     properties.put("password", "fakepassword");
+    int queueSize = TelemetryService.getInstance().size();
     try
     {
       connStart = System.currentTimeMillis();
-      DriverManager.getConnection(
-          "jdbc:snowflake://testaccount.wronghostname.com", properties);
+      Map<String, String> params = getConnectionParameters();
+      // use wrongaccount in url
+      String host = params.get("host");
+      String[] hostItems = host.split("\\.");
+      String wrongUri = params.get("uri").replace(
+          "."+ hostItems[1]+".", ".wronghostname.");
+
+      DriverManager.getConnection(wrongUri, properties);
     }
     catch (SQLException e)
     {
@@ -279,6 +345,13 @@ public class ConnectionIT extends BaseJDBCTest
       conEnd = System.currentTimeMillis();
       assertThat("Login time out not taking effective",
           conEnd - connStart < 60000);
+      assertThat("telemetry log created",
+          TelemetryService.getInstance().size() - queueSize == 1);
+      TelemetryEvent te = TelemetryService.getInstance().getEvent(queueSize);
+      JSONObject values =  (JSONObject)te.get("Value");
+      assertThat("Communication error",
+          values.get("errorCode").toString().compareTo(
+              ErrorCode.NETWORK_ERROR.getMessageCode().toString()) == 0);
       return;
     }
     fail();

@@ -3,6 +3,7 @@ package net.snowflake.client.jdbc.telemetryV2;
 import net.minidev.json.JSONArray;
 import net.minidev.json.JSONObject;
 import net.snowflake.client.core.SFException;
+import net.snowflake.client.jdbc.telemetry.Telemetry;
 import net.snowflake.common.core.ResourceBundleManager;
 
 import java.io.PrintWriter;
@@ -16,6 +17,7 @@ import java.util.TimeZone;
 
 public class TelemetryEvent extends JSONObject
 {
+
   public enum Type{
       Metric, Log
   }
@@ -101,6 +103,18 @@ public class TelemetryEvent extends JSONObject
       return this;
     }
 
+    public LogBuilder withValue(JSONObject value)
+    {
+      body.put("Value", value);
+      return this;
+    }
+
+    public LogBuilder withValue(JSONArray value)
+    {
+      body.put("Value", value);
+      return this;
+    }
+
     public TelemetryEvent build()
     {
       TelemetryEvent event = super.build();
@@ -129,7 +143,20 @@ public class TelemetryEvent extends JSONObject
       tags.put("driver", driver);
       Package pkg = Package.getPackage("net.snowflake.client.jdbc");
       tags.put("version", version);
-      tags.put("deployment", TelemetryService.getInstance().getServerDeploymentName());
+      TelemetryService instance = TelemetryService.getInstance();
+      tags.put("deployment", instance.getServerDeploymentName());
+      JSONObject context = instance.getContext();
+      if(context!=null)
+      {
+        for (String key : context.keySet())
+        {
+          Object val = context.get(key);
+          if (val != null)
+          {
+            tags.put("ctx_"+key, val.toString());
+          }
+        }
+      }
     }
 
     private String getUTCNow()
@@ -147,9 +174,17 @@ public class TelemetryEvent extends JSONObject
       return builderClass.cast(this);
     }
 
+    public T withTag(String name, int value)
+    {
+      return withTag(name, Integer.toString(value));
+    }
+
     public T withTag(String name, String value)
     {
-      tags.put(name, value);
+      if (value != null && value.length()>0)
+      {
+        tags.put(name, value);
+      }
       return builderClass.cast(this);
     }
 
@@ -176,4 +211,20 @@ public class TelemetryEvent extends JSONObject
     }
   }
 
+  /**
+   *
+   * @return the deployment of this event
+   */
+  public String getDeployment()
+  {
+     JSONArray tags = (JSONArray) this.get("Tags");
+     for (Object tag : tags)
+     {
+       JSONObject json = (JSONObject) tag;
+       if (json.get("Name").toString().compareTo("deployment")==0){
+         return json.get("Value").toString();
+       }
+     }
+     return "Unknown";
+  }
 }
