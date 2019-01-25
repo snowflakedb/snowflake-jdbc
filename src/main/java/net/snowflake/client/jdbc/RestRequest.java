@@ -7,6 +7,7 @@ package net.snowflake.client.jdbc;
 import net.snowflake.client.core.Event;
 import net.snowflake.client.core.EventUtil;
 
+import net.snowflake.client.jdbc.telemetryV2.TelemetryService;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 
@@ -61,6 +62,7 @@ public class RestRequest
    * @param includeRetryParameters whether to include retry parameters in retried
    *                               requests
    * @param includeRequestGuid whether to include request_guid parameter
+   * @param telemetryOn whether to send http response error to the telemetry service
    * @return HttpResponse Object get from server
    * @throws net.snowflake.client.jdbc.SnowflakeSQLException Request timeout Exception or Illegal State Exception i.e.
    *                                                         connection is already shutdown etc
@@ -73,7 +75,8 @@ public class RestRequest
       AtomicBoolean canceling,
       boolean withoutCookies,
       boolean includeRetryParameters,
-      boolean includeRequestGuid) throws SnowflakeSQLException
+      boolean includeRequestGuid,
+      boolean telemetryOn) throws SnowflakeSQLException
   {
     CloseableHttpResponse response = null;
 
@@ -104,6 +107,9 @@ public class RestRequest
     int origSocketTimeout = 0;
 
     Exception savedEx = null;
+
+    // label the reason to break retry
+    String breakRetryReason;
 
     // try request till we get a good response or retry timeout
     while (true)
@@ -226,7 +232,7 @@ public class RestRequest
               false);
 
         }
-
+        breakRetryReason = "status code does not need retry";
         break;
       }
       else
@@ -255,6 +261,7 @@ public class RestRequest
         {
           logger.info(
               "Stop retrying since canceling is requested");
+          breakRetryReason = "canceling is requested";
           break;
         }
 
@@ -274,10 +281,29 @@ public class RestRequest
                     "issues has reached timeout. " +
                     "Elapsed={}(ms), timeout={}(ms)",
             elapsedMilliForTransientIssues, retryTimeoutInMilliseconds);
-
+            breakRetryReason = "retry timeout";
             // rethrow the timeout exception
             if (response == null && savedEx != null)
             {
+              if (telemetryOn)
+              {
+                TelemetryService.getInstance().logHttpRequestError(httpRequest,
+                    injectSocketTimeout,
+                    canceling,
+                    withoutCookies,
+                    includeRetryParameters,
+                    includeRequestGuid,
+                    response,
+                    breakRetryReason,
+                    retryTimeout,
+                    retryCount,
+                    SqlState.IO_ERROR,
+                    ErrorCode.NETWORK_ERROR.getMessageCode()
+                    );
+                // try to upload events in the queue
+                // before throwing the exception
+                TelemetryService.getInstance().flush();
+              }
               throw new SnowflakeSQLException(SqlState.IO_ERROR,
                   ErrorCode.NETWORK_ERROR.getMessageCode(),
                   "Exception encountered for HTTP request: " +
@@ -325,6 +351,23 @@ public class RestRequest
           "Error response: HTTP Response code={}, request={}",
           response.getStatusLine().getStatusCode(),
           httpRequest);
+    }
+    if (telemetryOn &&
+        (response == null ||
+            response.getStatusLine().getStatusCode() != 200))
+    {
+      TelemetryService.getInstance().logHttpRequestError(httpRequest,
+          injectSocketTimeout,
+          canceling,
+          withoutCookies,
+          includeRetryParameters,
+          includeRequestGuid,
+          response,
+          breakRetryReason,
+          retryTimeout,
+          retryCount,
+          null,
+          0);
     }
     return response;
   }
