@@ -39,6 +39,8 @@ public class JDK14Logger implements SFLogger
   private Set<String> logMethods = new HashSet<>(Arrays.asList(
       "debug", "error", "info", "trace", "warn"));
 
+  private static boolean isLegacyLoggerInit = false;
+
   public JDK14Logger(String name)
   {
     this.jdkLogger = Logger.getLogger(name);
@@ -188,20 +190,15 @@ public class JDK14Logger implements SFLogger
    * Only effective when java.util.logging.config.file is not specified
    */
   @Deprecated
-  public static void honorTracingParameter(Level level)
+  public static synchronized void honorTracingParameter(Level level)
   {
-    if (System.getProperty("java.util.logging.config.file") == null)
+    if (!isLegacyLoggerInit &&
+        System.getProperty("java.util.logging.config.file") == null &&
+        System.getProperty("java.util.logging.config.class") == null)
     {
-      // update logger level
-      setLevel(level);
+      legacyLoggerInit(level);
 
-      // update all handler's level, in this case, only FileHanlder to tmp
-      // directory will be honored
-      Logger snowflakeLogger = Logger.getLogger(SFFormatter.CLASS_NAME_PREFIX);
-      for (Handler h : snowflakeLogger.getHandlers())
-      {
-        h.setLevel(level);
-      }
+      isLegacyLoggerInit = true;
     }
   }
 
@@ -275,21 +272,9 @@ public class JDK14Logger implements SFLogger
     return results;
   }
 
-  static void defaultInit()
+  @Deprecated
+  private static void legacyLoggerInit(Level level)
   {
-    // get logging level
-    String defaultLevelVal = System.getProperty("snowflake.jdbc.log.level");
-
-    Level defaultLevel = Level.WARNING;
-
-    if (defaultLevelVal != null)
-    {
-      defaultLevel = Level.parse(defaultLevelVal.toUpperCase());
-
-      if (defaultLevel == null)
-        defaultLevel = Level.WARNING;
-    }
-
     // get log count and size
     String defaultLogSizeVal = System.getProperty("snowflake.jdbc.log.size");
     String defaultLogCountVal = System.getProperty("snowflake.jdbc.log.count");
@@ -324,28 +309,25 @@ public class JDK14Logger implements SFLogger
 
     Logger snowflakeLoggerInformaticaV1 = Logger.getLogger(
         SFFormatter.INFORMATICA_V1_CLASS_NAME_PREFIX);
-    snowflakeLoggerInformaticaV1.setLevel(defaultLevel);
+    snowflakeLoggerInformaticaV1.setLevel(level);
     snowflakeLoggerInformaticaV1.addHandler(eventHandler);
 
-    if (System.getProperty("java.util.logging.config.file") == null)
+    // write log file to tmp directory
+    try
     {
-      // write log file to tmp directory
-      try
-      {
-        FileHandler fileHandler = new FileHandler("%t/snowflake_jdbc%u.log",
-                                                  logSize, logCount, true);
-        fileHandler.setFormatter(new SFFormatter());
-        fileHandler.setLevel(defaultLevel);
-        JDK14Logger.addHandler(fileHandler);
+      FileHandler fileHandler = new FileHandler("%t/snowflake_jdbc%u.log",
+                                                logSize, logCount, true);
+      fileHandler.setFormatter(new SFFormatter());
+      fileHandler.setLevel(level);
+      JDK14Logger.addHandler(fileHandler);
 
-        // set default level and add handler for snowflake logger
-        JDK14Logger.setLevel(defaultLevel);
+      // set default level and add handler for snowflake logger
+      JDK14Logger.setLevel(level);
 
-        snowflakeLoggerInformaticaV1.addHandler(fileHandler);
-      }
-      catch (IOException e)
-      {
-      }
+      snowflakeLoggerInformaticaV1.addHandler(fileHandler);
+    }
+    catch (IOException e)
+    {
     }
   }
 }
