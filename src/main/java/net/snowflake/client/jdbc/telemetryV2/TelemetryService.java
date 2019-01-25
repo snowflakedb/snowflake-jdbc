@@ -42,29 +42,31 @@ public class TelemetryService
                                          final String account,
                                          final String port)
   {
-    if (url.contains("reg"))
+    TelemetryService instance = getInstance();
+    // default value
+    TELEMETRY_SERVER_DEPLOYMENT deployment = TELEMETRY_SERVER_DEPLOYMENT.PROD;
+    if (url != null)
     {
-      if (port.compareTo("8080") == 0)
+      if (url.contains("reg"))
       {
-        telemetryService.setDeployment(TELEMETRY_SERVER_DEPLOYMENT.DEV);
+        deployment = TELEMETRY_SERVER_DEPLOYMENT.REG;
+        if ((port != null && port.compareTo("8080") == 0)
+            || url.contains("8080"))
+        {
+          deployment = TELEMETRY_SERVER_DEPLOYMENT.DEV;
+        }
       }
-      else if (port.compareTo("8082") == 0)
+      else if (url.contains("qa1") ||
+          (account != null && account.contains("qa1")))
       {
-        telemetryService.setDeployment(TELEMETRY_SERVER_DEPLOYMENT.REG);
+        deployment = TELEMETRY_SERVER_DEPLOYMENT.QA1;
+      }
+      else if (url.contains("preprod2"))
+      {
+        deployment = TELEMETRY_SERVER_DEPLOYMENT.PREPROD2;
       }
     }
-    else if (url.contains("qa1") || account.contains("qa1"))
-    {
-      telemetryService.setDeployment(TELEMETRY_SERVER_DEPLOYMENT.QA1);
-    }
-    else if (url.contains("preprod2"))
-    {
-      telemetryService.setDeployment(TELEMETRY_SERVER_DEPLOYMENT.PREPROD2);
-    }
-    else
-    {
-      telemetryService.setDeployment(TELEMETRY_SERVER_DEPLOYMENT.PROD);
-    }
+    instance.setDeployment(deployment);
   }
 
   private enum TELEMETRY_SERVER_URL
