@@ -885,7 +885,8 @@ public class SnowflakeChunkDownloader
                                 null, // no canceling
                                 false, // no cookie
                                 false, // no retry
-                                false); // no request_guid
+                                false, // no request_guid
+                                true);
 
         logger.debug("Call returned for URL: {}",
                                chunkUrl);

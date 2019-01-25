@@ -55,6 +55,7 @@ public class RestRequestIT
         new AtomicBoolean(false),
         false,
         includeRetryParameters,
+        true,
         true);
   }
 

@@ -139,8 +139,7 @@ public class SnowflakeConnectionV1 implements Connection
   {
     logger.info("Trying to establish session, JDBC driver version: {}",
                 SnowflakeDriver.implementVersion);
-    TelemetryService.configureDeployment(url, info.getProperty("account"),
-        info.getProperty("port"));
+    TelemetryService.getInstance().updateContext(url, info);
     // open connection to GS
     sfSession = new SFSession();
 
