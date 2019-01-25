@@ -654,6 +654,74 @@
       </build>
     </profile>
     <profile>
+      <id>jenkinsIT</id>
+      <activation>
+        <property>
+          <name>jenkinsIT</name>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-failsafe-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>Incident2IT</id>
+                <goals>
+                  <goal>integration-test</goal>
+                </goals>
+                <configuration>
+                  <argLine>
+                    @{argLine}
+                    -Djava.util.logging.config.file=jenkins_it_logging.properties
+                    -Dsnowflake.throttle_duration=0
+                    -Dsnowflake.throttle_limit=10
+                  </argLine>
+                  <test>Incident2IT.java</test>
+                </configuration>
+              </execution>
+              <execution>
+                <id>DefaultIT</id>
+                <goals>
+                  <goal>integration-test</goal>
+                </goals>
+                <configuration>
+                  <excludes>
+                    <exclude>**/Incident2IT.java</exclude>
+                    <exclude>**/ingest/*.java</exclude>
+                    <exclude>**/DellBoomiCloudIT.java</exclude>
+                  </excludes>
+                  <argLine>
+                    @{argLine}
+                    -Djava.util.logging.config.file=jenkins_it_logging.properties
+                  </argLine>
+                </configuration>
+              </execution>
+              <execution>
+                <id>DellBoomiIT</id>
+                <goals>
+                  <goal>integration-test</goal>
+                </goals>
+                <configuration>
+                  <argLine>
+                    @{argLine}
+                    -Djava.util.logging.config.file=jenkins_it_logging.properties
+                  </argLine>
+                  <test>DellBoomiCloudIT.java</test>
+                </configuration>
+              </execution>
+              <execution>
+                <goals>
+                  <goal>verify</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <profile>
       <id>travisIT</id>
       <activation>
         <property>

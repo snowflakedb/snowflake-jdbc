@@ -19,6 +19,7 @@ import net.snowflake.client.log.JDK14Logger;
 import org.apache.http.HttpHeaders;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.conn.routing.HttpRoutePlanner;
 
 import java.io.IOException;
 import java.security.PrivateKey;
@@ -356,6 +357,8 @@ public class SFSession
     Boolean insecureMode = (Boolean)connectionPropertiesMap.get(
         SFSessionProperty.INSECURE_MODE);
 
+    HttpUtil.configureCustomProxyProperties(connectionPropertiesMap);
+
     HttpUtil.initHttpClient(insecureMode != null ? insecureMode : false, null);
 
     SessionUtil.LoginInput loginInput = new SessionUtil.LoginInput();
@@ -512,6 +515,20 @@ public class SFSession
 
       {
         throw new SFException(ErrorCode.MISSING_PASSWORD);
+      }
+    }
+
+    // perform sanity check on proxy settings
+    boolean useProxy = (boolean) connectionPropertiesMap.getOrDefault(
+        SFSessionProperty.USE_PROXY, false);
+    if (useProxy)
+    {
+      if(!connectionPropertiesMap.containsKey(SFSessionProperty.PROXY_HOST)
+        || !connectionPropertiesMap.containsKey(SFSessionProperty.PROXY_PORT)
+        || !connectionPropertiesMap.containsKey(SFSessionProperty.PROXY_USER)
+        || !connectionPropertiesMap.containsKey(SFSessionProperty.PROXY_PASSWORD))
+      {
+        throw new SFException(ErrorCode.INVALID_PROXY_PROPERTIES);
       }
     }
   }

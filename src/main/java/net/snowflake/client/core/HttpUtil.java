@@ -4,6 +4,7 @@
 
 package net.snowflake.client.core;
 
+import com.amazonaws.http.apache.SdkProxyRoutePlanner;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.RestRequest;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
@@ -12,6 +13,11 @@ import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SqlState;
 import org.apache.commons.io.IOUtils;
+import org.apache.http.HttpHost;
+import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.Credentials;
+import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpRequestBase;
@@ -19,6 +25,7 @@ import org.apache.http.config.Registry;
 import org.apache.http.config.RegistryBuilder;
 import org.apache.http.conn.socket.ConnectionSocketFactory;
 import org.apache.http.conn.socket.PlainConnectionSocketFactory;
+import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.DefaultRedirectStrategy;
 import org.apache.http.impl.client.HttpClientBuilder;
@@ -36,6 +43,7 @@ import java.net.Proxy;
 import java.net.Socket;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.apache.http.client.config.CookieSpecs.DEFAULT;
@@ -68,6 +76,16 @@ public class HttpUtil
 
 
   private static boolean socksProxyDisabled = false;
+
+  /**
+   * customized proxy properties
+   */
+  private static boolean useProxy = false;
+  private static String proxyHost;
+  private static int proxyPort;
+  private static String proxyUser;
+  private static String proxyPassword;
+  private static String nonProxyHosts;
 
   /**
    * Build an Http client using our set of default.
@@ -115,17 +133,45 @@ public class HttpUtil
       connectionManager.setMaxTotal(DEFAULT_MAX_CONNECTIONS);
       connectionManager.setDefaultMaxPerRoute(DEFAULT_MAX_CONNECTIONS_PER_ROUTE);
 
-      httpClient =
-          HttpClientBuilder.create()
-              .setDefaultRequestConfig(DefaultRequestConfig)
-              .setConnectionManager(connectionManager)
-              // Support JVM proxy settings
-              .useSystemProperties()
-              .setRedirectStrategy(new DefaultRedirectStrategy())
-              .setUserAgent("-")     // needed for Okta
-              .disableCookieManagement() // SNOW-39748
-              .build();
-
+      if (useProxy)
+      {
+        // use the custom proxy properties
+        HttpHost proxy = new HttpHost(proxyHost, proxyPort);
+        Credentials credentials =
+            new UsernamePasswordCredentials(proxyUser, proxyPassword);
+        AuthScope authScope = new AuthScope(proxyHost, proxyPort);
+        CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
+        credentialsProvider.setCredentials(authScope, credentials);
+        SdkProxyRoutePlanner sdkProxyRoutePlanner = new SdkProxyRoutePlanner(
+            proxyHost, proxyPort, nonProxyHosts
+        );
+        httpClient =
+            HttpClientBuilder.create()
+                .setDefaultRequestConfig(DefaultRequestConfig)
+                .setConnectionManager(connectionManager)
+                // Support JVM proxy settings
+                .useSystemProperties()
+                .setRedirectStrategy(new DefaultRedirectStrategy())
+                .setUserAgent("-")     // needed for Okta
+                .disableCookieManagement() // SNOW-39748
+                .setProxy(proxy)
+                .setDefaultCredentialsProvider(credentialsProvider)
+                .setRoutePlanner(sdkProxyRoutePlanner)
+                .build();
+      }
+      else
+      {
+        httpClient =
+            HttpClientBuilder.create()
+                .setDefaultRequestConfig(DefaultRequestConfig)
+                .setConnectionManager(connectionManager)
+                // Support JVM proxy settings
+                .useSystemProperties()
+                .setRedirectStrategy(new DefaultRedirectStrategy())
+                .setUserAgent("-")     // needed for Okta
+                .disableCookieManagement() // SNOW-39748
+                .build();
+      }
       return httpClient;
     }
     catch (NoSuchAlgorithmException | KeyManagementException ex)
@@ -526,5 +572,31 @@ public class HttpUtil
     }
   }
 
+  /**
+   * configure custom proxy properties from connectionPropertiesMap
+   */
+  public static void configureCustomProxyProperties(
+      Map<SFSessionProperty, Object> connectionPropertiesMap)
+  {
+    if (connectionPropertiesMap.containsKey(SFSessionProperty.USE_PROXY))
+    {
+      useProxy = (boolean) connectionPropertiesMap.get(
+          SFSessionProperty.USE_PROXY);
+    }
 
+    if (useProxy)
+    {
+      proxyHost =
+          (String) connectionPropertiesMap.get(SFSessionProperty.PROXY_HOST);
+      proxyPort =
+          Integer.parseInt(
+              connectionPropertiesMap.get(SFSessionProperty.PROXY_PORT).toString());
+      proxyUser =
+          (String) connectionPropertiesMap.get(SFSessionProperty.PROXY_USER);
+      proxyPassword =
+          (String) connectionPropertiesMap.get(SFSessionProperty.PROXY_PASSWORD);
+      nonProxyHosts =
+          (String) connectionPropertiesMap.get(SFSessionProperty.NON_PROXY_HOSTS);
+    }
+  }
 }

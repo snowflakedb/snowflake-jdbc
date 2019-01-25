@@ -118,7 +118,20 @@ public class TelemetryService
     if (telemetryService == null)
     {
       telemetryService = new TelemetryService();
-      Runtime.getRuntime().addShutdownHook(new TelemetryUploader());
+
+      try
+      {
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null)
+        {
+          sm.checkPermission(new RuntimePermission("shutdownHooks"));
+        }
+        Runtime.getRuntime().addShutdownHook(new TelemetryUploader());
+      }
+      catch(SecurityException e)
+      {
+        logger.debug("Failed to add shutdown hook for telemetry service");
+      }
     }
     return telemetryService;
   }

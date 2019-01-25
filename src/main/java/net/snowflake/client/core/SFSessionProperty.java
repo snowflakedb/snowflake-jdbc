@@ -44,6 +44,13 @@ public enum SFSessionProperty
   APPLICATION("application", false, String.class),
   TRACING("tracing", false, String.class),
   DISABLE_SOCKS_PROXY("disableSocksProxy", false, Boolean.class),
+  // connection proxy
+  USE_PROXY("useProxy", false, Boolean.class),
+  PROXY_HOST("proxyHost", false, String.class),
+  PROXY_PORT("proxyPort", false, String.class),
+  PROXY_USER("proxyUser", false, String.class),
+  PROXY_PASSWORD("proxyPassword", false, String.class),
+  NON_PROXY_HOSTS("nonProxyHosts", false, String.class)
   ;
 
   // property key in string
