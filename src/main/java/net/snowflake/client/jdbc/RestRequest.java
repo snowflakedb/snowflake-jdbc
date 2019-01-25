@@ -182,7 +182,7 @@ public class RestRequest
               (System.currentTimeMillis() - startTimePerRequest) / 1000);
         }
 
-        logger.warn("Exception encountered for: " +
+        logger.warn("Exception encountered for: {}, {}",
             httpRequest.toString(), ex);
       }
       finally

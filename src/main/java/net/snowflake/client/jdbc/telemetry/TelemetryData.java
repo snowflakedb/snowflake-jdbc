@@ -2,6 +2,7 @@ package net.snowflake.client.jdbc.telemetry;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import net.snowflake.client.core.ObjectMapperFactory;
 
 /**
  * Copyright (c) 2018 Snowflake Computing Inc. All rights reserved.
@@ -11,7 +12,8 @@ public class TelemetryData
   //message is a json node
   private final ObjectNode message;
   private final long timeStamp;
-  private final static ObjectMapper mapper = new ObjectMapper();
+  private final static ObjectMapper mapper =
+      ObjectMapperFactory.getObjectMapper();
 
   public TelemetryData(ObjectNode message, long timeStamp)
   {

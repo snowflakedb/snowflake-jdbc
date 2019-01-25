@@ -101,7 +101,8 @@ public class SFSession
 
   private Map<String, Object> sessionProperties = new HashMap<>(1);
 
-  private final static ObjectMapper mapper = new ObjectMapper();
+  private final static ObjectMapper mapper =
+      ObjectMapperFactory.getObjectMapper();
 
   private Properties clientInfo = new Properties();
 

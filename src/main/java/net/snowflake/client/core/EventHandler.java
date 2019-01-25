@@ -10,10 +10,14 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.TimeZone;
 import java.util.TreeSet;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -229,6 +233,7 @@ public class EventHandler extends Handler
     pushEvent(triggeredEvent, flushBuffer);
   }
 
+
   /**
    * Triggers a state transition event to @newState with an identifier
    * (eg, requestId, jobUUID, etc)
@@ -240,13 +245,21 @@ public class EventHandler extends Handler
   {
     String msg = "{newState: " + newState.getDescription() + ", " +
                   "info: " + identifier + ", " +
-                  "timestamp: " + DateTime.now().toString() +
+                  "timestamp: " + getCurrentTimestamp() +
                  "}";
 
     Event triggeredEvent =
         new BasicEvent(Event.EventType.STATE_TRANSITION, msg);
 
     pushEvent(triggeredEvent, false);
+  }
+
+  static String getCurrentTimestamp()
+  {
+    DateFormat fmt = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+    fmt.setTimeZone(TimeZone.getTimeZone("UTC"));
+    return fmt.format(new Date());
+
   }
 
   /**

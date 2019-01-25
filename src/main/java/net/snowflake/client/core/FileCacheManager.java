@@ -32,7 +32,8 @@ class FileCacheManager
   /**
    * Object mapper for JSON encoding and decoding
    */
-  private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+  private static final ObjectMapper OBJECT_MAPPER =
+      ObjectMapperFactory.getObjectMapper();
 
   private static final Charset DEFAULT_FILE_ENCODING = Charset.forName("UTF-8");
 

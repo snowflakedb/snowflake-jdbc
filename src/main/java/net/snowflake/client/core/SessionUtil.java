@@ -80,7 +80,7 @@ public class SessionUtil
 
   private static final String SF_PATH_SESSION = "/session";
 
-  private static ObjectMapper mapper = new ObjectMapper();
+  private static ObjectMapper mapper = ObjectMapperFactory.getObjectMapper();
 
   public static final String SF_HEADER_AUTHORIZATION = HttpHeaders.AUTHORIZATION;
 
@@ -1137,12 +1137,6 @@ public class SessionUtil
       clientEnv.put("JAVA_RUNTIME", System.getProperty("java.runtime.name"));
       clientEnv.put("JAVA_VM", System.getProperty("java.vm.name"));
 
-      // SNOW-15780: find out if application has set
-      // -Dcom.sun.security.enableCRLDP=true and
-      // -Dcom.sun.net.ssl.checkRevocation=true
-      boolean CRLEnabled = SessionUtil.checkCRLSystemProperty();
-      clientEnv.put("CRL_ENABLED", CRLEnabled);
-
       if (loginInput.getApplication() != null)
       {
         clientEnv.put("APPLICATION", loginInput.getApplication());
@@ -2026,24 +2020,6 @@ public class SessionUtil
     Elements e2 = e1.get(0).getElementsByTag("form");
     String postBackUrl = e2.first().attr("action");
     return postBackUrl;
-  }
-
-  /**
-   * Check if com.sun.security.enableCRLDP and com.sun.net.ssl.checkRevocation
-   * are set to true
-   *
-   * @return true if both system properties set to true, false otherwise.
-   */
-  static public boolean checkCRLSystemProperty()
-  {
-    String enableCRLDP = System.getProperty("com.sun.security.enableCRLDP");
-    String checkRevocation = System.getProperty("com.sun.net.ssl.checkRevocation");
-    boolean CRLEnabled = false;
-
-    if ((enableCRLDP != null && "true".equalsIgnoreCase(enableCRLDP)) &&
-        (checkRevocation != null && "true".equalsIgnoreCase(checkRevocation)))
-      CRLEnabled = true;
-    return CRLEnabled;
   }
 
   /**

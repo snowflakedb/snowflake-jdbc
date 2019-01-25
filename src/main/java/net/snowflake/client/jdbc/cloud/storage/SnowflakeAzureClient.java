@@ -11,6 +11,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.microsoft.azure.storage.blob.BlobProperties;
 import com.microsoft.azure.storage.blob.CloudBlob;
 import com.microsoft.azure.storage.blob.CloudBlockBlob;
+import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.FileBackedOutputStream;
@@ -782,7 +783,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient
   private SimpleEntry<String, String> parseEncryptionData(String jsonEncryptionData)
           throws SnowflakeSQLException
   {
-    ObjectMapper mapper = new ObjectMapper();
+    ObjectMapper mapper = ObjectMapperFactory.getObjectMapper();
     JsonFactory factory = mapper.getJsonFactory();
     try
     {

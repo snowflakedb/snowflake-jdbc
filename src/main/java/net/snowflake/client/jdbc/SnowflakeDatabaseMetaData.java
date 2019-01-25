@@ -6,6 +6,7 @@ package net.snowflake.client.jdbc;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -42,7 +43,8 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
 
   static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeDatabaseMetaData.class);
 
-  private static final ObjectMapper mapper = new ObjectMapper();
+  private static final ObjectMapper mapper =
+      ObjectMapperFactory.getObjectMapper();
 
   static final private String DatabaseProductName = "Snowflake";
 

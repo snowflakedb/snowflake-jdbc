@@ -12,6 +12,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.CountingOutputStream;
+import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SFFixedViewResultSet;
 import net.snowflake.client.core.SFSession;
@@ -66,7 +67,8 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
 
   final static StorageClientFactory storageFactory = StorageClientFactory.getFactory();
 
-  private static final ObjectMapper mapper = new ObjectMapper();
+  private static final ObjectMapper mapper =
+      ObjectMapperFactory.getObjectMapper();
 
   // We will allow buffering of upto 128M data before spilling to disk during
   // compression and digest computation
