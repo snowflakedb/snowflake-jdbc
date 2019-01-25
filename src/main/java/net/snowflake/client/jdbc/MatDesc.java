@@ -7,6 +7,7 @@ package net.snowflake.client.jdbc;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import net.snowflake.client.core.ObjectMapperFactory;
 
 /**
  * A class to handle S3 material descriptor metadata entries (matdesc).
@@ -38,7 +39,8 @@ public class MatDesc
   /**
    * The JSON parser for matdesc entries
    */
-  private final static ObjectMapper mapper = new ObjectMapper();
+  private final static ObjectMapper mapper =
+      ObjectMapperFactory.getObjectMapper();
 
   /**
    * The Stage Master Key ID

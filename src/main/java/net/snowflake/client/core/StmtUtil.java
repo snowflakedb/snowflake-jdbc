@@ -16,14 +16,12 @@ import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.api.QueryInProgressResponse;
 import org.apache.http.HttpHeaders;
-import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.CloseableHttpClient;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -42,7 +40,7 @@ public class StmtUtil
 {
   static final EventHandler eventHandler = EventUtil.getEventHandlerInstance();
 
-  static final ObjectMapper mapper = new ObjectMapper();
+  static final ObjectMapper mapper = ObjectMapperFactory.getObjectMapper();
 
   static final String SF_PATH_QUERY_V1 = "/queries/v1/query-request";
 

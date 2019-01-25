@@ -11,7 +11,7 @@ import java.util.Map;
  *
  * Created by hyu on 6/30/17.
  */
-class QueryExecDTO
+public class QueryExecDTO
 {
   private String sqlText;
 
@@ -32,7 +32,7 @@ class QueryExecDTO
 
   private boolean isInternal;
 
-  QueryExecDTO(String sqlText,
+  public QueryExecDTO(String sqlText,
                boolean describeOnly,
                Integer sequenceId,
                Map<String, ParameterBindingDTO> bindings,

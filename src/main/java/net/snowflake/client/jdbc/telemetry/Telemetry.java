@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import net.snowflake.client.core.HttpUtil;
+import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.jdbc.SnowflakeConnectionV1;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
@@ -42,7 +43,8 @@ public class Telemetry
 
   private final SFSession session;
   private LinkedList<TelemetryData> logBatch;
-  private static final ObjectMapper mapper = new ObjectMapper();
+  private static final ObjectMapper mapper =
+      ObjectMapperFactory.getObjectMapper();
 
   private boolean isClosed;
 

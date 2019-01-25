@@ -2,10 +2,12 @@ package net.snowflake.client.jdbc.telemetry;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import net.snowflake.client.core.ObjectMapperFactory;
 
 public class TelemetryUtil
 {
-  private final static ObjectMapper mapper = new ObjectMapper();
+  private final static ObjectMapper mapper =
+      ObjectMapperFactory.getObjectMapper();
 
   public final static String TYPE = "type";
   public final static String QUERY_ID = "query_id";

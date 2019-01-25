@@ -139,7 +139,7 @@ public class SessionUtilExternalBrowser
 
   public SessionUtilExternalBrowser(SessionUtil.LoginInput loginInput, AuthExternalBrowserHandlers handlers)
   {
-    this.mapper = new ObjectMapper();
+    this.mapper = ObjectMapperFactory.getObjectMapper();
     this.loginInput = loginInput;
     this.handlers = handlers;
     this.consentCacheIdToken = true; // true by default

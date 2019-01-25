@@ -61,7 +61,7 @@ public class Incident extends Event
   @Override
   public void flush()
   {
-    ObjectMapper mapper = new ObjectMapper();
+    ObjectMapper mapper = ObjectMapperFactory.getObjectMapper();
     String json;
     String response;
     CloseableHttpClient httpClient;

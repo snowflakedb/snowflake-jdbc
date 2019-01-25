@@ -115,7 +115,8 @@ class SFTrustManager implements X509TrustManager
   /**
    * Object mapper for JSON encoding and decoding
    */
-  private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+  private static final ObjectMapper OBJECT_MAPPER =
+      ObjectMapperFactory.getObjectMapper();
 
   /**
    * System property name to specify cache directory.

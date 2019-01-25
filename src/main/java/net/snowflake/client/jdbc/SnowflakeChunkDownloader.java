@@ -11,6 +11,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.MappingJsonFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.snowflake.client.core.HttpUtil;
+import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.jdbc.SnowflakeResultChunk.DownloadState;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -64,7 +65,8 @@ public class SnowflakeChunkDownloader
   private static final String SSE_C_AES = "AES256";
 
   // object mapper for deserialize JSON
-  private static final ObjectMapper mapper = new ObjectMapper();
+  private static final ObjectMapper mapper =
+      ObjectMapperFactory.getObjectMapper();
 
   /** a shared JSON parser factory. */
   private static final JsonFactory jsonFactory  = new MappingJsonFactory();
