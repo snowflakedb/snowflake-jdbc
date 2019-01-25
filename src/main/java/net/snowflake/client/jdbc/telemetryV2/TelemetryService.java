@@ -1,6 +1,9 @@
 package net.snowflake.client.jdbc.telemetryV2;
 
 import net.minidev.json.JSONArray;
+import net.minidev.json.JSONObject;
+import net.minidev.json.parser.JSONParser;
+import net.minidev.json.parser.ParseException;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.log.SFLogger;
@@ -24,9 +27,89 @@ public class TelemetryService
 
   private static LinkedList<TelemetryEvent> queue = new LinkedList<>();
   private static TelemetryService telemetryService = null;
-  private static String SERVER_URL = "https://syswm3rhj6.execute-api.us-west-2.amazonaws.com/sfctest/enqueue";
   private static int BATCH_SIZE = 100;
   private static boolean enabled = false;
+  private static TELEMETRY_SERVER_DEPLOYMENT serverDeployment;
+
+  /**
+   * configure telemetry deployment based on connection url and info
+   * Note: it is not thread-safe while connecting to different deployments
+   * simultaneously.
+   * @param url
+   * @param account
+   */
+  public static void configureDeployment(final String url,
+                                         final String account,
+                                         final String port)
+  {
+    if (url.contains("reg"))
+    {
+      if (port.compareTo("8080") == 0)
+      {
+        telemetryService.setDeployment(TELEMETRY_SERVER_DEPLOYMENT.DEV);
+      }
+      else if (port.compareTo("8082") == 0)
+      {
+        telemetryService.setDeployment(TELEMETRY_SERVER_DEPLOYMENT.REG);
+      }
+    }
+    else if (url.contains("qa1") || account.contains("qa1"))
+    {
+      telemetryService.setDeployment(TELEMETRY_SERVER_DEPLOYMENT.QA1);
+    }
+    else if (url.contains("preprod2"))
+    {
+      telemetryService.setDeployment(TELEMETRY_SERVER_DEPLOYMENT.PREPROD2);
+    }
+    else
+    {
+      telemetryService.setDeployment(TELEMETRY_SERVER_DEPLOYMENT.PROD);
+    }
+  }
+
+  private enum TELEMETRY_SERVER_URL
+  {
+    SFCTEST ("https://lximwp8945.execute-api.us-west-2.amazonaws.com/sfctest/enqueue"),
+    SFCDEV ("https://lol6l3j52m.execute-api.us-west-2.amazonaws.com/sfcdev/enqueue"),
+    US2 ("https://lol6l3j52m.execute-api.us-west-2.amazonaws.com/sfctest/enqueue"); // todo: change the url
+
+    private final String url;
+
+    TELEMETRY_SERVER_URL(String url)
+    {
+      this.url = url;
+    }
+  }
+
+  public enum TELEMETRY_SERVER_DEPLOYMENT
+  {
+    DEV ("dev", TELEMETRY_SERVER_URL.SFCTEST.url),
+    REG ("reg", TELEMETRY_SERVER_URL.SFCTEST.url),
+    QA1 ("qa1", TELEMETRY_SERVER_URL.SFCDEV.url),
+    PREPROD2 ("preprod2", TELEMETRY_SERVER_URL.SFCDEV.url),
+    PROD("prod", TELEMETRY_SERVER_URL.US2.url),
+    NONEXISTENT("nonexistent",
+        "https://nonexist.execute-api.us-west-2.amazonaws.com/sfctest/enqueue");
+
+    private final String name;
+    private final String url;
+
+    TELEMETRY_SERVER_DEPLOYMENT(String name, String url)
+    {
+      this.name = name;
+      this.url = url;
+    }
+
+    public String getURL()
+    {
+      return url;
+    }
+
+    public String getName()
+    {
+      return name;
+    }
+  }
 
   public static synchronized TelemetryService getInstance()
   {
@@ -38,9 +121,14 @@ public class TelemetryService
     return telemetryService;
   }
 
-  public synchronized void setServerURL(String url)
+  public synchronized void setDeployment(TELEMETRY_SERVER_DEPLOYMENT deployment)
   {
-    SERVER_URL = url;
+    serverDeployment = deployment;
+  }
+
+  public String getServerDeploymentName()
+  {
+    return serverDeployment.name;
   }
 
   public synchronized void enable()
@@ -85,25 +173,44 @@ public class TelemetryService
       boolean success = true;
       try
       {
-        HttpPost post = new HttpPost(SERVER_URL);
+        HttpPost post = new HttpPost(serverDeployment.url);
         post.setEntity(new StringEntity(logsToString(queue)));
         post.setHeader("Content-type", "application/json");
         // start a request with retry timeout = 10 secs
         response = HttpUtil.executeRequest(post, 10, 0, null);
+        JSONParser p = new JSONParser();
+        JSONObject obj = (JSONObject) p.parse(response);
+        if (obj != null && obj.getAsNumber("statusCode").intValue() == 200)
+        {
+          logger.debug("telemetry server request success: " + response);
+        }
+        else
+        {
+          logger.warn("telemetry server request error: " + response);
+          success = false;
+        }
+
         logger.debug(response);
       }
       catch (SnowflakeSQLException e)
       {
-        logger.error(
+        logger.warn(
             "Telemetry request failed, SnowflakeSQLException " +
                 "response: {}, exception: {}", response, e.getMessage());
         success = false;
       }
       catch (IOException e)
       {
-        logger.error(
+        logger.warn(
             "Telemetry request failed, IOException" +
                 "response: {}, exception: {}", response, e.getMessage());
+        success = false;
+      }
+      catch (ParseException pe)
+      {
+        logger.warn(
+            "Telemetry request failed, ParseException" +
+                "response: {}, exception: {}", response, pe.getMessage());
         success = false;
       }
       finally
