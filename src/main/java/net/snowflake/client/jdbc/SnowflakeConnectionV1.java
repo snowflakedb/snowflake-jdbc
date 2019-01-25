@@ -7,6 +7,7 @@ package net.snowflake.client.jdbc;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.core.SFSessionProperty;
+import net.snowflake.client.jdbc.telemetryV2.TelemetryService;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.LoginInfoDTO;
@@ -138,6 +139,8 @@ public class SnowflakeConnectionV1 implements Connection
   {
     logger.info("Trying to establish session, JDBC driver version: {}",
                 SnowflakeDriver.implementVersion);
+    TelemetryService.configureDeployment(url, info.getProperty("account"),
+        info.getProperty("port"));
     // open connection to GS
     sfSession = new SFSession();
 

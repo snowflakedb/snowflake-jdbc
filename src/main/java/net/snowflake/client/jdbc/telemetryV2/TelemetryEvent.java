@@ -3,7 +3,6 @@ package net.snowflake.client.jdbc.telemetryV2;
 import net.minidev.json.JSONArray;
 import net.minidev.json.JSONObject;
 import net.snowflake.client.core.SFException;
-import net.snowflake.client.core.SessionUtilExternalBrowser;
 import net.snowflake.common.core.ResourceBundleManager;
 
 import java.io.PrintWriter;
@@ -130,6 +129,7 @@ public class TelemetryEvent extends JSONObject
       tags.put("driver", driver);
       Package pkg = Package.getPackage("net.snowflake.client.jdbc");
       tags.put("version", version);
+      tags.put("deployment", TelemetryService.getInstance().getServerDeploymentName());
     }
 
     private String getUTCNow()
@@ -152,7 +152,6 @@ public class TelemetryEvent extends JSONObject
       tags.put(name, value);
       return builderClass.cast(this);
     }
-
 
     protected TelemetryEvent build()
     {
