@@ -524,9 +524,7 @@ public class SFSession
     if (useProxy)
     {
       if(!connectionPropertiesMap.containsKey(SFSessionProperty.PROXY_HOST)
-        || !connectionPropertiesMap.containsKey(SFSessionProperty.PROXY_PORT)
-        || !connectionPropertiesMap.containsKey(SFSessionProperty.PROXY_USER)
-        || !connectionPropertiesMap.containsKey(SFSessionProperty.PROXY_PASSWORD))
+        || !connectionPropertiesMap.containsKey(SFSessionProperty.PROXY_PORT))
       {
         throw new SFException(ErrorCode.INVALID_PROXY_PROPERTIES);
       }
