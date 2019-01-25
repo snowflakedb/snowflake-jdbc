@@ -149,6 +149,9 @@ class SFTrustManager implements X509TrustManager
    */
   public static final String CACHE_FILE_NAME = "ocsp_response_cache.json";
 
+  /** provider name */
+  private static final String BOUNCY_CASTLE_PROVIDER = "BC";
+
   /**
    * OCSP response file cache directory
    */
@@ -237,7 +240,9 @@ class SFTrustManager implements X509TrustManager
   {
     // Add Bouncy Castle to the security provider. This is required to
     // verify the signature on OCSP response and attached certificates.
-    Security.addProvider(new BouncyCastleProvider());
+    if (Security.getProvider(BOUNCY_CASTLE_PROVIDER) == null) {
+        Security.addProvider(new BouncyCastleProvider());
+    }
   }
 
   private static JcaX509CertificateConverter CONVERTER_X509 = new JcaX509CertificateConverter();
