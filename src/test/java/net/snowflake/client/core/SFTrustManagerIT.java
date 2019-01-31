@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2018 Snowflake Computing Inc. All right reserved.
+ * Copyright (c) 2012-2019 Snowflake Computing Inc. All right reserved.
  */
 package net.snowflake.client.core;
 
@@ -159,7 +159,7 @@ public class SFTrustManagerIT
         true);
     try
     {
-      sft.validateRevocationStatus(certList.toArray(new X509Certificate[0]));
+      sft.validateRevocationStatus(certList.toArray(new X509Certificate[0]), "test_host");
       fail();
     }
     catch (CertificateEncodingException ex)
