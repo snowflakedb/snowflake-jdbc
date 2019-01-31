@@ -141,7 +141,7 @@ public class IncidentUtil
     }
     else
     {
-      logger.warn("Failed to generate incident, sessionToken valid={} "
+      logger.debug("Failed to generate incident, sessionToken valid={} "
               + "serverUrl={}",
                   sessionToken != null, serverUrl);
     }
@@ -231,7 +231,7 @@ public class IncidentUtil
     }
     else
     {
-      logger.warn("Attempting to generate incident and"
+      logger.debug("Attempting to generate incident and"
               + " SFException with null cause");
     }
 
@@ -254,7 +254,7 @@ public class IncidentUtil
     }
     else
     {
-      logger.warn("Failed to generate incident, sessionToken valid={} "
+      logger.debug("Failed to generate incident, sessionToken valid={} "
               + "serverUrl={}",
                   sessionToken != null, serverUrl);
     }
@@ -302,7 +302,7 @@ public class IncidentUtil
     }
     else
     {
-      logger.warn("Failed to generate incident, sessionToken valid={} "
+      logger.debug("Failed to generate incident, sessionToken valid={} "
               + "serverUrl={}",
                   sessionToken != null, serverUrl);
     }
@@ -384,7 +384,7 @@ public class IncidentUtil
     }
     else
     {
-      logger.warn("Failed to generate incident, sessionToken valid={} "
+      logger.debug("Failed to generate incident, sessionToken valid={} "
               + "serverUrl={}",
                   sessionToken != null, serverUrl);
     }

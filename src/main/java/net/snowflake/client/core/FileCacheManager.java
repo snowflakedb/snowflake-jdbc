@@ -116,7 +116,7 @@ class FileCacheManager
       }
       catch(Throwable ex)
       {
-        LOGGER.info("Cannot get environment variable for cache directory, " +
+        LOGGER.debug("Cannot get environment variable for cache directory, " +
                         "skip using cache");
         // In Boomi cloud, System.getenv is not allowed due to policy,
         // so we catch the exception and skip cache completely
