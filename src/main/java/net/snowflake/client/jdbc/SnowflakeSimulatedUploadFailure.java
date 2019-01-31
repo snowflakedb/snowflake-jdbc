@@ -26,7 +26,7 @@ public class SnowflakeSimulatedUploadFailure extends RuntimeException
   {
     super("Simulated upload failure for " + filename);
 
-    logger.info("{}. This should show up only in tests.", this.getMessage());
+    logger.debug("{}. This should show up only in tests.", this.getMessage());
   }
 
 }

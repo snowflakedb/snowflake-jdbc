@@ -77,10 +77,10 @@ public class ProcessQueue implements Runnable
           if (_loader.isAborted()) {
             if (!_loader._preserveStageFile) {
               currentCommand = "RM '" + remoteStage + "'";
-              LOGGER.info(currentCommand);
+              LOGGER.debug(currentCommand);
               conn.createStatement().execute(currentCommand);
             } else {
-              LOGGER.warn("Error occurred. The remote stage is preserved for " +
+              LOGGER.debug("Error occurred. The remote stage is preserved for " +
                   "further investigation: {}", remoteStage);
             }
             if (stage.isTerminate()) {
@@ -99,7 +99,7 @@ public class ProcessQueue implements Runnable
           String lastErrorRow = "";
 
           // Create temp table to load data (may has a subset of columns)
-          LOGGER.info("Creating Temporary Table: name={}", stage.getId());
+          LOGGER.debug("Creating Temporary Table: name={}", stage.getId());
           currentState = State.CREATE_TEMP_TABLE;
           currentCommand = "CREATE TEMPORARY TABLE \""
                   + stage.getId() + "\" AS SELECT "
@@ -108,7 +108,7 @@ public class ProcessQueue implements Runnable
           conn.createStatement().execute(currentCommand);
 
           // Load data there
-          LOGGER.info("COPY data in the stage to table:"
+          LOGGER.debug("COPY data in the stage to table:"
                              + " stage={},"
                              + " name={}", remoteStage, stage.getId());
           currentState = State.COPY_INTO_TABLE;
@@ -131,7 +131,7 @@ public class ProcessQueue implements Runnable
           }
 
           int errorRecordCount = parsed - loaded;
-          LOGGER.info("errorRecordCount=[{}],"
+          LOGGER.debug("errorRecordCount=[{}],"
                              + " parsed=[{}],"
                              + " loaded=[{}]",
                              errorRecordCount, parsed, loaded);
@@ -142,14 +142,14 @@ public class ProcessQueue implements Runnable
           if (loaded == stage.getRowCount())
           {
             // successfully loaded everything
-            LOGGER.info("COPY command successfully finished:"
+            LOGGER.debug("COPY command successfully finished:"
                 + " stage={},"
                 + " name={}", remoteStage, stage.getId());
             listener.addErrorCount(0);
           }
           else
           {
-            LOGGER.info("Found errors in COPY command:"
+            LOGGER.debug("Found errors in COPY command:"
                 + " stage={},"
                 + " name={}", remoteStage, stage.getId());
             if (listener.needErrors())
@@ -185,7 +185,7 @@ public class ProcessQueue implements Runnable
                   dataError = loadError.getException();
                 }
               }
-              LOGGER.info("errorCount: {}", errorCount);
+              LOGGER.debug("errorCount: {}", errorCount);
 
               listener.addErrorCount(errorCount);
               if (listener.throwOnError()) {

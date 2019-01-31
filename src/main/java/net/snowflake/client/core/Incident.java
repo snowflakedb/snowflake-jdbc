@@ -137,7 +137,7 @@ public class Incident extends Event
     }
     catch(IOException exc)
     {
-      logger.warn("Incident registration failed, could not compress"
+      logger.debug("Incident registration failed, could not compress"
               + " payload. Exception: {}", exc.getMessage());
     }
 

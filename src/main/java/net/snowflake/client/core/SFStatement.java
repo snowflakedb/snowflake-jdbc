@@ -407,7 +407,7 @@ public class SFStatement
         }
         catch (BindException ex)
         {
-          logger.warn("Exception encountered trying to upload binds to stage. Attaching binds in payload instead. ", ex);
+          logger.debug("Exception encountered trying to upload binds to stage. Attaching binds in payload instead. ", ex);
           TelemetryData errorLog = TelemetryUtil.buildJobData(this.requestId, ex.type.field, 1);
           this.session.getTelemetryClient().tryAddLogToBatch(errorLog);
           IncidentUtil.generateIncident(session, "Failed to upload binds to stage",
@@ -649,7 +649,7 @@ public class SFStatement
 
     session.injectedDelay();
 
-    logger.info("execute: {}", sql);
+    logger.debug("execute: {}", sql);
 
     String trimmedSql = sql.trim();
 
@@ -686,7 +686,7 @@ public class SFStatement
 
       logger.debug("Number of cols: {}",
                                resultSet.getMetaData().getColumnCount());
-      logger.info("Completed transferring data");
+      logger.debug("Completed transferring data");
       return resultSet;
     }
     catch (SQLException ex)
@@ -724,7 +724,7 @@ public class SFStatement
     }
     catch (IOException ex)
     {
-      logger.warn("Telemetry client failed to send batch metrics.");
+      logger.debug("Telemetry client failed to send batch metrics.");
     }
 
     isFileTransfer = false;

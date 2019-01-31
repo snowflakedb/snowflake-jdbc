@@ -782,7 +782,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
             }
             catch (IOException ex)
             {
-              logger.warn("failed to clean up temp file: {}", ex);
+              logger.debug("failed to clean up temp file: {}", ex);
             }
           }
           if (inputStream == null)
@@ -1213,7 +1213,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
     }
     else if (localFilePath.isEmpty())
     {
-      logger.warn(
+      logger.debug(
           "fail to parse local file path from command: {}", command);
     }
     else
@@ -2021,7 +2021,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
         }
         catch(Exception ex)
         {
-          logger.warn("Listing objects for filtering encountered exception: {}",
+          logger.debug("Listing objects for filtering encountered exception: {}",
               ex.getMessage());
 
           storageClient.handleStorageException(ex, ++retryCount, "listObjects", connection, command);
@@ -2088,7 +2088,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
             if (spEx.isServiceException404())
             {
               // log it
-              logger.warn("File returned from listing but found missing {} when getting its" +
+              logger.debug("File returned from listing but found missing {} when getting its" +
                           " metadata. Location={}, key={}",
                           obj.getLocation(), obj.getKey());
 
@@ -2166,7 +2166,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
                 }
                 catch (IOException ex)
                 {
-                  logger.warn("failed to clean up temp file: {}", ex);
+                  logger.debug("failed to clean up temp file: {}", ex);
                 }
               }
             }
@@ -2280,7 +2280,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
                 }
                 catch (IOException ex)
                 {
-                  logger.warn("failed to clean up temp file: {}", ex);
+                  logger.debug("failed to clean up temp file: {}", ex);
                 }
               }
             }
@@ -2316,7 +2316,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
             }
             catch (IOException ex)
             {
-              logger.warn("failed to clean up temp file: {}", ex);
+              logger.debug("failed to clean up temp file: {}", ex);
             }
             IOUtils.closeQuietly(stageFileStream);
         }
@@ -2393,14 +2393,14 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
 
           if (!file.exists())
           {
-            logger.warn("File doesn't exist: {}", sourceFile);
+            logger.debug("File doesn't exist: {}", sourceFile);
 
             throw new SnowflakeSQLException(SqlState.DATA_EXCEPTION,
                 ErrorCode.FILE_NOT_FOUND.getMessageCode(),
                 sourceFile);
           } else if (file.isDirectory())
           {
-            logger.warn("Not a file, but directory: {}", sourceFile);
+            logger.debug("Not a file, but directory: {}", sourceFile);
 
             throw new SnowflakeSQLException(SqlState.DATA_EXCEPTION,
                 ErrorCode.FILE_IS_DIRECTORY.getMessageCode(),

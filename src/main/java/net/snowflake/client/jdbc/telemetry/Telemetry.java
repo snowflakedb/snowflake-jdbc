@@ -188,7 +188,7 @@ public class Telemetry
     }
     catch (IOException ex)
     {
-      logger.warn("Exception encountered while sending metrics to telemetry endpoint.", ex);
+      logger.debug("Exception encountered while sending metrics to telemetry endpoint.", ex);
     }
   }
 

@@ -227,7 +227,7 @@ public class HttpUtil
     {
       // for boomi clound since they did not allowed System.getenv
       // enable ocsp cache server by default
-      logger.info("Failed to get environment variable " +
+      logger.debug("Failed to get environment variable " +
                       "SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED. Skip");
     }
     if (flag == null)

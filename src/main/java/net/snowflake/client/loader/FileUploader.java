@@ -68,7 +68,7 @@ public class FileUploader implements Runnable {
         }
 
         if (attempt > 0) {
-          LOGGER.info("Will retry PUT after {} seconds",
+          LOGGER.debug("Will retry PUT after {} seconds",
                                  Math.pow(2, attempt));
           Thread.sleep(1000 * ((int)Math.pow(2, attempt)));
         }
@@ -121,9 +121,9 @@ public class FileUploader implements Runnable {
 
         Statement statement = _loader.getPutConnection().createStatement();
         try {
-          LOGGER.info("Put Statement start: {}", putStatement);
+          LOGGER.debug("Put Statement start: {}", putStatement);
           statement.execute(putStatement);
-          LOGGER.info("Put Statement end: {}", putStatement);
+          LOGGER.debug("Put Statement end: {}", putStatement);
           ResultSet putResult = statement.getResultSet();
 
           putResult.next();
@@ -145,7 +145,7 @@ public class FileUploader implements Runnable {
             // The log level should be WARNING for a single upload failure.
             if (message.startsWith("Simulated upload failure"))
             {
-              LOGGER.info("Failed to upload a file:"
+              LOGGER.debug("Failed to upload a file:"
                       + " status={},"
                       + " filename={},"
                       + " message={}",
@@ -153,7 +153,7 @@ public class FileUploader implements Runnable {
             }
             else
             {
-              LOGGER.warn("Failed to upload a file:"
+              LOGGER.debug("Failed to upload a file:"
                       + " status={},"
                       + " filename={},"
                       + " message={}",
