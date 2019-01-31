@@ -1,11 +1,5 @@
 /*
- * Copyright (c) 2012-2018 Snowflake Computing Inc. All rights reserved.
- */
-
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+ * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
  */
 
 package net.snowflake.client.jdbc;
@@ -40,6 +34,7 @@ import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -49,10 +44,6 @@ import java.util.TimeZone;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 
-/**
- *
- * @author jhuang
- */
 final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
                                          implements PreparedStatement
 {
@@ -77,6 +68,8 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
    */
   private Map<String, ParameterBindingDTO> batchParameterBindings =
       new HashMap<>();
+
+  private Map<String, Boolean> wasPrevValueNull = new HashMap<>();
 
   /**
    * Counter for batch size if we are executing a statement with array bind
@@ -517,11 +510,12 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
 
         List<String> values;
 
+        Object newValue = binding.getValue().getValue();
         // create binding value and type for the first time
         if (bindingValueAndType == null)
         {
           // create the value list
-          values = new ArrayList<String>();
+          values = new ArrayList<>();
 
           bindingValueAndType = new ParameterBindingDTO(
               binding.getValue().getType(), values);
@@ -529,12 +523,28 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
           // put the new map into the batch
           batchParameterBindings.put(binding.getKey(),
               bindingValueAndType);
+
+          wasPrevValueNull.put(
+              binding.getKey(), binding.getValue().getValue() == null);
         }
         else
         {
           // make sure type matches except for null values
           String prevType = bindingValueAndType.getType();
           String newType = binding.getValue().getType();
+
+          if (wasPrevValueNull.get(binding.getKey()) && newValue != null)
+          {
+            // if previous value is null and the current value is not null
+            // override the data type.
+            bindingValueAndType = batchParameterBindings.remove(
+                binding.getKey());
+            bindingValueAndType.setType(newType);
+            batchParameterBindings.put(binding.getKey(),
+                bindingValueAndType);
+            prevType = newType;
+            wasPrevValueNull.put(binding.getKey(), false);
+          }
 
           // if previous type is null, replace it with new type
           if (SnowflakeType.ANY.name().equalsIgnoreCase(prevType) &&
@@ -545,10 +555,17 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
           else if (binding.getValue().getValue() != null &&
               !prevType.equalsIgnoreCase(newType))
           {
+            String row = "Unknown";
+            if (bindingValueAndType.getValue() instanceof Collection)
+            {
+              values = (List<String>)bindingValueAndType.getValue();
+              row = Integer.toString(values.size() + 1);
+            }
             throw new SnowflakeSQLException(SqlState.FEATURE_NOT_SUPPORTED,
                 ErrorCode.ARRAY_BIND_MIXED_TYPES_NOT_SUPPORTED.getMessageCode(),
                 SnowflakeType.getJavaType(SnowflakeType.fromString(prevType)).name(),
-                SnowflakeType.getJavaType(SnowflakeType.fromString(newType)).name());
+                SnowflakeType.getJavaType(SnowflakeType.fromString(newType)).name(),
+                binding.getKey(), row);
           }
 
           // found the existing map so just get the value list
@@ -556,7 +573,7 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
         }
 
         // add the value to the list of values in batch binding map
-        values.add((String)binding.getValue().getValue());
+        values.add((String)newValue);
       }
       batchSize++;
     }
