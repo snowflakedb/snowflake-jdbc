@@ -749,6 +749,11 @@
                   </argLine>
                 </configuration>
               </execution>
+              <execution>
+                <goals>
+                  <goal>verify</goal>
+                </goals>
+              </execution>
             </executions>
           </plugin>
         </plugins>
