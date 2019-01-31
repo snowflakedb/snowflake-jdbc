@@ -132,7 +132,7 @@ public class RestRequest
         // to the injected socket timeout value
         if (injectSocketTimeout != 0 && retryCount == 0)
         {
-          logger.info("Injecting socket timeout by setting " +
+          logger.debug("Injecting socket timeout by setting " +
               "socket timeout to {} millisecond ", injectSocketTimeout);
           httpRequest.setConfig(
               HttpUtil.getDefaultRequestConfigWithSocketTimeout(
@@ -191,7 +191,7 @@ public class RestRequest
         }
         StringWriter sw = new StringWriter();
         savedEx.printStackTrace(new PrintWriter(sw));
-        logger.warn("Exception encountered for: {}, {}, {}",
+        logger.debug("Exception encountered for: {}, {}, {}",
             httpRequest.toString(), ex.getLocalizedMessage(), sw.toString());
       }
       finally
@@ -242,14 +242,14 @@ public class RestRequest
       {
         if (response != null)
         {
-          logger.warn(
+          logger.debug(
               "HTTP response not ok: status code={}, request={}",
               response.getStatusLine().getStatusCode(),
               httpRequest);
         }
         else
         {
-          logger.warn("Null response for request={}", httpRequest);
+          logger.debug("Null response for request={}", httpRequest);
         }
 
         // get the elapsed time for the last request
@@ -262,7 +262,7 @@ public class RestRequest
         // check canceling flag
         if (canceling != null && canceling.get())
         {
-          logger.info(
+          logger.debug(
               "Stop retrying since canceling is requested");
           breakRetryReason = "canceling is requested";
           break;

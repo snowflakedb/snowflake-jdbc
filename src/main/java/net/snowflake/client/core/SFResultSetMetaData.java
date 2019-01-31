@@ -269,7 +269,7 @@ public class SFResultSetMetaData
       }
     } catch (SFException e)
     {
-      logger.warn("Failed to calculate the display size. Use default one.");
+      logger.debug("Failed to calculate the display size. Use default one.");
     }
   }
 

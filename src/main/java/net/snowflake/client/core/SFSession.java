@@ -1082,7 +1082,7 @@ public class SFSession
       }
       catch (IOException ex)
       {
-        logger.warn("Telemetry client failed to submit metrics on close.");
+        logger.debug("Telemetry client failed to submit metrics on close.");
       }
     }
   }
@@ -1209,7 +1209,7 @@ public class SFSession
     }
     catch(SFException | SQLException ex)
     {
-      logger.warn("Failed to run a command: {}, err={}", sql, ex);
+      logger.debug("Failed to run a command: {}, err={}", sql, ex);
     }
     return null;
   }

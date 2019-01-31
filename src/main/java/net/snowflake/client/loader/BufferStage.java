@@ -142,7 +142,7 @@ public class BufferStage
       {
         fName += StreamLoader.FILE_SUFFIX;
       }
-      LOGGER.info("openFile: {}", fName);
+      LOGGER.debug("openFile: {}", fName);
 
       OutputStream fileStream = new FileOutputStream(fName);
       if (_loader._compressDataBeforePut)
@@ -195,7 +195,7 @@ public class BufferStage
     }
 
     if(_currentSize >= this._csvFileSize) {
-      LOGGER.info("name: {}, currentSize: {}, Threshold: {},"
+      LOGGER.debug("name: {}, currentSize: {}, Threshold: {},"
                       + " fileCount: {}, fileBucketSize: {}",
               _file.getAbsolutePath(), _currentSize, this._csvFileSize, _fileCount,
               this._csvFileBucketSize);

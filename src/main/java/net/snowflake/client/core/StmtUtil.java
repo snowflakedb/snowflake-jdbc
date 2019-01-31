@@ -472,7 +472,7 @@ public class StmtUtil
         }
         else
         {
-          logger.info("Will retry get result. Retry count: {}",
+          logger.debug("Will retry get result. Retry count: {}",
               retries);
 
           retries++;
@@ -530,7 +530,7 @@ public class StmtUtil
             }
             catch (InterruptedException ex)
             {
-              logger.warn("exception encountered while injecting pause");
+              logger.debug("exception encountered while injecting pause");
             }
           }
         }
