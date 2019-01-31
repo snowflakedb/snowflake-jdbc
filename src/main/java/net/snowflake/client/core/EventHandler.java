@@ -272,7 +272,7 @@ public class EventHandler extends Handler
 
     if (SnowflakeDriver.isDisableIncidents())
     {
-      logger.info("Incidents disabled by Snowflake, creation failed");
+      logger.debug("Incidents disabled by Snowflake, creation failed");
       return;
     }
 
@@ -292,13 +292,13 @@ public class EventHandler extends Handler
 
     if (incidentId == null)
     {
-      logger.warn("Unexpected incidentInfo format encountered");
+      logger.debug("Unexpected incidentInfo format encountered");
     }
 
     // Do we need to throttle based on the signature to this incident?
     if (needsToThrottle(signature))
     {
-      logger.info("Incident throttled, not reported");
+      logger.debug("Incident throttled, not reported");
       return;
     }
 

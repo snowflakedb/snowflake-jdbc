@@ -80,7 +80,7 @@ public class TelemetryService
     }
     catch(SecurityException e)
     {
-      logger.info("Failed to add shutdown hook for telemetry service");
+      logger.debug("Failed to add shutdown hook for telemetry service");
     }
   }
 
@@ -288,7 +288,7 @@ public class TelemetryService
         if (!ENABLED_DEPLOYMENT.contains(instance.serverDeployment.name))
         {
           // skip the disabled deployment
-          logger.info("skip the disabled deployment: "
+          logger.debug("skip the disabled deployment: "
               + instance.serverDeployment.name);
           return;
         }
@@ -305,7 +305,7 @@ public class TelemetryService
         }
         else
         {
-          logger.warn("telemetry server request error: " + response);
+          logger.debug("telemetry server request error: " + response);
           success = false;
         }
 
@@ -313,28 +313,28 @@ public class TelemetryService
       }
       catch (SnowflakeSQLException e)
       {
-        logger.warn(
+        logger.debug(
             "Telemetry request failed, SnowflakeSQLException " +
                 "response: {}, exception: {}", response, e.getMessage());
         success = false;
       }
       catch (IOException e)
       {
-        logger.warn(
+        logger.debug(
             "Telemetry request failed, IOException" +
                 "response: {}, exception: {}", response, e.getMessage());
         success = false;
       }
       catch (ParseException pe)
       {
-        logger.warn(
+        logger.debug(
             "Telemetry request failed, ParseException" +
                 "response: {}, exception: {}", response, pe.getMessage());
         success = false;
       }
       finally
       {
-        logger.info("Telemetry request success={} " +
+        logger.debug("Telemetry request success={} " +
             "and clean the current queue", success);
         // clean the current queue
         instance.queue.clear();

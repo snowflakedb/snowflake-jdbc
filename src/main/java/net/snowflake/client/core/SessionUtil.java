@@ -1180,7 +1180,7 @@ public class SessionUtil
         }
         catch (Throwable ex)
         {
-          logger.warn(
+          logger.debug(
               "failed to process snowflake.client.info property as JSON: "
                   + clientInfoJSONStr, ex);
         }
@@ -1310,7 +1310,7 @@ public class SessionUtil
       }
       else
       {
-        logger.warn("server version is null");
+        logger.debug("server version is null");
       }
 
       if (databaseVersion != null)
@@ -1332,7 +1332,7 @@ public class SessionUtil
         }
       }
       else
-        logger.warn("database version is null");
+        logger.debug("database version is null");
 
 
       if (!jsonNode.path("data").path("newClientForUpgrade").isNull())

@@ -419,11 +419,11 @@ public class BindUploader implements Closeable
         {
           return; // success!
         }
-        logger.warn("PUT statement failed. The response had status %s.", status);
+        logger.debug("PUT statement failed. The response had status %s.", status);
       }
       catch (SFException | SQLException ex)
       {
-        logger.warn("Exception encountered during PUT operation. ", ex);
+        logger.debug("Exception encountered during PUT operation. ", ex);
       }
     }
 
@@ -490,7 +490,7 @@ public class BindUploader implements Closeable
       }
       catch (IOException ex)
       {
-        logger.warn("Exception encountered while trying to clean local directory. ", ex);
+        logger.debug("Exception encountered while trying to clean local directory. ", ex);
       }
       finally
       {

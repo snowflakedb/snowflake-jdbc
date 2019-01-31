@@ -383,12 +383,12 @@ public class StreamLoader implements Loader, Runnable
       {
         if (_startTransaction)
         {
-          LOGGER.info("Begin Transaction");
+          LOGGER.debug("Begin Transaction");
           _processConn.createStatement().execute("begin transaction");
         }
         else
         {
-          LOGGER.info("No Transaction started");
+          LOGGER.debug("No Transaction started");
         }
       }
       catch (SQLException ex)
@@ -406,7 +406,7 @@ public class StreamLoader implements Loader, Runnable
       {
         if (_before != null)
         {
-          LOGGER.info("Running Execute Before SQL");
+          LOGGER.debug("Running Execute Before SQL");
           _processConn.createStatement().execute(_before);
         }
       }
@@ -430,7 +430,7 @@ public class StreamLoader implements Loader, Runnable
       }
     }
     setPropertyBySystemProperty();
-    LOGGER.info("Database Name: {}, Schema Name: {}, Table Name: {}, " +
+    LOGGER.debug("Database Name: {}, Schema Name: {}, Table Name: {}, " +
             "Remote Stage: {}, Columns: {}, Keys: {}, Operation: {}, " +
             "Start Transaction: {}, OneBatch: {}, Truncate Table: {}, " +
             "Execute Before: {}, Execute After: {}, Batch Row Size: {}, " +
@@ -456,7 +456,7 @@ public class StreamLoader implements Loader, Runnable
     synchronized (this)
     {
       // Abort once, keep first error.
-      LOGGER.warn("Exception received. Aborting...", t);
+      LOGGER.debug("Exception received. Aborting...", t);
 
       if (_aborted.getAndSet(true))
       {
@@ -490,7 +490,7 @@ public class StreamLoader implements Loader, Runnable
     {
       terminate();
 
-      LOGGER.warn("Rollback");
+      LOGGER.debug("Rollback");
       this._processConn.createStatement().execute("rollback");
     }
     catch (SQLException ex)
@@ -524,7 +524,7 @@ public class StreamLoader implements Loader, Runnable
     {
       if (!_active.get())
       {
-        LOGGER.warn("Inactive loader. Row ignored");
+        LOGGER.debug("Inactive loader. Row ignored");
         return;
       }
 
@@ -742,12 +742,12 @@ public class StreamLoader implements Loader, Runnable
       {
         if (_after != null)
         {
-          LOGGER.info("Running Execute After SQL");
+          LOGGER.debug("Running Execute After SQL");
           _processConn.createStatement().execute(_after);
         }
         // Loader sucessfully completed. Commit and return.
         _processConn.createStatement().execute("commit");
-        LOGGER.info("Committed");
+        LOGGER.debug("Committed");
       }
       catch (SQLException ex)
       {
@@ -757,9 +757,9 @@ public class StreamLoader implements Loader, Runnable
         }
         catch (SQLException ex0)
         {
-          LOGGER.warn("Failed to rollback");
+          LOGGER.debug("Failed to rollback");
         }
-        LOGGER.warn(String.format("Execute After SQL failed to run: %s", _after),
+        LOGGER.debug(String.format("Execute After SQL failed to run: %s", _after),
             ex);
         throw new Loader.ConnectionError(Utils.getCause(ex));
       }
@@ -769,7 +769,7 @@ public class StreamLoader implements Loader, Runnable
   @Override
   public void close()
   {
-    LOGGER.info("Close Loader");
+    LOGGER.debug("Close Loader");
     try
     {
       this._processConn.close();
@@ -935,10 +935,10 @@ public class StreamLoader implements Loader, Runnable
   void throttleUp()
   {
     int open = this._throttleCounter.incrementAndGet();
-    LOGGER.info("PUT Throttle Up: {}", open);
+    LOGGER.debug("PUT Throttle Up: {}", open);
     if (open > 8)
     {
-      LOGGER.info("Will retry scheduling file for upload after {} seconds",
+      LOGGER.debug("Will retry scheduling file for upload after {} seconds",
           (Math.pow(2, open - 7)));
       try
       {
@@ -954,10 +954,10 @@ public class StreamLoader implements Loader, Runnable
   void throttleDown()
   {
     int throttleLevel = this._throttleCounter.decrementAndGet();
-    LOGGER.info("PUT Throttle Down: {}", throttleLevel);
+    LOGGER.debug("PUT Throttle Down: {}", throttleLevel);
     if (throttleLevel < 0)
     {
-      LOGGER.warn("Unbalanced throttle");
+      LOGGER.debug("Unbalanced throttle");
       _throttleCounter.set(0);
     }
 

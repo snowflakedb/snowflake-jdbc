@@ -510,7 +510,7 @@ public class ResultUtil
     // always make sure memoryLimit <= 80% of the maximum
     memoryLimit = Math.min(memoryLimit, maxMemoryToUse);
 
-    logger.info("Set allowed memory usage to {} bytes", memoryLimit);
+    logger.debug("Set allowed memory usage to {} bytes", memoryLimit);
     return memoryLimit;
   }
 
