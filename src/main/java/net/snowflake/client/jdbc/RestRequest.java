@@ -20,6 +20,8 @@ import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -187,9 +189,10 @@ public class RestRequest
           logger.error("HTTP request took longer than 5 min: {} sec",
               (System.currentTimeMillis() - startTimePerRequest) / 1000);
         }
-
-        logger.warn("Exception encountered for: {}, {}",
-            httpRequest.toString(), ex);
+        StringWriter sw = new StringWriter();
+        savedEx.printStackTrace(new PrintWriter(sw));
+        logger.warn("Exception encountered for: {}, {}, {}",
+            httpRequest.toString(), ex.getLocalizedMessage(), sw.toString());
       }
       finally
       {
@@ -282,28 +285,32 @@ public class RestRequest
                     "Elapsed={}(ms), timeout={}(ms)",
             elapsedMilliForTransientIssues, retryTimeoutInMilliseconds);
             breakRetryReason = "retry timeout";
-            // rethrow the timeout exception
-            if (response == null && savedEx != null)
+            if (telemetryOn)
             {
-              if (telemetryOn)
+              TelemetryService.getInstance().logHttpRequestError(httpRequest,
+                  injectSocketTimeout,
+                  canceling,
+                  withoutCookies,
+                  includeRetryParameters,
+                  includeRequestGuid,
+                  response,
+                  savedEx,
+                  breakRetryReason,
+                  retryTimeout,
+                  retryCount,
+                  SqlState.IO_ERROR,
+                  ErrorCode.NETWORK_ERROR.getMessageCode()
+              );
+              if (savedEx != null)
               {
-                TelemetryService.getInstance().logHttpRequestError(httpRequest,
-                    injectSocketTimeout,
-                    canceling,
-                    withoutCookies,
-                    includeRetryParameters,
-                    includeRequestGuid,
-                    response,
-                    breakRetryReason,
-                    retryTimeout,
-                    retryCount,
-                    SqlState.IO_ERROR,
-                    ErrorCode.NETWORK_ERROR.getMessageCode()
-                    );
                 // try to upload events in the queue
                 // before throwing the exception
                 TelemetryService.getInstance().flush();
               }
+            }
+            // rethrow the timeout exception
+            if (response == null && savedEx != null)
+            {
               throw new SnowflakeSQLException(SqlState.IO_ERROR,
                   ErrorCode.NETWORK_ERROR.getMessageCode(),
                   "Exception encountered for HTTP request: " +
@@ -363,7 +370,7 @@ public class RestRequest
           includeRetryParameters,
           includeRequestGuid,
           response,
-          breakRetryReason,
+          savedEx, breakRetryReason,
           retryTimeout,
           retryCount,
           null,
