@@ -14,6 +14,8 @@ import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.entity.StringEntity;
 
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashSet;
@@ -395,24 +397,29 @@ public class TelemetryService
    * log error http response to telemetry
    */
   public void logHttpRequestError(HttpRequestBase request,
-                                         int injectSocketTimeout,
-                                         AtomicBoolean canceling,
-                                         boolean withoutCookies,
-                                         boolean includeRetryParameters,
-                                         boolean includeRequestGuid,
-                                         CloseableHttpResponse response,
-                                         String breakRetryReason,
-                                         long retryTimeout,
-                                         int retryCount,
-                                         String sqlState,
-                                         int errorCode)
+                                  int injectSocketTimeout,
+                                  AtomicBoolean canceling,
+                                  boolean withoutCookies,
+                                  boolean includeRetryParameters,
+                                  boolean includeRequestGuid,
+                                  CloseableHttpResponse response,
+                                  final Exception savedEx,
+                                  String breakRetryReason,
+                                  long retryTimeout,
+                                  int retryCount,
+                                  String sqlState,
+                                  int errorCode)
   {
     if(enabled)
     {
       TelemetryEvent.LogBuilder logBuilder = new TelemetryEvent.LogBuilder();
       String name;
       JSONObject value = new JSONObject();
-      if(response == null)
+      if (savedEx != null)
+      {
+        name = savedEx.getLocalizedMessage();
+      }
+      else if (response == null)
       {
         name = "null http response";
       }
@@ -434,6 +441,13 @@ public class TelemetryService
       value.put("retryCount", retryCount);
       value.put("sqlState", sqlState);
       value.put("errorCode", errorCode);
+      if (savedEx != null)
+      {
+        value.put("exceptionMessage", savedEx.getLocalizedMessage());
+        StringWriter sw = new StringWriter();
+        savedEx.printStackTrace(new PrintWriter(sw));
+        value.put("exceptionStackTrace", sw.toString());
+      }
       TelemetryEvent log = logBuilder
           .withName(name)
           .withValue(value)
