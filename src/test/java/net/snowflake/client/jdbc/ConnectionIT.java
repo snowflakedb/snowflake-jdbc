@@ -303,13 +303,16 @@ public class ConnectionIT extends BaseJDBCTest
       assertThat("Login time out not taking effective",
           conEnd - connStart < 60000);
 
-      assertThat("telemetry log created",
+      if (TelemetryService.getInstance().isDeploymentEnabled())
+      {
+        assertThat("telemetry log created",
           TelemetryService.getInstance().size() - queueSize == 1);
-      TelemetryEvent te = TelemetryService.getInstance().getEvent(queueSize);
-      JSONObject values =  (JSONObject)te.get("Value");
-      assertThat("Communication error",
+        TelemetryEvent te = TelemetryService.getInstance().getEvent(queueSize);
+        JSONObject values =  (JSONObject)te.get("Value");
+        assertThat("Communication error",
           values.get("errorCode").toString().compareTo(
               ErrorCode.NETWORK_ERROR.getMessageCode().toString()) == 0);
+      }
       return;
     }
     fail();
@@ -333,7 +336,7 @@ public class ConnectionIT extends BaseJDBCTest
       String host = params.get("host");
       String[] hostItems = host.split("\\.");
       String wrongUri = params.get("uri").replace(
-          "."+ hostItems[1]+".", ".wronghostname.");
+          "."+ hostItems[hostItems.length-2]+".", ".wronghostname.");
 
       DriverManager.getConnection(wrongUri, properties);
     }
@@ -345,13 +348,17 @@ public class ConnectionIT extends BaseJDBCTest
       conEnd = System.currentTimeMillis();
       assertThat("Login time out not taking effective",
           conEnd - connStart < 60000);
-      assertThat("telemetry log created",
+
+      if (TelemetryService.getInstance().isDeploymentEnabled())
+      {
+        assertThat("telemetry log created",
           TelemetryService.getInstance().size() - queueSize == 1);
-      TelemetryEvent te = TelemetryService.getInstance().getEvent(queueSize);
-      JSONObject values =  (JSONObject)te.get("Value");
-      assertThat("Communication error",
+        TelemetryEvent te = TelemetryService.getInstance().getEvent(queueSize);
+        JSONObject values =  (JSONObject)te.get("Value");
+        assertThat("Communication error",
           values.get("errorCode").toString().compareTo(
               ErrorCode.NETWORK_ERROR.getMessageCode().toString()) == 0);
+      }
       return;
     }
     fail();

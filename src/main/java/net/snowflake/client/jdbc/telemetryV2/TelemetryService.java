@@ -162,7 +162,6 @@ public class TelemetryService
   private void configureDeployment(final String url, final String account,
                                    final String port)
   {
-    TelemetryService instance = getInstance();
     // default value
     TELEMETRY_SERVER_DEPLOYMENT deployment = TELEMETRY_SERVER_DEPLOYMENT.PROD;
     if (url != null)
@@ -186,7 +185,15 @@ public class TelemetryService
         deployment = TELEMETRY_SERVER_DEPLOYMENT.PREPROD2;
       }
     }
-    instance.setDeployment(deployment);
+    this.setDeployment(deployment);
+  }
+
+  /**
+   * whether the telemetry service is enabled for current deployment
+   */
+  public boolean isDeploymentEnabled()
+  {
+    return ENABLED_DEPLOYMENT.contains(this.serverDeployment.name);
   }
 
   public TelemetryEvent getEvent(int i)
@@ -285,7 +292,7 @@ public class TelemetryService
       boolean success = true;
       try
       {
-        if (!ENABLED_DEPLOYMENT.contains(instance.serverDeployment.name))
+        if (!instance.isDeploymentEnabled())
         {
           // skip the disabled deployment
           logger.debug("skip the disabled deployment: "
