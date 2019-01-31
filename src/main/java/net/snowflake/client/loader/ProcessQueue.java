@@ -6,7 +6,9 @@ package net.snowflake.client.loader;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.LinkedList;
 import java.util.List;
 
 import net.snowflake.client.log.SFLogger;
@@ -101,11 +103,27 @@ public class ProcessQueue implements Runnable
           // Create temp table to load data (may has a subset of columns)
           LOGGER.debug("Creating Temporary Table: name={}", stage.getId());
           currentState = State.CREATE_TEMP_TABLE;
+          List<String> allColumns = getAllColumns(conn);
+
+          // use like to make sure columns in temporary table
+          // contains properties (e.g., NOT NULL) from the source table
           currentCommand = "CREATE TEMPORARY TABLE \""
-                  + stage.getId() + "\" AS SELECT "
-                  + _loader.getColumnsAsString()
-                  + " FROM " + _loader.getFullTableName() + " WHERE FALSE";
+                  + stage.getId() + "\" LIKE "
+                  + _loader.getFullTableName();
+          String selectedColumns = _loader.getColumnsAsString();
           conn.createStatement().execute(currentCommand);
+
+          // the temp table can contain only a subset of columns
+          // so remove unselected columns
+          for (String col : allColumns)
+          {
+            if (!selectedColumns.contains(col))
+            {
+              String dropUnSelectedColumn = "alter table \""
+                  + stage.getId() + "\" drop column \"" + col + "\"";
+              conn.createStatement().execute(dropUnSelectedColumn);
+            }
+          }
 
           // Load data there
           LOGGER.debug("COPY data in the stage to table:"
@@ -363,6 +381,21 @@ public class ProcessQueue implements Runnable
         }
       }
     }
+  }
+
+  private List<String> getAllColumns(final Connection conn) throws SQLException
+  {
+    List<String> columns = new LinkedList<>();
+    ResultSet result = conn.createStatement().executeQuery("show " +
+        "columns" +
+        " in "
+        + _loader.getFullTableName());
+    while(result.next())
+    {
+      String col = result.getString("column_name");
+      columns.add(col);
+    }
+    return columns;
   }
 
   private String getOn(List<String> keys, String L, String R)
