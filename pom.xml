@@ -739,6 +739,9 @@
                   <goal>integration-test</goal>
                 </goals>
                 <configuration>
+                  <excludes>
+                    <exclude>**/DellBoomiCloudIT.java</exclude>
+                  </excludes>
                   <argLine>
                     @{argLine} -Djava.util.logging.config.file=travis_it_logging.properties
                   </argLine>
