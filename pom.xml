@@ -722,6 +722,39 @@
       </build>
     </profile>
     <profile>
+      <id>qa1IT</id>
+      <activation>
+        <property>
+          <name>qa1IT</name>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-failsafe-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>ClientTelemetryIT</id>
+                <goals>
+                  <goal>integration-test</goal>
+                </goals>
+                <configuration>
+                  <includes>
+                    <include>**/ConnectionIT.java</include>
+                  </includes>
+                  <argLine>
+                    @{argLine}
+                    -Djava.util.logging.config.file=jenkins_it_logging.properties
+                  </argLine>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <profile>
       <id>travisIT</id>
       <activation>
         <property>
