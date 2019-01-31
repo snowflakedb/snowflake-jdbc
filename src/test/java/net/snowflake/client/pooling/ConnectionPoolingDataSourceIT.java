@@ -33,7 +33,7 @@ public class ConnectionPoolingDataSourceIT extends AbstractDriverIT
         new SnowflakeConnectionPoolDataSource();
 
     poolDataSource.setUrl(properties.get("uri"));
-    poolDataSource.setSsl(Boolean.parseBoolean(properties.get("ssl")));
+    poolDataSource.setPortNumber(Integer.parseInt(properties.get("port")));
     poolDataSource.setAccount(properties.get("account"));
     poolDataSource.setUser(properties.get("user"));
     poolDataSource.setPassword(properties.get("password"));
