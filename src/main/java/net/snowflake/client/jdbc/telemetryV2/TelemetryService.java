@@ -2,16 +2,16 @@ package net.snowflake.client.jdbc.telemetryV2;
 
 import net.minidev.json.JSONArray;
 import net.minidev.json.JSONObject;
-import net.minidev.json.parser.JSONParser;
-import net.minidev.json.parser.ParseException;
-import net.snowflake.client.core.HttpUtil;
-import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.util.EntityUtils;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -288,7 +288,7 @@ public class TelemetryService
     }
 
     private void flushQueue(){
-      String response = null;
+      HttpResponse response = null;
       boolean success = true;
       try
       {
@@ -299,14 +299,15 @@ public class TelemetryService
               + instance.serverDeployment.name);
           return;
         }
+        HttpClient httpClient = HttpClientBuilder.create().build();
         HttpPost post = new HttpPost(instance.serverDeployment.url);
         post.setEntity(new StringEntity(instance.logsToString(instance.queue)));
         post.setHeader("Content-type", "application/json");
         // start a request with retry timeout = 10 secs
-        response = HttpUtil.executeTelemetryRequest(post, 10);
-        JSONParser p = new JSONParser();
-        JSONObject obj = (JSONObject) p.parse(response);
-        if (obj != null && obj.getAsNumber("statusCode").intValue() == 200)
+        response = httpClient.execute(post);
+        int statusCode = response.getStatusLine().getStatusCode();
+
+        if (statusCode == 200)
         {
           logger.debug("telemetry server request success: " + response);
         }
@@ -316,27 +317,13 @@ public class TelemetryService
           success = false;
         }
 
-        logger.debug(response);
-      }
-      catch (SnowflakeSQLException e)
-      {
-        logger.debug(
-            "Telemetry request failed, SnowflakeSQLException " +
-                "response: {}, exception: {}", response, e.getMessage());
-        success = false;
+        logger.debug(EntityUtils.toString(response.getEntity(), "UTF-8"));
       }
       catch (IOException e)
       {
         logger.debug(
             "Telemetry request failed, IOException" +
                 "response: {}, exception: {}", response, e.getMessage());
-        success = false;
-      }
-      catch (ParseException pe)
-      {
-        logger.debug(
-            "Telemetry request failed, ParseException" +
-                "response: {}, exception: {}", response, pe.getMessage());
         success = false;
       }
       finally

@@ -64,7 +64,6 @@ public class RestRequest
    * @param includeRetryParameters whether to include retry parameters in retried
    *                               requests
    * @param includeRequestGuid whether to include request_guid parameter
-   * @param telemetryOn whether to send http response error to the telemetry service
    * @return HttpResponse Object get from server
    * @throws net.snowflake.client.jdbc.SnowflakeSQLException Request timeout Exception or Illegal State Exception i.e.
    *                                                         connection is already shutdown etc
@@ -77,8 +76,7 @@ public class RestRequest
       AtomicBoolean canceling,
       boolean withoutCookies,
       boolean includeRetryParameters,
-      boolean includeRequestGuid,
-      boolean telemetryOn) throws SnowflakeSQLException
+      boolean includeRequestGuid) throws SnowflakeSQLException
   {
     CloseableHttpResponse response = null;
 
@@ -285,9 +283,7 @@ public class RestRequest
                     "Elapsed={}(ms), timeout={}(ms)",
             elapsedMilliForTransientIssues, retryTimeoutInMilliseconds);
             breakRetryReason = "retry timeout";
-            if (telemetryOn)
-            {
-              TelemetryService.getInstance().logHttpRequestError(httpRequest,
+            TelemetryService.getInstance().logHttpRequestError(httpRequest,
                   injectSocketTimeout,
                   canceling,
                   withoutCookies,
@@ -300,13 +296,12 @@ public class RestRequest
                   retryCount,
                   SqlState.IO_ERROR,
                   ErrorCode.NETWORK_ERROR.getMessageCode()
-              );
-              if (savedEx != null)
-              {
-                // try to upload events in the queue
-                // before throwing the exception
-                TelemetryService.getInstance().flush();
-              }
+            );
+            if (savedEx != null)
+            {
+              // try to upload events in the queue
+              // before throwing the exception
+              TelemetryService.getInstance().flush();
             }
             // rethrow the timeout exception
             if (response == null && savedEx != null)
@@ -359,8 +354,7 @@ public class RestRequest
           response.getStatusLine().getStatusCode(),
           httpRequest);
     }
-    if (telemetryOn &&
-        (response == null ||
+    if ((response == null ||
             response.getStatusLine().getStatusCode() != 200))
     {
       TelemetryService.getInstance().logHttpRequestError(httpRequest,

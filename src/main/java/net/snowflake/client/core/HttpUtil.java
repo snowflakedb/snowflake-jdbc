@@ -327,7 +327,6 @@ public class HttpUtil
         canceling,
         true,
         false,
-        true,
         true);
   }
 
@@ -357,31 +356,6 @@ public class HttpUtil
   }
 
   /**
-   * Executes a HTTP request for Snowflake telemetry service.
-   *
-   * @param httpRequest HttpRequestBase
-   * @param retryTimeout retry timeout
-   * @return response
-   * @throws SnowflakeSQLException if Snowflake error occurs
-   * @throws IOException raises if a general IO error occurs
-   */
-  public static String executeTelemetryRequest(HttpRequestBase httpRequest,
-                                      int retryTimeout)
-      throws SnowflakeSQLException, IOException
-  {
-    return executeRequestInternal(
-        httpRequest,
-        retryTimeout,
-        0,
-        null,
-        false,
-        false,
-        false,
-        false);
-  }
-
-
-  /**
    * Executes a HTTP request for Snowflake.
    *
    * @param httpRequest HttpRequestBase
@@ -408,7 +382,6 @@ public class HttpUtil
         canceling,
         false,
         includeRetryParameters,
-        true,
         true);
   }
 
@@ -428,7 +401,6 @@ public class HttpUtil
    * @param includeRetryParameters whether to include retry parameters in
    *                               retried requests
    * @param includeRequestGuid whether to include request_guid
-   * @param telemetryOn whether to log http error to telemetry
    * @return response in String
    * @throws SnowflakeSQLException if Snowflake error occurs
    * @throws IOException raises if a general IO error occurs
@@ -439,8 +411,7 @@ public class HttpUtil
                                                AtomicBoolean canceling,
                                                boolean withoutCookies,
                                                boolean includeRetryParameters,
-                                               boolean includeRequestGuid,
-                                               boolean telemetryOn)
+                                               boolean includeRequestGuid)
       throws SnowflakeSQLException, IOException
   {
     if (logger.isDebugEnabled())
@@ -462,8 +433,7 @@ public class HttpUtil
           canceling,
           withoutCookies,
           includeRetryParameters,
-          includeRequestGuid,
-          telemetryOn);
+          includeRequestGuid);
 
       if (response == null ||
           response.getStatusLine().getStatusCode() != 200)
