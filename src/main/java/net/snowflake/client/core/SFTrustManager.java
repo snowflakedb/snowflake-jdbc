@@ -170,7 +170,7 @@ class SFTrustManager extends X509ExtendedTrustManager
   /**
    * SSD Support management
    */
-  private static SSDManager ssdManager;
+  static SSDManager ssdManager = new SSDManager();
 
   static
   {
@@ -192,7 +192,7 @@ class SFTrustManager extends X509ExtendedTrustManager
   /**
    * OCSP Response Cache server Retry URL pattern
    */
-  private static String SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN;
+  static String SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN;
 
   /**
    * Tolerable validity date range ratio.
@@ -316,7 +316,6 @@ class SFTrustManager extends X509ExtendedTrustManager
     this.exTrustManager = (X509ExtendedTrustManager)getTrustManager(
             KeyManagerFactory.getDefaultAlgorithm());
 
-    ssdManager = new SSDManager();
     if (ssdManager.getSSDSupportStatus())
     {
       SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN = SF_DEFAULT_OCSP_RESPONSE_RETRY_URL;
@@ -388,13 +387,13 @@ class SFTrustManager extends X509ExtendedTrustManager
           {
             SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN =
                     String.format("%s://%s:%d/retry/%s",
-                            url.getProtocol(), url.getHost(), url.getPort(), "%%s/%%s");
+                            url.getProtocol(), url.getHost(), url.getPort(), "%s/%s");
           }
           else
           {
             SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN =
                     String.format("%s://%s/retry/%s",
-                            url.getProtocol(), url.getHost(), "%%s/%%s");
+                            url.getProtocol(), url.getHost(), "%s/%s");
           }
         }
         else
@@ -402,13 +401,13 @@ class SFTrustManager extends X509ExtendedTrustManager
           if (url.getPort() > 0)
           {
             SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN =
-                    String.format("%s://%s:%d/retry/",
+                    String.format("%s://%s:%d/retry",
                             url.getProtocol(), url.getHost(), url.getPort());
           }
           else
           {
             SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN =
-                    String.format("%s://%s/retry/",
+                    String.format("%s://%s/retry",
                             url.getProtocol(), url.getHost());
           }
         }
