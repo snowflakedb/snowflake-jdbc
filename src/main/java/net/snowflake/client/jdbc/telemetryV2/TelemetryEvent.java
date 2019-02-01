@@ -14,6 +14,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.TimeZone;
+import java.util.UUID;
 
 public class TelemetryEvent extends JSONObject
 {
@@ -190,6 +191,7 @@ public class TelemetryEvent extends JSONObject
 
     protected TelemetryEvent build()
     {
+      body.put("UUID", UUID.randomUUID().toString());
       body.put("Created_On", getUTCNow());
       this.putMap("Tags", tags);
       return body;
