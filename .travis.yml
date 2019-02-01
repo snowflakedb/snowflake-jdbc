@@ -1,43 +1,22 @@
 sudo: required
 language: java
-install: "/bin/true"
+install: "./scripts/install.sh"
 matrix:
   include:
   - os: linux
     jdk: oraclejdk8
     env:
     - JACOCO_COVERAGE=true
-    before_install:
-    - eval "${MATRIX_EVAL}"
-    - sudo apt-get update
-    - openssl aes-256-cbc -k "$super_secret_password" -in parameters.json.enc -out
-      parameters.json -d
-    - pyenv local 3.6
-    - curl -O https://bootstrap.pypa.io/get-pip.py
-    - python get-pip.py
-    - pip --version
-    - pip install -U virtualenv
-    - virtualenv env
-    - source env/bin/activate
-    script:
-    - "./scripts/run_travis.sh"
-    - bash <(curl -s https://codecov.io/bash)
   - os: linux
     jdk: oraclejdk9
-    before_install:
-    - eval "${MATRIX_EVAL}"
-    - sudo apt-get update
-    - openssl aes-256-cbc -k "$super_secret_password" -in parameters.json.enc -out
-      parameters.json -d
-    - pyenv local 3.6
-    - curl -O https://bootstrap.pypa.io/get-pip.py
-    - python get-pip.py
-    - pip --version
-    - pip install -U virtualenv
-    - virtualenv env
-    - source env/bin/activate
-    script:
-    - "./scripts/run_travis.sh"
+  - os: linux
+    jdk: oraclejdk9
+    env:
+    - SNOWFLAKE_AZURE=true
+script:
+  - "./scripts/run_travis.sh"
+after_success:
+  - bash <(curl -s https://codecov.io/bash)
 env:
   global:
   - secure: pPK8xlDKO5l/lGvSym81fVGyfoIBPvPeaUVMZRFqcgVhSO6XHCS0Ktn2t8Y6VgT1MN9njLS5ewQ3uDX/7iZ9a3t3iHFstU6FLAQTxdahn0WLi3T9Dfj7aOpC+JaTUr4eWHZZNHs6635OFfOXEw7XoMIJIZ5jjexuRwnUf+RJ7siN3qbeTozxFHY95VjJKNZZ4ga3GyXeuvpJTVlYJT2JfvJUpMPJQV6cjdVOhAn8LiusNXieKrURdTbemCYgO0+Fe9kUusMKfJPdMEfufcvKnE4jk4XC61J47QCBQl9CRtkGi2uCOepwOlIXXsR3nZtGP9SB/INDkpzlbpx2e2f2sBkFXuM74bbcLfrAAbdgjjhJTI5f0aD+/FC+mQ2AsA97nrlqltbEXsml/rS+vUvCn3N9mmFQuAHVPSx5LNzD0bOmAKNDElIqIrCNXvu/DR+CYvrwosKK+YHcmBmrl5ZlY/WT7Mm2FVENww4P7e8AJrVFQaOVA1rOyMu/9/Vc6NvHHQs3ha/zU6OBtR5v2g5qBxdrDaPh1H0O0N4U6cr3wNett8cT8CbmqRDxvqyl46697kgj3Xzf5V8BJnyiGb8qgJ89IBD6AqxTaFvMpkGhTTKRzYzYnZwsZJ66gMRmLCGIljeObaEx+FR9Kqodr4CCpmYCrI3LK0KWG7pIBdm47Y0=
