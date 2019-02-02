@@ -62,7 +62,7 @@ mvn_settings.xml
 deploy.sh
 *-maven-metadata.xml
 Dockerfile.build
-parameters.json
+parameters*.json
 snowflake-whitelist
 Golang
 ClientTelemetryFramework
