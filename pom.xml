@@ -779,6 +779,7 @@
                 <configuration>
                   <excludes>
                     <exclude>**/DellBoomiCloudIT.java</exclude>
+                    <exclude>**/ingest/*.java</exclude>
                   </excludes>
                   <argLine>
                     @{argLine} -Djava.util.logging.config.file=travis_it_logging.properties
