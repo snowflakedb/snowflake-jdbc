@@ -34,6 +34,7 @@ public class ConnectionPoolingDataSourceIT extends AbstractDriverIT
 
     poolDataSource.setUrl(properties.get("uri"));
     poolDataSource.setPortNumber(Integer.parseInt(properties.get("port")));
+    poolDataSource.setSsl("on".equals(properties.get("ssl")));
     poolDataSource.setAccount(properties.get("account"));
     poolDataSource.setUser(properties.get("user"));
     poolDataSource.setPassword(properties.get("password"));
