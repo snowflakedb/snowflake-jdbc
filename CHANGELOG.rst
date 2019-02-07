@@ -1,13 +1,14 @@
 **JDBC Driver 3.6.25**
-|SNOW-64564| Lazy init JDBC legacy logger
-|SNOW-63813|Explicitly allows all proxy data to be fed via the JDBC connection string
-|SNOW-64570|Failed to serialize ClientAuthnDTO in boomi cloud environment
+
+- \|SNOW-64564| Lazy init JDBC legacy logger
+- \|SNOW-63813| Explicitly allows all proxy data to be fed via the JDBC connection string
+- \|SNOW-64570| Failed to serialize ClientAuthnDTO in boomi cloud environment
 
 **JDBC Driver 3.6.24**
 
-- \| SNOW-63844 | Security vulnerability: com.fasterxml.jackson.core:jackson-databind >= 2.9.0, < 2.9.8
-- \| SNOW-62247 | Add enum REJECTED_RECORD in class LoadingError
-- \| SNOW-61650 | Support Dell boomi cloud
+- \|SNOW-63844| Security vulnerability: com.fasterxml.jackson.core:jackson-databind >= 2.9.0, < 2.9.8
+- \|SNOW-62247| Add enum REJECTED_RECORD in class LoadingError
+- \|SNOW-61650| Support Dell boomi cloud
 
 **JDBC Driver 3.6.23**
 
