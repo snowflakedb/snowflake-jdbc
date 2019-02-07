@@ -1617,8 +1617,18 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
 
             int columnSize = 0;
 
+            // The COLUMN_SIZE column specifies the column size for the given
+            // column. For numeric data, this is the maximum precision. For
+            // character data, this is the length in characters. For datetime
+            // datatypes, this is the length in characters of the String
+            // representation (assuming the maximum allowed precision of the
+            // fractional seconds component). For binary data, this is the
+            // length in bytes. For the ROWID datatype, this is the length in
+            // bytes. Null is returned for data types where the column size
+            // is not applicable.
             if (columnMetadata.getType() == Types.VARCHAR
-                || columnMetadata.getType() == Types.CHAR)
+                || columnMetadata.getType() == Types.CHAR
+                || columnMetadata.getType() == Types.BINARY)
             {
               columnSize = columnMetadata.getLength();
             }
