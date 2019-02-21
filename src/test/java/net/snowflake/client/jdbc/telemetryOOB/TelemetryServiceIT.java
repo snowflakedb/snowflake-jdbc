@@ -9,6 +9,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.sql.SQLException;
 import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -26,14 +27,14 @@ public class TelemetryServiceIT extends BaseJDBCTest
   public void setUp()
   {
     TelemetryService service = TelemetryService.getInstance();
-//    try
-//    {
-//      service.updateContext(getConnectionParameters());
-//    }
-//    catch (SQLException e)
-//    {
-//      e.printStackTrace();
-//    }
+    try
+    {
+      service.updateContext(getConnectionParameters());
+    }
+    catch (SQLException e)
+    {
+      e.printStackTrace();
+    }
     defaultState = service.isEnabled();
     defaultDeployment = service.getServerDeploymentName();
     service.enable();
@@ -148,29 +149,17 @@ public class TelemetryServiceIT extends BaseJDBCTest
 
   @Ignore
   @Test
-  public void testCreateMetric()
+  public void testCreateUrgentEvent()
   {
-    // this metric will be delivered to wavefront
+    // this log will be delivered to snowflake
     TelemetryService service = TelemetryService.getInstance();
-    TelemetryEvent.MetricBuilder mBuilder = new TelemetryEvent.MetricBuilder();
-    TelemetryEvent metric = mBuilder
-        .withName("ExampleMetricCount")
-        .withValue(1)
-        .withTag("domain", "test")
+    TelemetryEvent.LogBuilder logBuilder = new TelemetryEvent.LogBuilder();
+    TelemetryEvent log = logBuilder
+        .withName("UrgentLog")
+        .withValue("This is an example urgent log")
+        .withUrgent(true)
         .build();
-    assertThat("check metric name", metric.get("Name").equals("ExampleMetricCount"));
-    assertThat("check metric value", (int)metric.get("Value") == 1);
-    JSONArray tags = (JSONArray) metric.get("Tags");
-    for (int i=0;i<tags.size();i++)
-    {
-      JSONObject tag = (JSONObject) tags.get(i);
-      if (tag.getAsString("Name").compareTo("stage") == 0)
-      {
-        assertThat("check stage name",
-            tag.getAsString("Value").compareTo(defaultDeployment) == 0);
-      }
-    }
-    service.add(metric);
-    service.flush();
+    assertThat("check log value", log.get("Value").equals("This is an example urgent log"));
+    service.add(log);
   }
 }
