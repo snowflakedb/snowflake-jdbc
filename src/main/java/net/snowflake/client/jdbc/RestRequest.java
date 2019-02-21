@@ -50,6 +50,7 @@ public class RestRequest
 
   // retry at least once even if timeout limit has been reached
   static private int MIN_RETRY_COUNT = 1;
+  private static final int TriggerRetryTelemetryEvent = 3;
 
   /**
    * Execute an http request with retry logic.
@@ -109,7 +110,7 @@ public class RestRequest
     Exception savedEx = null;
 
     // label the reason to break retry
-    String breakRetryReason;
+    String breakRetryReason = "";
 
     // try request till we get a good response or retry timeout
     while (true)
@@ -283,7 +284,9 @@ public class RestRequest
                     "Elapsed={}(ms), timeout={}(ms)",
             elapsedMilliForTransientIssues, retryTimeoutInMilliseconds);
             breakRetryReason = "retry timeout";
-            TelemetryService.getInstance().logHttpRequestError(httpRequest,
+            TelemetryService.getInstance().logHttpRequestTelemetryEvent(
+                  "HttpRequestRetryTimeout",
+                  httpRequest,
                   injectSocketTimeout,
                   canceling,
                   withoutCookies,
@@ -335,10 +338,31 @@ public class RestRequest
           }
         }
 
+        retryCount++;
+
+        if (retryCount == TriggerRetryTelemetryEvent)
+        {
+          TelemetryService.getInstance().logHttpRequestTelemetryEvent(
+              String.format("HttpRequestRetry%dTimes",
+                            TriggerRetryTelemetryEvent),
+              httpRequest,
+              injectSocketTimeout,
+              canceling,
+              withoutCookies,
+              includeRetryParameters,
+              includeRequestGuid,
+              response,
+              savedEx,
+              breakRetryReason,
+              retryTimeout,
+              retryCount,
+              SqlState.IO_ERROR,
+              ErrorCode.NETWORK_ERROR.getMessageCode()
+          );
+        }
+
         // release connection before retry
         httpRequest.releaseConnection();
-
-        retryCount++;
       }
     }
 
@@ -357,7 +381,9 @@ public class RestRequest
     if ((response == null ||
             response.getStatusLine().getStatusCode() != 200))
     {
-      TelemetryService.getInstance().logHttpRequestError(httpRequest,
+      TelemetryService.getInstance().logHttpRequestTelemetryEvent(
+          "NullResponseHttpError",
+          httpRequest,
           injectSocketTimeout,
           canceling,
           withoutCookies,

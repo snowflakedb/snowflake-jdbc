@@ -343,9 +343,11 @@ public class TelemetryService
       return;
     }
     queue.add(event);
-    if (queue.size() >= BATCH_SIZE)
+    if (queue.size() >= BATCH_SIZE ||
+        (event.containsKey("Urgent") && (boolean) event.get("Urgent")))
     {
-      // start a new thread to upload without blocking the current thread
+      // When the queue is full or the event is urgent,
+      // then start a new thread to upload without blocking the current thread
       new TelemetryUploader(this).start();
     }
   }
@@ -390,24 +392,25 @@ public class TelemetryService
   /**
    * log error http response to telemetry
    */
-  public void logHttpRequestError(HttpRequestBase request,
-                                  int injectSocketTimeout,
-                                  AtomicBoolean canceling,
-                                  boolean withoutCookies,
-                                  boolean includeRetryParameters,
-                                  boolean includeRequestGuid,
-                                  CloseableHttpResponse response,
-                                  final Exception savedEx,
-                                  String breakRetryReason,
-                                  long retryTimeout,
-                                  int retryCount,
-                                  String sqlState,
-                                  int errorCode)
+  public void logHttpRequestTelemetryEvent(
+                                           String eventName,
+                                           HttpRequestBase request,
+                                           int injectSocketTimeout,
+                                           AtomicBoolean canceling,
+                                           boolean withoutCookies,
+                                           boolean includeRetryParameters,
+                                           boolean includeRequestGuid,
+                                           CloseableHttpResponse response,
+                                           final Exception savedEx,
+                                           String breakRetryReason,
+                                           long retryTimeout,
+                                           int retryCount,
+                                           String sqlState,
+                                           int errorCode)
   {
     if(enabled)
     {
       TelemetryEvent.LogBuilder logBuilder = new TelemetryEvent.LogBuilder();
-      String name = "HttpError";
       JSONObject value = new JSONObject();
       value.put("request", request.toString());
       value.put("retryTimeout", retryTimeout);
@@ -430,7 +433,7 @@ public class TelemetryService
         value.put("exceptionStackTrace", sw.toString());
       }
       TelemetryEvent log = logBuilder
-          .withName(name)
+          .withName(eventName)
           .withValue(value)
           .withTag("sqlState", sqlState)
           .withTag("errorCode", errorCode)

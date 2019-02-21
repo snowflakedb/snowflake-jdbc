@@ -3,6 +3,7 @@ package net.snowflake.client.jdbc.telemetryOOB;
 import net.minidev.json.JSONArray;
 import net.minidev.json.JSONObject;
 import net.snowflake.client.core.SFException;
+import net.snowflake.client.core.SessionUtilExternalBrowser;
 import net.snowflake.common.core.ResourceBundleManager;
 
 import java.io.PrintWriter;
@@ -190,6 +191,12 @@ public class TelemetryEvent extends JSONObject
       {
         tags.put(name, value);
       }
+      return builderClass.cast(this);
+    }
+
+    public T withUrgent(boolean urgent)
+    {
+      body.put("Urgent", urgent);
       return builderClass.cast(this);
     }
 

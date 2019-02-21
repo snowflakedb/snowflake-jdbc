@@ -305,7 +305,7 @@ public class ConnectionIT extends BaseJDBCTest
       if (TelemetryService.getInstance().isDeploymentEnabled())
       {
         assertThat("telemetry log created",
-          TelemetryService.getInstance().size() - queueSize == 1);
+          TelemetryService.getInstance().size() - queueSize == 2);
         TelemetryEvent te = TelemetryService.getInstance().getEvent(queueSize);
         JSONObject values =  (JSONObject)te.get("Value");
         assertThat("Communication error",
@@ -351,7 +351,7 @@ public class ConnectionIT extends BaseJDBCTest
       if (TelemetryService.getInstance().isDeploymentEnabled())
       {
         assertThat("telemetry log created",
-          TelemetryService.getInstance().size() - queueSize == 1);
+          TelemetryService.getInstance().size() - queueSize == 2);
         TelemetryEvent te = TelemetryService.getInstance().getEvent(queueSize);
         JSONObject values =  (JSONObject)te.get("Value");
         assertThat("Communication error",
