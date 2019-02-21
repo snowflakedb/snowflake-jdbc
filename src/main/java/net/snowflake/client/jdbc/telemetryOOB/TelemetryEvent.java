@@ -1,9 +1,8 @@
-package net.snowflake.client.jdbc.telemetryV2;
+package net.snowflake.client.jdbc.telemetryOOB;
 
 import net.minidev.json.JSONArray;
 import net.minidev.json.JSONObject;
 import net.snowflake.client.core.SFException;
-import net.snowflake.client.jdbc.telemetry.Telemetry;
 import net.snowflake.common.core.ResourceBundleManager;
 
 import java.io.PrintWriter;
@@ -16,6 +15,11 @@ import java.util.Map;
 import java.util.TimeZone;
 import java.util.UUID;
 
+/**
+ * Copyright (c) 2018 Snowflake Computing Inc. All rights reserved.
+ * <p>
+ * Telemetry Event Class
+ */
 public class TelemetryEvent extends JSONObject
 {
 

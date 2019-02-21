@@ -7,7 +7,7 @@ package net.snowflake.client.jdbc;
 import net.snowflake.client.core.Event;
 import net.snowflake.client.core.EventUtil;
 
-import net.snowflake.client.jdbc.telemetryV2.TelemetryService;
+import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 
