@@ -118,6 +118,11 @@ public class BindUploader implements Closeable
 
   private synchronized String synchronizedTimestampFormat(String o)
   {
+    if (o == null)
+    {
+      return null;
+    }
+
     boolean isNegative = o.length() > 0 && o.charAt(0) == '-';
     String inpString = o;
     if (isNegative)
