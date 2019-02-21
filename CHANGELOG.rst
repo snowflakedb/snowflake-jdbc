@@ -1,3 +1,13 @@
+**JDBC Driver 3.6.26**
+
+- \|SNOW-66026|Change all INFO and WARNING logging to DEBUG in JDBC
+- \|SNOW-66015|Binary column always returns 0 precision
+- \|SNOW-65421|Fixed binding null with data type raising error.
+- \|SNOW-65154|Fixed CHANGELOG.rst format
+- \|SNOW-64977|More granular error message for failed batch loads
+- \|SNOW-64063|Update JDBC Loader API to using CREATE TABLE ... LIKE syntax
+- \|SNOW-53174|Improve error messages when a driver fails to connect to Snowflake, S3 or OCSP
+
 **JDBC Driver 3.6.25**
 
 - \|SNOW-64564| Lazy init JDBC legacy logger
