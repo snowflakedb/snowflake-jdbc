@@ -42,7 +42,9 @@ if protocol:
 
 if not test_schema.lower() in ['public', 'testschema']:
     con = snowflake.connector.connect(**params)
-    con.cursor().execute("create schema if not exists {0}".format(test_schema))
+    cmd = "create schema if not exists {0}".format(test_schema)
+    print(cmd)
+    con.cursor().execute(cmd)
 
 if not 'BUILD_TAG' in os.environ:
     os.environ["SNOWFLAKE_TEST_SCHEMA"]=test_schema
