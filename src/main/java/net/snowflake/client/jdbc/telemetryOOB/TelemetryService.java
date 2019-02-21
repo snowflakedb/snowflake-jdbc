@@ -1,4 +1,4 @@
-package net.snowflake.client.jdbc.telemetryV2;
+package net.snowflake.client.jdbc.telemetryOOB;
 
 import net.minidev.json.JSONArray;
 import net.minidev.json.JSONObject;
@@ -407,21 +407,8 @@ public class TelemetryService
     if(enabled)
     {
       TelemetryEvent.LogBuilder logBuilder = new TelemetryEvent.LogBuilder();
-      String name;
+      String name = "HttpError";
       JSONObject value = new JSONObject();
-      if (savedEx != null)
-      {
-        name = savedEx.getLocalizedMessage();
-      }
-      else if (response == null)
-      {
-        name = "null http response";
-      }
-      else
-      {
-        name = "http response with code "
-            + response.getStatusLine().getStatusCode();
-      }
       value.put("request", request.toString());
       value.put("retryTimeout", retryTimeout);
       value.put("injectSocketTimeout", injectSocketTimeout);
