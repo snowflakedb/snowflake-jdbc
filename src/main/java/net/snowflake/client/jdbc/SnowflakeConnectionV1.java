@@ -1000,6 +1000,9 @@ public class SnowflakeConnectionV1 implements Connection
    * caller is responsible for passing the correct size for the data in the
    * stream and releasing the inputStream after the method is called.
    *
+   * Note this method is deprecated since streamSize is not required now. Keep
+   * the function signature for backward compatibility
+   *
    * @param stageName    stage name: e.g. ~ or table name or stage name
    * @param destPrefix   path prefix under which the data should be uploaded on the stage
    * @param inputStream  input stream from which the data will be uploaded
@@ -1007,6 +1010,7 @@ public class SnowflakeConnectionV1 implements Connection
    * @param streamSize   data size in the stream
    * @throws java.sql.SQLException failed to put data from a stream at stage
    */
+  @Deprecated
   public void uploadStream(String stageName,
                            String destPrefix,
                            InputStream inputStream,
@@ -1015,7 +1019,7 @@ public class SnowflakeConnectionV1 implements Connection
       throws SQLException
   {
     uploadStreamInternal(stageName, destPrefix, inputStream,
-        destFileName, streamSize, false);
+        destFileName, false);
   }
 
   /**
@@ -1029,8 +1033,36 @@ public class SnowflakeConnectionV1 implements Connection
    * @param destPrefix   path prefix under which the data should be uploaded on the stage
    * @param inputStream  input stream from which the data will be uploaded
    * @param destFileName destination file name to use
+   * @param compressData compress data or not before uploading stream
    * @throws java.sql.SQLException failed to compress and put data from a stream at stage
    */
+  public void uploadStream(String stageName,
+                           String destPrefix,
+                           InputStream inputStream,
+                           String destFileName,
+                           boolean compressData)
+      throws SQLException
+  {
+    uploadStreamInternal(stageName, destPrefix, inputStream,
+                         destFileName, compressData);
+  }
+
+  /**
+   * Method to compress data from a stream and upload it at a stage location.
+   * The data will be uploaded as one file. No splitting is done in this method.
+   * <p>
+   * caller is responsible for releasing the inputStream after the method is
+   * called.
+   *
+   * This method is deprecated
+   *
+   * @param stageName    stage name: e.g. ~ or table name or stage name
+   * @param destPrefix   path prefix under which the data should be uploaded on the stage
+   * @param inputStream  input stream from which the data will be uploaded
+   * @param destFileName destination file name to use
+   * @throws java.sql.SQLException failed to compress and put data from a stream at stage
+   */
+  @Deprecated
   public void compressAndUploadStream(String stageName,
                                       String destPrefix,
                                       InputStream inputStream,
@@ -1038,7 +1070,7 @@ public class SnowflakeConnectionV1 implements Connection
       throws SQLException
   {
     uploadStreamInternal(stageName, destPrefix, inputStream,
-        destFileName, 0, true);
+        destFileName,  true);
   }
 
   /**
@@ -1055,7 +1087,6 @@ public class SnowflakeConnectionV1 implements Connection
    * @param destPrefix   path prefix under which the data should be uploaded on the stage
    * @param inputStream  input stream from which the data will be uploaded
    * @param destFileName destination file name to use
-   * @param streamSize   data size in the stream
    * @param compressData whether compression is requested fore uploading data
    * @throws java.sql.SQLException
    */
@@ -1063,7 +1094,6 @@ public class SnowflakeConnectionV1 implements Connection
                                     String destPrefix,
                                     InputStream inputStream,
                                     String destFileName,
-                                    long streamSize,
                                     boolean compressData)
       throws SQLException
   {
@@ -1101,15 +1131,15 @@ public class SnowflakeConnectionV1 implements Connection
       putCommand.append(destPrefix);
     }
 
+    putCommand.append(" overwrite=true");
+
     SnowflakeFileTransferAgent transferAgent = null;
     transferAgent = new SnowflakeFileTransferAgent(putCommand.toString(),
         sfSession, stmt.getSfStatement());
 
     transferAgent.setSourceStream(inputStream);
     transferAgent.setDestFileNameForStreamSource(destFileName);
-    transferAgent.setSourceStreamSize(streamSize);
     transferAgent.setCompressSourceFromStream(compressData);
-    transferAgent.setOverwrite(true);
     transferAgent.execute();
 
     stmt.close();

@@ -35,6 +35,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.DigestOutputStream;
@@ -114,7 +115,6 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
 
   private InputStream sourceStream;
   private boolean sourceFromStream;
-  private long sourceStreamSize;
   private boolean compressSourceFromStream;
 
   private String destFileNameForStreamSource;
@@ -569,7 +569,6 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
 
   }
 
-
   private static InputStreamWithMetadata computeDigest(InputStream is,
                                                        boolean resetStream)
           throws NoSuchAlgorithmException, IOException
@@ -580,21 +579,27 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
       FileBackedOutputStream tempStream =
             new FileBackedOutputStream(MAX_BUFFER_SIZE, true);
 
-      DigestOutputStream digestStream = new DigestOutputStream(tempStream, md);
+      CountingOutputStream countingOutputStream =
+          new CountingOutputStream(tempStream);
+
+      DigestOutputStream digestStream = new DigestOutputStream(countingOutputStream, md);
 
       IOUtils.copy(is, digestStream);
 
-      return new InputStreamWithMetadata(-1,
+      return new InputStreamWithMetadata(countingOutputStream.getCount(),
               Base64.encodeAsString(digestStream.getMessageDigest().digest()),
               tempStream);
     }
     else
     {
+      CountingOutputStream countingOutputStream =
+          new CountingOutputStream(ByteStreams.nullOutputStream());
+
       DigestOutputStream digestStream = new DigestOutputStream(
-                                            ByteStreams.nullOutputStream(),
+                                            countingOutputStream,
                                             md);
       IOUtils.copy(is, digestStream);
-      return new InputStreamWithMetadata(-1,
+      return new InputStreamWithMetadata(countingOutputStream.getCount(),
           Base64.encodeAsString(digestStream.getMessageDigest().digest()), null);
     }
   }
@@ -607,14 +612,12 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
    *
    * @param stage information about the stage
    * @param srcFilePath source file path
-   * @param requireCompress boolean indicating if requiring compression
-   * @param fileMetadataMap map where key is file name and value is metadata
+   * @param metadata file metadata
    * @param client client object used to communicate with c3
    * @param connection connection object
    * @param command command string
    * @param inputStream null if upload source is file
    * @param sourceFromStream whether upload source is file or stream
-   * @param sourceDataSize upload data size
    * @param parallel number of threads for parallel uploading
    * @param srcFile source file name
    * @param encMat not null if encryption is required
@@ -623,14 +626,12 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
   public static Callable<Void> getUploadFileCallable(
           final StageInfo stage,
           final String srcFilePath,
-          final boolean requireCompress,
-          final Map<String, FileMetadata> fileMetadataMap,
+          final FileMetadata metadata,
           final SnowflakeStorageClient client,
           final SFSession connection,
           final String command,
           final InputStream inputStream,
           final boolean sourceFromStream,
-          final long sourceDataSize,
           final int parallel,
           final File srcFile,
           final RemoteStoreFileEncryptionMaterial encMat) {
@@ -639,13 +640,11 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
 
         logger.debug("Entering getUploadFileCallable...");
 
-        FileMetadata metadata = fileMetadataMap.get(srcFilePath);
-
         InputStream uploadStream = inputStream;
 
         File fileToUpload = null;
 
-        if (inputStream == null)
+        if (uploadStream == null)
         {
           try
           {
@@ -669,12 +668,11 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
 
         String destFileName = metadata.destFileName;
 
-        long uploadSize = sourceDataSize;
+        long uploadSize;
 
         String digest = null;
 
-        logger.debug("Dest file name={}, orig size={}",  destFileName, 
-             uploadSize);
+        logger.debug("Dest file name={}");
 
         // Temp file that needs to be cleaned up when upload was successful
         FileBackedOutputStream fileBackedOutputStream = null;
@@ -683,7 +681,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
         // calcuate digest.
         try
         {
-          if (requireCompress)
+          if (metadata.requireCompress)
           {
             InputStreamWithMetadata compressedSizeAndStream = (encMat == null ?
               compressStreamWithGZIPNoDigest(uploadStream) :
@@ -710,6 +708,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
                                                            sourceFromStream);
             digest = result.digest;
             fileBackedOutputStream = result.fileBackedOutputStream;
+            uploadSize = result.size;
 
             if (!sourceFromStream)
               fileToUpload = srcFile;
@@ -720,11 +719,17 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
           {
             if (!sourceFromStream && (srcFile != null))
               fileToUpload = srcFile;
+
+            // if stage is local_fs and upload source is stream, upload size
+            // does not matter since 1) transfer did not require size 2) no
+            // output from uploadStream api is required
+            uploadSize = sourceFromStream ? 0 : srcFile.length();
           }
 
           logger.debug("Started copying file from: {} to {}:{} destName: {} " +
               "auto compressed? {} size={}", srcFilePath, stage.getStageType().name(), stage.getLocation(),
-                destFileName, (requireCompress ? "yes":"no"), uploadSize);
+                destFileName, (metadata.requireCompress ? "yes":"no"),
+                       uploadSize);
 
             // Simulated failure code.
           if (connection.getInjectFileUploadFailure()
@@ -747,7 +752,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
             case S3:
             case AZURE:
               pushFileToRemoteStore(stage,
-                           srcFilePath, destFileName,
+                           destFileName,
                            uploadStream, fileBackedOutputStream, uploadSize,
                            digest, metadata.destCompressionType,
                            client, connection, command, parallel, fileToUpload,
@@ -1379,17 +1384,15 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
       threadExecutor = SnowflakeUtil.createDefaultExecutorService(
           "sf-stream-upload-worker-", 1);
 
-      FileMetadata fileMetadata = fileMetadataMap.get(SRC_FILE_NAME_FOR_STREAM);
-
       RemoteStoreFileEncryptionMaterial encMat = encryptionMaterial.get(0);
       if (commandType == CommandType.UPLOAD)
         threadExecutor.submit(getUploadFileCallable(
             stageInfo, SRC_FILE_NAME_FOR_STREAM,
-            compressSourceFromStream, fileMetadataMap,
+            fileMetadataMap.get(SRC_FILE_NAME_FOR_STREAM),
             (stageInfo.getStageType() == StageInfo.StageType.LOCAL_FS) ?
                null:storageFactory.createClient(stageInfo, parallel, encMat),
             connection, command,
-            sourceStream, true, sourceStreamSize, parallel, null, encMat));
+            sourceStream, true, parallel, null, encMat));
       else if (commandType == CommandType.DOWNLOAD)
         throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
             ErrorCode.INTERNAL_ERROR.getMessageCode());
@@ -1553,12 +1556,13 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
         File srcFileObj = new File(srcFile);
 
         threadExecutor.submit(getUploadFileCallable(
-            stageInfo, srcFile,
-            fileMetadata.requireCompress, fileMetadataMap,
+            stageInfo,
+            srcFile,
+            fileMetadata,
             (stageInfo.getStageType() == StageInfo.StageType.LOCAL_FS) ?
                null:storageFactory.createClient(stageInfo, parallel,encryptionMaterial.get(0)),
             connection, command,
-            null, false, srcFileObj.length(),
+            null, false,
             (parallel > 1 ?  1: this.parallel), srcFileObj, encryptionMaterial.get(0)));
 
         logger.debug("submitted copy job for: {}", srcFile);
@@ -1811,7 +1815,6 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
   }
 
   static private void pushFileToRemoteStore(StageInfo stage,
-                                            String filePath,
                                             String destFileName,
                                             InputStream inputStream,
                                             FileBackedOutputStream fileBackedOutStr,
@@ -1838,7 +1841,8 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
     if (logger.isDebugEnabled())
     {
       logger.debug("upload object. location={}, key={}, srcFile={}, encryption={}",
-          remoteLocation.location, destFileName, filePath, (encMat == null ? "NULL" :
+          remoteLocation.location, destFileName, srcFile,
+                   (encMat == null ? "NULL" :
               Long.toString(encMat.getSmkId()) + "|" + encMat.getQueryId()));
     }
 
@@ -2499,8 +2503,6 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
         String srcFileName = file.getName();
 
         String mimeTypeStr = null;
-        MimeType mimeType = null;
-
         FileCompressionType currentFileCompressionType = null;
 
         try
@@ -2528,7 +2530,6 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
                   }
                 }
               }
-
             }
 
             if (mimeTypeStr != null)
@@ -2630,13 +2631,20 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
     }
     else
     {
+      // source from stream case
       FileMetadata fileMetadata = fileMetadataMap.get(SRC_FILE_NAME_FOR_STREAM);
       fileMetadata.srcCompressionType = userSpecifiedSourceCompression;
 
       if (compressSourceFromStream)
+      {
         fileMetadata.destCompressionType = FileCompressionType.GZIP;
+        fileMetadata.requireCompress = true;
+      }
       else
+      {
         fileMetadata.destCompressionType = userSpecifiedSourceCompression;
+        fileMetadata.requireCompress = false;
+      }
 
       // add gz extension if file name doesn't have it
       if (compressSourceFromStream &&
@@ -2848,21 +2856,10 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
     this.destFileNameForStreamSource = destFileNameForStreamSource;
   }
 
-  public void setSourceStreamSize(long sourceStreamSize)
-  {
-    this.sourceStreamSize = sourceStreamSize;
-  }
-
   public void setCompressSourceFromStream(boolean compressSourceFromStream)
   {
     this.compressSourceFromStream = compressSourceFromStream;
   }
-
-  public void setOverwrite(boolean overwrite)
-  {
-    this.overwrite = overwrite;
-  }
-
 
   /*
    * Handles an InvalidKeyException which indicates that the JCE component
