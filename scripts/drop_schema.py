@@ -42,6 +42,8 @@ if protocol:
 
 if not test_schema.lower() in ['testschema', 'public']:
     con = snowflake.connector.connect(**params)
-    con.cursor().execute("drop schema if exists {0}".format(test_schema))
+    cmd = "drop schema if exists {0}".format(test_schema)
+    print(cmd)
+    con.cursor().execute(cmd)
 
 sys.exit(0)
