@@ -1242,10 +1242,15 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
       return SnowflakeDatabaseMetaDataResultSet.getEmptyResultSet(GET_TABLES, statement);
     }
 
-    if (catalog == null && schemaPattern == null && metadataRequestUseConnectionCtx)
+    // apply session context when catalog is unspecified
+    if (catalog == null && metadataRequestUseConnectionCtx)
     {
       catalog = session.getDatabase();
-      schemaPattern = session.getSchema();
+
+      if (schemaPattern == null)
+      {
+        schemaPattern = session.getSchema();
+      }
     }
 
     final Pattern compiledSchemaPattern = Wildcard.toRegexPattern(schemaPattern, true);
@@ -1458,10 +1463,15 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
             "String tableNamePattern={}, String columnNamePattern={}, boolean extendedSet={}",
         catalog, schemaPattern, tableNamePattern, columnNamePattern, extendedSet);
 
-    if (catalog == null && schemaPattern == null && metadataRequestUseConnectionCtx)
+    // apply session context when catalog is unspecified
+    if (catalog == null && metadataRequestUseConnectionCtx)
     {
       catalog = session.getDatabase();
-      schemaPattern = session.getSchema();
+
+      if (schemaPattern == null)
+      {
+        schemaPattern = session.getSchema();
+      }
     }
 
     final Pattern compiledSchemaPattern = Wildcard.toRegexPattern(schemaPattern, true);
@@ -1765,10 +1775,15 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
             + "String schema={}, String table={})", catalog, schema, table);
     String showPKCommand = "show /* JDBC:DatabaseMetaData.getPrimaryKeys() */ primary keys in ";
 
-    if (catalog == null && schema == null && metadataRequestUseConnectionCtx)
+    // apply session context when catalog is unspecified
+    if (catalog == null && metadataRequestUseConnectionCtx)
     {
       catalog = session.getDatabase();
-      schema = session.getSchema();
+
+      if (schema == null)
+      {
+        schema = session.getSchema();
+      }
     }
 
     if (catalog == null)
@@ -2506,11 +2521,15 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
         "public ResultSet getSchemas(String catalog={}, String "
             + "schemaPattern={})", catalog, schemaPattern);
 
-    // try to determine if to use session database and schema
-    if (catalog == null && schemaPattern == null && metadataRequestUseConnectionCtx)
+    // apply session context when catalog is unspecified
+    if (catalog == null && metadataRequestUseConnectionCtx)
     {
       catalog = session.getDatabase();
-      schemaPattern = session.getSchema();
+
+      if (schemaPattern == null)
+      {
+        schemaPattern = session.getSchema();
+      }
     }
 
     final Pattern compiledSchemaPattern = Wildcard.toRegexPattern(schemaPattern, true);
@@ -2611,10 +2630,15 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
             "String functionNamePattern={}",
         catalog, schemaPattern, functionNamePattern);
 
-    if (catalog == null && schemaPattern == null && metadataRequestUseConnectionCtx)
+    // apply session context when catalog is unspecified
+    if (catalog == null && metadataRequestUseConnectionCtx)
     {
       catalog = session.getDatabase();
-      schemaPattern = session.getSchema();
+
+      if (schemaPattern == null)
+      {
+        schemaPattern = session.getSchema();
+      }
     }
 
     final Pattern compiledSchemaPattern = Wildcard.toRegexPattern(schemaPattern, true);
