@@ -1,3 +1,10 @@
+**JDBC Driver 3.6.27**
+
+- \|SNOW-42661| Add unknown type  binding variable support in table UDF
+- \|SNOW-66840| Align CLIENT_METADATA_REQUEST_USE_CONNECTION_CTX behavior of JDBC with ODBC
+- \|SNOW-67327| NPE when timestamp value is null in binding
+- \|SNOW-62511| Mask AWS password in a query
+
 **JDBC Driver 3.6.26**
 
 - \|SNOW-66026|Change all INFO and WARNING logging to DEBUG in JDBC
