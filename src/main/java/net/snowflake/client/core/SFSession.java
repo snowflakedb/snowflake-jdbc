@@ -519,8 +519,8 @@ public class SFSession
     }
 
     // perform sanity check on proxy settings
-    boolean useProxy = (boolean) connectionPropertiesMap.get(SFSessionProperty.USE_PROXY);
-    if (useProxy)
+    Boolean useProxy = (Boolean) connectionPropertiesMap.get(SFSessionProperty.USE_PROXY);
+    if (useProxy != null && useProxy.booleanValue())
     {
       if(!connectionPropertiesMap.containsKey(SFSessionProperty.PROXY_HOST)
         || !connectionPropertiesMap.containsKey(SFSessionProperty.PROXY_PORT))
