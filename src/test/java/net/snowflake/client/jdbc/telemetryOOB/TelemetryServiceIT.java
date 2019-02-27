@@ -1,19 +1,17 @@
 package net.snowflake.client.jdbc.telemetryOOB;
 
 
-import jdk.nashorn.internal.ir.annotations.Ignore;
-import net.minidev.json.JSONArray;
-import net.minidev.json.JSONObject;
-import net.snowflake.client.jdbc.BaseJDBCTest;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 import java.sql.SQLException;
 import java.util.concurrent.TimeUnit;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.fail;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Test;
+
+import net.snowflake.client.jdbc.BaseJDBCTest;
 
 /**
  * Standalone test cases for the out of band telemetry service

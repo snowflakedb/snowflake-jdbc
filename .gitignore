@@ -45,6 +45,7 @@ fat/target/*
 *.iml
 nb-configuration.xml
 nbactions.xml
+.settings
 
 # For snowfalke internal use #
 ##############################
@@ -66,3 +67,5 @@ parameters*.json
 snowflake-whitelist
 Golang
 ClientTelemetryFramework
+/.classpath
+/.project
