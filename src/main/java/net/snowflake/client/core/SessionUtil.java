@@ -1181,8 +1181,8 @@ public class SessionUtil
         catch (Throwable ex)
         {
           logger.debug(
-              "failed to process snowflake.client.info property as JSON: "
-                  + clientInfoJSONStr, ex);
+              "failed to process snowflake.client.info property as JSON: {}"
+                  ,clientInfoJSONStr, ex);
         }
 
         if (clientInfoJSON != null)
@@ -1587,13 +1587,16 @@ public class SessionUtil
 
       setServiceNameHeader(loginInput, postRequest);
 
-      logger.debug(
-          "request type: {}, old session token: {}, " +
-              "master token: {}, id token: {}",
-          requestType.value,
-          loginInput.getSessionToken() != null ? "******" : null,
-          loginInput.getMasterToken() != null ? "******" : null,
-          loginInput.getIdToken() != null ? "******" : null);
+      if (logger.isDebugEnabled())
+      {
+        logger.debug(
+            "request type: {}, old session token: {}, " +
+                "master token: {}, id token: {}",
+            requestType.value,
+            loginInput.getSessionToken() != null ? "******" : null,
+            loginInput.getMasterToken() != null ? "******" : null,
+            loginInput.getIdToken() != null ? "******" : null);
+      }
 
       String theString = HttpUtil.executeRequest(postRequest,
           loginInput.getLoginTimeout(), 0, null);
