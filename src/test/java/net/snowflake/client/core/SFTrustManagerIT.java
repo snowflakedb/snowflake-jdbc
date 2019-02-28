@@ -179,8 +179,7 @@ public class SFTrustManagerIT
   {
     CertificateFactory fact = CertificateFactory.getInstance("X.509");
     List<X509Certificate> certList = new ArrayList<>();
-    for (Certificate cert : fact.generateCertificates(
-        getFile(filename)))
+    for (Certificate cert : fact.generateCertificates(getFile(filename)))
     {
       certList.add((X509Certificate) cert);
     }
