@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import net.snowflake.client.core.ObjectMapperFactory;
 
 /**
- * Copyright (c) 2018 Snowflake Computing Inc. All rights reserved.
+ * Copyright (c) 2018-2019 Snowflake Computing Inc. All rights reserved.
  */
 public class TelemetryData
 {

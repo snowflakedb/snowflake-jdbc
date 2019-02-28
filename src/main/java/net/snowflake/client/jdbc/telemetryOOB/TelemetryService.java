@@ -25,7 +25,7 @@ import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * Copyright (c) 2018 Snowflake Computing Inc. All rights reserved.
+ * Copyright (c) 2018-2019 Snowflake Computing Inc. All rights reserved.
  * <p>
  * Out of Band Telemetry Service
  * This is a thread safe singleton queue containing telemetry messages
