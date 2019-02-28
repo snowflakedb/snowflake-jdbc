@@ -74,11 +74,13 @@ public class SFStatement
   private SnowflakeFileTransferAgent transferAgent = null;
 
   // statement level parameters
-  private final Map<String, Object> statementParametersMap =  new HashMap<String, Object>();
+  private final Map<String, Object> statementParametersMap = new HashMap<String, Object>();
 
   final private static int MAX_STATEMENT_PARAMETERS = 1000;
 
-  /** id used in combine describe and execute */
+  /**
+   * id used in combine describe and execute
+   */
   private String describeJobUUID;
 
   // when uploading binds to stage, we use a table scan which cannot parse times from ms
@@ -87,13 +89,14 @@ public class SFStatement
 
   // list of child result objects for queries called by the current query, if any
   private List<SFChildResult> childResults = null;
+
   /**
    * Add a statement parameter
-   *
+   * <p>
    * Make sure a property is not added more than once and the number of
    * properties does not exceed limit.
    *
-   * @param propertyName property name
+   * @param propertyName  property name
    * @param propertyValue property value
    * @throws SFException if too many parameters for a statement
    */
@@ -112,7 +115,7 @@ public class SFStatement
     if (statementParametersMap.size() > MAX_STATEMENT_PARAMETERS)
     {
       throw new SFException(
-              ErrorCode.TOO_MANY_STATEMENT_PARAMETERS, MAX_STATEMENT_PARAMETERS);
+          ErrorCode.TOO_MANY_STATEMENT_PARAMETERS, MAX_STATEMENT_PARAMETERS);
     }
   }
 
@@ -122,11 +125,12 @@ public class SFStatement
 
     this.session = session;
     Integer queryTimeout = session == null ? null : session.getQueryTimeout();
-    this.queryTimeout =  queryTimeout != null ? queryTimeout : this.queryTimeout;
+    this.queryTimeout = queryTimeout != null ? queryTimeout : this.queryTimeout;
   }
 
   /**
    * Sanity check query text
+   *
    * @param sql The SQL statement to check
    * @throws java.sql.SQLException
    */
@@ -143,11 +147,11 @@ public class SFStatement
   /**
    * Execute SQL query with an option for describe only
    *
-   * @param sql sql statement
+   * @param sql          sql statement
    * @param describeOnly true if describe only
    * @return query result set
    * @throws SQLException if connection is already closed
-   * @throws SFException if result set is null
+   * @throws SFException  if result set is null
    */
   private SFBaseResultSet executeQuery(
       String sql,
@@ -164,7 +168,7 @@ public class SFStatement
     if (isFileTransfer(trimmedSql))
     {
       // PUT/GET command
-      logger.debug( "Executing file transfer locally: {}", sql);
+      logger.debug("Executing file transfer locally: {}", sql);
 
       return executeFileTransfer(sql);
     }
@@ -185,7 +189,7 @@ public class SFStatement
    * @param sql statement
    * @return metadata of statement including result set metadata and binding information
    * @throws SQLException if connection is already closed
-   * @throws SFException if result set is null
+   * @throws SFException  if result set is null
    */
   public SFStatementMetaData describe(String sql) throws SFException, SQLException
   {
@@ -194,22 +198,23 @@ public class SFStatement
     describeJobUUID = baseResultSet.getQueryId();
 
     return new SFStatementMetaData(baseResultSet.getMetaData(),
-                                   baseResultSet.getStatementType(),
-                                   baseResultSet.getNumberOfBinds(),
-                                   baseResultSet.isArrayBindSupported());
+        baseResultSet.getStatementType(),
+        baseResultSet.getNumberOfBinds(),
+        baseResultSet.isArrayBindSupported());
   }
 
   /**
    * Internal method for executing a query with bindings accepted.
    * <p>
-   * @param sql sql statement
+   *
+   * @param sql               sql statement
    * @param parameterBindings binding information
-   * @param describeOnly true if just showing result set metadata
-   * @param internal true if internal command not showing up in the history
-   * @param caller the JDBC method that called this function, null if none
+   * @param describeOnly      true if just showing result set metadata
+   * @param internal          true if internal command not showing up in the history
+   * @param caller            the JDBC method that called this function, null if none
    * @return snowflake query result set
    * @throws SQLException if connection is already closed
-   * @throws SFException if result set is null
+   * @throws SFException  if result set is null
    */
   SFBaseResultSet executeQueryInternal(
       String sql,
@@ -223,10 +228,10 @@ public class SFStatement
 
     if (logger.isDebugEnabled())
     {
-      logger.debug( "executeQuery: {}", SecretDetector.maskAWSSecret(sql));
+      logger.debug("executeQuery: {}", SecretDetector.maskAWSSecret(sql));
     }
 
-    if (session.isClosed())
+    if (session == null || session.isClosed())
     {
       throw new SQLException("connection is closed");
     }
@@ -240,8 +245,8 @@ public class SFStatement
     if (result == null)
     {
       throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
-                                      ErrorCode.INTERNAL_ERROR.getMessageCode(),
-                                      "got null result");
+          ErrorCode.INTERNAL_ERROR.getMessageCode(),
+          "got null result");
     }
 
     /*
@@ -251,7 +256,7 @@ public class SFStatement
 
     boolean sortResult = sortProperty != null && (Boolean) sortProperty;
 
-    logger.debug( "Creating result set");
+    logger.debug("Creating result set");
 
     try
     {
@@ -300,13 +305,14 @@ public class SFStatement
           ErrorCode.INTERNAL_ERROR,
           "exception creating result");
     }
-    logger.debug( "Done creating result set");
+    logger.debug("Done creating result set");
 
     return resultSet;
   }
 
   /**
    * Set a time bomb to cancel the outstanding query when timeout is reached.
+   *
    * @param executor object to execute statement cancel request
    */
   private void setTimeBomb(ScheduledExecutorService executor)
@@ -344,21 +350,20 @@ public class SFStatement
   /**
    * A helper method to build URL and submit the SQL to snowflake for exec
    *
-   * @param sql sql statement
-   * @param mediaType media type
-   * @param bindValues map of binding values
+   * @param sql          sql statement
+   * @param mediaType    media type
+   * @param bindValues   map of binding values
    * @param describeOnly whether only show the result set metadata
-   * @param internal run internal query not showing up in history
+   * @param internal     run internal query not showing up in history
    * @return raw json response
-   * @throws SFException if query is canceled
+   * @throws SFException           if query is canceled
    * @throws SnowflakeSQLException if query is already running
    */
-  public
-  Object executeHelper(String sql,
-                       String mediaType,
-                       Map<String, ParameterBindingDTO> bindValues,
-                       boolean describeOnly,
-                       boolean internal)
+  public Object executeHelper(String sql,
+                              String mediaType,
+                              Map<String, ParameterBindingDTO> bindValues,
+                              boolean describeOnly,
+                              boolean internal)
       throws SnowflakeSQLException, SFException
   {
     ScheduledExecutorService executor = null;
@@ -454,7 +459,7 @@ public class SFStatement
 
       if (canceling.get())
       {
-        logger.debug( "Query cancelled");
+        logger.debug("Query cancelled");
 
         throw new SFException(ErrorCode.QUERY_CANCELED);
       }
@@ -487,7 +492,7 @@ public class SFStatement
               // renew the session
               session.renewSession(stmtInput.sessionToken);
             }
-            catch(SnowflakeReauthenticationRequest ex0)
+            catch (SnowflakeReauthenticationRequest ex0)
             {
               if (session.isExternalbrowserAuthenticator())
               {
@@ -510,17 +515,17 @@ public class SFStatement
             throw ex;
         }
       }
-      while(sessionRenewed && !canceling.get());
+      while (sessionRenewed && !canceling.get());
 
       // Debugging/Testing for incidents
-      if(System.getProperty("snowflake.enable_incident_test1") != null &&
-         System.getProperty("snowflake.enable_incident_test1").equals("true"))
+      if (System.getProperty("snowflake.enable_incident_test1") != null &&
+          System.getProperty("snowflake.enable_incident_test1").equals("true"))
       {
         SFException sfe =
             IncidentUtil.generateIncidentWithException(session, this.requestId,
                 null, ErrorCode.STATEMENT_CLOSED);
 
-          throw sfe;
+        throw sfe;
       }
 
       synchronized (this)
@@ -541,9 +546,13 @@ public class SFStatement
         throw new SFException(ErrorCode.QUERY_CANCELED);
       }
 
-      logger.debug( "Returning from executeHelper");
+      logger.debug("Returning from executeHelper");
 
-      return stmtOutput.getResult();
+      if (stmtOutput != null)
+      {
+        return stmtOutput.getResult();
+      }
+      throw new SFException(ErrorCode.INTERNAL_ERROR);
     }
     catch (SFException | SnowflakeSQLException ex)
     {
@@ -579,10 +588,10 @@ public class SFStatement
   /**
    * A helper method to build URL and cancel the SQL for exec
    *
-   * @param sql sql statement
+   * @param sql       sql statement
    * @param mediaType media type
    * @throws SnowflakeSQLException if failed to cancel the statement
-   * @throws SFException if statement is already closed
+   * @throws SFException           if statement is already closed
    */
   private void cancelHelper(String sql, String mediaType)
       throws SnowflakeSQLException, SFException
@@ -622,6 +631,7 @@ public class SFStatement
    * A method to check if a sql is file upload statement with consideration for
    * potential comments in front of put keyword.
    * <p>
+   *
    * @param sql sql statement
    * @return true if the command is upload statement
    */
@@ -629,19 +639,19 @@ public class SFStatement
   {
     SFStatementType statementType = StmtUtil.checkStageManageCommand(sql);
     return statementType == SFStatementType.PUT ||
-           statementType == SFStatementType.GET;
+        statementType == SFStatementType.GET;
   }
 
   /**
    * Execute sql
    *
-   * @param sql sql statement.
+   * @param sql               sql statement.
    * @param parametersBinding parameters to bind
-   * @param caller the JDBC interface method that called this method, if any
+   * @param caller            the JDBC interface method that called this method, if any
    * @return whether there is result set or not
    * @throws java.sql.SQLException if failed to execute sql
-   * @throws SFException exception raised from Snowflake components
-   * @throws SQLException if SQL error occurs
+   * @throws SFException           exception raised from Snowflake components
+   * @throws SQLException          if SQL error occurs
    */
   public SFBaseResultSet execute(String sql,
                                  Map<String, ParameterBindingDTO>
@@ -688,11 +698,11 @@ public class SFStatement
 
       logger.debug("setting result set");
 
-      resultSet = (SFFixedViewResultSet)transferAgent.getResultSet();
+      resultSet = (SFFixedViewResultSet) transferAgent.getResultSet();
       childResults = Collections.emptyList();
 
       logger.debug("Number of cols: {}",
-                               resultSet.getMetaData().getColumnCount());
+          resultSet.getMetaData().getColumnCount());
       logger.debug("Completed transferring data");
       return resultSet;
     }
@@ -848,13 +858,14 @@ public class SFStatement
 
   /**
    * Sets the result set to the next one, if available.
+   *
    * @param current What to do with the current result.
-   *        One of Statement.CLOSE_CURRENT_RESULT,
-   *               Statement.CLOSE_ALL_RESULTS, or
-   *               Statement.KEEP_CURRENT_RESULT
+   *                One of Statement.CLOSE_CURRENT_RESULT,
+   *                Statement.CLOSE_ALL_RESULTS, or
+   *                Statement.KEEP_CURRENT_RESULT
    * @return true if there is a next result and it's a result set
-   *         false if there are no more results, or there is a next result
-   *           and it's an update count
+   * false if there are no more results, or there is a next result
+   * and it's an update count
    * @throws SQLException if something fails while getting the next result
    */
   public boolean getMoreResults(int current) throws SQLException
@@ -862,7 +873,7 @@ public class SFStatement
     // clean up current result, if exists
     if (resultSet != null &&
         (current == Statement.CLOSE_CURRENT_RESULT ||
-        current == Statement.CLOSE_ALL_RESULTS))
+            current == Statement.CLOSE_ALL_RESULTS))
     {
       resultSet.close();
     }
