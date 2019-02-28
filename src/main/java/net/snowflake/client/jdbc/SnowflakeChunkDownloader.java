@@ -230,8 +230,8 @@ public class SnowflakeChunkDownloader
         Map.Entry<String, JsonNode> chunkHeader = chunkHeadersIter.next();
 
         logger.debug("add header key={}, value={}",
-                               new Object[]{chunkHeader.getKey(),
-                               chunkHeader.getValue().asText()});
+                               chunkHeader.getKey(),
+                               chunkHeader.getValue().asText());
         chunkHeadersMap.put(chunkHeader.getKey(),
                             chunkHeader.getValue().asText());
       }
@@ -263,7 +263,7 @@ public class SnowflakeChunkDownloader
               efficientChunkStorage);
 
       logger.debug("add chunk, url={} rowCount={}",
-          new Object[]{chunk.getUrl(), chunk.getRowCount()});
+            chunk.getUrl(), chunk.getRowCount());
 
       chunks.add(chunk);
     }
@@ -289,8 +289,11 @@ public class SnowflakeChunkDownloader
   private void startNextDownloaders() throws SnowflakeSQLException
   {
     // start downloading chunks up to number of slots
-    logger.debug("Submit {} chunks to be pre-fetched",
-               Math.min(prefetchSlots, chunks.size()));
+    if (logger.isDebugEnabled())
+    {
+      logger.debug("Submit {} chunks to be pre-fetched",
+          Math.min(prefetchSlots, chunks.size()));
+    }
 
     long waitingTime = BASE_WAITING_MS;
 
@@ -309,10 +312,13 @@ public class SnowflakeChunkDownloader
         // make sure memoryLimit > neededChunkMemory; otherwise, the thread hangs
         if (neededChunkMemory > memoryLimit)
         {
-          logger.debug("{}: reset memoryLimit from {} MB to current chunk size {} MB",
-              Thread.currentThread().getName(),
-              memoryLimit/1024/1024,
-              neededChunkMemory/1024/1024);
+          if (logger.isDebugEnabled())
+          {
+            logger.debug("{}: reset memoryLimit from {} MB to current chunk size {} MB",
+                Thread.currentThread().getName(),
+                memoryLimit/1024/1024,
+                neededChunkMemory/1024/1024);
+          }
           memoryLimit = neededChunkMemory;
         }
 
@@ -329,12 +335,15 @@ public class SnowflakeChunkDownloader
           nextChunk.tryReuse(chunkDataCache);
 
           currentMemoryUsage += neededChunkMemory;
-          logger.debug("{}: currentMemoryUsage in MB: {}, nextD: {}, nextC: {}, allocated: {} ",
-              Thread.currentThread().getName(),
-              currentMemoryUsage/1024/1024,
-              nextChunkToDownload,
-              nextChunkToConsume,
-              neededChunkMemory);
+          if (logger.isDebugEnabled())
+          {
+            logger.debug("{}: currentMemoryUsage in MB: {}, nextD: {}, nextC: {}, allocated: {} ",
+                Thread.currentThread().getName(),
+                currentMemoryUsage/1024/1024,
+                nextChunkToDownload,
+                nextChunkToConsume,
+                neededChunkMemory);
+          }
 
           logger.debug("submit chunk #{} for downloading, url={}",
               this.nextChunkToDownload, nextChunk.getUrl());
@@ -360,13 +369,16 @@ public class SnowflakeChunkDownloader
         waitingTime = waitingTime > MAX_WAITING_MS ? MAX_WAITING_MS: waitingTime;
         long jitter = ThreadLocalRandom.current().nextLong(0, waitingTime/WAITING_JITTER_RATIO);
         waitingTime += jitter;
-        logger.debug("{} waiting for {}s: currentMemoryUsage in MB: {}, needed: {}, nextD: {}, nextC: {} ",
-            Thread.currentThread().getName(),
-            waitingTime/1000.0,
-            currentMemoryUsage/1024/1024,
-            neededChunkMemory/1024/1024,
-            nextChunkToDownload,
-            nextChunkToConsume);
+        if (logger.isDebugEnabled())
+        {
+          logger.debug("{} waiting for {}s: currentMemoryUsage in MB: {}, needed: {}, nextD: {}, nextC: {} ",
+              Thread.currentThread().getName(),
+              waitingTime/1000.0,
+              currentMemoryUsage/1024/1024,
+              neededChunkMemory/1024/1024,
+              nextChunkToDownload,
+              nextChunkToConsume);
+        }
         Thread.sleep(waitingTime);
       } catch (InterruptedException ie)
       {
@@ -388,11 +400,14 @@ public class SnowflakeChunkDownloader
     {
       // has to be before reusing the memory
       currentMemoryUsage -= chunks.get(chunk).computeNeededChunkMemory();
-      logger.debug("{}: currentMemoryUsage in MB: {}, released: {}, chunk: {}",
-          Thread.currentThread().getName(),
-          currentMemoryUsage/1024/1024,
-          chunks.get(chunk).computeNeededChunkMemory(),
-          chunk);
+      if (logger.isDebugEnabled())
+      {
+        logger.debug("{}: currentMemoryUsage in MB: {}, released: {}, chunk: {}",
+            Thread.currentThread().getName(),
+            currentMemoryUsage/1024/1024,
+            chunks.get(chunk).computeNeededChunkMemory(),
+            chunk);
+      }
     }
   }
 
@@ -493,8 +508,8 @@ public class SnowflakeChunkDownloader
             currentChunk.getDownloadState() != DownloadState.FAILURE)
         {
           logger.debug("wait for chunk #{} to be ready, current"
-                  + "chunk state is: {}",
-              new Object[]{nextChunkToConsume, currentChunk.getDownloadState()});
+                    + "chunk state is: {}",
+                nextChunkToConsume, currentChunk.getDownloadState());
 
           long startTime = System.currentTimeMillis();
           if(!currentChunk.getDownloadCondition().await(downloadedConditionTimeoutInSeconds, TimeUnit.SECONDS))
@@ -636,7 +651,7 @@ public class SnowflakeChunkDownloader
           }
 
           logger.debug("Downloading chunk {}, url={}",
-                                 new Object[]{chunkIndex, resultChunk.getUrl()});
+                chunkIndex, resultChunk.getUrl());
 
           long startTime = System.currentTimeMillis();
 
@@ -817,10 +832,9 @@ public class SnowflakeChunkDownloader
 
           logger.error(
                      "Exception encountered ({}:{}) fetching chunk from: {}",
-                     new Object[]{
                          ex.getClass().getName(),
                          ex.getLocalizedMessage(),
-                         resultChunk.getUrl()});
+                         resultChunk.getUrl());
 
           logger.error( "Exception: ", ex);
         }
