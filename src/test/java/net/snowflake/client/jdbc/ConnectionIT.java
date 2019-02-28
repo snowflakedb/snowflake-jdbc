@@ -9,6 +9,7 @@ import net.snowflake.client.RunningOnTravisCI;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryEvent;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.common.core.SqlState;
+import org.apache.avro.data.Json;
 import org.apache.commons.codec.binary.Base64;
 import org.junit.After;
 import org.junit.Assert;
@@ -273,7 +274,7 @@ public class ConnectionIT extends BaseJDBCTest
   }
 
   @Test
-  public void testLoginTimeout() throws SQLException
+  public void testHttpsLoginTimeout() throws SQLException
   {
     long connStart = 0, conEnd;
     Properties properties = new Properties();
@@ -281,6 +282,9 @@ public class ConnectionIT extends BaseJDBCTest
     properties.put("loginTimeout", "20");
     properties.put("user", "fakeuser");
     properties.put("password", "fakepassword");
+    // only when ssl is on can trigger the login timeout
+    // ssl is off will trigger 404
+    properties.put("ssl", "on");
     int queueSize = TelemetryService.getInstance().size();
     try
     {
@@ -311,6 +315,46 @@ public class ConnectionIT extends BaseJDBCTest
         assertThat("Communication error",
           values.get("errorCode").toString().compareTo(
               ErrorCode.NETWORK_ERROR.getMessageCode().toString()) == 0);
+      }
+      return;
+    }
+    fail();
+  }
+
+  @Test
+  public void testHttp404Error() throws SQLException
+  {
+    Properties properties = new Properties();
+    properties.put("account", "wrongaccount");
+    properties.put("loginTimeout", "20");
+    properties.put("user", "fakeuser");
+    properties.put("password", "fakepassword");
+    properties.put("ssl", "off");
+    int queueSize = TelemetryService.getInstance().size();
+    try
+    {
+      Map<String, String> params = getConnectionParameters();
+      // use wrongaccount in url
+      String host = params.get("host");
+      String[] hostItems = host.split("\\.");
+      String wrongUri = params.get("uri").replace("://" + hostItems[0], "://wrongaccount");
+
+      DriverManager.getConnection(wrongUri, properties);
+    }
+    catch (SQLException e)
+    {
+      assertThat("Communication error", e.getErrorCode(),
+          equalTo(ErrorCode.NETWORK_ERROR.getMessageCode()));
+
+      if (TelemetryService.getInstance().isDeploymentEnabled())
+      {
+        assertThat("telemetry log created",
+            TelemetryService.getInstance().size() - queueSize == 1);
+        TelemetryEvent te = TelemetryService.getInstance().getEvent(queueSize);
+        String name = (String) te.get("Name");
+        int statusCode = (int)((JSONObject) te.get("Value")).get("responseStatusCode");
+        assertEquals(name, "HttpError404");
+        assertEquals(statusCode, 404);
       }
       return;
     }
