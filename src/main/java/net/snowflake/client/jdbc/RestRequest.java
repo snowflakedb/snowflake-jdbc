@@ -381,8 +381,25 @@ public class RestRequest
     if ((response == null ||
             response.getStatusLine().getStatusCode() != 200))
     {
+
+      String eventName;
+      if (response == null)
+      {
+        eventName = "NullResponseHttpError";
+      }
+      else
+      {
+        if (response.getStatusLine() == null)
+        {
+          eventName = "NullResponseStatusLine";
+        }
+        else
+        {
+          eventName = String.format("HttpError%d", response.getStatusLine().getStatusCode());
+        }
+      }
       TelemetryService.getInstance().logHttpRequestTelemetryEvent(
-          "NullResponseHttpError",
+          eventName,
           httpRequest,
           injectSocketTimeout,
           canceling,

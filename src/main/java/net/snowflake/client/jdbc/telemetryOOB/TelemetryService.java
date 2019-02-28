@@ -419,12 +419,26 @@ public class TelemetryService
       value.put("withoutCookies", withoutCookies);
       value.put("includeRetryParameters", includeRetryParameters);
       value.put("includeRequestGuid", includeRequestGuid);
-      value.put("response", response);
       value.put("breakRetryReason", breakRetryReason);
       value.put("retryTimeout", retryTimeout);
       value.put("retryCount", retryCount);
       value.put("sqlState", sqlState);
       value.put("errorCode", errorCode);
+      int responseStatusCode = -1;
+      if (response != null)
+      {
+        value.put("response", response.toString());
+        value.put("responseStatusLine", response.getStatusLine().toString());
+        if (response.getStatusLine() != null)
+        {
+          responseStatusCode = response.getStatusLine().getStatusCode();
+          value.put("responseStatusCode", responseStatusCode);
+        }
+      }
+      else
+      {
+        value.put("response", null);
+      }
       if (savedEx != null)
       {
         value.put("exceptionMessage", savedEx.getLocalizedMessage());
@@ -437,6 +451,7 @@ public class TelemetryService
           .withValue(value)
           .withTag("sqlState", sqlState)
           .withTag("errorCode", errorCode)
+          .withTag("responseStatusCode", responseStatusCode)
           .build();
       this.add(log);
     }
