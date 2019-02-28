@@ -274,7 +274,7 @@ public class ConnectionIT extends BaseJDBCTest
   }
 
   @Test
-  public void testHttpsLoginTimeout() throws SQLException
+  public void testHttpsLoginTimeoutWithSSL() throws SQLException
   {
     long connStart = 0, conEnd;
     Properties properties = new Properties();
@@ -322,7 +322,7 @@ public class ConnectionIT extends BaseJDBCTest
   }
 
   @Test
-  public void testHttp404Error() throws SQLException
+  public void testHttpsLoginTimeoutWithOutSSL() throws SQLException
   {
     Properties properties = new Properties();
     properties.put("account", "wrongaccount");
@@ -343,18 +343,38 @@ public class ConnectionIT extends BaseJDBCTest
     }
     catch (SQLException e)
     {
-      assertThat("Communication error", e.getErrorCode(),
-          equalTo(ErrorCode.NETWORK_ERROR.getMessageCode()));
-
-      if (TelemetryService.getInstance().isDeploymentEnabled())
+      if (TelemetryService.getInstance().getServerDeploymentName().equals(
+          TelemetryService.TELEMETRY_SERVER_DEPLOYMENT.DEV.getName()) ||
+          TelemetryService.getInstance().getServerDeploymentName().equals(
+              TelemetryService.TELEMETRY_SERVER_DEPLOYMENT.REG.getName()))
       {
-        assertThat("telemetry log created",
-            TelemetryService.getInstance().size() - queueSize == 1);
-        TelemetryEvent te = TelemetryService.getInstance().getEvent(queueSize);
-        String name = (String) te.get("Name");
-        int statusCode = (int)((JSONObject) te.get("Value")).get("responseStatusCode");
-        assertEquals(name, "HttpError404");
-        assertEquals(statusCode, 404);
+        // a connection error response (wrong user and password)
+        // with status code 200 is returned in RT
+        assertThat("Communication error", e.getErrorCode(),
+            equalTo(ErrorCode.CONNECTION_ERROR.getMessageCode()));
+
+        // since it returns normal response,
+        // the telemetry does not create new event
+        if (TelemetryService.getInstance().isDeploymentEnabled())
+        {
+          assertEquals(0, TelemetryService.getInstance().size() - queueSize);
+        }
+      }
+      else
+      {
+        // in qa1 and others, 404 http status code should be returned
+        assertThat("Communication error", e.getErrorCode(),
+            equalTo(ErrorCode.NETWORK_ERROR.getMessageCode()));
+
+        if (TelemetryService.getInstance().isDeploymentEnabled())
+        {
+          assertEquals(1, TelemetryService.getInstance().size() - queueSize);
+          TelemetryEvent te = TelemetryService.getInstance().getEvent(queueSize);
+          String name = (String) te.get("Name");
+          int statusCode = (int)((JSONObject) te.get("Value")).get("responseStatusCode");
+          assertEquals(name, "HttpError404");
+          assertEquals(statusCode, 404);
+        }
       }
       return;
     }
