@@ -279,7 +279,7 @@ public class SFResultSet extends SFBaseResultSet
   {
     if (isClosed())
     {
-      throw new SFException(ErrorCode.RESULTSET_ALREADY_CLOSED);
+      return false;
     }
 
     // otherwise try to fetch again
@@ -426,6 +426,7 @@ public class SFResultSet extends SFBaseResultSet
 
     if (chunkDownloader != null)
     {
+      chunkDownloader.releaseAllChunkMemoryUsage();
       SnowflakeChunkDownloader.Metrics metrics = chunkDownloader.terminate();
       logChunkDownloaderMetrics(metrics);
       firstChunkSortedRowSet = null;

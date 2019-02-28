@@ -711,7 +711,11 @@ class SnowflakeStatementV1 implements Statement
   {
     logger.debug("public void close()");
 
-    resultSet = null;
+    if (resultSet != null)
+    {
+      resultSet.close();
+      resultSet = null;
+    }
     isClosed = true;
     batch.clear();
 
