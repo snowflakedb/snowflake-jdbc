@@ -17,7 +17,7 @@ import java.util.TimeZone;
 import java.util.UUID;
 
 /**
- * Copyright (c) 2018 Snowflake Computing Inc. All rights reserved.
+ * Copyright (c) 2018-2019 Snowflake Computing Inc. All rights reserved.
  * <p>
  * Telemetry Event Class
  */
