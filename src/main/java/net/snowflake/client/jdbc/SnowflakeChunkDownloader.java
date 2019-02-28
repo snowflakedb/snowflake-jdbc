@@ -117,6 +117,14 @@ public class SnowflakeChunkDownloader
   // the current memory usage across JVM
   private static Long currentMemoryUsage = 0L;
 
+  public static long getCurrentMemoryUsage()
+  {
+    synchronized (currentMemoryUsage)
+    {
+      return currentMemoryUsage.longValue();
+    }
+  }
+
   // The parameters used to wait for available memory:
   // starting waiting time will be BASE_WAITING_MS * WAITING_SECS_MULTIPLIER = 100 ms
   private long BASE_WAITING_MS = 50;
@@ -385,6 +393,22 @@ public class SnowflakeChunkDownloader
           currentMemoryUsage/1024/1024,
           chunks.get(chunk).computeNeededChunkMemory(),
           chunk);
+    }
+  }
+
+  /**
+   * release all existing chunk memory usage before close
+   */
+  public void releaseAllChunkMemoryUsage()
+  {
+    if (chunks == null || chunks.size() == 0)
+    {
+      return;
+    }
+
+    for (int i = 0; i < chunks.size() ; i++)
+    {
+      releaseCurrentMemoryUsage(i);
     }
   }
 
