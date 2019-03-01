@@ -816,9 +816,6 @@ public class SessionUtil
     AssertUtil.assertTrue(loginInput.getServerUrl() != null,
         "missing server URL for opening session");
 
-    AssertUtil.assertTrue(loginInput.getUserName() != null,
-        "missing user name for opening session");
-
     AssertUtil.assertTrue(loginInput.getAppId() != null,
         "missing app id for opening session");
 
