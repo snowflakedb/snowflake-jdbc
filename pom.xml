@@ -760,6 +760,44 @@
       </build>
     </profile>
     <profile>
+      <id>preprod2IT</id>
+      <activation>
+        <property>
+          <name>preprod2IT</name>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-failsafe-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>ClientTelemetryIT</id>
+                <goals>
+                  <goal>integration-test</goal>
+                </goals>
+                <configuration>
+                  <includes>
+                    <include>**/ConnectionIT.java</include>
+                  </includes>
+                  <argLine>
+                    @{argLine}
+                    -Djava.util.logging.config.file=jenkins_it_logging.properties
+                  </argLine>
+                </configuration>
+              </execution>
+              <execution>
+                <goals>
+                  <goal>verify</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <profile>
       <id>travisIT</id>
       <activation>
         <property>

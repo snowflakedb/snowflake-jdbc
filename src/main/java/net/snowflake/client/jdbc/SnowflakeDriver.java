@@ -35,7 +35,7 @@ import net.snowflake.client.log.*;
  * JDBC Driver implementation of Snowflake for production.
  * To use this driver, specify the following URL:
  * jdbc:snowflake://host:port
- *
+ * <p>
  * Note: don't add logger to this class since logger init will potentially
  * break driver class loading
  *
@@ -45,8 +45,8 @@ public class SnowflakeDriver implements Driver
 {
   // pattern for jdbc:snowflake://[host[:port]]/?q1=v1&q2=v2...
   private static final String JDBC_PROTOCOL_REGEX =
-  "jdbc:snowflake://([a-zA-Z_\\-0-9\\.]+(:\\d+)?)?"
-  + "(/?(\\?\\w+=\\w+)?(\\&\\w+=\\w+)*)?";
+      "jdbc:snowflake://([a-zA-Z_\\-0-9\\.]+(:\\d+)?)?"
+      + "(/?(\\?\\w+=\\w+)?(\\&\\w+=\\w+)*)?";
 
   public static SnowflakeDriver INSTANCE = null;
 
@@ -73,7 +73,7 @@ public class SnowflakeDriver implements Driver
     catch (SQLException ex)
     {
       throw new IllegalStateException("Unable to register "
-              + SnowflakeDriver.class.getName(), ex);
+                                      + SnowflakeDriver.class.getName(), ex);
     }
 
     /*
@@ -103,16 +103,18 @@ public class SnowflakeDriver implements Driver
           changeVersion = Long.parseLong(versionBreakdown[2]);
         }
         else
+        {
           throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
-              ErrorCode.INTERNAL_ERROR.getMessageCode(),
-              "Invalid Snowflake JDBC Version: " + implementVersion);
+                                          ErrorCode.INTERNAL_ERROR.getMessageCode(),
+                                          "Invalid Snowflake JDBC Version: " + implementVersion);
+        }
       }
       else
       {
         throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
-            ErrorCode.INTERNAL_ERROR.getMessageCode(),
-            "Snowflake JDBC Version is not set. " +
-                "Ensure version.properties is included.");
+                                        ErrorCode.INTERNAL_ERROR.getMessageCode(),
+                                        "Snowflake JDBC Version is not set. " +
+                                        "Ensure version.properties is included.");
       }
     }
     catch (Throwable ex)
@@ -122,41 +124,37 @@ public class SnowflakeDriver implements Driver
 
   /**
    * Checks whether a given url is in a valid format.
-   *
+   * <p>
    * The current uri format is: jdbc:snowflake://[host[:port]]
-   *
+   * <p>
    * jdbc:snowflake:// - run in embedded mode jdbc:snowflake://localhost -
    * connect to localhost default port (8080)
-   *
+   * <p>
    * jdbc:snowflake://localhost:8080- connect to localhost port 8080
    *
-   * @param url
-   *   url of the database including host and port
-   * @return
-   *   true if the url is valid
-   * @throws SQLException if failed to accept url
+   * @param url url of the database including host and port
+   * @return true if the url is valid
    */
   @Override
-  public boolean acceptsURL(String url) throws SQLException
+  public boolean acceptsURL(String url)
   {
     if (url == null)
+    {
       return false;
+    }
 
-    return url.indexOf("/?") > 0?
+    return url.indexOf("/?") > 0 ?
            Pattern.matches(JDBC_PROTOCOL_REGEX,
-                           url.substring(0, url.indexOf("/?"))):
+                           url.substring(0, url.indexOf("/?"))) :
            Pattern.matches(JDBC_PROTOCOL_REGEX, url);
   }
 
   /**
    * Connect method
    *
-   * @param url
-   *   jdbc url
-   * @param info
-   *   addition info for passing database/schema names
-   * @return
-   *   connection
+   * @param url  jdbc url
+   * @param info addition info for passing database/schema names
+   * @return connection
    * @throws SQLException if failed to create a snowflake connection
    */
   @Override
@@ -183,7 +181,7 @@ public class SnowflakeDriver implements Driver
 
   @Override
   public DriverPropertyInfo[] getPropertyInfo(String url, Properties info)
-          throws SQLException
+  throws SQLException
   {
     return EMPTY_INFO;
   }

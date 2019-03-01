@@ -1,15 +1,18 @@
+/*
+ * Copyright (c) 2012-2019 Snowflake Computing Inc. All right reserved.
+ */
 package net.snowflake.client;
 
 /**
- * Created by hyu on 1/22/18.
+ * Run tests on CI
  */
 public class RunningOnTravisCI implements
-    ConditionalIgnoreRule.IgnoreCondition
+                               ConditionalIgnoreRule.IgnoreCondition
 {
-  //TODO Right now always return false. After we open source the tests, this
-  //TODO method will be changed to conditional ignore running some tests on travis
   public boolean isSatisfied()
   {
-    return System.getenv("TRAVIS_JOB_ID") != null;
+    return
+        System.getenv("TRAVIS_JOB_ID") != null ||
+        System.getenv("APPVEYOR_BUILD_ID") != null;
   }
 }

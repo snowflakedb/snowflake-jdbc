@@ -12,15 +12,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
-import java.util.logging.Logger;
 
-/**
- * @author hyu
- */
 public class BaseJDBCTest extends AbstractDriverIT
 {
-  private static Logger logger = Logger.getLogger(BaseJDBCTest.class.getName());
-
   int getSizeOfResultSet(ResultSet rs) throws SQLException
   {
     int count = 0;
