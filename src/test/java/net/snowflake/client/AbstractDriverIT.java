@@ -24,13 +24,11 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Base test class with common constants, data structures and methods
- *
- * @author jhuang
  */
 public class AbstractDriverIT
 {
   public static final String DRIVER_CLASS = "net.snowflake.client.jdbc.SnowflakeDriver";
-  static final int DONT_INJECT_SOCKET_TIMEOUT = 0;
+  public static final int DONT_INJECT_SOCKET_TIMEOUT = 0;
 
   private static Logger logger =
       Logger.getLogger(AbstractDriverIT.class.getName());
@@ -41,14 +39,13 @@ public class AbstractDriverIT
     try
     {
       Class.forName(DRIVER_CLASS);
-    } catch (Exception e)
+    }
+    catch (Exception e)
     {
       logger.log(Level.SEVERE, "Cannot find Driver", e);
       throw new RuntimeException(e.getCause());
     }
   }
-
-  protected final int ERROR_CODE_UNACCEPTABLE_PREPARED_STATEMENT = 7;
 
   protected final int ERROR_CODE_BIND_VARIABLE_NOT_ALLOWED_IN_VIEW_OR_UDF_DEF
       = 2210;
@@ -59,52 +56,51 @@ public class AbstractDriverIT
   public ConditionalIgnoreRule rule = new ConditionalIgnoreRule();
 
   public static Map<String, String> getConnectionParameters()
-      throws SQLException
   {
     Map<String, String> params = new HashMap<>();
     String account = System.getenv("SNOWFLAKE_TEST_ACCOUNT");
     assertThat("set SNOWFLAKE_TEST_ACCOUNT environment variable.",
-        !Strings.isNullOrEmpty(account));
+               !Strings.isNullOrEmpty(account));
     params.put("account", account);
 
     String user = System.getenv("SNOWFLAKE_TEST_USER");
     assertThat("set SNOWFLAKE_TEST_USER environment variable.",
-        !Strings.isNullOrEmpty(user));
+               !Strings.isNullOrEmpty(user));
     params.put("user", user);
 
     String password = System.getenv("SNOWFLAKE_TEST_PASSWORD");
     assertThat("set SNOWFLAKE_TEST_PASSWORD environment variable.",
-        !Strings.isNullOrEmpty(password));
+               !Strings.isNullOrEmpty(password));
     params.put("password", password);
 
     String host = System.getenv("SNOWFLAKE_TEST_HOST");
     assertThat("set SNOWFLAKE_TEST_HOST environment variable.",
-        !Strings.isNullOrEmpty(host));
+               !Strings.isNullOrEmpty(host));
     params.put("host", host);
 
     String port = System.getenv("SNOWFLAKE_TEST_PORT");
     assertThat("set SNOWFLAKE_TEST_PORT environment variable.",
-        !Strings.isNullOrEmpty(port));
+               !Strings.isNullOrEmpty(port));
     params.put("port", port);
 
     String database = System.getenv("SNOWFLAKE_TEST_DATABASE");
     assertThat("set SNOWFLAKE_TEST_DATABASE environment variable.",
-        !Strings.isNullOrEmpty(database));
+               !Strings.isNullOrEmpty(database));
     params.put("database", database);
 
     String schema = System.getenv("SNOWFLAKE_TEST_SCHEMA");
     assertThat("set SNOWFLAKE_TEST_SCHEMA environment variable.",
-        !Strings.isNullOrEmpty(schema));
+               !Strings.isNullOrEmpty(schema));
     params.put("schema", schema);
 
     String role = System.getenv("SNOWFLAKE_TEST_ROLE");
     assertThat("set SNOWFLAKE_TEST_ROLE environment variable.",
-        !Strings.isNullOrEmpty(role));
+               !Strings.isNullOrEmpty(role));
     params.put("role", role);
 
     String warehouse = System.getenv("SNOWFLAKE_TEST_WAREHOUSE");
     assertThat("set SNOWFLAKE_TEST_WAREHOUSE environment variable.",
-        !Strings.isNullOrEmpty(role));
+               !Strings.isNullOrEmpty(role));
     params.put("warehouse", warehouse);
 
     String protocol = System.getenv("SNOWFLAKE_TEST_PROTOCOL");
@@ -112,7 +108,8 @@ public class AbstractDriverIT
     if (Strings.isNullOrEmpty(protocol) || "http".equals(protocol))
     {
       ssl = "off";
-    } else
+    }
+    else
     {
       ssl = "on";
     }
@@ -142,7 +139,7 @@ public class AbstractDriverIT
    */
 
   public static Connection getConnection(Properties paramProperties)
-      throws SQLException
+  throws SQLException
   {
     return getConnection(DONT_INJECT_SOCKET_TIMEOUT, paramProperties, false);
   }
@@ -154,7 +151,7 @@ public class AbstractDriverIT
    * @throws SQLException raised if any error occurs
    */
   public static Connection getConnection()
-      throws SQLException
+  throws SQLException
   {
     return getConnection(DONT_INJECT_SOCKET_TIMEOUT, null, false);
   }
@@ -168,7 +165,7 @@ public class AbstractDriverIT
    * @throws SQLException raised if any error occurs
    */
   public static Connection getConnection(int injectSocketTimeout)
-      throws SQLException
+  throws SQLException
   {
     return getConnection(injectSocketTimeout, null, false);
   }
@@ -179,8 +176,8 @@ public class AbstractDriverIT
    * @return Connection a database connection
    * @throws SQLException raised if any error occurs
    */
-  public static Connection getSnowflakeAdminConnection()
-      throws SQLException
+  protected static Connection getSnowflakeAdminConnection()
+  throws SQLException
   {
     return getConnection(DONT_INJECT_SOCKET_TIMEOUT, null, true);
   }
@@ -192,8 +189,8 @@ public class AbstractDriverIT
    * @return Connection a database connection
    * @throws SQLException raised if any error occurs
    */
-  public static Connection getSnowflakeAdminConnection(Properties paramProperties)
-      throws SQLException
+  protected static Connection getSnowflakeAdminConnection(Properties paramProperties)
+  throws SQLException
   {
     return getConnection(DONT_INJECT_SOCKET_TIMEOUT, paramProperties, true);
   }
@@ -210,7 +207,7 @@ public class AbstractDriverIT
    */
   public static Connection getConnection(
       int injectSocketTimeout, Properties paramProperties, boolean isAdmin)
-      throws SQLException
+  throws SQLException
   {
     Map<String, String> params = getConnectionParameters();
 
@@ -219,15 +216,16 @@ public class AbstractDriverIT
     if (isAdmin)
     {
       assertThat("set SNOWFLAKE_TEST_ADMIN_USER environment variable.",
-          !Strings.isNullOrEmpty(params.get("adminUser")));
+                 !Strings.isNullOrEmpty(params.get("adminUser")));
       assertThat("set SNOWFLAKE_TEST_ADMIN_PASSWORD environment variable.",
-          !Strings.isNullOrEmpty(params.get("adminPassword")));
+                 !Strings.isNullOrEmpty(params.get("adminPassword")));
 
       properties.put("user", params.get("adminUser"));
       properties.put("password", params.get("adminPassword"));
       properties.put("role", "accountadmin");
       properties.put("account", "snowflake");
-    } else
+    }
+    else
     {
       properties.put("user", params.get("user"));
       properties.put("password", params.get("password"));

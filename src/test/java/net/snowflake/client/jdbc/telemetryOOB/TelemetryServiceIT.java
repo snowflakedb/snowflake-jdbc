@@ -2,18 +2,14 @@ package net.snowflake.client.jdbc.telemetryOOB;
 
 
 import jdk.nashorn.internal.ir.annotations.Ignore;
-import net.minidev.json.JSONArray;
-import net.minidev.json.JSONObject;
 import net.snowflake.client.jdbc.BaseJDBCTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.sql.SQLException;
 import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.fail;
 
 /**
  * Standalone test cases for the out of band telemetry service
@@ -21,22 +17,13 @@ import static org.junit.Assert.fail;
 public class TelemetryServiceIT extends BaseJDBCTest
 {
   private boolean defaultState;
-  private String defaultDeployment;
 
   @Before
   public void setUp()
   {
     TelemetryService service = TelemetryService.getInstance();
-    try
-    {
-      service.updateContext(getConnectionParameters());
-    }
-    catch (SQLException e)
-    {
-      e.printStackTrace();
-    }
+    service.updateContext(getConnectionParameters());
     defaultState = service.isEnabled();
-    defaultDeployment = service.getServerDeploymentName();
     service.enable();
   }
 
@@ -61,8 +48,9 @@ public class TelemetryServiceIT extends BaseJDBCTest
   public void testCreateException()
   {
     TelemetryService service = TelemetryService.getInstance();
-    try{
-      int a = 10/0;
+    try
+    {
+      int a = 10 / 0;
     }
     catch (Exception ex)
     {
@@ -109,7 +97,8 @@ public class TelemetryServiceIT extends BaseJDBCTest
     while (i-- > 0)
     {
       TimeUnit.SECONDS.sleep(5);
-      if(service.size()==0){
+      if (service.size() == 0)
+      {
         break;
       }
     }
