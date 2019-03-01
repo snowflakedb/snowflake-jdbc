@@ -273,9 +273,13 @@
         <artifactId>maven-clean-plugin</artifactId>
         <version>3.0.0</version>
         <configuration>
+          <excludeDefaultDirectories/>
           <filesets>
             <fileset>
               <directory>lib</directory>
+                <includes>
+                  <include>*.jar</include>
+                </includes>
             </fileset>
           </filesets>
         </configuration>
@@ -542,6 +546,7 @@
                             <exclude>META-INF/*.SF</exclude>
                             <exclude>META-INF/*.DSA</exclude>
                             <exclude>META-INF/*.RSA</exclude>
+                            <exclude>.netbeans_automatic_build</exclude>
                          </excludes>
                       </filter>
                       <filter>
