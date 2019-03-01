@@ -5,6 +5,7 @@ package net.snowflake.client.jdbc;
 
 import org.junit.Test;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -27,10 +28,12 @@ public class SnowflakeDriverTest
     assertTrue(snowflakeDriver.acceptsURL("jdbc:snowflake://localhost:8081/?a=b&c=d"));
 
     // negative tests
-    assertTrue(!snowflakeDriver.acceptsURL("jdbc:snowflake://:"));
-    assertTrue(!snowflakeDriver.acceptsURL("jdbc:snowflake://localhost:"));
-    assertTrue(!snowflakeDriver.acceptsURL("jdbc:snowflake://:8080"));
-    assertTrue(!snowflakeDriver.acceptsURL("jdbc:snowflake://localhost:xyz"));
-    assertTrue(!snowflakeDriver.acceptsURL("jdbc:snowflak://localhost:8080"));
+    assertFalse(snowflakeDriver.acceptsURL("jdbc:"));
+    assertFalse(snowflakeDriver.acceptsURL("jdbc:snowflake://:"));
+    assertFalse(snowflakeDriver.acceptsURL("jdbc:snowflake://localhost:"));
+    assertFalse(snowflakeDriver.acceptsURL("jdbc:snowflake://:8080"));
+    assertFalse(snowflakeDriver.acceptsURL("jdbc:snowflake://localhost:xyz"));
+    assertFalse(snowflakeDriver.acceptsURL("jdbc:snowflak://localhost:8080"));
+    assertFalse(snowflakeDriver.acceptsURL("jdbc:snowflake://localhost:8080/a=b"));
   }
 }

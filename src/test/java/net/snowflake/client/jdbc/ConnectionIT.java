@@ -52,14 +52,7 @@ public class ConnectionIT extends BaseJDBCTest
   public void setUp()
   {
     TelemetryService service = TelemetryService.getInstance();
-    try
-    {
-      TelemetryService.getInstance().updateContext(getConnectionParameters());
-    }
-    catch (SQLException e)
-    {
-      e.printStackTrace();
-    }
+    TelemetryService.getInstance().updateContext(getConnectionParameters());
     defaultState = service.isEnabled();
     defaultDeployment = service.getServerDeploymentName();
     service.enable();
@@ -300,21 +293,21 @@ public class ConnectionIT extends BaseJDBCTest
     catch (SQLException e)
     {
       assertThat("Communication error", e.getErrorCode(),
-          equalTo(ErrorCode.NETWORK_ERROR.getMessageCode()));
+                 equalTo(ErrorCode.NETWORK_ERROR.getMessageCode()));
 
       conEnd = System.currentTimeMillis();
       assertThat("Login time out not taking effective",
-          conEnd - connStart < 60000);
+                 conEnd - connStart < 60000);
 
       if (TelemetryService.getInstance().isDeploymentEnabled())
       {
         assertThat("telemetry log created",
-          TelemetryService.getInstance().size() - queueSize == 2);
+                   TelemetryService.getInstance().size() - queueSize == 2);
         TelemetryEvent te = TelemetryService.getInstance().getEvent(queueSize);
-        JSONObject values =  (JSONObject)te.get("Value");
+        JSONObject values = (JSONObject) te.get("Value");
         assertThat("Communication error",
-          values.get("errorCode").toString().compareTo(
-              ErrorCode.NETWORK_ERROR.getMessageCode().toString()) == 0);
+                   values.get("errorCode").toString().compareTo(
+                       ErrorCode.NETWORK_ERROR.getMessageCode().toString()) == 0);
       }
       return;
     }
@@ -351,7 +344,7 @@ public class ConnectionIT extends BaseJDBCTest
         // a connection error response (wrong user and password)
         // with status code 200 is returned in RT
         assertThat("Communication error", e.getErrorCode(),
-            equalTo(ErrorCode.CONNECTION_ERROR.getMessageCode()));
+                   equalTo(ErrorCode.CONNECTION_ERROR.getMessageCode()));
 
         // since it returns normal response,
         // the telemetry does not create new event
@@ -364,14 +357,14 @@ public class ConnectionIT extends BaseJDBCTest
       {
         // in qa1 and others, 404 http status code should be returned
         assertThat("Communication error", e.getErrorCode(),
-            equalTo(ErrorCode.NETWORK_ERROR.getMessageCode()));
+                   equalTo(ErrorCode.NETWORK_ERROR.getMessageCode()));
 
         if (TelemetryService.getInstance().isDeploymentEnabled())
         {
           assertEquals(1, TelemetryService.getInstance().size() - queueSize);
           TelemetryEvent te = TelemetryService.getInstance().getEvent(queueSize);
           String name = (String) te.get("Name");
-          int statusCode = (int)((JSONObject) te.get("Value")).get("responseStatusCode");
+          int statusCode = (int) ((JSONObject) te.get("Value")).get("responseStatusCode");
           assertEquals(name, "HttpError404");
           assertEquals(statusCode, 404);
         }
@@ -399,28 +392,28 @@ public class ConnectionIT extends BaseJDBCTest
       String host = params.get("host");
       String[] hostItems = host.split("\\.");
       String wrongUri = params.get("uri").replace(
-          "."+ hostItems[hostItems.length-2]+".", ".wronghostname.");
+          "." + hostItems[hostItems.length - 2] + ".", ".wronghostname.");
 
       DriverManager.getConnection(wrongUri, properties);
     }
     catch (SQLException e)
     {
       assertThat("Communication error", e.getErrorCode(),
-          equalTo(ErrorCode.NETWORK_ERROR.getMessageCode()));
+                 equalTo(ErrorCode.NETWORK_ERROR.getMessageCode()));
 
       conEnd = System.currentTimeMillis();
       assertThat("Login time out not taking effective",
-          conEnd - connStart < 60000);
+                 conEnd - connStart < 60000);
 
       if (TelemetryService.getInstance().isDeploymentEnabled())
       {
         assertThat("telemetry log created",
-          TelemetryService.getInstance().size() - queueSize == 2);
+                   TelemetryService.getInstance().size() - queueSize == 2);
         TelemetryEvent te = TelemetryService.getInstance().getEvent(queueSize);
-        JSONObject values =  (JSONObject)te.get("Value");
+        JSONObject values = (JSONObject) te.get("Value");
         assertThat("Communication error",
-          values.get("errorCode").toString().compareTo(
-              ErrorCode.NETWORK_ERROR.getMessageCode().toString()) == 0);
+                   values.get("errorCode").toString().compareTo(
+                       ErrorCode.NETWORK_ERROR.getMessageCode().toString()) == 0);
       }
       return;
     }
@@ -739,11 +732,11 @@ public class ConnectionIT extends BaseJDBCTest
 
     // set JVM parameters
     System.setProperty("net.snowflake.jdbc.clientPrefetchThreads",
-        paramProperties.get("CLIENT_PREFETCH_THREADS").toString());
+                       paramProperties.get("CLIENT_PREFETCH_THREADS").toString());
     System.setProperty("net.snowflake.jdbc.clientResultChunkSize",
-        paramProperties.get("CLIENT_RESULT_CHUNK_SIZE").toString());
+                       paramProperties.get("CLIENT_RESULT_CHUNK_SIZE").toString());
     System.setProperty("net.snowflake.jdbc.clientMemoryLimit",
-        paramProperties.get("CLIENT_MEMORY_LIMIT").toString());
+                       paramProperties.get("CLIENT_MEMORY_LIMIT").toString());
 
     try
     {
@@ -782,11 +775,11 @@ public class ConnectionIT extends BaseJDBCTest
 
     // set JVM parameters
     System.setProperty("net.snowflake.jdbc.clientPrefetchThreads",
-        paramProperties.get("CLIENT_PREFETCH_THREADS").toString());
+                       paramProperties.get("CLIENT_PREFETCH_THREADS").toString());
     System.setProperty("net.snowflake.jdbc.clientResultChunkSize",
-        paramProperties.get("CLIENT_RESULT_CHUNK_SIZE").toString());
+                       paramProperties.get("CLIENT_RESULT_CHUNK_SIZE").toString());
     System.setProperty("net.snowflake.jdbc.clientMemoryLimit",
-        paramProperties.get("CLIENT_MEMORY_LIMIT").toString());
+                       paramProperties.get("CLIENT_MEMORY_LIMIT").toString());
 
     paramProperties.put("CLIENT_PREFETCH_THREADS", "8");
     paramProperties.put("CLIENT_RESULT_CHUNK_SIZE", 64);

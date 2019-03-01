@@ -40,20 +40,14 @@ public class ConnectionPoolingIT
 
   public ConnectionPoolingIT()
   {
-    try
-    {
-      Map<String, String> params = BaseJDBCTest.getConnectionParameters();
-      connectStr = params.get("uri");
-      account = params.get("account");
-      user = params.get("user");
-      password = params.get("password");
-      database = params.get("database");
-      schema = params.get("schema");
-      ssl = params.get("ssl");
-    } catch (SQLException e)
-    {
-      throw new RuntimeException(e.getCause());
-    }
+    Map<String, String> params = BaseJDBCTest.getConnectionParameters();
+    connectStr = params.get("uri");
+    account = params.get("account");
+    user = params.get("user");
+    password = params.get("password");
+    database = params.get("database");
+    schema = params.get("schema");
+    ssl = params.get("ssl");
   }
 
   @Before
@@ -206,13 +200,21 @@ public class ConnectionPoolingIT
       try
       {
         if (cpds != null)
+        {
           con = cpds.getConnection();
+        }
         else if (bds != null)
+        {
           con = bds.getConnection();
+        }
         else if (pds != null)
+        {
           con = pds.getConnection();
+        }
         else if (hds != null)
+        {
           con = hds.getConnection();
+        }
 
         Statement st = con.createStatement();
         ResultSet resultSet = st.executeQuery("SELECT * FROM test_pooling");
@@ -221,15 +223,18 @@ public class ConnectionPoolingIT
         {
           assertEquals("test_str", resultSet.getString(1));
         }
-      } catch (Exception e)
+      }
+      catch (Exception e)
       {
         System.out.println(e);
-      } finally
+      }
+      finally
       {
         try
         {
           con.close();
-        } catch (Exception e)
+        }
+        catch (Exception e)
         {
           System.out.println(e);
         }
