@@ -10,13 +10,17 @@ import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.sql.Connection;
+import java.sql.Date;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Timestamp;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.TimeZone;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -29,6 +33,10 @@ public class AbstractDriverIT
 {
   public static final String DRIVER_CLASS = "net.snowflake.client.jdbc.SnowflakeDriver";
   public static final int DONT_INJECT_SOCKET_TIMEOUT = 0;
+
+  // data files
+  protected static final String TEST_DATA_FILE = "orders_100.csv";
+  protected static final String TEST_DATA_FILE_2 = "orders_101.csv";
 
   private static Logger logger =
       Logger.getLogger(AbstractDriverIT.class.getName());
@@ -291,4 +299,43 @@ public class AbstractDriverIT
 
     return testDir.substring(0, testDir.indexOf("Client"));
   }
+
+  /**
+   * Get a full path of the file in Resource
+   *
+   * @param fileName a file name
+   * @return a full path name of the file
+   */
+  protected static String getFullPathFileInResource(String fileName)
+  {
+    ClassLoader classLoader = AbstractDriverIT.class.getClassLoader();
+    URL url = classLoader.getResource(fileName);
+    if (url != null)
+    {
+      return url.getFile();
+    }
+    else
+    {
+      throw new RuntimeException("No file is found: " + fileName);
+    }
+  }
+
+  protected static Timestamp buildTimestamp(
+      int year, int month, int day, int hour, int minute, int second, int fractionInNanoseconds)
+  {
+    Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+    cal.set(year, month, day, hour, minute, second);
+    Timestamp ts = new Timestamp(cal.getTime().getTime());
+    ts.setNanos(fractionInNanoseconds);
+    return ts;
+  }
+
+  protected static Date buildDate(int year, int month, int day)
+  {
+    Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+    cal.set(year, month, day, 0, 0, 0);
+    cal.set(Calendar.MILLISECOND, 0);
+    return new Date(cal.getTime().getTime());
+  }
+
 }
