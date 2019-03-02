@@ -145,8 +145,12 @@ public class BindUploader implements Closeable
     if (isNegative)
     {
       // adjust the timestamp
-      sec = -1 * sec - 1L;
-      nano = 1000000000 - nano;
+      sec = -1 * sec;
+      if (nano > 0)
+      {
+        nano = 1000000000 - nano;
+        sec--;
+      }
     }
     Timestamp v1 = new Timestamp(sec * 1000);
     return timestampFormat.format(v1) + String.format("%09d", nano) + " +00:00";
