@@ -291,15 +291,6 @@ public class AbstractDriverIT
     }
   }
 
-  protected static String getSFProjectRoot() throws UnsupportedEncodingException
-  {
-    URL location =
-        AbstractDriverIT.class.getProtectionDomain().getCodeSource().getLocation();
-    String testDir = URLDecoder.decode(location.getPath(), "UTF-8");
-
-    return testDir.substring(0, testDir.indexOf("Client"));
-  }
-
   /**
    * Get a full path of the file in Resource
    *
@@ -323,7 +314,7 @@ public class AbstractDriverIT
   protected static Timestamp buildTimestamp(
       int year, int month, int day, int hour, int minute, int second, int fractionInNanoseconds)
   {
-    Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+    Calendar cal = Calendar.getInstance();
     cal.set(year, month, day, hour, minute, second);
     Timestamp ts = new Timestamp(cal.getTime().getTime());
     ts.setNanos(fractionInNanoseconds);
@@ -332,7 +323,7 @@ public class AbstractDriverIT
 
   protected static Date buildDate(int year, int month, int day)
   {
-    Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+    Calendar cal = Calendar.getInstance();
     cal.set(year, month, day, 0, 0, 0);
     cal.set(Calendar.MILLISECOND, 0);
     return new Date(cal.getTime().getTime());
