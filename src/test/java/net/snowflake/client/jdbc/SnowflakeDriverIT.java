@@ -5,7 +5,6 @@ package net.snowflake.client.jdbc;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import net.snowflake.client.AbstractDriverIT;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnTravisCI;
@@ -19,7 +18,6 @@ import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
 import java.math.BigDecimal;
-import java.net.URL;
 import java.nio.charset.Charset;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -65,7 +63,6 @@ public class SnowflakeDriverIT extends AbstractDriverIT
 {
   private static final int MAX_CONCURRENT_QUERIES_PER_USER = 50;
   private static final String TEST_UUID = UUID.randomUUID().toString();
-  private static final String TEST_DATA_FILE = "orders_100.csv";
 
   private ObjectMapper mapper = new ObjectMapper();
 
@@ -78,7 +75,6 @@ public class SnowflakeDriverIT extends AbstractDriverIT
   @BeforeClass
   public static void setUp() throws Throwable
   {
-    final String TEST_DATA_FILE_2 = "orders_101.csv";
     Connection connection = getConnection();
 
     Statement statement = connection.createStatement();
@@ -98,9 +94,13 @@ public class SnowflakeDriverIT extends AbstractDriverIT
 
     // put files
     assertTrue("Failed to put a file",
-               statement.execute("PUT file://" + getFile(TEST_DATA_FILE) + " @%orders_jdbc"));
+               statement.execute(
+                   "PUT file://" +
+                   getFullPathFileInResource(TEST_DATA_FILE) + " @%orders_jdbc"));
     assertTrue("Failed to put a file",
-               statement.execute("PUT file://" + getFile(TEST_DATA_FILE_2) + " @%orders_jdbc"));
+               statement.execute(
+                   "PUT file://" +
+                   getFullPathFileInResource(TEST_DATA_FILE_2) + " @%orders_jdbc"));
 
     int numRows =
         statement.executeUpdate("copy into orders_jdbc");
@@ -888,7 +888,7 @@ public class SnowflakeDriverIT extends AbstractDriverIT
         // put files
         assertTrue("Failed to put a file",
                    statement.execute(
-                       "PUT file://" + getFile(TEST_DATA_FILE)
+                       "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE)
                        + " @%testLoadToLocalFS/orders parallel=10"));
 
         resultSet = statement.getResultSet();
@@ -1604,9 +1604,7 @@ public class SnowflakeDriverIT extends AbstractDriverIT
       assertEquals("string", "hello", resultSet.getString(2));
 
       // bind timestamp
-      Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
-      cal.set(2014, 7, 26, 3, 52, 0);
-      Timestamp ts = new Timestamp(cal.getTime().getTime());
+      Timestamp ts = buildTimestamp(2014, 7, 26, 3, 52, 0, 0);
       preparedStatement.setTimestamp(1, ts);
       resultSet = preparedStatement.executeQuery();
 
@@ -2127,10 +2125,7 @@ public class SnowflakeDriverIT extends AbstractDriverIT
       preparedStatement = connection.prepareStatement(
           "insert into testBindTimestampNTZ values(?)");
 
-      Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
-      cal.set(2014, 7, 26, 3, 52, 0);
-      Timestamp ts = new Timestamp(cal.getTime().getTime());
-
+      Timestamp ts = buildTimestamp(2014, 7, 26, 3, 52, 0, 0);
       preparedStatement.setTimestamp(1, ts);
 
       int updateCount = preparedStatement.executeUpdate();
@@ -2150,8 +2145,10 @@ public class SnowflakeDriverIT extends AbstractDriverIT
           "truncate table testBindTimestampNTZ");
       regularStatement.close();
 
-      preparedStatement.setTimestamp(1, ts,
-                                     Calendar.getInstance(TimeZone.getTimeZone("America/Los_Angeles")));
+      preparedStatement.setTimestamp(
+          1,
+          ts,
+          Calendar.getInstance(TimeZone.getTimeZone("America/Los_Angeles")));
 
       updateCount = preparedStatement.executeUpdate();
 
@@ -2304,9 +2301,7 @@ public class SnowflakeDriverIT extends AbstractDriverIT
 
       java.sql.Date sqlDate = java.sql.Date.valueOf("2014-08-26");
 
-      Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
-      cal.set(2014, 7, 26, 3, 52, 0);
-      Timestamp ts = new Timestamp(cal.getTime().getTime());
+      Timestamp ts = buildTimestamp(2014, 7, 26, 3, 52, 0, 0);
 
       preparedStatement.setObject(1, 1);
       preparedStatement.setObject(2, "hello");
@@ -2616,7 +2611,7 @@ public class SnowflakeDriverIT extends AbstractDriverIT
 
         // put files
         resultSet =
-            statement.executeQuery("PUT file://" + getFile(TEST_DATA_FILE)
+            statement.executeQuery("PUT file://" + getFullPathFileInResource(TEST_DATA_FILE)
                                    + " @%testPutViaExecuteQuery/orders parallel=10");
 
         ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
@@ -2816,12 +2811,6 @@ public class SnowflakeDriverIT extends AbstractDriverIT
       connection = getConnection();
 
       statement = connection.createStatement();
-
-      /*
-      statement.execute(
-              "alter session set client_honor_client_tz_for_timestamp_ntz=false");
-      statement.close();
-      */
 
       // 30 minutes past daylight saving change (from 2am to 3am)
       ResultSet res = statement.executeQuery(
@@ -3296,7 +3285,7 @@ public class SnowflakeDriverIT extends AbstractDriverIT
 
       statement = connection.createStatement();
 
-      String soureFilePath = getFile(TEST_DATA_FILE);
+      String soureFilePath = getFullPathFileInResource(TEST_DATA_FILE);
 
       File destFolder = tmpFolder.newFolder();
       String destFolderCanonicalPath = destFolder.getCanonicalPath();
@@ -3350,19 +3339,5 @@ public class SnowflakeDriverIT extends AbstractDriverIT
     Connection connection = getConnection();
     connection.close();
     connection.prepareStatement("select 1");
-  }
-
-  private static String getFile(String fileName)
-  {
-    ClassLoader classLoader = SnowflakeDriverIT.class.getClassLoader();
-    URL url = classLoader.getResource(fileName);
-    if (url != null)
-    {
-      return url.getFile();
-    }
-    else
-    {
-      throw new RuntimeException("No file is found: " + fileName);
-    }
   }
 }
