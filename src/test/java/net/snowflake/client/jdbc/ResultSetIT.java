@@ -797,7 +797,6 @@ public class ResultSetIT extends BaseJDBCTest
 
     // ResultSet.getDate()
     assertEquals(date, resultSet.getDate("COLDATE"));
-    assertEquals(date.toString(), resultSet.getDate("COLTS").toString());
     try
     {
       resultSet.getDate("COLTIME");
