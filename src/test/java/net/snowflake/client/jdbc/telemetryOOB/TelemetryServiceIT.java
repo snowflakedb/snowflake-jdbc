@@ -1,10 +1,10 @@
 package net.snowflake.client.jdbc.telemetryOOB;
 
 
-import jdk.nashorn.internal.ir.annotations.Ignore;
 import net.snowflake.client.jdbc.BaseJDBCTest;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.concurrent.TimeUnit;
