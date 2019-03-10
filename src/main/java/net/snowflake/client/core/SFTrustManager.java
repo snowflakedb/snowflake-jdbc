@@ -1184,6 +1184,16 @@ class SFTrustManager extends X509ExtendedTrustManager
             "Certificate is attached for verification. " +
             "Verifying it by the issuer certificate.");
         signVerifyCert = attachedCerts[0];
+        if (currentTime.after(signVerifyCert.getNotAfter()) || currentTime.before(signVerifyCert.getNotBefore()))
+        {
+          throw new OCSPException(String.format("Cert attached to OCSP Response is invalid." +
+                  "Current time - %s" +
+                  "Certificate not before time - %s" +
+                  "Certificate not after time - %s",
+                  currentTime.toString(),
+                  signVerifyCert.getNotBefore().toString(),
+                  signVerifyCert.getNotAfter().toString()));
+        }
         verifySignature(
             new X509CertificateHolder(pairIssuerSubject.left.getEncoded()),
             signVerifyCert.getSignature(),
