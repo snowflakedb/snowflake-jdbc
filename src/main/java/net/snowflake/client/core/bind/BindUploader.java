@@ -43,16 +43,10 @@ public class BindUploader implements Closeable
 
   private static final String STAGE_NAME = "SYSTEM$BIND";
 
-  // Date binds are saved as millis, timestamp binds are saved as nanos (and times are not supported)
-  private static final String DATE_FORMAT = "ES3";
-  private static final String TS_FORMAT = "YYYY-MM-DD HH24:MI:SS.FF9 TZH:TZM";
-
   private static final String CREATE_STAGE_STMT = "CREATE TEMPORARY STAGE "
                                                   + STAGE_NAME
                                                   + " file_format=("
                                                   + " type=csv"
-                                                  + " date_format=" + DATE_FORMAT
-                                                  + " timestamp_format='" + TS_FORMAT + "'"
                                                   + " field_optionally_enclosed_by='\"'"
                                                   + ")";
 
@@ -82,6 +76,7 @@ public class BindUploader implements Closeable
   private long fileSize = 100 * 1024 * 1024;
 
   private final DateFormat timestampFormat;
+  private final DateFormat dateFormat;
 
   static class ColumnTypeDataPair
   {
@@ -114,6 +109,17 @@ public class BindUploader implements Closeable
     this.timestampFormat = new SimpleDateFormat(
         "yyyy-MM-dd HH:mm:ss.");
     this.timestampFormat.setCalendar(calendarUTC);
+    this.dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+    this.dateFormat.setCalendar(calendarUTC);
+  }
+
+  private synchronized String synchronizedDateFormat(String o)
+  {
+    if (o == null)
+    {
+      return null;
+    }
+    return dateFormat.format(new java.sql.Date(Long.parseLong(o)));
   }
 
   private synchronized String synchronizedTimestampFormat(String o)
@@ -238,9 +244,16 @@ public class BindUploader implements Closeable
         List<String> convertedList = new ArrayList<>(list.size());
         if ("TIMESTAMP_LTZ".equals(type) || "TIMESTAMP_NTZ".equals(type))
         {
-          for (int j = 0, len = list.size(); j < len; ++j)
+          for (String e : list)
           {
-            convertedList.add(synchronizedTimestampFormat(list.get(j)));
+            convertedList.add(synchronizedTimestampFormat(e));
+          }
+        }
+        else if ("DATE".equals(type))
+        {
+          for (String e : list)
+          {
+            convertedList.add(synchronizedDateFormat(e));
           }
         }
         else
@@ -308,7 +321,7 @@ public class BindUploader implements Closeable
    */
   private void writeRowsToCSV(List<String[]> rows) throws BindException
   {
-    int numBytes = 0;
+    int numBytes;
     int rowNum = 0;
     int fileCount = 0;
 
@@ -340,7 +353,7 @@ public class BindUploader implements Closeable
    * Create a File object for the given fileNum under the temporary directory
    *
    * @param fileNum the number to use as the file name
-   * @return
+   * @return a File object to upload to the stage
    */
   private File getFile(int fileNum)
   {
@@ -352,7 +365,7 @@ public class BindUploader implements Closeable
    *
    * @param file the file to write out to
    * @return output stream
-   * @throws BindException
+   * @throws BindException raises if it fails to create an output file.
    */
   private OutputStream openFile(File file) throws BindException
   {
@@ -493,9 +506,13 @@ public class BindUploader implements Closeable
       {
         if (Files.isDirectory(bindDir))
         {
-          for (String fileName : bindDir.toFile().list())
+          String[] dir = bindDir.toFile().list();
+          if (dir != null)
           {
-            Files.delete(bindDir.resolve(fileName));
+            for (String fileName : dir)
+            {
+              Files.delete(bindDir.resolve(fileName));
+            }
           }
           Files.delete(bindDir);
         }
