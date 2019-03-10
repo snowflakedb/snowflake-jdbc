@@ -13,15 +13,16 @@ import java.util.Map;
 public class LoaderFactory
 {
   private static final SFLogger LOGGER = SFLoggerFactory.getLogger(
-          LoaderFactory.class);
+      LoaderFactory.class);
+
   public static Loader createLoader(Map<LoaderProperty, Object> properties,
                                     Connection uploadConnection,
                                     Connection processingConnection)
   {
-      LOGGER.debug("");
-      StreamLoader loader = new StreamLoader(properties, uploadConnection,
-              processingConnection);
-      return loader;
+    LOGGER.debug("");
+    StreamLoader loader = new StreamLoader(properties, uploadConnection,
+                                           processingConnection);
+    return loader;
   }
 
 }

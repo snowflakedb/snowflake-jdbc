@@ -8,7 +8,7 @@ import java.util.Map;
 
 /**
  * Body of a query request
- *
+ * <p>
  * Created by hyu on 6/30/17.
  */
 public class QueryExecDTO
@@ -33,13 +33,13 @@ public class QueryExecDTO
   private boolean isInternal;
 
   public QueryExecDTO(String sqlText,
-               boolean describeOnly,
-               Integer sequenceId,
-               Map<String, ParameterBindingDTO> bindings,
-               String bindStage,
-               Map<String, Object> parameters,
-               long querySubmissionTime,
-               boolean internal)
+                      boolean describeOnly,
+                      Integer sequenceId,
+                      Map<String, ParameterBindingDTO> bindings,
+                      String bindStage,
+                      Map<String, Object> parameters,
+                      long querySubmissionTime,
+                      boolean internal)
   {
     this.sqlText = sqlText;
     this.describeOnly = describeOnly;

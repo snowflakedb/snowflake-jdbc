@@ -17,7 +17,10 @@ public final class Constants
 
   public enum OS
   {
-    WINDOWS, LINUX, MAC, SOLARIS
+    WINDOWS,
+    LINUX,
+    MAC,
+    SOLARIS
   }
 
   private static OS os = null;
@@ -30,14 +33,17 @@ public final class Constants
       if (operSys.contains("win"))
       {
         os = OS.WINDOWS;
-      } else if (operSys.contains("nix") || operSys.contains("nux")
-          || operSys.contains("aix"))
+      }
+      else if (operSys.contains("nix") || operSys.contains("nux")
+               || operSys.contains("aix"))
       {
         os = OS.LINUX;
-      } else if (operSys.contains("mac"))
+      }
+      else if (operSys.contains("mac"))
       {
         os = OS.MAC;
-      } else if (operSys.contains("sunos"))
+      }
+      else if (operSys.contains("sunos"))
       {
         os = OS.SOLARIS;
       }

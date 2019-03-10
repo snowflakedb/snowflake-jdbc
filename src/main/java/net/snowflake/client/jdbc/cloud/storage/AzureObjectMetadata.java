@@ -8,12 +8,11 @@ import java.util.Map;
 
 /**
  * Implements  platform-independent interface Azure BLOB object metadata
- *
+ * <p>
  * Only the metadata accessors and mutators used by the JDBC client currently are supported,
  * additional methods should be added as needed
  *
  * @author lgiakoumakis
- *
  **/
 public class AzureObjectMetadata implements StorageObjectMetadata
 {
@@ -44,7 +43,9 @@ public class AzureObjectMetadata implements StorageObjectMetadata
   public Map<String, String> getUserMetadata()
   {
     return userDefinedMetadata;
-  };
+  }
+
+  ;
 
   /**
    * @return returns the size of object in bytes
@@ -85,8 +86,8 @@ public class AzureObjectMetadata implements StorageObjectMetadata
   }
 
   /*
- * @return returns the content encoding type
- */
+   * @return returns the content encoding type
+   */
   @Override
   public String getContentEncoding()
   {

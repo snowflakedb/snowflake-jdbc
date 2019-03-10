@@ -22,14 +22,14 @@ import java.util.logging.StreamHandler;
 
 /**
  * Use java.util.logging to implements SFLogger.
- *
+ * <p>
  * Log Level mapping from SFLogger to java.util.logging:
  * ERROR -- SEVERE
  * WARN  -- WARNING
  * INFO  -- INFO
  * DEBUG -- FINE
  * TRACE -- FINEST
- *
+ * <p>
  * Created by hyu on 11/17/16.
  */
 public class JDK14Logger implements SFLogger
@@ -206,33 +206,32 @@ public class JDK14Logger implements SFLogger
    * Since we use SLF4J ways of formatting string we need to refactor message string
    * if we have arguments.
    * For example, in sl4j, this string can be formatted with 2 arguments
-   *
-   *   ex.1: Error happened in {} on {}
-   *
+   * <p>
+   * ex.1: Error happened in {} on {}
+   * <p>
    * And if two arguments are provided, error message can be formatted.
-   *
+   * <p>
    * However, in java.util.logging, to achieve formatted error message,
    * Same string should be converted to
-   *
-   *   ex.2: Error happened in {0} on {1}
-   *
+   * <p>
+   * ex.2: Error happened in {0} on {1}
+   * <p>
    * Which represented first arguments and second arguments will be replaced in the
    * corresponding places.
-   *
+   * <p>
    * This method will convert string in ex.1 to ex.2
-   *
    */
   private String refactorString(String original)
   {
     StringBuilder sb = new StringBuilder();
     int argCount = 0;
-    for (int i=0; i<original.length(); i++)
+    for (int i = 0; i < original.length(); i++)
     {
-      if (original.charAt(i) == '{' && i < original.length()-1 && original.charAt(i+1) == '}')
+      if (original.charAt(i) == '{' && i < original.length() - 1 && original.charAt(i + 1) == '}')
       {
         sb.append(String.format("{%d}", argCount));
-        argCount ++;
-        i ++;
+        argCount++;
+        i++;
       }
       else
       {
@@ -245,20 +244,21 @@ public class JDK14Logger implements SFLogger
   /**
    * Used to find the index of the source class/method in current stack
    * This method will locate the source as the first method after logMethods
+   *
    * @return an array of size two, first element is className and second is
-   *          methodName
+   * methodName
    */
   private String[] findSourceInStack()
   {
     StackTraceElement[] stackTraces = Thread.currentThread().getStackTrace();
     String[] results = new String[2];
-    for (int i=0; i<stackTraces.length; i++)
+    for (int i = 0; i < stackTraces.length; i++)
     {
       if (logMethods.contains(stackTraces[i].getMethodName()))
       {
         // since already find the highest logMethods, find the first method after this one
         // and is not a logMethods. This is done to avoid multiple wrapper over log methods
-        for (int j=i; j<stackTraces.length; j++)
+        for (int j = i; j < stackTraces.length; j++)
         {
           if (!logMethods.contains(stackTraces[j].getMethodName()))
           {
@@ -285,18 +285,26 @@ public class JDK14Logger implements SFLogger
     // default number of log files to rotate to 2
     int logCount = 2;
 
-    if (defaultLogSizeVal != null) {
-      try {
+    if (defaultLogSizeVal != null)
+    {
+      try
+      {
         logSize = Integer.parseInt(defaultLogSizeVal);
-      } catch (Exception ex) {
+      }
+      catch (Exception ex)
+      {
         ;
       }
     }
 
-    if (defaultLogCountVal != null) {
-      try {
+    if (defaultLogCountVal != null)
+    {
+      try
+      {
         logCount = Integer.parseInt(defaultLogCountVal);
-      } catch (Exception ex) {
+      }
+      catch (Exception ex)
+      {
         ;
       }
     }

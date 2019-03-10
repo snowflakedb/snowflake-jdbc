@@ -7,6 +7,7 @@ package net.snowflake.client.core;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URI;
@@ -14,6 +15,7 @@ import java.net.URISyntaxException;
 import java.util.Map;
 import java.util.Random;
 import java.util.zip.GZIPOutputStream;
+
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.ByteArrayEntity;
@@ -24,6 +26,7 @@ import org.apache.http.impl.client.CloseableHttpClient;
 
 /**
  * Incident Event class for triggering and registering Incidents with GS
+ *
  * @author jrosen
  */
 public class Incident extends Event
@@ -34,9 +37,9 @@ public class Incident extends Event
 
   private static final Random randomGenerator = new Random();
 
-  private final Map<String,Object> incident;
+  private final Map<String, Object> incident;
 
-  public Incident(Event.EventType type, Map<String,Object> incident)
+  public Incident(Event.EventType type, Map<String, Object> incident)
   {
     super(type, "");
 
@@ -48,6 +51,7 @@ public class Incident extends Event
    * the time instant generated. I.e. in case there happens to be a collision
    * (unlikely), then the id together with the timestamp can be used to
    * disambiguate the two events. (Stolen from GS)
+   *
    * @return incident id
    */
   public static String generateIncidentId()
@@ -69,20 +73,20 @@ public class Incident extends Event
     HttpPost postRequest;
 
     logger.debug("Flushing incident, type={}, msg={}",
-          this.getType().getDescription(), this.getMessage());
+                 this.getType().getDescription(), this.getMessage());
 
     // Get session token and incident info
     String sessionToken =
-        (String)incident.get(SFSession.SF_HEADER_TOKEN_TAG);
+        (String) incident.get(SFSession.SF_HEADER_TOKEN_TAG);
     String serverUrl =
-        (String)incident.get(SFSessionProperty.SERVER_URL.getPropertyKey());
-    Map<String,Object> incidentInfo =
-        (Map<String,Object>)incident.get(IncidentUtil.INCIDENT_INFO);
+        (String) incident.get(SFSessionProperty.SERVER_URL.getPropertyKey());
+    Map<String, Object> incidentInfo =
+        (Map<String, Object>) incident.get(IncidentUtil.INCIDENT_INFO);
 
     if (sessionToken == null || serverUrl == null)
     {
       logger.debug("Incident registration failed, sessionToken or "
-              + "serverUrl not specified");
+                   + "serverUrl not specified");
       return;
     }
 
@@ -94,7 +98,7 @@ public class Incident extends Event
     catch (JsonProcessingException ex)
     {
       logger.error("Incident registration failed, could not map "
-              + "incident report to json string. Exception: {}", ex.getMessage());
+                   + "incident report to json string. Exception: {}", ex.getMessage());
       return;
     }
 
@@ -110,18 +114,18 @@ public class Incident extends Event
     catch (URISyntaxException ex)
     {
       logger.error("Incident registration failed, "
-              + "URI could not be built. Exception: {}", ex.getMessage());
+                   + "URI could not be built. Exception: {}", ex.getMessage());
       return;
     }
 
     logger.debug("Creating new HTTP request, token={}, URL={}",
-        sessionToken, incidentURI.toString());
+                 sessionToken, incidentURI.toString());
 
     postRequest = new HttpPost(incidentURI);
     postRequest.setHeader(SFSession.SF_HEADER_AUTHORIZATION,
-          SFSession.SF_HEADER_SNOWFLAKE_AUTHTYPE + " "
-              + SFSession.SF_HEADER_TOKEN_TAG + "=\""
-              + sessionToken + "\"");
+                          SFSession.SF_HEADER_SNOWFLAKE_AUTHTYPE + " "
+                          + SFSession.SF_HEADER_TOKEN_TAG + "=\""
+                          + sessionToken + "\"");
 
     // Compress the payload.
     ByteArrayEntity input = null;
@@ -135,10 +139,10 @@ public class Incident extends Event
       input = new ByteArrayEntity(baos.toByteArray());
       input.setContentType("application/json");
     }
-    catch(IOException exc)
+    catch (IOException exc)
     {
       logger.debug("Incident registration failed, could not compress"
-              + " payload. Exception: {}", exc.getMessage());
+                   + " payload. Exception: {}", exc.getMessage());
     }
 
     postRequest.setEntity(input);
@@ -157,7 +161,7 @@ public class Incident extends Event
       // No much we can do here besides complain.
       logger.error(
           "Incident registration request failed, " +
-              "response: {}, exception: {}", response, ex.getMessage());
+          "response: {}, exception: {}", response, ex.getMessage());
     }
   }
 }

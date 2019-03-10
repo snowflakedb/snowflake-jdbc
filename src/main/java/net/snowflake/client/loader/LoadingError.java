@@ -6,6 +6,7 @@ package net.snowflake.client.loader;
 
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
+
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashMap;
@@ -14,19 +15,27 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- *   Wrapper for data format errors returned by the COPY/validate command
+ * Wrapper for data format errors returned by the COPY/validate command
  */
 public class LoadingError
 {
   private static final SFLogger LOGGER = SFLoggerFactory.getLogger(
-          LoadingError.class);
+      LoadingError.class);
 
   public enum ErrorProperty
   {
 
-    ERROR, LINE, CHARACTER, BYTE_OFFSET, CATEGORY, CODE,
-    SQL_STATE, COLUMN_NAME, ROW_NUMBER,
-    ROW_START_LINE, REJECTED_RECORD
+    ERROR,
+    LINE,
+    CHARACTER,
+    BYTE_OFFSET,
+    CATEGORY,
+    CODE,
+    SQL_STATE,
+    COLUMN_NAME,
+    ROW_NUMBER,
+    ROW_START_LINE,
+    REJECTED_RECORD
   }
 
   private String _stage;
@@ -38,15 +47,15 @@ public class LoadingError
   private final String _target;
 
   private final Map<ErrorProperty, String> _properties
-                                           = new HashMap<ErrorProperty, String>();
+      = new HashMap<ErrorProperty, String>();
 
   public static String UNKNOWN = "unknown";
 
   /**
    * Construct error from validation output
    *
-   * @param rs result set
-   * @param bs buffer stage
+   * @param rs     result set
+   * @param bs     buffer stage
    * @param loader stream loader
    */
   public LoadingError(ResultSet rs, BufferStage bs, StreamLoader loader)
@@ -121,7 +130,7 @@ public class LoadingError
       sb.append("\"").append(p.name()).append("\": ");
       sb.append("\"");
       String value = String.valueOf(_properties.get(p));
-      sb.append(value.replaceAll("[\\s]+"," ").replace("\"", "\\\""));
+      sb.append(value.replaceAll("[\\s]+", " ").replace("\"", "\\\""));
       sb.append("\"");
       prefix = ",";
     }

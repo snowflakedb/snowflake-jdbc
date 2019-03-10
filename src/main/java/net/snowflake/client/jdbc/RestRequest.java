@@ -55,16 +55,16 @@ public class RestRequest
   /**
    * Execute an http request with retry logic.
    *
-   * @param httpClient          client object used to communicate with other machine
-   * @param httpRequest         request object contains all the request information
-   * @param retryTimeout        : retry timeout (in seconds)
-   * @param injectSocketTimeout : simulate socket timeout
-   * @param canceling           canceling flag
-   * @param withoutCookies      whether the cookie spec should be set to IGNORE
-   *                            or not
+   * @param httpClient             client object used to communicate with other machine
+   * @param httpRequest            request object contains all the request information
+   * @param retryTimeout           : retry timeout (in seconds)
+   * @param injectSocketTimeout    : simulate socket timeout
+   * @param canceling              canceling flag
+   * @param withoutCookies         whether the cookie spec should be set to IGNORE
+   *                               or not
    * @param includeRetryParameters whether to include retry parameters in retried
    *                               requests
-   * @param includeRequestGuid whether to include request_guid parameter
+   * @param includeRequestGuid     whether to include request_guid parameter
    * @return HttpResponse Object get from server
    * @throws net.snowflake.client.jdbc.SnowflakeSQLException Request timeout Exception or Illegal State Exception i.e.
    *                                                         connection is already shutdown etc
@@ -132,7 +132,7 @@ public class RestRequest
         if (injectSocketTimeout != 0 && retryCount == 0)
         {
           logger.debug("Injecting socket timeout by setting " +
-              "socket timeout to {} millisecond ", injectSocketTimeout);
+                       "socket timeout to {} millisecond ", injectSocketTimeout);
           httpRequest.setConfig(
               HttpUtil.getDefaultRequestConfigWithSocketTimeout(
                   injectSocketTimeout, withoutCookies));
@@ -175,9 +175,9 @@ public class RestRequest
         if (ex instanceof IllegalStateException)
         {
           throw new SnowflakeSQLException(ex,
-              ErrorCode.INVALID_STATE.getSqlState(),
-              ErrorCode.INVALID_STATE.getMessageCode(),
-              ex.getMessage());
+                                          ErrorCode.INVALID_STATE.getSqlState(),
+                                          ErrorCode.INVALID_STATE.getMessageCode(),
+                                          ex.getMessage());
         }
 
         savedEx = ex;
@@ -186,12 +186,12 @@ public class RestRequest
         if ((System.currentTimeMillis() - startTimePerRequest) > 300000)
         {
           logger.error("HTTP request took longer than 5 min: {} sec",
-              (System.currentTimeMillis() - startTimePerRequest) / 1000);
+                       (System.currentTimeMillis() - startTimePerRequest) / 1000);
         }
         StringWriter sw = new StringWriter();
         savedEx.printStackTrace(new PrintWriter(sw));
         logger.debug("Exception encountered for: {}, {}, {}",
-            httpRequest.toString(), ex.getLocalizedMessage(), sw.toString());
+                     httpRequest.toString(), ex.getLocalizedMessage(), sw.toString());
       }
       finally
       {
@@ -213,24 +213,24 @@ public class RestRequest
        */
       if (response != null &&
           (response.getStatusLine().getStatusCode() < 500 || // service unavailable
-              response.getStatusLine().getStatusCode() >= 600) && // gateway timeout
+           response.getStatusLine().getStatusCode() >= 600) && // gateway timeout
           response.getStatusLine().getStatusCode() != 408 && // request timeout
           response.getStatusLine().getStatusCode() != 403) // intermittent AWS access issue
       {
         logger.debug("HTTP response code: {}",
-            response.getStatusLine().getStatusCode());
+                     response.getStatusLine().getStatusCode());
 
         if (response.getStatusLine().getStatusCode() != 200)
         {
           logger.debug("Error response not retriable, " +
-                  "HTTP Response Code={}, request={}",
-              response.getStatusLine().getStatusCode(),
-              httpRequest);
+                       "HTTP Response Code={}, request={}",
+                       response.getStatusLine().getStatusCode(),
+                       httpRequest);
           EventUtil.triggerBasicEvent(
               Event.EventType.NETWORK_ERROR,
               "StatusCode: " + response.getStatusLine().getStatusCode() +
-                  ", Reason: " + response.getStatusLine().getReasonPhrase() +
-                  ", Request: " + httpRequest.toString(),
+              ", Reason: " + response.getStatusLine().getReasonPhrase() +
+              ", Request: " + httpRequest.toString(),
               false);
 
         }
@@ -280,25 +280,25 @@ public class RestRequest
           {
             logger.error(
                 "Stop retrying since elapsed time due to network " +
-                    "issues has reached timeout. " +
-                    "Elapsed={}(ms), timeout={}(ms)",
-            elapsedMilliForTransientIssues, retryTimeoutInMilliseconds);
+                "issues has reached timeout. " +
+                "Elapsed={}(ms), timeout={}(ms)",
+                elapsedMilliForTransientIssues, retryTimeoutInMilliseconds);
             breakRetryReason = "retry timeout";
             TelemetryService.getInstance().logHttpRequestTelemetryEvent(
-                  "HttpRequestRetryTimeout",
-                  httpRequest,
-                  injectSocketTimeout,
-                  canceling,
-                  withoutCookies,
-                  includeRetryParameters,
-                  includeRequestGuid,
-                  response,
-                  savedEx,
-                  breakRetryReason,
-                  retryTimeout,
-                  retryCount,
-                  SqlState.IO_ERROR,
-                  ErrorCode.NETWORK_ERROR.getMessageCode()
+                "HttpRequestRetryTimeout",
+                httpRequest,
+                injectSocketTimeout,
+                canceling,
+                withoutCookies,
+                includeRetryParameters,
+                includeRequestGuid,
+                response,
+                savedEx,
+                breakRetryReason,
+                retryTimeout,
+                retryCount,
+                SqlState.IO_ERROR,
+                ErrorCode.NETWORK_ERROR.getMessageCode()
             );
             if (savedEx != null)
             {
@@ -310,9 +310,9 @@ public class RestRequest
             if (response == null && savedEx != null)
             {
               throw new SnowflakeSQLException(SqlState.IO_ERROR,
-                  ErrorCode.NETWORK_ERROR.getMessageCode(),
-                  "Exception encountered for HTTP request: " +
-                      savedEx.getMessage());
+                                              ErrorCode.NETWORK_ERROR.getMessageCode(),
+                                              "Exception encountered for HTTP request: " +
+                                              savedEx.getMessage());
             }
             // no more retry
             break;
@@ -369,7 +369,7 @@ public class RestRequest
     if (response == null)
     {
       logger.error("Returning null response for request: {}",
-          httpRequest);
+                   httpRequest);
     }
     else if (response.getStatusLine().getStatusCode() != 200)
     {
@@ -379,7 +379,7 @@ public class RestRequest
           httpRequest);
     }
     if ((response == null ||
-            response.getStatusLine().getStatusCode() != 200))
+         response.getStatusLine().getStatusCode() != 200))
     {
 
       String eventName;

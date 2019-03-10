@@ -31,10 +31,14 @@ import java.util.concurrent.Executor;
  */
 class LogicalConnection implements Connection
 {
-  /** physical connection to snowflake, instance SnowflakeConnectionV1 */
+  /**
+   * physical connection to snowflake, instance SnowflakeConnectionV1
+   */
   private final Connection physicalConnection;
 
-  /** Pooled connection object that create this logical connection */
+  /**
+   * Pooled connection object that create this logical connection
+   */
   private final SnowflakePooledConnection pooledConnection;
 
   /**
@@ -60,7 +64,7 @@ class LogicalConnection implements Connection
     {
       return physicalConnection.createStatement();
     }
-    catch(SQLException e)
+    catch (SQLException e)
     {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
@@ -69,7 +73,7 @@ class LogicalConnection implements Connection
 
   @Override
   public PreparedStatement prepareStatement(String sql)
-      throws SQLException
+  throws SQLException
   {
     throwExceptionIfClosed();
 
@@ -77,7 +81,7 @@ class LogicalConnection implements Connection
     {
       return physicalConnection.prepareStatement(sql);
     }
-    catch(SQLException e)
+    catch (SQLException e)
     {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
@@ -93,7 +97,7 @@ class LogicalConnection implements Connection
     {
       return physicalConnection.prepareCall(sql);
     }
-    catch(SQLException e)
+    catch (SQLException e)
     {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
@@ -109,7 +113,7 @@ class LogicalConnection implements Connection
     {
       return physicalConnection.nativeSQL(sql);
     }
-    catch(SQLException e)
+    catch (SQLException e)
     {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
@@ -125,7 +129,7 @@ class LogicalConnection implements Connection
     {
       physicalConnection.setAutoCommit(autoCommit);
     }
-    catch(SQLException e)
+    catch (SQLException e)
     {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
@@ -141,7 +145,7 @@ class LogicalConnection implements Connection
     {
       return physicalConnection.getAutoCommit();
     }
-    catch(SQLException e)
+    catch (SQLException e)
     {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
@@ -157,7 +161,7 @@ class LogicalConnection implements Connection
     {
       physicalConnection.commit();
     }
-    catch(SQLException e)
+    catch (SQLException e)
     {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
@@ -173,7 +177,7 @@ class LogicalConnection implements Connection
     {
       physicalConnection.rollback();
     }
-    catch(SQLException e)
+    catch (SQLException e)
     {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
@@ -209,7 +213,7 @@ class LogicalConnection implements Connection
     {
       return physicalConnection.getMetaData();
     }
-    catch(SQLException e)
+    catch (SQLException e)
     {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
@@ -225,7 +229,7 @@ class LogicalConnection implements Connection
     {
       physicalConnection.setReadOnly(readOnly);
     }
-    catch(SQLException e)
+    catch (SQLException e)
     {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
@@ -241,7 +245,7 @@ class LogicalConnection implements Connection
     {
       return physicalConnection.isReadOnly();
     }
-    catch(SQLException e)
+    catch (SQLException e)
     {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
@@ -257,7 +261,7 @@ class LogicalConnection implements Connection
     {
       physicalConnection.setCatalog(catalog);
     }
-    catch(SQLException e)
+    catch (SQLException e)
     {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
@@ -273,7 +277,7 @@ class LogicalConnection implements Connection
     {
       return physicalConnection.getCatalog();
     }
-    catch(SQLException e)
+    catch (SQLException e)
     {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
@@ -289,7 +293,7 @@ class LogicalConnection implements Connection
     {
       physicalConnection.setTransactionIsolation(level);
     }
-    catch(SQLException e)
+    catch (SQLException e)
     {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
@@ -305,7 +309,7 @@ class LogicalConnection implements Connection
     {
       return physicalConnection.getTransactionIsolation();
     }
-    catch(SQLException e)
+    catch (SQLException e)
     {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
@@ -321,7 +325,7 @@ class LogicalConnection implements Connection
     {
       return physicalConnection.getWarnings();
     }
-    catch(SQLException e)
+    catch (SQLException e)
     {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
@@ -337,7 +341,7 @@ class LogicalConnection implements Connection
     {
       physicalConnection.clearWarnings();
     }
-    catch(SQLException e)
+    catch (SQLException e)
     {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
@@ -346,7 +350,7 @@ class LogicalConnection implements Connection
 
   @Override
   public Statement createStatement(int resultSetType, int resultSetConcurrency)
-      throws SQLException
+  throws SQLException
   {
     throwExceptionIfClosed();
 
@@ -355,7 +359,7 @@ class LogicalConnection implements Connection
       return physicalConnection.createStatement(resultSetType,
                                                 resultSetConcurrency);
     }
-    catch(SQLException e)
+    catch (SQLException e)
     {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
@@ -364,8 +368,8 @@ class LogicalConnection implements Connection
 
   @Override
   public PreparedStatement prepareStatement(String sql, int resultSetType,
-                                     int resultSetConcurrency)
-      throws SQLException
+                                            int resultSetConcurrency)
+  throws SQLException
   {
     throwExceptionIfClosed();
 
@@ -374,7 +378,7 @@ class LogicalConnection implements Connection
       return physicalConnection.prepareStatement(sql, resultSetType,
                                                  resultSetConcurrency);
     }
-    catch(SQLException e)
+    catch (SQLException e)
     {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
@@ -383,7 +387,7 @@ class LogicalConnection implements Connection
 
   @Override
   public CallableStatement prepareCall(String sql, int resultSetType,
-                                int resultSetConcurrency) throws SQLException
+                                       int resultSetConcurrency) throws SQLException
   {
     throwExceptionIfClosed();
 
@@ -392,7 +396,7 @@ class LogicalConnection implements Connection
       return physicalConnection.prepareCall(sql, resultSetType,
                                             resultSetConcurrency);
     }
-    catch(SQLException e)
+    catch (SQLException e)
     {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
@@ -400,7 +404,7 @@ class LogicalConnection implements Connection
   }
 
   @Override
-  public java.util.Map<String,Class<?>> getTypeMap() throws SQLException
+  public java.util.Map<String, Class<?>> getTypeMap() throws SQLException
   {
     throwExceptionIfClosed();
 
@@ -408,7 +412,7 @@ class LogicalConnection implements Connection
     {
       return physicalConnection.getTypeMap();
     }
-    catch(SQLException e)
+    catch (SQLException e)
     {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
@@ -416,7 +420,7 @@ class LogicalConnection implements Connection
   }
 
   @Override
-  public void setTypeMap(java.util.Map<String,Class<?>> map) throws SQLException
+  public void setTypeMap(java.util.Map<String, Class<?>> map) throws SQLException
   {
     throwExceptionIfClosed();
 
@@ -424,7 +428,7 @@ class LogicalConnection implements Connection
     {
       physicalConnection.setTypeMap(map);
     }
-    catch(SQLException e)
+    catch (SQLException e)
     {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
@@ -440,7 +444,7 @@ class LogicalConnection implements Connection
     {
       physicalConnection.setHoldability(holdability);
     }
-    catch(SQLException e)
+    catch (SQLException e)
     {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
@@ -456,7 +460,7 @@ class LogicalConnection implements Connection
     {
       return physicalConnection.getHoldability();
     }
-    catch(SQLException e)
+    catch (SQLException e)
     {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
@@ -472,7 +476,7 @@ class LogicalConnection implements Connection
     {
       return physicalConnection.setSavepoint();
     }
-    catch(SQLException e)
+    catch (SQLException e)
     {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
@@ -488,7 +492,7 @@ class LogicalConnection implements Connection
     {
       return physicalConnection.setSavepoint(name);
     }
-    catch(SQLException e)
+    catch (SQLException e)
     {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
@@ -504,7 +508,7 @@ class LogicalConnection implements Connection
     {
       physicalConnection.rollback(savepoint);
     }
-    catch(SQLException e)
+    catch (SQLException e)
     {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
@@ -520,7 +524,7 @@ class LogicalConnection implements Connection
     {
       physicalConnection.releaseSavepoint(savepoint);
     }
-    catch(SQLException e)
+    catch (SQLException e)
     {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
@@ -529,7 +533,7 @@ class LogicalConnection implements Connection
 
   @Override
   public Statement createStatement(int resultSetType, int resultSetConcurrency,
-                            int resultSetHoldability) throws SQLException
+                                   int resultSetHoldability) throws SQLException
   {
     throwExceptionIfClosed();
 
@@ -539,7 +543,7 @@ class LogicalConnection implements Connection
                                                 resultSetConcurrency,
                                                 resultSetHoldability);
     }
-    catch(SQLException e)
+    catch (SQLException e)
     {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
@@ -548,8 +552,8 @@ class LogicalConnection implements Connection
 
   @Override
   public PreparedStatement prepareStatement(String sql, int resultSetType,
-                                     int resultSetConcurrency, int resultSetHoldability)
-      throws SQLException
+                                            int resultSetConcurrency, int resultSetHoldability)
+  throws SQLException
   {
     throwExceptionIfClosed();
 
@@ -559,7 +563,7 @@ class LogicalConnection implements Connection
                                                  resultSetConcurrency,
                                                  resultSetHoldability);
     }
-    catch(SQLException e)
+    catch (SQLException e)
     {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
@@ -569,8 +573,8 @@ class LogicalConnection implements Connection
 
   @Override
   public CallableStatement prepareCall(String sql, int resultSetType,
-                                int resultSetConcurrency,
-                                int resultSetHoldability) throws SQLException
+                                       int resultSetConcurrency,
+                                       int resultSetHoldability) throws SQLException
   {
     throwExceptionIfClosed();
 
@@ -580,7 +584,7 @@ class LogicalConnection implements Connection
                                             resultSetConcurrency,
                                             resultSetHoldability);
     }
-    catch(SQLException e)
+    catch (SQLException e)
     {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
@@ -589,7 +593,7 @@ class LogicalConnection implements Connection
 
   @Override
   public PreparedStatement prepareStatement(String sql, int autoGeneratedKeys)
-      throws SQLException
+  throws SQLException
   {
     throwExceptionIfClosed();
 
@@ -597,7 +601,7 @@ class LogicalConnection implements Connection
     {
       return physicalConnection.prepareStatement(sql, autoGeneratedKeys);
     }
-    catch(SQLException e)
+    catch (SQLException e)
     {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
@@ -606,7 +610,7 @@ class LogicalConnection implements Connection
 
   @Override
   public PreparedStatement prepareStatement(String sql, int columnIndexes[])
-      throws SQLException
+  throws SQLException
   {
     throwExceptionIfClosed();
 
@@ -614,7 +618,7 @@ class LogicalConnection implements Connection
     {
       return physicalConnection.prepareStatement(sql, columnIndexes);
     }
-    catch(SQLException e)
+    catch (SQLException e)
     {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
@@ -623,7 +627,7 @@ class LogicalConnection implements Connection
 
   @Override
   public PreparedStatement prepareStatement(String sql, String columnNames[])
-      throws SQLException
+  throws SQLException
   {
     throwExceptionIfClosed();
 
@@ -631,7 +635,7 @@ class LogicalConnection implements Connection
     {
       return physicalConnection.prepareStatement(sql, columnNames);
     }
-    catch(SQLException e)
+    catch (SQLException e)
     {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
@@ -647,7 +651,7 @@ class LogicalConnection implements Connection
     {
       return physicalConnection.createClob();
     }
-    catch(SQLException e)
+    catch (SQLException e)
     {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
@@ -663,7 +667,7 @@ class LogicalConnection implements Connection
     {
       return physicalConnection.createBlob();
     }
-    catch(SQLException e)
+    catch (SQLException e)
     {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
@@ -679,7 +683,7 @@ class LogicalConnection implements Connection
     {
       return physicalConnection.createNClob();
     }
-    catch(SQLException e)
+    catch (SQLException e)
     {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
@@ -695,7 +699,7 @@ class LogicalConnection implements Connection
     {
       return physicalConnection.createSQLXML();
     }
-    catch(SQLException e)
+    catch (SQLException e)
     {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
@@ -709,7 +713,7 @@ class LogicalConnection implements Connection
     {
       return !isClosed && physicalConnection.isValid(timeout);
     }
-    catch(SQLException e)
+    catch (SQLException e)
     {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
@@ -718,13 +722,13 @@ class LogicalConnection implements Connection
 
   @Override
   public void setClientInfo(String name, String value)
-      throws SQLClientInfoException
+  throws SQLClientInfoException
   {
     try
     {
       physicalConnection.setClientInfo(name, value);
     }
-    catch(SQLException e)
+    catch (SQLException e)
     {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
@@ -733,13 +737,13 @@ class LogicalConnection implements Connection
 
   @Override
   public void setClientInfo(Properties properties)
-      throws SQLClientInfoException
+  throws SQLClientInfoException
   {
     try
     {
       physicalConnection.setClientInfo(properties);
     }
-    catch(SQLException e)
+    catch (SQLException e)
     {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
@@ -753,7 +757,7 @@ class LogicalConnection implements Connection
     {
       return physicalConnection.getClientInfo(name);
     }
-    catch(SQLException e)
+    catch (SQLException e)
     {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
@@ -769,7 +773,7 @@ class LogicalConnection implements Connection
     {
       return physicalConnection.getClientInfo();
     }
-    catch(SQLException e)
+    catch (SQLException e)
     {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
@@ -778,7 +782,7 @@ class LogicalConnection implements Connection
 
   @Override
   public Array createArrayOf(String typeName, Object[] elements) throws
-                                                          SQLException
+                                                                 SQLException
   {
     throwExceptionIfClosed();
 
@@ -786,7 +790,7 @@ class LogicalConnection implements Connection
     {
       return createArrayOf(typeName, elements);
     }
-    catch(SQLException e)
+    catch (SQLException e)
     {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
@@ -795,7 +799,7 @@ class LogicalConnection implements Connection
 
   @Override
   public Struct createStruct(String typeName, Object[] attributes)
-      throws SQLException
+  throws SQLException
   {
     throwExceptionIfClosed();
 
@@ -803,7 +807,7 @@ class LogicalConnection implements Connection
     {
       return physicalConnection.createStruct(typeName, attributes);
     }
-    catch(SQLException e)
+    catch (SQLException e)
     {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
@@ -819,7 +823,7 @@ class LogicalConnection implements Connection
     {
       physicalConnection.setSchema(schema);
     }
-    catch(SQLException e)
+    catch (SQLException e)
     {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
@@ -835,7 +839,7 @@ class LogicalConnection implements Connection
     {
       return physicalConnection.getSchema();
     }
-    catch(SQLException e)
+    catch (SQLException e)
     {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
@@ -849,7 +853,7 @@ class LogicalConnection implements Connection
     {
       physicalConnection.abort(executor);
     }
-    catch(SQLException e)
+    catch (SQLException e)
     {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
@@ -865,7 +869,7 @@ class LogicalConnection implements Connection
     {
       physicalConnection.setNetworkTimeout(executor, milliseconds);
     }
-    catch(SQLException e)
+    catch (SQLException e)
     {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
@@ -881,7 +885,7 @@ class LogicalConnection implements Connection
     {
       return physicalConnection.getNetworkTimeout();
     }
-    catch(SQLException e)
+    catch (SQLException e)
     {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
@@ -895,7 +899,7 @@ class LogicalConnection implements Connection
     {
       return physicalConnection.isWrapperFor(iface);
     }
-    catch(SQLException e)
+    catch (SQLException e)
     {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
@@ -909,7 +913,7 @@ class LogicalConnection implements Connection
     {
       return physicalConnection.unwrap(iface);
     }
-    catch(SQLException e)
+    catch (SQLException e)
     {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;

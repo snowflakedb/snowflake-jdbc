@@ -32,14 +32,18 @@ public class SnowflakeBasicDataSource implements DataSource
   static final
   SFLogger logger = SFLoggerFactory.getLogger(SnowflakeBasicDataSource.class);
 
-  static {
-    try {
+  static
+  {
+    try
+    {
       Class.forName("net.snowflake.client.jdbc.SnowflakeDriver");
-    } catch (ClassNotFoundException e) {
+    }
+    catch (ClassNotFoundException e)
+    {
       throw new IllegalStateException("Unable to load " +
-          "net.snowflake.client.jdbc.SnowflakeDriver. " +
-          "Please check if you have proper Snowflake JDBC " +
-          "Driver jar on the classpath", e);
+                                      "net.snowflake.client.jdbc.SnowflakeDriver. " +
+                                      "Please check if you have proper Snowflake JDBC " +
+                                      "Driver jar on the classpath", e);
     }
   }
 
@@ -51,7 +55,7 @@ public class SnowflakeBasicDataSource implements DataSource
 
   @Override
   public Connection getConnection(String username, String password)
-      throws SQLException
+  throws SQLException
   {
     properties.put("user", username);
     properties.put("password", password);
@@ -62,14 +66,14 @@ public class SnowflakeBasicDataSource implements DataSource
       if (logger.isTraceEnabled())
       {
         logger.trace("Created a connection for {} at {}",
-            user, getUrl());
+                     user, getUrl());
       }
       return con;
     }
     catch (SQLException e)
     {
       logger.error("Failed to create a connection for {} at {}: {}",
-          user, getUrl(), e);
+                   user, getUrl(), e);
       throw e;
     }
   }
@@ -77,7 +81,7 @@ public class SnowflakeBasicDataSource implements DataSource
   @Override
   public PrintWriter getLogWriter() throws SQLException
   {
-   throw new SQLFeatureNotSupportedException();
+    throw new SQLFeatureNotSupportedException();
   }
 
   @Override
@@ -93,7 +97,7 @@ public class SnowflakeBasicDataSource implements DataSource
     {
       return Integer.parseInt(properties.getProperty("loginTimeout"));
     }
-    catch(NumberFormatException e)
+    catch (NumberFormatException e)
     {
       return 0;
     }
@@ -177,7 +181,7 @@ public class SnowflakeBasicDataSource implements DataSource
   {
     this.properties.put("ssl", String.valueOf(ssl));
   }
-  
+
   public void setAuthenticator(String authenticator)
   {
     this.properties.put("authenticator", authenticator);
@@ -195,7 +199,8 @@ public class SnowflakeBasicDataSource implements DataSource
       StringBuilder url = new StringBuilder(100);
       url.append("jdbc:snowflake://");
       url.append(serverName);
-      if (portNumber != 0) {
+      if (portNumber != 0)
+      {
         url.append(":").append(portNumber);
       }
 

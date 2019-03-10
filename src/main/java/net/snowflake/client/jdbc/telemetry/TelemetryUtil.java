@@ -15,9 +15,10 @@ public class TelemetryUtil
 
   /**
    * Create a simple TelemetryData instance for Job metrics using given parameters
+   *
    * @param queryId the id of the query
-   * @param field the field to log (represents the "type" field in telemetry)
-   * @param value the value to log for the field
+   * @param field   the field to log (represents the "type" field in telemetry)
+   * @param value   the value to log for the field
    * @return TelemetryData instance constructed from parameters
    */
   public static TelemetryData buildJobData(String queryId, TelemetryField field, long value)

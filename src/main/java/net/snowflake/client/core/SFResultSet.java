@@ -85,7 +85,7 @@ public class SFResultSet extends SFBaseResultSet
   public SFResultSet(JsonNode result,
                      SFStatement statement,
                      boolean sortResult)
-      throws SQLException, SFException
+  throws SQLException, SFException
   {
     this.statement = statement;
     this.columnCount = 0;
@@ -142,7 +142,7 @@ public class SFResultSet extends SFBaseResultSet
       if (chunkCount > 0)
       {
         throw new SnowflakeSQLException(SqlState.FEATURE_NOT_SUPPORTED,
-            ErrorCode.CLIENT_SIDE_SORTING_NOT_SUPPORTED.getMessageCode());
+                                        ErrorCode.CLIENT_SIDE_SORTING_NOT_SUPPORTED.getMessageCode());
       }
 
       sortResultSet();
@@ -156,16 +156,16 @@ public class SFResultSet extends SFBaseResultSet
     }
 
     eventHandler.triggerStateTransition(BasicEvent.QueryState.CONSUMING_RESULT,
-        String.format(QueryState.CONSUMING_RESULT.getArgString(), queryId, 0));
+                                        String.format(QueryState.CONSUMING_RESULT.getArgString(), queryId, 0));
 
     resultSetMetaData = new SFResultSetMetaData(resultOutput.getResultColumnMetadata(),
-        queryId,
-        session,
-        this.timestampNTZFormatter,
-        this.timestampLTZFormatter,
-        this.timestampTZFormatter,
-        this.dateFormatter,
-        this.timeFormatter);
+                                                queryId,
+                                                session,
+                                                this.timestampNTZFormatter,
+                                                this.timestampLTZFormatter,
+                                                this.timestampTZFormatter,
+                                                this.dateFormatter,
+                                                this.timeFormatter);
   }
 
   private boolean fetchNextRow() throws SFException, SnowflakeSQLException
@@ -217,23 +217,25 @@ public class SFResultSet extends SFBaseResultSet
         eventHandler.triggerStateTransition(
             BasicEvent.QueryState.CONSUMING_RESULT,
             String.format(QueryState.CONSUMING_RESULT.getArgString(),
-                queryId,
-                nextChunkIndex));
+                          queryId,
+                          nextChunkIndex));
 
         SnowflakeResultChunk nextChunk = chunkDownloader.getNextChunkToConsume();
 
         if (nextChunk == null)
+        {
           throw new SnowflakeSQLException(
               SqlState.INTERNAL_ERROR,
               ErrorCode.INTERNAL_ERROR.getMessageCode(),
               "Expect chunk but got null for chunk index " + nextChunkIndex);
+        }
 
         currentChunkRowIndex = 0;
         currentChunkRowCount = nextChunk.getRowCount();
         currentChunk = nextChunk;
 
         logger.debug("Moving to chunk index {}, row count={}",
-            nextChunkIndex, currentChunkRowCount);
+                     nextChunkIndex, currentChunkRowCount);
 
         nextChunkIndex++;
 
@@ -242,7 +244,7 @@ public class SFResultSet extends SFBaseResultSet
       catch (InterruptedException ex)
       {
         throw new SnowflakeSQLException(SqlState.QUERY_CANCELED,
-            ErrorCode.INTERRUPTED.getMessageCode());
+                                        ErrorCode.INTERRUPTED.getMessageCode());
       }
     }
     else if (chunkCount > 0)
@@ -305,11 +307,11 @@ public class SFResultSet extends SFBaseResultSet
        */
       if (totalRowCountTruncated ||
           System.getProperty("snowflake.enable_incident_test2") != null &&
-              System.getProperty("snowflake.enable_incident_test2").equals("true"))
+          System.getProperty("snowflake.enable_incident_test2").equals("true"))
       {
         throw IncidentUtil.
             generateIncidentWithException(session, null, queryId,
-                ErrorCode.MAX_RESULT_LIMIT_EXCEEDED);
+                                          ErrorCode.MAX_RESULT_LIMIT_EXCEEDED);
       }
 
       // mark end of result
@@ -336,8 +338,8 @@ public class SFResultSet extends SFBaseResultSet
     else if (firstChunkRowset != null)
     {
       retValue = SnowflakeResultChunk.extractCell(firstChunkRowset,
-          currentChunkRowIndex,
-          internalColumnIndex);
+                                                  currentChunkRowIndex,
+                                                  internalColumnIndex);
     }
     else if (currentChunk != null)
     {
@@ -363,66 +365,66 @@ public class SFResultSet extends SFBaseResultSet
       {
         firstChunkSortedRowSet[rowIdx][colIdx] =
             SnowflakeResultChunk.extractCell(firstChunkRowset,
-                rowIdx, colIdx);
+                                             rowIdx, colIdx);
       }
     }
 
     // now sort it
     Arrays.sort(firstChunkSortedRowSet,
-        new Comparator<Object[]>()
-        {
-          public int compare(Object[] a, Object[] b)
-          {
-            int numCols = a.length;
+                new Comparator<Object[]>()
+                {
+                  public int compare(Object[] a, Object[] b)
+                  {
+                    int numCols = a.length;
 
-            for (int colIdx = 0; colIdx < numCols; colIdx++)
-            {
-              if (a[colIdx] == null && b[colIdx] == null)
-              {
-                continue;
-              }
+                    for (int colIdx = 0; colIdx < numCols; colIdx++)
+                    {
+                      if (a[colIdx] == null && b[colIdx] == null)
+                      {
+                        continue;
+                      }
 
-              // null is considered bigger than all values
-              if (a[colIdx] == null)
-              {
-                return 1;
-              }
+                      // null is considered bigger than all values
+                      if (a[colIdx] == null)
+                      {
+                        return 1;
+                      }
 
-              if (b[colIdx] == null)
-              {
-                return -1;
-              }
+                      if (b[colIdx] == null)
+                      {
+                        return -1;
+                      }
 
-              int res
-                  = a[colIdx].toString().compareTo(b[colIdx].toString());
+                      int res
+                          = a[colIdx].toString().compareTo(b[colIdx].toString());
 
-              // continue to next column if no difference
-              if (res == 0)
-              {
-                continue;
-              }
+                      // continue to next column if no difference
+                      if (res == 0)
+                      {
+                        continue;
+                      }
 
-              return res;
-            }
+                      return res;
+                    }
 
-            // all columns are the same
-            return 0;
-          }
-        });
+                    // all columns are the same
+                    return 0;
+                  }
+                });
   }
 
   @Override
   public boolean isLast()
   {
     return nextChunkIndex == chunkCount &&
-        currentChunkRowIndex + 1 == currentChunkRowCount;
+           currentChunkRowIndex + 1 == currentChunkRowCount;
   }
 
   @Override
   public boolean isAfterLast()
   {
     return nextChunkIndex == chunkCount &&
-        currentChunkRowIndex >= currentChunkRowCount;
+           currentChunkRowIndex >= currentChunkRowCount;
   }
 
   @Override

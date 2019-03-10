@@ -251,7 +251,7 @@ public class StreamLoader implements Loader, Runnable
       case compressLevel:
         _compressLevel = parseLongValue(LoaderProperty.compressLevel, value);
         if ((_compressLevel < Deflater.BEST_SPEED ||
-            _compressLevel > Deflater.BEST_COMPRESSION) &&
+             _compressLevel > Deflater.BEST_COMPRESSION) &&
             _compressLevel != Deflater.DEFAULT_COMPRESSION)
         {
           throw new IllegalArgumentException("invalid compression level");
@@ -394,7 +394,7 @@ public class StreamLoader implements Loader, Runnable
       catch (SQLException ex)
       {
         abort(new Loader.ConnectionError("Failed to start Transaction",
-            Utils.getCause(ex)));
+                                         Utils.getCause(ex)));
       }
 
       if (_truncate)
@@ -431,18 +431,18 @@ public class StreamLoader implements Loader, Runnable
     }
     setPropertyBySystemProperty();
     LOGGER.debug("Database Name: {}, Schema Name: {}, Table Name: {}, " +
-            "Remote Stage: {}, Columns: {}, Keys: {}, Operation: {}, " +
-            "Start Transaction: {}, OneBatch: {}, Truncate Table: {}, " +
-            "Execute Before: {}, Execute After: {}, Batch Row Size: {}, " +
-            "CSV File Bucket Size: {}, CSV File Size: {}, Preserve Stage File: {}, " +
-            "Use Local TimeZone: {}, Copy Empty Field As Empty: {}, " +
-            "MapTimeToTimestamp: {}, Compress Data before PUT: {}, " +
-            "Compress File By Put: {}, Compress Level: {}, OnError: {}",
-        _database, _schema, _table, _remoteStage, _columns, _keys, _op,
-        _startTransaction, _oneBatch, _truncate, _before, _after,
-        _batchRowSize, _csvFileBucketSize, _csvFileSize, _preserveStageFile,
-        _useLocalTimezone, _copyEmptyFieldAsEmpty, _mapTimeToTimestamp,
-        _compressDataBeforePut, _compressFileByPut, _compressLevel, _onError
+                 "Remote Stage: {}, Columns: {}, Keys: {}, Operation: {}, " +
+                 "Start Transaction: {}, OneBatch: {}, Truncate Table: {}, " +
+                 "Execute Before: {}, Execute After: {}, Batch Row Size: {}, " +
+                 "CSV File Bucket Size: {}, CSV File Size: {}, Preserve Stage File: {}, " +
+                 "Use Local TimeZone: {}, Copy Empty Field As Empty: {}, " +
+                 "MapTimeToTimestamp: {}, Compress Data before PUT: {}, " +
+                 "Compress File By Put: {}, Compress Level: {}, OnError: {}",
+                 _database, _schema, _table, _remoteStage, _columns, _keys, _op,
+                 _startTransaction, _oneBatch, _truncate, _before, _after,
+                 _batchRowSize, _csvFileBucketSize, _csvFileSize, _preserveStageFile,
+                 _useLocalTimezone, _copyEmptyFieldAsEmpty, _mapTimeToTimestamp,
+                 _compressDataBeforePut, _compressFileByPut, _compressLevel, _onError
     );
   }
 
@@ -557,7 +557,7 @@ public class StreamLoader implements Loader, Runnable
         (_listener.getSubmittedRowCount() % _batchRowSize) == 0)
     {
       LOGGER.debug("Flushing Queue: Submitted Row Count: {}, Batch Row Size: {}",
-          _listener.getSubmittedRowCount(), _batchRowSize);
+                   _listener.getSubmittedRowCount(), _batchRowSize);
       // flush data loading
       try
       {
@@ -713,7 +713,10 @@ public class StreamLoader implements Loader, Runnable
 
     for (int i = 0; i < data.length; ++i)
     {
-      if (i > 0) sb.append(',');
+      if (i > 0)
+      {
+        sb.append(',');
+      }
       sb.append(SnowflakeType.escapeForCSV(
           SnowflakeType.lexicalValue(
               data[i],
@@ -760,7 +763,7 @@ public class StreamLoader implements Loader, Runnable
           LOGGER.debug("Failed to rollback");
         }
         LOGGER.debug(String.format("Execute After SQL failed to run: %s", _after),
-            ex);
+                     ex);
         throw new Loader.ConnectionError(Utils.getCause(ex));
       }
     }
@@ -792,7 +795,10 @@ public class StreamLoader implements Loader, Runnable
 
     boolean active = _active.getAndSet(false);
 
-    if (!active) return;  // No-op
+    if (!active)
+    {
+      return;  // No-op
+    }
 
     if (_stage == null)
     {
@@ -886,7 +892,10 @@ public class StreamLoader implements Loader, Runnable
     StringBuilder sb = new StringBuilder("\"");
     for (int i = 0; i < _columns.size(); i++)
     {
-      if (i > 0) sb.append("\",\"");
+      if (i > 0)
+      {
+        sb.append("\",\"");
+      }
       sb.append(_columns.get(i));
     }
     sb.append("\"");
@@ -896,8 +905,8 @@ public class StreamLoader implements Loader, Runnable
   String getFullTableName()
   {
     return (_database == null ? "" : ("\"" + _database + "\"."))
-        + (_schema == null ? "" : ("\"" + _schema + "\"."))
-        + "\"" + _table + "\"";
+           + (_schema == null ? "" : ("\"" + _schema + "\"."))
+           + "\"" + _table + "\"";
   }
 
   public LoadResultListener getListener()
@@ -939,7 +948,7 @@ public class StreamLoader implements Loader, Runnable
     if (open > 8)
     {
       LOGGER.debug("Will retry scheduling file for upload after {} seconds",
-          (Math.pow(2, open - 7)));
+                   (Math.pow(2, open - 7)));
       try
       {
         Thread.sleep(1000 * ((int) Math.pow(2, open - 7)));

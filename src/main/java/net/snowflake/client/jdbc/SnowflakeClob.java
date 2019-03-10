@@ -22,6 +22,7 @@ public class SnowflakeClob implements Clob
     private StringBuffer main;
     private StringBuffer current;
     private int offset;
+
     /**
      *
      */
@@ -30,7 +31,7 @@ public class SnowflakeClob implements Clob
       super();
       this.main = buffer;
       this.current = new StringBuffer();
-      this.offset = pos-1;
+      this.offset = pos - 1;
     }
 
     @Override
@@ -38,7 +39,7 @@ public class SnowflakeClob implements Clob
     {
       for (int i = 0; i < len; i++)
       {
-        this.current.append(cbuf[off+i]);
+        this.current.append(cbuf[off + i]);
       }
     }
 
@@ -52,7 +53,7 @@ public class SnowflakeClob implements Clob
     @Override
     public void close() throws IOException
     {
-      if(this.current == null)
+      if (this.current == null)
       {
         throw new IOException();
       }
@@ -65,6 +66,7 @@ public class SnowflakeClob implements Clob
   {
     private StringBuffer buffer;
     private int offset;
+
     /**
      *
      */
@@ -72,7 +74,7 @@ public class SnowflakeClob implements Clob
     {
       super();
       this.buffer = buffer;
-      this.offset = pos-1;
+      this.offset = pos - 1;
     }
 
     /*
@@ -80,13 +82,13 @@ public class SnowflakeClob implements Clob
      */
     public void write(int c) throws IOException
     {
-      if(this.offset >= this.buffer.length())
+      if (this.offset >= this.buffer.length())
       {
-        buffer.append((char)c);
+        buffer.append((char) c);
       }
       else
       {
-        buffer.replace(this.offset, this.offset+1, Integer.toString(c));
+        buffer.replace(this.offset, this.offset + 1, Integer.toString(c));
       }
     }
 
@@ -124,7 +126,7 @@ public class SnowflakeClob implements Clob
     {
       throw new SQLException();
     }
-    return buffer.substring((int)pos-0, (int)pos-0+length);
+    return buffer.substring((int) pos - 0, (int) pos - 0 + length);
   }
 
   @Override
@@ -142,31 +144,31 @@ public class SnowflakeClob implements Clob
   @Override
   public long position(final String searchstr, final long start) throws SQLException
   {
-    if (start < 1 )
+    if (start < 1)
     {
       throw new SQLException();
     }
-    return (long) buffer.lastIndexOf(searchstr, (int)start-1);
+    return (long) buffer.lastIndexOf(searchstr, (int) start - 1);
   }
 
   @Override
   public long position(final Clob searchstr, final long start) throws SQLException
   {
-    if (start < 1 )
+    if (start < 1)
     {
       throw new SQLException();
     }
-    return (long) buffer.lastIndexOf(searchstr.toString(), (int)start-1);
+    return (long) buffer.lastIndexOf(searchstr.toString(), (int) start - 1);
   }
 
   @Override
   public int setString(final long pos, final String str) throws SQLException
   {
-    if (pos < 1 )
+    if (pos < 1)
     {
       throw new SQLException();
     }
-    buffer.insert((int)pos-1, str);
+    buffer.insert((int) pos - 1, str);
     return str.length();
   }
 
@@ -174,19 +176,19 @@ public class SnowflakeClob implements Clob
   public int setString(final long pos, final String str, final int offset,
                        final int len) throws SQLException
   {
-    if (pos < 1 )
+    if (pos < 1)
     {
       throw new SQLException();
     }
     String substring = str.substring(offset, len);
-    buffer.insert((int)pos-1, substring);
+    buffer.insert((int) pos - 1, substring);
     return substring.length();
   }
 
   @Override
   public OutputStream setAsciiStream(final long pos) throws SQLException
   {
-    return new StringBufferOutputStream(buffer, (int)pos);
+    return new StringBufferOutputStream(buffer, (int) pos);
   }
 
   @Override
@@ -200,7 +202,7 @@ public class SnowflakeClob implements Clob
   {
     if (buffer.length() > len)
     {
-      buffer.delete((int)len, buffer.length());
+      buffer.delete((int) len, buffer.length());
     }
   }
 
@@ -213,7 +215,7 @@ public class SnowflakeClob implements Clob
   @Override
   public Reader getCharacterStream(final long pos, final long length) throws SQLException
   {
-    return new StringReader(buffer.substring((int)pos-1, (int)pos-1+(int)length));
+    return new StringReader(buffer.substring((int) pos - 1, (int) pos - 1 + (int) length));
   }
 
   @Override

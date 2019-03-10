@@ -50,8 +50,7 @@ public enum SFSessionProperty
   PROXY_PORT("proxyPort", false, String.class),
   PROXY_USER("proxyUser", false, String.class),
   PROXY_PASSWORD("proxyPassword", false, String.class),
-  NON_PROXY_HOSTS("nonProxyHosts", false, String.class)
-  ;
+  NON_PROXY_HOSTS("nonProxyHosts", false, String.class);
 
   // property key in string
   private String propertyKey;
@@ -104,7 +103,7 @@ public enum SFSessionProperty
       }
       else
       {
-        for(String alias : property.aliases)
+        for (String alias : property.aliases)
         {
           if (alias.equalsIgnoreCase(propertyKey))
           {
@@ -113,11 +112,12 @@ public enum SFSessionProperty
         }
       }
     }
-    return  null;
+    return null;
   }
 
   /**
    * Check if property value is desired class. Convert if possible
+   *
    * @param property
    * @param propertyValue
    * @return
@@ -125,7 +125,7 @@ public enum SFSessionProperty
    */
   static Object checkPropertyValue(SFSessionProperty property,
                                    Object propertyValue)
-      throws SFException
+  throws SFException
   {
     if (propertyValue == null)
     {
@@ -137,14 +137,14 @@ public enum SFSessionProperty
       switch (property)
       {
         case APPLICATION:
-          if (APPLICATION_REGEX.matcher((String)propertyValue).find())
+          if (APPLICATION_REGEX.matcher((String) propertyValue).find())
           {
             return propertyValue;
           }
           else
           {
             throw new SFException(ErrorCode.INVALID_PARAMETER_VALUE,
-                propertyValue, property);
+                                  propertyValue, property);
           }
         default:
           return propertyValue;
@@ -161,20 +161,20 @@ public enum SFSessionProperty
           return true;
         }
         else if ("off".equalsIgnoreCase((String) propertyValue) ||
-            "false".equalsIgnoreCase((String) propertyValue))
+                 "false".equalsIgnoreCase((String) propertyValue))
         {
           return false;
         }
       }
       else if (property.getValueType() == Integer.class &&
-          propertyValue instanceof String)
+               propertyValue instanceof String)
       {
-        return Integer.valueOf((String)propertyValue);
+        return Integer.valueOf((String) propertyValue);
       }
     }
 
     throw new SFException(ErrorCode.INVALID_PARAMETER_TYPE,
-        propertyValue.getClass().getName(),
-        property.getValueType().getName());
+                          propertyValue.getClass().getName(),
+                          property.getValueType().getName());
   }
 }

@@ -7,6 +7,7 @@ package net.snowflake.client.core;
 /**
  * Base Event class for events that don't need to deviate from the default
  * flush behavior.
+ *
  * @author jrosen
  */
 public class BasicEvent extends Event
@@ -22,14 +23,14 @@ public class BasicEvent extends Event
 
   public enum QueryState
   {
-    QUERY_STARTED      (1, "Query Started", "{" + requestId + "}"),
-    SENDING_QUERY      (2, "Sending Query", "{" + requestId + "}"),
-    WAITING_FOR_RESULT (3, "Waiting for Result", "{" + requestId + "," + numPings + "}"),
-    PROCESSING_RESULT  (4, "Processing Result", "{" + requestId + "}"),
-    CONSUMING_RESULT   (5, "Consuming Result", "{" + jobId + "," + chunkIdx + "}"),
-    QUERY_ENDED        (6, "Query ended", "{" + requestId + "}"),
-    GETTING_FILES      (8, "Getting Files", "{" + requestId + "}"),
-    PUTTING_FILES      (9, "Putting Files", "{" + requestId + "}"),
+    QUERY_STARTED(1, "Query Started", "{" + requestId + "}"),
+    SENDING_QUERY(2, "Sending Query", "{" + requestId + "}"),
+    WAITING_FOR_RESULT(3, "Waiting for Result", "{" + requestId + "," + numPings + "}"),
+    PROCESSING_RESULT(4, "Processing Result", "{" + requestId + "}"),
+    CONSUMING_RESULT(5, "Consuming Result", "{" + jobId + "," + chunkIdx + "}"),
+    QUERY_ENDED(6, "Query ended", "{" + requestId + "}"),
+    GETTING_FILES(8, "Getting Files", "{" + requestId + "}"),
+    PUTTING_FILES(9, "Putting Files", "{" + requestId + "}"),
     ;
 
     QueryState(int id, String description, String argString)

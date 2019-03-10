@@ -20,10 +20,12 @@ public class AssertUtil
    * @throws SFException
    */
   static void assertTrue(boolean condition, String internalErrorMesg)
-      throws SFException
+  throws SFException
   {
     if (!condition)
+    {
       throw new SFException(ErrorCode.INTERNAL_ERROR, internalErrorMesg);
+    }
   }
 
 }

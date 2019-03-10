@@ -6,7 +6,9 @@ package net.snowflake.client.jdbc;
 
 import net.snowflake.client.core.SFException;
 import net.snowflake.common.core.ResourceBundleManager;
+
 import java.sql.SQLException;
+
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 
@@ -16,10 +18,10 @@ import net.snowflake.client.log.SFLoggerFactory;
 public class SnowflakeSQLException extends SQLException
 {
   static final SFLogger logger =
-                       SFLoggerFactory.getLogger(SnowflakeSQLException.class);
+      SFLoggerFactory.getLogger(SnowflakeSQLException.class);
 
   static final ResourceBundleManager errorResourceBundleManager =
-  ResourceBundleManager.getSingleton(ErrorCode.errorMessageResource);
+      ResourceBundleManager.getSingleton(ErrorCode.errorMessageResource);
 
   private String queryId = "unknown";
 
@@ -28,9 +30,10 @@ public class SnowflakeSQLException extends SQLException
    * Global service. Since Global service has already built the error message,
    * we use it as is. For any errors local to JDBC driver, we should use one
    * of the constructors below to build the error message.
-   * @param queryId query id
-   * @param reason reason for which exception is created
-   * @param sqlState sql state
+   *
+   * @param queryId    query id
+   * @param reason     reason for which exception is created
+   * @param sqlState   sql state
    * @param vendorCode vendor code
    */
   public SnowflakeSQLException(String queryId,
@@ -44,41 +47,41 @@ public class SnowflakeSQLException extends SQLException
 
     // log user error from GS at fine level
     logger.debug("Snowflake exception: {}, sqlState:{}, vendorCode:{}, queryId:{}",
-                reason, sqlState, vendorCode, queryId);
+                 reason, sqlState, vendorCode, queryId);
 
   }
 
   public SnowflakeSQLException(String sqlState, int vendorCode)
   {
     super(errorResourceBundleManager.getLocalizedMessage(
-            String.valueOf(vendorCode)), sqlState, vendorCode);
+        String.valueOf(vendorCode)), sqlState, vendorCode);
 
     logger.debug("Snowflake exception: {}, sqlState:{}, vendorCode:{}",
-                errorResourceBundleManager.getLocalizedMessage(String.valueOf(vendorCode)),
-                sqlState,
-                vendorCode);
+                 errorResourceBundleManager.getLocalizedMessage(String.valueOf(vendorCode)),
+                 sqlState,
+                 vendorCode);
   }
 
   public SnowflakeSQLException(String sqlState, int vendorCode, Object... params)
   {
     super(errorResourceBundleManager.getLocalizedMessage(
-            String.valueOf(vendorCode), params), sqlState, vendorCode);
+        String.valueOf(vendorCode), params), sqlState, vendorCode);
 
     logger.debug("Snowflake exception: {}, sqlState:{}, vendorCode:{}",
-                errorResourceBundleManager.getLocalizedMessage(
-                  String.valueOf(vendorCode), params),
-                sqlState,
-                vendorCode);
+                 errorResourceBundleManager.getLocalizedMessage(
+                     String.valueOf(vendorCode), params),
+                 sqlState,
+                 vendorCode);
   }
 
   public SnowflakeSQLException(Throwable ex, String sqlState, int vendorCode)
   {
     super(errorResourceBundleManager.getLocalizedMessage(
-            String.valueOf(vendorCode)), sqlState, vendorCode, ex);
+        String.valueOf(vendorCode)), sqlState, vendorCode, ex);
 
     logger.debug("Snowflake exception: {}" +
-                              errorResourceBundleManager.getLocalizedMessage(
-                              String.valueOf(vendorCode)), ex);
+                 errorResourceBundleManager.getLocalizedMessage(
+                     String.valueOf(vendorCode)), ex);
   }
 
   public SnowflakeSQLException(Throwable ex,
@@ -87,19 +90,19 @@ public class SnowflakeSQLException extends SQLException
                                Object... params)
   {
     super(errorResourceBundleManager.getLocalizedMessage(
-            String.valueOf(vendorCode), params), sqlState, vendorCode, ex);
+        String.valueOf(vendorCode), params), sqlState, vendorCode, ex);
 
     logger.debug("Snowflake exception: " +
-                           errorResourceBundleManager.getLocalizedMessage(
-                                   String.valueOf(vendorCode), params), ex);
+                 errorResourceBundleManager.getLocalizedMessage(
+                     String.valueOf(vendorCode), params), ex);
   }
 
   public SnowflakeSQLException(ErrorCode errorCode, Object... params)
   {
     super(errorResourceBundleManager.getLocalizedMessage(
         String.valueOf(errorCode.getMessageCode()), params),
-        errorCode.getSqlState(),
-        errorCode.getMessageCode());
+          errorCode.getSqlState(),
+          errorCode.getMessageCode());
   }
 
   public SnowflakeSQLException(SFException e)

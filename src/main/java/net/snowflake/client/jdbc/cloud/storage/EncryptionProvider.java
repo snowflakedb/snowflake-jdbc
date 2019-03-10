@@ -4,6 +4,7 @@
 package net.snowflake.client.jdbc.cloud.storage;
 
 import com.amazonaws.util.Base64;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -25,6 +26,7 @@ import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
+
 import net.snowflake.client.jdbc.MatDesc;
 import net.snowflake.common.core.RemoteStoreFileEncryptionMaterial;
 
@@ -41,7 +43,7 @@ public class EncryptionProvider
   private final static String AES = "AES";
   private final static String FILE_CIPHER = "AES/CBC/PKCS5Padding";
   private final static String KEY_CIPHER = "AES/ECB/PKCS5Padding";
-  private final static int BUFFER_SIZE = 2*1024*1024; // 2 MB
+  private final static int BUFFER_SIZE = 2 * 1024 * 1024; // 2 MB
   private static SecureRandom secRnd;
 
   /**
@@ -51,9 +53,9 @@ public class EncryptionProvider
                                           String keyBase64,
                                           String ivBase64,
                                           RemoteStoreFileEncryptionMaterial encMat)
-      throws NoSuchPaddingException, NoSuchAlgorithmException,
-      InvalidKeyException, BadPaddingException, IllegalBlockSizeException,
-      InvalidAlgorithmParameterException
+  throws NoSuchPaddingException, NoSuchAlgorithmException,
+         InvalidKeyException, BadPaddingException, IllegalBlockSizeException,
+         InvalidAlgorithmParameterException
   {
     byte[] decodedKey = Base64.decode(encMat.getQueryStageMasterKey());
 
@@ -91,13 +93,13 @@ public class EncryptionProvider
                              String keyBase64,
                              String ivBase64,
                              RemoteStoreFileEncryptionMaterial encMat)
-          throws NoSuchAlgorithmException,
-                 NoSuchPaddingException,
-                 InvalidKeyException,
-                 IllegalBlockSizeException,
-                 BadPaddingException,
-                 InvalidAlgorithmParameterException,
-                 IOException
+  throws NoSuchAlgorithmException,
+         NoSuchPaddingException,
+         InvalidKeyException,
+         IllegalBlockSizeException,
+         BadPaddingException,
+         InvalidAlgorithmParameterException,
+         IOException
   {
     byte[] keyBytes = Base64.decode(keyBase64);
     byte[] ivBytes = Base64.decode(ivBase64);
@@ -154,18 +156,18 @@ public class EncryptionProvider
    * metadata object.
    */
   public static CipherInputStream encrypt(StorageObjectMetadata meta,
-                                    long originalContentLength,
-                                    InputStream src,
-                                    RemoteStoreFileEncryptionMaterial encMat,
-                                    SnowflakeStorageClient client)
-          throws InvalidKeyException,
-                 InvalidAlgorithmParameterException,
-                 NoSuchAlgorithmException,
-                 NoSuchProviderException,
-                 NoSuchPaddingException,
-                 FileNotFoundException,
-                 IllegalBlockSizeException,
-                 BadPaddingException
+                                          long originalContentLength,
+                                          InputStream src,
+                                          RemoteStoreFileEncryptionMaterial encMat,
+                                          SnowflakeStorageClient client)
+  throws InvalidKeyException,
+         InvalidAlgorithmParameterException,
+         NoSuchAlgorithmException,
+         NoSuchProviderException,
+         NoSuchPaddingException,
+         FileNotFoundException,
+         IllegalBlockSizeException,
+         BadPaddingException
   {
     final byte[] decodedKey = Base64.decode(encMat.getQueryStageMasterKey());
     final int keySize = decodedKey.length;
@@ -195,7 +197,7 @@ public class EncryptionProvider
 
     // Encrypt the file key with the QRMK
     {
-      final Cipher keyCipher =  Cipher.getInstance(KEY_CIPHER);
+      final Cipher keyCipher = Cipher.getInstance(KEY_CIPHER);
       SecretKey queryStageMasterKey =
           new SecretKeySpec(decodedKey, 0, keySize, AES);
 
@@ -221,8 +223,8 @@ public class EncryptionProvider
    * Gets a random number for encryption purposes.
    */
   private static synchronized SecureRandom getSecRnd()
-          throws NoSuchAlgorithmException,
-                 NoSuchProviderException
+  throws NoSuchAlgorithmException,
+         NoSuchProviderException
   {
     if (secRnd == null)
     {

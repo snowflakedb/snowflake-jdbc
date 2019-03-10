@@ -8,7 +8,14 @@ import java.util.Map;
  */
 public class StageInfo
 {
-  public enum StageType {S3, AZURE, LOCAL_FS};
+  public enum StageType
+  {
+    S3,
+    AZURE,
+    LOCAL_FS
+  }
+
+  ;
   private StageType stageType;        // The stage type
   private String location;            // The container or bucket
   private Map credentials;            // the credentials required for the stage
@@ -30,29 +37,35 @@ public class StageInfo
    */
   public static StageInfo createStageInfo(String locationType, String location, Map credentials,
                                           String region, String endPoint, String storageAccount)
-    throws IllegalArgumentException
+  throws IllegalArgumentException
   {
     StageType stageType;
     // Ensure that all the required parameters are specified
-    switch(locationType)
+    switch (locationType)
     {
       case "AZURE":
         stageType = StageType.AZURE;
-        if(!isSpecified(location) || !isSpecified(endPoint) || !isSpecified(storageAccount)
-                || credentials == null)
+        if (!isSpecified(location) || !isSpecified(endPoint) || !isSpecified(storageAccount)
+            || credentials == null)
+        {
           throw new IllegalArgumentException("Incomplete parameters specified for Azure stage");
+        }
         break;
 
       case "S3":
         stageType = StageType.S3;
         if (!isSpecified(location) || !isSpecified(region) || credentials == null)
+        {
           throw new IllegalArgumentException("Incomplete parameters specified for S3 stage");
+        }
         break;
 
       case "LOCAL_FS":
         stageType = StageType.LOCAL_FS;
-        if(!isSpecified(location))
+        if (!isSpecified(location))
+        {
           throw new IllegalArgumentException("Incomplete parameters specific for local stage");
+        }
         break;
 
       default:
@@ -84,7 +97,7 @@ public class StageInfo
     this.storageAccount = storageAccount;
   }
 
-  public  StageType getStageType()
+  public StageType getStageType()
   {
     return stageType;
   }
@@ -121,6 +134,6 @@ public class StageInfo
 
   private static boolean isSpecified(String arg)
   {
-    return !(arg == null || arg.equalsIgnoreCase("") );
+    return !(arg == null || arg.equalsIgnoreCase(""));
   }
 }

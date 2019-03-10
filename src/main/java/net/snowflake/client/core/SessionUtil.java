@@ -152,7 +152,9 @@ public class SessionUtil
       "JDBC_ENABLE_COMBINED_DESCRIBE"));
 
   public static Map<String, String> JVM_PARAMS_TO_PARAMS = new HashMap<>();
-  static {
+
+  static
+  {
     JVM_PARAMS_TO_PARAMS.put(
         CLIENT_RESULT_CHUNK_SIZE_JVM, CLIENT_RESULT_CHUNK_SIZE);
     JVM_PARAMS_TO_PARAMS.put(
@@ -160,6 +162,7 @@ public class SessionUtil
     JVM_PARAMS_TO_PARAMS.put(
         CLIENT_PREFETCH_THREADS_JVM, CLIENT_PREFETCH_THREADS);
   }
+
   enum TokenRequestType
   {
     RENEW("RENEW"),
@@ -798,8 +801,8 @@ public class SessionUtil
     // if privateKey is specified or not. If yes, authenticator type will be
     // SNOWFLAKE_JWT, otherwise it will use SNOWFLAKE.
     return loginInput.getPrivateKey() != null ?
-        ClientAuthnDTO.AuthenticatorType.SNOWFLAKE_JWT :
-        ClientAuthnDTO.AuthenticatorType.SNOWFLAKE;
+           ClientAuthnDTO.AuthenticatorType.SNOWFLAKE_JWT :
+           ClientAuthnDTO.AuthenticatorType.SNOWFLAKE;
   }
 
   /**
@@ -811,16 +814,16 @@ public class SessionUtil
    * @throws SnowflakeSQLException if failed to establish connection with snowflake
    */
   static public LoginOutput openSession(LoginInput loginInput)
-      throws SFException, SnowflakeSQLException
+  throws SFException, SnowflakeSQLException
   {
     AssertUtil.assertTrue(loginInput.getServerUrl() != null,
-        "missing server URL for opening session");
+                          "missing server URL for opening session");
 
     AssertUtil.assertTrue(loginInput.getAppId() != null,
-        "missing app id for opening session");
+                          "missing app id for opening session");
 
     AssertUtil.assertTrue(loginInput.getLoginTimeout() >= 0,
-        "negative login timeout for opening session");
+                          "negative login timeout for opening session");
 
     final ClientAuthnDTO.AuthenticatorType authenticator = getAuthenticator(
         loginInput);
@@ -828,7 +831,7 @@ public class SessionUtil
     {
       // OAuth does not require a username
       AssertUtil.assertTrue(loginInput.getUserName() != null,
-          "missing user name for opening session");
+                            "missing user name for opening session");
     }
     if (authenticator.equals(ClientAuthnDTO.AuthenticatorType.EXTERNALBROWSER))
     {
@@ -861,7 +864,7 @@ public class SessionUtil
   }
 
   static private LoginOutput readTemporaryCredential(LoginInput loginInput)
-      throws SFException, SnowflakeSQLException
+  throws SFException, SnowflakeSQLException
   {
     String idToken;
     synchronized (ID_TOKEN_CACHE_LOCK)
@@ -969,7 +972,7 @@ public class SessionUtil
   }
 
   static private LoginOutput newSession(LoginInput loginInput)
-      throws SFException, SnowflakeSQLException
+  throws SFException, SnowflakeSQLException
   {
     // build URL for login request
     URIBuilder uriBuilder;
@@ -1040,8 +1043,8 @@ public class SessionUtil
       else if (authenticator == ClientAuthnDTO.AuthenticatorType.SNOWFLAKE_JWT)
       {
         SessionUtilKeyPair s = new SessionUtilKeyPair(loginInput.getPrivateKey(),
-            loginInput.getAccountName(),
-            loginInput.getUserName());
+                                                      loginInput.getAccountName(),
+                                                      loginInput.getUserName());
 
         loginInput.setToken(s.issueJwtToken());
       }
@@ -1057,7 +1060,7 @@ public class SessionUtil
       logger.error("Exception when building URL", ex);
 
       throw new SFException(ex, ErrorCode.INTERNAL_ERROR,
-          "unexpected URI syntax exception:1");
+                            "unexpected URI syntax exception:1");
     }
 
     if (loginInput.getServerUrl().indexOf(".privatelink.snowflakecomputing.com") > 0)
@@ -1073,13 +1076,13 @@ public class SessionUtil
             host.substring(host.indexOf('.')),
             SFTrustManager.CACHE_FILE_NAME);
         logger.debug("OCSP Cache Server for Privatelink: {}",
-            ocspCacheServerUrl);
+                     ocspCacheServerUrl);
         resetOCSPResponseCacherServerURL(ocspCacheServerUrl);
       }
       catch (IOException ex)
       {
         throw new SFException(ex, ErrorCode.INTERNAL_ERROR,
-            "unexpected URL syntax exception");
+                              "unexpected URL syntax exception");
       }
     }
 
@@ -1096,7 +1099,7 @@ public class SessionUtil
        * the user.
        */
       data.put(ClientAuthnParameter.LOGIN_NAME.name(),
-          loginInput.getUserName());
+               loginInput.getUserName());
 
       /*
        * only include password information in the request to GS if federated
@@ -1112,7 +1115,7 @@ public class SessionUtil
       else if (authenticator == ClientAuthnDTO.AuthenticatorType.EXTERNALBROWSER)
       {
         data.put(ClientAuthnParameter.AUTHENTICATOR.name(),
-            ClientAuthnDTO.AuthenticatorType.EXTERNALBROWSER.name());
+                 ClientAuthnDTO.AuthenticatorType.EXTERNALBROWSER.name());
         data.put(ClientAuthnParameter.PROOF_KEY.name(), samlProofKey);
         data.put(ClientAuthnParameter.TOKEN.name(), tokenOrSamlResponse);
       }
@@ -1121,7 +1124,7 @@ public class SessionUtil
         data.put(ClientAuthnParameter.RAW_SAML_RESPONSE.name(), tokenOrSamlResponse);
       }
       else if (authenticator == ClientAuthnDTO.AuthenticatorType.OAUTH ||
-          authenticator == ClientAuthnDTO.AuthenticatorType.SNOWFLAKE_JWT)
+               authenticator == ClientAuthnDTO.AuthenticatorType.SNOWFLAKE_JWT)
       {
         data.put(ClientAuthnParameter.AUTHENTICATOR.name(), authenticator.name());
         data.put(ClientAuthnParameter.TOKEN.name(), loginInput.getToken());
@@ -1148,7 +1151,9 @@ public class SessionUtil
         if (appName != null)
         {
           if (appName.indexOf(" ") > 0)
+          {
             appName = appName.substring(0, appName.indexOf(" "));
+          }
 
           clientEnv.put("APPLICATION", appName);
         }
@@ -1157,13 +1162,17 @@ public class SessionUtil
       // add properties from client info
       Properties clientInfo = loginInput.getClientInfo();
       if (clientInfo != null)
+      {
         for (Map.Entry property : clientInfo.entrySet())
         {
           if (property != null && property.getKey() != null &&
               property.getValue() != null)
+          {
             clientEnv.put(property.getKey().toString(),
-                property.getValue().toString());
+                          property.getValue().toString());
+          }
         }
+      }
 
       // SNOW-20103: track additional client info in session
       String clientInfoJSONStr = System.getProperty("snowflake.client.info");
@@ -1179,7 +1188,7 @@ public class SessionUtil
         {
           logger.debug(
               "failed to process snowflake.client.info property as JSON: {}"
-                  ,clientInfoJSONStr, ex);
+              , clientInfoJSONStr, ex);
         }
 
         if (clientInfoJSON != null)
@@ -1207,7 +1216,7 @@ public class SessionUtil
       if (loginInput.getAccountName() != null)
       {
         data.put(ClientAuthnParameter.ACCOUNT_NAME.name(),
-            loginInput.getAccountName());
+                 loginInput.getAccountName());
       }
 
       // Second Factor Authentication
@@ -1219,7 +1228,7 @@ public class SessionUtil
       {
         data.put(ClientAuthnParameter.EXT_AUTHN_DUO_METHOD.name(), "passcode");
         data.put(ClientAuthnParameter.PASSCODE.name(),
-            loginInput.getPasscode());
+                 loginInput.getPasscode());
       }
       else
       {
@@ -1227,7 +1236,7 @@ public class SessionUtil
       }
 
       data.put(ClientAuthnParameter.CLIENT_APP_VERSION.name(),
-          loginInput.getAppVersion());
+               loginInput.getAppVersion());
 
       authnData.setData(data);
       String json = mapper.writeValueAsString(authnData);
@@ -1246,13 +1255,13 @@ public class SessionUtil
        * String.
        */
       postRequest.setHeader(SF_HEADER_AUTHORIZATION,
-          SF_HEADER_BASIC_AUTHTYPE);
+                            SF_HEADER_BASIC_AUTHTYPE);
 
       setServiceNameHeader(loginInput, postRequest);
 
       String theString = HttpUtil.executeRequest(postRequest,
-          loginInput.getLoginTimeout(),
-          0, null);
+                                                 loginInput.getLoginTimeout(),
+                                                 0, null);
 
       logger.debug("login response: {}", theString);
 
@@ -1300,10 +1309,14 @@ public class SessionUtil
         logger.debug("server version = {}", serverVersion);
 
         if (serverVersion.indexOf(" ") > 0)
+        {
           databaseVersion = serverVersion.substring(0,
-              serverVersion.indexOf(" "));
+                                                    serverVersion.indexOf(" "));
+        }
         else
+        {
           databaseVersion = serverVersion;
+        }
       }
       else
       {
@@ -1323,13 +1336,15 @@ public class SessionUtil
           catch (Exception ex)
           {
             logger.error("Exception encountered when parsing server "
-                    + "version: {} Exception: {}",
-                databaseVersion, ex.getMessage());
+                         + "version: {} Exception: {}",
+                         databaseVersion, ex.getMessage());
           }
         }
       }
       else
+      {
         logger.debug("database version is null");
+      }
 
 
       if (!jsonNode.path("data").path("newClientForUpgrade").isNull())
@@ -1354,16 +1369,16 @@ public class SessionUtil
 
         // add health check interval to socket timeout
         httpClientSocketTimeout = loginInput.getSocketTimeout() +
-            (healthCheckIntervalFromGS * 1000);
+                                  (healthCheckIntervalFromGS * 1000);
 
         final HttpParams httpParams = new BasicHttpParams();
 
         // set timeout so that we don't wait forever
         HttpConnectionParams.setConnectionTimeout(httpParams,
-            loginInput.getConnectionTimeout());
+                                                  loginInput.getConnectionTimeout());
 
         HttpConnectionParams.setSoTimeout(httpParams,
-            httpClientSocketTimeout);
+                                          httpClientSocketTimeout);
 
         ((SystemDefaultHttpClient) HttpUtil.getHttpClient()).setParams(httpParams);
 
@@ -1382,40 +1397,40 @@ public class SessionUtil
     catch (IOException ex)
     {
       logger.error("IOException when creating session: " +
-          postRequest, ex);
+                   postRequest, ex);
 
       throw new SnowflakeSQLException(ex, SqlState.IO_ERROR,
-          ErrorCode.NETWORK_ERROR.getMessageCode(),
-          "Exception encountered when opening connection: " +
-              ex.getMessage());
+                                      ErrorCode.NETWORK_ERROR.getMessageCode(),
+                                      "Exception encountered when opening connection: " +
+                                      ex.getMessage());
     }
     catch (Throwable ex)
     {
       logger.error("Exception when creating session: " +
-          postRequest, ex);
+                   postRequest, ex);
 
       throw new SnowflakeSQLException(ex,
-          SqlState.SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION,
-          ErrorCode.CONNECTION_ERROR.getMessageCode(),
-          ErrorCode.CONNECTION_ERROR.getMessageCode(), ex.getMessage());
+                                      SqlState.SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION,
+                                      ErrorCode.CONNECTION_ERROR.getMessageCode(),
+                                      ErrorCode.CONNECTION_ERROR.getMessageCode(), ex.getMessage());
     }
 
     LoginOutput ret = new LoginOutput(sessionToken,
-        masterToken,
-        masterTokenValidityInSeconds,
-        remMeToken,
-        idToken,
-        databaseVersion,
-        databaseMajorVersion,
-        databaseMinorVersion,
-        newClientForUpgrade,
-        healthCheckInterval,
-        httpClientSocketTimeout,
-        sessionDatabase,
-        sessionSchema,
-        sessionRole,
-        sessionWarehouse,
-        commonParams);
+                                      masterToken,
+                                      masterTokenValidityInSeconds,
+                                      remMeToken,
+                                      idToken,
+                                      databaseVersion,
+                                      databaseMajorVersion,
+                                      databaseMinorVersion,
+                                      newClientForUpgrade,
+                                      healthCheckInterval,
+                                      httpClientSocketTimeout,
+                                      sessionDatabase,
+                                      sessionSchema,
+                                      sessionRole,
+                                      sessionWarehouse,
+                                      commonParams);
     ret.setUpdatedByTokenRequest(false);
 
     if (consentCacheIdToken)
@@ -1431,7 +1446,7 @@ public class SessionUtil
     {
       // service name is used to route a request to appropriate cluster.
       postRequest.setHeader(SF_HEADER_SERVICE_NAME,
-          loginInput.getServiceName());
+                            loginInput.getServiceName());
     }
   }
 
@@ -1474,7 +1489,7 @@ public class SessionUtil
    * @throws SnowflakeSQLException if failed to renew the session
    */
   static public LoginOutput renewSession(LoginInput loginInput)
-      throws SFException, SnowflakeSQLException
+  throws SFException, SnowflakeSQLException
   {
     try
     {
@@ -1499,33 +1514,33 @@ public class SessionUtil
    * @throws SnowflakeSQLException if failed to renew the session
    */
   static public LoginOutput issueSession(LoginInput loginInput)
-      throws SFException, SnowflakeSQLException
+  throws SFException, SnowflakeSQLException
   {
     return tokenRequest(loginInput, TokenRequestType.ISSUE);
   }
 
   static private LoginOutput tokenRequest(
       LoginInput loginInput, TokenRequestType requestType)
-      throws SFException, SnowflakeSQLException
+  throws SFException, SnowflakeSQLException
   {
     AssertUtil.assertTrue(loginInput.getServerUrl() != null,
-        "missing server URL for tokenRequest");
+                          "missing server URL for tokenRequest");
 
     if (requestType == TokenRequestType.RENEW)
     {
       AssertUtil.assertTrue(loginInput.getMasterToken() != null,
-          "missing master token for tokenRequest");
+                            "missing master token for tokenRequest");
       AssertUtil.assertTrue(loginInput.getSessionToken() != null,
-          "missing session token for tokenRequest");
+                            "missing session token for tokenRequest");
     }
     else if (requestType == TokenRequestType.ISSUE)
     {
       AssertUtil.assertTrue(loginInput.getIdToken() != null,
-          "missing id token for tokenRequest");
+                            "missing id token for tokenRequest");
     }
 
     AssertUtil.assertTrue(loginInput.getLoginTimeout() >= 0,
-        "negative login timeout for tokenRequest");
+                          "negative login timeout for tokenRequest");
 
     // build URL for login request
     URIBuilder uriBuilder;
@@ -1539,7 +1554,7 @@ public class SessionUtil
       uriBuilder.setPath(SF_PATH_TOKEN_REQUEST);
 
       uriBuilder.addParameter(SFSession.SF_QUERY_REQUEST_ID,
-          UUID.randomUUID().toString());
+                              UUID.randomUUID().toString());
 
       postRequest = new HttpPost(uriBuilder.build());
     }
@@ -1548,7 +1563,7 @@ public class SessionUtil
       logger.error("Exception when creating http request", ex);
 
       throw new SFException(ex, ErrorCode.INTERNAL_ERROR,
-          "unexpected URI syntax exception:3");
+                            "unexpected URI syntax exception:3");
     }
 
     try
@@ -1580,7 +1595,7 @@ public class SessionUtil
       postRequest.setHeader(
           SF_HEADER_AUTHORIZATION,
           SF_HEADER_SNOWFLAKE_AUTHTYPE + " " +
-              SF_HEADER_TOKEN_TAG + "=\"" + headerToken + "\"");
+          SF_HEADER_TOKEN_TAG + "=\"" + headerToken + "\"");
 
       setServiceNameHeader(loginInput, postRequest);
 
@@ -1588,7 +1603,7 @@ public class SessionUtil
       {
         logger.debug(
             "request type: {}, old session token: {}, " +
-                "master token: {}, id token: {}",
+            "master token: {}, id token: {}",
             requestType.value,
             loginInput.getSessionToken() != null ? "******" : null,
             loginInput.getMasterToken() != null ? "******" : null,
@@ -1596,7 +1611,7 @@ public class SessionUtil
       }
 
       String theString = HttpUtil.executeRequest(postRequest,
-          loginInput.getLoginTimeout(), 0, null);
+                                                 loginInput.getLoginTimeout(), 0, null);
 
       // general method, same as with data binding
       JsonNode jsonNode = mapper.readTree(theString);
@@ -1612,7 +1627,7 @@ public class SessionUtil
         EventUtil.triggerBasicEvent(
             Event.EventType.NETWORK_ERROR,
             "SessionUtil:renewSession failure, error code="
-                + errorCode + ", message=" + message,
+            + errorCode + ", message=" + message,
             true);
 
         SnowflakeUtil.checkErrorAndThrowExceptionIncludingReauth(jsonNode);
@@ -1625,7 +1640,7 @@ public class SessionUtil
     catch (IOException ex)
     {
       logger.error("IOException when renewing session: " +
-          postRequest, ex);
+                   postRequest, ex);
 
       // Any EventType.NETWORK_ERRORs should have been triggered before
       // exception was thrown.
@@ -1650,19 +1665,19 @@ public class SessionUtil
    * @throws SFException           if failed to close session
    */
   static public void closeSession(LoginInput loginInput)
-      throws SFException, SnowflakeSQLException
+  throws SFException, SnowflakeSQLException
   {
     logger.debug(" public void close() throws SFException");
 
     // assert the following inputs are valid
     AssertUtil.assertTrue(loginInput.getServerUrl() != null,
-        "missing server URL for closing session");
+                          "missing server URL for closing session");
 
     AssertUtil.assertTrue(loginInput.getSessionToken() != null,
-        "missing session token for closing session");
+                          "missing session token for closing session");
 
     AssertUtil.assertTrue(loginInput.getLoginTimeout() >= 0,
-        "missing login timeout for closing session");
+                          "missing login timeout for closing session");
 
     HttpPost postRequest = null;
 
@@ -1674,22 +1689,22 @@ public class SessionUtil
 
       uriBuilder.addParameter(SF_QUERY_SESSION_DELETE, "true");
       uriBuilder.addParameter(SFSession.SF_QUERY_REQUEST_ID,
-          UUID.randomUUID().toString());
+                              UUID.randomUUID().toString());
 
       uriBuilder.setPath(SF_PATH_SESSION);
 
       postRequest = new HttpPost(uriBuilder.build());
 
       postRequest.setHeader(SF_HEADER_AUTHORIZATION,
-          SF_HEADER_SNOWFLAKE_AUTHTYPE + " "
-              + SF_HEADER_TOKEN_TAG + "=\""
-              + loginInput.getSessionToken() + "\"");
+                            SF_HEADER_SNOWFLAKE_AUTHTYPE + " "
+                            + SF_HEADER_TOKEN_TAG + "=\""
+                            + loginInput.getSessionToken() + "\"");
 
       setServiceNameHeader(loginInput, postRequest);
 
       String theString = HttpUtil.executeRequest(postRequest,
-          loginInput.getLoginTimeout(),
-          0, null);
+                                                 loginInput.getLoginTimeout(),
+                                                 0, null);
 
       JsonNode rootNode;
 
@@ -1708,13 +1723,15 @@ public class SessionUtil
     catch (IOException ex)
     {
       logger.error("unexpected IO exception for: " + postRequest,
-          ex);
+                   ex);
     }
     catch (SnowflakeSQLException ex)
     {
       // ignore session expiration exception
       if (ex.getErrorCode() != Constants.SESSION_EXPIRED_GS_CODE)
+      {
         throw ex;
+      }
     }
   }
 
@@ -1760,15 +1777,15 @@ public class SessionUtil
       httpGet.setHeaders(headers.getAllHeaders());
 
       responseHtml = HttpUtil.executeRequest(httpGet,
-          loginInput.getLoginTimeout(), 0, null);
+                                             loginInput.getLoginTimeout(), 0, null);
 
       // step 5
       String postBackUrl = getPostBackUrlFromHTML(responseHtml);
       if (!isPrefixEqual(postBackUrl, loginInput.getServerUrl()))
       {
         logger.debug("The specified authenticator {} and the destination URL " +
-                "in the SAML assertion {} do not match.",
-            loginInput.getAuthenticator(), postBackUrl);
+                     "in the SAML assertion {} do not match.",
+                     loginInput.getAuthenticator(), postBackUrl);
         throw new SnowflakeSQLException(
             SqlState.SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION,
             ErrorCode.IDP_INCORRECT_DESTINATION.getMessageCode());
@@ -1790,7 +1807,7 @@ public class SessionUtil
    * @throws SnowflakeSQLException
    */
   private static String federatedFlowStep3(LoginInput loginInput, String tokenUrl)
-      throws SnowflakeSQLException
+  throws SnowflakeSQLException
 
   {
     String oneTimeToken = "";
@@ -1801,8 +1818,8 @@ public class SessionUtil
       final HttpPost postRequest = new HttpPost(tokenUri);
 
       StringEntity params = new StringEntity("{\"username\":\"" +
-          loginInput.getUserName() + "\",\"password\":\"" +
-          loginInput.getPassword() + "\"}");
+                                             loginInput.getUserName() + "\",\"password\":\"" +
+                                             loginInput.getPassword() + "\"}");
       postRequest.setEntity(params);
 
       HeaderGroup headers = new HeaderGroup();
@@ -1811,10 +1828,10 @@ public class SessionUtil
       postRequest.setHeaders(headers.getAllHeaders());
 
       final String idpResponse = HttpUtil.executeRequestWithoutCookies(postRequest,
-          loginInput.getLoginTimeout(), 0, null);
+                                                                       loginInput.getLoginTimeout(), 0, null);
 
       logger.debug("user is authenticated against {}.",
-          loginInput.getAuthenticator());
+                   loginInput.getAuthenticator());
 
       // session token is in the data field of the returned json response
       final JsonNode jsonNode = mapper.readTree(idpResponse);
@@ -1852,7 +1869,7 @@ public class SessionUtil
           !isPrefixEqual(loginInput.getAuthenticator(), ssoUrl))
       {
         logger.debug("The specified authenticator {} is not supported.",
-            loginInput.getAuthenticator());
+                     loginInput.getAuthenticator());
         throw new SnowflakeSQLException(
             SqlState.SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION,
             ErrorCode.IDP_CONNECTION_ERROR.getMessageCode());
@@ -1871,7 +1888,7 @@ public class SessionUtil
    * @throws SnowflakeSQLException
    */
   private static JsonNode federatedFlowStep1(LoginInput loginInput)
-      throws SnowflakeSQLException
+  throws SnowflakeSQLException
   {
     JsonNode dataNode = null;
     try
@@ -1882,12 +1899,12 @@ public class SessionUtil
 
       Map<String, Object> data = new HashMap<>();
       data.put(ClientAuthnParameter.ACCOUNT_NAME.name(),
-          loginInput.getAccountName());
+               loginInput.getAccountName());
       data.put(ClientAuthnParameter.AUTHENTICATOR.name(),
-          loginInput.getAuthenticator());
+               loginInput.getAuthenticator());
       data.put(ClientAuthnParameter.CLIENT_APP_ID.name(), loginInput.getAppId());
       data.put(ClientAuthnParameter.CLIENT_APP_VERSION.name(),
-          loginInput.getAppVersion());
+               loginInput.getAppVersion());
 
       ClientAuthnDTO authnData = new ClientAuthnDTO();
       authnData.setData(data);
@@ -1901,7 +1918,7 @@ public class SessionUtil
       postRequest.addHeader("accept", "application/json");
 
       final String gsResponse = HttpUtil.executeRequest(postRequest,
-          loginInput.getLoginTimeout(), 0, null);
+                                                        loginInput.getLoginTimeout(), 0, null);
       logger.debug("authenticator-request response: {}", gsResponse);
       JsonNode jsonNode = mapper.readTree(gsResponse);
 
@@ -1936,24 +1953,24 @@ public class SessionUtil
    * @throws SnowflakeSQLException
    */
   private static void handleFederatedFlowError(LoginInput loginInput, Exception ex)
-      throws SnowflakeSQLException
+  throws SnowflakeSQLException
 
   {
     if (ex instanceof IOException)
     {
       logger.error("IOException when authenticating with " +
-          loginInput.getAuthenticator(), ex);
+                   loginInput.getAuthenticator(), ex);
       throw new SnowflakeSQLException(ex, SqlState.IO_ERROR,
-          ErrorCode.NETWORK_ERROR.getMessageCode(),
-          "Exception encountered when opening connection: " +
-              ex.getMessage());
+                                      ErrorCode.NETWORK_ERROR.getMessageCode(),
+                                      "Exception encountered when opening connection: " +
+                                      ex.getMessage());
     }
     logger.error("Exception when authenticating with " +
-        loginInput.getAuthenticator(), ex);
+                 loginInput.getAuthenticator(), ex);
     throw new SnowflakeSQLException(ex,
-        SqlState.SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION,
-        ErrorCode.CONNECTION_ERROR.getMessageCode(),
-        ErrorCode.CONNECTION_ERROR.getMessageCode(), ex.getMessage());
+                                    SqlState.SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION,
+                                    ErrorCode.CONNECTION_ERROR.getMessageCode(),
+                                    ErrorCode.CONNECTION_ERROR.getMessageCode(), ex.getMessage());
   }
 
   /**
@@ -1964,7 +1981,7 @@ public class SessionUtil
    * @throws SnowflakeSQLException
    */
   static private String getSamlResponseUsingOkta(LoginInput loginInput)
-      throws SnowflakeSQLException
+  throws SnowflakeSQLException
   {
     JsonNode dataNode = federatedFlowStep1(loginInput);
     String tokenUrl = dataNode.path("tokenUrl").asText();
@@ -1985,7 +2002,7 @@ public class SessionUtil
    * @throws MalformedURLException raises if a URL string is not valid.
    */
   static boolean isPrefixEqual(String aUrlStr, String bUrlStr)
-      throws MalformedURLException
+  throws MalformedURLException
   {
     URL aUrl = new URL(aUrlStr);
     URL bUrl = new URL(bUrlStr);
@@ -2003,8 +2020,8 @@ public class SessionUtil
     }
     // no default port number for HTTP is supported.
     return aUrl.getHost().equalsIgnoreCase(bUrl.getHost()) &&
-        aUrl.getProtocol().equalsIgnoreCase(bUrl.getProtocol()) &&
-        aPort == bPort;
+           aUrl.getProtocol().equalsIgnoreCase(bUrl.getProtocol()) &&
+           aPort == bPort;
   }
 
   /**
@@ -2039,7 +2056,7 @@ public class SessionUtil
       if (!child.hasNonNull("name"))
       {
         logger.error("Common Parameter JsonNode encountered with "
-            + "no parameter name!");
+                     + "no parameter name!");
         continue;
       }
 
@@ -2050,7 +2067,7 @@ public class SessionUtil
       if (!child.hasNonNull("value"))
       {
         logger.debug("No value found for Common Parameter {}",
-            child.path("name").asText());
+                     child.path("name").asText());
         continue;
       }
 
@@ -2072,7 +2089,7 @@ public class SessionUtil
       }
 
       logger.debug("Parameter {}: {}",
-          paramName, child.path("value").asText());
+                   paramName, child.path("value").asText());
     }
 
     return parameters;
@@ -2117,7 +2134,7 @@ public class SessionUtil
       }
       else if (
           JDBC_RS_COLUMN_CASE_INSENSITIVE.equalsIgnoreCase(entry.getKey()) ||
-              CLIENT_RESULT_COLUMN_CASE_INSENSITIVE.equalsIgnoreCase(entry.getKey()))
+          CLIENT_RESULT_COLUMN_CASE_INSENSITIVE.equalsIgnoreCase(entry.getKey()))
       {
         if (session != null && !session.isResultColumnCaseInsensitive())
         {

@@ -104,20 +104,20 @@ class FileCacheManager
   {
     // try to get cacheDir from system property or environment variable
     String cacheDirPath = this.cacheDirectorySystemProperty != null ?
-        System.getProperty(this.cacheDirectorySystemProperty)
-        : null;
+                          System.getProperty(this.cacheDirectorySystemProperty)
+                                                                    : null;
     if (cacheDirPath == null)
     {
       try
       {
         cacheDirPath = this.cacheDirectoryEnvironmentVariable != null ?
-            System.getenv(this.cacheDirectoryEnvironmentVariable)
-            : null;
+                       System.getenv(this.cacheDirectoryEnvironmentVariable)
+                                                                      : null;
       }
-      catch(Throwable ex)
+      catch (Throwable ex)
       {
         LOGGER.debug("Cannot get environment variable for cache directory, " +
-                        "skip using cache");
+                     "skip using cache");
         // In Boomi cloud, System.getenv is not allowed due to policy,
         // so we catch the exception and skip cache completely
         return this;
@@ -141,12 +141,12 @@ class FileCacheManager
       {
         this.cacheDir = new File(
             new File(new File(new File(homeDir,
-                "AppData"), "Local"), "Snowflake"), "Caches");
+                                       "AppData"), "Local"), "Snowflake"), "Caches");
       }
       else if (Constants.getOS() == Constants.OS.MAC)
       {
         this.cacheDir = new File(new File(new File(homeDir,
-            "Library"), "Caches"), "Snowflake");
+                                                   "Library"), "Caches"), "Snowflake");
       }
       else
       {
@@ -258,7 +258,7 @@ class FileCacheManager
   void deleteCacheFile()
   {
     LOGGER.debug("Deleting cache file. File={}, Lock File={}",
-        cacheFile, cacheLockFile);
+                 cacheFile, cacheLockFile);
 
     if (cacheFile == null)
     {
@@ -326,7 +326,7 @@ class FileCacheManager
     long cacheFileTs = fileCreationTime(cacheFile);
 
     if (!cacheLockFile.exists() && cacheFileTs > 0 && currentTime -
-        this.cacheExpirationInMilliseconds <= cacheFileTs)
+                                                      this.cacheExpirationInMilliseconds <= cacheFileTs)
     {
       LOGGER.debug("No cache file lock directory exists and cache file is up to date.");
       return true;

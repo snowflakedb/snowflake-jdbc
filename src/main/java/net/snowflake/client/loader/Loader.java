@@ -7,7 +7,7 @@ package net.snowflake.client.loader;
 import java.io.File;
 
 /**
- *  Bulk loader for Snowflake
+ * Bulk loader for Snowflake
  */
 public interface Loader
 {
@@ -16,7 +16,7 @@ public interface Loader
   String tmpdir = System.getProperty("java.io.tmpdir");
 
   String BASE = tmpdir + (!(tmpdir.endsWith("/") || tmpdir.endsWith("\\")) ? File.separatorChar : "")
-                       + "snowflake" + File.separatorChar + "stage";
+                + "snowflake" + File.separatorChar + "stage";
 
   // Configuration, see LoaderProperty
   void setProperty(LoaderProperty property, Object value);
@@ -33,6 +33,7 @@ public interface Loader
 
   /**
    * Pass row data
+   *
    * @param data, must match shape of the table (requested columns, in the order provided)
    */
   void submitRow(Object[] data);
@@ -40,13 +41,14 @@ public interface Loader
 
   /**
    * If operation is changed, previous data is committed
+   *
    * @param op operation will be reset
    */
   void resetOperation(Operation op);
 
   /**
-   *  Rollback uncommitted changes.    If no transaction was initialized,
-   *  indeterminate fraction of rows could have been committed.
+   * Rollback uncommitted changes.    If no transaction was initialized,
+   * indeterminate fraction of rows could have been committed.
    */
   void rollback();
 
@@ -72,12 +74,16 @@ public interface Loader
     {
       super(msg);
     }
+
     DataError(String msg, Throwable ex)
     {
       super(msg, ex);
     }
-    DataError(Throwable ex) {
-      super(ex); }
+
+    DataError(Throwable ex)
+    {
+      super(ex);
+    }
   }
 
   // Raised for connection and other system errors.
@@ -93,7 +99,9 @@ public interface Loader
     {
       super(msg, ex);
     }
-    ConnectionError(Throwable ex) {
+
+    ConnectionError(Throwable ex)
+    {
       super(ex);
     }
 

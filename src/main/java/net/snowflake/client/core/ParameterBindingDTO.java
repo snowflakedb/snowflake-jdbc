@@ -10,11 +10,14 @@ package net.snowflake.client.core;
  */
 public class ParameterBindingDTO
 {
-  /** Type of binding */
+  /**
+   * Type of binding
+   */
   private String type;
 
-  /** Value is a String object if it's a single bind,
-   *  otherwise is an array of String
+  /**
+   * Value is a String object if it's a single bind,
+   * otherwise is an array of String
    */
   private Object value;
 

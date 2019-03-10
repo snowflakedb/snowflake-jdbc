@@ -196,7 +196,7 @@ public class SFSession
 
   public void addProperty(SFSessionProperty sfSessionProperty,
                           Object propertyValue)
-      throws SFException
+  throws SFException
   {
     addProperty(sfSessionProperty.getPropertyKey(), propertyValue);
   }
@@ -214,7 +214,7 @@ public class SFSession
    * @throws SFException exception raised from Snowflake components
    */
   public void addProperty(String propertyName, Object propertyValue)
-      throws SFException
+  throws SFException
   {
     SFSessionProperty connectionProperty =
         SFSessionProperty.lookupByKey(propertyName);
@@ -228,7 +228,7 @@ public class SFSession
       if (connectionPropertiesMap.containsKey(connectionProperty))
       {
         throw new SFException(ErrorCode.DUPLICATE_CONNECTION_PROPERTY_SPECIFIED,
-            propertyName);
+                              propertyName);
       }
       else
       {
@@ -239,22 +239,30 @@ public class SFSession
       {
         case LOGIN_TIMEOUT:
           if (propertyValue != null)
+          {
             loginTimeout = (Integer) propertyValue;
+          }
           break;
 
         case NETWORK_TIMEOUT:
           if (propertyValue != null)
+          {
             networkTimeoutInMilli = (Integer) propertyValue;
+          }
           break;
 
         case INJECT_CLIENT_PAUSE:
           if (propertyValue != null)
+          {
             injectClientPause = (Integer) propertyValue;
+          }
           break;
 
         case INJECT_SOCKET_TIMEOUT:
           if (propertyValue != null)
+          {
             injectSocketTimeout = (Integer) propertyValue;
+          }
           break;
 
         case PASSCODE_IN_PASSWORD:
@@ -264,7 +272,7 @@ public class SFSession
         case TRACING:
           if (propertyValue != null)
           {
-            tracingLevel = Level.parse(((String)propertyValue).toUpperCase());
+            tracingLevel = Level.parse(((String) propertyValue).toUpperCase());
             if (tracingLevel != null && logger instanceof JDK14Logger)
             {
               JDK14Logger.honorTracingParameter(tracingLevel);
@@ -276,7 +284,9 @@ public class SFSession
           // note: if any session has this parameter, it will be used for all
           // sessions on the current JVM.
           if (propertyValue != null)
+          {
             HttpUtil.setSocksProxyDisabled((Boolean) propertyValue);
+          }
 
         default:
           break;
@@ -287,15 +297,21 @@ public class SFSession
       // this property does not match any predefined property, treat it as
       // session parameter
       if (sessionParametersMap.containsKey(propertyName))
+      {
         throw new SFException(ErrorCode.DUPLICATE_CONNECTION_PROPERTY_SPECIFIED,
-            propertyName);
+                              propertyName);
+      }
       else
+      {
         sessionParametersMap.put(propertyName, propertyValue);
+      }
 
       // check if the number of session properties exceed limit
       if (sessionParametersMap.size() > MAX_SESSION_PARAMETERS)
+      {
         throw new SFException(ErrorCode.TOO_MANY_SESSION_PARAMETERS,
-            MAX_SESSION_PARAMETERS);
+                              MAX_SESSION_PARAMETERS);
+      }
     }
   }
 
@@ -328,12 +344,13 @@ public class SFSession
         SFSessionProperty.PRIVATE_KEY);
 
     return (authenticator == null && privateKey == null) ||
-        ClientAuthnDTO.AuthenticatorType.SNOWFLAKE.name()
-            .equalsIgnoreCase(authenticator);
+           ClientAuthnDTO.AuthenticatorType.SNOWFLAKE.name()
+               .equalsIgnoreCase(authenticator);
   }
 
   /**
    * Returns true If authenticator is EXTERNALBROWSER.
+   *
    * @return true if authenticator type is EXTERNALBROWSER
    */
   boolean isExternalbrowserAuthenticator()
@@ -354,7 +371,7 @@ public class SFSession
   {
     performSanityCheckOnProperties();
 
-    Boolean insecureMode = (Boolean)connectionPropertiesMap.get(
+    Boolean insecureMode = (Boolean) connectionPropertiesMap.get(
         SFSessionProperty.INSECURE_MODE);
 
     HttpUtil.configureCustomProxyProperties(connectionPropertiesMap);
@@ -383,7 +400,7 @@ public class SFSession
         .setToken(
             (String) connectionPropertiesMap.get(SFSessionProperty.TOKEN))
         .setIdToken(
-            (String)connectionPropertiesMap.get(SFSessionProperty.ID_TOKEN))
+            (String) connectionPropertiesMap.get(SFSessionProperty.ID_TOKEN))
         .setClientInfo(this.getClientInfo())
         .setPasscodeInPassword(passcodeInPassword)
         .setPasscode(
@@ -425,45 +442,45 @@ public class SFSession
     // Update common parameter values for this session
     SessionUtil.updateSfDriverParamValues(loginOutput.getCommonParams(), this);
 
-    String loginDatabaseName = (String)connectionPropertiesMap.get(
+    String loginDatabaseName = (String) connectionPropertiesMap.get(
         SFSessionProperty.DATABASE);
-    String loginSchemaName = (String)connectionPropertiesMap.get(
+    String loginSchemaName = (String) connectionPropertiesMap.get(
         SFSessionProperty.SCHEMA);
-    String loginRole = (String)connectionPropertiesMap.get(
+    String loginRole = (String) connectionPropertiesMap.get(
         SFSessionProperty.ROLE);
-    String loginWarehouse = (String)connectionPropertiesMap.get(
+    String loginWarehouse = (String) connectionPropertiesMap.get(
         SFSessionProperty.WAREHOUSE);
 
     if (loginDatabaseName != null && !loginDatabaseName
         .equalsIgnoreCase(database))
     {
       sqlWarnings.add(new SFException(ErrorCode
-          .CONNECTION_ESTABLISHED_WITH_DIFFERENT_PROP,
-          "Database", loginDatabaseName, database));
+                                          .CONNECTION_ESTABLISHED_WITH_DIFFERENT_PROP,
+                                      "Database", loginDatabaseName, database));
     }
 
     if (loginSchemaName != null && !loginSchemaName
         .equalsIgnoreCase(schema))
     {
       sqlWarnings.add(new SFException(ErrorCode.
-          CONNECTION_ESTABLISHED_WITH_DIFFERENT_PROP,
-          "Schema", loginSchemaName, schema));
+                                          CONNECTION_ESTABLISHED_WITH_DIFFERENT_PROP,
+                                      "Schema", loginSchemaName, schema));
     }
 
     if (loginRole != null && !loginRole
         .equalsIgnoreCase(role))
     {
       sqlWarnings.add(new SFException(ErrorCode.
-          CONNECTION_ESTABLISHED_WITH_DIFFERENT_PROP,
-          "Role", loginRole, role));
+                                          CONNECTION_ESTABLISHED_WITH_DIFFERENT_PROP,
+                                      "Role", loginRole, role));
     }
 
     if (loginWarehouse != null && !loginWarehouse
         .equalsIgnoreCase(warehouse))
     {
       sqlWarnings.add(new SFException(ErrorCode.
-          CONNECTION_ESTABLISHED_WITH_DIFFERENT_PROP,
-          "Warehouse", loginWarehouse, warehouse));
+                                          CONNECTION_ESTABLISHED_WITH_DIFFERENT_PROP,
+                                      "Warehouse", loginWarehouse, warehouse));
     }
 
     // start heartbeat for this session so that the master token will not expire
@@ -474,6 +491,7 @@ public class SFSession
    * Performs a sanity check on properties. Sanity checking includes:
    * - verifying that a server url is present
    * - verifying various combinations of properties given the authenticator
+   *
    * @throws SFException
    */
   private void performSanityCheckOnProperties() throws SFException
@@ -490,7 +508,7 @@ public class SFSession
 
           default:
             throw new SFException(ErrorCode.MISSING_CONNECTION_PROPERTY,
-                property.getPropertyKey());
+                                  property.getPropertyKey());
         }
       }
     }
@@ -523,8 +541,8 @@ public class SFSession
         SFSessionProperty.USE_PROXY, false);
     if (useProxy)
     {
-      if(!connectionPropertiesMap.containsKey(SFSessionProperty.PROXY_HOST)
-        || !connectionPropertiesMap.containsKey(SFSessionProperty.PROXY_PORT))
+      if (!connectionPropertiesMap.containsKey(SFSessionProperty.PROXY_HOST)
+          || !connectionPropertiesMap.containsKey(SFSessionProperty.PROXY_PORT))
       {
         throw new SFException(ErrorCode.INVALID_PROXY_PROPERTIES);
       }
@@ -564,7 +582,7 @@ public class SFSession
    * @throws SFException           if failed to renew the session
    */
   synchronized void renewSession(String prevSessionToken)
-      throws SFException, SnowflakeSQLException
+  throws SFException, SnowflakeSQLException
   {
     if (sessionToken != null &&
         !sessionToken.equals(prevSessionToken))
@@ -642,10 +660,10 @@ public class SFSession
     if (enableHeartbeat && !Strings.isNullOrEmpty(masterToken))
     {
       logger.debug("start heartbeat, master token validity: " +
-          masterTokenValidityInSeconds);
+                   masterTokenValidityInSeconds);
 
       HeartbeatBackground.getInstance().addSession(this,
-          masterTokenValidityInSeconds);
+                                                   masterTokenValidityInSeconds);
     }
     else
     {
@@ -712,18 +730,18 @@ public class SFSession
         String prevSessionToken = sessionToken;
 
         postRequest.setHeader(SF_HEADER_AUTHORIZATION,
-            SF_HEADER_SNOWFLAKE_AUTHTYPE + " "
-                + SF_HEADER_TOKEN_TAG + "=\""
-                + prevSessionToken + "\"");
+                              SF_HEADER_SNOWFLAKE_AUTHTYPE + " "
+                              + SF_HEADER_TOKEN_TAG + "=\""
+                              + prevSessionToken + "\"");
 
         logger.debug("Executing heartbeat request: {}",
-            postRequest.toString());
+                     postRequest.toString());
 
         // the following will retry transient network issues
         String theResponse = HttpUtil.executeRequest(postRequest,
-            SF_HEARTBEAT_TIMEOUT,
-            0,
-            null);
+                                                     SF_HEARTBEAT_TIMEOUT,
+                                                     0,
+                                                     null);
 
         JsonNode rootNode;
 
@@ -750,7 +768,9 @@ public class SFSession
       {
         // for snowflake exception, just rethrow it
         if (ex instanceof SnowflakeSQLException)
+        {
           throw (SnowflakeSQLException) ex;
+        }
 
         logger.error("unexpected exception", ex);
 
@@ -770,12 +790,14 @@ public class SFSession
   }
 
   public void setClientInfo(Properties properties)
-      throws SQLClientInfoException
+  throws SQLClientInfoException
   {
     logger.debug(" public void setClientInfo(Properties properties)");
 
     if (this.clientInfo == null)
+    {
       this.clientInfo = new Properties();
+    }
 
     // make a copy, don't point to the properties directly since we don't
     // own it.
@@ -784,12 +806,14 @@ public class SFSession
   }
 
   public void setClientInfo(String name, String value)
-      throws SQLClientInfoException
+  throws SQLClientInfoException
   {
     logger.debug(" public void setClientInfo(String name, String value)");
 
     if (this.clientInfo == null)
+    {
       this.clientInfo = new Properties();
+    }
 
     this.clientInfo.setProperty(name, value);
   }
@@ -808,7 +832,9 @@ public class SFSession
       return copy;
     }
     else
+    {
       return null;
+    }
   }
 
   public String getClientInfo(String name)
@@ -816,9 +842,13 @@ public class SFSession
     logger.debug(" public String getClientInfo(String name)");
 
     if (this.clientInfo != null)
+    {
       return this.clientInfo.getProperty(name);
+    }
     else
+    {
       return null;
+    }
   }
 
   void setSFSessionProperty(String propertyName, boolean propertyValue)
@@ -1033,17 +1063,17 @@ public class SFSession
 
   public Integer getQueryTimeout()
   {
-    return (Integer)this.connectionPropertiesMap.get(SFSessionProperty.QUERY_TIMEOUT);
+    return (Integer) this.connectionPropertiesMap.get(SFSessionProperty.QUERY_TIMEOUT);
   }
 
   public String getUser()
   {
-    return (String)this.connectionPropertiesMap.get(SFSessionProperty.USER);
+    return (String) this.connectionPropertiesMap.get(SFSessionProperty.USER);
   }
 
   public String getUrl()
   {
-    return (String)this.connectionPropertiesMap.get(SFSessionProperty.SERVER_URL);
+    return (String) this.connectionPropertiesMap.get(SFSessionProperty.SERVER_URL);
   }
 
   public List<SFException> getSqlWarnings()
@@ -1091,6 +1121,7 @@ public class SFSession
   {
     return this.clientTelemetryEnabled;
   }
+
   public void setClientTelemetryEnabled(boolean clientTelemetryEnabled)
   {
     this.clientTelemetryEnabled = clientTelemetryEnabled;
@@ -1114,7 +1145,7 @@ public class SFSession
   public void setArrayBindStage(String arrayBindStage)
   {
     this.arrayBindStage = String.format("%s.%s.%s",
-        this.getDatabase(), this.getSchema(), arrayBindStage);
+                                        this.getDatabase(), this.getSchema(), arrayBindStage);
   }
 
   public String getIdToken()
@@ -1126,6 +1157,7 @@ public class SFSession
   {
     return this.storeTemporaryCredential;
   }
+
   public void setStoreTemporaryCredential(boolean storeTemporaryCredential)
   {
     this.storeTemporaryCredential = storeTemporaryCredential;
@@ -1133,6 +1165,7 @@ public class SFSession
 
   /**
    * Sets the service name provided from GS.
+   *
    * @param serviceName service name
    */
   public void setServiceName(String serviceName)
@@ -1142,6 +1175,7 @@ public class SFSession
 
   /**
    * Gets the service name provided from GS.
+   *
    * @return the service name
    */
   public String getServiceName()
@@ -1207,7 +1241,7 @@ public class SFSession
           null // caller isn't a JDBC interface method
       );
     }
-    catch(SFException | SQLException ex)
+    catch (SFException | SQLException ex)
     {
       logger.debug("Failed to run a command: {}, err={}", sql, ex);
     }

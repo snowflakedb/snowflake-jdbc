@@ -19,6 +19,7 @@ import java.sql.Types;
 import java.util.List;
 import java.util.HashMap;
 import java.util.Map;
+
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 
@@ -48,21 +49,23 @@ public class SnowflakeResultSetMetaData implements ResultSetMetaData
   private String queryId;
 
   private Map<String, Integer> columnNamePositionMap =
-  new HashMap<>();
+      new HashMap<>();
 
   private Map<String, Integer> columnNameUpperCasePositionMap =
       new HashMap<>();
 
   private SFSession session;
 
-  public SnowflakeResultSetMetaData() {}
+  public SnowflakeResultSetMetaData()
+  {
+  }
 
   public SnowflakeResultSetMetaData(int columnCount,
                                     List<String> columnNames,
                                     List<String> columnTypeNames,
                                     List<Integer> columnTypes,
                                     SFSession session)
-          throws SnowflakeSQLException
+  throws SnowflakeSQLException
   {
     this.columnCount = columnCount;
     this.columnNames = columnNames;
@@ -96,7 +99,7 @@ public class SnowflakeResultSetMetaData implements ResultSetMetaData
     boolean caseInsensitive = session != null && session.isResultColumnCaseInsensitive();
     columnName = caseInsensitive ? columnName.toUpperCase() : columnName;
     Map<String, Integer> nameToIndexMap = caseInsensitive ?
-        columnNameUpperCasePositionMap : columnNamePositionMap;
+                                          columnNameUpperCasePositionMap : columnNamePositionMap;
 
     if (nameToIndexMap.get(columnName) != null)
     {
@@ -105,8 +108,8 @@ public class SnowflakeResultSetMetaData implements ResultSetMetaData
     else
     {
       int columnIndex = caseInsensitive ?
-          ResultUtil.listSearchCaseInsensitive(columnNames, columnName) :
-          columnNames.indexOf(columnName);
+                        ResultUtil.listSearchCaseInsensitive(columnNames, columnName) :
+                        columnNames.indexOf(columnName);
       nameToIndexMap.put(columnName, columnIndex);
       return columnIndex;
     }
@@ -120,8 +123,8 @@ public class SnowflakeResultSetMetaData implements ResultSetMetaData
   public int getColumnCount() throws SQLException
   {
     logger.debug(
-	       "public int getColumnCount(), columnCount= {}",
-	       columnCount);
+        "public int getColumnCount(), columnCount= {}",
+        columnCount);
 
     return columnCount;
   }
@@ -171,12 +174,16 @@ public class SnowflakeResultSetMetaData implements ResultSetMetaData
   {
     logger.debug("public boolean isSigned(int column)");
 
-    if (columnTypes.get(column-1) == Types.INTEGER ||
-        columnTypes.get(column-1) == Types.DECIMAL ||
-        columnTypes.get(column-1) == Types.DOUBLE)
+    if (columnTypes.get(column - 1) == Types.INTEGER ||
+        columnTypes.get(column - 1) == Types.DECIMAL ||
+        columnTypes.get(column - 1) == Types.DOUBLE)
+    {
       return true;
+    }
     else
+    {
       return false;
+    }
   }
 
   @Override
@@ -192,10 +199,14 @@ public class SnowflakeResultSetMetaData implements ResultSetMetaData
   {
     logger.debug("public String getColumnLabel(int column)");
 
-    if(columnNames != null)
-      return columnNames.get(column-1);
+    if (columnNames != null)
+    {
+      return columnNames.get(column - 1);
+    }
     else
-      return "C" + Integer.toString(column-1);
+    {
+      return "C" + Integer.toString(column - 1);
+    }
   }
 
   @Override
@@ -203,10 +214,14 @@ public class SnowflakeResultSetMetaData implements ResultSetMetaData
   {
     logger.debug("public String getColumnName(int column)");
 
-    if(columnNames != null)
-      return columnNames.get(column-1);
+    if (columnNames != null)
+    {
+      return columnNames.get(column - 1);
+    }
     else
-      return "C" + Integer.toString(column-1);
+    {
+      return "C" + Integer.toString(column - 1);
+    }
   }
 
   @Override
@@ -224,7 +239,7 @@ public class SnowflakeResultSetMetaData implements ResultSetMetaData
 
     if (precisions != null && precisions.size() >= column)
     {
-      return precisions.get(column-1);
+      return precisions.get(column - 1);
     }
     else
     {
@@ -240,7 +255,7 @@ public class SnowflakeResultSetMetaData implements ResultSetMetaData
 
     if (scales != null && scales.size() >= column)
     {
-      return scales.get(column-1);
+      return scales.get(column - 1);
     }
     else
     {
@@ -276,11 +291,13 @@ public class SnowflakeResultSetMetaData implements ResultSetMetaData
 
     if (internalColumnType == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_LTZ ||
         internalColumnType == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_TZ)
+    {
       externalColumnType = Types.TIMESTAMP;
+    }
 
     logger.debug(
-	       "column type = {}", 
-	       externalColumnType);
+        "column type = {}",
+        externalColumnType);
 
     return externalColumnType;
   }
@@ -289,22 +306,22 @@ public class SnowflakeResultSetMetaData implements ResultSetMetaData
   {
     logger.debug("public int getInternalColumnType(int column)");
 
-    int columnIdx = column-1;
+    int columnIdx = column - 1;
     if (column > columnTypes.size())
     {
       throw new SQLException("Invalid column index: " + column);
     }
 
-    if(columnTypes.get(columnIdx) == null)
+    if (columnTypes.get(columnIdx) == null)
     {
       throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
-              ErrorCode.INTERNAL_ERROR.getMessageCode(),
-              "Missing column type for column " + column);
+                                      ErrorCode.INTERNAL_ERROR.getMessageCode(),
+                                      "Missing column type for column " + column);
     }
 
     logger.debug(
-	       "column type = {}",
-	       columnTypes.get(column-1));
+        "column type = {}",
+        columnTypes.get(column - 1));
 
     return columnTypes.get(columnIdx);
   }
@@ -319,14 +336,14 @@ public class SnowflakeResultSetMetaData implements ResultSetMetaData
       throw new SQLException("Invalid column index: " + column);
     }
 
-    if(columnTypeNames == null || columnTypeNames.get(column-1) == null)
+    if (columnTypeNames == null || columnTypeNames.get(column - 1) == null)
     {
       throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
-              ErrorCode.INTERNAL_ERROR.getMessageCode(),
-              "Missing column type for column " + column);
+                                      ErrorCode.INTERNAL_ERROR.getMessageCode(),
+                                      "Missing column type for column " + column);
     }
 
-    return columnTypeNames.get(column-1);
+    return columnTypeNames.get(column - 1);
   }
 
   @Override
@@ -360,7 +377,7 @@ public class SnowflakeResultSetMetaData implements ResultSetMetaData
 
     int type = this.getColumnType(column);
 
-    switch(type)
+    switch (type)
     {
       case Types.VARCHAR:
       case Types.CHAR:

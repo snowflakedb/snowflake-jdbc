@@ -83,12 +83,13 @@ public class PutUnescapeBackslashIT extends AbstractDriverIT
       while (resultSet.next())
       {
         assertThat("File name doesn't match",
-            resultSet.getString(1),
-            startsWith(String.format("%s/%s",
-                remoteSubDir, testDataFileName)));
+                   resultSet.getString(1),
+                   startsWith(String.format("%s/%s",
+                                            remoteSubDir, testDataFileName)));
       }
 
-    } finally
+    }
+    finally
     {
       if (connection != null)
       {

@@ -5,6 +5,7 @@
 package net.snowflake.client.core;
 
 import com.google.common.base.Preconditions;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -17,6 +18,7 @@ import net.snowflake.client.log.SFLoggerFactory;
 
 /**
  * Abstract class to encapsulate a Client-side Event and any methods associated with it.
+ *
  * @author jrosen
  */
 public abstract class Event
@@ -33,9 +35,8 @@ public abstract class Event
   {
     INCIDENT(1, "INCIDENT", Incident.class),
     NETWORK_ERROR(2, "NETWORK ERROR", BasicEvent.class),
-    STATE_TRANSITION (3, "STATE TRANSITION", BasicEvent.class),
-    NONE(100, "NONE", BasicEvent.class)
-    ;
+    STATE_TRANSITION(3, "STATE TRANSITION", BasicEvent.class),
+    NONE(100, "NONE", BasicEvent.class);
 
     public int getId()
     {
@@ -98,7 +99,7 @@ public abstract class Event
   protected void writeEventDumpLine(String message)
   {
     final String eventDumpPath = EventUtil.getDumpPathPrefix() + "/" +
-        EVENT_DUMP_FILE_NAME + EventUtil.getDumpFileId() + EVENT_DUMP_FILE_EXT;
+                                 EVENT_DUMP_FILE_NAME + EventUtil.getDumpFileId() + EVENT_DUMP_FILE_EXT;
 
     // If the event dump file is too large, truncate
     if (new File(eventDumpPath).length() < EventUtil.getmaxDumpFileSizeBytes())
@@ -115,13 +116,13 @@ public abstract class Event
       catch (IOException ex)
       {
         logger.error("Could not open Event dump file {}, exception:{}",
-                  eventDumpPath, ex.getMessage());
+                     eventDumpPath, ex.getMessage());
       }
     }
     else
     {
       logger.error("Failed to dump Event because dump file is "
-          + "too large. Delete dump file or increase maximum dump file size.");
+                   + "too large. Delete dump file or increase maximum dump file size.");
     }
   }
 

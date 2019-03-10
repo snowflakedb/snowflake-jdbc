@@ -12,10 +12,10 @@ public class BindException extends Exception
   {
     SERIALIZATION(TelemetryField.FAILED_BIND_SERIALIZATION),
     UPLOAD(TelemetryField.FAILED_BIND_UPLOAD),
-    OTHER(TelemetryField.FAILED_BIND_OTHER)
-    ;
+    OTHER(TelemetryField.FAILED_BIND_OTHER);
 
     public final TelemetryField field;
+
     Type(TelemetryField field)
     {
       this.field = field;

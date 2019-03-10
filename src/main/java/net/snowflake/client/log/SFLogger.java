@@ -5,44 +5,49 @@ package net.snowflake.client.log;
 
 /**
  * Interface used by JDBC driver to log information
- *
+ * <p>
  * Five levels are included in this interface, from high to low:
- *   ERROR
- *   WARN
- *   INFO
- *   DEBUG
- *   TRACE
- *
+ * ERROR
+ * WARN
+ * INFO
+ * DEBUG
+ * TRACE
+ * <p>
  * Created by hyu on 11/17/16.
  */
 public interface SFLogger
 {
   /**
    * Is debug level enabled?
+   *
    * @return true if the trace level is DEBUG
    */
   boolean isDebugEnabled();
 
   /**
    * Is error level enabled?
+   *
    * @return true if the trace level is ERROR
    */
   boolean isErrorEnabled();
 
   /**
    * Is info level enabled?
+   *
    * @return true if the trace level is INFO
    */
   boolean isInfoEnabled();
 
   /**
    * Is trace level enabled?
+   *
    * @return true if the trace level is TRACE
    */
   boolean isTraceEnabled();
 
   /**
    * Is warn level enabled?
+   *
    * @return true if the trace level is WARN
    */
   boolean isWarnEnabled();

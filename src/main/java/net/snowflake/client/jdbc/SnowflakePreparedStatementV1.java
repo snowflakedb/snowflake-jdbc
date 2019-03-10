@@ -41,30 +41,32 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
+
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 
 final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
-                                         implements PreparedStatement
+    implements PreparedStatement
 {
   static final SFLogger logger = SFLoggerFactory.getLogger(
       SnowflakePreparedStatementV1.class);
 
   private final String sql;
 
-  /** statement and result metadata from describe phase */
+  /**
+   * statement and result metadata from describe phase
+   */
   private SFStatementMetaData statementMetaData;
 
   /**
    * map of bind name to bind values for single query execution
-   *
+   * <p>
    * Currently, bind name is just value index
    */
   private Map<String, ParameterBindingDTO> parameterBindings = new HashMap<>();
 
   /**
    * map of bind values for batch query executions
-   *
    */
   private Map<String, ParameterBindingDTO> batchParameterBindings =
       new HashMap<>();
@@ -77,16 +79,24 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
    */
   private int batchSize = 0;
 
-  /** Error code returned when describing a statement that is binding table name*/
+  /**
+   * Error code returned when describing a statement that is binding table name
+   */
   private static final Integer ERROR_CODE_TABLE_BIND_VARIABLE_NOT_SET = 2128;
 
-  /** Error code when preparing statement with binding object names */
+  /**
+   * Error code when preparing statement with binding object names
+   */
   private static final Integer ERROR_CODE_OBJECT_BIND_NOT_SET = 2129;
 
-  /** Error code returned when describing a ddl command */
+  /**
+   * Error code returned when describing a ddl command
+   */
   private static final Integer ERROR_CODE_STATEMENT_CANNOT_BE_PREPARED = 7;
 
-  /** snow-44393 Workaround for compiler cannot prepare to_timestamp(?, 3)*/
+  /**
+   * snow-44393 Workaround for compiler cannot prepare to_timestamp(?, 3)
+   */
   private static final Integer ERROR_CODE_FORMAT_ARGUMENT_NOT_STRING = 1026;
 
   /**
@@ -95,17 +105,18 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
    */
   private static final Set<Integer> errorCodesIgnoredInDescribeMode
       = new HashSet<>(Arrays.asList(
-       ERROR_CODE_TABLE_BIND_VARIABLE_NOT_SET,
-       ERROR_CODE_STATEMENT_CANNOT_BE_PREPARED,
-       ERROR_CODE_OBJECT_BIND_NOT_SET,
-       ERROR_CODE_FORMAT_ARGUMENT_NOT_STRING));
+      ERROR_CODE_TABLE_BIND_VARIABLE_NOT_SET,
+      ERROR_CODE_STATEMENT_CANNOT_BE_PREPARED,
+      ERROR_CODE_OBJECT_BIND_NOT_SET,
+      ERROR_CODE_FORMAT_ARGUMENT_NOT_STRING));
 
   /**
    * Construct SnowflakePreparedStatementV1
-   * @param connection connection object
-   * @param sql sql
+   *
+   * @param connection  connection object
+   * @param sql         sql
    * @param skipParsing true if the applications want to skip parsing
-   *                   to get metadata. false by default.
+   *                    to get metadata. false by default.
    * @throws SQLException
    */
   SnowflakePreparedStatementV1(SnowflakeConnectionV1 connection,
@@ -120,11 +131,11 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
       {
         this.statementMetaData = sfStatement.describe(sql);
       }
-      catch(SFException e)
+      catch (SFException e)
       {
         throw new SnowflakeSQLException(e);
       }
-      catch(SnowflakeSQLException e)
+      catch (SnowflakeSQLException e)
       {
         if (!errorCodesIgnoredInDescribeMode.contains(e.getErrorCode()))
         {
@@ -153,7 +164,7 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
   @Override
   public int executeUpdate() throws SQLException
   {
-    logger.debug( "executeUpdate() throws SQLException");
+    logger.debug("executeUpdate() throws SQLException");
 
     return executeUpdateInternal(sql, parameterBindings, true);
   }
@@ -165,7 +176,7 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
         "setNull(int parameterIndex, int sqlType) throws SQLException");
 
     ParameterBindingDTO binding = new ParameterBindingDTO(
-                        SnowflakeUtil.javaTypeToSFTypeString(sqlType), null);
+        SnowflakeUtil.javaTypeToSFTypeString(sqlType), null);
     parameterBindings.put(String.valueOf(parameterIndex), binding);
   }
 
@@ -173,7 +184,7 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
   public void setBoolean(int parameterIndex, boolean x) throws SQLException
   {
     logger.debug(
-               "setBoolean(int parameterIndex, boolean x) throws SQLException");
+        "setBoolean(int parameterIndex, boolean x) throws SQLException");
 
     ParameterBindingDTO binding = new ParameterBindingDTO(
         SnowflakeUtil.javaTypeToSFTypeString(Types.BOOLEAN), String.valueOf(x));
@@ -194,7 +205,7 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
         "setShort(int parameterIndex, short x) throws SQLException");
 
     ParameterBindingDTO binding = new ParameterBindingDTO(SnowflakeUtil
-        .javaTypeToSFTypeString(Types.SMALLINT), String.valueOf(x));
+                                                              .javaTypeToSFTypeString(Types.SMALLINT), String.valueOf(x));
     parameterBindings.put(String.valueOf(parameterIndex), binding);
   }
 
@@ -205,7 +216,7 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
         "setInt(int parameterIndex, int x) throws SQLException");
 
     ParameterBindingDTO binding = new ParameterBindingDTO(SnowflakeUtil
-                  .javaTypeToSFTypeString(Types.INTEGER), String.valueOf(x));
+                                                              .javaTypeToSFTypeString(Types.INTEGER), String.valueOf(x));
     parameterBindings.put(String.valueOf(parameterIndex), binding);
   }
 
@@ -216,7 +227,7 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
         "setLong(int parameterIndex, long x) throws SQLException");
 
     ParameterBindingDTO binding = new ParameterBindingDTO(
-         SnowflakeUtil.javaTypeToSFTypeString(Types.BIGINT), String.valueOf(x));
+        SnowflakeUtil.javaTypeToSFTypeString(Types.BIGINT), String.valueOf(x));
     parameterBindings.put(String.valueOf(parameterIndex), binding);
   }
 
@@ -255,7 +266,7 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
     else
     {
       ParameterBindingDTO binding = new ParameterBindingDTO(
-        SnowflakeUtil.javaTypeToSFTypeString(Types.DECIMAL), String.valueOf(x));
+          SnowflakeUtil.javaTypeToSFTypeString(Types.DECIMAL), String.valueOf(x));
       parameterBindings.put(String.valueOf(parameterIndex), binding);
     }
   }
@@ -278,7 +289,7 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
         "setBytes(int parameterIndex, byte[] x) throws SQLException");
 
     ParameterBindingDTO binding = new ParameterBindingDTO(SnowflakeUtil
-        .javaTypeToSFTypeString(Types.BINARY), new SFBinary(x).toHex());
+                                                              .javaTypeToSFTypeString(Types.BINARY), new SFBinary(x).toHex());
     parameterBindings.put(String.valueOf(parameterIndex), binding);
   }
 
@@ -297,8 +308,8 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
       ParameterBindingDTO binding = new ParameterBindingDTO(
           SnowflakeUtil.javaTypeToSFTypeString(Types.DATE),
           String.valueOf(x.getTime() +
-          TimeZone.getDefault().getOffset(x.getTime())-
-          ResultUtil.msDiffJulianToGregorian(x)));
+                         TimeZone.getDefault().getOffset(x.getTime()) -
+                         ResultUtil.msDiffJulianToGregorian(x)));
 
       parameterBindings.put(String.valueOf(parameterIndex), binding);
     }
@@ -325,8 +336,8 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
       long nanosSinceMidnight = msSinceMidnight * 1000 * 1000;
 
       ParameterBindingDTO binding = new ParameterBindingDTO(
-                      SnowflakeUtil.javaTypeToSFTypeString(Types.TIME),
-                      String.valueOf(nanosSinceMidnight));
+          SnowflakeUtil.javaTypeToSFTypeString(Types.TIME),
+          String.valueOf(nanosSinceMidnight));
 
       parameterBindings.put(String.valueOf(parameterIndex), binding);
       sfStatement.setHasUnsupportedStageBind(true);
@@ -340,10 +351,10 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
         "setTimestamp(int parameterIndex, Timestamp x) throws SQLException");
 
     // convert the timestamp from being in local time zone to be in UTC timezone
-    String value =  x == null ? null :
-        String.valueOf(
-        BigDecimal.valueOf((x.getTime() - ResultUtil.msDiffJulianToGregorian(x))/1000).
-        scaleByPowerOfTen(9).add(BigDecimal.valueOf(x.getNanos())));
+    String value = x == null ? null :
+                   String.valueOf(
+                       BigDecimal.valueOf((x.getTime() - ResultUtil.msDiffJulianToGregorian(x)) / 1000).
+                           scaleByPowerOfTen(9).add(BigDecimal.valueOf(x.getNanos())));
 
     SnowflakeType sfType = SnowflakeUtil.javaTypeToSFType(Types.TIMESTAMP);
 
@@ -358,7 +369,7 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
 
   @Override
   public void setAsciiStream(int parameterIndex, InputStream x, int length)
-          throws SQLException
+  throws SQLException
   {
     throw new UnsupportedOperationException(
         "setAsciiStream(int parameterIndex, InputStream x, int length) Not supported yet.");
@@ -367,7 +378,7 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
   @Override
   @Deprecated
   public void setUnicodeStream(int parameterIndex, InputStream x, int length)
-          throws SQLException
+  throws SQLException
   {
     throw new UnsupportedOperationException(
         "setUnicodeStream(int parameterIndex, InputStream x, int length) Not supported yet.");
@@ -375,7 +386,7 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
 
   @Override
   public void setBinaryStream(int parameterIndex, InputStream x, int length)
-          throws SQLException
+  throws SQLException
   {
     throw new UnsupportedOperationException(
         "setBinaryStream(int parameterIndex, InputStream x, int length) Not supported yet.");
@@ -416,8 +427,8 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
     else
     {
       ParameterBindingDTO binding = new ParameterBindingDTO(
-                        SnowflakeUtil.javaTypeToSFTypeString(targetSqlType),
-                        String.valueOf(x));
+          SnowflakeUtil.javaTypeToSFTypeString(targetSqlType),
+          String.valueOf(x));
       parameterBindings.put(String.valueOf(parameterIndex), binding);
     }
   }
@@ -439,7 +450,7 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
     }
     else if (x instanceof Short)
     {
-      setShort(parameterIndex, (Short)x);
+      setShort(parameterIndex, (Short) x);
     }
     else if (x instanceof Integer)
     {
@@ -471,20 +482,20 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
     }
     else if (x instanceof Boolean)
     {
-      setBoolean(parameterIndex, (Boolean)x);
+      setBoolean(parameterIndex, (Boolean) x);
     }
     else
     {
       throw new SnowflakeSQLException(SqlState.FEATURE_NOT_SUPPORTED,
-          ErrorCode.DATA_TYPE_NOT_SUPPORTED.getMessageCode(),
-          "Object type: " + x.getClass());
+                                      ErrorCode.DATA_TYPE_NOT_SUPPORTED.getMessageCode(),
+                                      "Object type: " + x.getClass());
     }
   }
 
   @Override
   public boolean execute() throws SQLException
   {
-    logger.debug( "execute: {}", sql);
+    logger.debug("execute: {}", sql);
 
     return executeInternal(sql, parameterBindings);
   }
@@ -492,7 +503,7 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
   @Override
   public void addBatch() throws SQLException
   {
-    logger.debug( "addBatch() throws SQLException");
+    logger.debug("addBatch() throws SQLException");
 
     if (isClosed())
     {
@@ -501,7 +512,7 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
 
     if (statementMetaData.isArrayBindSupported())
     {
-      for(Map.Entry<String, ParameterBindingDTO> binding :
+      for (Map.Entry<String, ParameterBindingDTO> binding :
           parameterBindings.entrySet())
       {
         // get the entry for the bind variable in the batch binding map
@@ -522,7 +533,7 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
 
           // put the new map into the batch
           batchParameterBindings.put(binding.getKey(),
-              bindingValueAndType);
+                                     bindingValueAndType);
 
           wasPrevValueNull.put(
               binding.getKey(), binding.getValue().getValue() == null);
@@ -541,7 +552,7 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
                 binding.getKey());
             bindingValueAndType.setType(newType);
             batchParameterBindings.put(binding.getKey(),
-                bindingValueAndType);
+                                       bindingValueAndType);
             prevType = newType;
             wasPrevValueNull.put(binding.getKey(), false);
           }
@@ -553,19 +564,19 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
             bindingValueAndType.setType(newType);
           }
           else if (binding.getValue().getValue() != null &&
-              !prevType.equalsIgnoreCase(newType))
+                   !prevType.equalsIgnoreCase(newType))
           {
             String row = "Unknown";
             if (bindingValueAndType.getValue() instanceof Collection)
             {
-              values = (List<String>)bindingValueAndType.getValue();
+              values = (List<String>) bindingValueAndType.getValue();
               row = Integer.toString(values.size() + 1);
             }
             throw new SnowflakeSQLException(SqlState.FEATURE_NOT_SUPPORTED,
-                ErrorCode.ARRAY_BIND_MIXED_TYPES_NOT_SUPPORTED.getMessageCode(),
-                SnowflakeType.getJavaType(SnowflakeType.fromString(prevType)).name(),
-                SnowflakeType.getJavaType(SnowflakeType.fromString(newType)).name(),
-                binding.getKey(), row);
+                                            ErrorCode.ARRAY_BIND_MIXED_TYPES_NOT_SUPPORTED.getMessageCode(),
+                                            SnowflakeType.getJavaType(SnowflakeType.fromString(prevType)).name(),
+                                            SnowflakeType.getJavaType(SnowflakeType.fromString(newType)).name(),
+                                            binding.getKey(), row);
           }
 
           // found the existing map so just get the value list
@@ -573,7 +584,7 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
         }
 
         // add the value to the list of values in batch binding map
-        values.add((String)newValue);
+        values.add((String) newValue);
       }
       batchSize++;
     }
@@ -586,7 +597,7 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
 
   @Override
   public void setCharacterStream(int parameterIndex, Reader reader, int length)
-          throws SQLException
+  throws SQLException
   {
     throw new UnsupportedOperationException(
         "setCharacterStream(int parameterIndex, Reader reader, int length) Not supported yet.");
@@ -622,7 +633,7 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
   @Override
   public ResultSetMetaData getMetaData() throws SQLException
   {
-    logger.debug( "getMetaData() throws SQLException");
+    logger.debug("getMetaData() throws SQLException");
 
     return new SnowflakeResultSetMetaDataV1(
         this.statementMetaData.getResultSetMetaData());
@@ -630,9 +641,9 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
 
   @Override
   public void setDate(int parameterIndex, Date x, Calendar cal)
-      throws SQLException
+  throws SQLException
   {
-    logger.debug( "setDate(int parameterIndex, Date x, Calendar cal)");
+    logger.debug("setDate(int parameterIndex, Date x, Calendar cal)");
 
     if (x == null)
     {
@@ -642,7 +653,7 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
     {
       // convert the date from to be in local time zone to be in UTC
       String value = String.valueOf(x.getTime() +
-                             cal.getTimeZone().getOffset(x.getTime()));
+                                    cal.getTimeZone().getOffset(x.getTime()));
 
       ParameterBindingDTO binding = new ParameterBindingDTO(
           SnowflakeUtil.javaTypeToSFTypeString(Types.DATE), value);
@@ -652,17 +663,17 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
 
   @Override
   public void setTime(int parameterIndex, Time x, Calendar cal)
-      throws SQLException
+  throws SQLException
   {
-    logger.debug( "setTime(int parameterIndex, Time x, Calendar cal)");
+    logger.debug("setTime(int parameterIndex, Time x, Calendar cal)");
     setTime(parameterIndex, x);
   }
 
   @Override
   public void setTimestamp(int parameterIndex, Timestamp x, Calendar cal)
-      throws SQLException
+  throws SQLException
   {
-    logger.debug( "setTimestamp(int parameterIndex, Timestamp x, Calendar cal)");
+    logger.debug("setTimestamp(int parameterIndex, Timestamp x, Calendar cal)");
 
     // convert the time from being in UTC to be in local time zone
     String value = null;
@@ -670,7 +681,7 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
     {
       long milliSecSinceEpoch = x.getTime();
       milliSecSinceEpoch = milliSecSinceEpoch +
-          cal.getTimeZone().getOffset(milliSecSinceEpoch);
+                           cal.getTimeZone().getOffset(milliSecSinceEpoch);
 
       value = String.valueOf(
           BigDecimal.valueOf(milliSecSinceEpoch / 1000).
@@ -690,9 +701,9 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
 
   @Override
   public void setNull(int parameterIndex, int sqlType, String typeName)
-      throws SQLException
+  throws SQLException
   {
-    logger.debug( "setNull(int parameterIndex, int sqlType, String typeName)");
+    logger.debug("setNull(int parameterIndex, int sqlType, String typeName)");
 
     setNull(parameterIndex, sqlType);
   }
@@ -727,7 +738,7 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
 
   @Override
   public void setNCharacterStream(int parameterIndex, Reader value, long length)
-          throws SQLException
+  throws SQLException
   {
     throw new UnsupportedOperationException(
         "setNCharacterStream(int parameterIndex, Reader value, long length) Not supported yet.");
@@ -742,7 +753,7 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
 
   @Override
   public void setClob(int parameterIndex, Reader reader, long length)
-      throws SQLException
+  throws SQLException
   {
     throw new UnsupportedOperationException(
         "setClob(int parameterIndex, Reader reader, long length) Not supported yet.");
@@ -750,7 +761,7 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
 
   @Override
   public void setBlob(int parameterIndex, InputStream inputStream, long length)
-          throws SQLException
+  throws SQLException
   {
     throw new UnsupportedOperationException(
         "setBlob(int parameterIndex, InputStream inputStream, long length) Not supported yet.");
@@ -758,7 +769,7 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
 
   @Override
   public void setNClob(int parameterIndex, Reader reader, long length)
-      throws SQLException
+  throws SQLException
   {
     throw new UnsupportedOperationException(
         "setNClob(int parameterIndex, Reader reader, long length) Not supported yet.");
@@ -766,7 +777,7 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
 
   @Override
   public void setSQLXML(int parameterIndex, SQLXML xmlObject)
-      throws SQLException
+  throws SQLException
   {
     throw new UnsupportedOperationException(
         "setSQLXML(int parameterIndex, SQLXML xmlObject) Not supported yet.");
@@ -784,7 +795,7 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
       setNull(parameterIndex, targetSqlType);
     }
     else if (targetSqlType == Types.DECIMAL ||
-        targetSqlType == Types.NUMERIC)
+             targetSqlType == Types.NUMERIC)
     {
       BigDecimal decimalObj = new BigDecimal(String.valueOf(x));
       decimalObj.setScale(scaleOrLength);
@@ -798,7 +809,7 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
 
   @Override
   public void setAsciiStream(int parameterIndex, InputStream x, long length)
-          throws SQLException
+  throws SQLException
   {
     throw new UnsupportedOperationException(
         "setAsciiStream(int parameterIndex, InputStream x, long length) Not supported yet.");
@@ -806,7 +817,7 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
 
   @Override
   public void setBinaryStream(int parameterIndex, InputStream x, long length)
-          throws SQLException
+  throws SQLException
   {
     throw new UnsupportedOperationException(
         "setBinaryStream(int parameterIndex, InputStream x, long length) Not supported yet.");
@@ -814,7 +825,7 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
 
   @Override
   public void setCharacterStream(int parameterIndex, Reader reader, long length)
-          throws SQLException
+  throws SQLException
   {
     throw new UnsupportedOperationException(
         "setCharacterStream(int parameterIndex, Reader reader, long length) Not supported yet.");
@@ -822,7 +833,7 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
 
   @Override
   public void setAsciiStream(int parameterIndex, InputStream x)
-      throws SQLException
+  throws SQLException
   {
     throw new UnsupportedOperationException(
         "setAsciiStream(int parameterIndex, InputStream x) Not supported yet.");
@@ -830,7 +841,7 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
 
   @Override
   public void setBinaryStream(int parameterIndex, InputStream x)
-      throws SQLException
+  throws SQLException
   {
     throw new UnsupportedOperationException(
         "setBinaryStream(int parameterIndex, InputStream x) Not supported yet.");
@@ -838,7 +849,7 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
 
   @Override
   public void setCharacterStream(int parameterIndex, Reader reader)
-      throws SQLException
+  throws SQLException
   {
     throw new UnsupportedOperationException(
         "setCharacterStream(int parameterIndex, Reader reader) Not supported yet.");
@@ -846,7 +857,7 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
 
   @Override
   public void setNCharacterStream(int parameterIndex, Reader value)
-      throws SQLException
+  throws SQLException
   {
     throw new UnsupportedOperationException(
         "setNCharacterStream(int parameterIndex, Reader value) Not supported yet.");
@@ -861,7 +872,7 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
 
   @Override
   public void setBlob(int parameterIndex, InputStream inputStream)
-      throws SQLException
+  throws SQLException
   {
     throw new UnsupportedOperationException(
         "setBlob(int parameterIndex, InputStream inputStream) Not supported yet.");
@@ -877,39 +888,39 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
   @Override
   public ResultSet executeQuery(String sql) throws SQLException
   {
-    logger.debug( "executeQuery(String sql) throws SQLException");
+    logger.debug("executeQuery(String sql) throws SQLException");
 
     throw new SnowflakeSQLException(ErrorCode.
-        UNSUPPORTED_STATEMENT_TYPE_IN_EXECUTION_API,
-        sql.length() > 20 ? sql.substring(0, 20) + "..." : sql);
+                                        UNSUPPORTED_STATEMENT_TYPE_IN_EXECUTION_API,
+                                    sql.length() > 20 ? sql.substring(0, 20) + "..." : sql);
   }
 
   @Override
   public int executeUpdate(String sql) throws SQLException
   {
-    logger.debug( "executeUpdate(String sql) throws SQLException");
+    logger.debug("executeUpdate(String sql) throws SQLException");
 
     throw new SnowflakeSQLException(ErrorCode.
-        UNSUPPORTED_STATEMENT_TYPE_IN_EXECUTION_API,
-        sql.length() > 20 ? sql.substring(0, 20) + "..." : sql);
+                                        UNSUPPORTED_STATEMENT_TYPE_IN_EXECUTION_API,
+                                    sql.length() > 20 ? sql.substring(0, 20) + "..." : sql);
   }
 
   @Override
   public boolean execute(String sql) throws SQLException
   {
-    logger.debug( "execute(String sql) throws SQLException");
+    logger.debug("execute(String sql) throws SQLException");
 
     throw new SnowflakeSQLException(ErrorCode.
-        UNSUPPORTED_STATEMENT_TYPE_IN_EXECUTION_API,
-        sql.length() > 20 ? sql.substring(0, 20) + "..." : sql);
+                                        UNSUPPORTED_STATEMENT_TYPE_IN_EXECUTION_API,
+                                    sql.length() > 20 ? sql.substring(0, 20) + "..." : sql);
   }
 
   @Override
   public void addBatch(String sql) throws SQLException
   {
     throw new SnowflakeSQLException(ErrorCode.
-        UNSUPPORTED_STATEMENT_TYPE_IN_EXECUTION_API,
-        sql.length() > 20 ? sql.substring(0, 20) + "..." : sql);
+                                        UNSUPPORTED_STATEMENT_TYPE_IN_EXECUTION_API,
+                                    sql.length() > 20 ? sql.substring(0, 20) + "..." : sql);
   }
 
   @Override
@@ -924,13 +935,13 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
   @Override
   public int[] executeBatch() throws SQLException
   {
-    logger.debug( "executeBatch() throws SQLException");
+    logger.debug("executeBatch() throws SQLException");
 
     if (this.statementMetaData.getStatementType().isGenerateResultSet())
     {
       throw new SnowflakeSQLException(ErrorCode.
-          UNSUPPORTED_STATEMENT_TYPE_IN_EXECUTION_API,
-          sql.length() > 20 ? sql.substring(0, 20) + "..." : sql);
+                                          UNSUPPORTED_STATEMENT_TYPE_IN_EXECUTION_API,
+                                      sql.length() > 20 ? sql.substring(0, 20) + "..." : sql);
     }
 
     int[] updateCounts = null;
@@ -939,7 +950,7 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
       if (this.statementMetaData.isArrayBindSupported())
       {
         int updateCount = executeUpdateInternal(
-                              this.sql, batchParameterBindings, false);
+            this.sql, batchParameterBindings, false);
 
         // when update count is the same as the number of bindings in the batch,
         // expand the update count into an array (SNOW-14034)
@@ -969,7 +980,7 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
 
   @Override
   public int executeUpdate(String sql, int autoGeneratedKeys)
-      throws SQLException
+  throws SQLException
   {
     throw new UnsupportedOperationException(
         "executeUpdate(String sql, int autoGeneratedKeys) Not supported yet.");

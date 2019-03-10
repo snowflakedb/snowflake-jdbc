@@ -7,6 +7,7 @@ package net.snowflake.client.core;
 import net.snowflake.client.jdbc.ErrorCode;
 import org.junit.Assert;
 import org.junit.Test;
+
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -16,7 +17,7 @@ public class SFSessionPropertyTest
   public void testCheckApplicationName() throws SFException
   {
     String[] validApplicationName = {"test1234", "test_1234", "test-1234",
-        "test.1234"} ;
+                                     "test.1234"};
 
     String[] invalidApplicationName = {"1234test", "test$A", "test<script>"};
 
@@ -25,7 +26,7 @@ public class SFSessionPropertyTest
       Object value = SFSessionProperty.checkPropertyValue(
           SFSessionProperty.APPLICATION, valid);
 
-      assertThat((String)value, is(valid));
+      assertThat((String) value, is(valid));
     }
 
     for (String invalid : invalidApplicationName)
@@ -36,10 +37,10 @@ public class SFSessionPropertyTest
             SFSessionProperty.APPLICATION, invalid);
         Assert.fail();
       }
-      catch(SFException e)
+      catch (SFException e)
       {
         assertThat(e.getVendorCode(),
-            is(ErrorCode.INVALID_PARAMETER_VALUE.getMessageCode()));
+                   is(ErrorCode.INVALID_PARAMETER_VALUE.getMessageCode()));
       }
     }
   }
