@@ -58,11 +58,16 @@ public class Telemetry
     this.session = session;
     this.serverUrl = session.getUrl();
 
-    if(this.serverUrl.endsWith("/"))
+    if (this.serverUrl.endsWith("/"))
+    {
       this.telemetryUrl =
-          this.serverUrl.substring(0, this.serverUrl.length()-1)
-              + SF_PATH_TELEMETRY;
-    else this.telemetryUrl = this.serverUrl + SF_PATH_TELEMETRY;
+          this.serverUrl.substring(0, this.serverUrl.length() - 1)
+          + SF_PATH_TELEMETRY;
+    }
+    else
+    {
+      this.telemetryUrl = this.serverUrl + SF_PATH_TELEMETRY;
+    }
 
     this.logBatch = new LinkedList<>();
     this.isClosed = false;
@@ -72,6 +77,7 @@ public class Telemetry
 
   /**
    * Return whether the client can be used to add/send metrics
+   *
    * @return whether client is enabled
    */
   public boolean isTelemetryEnabled()
@@ -82,7 +88,8 @@ public class Telemetry
   /**
    * Disable any use of the client to add/send metrics
    */
-  public void disableTelemetry(){
+  public void disableTelemetry()
+  {
     this.isTelemetryServiceAvailable = false;
   }
 
@@ -90,7 +97,7 @@ public class Telemetry
   /**
    * Initialize the telemetry connector
    *
-   * @param conn connection with the session to use for the connector
+   * @param conn      connection with the session to use for the connector
    * @param flushSize maximum size of telemetry batch before flush
    * @return a telemetry connector
    */
@@ -118,6 +125,7 @@ public class Telemetry
 
   /**
    * Initialize the telemetry connector
+   *
    * @param session session to use for telemetry dumps
    * @return a telemetry connector
    */
@@ -128,7 +136,8 @@ public class Telemetry
 
   /**
    * Initialize the telemetry connector
-   * @param session session to use for telemetry dumps
+   *
+   * @param session   session to use for telemetry dumps
    * @param flushSize maximum size of telemetry batch before flush
    * @return a telemetry connector
    */
@@ -140,6 +149,7 @@ public class Telemetry
   /**
    * Add log to batch to be submitted to telemetry. Send batch if forceFlushSize
    * reached
+   *
    * @param log entry to add
    * @throws IOException if closed or uploading batch fails
    */
@@ -149,7 +159,10 @@ public class Telemetry
     {
       throw new IOException("Telemetry connector is closed");
     }
-    if (!isTelemetryEnabled()) return; // if disable, do nothing
+    if (!isTelemetryEnabled())
+    {
+      return; // if disable, do nothing
+    }
 
     synchronized (locker)
     {
@@ -165,12 +178,13 @@ public class Telemetry
   /**
    * Add log to batch to be submitted to telemetry. Send batch if forceFlushSize
    * reached
-   * @param message json node of log
+   *
+   * @param message   json node of log
    * @param timeStamp timestamp to use for log
    * @throws IOException if closed or uploading batch fails
    */
   public void addLogToBatch(ObjectNode message, long timeStamp) throws
-      IOException
+                                                                IOException
   {
     this.addLogToBatch(new TelemetryData(message, timeStamp));
   }
@@ -178,6 +192,7 @@ public class Telemetry
   /**
    * Attempt to add log to batch, and suppress exceptions thrown in case of
    * failure
+   *
    * @param log entry to add
    */
   public void tryAddLogToBatch(TelemetryData log)
@@ -194,6 +209,7 @@ public class Telemetry
 
   /**
    * Close telemetry connector and send any unsubmitted logs
+   *
    * @throws IOException if closed or uploading batch fails
    */
   public void close() throws IOException
@@ -205,10 +221,12 @@ public class Telemetry
     try
     {
       this.sendBatch();
-    } catch (IOException e)
+    }
+    catch (IOException e)
     {
       logger.error("Send logs failed on closing", e);
-    } finally
+    }
+    finally
     {
       this.isClosed = true;
     }
@@ -216,6 +234,7 @@ public class Telemetry
 
   /**
    * Return whether the client has been closed
+   *
    * @return whether client is closed
    */
   public boolean isClosed()
@@ -225,6 +244,7 @@ public class Telemetry
 
   /**
    * Send all cached logs to server
+   *
    * @return whether the logs were sent successfully
    * @throws IOException if closed or uploading batch fails
    */
@@ -234,7 +254,10 @@ public class Telemetry
     {
       throw new IOException("Telemetry connector is closed");
     }
-    if (!isTelemetryEnabled()) return false;
+    if (!isTelemetryEnabled())
+    {
+      return false;
+    }
 
     LinkedList<TelemetryData> tmpList;
     synchronized (locker)
@@ -257,19 +280,20 @@ public class Telemetry
       post.setEntity(new StringEntity(logsToString(tmpList)));
       post.setHeader("Content-type", "application/json");
       post.setHeader("Authorization", "Snowflake Token=\"" + sessionToken +
-          "\"");
+                                      "\"");
 
       String response = null;
 
       try
       {
         response = HttpUtil.executeRequest(post, 1000, 0, null);
-      } catch (SnowflakeSQLException e)
+      }
+      catch (SnowflakeSQLException e)
       {
         disableTelemetry(); // when got error like 404 or bad request, disable telemetry in this telemetry instance
         logger.error(
             "Telemetry request failed, " +
-                "response: {}, exception: {}", response, e.getMessage());
+            "response: {}, exception: {}", response, e.getMessage());
         return false;
       }
     }
@@ -279,6 +303,7 @@ public class Telemetry
 
   /**
    * Send a log to the server, along with any existing logs waiting to be sent
+   *
    * @param log entry to send
    * @return whether the logs were sent successfully
    * @throws IOException if closed or uploading batch fails
@@ -291,7 +316,8 @@ public class Telemetry
 
   /**
    * Send a log to the server, along with any existing logs waiting to be sent
-   * @param message json node of log
+   *
+   * @param message   json node of log
    * @param timeStamp timestamp to use for log
    * @return whether the logs were sent successfully
    * @throws IOException if closed or uploading batch fails
@@ -333,6 +359,7 @@ public class Telemetry
 
   /**
    * For test use only
+   *
    * @return the number of cached logs
    */
   public int bufferSize()
@@ -342,6 +369,7 @@ public class Telemetry
 
   /**
    * For test use only
+   *
    * @return a copy of the logs currently in the buffer
    */
   public LinkedList<TelemetryData> logBuffer()

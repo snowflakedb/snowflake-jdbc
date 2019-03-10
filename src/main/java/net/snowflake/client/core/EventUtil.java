@@ -11,6 +11,7 @@ import java.util.concurrent.atomic.AtomicReference;
 /**
  * Utility class to encapsulate support information pertaining to the
  * EventHandler and events.
+ *
  * @author jrosen
  */
 public class EventUtil
@@ -36,7 +37,8 @@ public class EventUtil
 
   /**
    * Initializes the common eventHandler instance for all sessions/threads
-   * @param maxEntries - maximum number of buffered events before flush
+   *
+   * @param maxEntries    - maximum number of buffered events before flush
    * @param flushPeriodMs - period of time between asynchronous buffer flushes
    */
   public static synchronized void initEventHandlerInstance(int maxEntries,

@@ -25,6 +25,7 @@ import java.util.logging.Level;
 /**
  * Snowflake ResultSet implementation
  * <p>
+ *
  * @author jhuang
  */
 class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
@@ -41,11 +42,11 @@ class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
    * </p>
    *
    * @param sfBaseResultSet snowflake core base result rest object
-   * @param statement query statement that generates this result set
+   * @param statement       query statement that generates this result set
    * @throws SQLException if failed to construct snowflake result set metadata
    */
   SnowflakeResultSetV1(SFBaseResultSet sfBaseResultSet, Statement statement)
-          throws SQLException
+  throws SQLException
   {
     this.sfBaseResultSet = sfBaseResultSet;
     this.statement = statement;
@@ -57,7 +58,7 @@ class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
     catch (SFException ex)
     {
       throw new SnowflakeSQLException(ex.getCause(),
-          ex.getSqlState(), ex.getVendorCode(), ex.getParams());
+                                      ex.getSqlState(), ex.getVendorCode(), ex.getParams());
     }
   }
 
@@ -78,7 +79,7 @@ class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
     catch (SFException ex)
     {
       throw new SnowflakeSQLException(ex.getCause(),
-          ex.getSqlState(), ex.getVendorCode(), ex.getParams());
+                                      ex.getSqlState(), ex.getVendorCode(), ex.getParams());
     }
   }
 
@@ -103,7 +104,7 @@ class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
     catch (SFException ex)
     {
       throw new SnowflakeSQLException(ex.getCause(),
-          ex.getSqlState(), ex.getVendorCode(), ex.getParams());
+                                      ex.getSqlState(), ex.getVendorCode(), ex.getParams());
     }
   }
 
@@ -118,7 +119,7 @@ class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
     catch (SFException ex)
     {
       throw new SnowflakeSQLException(ex.getCause(),
-          ex.getSqlState(), ex.getVendorCode(), ex.getParams());
+                                      ex.getSqlState(), ex.getVendorCode(), ex.getParams());
     }
   }
 
@@ -131,7 +132,7 @@ class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
     catch (SFException ex)
     {
       throw new SnowflakeSQLException(ex.getCause(),
-          ex.getSqlState(), ex.getVendorCode(), ex.getParams());
+                                      ex.getSqlState(), ex.getVendorCode(), ex.getParams());
     }
   }
 
@@ -144,7 +145,7 @@ class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
     catch (SFException ex)
     {
       throw new SnowflakeSQLException(ex.getCause(),
-          ex.getSqlState(), ex.getVendorCode(), ex.getParams());
+                                      ex.getSqlState(), ex.getVendorCode(), ex.getParams());
     }
   }
 
@@ -157,7 +158,7 @@ class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
     catch (SFException ex)
     {
       throw new SnowflakeSQLException(ex.getCause(),
-          ex.getSqlState(), ex.getVendorCode(), ex.getParams());
+                                      ex.getSqlState(), ex.getVendorCode(), ex.getParams());
     }
   }
 
@@ -170,7 +171,7 @@ class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
     catch (SFException ex)
     {
       throw new SnowflakeSQLException(ex.getCause(),
-          ex.getSqlState(), ex.getVendorCode(), ex.getParams());
+                                      ex.getSqlState(), ex.getVendorCode(), ex.getParams());
     }
   }
 
@@ -183,7 +184,7 @@ class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
     catch (SFException ex)
     {
       throw new SnowflakeSQLException(ex.getCause(),
-          ex.getSqlState(), ex.getVendorCode(), ex.getParams());
+                                      ex.getSqlState(), ex.getVendorCode(), ex.getParams());
     }
 
   }
@@ -197,7 +198,7 @@ class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
     catch (SFException ex)
     {
       throw new SnowflakeSQLException(ex.getCause(),
-          ex.getSqlState(), ex.getVendorCode(), ex.getParams());
+                                      ex.getSqlState(), ex.getVendorCode(), ex.getParams());
     }
   }
 
@@ -210,7 +211,7 @@ class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
     catch (SFException ex)
     {
       throw new SnowflakeSQLException(ex.getCause(),
-          ex.getSqlState(), ex.getVendorCode(), ex.getParams());
+                                      ex.getSqlState(), ex.getVendorCode(), ex.getParams());
     }
   }
 
@@ -223,12 +224,12 @@ class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
     catch (SFException ex)
     {
       throw new SnowflakeSQLException(ex.getCause(),
-          ex.getSqlState(), ex.getVendorCode(), ex.getParams());
+                                      ex.getSqlState(), ex.getVendorCode(), ex.getParams());
     }
   }
 
   public Timestamp getTimestamp(int columnIndex, TimeZone tz)
-      throws SQLException
+  throws SQLException
   {
     try
     {
@@ -237,7 +238,7 @@ class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
     catch (SFException ex)
     {
       throw new SnowflakeSQLException(ex.getCause(),
-          ex.getSqlState(), ex.getVendorCode(), ex.getParams());
+                                      ex.getSqlState(), ex.getVendorCode(), ex.getParams());
     }
   }
 
@@ -257,7 +258,7 @@ class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
     catch (SFException ex)
     {
       throw new SnowflakeSQLException(ex.getCause(),
-          ex.getSqlState(), ex.getVendorCode(), ex.getParams());
+                                      ex.getSqlState(), ex.getVendorCode(), ex.getParams());
     }
   }
 
@@ -270,7 +271,7 @@ class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
     catch (SFException ex)
     {
       throw new SnowflakeSQLException(ex.getCause(),
-          ex.getSqlState(), ex.getVendorCode(), ex.getParams());
+                                      ex.getSqlState(), ex.getVendorCode(), ex.getParams());
     }
   }
 
@@ -283,7 +284,7 @@ class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
     catch (SFException ex)
     {
       throw new SnowflakeSQLException(ex.getCause(),
-          ex.getSqlState(), ex.getVendorCode(), ex.getParams());
+                                      ex.getSqlState(), ex.getVendorCode(), ex.getParams());
     }
   }
 
@@ -296,7 +297,7 @@ class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
     catch (SFException ex)
     {
       throw new SnowflakeSQLException(ex.getCause(),
-          ex.getSqlState(), ex.getVendorCode(), ex.getParams());
+                                      ex.getSqlState(), ex.getVendorCode(), ex.getParams());
     }
   }
 
@@ -310,7 +311,7 @@ class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
   public boolean isFirst() throws SQLException
   {
     logger.debug("public boolean isFirst()");
-    
+
     return sfBaseResultSet.isFirst();
   }
 
@@ -352,7 +353,7 @@ class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
     catch (SFException ex)
     {
       throw new SnowflakeSQLException(ex.getCause(),
-          ex.getSqlState(), ex.getVendorCode(), ex.getParams());
+                                      ex.getSqlState(), ex.getVendorCode(), ex.getParams());
     }
   }
 }

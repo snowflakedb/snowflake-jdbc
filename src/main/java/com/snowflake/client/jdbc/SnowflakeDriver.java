@@ -11,10 +11,10 @@ import java.sql.Driver;
  * are still using the legacy com.snowflake.client.jdbc.SnowflakeDriver.
  * Ideally, we want to remove this class and have all customers move to
  * net.snowflake.client.jdbc.SnowflakeDriver.
- *
+ * <p>
  * Created by hyu on 10/10/16.
  */
 public class SnowflakeDriver extends net.snowflake.client.jdbc.SnowflakeDriver
-      implements Driver
+    implements Driver
 {
 }

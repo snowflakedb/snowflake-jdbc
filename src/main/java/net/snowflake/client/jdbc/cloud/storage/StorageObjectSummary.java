@@ -27,6 +27,7 @@ public class StorageObjectSummary
 
   /**
    * Contructs a StorageObjectSummary object from the S3 equivalent S3ObjectSummary
+   *
    * @param
    */
   private StorageObjectSummary(String location, String key, String md5, long size)
@@ -39,32 +40,34 @@ public class StorageObjectSummary
 
   /**
    * Contructs a StorageObjectSummary object from the S3 equivalent S3ObjectSummary
+   *
    * @param objSummary the AWS S3 ObjectSummary object to copy from
    * @return the ObjectSummary object created
    */
- public static StorageObjectSummary createFromS3ObjectSummary(S3ObjectSummary objSummary)
+  public static StorageObjectSummary createFromS3ObjectSummary(S3ObjectSummary objSummary)
   {
 
     return new StorageObjectSummary(
-                  objSummary.getBucketName(),
-                  objSummary.getKey(),
-                  // S3 ETag is not always MD5, but since this code path is only
-                  // used in skip duplicate files in PUT command, It's not
-                  // critical to guarantee that it's MD5
-                  objSummary.getETag(),
-                  objSummary.getSize()
-                  );
+        objSummary.getBucketName(),
+        objSummary.getKey(),
+        // S3 ETag is not always MD5, but since this code path is only
+        // used in skip duplicate files in PUT command, It's not
+        // critical to guarantee that it's MD5
+        objSummary.getETag(),
+        objSummary.getSize()
+    );
   }
 
   /**
    * Contructs a StorageObjectSummary object from Azure BLOB properties
    * Using factory methods to create these objects since Azure can throw,
    * while retrieving the BLOB properties
+   *
    * @param listBlobItem an Azure ListBlobItem object
    * @return the ObjectSummary object created
    */
   public static StorageObjectSummary createFromAzureListBlobItem(ListBlobItem listBlobItem)
-    throws StorageProviderException
+  throws StorageProviderException
   {
     String location, key, md5;
     long size;
@@ -98,21 +101,26 @@ public class StorageObjectSummary
 
   }
 
-  private static String convertBase64ToHex(String base64String){
-    try{
+  private static String convertBase64ToHex(String base64String)
+  {
+    try
+    {
       byte[] bytes = Base64.decode(base64String);
-    
+
       final StringBuilder builder = new StringBuilder();
-      for(byte b : bytes) {
+      for (byte b : bytes)
+      {
         builder.append(String.format("%02x", b));
       }
       return builder.toString();
-    // return empty string if input is not a valid Base64 string
-    }catch(Exception e){
+      // return empty string if input is not a valid Base64 string
+    }
+    catch (Exception e)
+    {
       return "";
     }
   }
-  
+
   /**
    * @return returns the location of the object
    */
@@ -124,7 +132,8 @@ public class StorageObjectSummary
   /**
    * @return returns the key property of the object
    */
-  public String getKey() {
+  public String getKey()
+  {
     return key;
   }
 

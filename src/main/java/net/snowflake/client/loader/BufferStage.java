@@ -27,18 +27,29 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 public class BufferStage
 {
   private static final SFLogger LOGGER = SFLoggerFactory.getLogger(
-          BufferStage.class);
+      BufferStage.class);
 
   public enum State
   {
 
-    CREATED, LOADING, LOADED, EMPTY, UPLOADED, VALIDATED, VALIDATED_CLEANED,
-    ERROR, PROCESSED, CLEANED, REMOVED
+    CREATED,
+    LOADING,
+    LOADED,
+    EMPTY,
+    UPLOADED,
+    VALIDATED,
+    VALIDATED_CLEANED,
+    ERROR,
+    PROCESSED,
+    CLEANED,
+    REMOVED
 
-  };
+  }
+
+  ;
 
 
-  public static final int  FILE_BUCKET_SIZE = 64;   // threshold to schedule processing
+  public static final int FILE_BUCKET_SIZE = 64;   // threshold to schedule processing
   public static final long FILE_SIZE = 50L * 1024L * 1024L;   // individual file, 50Mb
 
   private State _state;
@@ -114,11 +125,12 @@ public class BufferStage
                                  + File.separatorChar + _location;
 
     _directory = new File(localStageDirectory);
-    if (!_directory.mkdirs()) {
+    if (!_directory.mkdirs())
+    {
       RuntimeException ex = new RuntimeException(
-              "Could not initialize the local staging area. " +
-                      "Make sure the directory is writable and readable: " +
-                      localStageDirectory);
+          "Could not initialize the local staging area. " +
+          "Make sure the directory is writable and readable: " +
+          localStageDirectory);
 
       _loader.abort(ex);
       throw ex;
@@ -134,7 +146,8 @@ public class BufferStage
    */
   private synchronized void openFile()
   {
-    try {
+    try
+    {
       String fName = _directory.getAbsolutePath()
                      + File.separatorChar + StreamLoader.FILE_PREFIX
                      + _stamp + _fileCount;
@@ -148,9 +161,10 @@ public class BufferStage
       if (_loader._compressDataBeforePut)
       {
         OutputStream gzipOutputStream = new GZIPOutputStream(
-            fileStream, 64 * 1024,  true) {
+            fileStream, 64 * 1024, true)
+        {
           {
-            def.setLevel((int)_loader._compressLevel);
+            def.setLevel((int) _loader._compressLevel);
           }
         };
         _outstream = new BufferedOutputStream(gzipOutputStream);
@@ -164,7 +178,8 @@ public class BufferStage
 
       _fileCount++;
     }
-    catch (IOException ex) {
+    catch (IOException ex)
+    {
       _loader.abort(new Loader.ConnectionError(Utils.getCause(ex)));
     }
   }
@@ -175,9 +190,10 @@ public class BufferStage
   // not thread safe
   boolean stageData(final byte[] line) throws IOException
   {
-    if (this._rowCount % 10000 == 0) {
+    if (this._rowCount % 10000 == 0)
+    {
       LOGGER.debug(
-              "rowCount: {}, currentSize: {}", this._rowCount, _currentSize);
+          "rowCount: {}, currentSize: {}", this._rowCount, _currentSize);
     }
     _outstream.write(line);
     _currentSize += line.length;
@@ -185,20 +201,22 @@ public class BufferStage
     _outstream.write(newLineBytes);
     this._rowCount++;
 
-    if (_loader._testRemoteBadCSV) {
+    if (_loader._testRemoteBadCSV)
+    {
       // inject garbage for a negative test case
       // The file will be uploaded to the stage, but COPY command will
       // fail and raise LoaderError
-      _outstream.write(new byte[] { (byte)0x01, (byte)0x02});
+      _outstream.write(new byte[]{(byte) 0x01, (byte) 0x02});
       _outstream.write(newLineBytes);
       this._rowCount++;
     }
 
-    if(_currentSize >= this._csvFileSize) {
+    if (_currentSize >= this._csvFileSize)
+    {
       LOGGER.debug("name: {}, currentSize: {}, Threshold: {},"
-                      + " fileCount: {}, fileBucketSize: {}",
-              _file.getAbsolutePath(), _currentSize, this._csvFileSize, _fileCount,
-              this._csvFileBucketSize);
+                   + " fileCount: {}, fileBucketSize: {}",
+                   _file.getAbsolutePath(), _currentSize, this._csvFileSize, _fileCount,
+                   this._csvFileBucketSize);
       _outstream.flush();
       _outstream.close();
       _outstream = null;
@@ -215,30 +233,33 @@ public class BufferStage
 
   /**
    * Wait for all files to finish uploading and schedule stage for processing
+   *
    * @throws IOException raises an exception if IO error occurs
    */
   void completeUploading() throws IOException
   {
     LOGGER.debug("name: {}, currentSize: {}, Threshold: {},"
-            + " fileCount: {}, fileBucketSize: {}",
-        _file.getAbsolutePath(),
-        _currentSize, this._csvFileSize, _fileCount,
-        this._csvFileBucketSize);
+                 + " fileCount: {}, fileBucketSize: {}",
+                 _file.getAbsolutePath(),
+                 _currentSize, this._csvFileSize, _fileCount,
+                 this._csvFileBucketSize);
 
     _outstream.flush();
     _outstream.close();
     //last file
-    if(_currentSize > 0)
+    if (_currentSize > 0)
     {
       FileUploader fu = new FileUploader(_loader, _location, _file);
       fu.upload();
       _uploaders.add(fu);
-    } else {
+    }
+    else
+    {
       // delete empty file
       _file.delete();
     }
 
-    for(FileUploader fu: _uploaders)
+    for (FileUploader fu : _uploaders)
     {
       // Finish all files being uploaded
       fu.join();
@@ -309,21 +330,30 @@ public class BufferStage
   private String remoteSeparator(String fname)
   {
     if (File.separatorChar == '\\')
+    {
       return fname.replace("\\", "/");
+    }
     else
+    {
       return fname;
+    }
   }
 
   /**
    * Escape file separator char to underscore. This prevents the file name
    * from using file path separator.
+   *
    * @param fname
    * @return escaped file name
    */
-  private static String escapeFileSeparatorChar(String fname) {
-    if (File.separatorChar == '\\') {
+  private static String escapeFileSeparatorChar(String fname)
+  {
+    if (File.separatorChar == '\\')
+    {
       return fname.replaceAll(File.separator + File.separator, "_");
-    } else {
+    }
+    else
+    {
       return fname.replaceAll(File.separator, "_");
     }
   }

@@ -16,7 +16,7 @@ import java.util.List;
  *
  * @author lgiakoumakis
  */
-public class  S3ObjectSummariesIterator implements Iterator<StorageObjectSummary>
+public class S3ObjectSummariesIterator implements Iterator<StorageObjectSummary>
 {
 
   // Encapsulated S3 iterator
@@ -34,18 +34,19 @@ public class  S3ObjectSummariesIterator implements Iterator<StorageObjectSummary
 
   public boolean hasNext()
   {
-      return s3ObjSummariesIterator.hasNext();
+    return s3ObjSummariesIterator.hasNext();
   }
 
   public StorageObjectSummary next()
   {
-      // Get the next S3 summary object and return it as a platform-agnostic object (StorageObjectSummary)
-      S3ObjectSummary s3Obj = s3ObjSummariesIterator.next();
+    // Get the next S3 summary object and return it as a platform-agnostic object (StorageObjectSummary)
+    S3ObjectSummary s3Obj = s3ObjSummariesIterator.next();
 
-      return  StorageObjectSummary.createFromS3ObjectSummary(s3Obj);
+    return StorageObjectSummary.createFromS3ObjectSummary(s3Obj);
   }
 
-  public void remove() {
+  public void remove()
+  {
     throw new UnsupportedOperationException("remove() method not supported");
   }
 

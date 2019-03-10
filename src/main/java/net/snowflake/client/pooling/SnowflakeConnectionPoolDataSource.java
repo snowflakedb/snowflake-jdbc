@@ -23,7 +23,7 @@ public class SnowflakeConnectionPoolDataSource
 
   @Override
   public PooledConnection getPooledConnection(String user, String password)
-      throws SQLException
+  throws SQLException
   {
     Connection connection = super.getConnection(user, password);
     return new SnowflakePooledConnection(connection);

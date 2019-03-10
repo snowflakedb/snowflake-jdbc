@@ -141,8 +141,8 @@ public class SFTrustManagerIT
       }
     }
     assertThat(String.format("response code for %s", host),
-        statusCode,
-        anyOf(equalTo(200), equalTo(403), equalTo(400)));
+               statusCode,
+               anyOf(equalTo(200), equalTo(403), equalTo(400)));
   }
 
   /**

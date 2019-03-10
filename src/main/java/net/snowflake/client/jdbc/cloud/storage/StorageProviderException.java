@@ -7,18 +7,20 @@ import com.amazonaws.AmazonServiceException;
 import org.apache.http.HttpStatus;
 
 /**
- * Custom exception class to signal a remote provider exception in 
+ * Custom exception class to signal a remote provider exception in
  * a platform-independent manner.
  *
  * @author lgiakoumakis
  */
-public class StorageProviderException extends RuntimeException {
+public class StorageProviderException extends RuntimeException
+{
   /**
    * Constructor that accepts an arbitrary Exception.
    *
    * @param ex An Exception to be treated as transient.
    */
-  public StorageProviderException(Exception ex) {
+  public StorageProviderException(Exception ex)
+  {
     super(ex);
   }
 
@@ -39,7 +41,7 @@ public class StorageProviderException extends RuntimeException {
    *
    * @return true if the specified exception is an AmazonServiceException
    * instance and if it was thrown because of a 404, false otherwise.
- */
+   */
   public boolean isServiceException404()
   {
     if ((Exception) this instanceof AmazonServiceException)

@@ -6,12 +6,13 @@ package net.snowflake.client.core;
 
 import java.io.IOException;
 import java.nio.file.Path;
+
 import org.apache.tika.Tika;
 
 /**
- *
  * @author jhuang
  */
+
 /**
  * Use Tika to detect the mime type of files
  */

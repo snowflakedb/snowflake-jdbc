@@ -159,7 +159,9 @@ class SFTrustManager extends X509ExtendedTrustManager
    */
   public static final String CACHE_FILE_NAME = "ocsp_response_cache.json";
 
-  /** provider name */
+  /**
+   * provider name
+   */
   private static final String BOUNCY_CASTLE_PROVIDER = "BC";
 
   /**
@@ -255,8 +257,9 @@ class SFTrustManager extends X509ExtendedTrustManager
   {
     // Add Bouncy Castle to the security provider. This is required to
     // verify the signature on OCSP response and attached certificates.
-    if (Security.getProvider(BOUNCY_CASTLE_PROVIDER) == null) {
-        Security.addProvider(new BouncyCastleProvider());
+    if (Security.getProvider(BOUNCY_CASTLE_PROVIDER) == null)
+    {
+      Security.addProvider(new BouncyCastleProvider());
     }
   }
 
@@ -313,15 +316,15 @@ class SFTrustManager extends X509ExtendedTrustManager
     this.trustManager = getTrustManager(
         KeyManagerFactory.getDefaultAlgorithm());
 
-    this.exTrustManager = (X509ExtendedTrustManager)getTrustManager(
-            KeyManagerFactory.getDefaultAlgorithm());
+    this.exTrustManager = (X509ExtendedTrustManager) getTrustManager(
+        KeyManagerFactory.getDefaultAlgorithm());
 
     if (ssdManager.getSSDSupportStatus())
     {
       SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN = SF_DEFAULT_OCSP_RESPONSE_RETRY_URL;
       readDirectives();
     }
-    
+
     synchronized (OCSP_RESPONSE_CACHE_LOCK)
     {
       if (cacheFile != null)
@@ -341,11 +344,10 @@ class SFTrustManager extends X509ExtendedTrustManager
 
   /**
    * Look for Out of Band Server Side Directives
-   * 
+   * <p>
    * These can be two types only:
    * 1. Key Update Directive - key_upd_ssd.ssd
    * 2. Host Specific OCSP Bypass Directive - host_spec_bypass_ssd.ssd
-   * 
    */
   void readDirectives()
   {
@@ -386,14 +388,14 @@ class SFTrustManager extends X509ExtendedTrustManager
           if (url.getPort() > 0)
           {
             SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN =
-                    String.format("%s://%s:%d/retry/%s",
-                            url.getProtocol(), url.getHost(), url.getPort(), "%s/%s");
+                String.format("%s://%s:%d/retry/%s",
+                              url.getProtocol(), url.getHost(), url.getPort(), "%s/%s");
           }
           else
           {
             SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN =
-                    String.format("%s://%s/retry/%s",
-                            url.getProtocol(), url.getHost(), "%s/%s");
+                String.format("%s://%s/retry/%s",
+                              url.getProtocol(), url.getHost(), "%s/%s");
           }
         }
         else
@@ -401,14 +403,14 @@ class SFTrustManager extends X509ExtendedTrustManager
           if (url.getPort() > 0)
           {
             SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN =
-                    String.format("%s://%s:%d/retry",
-                            url.getProtocol(), url.getHost(), url.getPort());
+                String.format("%s://%s:%d/retry",
+                              url.getProtocol(), url.getHost(), url.getPort());
           }
           else
           {
             SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN =
-                    String.format("%s://%s/retry",
-                            url.getProtocol(), url.getHost());
+                String.format("%s://%s/retry",
+                              url.getProtocol(), url.getHost());
           }
         }
       }
@@ -537,7 +539,7 @@ class SFTrustManager extends X509ExtendedTrustManager
   /**
    * Certificate Revocation checks
    *
-   * @param chain chain of certificates attached.
+   * @param chain    chain of certificates attached.
    * @param peerHost Hostname of the server
    * @throws CertificateException if any certificate validation fails
    */
@@ -577,7 +579,7 @@ class SFTrustManager extends X509ExtendedTrustManager
    */
   private void executeRevocationStatusChecks(
       List<SFPair<Certificate, Certificate>> pairIssuerSubjectList, String peerHost)
-      throws CertificateException
+  throws CertificateException
   {
     long currentTimeSecond = new Date().getTime() / 1000L;
     try
@@ -629,7 +631,7 @@ class SFTrustManager extends X509ExtendedTrustManager
   private void executeOneRevoctionStatusCheck(
       SFPair<Certificate, Certificate> pairIssuerSubject, long currentTimeSecond,
       String peerHost)
-      throws IOException, CertificateException
+  throws IOException, CertificateException
   {
     OCSPReq req = createRequest(pairIssuerSubject);
     CertID cid = req.getRequestList()[0].getCertID().toASN1Primitive();
@@ -669,14 +671,14 @@ class SFTrustManager extends X509ExtendedTrustManager
               ssdManager.removeFromSSDCache(peerHost);
             }
           }
-          catch(Throwable ex)
+          catch (Throwable ex)
           {
             LOGGER.info("Unable to process Host Specific OCSP Response. Removing" +
-                    "it from the SSD Cache");
+                        "it from the SSD Cache");
             ssdManager.removeFromSSDCache(peerHost);
           }
         }
-        else if(resp.right != null)
+        else if (resp.right != null)
         {
           /**
            * Process WildCard SSD if present
@@ -704,18 +706,18 @@ class SFTrustManager extends X509ExtendedTrustManager
         {
           LOGGER.debug("not hit cache.");
           ocspResp = fetchOcspResponse(pairIssuerSubject, req,
-                  encodeCacheKey(keyOcspResponse), peerHost);
+                                       encodeCacheKey(keyOcspResponse), peerHost);
 
           OCSP_RESPONSE_CACHE.put(
               keyOcspResponse, SFPair.of(currentTimeSecond,
-                          ocspResponseToB64(ocspResp)));
+                                         ocspResponseToB64(ocspResp)));
           WAS_CACHE_UPDATED = true;
           value0 = SFPair.of(currentTimeSecond,
-                  ocspResponseToB64(ocspResp));
+                             ocspResponseToB64(ocspResp));
         }
 
         LOGGER.debug("validating. {}",
-            CertificateIDToString(req.getRequestList()[0].getCertID()));
+                     CertificateIDToString(req.getRequestList()[0].getCertID()));
         try
         {
           validateRevocationStatusMain(pairIssuerSubject, value0.right);
@@ -736,10 +738,14 @@ class SFTrustManager extends X509ExtendedTrustManager
               break;
             }
             else
+            {
               throw ex;
+            }
           }
           else
+          {
             throw ex;
+          }
         }
       }
       catch (CertificateException ex)
@@ -752,7 +758,7 @@ class SFTrustManager extends X509ExtendedTrustManager
         }
         error = ex;
         LOGGER.debug("Retrying {}/{} after sleeping {}(ms)",
-            retry + 1, MAX_RETRY_COUNTER, sleepTime);
+                     retry + 1, MAX_RETRY_COUNTER, sleepTime);
         try
         {
           Thread.sleep(sleepTime);
@@ -815,7 +821,7 @@ class SFTrustManager extends X509ExtendedTrustManager
           catch (CertificateException ex)
           {
             LOGGER.debug("Cache includes invalid OCSPResponse. " +
-                "Will download the OCSP cache from Snowflake OCSP server");
+                         "Will download the OCSP cache from Snowflake OCSP server");
             isCached = false;
           }
         }
@@ -838,10 +844,10 @@ class SFTrustManager extends X509ExtendedTrustManager
   private static String CertificateIDToString(CertificateID certificateID)
   {
     return String.format("CertID. NameHash: %s, KeyHash: %s, Serial Number: %s",
-        byteToHexString(certificateID.getIssuerNameHash()),
-        byteToHexString(certificateID.getIssuerKeyHash()),
-        MessageFormat.format("{0,number,#}",
-            certificateID.getSerialNumber()));
+                         byteToHexString(certificateID.getIssuerNameHash()),
+                         byteToHexString(certificateID.getIssuerKeyHash()),
+                         MessageFormat.format("{0,number,#}",
+                                              certificateID.getSerialNumber()));
 
   }
 
@@ -882,7 +888,7 @@ class SFTrustManager extends X509ExtendedTrustManager
     else
     {
       // delete cache
-      return SFPair.of(k, SFPair.of(producedAt,(String)null));
+      return SFPair.of(k, SFPair.of(producedAt, (String) null));
     }
   }
 
@@ -950,9 +956,9 @@ class SFTrustManager extends X509ExtendedTrustManager
           throw new IOException(
               String.format(
                   "Failed to get the OCSP response from the OCSP " +
-                      "cache server: HTTP: %d",
+                  "cache server: HTTP: %d",
                   response != null ? response.getStatusLine().getStatusCode() :
-                      -1));
+                  -1));
         }
 
         ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -966,7 +972,7 @@ class SFTrustManager extends X509ExtendedTrustManager
       {
         error = ex;
         LOGGER.debug("Retrying {}/{} after sleeping {}(ms)",
-            retry + 1, MAX_RETRY_COUNTER, sleepTime);
+                     retry + 1, MAX_RETRY_COUNTER, sleepTime);
         try
         {
           Thread.sleep(sleepTime);
@@ -979,7 +985,7 @@ class SFTrustManager extends X509ExtendedTrustManager
     }
     LOGGER.debug(
         "Failed to read the OCSP response cache from the server. " +
-            "Server: {}, Err: {}", SF_OCSP_RESPONSE_CACHE_SERVER_URL, error);
+        "Server: {}, Err: {}", SF_OCSP_RESPONSE_CACHE_SERVER_URL, error);
   }
 
   private static void readJsonStoreCache(JsonNode m)
@@ -1044,7 +1050,7 @@ class SFTrustManager extends X509ExtendedTrustManager
   private OCSPResp fetchOcspResponse(
       SFPair<Certificate, Certificate> pairIssuerSubject, OCSPReq req,
       String cid_enc, String hname)
-      throws CertificateEncodingException
+  throws CertificateEncodingException
   {
     try
     {
@@ -1061,8 +1067,8 @@ class SFTrustManager extends X509ExtendedTrustManager
         {
           URL ocspUrl = new URL(ocspUrlStr);
           url = new URL(String.format(
-                  SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN,
-                  ocspUrl.getHost(), ocspReqDerBase64));
+              SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN,
+              ocspUrl.getHost(), ocspReqDerBase64));
         }
         else
         {
@@ -1070,13 +1076,13 @@ class SFTrustManager extends X509ExtendedTrustManager
         }
 
         LOGGER.debug(
-                "not hit cache. Fetching OCSP response from CA OCSP server. {}", url.toString());
+            "not hit cache. Fetching OCSP response from CA OCSP server. {}", url.toString());
       }
       else
       {
         url = new URL(SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN);
         LOGGER.debug(
-                "not hit cache. Fetching OCSP response from Snowflake OCSP Response Fetcher. {}", url.toString());
+            "not hit cache. Fetching OCSP response from Snowflake OCSP Response Fetcher. {}", url.toString());
       }
 
       long sleepTime = INITIAL_SLEEPING_TIME_IN_MILLISECONDS;
@@ -1097,14 +1103,14 @@ class SFTrustManager extends X509ExtendedTrustManager
         {
           HttpClient client = getHttpClient();
           HttpPost post = new HttpPost(url.toString());
-          post.setHeader("Content-Type","application/json");
+          post.setHeader("Content-Type", "application/json");
           SFTrustManager.OCSPPostReqData postReqData =
-                  new SFTrustManager.OCSPPostReqData(ocspUrlStr,
-                  ocspReqDerBase64,
-                  cid_enc,
-                  hname);
+              new SFTrustManager.OCSPPostReqData(ocspUrlStr,
+                                                 ocspReqDerBase64,
+                                                 cid_enc,
+                                                 hname);
           String json_payload = OBJECT_MAPPER.writeValueAsString(postReqData);
-          post.setEntity(new StringEntity(json_payload,"utf-8"));
+          post.setEntity(new StringEntity(json_payload, "utf-8"));
           response = client.execute(post);
 
         }
@@ -1113,12 +1119,12 @@ class SFTrustManager extends X509ExtendedTrustManager
         {
           success = true;
           LOGGER.debug(
-                  "Successfully downloaded OCSP response from CA server. " +
-                          "URL: {}", url.toString());
+              "Successfully downloaded OCSP response from CA server. " +
+              "URL: {}", url.toString());
           break;
         }
         LOGGER.debug("Retrying {}/{} after sleeping {}(ms)",
-                retry + 1, MAX_RETRY_COUNTER, sleepTime);
+                     retry + 1, MAX_RETRY_COUNTER, sleepTime);
         try
         {
           Thread.sleep(sleepTime);
@@ -1143,7 +1149,7 @@ class SFTrustManager extends X509ExtendedTrustManager
       {
         throw new CertificateEncodingException(
             String.format("Failed to get OCSP response. Status: %s",
-                OCSP_RESPONSE_CODE_TO_STRING.get(ocspResp.getStatus())));
+                          OCSP_RESPONSE_CODE_TO_STRING.get(ocspResp.getStatus())));
       }
 
       return ocspResp;
@@ -1176,7 +1182,7 @@ class SFTrustManager extends X509ExtendedTrustManager
       {
         LOGGER.debug(
             "Certificate is attached for verification. " +
-                "Verifying it by the issuer certificate.");
+            "Verifying it by the issuer certificate.");
         signVerifyCert = attachedCerts[0];
         verifySignature(
             new X509CertificateHolder(pairIssuerSubject.left.getEncoded()),
@@ -1190,7 +1196,7 @@ class SFTrustManager extends X509ExtendedTrustManager
       else
       {
         LOGGER.debug("Certificate is NOT attached for verification. " +
-            "Verifying OCSP signature by the issuer public key.");
+                     "Verifying OCSP signature by the issuer public key.");
         signVerifyCert = new X509CertificateHolder(
             pairIssuerSubject.left.getEncoded());
       }
@@ -1218,14 +1224,14 @@ class SFTrustManager extends X509ExtendedTrustManager
    */
   private void validateBasicOcspResponse(
       Date currentTime, BasicOCSPResp basicOcspResp)
-      throws CertificateEncodingException
+  throws CertificateEncodingException
   {
     for (SingleResp singleResps : basicOcspResp.getResponses())
     {
       Date thisUpdate = singleResps.getThisUpdate();
       Date nextUpdate = singleResps.getNextUpdate();
       LOGGER.debug("Current Time: {}, This Update: {}, Next Update: {}",
-          currentTime, thisUpdate, nextUpdate);
+                   currentTime, thisUpdate, nextUpdate);
       CertificateStatus certStatus = singleResps.getCertStatus();
       if (certStatus != CertificateStatus.GOOD)
       {
@@ -1259,7 +1265,7 @@ class SFTrustManager extends X509ExtendedTrustManager
         throw new CertificateEncodingException(
             String.format(
                 "The validity is out of range: " +
-                    "Current Time: %s, This Update: %s, Next Update: %s",
+                "Current Time: %s, This Update: %s, Next Update: %s",
                 DATE_FORMAT_UTC.format(currentTime),
                 DATE_FORMAT_UTC.format(thisUpdate),
                 DATE_FORMAT_UTC.format(nextUpdate)));
@@ -1299,7 +1305,7 @@ class SFTrustManager extends X509ExtendedTrustManager
       {
         throw new CertificateEncodingException(
             String.format("Failed to verify the signature. Potentially the " +
-                "data was not generated by by the cert, %s", cert.getSubject()));
+                          "data was not generated by by the cert, %s", cert.getSubject()));
       }
     }
     catch (NoSuchAlgorithmException | NoSuchProviderException |
@@ -1492,7 +1498,7 @@ class SFTrustManager extends X509ExtendedTrustManager
   private static long calculateTolerableVadility(Date thisUpdate, Date nextUpdate)
   {
     return maxLong((long) ((float) (nextUpdate.getTime() - thisUpdate.getTime()) *
-        TOLERABLE_VALIDITY_RANGE_RATIO), MIN_CACHE_WARMUP_TIME_IN_MILLISECONDS);
+                           TOLERABLE_VALIDITY_RANGE_RATIO), MIN_CACHE_WARMUP_TIME_IN_MILLISECONDS);
   }
 
   /**
@@ -1507,7 +1513,7 @@ class SFTrustManager extends X509ExtendedTrustManager
   {
     long tolerableValidity = calculateTolerableVadility(thisUpdate, nextUpdate);
     return thisUpdate.getTime() - MAX_CLOCK_SKEW_IN_MILLISECONDS <= currentTime.getTime() &&
-        currentTime.getTime() <= nextUpdate.getTime() + tolerableValidity;
+           currentTime.getTime() <= nextUpdate.getTime() + tolerableValidity;
   }
 
   /**
@@ -1523,7 +1529,7 @@ class SFTrustManager extends X509ExtendedTrustManager
        */
       //PlainJWT jwt_unverified = PlainJWT.parse(ssd);
       SignedJWT jwt_signed = SignedJWT.parse(ssd);
-      String jwt_issuer = (String)jwt_signed.getHeader().getCustomParam("ssd_iss");
+      String jwt_issuer = (String) jwt_signed.getHeader().getCustomParam("ssd_iss");
       String ssd_pubKey;
 
       if (!jwt_issuer.equals(issuer))
@@ -1547,7 +1553,8 @@ class SFTrustManager extends X509ExtendedTrustManager
         return;
       }
 
-      String publicKeyContent = ssd_pubKey.replaceAll("\\n", "").replace("-----BEGIN PUBLIC KEY-----", "").replace("-----END PUBLIC KEY-----", "");
+      String publicKeyContent =
+          ssd_pubKey.replaceAll("\\n", "").replace("-----BEGIN PUBLIC KEY-----", "").replace("-----END PUBLIC KEY-----", "");
       KeyFactory kf = KeyFactory.getInstance("RSA");
       X509EncodedKeySpec keySpecX509 = new X509EncodedKeySpec(Base64.decodeBase64(publicKeyContent));
       RSAPublicKey rsaPubKey = (RSAPublicKey) kf.generatePublic(keySpecX509);
@@ -1579,8 +1586,8 @@ class SFTrustManager extends X509ExtendedTrustManager
             return;
           }
           ssdManager.updateKey(jwt_issuer,
-                  jwt_token_verified.getJWTClaimsSet().getStringClaim("pubKey"),
-                  key_ver);
+                               jwt_token_verified.getJWTClaimsSet().getStringClaim("pubKey"),
+                               key_ver);
         }
       }
       catch (Throwable ex)
@@ -1595,8 +1602,10 @@ class SFTrustManager extends X509ExtendedTrustManager
     }
   }
 
-  private boolean processOCSPBypassSSD(String ocsp_ssd, OcspResponseCacheKey cid, String hostname) {
-    try {
+  private boolean processOCSPBypassSSD(String ocsp_ssd, OcspResponseCacheKey cid, String hostname)
+  {
+    try
+    {
       /**
        * Get unverified part of the JWT to extract issuer.
        */
@@ -1613,7 +1622,8 @@ class SFTrustManager extends X509ExtendedTrustManager
         ssd_pubKey = ssdManager.getPubKey("dep2");
       }
 
-      String publicKeyContent = ssd_pubKey.replaceAll("\\n", "").replace("-----BEGIN PUBLIC KEY-----", "").replace("-----END PUBLIC KEY-----", "");
+      String publicKeyContent =
+          ssd_pubKey.replaceAll("\\n", "").replace("-----BEGIN PUBLIC KEY-----", "").replace("-----END PUBLIC KEY-----", "");
       KeyFactory kf = KeyFactory.getInstance("RSA");
       X509EncodedKeySpec keySpecX509 = new X509EncodedKeySpec(Base64.decodeBase64(publicKeyContent));
       RSAPublicKey rsaPubKey = (RSAPublicKey) kf.generatePublic(keySpecX509);
@@ -1647,7 +1657,7 @@ class SFTrustManager extends X509ExtendedTrustManager
             /**
              * No In Band token can have > 7 days validity
              */
-            if (jwt_exp.getTime() - jwt_nbf.getTime() > (7*24*60*60*1000))
+            if (jwt_exp.getTime() - jwt_nbf.getTime() > (7 * 24 * 60 * 60 * 1000))
             {
               return false;
             }
@@ -1659,14 +1669,14 @@ class SFTrustManager extends X509ExtendedTrustManager
             BigInteger serialNumber = ((ASN1Integer) jwt_rawCertIdArray[3]).getValue();
 
             OcspResponseCacheKey k = new OcspResponseCacheKey(
-                    issuerNameHashDer, issuerKeyHashDer, serialNumber);
+                issuerNameHashDer, issuerKeyHashDer, serialNumber);
 
             if (k.equals(cid))
             {
-              LOGGER.debug("Found a Signed OCSP Bypass SSD for ceri id "+cid.toString());
+              LOGGER.debug("Found a Signed OCSP Bypass SSD for ceri id " + cid.toString());
               return true;
             }
-            LOGGER.debug("Found invalid OCSP bypass for cert id "+cid.toString());
+            LOGGER.debug("Found invalid OCSP bypass for cert id " + cid.toString());
             return false;
           }
         }
@@ -1691,7 +1701,9 @@ class SFTrustManager extends X509ExtendedTrustManager
   private String ocspResponseToB64(OCSPResp ocspResp)
   {
     if (ocspResp == null)
+    {
       return null;
+    }
     try
     {
       return Base64.encodeBase64String(ocspResp.getEncoded());
@@ -1715,6 +1727,7 @@ class SFTrustManager extends X509ExtendedTrustManager
       return null;
     }
   }
+
   /**
    * OCSP response cache key object
    */
@@ -1747,8 +1760,8 @@ class SFTrustManager extends X509ExtendedTrustManager
       }
       OcspResponseCacheKey target = (OcspResponseCacheKey) obj;
       return Arrays.equals(this.nameHash, target.nameHash) &&
-          Arrays.equals(this.keyHash, target.keyHash) &&
-          this.serialNumber.equals(target.serialNumber);
+             Arrays.equals(this.keyHash, target.keyHash) &&
+             this.serialNumber.equals(target.serialNumber);
     }
 
     public String toString()

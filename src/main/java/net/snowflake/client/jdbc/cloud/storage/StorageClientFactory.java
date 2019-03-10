@@ -2,6 +2,7 @@
  * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
  */
 package net.snowflake.client.jdbc.cloud.storage;
+
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.log.SFLogger;
 import com.amazonaws.ClientConfiguration;
@@ -21,19 +22,25 @@ public class StorageClientFactory
 {
 
   private final static SFLogger logger =
-          SFLoggerFactory.getLogger(SnowflakeS3Client.class);
+      SFLoggerFactory.getLogger(SnowflakeS3Client.class);
 
   private static StorageClientFactory factory;
 
-  private StorageClientFactory() {}
+  private StorageClientFactory()
+  {
+  }
 
   /**
    * Creates or returns the single instance of the factory object
+   *
    * @return the storage client instance
    */
   public static StorageClientFactory getFactory()
   {
-    if(factory == null) factory = new StorageClientFactory();
+    if (factory == null)
+    {
+      factory = new StorageClientFactory();
+    }
 
     return factory;
   }
@@ -41,16 +48,16 @@ public class StorageClientFactory
   /**
    * Creates a storage client based on the value of stageLocationType
    *
-   * @param stage the stage properties
+   * @param stage    the stage properties
    * @param parallel the degree of parallelism to be used by the client
-   * @param encMat encryption material for the client
+   * @param encMat   encryption material for the client
    * @return a SnowflakeStorageClient interface to the instance created
    * @throws SnowflakeSQLException if any error occurs
    */
   public SnowflakeStorageClient createClient(StageInfo stage,
                                              int parallel,
                                              RemoteStoreFileEncryptionMaterial encMat)
-                                             throws SnowflakeSQLException
+  throws SnowflakeSQLException
   {
     logger.debug("createClient client type={}", stage.getStageType().name());
 
@@ -67,7 +74,7 @@ public class StorageClientFactory
         // so we should only find ourselves here if an unsupported
         // remote storage client type is specified
         throw new IllegalArgumentException("Unsupported storage client specified: "
-                + stage.getStageType().name());
+                                           + stage.getStageType().name());
     }
   }
 
@@ -76,9 +83,9 @@ public class StorageClientFactory
    * the Amazon S3 client
    *
    * @param stageCredentials Map of stage credential properties
-   * @param parallel degree of parallelism
-   * @param encMat encryption material for the client
-   * @param stageRegion the region where the stage is located
+   * @param parallel         degree of parallelism
+   * @param encMat           encryption material for the client
+   * @param stageRegion      the region where the stage is located
    * @return the SnowflakeS3Client  instance created
    * @throws SnowflakeSQLException failure to create the S3 client
    */
@@ -86,7 +93,7 @@ public class StorageClientFactory
                                            int parallel,
                                            RemoteStoreFileEncryptionMaterial encMat,
                                            String stageRegion)
-          throws SnowflakeSQLException
+  throws SnowflakeSQLException
   {
     final int S3_TRANSFER_MAX_RETRIES = 3;
 
@@ -95,22 +102,22 @@ public class StorageClientFactory
     SnowflakeS3Client s3Client;
 
     ClientConfiguration clientConfig = new ClientConfiguration();
-    clientConfig.setMaxConnections(parallel+1);
+    clientConfig.setMaxConnections(parallel + 1);
     clientConfig.setMaxErrorRetry(S3_TRANSFER_MAX_RETRIES);
     clientConfig.setDisableSocketProxy(HttpUtil.isSocksProxyDisabled());
 
     logger.debug("s3 client configuration: maxConnection={}, connectionTimeout={}, " +
-                    "socketTimeout={}, maxErrorRetry={}",
-            clientConfig.getMaxConnections(),
-            clientConfig.getConnectionTimeout(),
-            clientConfig.getSocketTimeout(),
-            clientConfig.getMaxErrorRetry());
+                 "socketTimeout={}, maxErrorRetry={}",
+                 clientConfig.getMaxConnections(),
+                 clientConfig.getConnectionTimeout(),
+                 clientConfig.getSocketTimeout(),
+                 clientConfig.getMaxErrorRetry());
 
     try
     {
       s3Client = new SnowflakeS3Client(stageCredentials, clientConfig, encMat, stageRegion);
     }
-    catch(Exception ex)
+    catch (Exception ex)
     {
       logger.debug("Exception creating s3 client", ex);
       throw ex;
@@ -142,21 +149,21 @@ public class StorageClientFactory
         // We don't create/implement a storage client for FS_LOCAL,
         // so we should never end up here while running on local file system
         throw new IllegalArgumentException("Unsupported stage type specified: "
-                + stageType.name());
-      }
+                                           + stageType.name());
+    }
   }
 
   /**
    * Creates a SnowflakeAzureClientObject which encapsulates
    * the Azure Storage client
    *
-   * @param stage Stage information
+   * @param stage  Stage information
    * @param encMat encryption material for the client
    * @return the SnowflakeS3Client  instance created
    */
   private SnowflakeAzureClient createAzureClient(StageInfo stage,
-                                           RemoteStoreFileEncryptionMaterial encMat)
-                              throws SnowflakeSQLException
+                                                 RemoteStoreFileEncryptionMaterial encMat)
+  throws SnowflakeSQLException
   {
     logger.debug("createAzureClient encryption={}", (encMat == null ? "no" : "yes"));
 
@@ -168,7 +175,7 @@ public class StorageClientFactory
     {
       azureClient = SnowflakeAzureClient.createSnowflakeAzureClient(stage, encMat);
     }
-    catch(Exception ex)
+    catch (Exception ex)
     {
       logger.debug("Exception creating Azure Storage client", ex);
       throw ex;

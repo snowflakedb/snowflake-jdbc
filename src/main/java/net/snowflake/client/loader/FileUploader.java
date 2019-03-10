@@ -6,6 +6,7 @@ package net.snowflake.client.loader;
 
 import net.snowflake.client.jdbc.SnowflakeConnectionV1;
 import net.snowflake.client.jdbc.SnowflakeFileTransferAgent;
+
 import java.io.File;
 import java.sql.ResultSet;
 import java.sql.Statement;
@@ -16,9 +17,10 @@ import net.snowflake.client.log.SFLoggerFactory;
 /**
  * Class responsible for uploading a single data file.
  */
-public class FileUploader implements Runnable {
+public class FileUploader implements Runnable
+{
   private static final SFLogger LOGGER = SFLoggerFactory.getLogger(
-          PutQueue.class);
+      PutQueue.class);
 
   private final static int RETRY = 6;
   private final Thread _thread;
@@ -26,7 +28,8 @@ public class FileUploader implements Runnable {
   private final String _stage;
   private final File _file;
 
-  FileUploader(StreamLoader loader, String stage, File file) {
+  FileUploader(StreamLoader loader, String stage, File file)
+  {
     LOGGER.debug("");
     _loader = loader;
     _thread = new Thread(this);
@@ -35,7 +38,8 @@ public class FileUploader implements Runnable {
     _file = file;
   }
 
-  public synchronized void upload() {
+  public synchronized void upload()
+  {
     // throttle up will wait if too many files are uploading
     LOGGER.debug("");
     _loader.throttleUp();
@@ -43,44 +47,55 @@ public class FileUploader implements Runnable {
   }
 
   @Override
-  public void run() {
+  public void run()
+  {
 
     Throwable previousException = null;
-    try {
-      for (int attempt = 0; attempt <= RETRY; attempt++) {
+    try
+    {
+      for (int attempt = 0; attempt <= RETRY; attempt++)
+      {
 
-        if (attempt == RETRY) {
-          if (previousException != null) {
+        if (attempt == RETRY)
+        {
+          if (previousException != null)
+          {
             _loader.abort(new Loader.ConnectionError(
-                    String.format(
-                            "File could not be uploaded to remote stage " +
-                            "after retrying %d times: %s", RETRY,
-                            _file.getCanonicalPath()),
-                    Utils.getCause(previousException)));
-          } else {
+                String.format(
+                    "File could not be uploaded to remote stage " +
+                    "after retrying %d times: %s", RETRY,
+                    _file.getCanonicalPath()),
+                Utils.getCause(previousException)));
+          }
+          else
+          {
             _loader.abort(new Loader.ConnectionError(
-                    String.format(
-                            "File could not be uploaded to remote stage " +
-                            "after retrying %d times: %s", RETRY,
-                            _file.getCanonicalPath())));
+                String.format(
+                    "File could not be uploaded to remote stage " +
+                    "after retrying %d times: %s", RETRY,
+                    _file.getCanonicalPath())));
           }
           break;
         }
 
-        if (attempt > 0) {
+        if (attempt > 0)
+        {
           LOGGER.debug("Will retry PUT after {} seconds",
-                                 Math.pow(2, attempt));
-          Thread.sleep(1000 * ((int)Math.pow(2, attempt)));
+                       Math.pow(2, attempt));
+          Thread.sleep(1000 * ((int) Math.pow(2, attempt)));
         }
 
         // In test mode force fail first file
-        if (_loader._testMode) {
+        if (_loader._testMode)
+        {
           // TEST MODE
-          if (attempt < 2) {
+          if (attempt < 2)
+          {
             ((SnowflakeConnectionV1) _loader.getPutConnection())
                 .setInjectFileUploadFailure(_file.getName());
           }
-          else {
+          else
+          {
             // so that retry now succeeds.
             ((SnowflakeConnectionV1) _loader.getPutConnection())
                 .setInjectFileUploadFailure(null);
@@ -97,7 +112,7 @@ public class FileUploader implements Runnable {
 
 
         String putStatement = "PUT "
-                              + (attempt > 0 ? "/* retry:"+attempt+" */ " : "")
+                              + (attempt > 0 ? "/* retry:" + attempt + " */ " : "")
                               + "'file://"
                               + _file.getCanonicalPath().replaceAll("\\\\", "\\\\\\\\")
                               + "' '"
@@ -107,7 +122,7 @@ public class FileUploader implements Runnable {
         if (_loader._compressDataBeforePut)
         {
           putStatement += " auto_compress=false"
-                        + " SOURCE_COMPRESSION=gzip";
+                          + " SOURCE_COMPRESSION=gzip";
         }
         else if (_loader._compressFileByPut)
         {
@@ -120,7 +135,8 @@ public class FileUploader implements Runnable {
         }
 
         Statement statement = _loader.getPutConnection().createStatement();
-        try {
+        try
+        {
           LOGGER.debug("Put Statement start: {}", putStatement);
           statement.execute(putStatement);
           LOGGER.debug("Put Statement end: {}", putStatement);
@@ -129,58 +145,71 @@ public class FileUploader implements Runnable {
           putResult.next();
 
           String file = localSeparator(
-                  putResult.getString(
-                          SnowflakeFileTransferAgent.UploadColumns.source.name()));
+              putResult.getString(
+                  SnowflakeFileTransferAgent.UploadColumns.source.name()));
           String status = putResult.getString(
-                  SnowflakeFileTransferAgent.UploadColumns.status.name());
+              SnowflakeFileTransferAgent.UploadColumns.status.name());
           String message = putResult.getString(
-                  SnowflakeFileTransferAgent.UploadColumns.message.name());
+              SnowflakeFileTransferAgent.UploadColumns.message.name());
 
           if (status != null && status.equals(
-                  SnowflakeFileTransferAgent.ResultStatus.UPLOADED.name())) {
+              SnowflakeFileTransferAgent.ResultStatus.UPLOADED.name()))
+          {
             // UPLOAD is success
             _file.delete();
             break;
-          } else {
+          }
+          else
+          {
             // The log level should be WARNING for a single upload failure.
             if (message.startsWith("Simulated upload failure"))
             {
               LOGGER.debug("Failed to upload a file:"
-                      + " status={},"
-                      + " filename={},"
-                      + " message={}",
-                  status, file, message);
+                           + " status={},"
+                           + " filename={},"
+                           + " message={}",
+                           status, file, message);
             }
             else
             {
               LOGGER.debug("Failed to upload a file:"
-                      + " status={},"
-                      + " filename={},"
-                      + " message={}",
-                  status, file, message);
+                           + " status={},"
+                           + " filename={},"
+                           + " message={}",
+                           status, file, message);
             }
           }
-        } catch (Throwable t) {
+        }
+        catch (Throwable t)
+        {
           // The log level for unknown error is set to SEVERE
           LOGGER.error(String.format(
-                  "Failed to PUT on attempt: attempt=[%s], "
-                  +"Message=[%s]", attempt, t.getMessage()), t.getCause());
+              "Failed to PUT on attempt: attempt=[%s], "
+              + "Message=[%s]", attempt, t.getMessage()), t.getCause());
           previousException = t;
         }
       }
-    } catch (Throwable t) {
+    }
+    catch (Throwable t)
+    {
       LOGGER.error("PUT exception", t);
       _loader.abort(new Loader.ConnectionError(t.getMessage(), t.getCause()));
-    } finally {
+    }
+    finally
+    {
       _loader.throttleDown();
     }
   }
 
-  public void join() {
+  public void join()
+  {
     LOGGER.debug("");
-    try {
+    try
+    {
       _thread.join(0);
-    } catch (InterruptedException ex) {
+    }
+    catch (InterruptedException ex)
+    {
       LOGGER.error(ex.getMessage(), ex);
     }
   }
@@ -189,28 +218,39 @@ public class FileUploader implements Runnable {
   /**
    * convert any back slashes to forward slashes if necessary when converting
    * a local filename to a one suitable for S3
-   * 
+   *
    * @param fname a file name to PUT
    * @return A fname string for S3
    */
-  private String remoteSeparator(String fname) {
+  private String remoteSeparator(String fname)
+  {
     if (File.separatorChar == '\\')
+    {
       return fname.replace("\\", "/");
+    }
     else
+    {
       return fname;
+    }
   }
 
   /**
    * convert any forward slashes to back slashes if necessary when converting
    * a S3 file name to a local file name
+   *
    * @param fname a file name to PUT
    * @return A fname string for the local FS (Windows/other Unix like OS)
    */
-  private String localSeparator(String fname) {
+  private String localSeparator(String fname)
+  {
     if (File.separatorChar == '\\')
+    {
       return fname.replace("/", "\\");
+    }
     else
+    {
       return fname;
+    }
   }
 }
 

@@ -53,7 +53,8 @@ public class StatementIT extends BaseJDBCTest
     try
     {
       statement.setFetchDirection(ResultSet.FETCH_REVERSE);
-    } catch (SQLFeatureNotSupportedException e)
+    }
+    catch (SQLFeatureNotSupportedException e)
     {
       assertTrue(true);
     }
@@ -115,7 +116,8 @@ public class StatementIT extends BaseJDBCTest
     try
     {
       statement.executeQuery("select count(*) from table(generator(timeLimit => 100))");
-    } catch (SQLException e)
+    }
+    catch (SQLException e)
     {
       assertTrue(true);
       assertEquals(SqlState.QUERY_CANCELED, e.getSQLState());
@@ -230,7 +232,7 @@ public class StatementIT extends BaseJDBCTest
     statement.execute("alter session set JDBC_EXECUTE_RETURN_COUNT_FOR_DML = true");
 
     statement.execute("create or replace table test_update(cola number, colb string) " +
-        "as select 1, 'str1'");
+                      "as select 1, 'str1'");
 
     statement.execute("insert into test_update values(2, 'str2')");
 
@@ -263,8 +265,8 @@ public class StatementIT extends BaseJDBCTest
   {
     Connection connection = getConnection();
     String mergeSQL = "merge into target using source on target.id = source.id "
-        + "when matched and source.sb =22 then update set ta = 'newStr' "
-        + "when not matched then insert (ta, tb) values (source.sa, source.sb)";
+                      + "when matched and source.sb =22 then update set ta = 'newStr' "
+                      + "when not matched then insert (ta, tb) values (source.sa, source.sb)";
     Statement statement = connection.createStatement();
     statement.execute("create or replace table target(id integer, ta string, tb integer)");
     statement.execute("create or replace table source(id integer, sa string, sb integer)");
@@ -290,10 +292,10 @@ public class StatementIT extends BaseJDBCTest
   {
     Connection connection = getConnection();
     String multiInsertionSQL = " insert all "
-        + "into foo "
-        + "into foo1 "
-        + "into bar (b1, b2, b3) values (s3, s2, s1) "
-        + "select s1, s2, s3 from source";
+                               + "into foo "
+                               + "into foo1 "
+                               + "into bar (b1, b2, b3) values (s3, s2, s1) "
+                               + "select s1, s2, s3 from source";
 
     Statement statement = connection.createStatement();
     statement.execute("create or replace table foo (f1 integer, f2 integer, f3 integer)");
@@ -335,16 +337,16 @@ public class StatementIT extends BaseJDBCTest
       rset.getString(1);
       fail("Should raise No row found exception");
     }
-    catch(SQLException ex)
+    catch (SQLException ex)
     {
       assertThat("No row found error", ex.getErrorCode(),
-          equalTo(ROW_DOES_NOT_EXIST.getMessageCode()));
+                 equalTo(ROW_DOES_NOT_EXIST.getMessageCode()));
     }
     int cnt = 0;
-    while(rset.next())
+    while (rset.next())
     {
       assertThat("uploaded file name",
-          rset.getString(1), equalTo(fileName));
+                 rset.getString(1), equalTo(fileName));
       ++cnt;
     }
     assertThat("number of files", cnt, equalTo(1));
@@ -369,7 +371,7 @@ public class StatementIT extends BaseJDBCTest
     statement.addBatch("create or replace table test_batch(a string, b integer)");
     statement.addBatch("insert into test_batch values('str1', 1), ('str2', 2)");
     statement.addBatch("update test_batch set test_batch.b = src.b + 5 from " +
-        "(select 'str1' as a, 2 as b) src where test_batch.a = src.a");
+                       "(select 'str1' as a, 2 as b) src where test_batch.a = src.a");
 
     int updateCounts[] = statement.executeBatch();
     connection.commit();
@@ -399,7 +401,8 @@ public class StatementIT extends BaseJDBCTest
       statement.executeBatch();
 
       fail();
-    } catch (BatchUpdateException e)
+    }
+    catch (BatchUpdateException e)
     {
       updateCounts = e.getUpdateCounts();
       assertThat(e.getErrorCode(), is(
@@ -497,7 +500,8 @@ public class StatementIT extends BaseJDBCTest
         Statement statement = connection.createStatement();
         statement.executeUpdate(testCommand);
         fail("TestCommand: " + testCommand + " is expected to be failed to execute");
-      } catch (SQLException e)
+      }
+      catch (SQLException e)
       {
         assertThat(e.getErrorCode(), is(ErrorCode.
             UNSUPPORTED_STATEMENT_TYPE_IN_EXECUTION_API.getMessageCode()));
@@ -543,12 +547,12 @@ public class StatementIT extends BaseJDBCTest
     Statement statement = connection.createStatement();
 
     statement.execute("create or replace table test_multi_txn(c1 number, c2 string)" +
-        " as select 10, 'z'");
+                      " as select 10, 'z'");
 
     String multiStmtQuery = "begin;\n" +
-        "delete from test_multi_txn;\n" +
-        "insert into test_multi_txn values (1, 'a'), (2, 'b');\n" +
-        "commit";
+                            "delete from test_multi_txn;\n" +
+                            "insert into test_multi_txn values (1, 'a'), (2, 'b');\n" +
+                            "commit";
 
     boolean hasResultSet = statement.execute(multiStmtQuery);
     // first statement
@@ -589,12 +593,12 @@ public class StatementIT extends BaseJDBCTest
     Statement statement = connection.createStatement();
 
     statement.execute("create or replace table test_multi_txn_rb(c1 number, c2 string)" +
-        " as select 10, 'z'");
+                      " as select 10, 'z'");
 
     String multiStmtQuery = "begin;\n" +
-        "delete from test_multi_txn_rb;\n" +
-        "rollback;\n" +
-        "select count(*) from test_multi_txn_rb";
+                            "delete from test_multi_txn_rb;\n" +
+                            "rollback;\n" +
+                            "select count(*) from test_multi_txn_rb";
 
     boolean hasResultSet = statement.execute(multiStmtQuery);
     // first statement
@@ -636,8 +640,8 @@ public class StatementIT extends BaseJDBCTest
     enableMultiStmt(connection);
     Statement statement = connection.createStatement();
     String multiStmtQuery = "create or replace temporary table test_multi (cola int);\n" +
-        "insert into test_multi VALUES (1), (2);\n" +
-        "select cola from test_multi order by cola asc";
+                            "insert into test_multi VALUES (1), (2);\n" +
+                            "select cola from test_multi order by cola asc";
 
     boolean hasResultSet = statement.execute(multiStmtQuery);
     // first statement
@@ -675,8 +679,8 @@ public class StatementIT extends BaseJDBCTest
     enableMultiStmt(connection);
     Statement statement = connection.createStatement();
     String multiStmtQuery = "create or replace temporary table test_multi (cola int);\n" +
-        "insert into test_multi VALUES (1), (2);\n" +
-        "select cola from test_multi order by cola asc";
+                            "insert into test_multi VALUES (1), (2);\n" +
+                            "select cola from test_multi order by cola asc";
 
     int updateCount = statement.executeUpdate(multiStmtQuery);
     // first statement
@@ -714,9 +718,9 @@ public class StatementIT extends BaseJDBCTest
     enableMultiStmt(connection);
     Statement statement = connection.createStatement();
     String multiStmtQuery = "select 1;\n" +
-        "create or replace temporary table test_multi (cola int);\n" +
-        "insert into test_multi VALUES (1), (2);\n" +
-        "select cola from test_multi order by cola asc";
+                            "create or replace temporary table test_multi (cola int);\n" +
+                            "insert into test_multi VALUES (1), (2);\n" +
+                            "select cola from test_multi order by cola asc";
 
     ResultSet rs = statement.executeQuery(multiStmtQuery);
     // first statement
@@ -762,16 +766,19 @@ public class StatementIT extends BaseJDBCTest
     enableMultiStmt(connection);
     Statement statement = connection.createStatement();
     String multiStmtQuery = "select 1;\n" +
-        "create or replace temporary table test_multi (cola int);\n" +
-        "insert into test_multi VALUES (1), (2);\n" +
-        "select cola from test_multi order by cola asc";
+                            "create or replace temporary table test_multi (cola int);\n" +
+                            "insert into test_multi VALUES (1), (2);\n" +
+                            "select cola from test_multi order by cola asc";
 
-    try {
+    try
+    {
       statement.executeUpdate(multiStmtQuery);
       fail("executeUpdate should have failed because the first statement yields a result set");
-    } catch (SQLException ex) {
+    }
+    catch (SQLException ex)
+    {
       assertThat(ex.getErrorCode(),
-          is(ErrorCode.UPDATE_FIRST_RESULT_NOT_UPDATE_COUNT.getMessageCode()));
+                 is(ErrorCode.UPDATE_FIRST_RESULT_NOT_UPDATE_COUNT.getMessageCode()));
     }
 
     statement.close();
@@ -786,15 +793,18 @@ public class StatementIT extends BaseJDBCTest
     enableMultiStmt(connection);
     Statement statement = connection.createStatement();
     String multiStmtQuery = "create or replace temporary table test_multi (cola int);\n" +
-        "insert into test_multi VALUES (1), (2);\n" +
-        "select cola from test_multi order by cola asc";
+                            "insert into test_multi VALUES (1), (2);\n" +
+                            "select cola from test_multi order by cola asc";
 
-    try {
+    try
+    {
       statement.executeQuery(multiStmtQuery);
       fail("executeQuery should have failed because the first statement yields an update count");
-    } catch (SQLException ex) {
+    }
+    catch (SQLException ex)
+    {
       assertThat(ex.getErrorCode(),
-          is(ErrorCode.QUERY_FIRST_RESULT_NOT_RESULT_SET.getMessageCode()));
+                 is(ErrorCode.QUERY_FIRST_RESULT_NOT_RESULT_SET.getMessageCode()));
     }
 
     statement.close();
@@ -856,7 +866,8 @@ public class StatementIT extends BaseJDBCTest
       statement.execute("garbage text; set testvar = 2");
       fail("Expected a compiler error to be thrown");
     }
-    catch (SQLException ex) {
+    catch (SQLException ex)
+    {
       assertEquals(SqlState.SYNTAX_ERROR_OR_ACCESS_RULE_VIOLATION, ex.getSQLState());
     }
 
@@ -882,13 +893,14 @@ public class StatementIT extends BaseJDBCTest
       statement.execute("set testvar = 1; select nonexistent_column from nonexistent_table; set testvar = 2");
       fail("Expected an execution error to be thrown");
     }
-    catch (SQLException ex) {
+    catch (SQLException ex)
+    {
       assertEquals(SqlState.PLSQL_ERROR, ex.getSQLState());
     }
 
     ResultSet rs = statement.executeQuery("select $testvar");
     rs.next();
-    assertEquals( 1, rs.getInt(1));
+    assertEquals(1, rs.getInt(1));
 
     statement.close();
     connection.close();
@@ -903,7 +915,8 @@ public class StatementIT extends BaseJDBCTest
     Statement statement = connection.createStatement();
 
     String entry = "success";
-    statement.execute("create or replace temporary table test_multi (cola string); insert into test_multi values ('" + entry + "')");
+    statement.execute(
+        "create or replace temporary table test_multi (cola string); insert into test_multi values ('" + entry + "')");
     // temporary table should persist outside of the above statement
     ResultSet rs = statement.executeQuery("select * from test_multi");
     rs.next();
@@ -1103,8 +1116,8 @@ public class StatementIT extends BaseJDBCTest
     Connection connection = getConnection();
     Statement statement = connection.createStatement();
     String multiStmtQuery = "create or replace temporary table test_multi (cola int);\n" +
-        "insert into test_multi VALUES (1), (2);\n" +
-        "select cola from test_multi order by cola asc";
+                            "insert into test_multi VALUES (1), (2);\n" +
+                            "select cola from test_multi order by cola asc";
 
     try
     {
@@ -1171,12 +1184,12 @@ public class StatementIT extends BaseJDBCTest
     statement.execute("alter session set ENABLE_JAVASCRIPT_STORED_PROCEDURE_CREATION=true");
 
     statement.execute("create or replace procedure SP()\n"
-    + "returns string not null\n"
-    + "language javascript\n"
-    + "as $$\n"
-    + "  snowflake.execute({sqlText:'select seq4() from table(generator(rowcount=>5))'});\n"
-    + "  return 'done';\n"
-    + "$$");
+                      + "returns string not null\n"
+                      + "language javascript\n"
+                      + "as $$\n"
+                      + "  snowflake.execute({sqlText:'select seq4() from table(generator(rowcount=>5))'});\n"
+                      + "  return 'done';\n"
+                      + "$$");
 
     assertTrue(statement.execute("call SP()"));
     ResultSet rs = statement.getResultSet();

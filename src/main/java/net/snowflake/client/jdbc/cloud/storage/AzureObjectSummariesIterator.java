@@ -25,21 +25,21 @@ public class AzureObjectSummariesIterator implements Iterator<StorageObjectSumma
    * lostBlobs method
    * @param azCloudBlobIterable an iterable set of ListBlobItems
    */
-  public AzureObjectSummariesIterator(Iterable<ListBlobItem>  azCloudBlobIterable)
+  public AzureObjectSummariesIterator(Iterable<ListBlobItem> azCloudBlobIterable)
   {
     itemIterator = azCloudBlobIterable.iterator();
   }
 
   public boolean hasNext()
   {
-    return  itemIterator.hasNext();
+    return itemIterator.hasNext();
   }
 
   public StorageObjectSummary next()
   {
     ListBlobItem listBlobItem = itemIterator.next();
 
-    if(!(listBlobItem instanceof CloudBlob))
+    if (!(listBlobItem instanceof CloudBlob))
     {
       // The only other possible type would a CloudDirectory
       // This should never happen since we are listing items as a flat list
@@ -49,7 +49,8 @@ public class AzureObjectSummariesIterator implements Iterator<StorageObjectSumma
     return StorageObjectSummary.createFromAzureListBlobItem(listBlobItem);
   }
 
-  public void remove() {
+  public void remove()
+  {
     throw new UnsupportedOperationException("remove() method not supported");
   }
 

@@ -101,7 +101,7 @@ public class SFStatement
    * @throws SFException if too many parameters for a statement
    */
   public void addProperty(String propertyName, Object propertyValue)
-      throws SFException
+  throws SFException
   {
     statementParametersMap.put(propertyName, propertyValue);
 
@@ -139,7 +139,7 @@ public class SFStatement
     if (sql == null || sql.isEmpty())
     {
       throw new SnowflakeSQLException(SqlState.SQL_STATEMENT_NOT_YET_COMPLETE,
-          ErrorCode.INVALID_SQL.getMessageCode(), sql);
+                                      ErrorCode.INVALID_SQL.getMessageCode(), sql);
 
     }
   }
@@ -158,7 +158,7 @@ public class SFStatement
       Map<String, ParameterBindingDTO> parametersBinding,
       boolean describeOnly,
       CallingMethod caller)
-      throws SQLException, SFException
+  throws SQLException, SFException
   {
     sanityCheckQuery(sql);
 
@@ -198,9 +198,9 @@ public class SFStatement
     describeJobUUID = baseResultSet.getQueryId();
 
     return new SFStatementMetaData(baseResultSet.getMetaData(),
-        baseResultSet.getStatementType(),
-        baseResultSet.getNumberOfBinds(),
-        baseResultSet.isArrayBindSupported());
+                                   baseResultSet.getStatementType(),
+                                   baseResultSet.getNumberOfBinds(),
+                                   baseResultSet.isArrayBindSupported());
   }
 
   /**
@@ -222,7 +222,7 @@ public class SFStatement
       boolean describeOnly,
       boolean internal,
       CallingMethod caller)
-      throws SQLException, SFException
+  throws SQLException, SFException
   {
     resetState();
 
@@ -237,16 +237,16 @@ public class SFStatement
     }
 
     Object result = executeHelper(sql,
-        StmtUtil.SF_MEDIA_TYPE,
-        parameterBindings,
-        describeOnly,
-        internal);
+                                  StmtUtil.SF_MEDIA_TYPE,
+                                  parameterBindings,
+                                  describeOnly,
+                                  internal);
 
     if (result == null)
     {
       throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
-          ErrorCode.INTERNAL_ERROR.getMessageCode(),
-          "got null result");
+                                      ErrorCode.INTERNAL_ERROR.getMessageCode(),
+                                      "got null result");
     }
 
     /*
@@ -337,14 +337,14 @@ public class SFStatement
         catch (SFException ex)
         {
           throw new SnowflakeSQLException(ex, ex.getSqlState(),
-              ex.getVendorCode(), ex.getParams());
+                                          ex.getVendorCode(), ex.getParams());
         }
         return null;
       }
     }
 
     executor.schedule(new TimeBombTask(this), this.queryTimeout,
-        TimeUnit.SECONDS);
+                      TimeUnit.SECONDS);
   }
 
   /**
@@ -364,7 +364,7 @@ public class SFStatement
                               Map<String, ParameterBindingDTO> bindValues,
                               boolean describeOnly,
                               boolean internal)
-      throws SnowflakeSQLException, SFException
+  throws SnowflakeSQLException, SFException
   {
     ScheduledExecutorService executor = null;
 
@@ -387,7 +387,7 @@ public class SFStatement
         if (this.requestId != null)
         {
           throw new SnowflakeSQLException(SqlState.FEATURE_NOT_SUPPORTED,
-              ErrorCode.STATEMENT_ALREADY_RUNNING_QUERY.getMessageCode());
+                                          ErrorCode.STATEMENT_ALREADY_RUNNING_QUERY.getMessageCode());
         }
 
         this.requestId = UUID.randomUUID().toString();
@@ -397,7 +397,7 @@ public class SFStatement
       }
 
       EventUtil.triggerStateTransition(BasicEvent.QueryState.QUERY_STARTED,
-          String.format(QueryState.QUERY_STARTED.getArgString(), requestId));
+                                       String.format(QueryState.QUERY_STARTED.getArgString(), requestId));
 
       // if there are a large number of bind values, we should upload them to stage
       // instead of passing them in the payload (if enabled)
@@ -420,7 +420,7 @@ public class SFStatement
           TelemetryData errorLog = TelemetryUtil.buildJobData(this.requestId, ex.type.field, 1);
           this.session.getTelemetryClient().tryAddLogToBatch(errorLog);
           IncidentUtil.generateIncident(session, "Failed to upload binds to stage",
-              null, requestId, null, ex);
+                                        null, requestId, null, ex);
         }
       }
 
@@ -512,7 +512,9 @@ public class SFStatement
             logger.debug("Session got renewed, will retry");
           }
           else
+          {
             throw ex;
+          }
         }
       }
       while (sessionRenewed && !canceling.get());
@@ -523,7 +525,7 @@ public class SFStatement
       {
         SFException sfe =
             IncidentUtil.generateIncidentWithException(session, this.requestId,
-                null, ErrorCode.STATEMENT_CLOSED);
+                                                       null, ErrorCode.STATEMENT_CLOSED);
 
         throw sfe;
       }
@@ -594,14 +596,14 @@ public class SFStatement
    * @throws SFException           if statement is already closed
    */
   private void cancelHelper(String sql, String mediaType)
-      throws SnowflakeSQLException, SFException
+  throws SnowflakeSQLException, SFException
   {
     synchronized (this)
     {
       if (isClosed)
       {
         throw new SFException(ErrorCode.INTERNAL_ERROR,
-            "statement already closed");
+                              "statement already closed");
       }
     }
 
@@ -639,7 +641,7 @@ public class SFStatement
   {
     SFStatementType statementType = StmtUtil.checkStageManageCommand(sql);
     return statementType == SFStatementType.PUT ||
-        statementType == SFStatementType.GET;
+           statementType == SFStatementType.GET;
   }
 
   /**
@@ -657,7 +659,7 @@ public class SFStatement
                                  Map<String, ParameterBindingDTO>
                                      parametersBinding,
                                  CallingMethod caller)
-      throws SQLException, SFException
+  throws SQLException, SFException
   {
     sanityCheckQuery(sql);
 
@@ -681,7 +683,7 @@ public class SFStatement
   }
 
   private SFBaseResultSet executeFileTransfer(String sql) throws SQLException,
-      SFException
+                                                                 SFException
   {
     session.injectedDelay();
 
@@ -702,7 +704,7 @@ public class SFStatement
       childResults = Collections.emptyList();
 
       logger.debug("Number of cols: {}",
-          resultSet.getMetaData().getColumnCount());
+                   resultSet.getMetaData().getColumnCount());
       logger.debug("Completed transferring data");
       return resultSet;
     }
@@ -720,7 +722,7 @@ public class SFStatement
     if (requestId != null)
     {
       EventUtil.triggerStateTransition(BasicEvent.QueryState.QUERY_ENDED,
-          String.format(QueryState.QUERY_ENDED.getArgString(), requestId));
+                                       String.format(QueryState.QUERY_ENDED.getArgString(), requestId));
     }
 
     resultSet = null;
@@ -873,7 +875,7 @@ public class SFStatement
     // clean up current result, if exists
     if (resultSet != null &&
         (current == Statement.CLOSE_CURRENT_RESULT ||
-            current == Statement.CLOSE_ALL_RESULTS))
+         current == Statement.CLOSE_ALL_RESULTS))
     {
       resultSet.close();
     }

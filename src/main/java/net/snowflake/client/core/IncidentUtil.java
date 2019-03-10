@@ -19,6 +19,7 @@ import com.yammer.metrics.Metrics;
 import com.yammer.metrics.core.Clock;
 import com.yammer.metrics.core.VirtualMachineMetrics;
 import com.yammer.metrics.reporting.MetricsServlet;
+
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -27,6 +28,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.zip.GZIPOutputStream;
+
 import org.joda.time.DateTime;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -34,7 +36,6 @@ import net.snowflake.client.log.SFLoggerFactory;
 import static net.snowflake.client.core.Incident.generateIncidentId;
 
 /**
- *
  * @author jrosen
  */
 public class IncidentUtil
@@ -67,46 +68,47 @@ public class IncidentUtil
   public static final String INC_DUMP_FILE_NAME = "sf_incident_";
   public static final String INC_DUMP_FILE_EXT = ".dmp.gz";
 
-   /**
+  /**
    * Creates an SFException without a cause to be thrown and generates/triggers
    * an incident based on that exception with the specified signature.
-   * @param session session that will generate incident
+   *
+   * @param session   session that will generate incident
    * @param requestId request id
-   * @param jobUuid job uuid
+   * @param jobUuid   job uuid
    * @param signature incident signature for identification
    * @param errorCode error code that caused the incident
-   * @param params option parameters
+   * @param params    option parameters
    * @return generated SFException
    */
   public static SFException generateIncidentWithSignatureAndException(
-          SFSession session,
-          String requestId,
-          String jobUuid,
-          String signature,
-          ErrorCode errorCode,
-          Object... params)
+      SFSession session,
+      String requestId,
+      String jobUuid,
+      String signature,
+      ErrorCode errorCode,
+      Object... params)
   {
     return generateIncidentWithSignatureAndException(
-            session != null ?
-                session.getSessionToken() : null,
-            session != null ?
-                session.getServerUrl() : null,
-            requestId,
-            jobUuid,
-            signature,
-            errorCode,
-            params);
+        session != null ?
+        session.getSessionToken() : null,
+        session != null ?
+        session.getServerUrl() : null,
+        requestId,
+        jobUuid,
+        signature,
+        errorCode,
+        params);
   }
 
 
   public static SFException generateIncidentWithSignatureAndException(
-          String sessionToken,
-          String serverUrl,
-          String requestId,
-          String jobUuid,
-          String signature,
-          ErrorCode errorCode,
-          Object... params)
+      String sessionToken,
+      String serverUrl,
+      String requestId,
+      String jobUuid,
+      String signature,
+      ErrorCode errorCode,
+      Object... params)
   {
     SFException sfe = new SFException(errorCode, params);
 
@@ -127,7 +129,7 @@ public class IncidentUtil
     if (sessionToken != null && serverUrl != null)
     {
 
-      Map<String,Object> incidentInfo =
+      Map<String, Object> incidentInfo =
           IncidentUtil.buildIncidentReport(sessionToken,
                                            serverUrl,
                                            signature,
@@ -142,8 +144,8 @@ public class IncidentUtil
     else
     {
       logger.debug("Failed to generate incident, sessionToken valid={} "
-              + "serverUrl={}",
-                  sessionToken != null, serverUrl);
+                   + "serverUrl={}",
+                   sessionToken != null, serverUrl);
     }
 
     return sfe;
@@ -152,11 +154,12 @@ public class IncidentUtil
   /**
    * Creates an SFException without a cause to be thrown and generates/triggers
    * an incident based on that exception.
-   * @param session session that will generate incident
+   *
+   * @param session   session that will generate incident
    * @param requestId request id
-   * @param jobUuid job uuid
+   * @param jobUuid   job uuid
    * @param errorCode error code that caused the incident
-   * @param params option parameters
+   * @param params    option parameters
    * @return generated SFException
    */
   public static SFException generateIncidentWithException(SFSession session,
@@ -166,9 +169,9 @@ public class IncidentUtil
                                                           Object... params)
   {
     return generateIncidentWithException(session != null ?
-                                            session.getSessionToken() : null,
+                                         session.getSessionToken() : null,
                                          session != null ?
-                                            session.getServerUrl() : null,
+                                         session.getServerUrl() : null,
                                          requestId,
                                          jobUuid,
                                          errorCode,
@@ -183,9 +186,9 @@ public class IncidentUtil
                                                           Object... params)
   {
     return generateIncidentWithException(session != null ?
-                                            session.getSessionToken() : null,
+                                         session.getSessionToken() : null,
                                          session != null ?
-                                            session.getServerUrl() : null,
+                                         session.getServerUrl() : null,
                                          requestId,
                                          jobUuid,
                                          cause,
@@ -197,13 +200,14 @@ public class IncidentUtil
   /**
    * Creates an SFException to be thrown and generates/triggers an incident
    * based on that exception.
+   *
    * @param sessionToken session token
-   * @param serverUrl snowflake url
-   * @param requestId request id
-   * @param jobUuid job uuid
-   * @param cause cause of the incident
-   * @param errorCode error code of the incident
-   * @param params optional parameters
+   * @param serverUrl    snowflake url
+   * @param requestId    request id
+   * @param jobUuid      job uuid
+   * @param cause        cause of the incident
+   * @param errorCode    error code of the incident
+   * @param params       optional parameters
    * @return generated SFException
    */
   public static SFException generateIncidentWithException(String sessionToken,
@@ -232,7 +236,7 @@ public class IncidentUtil
     else
     {
       logger.debug("Attempting to generate incident and"
-              + " SFException with null cause");
+                   + " SFException with null cause");
     }
 
     SFException sfe = new SFException(cause, errorCode, params);
@@ -240,7 +244,7 @@ public class IncidentUtil
     // Build message for GS Incident reporting
     if (sessionToken != null && serverUrl != null)
     {
-      Map<String,Object> incidentInfo =
+      Map<String, Object> incidentInfo =
           IncidentUtil.buildIncidentReport(sessionToken,
                                            serverUrl,
                                            causeStr,
@@ -255,8 +259,8 @@ public class IncidentUtil
     else
     {
       logger.debug("Failed to generate incident, sessionToken valid={} "
-              + "serverUrl={}",
-                  sessionToken != null, serverUrl);
+                   + "serverUrl={}",
+                   sessionToken != null, serverUrl);
     }
 
     return sfe;
@@ -288,7 +292,7 @@ public class IncidentUtil
     if (sessionToken != null && serverUrl != null)
     {
 
-      Map<String,Object> incidentInfo =
+      Map<String, Object> incidentInfo =
           IncidentUtil.buildIncidentReport(sessionToken,
                                            serverUrl,
                                            causeStr,
@@ -303,8 +307,8 @@ public class IncidentUtil
     else
     {
       logger.debug("Failed to generate incident, sessionToken valid={} "
-              + "serverUrl={}",
-                  sessionToken != null, serverUrl);
+                   + "serverUrl={}",
+                   sessionToken != null, serverUrl);
     }
 
     return sfe;
@@ -332,13 +336,14 @@ public class IncidentUtil
   /**
    * Generates an incident report based on the parameters passed in and
    * triggers an incident with the EventHandler
+   *
    * @param sessionToken session token
-   * @param serverUrl server url
-   * @param signature incident signature
-   * @param detail incident detail
-   * @param requestId request id
-   * @param jobUuid job uuid
-   * @param cause cause of incident
+   * @param serverUrl    server url
+   * @param signature    incident signature
+   * @param detail       incident detail
+   * @param requestId    request id
+   * @param jobUuid      job uuid
+   * @param cause        cause of incident
    */
   public static void generateIncident(String sessionToken,
                                       String serverUrl,
@@ -364,13 +369,13 @@ public class IncidentUtil
     else
     {
       logger.debug("Attempting to generate incident without cause, " +
-          "signature={}, detail={}", signature, detail);
+                   "signature={}, detail={}", signature, detail);
     }
 
     if (sessionToken != null && serverUrl != null)
     {
       // Build message for GS Incident reporting
-      Map<String,Object> incidentInfo =
+      Map<String, Object> incidentInfo =
           IncidentUtil.buildIncidentReport(sessionToken,
                                            serverUrl,
                                            signature,
@@ -385,13 +390,14 @@ public class IncidentUtil
     else
     {
       logger.debug("Failed to generate incident, sessionToken valid={} "
-              + "serverUrl={}",
-                  sessionToken != null, serverUrl);
+                   + "serverUrl={}",
+                   sessionToken != null, serverUrl);
     }
   }
 
   /**
    * Builds an incident report to be serialized for consumption by Global Services.
+   *
    * @param signature
    * @param detail
    * @param requestId
@@ -399,20 +405,20 @@ public class IncidentUtil
    * @param cause
    * @return
    */
-  private static Map<String,Object> buildIncidentReport(String sessionToken,
-                                                        String serverUrl,
-                                                        String signature,
-                                                        String detail,
-                                                        String requestId,
-                                                        String jobUuid,
-                                                        String cause)
+  private static Map<String, Object> buildIncidentReport(String sessionToken,
+                                                         String serverUrl,
+                                                         String signature,
+                                                         String detail,
+                                                         String requestId,
+                                                         String jobUuid,
+                                                         String cause)
   {
     // No session, no incident.
     Preconditions.checkArgument(sessionToken != null && serverUrl != null);
 
-    Map<String,Object> incident = new HashMap<>();
-    Map<String,Object> incidentInfo = new HashMap<>();
-    Map<String,Object> incidentReport = new HashMap<>();
+    Map<String, Object> incident = new HashMap<>();
+    Map<String, Object> incidentInfo = new HashMap<>();
+    Map<String, Object> incidentReport = new HashMap<>();
 
     // Record environment info
     incidentReport.put(CLIENT_TYPE, LoginInfoDTO.SF_JDBC_APP_ID);
@@ -438,7 +444,7 @@ public class IncidentUtil
 
     String detailMessage = (detail == null && cause == null) ? null :
                            ((detail == null ? "" : (detail + " : ")) +
-                           (cause == null  ? "" : cause));
+                            (cause == null ? "" : cause));
 
     // First N lines of the stacktrace
     StackTraceElement[] strace = new StackTraceElement[STACK_TRACE_SIZE];
@@ -483,6 +489,7 @@ public class IncidentUtil
   /**
    * Produce a one line description of the throwable, suitable for error message
    * and log printing.
+   *
    * @param thrown thrown object
    * @return description of the thrown object
    */
@@ -499,6 +506,7 @@ public class IncidentUtil
 
   /**
    * Dumps JVM metrics for this process.
+   *
    * @param incidentId incident id
    */
   public static void dumpVmMetrics(String incidentId)
@@ -550,14 +558,14 @@ public class IncidentUtil
 
       // Thread dump next....
       writer.print("\n\n\n---------------------------  THREAD DUMP "
-          + "---------------------------\n\n");
+                   + "---------------------------\n\n");
       writer.flush();
 
       vm.threadDump(outStream);
 
       logger.debug("Dump file {} is created.", dumpFile);
     }
-    catch(Exception exc)
+    catch (Exception exc)
     {
       logger.error(
           "Unable to write dump file, exception: {}", exc.getMessage());
@@ -572,7 +580,7 @@ public class IncidentUtil
   }
 
   private static void writeVmMetrics(JsonGenerator json, VirtualMachineMetrics vm)
-          throws IOException
+  throws IOException
   {
     json.writeFieldName("jvm");
     json.writeStartObject();
@@ -613,7 +621,7 @@ public class IncidentUtil
       json.writeEndObject();
 
       final Map<String, VirtualMachineMetrics.BufferPoolStats> bufferPoolStats = vm
-              .getBufferPoolStats();
+          .getBufferPoolStats();
       if (!bufferPoolStats.isEmpty())
       {
         json.writeFieldName("buffers");
@@ -623,11 +631,11 @@ public class IncidentUtil
           json.writeStartObject();
           {
             json.writeNumberField("count", bufferPoolStats.get("direct")
-                                  .getCount());
+                .getCount());
             json.writeNumberField("memoryUsed", bufferPoolStats.get("direct")
-                                  .getMemoryUsed());
+                .getMemoryUsed());
             json.writeNumberField("totalCapacity", bufferPoolStats.get("direct")
-                                  .getTotalCapacity());
+                .getTotalCapacity());
           }
           json.writeEndObject();
 
@@ -635,11 +643,11 @@ public class IncidentUtil
           json.writeStartObject();
           {
             json.writeNumberField("count", bufferPoolStats.get("mapped")
-                                  .getCount());
+                .getCount());
             json.writeNumberField("memoryUsed", bufferPoolStats.get("mapped")
-                                  .getMemoryUsed());
+                .getMemoryUsed());
             json.writeNumberField("totalCapacity", bufferPoolStats.get("mapped")
-                                  .getTotalCapacity());
+                .getTotalCapacity());
           }
           json.writeEndObject();
         }
@@ -656,7 +664,7 @@ public class IncidentUtil
       json.writeStartObject();
       {
         for (Map.Entry<Thread.State, Double> entry : vm.threadStatePercentages()
-                .entrySet())
+            .entrySet())
         {
           json.writeNumberField(entry.getKey().toString().toLowerCase(),
                                 entry.getValue());
@@ -668,14 +676,14 @@ public class IncidentUtil
       json.writeStartObject();
       {
         for (Map.Entry<String, VirtualMachineMetrics.GarbageCollectorStats> entry : vm
-                .garbageCollectors()
-                .entrySet())
+            .garbageCollectors()
+            .entrySet())
         {
           json.writeFieldName(entry.getKey());
           json.writeStartObject();
           {
             final VirtualMachineMetrics.GarbageCollectorStats gc = entry
-                    .getValue();
+                .getValue();
             json.writeNumberField("runs", gc.getRuns());
             json.writeNumberField("time", gc.getTime(TimeUnit.MILLISECONDS));
           }

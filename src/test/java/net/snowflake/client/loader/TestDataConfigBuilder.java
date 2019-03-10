@@ -232,7 +232,7 @@ class TestDataConfigBuilder
       for (int i = 0; i < numberOfRows; i++)
       {
         final String json = "{\"key\":" + String.valueOf(rnd.nextInt()) + ","
-            + "\"bar\":" + i + "}";
+                            + "\"bar\":" + i + "}";
         Object[] row = new Object[]
             {
                 i, "foo_" + i, rnd.nextInt() / 3, new Date(),
@@ -257,27 +257,27 @@ class TestDataConfigBuilder
     int submitted = listener.getSubmittedRowCount();
 
     assertThat("submitted rows",
-        submitted, equalTo(numberOfRows));
+               submitted, equalTo(numberOfRows));
     assertThat("_resultListener.counter is not correct",
-        listener.counter.get(), equalTo(numberOfRows));
+               listener.counter.get(), equalTo(numberOfRows));
     assertThat("_resultListener.getErrors() was not 0",
-        listener.getErrors().size(), equalTo(0));
+               listener.getErrors().size(), equalTo(0));
 
     ResultSet rs = testConnection.createStatement().executeQuery(
         String.format("SELECT COUNT(*) AS N"
-            + " FROM LOADER.\"%s\"", tableName));
+                      + " FROM LOADER.\"%s\"", tableName));
 
     rs.next();
     int count = rs.getInt("N");
     assertThat("count is not correct", count, equalTo(numberOfRows));
     assertThat("_resultListener.processed didn't match count",
-        listener.processed.get(), equalTo(count));
+               listener.processed.get(), equalTo(count));
     assertThat("_resultListener.counter didn't match count",
-        listener.counter.get(), equalTo(count));
+               listener.counter.get(), equalTo(count));
     assertThat("_resultListener.getErrors().size() was not 0",
-        listener.getErrors().size(), equalTo(0));
+               listener.getErrors().size(), equalTo(0));
     assertThat("_resultListener.getLastRecord()[0] was not 9999",
-        (Integer) listener.getLastRecord()[0], equalTo(numberOfRows - 1));
+               (Integer) listener.getLastRecord()[0], equalTo(numberOfRows - 1));
     return newDataSet;
   }
 
@@ -311,10 +311,10 @@ class TestDataConfigBuilder
     streamLoader.setProperty(LoaderProperty.copyEmptyFieldAsEmpty, copyEmptyFieldAsEmpty);
     // file bucket size
     streamLoader.setProperty(LoaderProperty.csvFileBucketSize,
-        Long.toString(csvFileBucketSize));
+                             Long.toString(csvFileBucketSize));
     // file batch
     streamLoader.setProperty(LoaderProperty.csvFileSize,
-        Long.toString(csvFileSize));
+                             Long.toString(csvFileSize));
     streamLoader.setProperty(LoaderProperty.compressFileByPut, compressFileByPut);
     streamLoader.setProperty(LoaderProperty.compressDataBeforePut, compressDataBeforePut);
     streamLoader.setProperty(LoaderProperty.compressLevel, compressLevel);

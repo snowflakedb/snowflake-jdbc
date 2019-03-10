@@ -24,19 +24,22 @@ import java.util.UUID;
 public class TelemetryEvent extends JSONObject
 {
 
-  public enum Type{
-      Metric, Log
+  public enum Type
+  {
+    Metric,
+    Log
   }
 
   /**
    * Build metric json object
    */
-  public static class MetricBuilder extends Builder<MetricBuilder> {
+  public static class MetricBuilder extends Builder<MetricBuilder>
+  {
 
 
     public MetricBuilder withException(Exception ex)
     {
-      this.withName("Exception:"+ex.getMessage());
+      this.withName("Exception:" + ex.getMessage());
       this.withValue(1);
       return this;
     }
@@ -67,23 +70,25 @@ public class TelemetryEvent extends JSONObject
   }
 
 
-
   /**
    * Build log json object
    */
-  public static class LogBuilder extends Builder<LogBuilder> {
-    public LogBuilder(){
+  public static class LogBuilder extends Builder<LogBuilder>
+  {
+    public LogBuilder()
+    {
       super(LogBuilder.class);
     }
 
     /**
      * build a log event for an exception including the full stack trace
+     *
      * @param ex
      * @return
      */
     public LogBuilder withException(Exception ex)
     {
-      this.withName("Exception:"+ex.getMessage());
+      this.withName("Exception:" + ex.getMessage());
       StringWriter sw = new StringWriter();
       PrintWriter pw = new PrintWriter(sw);
       ex.printStackTrace(pw);
@@ -94,7 +99,7 @@ public class TelemetryEvent extends JSONObject
 
     public LogBuilder withException(final SFException ex)
     {
-      this.withName("Exception:"+ex.getMessage());
+      this.withName("Exception:" + ex.getMessage());
       StringWriter sw = new StringWriter();
       PrintWriter pw = new PrintWriter(sw);
       ex.printStackTrace(pw);
@@ -131,7 +136,8 @@ public class TelemetryEvent extends JSONObject
 
   }
 
-  private static class Builder<T> {
+  private static class Builder<T>
+  {
     protected final Class<T> builderClass;
     protected TelemetryEvent body;
     protected HashMap<String, String> tags;
@@ -152,14 +158,14 @@ public class TelemetryEvent extends JSONObject
       TelemetryService instance = TelemetryService.getInstance();
       tags.put("deployment", instance.getServerDeploymentName());
       JSONObject context = instance.getContext();
-      if(context!=null)
+      if (context != null)
       {
         for (String key : context.keySet())
         {
           Object val = context.get(key);
           if (val != null)
           {
-            tags.put("ctx_"+key, val.toString());
+            tags.put("ctx_" + key, val.toString());
           }
         }
       }
@@ -187,7 +193,7 @@ public class TelemetryEvent extends JSONObject
 
     public T withTag(String name, String value)
     {
-      if (value != null && value.length()>0)
+      if (value != null && value.length() > 0)
       {
         tags.put(name, value);
       }
@@ -225,19 +231,19 @@ public class TelemetryEvent extends JSONObject
   }
 
   /**
-   *
    * @return the deployment of this event
    */
   public String getDeployment()
   {
-     JSONArray tags = (JSONArray) this.get("Tags");
-     for (Object tag : tags)
-     {
-       JSONObject json = (JSONObject) tag;
-       if (json.get("Name").toString().compareTo("deployment")==0){
-         return json.get("Value").toString();
-       }
-     }
-     return "Unknown";
+    JSONArray tags = (JSONArray) this.get("Tags");
+    for (Object tag : tags)
+    {
+      JSONObject json = (JSONObject) tag;
+      if (json.get("Name").toString().compareTo("deployment") == 0)
+      {
+        return json.get("Value").toString();
+      }
+    }
+    return "Unknown";
   }
 }

@@ -11,6 +11,7 @@ import net.snowflake.client.core.ObjectMapperFactory;
 
 /**
  * A class to handle S3 material descriptor metadata entries (matdesc).
+ *
  * @author ffunke
  */
 public class MatDesc
@@ -29,7 +30,7 @@ public class MatDesc
    * MatDesc key for the length of the key in bits
    */
   public static String KEY_SIZE = "keySize";
-  
+
   /**
    * If key size is not explicitly specified, assume DEFAULT_KEY_SIZE
    */
@@ -86,13 +87,16 @@ public class MatDesc
 
   /**
    * Try to parse the material descriptor string.
+   *
    * @param matdesc string
    * @return The material description or null
    */
   public static MatDesc parse(String matdesc)
   {
     if (matdesc == null)
+    {
       return null;
+    }
     try
     {
       JsonNode jsonNode = mapper.readTree(matdesc);

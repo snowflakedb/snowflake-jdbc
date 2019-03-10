@@ -18,30 +18,30 @@ public class SessionUtilTest
   public void testIsPrefixEqual() throws Exception
   {
     assertThat("no port number",
-        SessionUtil.isPrefixEqual(
-            "https://testaccount.snowflakecomputing.com/blah",
-            "https://testaccount.snowflakecomputing.com/"));
+               SessionUtil.isPrefixEqual(
+                   "https://testaccount.snowflakecomputing.com/blah",
+                   "https://testaccount.snowflakecomputing.com/"));
     assertThat("no port number with a slash",
-        SessionUtil.isPrefixEqual(
-            "https://testaccount.snowflakecomputing.com/blah",
-            "https://testaccount.snowflakecomputing.com"));
+               SessionUtil.isPrefixEqual(
+                   "https://testaccount.snowflakecomputing.com/blah",
+                   "https://testaccount.snowflakecomputing.com"));
     assertThat("including a port number on one of them",
-        SessionUtil.isPrefixEqual(
-            "https://testaccount.snowflakecomputing.com/blah",
-            "https://testaccount.snowflakecomputing.com:443/"));
+               SessionUtil.isPrefixEqual(
+                   "https://testaccount.snowflakecomputing.com/blah",
+                   "https://testaccount.snowflakecomputing.com:443/"));
 
     // negative
     assertThat("different hostnames",
-        !SessionUtil.isPrefixEqual(
-            "https://testaccount1.snowflakecomputing.com/blah",
-            "https://testaccount2.snowflakecomputing.com/"));
+               !SessionUtil.isPrefixEqual(
+                   "https://testaccount1.snowflakecomputing.com/blah",
+                   "https://testaccount2.snowflakecomputing.com/"));
     assertThat("different port numbers",
-        !SessionUtil.isPrefixEqual(
-            "https://testaccount.snowflakecomputing.com:123/blah",
-            "https://testaccount.snowflakecomputing.com:443/"));
+               !SessionUtil.isPrefixEqual(
+                   "https://testaccount.snowflakecomputing.com:123/blah",
+                   "https://testaccount.snowflakecomputing.com:443/"));
     assertThat("different protocols",
-        !SessionUtil.isPrefixEqual(
-            "http://testaccount.snowflakecomputing.com/blah",
-            "https://testaccount.snowflakecomputing.com/"));
+               !SessionUtil.isPrefixEqual(
+                   "http://testaccount.snowflakecomputing.com/blah",
+                   "https://testaccount.snowflakecomputing.com/"));
   }
 }

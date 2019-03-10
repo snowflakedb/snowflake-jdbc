@@ -35,7 +35,7 @@ public class SFFixedViewResultSet extends SFBaseResultSet
 
   public SFFixedViewResultSet(SnowflakeFixedView fixedView,
                               CommandType commandType)
-          throws SnowflakeSQLException
+  throws SnowflakeSQLException
   {
     this.fixedView = fixedView;
     this.commandType = commandType;
@@ -106,7 +106,7 @@ public class SFFixedViewResultSet extends SFBaseResultSet
   protected Object getObjectInternal(int columnIndex) throws SFException
   {
     logger.debug(
-               "public Object getObjectInternal(int columnIndex)");
+        "public Object getObjectInternal(int columnIndex)");
 
     if (nextRow == null)
     {
@@ -147,7 +147,7 @@ public class SFFixedViewResultSet extends SFBaseResultSet
 
   @Override
   public void setStatementType(SFStatementType statementType)
-      throws SQLException
+  throws SQLException
   {
     throw new SQLFeatureNotSupportedException();
   }
@@ -155,7 +155,7 @@ public class SFFixedViewResultSet extends SFBaseResultSet
   @Override
   public boolean isLast()
   {
-    return row  == fixedView.getTotalRows();
+    return row == fixedView.getTotalRows();
   }
 
   @Override

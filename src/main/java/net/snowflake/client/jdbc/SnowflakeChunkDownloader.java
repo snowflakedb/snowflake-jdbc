@@ -48,7 +48,7 @@ import java.util.zip.GZIPInputStream;
 
 /**
  * Class for managing async download of offline result chunks
- *
+ * <p>
  * Created by jhuang on 11/12/14.
  */
 public class SnowflakeChunkDownloader
@@ -68,8 +68,10 @@ public class SnowflakeChunkDownloader
   private static final ObjectMapper mapper =
       ObjectMapperFactory.getObjectMapper();
 
-  /** a shared JSON parser factory. */
-  private static final JsonFactory jsonFactory  = new MappingJsonFactory();
+  /**
+   * a shared JSON parser factory.
+   */
+  private static final JsonFactory jsonFactory = new MappingJsonFactory();
 
   private static final SFLogger logger =
       SFLoggerFactory.getLogger(SnowflakeChunkDownloader.class);
@@ -130,23 +132,26 @@ public class SnowflakeChunkDownloader
   private long BASE_WAITING_MS = 50;
   private long WAITING_SECS_MULTIPLIER = 2;
   // the maximum waiting time
-  private long MAX_WAITING_MS = 30*1000;
+  private long MAX_WAITING_MS = 30 * 1000;
   // the default jitter ratio 10%
   private long WAITING_JITTER_RATIO = 10;
-  /** Timeout that main thread wait for downloading */
+  /**
+   * Timeout that main thread wait for downloading
+   */
   private final long downloadedConditionTimeoutInSeconds = 3600;
 
   /**
    * Create a pool of downloader threads.
    *
    * @param threadNamePrefix name of threads in pool
-   * @param parallel number of thread in pool
+   * @param parallel         number of thread in pool
    * @return new thread pool
    */
   private static ThreadPoolExecutor createChunkDownloaderExecutorService(
       final String threadNamePrefix, final int parallel)
   {
-    ThreadFactory threadFactory = new ThreadFactory() {
+    ThreadFactory threadFactory = new ThreadFactory()
+    {
       private int threadCount = 1;
 
       public Thread newThread(final Runnable r)
@@ -160,8 +165,8 @@ public class SnowflakeChunkDownloader
               public void uncaughtException(Thread t, Throwable e)
               {
                 logger.error(
-                           "uncaughtException in thread: " + t + " {}",
-                           e);
+                    "uncaughtException in thread: " + t + " {}",
+                    e);
               }
             });
 
@@ -179,6 +184,7 @@ public class SnowflakeChunkDownloader
     public final long millisWaiting;
     public final long millisDownloading;
     public final long millisParsing;
+
     private Metrics()
     {
       SnowflakeChunkDownloader outer = SnowflakeChunkDownloader.this;
@@ -190,14 +196,15 @@ public class SnowflakeChunkDownloader
 
   /**
    * Constructor to initialize downloader
-   * @param colCount number of columns to expect
-   * @param chunksData JSON object contains all the chunk information
-   * @param prefetchThreads number of prefetch threads
-   * @param qrmk Query Result Master Key
-   * @param chunkHeaders JSON object contains information about chunk headers
+   *
+   * @param colCount              number of columns to expect
+   * @param chunksData            JSON object contains all the chunk information
+   * @param prefetchThreads       number of prefetch threads
+   * @param qrmk                  Query Result Master Key
+   * @param chunkHeaders          JSON object contains information about chunk headers
    * @param networkTimeoutInMilli network timeout
-   * @param useJsonParser should JsonParser be used instead of object
-   * @param memoryLimit memory limit for chunk buffer
+   * @param useJsonParser         should JsonParser be used instead of object
+   * @param memoryLimit           memory limit for chunk buffer
    * @param efficientChunkStorage use new efficient storage format
    */
   public SnowflakeChunkDownloader(int colCount,
@@ -216,22 +223,22 @@ public class SnowflakeChunkDownloader
     this.prefetchSlots = prefetchThreads * 2;
     this.useJsonParser = useJsonParser;
     this.memoryLimit = memoryLimit;
-    logger.debug( "qrmk = {}", qrmk);
+    logger.debug("qrmk = {}", qrmk);
 
     if (chunkHeaders != null && !chunkHeaders.isMissingNode())
     {
       chunkHeadersMap = new HashMap<>(2);
 
       Iterator<Map.Entry<String, JsonNode>> chunkHeadersIter =
-      chunkHeaders.fields();
+          chunkHeaders.fields();
 
       while (chunkHeadersIter.hasNext())
       {
         Map.Entry<String, JsonNode> chunkHeader = chunkHeadersIter.next();
 
         logger.debug("add header key={}, value={}",
-                               chunkHeader.getKey(),
-                               chunkHeader.getValue().asText());
+                     chunkHeader.getKey(),
+                     chunkHeader.getValue().asText());
         chunkHeadersMap.put(chunkHeader.getKey(),
                             chunkHeader.getValue().asText());
       }
@@ -263,7 +270,7 @@ public class SnowflakeChunkDownloader
               efficientChunkStorage);
 
       logger.debug("add chunk, url={} rowCount={}",
-            chunk.getUrl(), chunk.getRowCount());
+                   chunk.getUrl(), chunk.getRowCount());
 
       chunks.add(chunk);
     }
@@ -271,8 +278,8 @@ public class SnowflakeChunkDownloader
     int effectiveThreads = Math.min(prefetchThreads, numChunks);
 
     logger.debug(
-	       "#chunks: {} #threads:{} #slots:{} -> pool:{}", 
-		   numChunks, prefetchThreads, prefetchSlots, effectiveThreads);
+        "#chunks: {} #threads:{} #slots:{} -> pool:{}",
+        numChunks, prefetchThreads, prefetchSlots, effectiveThreads);
 
     // create thread pool
     executor =
@@ -292,7 +299,7 @@ public class SnowflakeChunkDownloader
     if (logger.isDebugEnabled())
     {
       logger.debug("Submit {} chunks to be pre-fetched",
-          Math.min(prefetchSlots, chunks.size()));
+                   Math.min(prefetchSlots, chunks.size()));
     }
 
     long waitingTime = BASE_WAITING_MS;
@@ -300,7 +307,7 @@ public class SnowflakeChunkDownloader
     // submit the chunks to be downloaded up to the prefetch slot capacity
     // and limited by memory
     while (nextChunkToDownload - nextChunkToConsume < prefetchSlots &&
-        nextChunkToDownload < chunks.size())
+           nextChunkToDownload < chunks.size())
     {
       // check if memory limit allows more prefetching
       final SnowflakeResultChunk nextChunk = chunks.get(nextChunkToDownload);
@@ -315,9 +322,9 @@ public class SnowflakeChunkDownloader
           if (logger.isDebugEnabled())
           {
             logger.debug("{}: reset memoryLimit from {} MB to current chunk size {} MB",
-                Thread.currentThread().getName(),
-                memoryLimit/1024/1024,
-                neededChunkMemory/1024/1024);
+                         Thread.currentThread().getName(),
+                         memoryLimit / 1024 / 1024,
+                         neededChunkMemory / 1024 / 1024);
           }
           memoryLimit = neededChunkMemory;
         }
@@ -338,21 +345,21 @@ public class SnowflakeChunkDownloader
           if (logger.isDebugEnabled())
           {
             logger.debug("{}: currentMemoryUsage in MB: {}, nextD: {}, nextC: {}, allocated: {} ",
-                Thread.currentThread().getName(),
-                currentMemoryUsage/1024/1024,
-                nextChunkToDownload,
-                nextChunkToConsume,
-                neededChunkMemory);
+                         Thread.currentThread().getName(),
+                         currentMemoryUsage / 1024 / 1024,
+                         nextChunkToDownload,
+                         nextChunkToConsume,
+                         neededChunkMemory);
           }
 
           logger.debug("submit chunk #{} for downloading, url={}",
-              this.nextChunkToDownload, nextChunk.getUrl());
+                       this.nextChunkToDownload, nextChunk.getUrl());
 
           executor.submit(getDownloadChunkCallable(this,
-              nextChunk,
-              qrmk, nextChunkToDownload,
-              chunkHeadersMap,
-              networkTimeoutInMilli));
+                                                   nextChunk,
+                                                   qrmk, nextChunkToDownload,
+                                                   chunkHeadersMap,
+                                                   networkTimeoutInMilli));
 
           // increment next chunk to download
           nextChunkToDownload++;
@@ -364,23 +371,25 @@ public class SnowflakeChunkDownloader
       }
 
       // waiting when nextChunkToDownload is equal to nextChunkToConsume but reach memory limit
-      try{
+      try
+      {
         waitingTime *= WAITING_SECS_MULTIPLIER;
-        waitingTime = waitingTime > MAX_WAITING_MS ? MAX_WAITING_MS: waitingTime;
-        long jitter = ThreadLocalRandom.current().nextLong(0, waitingTime/WAITING_JITTER_RATIO);
+        waitingTime = waitingTime > MAX_WAITING_MS ? MAX_WAITING_MS : waitingTime;
+        long jitter = ThreadLocalRandom.current().nextLong(0, waitingTime / WAITING_JITTER_RATIO);
         waitingTime += jitter;
         if (logger.isDebugEnabled())
         {
           logger.debug("{} waiting for {}s: currentMemoryUsage in MB: {}, needed: {}, nextD: {}, nextC: {} ",
-              Thread.currentThread().getName(),
-              waitingTime/1000.0,
-              currentMemoryUsage/1024/1024,
-              neededChunkMemory/1024/1024,
-              nextChunkToDownload,
-              nextChunkToConsume);
+                       Thread.currentThread().getName(),
+                       waitingTime / 1000.0,
+                       currentMemoryUsage / 1024 / 1024,
+                       neededChunkMemory / 1024 / 1024,
+                       nextChunkToDownload,
+                       nextChunkToConsume);
         }
         Thread.sleep(waitingTime);
-      } catch (InterruptedException ie)
+      }
+      catch (InterruptedException ie)
       {
         throw new SnowflakeSQLException(
             SqlState.INTERNAL_ERROR,
@@ -403,10 +412,10 @@ public class SnowflakeChunkDownloader
       if (logger.isDebugEnabled())
       {
         logger.debug("{}: currentMemoryUsage in MB: {}, released: {}, chunk: {}",
-            Thread.currentThread().getName(),
-            currentMemoryUsage/1024/1024,
-            chunks.get(chunk).computeNeededChunkMemory(),
-            chunk);
+                     Thread.currentThread().getName(),
+                     currentMemoryUsage / 1024 / 1024,
+                     chunks.get(chunk).computeNeededChunkMemory(),
+                     chunk);
       }
     }
   }
@@ -421,27 +430,26 @@ public class SnowflakeChunkDownloader
       return;
     }
 
-    for (int i = 0; i < chunks.size() ; i++)
+    for (int i = 0; i < chunks.size(); i++)
     {
       releaseCurrentMemoryUsage(i);
     }
   }
 
   /**
-   *
    * The method does the following:
-   *
+   * <p>
    * 1. free the previous chunk data and submit a new chunk to be downloaded
-   *
+   * <p>
    * 2. get next chunk to consume, if it is not ready for consumption,
    * it waits until it is ready
    *
    * @return next SnowflakeResultChunk to be consumed
-   * @throws InterruptedException if downloading thread was interrupted
+   * @throws InterruptedException  if downloading thread was interrupted
    * @throws SnowflakeSQLException if downloader encountered an error
    */
   public SnowflakeResultChunk getNextChunkToConsume() throws InterruptedException,
-                                                      SnowflakeSQLException
+                                                             SnowflakeSQLException
   {
     // free previous chunk data and submit a new chunk for downloading
     if (this.nextChunkToConsume > 0)
@@ -450,7 +458,7 @@ public class SnowflakeChunkDownloader
 
       // free the chunk data for previous chunk
       logger.debug("free chunk data for chunk #{}",
-                 prevChunk);
+                   prevChunk);
 
       releaseCurrentMemoryUsage(prevChunk);
 
@@ -489,7 +497,7 @@ public class SnowflakeChunkDownloader
       if (nextChunkToConsume == this.chunks.size())
       {
         // make sure to release the last chunk
-        releaseCurrentMemoryUsage(nextChunkToConsume-1);
+        releaseCurrentMemoryUsage(nextChunkToConsume - 1);
       }
       return currentChunk;
     }
@@ -499,46 +507,46 @@ public class SnowflakeChunkDownloader
       try
       {
         logger.debug("chunk #{} is not ready to consume",
-                   nextChunkToConsume);
+                     nextChunkToConsume);
 
         currentChunk.getLock().lock();
         logger.debug("consumer get lock to check chunk state");
 
         while (currentChunk.getDownloadState() != DownloadState.SUCCESS &&
-            currentChunk.getDownloadState() != DownloadState.FAILURE)
+               currentChunk.getDownloadState() != DownloadState.FAILURE)
         {
           logger.debug("wait for chunk #{} to be ready, current"
-                    + "chunk state is: {}",
-                nextChunkToConsume, currentChunk.getDownloadState());
+                       + "chunk state is: {}",
+                       nextChunkToConsume, currentChunk.getDownloadState());
 
           long startTime = System.currentTimeMillis();
-          if(!currentChunk.getDownloadCondition().await(downloadedConditionTimeoutInSeconds, TimeUnit.SECONDS))
+          if (!currentChunk.getDownloadCondition().await(downloadedConditionTimeoutInSeconds, TimeUnit.SECONDS))
           {
             currentChunk.setDownloadState(DownloadState.FAILURE);
             currentChunk.setDownloadError(String.format("Timeout waiting for the download of chunk #%d" +
-                "(Total chunks: %d)", nextChunkToConsume, this.chunks.size()));
+                                                        "(Total chunks: %d)", nextChunkToConsume, this.chunks.size()));
           }
           this.numberMillisWaitingForChunks +=
               (System.currentTimeMillis() - startTime);
 
           logger.debug(
               "woken up from waiting for chunk #{} to be ready",
-                     nextChunkToConsume);
+              nextChunkToConsume);
         }
 
         // downloader thread encountered an error
         if (currentChunk.getDownloadState() == DownloadState.FAILURE)
         {
           logger.error("downloader encountered error: {}",
-              currentChunk.getDownloadError());
+                       currentChunk.getDownloadError());
 
           throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
-              ErrorCode.INTERNAL_ERROR.getMessageCode(),
-              currentChunk.getDownloadError());
+                                          ErrorCode.INTERNAL_ERROR.getMessageCode(),
+                                          currentChunk.getDownloadError());
         }
 
         logger.debug("chunk #{} is ready to consume",
-                   nextChunkToConsume);
+                     nextChunkToConsume);
 
         nextChunkToConsume++;
 
@@ -555,7 +563,7 @@ public class SnowflakeChunkDownloader
         if (nextChunkToConsume == this.chunks.size())
         {
           // make sure to release the last chunk
-          releaseCurrentMemoryUsage(nextChunkToConsume-1);
+          releaseCurrentMemoryUsage(nextChunkToConsume - 1);
         }
         if (terminateDownloader)
         {
@@ -568,6 +576,7 @@ public class SnowflakeChunkDownloader
 
   /**
    * terminate the downloader
+   *
    * @return chunk downloader metrics collected over instance lifetime
    */
   public Metrics terminate()
@@ -576,11 +585,11 @@ public class SnowflakeChunkDownloader
     {
 
       logger.debug("Total milliseconds waiting for chunks: {}, " +
-              "Total memory used: {}, total download time: {} millisec, " +
-              "total parsing time: {} milliseconds, total chunks: {}",
-          numberMillisWaitingForChunks,
-          Runtime.getRuntime().totalMemory(), totalMillisDownloadingChunks.get(),
-          totalMillisParsingChunks.get(), chunks.size());
+                   "Total memory used: {}, total download time: {} millisec, " +
+                   "total parsing time: {} milliseconds, total chunks: {}",
+                   numberMillisWaitingForChunks,
+                   Runtime.getRuntime().totalMemory(), totalMillisDownloadingChunks.get(),
+                   totalMillisParsingChunks.get(), chunks.size());
 
       if (executor != null)
       {
@@ -598,6 +607,7 @@ public class SnowflakeChunkDownloader
 
   /**
    * add download time
+   *
    * @param downloadTime Time for downloading a single chunk
    */
   private void addDownloadTime(long downloadTime)
@@ -607,6 +617,7 @@ public class SnowflakeChunkDownloader
 
   /**
    * add parsing time
+   *
    * @param parsingTime Time for parsing a single chunk
    */
   private void addParsingTime(long parsingTime)
@@ -616,13 +627,14 @@ public class SnowflakeChunkDownloader
 
   /**
    * Create a download callable that will be run in download thread
-   * @param downloader object to download the chunk
-   * @param resultChunk object contains information about the chunk will
-   *                    be downloaded
-   * @param qrmk Query Result Master Key
-   * @param chunkIndex the index of the chunk which will be downloaded in array
-   *                   chunks. This is mainly for logging purpose
-   * @param chunkHeadersMap contains headers needed to be added when downloading from s3
+   *
+   * @param downloader            object to download the chunk
+   * @param resultChunk           object contains information about the chunk will
+   *                              be downloaded
+   * @param qrmk                  Query Result Master Key
+   * @param chunkIndex            the index of the chunk which will be downloaded in array
+   *                              chunks. This is mainly for logging purpose
+   * @param chunkHeadersMap       contains headers needed to be added when downloading from s3
    * @param networkTimeoutInMilli network timeout
    * @return A callable responsible for downloading chunk
    */
@@ -633,7 +645,7 @@ public class SnowflakeChunkDownloader
       final Map<String, String> chunkHeadersMap,
       final int networkTimeoutInMilli)
   {
-    return new Callable<Void> ()
+    return new Callable<Void>()
     {
       public Void call() throws Exception
       {
@@ -651,7 +663,7 @@ public class SnowflakeChunkDownloader
           }
 
           logger.debug("Downloading chunk {}, url={}",
-                chunkIndex, resultChunk.getUrl());
+                       chunkIndex, resultChunk.getUrl());
 
           long startTime = System.currentTimeMillis();
 
@@ -664,19 +676,19 @@ public class SnowflakeChunkDownloader
           if (response == null
               || response.getStatusLine().getStatusCode() != 200)
           {
-            logger.error( "Error fetching chunk from: {}",
-                resultChunk.getUrl());
+            logger.error("Error fetching chunk from: {}",
+                         resultChunk.getUrl());
 
             SnowflakeUtil.logResponseDetails(response, logger);
 
             throw new SnowflakeSQLException(SqlState.IO_ERROR,
-                ErrorCode.NETWORK_ERROR
-                    .getMessageCode(),
-                "Error encountered when downloading a result chunk: HTTP "
-                    + "status="
-                    + ((response != null)
-                    ? response.getStatusLine().getStatusCode()
-                    : "null response"));
+                                            ErrorCode.NETWORK_ERROR
+                                                .getMessageCode(),
+                                            "Error encountered when downloading a result chunk: HTTP "
+                                            + "status="
+                                            + ((response != null)
+                                               ? response.getStatusLine().getStatusCode()
+                                               : "null response"));
           }
 
           InputStream jsonInputStream;
@@ -685,7 +697,7 @@ public class SnowflakeChunkDownloader
           {
             // read the chunk data
             InputStream is =
-                  new HttpUtil.HttpInputStream(entity.getContent());
+                new HttpUtil.HttpInputStream(entity.getContent());
 
             // Determine the format of the response, if it is not
             // either plain text or gzip, raise an error.
@@ -704,7 +716,7 @@ public class SnowflakeChunkDownloader
                         SqlState.INTERNAL_ERROR,
                         ErrorCode.INTERNAL_ERROR.getMessageCode(),
                         "Exception: unexpected compression got " +
-                            encoding.getValue());
+                        encoding.getValue());
               }
             }
 
@@ -725,8 +737,8 @@ public class SnowflakeChunkDownloader
           catch (Exception ex)
           {
             logger.error(
-                       "Failed to uncompress data: {}",
-                       response);
+                "Failed to uncompress data: {}",
+                response);
 
             throw ex;
           }
@@ -747,7 +759,7 @@ public class SnowflakeChunkDownloader
           {
             if (downloader.useJsonParser)
             {
-              parseJsonToChunk(jsonInputStream,resultChunk);
+              parseJsonToChunk(jsonInputStream, resultChunk);
             }
             else
             {
@@ -758,14 +770,14 @@ public class SnowflakeChunkDownloader
           }
           catch (Exception ex)
           {
-            logger.error( "Exception when parsing result", ex);
+            logger.error("Exception when parsing result", ex);
 
             throw new SnowflakeSQLException(ex, SqlState.INTERNAL_ERROR,
-                ErrorCode.INTERNAL_ERROR
-                    .getMessageCode(),
-                "Exception: " +
-                    ex.getLocalizedMessage() +
-                    "\nBad result json: " + response.toString());
+                                            ErrorCode.INTERNAL_ERROR
+                                                .getMessageCode(),
+                                            "Exception: " +
+                                            ex.getLocalizedMessage() +
+                                            "\nBad result json: " + response.toString());
           }
           finally
           {
@@ -781,11 +793,11 @@ public class SnowflakeChunkDownloader
           resultChunk.setResultData(resultData);
 
           logger.debug(
-                   "Finished preparing chunk data for {}, " +
-                    "total download time={}ms, total parse time={}ms",
-                     resultChunk.getUrl(),
-                     resultChunk.getDownloadTime(),
-                     resultChunk.getParseTime());
+              "Finished preparing chunk data for {}, " +
+              "total download time={}ms, total parse time={}ms",
+              resultChunk.getUrl(),
+              resultChunk.getDownloadTime(),
+              resultChunk.getParseTime());
 
           try
           {
@@ -795,7 +807,7 @@ public class SnowflakeChunkDownloader
 
             logger.debug(
                 "wake up consumer if it is waiting for a chunk to be "
-                    + "ready");
+                + "ready");
 
             resultChunk.setDownloadState(DownloadState.SUCCESS);
             resultChunk.getDownloadCondition().signal();
@@ -826,17 +838,17 @@ public class SnowflakeChunkDownloader
           finally
           {
             logger.debug("Failed to download chunk {}, free lock",
-                chunkIndex);
+                         chunkIndex);
             resultChunk.getLock().unlock();
           }
 
           logger.error(
-                     "Exception encountered ({}:{}) fetching chunk from: {}",
-                         ex.getClass().getName(),
-                         ex.getLocalizedMessage(),
-                         resultChunk.getUrl());
+              "Exception encountered ({}:{}) fetching chunk from: {}",
+              ex.getClass().getName(),
+              ex.getLocalizedMessage(),
+              resultChunk.getUrl());
 
-          logger.error( "Exception: ", ex);
+          logger.error("Exception: ", ex);
         }
 
         return null;
@@ -844,7 +856,7 @@ public class SnowflakeChunkDownloader
 
       private void parseJsonToChunk(InputStream jsonInputStream,
                                     SnowflakeResultChunk resultChunk)
-          throws IOException, SnowflakeSQLException
+      throws IOException, SnowflakeSQLException
       {
         /*
          * This is a hand-written customized parser that
@@ -871,8 +883,8 @@ public class SnowflakeChunkDownloader
                     SqlState.INTERNAL_ERROR,
                     ErrorCode.INTERNAL_ERROR.getMessageCode(),
                     "Exception1: expected '[' " +
-                        "got " +
-                        currentToken.asString());
+                    "got " +
+                    currentToken.asString());
           }
 
           // For all the rows...
@@ -896,7 +908,7 @@ public class SnowflakeChunkDownloader
           for (Map.Entry<String, String> entry : chunkHeadersMap.entrySet())
           {
             logger.debug("Adding header key={}, value={}",
-                       entry.getKey(), entry.getValue());
+                         entry.getKey(), entry.getValue());
             httpRequest.addHeader(entry.getKey(), entry.getValue());
           }
         }
@@ -924,10 +936,10 @@ public class SnowflakeChunkDownloader
                                 false, // no cookie
                                 false, // no retry
                                 false // no request_guid
-                 );
+            );
 
         logger.debug("Call returned for URL: {}",
-                               chunkUrl);
+                     chunkUrl);
         return response;
       }
     };

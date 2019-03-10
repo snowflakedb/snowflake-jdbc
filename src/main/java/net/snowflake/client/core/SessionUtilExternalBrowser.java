@@ -203,14 +203,14 @@ public class SessionUtilExternalBrowser
 
       data.put(ClientAuthnParameter.AUTHENTICATOR.name(), authenticator);
       data.put(ClientAuthnParameter.ACCOUNT_NAME.name(),
-          loginInput.getAccountName());
+               loginInput.getAccountName());
       data.put(ClientAuthnParameter.LOGIN_NAME.name(),
-          loginInput.getUserName());
+               loginInput.getUserName());
       data.put(ClientAuthnParameter.BROWSER_MODE_REDIRECT_PORT.name(),
-          Integer.toString(port));
+               Integer.toString(port));
       data.put(ClientAuthnParameter.CLIENT_APP_ID.name(), loginInput.getAppId());
       data.put(ClientAuthnParameter.CLIENT_APP_VERSION.name(),
-          loginInput.getAppVersion());
+               loginInput.getAppVersion());
 
       authnData.setData(data);
       String json = mapper.writeValueAsString(authnData);
@@ -223,7 +223,7 @@ public class SessionUtilExternalBrowser
       postRequest.addHeader("accept", "application/json");
 
       String theString = HttpUtil.executeRequest(postRequest,
-          loginInput.getLoginTimeout(), 0, null);
+                                                 loginInput.getLoginTimeout(), 0, null);
 
       logger.debug("authenticator-request response: {}", theString);
 
@@ -270,9 +270,9 @@ public class SessionUtilExternalBrowser
       String ssoUrl = getSSOUrl(port);
       this.handlers.output(
           "Initiating login request with your identity provider. A " +
-              "browser window should have opened for you to complete the " +
-              "login. If you can't see it, check existing browser windows, " +
-              "or your OS settings. Press CTRL+C to abort and try again...");
+          "browser window should have opened for you to complete the " +
+          "login. If you can't see it, check existing browser windows, " +
+          "or your OS settings. Press CTRL+C to abort and try again...");
       this.handlers.openBrowser(ssoUrl);
 
       while (true)
@@ -327,7 +327,7 @@ public class SessionUtilExternalBrowser
         targetLine = line;
       }
       else if (line.length() > PREFIX_USER_AGENT.length() &&
-          line.substring(0, PREFIX_USER_AGENT.length()).equalsIgnoreCase(PREFIX_USER_AGENT))
+               line.substring(0, PREFIX_USER_AGENT.length()).equalsIgnoreCase(PREFIX_USER_AGENT))
       {
         userAgent = line;
       }
@@ -428,13 +428,13 @@ public class SessionUtilExternalBrowser
         targetLine = line;
       }
       else if (line.length() > PREFIX_POST.length() &&
-          line.substring(0, PREFIX_POST.length()).equalsIgnoreCase(PREFIX_POST))
+               line.substring(0, PREFIX_POST.length()).equalsIgnoreCase(PREFIX_POST))
       {
         targetLine = rets[rets.length - 1];
         isPost = true;
       }
       else if (line.length() > PREFIX_USER_AGENT.length() &&
-          line.substring(0, PREFIX_USER_AGENT.length()).equalsIgnoreCase(PREFIX_USER_AGENT))
+               line.substring(0, PREFIX_USER_AGENT.length()).equalsIgnoreCase(PREFIX_USER_AGENT))
       {
         userAgent = line;
       }
@@ -442,7 +442,7 @@ public class SessionUtilExternalBrowser
     if (targetLine == null)
     {
       throw new SFException(ErrorCode.NETWORK_ERROR,
-          "Invalid HTTP request. No token is given from the browser.");
+                            "Invalid HTTP request. No token is given from the browser.");
     }
     if (userAgent != null)
     {
@@ -457,8 +457,8 @@ public class SessionUtilExternalBrowser
     catch (IOException ex)
     {
       String parameters = isPost ?
-          extractTokenFromPostRequest(targetLine) :
-          extractTokenFromGetRequest(targetLine);
+                          extractTokenFromPostRequest(targetLine) :
+                          extractTokenFromGetRequest(targetLine);
       try
       {
         URI inputParameter = new URI(parameters);
@@ -475,17 +475,17 @@ public class SessionUtilExternalBrowser
       catch (URISyntaxException ex0)
       {
         throw new SFException(ErrorCode.NETWORK_ERROR,
-            String.format(
-                "Invalid HTTP request. No token is given from the browser. %s, err: %s",
-                targetLine, ex0));
+                              String.format(
+                                  "Invalid HTTP request. No token is given from the browser. %s, err: %s",
+                                  targetLine, ex0));
       }
     }
     if (this.token == null)
     {
       throw new SFException(ErrorCode.NETWORK_ERROR,
-          String.format(
-              "Invalid HTTP request. No token is given from the browser: %s",
-              targetLine));
+                            String.format(
+                                "Invalid HTTP request. No token is given from the browser: %s",
+                                targetLine));
     }
 
     returnToBrowser(socket);
@@ -511,9 +511,9 @@ public class SessionUtilExternalBrowser
         !elems[2].startsWith("HTTP/1."))
     {
       throw new SFException(ErrorCode.NETWORK_ERROR,
-          String.format(
-              "Invalid HTTP request. No token is given from the browser: %s",
-              targetLine));
+                            String.format(
+                                "Invalid HTTP request. No token is given from the browser: %s",
+                                targetLine));
     }
     return elems[1];
   }
@@ -545,10 +545,10 @@ public class SessionUtilExternalBrowser
     {
       responseText =
           "<!DOCTYPE html><html><head><meta charset=\"UTF-8\"/>" +
-              "<title>SAML Response for Snowflake</title></head>" +
-              "<body>Your identity was confirmed and propagated to " +
-              "Snowflake JDBC driver. You can close this window now and go back " +
-              "where you started from.</body></html>";
+          "<title>SAML Response for Snowflake</title></head>" +
+          "<body>Your identity was confirmed and propagated to " +
+          "Snowflake JDBC driver. You can close this window now and go back " +
+          "where you started from.</body></html>";
 
     }
     content.add(String.format("Content-Length: %s", responseText.length()));
@@ -589,6 +589,7 @@ public class SessionUtilExternalBrowser
 
   /**
    * True if the user consented to cache id token
+   *
    * @return true or false
    */
   boolean isConsentCacheIdToken()

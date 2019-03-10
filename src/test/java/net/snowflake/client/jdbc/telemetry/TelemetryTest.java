@@ -36,14 +36,14 @@ public class TelemetryTest
     ObjectNode expect = mapper.createObjectNode();
     ArrayNode logs = mapper.createArrayNode();
     ObjectNode message1 = mapper.createObjectNode();
-    message1.put("timestamp",timestamp1+"");
-    message1.set("message",log1);
+    message1.put("timestamp", timestamp1 + "");
+    message1.set("message", log1);
     logs.add(message1);
     ObjectNode message2 = mapper.createObjectNode();
-    message2.put("timestamp",timestamp2+"");
-    message2.set("message",log2);
+    message2.put("timestamp", timestamp2 + "");
+    message2.set("message", log2);
     logs.add(message2);
-    expect.set("logs",logs);
+    expect.set("logs", logs);
 
     assertEquals(expect.toString(), result);
   }

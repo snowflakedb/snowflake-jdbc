@@ -54,25 +54,25 @@ class SessionUtilKeyPair
     // construct public key from raw bytes
     if (privateKey instanceof RSAPrivateCrtKey)
     {
-      RSAPrivateCrtKey rsaPrivateCrtKey = (RSAPrivateCrtKey)privateKey;
+      RSAPrivateCrtKey rsaPrivateCrtKey = (RSAPrivateCrtKey) privateKey;
       RSAPublicKeySpec rsaPublicKeySpec = new RSAPublicKeySpec(
           rsaPrivateCrtKey.getModulus(), rsaPrivateCrtKey.getPublicExponent());
 
       try
       {
         this.publicKey = KeyFactory.getInstance("RSA")
-                                   .generatePublic(rsaPublicKeySpec);
+            .generatePublic(rsaPublicKeySpec);
       }
-      catch(NoSuchAlgorithmException | InvalidKeySpecException e)
+      catch (NoSuchAlgorithmException | InvalidKeySpecException e)
       {
         throw new SFException(e, ErrorCode.INTERNAL_ERROR,
-            "Error retrieving public key");
+                              "Error retrieving public key");
       }
     }
     else
     {
       throw new SFException(ErrorCode.INVALID_OR_UNSUPPORTED_PRIVATE_KEY,
-          "Please use java.security.interfaces.RSAPrivateCrtKey.class");
+                            "Please use java.security.interfaces.RSAPrivateCrtKey.class");
     }
   }
 
@@ -81,7 +81,7 @@ class SessionUtilKeyPair
     JWTClaimsSet.Builder builder = new JWTClaimsSet.Builder();
     String sub = String.format(SUBJECT_FMT, this.accountName, this.userName);
     String iss = String.format(ISSUER_FMT, this.accountName, this.userName,
-        this.calculatePublicKeyFingerprint(this.publicKey));
+                               this.calculatePublicKeyFingerprint(this.publicKey));
 
     // iat is now
     Date iat = new Date(System.currentTimeMillis());
@@ -90,20 +90,20 @@ class SessionUtilKeyPair
     Date exp = new Date(iat.getTime() + 60L * 1000);
 
     JWTClaimsSet claimsSet = builder.issuer(iss)
-                                    .subject(sub)
-                                    .issueTime(iat)
-                                    .expirationTime(exp)
-                                    .build();
+        .subject(sub)
+        .issueTime(iat)
+        .expirationTime(exp)
+        .build();
 
     SignedJWT signedJWT = new SignedJWT(new JWSHeader(JWSAlgorithm.RS256),
-        claimsSet);
+                                        claimsSet);
     JWSSigner signer = new RSASSASigner(this.privateKey);
 
     try
     {
       signedJWT.sign(signer);
     }
-    catch(JOSEException e)
+    catch (JOSEException e)
     {
       throw new SFException(e, ErrorCode.FAILED_TO_GENERATE_JWT);
     }
@@ -112,7 +112,7 @@ class SessionUtilKeyPair
   }
 
   private String calculatePublicKeyFingerprint(PublicKey publicKey)
-      throws SFException
+  throws SFException
   {
     try
     {
@@ -123,7 +123,7 @@ class SessionUtilKeyPair
     catch (NoSuchAlgorithmException e)
     {
       throw new SFException(e, ErrorCode.INTERNAL_ERROR,
-          "Error when calculating fingerprint");
+                            "Error when calculating fingerprint");
     }
   }
 }
