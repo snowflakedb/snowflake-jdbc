@@ -9,6 +9,7 @@ import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SqlState;
 import net.snowflake.common.util.ClassUtil;
 import net.snowflake.common.util.FixedViewColumn;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -23,12 +24,13 @@ import java.util.Random;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
+
 import net.snowflake.client.log.SFLogger;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.Header;
 import org.apache.http.HttpResponse;
+
 /**
- *
  * @author jhuang
  */
 public class SnowflakeUtil
@@ -51,13 +53,13 @@ public class SnowflakeUtil
 
 
   static public void checkErrorAndThrowExceptionIncludingReauth(JsonNode rootNode)
-      throws SnowflakeSQLException
+  throws SnowflakeSQLException
   {
     checkErrorAndThrowExceptionSub(rootNode, true);
   }
 
   static public void checkErrorAndThrowException(JsonNode rootNode)
-      throws SnowflakeSQLException
+  throws SnowflakeSQLException
   {
     checkErrorAndThrowExceptionSub(rootNode, false);
   }
@@ -66,14 +68,14 @@ public class SnowflakeUtil
    * Check the error in the JSON node and generate an exception based on
    * information extracted from the node.
    *
-   * @param rootNode json object contains error information
+   * @param rootNode                 json object contains error information
    * @param raiseReauthenticateError raises SnowflakeReauthenticationRequest
-   *                                if true
+   *                                 if true
    * @throws SnowflakeSQLException the exception get from the error in the json
    */
   static private void checkErrorAndThrowExceptionSub(
       JsonNode rootNode, boolean raiseReauthenticateError)
-      throws SnowflakeSQLException
+  throws SnowflakeSQLException
   {
     // no need to throw exception if success
     if (rootNode.path("success").asBoolean())
@@ -123,7 +125,7 @@ public class SnowflakeUtil
 
     if (raiseReauthenticateError)
     {
-      switch(errorCode)
+      switch (errorCode)
       {
         case ID_TOKEN_EXPIRED_GS_CODE:
         case SESSION_NOT_EXIST_GS_CODE:
@@ -139,9 +141,9 @@ public class SnowflakeUtil
   }
 
   static public SnowflakeColumnMetadata extractColumnMetadata(
-                                                  JsonNode colNode,
-                                                  boolean jdbcTreatDecimalAsInt)
-          throws SnowflakeSQLException
+      JsonNode colNode,
+      boolean jdbcTreatDecimalAsInt)
+  throws SnowflakeSQLException
   {
     String colName = colNode.path("name").asText();
     String internalColTypeName = colNode.path("type").asText();
@@ -176,7 +178,7 @@ public class SnowflakeUtil
 
       case FIXED:
         colType = jdbcTreatDecimalAsInt && scale == 0
-            ? Types.BIGINT : Types.DECIMAL;
+                  ? Types.BIGINT : Types.DECIMAL;
         extColTypeName = "NUMBER";
         break;
 
@@ -240,7 +242,7 @@ public class SnowflakeUtil
       default:
         throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
                                         ErrorCode.INTERNAL_ERROR
-                                        .getMessageCode(),
+                                            .getMessageCode(),
                                         "Unknown column type: " + internalColTypeName);
     }
 
@@ -255,13 +257,13 @@ public class SnowflakeUtil
   }
 
   static String javaTypeToSFTypeString(int javaType)
-          throws SnowflakeSQLException
+  throws SnowflakeSQLException
   {
     return SnowflakeType.javaTypeToSFType(javaType).name();
   }
 
   static SnowflakeType javaTypeToSFType(int javaType)
-          throws SnowflakeSQLException
+  throws SnowflakeSQLException
   {
     return SnowflakeType.javaTypeToSFType(javaType);
   }
@@ -276,14 +278,15 @@ public class SnowflakeUtil
    * <p>
    * Typical use case is to concatenate a file name to a directory.
    * </p>
-   * @param leftPath left path
+   *
+   * @param leftPath  left path
    * @param rightPath right path
-   * @param fileSep file separator
+   * @param fileSep   file separator
    * @return concatenated file path
    */
   static String concatFilePathNames(String leftPath,
-                                           String rightPath,
-                                           String fileSep)
+                                    String rightPath,
+                                    String fileSep)
   {
     String leftPathTrimmed = leftPath.trim();
     String rightPathTrimmed = rightPath.trim();
@@ -336,11 +339,11 @@ public class SnowflakeUtil
   }
 
   static List<SnowflakeColumnMetadata> describeFixedViewColumns(
-          Class clazz) throws SnowflakeSQLException
+      Class clazz) throws SnowflakeSQLException
   {
     Field[] columns
-            = ClassUtil.getAnnotatedDeclaredFields(clazz, FixedViewColumn.class,
-                                                   true);
+        = ClassUtil.getAnnotatedDeclaredFields(clazz, FixedViewColumn.class,
+                                               true);
 
     Arrays.sort(columns, new FixedViewColumn.OrdinalComparatorForFields());
 
@@ -349,7 +352,7 @@ public class SnowflakeUtil
     for (Field column : columns)
     {
       FixedViewColumn columnAnnotation
-                      = column.getAnnotation(FixedViewColumn.class);
+          = column.getAnnotation(FixedViewColumn.class);
 
       String typeName;
       int colType;
@@ -380,26 +383,26 @@ public class SnowflakeUtil
       {
         throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
                                         ErrorCode.INTERNAL_ERROR
-                                        .getMessageCode(),
+                                            .getMessageCode(),
                                         "Unsupported column type: " + type
-                                        .getName());
+                                            .getName());
       }
 
       // TODO: we hard code some of the values below but can change them
       // later to derive from annotation as well.
       rowType.add(new SnowflakeColumnMetadata(
-              columnAnnotation.name(), // column name
-              colType, // column type
-              false, // nullable
-              20480, // length
-              10, // precision
-              0, // scale
-              typeName, // type name
-              true,
-              stype,  // fixed
-              "",     // database
-              "",     // schema
-              ""));   // table
+          columnAnnotation.name(), // column name
+          colType, // column type
+          false, // nullable
+          20480, // length
+          10, // precision
+          0, // scale
+          typeName, // type name
+          true,
+          stype,  // fixed
+          "",     // database
+          "",     // schema
+          ""));   // table
     }
 
     return rowType;
@@ -410,8 +413,9 @@ public class SnowflakeUtil
    * <p>
    * Used when there is an error in http response
    * </p>
+   *
    * @param response http response get from server
-   * @param logger logger object
+   * @param logger   logger object
    */
   static public void logResponseDetails(HttpResponse response, SFLogger logger)
   {
@@ -425,7 +429,7 @@ public class SnowflakeUtil
     if (response.getStatusLine() != null)
     {
       logger.error("Response status line reason: {}",
-                 response.getStatusLine().getReasonPhrase());
+                   response.getStatusLine().getReasonPhrase());
     }
 
     // log each header from response
@@ -446,14 +450,14 @@ public class SnowflakeUtil
       {
         StringWriter writer = new StringWriter();
         BufferedReader bufferedReader = new BufferedReader(
-                new InputStreamReader((response.getEntity().getContent())));
+            new InputStreamReader((response.getEntity().getContent())));
         IOUtils.copy(bufferedReader, writer);
         logger.error("Response content: {}", writer.toString());
       }
       catch (IOException ex)
       {
         logger.error("Failed to read content due to exception: "
-                               + "{}", ex.getMessage());
+                     + "{}", ex.getMessage());
       }
     }
   }
@@ -462,29 +466,31 @@ public class SnowflakeUtil
    * Returns a new thread pool configured with the default settings.
    *
    * @param threadNamePrefix prefix of the thread name
-   * @param parallel the number of concurrency
+   * @param parallel         the number of concurrency
    * @return A new thread pool configured with the default settings.
    */
   static public ThreadPoolExecutor createDefaultExecutorService(
       final String threadNamePrefix, final int parallel)
   {
-    ThreadFactory threadFactory = new ThreadFactory() {
+    ThreadFactory threadFactory = new ThreadFactory()
+    {
       private int threadCount = 1;
 
-      public Thread newThread(Runnable r) {
+      public Thread newThread(Runnable r)
+      {
         Thread thread = new Thread(r);
         thread.setName(threadNamePrefix + threadCount++);
         return thread;
       }
     };
     return (ThreadPoolExecutor) Executors.newFixedThreadPool(parallel,
-        threadFactory);
+                                                             threadFactory);
   }
 
   static public Throwable getRootCause(Exception ex)
   {
     Throwable cause = ex;
-    while(cause.getCause() != null)
+    while (cause.getCause() != null)
     {
       cause = cause.getCause();
     }
@@ -499,7 +505,7 @@ public class SnowflakeUtil
       return true;
     }
 
-    for(char c : input.toCharArray())
+    for (char c : input.toCharArray())
     {
       if (!Character.isWhitespace(c))
       {

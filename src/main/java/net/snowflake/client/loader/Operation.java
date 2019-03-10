@@ -9,6 +9,9 @@ package net.snowflake.client.loader;
  */
 
 public enum Operation
-  {
-    INSERT, DELETE, MODIFY, UPSERT
-  };
+{
+  INSERT,
+  DELETE,
+  MODIFY,
+  UPSERT
+};

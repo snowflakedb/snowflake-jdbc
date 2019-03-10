@@ -45,7 +45,7 @@ public class RestRequestIT
 
   private void execute(CloseableHttpClient client, String uri,
                        boolean includeRetryParameters)
-      throws IOException, SnowflakeSQLException
+  throws IOException, SnowflakeSQLException
   {
     RestRequest.execute(
         client,
@@ -69,7 +69,7 @@ public class RestRequestIT
 
           @Override
           public CloseableHttpResponse answer(InvocationOnMock invocation)
-              throws Throwable
+          throws Throwable
           {
             HttpUriRequest arg = (HttpUriRequest) invocation.getArguments()[0];
             String params = arg.getURI().getQuery();
@@ -99,7 +99,7 @@ public class RestRequestIT
           }
         });
 
-   execute(client, "fakeurl.com/?requestId=abcd-1234", true);
+    execute(client, "fakeurl.com/?requestId=abcd-1234", true);
   }
 
   @Test
@@ -113,7 +113,7 @@ public class RestRequestIT
 
           @Override
           public CloseableHttpResponse answer(InvocationOnMock invocation)
-              throws Throwable
+          throws Throwable
           {
             HttpUriRequest arg = (HttpUriRequest) invocation.getArguments()[0];
             String params = arg.getURI().getQuery();

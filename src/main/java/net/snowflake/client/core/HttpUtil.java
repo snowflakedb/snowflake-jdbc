@@ -123,9 +123,9 @@ public class HttpUtil
       Registry<ConnectionSocketFactory> registry =
           RegistryBuilder.<ConnectionSocketFactory>create()
               .register("https",
-                  new SFSSLConnectionSocketFactory(trustManagers, socksProxyDisabled))
+                        new SFSSLConnectionSocketFactory(trustManagers, socksProxyDisabled))
               .register("http",
-                  new SFConnectionSocketFactory())
+                        new SFConnectionSocketFactory())
               .build();
 
       // Build a connection manager with enough connections
@@ -193,7 +193,7 @@ public class HttpUtil
   /**
    * Accessor for the HTTP client singleton.
    *
-   * @param insecureMode skip OCSP revocation check if true.
+   * @param insecureMode  skip OCSP revocation check if true.
    * @param ocspCacheFile OCSP response cache file name. if null, the default
    *                      file will be used.
    * @return HttpClient object shared across all connections
@@ -228,7 +228,7 @@ public class HttpUtil
       // for boomi clound since they did not allowed System.getenv
       // enable ocsp cache server by default
       logger.debug("Failed to get environment variable " +
-                      "SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED. Skip");
+                   "SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED. Skip");
     }
     if (flag == null)
     {
@@ -281,12 +281,13 @@ public class HttpUtil
   private static String getHttpClientStats()
   {
     return connectionManager == null ?
-        "" :
-        connectionManager.getTotalStats().toString();
+           "" :
+           connectionManager.getTotalStats().toString();
   }
 
   /**
    * Enables/disables use of the SOCKS proxy when creating sockets
+   *
    * @param socksProxyDisabled new value
    */
   public static void setSocksProxyDisabled(boolean socksProxyDisabled)
@@ -296,6 +297,7 @@ public class HttpUtil
 
   /**
    * Returns whether the SOCKS proxy is disabled for this JVM
+   *
    * @return whether the SOCKS proxy is disabled
    */
   public static boolean isSocksProxyDisabled()
@@ -306,19 +308,19 @@ public class HttpUtil
   /**
    * Executes a HTTP request with the cookie spec set to IGNORE_COOKIES
    *
-   * @param httpRequest HttpRequestBase
-   * @param retryTimeout retry timeout
+   * @param httpRequest         HttpRequestBase
+   * @param retryTimeout        retry timeout
    * @param injectSocketTimeout injecting socket timeout
-   * @param canceling canceling?
-   * @throws SnowflakeSQLException if Snowflake error occurs
-   * @throws IOException raises if a general IO error occurs
+   * @param canceling           canceling?
    * @return response
+   * @throws SnowflakeSQLException if Snowflake error occurs
+   * @throws IOException           raises if a general IO error occurs
    */
   static String executeRequestWithoutCookies(HttpRequestBase httpRequest,
                                              int retryTimeout,
                                              int injectSocketTimeout,
                                              AtomicBoolean canceling)
-      throws SnowflakeSQLException, IOException
+  throws SnowflakeSQLException, IOException
   {
     return executeRequestInternal(
         httpRequest,
@@ -333,19 +335,19 @@ public class HttpUtil
   /**
    * Executes a HTTP request for Snowflake.
    *
-   * @param httpRequest HttpRequestBase
-   * @param retryTimeout retry timeout
+   * @param httpRequest         HttpRequestBase
+   * @param retryTimeout        retry timeout
    * @param injectSocketTimeout injecting socket timeout
-   * @param canceling canceling?
+   * @param canceling           canceling?
    * @return response
    * @throws SnowflakeSQLException if Snowflake error occurs
-   * @throws IOException raises if a general IO error occurs
+   * @throws IOException           raises if a general IO error occurs
    */
   public static String executeRequest(HttpRequestBase httpRequest,
                                       int retryTimeout,
                                       int injectSocketTimeout,
                                       AtomicBoolean canceling)
-      throws SnowflakeSQLException, IOException
+  throws SnowflakeSQLException, IOException
   {
     return executeRequest(
         httpRequest,
@@ -358,22 +360,22 @@ public class HttpUtil
   /**
    * Executes a HTTP request for Snowflake.
    *
-   * @param httpRequest HttpRequestBase
-   * @param retryTimeout retry timeout
-   * @param injectSocketTimeout injecting socket timeout
-   * @param canceling canceling?
+   * @param httpRequest            HttpRequestBase
+   * @param retryTimeout           retry timeout
+   * @param injectSocketTimeout    injecting socket timeout
+   * @param canceling              canceling?
    * @param includeRetryParameters whether to include retry parameters in
    *                               retried requests
    * @return response
    * @throws SnowflakeSQLException if Snowflake error occurs
-   * @throws IOException raises if a general IO error occurs
+   * @throws IOException           raises if a general IO error occurs
    */
   public static String executeRequest(HttpRequestBase httpRequest,
                                       int retryTimeout,
                                       int injectSocketTimeout,
                                       AtomicBoolean canceling,
                                       boolean includeRetryParameters)
-      throws SnowflakeSQLException, IOException
+  throws SnowflakeSQLException, IOException
   {
     return executeRequestInternal(
         httpRequest,
@@ -393,17 +395,17 @@ public class HttpUtil
    * <p>
    * Connection under the httpRequest is released.
    *
-   * @param httpRequest         request object contains all the information
-   * @param retryTimeout        retry timeout (in seconds)
-   * @param injectSocketTimeout simulate socket timeout
-   * @param canceling           canceling flag
-   * @param withoutCookies      whether this request should ignore cookies
+   * @param httpRequest            request object contains all the information
+   * @param retryTimeout           retry timeout (in seconds)
+   * @param injectSocketTimeout    simulate socket timeout
+   * @param canceling              canceling flag
+   * @param withoutCookies         whether this request should ignore cookies
    * @param includeRetryParameters whether to include retry parameters in
    *                               retried requests
-   * @param includeRequestGuid whether to include request_guid
+   * @param includeRequestGuid     whether to include request_guid
    * @return response in String
    * @throws SnowflakeSQLException if Snowflake error occurs
-   * @throws IOException raises if a general IO error occurs
+   * @throws IOException           raises if a general IO error occurs
    */
   private static String executeRequestInternal(HttpRequestBase httpRequest,
                                                int retryTimeout,
@@ -412,13 +414,13 @@ public class HttpUtil
                                                boolean withoutCookies,
                                                boolean includeRetryParameters,
                                                boolean includeRequestGuid)
-      throws SnowflakeSQLException, IOException
+  throws SnowflakeSQLException, IOException
   {
     if (logger.isDebugEnabled())
     {
       logger.debug("Pool: {} Executing: {}",
-          HttpUtil.getHttpClientStats(),
-          httpRequest);
+                   HttpUtil.getHttpClientStats(),
+                   httpRequest);
     }
 
     String theString;
@@ -427,19 +429,19 @@ public class HttpUtil
     try
     {
       response = RestRequest.execute(getHttpClient(),
-          httpRequest,
-          retryTimeout,
-          injectSocketTimeout,
-          canceling,
-          withoutCookies,
-          includeRetryParameters,
-          includeRequestGuid);
+                                     httpRequest,
+                                     retryTimeout,
+                                     injectSocketTimeout,
+                                     canceling,
+                                     withoutCookies,
+                                     includeRetryParameters,
+                                     includeRequestGuid);
 
       if (response == null ||
           response.getStatusLine().getStatusCode() != 200)
       {
         logger.error("Error executing request: {}",
-            httpRequest.toString());
+                     httpRequest.toString());
 
         SnowflakeUtil.logResponseDetails(response, logger);
 
@@ -449,11 +451,11 @@ public class HttpUtil
         }
 
         throw new SnowflakeSQLException(SqlState.IO_ERROR,
-            ErrorCode.NETWORK_ERROR.getMessageCode(),
-            "HTTP status="
-                + ((response != null) ?
-                response.getStatusLine().getStatusCode() :
-                "null response"));
+                                        ErrorCode.NETWORK_ERROR.getMessageCode(),
+                                        "HTTP status="
+                                        + ((response != null) ?
+                                           response.getStatusLine().getStatusCode() :
+                                           "null response"));
       }
 
       writer = new StringWriter();
@@ -559,7 +561,7 @@ public class HttpUtil
   }
 
   private final static class SFConnectionSocketFactory
-  extends PlainConnectionSocketFactory
+      extends PlainConnectionSocketFactory
   {
     @Override
     public Socket createSocket(HttpContext ctx) throws IOException

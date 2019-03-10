@@ -101,7 +101,11 @@ public class StmtUtil
 
     String serviceName;
 
-    public StmtInput() {};
+    public StmtInput()
+    {
+    }
+
+    ;
 
     public StmtInput setSql(String sql)
     {
@@ -251,7 +255,7 @@ public class StmtUtil
 
   /**
    * Execute a statement
-   *
+   * <p>
    * side effect: stmtInput.prevGetResultURL is set if we have started ping
    * pong and receives an exception from session token expiration so that
    * during retry we don't retry the query submission, but continue the
@@ -259,29 +263,28 @@ public class StmtUtil
    *
    * @param stmtInput input statement
    * @return StmtOutput output statement
-   *
-   * @throws SFException exception raised from Snowflake components
+   * @throws SFException           exception raised from Snowflake components
    * @throws SnowflakeSQLException exception raised from Snowflake components
    */
   public static StmtOutput execute(StmtInput stmtInput) throws SFException,
-      SnowflakeSQLException
+                                                               SnowflakeSQLException
   {
     HttpPost httpRequest = null;
 
     AssertUtil.assertTrue(stmtInput.serverUrl != null,
-        "Missing server url for statement execution");
+                          "Missing server url for statement execution");
 
     AssertUtil.assertTrue(stmtInput.sql != null,
-        "Missing sql for statement execution");
+                          "Missing sql for statement execution");
 
     AssertUtil.assertTrue(stmtInput.requestId != null,
-        "Missing request id for statement execution");
+                          "Missing request id for statement execution");
 
-    AssertUtil.assertTrue(stmtInput.sequenceId >=0,
-        "Negative sequence id for statement execution");
+    AssertUtil.assertTrue(stmtInput.sequenceId >= 0,
+                          "Negative sequence id for statement execution");
 
     AssertUtil.assertTrue(stmtInput.mediaType != null,
-        "Missing media type for statement execution");
+                          "Missing media type for statement execution");
 
     try
     {
@@ -349,12 +352,12 @@ public class StmtUtil
         httpRequest.addHeader("accept", stmtInput.mediaType);
 
         httpRequest.setHeader(SF_HEADER_AUTHORIZATION,
-            SF_HEADER_SNOWFLAKE_AUTHTYPE + " " + SF_HEADER_TOKEN_TAG
-                + "=\"" + stmtInput.sessionToken + "\"");
+                              SF_HEADER_SNOWFLAKE_AUTHTYPE + " " + SF_HEADER_TOKEN_TAG
+                              + "=\"" + stmtInput.sessionToken + "\"");
 
         setServiceNameHeader(stmtInput, httpRequest);
         eventHandler.triggerStateTransition(BasicEvent.QueryState.SENDING_QUERY,
-            String.format(QueryState.SENDING_QUERY.getArgString(), stmtInput.requestId));
+                                            String.format(QueryState.SENDING_QUERY.getArgString(), stmtInput.requestId));
 
         resultAsString =
             HttpUtil.executeRequest(httpRequest,
@@ -362,7 +365,7 @@ public class StmtUtil
                                     stmtInput.injectSocketTimeout,
                                     stmtInput.canceling,
                                     true // include retry parameters
-                                  );
+            );
       }
 
       return pollForOutput(resultAsString, stmtInput, httpRequest);
@@ -377,8 +380,8 @@ public class StmtUtil
 
           // network error
           throw new SFException(ex, ErrorCode.NETWORK_ERROR,
-              "Exception encountered when executing statement: " +
-                  ex.getLocalizedMessage());
+                                "Exception encountered when executing statement: " +
+                                ex.getLocalizedMessage());
         }
         else
         {
@@ -386,7 +389,7 @@ public class StmtUtil
 
           // raise internal exception if this is not a snowflake exception
           throw new SFException(ex, ErrorCode.INTERNAL_ERROR,
-              ex.getLocalizedMessage());
+                                ex.getLocalizedMessage());
         }
       }
       else
@@ -416,7 +419,7 @@ public class StmtUtil
   private static StmtOutput pollForOutput(String resultAsString,
                                           StmtInput stmtInput,
                                           HttpPost httpRequest)
-      throws SFException, SnowflakeSQLException
+  throws SFException, SnowflakeSQLException
   {
     /**
      * Check response for error or for ping pong response
@@ -445,17 +448,17 @@ public class StmtUtil
         catch (Exception ex)
         {
           logger.error("Bad result json: {}, " +
-                  "JSON parsing exception: {}, http request: {}",
-              resultAsString, ex.getLocalizedMessage(),
-              httpRequest);
+                       "JSON parsing exception: {}, http request: {}",
+                       resultAsString, ex.getLocalizedMessage(),
+                       httpRequest);
 
           logger.error("Exception stack trace", ex);
         }
       }
 
       eventHandler.triggerStateTransition(BasicEvent.QueryState.WAITING_FOR_RESULT,
-          "{requestId: " + stmtInput.requestId + "," +
-              "pingNumber: " + retries + "}");
+                                          "{requestId: " + stmtInput.requestId + "," +
+                                          "pingNumber: " + retries + "}");
 
       if (pingPongResponseJson == null)
       {
@@ -473,13 +476,15 @@ public class StmtUtil
         else
         {
           logger.debug("Will retry get result. Retry count: {}",
-              retries);
+                       retries);
 
           retries++;
         }
       }
       else
+      {
         retries = 0; // reset retry counter after a successful response
+      }
 
       // trace the response if requested
       if (logger.isDebugEnabled())
@@ -489,7 +494,7 @@ public class StmtUtil
           String json = mapper.writeValueAsString(resultAsString);
           logger.debug("Response: {}", json);
         }
-        catch(JsonProcessingException ex)
+        catch (JsonProcessingException ex)
         {
           logger.debug("Response: {}", resultAsString);
         }
@@ -536,8 +541,8 @@ public class StmtUtil
         }
 
         resultAsString = getQueryResult(pingPongResponseJson,
-            previousGetResultPath,
-            stmtInput);
+                                        previousGetResultPath,
+                                        stmtInput);
 
         // save the previous get result path in case we run into session
         // expiration
@@ -551,14 +556,16 @@ public class StmtUtil
 
       // not first response any more
       if (firstResponse)
+      {
         firstResponse = false;
+      }
     }
     while (queryInProgress);
 
     logger.debug("Returning result");
 
     eventHandler.triggerStateTransition(BasicEvent.QueryState.PROCESSING_RESULT,
-        String.format(QueryState.PROCESSING_RESULT.getArgString(), stmtInput.requestId));
+                                        String.format(QueryState.PROCESSING_RESULT.getArgString(), stmtInput.requestId));
 
     return new StmtOutput(pingPongResponseJson);
   }
@@ -567,17 +574,18 @@ public class StmtUtil
   /**
    * Issue get-result call to get query result given an in-progress response.
    * <p>
-   * @param inProgressResponse In progress response in JSON form
+   *
+   * @param inProgressResponse    In progress response in JSON form
    * @param previousGetResultPath previous get results path
-   * @param stmtInput input statement
+   * @param stmtInput             input statement
    * @return results in string form
-   * @throws SFException exception raised from Snowflake components
+   * @throws SFException           exception raised from Snowflake components
    * @throws SnowflakeSQLException exception raised from Snowflake components
    */
   static protected String getQueryResult(JsonNode inProgressResponse,
-                                        String previousGetResultPath,
-                                        StmtInput stmtInput)
-      throws SFException, SnowflakeSQLException
+                                         String previousGetResultPath,
+                                         StmtInput stmtInput)
+  throws SFException, SnowflakeSQLException
   {
     String getResultPath = null;
 
@@ -588,12 +596,12 @@ public class StmtUtil
       if (previousGetResultPath == null)
       {
         throw new SFException(ErrorCode.INTERNAL_ERROR,
-            "No query response or missing get result URL");
+                              "No query response or missing get result URL");
       }
       else
       {
         logger.debug("No query response or missing get result URL, " +
-            "use previous get result URL: {}", previousGetResultPath);
+                     "use previous get result URL: {}", previousGetResultPath);
         getResultPath = previousGetResultPath;
       }
     }
@@ -611,15 +619,16 @@ public class StmtUtil
   /**
    * Issue get-result call to get query result given an in-progress response.
    * <p>
+   *
    * @param getResultPath path to results
-   * @param stmtInput object with context information
+   * @param stmtInput     object with context information
    * @return results in string form
-   * @throws SFException exception raised from Snowflake components
+   * @throws SFException           exception raised from Snowflake components
    * @throws SnowflakeSQLException exception raised from Snowflake components
    */
   static protected String getQueryResult(String getResultPath,
                                          StmtInput stmtInput)
-      throws SFException, SnowflakeSQLException
+  throws SFException, SnowflakeSQLException
   {
     HttpGet httpRequest = null;
     logger.debug("get query result: {}", getResultPath);
@@ -631,46 +640,47 @@ public class StmtUtil
       uriBuilder.setPath(getResultPath);
 
       uriBuilder.addParameter(SF_QUERY_REQUEST_ID,
-          UUID.randomUUID().toString());
+                              UUID.randomUUID().toString());
 
       httpRequest = new HttpGet(uriBuilder.build());
 
       httpRequest.addHeader("accept", stmtInput.mediaType);
 
       httpRequest.setHeader(SF_HEADER_AUTHORIZATION,
-          SF_HEADER_SNOWFLAKE_AUTHTYPE + " " + SF_HEADER_TOKEN_TAG
-              + "=\"" + stmtInput.sessionToken + "\"");
+                            SF_HEADER_SNOWFLAKE_AUTHTYPE + " " + SF_HEADER_TOKEN_TAG
+                            + "=\"" + stmtInput.sessionToken + "\"");
 
       setServiceNameHeader(stmtInput, httpRequest);
 
       return HttpUtil.executeRequest(httpRequest,
-          stmtInput.networkTimeoutInMillis/1000,
-          0,
-          stmtInput.canceling);
+                                     stmtInput.networkTimeoutInMillis / 1000,
+                                     0,
+                                     stmtInput.canceling);
     }
     catch (URISyntaxException | IOException ex)
     {
       logger.error("Exception encountered when getting result for "
-          + httpRequest, ex);
+                   + httpRequest, ex);
 
       // raise internal exception if this is not a snowflake exception
       throw new SFException(ex, ErrorCode.INTERNAL_ERROR,
-          ex.getLocalizedMessage());
+                            ex.getLocalizedMessage());
     }
   }
 
   /**
    * Issue get-result call to get query result given an in progress response.
    * <p>
+   *
    * @param queryId id of query to get results for
    * @param session the current session
    * @return results in JSON
-   * @throws SFException exception raised from Snowflake components
+   * @throws SFException           exception raised from Snowflake components
    * @throws SnowflakeSQLException exception raised from Snowflake components
    */
   static protected JsonNode getQueryResultJSON(String queryId,
                                                SFSession session)
-      throws SFException, SnowflakeSQLException
+  throws SFException, SnowflakeSQLException
   {
     String getResultPath = String.format(SF_PATH_QUERY_RESULT, queryId);
     StmtInput stmtInput = new StmtInput()
@@ -690,28 +700,28 @@ public class StmtUtil
    * Cancel a statement identifiable by a request id
    *
    * @param stmtInput input statement
-   * @throws SFException if there is an internal exception
+   * @throws SFException           if there is an internal exception
    * @throws SnowflakeSQLException if failed to cancel the statement
    */
   public static void cancel(StmtInput stmtInput) throws SFException,
-      SnowflakeSQLException
+                                                        SnowflakeSQLException
   {
     HttpPost httpRequest = null;
 
     AssertUtil.assertTrue(stmtInput.serverUrl != null,
-        "Missing server url for statement execution");
+                          "Missing server url for statement execution");
 
     AssertUtil.assertTrue(stmtInput.sql != null,
-        "Missing sql for statement execution");
+                          "Missing sql for statement execution");
 
     AssertUtil.assertTrue(stmtInput.mediaType != null,
-        "Missing media type for statement execution");
+                          "Missing media type for statement execution");
 
     AssertUtil.assertTrue(stmtInput.requestId != null,
-        "Missing request id for statement execution");
+                          "Missing request id for statement execution");
 
     AssertUtil.assertTrue(stmtInput.sessionToken != null,
-        "Missing session token for statement execution");
+                          "Missing session token for statement execution");
 
     try
     {
@@ -743,8 +753,8 @@ public class StmtUtil
       httpRequest.addHeader("accept", stmtInput.mediaType);
 
       httpRequest.setHeader(SF_HEADER_AUTHORIZATION,
-          SF_HEADER_SNOWFLAKE_AUTHTYPE + " " + SF_HEADER_TOKEN_TAG
-              + "=\"" + stmtInput.sessionToken + "\"");
+                            SF_HEADER_SNOWFLAKE_AUTHTYPE + " " + SF_HEADER_TOKEN_TAG
+                            + "=\"" + stmtInput.sessionToken + "\"");
 
       setServiceNameHeader(stmtInput, httpRequest);
 
@@ -765,8 +775,8 @@ public class StmtUtil
     catch (URISyntaxException | IOException ex)
     {
       logger.error(
-                 "Exception encountered when canceling " + httpRequest,
-                 ex);
+          "Exception encountered when canceling " + httpRequest,
+          ex);
 
       // raise internal exception if this is not a snowflake exception
       throw new SFException(ex,
@@ -780,7 +790,7 @@ public class StmtUtil
    *
    * @param sql a SQL statement/command
    * @return PUT/GET/LIST/RM if statment belongs to one of them, otherwise
-   *         return NULL
+   * return NULL
    */
   static public SFStatementType checkStageManageCommand(String sql)
   {
@@ -806,15 +816,15 @@ public class StmtUtil
         break;
       }
 
-      logger.debug( "New sql after skipping // comments: \n{}",
-          trimmedSql);
+      logger.debug("New sql after skipping // comments: \n{}",
+                   trimmedSql);
 
     }
 
     // skip commenting enclosed with /* */
     while (trimmedSql.startsWith("/*"))
     {
-      logger.debug( "skipping /* */ comments in: \n{}", trimmedSql);
+      logger.debug("skipping /* */ comments in: \n{}", trimmedSql);
 
       if (trimmedSql.indexOf("*/") > 0)
       {
@@ -826,7 +836,7 @@ public class StmtUtil
         break;
 
       }
-      logger.debug( "New sql after skipping /* */ comments: \n{}", trimmedSql);
+      logger.debug("New sql after skipping /* */ comments: \n{}", trimmedSql);
 
     }
 
@@ -846,7 +856,7 @@ public class StmtUtil
       return SFStatementType.LIST;
     }
     else if (trimmedSql.startsWith("rm ") ||
-            trimmedSql.startsWith("remove "))
+             trimmedSql.startsWith("remove "))
     {
       return SFStatementType.REMOVE;
     }

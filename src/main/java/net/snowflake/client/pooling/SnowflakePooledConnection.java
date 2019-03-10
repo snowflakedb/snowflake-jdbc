@@ -17,10 +17,14 @@ import java.util.Set;
  */
 public class SnowflakePooledConnection implements PooledConnection
 {
-  /** physical connection, an instance of SnowflakeConnectionV1 class */
+  /**
+   * physical connection, an instance of SnowflakeConnectionV1 class
+   */
   private Connection physicalConnection;
 
-  /** list of event listener registered to listen for connection event */
+  /**
+   * list of event listener registered to listen for connection event
+   */
   private final Set<ConnectionEventListener> eventListeners;
 
   SnowflakePooledConnection(Connection physicalConnection)

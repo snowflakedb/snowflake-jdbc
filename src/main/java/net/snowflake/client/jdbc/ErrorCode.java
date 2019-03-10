@@ -19,13 +19,13 @@ public enum ErrorCode
 
   /**
    * Error codes partitioning:
-   *
+   * <p>
    * 0NNNNN: GS SQL error codes
    * 1NNNNN: XP error codes
    * 2NNNNN: JDBC driver error codes
    * 3NNNNN: GS generic error codes
    * 4NNNNN: Node.js driver error codes
-   *
+   * <p>
    * N can be any digits from 0 to 9.
    */
   INTERNAL_ERROR(200001, SqlState.INTERNAL_ERROR),
@@ -38,7 +38,7 @@ public enum ErrorCode
   FILE_NOT_FOUND(200008, SqlState.DATA_EXCEPTION),
   FILE_IS_DIRECTORY(200009, SqlState.DATA_EXCEPTION),
   DUPLICATE_CONNECTION_PROPERTY_SPECIFIED(200010,
-      SqlState.DATA_EXCEPTION),
+                                          SqlState.DATA_EXCEPTION),
   MISSING_USERNAME(200011, SqlState.INVALID_AUTHORIZATION_SPECIFICATION),
   MISSING_PASSWORD(200012, SqlState.INVALID_AUTHORIZATION_SPECIFICATION),
   S3_OPERATION_ERROR(200013, SqlState.SYSTEM_ERROR),
@@ -57,7 +57,7 @@ public enum ErrorCode
   MISSING_SERVER_URL(200026, SqlState.INVALID_AUTHORIZATION_SPECIFICATION),
   TOO_MANY_SESSION_PARAMETERS(200027, SqlState.FEATURE_NOT_SUPPORTED),
   MISSING_CONNECTION_PROPERTY(200028,
-      SqlState.INVALID_AUTHORIZATION_SPECIFICATION),
+                              SqlState.INVALID_AUTHORIZATION_SPECIFICATION),
   INVALID_CONNECTION_URL(200029, SqlState.INVALID_AUTHORIZATION_SPECIFICATION),
   DUPLICATE_STATEMENT_PARAMETER_SPECIFIED(200030, SqlState.DATA_EXCEPTION),
   TOO_MANY_STATEMENT_PARAMETERS(200031, SqlState.FEATURE_NOT_SUPPORTED),
@@ -71,12 +71,12 @@ public enum ErrorCode
   IDP_CONNECTION_ERROR(200039,
                        SqlState.SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION),
   IDP_INCORRECT_DESTINATION(200040,
-                       SqlState.SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION),
+                            SqlState.SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION),
   CONNECTION_ESTABLISHED_WITH_DIFFERENT_PROP(200041, SqlState.WARNING),
   UNSUPPORTED_STATEMENT_TYPE_IN_EXECUTION_API(200042,
-      SqlState.FEATURE_NOT_SUPPORTED),
+                                              SqlState.FEATURE_NOT_SUPPORTED),
   STATEMENT_PREPARE_FAILURE(200043, SqlState.FEATURE_NOT_SUPPORTED),
-   AZURE_SERVICE_ERROR(200044, SqlState.SYSTEM_ERROR),
+  AZURE_SERVICE_ERROR(200044, SqlState.SYSTEM_ERROR),
 
   INVALID_OR_UNSUPPORTED_PRIVATE_KEY(200045, SqlState.SYNTAX_ERROR),
   FAILED_TO_GENERATE_JWT(200046, SqlState.SYNTAX_ERROR),
@@ -85,11 +85,10 @@ public enum ErrorCode
   UPDATE_FIRST_RESULT_NOT_UPDATE_COUNT(200049, SqlState.WARNING),
   CHILD_RESULT_IDS_AND_TYPES_DIFFERENT_SIZES(200050, SqlState.INTERNAL_ERROR),
   INVALID_PROXY_PROPERTIES(200051, SqlState.CONNECTION_EXCEPTION),
-  CONNECTION_CLOSED(200052, SqlState.CONNECTION_DOES_NOT_EXIST)
-  ;
+  CONNECTION_CLOSED(200052, SqlState.CONNECTION_DOES_NOT_EXIST);
 
   public final static String errorMessageResource =
-  "net.snowflake.client.jdbc.jdbc_error_messages";
+      "net.snowflake.client.jdbc.jdbc_error_messages";
 
   /**
    * Snowflake internal message associated to the error.
@@ -102,6 +101,7 @@ public enum ErrorCode
    * Construct a new error code specification given Snowflake internal error
    * code and SQL state error code.
    * <p/>
+   *
    * @param messageCode
    */
   ErrorCode(Integer messageCode, String sqlState)
@@ -124,6 +124,6 @@ public enum ErrorCode
   public String toString()
   {
     return "ErrorCode{" + "messageCode=" + messageCode + ", sqlState=" +
-        sqlState + '}';
+           sqlState + '}';
   }
 }

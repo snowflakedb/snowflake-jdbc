@@ -10,13 +10,13 @@ import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 
 /**
- *  Queue that sequentially finalizes BufferStage uploads and schedules them for 
- *  processing in ProcessQueue.
+ * Queue that sequentially finalizes BufferStage uploads and schedules them for
+ * processing in ProcessQueue.
  */
 public class PutQueue implements Runnable
 {
   private static final SFLogger LOGGER = SFLoggerFactory.getLogger(
-          PutQueue.class);
+      PutQueue.class);
 
   private final Thread _thread;
 
@@ -62,7 +62,7 @@ public class PutQueue implements Runnable
 
         // Uploads the stage
         stage.completeUploading();
-        
+
         // Schedules it for processing
         _loader.queueProcess(stage);
 

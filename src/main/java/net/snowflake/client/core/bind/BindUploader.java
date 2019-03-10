@@ -48,21 +48,21 @@ public class BindUploader implements Closeable
   private static final String TS_FORMAT = "YYYY-MM-DD HH24:MI:SS.FF9 TZH:TZM";
 
   private static final String CREATE_STAGE_STMT = "CREATE TEMPORARY STAGE "
-      + STAGE_NAME
-      + " file_format=("
-      + " type=csv"
-      + " date_format=" + DATE_FORMAT
-      + " timestamp_format='" + TS_FORMAT + "'"
-      + " field_optionally_enclosed_by='\"'"
-      + ")";
+                                                  + STAGE_NAME
+                                                  + " file_format=("
+                                                  + " type=csv"
+                                                  + " date_format=" + DATE_FORMAT
+                                                  + " timestamp_format='" + TS_FORMAT + "'"
+                                                  + " field_optionally_enclosed_by='\"'"
+                                                  + ")";
 
   private static final String PUT_STMT = "PUT"
-      + " 'file://%s%s*'"           // argument 1: folder, argument 2: separator
-      + " '%s'"                     // argument 3: stage path
-      + " parallel=10"              // upload chunks in parallel
-      + " overwrite=true"           // skip file existence check
-      + " auto_compress=false"      // we compress already
-      + " source_compression=gzip"; //   (with gzip)
+                                         + " 'file://%s%s*'"           // argument 1: folder, argument 2: separator
+                                         + " '%s'"                     // argument 3: stage path
+                                         + " parallel=10"              // upload chunks in parallel
+                                         + " overwrite=true"           // skip file existence check
+                                         + " auto_compress=false"      // we compress already
+                                         + " source_compression=gzip"; //   (with gzip)
 
   private static final int PUT_RETRY_COUNT = 3;
 
@@ -166,7 +166,7 @@ public class BindUploader implements Closeable
    * @throws BindException if temporary directory could not be created
    */
   public synchronized static BindUploader newInstance(SFSession session, String stageDir)
-      throws BindException
+  throws BindException
   {
     try
     {
@@ -380,7 +380,10 @@ public class BindUploader implements Closeable
 
     for (int i = 0; i < data.length; ++i)
     {
-      if (i > 0) sb.append(',');
+      if (i > 0)
+      {
+        sb.append(',');
+      }
       sb.append(SnowflakeType.escapeForCSV(data[i]));
     }
     sb.append('\n');

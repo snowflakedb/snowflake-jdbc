@@ -9,6 +9,7 @@ import net.snowflake.common.core.ResourceBundleManager;
 
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
+
 /**
  * Created by jhuang on 1/5/16.
  */
@@ -81,7 +82,7 @@ public class SFException extends Throwable
   public String toString()
   {
     return super.toString() +
-        (getQueryId() != null ? ", query id = " + getQueryId() : "") +
-        (getSqlState() != null ? ", sql state = " + getSqlState() : "");
+           (getQueryId() != null ? ", query id = " + getQueryId() : "") +
+           (getSqlState() != null ? ", sql state = " + getSqlState() : "");
   }
 }

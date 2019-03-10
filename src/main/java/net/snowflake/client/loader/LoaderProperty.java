@@ -33,12 +33,12 @@ public enum LoaderProperty
   compressFileByPut, // Compress file by PUT. false by default                     Boolean
   compressDataBeforePut, // Compress data before PUT. true by default              Boolean
   compressLevel,     // Compress level: 1 (Speed) to 9 (Compression) for
-                     // compressDataBeforePut option. No impact to
-                     // compressFileByPut.  1 by default.                          Long
+  // compressDataBeforePut option. No impact to
+  // compressFileByPut.  1 by default.                          Long
 
   // compatibility parameters
   mapTimeToTimestamp, // map TIME data type to TIMESTAMP. Informatica v1
-                      // connector behavior.                                       Boolean
+  // connector behavior.                                       Boolean
 
   // deprecated. to be removed.
   copyEmptyFieldAsEmpty, // EMPTY_FIELD_AS_NULL = true by default                  Boolean

@@ -28,6 +28,7 @@ import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.filefilter.WildcardFileFilter;
+
 import javax.activation.MimeType;
 import javax.activation.MimeTypeParseException;
 import java.io.File;
@@ -64,7 +65,7 @@ import java.util.zip.GZIPOutputStream;
 public class SnowflakeFileTransferAgent implements SnowflakeFixedView
 {
   final static SFLogger logger =
-  SFLoggerFactory.getLogger(SnowflakeFileTransferAgent.class);
+      SFLoggerFactory.getLogger(SnowflakeFileTransferAgent.class);
 
   final static StorageClientFactory storageFactory = StorageClientFactory.getFactory();
 
@@ -119,7 +120,8 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
 
   private String destFileNameForStreamSource;
 
-  public StageInfo getStageInfo() {
+  public StageInfo getStageInfo()
+  {
     return this.stageInfo;
   }
 
@@ -129,24 +131,28 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
   // Index: Source file to encryption material
   HashMap<String, RemoteStoreFileEncryptionMaterial> srcFileToEncMat;
 
-  public Map getStageCredentials() {
+  public Map getStageCredentials()
+  {
     return new HashMap(stageInfo.getCredentials());
-    }
-  
-  public List<RemoteStoreFileEncryptionMaterial> getEncryptionMaterial() {
-    return new ArrayList(encryptionMaterial);
-    }
+  }
 
-  public Map<String, RemoteStoreFileEncryptionMaterial> getSrcToMaterialsMap() {
+  public List<RemoteStoreFileEncryptionMaterial> getEncryptionMaterial()
+  {
+    return new ArrayList(encryptionMaterial);
+  }
+
+  public Map<String, RemoteStoreFileEncryptionMaterial> getSrcToMaterialsMap()
+  {
     return new HashMap(srcFileToEncMat);
-    }
-  
-  public String getStageLocation() {
+  }
+
+  public String getStageLocation()
+  {
     return stageInfo.getLocation();
-    }
+  }
 
   private void initEncryptionMaterial(CommandType commandType, JsonNode jsonNode)
-      throws SnowflakeSQLException, JsonProcessingException
+  throws SnowflakeSQLException, JsonProcessingException
   {
     encryptionMaterial = new ArrayList<>();
     JsonNode rootNode = jsonNode.path("data").path("encryptionMaterial");
@@ -249,10 +255,19 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
   public enum UploadColumns
   {
 
-    source, target, source_size, target_size,
-    source_compression, target_compression, status, encryption, message
+    source,
+    target,
+    source_size,
+    target_size,
+    source_compression,
+    target_compression,
+    status,
+    encryption,
+    message
 
-  };
+  }
+
+  ;
 
   public class UploadCommandFacade
   {
@@ -305,12 +320,12 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
     private String encryption;
 
     public UploadCommandEncryptionFacade(String srcFile, String destFile,
-                               String resultStatus,
-                               String errorDetails,
-                               long srcSize, long destSize,
-                               String srcCompressionType,
-                               String destCompressionType,
-                               boolean isEncrypted)
+                                         String resultStatus,
+                                         String errorDetails,
+                                         long srcSize, long destSize,
+                                         String srcCompressionType,
+                                         String destCompressionType,
+                                         boolean isEncrypted)
     {
       super(srcFile, destFile, resultStatus, errorDetails, srcSize, destSize,
             srcCompressionType, destCompressionType);
@@ -336,9 +351,9 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
     private String errorDetails;
 
     public DownloadCommandFacade(String file,
-                             String resultStatus,
-                             String errorDetails,
-                             long size)
+                                 String resultStatus,
+                                 String errorDetails,
+                                 long size)
     {
       this.file = file;
       this.resultStatus = resultStatus;
@@ -353,10 +368,10 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
     private String encryption;
 
     public DownloadCommandEncryptionFacade(String file,
-                             String resultStatus,
-                             String errorDetails,
-                             long size,
-                             boolean isEncrypted)
+                                           String resultStatus,
+                                           String errorDetails,
+                                           long size,
+                                           boolean isEncrypted)
     {
       super(file, resultStatus, errorDetails, size);
       this.encryption = isEncrypted ? "DECRYPTED" : "";
@@ -370,7 +385,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
   private class FileMetadata
   {
     public String srcFileName;
-    public long   srcFileSize;
+    public long srcFileSize;
     public String destFileName;
     public long destFileSize;
     public boolean requireCompress;
@@ -384,35 +399,35 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
   public enum FileCompressionType
   {
     GZIP(".gz", "application",
-            Arrays.asList("gzip", "x-gzip"), true),
+         Arrays.asList("gzip", "x-gzip"), true),
     DEFLATE(".deflate", "application",
             Arrays.asList("zlib", "deflate"), true),
     RAW_DEFLATE(".raw_deflate", "application",
-            Arrays.asList("raw_deflate"), true),
+                Arrays.asList("raw_deflate"), true),
     BZIP2(".bz2", "application",
-            Arrays.asList("bzip2", "x-bzip2", "x-bz2", "x-bzip", "bz2"), true),
+          Arrays.asList("bzip2", "x-bzip2", "x-bz2", "x-bzip", "bz2"), true),
     ZSTD(".zst", "application",
-            Arrays.asList("zstd"), true),
+         Arrays.asList("zstd"), true),
     BROTLI(".br", "application",
-            Arrays.asList("brotli"), true),
+           Arrays.asList("brotli"), true),
     LZIP(".lz", "application",
-            Arrays.asList("lzip", "x-lzip"), false),
+         Arrays.asList("lzip", "x-lzip"), false),
     LZMA(".lzma", "application",
-            Arrays.asList("lzma", "x-lzma"), false),
+         Arrays.asList("lzma", "x-lzma"), false),
     LZO(".lzo", "application",
-            Arrays.asList("lzop", "x-lzop"), false),
+        Arrays.asList("lzop", "x-lzop"), false),
     XZ(".xz", "application",
-            Arrays.asList("xz", "x-xz"), false),
+       Arrays.asList("xz", "x-xz"), false),
     COMPRESS(".Z", "application",
-            Arrays.asList("compress", "x-compress"), false),
+             Arrays.asList("compress", "x-compress"), false),
     PARQUET(".parquet", "snowflake",
             Collections.singletonList("parquet"), true),
     ORC(".orc", "snowflake",
-            Collections.singletonList("orc"), true);
+        Collections.singletonList("orc"), true);
 
     private FileCompressionType(String fileExtension, String mimeType,
-                     List<String> mimeSubTypes,
-                     boolean isSupported)
+                                List<String> mimeSubTypes,
+                                boolean isSupported)
     {
       this.fileExtension = fileExtension;
       this.mimeType = mimeType;
@@ -426,12 +441,13 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
     private boolean supported;
 
     static final Map<String, FileCompressionType> mimeSubTypeToCompressionMap =
-     new HashMap<String, FileCompressionType>();
+        new HashMap<String, FileCompressionType>();
 
-    static {
-      for(FileCompressionType compression : FileCompressionType.values())
+    static
+    {
+      for (FileCompressionType compression : FileCompressionType.values())
       {
-        for(String mimeSubType : compression.mimeSubTypes)
+        for (String mimeSubType : compression.mimeSubTypes)
         {
           mimeSubTypeToCompressionMap.put(mimeSubType, compression);
         }
@@ -476,19 +492,19 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
    * @throws SnowflakeSQLException if encountered exception when compressing
    */
   private static InputStreamWithMetadata compressStreamWithGZIP(
-          InputStream inputStream) throws SnowflakeSQLException
+      InputStream inputStream) throws SnowflakeSQLException
   {
     FileBackedOutputStream tempStream =
-          new FileBackedOutputStream(MAX_BUFFER_SIZE, true);
+        new FileBackedOutputStream(MAX_BUFFER_SIZE, true);
 
     try
     {
 
       DigestOutputStream digestStream = new DigestOutputStream(tempStream,
-          MessageDigest.getInstance("SHA-256"));
+                                                               MessageDigest.getInstance("SHA-256"));
 
       CountingOutputStream countingStream =
-            new CountingOutputStream(digestStream);
+          new CountingOutputStream(digestStream);
 
       // construct a gzip stream with sync_flush mode
       GZIPOutputStream gzipStream;
@@ -505,8 +521,8 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
       countingStream.flush();
 
       return new InputStreamWithMetadata(countingStream.getCount(),
-          Base64.encodeAsString(digestStream.getMessageDigest().digest()),
-          tempStream);
+                                         Base64.encodeAsString(digestStream.getMessageDigest().digest()),
+                                         tempStream);
 
     }
     catch (IOException | NoSuchAlgorithmException ex)
@@ -514,13 +530,13 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
       logger.error("Exception compressing input stream", ex);
 
       throw new SnowflakeSQLException(ex, SqlState.INTERNAL_ERROR,
-              ErrorCode.INTERNAL_ERROR.getMessageCode(),
-              "error encountered for compression");
+                                      ErrorCode.INTERNAL_ERROR.getMessageCode(),
+                                      "error encountered for compression");
     }
 
   }
 
-    /**
+  /**
    * Compress an input stream with GZIP and return the result size, digest and
    * compressed stream.
    *
@@ -530,7 +546,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
    * @deprecated Can be removed when all accounts are encrypted
    */
   private static InputStreamWithMetadata compressStreamWithGZIPNoDigest(
-          InputStream inputStream) throws SnowflakeSQLException
+      InputStream inputStream) throws SnowflakeSQLException
   {
     try
     {
@@ -538,7 +554,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
           new FileBackedOutputStream(MAX_BUFFER_SIZE, true);
 
       CountingOutputStream countingStream =
-            new CountingOutputStream(tempStream);
+          new CountingOutputStream(tempStream);
 
       // construct a gzip stream with sync_flush mode
       GZIPOutputStream gzipStream;
@@ -555,7 +571,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
       countingStream.flush();
 
       return new InputStreamWithMetadata(countingStream.getCount(),
-              null, tempStream);
+                                         null, tempStream);
 
     }
     catch (IOException ex)
@@ -563,21 +579,21 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
       logger.error("Exception compressing input stream", ex);
 
       throw new SnowflakeSQLException(ex, SqlState.INTERNAL_ERROR,
-              ErrorCode.INTERNAL_ERROR.getMessageCode(),
-              "error encountered for compression");
+                                      ErrorCode.INTERNAL_ERROR.getMessageCode(),
+                                      "error encountered for compression");
     }
 
   }
 
   private static InputStreamWithMetadata computeDigest(InputStream is,
                                                        boolean resetStream)
-          throws NoSuchAlgorithmException, IOException
+  throws NoSuchAlgorithmException, IOException
   {
     MessageDigest md = MessageDigest.getInstance("SHA-256");
     if (resetStream)
     {
       FileBackedOutputStream tempStream =
-            new FileBackedOutputStream(MAX_BUFFER_SIZE, true);
+          new FileBackedOutputStream(MAX_BUFFER_SIZE, true);
 
       CountingOutputStream countingOutputStream =
           new CountingOutputStream(tempStream);
@@ -587,8 +603,8 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
       IOUtils.copy(is, digestStream);
 
       return new InputStreamWithMetadata(countingOutputStream.getCount(),
-              Base64.encodeAsString(digestStream.getMessageDigest().digest()),
-              tempStream);
+                                         Base64.encodeAsString(digestStream.getMessageDigest().digest()),
+                                         tempStream);
     }
     else
     {
@@ -596,47 +612,50 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
           new CountingOutputStream(ByteStreams.nullOutputStream());
 
       DigestOutputStream digestStream = new DigestOutputStream(
-                                            countingOutputStream,
-                                            md);
+          countingOutputStream,
+          md);
       IOUtils.copy(is, digestStream);
       return new InputStreamWithMetadata(countingOutputStream.getCount(),
-          Base64.encodeAsString(digestStream.getMessageDigest().digest()), null);
+                                         Base64.encodeAsString(digestStream.getMessageDigest().digest()), null);
     }
   }
 
   /**
    * A callable that can be executed in a separate thread using exeuctor service.
-   *
+   * <p>
    * The callable does compression if needed and upload the result to the
    * table's staging area.
    *
-   * @param stage information about the stage
-   * @param srcFilePath source file path
-   * @param metadata file metadata
-   * @param client client object used to communicate with c3
-   * @param connection connection object
-   * @param command command string
-   * @param inputStream null if upload source is file
+   * @param stage            information about the stage
+   * @param srcFilePath      source file path
+   * @param metadata         file metadata
+   * @param client           client object used to communicate with c3
+   * @param connection       connection object
+   * @param command          command string
+   * @param inputStream      null if upload source is file
    * @param sourceFromStream whether upload source is file or stream
-   * @param parallel number of threads for parallel uploading
-   * @param srcFile source file name
-   * @param encMat not null if encryption is required
+   * @param parallel         number of threads for parallel uploading
+   * @param srcFile          source file name
+   * @param encMat           not null if encryption is required
    * @return a callable that uploading file to the remote store
    */
   public static Callable<Void> getUploadFileCallable(
-          final StageInfo stage,
-          final String srcFilePath,
-          final FileMetadata metadata,
-          final SnowflakeStorageClient client,
-          final SFSession connection,
-          final String command,
-          final InputStream inputStream,
-          final boolean sourceFromStream,
-          final int parallel,
-          final File srcFile,
-          final RemoteStoreFileEncryptionMaterial encMat) {
-    return new Callable<Void>() {
-      public Void call() throws Exception {
+      final StageInfo stage,
+      final String srcFilePath,
+      final FileMetadata metadata,
+      final SnowflakeStorageClient client,
+      final SFSession connection,
+      final String command,
+      final InputStream inputStream,
+      final boolean sourceFromStream,
+      final int parallel,
+      final File srcFile,
+      final RemoteStoreFileEncryptionMaterial encMat)
+  {
+    return new Callable<Void>()
+    {
+      public Void call() throws Exception
+      {
 
         logger.debug("Entering getUploadFileCallable...");
 
@@ -662,8 +681,8 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
         if (metadata == null)
         {
           throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
-                  ErrorCode.INTERNAL_ERROR.getMessageCode(),
-                  "missing file metadata for: " +  srcFilePath);
+                                          ErrorCode.INTERNAL_ERROR.getMessageCode(),
+                                          "missing file metadata for: " + srcFilePath);
         }
 
         String destFileName = metadata.destFileName;
@@ -684,23 +703,25 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
           if (metadata.requireCompress)
           {
             InputStreamWithMetadata compressedSizeAndStream = (encMat == null ?
-              compressStreamWithGZIPNoDigest(uploadStream) :
-              compressStreamWithGZIP(uploadStream));
+                                                               compressStreamWithGZIPNoDigest(uploadStream) :
+                                                               compressStreamWithGZIP(uploadStream));
 
             fileBackedOutputStream =
-            compressedSizeAndStream.fileBackedOutputStream;
+                compressedSizeAndStream.fileBackedOutputStream;
 
             // update the size
             uploadSize = compressedSizeAndStream.size;
             digest = compressedSizeAndStream.digest;
 
             if (compressedSizeAndStream.fileBackedOutputStream.getFile() != null)
+            {
               fileToUpload =
-            compressedSizeAndStream.fileBackedOutputStream.getFile();
+                  compressedSizeAndStream.fileBackedOutputStream.getFile();
+            }
 
             logger.debug("New size after compression: {}", uploadSize);
           }
-          else if(stage.getStageType() != StageInfo.StageType.LOCAL_FS)
+          else if (stage.getStageType() != StageInfo.StageType.LOCAL_FS)
           {
             // If it's not local_fs, we store our digest in the metadata
             // In local_fs, we don't need digest, and if we turn it on, we will consume whole uploadStream, which local_fs uses.
@@ -711,14 +732,20 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
             uploadSize = result.size;
 
             if (!sourceFromStream)
+            {
               fileToUpload = srcFile;
+            }
             else if (result.fileBackedOutputStream.getFile() != null)
+            {
               fileToUpload = result.fileBackedOutputStream.getFile();
+            }
           }
           else
           {
             if (!sourceFromStream && (srcFile != null))
+            {
               fileToUpload = srcFile;
+            }
 
             // if stage is local_fs and upload source is stream, upload size
             // does not matter since 1) transfer did not require size 2) no
@@ -727,17 +754,17 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
           }
 
           logger.debug("Started copying file from: {} to {}:{} destName: {} " +
-              "auto compressed? {} size={}", srcFilePath, stage.getStageType().name(), stage.getLocation(),
-                destFileName, (metadata.requireCompress ? "yes":"no"),
+                       "auto compressed? {} size={}", srcFilePath, stage.getStageType().name(), stage.getLocation(),
+                       destFileName, (metadata.requireCompress ? "yes" : "no"),
                        uploadSize);
 
-            // Simulated failure code.
+          // Simulated failure code.
           if (connection.getInjectFileUploadFailure()
               != null && srcFilePath.endsWith(
               (connection).getInjectFileUploadFailure()))
           {
             throw new SnowflakeSimulatedUploadFailure(
-                    srcFile != null ? srcFile.getName() : "Unknown");
+                srcFile != null ? srcFile.getName() : "Unknown");
           }
 
           // upload it
@@ -745,23 +772,23 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
           {
             case LOCAL_FS:
               pushFileToLocal(stage.getLocation(),
-                       srcFilePath, destFileName, uploadStream,
-                       fileBackedOutputStream);
+                              srcFilePath, destFileName, uploadStream,
+                              fileBackedOutputStream);
               break;
 
             case S3:
             case AZURE:
               pushFileToRemoteStore(stage,
-                           destFileName,
-                           uploadStream, fileBackedOutputStream, uploadSize,
-                           digest, metadata.destCompressionType,
-                           client, connection, command, parallel, fileToUpload,
-                           (fileToUpload == null), encMat);
+                                    destFileName,
+                                    uploadStream, fileBackedOutputStream, uploadSize,
+                                    digest, metadata.destCompressionType,
+                                    client, connection, command, parallel, fileToUpload,
+                                    (fileToUpload == null), encMat);
               metadata.isEncrypted = encMat != null;
               break;
           }
         }
-        catch(SnowflakeSimulatedUploadFailure ex)
+        catch (SnowflakeSimulatedUploadFailure ex)
         {
           // This code path is used for Simulated failure code in tests.
           // Never happen in production
@@ -769,10 +796,10 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
           metadata.errorDetails = ex.getMessage();
           throw ex;
         }
-        catch(Throwable ex)
+        catch (Throwable ex)
         {
           logger.error(
-                     "Exception encountered during file upload", ex);
+              "Exception encountered during file upload", ex);
           metadata.resultStatus = ResultStatus.ERROR;
           metadata.errorDetails = ex.getMessage();
           throw ex;
@@ -797,7 +824,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
         }
 
 
-        logger.debug("filePath: {}",  srcFilePath);
+        logger.debug("filePath: {}", srcFilePath);
 
         // set dest size
         metadata.destFileSize = uploadSize;
@@ -812,32 +839,35 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
 
   /**
    * A callable that can be executed in a separate thread using executor service.
-   *
+   * <p>
    * The callable download files from a stage location to a local location
    *
-   * @param stage stage information
-   * @param srcFilePath path that stores the downloaded file
-   * @param localLocation local location
+   * @param stage           stage information
+   * @param srcFilePath     path that stores the downloaded file
+   * @param localLocation   local location
    * @param fileMetadataMap file metadata map
-   * @param client remote store client
-   * @param connection connection object
-   * @param command command string
-   * @param encMat remote store encryption material
-   * @param parallel number of parallel threads for downloading
+   * @param client          remote store client
+   * @param connection      connection object
+   * @param command         command string
+   * @param encMat          remote store encryption material
+   * @param parallel        number of parallel threads for downloading
    * @return a callable responsible for downloading files
    */
   public static Callable<Void> getDownloadFileCallable(
-          final StageInfo stage,
-          final String srcFilePath,
-          final String localLocation,
-          final Map<String, FileMetadata> fileMetadataMap,
-          final SnowflakeStorageClient client,
-          final SFSession connection,
-          final String command,
-          final int parallel,
-          final RemoteStoreFileEncryptionMaterial encMat) {
-    return new Callable<Void>() {
-      public Void call() throws Exception {
+      final StageInfo stage,
+      final String srcFilePath,
+      final String localLocation,
+      final Map<String, FileMetadata> fileMetadataMap,
+      final SnowflakeStorageClient client,
+      final SFSession connection,
+      final String command,
+      final int parallel,
+      final RemoteStoreFileEncryptionMaterial encMat)
+  {
+    return new Callable<Void>()
+    {
+      public Void call() throws Exception
+      {
 
         logger.debug("Entering getDownloadFileCallable...");
 
@@ -847,13 +877,13 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
         if (metadata == null)
         {
           throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
-                  ErrorCode.INTERNAL_ERROR.getMessageCode(),
-                  "missing file metadata for: " +  srcFilePath);
+                                          ErrorCode.INTERNAL_ERROR.getMessageCode(),
+                                          "missing file metadata for: " + srcFilePath);
         }
 
         String destFileName = metadata.destFileName;
         logger.debug("Started copying file from: {}:{} file path:{} to {} destName:{}",
-               stage.getStageType().name(), stage.getLocation(), srcFilePath, localLocation, destFileName);
+                     stage.getStageType().name(), stage.getLocation(), srcFilePath, localLocation, destFileName);
 
         try
         {
@@ -861,30 +891,30 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
           {
             case LOCAL_FS:
               pullFileFromLocal(stage.getLocation(),
-                      srcFilePath,
-                      localLocation,
-                      destFileName);
+                                srcFilePath,
+                                localLocation,
+                                destFileName);
               break;
 
             case AZURE:
             case S3:
               pullFileFromRemoteStore(stage,
-                             srcFilePath,
-                             destFileName,
-                             localLocation,
-                             client,
-                             connection,
-                             command,
-                             parallel,
-                             encMat);
+                                      srcFilePath,
+                                      destFileName,
+                                      localLocation,
+                                      client,
+                                      connection,
+                                      command,
+                                      parallel,
+                                      encMat);
               metadata.isEncrypted = encMat != null;
               break;
           }
         }
-        catch(Throwable ex)
+        catch (Throwable ex)
         {
           logger.error(
-                     "Exception encountered during file download", ex);
+              "Exception encountered during file download", ex);
 
           metadata.resultStatus = ResultStatus.ERROR;
           metadata.errorDetails = ex.getMessage();
@@ -908,9 +938,9 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
   }
 
   public SnowflakeFileTransferAgent(String command,
-                               SFSession connection,
-                               SFStatement statement)
-          throws SnowflakeSQLException
+                                    SFSession connection,
+                                    SFStatement statement)
+  throws SnowflakeSQLException
   {
     this.command = command;
     this.connection = connection;
@@ -930,7 +960,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
 
   /**
    * Parse the put/get command.
-   *
+   * <p>
    * We send the command to the GS to do the parsing. In the future, we
    * will delegate more work to GS such as copying files from HTTP to the remote store.
    *
@@ -942,8 +972,10 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
 
     // get command type
     if (!jsonNode.path("data").path("command").isMissingNode())
+    {
       commandType = CommandType.valueOf(
-              jsonNode.path("data").path("command").asText());
+          jsonNode.path("data").path("command").asText());
+    }
 
     // get source file locations as array (apply to both upload and download)
     JsonNode locationsNode = jsonNode.path("data").path("src_locations");
@@ -960,13 +992,13 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
     catch (Exception ex)
     {
       throw new SnowflakeSQLException(ex, SqlState.INTERNAL_ERROR,
-              ErrorCode.INTERNAL_ERROR.getMessageCode(),
-              "Failed to parse the locations due to: " + ex.getMessage());
+                                      ErrorCode.INTERNAL_ERROR.getMessageCode(),
+                                      "Failed to parse the locations due to: " + ex.getMessage());
     }
 
     showEncryptionParameter = jsonNode.path("data")
-                                      .path("clientShowEncryptionParameter")
-                                      .asBoolean();
+        .path("clientShowEncryptionParameter")
+        .asBoolean();
 
     String localFilePathFromGS = null;
 
@@ -974,16 +1006,20 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
     if (commandType == CommandType.UPLOAD)
     {
       if (src_locations.length > 0)
+      {
         localFilePathFromGS = src_locations[0];
+      }
 
       sourceFiles = expandFileNames(src_locations);
 
       autoCompress =
-      jsonNode.path("data").path("autoCompress").asBoolean(true);
+          jsonNode.path("data").path("autoCompress").asBoolean(true);
 
       if (!jsonNode.path("data").path("sourceCompression").isMissingNode())
+      {
         sourceCompression =
-        jsonNode.path("data").path("sourceCompression").asText();
+            jsonNode.path("data").path("sourceCompression").asText();
+      }
 
     }
     else
@@ -1018,8 +1054,8 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
       if (localLocation.contains("~"))
       {
         throw new SnowflakeSQLException(SqlState.IO_ERROR,
-                ErrorCode.PATH_NOT_DIRECTORY.getMessageCode(),
-                localLocation);
+                                        ErrorCode.PATH_NOT_DIRECTORY.getMessageCode(),
+                                        localLocation);
       }
 
       // todo: replace ~userid with the home directory of a given userid
@@ -1039,8 +1075,10 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
 
       // local location should be a directory
       if ((new File(localLocation)).isFile())
+      {
         throw new SnowflakeSQLException(SqlState.IO_ERROR,
-                ErrorCode.PATH_NOT_DIRECTORY.getMessageCode(), localLocation);
+                                        ErrorCode.PATH_NOT_DIRECTORY.getMessageCode(), localLocation);
+      }
     }
 
     // SNOW-15153: verify that the value after file:// is not changed by GS
@@ -1048,14 +1086,14 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
 
     // more parameters common to upload/download
     String stageLocation = jsonNode.path("data").path("stageInfo").
-                    path("location").asText();
+        path("location").asText();
 
     parallel = jsonNode.path("data").path("parallel").asInt();
 
     overwrite = jsonNode.path("data").path("overwrite").asBoolean(false);
 
     String stageLocationType = jsonNode.path("data").path("stageInfo").
-                        path("locationType").asText();
+        path("locationType").asText();
 
     String stageRegion = null;
     if (!jsonNode.path("data").path("stageInfo").path("region").isMissingNode())
@@ -1066,14 +1104,14 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
 
     // endPoint is only available in Azure stages
     String endPoint = null;
-    if(!jsonNode.path("data").path("stageInfo").path("endPoint").isMissingNode())
+    if (!jsonNode.path("data").path("stageInfo").path("endPoint").isMissingNode())
     {
       endPoint = jsonNode.path("data").path("stageInfo").path("endPoint").asText();
     }
 
     // storageAccount is only available in Azure stages
     String storageAccount = null;
-    if(!jsonNode.path("data").path("stageInfo").path("endPoint").isMissingNode())
+    if (!jsonNode.path("data").path("stageInfo").path("endPoint").isMissingNode())
     {
       storageAccount = jsonNode.path("data").path("stageInfo").path("storageAccount").asText();
     }
@@ -1137,7 +1175,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
     Map stageCredentials = extractStageCreds(jsonNode);
 
     stageInfo = StageInfo.createStageInfo(stageLocationType, stageLocation, stageCredentials,
-            stageRegion, endPoint, storageAccount);
+                                          stageRegion, endPoint, storageAccount);
   }
 
   /**
@@ -1149,7 +1187,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
    * @throws SnowflakeSQLException
    */
   private void verifyLocalFilePath(String localFilePathFromGS)
-      throws SnowflakeSQLException
+  throws SnowflakeSQLException
   {
     if (command == null)
     {
@@ -1165,10 +1203,10 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
     }
 
     int localFilePathBeginIdx = command.indexOf(FILE_PROTOCOL) +
-        FILE_PROTOCOL.length();
+                                FILE_PROTOCOL.length();
     boolean isLocalFilePathQuoted =
         (localFilePathBeginIdx > FILE_PROTOCOL.length()) &&
-        (command.charAt(localFilePathBeginIdx-1-FILE_PROTOCOL.length()) == '\'');
+        (command.charAt(localFilePathBeginIdx - 1 - FILE_PROTOCOL.length()) == '\'');
 
     // the ending index is exclusive
     int localFilePathEndIdx = 0;
@@ -1179,8 +1217,10 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
       // look for the matching quote
       localFilePathEndIdx = command.indexOf("'", localFilePathBeginIdx);
       if (localFilePathEndIdx > localFilePathBeginIdx)
+      {
         localFilePath = command.substring(localFilePathBeginIdx,
-            localFilePathEndIdx);
+                                          localFilePathEndIdx);
+      }
       // unescape backslashes to match the file name from GS
       localFilePath = localFilePath.replaceAll("\\\\\\\\", "\\\\");
     }
@@ -1189,7 +1229,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
       // look for the first space or new line or semi colon
       List<Integer> indexList = new ArrayList<>();
       char[] delimiterChars = {' ', '\n', ';'};
-      for (int i=0; i<delimiterChars.length; i++)
+      for (int i = 0; i < delimiterChars.length; i++)
       {
         int charIndex = command.indexOf(delimiterChars[i], localFilePathBeginIdx);
         if (charIndex != -1)
@@ -1201,8 +1241,10 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
       localFilePathEndIdx = indexList.isEmpty() ? -1 : Collections.min(indexList);
 
       if (localFilePathEndIdx > localFilePathBeginIdx)
+      {
         localFilePath = command.substring(localFilePathBeginIdx,
-            localFilePathEndIdx);
+                                          localFilePathEndIdx);
+      }
       else if (localFilePathEndIdx == -1)
       {
         localFilePath = command.substring(localFilePathBeginIdx);
@@ -1212,9 +1254,9 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
     if (!localFilePath.isEmpty() && !localFilePath.equals(localFilePathFromGS))
     {
       throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
-          ErrorCode.INTERNAL_ERROR.getMessageCode(),
-          "Unexpected local file path from GS. From GS: " +
-              localFilePathFromGS + ", expected: " + localFilePath);
+                                      ErrorCode.INTERNAL_ERROR.getMessageCode(),
+                                      "Unexpected local file path from GS. From GS: " +
+                                      localFilePathFromGS + ", expected: " + localFilePath);
     }
     else if (localFilePath.isEmpty())
     {
@@ -1222,8 +1264,10 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
           "fail to parse local file path from command: {}", command);
     }
     else
+    {
       logger.trace(
           "local file path from GS matches local parsing: {}", localFilePath);
+    }
   }
 
   /**
@@ -1232,26 +1276,26 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
    */
   private static JsonNode parseCommandInGS(SFStatement statement,
                                            String command)
-      throws SnowflakeSQLException
+  throws SnowflakeSQLException
   {
     Object result = null;
-      // send the command to GS
+    // send the command to GS
     try
     {
       result = statement.executeHelper(command,
-          "application/json",
-          null, // bindValues
-          false, // describeOnly
-          false // internal
+                                       "application/json",
+                                       null, // bindValues
+                                       false, // describeOnly
+                                       false // internal
       );
     }
     catch (SFException ex)
     {
       throw new SnowflakeSQLException(ex, ex.getSqlState(),
-          ex.getVendorCode(), ex.getParams());
+                                      ex.getVendorCode(), ex.getParams());
     }
 
-    JsonNode jsonNode = (JsonNode)result;
+    JsonNode jsonNode = (JsonNode) result;
     logger.debug("response: {}", jsonNode.toString());
 
     SnowflakeUtil.checkErrorAndThrowException(jsonNode);
@@ -1263,7 +1307,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
    * @throws SnowflakeSQLException
    */
   private static Map extractStageCreds(JsonNode rootNode)
-                                                   throws SnowflakeSQLException
+  throws SnowflakeSQLException
   {
     JsonNode credsNode = rootNode.path("data").path("stageInfo").path("creds");
     Map stageCredentials = null;
@@ -1271,17 +1315,19 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
     try
     {
       TypeReference<HashMap<String, String>> typeRef
-      = new TypeReference<HashMap<String, String>>() {};
+          = new TypeReference<HashMap<String, String>>()
+      {
+      };
       stageCredentials = mapper.readValue(credsNode.toString(), typeRef);
 
     }
     catch (Exception ex)
     {
       throw new SnowflakeSQLException(ex, SqlState.INTERNAL_ERROR,
-              ErrorCode.INTERNAL_ERROR.getMessageCode(),
-              "Failed to parse the credentials (" +
-              (credsNode!=null?credsNode.toString():"null") +
-              ") due to exception: " + ex.getMessage());
+                                      ErrorCode.INTERNAL_ERROR.getMessageCode(),
+                                      "Failed to parse the credentials (" +
+                                      (credsNode != null ? credsNode.toString() : "null") +
+                                      ") due to exception: " + ex.getMessage());
     }
 
     return stageCredentials;
@@ -1300,7 +1346,9 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
 
       // check file compression type
       if (commandType == CommandType.UPLOAD)
+      {
         processFileCompressionTypes();
+      }
 
       // filter out files that are already existing in the destination
       if (!overwrite)
@@ -1329,15 +1377,21 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
           boolean created = dir.mkdirs();
 
           if (created)
+          {
             logger.debug("directory created: {}", localLocation);
+          }
           else
+          {
             logger.debug("directory not created {}", localLocation);
+          }
         }
 
         downloadFiles();
       }
       else if (sourceFromStream)
+      {
         uploadStream();
+      }
       else
       {
         // separate files to big files list and small files list
@@ -1386,16 +1440,20 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
 
       RemoteStoreFileEncryptionMaterial encMat = encryptionMaterial.get(0);
       if (commandType == CommandType.UPLOAD)
+      {
         threadExecutor.submit(getUploadFileCallable(
             stageInfo, SRC_FILE_NAME_FOR_STREAM,
             fileMetadataMap.get(SRC_FILE_NAME_FOR_STREAM),
             (stageInfo.getStageType() == StageInfo.StageType.LOCAL_FS) ?
-               null:storageFactory.createClient(stageInfo, parallel, encMat),
+            null : storageFactory.createClient(stageInfo, parallel, encMat),
             connection, command,
             sourceStream, true, parallel, null, encMat));
+      }
       else if (commandType == CommandType.DOWNLOAD)
+      {
         throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
-            ErrorCode.INTERNAL_ERROR.getMessageCode());
+                                        ErrorCode.INTERNAL_ERROR.getMessageCode());
+      }
 
       threadExecutor.shutdown();
 
@@ -1407,7 +1465,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
       catch (InterruptedException ex)
       {
         throw new SnowflakeSQLException(SqlState.QUERY_CANCELED,
-            ErrorCode.INTERRUPTED.getMessageCode());
+                                        ErrorCode.INTERRUPTED.getMessageCode());
       }
       logger.debug("Done with uploading from a stream");
     }
@@ -1431,8 +1489,8 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
       logger.error("downloadStream function doesn't support local file system");
 
       throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
-          ErrorCode.INTERNAL_ERROR.getMessageCode(),
-          "downloadStream function only supported in remote stages");
+                                      ErrorCode.INTERNAL_ERROR.getMessageCode(),
+                                      "downloadStream function only supported in remote stages");
     }
 
     remoteLocation remoteLocation =
@@ -1443,14 +1501,14 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
     if (!remoteLocation.path.isEmpty())
     {
       stageFilePath = SnowflakeUtil.concatFilePathNames(remoteLocation.path,
-          fileName, "/");
+                                                        fileName, "/");
     }
 
     RemoteStoreFileEncryptionMaterial encMat = srcFileToEncMat.get(fileName);
 
     return storageFactory.createClient(stageInfo, parallel, encMat)
         .downloadToStream(connection, command, parallel, remoteLocation.location,
-            stageFilePath, stageInfo.getRegion());
+                          stageFilePath, stageInfo.getRegion());
   }
 
   /**
@@ -1472,7 +1530,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
         if (fileMetadata.resultStatus != ResultStatus.UNKNOWN)
         {
           logger.debug("Skipping {}, status: {}, details: {}",
-              srcFile, fileMetadata.resultStatus, fileMetadata.errorDetails);
+                       srcFile, fileMetadata.resultStatus, fileMetadata.errorDetails);
           continue;
         }
 
@@ -1483,7 +1541,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
             localLocation,
             fileMetadataMap,
             (stageInfo.getStageType() == StageInfo.StageType.LOCAL_FS) ?
-              null:storageFactory.createClient(stageInfo, parallel, encMat),
+            null : storageFactory.createClient(stageInfo, parallel, encMat),
             connection,
             command,
             parallel,
@@ -1502,7 +1560,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
       catch (InterruptedException ex)
       {
         throw new SnowflakeSQLException(SqlState.QUERY_CANCELED,
-            ErrorCode.INTERRUPTED.getMessageCode());
+                                        ErrorCode.INTERRUPTED.getMessageCode());
       }
       logger.debug("Done with downloading");
     }
@@ -1541,7 +1599,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
         if (fileMetadata.resultStatus != ResultStatus.UNKNOWN)
         {
           logger.debug("Skipping {}, status: {}, details: {}",
-              srcFile, fileMetadata.resultStatus, fileMetadata.errorDetails);
+                       srcFile, fileMetadata.resultStatus, fileMetadata.errorDetails);
 
           continue;
         }
@@ -1560,10 +1618,10 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
             srcFile,
             fileMetadata,
             (stageInfo.getStageType() == StageInfo.StageType.LOCAL_FS) ?
-               null:storageFactory.createClient(stageInfo, parallel,encryptionMaterial.get(0)),
+            null : storageFactory.createClient(stageInfo, parallel, encryptionMaterial.get(0)),
             connection, command,
             null, false,
-            (parallel > 1 ?  1: this.parallel), srcFileObj, encryptionMaterial.get(0)));
+            (parallel > 1 ? 1 : this.parallel), srcFileObj, encryptionMaterial.get(0)));
 
         logger.debug("submitted copy job for: {}", srcFile);
       }
@@ -1579,7 +1637,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
       catch (InterruptedException ex)
       {
         throw new SnowflakeSQLException(SqlState.QUERY_CANCELED,
-            ErrorCode.INTERRUPTED.getMessageCode());
+                                        ErrorCode.INTERRUPTED.getMessageCode());
       }
       logger.debug("Done with uploading");
 
@@ -1597,7 +1655,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
 
   private void segregateFilesBySize()
   {
-    for(String srcFile : sourceFiles)
+    for (String srcFile : sourceFiles)
     {
       if ((new File(srcFile)).length() > BIG_FILE_THRESHOLD)
       {
@@ -1644,7 +1702,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
    * @throws SnowflakeSQLException if cannot find the file
    */
   static public Set<String> expandFileNames(String[] filePathList)
-          throws SnowflakeSQLException
+  throws SnowflakeSQLException
   {
     Set<String> result = new HashSet<String>();
 
@@ -1709,19 +1767,19 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
 
     // For each location, list files and match against the patterns
     for (Map.Entry<String, List<String>> entry :
-            locationToFilePatterns.entrySet())
+        locationToFilePatterns.entrySet())
     {
       try
       {
         java.io.File dir = new java.io.File(entry.getKey());
 
         logger.debug("Listing files under: {} with patterns: {}",
-            entry.getKey(), entry.getValue().toString());
+                     entry.getKey(), entry.getValue().toString());
 
         // The following currently ignore sub directories
         for (Object file : FileUtils.listFiles(dir,
-                                             new WildcardFileFilter(entry.getValue()),
-                                             null))
+                                               new WildcardFileFilter(entry.getValue()),
+                                               null))
         {
           result.add(((java.io.File) file).getCanonicalPath());
         }
@@ -1729,10 +1787,10 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
       catch (Exception ex)
       {
         throw new SnowflakeSQLException(ex, SqlState.DATA_EXCEPTION,
-                ErrorCode.FAIL_LIST_FILES.getMessageCode(),
-                "Exception: " + ex.getMessage() + ", Dir=" +
-                entry.getKey() + ", Patterns=" +
-                entry.getValue().toString());
+                                        ErrorCode.FAIL_LIST_FILES.getMessageCode(),
+                                        "Exception: " + ex.getMessage() + ", Dir=" +
+                                        entry.getKey() + ", Patterns=" +
+                                        entry.getValue().toString());
       }
     }
 
@@ -1751,23 +1809,23 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
                                          String destFileName,
                                          InputStream inputStream,
                                          FileBackedOutputStream fileBackedOutStr)
-          throws SQLException
+  throws SQLException
   {
 
 
     // replace ~ with user home
     stageLocation = stageLocation.replace("~",
-                                            System.getProperty("user.home"));
+                                          System.getProperty("user.home"));
     try
     {
       logger.debug("Copy file. srcFile={}, destination={}, destFileName={}",
-                    filePath, stageLocation, destFileName);
+                   filePath, stageLocation, destFileName);
 
       File destFile = new File(
-              SnowflakeUtil.concatFilePathNames(
-                      stageLocation,
-                      destFileName,
-                      localFSFileSep));
+          SnowflakeUtil.concatFilePathNames(
+              stageLocation,
+              destFileName,
+              localFSFileSep));
 
       if (fileBackedOutStr != null)
       {
@@ -1778,8 +1836,8 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
     catch (Exception ex)
     {
       throw new SnowflakeSQLException(ex, SqlState.INTERNAL_ERROR,
-              ErrorCode.INTERNAL_ERROR.getMessageCode(),
-              ex.getMessage());
+                                      ErrorCode.INTERNAL_ERROR.getMessageCode(),
+                                      ex.getMessage());
     }
 
     return true;
@@ -1789,26 +1847,26 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
                                            String filePath,
                                            String destLocation,
                                            String destFileName)
-          throws SQLException
+  throws SQLException
   {
     try
     {
       logger.debug("Copy file. srcFile={}, destination={}, destFileName={}",
-                  sourceLocation + localFSFileSep + filePath, destLocation, destFileName);
+                   sourceLocation + localFSFileSep + filePath, destLocation, destFileName);
 
       File srcFile = new File(
-              SnowflakeUtil.concatFilePathNames(
-                      sourceLocation,
-                      filePath,
-                      localFSFileSep));
+          SnowflakeUtil.concatFilePathNames(
+              sourceLocation,
+              filePath,
+              localFSFileSep));
 
       FileUtils.copyFileToDirectory(srcFile, new File(destLocation));
     }
     catch (Exception ex)
     {
       throw new SnowflakeSQLException(ex, SqlState.INTERNAL_ERROR,
-              ErrorCode.INTERNAL_ERROR.getMessageCode(),
-              ex.getMessage());
+                                      ErrorCode.INTERNAL_ERROR.getMessageCode(),
+                                      ex.getMessage());
     }
 
     return true;
@@ -1828,22 +1886,22 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
                                             File srcFile,
                                             boolean uploadFromStream,
                                             RemoteStoreFileEncryptionMaterial encMat)
-      throws SQLException, IOException
+  throws SQLException, IOException
   {
     remoteLocation remoteLocation = extractLocationAndPath(stage.getLocation());
 
     if (remoteLocation.path != null && !remoteLocation.path.isEmpty())
     {
       destFileName = remoteLocation.path +
-                     (!remoteLocation.path.endsWith("/")?"/":"")
+                     (!remoteLocation.path.endsWith("/") ? "/" : "")
                      + destFileName;
     }
     if (logger.isDebugEnabled())
     {
       logger.debug("upload object. location={}, key={}, srcFile={}, encryption={}",
-          remoteLocation.location, destFileName, srcFile,
+                   remoteLocation.location, destFileName, srcFile,
                    (encMat == null ? "NULL" :
-              Long.toString(encMat.getSmkId()) + "|" + encMat.getQueryId()));
+                    Long.toString(encMat.getSmkId()) + "|" + encMat.getQueryId()));
     }
 
     StorageObjectMetadata meta = storageFactory.createStorageMetadataObj(stage.getStageType());
@@ -1855,19 +1913,23 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
 
     if (compressionType != null &&
         compressionType.isSupported())
+    {
       meta.setContentEncoding(compressionType.name().toLowerCase());
+    }
 
     try
     {
       initialClient.upload(connection, command, parallel,
-              uploadFromStream,
-          remoteLocation.location, srcFile, destFileName,
-          inputStream, fileBackedOutStr, meta, stage.getRegion());
+                           uploadFromStream,
+                           remoteLocation.location, srcFile, destFileName,
+                           inputStream, fileBackedOutStr, meta, stage.getRegion());
     }
     finally
     {
       if (uploadFromStream && inputStream != null)
+      {
         inputStream.close();
+      }
     }
   }
 
@@ -1878,21 +1940,21 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
    * client to refresh itself with the new token
    *
    * @param connection a connection object
-   * @param command a command to be retried
-   * @param client a Snowflake Storage client object
+   * @param command    a command to be retried
+   * @param client     a Snowflake Storage client object
    * @throws SnowflakeSQLException if any error occurs
    */
   static public void renewExpiredToken(SFSession connection, String command,
-                                SnowflakeStorageClient client)
-                                throws SnowflakeSQLException
+                                       SnowflakeStorageClient client)
+  throws SnowflakeSQLException
   {
-      SFStatement statement = new SFStatement(connection);
-      JsonNode jsonNode = parseCommandInGS(statement, command);
-      Map stageCredentials = extractStageCreds(jsonNode);
+    SFStatement statement = new SFStatement(connection);
+    JsonNode jsonNode = parseCommandInGS(statement, command);
+    Map stageCredentials = extractStageCreds(jsonNode);
 
-      // renew client with the fresh token
-      logger.debug("Renewing expired access token");
-      client.renew(stageCredentials);
+    // renew client with the fresh token
+    logger.debug("Renewing expired access token");
+    client.renew(stageCredentials);
   }
 
   static private void pullFileFromRemoteStore(StageInfo stage,
@@ -1904,7 +1966,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
                                               String command,
                                               int parallel,
                                               RemoteStoreFileEncryptionMaterial encMat)
-          throws SQLException
+  throws SQLException
   {
     remoteLocation remoteLocation = extractLocationAndPath(stage.getLocation());
 
@@ -1913,26 +1975,26 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
     if (!remoteLocation.path.isEmpty())
     {
       stageFilePath = SnowflakeUtil.concatFilePathNames(remoteLocation.path,
-                                                         filePath, "/");
+                                                        filePath, "/");
     }
     if (logger.isDebugEnabled())
     {
       logger.debug("Download object. location={}, key={}, srcFile={}, encryption={}",
-          remoteLocation.location, stageFilePath, filePath,
-          (encMat == null ? "NULL" : Long.toString(encMat.getSmkId()) +
-              "|" + encMat.getQueryId()));
+                   remoteLocation.location, stageFilePath, filePath,
+                   (encMat == null ? "NULL" : Long.toString(encMat.getSmkId()) +
+                                              "|" + encMat.getQueryId()));
     }
 
     initialClient.download(connection, command,
-                               localLocation, destFileName, parallel,
-                               remoteLocation.location, stageFilePath,stage.getRegion());
+                           localLocation, destFileName, parallel,
+                           remoteLocation.location, stageFilePath, stage.getRegion());
   }
 
   /**
    * From the set of files intended to be uploaded/downloaded, derive a common
    * prefix and use the listObjects API to get the object summary for each
    * object that has the common prefix.
-   *
+   * <p>
    * For each returned object, we compare the size and digest with the local file
    * and if they are the same, we will not upload/download the file.
    *
@@ -1947,7 +2009,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
      * skipped for uploading/downloading
      */
     Map<String, String> destFileNameToSrcFileMap =
-    new HashMap<String, String>(fileMetadataMap.size());
+        new HashMap<String, String>(fileMetadataMap.size());
 
     logger.debug("Build reverse map from destination file name to source file");
 
@@ -1956,8 +2018,8 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
       if (entry.getValue().destFileName != null)
       {
         String prevSrcFile =
-        destFileNameToSrcFileMap.put(entry.getValue().destFileName,
-                                     entry.getKey());
+            destFileNameToSrcFileMap.put(entry.getValue().destFileName,
+                                         entry.getKey());
 
         if (prevSrcFile != null)
         {
@@ -1977,7 +2039,9 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
 
     // no files to be processed
     if (destFileNameToSrcFileMap.size() == 0)
+    {
       return;
+    }
 
     // determine greatest common prefix for all stage file names so that
     // we can call remote store API to list the objects and get their digest to compare
@@ -1985,23 +2049,27 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
     String[] stageFileNames;
 
     if (commandType == CommandType.UPLOAD)
+    {
       stageFileNames = destFileNameToSrcFileMap.keySet().toArray(new String[0]);
+    }
     else
+    {
       stageFileNames =
-      destFileNameToSrcFileMap.values().toArray(new String[0]);
+          destFileNameToSrcFileMap.values().toArray(new String[0]);
+    }
 
     // find greatest common prefix for all stage file names
     Arrays.sort(stageFileNames);
 
     String greatestCommonPrefix =
-    SnowflakeUtil.greatestCommonPrefix(stageFileNames[0],
-                                   stageFileNames[stageFileNames.length-1]);
+        SnowflakeUtil.greatestCommonPrefix(stageFileNames[0],
+                                           stageFileNames[stageFileNames.length - 1]);
 
     logger.debug("Greatest common prefix: {}", greatestCommonPrefix);
 
     // use the greatest common prefix to list objects under stage location
     if (stageInfo.getStageType() == StageInfo.StageType.S3 ||
-            stageInfo.getStageType() == StageInfo.StageType.AZURE)
+        stageInfo.getStageType() == StageInfo.StageType.AZURE)
     {
       logger.debug("check existing files on remote storage for the common prefix");
 
@@ -2016,22 +2084,22 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
         try
         {
           objectSummaries = storageClient.listObjects(storeLocation.location,
-              SnowflakeUtil.concatFilePathNames(
-                  storeLocation.path,
-                  greatestCommonPrefix, "/"));
+                                                      SnowflakeUtil.concatFilePathNames(
+                                                          storeLocation.path,
+                                                          greatestCommonPrefix, "/"));
 
           // exit retry loop
           break;
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
           logger.debug("Listing objects for filtering encountered exception: {}",
-              ex.getMessage());
+                       ex.getMessage());
 
           storageClient.handleStorageException(ex, ++retryCount, "listObjects", connection, command);
         }
       }
-      while(retryCount <= storageClient.getMaxRetries());
+      while (retryCount <= storageClient.getMaxRetries());
 
       for (StorageObjectSummary obj : objectSummaries)
       {
@@ -2047,7 +2115,9 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
 
         // skip objects that don't have a corresponding file to be uploaded
         if (mappedSrcFile == null)
+        {
           continue;
+        }
 
         logger.debug("Next compare digest for {} against {} on the remote store", mappedSrcFile, objFileName);
 
@@ -2056,14 +2126,14 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
 
         try
         {
-          localFile = (commandType==CommandType.UPLOAD)?
-                             mappedSrcFile:(localLocation + objFileName);
+          localFile = (commandType == CommandType.UPLOAD) ?
+                      mappedSrcFile : (localLocation + objFileName);
 
           if (commandType == CommandType.DOWNLOAD &&
               !(new File(localFile)).exists())
           {
-            logger.debug("File does not exist locally, will download {}", 
-                        mappedSrcFile);
+            logger.debug("File does not exist locally, will download {}",
+                         mappedSrcFile);
             continue;
           }
 
@@ -2073,7 +2143,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
               Math.abs(obj.getSize() - (new File(localFile)).length()) > 16)
           {
             logger.debug("Size diff between remote and local, will {} {}",
-                        commandType.name().toLowerCase(), mappedSrcFile);
+                         commandType.name().toLowerCase(), mappedSrcFile);
             continue;
           }
 
@@ -2084,17 +2154,17 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
           try
           {
             meta = storageClient.getObjectMetadata(obj.getLocation(),
-                obj.getKey());
+                                                   obj.getKey());
           }
-          catch(StorageProviderException spEx)
+          catch (StorageProviderException spEx)
           {
             // SNOW-14521: when file is not found, ok to upload
             if (spEx.isServiceException404())
             {
               // log it
               logger.debug("File returned from listing but found missing {} when getting its" +
-                          " metadata. Location={}, key={}",
-                          obj.getLocation(), obj.getKey());
+                           " metadata. Location={}, key={}",
+                           obj.getLocation(), obj.getKey());
 
               // the file is not found, ok to upload
               continue;
@@ -2103,7 +2173,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
 
             // for any other exception, log an error
             logger.error("Fetching object metadata encountered exception: {}",
-                   spEx.getMessage());
+                         spEx.getMessage());
 
             throw spEx;
           }
@@ -2143,7 +2213,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
             // no comparison is performed
             if (objDigest != null)
             {
-              InputStreamWithMetadata res = computeDigest(fileStream,false);
+              InputStreamWithMetadata res = computeDigest(fileStream, false);
               hashText = res.digest;
               fileBackedOutputStreams.add(res.fileBackedOutputStream);
 
@@ -2183,46 +2253,48 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
           {
             logger.debug(
                 "digest diff between remote store and local, will {} {}, " +
-                    "local digest: {}, remote store md5: {}",
-                    commandType.name().toLowerCase(),
-                    mappedSrcFile, hashText, obj.getMD5());
+                "local digest: {}, remote store md5: {}",
+                commandType.name().toLowerCase(),
+                mappedSrcFile, hashText, obj.getMD5());
             continue;
           }
         }
         catch (IOException | NoSuchAlgorithmException ex)
         {
           throw new SnowflakeSQLException(ex, SqlState.INTERNAL_ERROR,
-              ErrorCode.INTERNAL_ERROR.getMessageCode(),
-              "Error reading: " + localFile);
+                                          ErrorCode.INTERNAL_ERROR.getMessageCode(),
+                                          "Error reading: " + localFile);
         }
 
         logger.debug("digest same between remote store and local, will not upload {} {}",
-                      commandType.name().toLowerCase(), mappedSrcFile);
+                     commandType.name().toLowerCase(), mappedSrcFile);
 
         skipFile(mappedSrcFile, objFileName);
       }
     }
     else if (stageInfo.getStageType() == StageInfo.StageType.LOCAL_FS)
     {
-      for(String stageFileName : stageFileNames)
+      for (String stageFileName : stageFileNames)
       {
         String stageFilePath =
-        SnowflakeUtil.concatFilePathNames(stageInfo.getLocation(),
-                                          stageFileName,
-                                          localFSFileSep);
+            SnowflakeUtil.concatFilePathNames(stageInfo.getLocation(),
+                                              stageFileName,
+                                              localFSFileSep);
 
         File stageFile = new File(stageFilePath);
 
         // if stage file doesn't exist, no need to skip whether for
         // upload/download
         if (!stageFile.exists())
+        {
           continue;
+        }
 
-        String mappedSrcFile = (commandType==CommandType.UPLOAD)?
-                               destFileNameToSrcFileMap.get(stageFileName):
+        String mappedSrcFile = (commandType == CommandType.UPLOAD) ?
+                               destFileNameToSrcFileMap.get(stageFileName) :
                                stageFileName;
 
-        String localFile = (commandType==CommandType.UPLOAD) ?
+        String localFile = (commandType == CommandType.UPLOAD) ?
                            mappedSrcFile :
                            (localLocation +
                             fileMetadataMap.get(mappedSrcFile).destFileName);
@@ -2233,7 +2305,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
             stageFile.length() != (new File(localFile)).length())
         {
           logger.debug("Size diff between stage and local, will {} {}",
-                      commandType.name().toLowerCase(), mappedSrcFile);
+                       commandType.name().toLowerCase(), mappedSrcFile);
           continue;
         }
 
@@ -2255,7 +2327,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
             logger.debug("Compressing stream for digest check");
 
             InputStreamWithMetadata res =
-            compressStreamWithGZIP(localFileStream);
+                compressStreamWithGZIP(localFileStream);
             fileBackedOutputStreams.add(res.fileBackedOutputStream);
 
             localFileStream =
@@ -2269,26 +2341,26 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
         catch (IOException | NoSuchAlgorithmException ex)
         {
           throw new SnowflakeSQLException(ex, SqlState.INTERNAL_ERROR,
-                  ErrorCode.INTERNAL_ERROR.getMessageCode(),
-                  "Error reading local file: " + localFile);
+                                          ErrorCode.INTERNAL_ERROR.getMessageCode(),
+                                          "Error reading local file: " + localFile);
         }
         finally
         {
-            for (FileBackedOutputStream stream : fileBackedOutputStreams)
+          for (FileBackedOutputStream stream : fileBackedOutputStreams)
+          {
+            if (stream != null)
             {
-              if (stream != null)
+              try
               {
-                try
-                {
-                  stream.reset();
-                }
-                catch (IOException ex)
-                {
-                  logger.debug("failed to clean up temp file: {}", ex);
-                }
+                stream.reset();
+              }
+              catch (IOException ex)
+              {
+                logger.debug("failed to clean up temp file: {}", ex);
               }
             }
-            IOUtils.closeQuietly(localFileStream);
+          }
+          IOUtils.closeQuietly(localFileStream);
         }
 
         FileBackedOutputStream fileBackedOutputStream = null;
@@ -2306,36 +2378,36 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
         catch (IOException | NoSuchAlgorithmException ex)
         {
           throw new SnowflakeSQLException(ex, SqlState.INTERNAL_ERROR,
-                  ErrorCode.INTERNAL_ERROR.getMessageCode(),
-                  "Error reading stage file: " + stageFilePath);
+                                          ErrorCode.INTERNAL_ERROR.getMessageCode(),
+                                          "Error reading stage file: " + stageFilePath);
         }
         finally
         {
-            try
+          try
+          {
+            if (fileBackedOutputStream != null)
             {
-              if (fileBackedOutputStream != null)
-              {
-                fileBackedOutputStream.reset();
-              }
+              fileBackedOutputStream.reset();
             }
-            catch (IOException ex)
-            {
-              logger.debug("failed to clean up temp file: {}", ex);
-            }
-            IOUtils.closeQuietly(stageFileStream);
+          }
+          catch (IOException ex)
+          {
+            logger.debug("failed to clean up temp file: {}", ex);
+          }
+          IOUtils.closeQuietly(stageFileStream);
         }
 
         // continue if digest is different so that we will process the file
         if (!stageFileHashText.equals(localFileHashText))
         {
           logger.debug("digest diff between local and stage, will {} {}",
-                        commandType.name().toLowerCase(), mappedSrcFile);
+                       commandType.name().toLowerCase(), mappedSrcFile);
           continue;
         }
         else
         {
-          logger.debug("digest matches between local and stage, will skip {}", 
-                      mappedSrcFile);
+          logger.debug("digest matches between local and stage, will skip {}",
+                       mappedSrcFile);
 
           // skip the file given that the check sum is the same b/w source
           // and destination
@@ -2343,7 +2415,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
         }
       }
     }
-   }
+  }
 
   private void skipFile(String srcFilePath, String destFileName)
   {
@@ -2358,13 +2430,13 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
 
         fileMetadata.resultStatus = ResultStatus.SKIPPED;
         fileMetadata.errorDetails =
-        "File with same destination name and checksum already exists: "
-        + destFileName;
+            "File with same destination name and checksum already exists: "
+            + destFileName;
       }
       else
       {
         logger.debug("No need to mark as skipped for: {} status was already marked as: {}",
-                      srcFilePath, fileMetadata.resultStatus);
+                     srcFilePath, fileMetadata.resultStatus);
       }
     }
   }
@@ -2400,15 +2472,16 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
             logger.debug("File doesn't exist: {}", sourceFile);
 
             throw new SnowflakeSQLException(SqlState.DATA_EXCEPTION,
-                ErrorCode.FILE_NOT_FOUND.getMessageCode(),
-                sourceFile);
-          } else if (file.isDirectory())
+                                            ErrorCode.FILE_NOT_FOUND.getMessageCode(),
+                                            sourceFile);
+          }
+          else if (file.isDirectory())
           {
             logger.debug("Not a file, but directory: {}", sourceFile);
 
             throw new SnowflakeSQLException(SqlState.DATA_EXCEPTION,
-                ErrorCode.FILE_IS_DIRECTORY.getMessageCode(),
-                sourceFile);
+                                            ErrorCode.FILE_IS_DIRECTORY.getMessageCode(),
+                                            sourceFile);
           }
         }
       }
@@ -2422,7 +2495,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
         fileMetadata.srcFileName = sourceFile;
 
         fileMetadata.destFileName = sourceFile.substring(
-                sourceFile.lastIndexOf("/") + 1); // s3 uses / as separator
+            sourceFile.lastIndexOf("/") + 1); // s3 uses / as separator
       }
     }
   }
@@ -2435,16 +2508,20 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
    * @throws MimeTypeParseException
    */
   private FileCompressionType mimeTypeToCompressionType(String mimeTypeStr)
-          throws MimeTypeParseException
+  throws MimeTypeParseException
   {
     MimeType mimeType = null;
 
     if (mimeTypeStr != null)
+    {
       mimeType = new MimeType(mimeTypeStr);
+    }
 
     if (mimeType != null && mimeType.getSubType() != null)
+    {
       return FileCompressionType.lookupByMimeSubType(
-              mimeType.getSubType().toLowerCase());
+          mimeType.getSubType().toLowerCase());
+    }
 
     return null;
   }
@@ -2471,19 +2548,19 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
     else
     {
       userSpecifiedSourceCompression =
-      FileCompressionType.lookupByMimeSubType(sourceCompression.toLowerCase());
+          FileCompressionType.lookupByMimeSubType(sourceCompression.toLowerCase());
 
       if (userSpecifiedSourceCompression == null)
       {
         throw new SnowflakeSQLException(SqlState.FEATURE_NOT_SUPPORTED,
-                ErrorCode.COMPRESSION_TYPE_NOT_KNOWN.getMessageCode(),
-                sourceCompression);
+                                        ErrorCode.COMPRESSION_TYPE_NOT_KNOWN.getMessageCode(),
+                                        sourceCompression);
       }
       else if (!userSpecifiedSourceCompression.isSupported())
       {
         throw new SnowflakeSQLException(SqlState.FEATURE_NOT_SUPPORTED,
-            ErrorCode.COMPRESSION_TYPE_NOT_SUPPORTED.getMessageCode(),
-            sourceCompression);
+                                        ErrorCode.COMPRESSION_TYPE_NOT_SUPPORTED.getMessageCode(),
+                                        sourceCompression);
       }
 
       autoDetect = false;
@@ -2497,7 +2574,9 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
 
         if (fileMetadata.resultStatus == ResultStatus.NONEXIST ||
             fileMetadata.resultStatus == ResultStatus.DIRECTORY)
+        {
           continue;
+        }
 
         File file = new File(srcFile);
         String srcFileName = file.getName();
@@ -2519,12 +2598,12 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
                 byte[] magic = new byte[4];
                 if (f.read(magic, 0, 4) == 4)
                 {
-                  if (Arrays.equals(magic, new byte[]{'P','A','R','1'}))
+                  if (Arrays.equals(magic, new byte[]{'P', 'A', 'R', '1'}))
                   {
                     mimeTypeStr = "snowflake/parquet";
                   }
                   else if (Arrays.equals(
-                      Arrays.copyOfRange(magic, 0, 3), new byte[]{'O','R','C'}))
+                      Arrays.copyOfRange(magic, 0, 3), new byte[]{'O', 'R', 'C'}))
                   {
                     mimeTypeStr = "snowflake/orc";
                   }
@@ -2536,7 +2615,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
             {
               logger.debug("Mime type for {} is: {}", srcFile, mimeTypeStr);
 
-              currentFileCompressionType=mimeTypeToCompressionType(mimeTypeStr);
+              currentFileCompressionType = mimeTypeToCompressionType(mimeTypeStr);
             }
 
             // fallback: use file extension
@@ -2547,7 +2626,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
               if (mimeTypeStr != null)
               {
                 logger.debug("Mime type for {} is: {}", srcFile, mimeTypeStr);
-                currentFileCompressionType=mimeTypeToCompressionType(mimeTypeStr);
+                currentFileCompressionType = mimeTypeToCompressionType(mimeTypeStr);
               }
             }
           }
@@ -2568,14 +2647,14 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
               fileMetadata.requireCompress = false;
               fileMetadata.destFileName = srcFileName;
               logger.debug("File compression detected as {} for: {}",
-                        currentFileCompressionType.name(), srcFile);
+                           currentFileCompressionType.name(), srcFile);
             }
             else
             {
               // error if not supported
               throw new SnowflakeSQLException(SqlState.FEATURE_NOT_SUPPORTED,
-                  ErrorCode.COMPRESSION_TYPE_NOT_SUPPORTED.getMessageCode(),
-                  currentFileCompressionType.name());
+                                              ErrorCode.COMPRESSION_TYPE_NOT_SUPPORTED.getMessageCode(),
+                                              currentFileCompressionType.name());
             }
           }
           else
@@ -2591,7 +2670,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
             {
               // We only support gzip auto compression
               fileMetadata.destFileName = srcFileName +
-                  FileCompressionType.GZIP.fileExtension;
+                                          FileCompressionType.GZIP.fileExtension;
               fileMetadata.destCompressionType = FileCompressionType.GZIP;
             }
             else
@@ -2609,20 +2688,24 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
 
           fileMetadata.resultStatus = ResultStatus.ERROR;
           fileMetadata.errorDetails = "Failed to parse mime type: " +
-              mimeTypeStr;
+                                      mimeTypeStr;
         }
         catch (Exception ex)
         {
 
           // SNOW-13146: don't log severe message for user error
           if (ex instanceof SnowflakeSQLException)
+          {
             logger.debug(
-              "Exception encountered when processing file compression types",
-              ex);
+                "Exception encountered when processing file compression types",
+                ex);
+          }
           else
+          {
             logger.debug(
-              "Exception encountered when processing file compression types",
-              ex);
+                "Exception encountered when processing file compression types",
+                ex);
+          }
 
           fileMetadata.resultStatus = ResultStatus.ERROR;
           fileMetadata.errorDetails = ex.getMessage();
@@ -2650,10 +2733,14 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
       if (compressSourceFromStream &&
           !destFileNameForStreamSource.endsWith(
               FileCompressionType.GZIP.fileExtension))
+      {
         fileMetadata.destFileName = destFileNameForStreamSource +
-            FileCompressionType.GZIP.fileExtension;
+                                    FileCompressionType.GZIP.fileExtension;
+      }
       else
+      {
         fileMetadata.destFileName = destFileNameForStreamSource;
+      }
     }
   }
 
@@ -2672,7 +2759,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
       if (srcFileLowCase.endsWith(compressionType.fileExtension))
       {
         return compressionType.mimeType + "/" +
-            compressionType.mimeSubTypes.get(0);
+               compressionType.mimeSubTypes.get(0);
       }
     }
 
@@ -2683,7 +2770,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
    * A small helper for extracting location name and path from full location path
    *
    * @param stageLocationPath stage location
-   * @return  remoteLocation object
+   * @return remoteLocation object
    */
   static public remoteLocation extractLocationAndPath(String stageLocationPath)
   {
@@ -2694,7 +2781,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
     if (stageLocationPath.contains("/"))
     {
       location = stageLocationPath.substring(0, stageLocationPath.indexOf("/"));
-      path = stageLocationPath.substring(stageLocationPath.indexOf("/")+1);
+      path = stageLocationPath.substring(stageLocationPath.indexOf("/") + 1);
     }
 
     return new remoteLocation(location, path);
@@ -2710,24 +2797,24 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
   public List<SnowflakeColumnMetadata> describeColumns() throws Exception
   {
     return SnowflakeUtil.describeFixedViewColumns(
-        commandType == CommandType.UPLOAD?
+        commandType == CommandType.UPLOAD ?
         (showEncryptionParameter ?
-          UploadCommandEncryptionFacade.class : UploadCommandFacade.class) :
+         UploadCommandEncryptionFacade.class : UploadCommandFacade.class) :
         (showEncryptionParameter ?
-          DownloadCommandEncryptionFacade.class : DownloadCommandFacade.class));
+         DownloadCommandEncryptionFacade.class : DownloadCommandFacade.class));
   }
 
   @Override
   public List<Object> getNextRow() throws Exception
   {
-    if(currentRowIndex < statusRows.size())
+    if (currentRowIndex < statusRows.size())
     {
       return ClassUtil.getFixedViewObjectAsRow(
-          commandType == CommandType.UPLOAD?
+          commandType == CommandType.UPLOAD ?
           (showEncryptionParameter ?
-            UploadCommandEncryptionFacade.class : UploadCommandFacade.class) :
+           UploadCommandEncryptionFacade.class : UploadCommandFacade.class) :
           (showEncryptionParameter ?
-            DownloadCommandEncryptionFacade.class : DownloadCommandFacade.class),
+           DownloadCommandEncryptionFacade.class : DownloadCommandFacade.class),
           statusRows.get(currentRowIndex++));
     }
     else
@@ -2748,48 +2835,48 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
       if (commandType == CommandType.UPLOAD)
       {
         statusRows.add(showEncryptionParameter ?
-            new UploadCommandEncryptionFacade(
-                fileMetadata.srcFileName,
-                fileMetadata.destFileName,
-                fileMetadata.resultStatus.name(),
-                fileMetadata.errorDetails,
-                fileMetadata.srcFileSize,
-                fileMetadata.destFileSize,
-                (fileMetadata.srcCompressionType==null)?
-                "NONE":fileMetadata.srcCompressionType.name(),
-                (fileMetadata.destCompressionType==null)?
-                "NONE":fileMetadata.destCompressionType.name(),
-                fileMetadata.isEncrypted) :
-            new UploadCommandFacade(
-                fileMetadata.srcFileName,
-                fileMetadata.destFileName,
-                fileMetadata.resultStatus.name(),
-                fileMetadata.errorDetails,
-                fileMetadata.srcFileSize,
-                fileMetadata.destFileSize,
-                (fileMetadata.srcCompressionType==null)?
-                "NONE":fileMetadata.srcCompressionType.name(),
-                (fileMetadata.destCompressionType==null)?
-                "NONE":fileMetadata.destCompressionType.name()));
+                       new UploadCommandEncryptionFacade(
+                           fileMetadata.srcFileName,
+                           fileMetadata.destFileName,
+                           fileMetadata.resultStatus.name(),
+                           fileMetadata.errorDetails,
+                           fileMetadata.srcFileSize,
+                           fileMetadata.destFileSize,
+                           (fileMetadata.srcCompressionType == null) ?
+                           "NONE" : fileMetadata.srcCompressionType.name(),
+                           (fileMetadata.destCompressionType == null) ?
+                           "NONE" : fileMetadata.destCompressionType.name(),
+                           fileMetadata.isEncrypted) :
+                       new UploadCommandFacade(
+                           fileMetadata.srcFileName,
+                           fileMetadata.destFileName,
+                           fileMetadata.resultStatus.name(),
+                           fileMetadata.errorDetails,
+                           fileMetadata.srcFileSize,
+                           fileMetadata.destFileSize,
+                           (fileMetadata.srcCompressionType == null) ?
+                           "NONE" : fileMetadata.srcCompressionType.name(),
+                           (fileMetadata.destCompressionType == null) ?
+                           "NONE" : fileMetadata.destCompressionType.name()));
       }
       else if (commandType == CommandType.DOWNLOAD)
       {
         statusRows.add(showEncryptionParameter ?
-                new DownloadCommandEncryptionFacade(
-                        fileMetadata.srcFileName.startsWith("/")?
-                        fileMetadata.srcFileName.substring(1):
-                        fileMetadata.srcFileName,
-                        fileMetadata.resultStatus.name(),
-                        fileMetadata.errorDetails,
-                        fileMetadata.destFileSize,
-                        fileMetadata.isEncrypted) :
-                new DownloadCommandFacade(
-                        fileMetadata.srcFileName.startsWith("/")?
-                        fileMetadata.srcFileName.substring(1):
-                        fileMetadata.srcFileName,
-                        fileMetadata.resultStatus.name(),
-                        fileMetadata.errorDetails,
-                        fileMetadata.destFileSize));
+                       new DownloadCommandEncryptionFacade(
+                           fileMetadata.srcFileName.startsWith("/") ?
+                           fileMetadata.srcFileName.substring(1) :
+                           fileMetadata.srcFileName,
+                           fileMetadata.resultStatus.name(),
+                           fileMetadata.errorDetails,
+                           fileMetadata.destFileSize,
+                           fileMetadata.isEncrypted) :
+                       new DownloadCommandFacade(
+                           fileMetadata.srcFileName.startsWith("/") ?
+                           fileMetadata.srcFileName.substring(1) :
+                           fileMetadata.srcFileName,
+                           fileMetadata.resultStatus.name(),
+                           fileMetadata.errorDetails,
+                           fileMetadata.destFileSize));
       }
 
     }
@@ -2801,32 +2888,32 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
     sortProperty =
         connection.getSFSessionProperty("sort");
 
-    boolean sortResult = sortProperty != null && (Boolean)sortProperty;
+    boolean sortResult = sortProperty != null && (Boolean) sortProperty;
 
     if (sortResult)
     {
       Comparator comparator =
-      (commandType == CommandType.UPLOAD)?
-      new Comparator<Object>()
-      {
-        public int compare(Object a, Object b)
-        {
-          String srcFileNameA = ((UploadCommandFacade)a).srcFile;
-          String srcFileNameB = ((UploadCommandFacade)b).srcFile;
+          (commandType == CommandType.UPLOAD) ?
+          new Comparator<Object>()
+          {
+            public int compare(Object a, Object b)
+            {
+              String srcFileNameA = ((UploadCommandFacade) a).srcFile;
+              String srcFileNameB = ((UploadCommandFacade) b).srcFile;
 
-          return srcFileNameA.compareTo(srcFileNameB);
-        }
-      }:
-      new Comparator<Object>()
-      {
-        public int compare(Object a, Object b)
-        {
-          String srcFileNameA = ((DownloadCommandFacade)a).file;
-          String srcFileNameB = ((DownloadCommandFacade)b).file;
+              return srcFileNameA.compareTo(srcFileNameB);
+            }
+          } :
+          new Comparator<Object>()
+          {
+            public int compare(Object a, Object b)
+            {
+              String srcFileNameA = ((DownloadCommandFacade) a).file;
+              String srcFileNameB = ((DownloadCommandFacade) b).file;
 
-          return srcFileNameA.compareTo(srcFileNameB);
-        }
-      };
+              return srcFileNameA.compareTo(srcFileNameB);
+            }
+          };
 
       // sort the rows by source file names
       Collections.sort(statusRows, comparator);
@@ -2834,7 +2921,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
   }
 
   public Object getResultSet()
-          throws SnowflakeSQLException
+  throws SnowflakeSQLException
   {
     return new SFFixedViewResultSet(this, this.commandType);
   }
@@ -2869,26 +2956,26 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
    * @throws throws the error as a SnowflakeSQLException
    */
   public static void throwJCEMissingError(String operation, Exception ex)
-          throws SnowflakeSQLException
+  throws SnowflakeSQLException
   {
     // Most likely cause: Unlimited strength policy files not installed
     String msg = "Strong encryption with Java JRE requires JCE " +
-            "Unlimited Strength Jurisdiction Policy files. " +
-            "Follow JDBC client installation instructions " +
-            "provided by Snowflake or contact Snowflake Support.";
+                 "Unlimited Strength Jurisdiction Policy files. " +
+                 "Follow JDBC client installation instructions " +
+                 "provided by Snowflake or contact Snowflake Support.";
 
-    logger.error( "JCE Unlimited Strength policy files missing: {}. {}.",
-                ex.getMessage(), ex.getCause().getMessage());
+    logger.error("JCE Unlimited Strength policy files missing: {}. {}.",
+                 ex.getMessage(), ex.getCause().getMessage());
 
     String bootLib = java.lang.System.getProperty("sun.boot.library.path");
     if (bootLib != null)
     {
       msg += " The target directory on your system is: " +
-              Paths.get(bootLib,"security").toString();
+             Paths.get(bootLib, "security").toString();
       logger.error(msg);
     }
     throw new SnowflakeSQLException(ex, SqlState.SYSTEM_ERROR,
-            ErrorCode.AWS_CLIENT_ERROR.getMessageCode(), operation, msg);
+                                    ErrorCode.AWS_CLIENT_ERROR.getMessageCode(), operation, msg);
   }
 
   @Override

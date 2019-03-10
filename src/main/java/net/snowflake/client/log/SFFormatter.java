@@ -4,6 +4,7 @@
 package net.snowflake.client.log;
 
 import net.snowflake.client.jdbc.SnowflakeDriver;
+
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -18,18 +19,19 @@ import java.util.logging.LogRecord;
 public class SFFormatter extends Formatter
 {
   private static final DateFormat df = new SimpleDateFormat(
-          "yyyy-MM-dd HH:mm:ss.SSS");
+      "yyyy-MM-dd HH:mm:ss.SSS");
+
   static
   {
     df.setTimeZone(TimeZone.getTimeZone("UTC"));
   }
 
   public static final String CLASS_NAME_PREFIX =
-    SnowflakeDriver.class.getPackage().getName().substring(0,
-    SnowflakeDriver.class.getPackage().getName().lastIndexOf('.'));
+      SnowflakeDriver.class.getPackage().getName().substring(0,
+                                                             SnowflakeDriver.class.getPackage().getName().lastIndexOf('.'));
 
   public static final String INFORMATICA_V1_CLASS_NAME_PREFIX =
-          "com.snowflake";
+      "com.snowflake";
 
   @Override
   public String format(LogRecord record)
@@ -51,9 +53,10 @@ public class SFFormatter extends Formatter
     {
       className = "n.s.c" + className.substring(CLASS_NAME_PREFIX.length());
     }
-    else if (className.startsWith(INFORMATICA_V1_CLASS_NAME_PREFIX)) {
+    else if (className.startsWith(INFORMATICA_V1_CLASS_NAME_PREFIX))
+    {
       className = "c.s" + className.substring(
-              INFORMATICA_V1_CLASS_NAME_PREFIX.length());
+          INFORMATICA_V1_CLASS_NAME_PREFIX.length());
     }
 
     StringBuilder builder = new StringBuilder(1000);

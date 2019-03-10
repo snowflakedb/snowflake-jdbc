@@ -52,7 +52,7 @@ public class ConnectionPoolingDataSourceIT extends AbstractDriverIT
       connection.setCatalog("unexisted_database");
       fail();
     }
-    catch(SQLException e)
+    catch (SQLException e)
     {
       assertThat(e.getErrorCode(), is(2043));
     }
@@ -71,7 +71,7 @@ public class ConnectionPoolingDataSourceIT extends AbstractDriverIT
     ConnectionEvent closedEvent = connectionClosedEvents.get(0);
     assertThat(closedEvent.getSQLException(), is(nullValue()));
     assertThat(closedEvent.getSource(), instanceOf(SnowflakePooledConnection.class));
-    assertThat((PooledConnection)closedEvent.getSource(),
+    assertThat((PooledConnection) closedEvent.getSource(),
                sameInstance(pooledConnection));
 
     // assert connection error event
@@ -80,14 +80,14 @@ public class ConnectionPoolingDataSourceIT extends AbstractDriverIT
 
     assertThat(errorEvent.getSource(),
                instanceOf(SnowflakePooledConnection.class));
-    assertThat((PooledConnection)errorEvent.getSource(),
+    assertThat((PooledConnection) errorEvent.getSource(),
                sameInstance(pooledConnection));
     // 2043 is the error code for object not existed
     assertThat(errorEvent.getSQLException().getErrorCode(), is(2043));
 
     // assert physical connection is not closed
     Connection physicalConnection =
-        ((SnowflakePooledConnection)pooledConnection).getPhysicalConnection();
+        ((SnowflakePooledConnection) pooledConnection).getPhysicalConnection();
 
     assertThat(physicalConnection.isClosed(), is(false));
 

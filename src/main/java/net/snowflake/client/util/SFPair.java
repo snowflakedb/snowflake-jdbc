@@ -11,7 +11,7 @@ public class SFPair<L, R>
 
   public R right;
 
-  public static <L, R>SFPair<L, R> of(L l, R r)
+  public static <L, R> SFPair<L, R> of(L l, R r)
   {
     return new SFPair<>(l, r);
   }
@@ -42,7 +42,7 @@ public class SFPair<L, R>
 
     SFPair<L, R> pair2 = (SFPair<L, R>) other;
     return Objects.equals(this.left, pair2.left) &&
-        Objects.equals(this.right, pair2.right);
+           Objects.equals(this.right, pair2.right);
   }
 
   @Override

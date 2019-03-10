@@ -14,7 +14,6 @@ import java.util.regex.Pattern;
 
 /**
  * Search for credentials in a sql text
- *
  */
 public class SecretDetector
 {
@@ -27,16 +26,16 @@ public class SecretDetector
       "([a-z0-9+/%]{18,})", Pattern.CASE_INSENSITIVE);
 
   private static final Pattern AWS_KEY_PATTERN = Pattern.compile(
-    "(aws_key_id)|(aws_secret_key)|(access_key_id)|(secret_access_key)",
-    Pattern.CASE_INSENSITIVE);
-  
+      "(aws_key_id)|(aws_secret_key)|(access_key_id)|(secret_access_key)",
+      Pattern.CASE_INSENSITIVE);
+
   // Used for detecting tokens in serialized JSON
   private static final Pattern AWS_TOKEN_PATTERN = Pattern.compile(
       "(accessToken|tempToken|keySecret)\"\\s*:\\s*\"([a-z0-9/+]{32,}={0,2})\"",
       Pattern.CASE_INSENSITIVE);
   private static final Pattern SAS_TOKEN_PATTERN = Pattern.compile(
       "sig=([a-z0-9%]{32,})", Pattern.CASE_INSENSITIVE);
-  
+
   private static final int LOOK_AHEAD = 10;
 
   // only attempt to find secrets in its leading 100Kb SNOW-30961
@@ -49,9 +48,9 @@ public class SecretDetector
    * Find all the positions of aws key id and aws secret key.
    * The time complexity is O(n)
    *
-   * @param text  the sql text which may contain aws key
+   * @param text the sql text which may contain aws key
    * @return Return a list of begin/end positions of aws key id and
-   *         aws secret key.
+   * aws secret key.
    */
   private static List<SecretRange> getAWSSecretPos(String text)
   {
@@ -67,7 +66,7 @@ public class SecretDetector
       int beginPos = Math.min(matcher.end() + LOOK_AHEAD, text.length());
 
       while (beginPos > 0 && beginPos < text.length() &&
-        isBase64(text.charAt(beginPos)))
+             isBase64(text.charAt(beginPos)))
       {
         beginPos--;
       }
@@ -80,7 +79,7 @@ public class SecretDetector
       }
 
       if (beginPos < text.length() && endPos <= text.length()
-        && beginPos >= 0 && endPos >= 0)
+          && beginPos >= 0 && endPos >= 0)
       {
         awsSecretRanges.add(new SecretRange(beginPos + 1, endPos));
       }
@@ -90,13 +89,13 @@ public class SecretDetector
 
     return awsSecretRanges;
   }
-  
+
   /**
    * Find all the positions of long base64 encoded strings that are typically
    * indicative of secrets or other keys.
    * The time complexity is O(n)
    *
-   * @param text  the sql text which may contain secrets
+   * @param text the sql text which may contain secrets
    * @return Return a list of begin/end positions of keys in the string
    */
   private static List<SecretRange> getGenericSecretPos(String text)
@@ -105,7 +104,7 @@ public class SecretDetector
     LOGGER.debug("pre-regex getGenericSecretPos");
 
     Matcher matcher = GENERIC_CREDS_PATTERN.matcher(
-      text.length() <= MAX_LENGTH ? text : text.substring(0, MAX_LENGTH));
+        text.length() <= MAX_LENGTH ? text : text.substring(0, MAX_LENGTH));
 
     ArrayList<SecretRange> awsSecretRanges = new ArrayList<>();
 
@@ -122,14 +121,15 @@ public class SecretDetector
   private static boolean isBase64(char ch)
   {
     return ('A' <= ch && ch <= 'Z')
-        || ('a' <= ch && ch <= 'z')
-        || ('0' <= ch && ch <= '9')
-        || ch == '+'
-        || ch == '/';
+           || ('a' <= ch && ch <= 'z')
+           || ('0' <= ch && ch <= '9')
+           || ch == '+'
+           || ch == '/';
   }
 
   /**
    * mask AWS secret in the input string
+   *
    * @param sql
    * @return masked string
    */

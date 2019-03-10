@@ -33,7 +33,7 @@ public class SFSSLConnectionSocketFactory extends SSLConnectionSocketFactory
 
   public SFSSLConnectionSocketFactory(TrustManager[] trustManagers,
                                       boolean socksProxyDisabled)
-      throws NoSuchAlgorithmException, KeyManagementException
+  throws NoSuchAlgorithmException, KeyManagementException
   {
     super(
         initSSLContext(trustManagers),
@@ -45,7 +45,7 @@ public class SFSSLConnectionSocketFactory extends SSLConnectionSocketFactory
   }
 
   private static SSLContext initSSLContext(TrustManager[] trustManagers)
-      throws NoSuchAlgorithmException, KeyManagementException
+  throws NoSuchAlgorithmException, KeyManagementException
   {
     // enforce using SSL_VERSION
     SSLContext sslContext = SSLContext.getInstance(SSL_VERSION);
@@ -60,7 +60,7 @@ public class SFSSLConnectionSocketFactory extends SSLConnectionSocketFactory
   public Socket createSocket(HttpContext ctx) throws IOException
   {
     return socksProxyDisabled ? new Socket(Proxy.NO_PROXY)
-        : super.createSocket(ctx);
+                              : super.createSocket(ctx);
   }
 
   /**
@@ -72,10 +72,10 @@ public class SFSSLConnectionSocketFactory extends SSLConnectionSocketFactory
   {
     String sysCipherSuites = System.getProperty("https.cipherSuites");
 
-    String[] cipherSuites =  sysCipherSuites != null ? sysCipherSuites.split(",") :
-        // use jdk default cipher suites
-        ((SSLServerSocketFactory) SSLServerSocketFactory.getDefault())
-            .getDefaultCipherSuites();
+    String[] cipherSuites = sysCipherSuites != null ? sysCipherSuites.split(",") :
+                            // use jdk default cipher suites
+                            ((SSLServerSocketFactory) SSLServerSocketFactory.getDefault())
+                                .getDefaultCipherSuites();
 
     // cipher suites need to be picked up in code explicitly for jdk 1.7
     // https://stackoverflow.com/questions/44378970/

@@ -5,7 +5,6 @@
 package net.snowflake.client.jdbc;
 
 /**
- *
  * @author jhuang
  */
 public class SnowflakeColumnMetadata
@@ -25,7 +24,7 @@ public class SnowflakeColumnMetadata
 
   public SnowflakeColumnMetadata(String name, int type, boolean nullable,
                                  int length, int precision, int scale,
-                                 String typeName, boolean fixed, 
+                                 String typeName, boolean fixed,
                                  SnowflakeType base, String columnSrcDatabase,
                                  String columnSrcSchema, String columnSrcTable)
   {
@@ -123,10 +122,11 @@ public class SnowflakeColumnMetadata
     this.fixed = fixed;
   }
 
-  public SnowflakeType getBase() {
+  public SnowflakeType getBase()
+  {
     return this.base;
   }
-  
+
   public String getColumnSrcTable()
   {
     return this.columnSrcTable;

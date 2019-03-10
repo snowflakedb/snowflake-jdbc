@@ -20,28 +20,34 @@ public class SLF4JLogger implements SFLogger
 
   private static final String FQCN = SLF4JLogger.class.getName();
 
-  public SLF4JLogger(Class<?> clazz) {
+  public SLF4JLogger(Class<?> clazz)
+  {
     slf4jLogger = LoggerFactory.getLogger(clazz);
     isLocationAwareLogger = slf4jLogger instanceof LocationAwareLogger;
   }
 
-  public boolean isDebugEnabled() {
+  public boolean isDebugEnabled()
+  {
     return this.slf4jLogger.isDebugEnabled();
   }
 
-  public boolean isErrorEnabled() {
+  public boolean isErrorEnabled()
+  {
     return this.slf4jLogger.isErrorEnabled();
   }
 
-  public boolean isInfoEnabled() {
+  public boolean isInfoEnabled()
+  {
     return this.slf4jLogger.isInfoEnabled();
   }
 
-  public boolean isTraceEnabled() {
+  public boolean isTraceEnabled()
+  {
     return this.slf4jLogger.isTraceEnabled();
   }
 
-  public boolean isWarnEnabled() {
+  public boolean isWarnEnabled()
+  {
     return this.slf4jLogger.isWarnEnabled();
   }
 

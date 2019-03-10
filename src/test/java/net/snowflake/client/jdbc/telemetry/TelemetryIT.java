@@ -30,32 +30,32 @@ public class TelemetryIT extends AbstractDriverIT
   {
     Telemetry telemetry = Telemetry.createTelemetry(connection, 100);
     ObjectNode node1 = mapper.createObjectNode();
-    node1.put("type","query");
-    node1.put("query_id","sdasdasdasdasds");
+    node1.put("type", "query");
+    node1.put("query_id", "sdasdasdasdasds");
     ObjectNode node2 = mapper.createObjectNode();
-    node2.put("type","query");
-    node2.put("query_id","eqweqweqweqwe");
+    node2.put("type", "query");
+    node2.put("query_id", "eqweqweqweqwe");
     telemetry.addLogToBatch(node1, 1234567);
-    telemetry.addLogToBatch(new TelemetryData(node2,22345678));
-    assertEquals(telemetry.bufferSize(),2);
+    telemetry.addLogToBatch(new TelemetryData(node2, 22345678));
+    assertEquals(telemetry.bufferSize(), 2);
 
     assertTrue(telemetry.sendBatch());
-    assertEquals(telemetry.bufferSize(),0);
+    assertEquals(telemetry.bufferSize(), 0);
 
-    assertTrue(telemetry.sendLog(node1,1234567));
-    assertEquals(telemetry.bufferSize(),0);
+    assertTrue(telemetry.sendLog(node1, 1234567));
+    assertEquals(telemetry.bufferSize(), 0);
 
     assertTrue(telemetry.sendLog(new TelemetryData(node2, 22345678)));
-    assertEquals(telemetry.bufferSize(),0);
+    assertEquals(telemetry.bufferSize(), 0);
 
     //reach flush threshold
     for (int i = 0; i < 99; i++)
     {
       telemetry.addLogToBatch(node1, 1111);
     }
-    assertEquals(telemetry.bufferSize(),99);
-    telemetry.addLogToBatch(node1,222);
-    assertEquals(telemetry.bufferSize(),0);
+    assertEquals(telemetry.bufferSize(), 99);
+    telemetry.addLogToBatch(node1, 222);
+    assertEquals(telemetry.bufferSize(), 0);
 
     telemetry.addLogToBatch(node1, 111);
     assertEquals(telemetry.bufferSize(), 1);
@@ -73,8 +73,8 @@ public class TelemetryIT extends AbstractDriverIT
     Telemetry telemetry = Telemetry.createTelemetry(connection);
     telemetry.close();
     ObjectNode node = mapper.createObjectNode();
-    node.put("type","query");
-    node.put("query_id","sdasdasdasdasds");
+    node.put("type", "query");
+    node.put("query_id", "sdasdasdasdasds");
     telemetry.addLogToBatch(node, 1234567);
   }
 
@@ -84,8 +84,8 @@ public class TelemetryIT extends AbstractDriverIT
     Telemetry telemetry = Telemetry.createTelemetry(connection);
     telemetry.close();
     ObjectNode node = mapper.createObjectNode();
-    node.put("type","query");
-    node.put("query_id","sdasdasdasdasds");
+    node.put("type", "query");
+    node.put("query_id", "sdasdasdasdasds");
     telemetry.addLogToBatch(new TelemetryData(node, 1234567));
   }
 
@@ -103,28 +103,28 @@ public class TelemetryIT extends AbstractDriverIT
     Telemetry telemetry = Telemetry.createTelemetry(connection, 100);
 
     ObjectNode node1 = mapper.createObjectNode();
-    node1.put("type","query");
-    node1.put("query_id","sdasdasdasdasds");
+    node1.put("type", "query");
+    node1.put("query_id", "sdasdasdasdasds");
     ObjectNode node2 = mapper.createObjectNode();
-    node2.put("type","query");
-    node2.put("query_id","eqweqweqweqwe");
+    node2.put("type", "query");
+    node2.put("query_id", "eqweqweqweqwe");
     telemetry.addLogToBatch(node1, 1234567);
 
-    assertEquals(telemetry.bufferSize(),1);
+    assertEquals(telemetry.bufferSize(), 1);
     telemetry.disableTelemetry();
     assertFalse(telemetry.isTelemetryEnabled());
 
-    telemetry.addLogToBatch(new TelemetryData(node2,22345678));
-    assertEquals(telemetry.bufferSize(),1);
+    telemetry.addLogToBatch(new TelemetryData(node2, 22345678));
+    assertEquals(telemetry.bufferSize(), 1);
 
     assertFalse(telemetry.sendBatch());
-    assertEquals(telemetry.bufferSize(),1);
+    assertEquals(telemetry.bufferSize(), 1);
 
-    assertFalse(telemetry.sendLog(node1,1234567));
-    assertEquals(telemetry.bufferSize(),1);
+    assertFalse(telemetry.sendLog(node1, 1234567));
+    assertEquals(telemetry.bufferSize(), 1);
 
     assertFalse(telemetry.sendLog(new TelemetryData(node2, 22345678)));
-    assertEquals(telemetry.bufferSize(),1);
+    assertEquals(telemetry.bufferSize(), 1);
 
   }
 

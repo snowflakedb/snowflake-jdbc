@@ -4,11 +4,11 @@
 package net.snowflake.client.jdbc.cloud.storage;
 
 import com.amazonaws.services.s3.model.ObjectMetadata;
+
 import java.util.Map;
 
 /**
  * Implementation of StorageObjectMetadata for S3 for remote storage object metadata.
- *
  *
  * @author ppaulus
  */
@@ -45,6 +45,7 @@ public class S3StorageObjectMetadata implements StorageObjectMetadata
 
   /**
    * Sets size of the associated object in bytes
+   *
    * @param contentLength the length of content
    */
   @Override
@@ -55,7 +56,8 @@ public class S3StorageObjectMetadata implements StorageObjectMetadata
 
   /**
    * Adds the key value pair of custom user-metadata for the associated object.
-   * @param key the key of user metadata
+   *
+   * @param key   the key of user metadata
    * @param value the value of user metadata
    */
   @Override
@@ -68,6 +70,7 @@ public class S3StorageObjectMetadata implements StorageObjectMetadata
    * Sets the optional Content-Encoding HTTP header specifying what content encodings,
    * have been applied to the object and what decoding mechanisms must be applied,
    * in order to obtain the media-type referenced by the Content-Type field.
+   *
    * @param encoding the encoding name using in HTTP header Content-Encoding
    */
   @Override
@@ -79,9 +82,9 @@ public class S3StorageObjectMetadata implements StorageObjectMetadata
   /*
    * @return returns the content encoding type
    */
-   @Override
-   public String getContentEncoding()
-   {
-     return this.s3Metadata.getContentEncoding();
-   }
+  @Override
+  public String getContentEncoding()
+  {
+    return this.s3Metadata.getContentEncoding();
+  }
 }

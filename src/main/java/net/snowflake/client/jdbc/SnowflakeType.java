@@ -19,8 +19,23 @@ import java.util.Date;
 public enum SnowflakeType
 {
 
-  TEXT, CHAR, INTEGER, FIXED, REAL, TIMESTAMP, TIMESTAMP_LTZ, TIMESTAMP_NTZ, TIMESTAMP_TZ,
-  DATE, TIME, BOOLEAN, ARRAY, OBJECT, VARIANT, BINARY, ANY;
+  TEXT,
+  CHAR,
+  INTEGER,
+  FIXED,
+  REAL,
+  TIMESTAMP,
+  TIMESTAMP_LTZ,
+  TIMESTAMP_NTZ,
+  TIMESTAMP_TZ,
+  DATE,
+  TIME,
+  BOOLEAN,
+  ARRAY,
+  OBJECT,
+  VARIANT,
+  BINARY,
+  ANY;
 
   public static final String DATE_OR_TIME_FORMAT_PATTERN = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX";
   public static final String TIMESTAMP_FORMAT_PATTERN = "yyyy-MM-dd'T'HH:mm:ss.";
@@ -230,9 +245,9 @@ public enum SnowflakeType
 
       default:
         throw new SnowflakeSQLException(SqlState.FEATURE_NOT_SUPPORTED,
-            ErrorCode.DATA_TYPE_NOT_SUPPORTED
-                .getMessageCode(),
-            javaType);
+                                        ErrorCode.DATA_TYPE_NOT_SUPPORTED
+                                            .getMessageCode(),
+                                        javaType);
     }
   }
 }

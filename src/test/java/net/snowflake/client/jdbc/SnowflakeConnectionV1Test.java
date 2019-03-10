@@ -1,6 +1,7 @@
 package net.snowflake.client.jdbc;
 
 import org.junit.Test;
+
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -24,9 +25,9 @@ public class SnowflakeConnectionV1Test
     Map<String, Object> result = SnowflakeConnectionV1.mergeProperties(url, prop);
 
     assertThat(result.size(), is(3));
-    assertThat((String)result.get("ACCOUNT"), is("s3testaccount"));
-    assertThat((String)result.get("USER"), is("snowman"));
-    assertThat((String)result.get("SERVERURL"), is("https://testaccount.localhost:8080"));
+    assertThat((String) result.get("ACCOUNT"), is("s3testaccount"));
+    assertThat((String) result.get("USER"), is("snowman"));
+    assertThat((String) result.get("SERVERURL"), is("https://testaccount.localhost:8080"));
 
     // testcase 2
     url = "jdbc:snowflake://testaccount.localhost:8080/?";
@@ -37,9 +38,9 @@ public class SnowflakeConnectionV1Test
     result = SnowflakeConnectionV1.mergeProperties(url, prop);
 
     assertThat(result.size(), is(3));
-    assertThat((String)result.get("ACCOUNT"), is("s3testaccount"));
-    assertThat((String)result.get("USER"), is("snowman"));
-    assertThat((String)result.get("SERVERURL"), is("https://testaccount.localhost:8080/"));
+    assertThat((String) result.get("ACCOUNT"), is("s3testaccount"));
+    assertThat((String) result.get("USER"), is("snowman"));
+    assertThat((String) result.get("SERVERURL"), is("https://testaccount.localhost:8080/"));
 
     // testcase 3
     url = "jdbc:snowflake://testaccount.localhost:8080/?aaaa";
@@ -50,9 +51,9 @@ public class SnowflakeConnectionV1Test
     result = SnowflakeConnectionV1.mergeProperties(url, prop);
 
     assertThat(result.size(), is(3));
-    assertThat((String)result.get("ACCOUNT"), is("s3testaccount"));
-    assertThat((String)result.get("USER"), is("snowman"));
-    assertThat((String)result.get("SERVERURL"), is("https://testaccount.localhost:8080/"));
+    assertThat((String) result.get("ACCOUNT"), is("s3testaccount"));
+    assertThat((String) result.get("USER"), is("snowman"));
+    assertThat((String) result.get("SERVERURL"), is("https://testaccount.localhost:8080/"));
 
     // testcase 4
     url = "jdbc:snowflake://testaccount.localhost:8080/?prop1=value1";
@@ -63,10 +64,10 @@ public class SnowflakeConnectionV1Test
     result = SnowflakeConnectionV1.mergeProperties(url, prop);
 
     assertThat(result.size(), is(4));
-    assertThat((String)result.get("ACCOUNT"), is("s3testaccount"));
-    assertThat((String)result.get("USER"), is("snowman"));
-    assertThat((String)result.get("SERVERURL"), is("https://testaccount.localhost:8080/"));
-    assertThat((String)result.get("PROP1"), is("value1"));
+    assertThat((String) result.get("ACCOUNT"), is("s3testaccount"));
+    assertThat((String) result.get("USER"), is("snowman"));
+    assertThat((String) result.get("SERVERURL"), is("https://testaccount.localhost:8080/"));
+    assertThat((String) result.get("PROP1"), is("value1"));
 
     // testcase 5
     url = "jdbc:snowflake://testaccount.localhost:8080/?prop1=value1&ssl=off";
@@ -77,10 +78,10 @@ public class SnowflakeConnectionV1Test
     result = SnowflakeConnectionV1.mergeProperties(url, prop);
 
     assertThat(result.size(), is(4));
-    assertThat((String)result.get("ACCOUNT"), is("s3testaccount"));
-    assertThat((String)result.get("USER"), is("snowman"));
-    assertThat((String)result.get("SERVERURL"), is("http://testaccount.localhost:8080/"));
-    assertThat((String)result.get("PROP1"), is("value1"));
+    assertThat((String) result.get("ACCOUNT"), is("s3testaccount"));
+    assertThat((String) result.get("USER"), is("snowman"));
+    assertThat((String) result.get("SERVERURL"), is("http://testaccount.localhost:8080/"));
+    assertThat((String) result.get("PROP1"), is("value1"));
 
     // testcase 6
     url = "jdbc:snowflake://testaccount.localhost:8080/?prop1=value1";
@@ -92,10 +93,10 @@ public class SnowflakeConnectionV1Test
     result = SnowflakeConnectionV1.mergeProperties(url, prop);
 
     assertThat(result.size(), is(4));
-    assertThat((String)result.get("ACCOUNT"), is("s3testaccount"));
-    assertThat((String)result.get("USER"), is("snowman"));
-    assertThat((String)result.get("SERVERURL"), is("http://testaccount.localhost:8080/"));
-    assertThat((String)result.get("PROP1"), is("value1"));
+    assertThat((String) result.get("ACCOUNT"), is("s3testaccount"));
+    assertThat((String) result.get("USER"), is("snowman"));
+    assertThat((String) result.get("SERVERURL"), is("http://testaccount.localhost:8080/"));
+    assertThat((String) result.get("PROP1"), is("value1"));
 
     // testcase 7
     url = "jdbc:snowflake://testaccount.localhost:8080/?prop1=value1";
@@ -107,9 +108,9 @@ public class SnowflakeConnectionV1Test
     result = SnowflakeConnectionV1.mergeProperties(url, prop);
 
     assertThat(result.size(), is(4));
-    assertThat((String)result.get("ACCOUNT"), is("testaccount"));
-    assertThat((String)result.get("USER"), is("snowman"));
-    assertThat((String)result.get("SERVERURL"), is("http://testaccount.localhost:8080/"));
-    assertThat((String)result.get("PROP1"), is("value2"));
+    assertThat((String) result.get("ACCOUNT"), is("testaccount"));
+    assertThat((String) result.get("USER"), is("snowman"));
+    assertThat((String) result.get("SERVERURL"), is("http://testaccount.localhost:8080/"));
+    assertThat((String) result.get("PROP1"), is("value2"));
   }
 }

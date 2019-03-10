@@ -16,7 +16,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Class for result chunk
- *
+ * <p>
  * Created by jhuang on 11/12/14.
  */
 public class SnowflakeResultChunk
@@ -29,7 +29,9 @@ public class SnowflakeResultChunk
     IN_PROGRESS,
     SUCCESS,
     FAILURE
-  };
+  }
+
+  ;
 
   // url for result chunk
   private final String url;
@@ -164,9 +166,9 @@ public class SnowflakeResultChunk
           ErrorCode.INTERNAL_ERROR
               .getMessageCode(),
           "Exception: expected " +
-              colCount +
-              " columns and received " +
-              row.length);
+          colCount +
+          " columns and received " +
+          row.length);
     }
 
     for (Object cell : row)
@@ -183,7 +185,7 @@ public class SnowflakeResultChunk
         }
         else if (cell instanceof Boolean)
         {
-          data.add((boolean)cell ? "1" : "0");
+          data.add((boolean) cell ? "1" : "0");
         }
         else
         {
@@ -213,9 +215,9 @@ public class SnowflakeResultChunk
               ErrorCode.INTERNAL_ERROR
                   .getMessageCode(),
               "Exception: expected " +
-                  rowCount +
-                  " rows and received " +
-                  currentRow);
+              rowCount +
+              " rows and received " +
+              currentRow);
     }
   }
 
@@ -233,7 +235,7 @@ public class SnowflakeResultChunk
   {
     if (data != null)
     {
-     data.freeData();
+      data.freeData();
     }
     resultData = null;
   }
@@ -297,8 +299,8 @@ public class SnowflakeResultChunk
   {
     // remove [ , ] characters, they won't be stored
     return uncompressedSize
-        - (rowCount * 2) // opening [ and komma separating rows
-        - (rowCount * colCount); // komma separating cells and closing ]
+           - (rowCount * 2) // opening [ and komma separating rows
+           - (rowCount * colCount); // komma separating cells and closing ]
   }
 
   /**

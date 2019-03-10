@@ -24,7 +24,9 @@ public class HeartbeatBackground implements Runnable
 {
   private static HeartbeatBackground singleton = new HeartbeatBackground();
 
-  /** The logger. */
+  /**
+   * The logger.
+   */
   private static final SFLogger LOGGER =
       SFLoggerFactory.getLogger(HeartbeatBackground.class);
 
@@ -35,7 +37,7 @@ public class HeartbeatBackground implements Runnable
    * How often heartbeat executes is calculated based on master token validity
    * and the headroom
    */
-  private long heartBeatIntervalInSecs = masterTokenValidityInSecs/4;
+  private long heartBeatIntervalInSecs = masterTokenValidityInSecs / 4;
 
   // Scheduler handling the main heartbeat background
   private ScheduledExecutorService scheduler = null;
@@ -50,7 +52,7 @@ public class HeartbeatBackground implements Runnable
    * care of the case when some application does not close session before it
    * goes out of scope.
    */
-  WeakHashMap<SFSession, Boolean> sessions=new WeakHashMap<SFSession, Boolean>();
+  WeakHashMap<SFSession, Boolean> sessions = new WeakHashMap<SFSession, Boolean>();
 
   // When is the last time hearbeat started
   private long lastHeartbeatStartTimeInSecs = 0;
@@ -64,23 +66,25 @@ public class HeartbeatBackground implements Runnable
   /**
    * private constructor so that no one can try to create one
    */
-  private HeartbeatBackground()  {}
+  private HeartbeatBackground()
+  {
+  }
 
   /**
    * Method to add a session
-   *
+   * <p>
    * It will compare the master token validity and stored master token validity
    * and if it is less, we will update the stored one and the heartbeat interval
    * and reschedule heartbeat.
-   *
+   * <p>
    * This method is called when a session is created.
    *
-   * @param session the session will be added
+   * @param session                   the session will be added
    * @param masterTokenValidityInSecs time interval for which client need to
    *                                  check validity of master token with server
    */
   synchronized protected void addSession(SFSession session,
-                                      long masterTokenValidityInSecs)
+                                         long masterTokenValidityInSecs)
   {
     boolean requireReschedule = false;
 
@@ -90,17 +94,17 @@ public class HeartbeatBackground implements Runnable
       long oldMasterTokenValidityInSecs = this.masterTokenValidityInSecs;
       long oldHeartbeatIntervalInSecs = this.heartBeatIntervalInSecs;
 
-      this.heartBeatIntervalInSecs = masterTokenValidityInSecs/4;
+      this.heartBeatIntervalInSecs = masterTokenValidityInSecs / 4;
 
       // save master token validity
       this.masterTokenValidityInSecs = masterTokenValidityInSecs;
 
       LOGGER.debug("update heartbeat interval, master token validity"
-              + " from {} to {}, heart beat interval from {} to {}",
-                             oldMasterTokenValidityInSecs,
-                             this.masterTokenValidityInSecs,
-                             oldHeartbeatIntervalInSecs,
-                             this.heartBeatIntervalInSecs);
+                   + " from {} to {}, heart beat interval from {} to {}",
+                   oldMasterTokenValidityInSecs,
+                   this.masterTokenValidityInSecs,
+                   oldHeartbeatIntervalInSecs,
+                   this.heartBeatIntervalInSecs);
 
       // heartbeat rescheduling required
       requireReschedule = true;
@@ -118,18 +122,18 @@ public class HeartbeatBackground implements Runnable
     {
       LOGGER.debug("create heartbeat thread pool");
       this.scheduler = Executors.newScheduledThreadPool(1,
-            new ThreadFactory()
-            {
-              @Override
-              public Thread newThread(Runnable runnable)
-              {
-                Thread thread =
-                Executors.defaultThreadFactory().newThread(runnable);
-                thread.setName("heartbeat (" + thread.getId() + ")");
-                thread.setDaemon(true);
-                return thread;
-              }
-            });
+                                                        new ThreadFactory()
+                                                        {
+                                                          @Override
+                                                          public Thread newThread(Runnable runnable)
+                                                          {
+                                                            Thread thread =
+                                                                Executors.defaultThreadFactory().newThread(runnable);
+                                                            thread.setName("heartbeat (" + thread.getId() + ")");
+                                                            thread.setDaemon(true);
+                                                            return thread;
+                                                          }
+                                                        });
     }
 
     // schedule a heartbeat task if none exists
@@ -177,7 +181,7 @@ public class HeartbeatBackground implements Runnable
   {
     // elapsed time in seconds since the last heartbeat
     long elapsedSecsSinceLastHeartBeat =
-    System.currentTimeMillis()/1000 - lastHeartbeatStartTimeInSecs;
+        System.currentTimeMillis() / 1000 - lastHeartbeatStartTimeInSecs;
 
     /**
      * The initial delay for the new scheduling is 0 if the elapsed
@@ -188,8 +192,8 @@ public class HeartbeatBackground implements Runnable
                                  elapsedSecsSinceLastHeartBeat, 0);
 
     LOGGER.debug(
-               "schedule heartbeat task with initial delay of {} seconds",
-               initialDelay);
+        "schedule heartbeat task with initial delay of {} seconds",
+        initialDelay);
 
     // Creates and executes a periodic action to send heartbeats
     this.heartbeatFuture =
@@ -199,7 +203,7 @@ public class HeartbeatBackground implements Runnable
   /**
    * Run heartbeat: for each session send a heartbeat request and schedule
    * next heartbeat as long as there are sessions left.
-   *
+   * <p>
    * Notice that the synchronization is only around the code that visits the
    * global sessions map and the code that schedules
    * next heartbeat, but not around the heartbeat calls for each session in
@@ -215,12 +219,12 @@ public class HeartbeatBackground implements Runnable
      * Remember current time as the heartbeat start time. This is used for
      * calculating the delay for the next heartbeat.
      */
-    this.lastHeartbeatStartTimeInSecs = System.currentTimeMillis()/1000;
+    this.lastHeartbeatStartTimeInSecs = System.currentTimeMillis() / 1000;
 
     Set<SFSession> sessionsToHeartbeat = new HashSet<SFSession>();
 
     // synchronously get a copy of the sessions from the global list
-    synchronized(this)
+    synchronized (this)
     {
       sessionsToHeartbeat.addAll(sessions.keySet());
     }
@@ -243,7 +247,7 @@ public class HeartbeatBackground implements Runnable
      * session so that we always make sure we have one heartbeat task scheduled
      * when there is any session left.
      */
-    synchronized(this)
+    synchronized (this)
     {
       // schedule next heartbeat
       if (sessions.size() > 0)

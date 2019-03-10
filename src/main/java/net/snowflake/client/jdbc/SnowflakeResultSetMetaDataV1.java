@@ -9,6 +9,7 @@ import net.snowflake.client.core.SFResultSetMetaData;
 
 import java.sql.SQLException;
 import java.util.List;
+
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 
@@ -25,7 +26,7 @@ class SnowflakeResultSetMetaDataV1 extends SnowflakeResultSetMetaData
   private SFResultSetMetaData resultSetMetaData;
 
   SnowflakeResultSetMetaDataV1(SFResultSetMetaData resultSetMetaData)
-          throws SnowflakeSQLException
+  throws SnowflakeSQLException
   {
     this.resultSetMetaData = resultSetMetaData;
   }
@@ -104,7 +105,7 @@ class SnowflakeResultSetMetaDataV1 extends SnowflakeResultSetMetaData
     catch (SFException ex)
     {
       throw new SnowflakeSQLException(ex.getCause(),
-          ex.getSqlState(), ex.getVendorCode(), ex.getParams());
+                                      ex.getSqlState(), ex.getVendorCode(), ex.getParams());
     }
   }
 
@@ -118,7 +119,7 @@ class SnowflakeResultSetMetaDataV1 extends SnowflakeResultSetMetaData
     catch (SFException ex)
     {
       throw new SnowflakeSQLException(ex.getCause(),
-          ex.getSqlState(), ex.getVendorCode(), ex.getParams());
+                                      ex.getSqlState(), ex.getVendorCode(), ex.getParams());
     }
   }
 
@@ -132,7 +133,7 @@ class SnowflakeResultSetMetaDataV1 extends SnowflakeResultSetMetaData
     catch (SFException ex)
     {
       throw new SnowflakeSQLException(ex.getCause(),
-          ex.getSqlState(), ex.getVendorCode(), ex.getParams());
+                                      ex.getSqlState(), ex.getVendorCode(), ex.getParams());
     }
   }
 

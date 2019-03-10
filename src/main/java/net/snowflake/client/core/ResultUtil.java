@@ -29,6 +29,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
+
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 
@@ -247,13 +248,13 @@ public class ResultUtil
    * A common helper to process result response
    *
    * @param resultData wrapper object over simple json result
-   * @param sfSession the Snowflake session
+   * @param sfSession  the Snowflake session
    * @return processed result output
    * @throws SnowflakeSQLException if failed to get number of columns
    */
   static public ResultOutput processResult(ResultInput resultData,
                                            SFSession sfSession)
-      throws SnowflakeSQLException
+  throws SnowflakeSQLException
   {
     ResultOutput resultOutput = new ResultOutput();
 
@@ -284,7 +285,9 @@ public class ResultUtil
         = rootNode.path("data").path("totalTruncated").asBoolean();
 
     if (logger.isDebugEnabled())
+    {
       logger.debug("query id: {}", resultOutput.queryId);
+    }
 
     // extract parameters
     resultOutput.parameters =
@@ -299,13 +302,15 @@ public class ResultUtil
 
       SnowflakeColumnMetadata columnMetadata
           = SnowflakeUtil.extractColumnMetadata(
-              colNode, sfSession.isJdbcTreatDecimalAsInt());
+          colNode, sfSession.isJdbcTreatDecimalAsInt());
 
       resultOutput.resultColumnMetadata.add(columnMetadata);
 
       if (logger.isDebugEnabled())
+      {
         logger.debug("Get column metadata: {}",
-             columnMetadata.toString());
+                     columnMetadata.toString());
+      }
     }
 
     resultOutput.currentChunkRowset = rootNode.path("data").path("rowset");
@@ -321,7 +326,7 @@ public class ResultUtil
     }
 
     logger.debug("First chunk row count: {}",
-        resultOutput.currentChunkRowCount);
+                 resultOutput.currentChunkRowCount);
 
     JsonNode chunksNode = rootNode.path("data").path("chunks");
 
@@ -332,7 +337,7 @@ public class ResultUtil
       // Try to get the Query Result Master Key
       JsonNode qrmkNode = rootNode.path("data").path("qrmk");
       final String qrmk = qrmkNode.isMissingNode() ?
-          null : qrmkNode.textValue();
+                          null : qrmkNode.textValue();
 
       JsonNode chunkHeaders = rootNode.path("data").path("chunkHeaders");
 
@@ -341,7 +346,7 @@ public class ResultUtil
       if (resultOutput.chunkCount > 0)
       {
         logger.debug("#chunks={}, initialize chunk downloader",
-            resultOutput.chunkCount);
+                     resultOutput.chunkCount);
 
         // prefetch threads
         int resultPrefetchThreads = 4;
@@ -422,9 +427,11 @@ public class ResultUtil
     resultOutput.dateFormatter = new SnowflakeDateTimeFormat(sqlDateFormat);
 
     if (logger.isDebugEnabled())
+    {
       logger.debug("sql date format: {}, java date format: {}",
-          sqlDateFormat,
-          resultOutput.dateFormatter.toSimpleDateTimePattern());
+                   sqlDateFormat,
+                   resultOutput.dateFormatter.toSimpleDateTimePattern());
+    }
 
     String sqlTimeFormat = (String) effectiveParamValue(
         resultOutput.parameters,
@@ -432,9 +439,11 @@ public class ResultUtil
 
     resultOutput.timeFormatter = new SnowflakeDateTimeFormat(sqlTimeFormat);
     if (logger.isDebugEnabled())
+    {
       logger.debug("sql time format: {}, java time format: {}",
-          sqlTimeFormat,
-          resultOutput.timeFormatter.toSimpleDateTimePattern());
+                   sqlTimeFormat,
+                   resultOutput.timeFormatter.toSimpleDateTimePattern());
+    }
 
     String timeZoneName = (String) effectiveParamValue(
         resultOutput.parameters, "TIMEZONE");
@@ -446,7 +455,7 @@ public class ResultUtil
             "CLIENT_HONOR_CLIENT_TZ_FOR_TIMESTAMP_NTZ");
 
     logger.debug("Honoring client TZ for timestamp_ntz? {}",
-        resultOutput.honorClientTZForTimestampNTZ);
+                 resultOutput.honorClientTZForTimestampNTZ);
 
     String binaryFmt = (String) effectiveParamValue(
         resultOutput.parameters, "BINARY_OUTPUT_FORMAT");
@@ -457,16 +466,20 @@ public class ResultUtil
     JsonNode versionNode = rootNode.path("data").path("version");
 
     if (!versionNode.isMissingNode())
+    {
       resultOutput.resultVersion = versionNode.longValue();
+    }
 
     // number of binds
     JsonNode numberOfBindsNode = rootNode.path("data").path("numberOfBinds");
 
     if (!numberOfBindsNode.isMissingNode())
+    {
       resultOutput.numberOfBinds = numberOfBindsNode.intValue();
+    }
 
     JsonNode arrayBindSupported = rootNode.path("data")
-              .path("arrayBindSupported");
+        .path("arrayBindSupported");
     resultOutput.arrayBindSupported = !arrayBindSupported.isMissingNode()
                                       && arrayBindSupported.asBoolean();
 
@@ -484,6 +497,7 @@ public class ResultUtil
 
   /**
    * initialize memory limit in bytes
+   *
    * @param resultOutput
    * @return memory limit in bytes
    */
@@ -495,11 +509,11 @@ public class ResultUtil
     {
       // use the settings from the customer
       memoryLimit =
-          (int)resultOutput.parameters.get(CLIENT_MEMORY_LIMIT) * 1024L * 1024L;
+          (int) resultOutput.parameters.get(CLIENT_MEMORY_LIMIT) * 1024L * 1024L;
     }
 
     long maxMemoryToUse = Runtime.getRuntime().maxMemory() * 8 / 10;
-    if ((int)resultOutput.parameters.get(CLIENT_MEMORY_LIMIT)
+    if ((int) resultOutput.parameters.get(CLIENT_MEMORY_LIMIT)
         == SessionUtil.DEFAULT_CLIENT_MEMORY_LIMIT)
     {
       // if the memory limit is the default value and best effort memory is enabled
@@ -516,6 +530,7 @@ public class ResultUtil
 
   // Map of default parameter values, used by effectiveParamValue().
   private static final Map<String, Object> defaultParameters;
+
   static
   {
     Map<String, Object> map = new HashMap<>();
@@ -553,11 +568,15 @@ public class ResultUtil
     Object value = parameters.get(upper);
 
     if (value != null)
+    {
       return value;
+    }
 
     value = defaultParameters.get(upper);
     if (value != null)
+    {
       return value;
+    }
 
     logger.debug("Unknown Common Parameter: {}", paramName);
     return null;
@@ -580,9 +599,11 @@ public class ResultUtil
             defaultFormat);
     SnowflakeDateTimeFormat formatter = new SnowflakeDateTimeFormat(sqlFormat);
     if (logger.isDebugEnabled())
+    {
       logger.debug("sql {} format: {}, java {} format: {}",
-          id, sqlFormat,
-          id, formatter.toSimpleDateTimePattern());
+                   id, sqlFormat,
+                   id, formatter.toSimpleDateTimePattern());
+    }
     return formatter;
   }
 
@@ -600,16 +621,18 @@ public class ResultUtil
     {
 
       if (logger.isDebugEnabled())
+      {
         logger.debug("adjust timestamp by {} days", milliToAdjust / 86400000);
+      }
 
       Timestamp newTimestamp = new Timestamp(timestamp.getTime()
-           + milliToAdjust);
+                                             + milliToAdjust);
 
       newTimestamp.setNanos(timestamp.getNanos());
 
       return newTimestamp;
     }
-	  else
+    else
     {
       return timestamp;
     }
@@ -662,15 +685,15 @@ public class ResultUtil
    * Convert a timestamp internal value (scaled number of seconds + fractional
    * seconds) into a SFTimestamp.
    *
-   * @param timestampStr timestamp object
-   * @param scale timestamp scale
+   * @param timestampStr       timestamp object
+   * @param scale              timestamp scale
    * @param internalColumnType snowflake timestamp type
-   * @param resultVersion For new result version, timestamp with timezone is formatted as
-   *                      the seconds since epoch with fractional part in the decimal followed
-   *                      by time zone index. E.g.: "123.456 1440". Here 123.456 is the * number
-   *                      of seconds since epoch and 1440 is the timezone index.
-   * @param sessionTZ session timezone
-   * @param session session object
+   * @param resultVersion      For new result version, timestamp with timezone is formatted as
+   *                           the seconds since epoch with fractional part in the decimal followed
+   *                           by time zone index. E.g.: "123.456 1440". Here 123.456 is the * number
+   *                           of seconds since epoch and 1440 is the timezone index.
+   * @param sessionTZ          session timezone
+   * @param session            session object
    * @return converted snowflake timestamp object
    * @throws SFException if timestampStr is an invalid timestamp
    */
@@ -679,7 +702,7 @@ public class ResultUtil
                                            long resultVersion,
                                            TimeZone sessionTZ,
                                            SFSession session)
-      throws SFException
+  throws SFException
   {
     logger.debug(
         "public Timestamp getTimestamp(int columnIndex)");
@@ -705,55 +728,55 @@ public class ResultUtil
       }
 
       // Construct a timestamp
-      return TimeUtil.getSFTimestamp(timestampStr, scale, 
+      return TimeUtil.getSFTimestamp(timestampStr, scale,
                                      tsType, resultVersion, sessionTZ);
     }
-    catch(IllegalArgumentException ex)
+    catch (IllegalArgumentException ex)
     {
       throw IncidentUtil.
           generateIncidentWithSignatureAndException(
-                  session, null, null,
-                  "Invalid timestamp value",
-                  ErrorCode.IO_ERROR,
-                  "Invalid timestamp value: " + timestampStr);
+              session, null, null,
+              "Invalid timestamp value",
+              ErrorCode.IO_ERROR,
+              "Invalid timestamp value: " + timestampStr);
     }
   }
 
   /**
    * Convert a time internal value (scaled number of seconds + fractional
    * seconds) into an SFTime.
-   *
+   * <p>
    * Example: getSFTime("123.456", 5) returns an SFTime for 00:02:03.45600.
    *
-   * @param obj time object
-   * @param scale time scale
+   * @param obj     time object
+   * @param scale   time scale
    * @param session session object
    * @return snowflake time object
    * @throws SFException if time is invalid
    */
   static public SFTime getSFTime(String obj, int scale, SFSession session)
-      throws SFException
+  throws SFException
   {
     try
     {
-        return TimeUtil.getSFTime(obj, scale);
+      return TimeUtil.getSFTime(obj, scale);
     }
-    catch(IllegalArgumentException ex)
+    catch (IllegalArgumentException ex)
     {
       throw IncidentUtil.
           generateIncidentWithSignatureAndException(
-                  session, null, null,
-                  "Invalid time value",
-                  ErrorCode.INTERNAL_ERROR,
-                  "Invalid time value: " + obj);
+              session, null, null,
+              "Invalid time value",
+              ErrorCode.INTERNAL_ERROR,
+              "Invalid time value: " + obj);
     }
   }
 
   /**
    * Convert a time value into a string
    *
-   * @param sft snowflake time object
-   * @param scale time scale
+   * @param sft           snowflake time object
+   * @param scale         time scale
    * @param timeFormatter time formatter
    * @return time in string
    */
@@ -777,13 +800,13 @@ public class ResultUtil
   /**
    * Convert a SFTimestamp to a string value.
    *
-   * @param sfTS snowflake timestamp object
-   * @param columnType internal snowflake t
-   * @param scale timestamp scale
+   * @param sfTS                  snowflake timestamp object
+   * @param columnType            internal snowflake t
+   * @param scale                 timestamp scale
    * @param timestampNTZFormatter snowflake timestamp ntz format
    * @param timestampLTZFormatter snowflake timestamp ltz format
-   * @param timestampTZFormatter snowflake timestamp tz format
-   * @param session session object
+   * @param timestampTZFormatter  snowflake timestamp tz format
+   * @param session               session object
    * @return timestamp in string in desired format
    * @throws SFException timestamp format is missing
    */
@@ -841,7 +864,7 @@ public class ResultUtil
   /**
    * Convert a date value into a string
    *
-   * @param date date will be converted
+   * @param date          date will be converted
    * @param dateFormatter date format
    * @return date in string
    */
@@ -857,26 +880,26 @@ public class ResultUtil
    * @param date date before 1582-10-05
    * @return adjusted date
    */
-   static public Date adjustDate(Date date)
-   {
-     long milliToAdjust = ResultUtil.msDiffJulianToGregorian(date);
+  static public Date adjustDate(Date date)
+  {
+    long milliToAdjust = ResultUtil.msDiffJulianToGregorian(date);
 
-     if (milliToAdjust != 0)
-     {
-       // add the difference to the new date
-       return new Date(date.getTime() + milliToAdjust);
-     }
-     else
-     {
-       return date;
-     }
-   }
+    if (milliToAdjust != 0)
+    {
+      // add the difference to the new date
+      return new Date(date.getTime() + milliToAdjust);
+    }
+    else
+    {
+      return date;
+    }
+  }
 
   /**
    * Convert a date internal object to a Date object in specified timezone.
    *
-   * @param str snowflake date object
-   * @param tz timezone we want convert to
+   * @param str     snowflake date object
+   * @param tz      timezone we want convert to
    * @param session snowflake session object
    * @return java date object
    * @throws SFException if date is invalid
@@ -888,14 +911,14 @@ public class ResultUtil
       long milliSecsSinceEpoch = Long.valueOf(str) * 86400000;
 
       SFTimestamp tsInUTC = SFTimestamp.fromDate(new Date(milliSecsSinceEpoch),
-          0, TimeZone.getTimeZone("UTC"));
+                                                 0, TimeZone.getTimeZone("UTC"));
 
       SFTimestamp tsInClientTZ = tsInUTC.moveToTimeZone(tz);
 
       if (logger.isDebugEnabled())
       {
         logger.debug("getDate: tz offset={}",
-            tsInClientTZ.getTimeZone().getOffset(tsInClientTZ.getTime()));
+                     tsInClientTZ.getTimeZone().getOffset(tsInClientTZ.getTime()));
       }
       // return the date adjusted to the JVM default time zone
       Date preDate = new Date(tsInClientTZ.getTime());
@@ -907,14 +930,14 @@ public class ResultUtil
       if (logger.isDebugEnabled())
       {
         logger.debug("Adjust date from {} to {}",
-            preDate.toString(), newDate.toString());
+                     preDate.toString(), newDate.toString());
       }
       return newDate;
     }
     catch (NumberFormatException ex)
     {
       SFException sfe = new SFException(ErrorCode.INTERNAL_ERROR,
-              "Invalid date value: " + str);
+                                        "Invalid date value: " + str);
 
       IncidentUtil.generateIncident(session, "Invalid date value",
                                     null, null, null, sfe);
@@ -931,7 +954,7 @@ public class ResultUtil
   public static boolean getBoolean(String str)
   {
     return str.equalsIgnoreCase("true") ||
-        str.equals("1");
+           str.equals("1");
   }
 
   /**
@@ -940,11 +963,11 @@ public class ResultUtil
    *
    * @param resultSet result set to extract update count from
    * @return the number of rows updated
-   * @throws SFException if failed to calculate update count
+   * @throws SFException  if failed to calculate update count
    * @throws SQLException if failed to calculate update count
    */
   static public int calculateUpdateCount(SFBaseResultSet resultSet)
-                                         throws SFException, SQLException
+  throws SFException, SQLException
   {
     int updateCount = 0;
     SFStatementType statementType = resultSet.getStatementType();
@@ -962,12 +985,12 @@ public class ResultUtil
         else if (statementType == SFStatementType.INSERT ||
                  statementType == SFStatementType.UPDATE ||
                  statementType == SFStatementType.DELETE ||
-                 statementType == SFStatementType.MERGE  ||
+                 statementType == SFStatementType.MERGE ||
                  statementType == SFStatementType.MULTI_INSERT)
         {
           int columnCount = resultSet.getMetaData().getColumnCount();
-          for(int i=0; i<columnCount; i++)
-            updateCount += resultSet.getLong(i+1); // add up number of rows updated
+          for (int i = 0; i < columnCount; i++)
+            updateCount += resultSet.getLong(i + 1); // add up number of rows updated
         }
         else
         {
@@ -986,17 +1009,20 @@ public class ResultUtil
   /**
    * Given a list of String, do a case insensitive search for target string
    * Used by resultsetMetadata to search for target column name
+   *
    * @param source source string list
    * @param target target string to match
    * @return index in the source string list that matches the target string
-   *         index starts from zero
+   * index starts from zero
    */
   public static int listSearchCaseInsensitive(List<String> source, String target)
   {
-    for (int i=0; i<source.size(); i++)
+    for (int i = 0; i < source.size(); i++)
     {
       if (target.equalsIgnoreCase(source.get(i)))
+      {
         return i;
+      }
     }
     return -1;
   }
@@ -1004,6 +1030,7 @@ public class ResultUtil
   /**
    * Return the list of result IDs provided in a result, if available; otherwise
    * return an empty list.
+   *
    * @param result result json
    * @return list of result IDs which can be used for result scans
    */
@@ -1022,6 +1049,7 @@ public class ResultUtil
   /**
    * Return the list of result types provided in a result, if available; otherwise
    * return an empty list.
+   *
    * @param result result json
    * @return list of result IDs which can be used for result scans
    */
@@ -1049,12 +1077,13 @@ public class ResultUtil
   /**
    * Return the list of child results provided in a result, if available; otherwise
    * return an empty list
-   * @param session the current session
+   *
+   * @param session   the current session
    * @param requestId the current request id
-   * @param result result json
+   * @param result    result json
    * @return list of child results
    * @throws SFException if the number of child IDs does not match
-   *   child statement types
+   *                     child statement types
    */
   public static List<SFChildResult> getChildResults(SFSession session,
                                                     String requestId,

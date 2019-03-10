@@ -37,13 +37,13 @@ public class TelemetryService
 
   private static ThreadLocal<TelemetryService> _threadLocal =
       new ThreadLocal<TelemetryService>()
-          {
-          @Override
-          protected TelemetryService initialValue()
-            {
-              return new TelemetryService();
-            }
-          };
+      {
+        @Override
+        protected TelemetryService initialValue()
+        {
+          return new TelemetryService();
+        }
+      };
 
   // Global parameters:
   /**
@@ -59,7 +59,6 @@ public class TelemetryService
   ));
 
   /**
-   *
    * @return return thread local instance
    */
   public static TelemetryService getInstance()
@@ -78,7 +77,7 @@ public class TelemetryService
       }
       Runtime.getRuntime().addShutdownHook(new TelemetryUploader(this));
     }
-    catch(SecurityException e)
+    catch (SecurityException e)
     {
       logger.debug("Failed to add shutdown hook for telemetry service");
     }
@@ -92,7 +91,6 @@ public class TelemetryService
   /**
    * control enable/disable the whole service:
    * disabled service will skip added events and uploading to the server
-   *
    */
   private boolean enabled = false;
 
@@ -124,7 +122,7 @@ public class TelemetryService
   public void updateContext(Map<String, String> params)
   {
     Properties info = new Properties();
-    for(String key: params.keySet())
+    for (String key : params.keySet())
     {
       Object val = params.get(key);
       if (val != null)
@@ -138,17 +136,17 @@ public class TelemetryService
   public void updateContext(final String url, final Properties info)
   {
     configureDeployment(url, info.getProperty("account"),
-        info.getProperty("port"));
+                        info.getProperty("port"));
     final Enumeration<?> names = info.propertyNames();
     context = new JSONObject();
-    while(names.hasMoreElements())
+    while (names.hasMoreElements())
     {
-        String name = (String) names.nextElement();
-        // remove sensitive properties
-        if(name.compareTo("password")!=0 && name.compareTo("privateKey")!=0)
-        {
-          context.put(name, info.getProperty(name));
-        }
+      String name = (String) names.nextElement();
+      // remove sensitive properties
+      if (name.compareTo("password") != 0 && name.compareTo("privateKey") != 0)
+      {
+        context.put(name, info.getProperty(name));
+      }
     }
   }
 
@@ -156,6 +154,7 @@ public class TelemetryService
    * configure telemetry deployment based on connection url and info
    * Note: it is not thread-safe while connecting to different deployments
    * simultaneously.
+   *
    * @param url
    * @param account
    */
@@ -176,7 +175,7 @@ public class TelemetryService
         }
       }
       else if (url.contains("qa1") ||
-          (account != null && account.contains("qa1")))
+               (account != null && account.contains("qa1")))
       {
         deployment = TELEMETRY_SERVER_DEPLOYMENT.QA1;
       }
@@ -198,7 +197,7 @@ public class TelemetryService
 
   public TelemetryEvent getEvent(int i)
   {
-    if(queue!=null && queue.size() > i && i >=0)
+    if (queue != null && queue.size() > i && i >= 0)
     {
       return queue.get(i);
     }
@@ -207,9 +206,9 @@ public class TelemetryService
 
   private enum TELEMETRY_SERVER_URL
   {
-    SFCTEST ("https://lximwp8945.execute-api.us-west-2.amazonaws.com/sfctest/enqueue"),
-    SFCDEV ("https://lol6l3j52m.execute-api.us-west-2.amazonaws.com/sfcdev/enqueue"),
-    US2 ("https://lol6l3j52m.execute-api.us-west-2.amazonaws.com/sfctest/enqueue"); // todo: change the url
+    SFCTEST("https://lximwp8945.execute-api.us-west-2.amazonaws.com/sfctest/enqueue"),
+    SFCDEV("https://lol6l3j52m.execute-api.us-west-2.amazonaws.com/sfcdev/enqueue"),
+    US2("https://lol6l3j52m.execute-api.us-west-2.amazonaws.com/sfctest/enqueue"); // todo: change the url
 
     private final String url;
 
@@ -221,13 +220,13 @@ public class TelemetryService
 
   public enum TELEMETRY_SERVER_DEPLOYMENT
   {
-    DEV ("dev", TELEMETRY_SERVER_URL.SFCTEST.url),
-    REG ("reg", TELEMETRY_SERVER_URL.SFCTEST.url),
-    QA1 ("qa1", TELEMETRY_SERVER_URL.SFCDEV.url),
-    PREPROD2 ("preprod2", TELEMETRY_SERVER_URL.SFCDEV.url),
+    DEV("dev", TELEMETRY_SERVER_URL.SFCTEST.url),
+    REG("reg", TELEMETRY_SERVER_URL.SFCTEST.url),
+    QA1("qa1", TELEMETRY_SERVER_URL.SFCDEV.url),
+    PREPROD2("preprod2", TELEMETRY_SERVER_URL.SFCDEV.url),
     PROD("prod", TELEMETRY_SERVER_URL.US2.url),
     NONEXISTENT("nonexistent",
-        "https://nonexist.execute-api.us-west-2.amazonaws.com/sfctest/enqueue");
+                "https://nonexist.execute-api.us-west-2.amazonaws.com/sfctest/enqueue");
 
     private final String name;
     private final String url;
@@ -260,7 +259,6 @@ public class TelemetryService
   }
 
 
-
   static class TelemetryUploader extends Thread
   {
     TelemetryService instance;
@@ -270,24 +268,26 @@ public class TelemetryService
       instance = _instance;
     }
 
-    public void run() {
+    public void run()
+    {
       if (!instance.enabled)
       {
         return;
       }
       if (instance.queue.isEmpty())
-        {
-          logger.debug("skip to run telemetry uploader for empty queue");
-        }
-        else
-        {
-          // flush the queue
-          flushQueue();
-          logger.debug("run telemetry uploader");
-        }
+      {
+        logger.debug("skip to run telemetry uploader for empty queue");
+      }
+      else
+      {
+        // flush the queue
+        flushQueue();
+        logger.debug("run telemetry uploader");
+      }
     }
 
-    private void flushQueue(){
+    private void flushQueue()
+    {
       HttpResponse response = null;
       boolean success = true;
       try
@@ -296,7 +296,7 @@ public class TelemetryService
         {
           // skip the disabled deployment
           logger.debug("skip the disabled deployment: "
-              + instance.serverDeployment.name);
+                       + instance.serverDeployment.name);
           return;
         }
         HttpClient httpClient = HttpClientBuilder.create().build();
@@ -323,13 +323,13 @@ public class TelemetryService
       {
         logger.debug(
             "Telemetry request failed, IOException" +
-                "response: {}, exception: {}", response, e.getMessage());
+            "response: {}, exception: {}", response, e.getMessage());
         success = false;
       }
       finally
       {
         logger.debug("Telemetry request success={} " +
-            "and clean the current queue", success);
+                     "and clean the current queue", success);
         // clean the current queue
         instance.queue.clear();
       }
@@ -393,29 +393,29 @@ public class TelemetryService
    * log error http response to telemetry
    */
   public void logHttpRequestTelemetryEvent(
-                                           String eventName,
-                                           HttpRequestBase request,
-                                           int injectSocketTimeout,
-                                           AtomicBoolean canceling,
-                                           boolean withoutCookies,
-                                           boolean includeRetryParameters,
-                                           boolean includeRequestGuid,
-                                           CloseableHttpResponse response,
-                                           final Exception savedEx,
-                                           String breakRetryReason,
-                                           long retryTimeout,
-                                           int retryCount,
-                                           String sqlState,
-                                           int errorCode)
+      String eventName,
+      HttpRequestBase request,
+      int injectSocketTimeout,
+      AtomicBoolean canceling,
+      boolean withoutCookies,
+      boolean includeRetryParameters,
+      boolean includeRequestGuid,
+      CloseableHttpResponse response,
+      final Exception savedEx,
+      String breakRetryReason,
+      long retryTimeout,
+      int retryCount,
+      String sqlState,
+      int errorCode)
   {
-    if(enabled)
+    if (enabled)
     {
       TelemetryEvent.LogBuilder logBuilder = new TelemetryEvent.LogBuilder();
       JSONObject value = new JSONObject();
       value.put("request", request.toString());
       value.put("retryTimeout", retryTimeout);
       value.put("injectSocketTimeout", injectSocketTimeout);
-      value.put("canceling", canceling == null ? "null": canceling.get());
+      value.put("canceling", canceling == null ? "null" : canceling.get());
       value.put("withoutCookies", withoutCookies);
       value.put("includeRetryParameters", includeRetryParameters);
       value.put("includeRequestGuid", includeRequestGuid);

@@ -5,7 +5,7 @@ package net.snowflake.client.log;
 
 /**
  * Used to create SFLogger instance
- *
+ * <p>
  * Created by hyu on 11/17/16.
  */
 public class SFLoggerFactory
@@ -59,7 +59,8 @@ public class SFLoggerFactory
 
       loggerImplementation = LoggerImpl.fromString(logger);
 
-      if (loggerImplementation == null) {
+      if (loggerImplementation == null)
+      {
         // default to use java util logging
         loggerImplementation = LoggerImpl.JDK14LOGGER;
       }

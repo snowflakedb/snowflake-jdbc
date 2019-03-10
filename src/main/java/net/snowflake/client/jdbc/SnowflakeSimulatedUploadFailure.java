@@ -14,7 +14,7 @@ public class SnowflakeSimulatedUploadFailure extends RuntimeException
 {
 
   static final SFLogger logger = SFLoggerFactory.getLogger(
-          SnowflakeSimulatedUploadFailure.class);
+      SnowflakeSimulatedUploadFailure.class);
 
   public SnowflakeSimulatedUploadFailure()
   {

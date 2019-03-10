@@ -34,8 +34,8 @@ public class TelemetryData
   public ObjectNode toJson()
   {
     ObjectNode node = mapper.createObjectNode();
-    node.put("timestamp",this.timeStamp+"");
-    node.set("message",this.message);
+    node.put("timestamp", this.timeStamp + "");
+    node.set("message", this.message);
     return node;
   }
 

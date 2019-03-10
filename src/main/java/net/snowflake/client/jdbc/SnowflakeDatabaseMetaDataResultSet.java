@@ -43,17 +43,17 @@ class SnowflakeDatabaseMetaDataResultSet extends SnowflakeBaseResultSet
       final List<Integer> columnTypes,
       final ResultSet showObjectResultSet,
       final Statement statement)
-      throws SQLException
+  throws SQLException
   {
     this.showObjectResultSet = showObjectResultSet;
 
     SFSession session = ((SnowflakeConnectionV1) statement.getConnection()).getSfSession();
 
     this.resultSetMetaData = new SnowflakeResultSetMetaData(columnNames.size(),
-        columnNames,
-        columnTypeNames,
-        columnTypes,
-        session);
+                                                            columnNames,
+                                                            columnTypeNames,
+                                                            columnTypes,
+                                                            session);
 
     this.nextRow = new Object[columnNames.size()];
 
@@ -76,17 +76,17 @@ class SnowflakeDatabaseMetaDataResultSet extends SnowflakeBaseResultSet
       final List<Integer> columnTypes,
       final Object[][] rows,
       final Statement statement)
-      throws SQLException
+  throws SQLException
   {
     this.rows = rows;
 
     SFSession session = ((SnowflakeConnectionV1) statement.getConnection()).getSfSession();
 
     this.resultSetMetaData = new SnowflakeResultSetMetaData(columnNames.size(),
-        columnNames,
-        columnTypeNames,
-        columnTypes,
-        session);
+                                                            columnNames,
+                                                            columnTypeNames,
+                                                            columnTypes,
+                                                            session);
 
     this.nextRow = new Object[columnNames.size()];
 
@@ -99,7 +99,7 @@ class SnowflakeDatabaseMetaDataResultSet extends SnowflakeBaseResultSet
       Statement statement) throws SQLException
   {
     this(metadataType.getColumnNames(), metadataType.getColumnTypeNames(),
-        metadataType.getColumnTypes(), resultSet, statement);
+         metadataType.getColumnTypes(), resultSet, statement);
   }
 
   private SnowflakeDatabaseMetaDataResultSet(
@@ -108,7 +108,7 @@ class SnowflakeDatabaseMetaDataResultSet extends SnowflakeBaseResultSet
       Statement statement) throws SQLException
   {
     this(metadataType.getColumnNames(), metadataType.getColumnTypeNames(),
-        metadataType.getColumnTypes(), rows, statement);
+         metadataType.getColumnTypes(), rows, statement);
   }
 
   @Override
@@ -167,7 +167,7 @@ class SnowflakeDatabaseMetaDataResultSet extends SnowflakeBaseResultSet
     else
     {
       throw new SnowflakeSQLException(ErrorCode.INVALID_VALUE_CONVERT,
-          obj.getClass().getName(), "TIME", obj);
+                                      obj.getClass().getName(), "TIME", obj);
     }
   }
 
@@ -183,7 +183,7 @@ class SnowflakeDatabaseMetaDataResultSet extends SnowflakeBaseResultSet
     else
     {
       throw new SnowflakeSQLException(ErrorCode.INVALID_VALUE_CONVERT,
-          obj.getClass().getName(), "TIMESTAMP", obj);
+                                      obj.getClass().getName(), "TIMESTAMP", obj);
     }
   }
 
@@ -199,12 +199,12 @@ class SnowflakeDatabaseMetaDataResultSet extends SnowflakeBaseResultSet
     else
     {
       throw new SnowflakeSQLException(ErrorCode.INVALID_VALUE_CONVERT,
-          obj.getClass().getName(), "DATE", obj);
+                                      obj.getClass().getName(), "DATE", obj);
     }
   }
 
   static ResultSet getEmptyResultSet(DBMetadataResultSetMetadata metadataType, Statement statement)
-      throws SQLException
+  throws SQLException
   {
     return new SnowflakeDatabaseMetaDataResultSet(metadataType, new Object[][]{}, statement);
   }

@@ -12,6 +12,7 @@ import net.snowflake.common.core.SFBinaryFormat;
 import net.snowflake.common.core.SFTime;
 import net.snowflake.common.core.SFTimestamp;
 import net.snowflake.common.core.SnowflakeDateTimeFormat;
+
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.sql.Date;
@@ -22,6 +23,7 @@ import java.sql.Types;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TimeZone;
+
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 
@@ -129,8 +131,10 @@ public abstract class SFBaseResultSet
             timestampLTZFormatter, timestampTZFormatter, session);
 
         if (logger.isDebugEnabled())
+        {
           logger.debug("Converting timestamp to string from: {} to: {}",
-               obj.toString(), timestampStr);
+                       obj.toString(), timestampStr);
+        }
 
         return timestampStr;
 
@@ -148,8 +152,10 @@ public abstract class SFBaseResultSet
         String dateStr = ResultUtil.getDateAsString(date, dateFormatter);
 
         if (logger.isDebugEnabled())
+        {
           logger.debug("Converting date to string from: {} to: {}",
-               obj.toString(), dateStr);
+                       obj.toString(), dateStr);
+        }
         return dateStr;
 
       case Types.TIME:
@@ -167,8 +173,10 @@ public abstract class SFBaseResultSet
         String timeStr = ResultUtil.getSFTimeAsString(sfTime, scale, timeFormatter);
 
         if (logger.isDebugEnabled())
+        {
           logger.debug("Converting time to string from: {} to: {}",
-               obj.toString(), timeStr);
+                       obj.toString(), timeStr);
+        }
         return timeStr;
 
       case Types.BINARY:
@@ -226,7 +234,9 @@ public abstract class SFBaseResultSet
     Object obj = getObjectInternal(columnIndex);
 
     if (obj == null)
+    {
       return 0;
+    }
 
     if (obj instanceof String)
     {
@@ -246,7 +256,9 @@ public abstract class SFBaseResultSet
     Object obj = getObjectInternal(columnIndex);
 
     if (obj == null)
+    {
       return 0;
+    }
 
     if (obj instanceof String)
     {
@@ -266,7 +278,9 @@ public abstract class SFBaseResultSet
     Object obj = getObjectInternal(columnIndex);
 
     if (obj == null)
+    {
       return 0;
+    }
 
     try
     {
@@ -286,15 +300,15 @@ public abstract class SFBaseResultSet
           || Types.SMALLINT == columnType)
       {
         SFException sfe = new SFException(ErrorCode.INTERNAL_ERROR,
-            "Invalid long: " + obj.toString());
+                                          "Invalid long: " + obj.toString());
         IncidentUtil.generateIncident(session, "Unable to Convert to Long",
-            null, null, null, sfe);
+                                      null, null, null, sfe);
         throw sfe;
       }
       else
       {
         throw new SFException(ErrorCode.INVALID_VALUE_CONVERT,
-            columnType, "LONG", obj);
+                              columnType, "LONG", obj);
       }
     }
   }
@@ -307,7 +321,9 @@ public abstract class SFBaseResultSet
     Object obj = getObjectInternal(columnIndex);
 
     if (obj == null)
+    {
       return 0;
+    }
 
     if (obj instanceof String)
     {
@@ -317,7 +333,8 @@ public abstract class SFBaseResultSet
       }
       else if ("-inf".equals(obj))
       {
-        return Float.NEGATIVE_INFINITY; }
+        return Float.NEGATIVE_INFINITY;
+      }
       else
       {
         return Float.parseFloat((String) obj);
@@ -338,7 +355,9 @@ public abstract class SFBaseResultSet
 
     // snow-11974: null for getDouble should return 0
     if (obj == null)
+    {
       return 0;
+    }
 
     if (obj instanceof String)
     {
@@ -369,7 +388,9 @@ public abstract class SFBaseResultSet
     Object obj = getObjectInternal(columnIndex);
 
     if (obj == null)
+    {
       return null;
+    }
 
     try
     {
@@ -378,7 +399,7 @@ public abstract class SFBaseResultSet
     catch (IllegalArgumentException ex)
     {
       throw new SFException(ErrorCode.INTERNAL_ERROR,
-          "Invalid binary value: " + obj.toString());
+                            "Invalid binary value: " + obj.toString());
     }
   }
 
@@ -395,7 +416,9 @@ public abstract class SFBaseResultSet
     Object obj = getObjectInternal(columnIndex);
 
     if (obj == null)
+    {
       return null;
+    }
 
     int columnType = resultSetMetaData.getColumnType(columnIndex);
 
@@ -440,7 +463,7 @@ public abstract class SFBaseResultSet
     else
     {
       throw new SFException(ErrorCode.INVALID_VALUE_CONVERT, columnType, "Time",
-          getObjectInternal(columnIndex));
+                            getObjectInternal(columnIndex));
     }
   }
 
@@ -449,7 +472,9 @@ public abstract class SFBaseResultSet
     Object obj = getObjectInternal(columnIndex);
 
     if (obj == null)
+    {
       return null;
+    }
 
     int scale = resultSetMetaData.getScale(columnIndex);
     return ResultUtil.getSFTime(obj.toString(), scale, session);
@@ -461,7 +486,7 @@ public abstract class SFBaseResultSet
   }
 
   public Timestamp getTimestamp(int columnIndex, TimeZone tz)
-      throws SFException
+  throws SFException
   {
     int columnType = resultSetMetaData.getColumnType(columnIndex);
     if (Types.TIMESTAMP == columnType)
@@ -503,19 +528,21 @@ public abstract class SFBaseResultSet
     else
     {
       throw new SFException(ErrorCode.INVALID_VALUE_CONVERT, columnType, "Timestamp",
-          getObjectInternal(columnIndex));
+                            getObjectInternal(columnIndex));
     }
   }
 
   private SFTimestamp getSFTimestamp(int columnIndex) throws SFException
   {
     logger.debug(
-               "public Timestamp getTimestamp(int columnIndex)");
+        "public Timestamp getTimestamp(int columnIndex)");
 
     Object obj = getObjectInternal(columnIndex);
 
     if (obj == null)
+    {
       return null;
+    }
 
     return ResultUtil.getSFTimestamp(
         obj.toString(),
@@ -536,15 +563,17 @@ public abstract class SFBaseResultSet
   public Object getObject(int columnIndex) throws SFException
   {
     logger.debug(
-               "public Object getObject(int columnIndex)");
+        "public Object getObject(int columnIndex)");
 
     int type = resultSetMetaData.getColumnType(columnIndex);
 
     Object obj = getObjectInternal(columnIndex);
     if (obj == null)
+    {
       return null;
+    }
 
-    switch(type)
+    switch (type)
     {
       case Types.VARCHAR:
       case Types.CHAR:
@@ -588,14 +617,16 @@ public abstract class SFBaseResultSet
   public BigDecimal getBigDecimal(int columnIndex) throws SFException
   {
     logger.debug(
-               "public BigDecimal getBigDecimal(int columnIndex)");
+        "public BigDecimal getBigDecimal(int columnIndex)");
 
 
     // Column index starts from 1, not 0.
     Object obj = getObjectInternal(columnIndex);
 
     if (obj == null)
+    {
       return null;
+    }
 
     return new BigDecimal(obj.toString());
   }
@@ -609,7 +640,9 @@ public abstract class SFBaseResultSet
     Object obj = getObjectInternal(columnIndex);
 
     if (obj == null)
+    {
       return null;
+    }
 
     BigDecimal value = new BigDecimal(obj.toString());
 
@@ -630,7 +663,7 @@ public abstract class SFBaseResultSet
     logger.debug("public boolean absolute(int row)");
 
     throw new SFException(
-            ErrorCode.FEATURE_UNSUPPORTED, "seek to a specific row");
+        ErrorCode.FEATURE_UNSUPPORTED, "seek to a specific row");
   }
 
   public boolean relative(int rows) throws SFException
@@ -638,7 +671,7 @@ public abstract class SFBaseResultSet
     logger.debug("public boolean relative(int rows)");
 
     throw new SFException(
-            ErrorCode.FEATURE_UNSUPPORTED, "seek to a row relative to current row");
+        ErrorCode.FEATURE_UNSUPPORTED, "seek to a row relative to current row");
   }
 
   public boolean previous() throws SFException
@@ -646,7 +679,7 @@ public abstract class SFBaseResultSet
     logger.debug("public boolean previous()");
 
     throw new SFException(
-            ErrorCode.FEATURE_UNSUPPORTED, "seek to a previous row");
+        ErrorCode.FEATURE_UNSUPPORTED, "seek to a previous row");
   }
 
   protected int getNumberOfBinds()
@@ -671,7 +704,7 @@ public abstract class SFBaseResultSet
   // this is useful to override the initial statement type if it is incorrect
   // (e.g. result scan yields a query type, but the results are from a DML statement)
   public abstract void setStatementType(SFStatementType statementType) throws
-      SQLException;
+                                                                       SQLException;
 
   public abstract String getQueryId();
 

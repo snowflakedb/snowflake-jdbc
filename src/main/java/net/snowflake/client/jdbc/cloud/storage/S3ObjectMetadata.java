@@ -4,17 +4,17 @@
 package net.snowflake.client.jdbc.cloud.storage;
 
 import com.amazonaws.services.s3.model.ObjectMetadata;
+
 import java.util.Map;
 
 /**
  * s3 implementation of platform independent StorageObjectMetadata interface,
  * wraps an S3 ObjectMetadata class
- *
+ * <p>
  * It only supports a limited set of metadata properties
  * currrently used by the JDBC client
  *
  * @author lgiakoumakis
- *
  **/
 public class S3ObjectMetadata implements StorageObjectMetadata
 {

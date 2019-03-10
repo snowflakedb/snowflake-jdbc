@@ -16,6 +16,7 @@ import java.util.TimeZone;
 import java.util.logging.Formatter;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
+
 import static org.junit.Assert.assertTrue;
 
 public class SFFormatterTest
@@ -44,12 +45,13 @@ public class SFFormatterTest
 
   /**
    * This test intends to check if the timestamp generated in the SFFormatter is in UTC timezone
-   *
+   * <p>
    * It would extract the timestamp from a log record using the SFFormatter and compare it against now;
-   *
+   * <p>
    * Since the time difference between the log record's generated time and the current time is small,
    * their difference would be limited within TIME_DIFFERENCE_BOUNDARY if the log record's timestamp
    * is in UTC timezone
+   *
    * @throws ParseException
    */
   @Test
@@ -64,7 +66,7 @@ public class SFFormatterTest
       Date date = extractDate(record);
       long nowInMs = Calendar.getInstance(TimeZone.getTimeZone("UTC")).getTimeInMillis();
       assertTrue("Time difference boundary should be less than " + TIME_DIFFERENCE_BOUNDARY + "ms",
-          nowInMs - date.getTime() < TIME_DIFFERENCE_BOUNDARY);
+                 nowInMs - date.getTime() < TIME_DIFFERENCE_BOUNDARY);
     }
     finally
     {
@@ -74,12 +76,14 @@ public class SFFormatterTest
 
   /**
    * The bulk version test of testUTCTimeStampSimple()
+   *
    * @throws ParseException
    */
   @Test
   public void testUTCTimeStampStress() throws ParseException
   {
-    for (int i = 0; i < STRESS_TEST_ITERATION; i++) {
+    for (int i = 0; i < STRESS_TEST_ITERATION; i++)
+    {
       testUTCTimeStampSimple();
     }
   }
@@ -106,7 +110,8 @@ public class SFFormatterTest
 
     /**
      * No formatter is needed
-     * @param level level of log record priority
+     *
+     * @param level   level of log record priority
      * @param message message of log record
      * @return A LogRecord instance
      */
@@ -121,7 +126,8 @@ public class SFFormatterTest
     /**
      * Generate the string representation of the log record
      * formatter is required to be not null!!
-     * @param level level of log record priority
+     *
+     * @param level   level of log record priority
      * @param message message of log record
      * @return A LogRecord instance
      */
@@ -132,6 +138,7 @@ public class SFFormatterTest
 
     /**
      * Formatter setter
+     *
      * @param formatter
      */
     public void setFormatter(Formatter formatter)
@@ -142,6 +149,7 @@ public class SFFormatterTest
 
   /**
    * Helper function to extract the date from the log record
+   *
    * @param string log record representation
    * @return a date specified by the log record
    * @throws ParseException
