@@ -4,7 +4,6 @@ ConnectionManual.java
 DatabaseMetaDataIT.java
 HeartbeatIT.java
 OpenGroupCLIFuncIT.java
-PreparedStatementIT.java
 SSOConnectionTest.java
 ServiceNameTest.java
 SessionVariablesIT.java
