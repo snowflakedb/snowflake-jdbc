@@ -1,3 +1,9 @@
+**JDBC Driver 3.6.28**
+
+- \|SNOW-67095|Fix a bug which caused the 3.6.x JDBC Driver hangs when resultSet is not consumed. The JDBC driver now always releases resultSet and its memory usage when a statement is closed.
+- \|SNOW-67120|Change getTableTypes() from only returning TABLE and VIEW to including TEMPORARY and TRANSIENT types.
+- \|SNOW-66302|Fixed parsing date and time format issue.
+
 **JDBC Driver 3.6.27**
 
 - \|SNOW-42661| Add unknown type  binding variable support in table UDF
