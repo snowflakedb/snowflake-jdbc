@@ -2,6 +2,7 @@ package net.snowflake.client.jdbc.telemetryOOB;
 
 
 import net.snowflake.client.jdbc.BaseJDBCTest;
+import org.apache.commons.lang3.time.StopWatch;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -123,6 +124,37 @@ public class TelemetryServiceIT extends BaseJDBCTest
 
   @Ignore
   @Test
+  public void stressTestCreateLog()
+  {
+    // this log will be delivered to snowflake
+    TelemetryService service = TelemetryService.getInstance();
+    // send one http request for each event
+    service.setBatchSize(1);
+    StopWatch sw = new StopWatch();
+    sw.start();
+    int rate = 50;
+    int sent = 0;
+    int duration = 60;
+    while (sw.getTime() < duration * 1000)
+    {
+      int toSend = (int) (sw.getTime() / 1000) * rate - sent;
+      for (int i = 0; i < toSend; i++)
+      {
+        TelemetryEvent log = new TelemetryEvent.LogBuilder()
+          .withName("StressTestLog")
+            .withValue("This is an example log for stress test " + sent)
+          .build();
+        System.out.println("stress test: " + sent++ + " sent.");
+        service.add(log);
+      }
+    }
+    service.resetBatchSize();
+    service.flush();
+    sw.stop();
+  }
+
+  @Ignore
+  @Test
   public void testCreateLogInBlackList()
   {
     // this log will be delivered to snowflake
@@ -150,5 +182,35 @@ public class TelemetryServiceIT extends BaseJDBCTest
         .build();
     assertThat("check log value", log.get("Value").equals("This is an example urgent log"));
     service.add(log);
+  }
+
+  @Ignore
+  @Test
+  public void stressTestCreateUrgentEvent()
+  {
+    // this log will be delivered to snowflake
+    TelemetryService service = TelemetryService.getInstance();
+    // send one http request for each event
+    StopWatch sw = new StopWatch();
+    sw.start();
+    int rate = 1;
+    int sent = 0;
+    int duration = 5;
+    while (sw.getTime() < duration * 1000)
+    {
+      int toSend = (int) (sw.getTime() / 1000) * rate - sent;
+      for (int i = 0; i < toSend; i++)
+      {
+        TelemetryEvent log = new TelemetryEvent.LogBuilder()
+            .withName("StressUrgentTestLog")
+            .withUrgent(true)
+            .withValue("This is an example urgent log for stress test " + sent)
+            .build();
+        System.out.println("stress test: " + sent++ + " sent.");
+        service.add(log);
+      }
+    }
+    service.flush();
+    sw.stop();
   }
 }

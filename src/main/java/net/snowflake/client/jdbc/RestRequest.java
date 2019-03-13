@@ -6,15 +6,12 @@ package net.snowflake.client.jdbc;
 
 import net.snowflake.client.core.Event;
 import net.snowflake.client.core.EventUtil;
-
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
-
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.util.DecorrelatedJitterBackoff;
 import net.snowflake.common.core.SqlState;
-
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.utils.URIBuilder;
@@ -50,7 +47,6 @@ public class RestRequest
 
   // retry at least once even if timeout limit has been reached
   static private int MIN_RETRY_COUNT = 1;
-  private static final int TriggerRetryTelemetryEvent = 3;
 
   /**
    * Execute an http request with retry logic.
@@ -304,7 +300,10 @@ public class RestRequest
             {
               // try to upload events in the queue
               // before throwing the exception
-              TelemetryService.getInstance().flush();
+              if (TelemetryService.getInstance().runFlushBeforeException())
+              {
+                TelemetryService.getInstance().flush();
+              }
             }
             // rethrow the timeout exception
             if (response == null && savedEx != null)
@@ -339,12 +338,11 @@ public class RestRequest
         }
 
         retryCount++;
-
-        if (retryCount == TriggerRetryTelemetryEvent)
+        int numOfRetryToTriggerTelemetry = TelemetryService.getInstance().getNumOfRetryToTriggerTelemetry();
+        if (retryCount == numOfRetryToTriggerTelemetry)
         {
           TelemetryService.getInstance().logHttpRequestTelemetryEvent(
-              String.format("HttpRequestRetry%dTimes",
-                            TriggerRetryTelemetryEvent),
+              String.format("HttpRequestRetry%dTimes", numOfRetryToTriggerTelemetry),
               httpRequest,
               injectSocketTimeout,
               canceling,

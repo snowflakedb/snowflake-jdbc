@@ -19,9 +19,11 @@ import java.io.StringWriter;
 import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -66,6 +68,22 @@ public class TelemetryService
     return _threadLocal.get();
   }
 
+  private static final int DEFAULT_NUM_OF_RETRY_TO_TRIGGER_TELEMETRY = 10;
+  private static final int DEFAULT_BATCH_SIZE = 100;
+  /**
+   * the number of retry to trigger the HTTP timeout telemetry event
+   */
+  private int numOfRetryToTriggerTelemetry = DEFAULT_NUM_OF_RETRY_TO_TRIGGER_TELEMETRY;
+  // local parameters
+  private ConcurrentLinkedQueue<TelemetryEvent> queue
+      = new ConcurrentLinkedQueue<>();
+  private int batchSize = DEFAULT_BATCH_SIZE;
+  /**
+   * the context (e.g., connection properties) to be included
+   * in the telemetry events
+   */
+  private JSONObject context;
+
   private TelemetryService()
   {
     try
@@ -75,17 +93,32 @@ public class TelemetryService
       {
         sm.checkPermission(new RuntimePermission("shutdownHooks"));
       }
-      Runtime.getRuntime().addShutdownHook(new TelemetryUploader(this));
+
+      Runtime.getRuntime().addShutdownHook(new Thread(
+          new TelemetryUploader(this, logsToString(queue))));
     }
     catch (SecurityException e)
     {
       logger.debug("Failed to add shutdown hook for telemetry service");
     }
   }
+  private ExecutorService uploader = Executors.newFixedThreadPool(3);
 
-  // local parameters
-  private LinkedList<TelemetryEvent> queue = new LinkedList<>();
-  private int BATCH_SIZE = 100;
+  public void resetNumOfRetryToTriggerTelemetry()
+  {
+    numOfRetryToTriggerTelemetry = DEFAULT_NUM_OF_RETRY_TO_TRIGGER_TELEMETRY;
+  }
+
+  public int getNumOfRetryToTriggerTelemetry()
+  {
+    return numOfRetryToTriggerTelemetry;
+  }
+
+  public void setNumOfRetryToTriggerTelemetry(int num)
+  {
+    numOfRetryToTriggerTelemetry = num;
+  }
+
   private TELEMETRY_SERVER_DEPLOYMENT serverDeployment;
 
   /**
@@ -110,9 +143,25 @@ public class TelemetryService
   }
 
   /**
-   * the context (e.g., connection properties) to be included in the telemetry events
+   * Try to flush events in the queue before throwing exceptions
+   * It's true by default and only set to false for testing
    */
-  private JSONObject context;
+  private boolean runFlushBeforeException = true;
+
+  public boolean runFlushBeforeException()
+  {
+    return runFlushBeforeException;
+  }
+
+  public void enableRunFlushBeforeException()
+  {
+    runFlushBeforeException = true;
+  }
+
+  public void disableRunFlushBeforeException()
+  {
+    runFlushBeforeException = false;
+  }
 
   public JSONObject getContext()
   {
@@ -195,13 +244,19 @@ public class TelemetryService
     return ENABLED_DEPLOYMENT.contains(this.serverDeployment.name);
   }
 
-  public TelemetryEvent getEvent(int i)
+  public TelemetryEvent peek()
   {
-    if (queue != null && queue.size() > i && i >= 0)
-    {
-      return queue.get(i);
-    }
-    return null;
+    return queue.peek();
+  }
+
+  public void setBatchSize(int size)
+  {
+    this.batchSize = size;
+  }
+
+  public void resetBatchSize()
+  {
+    this.batchSize = DEFAULT_BATCH_SIZE;
   }
 
   private enum TELEMETRY_SERVER_URL
@@ -258,14 +313,65 @@ public class TelemetryService
     return serverDeployment.name;
   }
 
+  public void add(TelemetryEvent event)
+  {
+    if (!enabled)
+    {
+      return;
+    }
+    queue.offer(event);
+    if (queue.size() >= batchSize ||
+        (event.containsKey("Urgent") && (boolean) event.get("Urgent")))
+    {
+      // When the queue is full or the event is urgent,
+      // then start a new thread to upload without blocking the current thread
+      Runnable runUpload = new TelemetryUploader(this, logsToString(queue));
+      uploader.execute(runUpload);
+    }
+  }
 
-  static class TelemetryUploader extends Thread
+  /**
+   * force to flush events in the queue
+   */
+  public void flush()
+  {
+    if (!enabled)
+    {
+      return;
+    }
+    if (!queue.isEmpty())
+    {
+      // start a new thread to upload without blocking the current thread
+      Runnable runUpload = new TelemetryUploader(this, logsToString(queue));
+      uploader.execute(runUpload);
+    }
+  }
+
+  /**
+   * convert a list of json objects to a string
+   *
+   * @param queue a list of json objects
+   * @return the result json string
+   */
+  public String logsToString(ConcurrentLinkedQueue<TelemetryEvent> queue)
+  {
+    JSONArray logs = new JSONArray();
+    while (!queue.isEmpty())
+    {
+      logs.add(queue.poll());
+    }
+    return logs.toString();
+  }
+
+  static class TelemetryUploader implements Runnable
   {
     TelemetryService instance;
+    String payload;
 
-    public TelemetryUploader(TelemetryService _instance)
+    public TelemetryUploader(TelemetryService _instance, String _payload)
     {
       instance = _instance;
+      payload = _payload;
     }
 
     public void run()
@@ -274,19 +380,19 @@ public class TelemetryService
       {
         return;
       }
-      if (instance.queue.isEmpty())
+      if (payload == null || payload.isEmpty())
       {
-        logger.debug("skip to run telemetry uploader for empty queue");
+        logger.debug("skip to run telemetry uploader for empty payload");
       }
       else
       {
         // flush the queue
-        flushQueue();
+        uploadPayload();
         logger.debug("run telemetry uploader");
       }
     }
 
-    private void flushQueue()
+    private void uploadPayload()
     {
       HttpResponse response = null;
       boolean success = true;
@@ -301,7 +407,7 @@ public class TelemetryService
         }
         HttpClient httpClient = HttpClientBuilder.create().build();
         HttpPost post = new HttpPost(instance.serverDeployment.url);
-        post.setEntity(new StringEntity(instance.logsToString(instance.queue)));
+        post.setEntity(new StringEntity(payload));
         post.setHeader("Content-type", "application/json");
         // start a request with retry timeout = 10 secs
         response = httpClient.execute(post);
@@ -334,54 +440,6 @@ public class TelemetryService
         instance.queue.clear();
       }
     }
-  }
-
-  public void add(TelemetryEvent event)
-  {
-    if (!enabled)
-    {
-      return;
-    }
-    queue.add(event);
-    if (queue.size() >= BATCH_SIZE ||
-        (event.containsKey("Urgent") && (boolean) event.get("Urgent")))
-    {
-      // When the queue is full or the event is urgent,
-      // then start a new thread to upload without blocking the current thread
-      new TelemetryUploader(this).start();
-    }
-  }
-
-  /**
-   * force to flush events in the queue
-   */
-  public void flush()
-  {
-    if (!enabled)
-    {
-      return;
-    }
-    if (!queue.isEmpty())
-    {
-      // start a new thread to upload without blocking the current thread
-      new TelemetryUploader(this).start();
-    }
-  }
-
-  /**
-   * convert a list of json objects to a string
-   *
-   * @param queue a list of json objects
-   * @return the result json string
-   */
-  public String logsToString(LinkedList<TelemetryEvent> queue)
-  {
-    JSONArray logs = new JSONArray();
-    for (TelemetryEvent event : queue)
-    {
-      logs.add(event);
-    }
-    return logs.toString();
   }
 
   public int size()
