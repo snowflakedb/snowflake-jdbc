@@ -9,7 +9,6 @@ import net.snowflake.client.RunningOnTravisCI;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryEvent;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.common.core.SqlState;
-import org.apache.avro.data.Json;
 import org.apache.commons.codec.binary.Base64;
 import org.junit.After;
 import org.junit.Assert;
@@ -52,9 +51,11 @@ public class ConnectionIT extends BaseJDBCTest
   public void setUp()
   {
     TelemetryService service = TelemetryService.getInstance();
-    TelemetryService.getInstance().updateContext(getConnectionParameters());
+    service.updateContext(getConnectionParameters());
     defaultState = service.isEnabled();
     defaultDeployment = service.getServerDeploymentName();
+    service.setNumOfRetryToTriggerTelemetry(3);
+    service.disableRunFlushBeforeException();
     service.enable();
   }
 
@@ -74,6 +75,8 @@ public class ConnectionIT extends BaseJDBCTest
     {
       service.disable();
     }
+    service.resetNumOfRetryToTriggerTelemetry();
+    service.enableRunFlushBeforeException();
   }
 
   @Test
@@ -301,9 +304,8 @@ public class ConnectionIT extends BaseJDBCTest
 
       if (TelemetryService.getInstance().isDeploymentEnabled())
       {
-        assertThat("telemetry log created",
-                   TelemetryService.getInstance().size() - queueSize == 2);
-        TelemetryEvent te = TelemetryService.getInstance().getEvent(queueSize);
+        assertEquals(TelemetryService.getInstance().size(), queueSize + 2);
+        TelemetryEvent te = TelemetryService.getInstance().peek();
         JSONObject values = (JSONObject) te.get("Value");
         assertThat("Communication error",
                    values.get("errorCode").toString().compareTo(
@@ -362,7 +364,7 @@ public class ConnectionIT extends BaseJDBCTest
         if (TelemetryService.getInstance().isDeploymentEnabled())
         {
           assertEquals(1, TelemetryService.getInstance().size() - queueSize);
-          TelemetryEvent te = TelemetryService.getInstance().getEvent(queueSize);
+          TelemetryEvent te = TelemetryService.getInstance().peek();
           String name = (String) te.get("Name");
           int statusCode = (int) ((JSONObject) te.get("Value")).get("responseStatusCode");
           assertEquals(name, "HttpError404");
@@ -407,9 +409,8 @@ public class ConnectionIT extends BaseJDBCTest
 
       if (TelemetryService.getInstance().isDeploymentEnabled())
       {
-        assertThat("telemetry log created",
-                   TelemetryService.getInstance().size() - queueSize == 2);
-        TelemetryEvent te = TelemetryService.getInstance().getEvent(queueSize);
+        assertEquals(TelemetryService.getInstance().size(), queueSize + 2);
+        TelemetryEvent te = TelemetryService.getInstance().peek();
         JSONObject values = (JSONObject) te.get("Value");
         assertThat("Communication error",
                    values.get("errorCode").toString().compareTo(
