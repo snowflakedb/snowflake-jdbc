@@ -23,6 +23,7 @@ import java.sql.Statement;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Set;
 
@@ -75,6 +76,44 @@ public class PreparedStatementIT extends BaseJDBCTest
     Statement st = con.createStatement();
     st.execute(deleteTableSQL);
     con.close();
+  }
+
+  /**
+   * Trigger default stage array binding threshold so that it can be run
+   * on travis
+   */
+  @Test
+  public void testInsertStageArrayBind() throws SQLException
+  {
+    connection = getConnection();
+    statement = connection.createStatement();
+    statement.execute("create or replace table testStageArrayBind(c1 integer)");
+
+    prepStatement = connection.prepareStatement(
+        "insert into testStageArrayBind values (?)");
+
+    for (int i=0; i<70000; i++)
+    {
+      prepStatement.setInt(1, i);
+      prepStatement.addBatch();
+    }
+    prepStatement.executeBatch();
+
+    resultSet = statement.executeQuery("select * from testStageArrayBind " +
+                                           "order by c1 asc");
+
+    int count = 0;
+    while(resultSet.next())
+    {
+      assertThat(resultSet.getInt(1), is(count));
+
+      count ++;
+    }
+
+    resultSet.close();
+    statement.close();
+    prepStatement.close();
+    connection.close();
   }
 
   @Test
@@ -521,9 +560,13 @@ public class PreparedStatementIT extends BaseJDBCTest
     prepStatement = connection.prepareStatement(insertSQL);
     bindOneParamSet(prepStatement, 1, 1.22222, (float) 1.2, "test", 12121212121L, (short) 12);
     prepStatement.clearParameters();
+
+    int parameterSize =
+        ((SnowflakePreparedStatementV1)prepStatement).getParameterBindings().size();
+    assertThat(parameterSize, is(0));
+
     bindOneParamSet(prepStatement, 3, 1.22, 1.2f, "hello", 12222L, (short) 1);
-    prepStatement.addBatch();
-    prepStatement.executeBatch();
+    prepStatement.executeUpdate();
 
     resultSet = connection.createStatement().executeQuery(selectAllSQL);
     resultSet.next();
@@ -541,10 +584,21 @@ public class PreparedStatementIT extends BaseJDBCTest
     prepStatement.addBatch();
     bindOneParamSet(prepStatement, 2, 2.22222, (float) 2.2, "test2", 1221221123131L, (short) 1);
     prepStatement.addBatch();
+
+    // clear batch should remove all batch parameters
     prepStatement.clearBatch();
+    int batchSize =
+        ((SnowflakePreparedStatementV1)prepStatement).getBatchParameterBindings().size();
+    assertThat(batchSize, is(0)) ;
+
     bindOneParamSet(prepStatement, 3, 1.22, 1.2f, "hello", 12222L, (short) 1);
     prepStatement.addBatch();
     prepStatement.executeBatch();
+
+    // executeBatch should remove batch as well
+    batchSize =
+        ((SnowflakePreparedStatementV1)prepStatement).getBatchParameterBindings().size();
+    assertThat(batchSize, is(0)) ;
 
     resultSet = connection.createStatement().executeQuery(selectAllSQL);
     resultSet.next();
