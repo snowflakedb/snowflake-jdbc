@@ -1026,4 +1026,10 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
   {
     return batchParameterBindings;
   }
+
+  // package private for testing purpose only
+  Map<String, ParameterBindingDTO> getParameterBindings()
+  {
+    return parameterBindings;
+  }
 }
