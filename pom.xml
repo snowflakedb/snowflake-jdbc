@@ -727,24 +727,43 @@
                 </configuration>
               </execution>
               <execution>
-                <id>DellBoomiIT</id>
-                <goals>
-                  <goal>integration-test</goal>
-                </goals>
-                <configuration>
-                  <argLine>
-                    @{argLine}
-                    -Djava.util.logging.config.file=jenkins_it_logging.properties
-                  </argLine>
-                  <test>DellBoomiCloudIT.java</test>
-                </configuration>
-              </execution>
-              <execution>
                 <goals>
                   <goal>verify</goal>
                 </goals>
               </execution>
             </executions>
+          </plugin>
+          <!-- collect code coverage -->
+          <plugin>
+            <groupId>org.jacoco</groupId>
+            <artifactId>jacoco-maven-plugin</artifactId>
+            <version>${jacoco.version}</version>
+            <executions>
+              <execution>
+                <id>pre-integration-test</id>
+                <phase>pre-integration-test</phase>
+                <goals>
+                  <goal>prepare-agent</goal>
+                </goals>
+                <configuration>
+                  <destFile>target/jacoco-it.exec</destFile>
+                </configuration>
+              </execution>
+              <execution>
+                <id>post-integration-test</id>
+                <phase>post-integration-test</phase>
+                <goals>
+                  <goal>report</goal>
+                </goals>
+                <configuration>
+                  <dataFile>target/jacoco-it.exec</dataFile>
+                  <outputDirectory>target/jacoco-it</outputDirectory>
+                </configuration>
+              </execution>
+            </executions>
+            <configuration>
+              <skip>${jacoco.skip.instrument}</skip>
+            </configuration>
           </plugin>
         </plugins>
       </build>
@@ -775,6 +794,42 @@
                     @{argLine}
                     -Djava.util.logging.config.file=jenkins_it_logging.properties
                   </argLine>
+                </configuration>
+              </execution>
+              <execution>
+                <goals>
+                  <goal>verify</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <profile>
+      <id>DellBoomi</id>
+      <activation>
+        <property>
+          <name>dellBoomiIT</name>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-failsafe-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>DellBoomiIT</id>
+                <goals>
+                  <goal>integration-test</goal>
+                </goals>
+                <configuration>
+                  <argLine>
+                    @{argLine}
+                    -Djava.util.logging.config.file=jenkins_it_logging.properties
+                  </argLine>
+                  <test>DellBoomiCloudIT.java</test>
                 </configuration>
               </execution>
               <execution>
