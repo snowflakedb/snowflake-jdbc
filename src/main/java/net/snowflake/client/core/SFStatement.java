@@ -36,8 +36,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Snowflake statement
- *
- * @author jhuang
  */
 public class SFStatement
 {
@@ -132,7 +130,7 @@ public class SFStatement
    * Sanity check query text
    *
    * @param sql The SQL statement to check
-   * @throws java.sql.SQLException
+   * @throws SQLException
    */
   private void sanityCheckQuery(String sql) throws SQLException
   {
@@ -473,7 +471,7 @@ public class SFStatement
       }
 
       StmtUtil.StmtOutput stmtOutput = null;
-      boolean sessionRenewed = false;
+      boolean sessionRenewed;
 
       do
       {
@@ -651,9 +649,9 @@ public class SFStatement
    * @param parametersBinding parameters to bind
    * @param caller            the JDBC interface method that called this method, if any
    * @return whether there is result set or not
-   * @throws java.sql.SQLException if failed to execute sql
-   * @throws SFException           exception raised from Snowflake components
-   * @throws SQLException          if SQL error occurs
+   * @throws SQLException if failed to execute sql
+   * @throws SFException  exception raised from Snowflake components
+   * @throws SQLException if SQL error occurs
    */
   public SFBaseResultSet execute(String sql,
                                  Map<String, ParameterBindingDTO>
@@ -721,8 +719,9 @@ public class SFStatement
 
     if (requestId != null)
     {
-      EventUtil.triggerStateTransition(BasicEvent.QueryState.QUERY_ENDED,
-                                       String.format(QueryState.QUERY_ENDED.getArgString(), requestId));
+      EventUtil.triggerStateTransition(
+          BasicEvent.QueryState.QUERY_ENDED,
+          String.format(QueryState.QUERY_ENDED.getArgString(), requestId));
     }
 
     resultSet = null;

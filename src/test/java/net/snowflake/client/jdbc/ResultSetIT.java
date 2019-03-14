@@ -1072,10 +1072,8 @@ public class ResultSetIT extends BaseJDBCTest
     assertThat(resultSet.getTimestamp(1).toString(), equalTo("1000-01-01 17:00:00.0"));
     assertThat(resultSet.getString(1), equalTo("Mon, 01 Jan 1000 17:00:00 Z"));
 
-    statement.close();
-
     statement.execute("drop table if exists testOldTs");
-
+    statement.close();
     con.close();
   }
 
@@ -1100,9 +1098,9 @@ public class ResultSetIT extends BaseJDBCTest
     assertThat(resultSet.getTimestamp(1).toString(), equalTo("0001-01-01 08:00:00.0"));
     assertThat(resultSet.getDate(2).toString(), equalTo("0001-01-01"));
 
-    statement.close();
-
     statement.execute("drop table if exists testPrepOldTs");
+
+    statement.close();
 
     con.close();
   }

@@ -5,13 +5,13 @@ package net.snowflake.client.jdbc;
 
 import net.snowflake.client.AbstractDriverIT;
 
-import java.net.URL;
-import java.net.URLDecoder;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 public class BaseJDBCTest extends AbstractDriverIT
 {
@@ -25,25 +25,32 @@ public class BaseJDBCTest extends AbstractDriverIT
     return count;
   }
 
-  String getSFProjectRootString() throws Exception
-  {
-    URL location =
-        BaseJDBCTest.class.getProtectionDomain().getCodeSource().getLocation();
-    String testDir = URLDecoder.decode(location.getPath(), "UTF-8");
-    System.out.println(testDir);
-    return testDir.substring(0, testDir.indexOf("Client"));
-  }
-
-  ArrayList<String> getInfoViaSQLCmd(String sqlCmd) throws SQLException
+  List<String> getInfoViaSQLCmd(String sqlCmd) throws SQLException
   {
     Connection con = getConnection();
     Statement st = con.createStatement();
-    ArrayList<String> result = new ArrayList<>();
+    List<String> result = new ArrayList<>();
     ResultSet rs = st.executeQuery(sqlCmd);
     while (rs.next())
     {
       result.add(rs.getString(1));
     }
     return result;
+  }
+
+  boolean isEqualTwoCollecionts(Collection<String> a, Collection<String> b)
+  {
+    if (a.size() != b.size())
+    {
+      return false;
+    }
+    for (String elem : a)
+    {
+      if (!b.contains(elem))
+      {
+        return false;
+      }
+    }
+    return true;
   }
 }

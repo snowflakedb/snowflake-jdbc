@@ -292,6 +292,25 @@ public class AbstractDriverIT
   }
 
   /**
+   * Close SQL Objects
+   *
+   * @param statement  a statement object
+   * @param connection a connection
+   * @throws SQLException raised if any error occurs
+   */
+  public void closeSQLObjects(Statement statement, Connection connection) throws SQLException
+  {
+    if (statement != null)
+    {
+      statement.close();
+    }
+    if (connection != null)
+    {
+      connection.close();
+    }
+  }
+
+  /**
    * Get a full path of the file in Resource
    *
    * @param fileName a file name

@@ -141,9 +141,9 @@ public class TelemetryServiceIT extends BaseJDBCTest
       for (int i = 0; i < toSend; i++)
       {
         TelemetryEvent log = new TelemetryEvent.LogBuilder()
-          .withName("StressTestLog")
+            .withName("StressTestLog")
             .withValue("This is an example log for stress test " + sent)
-          .build();
+            .build();
         System.out.println("stress test: " + sent++ + " sent.");
         service.add(log);
       }

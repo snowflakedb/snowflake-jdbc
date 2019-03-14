@@ -39,8 +39,6 @@ import net.snowflake.client.log.SFLoggerFactory;
 
 /**
  * Base class for query result set and metadata result set
- *
- * @author jhuang
  */
 abstract class SnowflakeBaseResultSet implements ResultSet
 {
