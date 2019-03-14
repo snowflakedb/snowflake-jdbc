@@ -92,7 +92,7 @@ class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
   @Override
   public void close() throws SQLException
   {
-    raiseSQLExceptionIfResultSetIsClosed();
+    // no SQLException is raised.
     sfBaseResultSet.close();
   }
 
