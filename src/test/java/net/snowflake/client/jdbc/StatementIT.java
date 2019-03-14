@@ -37,7 +37,7 @@ import static org.junit.Assert.fail;
  */
 public class StatementIT extends BaseJDBCTest
 {
-  public void enableMultiStmt(Connection connection) throws SQLException
+  private void enableMultiStmt(Connection connection) throws SQLException
   {
     Statement statement = connection.createStatement();
     statement.execute("alter session set ENABLE_MULTISTATEMENT=true");
@@ -90,12 +90,10 @@ public class StatementIT extends BaseJDBCTest
     ResultSet rs = statement.executeQuery(sqlSelect);
     int resultSizeCount = getSizeOfResultSet(rs);
     assertEquals(1, resultSizeCount);
-    statement.close();
 
     statement.setMaxRows(0);
     rs = statement.executeQuery(sqlSelect);
     assertEquals(3, getSizeOfResultSet(rs));
-    statement.close();
 
     statement.setMaxRows(-1);
     rs = statement.executeQuery(sqlSelect);
@@ -149,7 +147,7 @@ public class StatementIT extends BaseJDBCTest
 
     String sqlSelect = "select seq4() from table(generator(rowcount=>3))";
     boolean success = statement.execute(sqlSelect);
-    assertEquals(true, success);
+    assertTrue(success);
     ResultSet rs = statement.getResultSet();
     assertEquals(3, getSizeOfResultSet(rs));
     assertEquals(-1, statement.getUpdateCount());
@@ -171,7 +169,7 @@ public class StatementIT extends BaseJDBCTest
     statement.execute("alter session set JDBC_EXECUTE_RETURN_COUNT_FOR_DML = true");
 
     boolean success = statement.execute("create or replace table test_create(colA integer)");
-    assertEquals(false, success);
+    assertFalse(success);
     assertEquals(0, statement.getUpdateCount());
     assertNull(statement.getResultSet());
 
@@ -179,7 +177,7 @@ public class StatementIT extends BaseJDBCTest
     assertEquals(0, updateCount);
 
     success = statement.execute("drop table if exists TEST_CREATE");
-    assertEquals(false, success);
+    assertFalse(success);
     assertEquals(0, statement.getUpdateCount());
     assertNull(statement.getResultSet());
 
@@ -208,7 +206,7 @@ public class StatementIT extends BaseJDBCTest
     assertEquals(1, updateCount);
 
     success = statement.execute(insertSQL);
-    assertEquals(false, success);
+    assertFalse(success);
     assertEquals(1, statement.getUpdateCount());
     assertNull(statement.getResultSet());
 
@@ -242,7 +240,7 @@ public class StatementIT extends BaseJDBCTest
     assertEquals(1, updateCount);
 
     success = statement.execute("update test_update set COLB = 'newStr' where COLA = 2");
-    assertEquals(false, success);
+    assertFalse(success);
     assertEquals(1, statement.getUpdateCount());
     assertNull(statement.getResultSet());
 
@@ -250,7 +248,7 @@ public class StatementIT extends BaseJDBCTest
     assertEquals(1, updateCount);
 
     success = statement.execute("delete from test_update where colA = 2");
-    assertEquals(false, success);
+    assertFalse(success);
     assertEquals(1, statement.getUpdateCount());
     assertNull(statement.getResultSet());
 
@@ -373,7 +371,7 @@ public class StatementIT extends BaseJDBCTest
     statement.addBatch("update test_batch set test_batch.b = src.b + 5 from " +
                        "(select 'str1' as a, 2 as b) src where test_batch.a = src.a");
 
-    int updateCounts[] = statement.executeBatch();
+    int[] updateCounts = statement.executeBatch();
     connection.commit();
 
     assertThat(updateCounts.length, is(3));
@@ -434,7 +432,7 @@ public class StatementIT extends BaseJDBCTest
   {
     Connection connection = getConnection();
 
-    String testCommands[] = {
+    String[] testCommands = {
         "use role accountadmin",
         "use database testdb",
         "use schema testschema",
@@ -481,7 +479,7 @@ public class StatementIT extends BaseJDBCTest
   {
     Connection connection = getConnection();
 
-    String testCommands[] = {
+    String[] testCommands = {
         "put file:///tmp/testfile @~",
         "list @~",
         "ls @~",
@@ -578,9 +576,8 @@ public class StatementIT extends BaseJDBCTest
     assertFalse(statement.getMoreResults());
     assertEquals(-1, statement.getUpdateCount());
 
-    statement.close();
-
     statement.execute("drop table if exists test_multi_txn");
+    statement.close();
     connection.close();
   }
 

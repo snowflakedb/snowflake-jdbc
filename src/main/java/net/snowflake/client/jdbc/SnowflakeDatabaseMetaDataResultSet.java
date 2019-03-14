@@ -111,21 +111,34 @@ class SnowflakeDatabaseMetaDataResultSet extends SnowflakeBaseResultSet
          metadataType.getColumnTypes(), rows, statement);
   }
 
+  /**
+   * Raises SQLException if the result set is closed
+   *
+   * @throws SQLException if the result set is closed.
+   */
+  private void raiseSQLExceptionIfResultSetIsClosed() throws SQLException
+  {
+    if (isClosed())
+    {
+      throw new SnowflakeSQLException(ErrorCode.RESULTSET_ALREADY_CLOSED);
+    }
+  }
+
+  @Override
+  public boolean isClosed() throws SQLException
+  {
+    return statement == null;
+  }
+
   @Override
   public boolean next() throws SQLException
   {
     logger.debug("public boolean next()");
-
+    // no exception is raised even after the result set is closed.
     if (row < rows.length)
     {
       nextRow = rows[row++];
       return true;
-    }
-
-    if (statement != null)
-    {
-      statement.close();
-      statement = null;
     }
 
     return false;
@@ -144,6 +157,7 @@ class SnowflakeDatabaseMetaDataResultSet extends SnowflakeBaseResultSet
   @Override
   public byte[] getBytes(int columnIndex) throws SQLException
   {
+    raiseSQLExceptionIfResultSetIsClosed();
     String str = this.getString(columnIndex);
     if (str != null)
     {
@@ -158,6 +172,7 @@ class SnowflakeDatabaseMetaDataResultSet extends SnowflakeBaseResultSet
   @Override
   public Time getTime(int columnIndex) throws SQLException
   {
+    raiseSQLExceptionIfResultSetIsClosed();
     Object obj = getObjectInternal(columnIndex);
 
     if (obj instanceof Time)
@@ -174,6 +189,7 @@ class SnowflakeDatabaseMetaDataResultSet extends SnowflakeBaseResultSet
   @Override
   public Timestamp getTimestamp(int columnIndex, TimeZone tz) throws SQLException
   {
+    raiseSQLExceptionIfResultSetIsClosed();
     Object obj = getObjectInternal(columnIndex);
 
     if (obj instanceof Timestamp)
@@ -190,6 +206,7 @@ class SnowflakeDatabaseMetaDataResultSet extends SnowflakeBaseResultSet
   @Override
   public Date getDate(int columnIndex, TimeZone tz) throws SQLException
   {
+    raiseSQLExceptionIfResultSetIsClosed();
     Object obj = getObjectInternal(columnIndex);
 
     if (obj instanceof Date)

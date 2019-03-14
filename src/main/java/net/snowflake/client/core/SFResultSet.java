@@ -125,7 +125,6 @@ public class SFResultSet extends SFBaseResultSet
     this.resultVersion = resultOutput.getResultVersion();
     this.numberOfBinds = resultOutput.getNumberOfBinds();
     this.arrayBindSupported = resultOutput.isArrayBindSupported();
-    this.isClosed = false;
 
     session.setDatabase(resultOutput.getFinalDatabaseName());
     session.setSchema(resultOutput.getFinalSchemaName());

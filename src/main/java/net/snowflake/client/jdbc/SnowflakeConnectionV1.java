@@ -11,7 +11,6 @@ import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.LoginInfoDTO;
-import net.snowflake.common.core.ResourceBundleManager;
 import net.snowflake.common.core.SqlState;
 
 import java.io.IOException;
@@ -22,7 +21,6 @@ import java.sql.CallableStatement;
 import java.sql.Clob;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
-import java.sql.DriverManager;
 import java.sql.NClob;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -34,7 +32,6 @@ import java.sql.SQLXML;
 import java.sql.Savepoint;
 import java.sql.Statement;
 import java.sql.Struct;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -48,8 +45,6 @@ import static net.snowflake.client.core.SessionUtil.JVM_PARAMS_TO_PARAMS;
 
 /**
  * Snowflake connection implementation
- *
- * @author jhuang
  */
 public class SnowflakeConnectionV1 implements Connection
 {
@@ -63,7 +58,7 @@ public class SnowflakeConnectionV1 implements Connection
 
   private static final String SSL_NATIVE_PROTOCOL = "https";
 
-  private boolean isClosed = true;
+  private boolean isClosed;
 
   private SQLWarning sqlWarnings = null;
 
@@ -73,21 +68,10 @@ public class SnowflakeConnectionV1 implements Connection
   // Any statement execution will sleep for the specified number of milliseconds
   private AtomicInteger _injectedDelay = new AtomicInteger(0);
 
-  private String databaseVersion = null;
-  private int databaseMajorVersion = 0;
-  private int databaseMinorVersion = 0;
+  private String databaseVersion;
+  private int databaseMajorVersion;
+  private int databaseMinorVersion;
 
-  /**
-   * Amount of seconds a user is willing to tolerate for establishing the
-   * connection with database. In our case, it means the first login
-   * request to get authorization token.
-   * <p>
-   * A value of 0 means no timeout.
-   * <p>
-   * Default: to login timeout in driver manager if set or 60 seconds
-   */
-  private int loginTimeout = (DriverManager.getLoginTimeout() > 0) ?
-                             DriverManager.getLoginTimeout() : 60;
 
   /**
    * Amount of milliseconds a user is willing to tolerate for network related
@@ -100,28 +84,12 @@ public class SnowflakeConnectionV1 implements Connection
    */
   private int networkTimeoutInMilli = 0; // in milliseconds
 
-  static private final ResourceBundleManager errorResourceBundleManager =
-      ResourceBundleManager.getSingleton(ErrorCode.errorMessageResource);
-
   private Properties clientInfo = new Properties();
 
   // TODO this should be set to Connection.TRANSACTION_READ_COMMITTED
   // TODO There may not be many implications here since the call to
   // TODO setTransactionIsolation doesn't do anything.
   private int transactionIsolation = Connection.TRANSACTION_NONE;
-
-  //--- Simulated failures for testing
-
-  // whether we try to simulate a socket timeout (a default value of 0 means
-  // no simulation). The value is in milliseconds
-  private int injectSocketTimeout = 0;
-
-  // simulate client pause after initial execute and before first get-result
-  // call ( a default value of 0 means no pause). The value is in seconds
-  private int injectClientPause = 0;
-
-  //Generate exception while uploading file with a given name
-  private String injectFileUploadFailure = null;
 
   private SFSession sfSession;
 
@@ -130,8 +98,8 @@ public class SnowflakeConnectionV1 implements Connection
    *
    * @param url  server url used to create snowflake connection
    * @param info properties about the snowflake connection
-   * @throws java.sql.SQLException if failed to create a snowflake connection
-   *                               i.e. username or password not specified
+   * @throws SQLException if failed to create a snowflake connection
+   *                      i.e. username or password not specified
    */
   public SnowflakeConnectionV1(String url,
                                Properties info)
@@ -167,6 +135,14 @@ public class SnowflakeConnectionV1 implements Connection
     isClosed = false;
   }
 
+  private void raiseSQLExceptionIfConnectionIsClosed() throws SQLException
+  {
+    if (isClosed)
+    {
+      throw new SnowflakeSQLException(ErrorCode.CONNECTION_CLOSED);
+    }
+  }
+
   /**
    * Processes parameters given in the connection string. This extracts
    * accountName, databaseName, schemaName from
@@ -175,8 +151,8 @@ public class SnowflakeConnectionV1 implements Connection
    * jdbc:snowflake://host:port/?user=v&password=v&account=v&
    * db=v&schema=v&ssl=v&[passcode=v|passcodeInPassword=on]
    *
-   * @param url
-   * @param info
+   * @param url  a URL string
+   * @param info additional properties
    */
   static Map<String, Object> mergeProperties(String url, Properties info)
   {
@@ -218,7 +194,8 @@ public class SnowflakeConnectionV1 implements Connection
     properties.put("SERVERURL", serverUrl);
     properties.remove("SSL");
 
-    if (properties.get("ACCOUNT") == null && serverUrl != null &&
+    // extracting ACCOUNT from URL if not set in the parameter
+    if (properties.get("ACCOUNT") == null &&
         serverUrl.indexOf(".") > 0 &&
         serverUrl.indexOf("://") > 0)
     {
@@ -232,7 +209,7 @@ public class SnowflakeConnectionV1 implements Connection
     return properties;
   }
 
-  void initSessionProperties(String url, Properties info) throws SFException
+  private void initSessionProperties(String url, Properties info) throws SFException
   {
     Map<String, Object> properties = mergeProperties(url, info);
 
@@ -276,18 +253,18 @@ public class SnowflakeConnectionV1 implements Connection
    * closed before this method returns
    *
    * @param stmtText text of the statement
-   * @throws java.sql.SQLException exception thrown it the statement fails to execute
+   * @throws SQLException exception thrown it the statement fails to execute
    */
   private void executeImmediate(String stmtText) throws SQLException
   {
     // execute the statement and auto-close it as well
-    try (final Statement statement = this.createStatement();)
+    try (final Statement statement = this.createStatement())
     {
       statement.execute(stmtText);
     }
   }
 
-  public String getNewClientForUpdate()
+  String getNewClientForUpdate()
   {
     return newClientForUpdate;
   }
@@ -296,19 +273,19 @@ public class SnowflakeConnectionV1 implements Connection
    * Create a statement
    *
    * @return statement
-   * @throws java.sql.SQLException if failed to create a snowflake statement
+   * @throws SQLException if failed to create a snowflake statement
    */
   @Override
   public Statement createStatement() throws SQLException
   {
-    Statement statement = new SnowflakeStatementV1(this);
-    return statement;
+    raiseSQLExceptionIfConnectionIsClosed();
+    return new SnowflakeStatementV1(this);
   }
 
   /**
    * Close the connection
    *
-   * @throws java.sql.SQLException failed to close the connection
+   * @throws SQLException failed to close the connection
    */
   @Override
   public void close() throws SQLException
@@ -317,6 +294,7 @@ public class SnowflakeConnectionV1 implements Connection
 
     if (isClosed)
     {
+      // No exception is raised even if the connection is closed.
       return;
     }
 
@@ -348,14 +326,14 @@ public class SnowflakeConnectionV1 implements Connection
    * Return the database metadata
    *
    * @return Database metadata
-   * @throws java.sql.SQLException f
+   * @throws SQLException if any database error occurs
    */
   @Override
   public DatabaseMetaData getMetaData() throws SQLException
   {
     logger.debug(
         " public DatabaseMetaData getMetaData() throws SQLException");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return new SnowflakeDatabaseMetaData(this);
   }
 
@@ -399,7 +377,7 @@ public class SnowflakeConnectionV1 implements Connection
   {
     logger.debug(
         " public String nativeSQL(String sql) throws SQLException");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return sql;
   }
 
@@ -409,69 +387,9 @@ public class SnowflakeConnectionV1 implements Connection
     logger.debug(
         " public void setAutoCommit(boolean isAutoCommit) throws "
         + "SQLException");
-
-    try
-    {
-      this.executeImmediate("alter session set autocommit=" +
-                            Boolean.toString(isAutoCommit));
-    }
-    catch (SnowflakeSQLException sse)
-    {
-      // check whether this is the autocommit api unsupported exception
-      if (sse.getSQLState().equals(SqlState.FEATURE_NOT_SUPPORTED))
-      {
-        // autocommit api support has not yet been enabled in this session/account
-        // do nothing for backward compatibility
-        logger.debug("Autocommit API is not supported for this " +
-                     "connection.");
-      }
-      else
-      {
-        // this is a different exception, rethrow it
-        throw sse;
-      }
-    }
-  }
-
-  /**
-   * Look up the GS metadata using sql command,
-   * provide a list of column names
-   * and return these column values in the row one of result set
-   *
-   * @param querySQL,
-   * @param columnNames
-   * @return
-   * @throws SQLException
-   */
-  private List<String> queryGSMetaData(String querySQL, List<String> columnNames) throws SQLException
-  {
-    // try with auto-closing statement resource
-    try (Statement statement = this.createStatement())
-    {
-      statement.execute(querySQL);
-
-      // handle the case where the result set is not what is expected
-      // try with auto-closing resultset resource
-      try (ResultSet rs = statement.getResultSet())
-      {
-        if (rs != null && rs.next())
-        {
-          List<String> columnValues = new ArrayList<>();
-          for (String columnName : columnNames)
-          {
-            columnValues.add(rs.getString(columnName));
-          }
-          return columnValues;
-        }
-        else
-        {
-          // returned no results or an error
-          throw new SQLException(
-              errorResourceBundleManager.getLocalizedMessage(
-                  ErrorCode.BAD_RESPONSE.getMessageCode().toString()));
-        }
-      }
-    }
+    this.executeImmediate(
+        "alter session /* JDBC:SnowflakeConnectionV1.setAutoCommit*/ set autocommit=" +
+        isAutoCommit);
   }
 
   @Override
@@ -479,7 +397,7 @@ public class SnowflakeConnectionV1 implements Connection
   {
     logger.debug(
         " public boolean getAutoCommit() throws SQLException");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return sfSession.getAutoCommit();
   }
 
@@ -517,7 +435,7 @@ public class SnowflakeConnectionV1 implements Connection
     logger.debug(
         " public void setReadOnly(boolean readOnly) throws "
         + "SQLException");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     if (readOnly)
     {
       throw new SQLFeatureNotSupportedException();
@@ -528,7 +446,7 @@ public class SnowflakeConnectionV1 implements Connection
   public boolean isReadOnly() throws SQLException
   {
     logger.debug(" public boolean isReadOnly() throws SQLException");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
@@ -545,6 +463,7 @@ public class SnowflakeConnectionV1 implements Connection
   @Override
   public String getCatalog() throws SQLException
   {
+    raiseSQLExceptionIfConnectionIsClosed();
     return sfSession.getDatabase();
   }
 
@@ -554,6 +473,7 @@ public class SnowflakeConnectionV1 implements Connection
     logger.debug(
         " public void setTransactionIsolation(int level) "
         + "throws SQLException. level = {}", level);
+    raiseSQLExceptionIfConnectionIsClosed();
     if (level == Connection.TRANSACTION_NONE
         || level == Connection.TRANSACTION_READ_COMMITTED)
     {
@@ -573,7 +493,7 @@ public class SnowflakeConnectionV1 implements Connection
   {
     logger.debug(
         " public int getTransactionIsolation() throws SQLException");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return this.transactionIsolation;
   }
 
@@ -582,7 +502,7 @@ public class SnowflakeConnectionV1 implements Connection
   {
     logger.debug(
         " public SQLWarning getWarnings() throws SQLException");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return sqlWarnings;
   }
 
@@ -590,7 +510,7 @@ public class SnowflakeConnectionV1 implements Connection
   public void clearWarnings() throws SQLException
   {
     logger.debug(" public void clearWarnings() throws SQLException");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     sfSession.clearSqlWarnings();
     sqlWarnings = null;
   }
@@ -636,7 +556,7 @@ public class SnowflakeConnectionV1 implements Connection
     logger.debug(
         " public PreparedStatement prepareStatement(String sql) "
         + "throws SQLException");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return prepareStatement(sql, false);
   }
 
@@ -718,12 +638,14 @@ public class SnowflakeConnectionV1 implements Connection
     logger.debug(
         " public PreparedStatement prepareStatement(String sql, "
         + "boolean skipParsing)");
+    raiseSQLExceptionIfConnectionIsClosed();
     return new SnowflakePreparedStatementV1(this, sql, skipParsing);
   }
 
   @Override
   public Map<String, Class<?>> getTypeMap() throws SQLException
   {
+    raiseSQLExceptionIfConnectionIsClosed();
     return Collections.emptyMap(); // nop
   }
 
@@ -742,6 +664,7 @@ public class SnowflakeConnectionV1 implements Connection
   @Override
   public int getHoldability() throws SQLException
   {
+    raiseSQLExceptionIfConnectionIsClosed();
     return ResultSet.CLOSE_CURSORS_AT_COMMIT; // nop
   }
 
@@ -772,6 +695,7 @@ public class SnowflakeConnectionV1 implements Connection
   @Override
   public Clob createClob() throws SQLException
   {
+    raiseSQLExceptionIfConnectionIsClosed();
     return new SnowflakeClob();
   }
 
@@ -791,7 +715,11 @@ public class SnowflakeConnectionV1 implements Connection
   public boolean isValid(int timeout) throws SQLException
   {
     // TODO: run query here or ping
-    return !isClosed;
+    if (timeout < 0)
+    {
+      throw new SQLException("timeout is less than 0");
+    }
+    return !isClosed; // no exception is raised
   }
 
   @Override
@@ -801,9 +729,9 @@ public class SnowflakeConnectionV1 implements Connection
     logger.debug(
         " public void setClientInfo(Properties properties)");
 
-    if (this.clientInfo == null)
+    if (isClosed)
     {
-      this.clientInfo = new Properties();
+      throw new SQLClientInfoException();
     }
 
     // make a copy, don't point to the properties directly since we don't
@@ -823,9 +751,9 @@ public class SnowflakeConnectionV1 implements Connection
   {
     logger.debug(" public void setClientInfo(String name, String value)");
 
-    if (this.clientInfo == null)
+    if (isClosed)
     {
-      this.clientInfo = new Properties();
+      throw new SQLClientInfoException();
     }
 
     this.clientInfo.setProperty(name, value);
@@ -842,44 +770,34 @@ public class SnowflakeConnectionV1 implements Connection
     logger.debug(
         " public Properties getClientInfo() throws SQLException");
 
+    raiseSQLExceptionIfConnectionIsClosed();
+
     if (sfSession != null)
     {
       return sfSession.getClientInfo();
     }
 
-    if (this.clientInfo != null)
-    {
-      // defensive copy to avoid client from changing the properties
-      // directly w/o going through the API
-      Properties copy = new Properties();
-      copy.putAll(this.clientInfo);
+    // defensive copy to avoid client from changing the properties
+    // directly w/o going through the API
+    Properties copy = new Properties();
+    copy.putAll(this.clientInfo);
 
-      return copy;
-    }
-    else
-    {
-      return null;
-    }
+    return copy;
   }
 
   @Override
-  public String getClientInfo(String name)
+  public String getClientInfo(String name) throws SQLException
   {
+    logger.debug(" public String getClientInfo(String name) throws SQLException");
+
+    raiseSQLExceptionIfConnectionIsClosed();
+
     if (sfSession != null)
     {
       return sfSession.getClientInfo(name);
     }
 
-    logger.debug(" public String getClientInfo(String name)");
-
-    if (this.clientInfo != null)
-    {
-      return this.clientInfo.getProperty(name);
-    }
-    else
-    {
-      return null;
-    }
+    return this.clientInfo.getProperty(name);
   }
 
   @Override
@@ -926,6 +844,7 @@ public class SnowflakeConnectionV1 implements Connection
   @Override
   public String getSchema() throws SQLException
   {
+    raiseSQLExceptionIfConnectionIsClosed();
     return sfSession.getSchema();
   }
 
@@ -945,6 +864,7 @@ public class SnowflakeConnectionV1 implements Connection
     logger.debug(
         " public void setNetworkTimeout(Executor executor, int "
         + "milliseconds)");
+    raiseSQLExceptionIfConnectionIsClosed();
 
     networkTimeoutInMilli = milliseconds;
   }
@@ -954,7 +874,7 @@ public class SnowflakeConnectionV1 implements Connection
   {
     logger.debug(
         " public int getNetworkTimeout() throws SQLException");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return networkTimeoutInMilli;
   }
 
@@ -982,16 +902,6 @@ public class SnowflakeConnectionV1 implements Connection
                                  + " not unwrappable from " + iface.getName());
     }
     return (T) this;
-  }
-
-  public static int getMajorVersion()
-  {
-    return SnowflakeDriver.majorVersion;
-  }
-
-  public static int getMinorVersion()
-  {
-    return SnowflakeDriver.minorVersion;
   }
 
   public int getDatabaseMajorVersion()
@@ -1027,7 +937,7 @@ public class SnowflakeConnectionV1 implements Connection
    * @param inputStream  input stream from which the data will be uploaded
    * @param destFileName destination file name to use
    * @param streamSize   data size in the stream
-   * @throws java.sql.SQLException failed to put data from a stream at stage
+   * @throws SQLException failed to put data from a stream at stage
    */
   @Deprecated
   public void uploadStream(String stageName,
@@ -1053,7 +963,7 @@ public class SnowflakeConnectionV1 implements Connection
    * @param inputStream  input stream from which the data will be uploaded
    * @param destFileName destination file name to use
    * @param compressData compress data or not before uploading stream
-   * @throws java.sql.SQLException failed to compress and put data from a stream at stage
+   * @throws SQLException failed to compress and put data from a stream at stage
    */
   public void uploadStream(String stageName,
                            String destPrefix,
@@ -1079,7 +989,7 @@ public class SnowflakeConnectionV1 implements Connection
    * @param destPrefix   path prefix under which the data should be uploaded on the stage
    * @param inputStream  input stream from which the data will be uploaded
    * @param destFileName destination file name to use
-   * @throws java.sql.SQLException failed to compress and put data from a stream at stage
+   * @throws SQLException failed to compress and put data from a stream at stage
    */
   @Deprecated
   public void compressAndUploadStream(String stageName,
@@ -1107,7 +1017,7 @@ public class SnowflakeConnectionV1 implements Connection
    * @param inputStream  input stream from which the data will be uploaded
    * @param destFileName destination file name to use
    * @param compressData whether compression is requested fore uploading data
-   * @throws java.sql.SQLException
+   * @throws SQLException raises if any error occurs
    */
   private void uploadStreamInternal(String stageName,
                                     String destPrefix,
@@ -1122,16 +1032,18 @@ public class SnowflakeConnectionV1 implements Connection
 
     if (stageName == null)
     {
-      throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
-                                      ErrorCode.INTERNAL_ERROR.getMessageCode(),
-                                      "stage name is null");
+      throw new SnowflakeSQLException(
+          SqlState.INTERNAL_ERROR,
+          ErrorCode.INTERNAL_ERROR.getMessageCode(),
+          "stage name is null");
     }
 
     if (destFileName == null)
     {
-      throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
-                                      ErrorCode.INTERNAL_ERROR.getMessageCode(),
-                                      "stage name is null");
+      throw new SnowflakeSQLException(
+          SqlState.INTERNAL_ERROR,
+          ErrorCode.INTERNAL_ERROR.getMessageCode(),
+          "stage name is null");
     }
 
     SnowflakeStatementV1 stmt = new SnowflakeStatementV1(this);
@@ -1191,16 +1103,18 @@ public class SnowflakeConnectionV1 implements Connection
 
     if (stageName == null || stageName.isEmpty())
     {
-      throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
-                                      ErrorCode.INTERNAL_ERROR.getMessageCode(),
-                                      "stage name is null or empty");
+      throw new SnowflakeSQLException(
+          SqlState.INTERNAL_ERROR,
+          ErrorCode.INTERNAL_ERROR.getMessageCode(),
+          "stage name is null or empty");
     }
 
     if (sourceFileName == null || sourceFileName.isEmpty())
     {
-      throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
-                                      ErrorCode.INTERNAL_ERROR.getMessageCode(),
-                                      "source file name is null or empty");
+      throw new SnowflakeSQLException(
+          SqlState.INTERNAL_ERROR,
+          ErrorCode.INTERNAL_ERROR.getMessageCode(),
+          "source file name is null or empty");
     }
 
     SnowflakeStatementV1 stmt = new SnowflakeStatementV1(this);
@@ -1244,9 +1158,10 @@ public class SnowflakeConnectionV1 implements Connection
       }
       catch (IOException ex)
       {
-        throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
-                                        ErrorCode.INTERNAL_ERROR.getMessageCode(),
-                                        ex.getMessage());
+        throw new SnowflakeSQLException(
+            SqlState.INTERNAL_ERROR,
+            ErrorCode.INTERNAL_ERROR.getMessageCode(),
+            ex.getMessage());
       }
     }
     else
@@ -1291,14 +1206,6 @@ public class SnowflakeConnectionV1 implements Connection
     {
       sfSession.setInjectFileUploadFailure(fileToFail);
     }
-
-    this.injectFileUploadFailure = fileToFail;
-  }
-
-
-  public String getInjectFileUploadFailure()
-  {
-    return this.injectFileUploadFailure;
   }
 
   public SFSession getSfSession()

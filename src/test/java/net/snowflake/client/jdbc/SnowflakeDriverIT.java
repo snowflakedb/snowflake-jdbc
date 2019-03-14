@@ -63,14 +63,16 @@ public class SnowflakeDriverIT extends AbstractDriverIT
 {
   private static final int MAX_CONCURRENT_QUERIES_PER_USER = 50;
   private static final String TEST_UUID = UUID.randomUUID().toString();
-
-  private ObjectMapper mapper = new ObjectMapper();
-
+  private final static String getCurrenTransactionStmt =
+      "SELECT CURRENT_TRANSACTION()";
   private static Logger logger =
       Logger.getLogger(SnowflakeDriverIT.class.getName());
 
+  private static String ORDERS_JDBC = "ORDERS_JDBC";
+
   @Rule
   public TemporaryFolder tmpFolder = new TemporaryFolder();
+  private ObjectMapper mapper = new ObjectMapper();
 
   @BeforeClass
   public static void setUp() throws Throwable
@@ -90,8 +92,6 @@ public class SnowflakeDriverIT extends AbstractDriverIT
         "create or replace table clustered_jdbc " +
         "(c1 number, c2 number) cluster by (c1)");
 
-    statement.close();
-
     // put files
     assertTrue("Failed to put a file",
                statement.execute(
@@ -106,6 +106,8 @@ public class SnowflakeDriverIT extends AbstractDriverIT
         statement.executeUpdate("copy into orders_jdbc");
 
     assertEquals("Unexpected number of rows copied: " + numRows, 73, numRows);
+
+    statement.close();
 
     connection.close();
   }
@@ -294,7 +296,6 @@ public class SnowflakeDriverIT extends AbstractDriverIT
 
       statement.execute(
           "CREATE OR REPLACE TABLE testDDLs(version number, name string)");
-      statement.close();
 
     }
     finally
@@ -303,12 +304,9 @@ public class SnowflakeDriverIT extends AbstractDriverIT
       {
         statement.execute("DROP TABLE testDDLs");
       }
-      closeSQLObjects(null, statement, connection);
+      closeSQLObjects(statement, connection);
     }
   }
-
-  private final static String getCurrenTransactionStmt =
-      "SELECT CURRENT_TRANSACTION()";
 
   private long getCurrentTransaction(Connection connection) throws SQLException
   {
@@ -724,19 +722,24 @@ public class SnowflakeDriverIT extends AbstractDriverIT
       ResultSet tableSet = metaData.getTables(
           connection.getCatalog(),
           connection.getSchema(),
-          "ORDERS_JDBC", null);
-      assertTrue("tables shouldn't be empty", tableSet.next());
+          ORDERS_JDBC,
+          null); // types
+      assertTrue(
+          String.format(
+              "table %s should exists in db: %s, schema: %s",
+              ORDERS_JDBC, connection.getCatalog(), connection.getSchema()),
+          tableSet.next());
       assertTrue("database should be " + connection.getCatalog(),
                  connection.getCatalog().equalsIgnoreCase(schemaSet.getString(2)));
       assertTrue("schema should be " + connection.getSchema(),
                  connection.getSchema().equalsIgnoreCase(schemaSet.getString(1)));
       assertTrue("table should be orders_jdbc",
-                 "orders_jdbc".equalsIgnoreCase(tableSet.getString(3)));
+                 ORDERS_JDBC.equalsIgnoreCase(tableSet.getString(3)));
 
       ResultSet tableMetaDataResultSet = metaData.getTables(
           null, // catalog
           null, // schema
-          "ORDERS_JDBC", // table
+          ORDERS_JDBC, // table
           null); // types
 
       ResultSetMetaData resultSetMetaData = tableMetaDataResultSet.getMetaData();
@@ -747,7 +750,7 @@ public class SnowflakeDriverIT extends AbstractDriverIT
       int cnt = 0;
       while (tableMetaDataResultSet.next())
       {
-        assertTrue("orders_jdbc".equalsIgnoreCase(
+        assertTrue(ORDERS_JDBC.equalsIgnoreCase(
             tableMetaDataResultSet.getString(3)));
         ++cnt;
       }
@@ -772,7 +775,7 @@ public class SnowflakeDriverIT extends AbstractDriverIT
       while (tableMetaDataResultSet.next())
       {
         // assert the table name
-        if ("orders_jdbc".equalsIgnoreCase(
+        if (ORDERS_JDBC.equalsIgnoreCase(
             tableMetaDataResultSet.getString(3)))
         {
           found = true;
@@ -787,7 +790,7 @@ public class SnowflakeDriverIT extends AbstractDriverIT
       ResultSet columnMetaDataResultSet = metaData.getColumns(
           null,
           null,
-          "ORDERS_JDBC",
+          ORDERS_JDBC,
           null);
 
       resultSetMetaData = columnMetaDataResultSet.getMetaData();
@@ -804,7 +807,7 @@ public class SnowflakeDriverIT extends AbstractDriverIT
             columnMetaDataResultSet.getString(1)));
 
         // assert the table name and column name, data type and type name
-        assertTrue("orders_jdbc".equalsIgnoreCase(
+        assertTrue(ORDERS_JDBC.equalsIgnoreCase(
             columnMetaDataResultSet.getString(3)));
 
         assertTrue(columnMetaDataResultSet.getString(4).startsWith("C"));
@@ -861,7 +864,7 @@ public class SnowflakeDriverIT extends AbstractDriverIT
       {
         statement.execute("DROP TABLE IF EXISTS \"testDBMetadata\"");
       }
-      closeSQLObjects(null, statement, connection);
+      closeSQLObjects(statement, connection);
     }
   }
 
@@ -901,8 +904,6 @@ public class SnowflakeDriverIT extends AbstractDriverIT
         assertTrue(resultSet.next()); // one row
         assertFalse(resultSet.next());
 
-        statement.close();
-
         findFile(statement,
                  "ls @%testLoadToLocalFS/ pattern='.*orders/" + TEST_DATA_FILE + ".g.*'");
 
@@ -930,8 +931,6 @@ public class SnowflakeDriverIT extends AbstractDriverIT
                        ex.getErrorCode());
         }
 
-        statement.close();
-
         Thread.sleep(100);
 
         // show files again
@@ -941,7 +940,6 @@ public class SnowflakeDriverIT extends AbstractDriverIT
         // assert we get 0 row
         assertFalse(resultSet.next());
 
-        statement.close();
       }
       finally
       {
@@ -972,7 +970,6 @@ public class SnowflakeDriverIT extends AbstractDriverIT
         fileFound = true;
         break;
       }
-      statement.close();
       // give enough time for s3 eventual consistency for US region
       Thread.sleep(1000);
     }
@@ -980,8 +977,6 @@ public class SnowflakeDriverIT extends AbstractDriverIT
 
     // assert the first column not null
     assertNotNull("Null result", resultSet.getString(1));
-
-    statement.close();
   }
 
   @Test
@@ -1009,7 +1004,6 @@ public class SnowflakeDriverIT extends AbstractDriverIT
       }
       catch (SQLException ex1)
       {
-        statement.close();
         // assert the sqlstate "02000" which means NO_DATA
         assertEquals("sqlstate mismatch", "02000", ex1.getSQLState());
       }
@@ -1038,19 +1032,16 @@ public class SnowflakeDriverIT extends AbstractDriverIT
 
       statement = connection.createStatement();
 
-      // test exception
       // execute a bad query
       try
       {
         statement.execute("alter session set ENABLE_FIX_63095 = true;");
         resultSet = statement.executeQuery("SELECT * FROM nonexistence");
 
-        // fail
-        fail("SQL exception not raised");
+        // failfail("SQL exception not raised");
       }
       catch (SQLException ex1)
       {
-        statement.close();
         // assert the sqlstate "42S02" which means BASE_TABLE_OR_VIEW_NOT_FOUND
         assertEquals("sqlstate mismatch", "42S02", ex1.getSQLState());
       }
@@ -1180,7 +1171,6 @@ public class SnowflakeDriverIT extends AbstractDriverIT
 
       // turn on sorting mode
       statement.execute("set-sf-property sort on");
-      statement.close();
 
       resultSet = statement.executeQuery("SELECT c3 FROM orders_jdbc");
 
@@ -1198,11 +1188,8 @@ public class SnowflakeDriverIT extends AbstractDriverIT
         assertEquals("F", resultSet.getString(1));
       }
 
-      statement.close();
-
       // turn off sorting mode
       statement.execute("set-sf-property sort off");
-      statement.close();
 
       resultSet = statement.executeQuery(
           "SELECT c3 FROM orders_jdbc order by c3 desc");
@@ -1243,7 +1230,6 @@ public class SnowflakeDriverIT extends AbstractDriverIT
       // create test table
       statement.execute(
           "CREATE OR REPLACE TABLE testUpdateCount(version number, name string)");
-      statement.close();
 
       // insert two rows
       int numRows =
@@ -1279,14 +1265,12 @@ public class SnowflakeDriverIT extends AbstractDriverIT
       // set timestamp format
       statement.execute(
           "alter session set timestamp_input_format = 'YYYY-MM-DD HH24:MI:SS';");
-      statement.close();
 
       // create test table with different time zone flavors
       String createSQL =
           "create or replace table testSnow4245(t timestamp with local time " +
           "zone,ntz timestamp without time zone,tz  timestamp with time zone)";
       statement.execute(createSQL);
-      statement.close();
 
       // populate
       int numRows =
@@ -1358,7 +1342,6 @@ public class SnowflakeDriverIT extends AbstractDriverIT
       // create test table
       statement.execute(
           String.format("CREATE OR REPLACE TABLE %s(str string)", tableName));
-      statement.close();
 
       String data = "What is \ud83d\ude12?";
       // insert two rows
@@ -1366,7 +1349,6 @@ public class SnowflakeDriverIT extends AbstractDriverIT
           statement.executeUpdate(
               String.format("INSERT INTO %s(str) values('%s')", tableName, data));
       assertEquals("Unexpected number of rows inserted: " + numRows, 1, numRows);
-      statement.close();
 
       ResultSet rset = statement.executeQuery(
           String.format("SELECT str FROM %s", tableName));
@@ -1376,7 +1358,6 @@ public class SnowflakeDriverIT extends AbstractDriverIT
         ret = rset.getString(1);
       }
       rset.close();
-      statement.close();
       assertEquals("Unexpected string value: " + ret, data, ret);
     }
     finally
@@ -1428,7 +1409,6 @@ public class SnowflakeDriverIT extends AbstractDriverIT
         ret = rset.getString(1);
       }
       rset.close();
-      statement.close();
       assertEquals("Unexpected string value: " + ret + " expect: hello",
                    "hello", ret);
     }
@@ -1439,7 +1419,7 @@ public class SnowflakeDriverIT extends AbstractDriverIT
         statement.execute("rm @~/" + DEST_PREFIX);
         statement.close();
       }
-      closeSQLObjects(null, statement, connection);
+      closeSQLObjects(statement, connection);
     }
   }
 
@@ -1483,7 +1463,6 @@ public class SnowflakeDriverIT extends AbstractDriverIT
         ret = rset.getString(1);
       }
       rset.close();
-      statement.close();
       assertEquals("Unexpected string value: " + ret + " expect: hello",
                    "hello", ret);
     }
@@ -1666,7 +1645,6 @@ public class SnowflakeDriverIT extends AbstractDriverIT
       regularStatement.executeUpdate(
           "create or replace table testBind(a int, b string, c double, d date, " +
           "e timestamp, f time, g date)");
-      regularStatement.close();
 
       preparedStatement = connection.prepareStatement(
           "insert into testBind(a, b, c, d, e, f) values(?, ?, ?, ?, ?, ?)");
@@ -1720,8 +1698,6 @@ public class SnowflakeDriverIT extends AbstractDriverIT
       assertEquals("time", "03:25:45", resultSet.getString(6));
       assertNull("date", resultSet.getString(7));
 
-      regularStatement.close();
-
       // array bind for insert
       preparedStatement = connection.prepareStatement(
           "insert into testBind (a, b, c, d, e, f, g) " +
@@ -1766,7 +1742,6 @@ public class SnowflakeDriverIT extends AbstractDriverIT
       assertEquals("timestamp", "Mon, 25 Aug 2014 20:52:00 -0700",
                    resultSet.getString(5));
       assertEquals("time", "03:25:45", resultSet.getString(6));
-      regularStatement.close();
 
       resultSet = regularStatement.executeQuery(
           "select * from testBind where a = 3");
@@ -1780,8 +1755,6 @@ public class SnowflakeDriverIT extends AbstractDriverIT
       assertEquals("timestamp", "Mon, 25 Aug 2014 20:52:00 -0700",
                    resultSet.getString(5));
       assertEquals("time", "03:25:45", resultSet.getString(6));
-
-      regularStatement.close();
 
       // describe mode
       preparedStatement = connection.prepareStatement(
@@ -1886,8 +1859,6 @@ public class SnowflakeDriverIT extends AbstractDriverIT
           + "c14 float, c15 string, c16 string, c17 string, c18 string,"
           + "c19 string, c20 date, c21 string)");
 
-      regularStatement.close();
-
       // array bind for insert
       preparedStatement = connection.prepareStatement(
           "insert into testBind1 (c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, "
@@ -1938,7 +1909,7 @@ public class SnowflakeDriverIT extends AbstractDriverIT
       //we do not have any metadata, without a specified table
       assertEquals(0, resultSetMetaData.getColumnCount());
 
-      preparedStatement.setString(1, "orders_jdbc");
+      preparedStatement.setString(1, ORDERS_JDBC);
       resultSet = preparedStatement.executeQuery();
       resultSetMetaData = resultSet.getMetaData();
       assertEquals(9, resultSetMetaData.getColumnCount());
@@ -1953,7 +1924,7 @@ public class SnowflakeDriverIT extends AbstractDriverIT
 
       //select * from table(?) where c1 = 1
       preparedStatement = connection.prepareStatement("SELECT * from table(?) where c1 = 1");
-      preparedStatement.setString(1, "orders_jdbc");
+      preparedStatement.setString(1, ORDERS_JDBC);
       resultSet = preparedStatement.executeQuery();
       resultSetMetaData = resultSet.getMetaData();
 
@@ -1965,7 +1936,7 @@ public class SnowflakeDriverIT extends AbstractDriverIT
 
       //select * from table(?) where c1 = 2 order by c3
       preparedStatement = connection.prepareStatement("SELECT * from table(?) order by c3");
-      preparedStatement.setString(1, "orders_jdbc");
+      preparedStatement.setString(1, ORDERS_JDBC);
       resultSet = preparedStatement.executeQuery();
       resultSetMetaData = resultSet.getMetaData();
 
@@ -1983,17 +1954,14 @@ public class SnowflakeDriverIT extends AbstractDriverIT
       regularStatement.execute(
           "create or replace table testTableBind(c integer, d string)");
 
-      regularStatement.close();
-
       //insert into table
       regularStatement = connection.createStatement();
       regularStatement.executeUpdate(
           "insert into testTableBind (c, d) values (1, 'one')");
-      regularStatement.close();
 
       //select c1, c from table(?), testTableBind
       preparedStatement = connection.prepareStatement("SELECT * from table(?), testTableBind");
-      preparedStatement.setString(1, "orders_jdbc");
+      preparedStatement.setString(1, ORDERS_JDBC);
       resultSet = preparedStatement.executeQuery();
       resultSetMetaData = resultSet.getMetaData();
 
@@ -2009,7 +1977,7 @@ public class SnowflakeDriverIT extends AbstractDriverIT
 
       //select * from table(?), table(?)
       preparedStatement = connection.prepareStatement("SELECT * from table(?), table(?)");
-      preparedStatement.setString(1, "orders_jdbc");
+      preparedStatement.setString(1, ORDERS_JDBC);
       preparedStatement.setString(2, "testTableBind");
       resultSet = preparedStatement.executeQuery();
       resultSetMetaData = resultSet.getMetaData();
@@ -2026,7 +1994,7 @@ public class SnowflakeDriverIT extends AbstractDriverIT
 
       //select tab1.c1, tab2.c from table(?) as a, table(?) as b
       preparedStatement = connection.prepareStatement("SELECT a.c1, b.c from table(?) as a, table(?) as b");
-      preparedStatement.setString(1, "orders_jdbc");
+      preparedStatement.setString(1, ORDERS_JDBC);
       preparedStatement.setString(2, "testTableBind");
       resultSet = preparedStatement.executeQuery();
       resultSetMetaData = resultSet.getMetaData();
@@ -2069,7 +2037,6 @@ public class SnowflakeDriverIT extends AbstractDriverIT
       regularStatement.execute(
           "create or replace table testBind2(a int, b string, c double, "
           + "d date, e timestamp, f time, g date)");
-      regularStatement.close();
 
       // bind in where clause
       preparedStatement = connection.prepareStatement(
@@ -2115,11 +2082,9 @@ public class SnowflakeDriverIT extends AbstractDriverIT
       regularStatement = connection.createStatement();
       regularStatement.executeUpdate(
           "create or replace table testBindTimestampNTZ(a timestamp_ntz)");
-      regularStatement.close();
 
       regularStatement.execute(
           "alter session set client_timestamp_type_mapping='timestamp_ntz'");
-      regularStatement.close();
 
       // bind in where clause
       preparedStatement = connection.prepareStatement(
@@ -2143,7 +2108,6 @@ public class SnowflakeDriverIT extends AbstractDriverIT
 
       regularStatement.executeUpdate(
           "truncate table testBindTimestampNTZ");
-      regularStatement.close();
 
       preparedStatement.setTimestamp(
           1,
@@ -2189,7 +2153,6 @@ public class SnowflakeDriverIT extends AbstractDriverIT
       regularStatement = connection.createStatement();
       regularStatement.execute(
           "create or replace table testNullBind(a double)");
-      regularStatement.close();
 
       // array bind with nulls
       preparedStatement = connection.prepareStatement(
@@ -2282,7 +2245,7 @@ public class SnowflakeDriverIT extends AbstractDriverIT
         regularStatement.close();
       }
 
-      closeSQLObjects(null, preparedStatement, connection);
+      closeSQLObjects(preparedStatement, connection);
     }
   }
 
@@ -2387,7 +2350,6 @@ public class SnowflakeDriverIT extends AbstractDriverIT
 
       // create test table
       statement.execute("CREATE OR REPLACE TABLE testSnow6290(ts timestamp)");
-      statement.close();
 
       PreparedStatement preparedStatement =
           connection.prepareStatement("INSERT INTO testSnow6290(ts) values(?)");
@@ -2412,7 +2374,7 @@ public class SnowflakeDriverIT extends AbstractDriverIT
         statement.execute("DROP TABLE if exists testSnow6290");
         statement.close();
       }
-      closeSQLObjects(null, statement, connection);
+      closeSQLObjects(statement, connection);
     }
   }
 
@@ -2444,7 +2406,7 @@ public class SnowflakeDriverIT extends AbstractDriverIT
     }
     finally
     {
-      closeSQLObjects(null, statement, connection);
+      closeSQLObjects(statement, connection);
     }
   }
 
@@ -2624,8 +2586,6 @@ public class SnowflakeDriverIT extends AbstractDriverIT
         {
           assertTrue(resultSet.next());
         }
-
-        statement.close();
       }
       finally
       {
@@ -2691,8 +2651,8 @@ public class SnowflakeDriverIT extends AbstractDriverIT
       {
         stmt.executeQuery("DROP TABLE SNOW16332");
       }
-      closeSQLObjects(null, stmt, conn);
-      closeSQLObjects(null, stmtWithNwError, connWithNwError);
+      closeSQLObjects(stmt, conn);
+      closeSQLObjects(stmtWithNwError, connWithNwError);
     }
   }
 
@@ -2887,7 +2847,7 @@ public class SnowflakeDriverIT extends AbstractDriverIT
     }
     finally
     {
-      closeSQLObjects(null, statement, connection);
+      closeSQLObjects(statement, connection);
     }
   }
 
@@ -2985,8 +2945,7 @@ public class SnowflakeDriverIT extends AbstractDriverIT
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
-  public void testLargeResultPerformance() throws Throwable
+  public void testLargeResultSet() throws Throwable
   {
     Connection connection = null;
     Statement statement = null;
@@ -2998,25 +2957,8 @@ public class SnowflakeDriverIT extends AbstractDriverIT
       // create statement
       statement = connection.createStatement();
 
-      // Set the result file strategy.
-
-      statement.execute("ALTER SESSION SET "
-                        + "ENABLE_RESULT_SCAN = true,"
-                        + "CLIENT_RESULT_PREFETCH_SLOTS=8, "
-                        + "CLIENT_RESULT_PREFETCH_THREADS=4, "
-                        + "RESULT_FIRST_CHUNK_MAX_SIZE = 1, "
-                        + "RESULT_MIN_CHUNK_SIZE = 1, "
-                        + "ROWS_PER_ROWSET=1, "
-                        + "LOCAL_DOP = 1, "
-                        + "INSTANCES_PER_WORKER = 1, "
-                        + "SERVER_COUNT = 1");
-
-      // set RESULT_MAX_CHUNK_SIZE after RESULT_MIN_CHUNK SIZE is set,
-      // since there is an interdependence between the two.
-      statement.execute("ALTER SESSION SET RESULT_MAX_CHUNK_SIZE = 2");
-
       String sql =
-          "SELECT random()||random() FROM table(generator(rowcount => 10000))";
+          "SELECT random()||random(), randstr(1000, random()) FROM table(generator(rowcount => 10000))";
       ResultSet result = statement.executeQuery(sql);
 
       int cnt = 0;
@@ -3053,7 +2995,6 @@ public class SnowflakeDriverIT extends AbstractDriverIT
       regularStatement = connection.createStatement();
       regularStatement.execute(
           "create or replace table testBind2(a int) as select * from values(1),(2),(8),(10)");
-      regularStatement.close();
 
       // test binds in BETWEEN predicate
       preparedStatement = connection.prepareStatement
@@ -3088,7 +3029,6 @@ public class SnowflakeDriverIT extends AbstractDriverIT
       regularStatementSF = snowflakeConnection.createStatement();
       regularStatementSF.execute(
           "create or replace warehouse wh26503 warehouse_size=xsmall");
-      regularStatement.close();
 
       preparedStatement = snowflakeConnection.prepareStatement
           ("select bv:\"1\":\"value\"::string, bv:\"2\":\"value\"::string from (select parse_json(system$get_bind_values(?)) bv)");

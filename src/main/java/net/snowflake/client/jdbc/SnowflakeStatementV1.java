@@ -9,34 +9,30 @@ import net.snowflake.client.core.ResultUtil;
 import net.snowflake.client.core.SFBaseResultSet;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SFStatement;
+import net.snowflake.client.core.StmtUtil;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
 
 import java.sql.BatchUpdateException;
-import java.util.ArrayList;
-import java.util.List;
-
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.sql.SQLWarning;
 import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
-
-import net.snowflake.client.core.StmtUtil;
-import net.snowflake.client.log.SFLogger;
-import net.snowflake.client.log.SFLoggerFactory;
 
 /**
  * Snowflake statement
- *
- * @author jhuang
  */
 class SnowflakeStatementV1 implements Statement
 {
 
   static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeStatementV1.class);
 
-  static final int NO_UPDATES = -1;
+  private static final int NO_UPDATES = -1;
 
   protected SnowflakeConnectionV1 connection;
 
@@ -54,23 +50,20 @@ class SnowflakeStatementV1 implements Statement
 
   private int updateCount = NO_UPDATES;
 
-  // TODO: escape processing for sql statement
-  private boolean escapeProcessing = false;
-
   // timeout in seconds
   private int queryTimeout = 0;
 
   // max field size limited to 16MB
   private final int maxFieldSize = 16777216;
 
-  protected SFStatement sfStatement;
+  SFStatement sfStatement;
 
   /**
    * batch of sql strings added by addBatch
    */
   protected final List<BatchEntry> batch = new ArrayList<>();
 
-  protected SQLWarning sqlWarnings;
+  private SQLWarning sqlWarnings;
 
   SnowflakeStatementV1(SnowflakeConnectionV1 conn)
   {
@@ -81,16 +74,25 @@ class SnowflakeStatementV1 implements Statement
     sfStatement = new SFStatement(conn.getSfSession());
   }
 
+  protected void raiseSQLExceptionIfConnectionIsClosed() throws SQLException
+  {
+    if (isClosed)
+    {
+      throw new SnowflakeSQLException(ErrorCode.STATEMENT_CLOSED);
+    }
+  }
+
   /**
    * Execute SQL query
    *
    * @param sql sql statement
    * @return ResultSet
-   * @throws java.sql.SQLException if @link{#executeQueryInternal(String, Map)} throws an exception
+   * @throws SQLException if @link{#executeQueryInternal(String, Map)} throws an exception
    */
   @Override
   public ResultSet executeQuery(String sql) throws SQLException
   {
+    raiseSQLExceptionIfConnectionIsClosed();
     return executeQueryInternal(sql, null);
   }
 
@@ -99,7 +101,7 @@ class SnowflakeStatementV1 implements Statement
    *
    * @param sql sql statement
    * @return number of rows updated
-   * @throws java.sql.SQLException if @link{#executeUpdateInternal(String, Map)} throws exception
+   * @throws SQLException if @link{#executeUpdateInternal(String, Map)} throws exception
    */
   @Override
   public int executeUpdate(String sql) throws SQLException
@@ -112,33 +114,36 @@ class SnowflakeStatementV1 implements Statement
                             boolean updateQueryRequired)
   throws SQLException
   {
+    raiseSQLExceptionIfConnectionIsClosed();
+
     if (StmtUtil.checkStageManageCommand(sql) != null)
     {
-      throw new SnowflakeSQLException(ErrorCode.
-                                          UNSUPPORTED_STATEMENT_TYPE_IN_EXECUTION_API,
-                                      sql.length() > 20 ? sql.substring(0, 20) + "..." : sql);
+      throw new SnowflakeSQLException(
+          ErrorCode.UNSUPPORTED_STATEMENT_TYPE_IN_EXECUTION_API, StmtUtil.truncateSQL(sql));
     }
 
-    SFBaseResultSet sfResultSet = null;
+    SFBaseResultSet sfResultSet;
     try
     {
       sfResultSet = sfStatement.execute(sql, parameterBindings,
                                         SFStatement.CallingMethod.EXECUTE_UPDATE);
       sfResultSet.setSession(this.connection.getSfSession());
       updateCount = ResultUtil.calculateUpdateCount(sfResultSet);
-      resultSet = null;
     }
     catch (SFException ex)
     {
       throw new SnowflakeSQLException(ex.getCause(),
                                       ex.getSqlState(), ex.getVendorCode(), ex.getParams());
     }
+    finally
+    {
+      resultSet = null;
+    }
 
     if (getUpdateCount() == NO_UPDATES && updateQueryRequired)
     {
-      throw new SnowflakeSQLException(ErrorCode.
-                                          UNSUPPORTED_STATEMENT_TYPE_IN_EXECUTION_API,
-                                      sql.length() > 20 ? sql.substring(0, 20) + "..." : sql);
+      throw new SnowflakeSQLException(
+          ErrorCode.UNSUPPORTED_STATEMENT_TYPE_IN_EXECUTION_API, StmtUtil.truncateSQL(sql));
     }
 
     return getUpdateCount();
@@ -157,7 +162,7 @@ class SnowflakeStatementV1 implements Statement
       Map<String, ParameterBindingDTO> parameterBindings)
   throws SQLException
   {
-    SFBaseResultSet sfResultSet = null;
+    SFBaseResultSet sfResultSet;
     try
     {
       sfResultSet = sfStatement.execute(sql, parameterBindings,
@@ -181,12 +186,13 @@ class SnowflakeStatementV1 implements Statement
    * @param sql               sql statement
    * @param parameterBindings a map of binds to use for this query
    * @return whether there is result set or not
-   * @throws java.sql.SQLException if @link{#executeQuery(String)} throws exception
+   * @throws SQLException if @link{#executeQuery(String)} throws exception
    */
   boolean executeInternal(String sql,
                           Map<String, ParameterBindingDTO> parameterBindings)
   throws SQLException
   {
+    raiseSQLExceptionIfConnectionIsClosed();
     connection.injectedDelay();
 
     logger.debug("execute: {}", sql);
@@ -201,7 +207,7 @@ class SnowflakeStatementV1 implements Statement
       return false;
     }
 
-    SFBaseResultSet sfResultSet = null;
+    SFBaseResultSet sfResultSet;
     try
     {
       sfResultSet = sfStatement.execute(sql, parameterBindings,
@@ -237,7 +243,7 @@ class SnowflakeStatementV1 implements Statement
    *
    * @param sql sql statement
    * @return whether there is result set or not
-   * @throws java.sql.SQLException if @link{#executeQuery(String)} throws exception
+   * @throws SQLException if @link{#executeQuery(String)} throws exception
    */
   @Override
   public boolean execute(String sql) throws SQLException
@@ -304,15 +310,12 @@ class SnowflakeStatementV1 implements Statement
    * Note, array binds use a different code path since only one network
    * roundtrip in the array bind execution case.
    *
-   * @return
-   * @throws SQLException
+   * @return the number of updated rows
+   * @throws SQLException raises if statement is closed or any db error occurs
    */
   int[] executeBatchInternal() throws SQLException
   {
-    if (isClosed)
-    {
-      throw new SnowflakeSQLException(ErrorCode.STATEMENT_CLOSED);
-    }
+    raiseSQLExceptionIfConnectionIsClosed();
 
     SQLException exceptionReturned = null;
     int updateCounts[] = new int[batch.size()];
@@ -391,7 +394,7 @@ class SnowflakeStatementV1 implements Statement
   public Connection getConnection() throws SQLException
   {
     logger.debug("public Connection getConnection()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return connection;
   }
 
@@ -399,7 +402,7 @@ class SnowflakeStatementV1 implements Statement
   public int getFetchDirection() throws SQLException
   {
     logger.debug("public int getFetchDirection()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return ResultSet.FETCH_FORWARD;
   }
 
@@ -407,7 +410,7 @@ class SnowflakeStatementV1 implements Statement
   public int getFetchSize() throws SQLException
   {
     logger.debug("public int getFetchSize()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return fetchSize;
   }
 
@@ -423,7 +426,7 @@ class SnowflakeStatementV1 implements Statement
   public int getMaxFieldSize() throws SQLException
   {
     logger.debug("public int getMaxFieldSize()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return maxFieldSize;
   }
 
@@ -431,7 +434,7 @@ class SnowflakeStatementV1 implements Statement
   public int getMaxRows() throws SQLException
   {
     logger.debug("public int getMaxRows()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return maxRows;
   }
 
@@ -447,6 +450,7 @@ class SnowflakeStatementV1 implements Statement
   public boolean getMoreResults(int current) throws SQLException
   {
     logger.debug("public boolean getMoreResults(int current)");
+    raiseSQLExceptionIfConnectionIsClosed();
 
     // clean up the current result set, if it exists
     if (resultSet != null &&
@@ -491,7 +495,7 @@ class SnowflakeStatementV1 implements Statement
   public int getQueryTimeout() throws SQLException
   {
     logger.debug("public int getQueryTimeout()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return this.queryTimeout;
   }
 
@@ -499,7 +503,7 @@ class SnowflakeStatementV1 implements Statement
   public ResultSet getResultSet() throws SQLException
   {
     logger.debug("public ResultSet getResultSet()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return resultSet;
   }
 
@@ -523,7 +527,7 @@ class SnowflakeStatementV1 implements Statement
   public int getResultSetType() throws SQLException
   {
     logger.debug("public int getResultSetType()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return ResultSet.TYPE_FORWARD_ONLY;
   }
 
@@ -531,7 +535,7 @@ class SnowflakeStatementV1 implements Statement
   public int getUpdateCount() throws SQLException
   {
     logger.debug("public int getUpdateCount()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return updateCount;
   }
 
@@ -539,7 +543,7 @@ class SnowflakeStatementV1 implements Statement
   public SQLWarning getWarnings() throws SQLException
   {
     logger.debug("public SQLWarning getWarnings()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return sqlWarnings;
   }
 
@@ -571,15 +575,16 @@ class SnowflakeStatementV1 implements Statement
   public void setEscapeProcessing(boolean enable) throws SQLException
   {
     logger.debug("public void setEscapeProcessing(boolean enable)");
-
-    escapeProcessing = true;
+    // NOTE: We could raise an exception here, because not implemented
+    // but it may break the existing applications. For now returning nothnig.
+    // we should revisit ASAP.
   }
 
   @Override
   public void setFetchDirection(int direction) throws SQLException
   {
     logger.debug("public void setFetchDirection(int direction)");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     if (direction != ResultSet.FETCH_FORWARD)
     {
       throw new SQLFeatureNotSupportedException();
@@ -590,7 +595,7 @@ class SnowflakeStatementV1 implements Statement
   public void setFetchSize(int rows) throws SQLException
   {
     logger.debug("public void setFetchSize(int rows), rows={}", rows);
-
+    raiseSQLExceptionIfConnectionIsClosed();
     fetchSize = rows;
   }
 
@@ -607,6 +612,8 @@ class SnowflakeStatementV1 implements Statement
   {
     logger.debug("public void setMaxRows(int max)");
 
+    raiseSQLExceptionIfConnectionIsClosed();
+
     this.maxRows = max;
     try
     {
@@ -617,8 +624,8 @@ class SnowflakeStatementV1 implements Statement
     }
     catch (SFException ex)
     {
-      throw new SnowflakeSQLException(ex.getCause(),
-                                      ex.getSqlState(), ex.getVendorCode(), ex.getParams());
+      throw new SnowflakeSQLException(
+          ex.getCause(), ex.getSqlState(), ex.getVendorCode(), ex.getParams());
     }
   }
 
@@ -626,6 +633,8 @@ class SnowflakeStatementV1 implements Statement
   public void setPoolable(boolean poolable) throws SQLException
   {
     logger.debug("public void setPoolable(boolean poolable)");
+
+    raiseSQLExceptionIfConnectionIsClosed();
 
     if (poolable)
     {
@@ -659,6 +668,7 @@ class SnowflakeStatementV1 implements Statement
   public void setQueryTimeout(int seconds) throws SQLException
   {
     logger.debug("public void setQueryTimeout(int seconds)");
+    raiseSQLExceptionIfConnectionIsClosed();
 
     this.queryTimeout = seconds;
     try
@@ -670,8 +680,8 @@ class SnowflakeStatementV1 implements Statement
     }
     catch (SFException ex)
     {
-      throw new SnowflakeSQLException(ex.getCause(),
-                                      ex.getSqlState(), ex.getVendorCode(), ex.getParams());
+      throw new SnowflakeSQLException(
+          ex.getCause(), ex.getSqlState(), ex.getVendorCode(), ex.getParams());
     }
   }
 
@@ -719,6 +729,7 @@ class SnowflakeStatementV1 implements Statement
   {
     logger.debug("public void close()");
 
+    // No exception is raised even if the statement is closed.
     if (resultSet != null)
     {
       resultSet.close();
@@ -734,6 +745,7 @@ class SnowflakeStatementV1 implements Statement
   public void cancel() throws SQLException
   {
     logger.debug("public void cancel()");
+    raiseSQLExceptionIfConnectionIsClosed();
 
     try
     {
@@ -750,7 +762,7 @@ class SnowflakeStatementV1 implements Statement
   public void clearWarnings() throws SQLException
   {
     logger.debug("public void clearWarnings()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     sqlWarnings = null;
   }
 
@@ -759,10 +771,7 @@ class SnowflakeStatementV1 implements Statement
   {
     logger.debug("public void addBatch(String sql)");
 
-    if (isClosed)
-    {
-      throw new SnowflakeSQLException(ErrorCode.STATEMENT_CLOSED);
-    }
+    raiseSQLExceptionIfConnectionIsClosed();
 
     batch.add(new BatchEntry(sql, null));
   }
@@ -772,10 +781,7 @@ class SnowflakeStatementV1 implements Statement
   {
     logger.debug("public void clearBatch()");
 
-    if (isClosed)
-    {
-      throw new SnowflakeSQLException(ErrorCode.STATEMENT_CLOSED);
-    }
+    raiseSQLExceptionIfConnectionIsClosed();
 
     batch.clear();
   }
@@ -787,7 +793,7 @@ class SnowflakeStatementV1 implements Statement
     // tokenize the sql
     String[] tokens = sql.split("\\s+");
 
-    if (tokens == null || tokens.length < 2)
+    if (tokens.length < 2)
     {
       return;
     }
@@ -813,18 +819,6 @@ class SnowflakeStatementV1 implements Statement
   public SFStatement getSfStatement()
   {
     return sfStatement;
-  }
-
-  protected void appendWarning(SQLWarning w)
-  {
-    if (sqlWarnings == null)
-    {
-      sqlWarnings = w;
-    }
-    else
-    {
-      sqlWarnings.setNextWarning(w);
-    }
   }
 
   final class BatchEntry

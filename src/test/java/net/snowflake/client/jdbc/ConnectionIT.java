@@ -45,7 +45,6 @@ import static org.junit.Assert.fail;
 public class ConnectionIT extends BaseJDBCTest
 {
   private boolean defaultState;
-  private String defaultDeployment;
 
   @Before
   public void setUp()
@@ -53,7 +52,6 @@ public class ConnectionIT extends BaseJDBCTest
     TelemetryService service = TelemetryService.getInstance();
     service.updateContext(getConnectionParameters());
     defaultState = service.isEnabled();
-    defaultDeployment = service.getServerDeploymentName();
     service.setNumOfRetryToTriggerTelemetry(3);
     service.disableRunFlushBeforeException();
     service.enable();
