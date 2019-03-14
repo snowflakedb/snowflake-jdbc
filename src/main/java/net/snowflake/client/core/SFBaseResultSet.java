@@ -64,7 +64,7 @@ public abstract class SFBaseResultSet
   protected SFSession session;
 
   // indicate whether the result set has been closed or not.
-  protected boolean isClosed = true;
+  protected boolean isClosed;
 
   abstract public boolean isLast();
 
