@@ -6,9 +6,7 @@ package net.snowflake.client;
 import com.google.common.base.Strings;
 import org.junit.Rule;
 
-import java.io.UnsupportedEncodingException;
 import java.net.URL;
-import java.net.URLDecoder;
 import java.sql.Connection;
 import java.sql.Date;
 import java.sql.DriverManager;
@@ -20,7 +18,6 @@ import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
-import java.util.TimeZone;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -59,9 +56,6 @@ public class AbstractDriverIT
       = 2210;
 
   protected final int ERROR_CODE_DOMAIN_OBJECT_DOES_NOT_EXIST = 2003;
-
-  @Rule
-  public ConditionalIgnoreRule rule = new ConditionalIgnoreRule();
 
   public static Map<String, String> getConnectionParameters()
   {

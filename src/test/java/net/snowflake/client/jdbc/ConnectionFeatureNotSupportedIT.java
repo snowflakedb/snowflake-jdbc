@@ -118,6 +118,24 @@ public class ConnectionFeatureNotSupportedIT extends BaseJDBCTest
       }
       try
       {
+        connection.prepareStatement("select 1", ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_READ_ONLY);
+        fail("must raise SQLFeatureNotSupportedException");
+      }
+      catch (SQLFeatureNotSupportedException ex)
+      {
+        // nop
+      }
+      try
+      {
+        connection.createStatement(ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_READ_ONLY);
+        fail("must raise SQLFeatureNotSupportedException");
+      }
+      catch (SQLFeatureNotSupportedException ex)
+      {
+        // nop
+      }
+      try
+      {
         Map<String, Class<?>> m = new HashMap<>();
         connection.setTypeMap(m);
         fail("must raise SQLFeatureNotSupportedException");

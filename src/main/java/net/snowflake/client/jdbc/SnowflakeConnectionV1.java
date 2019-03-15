@@ -291,6 +291,7 @@ public class SnowflakeConnectionV1 implements Connection
       return;
     }
 
+    isClosed = true;
     try
     {
       if (sfSession != null)
@@ -298,7 +299,6 @@ public class SnowflakeConnectionV1 implements Connection
         sfSession.close();
         sfSession = null;
       }
-      isClosed = true;
     }
     catch (SFException ex)
     {
@@ -741,10 +741,8 @@ public class SnowflakeConnectionV1 implements Connection
     this.clientInfo.clear();
     this.clientInfo.putAll(properties);
 
-    if (sfSession != null)
-    {
-      sfSession.setClientInfo(properties);
-    }
+    // sfSession must not be null if the connection is not closed.
+    sfSession.setClientInfo(properties);
   }
 
   @Override
@@ -760,31 +758,17 @@ public class SnowflakeConnectionV1 implements Connection
 
     this.clientInfo.setProperty(name, value);
 
-    if (sfSession != null)
-    {
-      sfSession.setClientInfo(name, value);
-    }
+    // sfSession must not be null if the connection is not closed.
+    sfSession.setClientInfo(name, value);
   }
 
   @Override
   public Properties getClientInfo() throws SQLException
   {
-    logger.debug(
-        "Properties getClientInfo()");
-
+    logger.debug("Properties getClientInfo()");
     raiseSQLExceptionIfConnectionIsClosed();
-
-    if (sfSession != null)
-    {
-      return sfSession.getClientInfo();
-    }
-
-    // defensive copy to avoid client from changing the properties
-    // directly w/o going through the API
-    Properties copy = new Properties();
-    copy.putAll(this.clientInfo);
-
-    return copy;
+    // sfSession must not be null if the connection is not closed.
+    return sfSession.getClientInfo();
   }
 
   @Override
@@ -793,13 +777,8 @@ public class SnowflakeConnectionV1 implements Connection
     logger.debug("String getClientInfo(String name)");
 
     raiseSQLExceptionIfConnectionIsClosed();
-
-    if (sfSession != null)
-    {
-      return sfSession.getClientInfo(name);
-    }
-
-    return this.clientInfo.getProperty(name);
+    // sfSession must not be null if the connection is not closed.
+    return sfSession.getClientInfo(name);
   }
 
   @Override
@@ -1168,18 +1147,15 @@ public class SnowflakeConnectionV1 implements Connection
     }
   }
 
-  public void setInjectedDelay(int delay)
+  public void setInjectedDelay(int delay) throws SQLException
   {
-    if (sfSession != null)
-    {
-      sfSession.setInjectedDelay(delay);
-    }
-
-    this._injectedDelay.set(delay);
+    raiseSQLExceptionIfConnectionIsClosed();
+    sfSession.setInjectedDelay(delay);
   }
 
-  void injectedDelay()
+  void injectedDelay() throws SQLException
   {
+    raiseSQLExceptionIfConnectionIsClosed();
 
     int d = _injectedDelay.get();
 
@@ -1198,12 +1174,10 @@ public class SnowflakeConnectionV1 implements Connection
     }
   }
 
-  public void setInjectFileUploadFailure(String fileToFail)
+  public void setInjectFileUploadFailure(String fileToFail) throws SQLException
   {
-    if (sfSession != null)
-    {
-      sfSession.setInjectFileUploadFailure(fileToFail);
-    }
+    raiseSQLExceptionIfConnectionIsClosed();
+    sfSession.setInjectFileUploadFailure(fileToFail);
   }
 
   public SFSession getSfSession()

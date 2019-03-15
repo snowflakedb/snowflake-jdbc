@@ -9,16 +9,18 @@ import net.snowflake.client.AbstractDriverIT;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnTravisCI;
 import net.snowflake.common.core.SqlState;
+import org.apache.commons.io.IOUtils;
 import org.junit.AfterClass;
+import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.InputStream;
+import java.io.StringWriter;
 import java.math.BigDecimal;
 import java.nio.charset.Charset;
 import java.sql.Connection;
@@ -1374,6 +1376,11 @@ public class SnowflakeDriverIT extends AbstractDriverIT
     }
   }
 
+  /**
+   * Test Upload Stream
+   *
+   * @throws Throwable if any error occurs.
+   */
   @Test
   public void testUploadStream() throws Throwable
   {
@@ -1412,16 +1419,54 @@ public class SnowflakeDriverIT extends AbstractDriverIT
       rset.close();
       assertEquals("Unexpected string value: " + ret + " expect: hello",
                    "hello", ret);
+    }
+    finally
+    {
+      if (statement != null)
+      {
+        statement.execute("rm @~/" + DEST_PREFIX);
+        statement.close();
+      }
+      closeSQLObjects(statement, connection);
+    }
+  }
 
-      /*
+  /**
+   * Test Download Stream
+   *
+   * @throws Throwable if any error occurs.
+   */
+  @Test
+  public void testDownloadStream() throws Throwable
+  {
+    Assume.assumeFalse("The test cannot run on testaccount with the local FS.",
+                       "testaccount".equals(System.getenv("SNOWFLAKE_TEST_ACCOUNT")));
+    final String DEST_PREFIX = TEST_UUID + "/testUploadStream";
+    Connection connection = null;
+    Statement statement = null;
+    try
+    {
+      connection = getConnection();
+      statement = connection.createStatement();
+      ResultSet rset = statement.executeQuery(
+          "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE)
+          + " @~/" + DEST_PREFIX);
+      assertTrue(rset.next());
+      assertEquals("UPLOADED", rset.getString(7));
+
       InputStream out = connection.unwrap(SnowflakeConnectionV1.class).downloadStream(
           "~",
-          DEST_PREFIX + "/hello.txt",
-          false);
-      byte[] buf = new byte[1024];
-      out.read(buf);
-      int a = 0;
-      */
+          DEST_PREFIX + "/" + TEST_DATA_FILE + ".gz",
+          true);
+      StringWriter writer = new StringWriter();
+      IOUtils.copy(out, writer, "UTF-8");
+      String output = writer.toString();
+      // the first 2 characters
+      assertEquals("1|", output.substring(0, 2));
+
+      // the number of lines
+      String[] lines = output.split("\n");
+      assertEquals(28, lines.length);
     }
     finally
     {

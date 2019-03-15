@@ -92,7 +92,7 @@ public class PreparedStatementIT extends BaseJDBCTest
     prepStatement = connection.prepareStatement(
         "insert into testStageArrayBind values (?)");
 
-    for (int i=0; i<70000; i++)
+    for (int i = 0; i < 70000; i++)
     {
       prepStatement.setInt(1, i);
       prepStatement.addBatch();
@@ -100,14 +100,14 @@ public class PreparedStatementIT extends BaseJDBCTest
     prepStatement.executeBatch();
 
     resultSet = statement.executeQuery("select * from testStageArrayBind " +
-                                           "order by c1 asc");
+                                       "order by c1 asc");
 
     int count = 0;
-    while(resultSet.next())
+    while (resultSet.next())
     {
       assertThat(resultSet.getInt(1), is(count));
 
-      count ++;
+      count++;
     }
 
     resultSet.close();
@@ -562,7 +562,7 @@ public class PreparedStatementIT extends BaseJDBCTest
     prepStatement.clearParameters();
 
     int parameterSize =
-        ((SnowflakePreparedStatementV1)prepStatement).getParameterBindings().size();
+        ((SnowflakePreparedStatementV1) prepStatement).getParameterBindings().size();
     assertThat(parameterSize, is(0));
 
     bindOneParamSet(prepStatement, 3, 1.22, 1.2f, "hello", 12222L, (short) 1);
@@ -588,8 +588,8 @@ public class PreparedStatementIT extends BaseJDBCTest
     // clear batch should remove all batch parameters
     prepStatement.clearBatch();
     int batchSize =
-        ((SnowflakePreparedStatementV1)prepStatement).getBatchParameterBindings().size();
-    assertThat(batchSize, is(0)) ;
+        ((SnowflakePreparedStatementV1) prepStatement).getBatchParameterBindings().size();
+    assertThat(batchSize, is(0));
 
     bindOneParamSet(prepStatement, 3, 1.22, 1.2f, "hello", 12222L, (short) 1);
     prepStatement.addBatch();
@@ -597,8 +597,8 @@ public class PreparedStatementIT extends BaseJDBCTest
 
     // executeBatch should remove batch as well
     batchSize =
-        ((SnowflakePreparedStatementV1)prepStatement).getBatchParameterBindings().size();
-    assertThat(batchSize, is(0)) ;
+        ((SnowflakePreparedStatementV1) prepStatement).getBatchParameterBindings().size();
+    assertThat(batchSize, is(0));
 
     resultSet = connection.createStatement().executeQuery(selectAllSQL);
     resultSet.next();
@@ -763,7 +763,7 @@ public class PreparedStatementIT extends BaseJDBCTest
   {
     connection = getConnection();
     String stmtStr = "select seq4() from table(generator(rowcount=>100)) " +
-        "limit ?";
+                     "limit ?";
 
     prepStatement = connection.prepareStatement(stmtStr);
     prepStatement.setInt(1, 10);
@@ -1352,7 +1352,7 @@ public class PreparedStatementIT extends BaseJDBCTest
     Connection connection = getConnection();
     Statement statement = connection.createStatement();
     statement.execute("alter session set timestamp_tz_output_format='YYYY-MM" +
-                          "-DD HH24:MI:SS.FF9 TZHTZM'");
+                      "-DD HH24:MI:SS.FF9 TZHTZM'");
     statement.execute("create or replace  table testbindtstz(cola timestamp_tz)");
 
     PreparedStatement preparedStatement = connection.prepareStatement(
