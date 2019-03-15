@@ -28,6 +28,10 @@ import static org.hamcrest.MatcherAssert.assertThat;
  */
 public class AbstractDriverIT
 {
+  // This is required to use ConditionalIgnore annotation.
+  @Rule
+  public ConditionalIgnoreRule rule = new ConditionalIgnoreRule();
+
   public static final String DRIVER_CLASS = "net.snowflake.client.jdbc.SnowflakeDriver";
   public static final int DONT_INJECT_SOCKET_TIMEOUT = 0;
 

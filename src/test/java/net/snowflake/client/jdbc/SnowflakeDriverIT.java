@@ -7,11 +7,11 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.snowflake.client.AbstractDriverIT;
 import net.snowflake.client.ConditionalIgnoreRule;
+import net.snowflake.client.RunningOnTestaccount;
 import net.snowflake.client.RunningOnTravisCI;
 import net.snowflake.common.core.SqlState;
 import org.apache.commons.io.IOUtils;
 import org.junit.AfterClass;
-import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Rule;
@@ -1437,10 +1437,9 @@ public class SnowflakeDriverIT extends AbstractDriverIT
    * @throws Throwable if any error occurs.
    */
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTestaccount.class)
   public void testDownloadStream() throws Throwable
   {
-    Assume.assumeFalse("The test cannot run on testaccount with the local FS.",
-                       "testaccount".equals(System.getenv("SNOWFLAKE_TEST_ACCOUNT")));
     final String DEST_PREFIX = TEST_UUID + "/testUploadStream";
     Connection connection = null;
     Statement statement = null;
