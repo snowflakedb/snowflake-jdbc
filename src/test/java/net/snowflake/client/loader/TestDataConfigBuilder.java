@@ -328,7 +328,7 @@ class TestDataConfigBuilder
     streamLoader.setTestMode(testMode);
 
     // Wait for 5 seconds on first put to buffer everything up.
-    ((SnowflakeConnectionV1) putConnection).setInjectedDelay(5000);
+    putConnection.unwrap(SnowflakeConnectionV1.class).setInjectedDelay(5000);
 
     return _resultListener;
   }

@@ -65,8 +65,6 @@ public class SFSession
 
   private String idToken;
 
-  private String newClientForUpdate;
-
   // Injected delay for the purpose of connection timeout testing
   // Any statement execution will sleep for the specified number of milliseconds
   private AtomicInteger _injectedDelay = new AtomicInteger(0);
@@ -105,11 +103,7 @@ public class SFSession
   private final static ObjectMapper mapper =
       ObjectMapperFactory.getObjectMapper();
 
-  private Properties clientInfo = new Properties();
-
-  // timeout setting for http client, they will be adjusted after first
-  // login request to GS
-  private int healthCheckInterval = 45; // seconds
+  private final Properties clientInfo = new Properties();
 
   private int httpClientConnectionTimeout = 60000; // milliseconds
 
@@ -431,7 +425,6 @@ public class SFSession
     databaseVersion = loginOutput.getDatabaseVersion();
     databaseMajorVersion = loginOutput.getDatabaseMajorVersion();
     databaseMinorVersion = loginOutput.getDatabaseMinorVersion();
-    healthCheckInterval = loginOutput.getHealthCheckInterval();
     httpClientSocketTimeout = loginOutput.getHttpClientSocketTimeout();
     masterTokenValidityInSeconds = loginOutput.getMasterTokenValidityInSeconds();
     database = loginOutput.getSessionDatabase();
@@ -549,11 +542,6 @@ public class SFSession
     }
   }
 
-  public String getNewClientForUpdate()
-  {
-    return newClientForUpdate;
-  }
-
   public String getDatabaseVersion()
   {
     return databaseVersion;
@@ -567,11 +555,6 @@ public class SFSession
   public int getDatabaseMinorVersion()
   {
     return databaseMinorVersion;
-  }
-
-  private void setNewClientForUpdate(String newClientForUpdate)
-  {
-    this.newClientForUpdate = newClientForUpdate;
   }
 
   /**
@@ -794,11 +777,6 @@ public class SFSession
   {
     logger.debug(" public void setClientInfo(Properties properties)");
 
-    if (this.clientInfo == null)
-    {
-      this.clientInfo = new Properties();
-    }
-
     // make a copy, don't point to the properties directly since we don't
     // own it.
     this.clientInfo.clear();
@@ -810,11 +788,6 @@ public class SFSession
   {
     logger.debug(" public void setClientInfo(String name, String value)");
 
-    if (this.clientInfo == null)
-    {
-      this.clientInfo = new Properties();
-    }
-
     this.clientInfo.setProperty(name, value);
   }
 
@@ -822,7 +795,7 @@ public class SFSession
   {
     logger.debug(" public Properties getClientInfo()");
 
-    if (this.clientInfo != null)
+    if (!this.clientInfo.isEmpty())
     {
       // defensive copy to avoid client from changing the properties
       // directly w/o going through the API
@@ -833,22 +806,14 @@ public class SFSession
     }
     else
     {
-      return null;
+      return this.clientInfo;
     }
   }
 
   public String getClientInfo(String name)
   {
     logger.debug(" public String getClientInfo(String name)");
-
-    if (this.clientInfo != null)
-    {
-      return this.clientInfo.getProperty(name);
-    }
-    else
-    {
-      return null;
-    }
+    return this.clientInfo.getProperty(name);
   }
 
   void setSFSessionProperty(String propertyName, boolean propertyValue)

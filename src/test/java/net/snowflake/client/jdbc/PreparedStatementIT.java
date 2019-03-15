@@ -1626,7 +1626,7 @@ public class PreparedStatementIT extends BaseJDBCTest
   public void testPreparedStatementWithSkipParsing() throws Exception
   {
     Connection con = getConnection();
-    PreparedStatement stmt = ((SnowflakeConnectionV1) con).prepareStatement(
+    PreparedStatement stmt = con.unwrap(SnowflakeConnectionV1.class).prepareStatement(
         "select 1", true);
     ResultSet rs = stmt.executeQuery();
     assertThat(rs.next(), is(true));
@@ -1642,12 +1642,12 @@ public class PreparedStatementIT extends BaseJDBCTest
     con.createStatement().execute("create or replace table t(c1 int)");
     try
     {
-      PreparedStatement stmt = ((SnowflakeConnectionV1) con).prepareStatement(
+      PreparedStatement stmt = con.unwrap(SnowflakeConnectionV1.class).prepareStatement(
           "insert into t(c1) values(?)", true);
       stmt.setInt(1, 123);
       int ret = stmt.executeUpdate();
       assertThat(ret, is(1));
-      stmt = ((SnowflakeConnectionV1) con).prepareStatement(
+      stmt = con.unwrap(SnowflakeConnectionV1.class).prepareStatement(
           "select * from t", true);
       ResultSet rs = stmt.executeQuery();
       assertThat(rs.next(), is(true));
@@ -1836,6 +1836,37 @@ public class PreparedStatementIT extends BaseJDBCTest
   private interface RunnableWithSQLException
   {
     void run() throws SQLException;
+  }
+
+  @Test
+  public void testCreatePreparedStatementWithParameters() throws Throwable
+  {
+    try (Connection connection = getConnection())
+    {
+      connection.prepareStatement("select 1", ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+      try
+      {
+        connection.prepareStatement("select 1", ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_UPDATABLE);
+        fail("updateable cursor is not supported.");
+      }
+      catch (SQLException ex)
+      {
+        assertEquals((int) ErrorCode.FEATURE_UNSUPPORTED.getMessageCode(), ex.getErrorCode());
+      }
+      connection.prepareStatement("select 1", ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY,
+                                  ResultSet.CLOSE_CURSORS_AT_COMMIT);
+      try
+      {
+        connection.prepareStatement("select 1", ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY,
+                                    ResultSet.HOLD_CURSORS_OVER_COMMIT);
+        fail("hold cursor over commit is not supported.");
+      }
+      catch (SQLException ex)
+      {
+        assertEquals((int) ErrorCode.FEATURE_UNSUPPORTED.getMessageCode(), ex.getErrorCode());
+      }
+
+    }
   }
 }
 

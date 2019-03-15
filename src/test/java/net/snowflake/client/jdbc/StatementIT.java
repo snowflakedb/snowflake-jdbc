@@ -22,13 +22,13 @@ import java.sql.SQLFeatureNotSupportedException;
 import java.sql.Statement;
 
 import static net.snowflake.client.jdbc.ErrorCode.ROW_DOES_NOT_EXIST;
-import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -934,7 +934,7 @@ public class StatementIT extends BaseJDBCTest
     statement.execute("use schema public; select 1");
     // current schema change should persist outside of the above statement
 
-    SFSession session = ((SnowflakeConnectionV1) statement.getConnection()).getSfSession();
+    SFSession session = statement.getConnection().unwrap(SnowflakeConnectionV1.class).getSfSession();
     assertEquals("PUBLIC", session.getSchema());
     ResultSet rs = statement.executeQuery("select current_schema()");
     rs.next();
@@ -943,7 +943,7 @@ public class StatementIT extends BaseJDBCTest
     statement.execute("use schema testschema; select 1");
     // current schema change should persist outside of the above statement
 
-    session = ((SnowflakeConnectionV1) statement.getConnection()).getSfSession();
+    session = statement.getConnection().unwrap(SnowflakeConnectionV1.class).getSfSession();
     assertEquals("TESTSCHEMA", session.getSchema());
     rs = statement.executeQuery("select current_schema()");
     rs.next();
@@ -961,7 +961,7 @@ public class StatementIT extends BaseJDBCTest
     enableMultiStmt(connection);
     Statement statement = connection.createStatement();
 
-    SFSession session = ((SnowflakeConnectionV1) statement.getConnection()).getSfSession();
+    SFSession session = statement.getConnection().unwrap(SnowflakeConnectionV1.class).getSfSession();
 
     // we need an arbitrary parameter which is updated by the client after each query for this test
     String param = "AUTOCOMMIT";
@@ -1199,5 +1199,36 @@ public class StatementIT extends BaseJDBCTest
 
     statement.close();
     connection.close();
+  }
+
+  @Test
+  public void testCreateStatementWithParameters() throws Throwable
+  {
+    try (Connection connection = getConnection())
+    {
+      connection.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+      try
+      {
+        connection.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_UPDATABLE);
+        fail("updateable cursor is not supported.");
+      }
+      catch (SQLException ex)
+      {
+        assertEquals((int) ErrorCode.FEATURE_UNSUPPORTED.getMessageCode(), ex.getErrorCode());
+      }
+      connection.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY,
+                                 ResultSet.CLOSE_CURSORS_AT_COMMIT);
+      try
+      {
+        connection.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY,
+                                   ResultSet.HOLD_CURSORS_OVER_COMMIT);
+        fail("hold cursor over commit is not supported.");
+      }
+      catch (SQLException ex)
+      {
+        assertEquals((int) ErrorCode.FEATURE_UNSUPPORTED.getMessageCode(), ex.getErrorCode());
+      }
+
+    }
   }
 }

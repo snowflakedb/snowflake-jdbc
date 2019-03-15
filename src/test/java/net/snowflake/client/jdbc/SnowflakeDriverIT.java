@@ -16,7 +16,9 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.InputStream;
 import java.math.BigDecimal;
 import java.nio.charset.Charset;
 import java.sql.Connection;
@@ -77,53 +79,50 @@ public class SnowflakeDriverIT extends AbstractDriverIT
   @BeforeClass
   public static void setUp() throws Throwable
   {
-    Connection connection = getConnection();
+    try (Connection connection = getConnection())
+    {
+      try (Statement statement = connection.createStatement())
+      {
 
-    Statement statement = connection.createStatement();
+        statement.execute("create or replace table orders_jdbc" +
+                          "(C1 STRING NOT NULL COMMENT 'JDBC', "
+                          + "C2 STRING, C3 STRING, C4 STRING, C5 STRING, C6 STRING, "
+                          + "C7 STRING, C8 STRING, C9 STRING) "
+                          + "stage_file_format = (field_delimiter='|' "
+                          + "error_on_column_count_mismatch=false)");
 
-    statement.execute("create or replace table orders_jdbc" +
-                      "(C1 STRING NOT NULL COMMENT 'JDBC', "
-                      + "C2 STRING, C3 STRING, C4 STRING, C5 STRING, C6 STRING, "
-                      + "C7 STRING, C8 STRING, C9 STRING) "
-                      + "stage_file_format = (field_delimiter='|' "
-                      + "error_on_column_count_mismatch=false)");
+        statement.execute(
+            "create or replace table clustered_jdbc " +
+            "(c1 number, c2 number) cluster by (c1)");
 
-    statement.execute(
-        "create or replace table clustered_jdbc " +
-        "(c1 number, c2 number) cluster by (c1)");
+        // put files
+        assertTrue("Failed to put a file",
+                   statement.execute(
+                       "PUT file://" +
+                       getFullPathFileInResource(TEST_DATA_FILE) + " @%orders_jdbc"));
+        assertTrue("Failed to put a file",
+                   statement.execute(
+                       "PUT file://" +
+                       getFullPathFileInResource(TEST_DATA_FILE_2) + " @%orders_jdbc"));
 
-    // put files
-    assertTrue("Failed to put a file",
-               statement.execute(
-                   "PUT file://" +
-                   getFullPathFileInResource(TEST_DATA_FILE) + " @%orders_jdbc"));
-    assertTrue("Failed to put a file",
-               statement.execute(
-                   "PUT file://" +
-                   getFullPathFileInResource(TEST_DATA_FILE_2) + " @%orders_jdbc"));
+        int numRows =
+            statement.executeUpdate("copy into orders_jdbc");
 
-    int numRows =
-        statement.executeUpdate("copy into orders_jdbc");
-
-    assertEquals("Unexpected number of rows copied: " + numRows, 73, numRows);
-
-    statement.close();
-
-    connection.close();
+        assertEquals("Unexpected number of rows copied: " + numRows, 73, numRows);
+      }
+    }
   }
 
   @AfterClass
   public static void tearDown() throws SQLException
   {
-    Connection connection = getConnection();
-
-    Statement statement = connection.createStatement();
-
-    statement.execute("drop table if exists clustered_jdbc");
-    statement.execute("drop table if exists orders_jdbc");
-    statement.close();
-
-    connection.close();
+    try (Connection connection = getConnection())
+    {
+      Statement statement = connection.createStatement();
+      statement.execute("drop table if exists clustered_jdbc");
+      statement.execute("drop table if exists orders_jdbc");
+      statement.close();
+    }
   }
 
   public static Connection getConnection(int injectSocketTimeout)
@@ -342,8 +341,11 @@ public class SnowflakeDriverIT extends AbstractDriverIT
       statement = connection.createStatement();
 
       // 1. test commit
+      connection.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
+      assertEquals(Connection.TRANSACTION_READ_COMMITTED, connection.getTransactionIsolation());
       connection.setAutoCommit(false); // disable autocommit
       assertFalse(connection.getAutoCommit());
+
       assertEquals(0, getCurrentTransaction(connection));
 
       // create a table, this should not start a transaction
@@ -1389,9 +1391,8 @@ public class SnowflakeDriverIT extends AbstractDriverIT
       outputStream.write("hello".getBytes(Charset.forName("UTF-8")));
       outputStream.flush();
 
-
       // upload the data to user stage under testUploadStream with name hello.txt
-      ((SnowflakeConnectionV1) connection).uploadStream(
+      connection.unwrap(SnowflakeConnectionV1.class).uploadStream(
           "~",
           DEST_PREFIX,
           outputStream.asByteSource().openStream(),
@@ -1411,6 +1412,16 @@ public class SnowflakeDriverIT extends AbstractDriverIT
       rset.close();
       assertEquals("Unexpected string value: " + ret + " expect: hello",
                    "hello", ret);
+
+      /*
+      InputStream out = connection.unwrap(SnowflakeConnectionV1.class).downloadStream(
+          "~",
+          DEST_PREFIX + "/hello.txt",
+          false);
+      byte[] buf = new byte[1024];
+      out.read(buf);
+      int a = 0;
+      */
     }
     finally
     {
@@ -1445,7 +1456,7 @@ public class SnowflakeDriverIT extends AbstractDriverIT
       // upload the data to user stage under testCompressAndUploadStream
       // with name hello.txt
       // upload the data to user stage under testUploadStream with name hello.txt
-      ((SnowflakeConnectionV1) connection).uploadStream(
+      connection.unwrap(SnowflakeConnectionV1.class).uploadStream(
           "~",
           DEST_PREFIX,
           outputStream.asByteSource().openStream(),

@@ -22,6 +22,7 @@ import java.sql.SQLFeatureNotSupportedException;
 import java.sql.Statement;
 import java.sql.Types;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -96,13 +97,12 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
 
   private boolean metadataRequestUseConnectionCtx;
 
-  SnowflakeDatabaseMetaData(Connection connection)
+  SnowflakeDatabaseMetaData(Connection connection) throws SQLException
   {
-    logger.debug(
-        "public SnowflakeDatabaseMetaData(SnowflakeConnection connection)");
+    logger.debug("public SnowflakeDatabaseMetaData(SnowflakeConnection connection)");
 
     this.connection = connection;
-    this.session = ((SnowflakeConnectionV1) connection).getSfSession();
+    this.session = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
     this.metadataRequestUseConnectionCtx = session.getMetadataRequestUseConnectionCtx();
   }
 
@@ -201,7 +201,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   {
     logger.debug("public String getDatabaseProductVersion()");
     raiseSQLExceptionIfConnectionIsClosed();
-    return ((SnowflakeConnectionV1) connection).getDatabaseVersion() +
+    return connection.unwrap(SnowflakeConnectionV1.class).getDatabaseVersion() +
            " (" + getDriverVersion() + ")";
   }
 
@@ -227,16 +227,6 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
     versionBuilder.append(SnowflakeDriver.minorVersion);
     versionBuilder.append(".");
     versionBuilder.append(SnowflakeDriver.changeVersion);
-
-    String newClientForUpdate =
-        ((SnowflakeConnectionV1) connection).getNewClientForUpdate();
-
-    // add new client version if current is older
-    if (newClientForUpdate != null)
-    {
-      versionBuilder.append(", latest change version: ");
-      versionBuilder.append(newClientForUpdate);
-    }
 
     return versionBuilder.toString();
   }
@@ -1451,9 +1441,9 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
     Statement statement = connection.createStatement();
 
     return new SnowflakeDatabaseMetaDataResultSet(
-        Arrays.asList("TABLE_TYPE"),
-        Arrays.asList("TEXT"),
-        Arrays.asList(Types.VARCHAR),
+        Collections.singletonList("TABLE_TYPE"),
+        Collections.singletonList("TEXT"),
+        Collections.singletonList(Types.VARCHAR),
         new Object[][]
             {
                 {
@@ -1654,7 +1644,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
               externalColumnType = Types.TIMESTAMP;
             }
 
-            nextRow[4] = new Integer(externalColumnType);
+            nextRow[4] = externalColumnType;
             nextRow[5] = columnMetadata.getTypeName();
 
             int columnSize = 0;
@@ -1682,9 +1672,9 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
               columnSize = columnMetadata.getPrecision();
             }
 
-            nextRow[6] = new Integer(columnSize);
+            nextRow[6] = columnSize;
             nextRow[7] = null;
-            nextRow[8] = new Integer(columnMetadata.getScale());
+            nextRow[8] = columnMetadata.getScale();
             nextRow[9] = null;
             nextRow[10] = (columnMetadata.isNullable()
                            ? columnNullable : columnNoNulls);
@@ -1699,8 +1689,8 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
             nextRow[14] = null;
             nextRow[15] = (columnMetadata.getType() == Types.VARCHAR
                            || columnMetadata.getType() == Types.CHAR)
-                          ? new Integer(columnMetadata.getLength()) : null;
-            nextRow[16] = new Integer(ordinalPosition);
+                          ? columnMetadata.getLength() : null;
+            nextRow[16] = ordinalPosition;
 
             nextRow[17] = (columnMetadata.isNullable() ? "YES" : "NO");
             nextRow[18] = null;
@@ -1908,14 +1898,16 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   }
 
   /**
-   * @param client
-   * @param parentCatalog
-   * @param parentSchema
-   * @param parentTable
-   * @param foreignCatalog
-   * @param foreignSchema
-   * @param foreignTable
-   * @return
+   * Retrieves the foreign keys
+   *
+   * @param client         type of foreign key
+   * @param parentCatalog  database name
+   * @param parentSchema   schema name
+   * @param parentTable    table name
+   * @param foreignCatalog other database name
+   * @param foreignSchema  other schema name
+   * @param foreignTable   other table name
+   * @return foreign key columns in result set
    */
   private ResultSet getForeignKeys(
       final String client, String parentCatalog,
@@ -2083,56 +2075,53 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   }
 
   /**
-   * Returns the ODBC standard property string for the property string used
+   * Returns the JDBC standard property string for the property string used
    * in our show constraint commands
    *
-   * @param property_name
-   * @param property
-   * @return
+   * @param property_name operation type
+   * @param property      property value
+   * @return metdata property value
    */
   private short getForeignKeyConstraintProperty(
       String property_name, String property)
   {
     short result = 0;
-    if (property_name.equals("update") || property_name.equals("delete"))
+    switch (property_name)
     {
-      if (property.equals("NO ACTION"))
-      {
-        result = importedKeyNoAction;
-      }
-      else if (property.equals("CASCADE"))
-      {
-        result = importedKeyCascade;
-      }
-      else if (property.equals("SET NULL"))
-      {
-        result = importedKeySetNull;
-      }
-      else if (property.equals("SET DEFAULT"))
-      {
-        result = importedKeySetDefault;
-      }
-      else if (property.equals("RESTRICT"))
-      {
-        result = importedKeyRestrict;
-      }
+      case "update":
+      case "delete":
+        switch (property)
+        {
+          case "NO ACTION":
+            result = importedKeyNoAction;
+            break;
+          case "CASCADE":
+            result = importedKeyCascade;
+            break;
+          case "SET NULL":
+            result = importedKeySetNull;
+            break;
+          case "SET DEFAULT":
+            result = importedKeySetDefault;
+            break;
+          case "RESTRICT":
+            result = importedKeyRestrict;
+            break;
+        }
+      case "deferrability":
+        switch (property)
+        {
+          case "INITIALLY DEFERRED":
+            result = importedKeyInitiallyDeferred;
+            break;
+          case "INITIALLY IMMEDIATE":
+            result = importedKeyInitiallyImmediate;
+            break;
+          case "NOT DEFERRABLE":
+            result = importedKeyNotDeferrable;
+            break;
+        }
     }
-    else // deferrability
-    {
-      if (property.equals("INITIALLY DEFERRED"))
-      {
-        result = importedKeyInitiallyDeferred;
-      }
-      else if (property.equals("INITIALLY IMMEDIATE"))
-      {
-        result = importedKeyInitiallyImmediate;
-      }
-      else if (property.equals("NOT DEFERRABLE"))
-      {
-        result = importedKeyNotDeferrable;
-      }
-    }
-
     return result;
   }
 
@@ -2515,7 +2504,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   {
     logger.debug("public int getDatabaseMajorVersion()");
     raiseSQLExceptionIfConnectionIsClosed();
-    return ((SnowflakeConnectionV1) connection).getDatabaseMajorVersion();
+    return connection.unwrap(SnowflakeConnectionV1.class).getDatabaseMajorVersion();
   }
 
   @Override
@@ -2523,7 +2512,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   {
     logger.debug("public int getDatabaseMinorVersion()");
     raiseSQLExceptionIfConnectionIsClosed();
-    return ((SnowflakeConnectionV1) connection).getDatabaseMinorVersion();
+    return connection.unwrap(SnowflakeConnectionV1.class).getDatabaseMinorVersion();
   }
 
   @Override

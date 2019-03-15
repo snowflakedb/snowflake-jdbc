@@ -1120,7 +1120,7 @@ public class ResultSetIT extends BaseJDBCTest
       ++cnt;
     }
     assertTrue(cnt >= 0);
-    Telemetry telemetry = ((SnowflakeConnectionV1) con).getSfSession().getTelemetryClient();
+    Telemetry telemetry = con.unwrap(SnowflakeConnectionV1.class).getSfSession().getTelemetryClient();
     LinkedList<TelemetryData> logs = telemetry.logBuffer();
 
     // there should be a log for each of the following fields

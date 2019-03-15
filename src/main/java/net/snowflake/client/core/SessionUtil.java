@@ -54,7 +54,7 @@ import java.util.UUID;
 import static net.snowflake.client.core.SFTrustManager.resetOCSPResponseCacherServerURL;
 
 /**
- * Created by jhuang on 1/23/16.
+ * Low level session util
  */
 public class SessionUtil
 {
@@ -524,7 +524,6 @@ public class SessionUtil
     String databaseVersion;
     int databaseMajorVersion;
     int databaseMinorVersion;
-    String newClientForUpgrade;
     int healthCheckInterval;
     int httpClientSocketTimeout;
     String sessionDatabase;
@@ -545,7 +544,7 @@ public class SessionUtil
                        String idToken,
                        String databaseVersion,
                        int databaseMajorVersion, int databaseMinorVersion,
-                       String newClientForUpgrade, int healthCheckInterval,
+                       int healthCheckInterval,
                        int httpClientSocketTimeout,
                        String sessionDatabase,
                        String sessionSchema,
@@ -560,7 +559,6 @@ public class SessionUtil
       this.databaseVersion = databaseVersion;
       this.databaseMajorVersion = databaseMajorVersion;
       this.databaseMinorVersion = databaseMinorVersion;
-      this.newClientForUpgrade = newClientForUpgrade;
       this.healthCheckInterval = healthCheckInterval;
       this.httpClientSocketTimeout = httpClientSocketTimeout;
       this.sessionDatabase = sessionDatabase;
@@ -589,48 +587,6 @@ public class SessionUtil
       return this;
     }
 
-    public LoginOutput setRemMeToken(String remMeToken)
-    {
-      this.remMeToken = remMeToken;
-      return this;
-    }
-
-    public LoginOutput setDatabaseVersion(String databaseVersion)
-    {
-      this.databaseVersion = databaseVersion;
-      return this;
-    }
-
-    public LoginOutput setDatabaseMajorVersion(int databaseMajorVersion)
-    {
-      this.databaseMajorVersion = databaseMajorVersion;
-      return this;
-    }
-
-    public LoginOutput setDatabaseMinorVersion(int databaseMinorVersion)
-    {
-      this.databaseMinorVersion = databaseMinorVersion;
-      return this;
-    }
-
-    public LoginOutput setNewClientForUpgrade(String newClientForUpgrade)
-    {
-      this.newClientForUpgrade = newClientForUpgrade;
-      return this;
-    }
-
-    public LoginOutput setHealthCheckInterval(int healthCheckInterval)
-    {
-      this.healthCheckInterval = healthCheckInterval;
-      return this;
-    }
-
-    public LoginOutput setHttpClientSocketTimeout(int httpClientSocketTimeout)
-    {
-      this.httpClientSocketTimeout = httpClientSocketTimeout;
-      return this;
-    }
-
     public LoginOutput setCommonParams(Map<String, Object> commonParams)
     {
       this.commonParams = commonParams;
@@ -645,11 +601,6 @@ public class SessionUtil
     public String getMasterToken()
     {
       return masterToken;
-    }
-
-    public String getRemMeToken()
-    {
-      return remMeToken;
     }
 
     public String getIdToken()
@@ -670,11 +621,6 @@ public class SessionUtil
     public int getDatabaseMinorVersion()
     {
       return databaseMinorVersion;
-    }
-
-    public String getNewClientForUpgrade()
-    {
-      return newClientForUpgrade;
     }
 
     public int getHealthCheckInterval()
@@ -1423,7 +1369,6 @@ public class SessionUtil
                                       databaseVersion,
                                       databaseMajorVersion,
                                       databaseMinorVersion,
-                                      newClientForUpgrade,
                                       healthCheckInterval,
                                       httpClientSocketTimeout,
                                       sessionDatabase,

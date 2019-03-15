@@ -91,13 +91,13 @@ public class FileUploader implements Runnable
           // TEST MODE
           if (attempt < 2)
           {
-            ((SnowflakeConnectionV1) _loader.getPutConnection())
+            _loader.getPutConnection().unwrap(SnowflakeConnectionV1.class)
                 .setInjectFileUploadFailure(_file.getName());
           }
           else
           {
             // so that retry now succeeds.
-            ((SnowflakeConnectionV1) _loader.getPutConnection())
+            _loader.getPutConnection().unwrap(SnowflakeConnectionV1.class)
                 .setInjectFileUploadFailure(null);
           }
         }

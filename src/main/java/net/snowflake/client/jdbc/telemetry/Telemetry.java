@@ -105,6 +105,7 @@ public class Telemetry
   {
     if (conn instanceof SnowflakeConnectionV1)
     {
+      // consider using conn.unwrap(SnowflakeConnectionV1.class)
       return createTelemetry(((SnowflakeConnectionV1) conn).getSfSession(), flushSize);
     }
     logger.debug("input connection is not a SnowflakeConnection");
