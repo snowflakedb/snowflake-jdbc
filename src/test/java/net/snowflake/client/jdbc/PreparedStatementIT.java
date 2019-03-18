@@ -1771,5 +1771,71 @@ public class PreparedStatementIT extends BaseJDBCTest
       connection.close();
     }
   }
+
+  @Test
+  public void testInvalidUsageOfApi() throws Exception
+  {
+    Connection connection = getConnection();
+    final PreparedStatement preparedStatement = connection.prepareStatement(
+        "select 1");
+    final int expectedCode =
+        ErrorCode.UNSUPPORTED_STATEMENT_TYPE_IN_EXECUTION_API.getMessageCode();
+
+    assertException(new RunnableWithSQLException()
+    {
+      @Override
+      public void run() throws SQLException
+      {
+        preparedStatement.executeUpdate("select 1");
+      }
+    }, expectedCode);
+
+    assertException(new RunnableWithSQLException()
+    {
+      @Override
+      public void run() throws SQLException
+      {
+        preparedStatement.executeQuery("select 1");
+      }
+    }, expectedCode);
+
+    assertException(new RunnableWithSQLException()
+    {
+      @Override
+      public void run() throws SQLException
+      {
+        preparedStatement.execute("select 1");
+      }
+    }, expectedCode);
+
+    assertException(new RunnableWithSQLException()
+    {
+      @Override
+      public void run() throws SQLException
+      {
+        preparedStatement.addBatch("select 1");
+      }
+    }, expectedCode);
+
+  }
+
+  private void assertException(RunnableWithSQLException runnable,
+                               int expectedCode)
+  {
+    try
+    {
+      runnable.run();
+      Assert.fail();
+    }
+    catch (SQLException e)
+    {
+      assertThat(e.getErrorCode(), is(expectedCode));
+    }
+  }
+
+  private interface RunnableWithSQLException
+  {
+    void run() throws SQLException;
+  }
 }
 
