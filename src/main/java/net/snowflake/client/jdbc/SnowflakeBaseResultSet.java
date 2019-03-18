@@ -119,7 +119,22 @@ abstract class SnowflakeBaseResultSet implements ResultSet
   {
     logger.debug("public byte getByte(int columnIndex)");
 
-    throw new SQLFeatureNotSupportedException();
+    // Column index starts from 1, not 0.
+    Object obj = getObjectInternal(columnIndex);
+
+    if (obj == null)
+    {
+      return 0;
+    }
+
+    if (obj instanceof String)
+    {
+      return Byte.valueOf((String) obj);
+    }
+    else
+    {
+      return (Byte) obj;
+    }
   }
 
   @Override
