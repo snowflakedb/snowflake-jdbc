@@ -194,8 +194,9 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
   @Override
   public void setByte(int parameterIndex, byte x) throws SQLException
   {
-    throw new UnsupportedOperationException(
-        "setByte(int parameterIndex, byte x) Not supported yet.");
+    ParameterBindingDTO binding = new ParameterBindingDTO(SnowflakeUtil
+                                                              .javaTypeToSFTypeString(Types.TINYINT), String.valueOf(x));
+    parameterBindings.put(String.valueOf(parameterIndex), binding);
   }
 
   @Override
