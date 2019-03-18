@@ -136,6 +136,20 @@ class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
     }
   }
 
+  @Override
+  public byte getByte(int columnIndex) throws SQLException
+  {
+    try
+    {
+      return sfBaseResultSet.getByte(columnIndex);
+    }
+    catch (SFException ex)
+    {
+      throw new SnowflakeSQLException(ex.getCause(),
+                                      ex.getSqlState(), ex.getVendorCode(), ex.getParams());
+    }
+  }
+
   public short getShort(int columnIndex) throws SQLException
   {
     try

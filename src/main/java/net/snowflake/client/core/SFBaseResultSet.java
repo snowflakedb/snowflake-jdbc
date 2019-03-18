@@ -226,6 +226,28 @@ public abstract class SFBaseResultSet
     }
   }
 
+  public byte getByte(int columnIndex) throws SFException
+  {
+    logger.debug("public short getByte(int columnIndex)");
+
+    // Column index starts from 1, not 0.
+    Object obj = getObjectInternal(columnIndex);
+
+    if (obj == null)
+    {
+      return 0;
+    }
+
+    if (obj instanceof String)
+    {
+      return Byte.parseByte((String) obj);
+    }
+    else
+    {
+      return ((Number) obj).byteValue();
+    }
+  }
+
   public short getShort(int columnIndex) throws SFException
   {
     logger.debug("public short getShort(int columnIndex)");
