@@ -151,6 +151,7 @@ class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
   @Override
   public byte getByte(int columnIndex) throws SQLException
   {
+    raiseSQLExceptionIfResultSetIsClosed();
     try
     {
       return sfBaseResultSet.getByte(columnIndex);

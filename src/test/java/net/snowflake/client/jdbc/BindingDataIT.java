@@ -155,7 +155,7 @@ public class BindingDataIT extends AbstractDriverIT
     Connection connection = getConnection();
     Statement statement = connection.createStatement();
     statement.execute("create or replace table test_bind_null(id number, val " +
-                          "number)");
+                      "number)");
 
     PreparedStatement preparedStatement = connection.prepareStatement(
         "insert into test_bind_null values (?, ?)");
