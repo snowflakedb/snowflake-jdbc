@@ -144,9 +144,6 @@ abstract class SnowflakeBaseResultSet implements ResultSet
     // Column index starts from 1, not 0.
     Object obj = getObjectInternal(columnIndex);
 
-    // Column index starts from 1, not 0.
-    Object obj = getObjectInternal(columnIndex);
-
     if (obj == null)
     {
       return 0;
