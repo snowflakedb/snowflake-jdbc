@@ -8,7 +8,6 @@ SSOConnectionTest.java
 ServiceNameTest.java
 SessionVariablesIT.java
 SnowflakeDriverConnectionStressTest.java
-VersionIT.java
 telemetry/TelemetryServiceIT.java
 DownloadStreamIT.java
 telemetryV2
