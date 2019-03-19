@@ -45,6 +45,7 @@ class SnowflakeDatabaseMetaDataResultSet extends SnowflakeBaseResultSet
       final Statement statement)
   throws SQLException
   {
+    super(statement);
     this.showObjectResultSet = showObjectResultSet;
 
     SFSession session = statement.getConnection().unwrap(SnowflakeConnectionV1.class).getSfSession();
@@ -78,6 +79,7 @@ class SnowflakeDatabaseMetaDataResultSet extends SnowflakeBaseResultSet
       final Statement statement)
   throws SQLException
   {
+    super(statement);
     this.rows = rows;
 
     SFSession session = statement.getConnection().unwrap(SnowflakeConnectionV1.class).getSfSession();
@@ -87,7 +89,6 @@ class SnowflakeDatabaseMetaDataResultSet extends SnowflakeBaseResultSet
                                                             columnTypeNames,
                                                             columnTypes,
                                                             session);
-
     this.nextRow = new Object[columnNames.size()];
 
     this.statement = statement;
@@ -111,22 +112,10 @@ class SnowflakeDatabaseMetaDataResultSet extends SnowflakeBaseResultSet
          metadataType.getColumnTypes(), rows, statement);
   }
 
-  /**
-   * Raises SQLException if the result set is closed
-   *
-   * @throws SQLException if the result set is closed.
-   */
-  private void raiseSQLExceptionIfResultSetIsClosed() throws SQLException
-  {
-    if (isClosed())
-    {
-      throw new SnowflakeSQLException(ErrorCode.RESULTSET_ALREADY_CLOSED);
-    }
-  }
-
   @Override
   public boolean isClosed() throws SQLException
   {
+    // no exception is raised.
     return statement == null;
   }
 

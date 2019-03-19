@@ -918,7 +918,7 @@ public class ConnectionIT extends BaseJDBCTest
   }
 
   @Test
-  public void testWrapper() throws Throwable
+  public void testUnwrapper() throws Throwable
   {
     try (Connection connection = getConnection())
     {
@@ -944,13 +944,4 @@ public class ConnectionIT extends BaseJDBCTest
       }
     }
   }
-
-  @Test
-  public void testVersion() throws Throwable
-  {
-    try (Connection connection = getConnection())
-    {
-    }
-  }
-
 }

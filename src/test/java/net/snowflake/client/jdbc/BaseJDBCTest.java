@@ -12,9 +12,13 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.UUID;
 
 public class BaseJDBCTest extends AbstractDriverIT
 {
+  // Test UUID unique per session
+  protected static final String TEST_UUID = UUID.randomUUID().toString();
+
   int getSizeOfResultSet(ResultSet rs) throws SQLException
   {
     int count = 0;

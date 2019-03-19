@@ -4,6 +4,7 @@
 
 package net.snowflake.client.jdbc;
 
+import com.google.common.base.Strings;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.core.SFSessionProperty;
@@ -265,14 +266,16 @@ public class SnowflakeConnectionV1 implements Connection
   /**
    * Create a statement
    *
-   * @return statement
+   * @return statement statement object
    * @throws SQLException if failed to create a snowflake statement
    */
   @Override
   public Statement createStatement() throws SQLException
   {
     raiseSQLExceptionIfConnectionIsClosed();
-    return new SnowflakeStatementV1(this);
+    return createStatement(
+        ResultSet.TYPE_FORWARD_ONLY,
+        ResultSet.CONCUR_READ_ONLY);
   }
 
   /**
@@ -508,22 +511,8 @@ public class SnowflakeConnectionV1 implements Connection
         "Statement createStatement(int resultSetType, "
         + "int resultSetConcurrency)");
 
-    if (resultSetType != ResultSet.TYPE_FORWARD_ONLY)
-    {
-      throw new SQLFeatureNotSupportedException(
-          String.format("ResultSet type %d is not supported.", resultSetType),
-          FEATURE_UNSUPPORTED.getSqlState(),
-          FEATURE_UNSUPPORTED.getMessageCode());
-    }
-
-    if (resultSetConcurrency != ResultSet.CONCUR_READ_ONLY)
-    {
-      throw new SQLFeatureNotSupportedException(
-          String.format("ResultSet concurrency %d is not supported.", resultSetConcurrency),
-          FEATURE_UNSUPPORTED.getSqlState(),
-          FEATURE_UNSUPPORTED.getMessageCode());
-    }
-    return createStatement();
+    return createStatement(
+        resultSetType, resultSetConcurrency, ResultSet.CLOSE_CURSORS_AT_COMMIT);
   }
 
   @Override
@@ -535,15 +524,8 @@ public class SnowflakeConnectionV1 implements Connection
         "Statement createStatement(int resultSetType, "
         + "int resultSetConcurrency, int resultSetHoldability");
 
-    if (resultSetHoldability != ResultSet.CLOSE_CURSORS_AT_COMMIT)
-    {
-      throw new SQLFeatureNotSupportedException(
-          String.format("ResultSet holdability %d is not supported.", resultSetHoldability),
-          FEATURE_UNSUPPORTED.getSqlState(),
-          FEATURE_UNSUPPORTED.getMessageCode());
-    }
-
-    return createStatement(resultSetType, resultSetConcurrency);
+    return new SnowflakeStatementV1(
+        this, resultSetType, resultSetConcurrency, resultSetHoldability);
   }
 
   @Override
@@ -588,60 +570,52 @@ public class SnowflakeConnectionV1 implements Connection
   }
 
   @Override
-  public PreparedStatement prepareStatement(String sql, int resultSetType,
-                                            int resultSetConcurrency)
+  public PreparedStatement prepareStatement(
+      String sql,
+      int resultSetType,
+      int resultSetConcurrency)
   throws SQLException
   {
     logger.debug(
         "PreparedStatement prepareStatement(String sql, "
         + "int resultSetType,");
 
-    if (resultSetType != ResultSet.TYPE_FORWARD_ONLY)
-    {
-      throw new SQLFeatureNotSupportedException(
-          String.format("ResultSet type %d is not supported.", resultSetType),
-          FEATURE_UNSUPPORTED.getSqlState(),
-          FEATURE_UNSUPPORTED.getMessageCode());
-    }
-
-    if (resultSetConcurrency != ResultSet.CONCUR_READ_ONLY)
-    {
-      throw new SQLFeatureNotSupportedException(
-          String.format("ResultSet concurrency %d is not supported.", resultSetConcurrency),
-          FEATURE_UNSUPPORTED.getSqlState(),
-          FEATURE_UNSUPPORTED.getMessageCode());
-    }
-    return prepareStatement(sql);
+    return prepareStatement(sql, resultSetType, resultSetConcurrency, ResultSet.CLOSE_CURSORS_AT_COMMIT);
   }
 
   @Override
-  public PreparedStatement prepareStatement(String sql, int resultSetType,
-                                            int resultSetConcurrency,
-                                            int resultSetHoldability)
+  public PreparedStatement prepareStatement(
+      String sql,
+      int resultSetType,
+      int resultSetConcurrency,
+      int resultSetHoldability)
   throws SQLException
   {
     logger.debug(
         "PreparedStatement prepareStatement(String sql, "
         + "int resultSetType,");
 
-    if (resultSetHoldability != ResultSet.CLOSE_CURSORS_AT_COMMIT)
-    {
-      throw new SQLFeatureNotSupportedException(
-          String.format("ResultSet holdability %d is not supported.", resultSetHoldability),
-          FEATURE_UNSUPPORTED.getSqlState(),
-          FEATURE_UNSUPPORTED.getMessageCode());
-    }
-    return prepareStatement(sql, resultSetType, resultSetConcurrency);
+    return new SnowflakePreparedStatementV1(
+        this, sql,
+        false,
+        resultSetType,
+        resultSetConcurrency,
+        resultSetHoldability);
   }
 
   public PreparedStatement prepareStatement(String sql, boolean skipParsing)
   throws SQLException
   {
     logger.debug(
-        "PreparedStatement prepareStatement(String sql, "
-        + "boolean skipParsing)");
+        "PreparedStatement prepareStatement(String sql, boolean skipParsing)");
     raiseSQLExceptionIfConnectionIsClosed();
-    return new SnowflakePreparedStatementV1(this, sql, skipParsing);
+    return new SnowflakePreparedStatementV1(
+        this,
+        sql,
+        skipParsing,
+        ResultSet.TYPE_FORWARD_ONLY,
+        ResultSet.CONCUR_READ_ONLY,
+        ResultSet.CLOSE_CURSORS_AT_COMMIT);
   }
 
   @Override
@@ -1023,7 +997,7 @@ public class SnowflakeConnectionV1 implements Connection
           "stage name is null");
     }
 
-    SnowflakeStatementV1 stmt = new SnowflakeStatementV1(this);
+    SnowflakeStatementV1 stmt = this.createStatement().unwrap(SnowflakeStatementV1.class);
 
     StringBuilder putCommand = new StringBuilder();
 
@@ -1071,14 +1045,14 @@ public class SnowflakeConnectionV1 implements Connection
    * @throws SnowflakeSQLException if any SQL error occurs.
    */
   public InputStream downloadStream(String stageName, String sourceFileName,
-                                    boolean decompress) throws SnowflakeSQLException
+                                    boolean decompress) throws SQLException
 
   {
     logger.debug("download data to stream: stageName={}" +
                  ", sourceFileName={}",
                  stageName, sourceFileName);
 
-    if (stageName == null || stageName.isEmpty())
+    if (Strings.isNullOrEmpty(stageName))
     {
       throw new SnowflakeSQLException(
           SqlState.INTERNAL_ERROR,
@@ -1086,7 +1060,7 @@ public class SnowflakeConnectionV1 implements Connection
           "stage name is null or empty");
     }
 
-    if (sourceFileName == null || sourceFileName.isEmpty())
+    if (Strings.isNullOrEmpty(sourceFileName))
     {
       throw new SnowflakeSQLException(
           SqlState.INTERNAL_ERROR,
@@ -1094,7 +1068,11 @@ public class SnowflakeConnectionV1 implements Connection
           "source file name is null or empty");
     }
 
-    SnowflakeStatementV1 stmt = new SnowflakeStatementV1(this);
+    SnowflakeStatementV1 stmt = new SnowflakeStatementV1(
+        this,
+        ResultSet.TYPE_FORWARD_ONLY,
+        ResultSet.CONCUR_READ_ONLY,
+        ResultSet.CLOSE_CURSORS_AT_COMMIT);
 
     StringBuilder getCommand = new StringBuilder();
 

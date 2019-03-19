@@ -103,16 +103,25 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
   /**
    * Construct SnowflakePreparedStatementV1
    *
-   * @param connection  connection object
-   * @param sql         sql
-   * @param skipParsing true if the applications want to skip parsing
-   *                    to get metadata. false by default.
-   * @throws SQLException
+   * @param connection           connection object
+   * @param sql                  sql
+   * @param skipParsing          true if the applications want to skip parsing
+   *                             to get metadata. false by default.
+   * @param resultSetType        result set type: ResultSet.TYPE_FORWARD_ONLY.
+   * @param resultSetConcurrency result set conconcurrency: ResultSet.CONCUR_READ_ONLY.
+   * @param resultSetHoldability result set holdability: ResultSet.CLOSE_CURSORS_AT_COMMIT
+   * @throws SQLException if any SQL error occurs.
    */
-  SnowflakePreparedStatementV1(SnowflakeConnectionV1 connection,
-                               String sql, boolean skipParsing) throws SQLException
+  SnowflakePreparedStatementV1(
+      SnowflakeConnectionV1 connection,
+      String sql,
+      boolean skipParsing,
+      int resultSetType,
+      int resultSetConcurrency,
+      int resultSetHoldability
+  ) throws SQLException
   {
-    super(connection);
+    super(connection, resultSetType, resultSetConcurrency, resultSetHoldability);
     this.sql = sql;
 
     if (!skipParsing)
@@ -164,7 +173,7 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
   {
     logger.debug(
         "setNull(int parameterIndex, int sqlType) throws SQLException");
-    raiseSQLExceptionIfConnectionIsClosed();
+    raiseSQLExceptionIfStatementIsClosed();
 
     ParameterBindingDTO binding = new ParameterBindingDTO(
         SnowflakeUtil.javaTypeToSFTypeString(sqlType), null);
@@ -185,8 +194,8 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
   @Override
   public void setByte(int parameterIndex, byte x) throws SQLException
   {
-    ParameterBindingDTO binding = new ParameterBindingDTO(SnowflakeUtil
-                                                              .javaTypeToSFTypeString(Types.TINYINT), String.valueOf(x));
+    ParameterBindingDTO binding = new ParameterBindingDTO(
+        SnowflakeUtil.javaTypeToSFTypeString(Types.TINYINT), String.valueOf(x));
     parameterBindings.put(String.valueOf(parameterIndex), binding);
   }
 
@@ -494,7 +503,7 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
   {
     logger.debug("addBatch() throws SQLException");
 
-    raiseSQLExceptionIfConnectionIsClosed();
+    raiseSQLExceptionIfStatementIsClosed();
 
     if (statementMetaData.isArrayBindSupported())
     {
@@ -617,7 +626,7 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
   {
     logger.debug("getMetaData() throws SQLException");
 
-    raiseSQLExceptionIfConnectionIsClosed();
+    raiseSQLExceptionIfStatementIsClosed();
     return new SnowflakeResultSetMetaDataV1(
         this.statementMetaData.getResultSetMetaData());
   }
@@ -628,7 +637,7 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
   {
     logger.debug("setDate(int parameterIndex, Date x, Calendar cal)");
 
-    raiseSQLExceptionIfConnectionIsClosed();
+    raiseSQLExceptionIfStatementIsClosed();
     if (x == null)
     {
       setNull(parameterIndex, Types.DATE);
@@ -638,7 +647,7 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
       // convert the date from to be in local time zone to be in UTC
       String value = String.valueOf(x.getTime() +
                                     cal.getTimeZone().getOffset(x.getTime())
-                                   - ResultUtil.msDiffJulianToGregorian(x));
+                                    - ResultUtil.msDiffJulianToGregorian(x));
 
       ParameterBindingDTO binding = new ParameterBindingDTO(
           SnowflakeUtil.javaTypeToSFTypeString(Types.DATE), value);
@@ -651,7 +660,7 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
   throws SQLException
   {
     logger.debug("setTime(int parameterIndex, Time x, Calendar cal)");
-    raiseSQLExceptionIfConnectionIsClosed();
+    raiseSQLExceptionIfStatementIsClosed();
     setTime(parameterIndex, x);
   }
 
@@ -660,7 +669,7 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
   throws SQLException
   {
     logger.debug("setTimestamp(int parameterIndex, Timestamp x, Calendar cal)");
-    raiseSQLExceptionIfConnectionIsClosed();
+    raiseSQLExceptionIfStatementIsClosed();
 
     // convert the time from being in UTC to be in local time zone
     String value = null;
@@ -767,7 +776,7 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
     logger.debug(
         "setObject(int parameterIndex, Object x, int targetSqlType, int scaleOrLength)");
 
-    raiseSQLExceptionIfConnectionIsClosed();
+    raiseSQLExceptionIfStatementIsClosed();
     if (x == null)
     {
       setNull(parameterIndex, targetSqlType);
@@ -900,7 +909,7 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
   public int[] executeBatch() throws SQLException
   {
     logger.debug("executeBatch() throws SQLException");
-    raiseSQLExceptionIfConnectionIsClosed();
+    raiseSQLExceptionIfStatementIsClosed();
 
     if (this.statementMetaData.getStatementType().isGenerateResultSet())
     {
