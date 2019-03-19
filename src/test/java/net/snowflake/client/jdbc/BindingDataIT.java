@@ -11,6 +11,7 @@ import org.junit.experimental.theories.Theory;
 import org.junit.runner.RunWith;
 
 import java.sql.Connection;
+import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -48,6 +49,33 @@ public class BindingDataIT extends AbstractDriverIT
     preparedStatement = connection.prepareStatement(
         "select * from test_bind_short where c1 = ?");
     preparedStatement.setShort(1, shortValue);
+
+    ResultSet resultSet = preparedStatement.executeQuery();
+    assertThat(resultSet.next(), is(true));
+    assertThat(resultSet.getShort("C1"), is(shortValue));
+
+    resultSet.close();
+    preparedStatement.close();
+
+    statement.execute("drop table if exists test_bind_short");
+    connection.close();
+  }
+
+  @Theory
+  public void testBindShortViaSetObject(short shortValue) throws SQLException
+  {
+    Connection connection = getConnection();
+    Statement statement = connection.createStatement();
+    statement.execute("create or replace table test_bind_short(c1 number)");
+
+    PreparedStatement preparedStatement = connection.prepareStatement(
+        "insert into test_bind_short values (?)");
+    preparedStatement.setObject(1, new Short(shortValue));
+    preparedStatement.executeUpdate();
+
+    preparedStatement = connection.prepareStatement(
+        "select * from test_bind_short where c1 = ?");
+    preparedStatement.setObject(1, new Short(shortValue));
 
     ResultSet resultSet = preparedStatement.executeQuery();
     assertThat(resultSet.next(), is(true));
@@ -143,6 +171,10 @@ public class BindingDataIT extends AbstractDriverIT
     preparedStatement.setObject(1, null, Types.BIGINT);
     preparedStatement.addBatch();
 
+    preparedStatement.setInt(1, 3);
+    preparedStatement.setObject(1, null, Types.BIGINT, 0);
+    preparedStatement.addBatch();
+
     preparedStatement.executeBatch();
 
     ResultSet rs = statement.executeQuery("select * from test_bind_null " +
@@ -154,7 +186,7 @@ public class BindingDataIT extends AbstractDriverIT
       count ++;
     }
 
-    assertThat(count, is(3));
+    assertThat(count, is(4));
 
     rs.close();
     preparedStatement.close();
@@ -261,6 +293,127 @@ public class BindingDataIT extends AbstractDriverIT
     preparedStatement.close();
 
     statement.execute("drop table if exists test_bind_time");
+    connection.close();
+  }
+
+  @Theory
+  public void testBindTimeViaSetObjectCast(Time timeVal) throws SQLException
+  {
+    Connection connection = getConnection();
+    Statement statement = connection.createStatement();
+    statement.execute("create or replace table test_bind_time(c1 time)");
+
+    PreparedStatement preparedStatement = connection.prepareStatement(
+        "insert into test_bind_time values (?)");
+    preparedStatement.setObject(1, timeVal);
+    preparedStatement.executeUpdate();
+
+    preparedStatement = connection.prepareStatement(
+        "select * from test_bind_time where c1 = ?");
+    preparedStatement.setObject(1, timeVal);
+
+    ResultSet resultSet = preparedStatement.executeQuery();
+    assertThat(resultSet.next(), is(true));
+    assertThat(resultSet.getTime("C1"), is(timeVal));
+
+    resultSet.close();
+    preparedStatement.close();
+
+    statement.execute("drop table if exists test_bind_time");
+    connection.close();
+  }
+
+  @DataPoints
+  public static Date[] dateValues = {
+      Date.valueOf("2000-01-01"),
+      Date.valueOf("3000-01-01"),
+      Date.valueOf("1970-01-01"),
+      Date.valueOf("1969-01-01"),
+      Date.valueOf("1500-01-01"),
+      Date.valueOf("1400-01-01"),
+      Date.valueOf("1000-01-01")
+  };
+
+  @Theory
+  public void testBindDate(Date dateValue) throws SQLException
+  {
+    Connection connection = getConnection();
+    Statement statement = connection.createStatement();
+    statement.execute("create or replace table test_bind_date(c1 date)");
+
+    PreparedStatement preparedStatement = connection.prepareStatement(
+        "insert into test_bind_date values (?)");
+    preparedStatement.setDate(1, dateValue);
+    preparedStatement.executeUpdate();
+
+    preparedStatement = connection.prepareStatement(
+        "select * from test_bind_date where c1 = ?");
+    preparedStatement.setDate(1, dateValue);
+
+    ResultSet resultSet = preparedStatement.executeQuery();
+    assertThat(resultSet.next(), is(true));
+    assertThat(resultSet.getDate("C1"), is(dateValue));
+
+    resultSet.close();
+    preparedStatement.close();
+
+    statement.execute("drop table if exists test_bind_date");
+    connection.close();
+  }
+
+  @Theory
+  public void testBindDateWithCalendar(Date dateValue) throws SQLException
+  {
+    Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+
+    Connection connection = getConnection();
+    Statement statement = connection.createStatement();
+    statement.execute("create or replace table test_bind_date(c1 date)");
+
+    PreparedStatement preparedStatement = connection.prepareStatement(
+        "insert into test_bind_date values (?)");
+    preparedStatement.setDate(1, dateValue, calendar);
+    preparedStatement.executeUpdate();
+
+    preparedStatement = connection.prepareStatement(
+        "select * from test_bind_date where c1 = ?");
+    preparedStatement.setDate(1, dateValue, calendar);
+
+    ResultSet resultSet = preparedStatement.executeQuery();
+    assertThat(resultSet.next(), is(true));
+    assertThat(resultSet.getDate("C1", calendar), is(dateValue));
+
+    resultSet.close();
+    preparedStatement.close();
+
+    statement.execute("drop table if exists test_bind_date");
+    connection.close();
+  }
+
+  @Theory
+  public void testBindObjectWithScaleZero(int intValue) throws SQLException
+  {
+    Connection connection = getConnection();
+    Statement statement = connection.createStatement();
+    statement.execute("create or replace table test_bind_object_0(c1 number)");
+
+    PreparedStatement preparedStatement = connection.prepareStatement(
+        "insert into test_bind_object_0 values (?)");
+    preparedStatement.setObject(1, intValue, Types.NUMERIC, 0);
+    preparedStatement.executeUpdate();
+
+    preparedStatement = connection.prepareStatement(
+        "select * from test_bind_object_0 where c1 = ?");
+    preparedStatement.setObject(1, intValue, Types.NUMERIC, 0);
+
+    ResultSet resultSet = preparedStatement.executeQuery();
+    assertThat(resultSet.next(), is(true));
+    assertThat(resultSet.getInt("C1"), is(intValue));
+
+    resultSet.close();
+    preparedStatement.close();
+
+    statement.execute("drop table if exists test_bind_object_0");
     connection.close();
   }
 }
