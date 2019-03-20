@@ -11,6 +11,8 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public class StatementAlreadyClosedIT extends BaseJDBCTest
@@ -34,7 +36,9 @@ public class StatementAlreadyClosedIT extends BaseJDBCTest
     try (Connection connection = getConnection())
     {
       Statement statement = connection.createStatement();
+      assertFalse(statement.isClosed());
       statement.close();
+      assertTrue(statement.isClosed());
 
       expectAlreadyClosedException(() -> statement.execute("select 1", Statement.NO_GENERATED_KEYS));
       expectAlreadyClosedException(statement::executeBatch);

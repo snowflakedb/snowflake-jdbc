@@ -9,7 +9,6 @@ import net.snowflake.client.core.SFException;
 
 import java.io.InputStream;
 import java.io.Reader;
-import java.io.StringReader;
 import java.math.BigDecimal;
 import java.net.URL;
 import java.sql.Array;
@@ -37,7 +36,6 @@ import java.util.TimeZone;
 class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
 {
   private final SFBaseResultSet sfBaseResultSet;
-  private final Statement statement;
 
   /**
    * Constructor takes an inputstream from the API response that we get from
@@ -58,7 +56,6 @@ class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
   {
     super(statement);
     this.sfBaseResultSet = sfBaseResultSet;
-    this.statement = statement;
     try
     {
       this.resultSetMetaData =
@@ -80,6 +77,7 @@ class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
   @Override
   public boolean next() throws SQLException
   {
+    // exception
     try
     {
       return sfBaseResultSet.next();
@@ -111,21 +109,6 @@ class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
     try
     {
       return sfBaseResultSet.getString(columnIndex);
-    }
-    catch (SFException ex)
-    {
-      throw new SnowflakeSQLException(ex.getCause(),
-                                      ex.getSqlState(), ex.getVendorCode(), ex.getParams());
-    }
-  }
-
-  public Clob getClob(int columnIndex) throws SQLException
-  {
-    raiseSQLExceptionIfResultSetIsClosed();
-    try
-    {
-      String content = sfBaseResultSet.getString(columnIndex);
-      return new SnowflakeClob(content);
     }
     catch (SFException ex)
     {
@@ -356,12 +339,6 @@ class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
     return sfBaseResultSet.isFirst();
   }
 
-  public Statement getStatement() throws SQLException
-  {
-    raiseSQLExceptionIfResultSetIsClosed();
-    return this.statement;
-  }
-
   public boolean isClosed() throws SQLException
   {
     // no exception is raised.
@@ -387,21 +364,6 @@ class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
   {
     raiseSQLExceptionIfResultSetIsClosed();
     return sfBaseResultSet.isBeforeFirst();
-  }
-
-  @Override
-  public Reader getCharacterStream(int columnIndex) throws SQLException
-  {
-    raiseSQLExceptionIfResultSetIsClosed();
-    try
-    {
-      return new StringReader(sfBaseResultSet.getString(columnIndex));
-    }
-    catch (SFException ex)
-    {
-      throw new SnowflakeSQLException(ex.getCause(),
-                                      ex.getSqlState(), ex.getVendorCode(), ex.getParams());
-    }
   }
 
   /**
@@ -434,8 +396,7 @@ class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
     @Override
     public boolean next() throws SQLException
     {
-      raiseSQLExceptionIfResultSetIsClosed();
-      return false;
+      return false; // no exception
     }
 
     @Override

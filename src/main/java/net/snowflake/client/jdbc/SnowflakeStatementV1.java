@@ -33,7 +33,6 @@ class SnowflakeStatementV1 implements Statement
 {
 
   static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeStatementV1.class);
-  static ResultSet EMPTY_RESULT_SET = new SnowflakeResultSetV1.EmptyResultSet();
 
   private static final int NO_UPDATES = -1;
 
@@ -471,7 +470,7 @@ class SnowflakeStatementV1 implements Statement
   {
     logger.debug("public ResultSet getGeneratedKeys()");
     raiseSQLExceptionIfStatementIsClosed();
-    return EMPTY_RESULT_SET;
+    return new SnowflakeResultSetV1.EmptyResultSet();
   }
 
   @Override
