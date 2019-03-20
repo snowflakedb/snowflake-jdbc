@@ -1388,8 +1388,9 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
     String showDB = "show /* JDBC:DatabaseMetaData.getCatalogs() */ databases in account";
 
     Statement statement = connection.createStatement();
-    return new SnowflakeDatabaseMetaDataResultSet(GET_CATALOGS,
-                                                  statement.executeQuery(showDB), statement)
+    return new SnowflakeDatabaseMetaDataResultSet(
+        GET_CATALOGS,
+        statement.executeQuery(showDB), statement)
     {
       public boolean next() throws SQLException
       {

@@ -92,7 +92,6 @@ public class ResultSetAlreadyClosedIT extends BaseJDBCTest
     expectAlreadyClosedException(() -> resultSet.getObject(1));
     expectAlreadyClosedException(() -> resultSet.getCharacterStream(1));
     expectAlreadyClosedException(() -> resultSet.getClob(1));
-    expectAlreadyClosedException(() -> resultSet.getNClob(1));
     expectAlreadyClosedException(() -> resultSet.getDate(1, Calendar.getInstance()));
     expectAlreadyClosedException(() -> resultSet.getTime(1, Calendar.getInstance()));
     expectAlreadyClosedException(() -> resultSet.getTimestamp(1, Calendar.getInstance()));
@@ -114,7 +113,6 @@ public class ResultSetAlreadyClosedIT extends BaseJDBCTest
     expectAlreadyClosedException(() -> resultSet.getObject("col1"));
     expectAlreadyClosedException(() -> resultSet.getCharacterStream("col1"));
     expectAlreadyClosedException(() -> resultSet.getClob("col1"));
-    expectAlreadyClosedException(() -> resultSet.getNClob("col1"));
     expectAlreadyClosedException(() -> resultSet.getDate("col1", Calendar.getInstance()));
     expectAlreadyClosedException(() -> resultSet.getTime("col1", Calendar.getInstance()));
     expectAlreadyClosedException(() -> resultSet.getTimestamp("col1", Calendar.getInstance()));
