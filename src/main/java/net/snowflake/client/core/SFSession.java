@@ -19,7 +19,6 @@ import net.snowflake.client.log.JDK14Logger;
 import org.apache.http.HttpHeaders;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
-import org.apache.http.conn.routing.HttpRoutePlanner;
 
 import java.io.IOException;
 import java.security.PrivateKey;
@@ -632,6 +631,7 @@ public class SFSession
 
     SessionUtil.closeSession(loginInput);
     closeTelemetryClient();
+    clientInfo.clear();
     isClosed = true;
   }
 
@@ -795,19 +795,11 @@ public class SFSession
   {
     logger.debug(" public Properties getClientInfo()");
 
-    if (!this.clientInfo.isEmpty())
-    {
-      // defensive copy to avoid client from changing the properties
-      // directly w/o going through the API
-      Properties copy = new Properties();
-      copy.putAll(this.clientInfo);
-
-      return copy;
-    }
-    else
-    {
-      return this.clientInfo;
-    }
+    // defensive copy to avoid client from changing the properties
+    // directly w/o going through the API
+    Properties copy = new Properties();
+    copy.putAll(this.clientInfo);
+    return copy;
   }
 
   public String getClientInfo(String name)

@@ -16,6 +16,18 @@ import static org.junit.Assert.fail;
 
 public class ResultSetAlreadyClosedIT extends BaseJDBCTest
 {
+  private void expectAlreadyClosedException(MethodRaisesSQLException f)
+  {
+    try
+    {
+      f.run();
+      fail("must raise exception");
+    }
+    catch (SQLException ex)
+    {
+      assertResultSetClosedError(ex);
+    }
+  }
 
   @Test
   public void testClosedResultSet() throws Throwable
@@ -27,429 +39,62 @@ public class ResultSetAlreadyClosedIT extends BaseJDBCTest
       resultSet.close();
       resultSet.close(); // second close won't raise exception
       assertFalse(resultSet.next()); // next after close should return false.
-      try
-      {
-        resultSet.wasNull();
-        fail("must raise exception");
-      }
-      catch (SQLException ex)
-      {
-        assertResultSetClosedError(ex);
-      }
-      try
-      {
-        resultSet.getString(1);
-        fail("must raise exception");
-      }
-      catch (SQLException ex)
-      {
-        assertResultSetClosedError(ex);
-      }
-      try
-      {
-        resultSet.getBoolean(1);
-        fail("must raise exception");
-      }
-      catch (SQLException ex)
-      {
-        assertResultSetClosedError(ex);
-      }
-      try
-      {
-        resultSet.getByte(1);
-        fail("must raise exception");
-      }
-      catch (SQLException ex)
-      {
-        assertResultSetClosedError(ex);
-      }
-      try
-      {
-        resultSet.getShort(1);
-        fail("must raise exception");
-      }
-      catch (SQLException ex)
-      {
-        assertResultSetClosedError(ex);
-      }
-      try
-      {
-        resultSet.getInt(1);
-        fail("must raise exception");
-      }
-      catch (SQLException ex)
-      {
-        assertResultSetClosedError(ex);
-      }
-      try
-      {
-        resultSet.getLong(1);
-        fail("must raise exception");
-      }
-      catch (SQLException ex)
-      {
-        assertResultSetClosedError(ex);
-      }
-      try
-      {
-        resultSet.getFloat(1);
-        fail("must raise exception");
-      }
-      catch (SQLException ex)
-      {
-        assertResultSetClosedError(ex);
-      }
-      try
-      {
-        resultSet.getDouble(1);
-        fail("must raise exception");
-      }
-      catch (SQLException ex)
-      {
-        assertResultSetClosedError(ex);
-      }
-      try
-      {
-        resultSet.getBigDecimal(1);
-        fail("must raise exception");
-      }
-      catch (SQLException ex)
-      {
-        assertResultSetClosedError(ex);
-      }
-      try
-      {
-        resultSet.getBytes(1);
-        fail("must raise exception");
-      }
-      catch (SQLException ex)
-      {
-        assertResultSetClosedError(ex);
-      }
-      try
-      {
-        resultSet.getDate(1);
-        fail("must raise exception");
-      }
-      catch (SQLException ex)
-      {
-        assertResultSetClosedError(ex);
-      }
-      try
-      {
-        resultSet.getTime(1);
-        fail("must raise exception");
-      }
-      catch (SQLException ex)
-      {
-        assertResultSetClosedError(ex);
-      }
-      try
-      {
-        resultSet.getTimestamp(1);
-        fail("must raise exception");
-      }
-      catch (SQLException ex)
-      {
-        assertResultSetClosedError(ex);
-      }
-      try
-      {
-        resultSet.getString("col1");
-        fail("must raise exception");
-      }
-      catch (SQLException ex)
-      {
-        assertResultSetClosedError(ex);
-      }
-      try
-      {
-        resultSet.getBoolean("col1");
-        fail("must raise exception");
-      }
-      catch (SQLException ex)
-      {
-        assertResultSetClosedError(ex);
-      }
-      try
-      {
-        resultSet.getByte("col1");
-        fail("must raise exception");
-      }
-      catch (SQLException ex)
-      {
-        assertResultSetClosedError(ex);
-      }
-      try
-      {
-        resultSet.getShort("col1");
-        fail("must raise exception");
-      }
-      catch (SQLException ex)
-      {
-        assertResultSetClosedError(ex);
-      }
-      try
-      {
-        resultSet.getInt("col1");
-        fail("must raise exception");
-      }
-      catch (SQLException ex)
-      {
-        assertResultSetClosedError(ex);
-      }
-      try
-      {
-        resultSet.getLong("col1");
-        fail("must raise exception");
-      }
-      catch (SQLException ex)
-      {
-        assertResultSetClosedError(ex);
-      }
-      try
-      {
-        resultSet.getFloat("col1");
-        fail("must raise exception");
-      }
-      catch (SQLException ex)
-      {
-        assertResultSetClosedError(ex);
-      }
-      try
-      {
-        resultSet.getDouble("col1");
-        fail("must raise exception");
-      }
-      catch (SQLException ex)
-      {
-        assertResultSetClosedError(ex);
-      }
-      try
-      {
-        resultSet.getBigDecimal("col1");
-        fail("must raise exception");
-      }
-      catch (SQLException ex)
-      {
-        assertResultSetClosedError(ex);
-      }
-      try
-      {
-        resultSet.getBytes("col1");
-        fail("must raise exception");
-      }
-      catch (SQLException ex)
-      {
-        assertResultSetClosedError(ex);
-      }
-      try
-      {
-        resultSet.getDate("col1");
-        fail("must raise exception");
-      }
-      catch (SQLException ex)
-      {
-        assertResultSetClosedError(ex);
-      }
-      try
-      {
-        resultSet.getTime("col1");
-        fail("must raise exception");
-      }
-      catch (SQLException ex)
-      {
-        assertResultSetClosedError(ex);
-      }
-      try
-      {
-        resultSet.getTimestamp("col1");
-        fail("must raise exception");
-      }
-      catch (SQLException ex)
-      {
-        assertResultSetClosedError(ex);
-      }
-      try
-      {
-        resultSet.getWarnings();
-        fail("must raise exception");
-      }
-      catch (SQLException ex)
-      {
-        assertResultSetClosedError(ex);
-      }
-      try
-      {
-        resultSet.clearWarnings();
-        fail("must raise exception");
-      }
-      catch (SQLException ex)
-      {
-        assertResultSetClosedError(ex);
-      }
-      try
-      {
-        resultSet.getMetaData();
-        fail("must raise exception");
-      }
-      catch (SQLException ex)
-      {
-        assertResultSetClosedError(ex);
-      }
-      try
-      {
-        resultSet.getObject(1);
-        fail("must raise exception");
-      }
-      catch (SQLException ex)
-      {
-        assertResultSetClosedError(ex);
-      }
-      try
-      {
-        resultSet.getObject("col1");
-        fail("must raise exception");
-      }
-      catch (SQLException ex)
-      {
-        assertResultSetClosedError(ex);
-      }
-      try
-      {
-        resultSet.findColumn("col1");
-        fail("must raise exception");
-      }
-      catch (SQLException ex)
-      {
-        assertResultSetClosedError(ex);
-      }
-      try
-      {
-        resultSet.getCharacterStream(1);
-        fail("must raise exception");
-      }
-      catch (SQLException ex)
-      {
-        assertResultSetClosedError(ex);
-      }
-      try
-      {
-        resultSet.getCharacterStream("col1");
-        fail("must raise exception");
-      }
-      catch (SQLException ex)
-      {
-        assertResultSetClosedError(ex);
-      }
-      try
-      {
-        resultSet.isBeforeFirst();
-        fail("must raise exception");
-      }
-      catch (SQLException ex)
-      {
-        assertResultSetClosedError(ex);
-      }
-      try
-      {
-        resultSet.isAfterLast();
-        fail("must raise exception");
-      }
-      catch (SQLException ex)
-      {
-        assertResultSetClosedError(ex);
-      }
-      try
-      {
-        resultSet.isFirst();
-        fail("must raise exception");
-      }
-      catch (SQLException ex)
-      {
-        assertResultSetClosedError(ex);
-      }
-      try
-      {
-        resultSet.isLast();
-        fail("must raise exception");
-      }
-      catch (SQLException ex)
-      {
-        assertResultSetClosedError(ex);
-      }
-      try
-      {
-        resultSet.getRow();
-        fail("must raise exception");
-      }
-      catch (SQLException ex)
-      {
-        assertResultSetClosedError(ex);
-      }
-      try
-      {
-        resultSet.setFetchDirection(ResultSet.FETCH_FORWARD);
-        fail("must raise exception");
-      }
-      catch (SQLException ex)
-      {
-        assertResultSetClosedError(ex);
-      }
-      try
-      {
-        resultSet.getFetchDirection();
-        fail("must raise exception");
-      }
-      catch (SQLException ex)
-      {
-        assertResultSetClosedError(ex);
-      }
-      try
-      {
-        resultSet.setFetchSize(10);
-        fail("must raise exception");
-      }
-      catch (SQLException ex)
-      {
-        assertResultSetClosedError(ex);
-      }
-      try
-      {
-        resultSet.getFetchSize();
-        fail("must raise exception");
-      }
-      catch (SQLException ex)
-      {
-        assertResultSetClosedError(ex);
-      }
-      try
-      {
-        resultSet.getType();
-        fail("must raise exception");
-      }
-      catch (SQLException ex)
-      {
-        assertResultSetClosedError(ex);
-      }
-      try
-      {
-        resultSet.getConcurrency();
-        fail("must raise exception");
-      }
-      catch (SQLException ex)
-      {
-        assertResultSetClosedError(ex);
-      }
-      try
-      {
-        resultSet.getStatement();
-        fail("must raise exception");
-      }
-      catch (SQLException ex)
-      {
-        assertResultSetClosedError(ex);
-      }
+
+      expectAlreadyClosedException(resultSet::wasNull);
+      expectAlreadyClosedException(() -> resultSet.getString(1));
+      expectAlreadyClosedException(() -> resultSet.getBoolean(1));
+      expectAlreadyClosedException(() -> resultSet.getByte(1));
+      expectAlreadyClosedException(() -> resultSet.getShort(1));
+      expectAlreadyClosedException(() -> resultSet.getInt(1));
+      expectAlreadyClosedException(() -> resultSet.getLong(1));
+      expectAlreadyClosedException(() -> resultSet.getFloat(1));
+      expectAlreadyClosedException(() -> resultSet.getDouble(1));
+      expectAlreadyClosedException(() -> resultSet.getBigDecimal(1));
+      expectAlreadyClosedException(() -> resultSet.getBytes(1));
+      expectAlreadyClosedException(() -> resultSet.getString(1));
+      expectAlreadyClosedException(() -> resultSet.getDate(1));
+      expectAlreadyClosedException(() -> resultSet.getTime(1));
+      expectAlreadyClosedException(() -> resultSet.getTimestamp(1));
+      expectAlreadyClosedException(() -> resultSet.getObject(1));
+      expectAlreadyClosedException(() -> resultSet.getCharacterStream(1));
+
+      expectAlreadyClosedException(() -> resultSet.getString("col1"));
+      expectAlreadyClosedException(() -> resultSet.getBoolean("col1"));
+      expectAlreadyClosedException(() -> resultSet.getByte("col1"));
+      expectAlreadyClosedException(() -> resultSet.getShort("col1"));
+      expectAlreadyClosedException(() -> resultSet.getInt("col1"));
+      expectAlreadyClosedException(() -> resultSet.getLong("col1"));
+      expectAlreadyClosedException(() -> resultSet.getFloat("col1"));
+      expectAlreadyClosedException(() -> resultSet.getDouble("col1"));
+      expectAlreadyClosedException(() -> resultSet.getBigDecimal("col1"));
+      expectAlreadyClosedException(() -> resultSet.getBytes("col1"));
+      expectAlreadyClosedException(() -> resultSet.getString("col1"));
+      expectAlreadyClosedException(() -> resultSet.getDate("col1"));
+      expectAlreadyClosedException(() -> resultSet.getTime("col1"));
+      expectAlreadyClosedException(() -> resultSet.getTimestamp("col1"));
+      expectAlreadyClosedException(() -> resultSet.getObject("col1"));
+      expectAlreadyClosedException(() -> resultSet.getCharacterStream("col1"));
+
+      expectAlreadyClosedException(resultSet::getWarnings);
+      expectAlreadyClosedException(resultSet::clearWarnings);
+      expectAlreadyClosedException(resultSet::getMetaData);
+
+      expectAlreadyClosedException(() -> resultSet.findColumn("col1"));
+
+      expectAlreadyClosedException(resultSet::isBeforeFirst);
+      expectAlreadyClosedException(resultSet::isAfterLast);
+      expectAlreadyClosedException(resultSet::isFirst);
+      expectAlreadyClosedException(resultSet::isLast);
+      expectAlreadyClosedException(resultSet::getRow);
+
+      expectAlreadyClosedException(() -> resultSet.setFetchDirection(ResultSet.FETCH_FORWARD));
+      expectAlreadyClosedException(() -> resultSet.setFetchSize(10));
+      expectAlreadyClosedException(resultSet::getFetchDirection);
+      expectAlreadyClosedException(resultSet::getFetchSize);
+      expectAlreadyClosedException(resultSet::getType);
+      expectAlreadyClosedException(resultSet::getConcurrency);
+      expectAlreadyClosedException(resultSet::getStatement);
+
     }
   }
 

@@ -11,211 +11,59 @@ import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.sql.Savepoint;
 import java.util.HashMap;
-import java.util.Map;
 
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public class ConnectionFeatureNotSupportedIT extends BaseJDBCTest
 {
+  private void expectFeatureNotSupportedException(MethodRaisesSQLException f)
+  {
+    try
+    {
+      f.run();
+      fail("must raise exception");
+    }
+    catch (SQLException ex)
+    {
+      assertTrue(ex instanceof SQLFeatureNotSupportedException);
+    }
+  }
 
   @Test
   public void testFeatureNotSupportedException() throws Throwable
   {
     try (Connection connection = getConnection())
     {
-      try
-      {
-        connection.prepareCall("select 1");
-        fail("must raise SQLFeatureNotSupportedException");
-      }
-      catch (SQLFeatureNotSupportedException ex)
-      {
-        // nop
-      }
+      expectFeatureNotSupportedException(() -> connection.prepareCall(
+          "select 1"));
+      expectFeatureNotSupportedException(() -> connection.prepareCall(
+          "select 1",
+          ResultSet.TYPE_FORWARD_ONLY,
+          ResultSet.CONCUR_READ_ONLY));
+      expectFeatureNotSupportedException(() -> connection.prepareCall(
+          "select 1",
+          ResultSet.TYPE_FORWARD_ONLY,
+          ResultSet.CONCUR_READ_ONLY,
+          ResultSet.HOLD_CURSORS_OVER_COMMIT));
 
-      try
-      {
-        connection.prepareCall(
-            "select 1",
-            ResultSet.TYPE_FORWARD_ONLY,
-            ResultSet.CONCUR_READ_ONLY);
-        fail("must raise SQLFeatureNotSupportedException");
-      }
-      catch (SQLFeatureNotSupportedException ex)
-      {
-        // nop
-      }
-
-      try
-      {
-        connection.prepareCall(
-            "select 1",
-            ResultSet.TYPE_FORWARD_ONLY,
-            ResultSet.CONCUR_READ_ONLY,
-            ResultSet.HOLD_CURSORS_OVER_COMMIT);
-        fail("must raise SQLFeatureNotSupportedException");
-      }
-      catch (SQLFeatureNotSupportedException ex)
-      {
-        // nop
-      }
-
-      try
-      {
-        connection.rollback(new FakeSavepoint());
-        fail("must raise SQLFeatureNotSupportedException");
-      }
-      catch (SQLFeatureNotSupportedException ex)
-      {
-        // nop
-      }
-      try
-      {
-        connection.setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE);
-        fail("must raise SQLFeatureNotSupportedException");
-      }
-      catch (SQLFeatureNotSupportedException ex)
-      {
-        // nop
-      }
-      try
-      {
-        connection.setTransactionIsolation(Connection.TRANSACTION_REPEATABLE_READ);
-        fail("must raise SQLFeatureNotSupportedException");
-      }
-      catch (SQLFeatureNotSupportedException ex)
-      {
-        // nop
-      }
-      try
-      {
-        connection.prepareStatement("select 1", 0);
-        fail("must raise SQLFeatureNotSupportedException");
-      }
-      catch (SQLFeatureNotSupportedException ex)
-      {
-        // nop
-      }
-      try
-      {
-        int[] columnIndexes = new int[]{1, 2};
-        connection.prepareStatement("select 1", columnIndexes);
-        fail("must raise SQLFeatureNotSupportedException");
-      }
-      catch (SQLFeatureNotSupportedException ex)
-      {
-        // nop
-      }
-      try
-      {
-        String[] columnNames = new String[]{"c1", "c2"};
-        connection.prepareStatement("select 1", columnNames);
-        fail("must raise SQLFeatureNotSupportedException");
-      }
-      catch (SQLFeatureNotSupportedException ex)
-      {
-        // nop
-      }
-      try
-      {
-        connection.prepareStatement("select 1", ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_READ_ONLY);
-        fail("must raise SQLFeatureNotSupportedException");
-      }
-      catch (SQLFeatureNotSupportedException ex)
-      {
-        // nop
-      }
-      try
-      {
-        connection.createStatement(ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_READ_ONLY);
-        fail("must raise SQLFeatureNotSupportedException");
-      }
-      catch (SQLFeatureNotSupportedException ex)
-      {
-        // nop
-      }
-      try
-      {
-        Map<String, Class<?>> m = new HashMap<>();
-        connection.setTypeMap(m);
-        fail("must raise SQLFeatureNotSupportedException");
-      }
-      catch (SQLFeatureNotSupportedException ex)
-      {
-        // nop
-      }
-      try
-      {
-        connection.setSavepoint();
-      }
-      catch (SQLFeatureNotSupportedException ex)
-      {
-        // nop
-      }
-      try
-      {
-        connection.setSavepoint("fake");
-      }
-      catch (SQLFeatureNotSupportedException ex)
-      {
-        // nop
-      }
-      try
-      {
-        connection.releaseSavepoint(new FakeSavepoint());
-      }
-      catch (SQLFeatureNotSupportedException ex)
-      {
-        // nop
-      }
-      try
-      {
-        connection.createBlob();
-      }
-      catch (SQLFeatureNotSupportedException ex)
-      {
-        // nop
-      }
-      try
-      {
-        connection.createNClob();
-      }
-      catch (SQLFeatureNotSupportedException ex)
-      {
-        // nop
-      }
-      try
-      {
-        connection.createSQLXML();
-      }
-      catch (SQLFeatureNotSupportedException ex)
-      {
-        // nop
-      }
-      try
-      {
-        connection.createArrayOf("fakeType", new Object[]{});
-      }
-      catch (SQLFeatureNotSupportedException ex)
-      {
-        // nop
-      }
-      try
-      {
-        connection.createStruct("fakeType", new Object[]{});
-      }
-      catch (SQLFeatureNotSupportedException ex)
-      {
-        // nop
-      }
-      try
-      {
-        connection.createStruct("fakeType", new Object[]{});
-      }
-      catch (SQLFeatureNotSupportedException ex)
-      {
-        // nop
-      }
+      expectFeatureNotSupportedException(() -> connection.rollback(new FakeSavepoint()));
+      expectFeatureNotSupportedException(() -> connection.setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE));
+      expectFeatureNotSupportedException(() -> connection.setTransactionIsolation(Connection.TRANSACTION_REPEATABLE_READ));
+      expectFeatureNotSupportedException(() -> connection.prepareStatement("select 1", 0));
+      expectFeatureNotSupportedException(() -> connection.prepareStatement("select 1", new int[]{1, 2}));
+      expectFeatureNotSupportedException(() -> connection.prepareStatement("select 1", new String[]{"c1", "c2"}));
+      expectFeatureNotSupportedException(() -> connection.prepareStatement("select 1", ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_READ_ONLY));
+      expectFeatureNotSupportedException(() -> connection.createStatement(ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_READ_ONLY));
+      expectFeatureNotSupportedException(() -> connection.setTypeMap(new HashMap<>()));
+      expectFeatureNotSupportedException(connection::setSavepoint);
+      expectFeatureNotSupportedException(() -> connection.setSavepoint("fake"));
+      expectFeatureNotSupportedException(() -> connection.releaseSavepoint(new FakeSavepoint()));
+      expectFeatureNotSupportedException(connection::createBlob);
+      expectFeatureNotSupportedException(connection::createNClob);
+      expectFeatureNotSupportedException(connection::createSQLXML);
+      expectFeatureNotSupportedException(() -> connection.createArrayOf("fakeType", new Object[]{}));
+      expectFeatureNotSupportedException(() -> connection.createStruct("fakeType", new Object[]{}));
     }
   }
 

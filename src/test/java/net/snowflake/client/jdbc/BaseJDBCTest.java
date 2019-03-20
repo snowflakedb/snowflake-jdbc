@@ -7,7 +7,9 @@ import net.snowflake.client.AbstractDriverIT;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
+import java.sql.SQLClientInfoException;
 import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -17,7 +19,23 @@ import java.util.UUID;
 public class BaseJDBCTest extends AbstractDriverIT
 {
   // Test UUID unique per session
-  protected static final String TEST_UUID = UUID.randomUUID().toString();
+  static final String TEST_UUID = UUID.randomUUID().toString();
+
+  protected interface MethodRaisesSQLException
+  {
+    void run() throws SQLException;
+  }
+
+  protected interface MethodRaisesSQLClientInfoException
+  {
+    void run() throws SQLClientInfoException;
+  }
+
+  protected interface MethodRaisesFeatureNotSupportedException
+  {
+    void run() throws SQLFeatureNotSupportedException;
+  }
+
 
   int getSizeOfResultSet(ResultSet rs) throws SQLException
   {

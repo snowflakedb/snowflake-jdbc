@@ -7,91 +7,43 @@ import org.junit.Test;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.sql.Statement;
 
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public class StatementFeatureNotSupportedIT extends BaseJDBCTest
 {
+  private void expectFeatureNotSupportedException(MethodRaisesSQLException f)
+  {
+    try
+    {
+      f.run();
+      fail("must raise exception");
+    }
+    catch (SQLException ex)
+    {
+      assertTrue(ex instanceof SQLFeatureNotSupportedException);
+    }
+  }
+
   @Test
   public void testFeatureNotSupportedException() throws Throwable
   {
     try (Connection connection = getConnection())
     {
-      Statement statement = connection.createStatement();
-
-      try
+      try (Statement statement = connection.createStatement())
       {
-        statement.execute("select 1", new int[]{});
-        fail("must raise SQLFeatureNotSupportedException");
-      }
-      catch (SQLFeatureNotSupportedException ex)
-      {
-        // nop
-      }
-      try
-      {
-        statement.execute("select 1", new String[]{});
-        fail("must raise SQLFeatureNotSupportedException");
-      }
-      catch (SQLFeatureNotSupportedException ex)
-      {
-        // nop
-      }
-      try
-      {
-        statement.setCursorName("curname");
-        fail("must raise SQLFeatureNotSupportedException");
-      }
-      catch (SQLFeatureNotSupportedException ex)
-      {
-        // nop
-      }
-      try
-      {
-        statement.setFetchDirection(ResultSet.FETCH_REVERSE);
-        fail("must raise SQLFeatureNotSupportedException");
-      }
-      catch (SQLFeatureNotSupportedException ex)
-      {
-        // nop
-      }
-      try
-      {
-        statement.setFetchDirection(ResultSet.FETCH_UNKNOWN);
-        fail("must raise SQLFeatureNotSupportedException");
-      }
-      catch (SQLFeatureNotSupportedException ex)
-      {
-        // nop
-      }
-      try
-      {
-        statement.setMaxFieldSize(10);
-        fail("must raise SQLFeatureNotSupportedException");
-      }
-      catch (SQLFeatureNotSupportedException ex)
-      {
-        // nop
-      }
-      try
-      {
-        statement.closeOnCompletion();
-        fail("must raise SQLFeatureNotSupportedException");
-      }
-      catch (SQLFeatureNotSupportedException ex)
-      {
-        // nop
-      }
-      try
-      {
-        statement.isCloseOnCompletion();
-        fail("must raise SQLFeatureNotSupportedException");
-      }
-      catch (SQLFeatureNotSupportedException ex)
-      {
-        // nop
+        expectFeatureNotSupportedException(() -> statement.execute("select 1", new int[]{}));
+        expectFeatureNotSupportedException(() -> statement.execute("select 1", new String[]{}));
+        expectFeatureNotSupportedException(() -> statement.setCursorName("curname"));
+        expectFeatureNotSupportedException(() -> statement.setFetchDirection(ResultSet.FETCH_REVERSE));
+        expectFeatureNotSupportedException(() -> statement.setFetchDirection(ResultSet.FETCH_UNKNOWN));
+        expectFeatureNotSupportedException(() -> statement.setMaxFieldSize(10));
+        expectFeatureNotSupportedException(statement::closeOnCompletion);
+        expectFeatureNotSupportedException(statement::isCloseOnCompletion);
       }
     }
   }
