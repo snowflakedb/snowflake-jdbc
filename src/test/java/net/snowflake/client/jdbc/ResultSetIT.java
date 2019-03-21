@@ -518,10 +518,10 @@ public class ResultSetIT extends BaseJDBCTest
     assertEquals("NUMBER", resultSetMetaData.getColumnTypeName(1));
     assertEquals(20, resultSetMetaData.getPrecision(1));
     assertEquals(5, resultSetMetaData.getScale(1));
-    assertTrue(!resultSetMetaData.isAutoIncrement(1));
-    assertTrue(!resultSetMetaData.isCaseSensitive(1));
-    assertTrue(!resultSetMetaData.isCurrency(1));
-    assertTrue(!resultSetMetaData.isDefinitelyWritable(1));
+    assertFalse(resultSetMetaData.isAutoIncrement(1));
+    assertFalse(resultSetMetaData.isCaseSensitive(1));
+    assertFalse(resultSetMetaData.isCurrency(1));
+    assertFalse(resultSetMetaData.isDefinitelyWritable(1));
     assertEquals(resultSetMetaData.columnNullable, resultSetMetaData.isNullable(1));
     assertTrue(resultSetMetaData.isReadOnly(1));
     assertTrue(resultSetMetaData.isSearchable(1));

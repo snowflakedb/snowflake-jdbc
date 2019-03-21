@@ -765,7 +765,6 @@ class SnowflakeStatementV1 implements Statement
   public void closeOnCompletion() throws SQLException
   {
     logger.debug("public void closeOnCompletion()");
-
     throw new SQLFeatureNotSupportedException();
   }
 
@@ -773,7 +772,6 @@ class SnowflakeStatementV1 implements Statement
   public boolean isCloseOnCompletion() throws SQLException
   {
     logger.debug("public boolean isCloseOnCompletion()");
-
     throw new SQLFeatureNotSupportedException();
   }
 

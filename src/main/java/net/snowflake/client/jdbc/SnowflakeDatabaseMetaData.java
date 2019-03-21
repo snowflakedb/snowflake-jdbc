@@ -21,9 +21,11 @@ import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.sql.Statement;
 import java.sql.Types;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -54,48 +56,51 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   static final private String JDBCVersion = "1.0";
   // Open Group CLI Functions
   // LOG10 is not supported
-  static final private String NumericFunctionsSupported = "ABS,ACOS,ASIN,"
-                                                          +
-                                                          "CEILING,COS,COT,DEGREES,EXP,FLOOR,LOG,MOD,PI,POWER,RADIANS,RAND,"
-                                                          + "ROUND,SIGN,SQRT,TAN,TRUNCATE";
+  static final private String NumericFunctionsSupported =
+      "ABS,ACOS,ASIN,"
+      + "CEILING,COS,COT,DEGREES,EXP,FLOOR,LOG,MOD,PI,POWER,RADIANS,RAND,"
+      + "ROUND,SIGN,SQRT,TAN,TRUNCATE";
   // DIFFERENCE and SOUNDEX are not supported
-  static final private String StringFunctionsSupported = "ASCII,CHAR,"
-                                                         +
-                                                         "CONCAT,INSERT,LCASE,LEFT,LENGTH,LOCATE,LTRIM,REPEAT,REPLACE,"
-                                                         + "RIGHT,RTRIM,SPACE,SUBSTRING,UCASE";
-  static final private String DateAndTimeFunctionsSupported = "CURDATE," +
-                                                              "CURTIME,DAYNAME,DAYOFMONTH,DAYOFWEEK,DAYOFYEAR,HOUR,MINUTE,MONTH," +
-                                                              "MONTHNAME,NOW,QUARTER,SECOND,TIMESTAMPADD,TIMESTAMPDIFF,WEEK,YEAR";
-  static final private String SystemFunctionsSupported = "DATABASE,IFNULL,USER";
+  static final private String StringFunctionsSupported =
+      "ASCII,CHAR,"
+      + "CONCAT,INSERT,LCASE,LEFT,LENGTH,LOCATE,LTRIM,REPEAT,REPLACE,"
+      + "RIGHT,RTRIM,SPACE,SUBSTRING,UCASE";
+  static final private String DateAndTimeFunctionsSupported =
+      "CURDATE," +
+      "CURTIME,DAYNAME,DAYOFMONTH,DAYOFWEEK,DAYOFYEAR,HOUR,MINUTE,MONTH," +
+      "MONTHNAME,NOW,QUARTER,SECOND,TIMESTAMPADD,TIMESTAMPDIFF,WEEK,YEAR";
+  static final private String SystemFunctionsSupported =
+      "DATABASE,IFNULL,USER";
 
   // These are keywords not in SQL2003 standard
-  static final private String notSQL2003Keywords = "ACCOUNT,DATABASE,SCHEMA,VIEW,ISSUE,DATE_PART,EXTRACT," +
-                                                   "POSITION,TRY_CAST,BIT,DATETIME,NUMBERC,OBJECT,BYTEINT,STRING,TEXT," +
-                                                   "TIMESTAMPLTZ,TIMESTAMPNTZ,TIMESTAMPTZ,TIMESTAMP_LTZ,TIMESTAMP_NTZ,TIMESTAMP_TZ,TINYINT," +
-                                                   "VARBINARY,VARIANT,ACCOUNTS,ACTION,ACTIVATE,ASC,AUTOINCREMENT,BEFORE," +
-                                                   "BUILTIN,BYTE,CACHE,CHANGE,CLEAREPCACHE,CLONE,CLUSTER,CLUSTERS,COLUMNS,COMMENT," +
-                                                   "COMPRESSION,CONSTRAINTS,COPY,CP,CREDENTIALS,D,DATA,DATABASES,DEFERRABLE," +
-                                                   "DEFERRED,DELIMITED,DESC,DIRECTORY,DISABLE,DUAL,ENABLE,ENFORCED," +
-                                                   "EXCLUSIVE,EXPLAIN,EXPORTED,FAIL,FIELDS,FILE,FILES,FIRST,FN,FORCE,FORMAT," +
-                                                   "FORMATS,FUNCTIONS,GRANTS,GSINSTANCE,GSINSTANCES,HELP,HIBERNATE,HINTS," +
-                                                   "HISTORY,IDENTIFIED,IMMUTABLE,IMPORTED,INCIDENT,INCIDENTS,INFO,INITIALLY," +
-                                                   "ISSUES,KEEP,KEY,KEYS,LAST,LIMIT,LIST,LOAD,LOCATION,LOCK,LOCKS,LS,MANAGE,MAP,MATCHED," +
-                                                   "MATERIALIZED,MODIFY,MONITOR,MONITORS,NAME,NETWORK,NEXT,NORELY,NOTIFY,NOVALIDATE,NULLS,OBJECTS," +
-                                                   "OFFSET,OJ,OPERATE,OPERATION,OPTION,OWNERSHIP,PARAMETERS,PARTIAL," +
-                                                   "PERCENT,PLAN,PLUS,POLICIES,POLICY,POOL,PRESERVE,PRIVILEGES,PUBLIC,PURGE,PUT,QUIESCE," +
-                                                   "READ,RECLUSTER,REFERENCE,RELY,REMOVE,RENAME,REPLACE,REPLACE_FAIL,RESOURCE," +
-                                                   "RESTART,RESTORE,RESTRICT,RESUME,REWRITE,RM,ROLE,ROLES,RULE,SAMPLE,SCHEMAS,SEMI," +
-                                                   "SEQUENCE,SEQUENCES,SERVER,SERVERS,SESSION,SETLOGLEVEL,SETS,SFC,SHARE,SHARED,SHARES,SHOW,SHUTDOWN,SIMPLE,SORT," +
-                                                   "STAGE,STAGES,STATEMENT,STATISTICS,STOP,STORED,STRICT,STRUCT,SUSPEND,SUSPEND_IMMEDIATE,SWAP,SWITCH,T," +
-                                                   "TABLES,TEMP,TEMPORARY,TRANSACTION,TRANSACTIONS,TRANSIENT,TRIGGERS,TRUNCATE,TS,TYPE,UNDROP,UNLOCK,UNSET," +
-                                                   "UPGRADE,USAGE,USE,USERS,UTC,UTCTIMESTAMP,VALIDATE,VARIABLES,VERSION,VIEWS,VOLATILE,VOLUME," +
-                                                   "VOLUMES,WAREHOUSE,WAREHOUSES,WARN,WORK,WRITE,ZONE,INCREMENT,MINUS,REGEXP,RLIKE";
+  static final private String notSQL2003Keywords =
+      "ACCOUNT,DATABASE,SCHEMA,VIEW,ISSUE,DATE_PART,EXTRACT," +
+      "POSITION,TRY_CAST,BIT,DATETIME,NUMBERC,OBJECT,BYTEINT,STRING,TEXT," +
+      "TIMESTAMPLTZ,TIMESTAMPNTZ,TIMESTAMPTZ,TIMESTAMP_LTZ,TIMESTAMP_NTZ,TIMESTAMP_TZ,TINYINT," +
+      "VARBINARY,VARIANT,ACCOUNTS,ACTION,ACTIVATE,ASC,AUTOINCREMENT,BEFORE," +
+      "BUILTIN,BYTE,CACHE,CHANGE,CLEAREPCACHE,CLONE,CLUSTER,CLUSTERS,COLUMNS,COMMENT," +
+      "COMPRESSION,CONSTRAINTS,COPY,CP,CREDENTIALS,D,DATA,DATABASES,DEFERRABLE," +
+      "DEFERRED,DELIMITED,DESC,DIRECTORY,DISABLE,DUAL,ENABLE,ENFORCED," +
+      "EXCLUSIVE,EXPLAIN,EXPORTED,FAIL,FIELDS,FILE,FILES,FIRST,FN,FORCE,FORMAT," +
+      "FORMATS,FUNCTIONS,GRANTS,GSINSTANCE,GSINSTANCES,HELP,HIBERNATE,HINTS," +
+      "HISTORY,IDENTIFIED,IMMUTABLE,IMPORTED,INCIDENT,INCIDENTS,INFO,INITIALLY," +
+      "ISSUES,KEEP,KEY,KEYS,LAST,LIMIT,LIST,LOAD,LOCATION,LOCK,LOCKS,LS,MANAGE,MAP,MATCHED," +
+      "MATERIALIZED,MODIFY,MONITOR,MONITORS,NAME,NETWORK,NEXT,NORELY,NOTIFY,NOVALIDATE,NULLS,OBJECTS," +
+      "OFFSET,OJ,OPERATE,OPERATION,OPTION,OWNERSHIP,PARAMETERS,PARTIAL," +
+      "PERCENT,PLAN,PLUS,POLICIES,POLICY,POOL,PRESERVE,PRIVILEGES,PUBLIC,PURGE,PUT,QUIESCE," +
+      "READ,RECLUSTER,REFERENCE,RELY,REMOVE,RENAME,REPLACE,REPLACE_FAIL,RESOURCE," +
+      "RESTART,RESTORE,RESTRICT,RESUME,REWRITE,RM,ROLE,ROLES,RULE,SAMPLE,SCHEMAS,SEMI," +
+      "SEQUENCE,SEQUENCES,SERVER,SERVERS,SESSION,SETLOGLEVEL,SETS,SFC,SHARE,SHARED,SHARES,SHOW,SHUTDOWN,SIMPLE,SORT," +
+      "STAGE,STAGES,STATEMENT,STATISTICS,STOP,STORED,STRICT,STRUCT,SUSPEND,SUSPEND_IMMEDIATE,SWAP,SWITCH,T," +
+      "TABLES,TEMP,TEMPORARY,TRANSACTION,TRANSACTIONS,TRANSIENT,TRIGGERS,TRUNCATE,TS,TYPE,UNDROP,UNLOCK,UNSET," +
+      "UPGRADE,USAGE,USE,USERS,UTC,UTCTIMESTAMP,VALIDATE,VARIABLES,VERSION,VIEWS,VOLATILE,VOLUME," +
+      "VOLUMES,WAREHOUSE,WAREHOUSES,WARN,WORK,WRITE,ZONE,INCREMENT,MINUS,REGEXP,RLIKE";
 
-  private Connection connection;
+  private final Connection connection;
 
-  private SFSession session;
+  private final SFSession session;
 
-  private boolean metadataRequestUseConnectionCtx;
+  private final boolean metadataRequestUseConnectionCtx;
 
   SnowflakeDatabaseMetaData(Connection connection) throws SQLException
   {
@@ -108,7 +113,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
 
   private void raiseSQLExceptionIfConnectionIsClosed() throws SQLException
   {
-    if (connection != null && connection.isClosed())
+    if (connection.isClosed())
     {
       throw new SnowflakeSQLException(ErrorCode.CONNECTION_CLOSED);
     }
@@ -153,6 +158,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   {
     logger.debug("public boolean isReadOnly()");
     raiseSQLExceptionIfConnectionIsClosed();
+    // no read only mode is supported.
     return false;
   }
 
@@ -201,8 +207,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   {
     logger.debug("public String getDatabaseProductVersion()");
     raiseSQLExceptionIfConnectionIsClosed();
-    return connection.unwrap(SnowflakeConnectionV1.class).getDatabaseVersion() +
-           " (" + getDriverVersion() + ")";
+    return connection.unwrap(SnowflakeConnectionV1.class).getDatabaseVersion();
   }
 
   @Override
@@ -218,17 +223,9 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   {
     logger.debug("public String getDriverVersion()");
     raiseSQLExceptionIfConnectionIsClosed();
-
-    StringBuilder versionBuilder = new StringBuilder();
-
-    versionBuilder.append(("driver change version: "));
-    versionBuilder.append(SnowflakeDriver.majorVersion);
-    versionBuilder.append(".");
-    versionBuilder.append(SnowflakeDriver.minorVersion);
-    versionBuilder.append(".");
-    versionBuilder.append(SnowflakeDriver.changeVersion);
-
-    return versionBuilder.toString();
+    return SnowflakeDriver.majorVersion + "." +
+           SnowflakeDriver.minorVersion + "." +
+           SnowflakeDriver.patchVersion;
   }
 
   @Override
@@ -901,7 +898,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   {
     logger.debug("public int getMaxBinaryLiteralLength()");
     raiseSQLExceptionIfConnectionIsClosed();
-    return 0;
+    return 8388608;
   }
 
   @Override
@@ -1212,7 +1209,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
     }
     resultSet.close();
 
-    final HashSet<String> inputValidTableTypes = new HashSet<>();
+    List<String> inputValidTableTypes = new ArrayList<>();
     // then filter on the input table types;
     if (types != null)
     {
@@ -1226,7 +1223,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
     }
     else
     {
-      inputValidTableTypes.addAll(supportedTableTypes);
+      inputValidTableTypes = new ArrayList<String>(supportedTableTypes);
     }
 
     // if the input table types don't have types supported by Snowflake,
@@ -1251,11 +1248,11 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
     final Pattern compiledSchemaPattern = Wildcard.toRegexPattern(schemaPattern, true);
     final Pattern compiledTablePattern = Wildcard.toRegexPattern(tableNamePattern, true);
 
-    String showCommand;
-    final boolean viewOnly = inputValidTableTypes.size() == 1 &&
-                             inputValidTableTypes.contains(TableType.VIEW.name());
-    final boolean tableOnly =
-        !inputValidTableTypes.contains(TableType.VIEW.name());
+    String showCommand = null;
+    final boolean viewOnly = inputValidTableTypes.size() == 1
+                             && "VIEW".equalsIgnoreCase(inputValidTableTypes.get(0));
+    final boolean tableOnly = inputValidTableTypes.size() == 1
+                              && "TABLE".equalsIgnoreCase(inputValidTableTypes.get(0));
     if (viewOnly)
     {
       showCommand = "show /* JDBC:DatabaseMetaData.getTables() */ views";
@@ -1311,11 +1308,13 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
 
     resultSet = executeAndReturnEmptyResultIfNotFound(statement, showCommand, GET_TABLES);
 
-    return new SnowflakeDatabaseMetaDataResultSet(GET_TABLES, resultSet, statement)
+    return new SnowflakeDatabaseMetaDataQueryResultSet(GET_TABLES, resultSet, statement)
     {
+      @Override
       public boolean next() throws SQLException
       {
         logger.debug("public boolean next()");
+        increamentRow();
 
         // iterate throw the show table result until we find an entry
         // that matches the table name
@@ -1327,14 +1326,12 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
           String schemaName;
           String kind;
           String comment;
-          boolean isKindIncluded;
 
           if (viewOnly)
           {
             dbName = showObjectResultSet.getString(4);
             schemaName = showObjectResultSet.getString(5);
             kind = "VIEW";
-            isKindIncluded = true;
             comment = showObjectResultSet.getString(7);
           }
           else
@@ -1343,11 +1340,10 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
             schemaName = showObjectResultSet.getString(4);
             kind = showObjectResultSet.getString(5);
             comment = showObjectResultSet.getString(6);
-            isKindIncluded = inputValidTableTypes.contains(kind);
           }
 
-          if (isKindIncluded && (compiledTablePattern == null
-                                 || compiledTablePattern.matcher(tableName).matches())
+          if ((compiledTablePattern == null
+               || compiledTablePattern.matcher(tableName).matches())
               && (compiledSchemaPattern == null
                   || compiledSchemaPattern.matcher(schemaName).matches()))
           {
@@ -1388,13 +1384,15 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
     String showDB = "show /* JDBC:DatabaseMetaData.getCatalogs() */ databases in account";
 
     Statement statement = connection.createStatement();
-    return new SnowflakeDatabaseMetaDataResultSet(
+    return new SnowflakeDatabaseMetaDataQueryResultSet(
         GET_CATALOGS,
         statement.executeQuery(showDB), statement)
     {
+      @Override
       public boolean next() throws SQLException
       {
         logger.debug("public boolean next()");
+        increamentRow();
 
         // iterate throw the show databases result
         if (showObjectResultSet.next())
@@ -1410,20 +1408,6 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
     };
   }
 
-  private enum TableType
-  {
-    TABLE,
-    TEMPORARY,
-    TRANSIENT,
-    VIEW
-  }
-
-  /**
-   * Snowflake supports the following table types:
-   * table, temporary, transient, and view
-   *
-   * @see <a href="https://docs.snowflake.net/manuals/user-guide/tables-temp-transient.html#comparison-of-table-types">table types</a>
-   */
   @Override
   public ResultSet getTableTypes() throws SQLException
   {
@@ -1432,6 +1416,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
 
     Statement statement = connection.createStatement();
 
+    // TODO: We should really get the list of table types from GS
     return new SnowflakeDatabaseMetaDataResultSet(
         Collections.singletonList("TABLE_TYPE"),
         Collections.singletonList("TEXT"),
@@ -1439,16 +1424,10 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
         new Object[][]
             {
                 {
-                    TableType.TABLE.name()
+                    "TABLE"
                 },
                 {
-                    TableType.TEMPORARY.name()
-                },
-                {
-                    TableType.TRANSIENT.name()
-                },
-                {
-                    TableType.VIEW.name()
+                    "VIEW"
                 }
             }, statement);
   }
@@ -1547,7 +1526,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
     ResultSet resultSet = executeAndReturnEmptyResultIfNotFound(statement, showColumnCommand,
                                                                 extendedSet ? GET_COLUMNS_EXTENDED_SET : GET_COLUMNS);
 
-    return new SnowflakeDatabaseMetaDataResultSet(
+    return new SnowflakeDatabaseMetaDataQueryResultSet(
         extendedSet ? GET_COLUMNS_EXTENDED_SET : GET_COLUMNS,
         resultSet, statement)
     {
@@ -1558,6 +1537,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
       public boolean next() throws SQLException
       {
         logger.debug("public boolean next()");
+        increamentRow();
 
         // iterate throw the show table result until we find an entry
         // that matches the table name
@@ -1843,12 +1823,13 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
 
     ResultSet resultSet = executeAndReturnEmptyResultIfNotFound(statement, showPKCommand, GET_PRIMARY_KEYS);
     // Return empty result set since we don't have primary keys yet
-    return new SnowflakeDatabaseMetaDataResultSet(GET_PRIMARY_KEYS, resultSet, statement)
+    return new SnowflakeDatabaseMetaDataQueryResultSet(GET_PRIMARY_KEYS, resultSet, statement)
     {
       @Override
       public boolean next() throws SQLException
       {
         logger.debug("public boolean next()");
+        increamentRow();
 
         while (showObjectResultSet.next())
         {
@@ -1958,12 +1939,13 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
 
     ResultSet resultSet = executeAndReturnEmptyResultIfNotFound(statement, command, GET_FOREIGN_KEYS);
 
-    return new SnowflakeDatabaseMetaDataResultSet(GET_FOREIGN_KEYS, resultSet, statement)
+    return new SnowflakeDatabaseMetaDataQueryResultSet(GET_FOREIGN_KEYS, resultSet, statement)
     {
       @Override
       public boolean next() throws SQLException
       {
         logger.debug("public boolean next()");
+        increamentRow();
 
         while (showObjectResultSet.next())
         {
@@ -2466,15 +2448,14 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
     logger.debug(
         "public boolean supportsResultSetHoldability(int holdability)");
     raiseSQLExceptionIfConnectionIsClosed();
-    return false;
+    return holdability == ResultSet.CLOSE_CURSORS_AT_COMMIT;
   }
 
   @Override
   public int getResultSetHoldability() throws SQLException
   {
     logger.debug("public int getResultSetHoldability()");
-
-    throw new SQLFeatureNotSupportedException();
+    return ResultSet.CLOSE_CURSORS_AT_COMMIT;
   }
 
   @Override
@@ -2592,11 +2573,12 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
                  showSchemas);
 
     ResultSet resultSet = executeAndReturnEmptyResultIfNotFound(statement, showSchemas, GET_SCHEMAS);
-    return new SnowflakeDatabaseMetaDataResultSet(GET_SCHEMAS, resultSet, statement)
+    return new SnowflakeDatabaseMetaDataQueryResultSet(GET_SCHEMAS, resultSet, statement)
     {
       public boolean next() throws SQLException
       {
         logger.debug("public boolean next()");
+        increamentRow();
 
         // iterate throw the show table result until we find an entry
         // that matches the table name
@@ -2710,11 +2692,12 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
 
     ResultSet resultSet = executeAndReturnEmptyResultIfNotFound(statement, showFunctionCommand, GET_FUNCTIONS);
 
-    return new SnowflakeDatabaseMetaDataResultSet(GET_FUNCTIONS, resultSet, statement)
+    return new SnowflakeDatabaseMetaDataQueryResultSet(GET_FUNCTIONS, resultSet, statement)
     {
       public boolean next() throws SQLException
       {
         logger.debug("public boolean next()");
+        increamentRow();
 
         // iterate throw the show table result until we find an entry
         // that matches the table name
@@ -2837,5 +2820,4 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
     }
     return resultSet;
   }
-
 }

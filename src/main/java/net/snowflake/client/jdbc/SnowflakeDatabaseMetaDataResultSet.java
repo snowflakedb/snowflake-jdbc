@@ -27,9 +27,9 @@ class SnowflakeDatabaseMetaDataResultSet extends SnowflakeBaseResultSet
 {
   ResultSet showObjectResultSet;
   Object[] nextRow;
-  protected Object[][] rows;
   private boolean wasNull = false;
-  private int row;
+  protected Object[][] rows;
+  protected int row = -1;
 
   static final SFLogger logger = SFLoggerFactory.getLogger(
       SnowflakeDatabaseMetaDataResultSet.class);
@@ -44,7 +44,7 @@ class SnowflakeDatabaseMetaDataResultSet extends SnowflakeBaseResultSet
    * @param statement           show command statement
    * @throws SQLException if failed to construct snowflake database metadata result set
    */
-  private SnowflakeDatabaseMetaDataResultSet(
+  SnowflakeDatabaseMetaDataResultSet(
       final List<String> columnNames,
       final List<String> columnTypeNames,
       final List<Integer> columnTypes,
@@ -66,7 +66,6 @@ class SnowflakeDatabaseMetaDataResultSet extends SnowflakeBaseResultSet
         session);
 
     this.nextRow = new Object[columnNames.size()];
-    this.row = 0;
   }
 
   /**
@@ -102,15 +101,6 @@ class SnowflakeDatabaseMetaDataResultSet extends SnowflakeBaseResultSet
     this.nextRow = new Object[columnNames.size()];
   }
 
-  SnowflakeDatabaseMetaDataResultSet(
-      DBMetadataResultSetMetadata metadataType,
-      ResultSet resultSet,
-      Statement statement) throws SQLException
-  {
-    this(metadataType.getColumnNames(), metadataType.getColumnTypeNames(),
-         metadataType.getColumnTypes(), resultSet, statement);
-  }
-
   private SnowflakeDatabaseMetaDataResultSet(
       DBMetadataResultSetMetadata metadataType,
       Object[][] rows,
@@ -131,14 +121,25 @@ class SnowflakeDatabaseMetaDataResultSet extends SnowflakeBaseResultSet
   public boolean next() throws SQLException
   {
     logger.debug("public boolean next()");
+    increamentRow();
+
     // no exception is raised even after the result set is closed.
     if (row < rows.length)
     {
-      nextRow = rows[row++];
+      nextRow = rows[row];
       return true;
     }
 
     return false;
+  }
+
+  /**
+   * Increments result set row pointer. Mainly used to check the result set
+   * isBeforeFirst or isFirst.
+   */
+  protected void increamentRow()
+  {
+    ++row;
   }
 
   @Override
@@ -147,7 +148,7 @@ class SnowflakeDatabaseMetaDataResultSet extends SnowflakeBaseResultSet
     // no exception
     try
     {
-      getStatement().close();
+      getStatement().close(); // should close both result set and statement.
     }
     catch (SQLException ex)
     {
@@ -160,7 +161,7 @@ class SnowflakeDatabaseMetaDataResultSet extends SnowflakeBaseResultSet
   {
     logger.debug("public boolean isFirst()");
     raiseSQLExceptionIfResultSetIsClosed();
-    return row == 1;
+    return row == 0;
   }
 
   @Override
@@ -168,7 +169,7 @@ class SnowflakeDatabaseMetaDataResultSet extends SnowflakeBaseResultSet
   {
     logger.debug("public boolean isBeforeFirst()");
     raiseSQLExceptionIfResultSetIsClosed();
-    return row == 0;
+    return row == -1;
   }
 
   @Override
@@ -268,7 +269,7 @@ class SnowflakeDatabaseMetaDataResultSet extends SnowflakeBaseResultSet
   }
 
 
-  protected Object getObjectInternal(int columnIndex) throws SQLException
+  Object getObjectInternal(int columnIndex) throws SQLException
   {
     logger.debug(
         "public Object getObjectInternal(int columnIndex)");
