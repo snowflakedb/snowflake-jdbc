@@ -5,6 +5,8 @@
 package net.snowflake.client.jdbc;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SqlState;
 
 import java.lang.ref.SoftReference;
@@ -22,6 +24,8 @@ import java.util.concurrent.locks.ReentrantLock;
 public class SnowflakeResultChunk
 {
   private static final int NULL_VALUE = Integer.MIN_VALUE;
+  private static final SFLogger logger =
+      SFLoggerFactory.getLogger(SnowflakeResultChunk.class);
 
   public enum DownloadState
   {
@@ -488,6 +492,7 @@ public class SnowflakeResultChunk
 
     private void allocateArrays()
     {
+      logger.debug("allocating {} B for ResultChunk", computeNeededChunkMemory());
       while (data.size() < blockCount)
       {
         data.add(new char[1 << blockLengthBits]);
@@ -497,6 +502,7 @@ public class SnowflakeResultChunk
         offsets.add(new int[1 << metaBlockLengthBits]);
         lengths.add(new int[1 << metaBlockLengthBits]);
       }
+      logger.debug("allocated {} B for ResultChunk", computeNeededChunkMemory());
     }
 
     // blocks for storing the string data

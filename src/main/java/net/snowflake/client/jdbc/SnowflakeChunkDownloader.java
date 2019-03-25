@@ -27,7 +27,9 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.io.SequenceInputStream;
+import java.io.StringWriter;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -269,8 +271,8 @@ public class SnowflakeChunkDownloader
               chunkNode.path("uncompressedSize").asInt(),
               efficientChunkStorage);
 
-      logger.debug("add chunk, url={} rowCount={}",
-                   chunk.getUrl(), chunk.getRowCount());
+      logger.debug("add chunk, url={} rowCount={} uncompressedSize={} neededChunkMemory={}",
+                   chunk.getUrl(), chunk.getRowCount(), chunk.getUncompressedSize(), chunk.computeNeededChunkMemory());
 
       chunks.add(chunk);
     }
@@ -295,13 +297,6 @@ public class SnowflakeChunkDownloader
    */
   private void startNextDownloaders() throws SnowflakeSQLException
   {
-    // start downloading chunks up to number of slots
-    if (logger.isDebugEnabled())
-    {
-      logger.debug("Submit {} chunks to be pre-fetched",
-                   Math.min(prefetchSlots, chunks.size()));
-    }
-
     long waitingTime = BASE_WAITING_MS;
 
     // submit the chunks to be downloaded up to the prefetch slot capacity
@@ -344,7 +339,8 @@ public class SnowflakeChunkDownloader
           currentMemoryUsage += neededChunkMemory;
           if (logger.isDebugEnabled())
           {
-            logger.debug("{}: currentMemoryUsage in MB: {}, nextD: {}, nextC: {}, allocated: {} ",
+            logger.debug("{}: currentMemoryUsage in MB: {}, nextChunkToDownload: {}, nextChunkToConsume: {}, " +
+                        "newReservedMemory in B: {} ",
                          Thread.currentThread().getName(),
                          currentMemoryUsage / 1024 / 1024,
                          nextChunkToDownload,
@@ -379,7 +375,8 @@ public class SnowflakeChunkDownloader
         waitingTime += jitter;
         if (logger.isDebugEnabled())
         {
-          logger.debug("{} waiting for {}s: currentMemoryUsage in MB: {}, needed: {}, nextD: {}, nextC: {} ",
+          logger.debug("{} waiting for {}s: currentMemoryUsage in MB: {}, neededChunkMemory in MB: {}, " +
+                      "nextChunkToDownload: {}, nextChunkToConsume: {} ",
                        Thread.currentThread().getName(),
                        waitingTime / 1000.0,
                        currentMemoryUsage / 1024 / 1024,
@@ -403,19 +400,19 @@ public class SnowflakeChunkDownloader
     chunkDataCache.clear();
   }
 
-  private void releaseCurrentMemoryUsage(int chunk)
+  private void releaseCurrentMemoryUsage(int chunkId, long releaseSize)
   {
     synchronized (currentMemoryUsage)
     {
       // has to be before reusing the memory
-      currentMemoryUsage -= chunks.get(chunk).computeNeededChunkMemory();
+      currentMemoryUsage -= releaseSize;
       if (logger.isDebugEnabled())
       {
-        logger.debug("{}: currentMemoryUsage in MB: {}, released: {}, chunk: {}",
+        logger.debug("{}: currentMemoryUsage in MB: {}, released in MB: {}, chunk: {}",
                      Thread.currentThread().getName(),
                      currentMemoryUsage / 1024 / 1024,
-                     chunks.get(chunk).computeNeededChunkMemory(),
-                     chunk);
+                     releaseSize,
+                     chunkId);
       }
     }
   }
@@ -432,7 +429,7 @@ public class SnowflakeChunkDownloader
 
     for (int i = 0; i < chunks.size(); i++)
     {
-      releaseCurrentMemoryUsage(i);
+      releaseCurrentMemoryUsage(i, chunks.get(i).computeNeededChunkMemory());
     }
   }
 
@@ -460,8 +457,7 @@ public class SnowflakeChunkDownloader
       logger.debug("free chunk data for chunk #{}",
                    prevChunk);
 
-      releaseCurrentMemoryUsage(prevChunk);
-
+      long chunkMemUsage = chunks.get(prevChunk).computeNeededChunkMemory();
       if (this.nextChunkToDownload < this.chunks.size())
       {
         // Reuse the set of object to avoid reallocation
@@ -476,6 +472,9 @@ public class SnowflakeChunkDownloader
 
       // Free any memory the previous chunk might hang on
       this.chunks.get(prevChunk).freeData();
+
+      releaseCurrentMemoryUsage(prevChunk, chunkMemUsage);
+
     }
 
     // if no more chunks, return null
@@ -497,7 +496,7 @@ public class SnowflakeChunkDownloader
       if (nextChunkToConsume == this.chunks.size())
       {
         // make sure to release the last chunk
-        releaseCurrentMemoryUsage(nextChunkToConsume - 1);
+        releaseCurrentMemoryUsage(nextChunkToConsume - 1, chunks.get(nextChunkToConsume - 1).computeNeededChunkMemory());
       }
       return currentChunk;
     }
@@ -540,6 +539,25 @@ public class SnowflakeChunkDownloader
           logger.error("downloader encountered error: {}",
                        currentChunk.getDownloadError());
 
+          if (currentChunk.getDownloadError().contains("java.lang.OutOfMemoryError: Java heap space"))
+          {
+            logger.error("Dump some crucial information below:\n" +
+                    "Total milliseconds waiting for chunks: {},\n" +
+                         "Total memory used: {}, Max heap size: {}, total download time: {} millisec,\n" +
+                         "total parsing time: {} milliseconds, total chunks: {},\n" +
+                         "currentMemoryUsage in Byte: {}, currentMemoryLimit in Bytes: {} \n" +
+                         "nextChunkToDownload: {}, nextChunkToConsume: {}\n" +
+                         "Several suggestions to try to resolve the OOM issue:\n" +
+                         "1. increase the JVM heap size; \n" +
+                         "2. use CLIENT_MEMORY_LIMIT to tune the memory usage by the JDBC driver " +
+                         "(https://docs.snowflake.net/manuals/sql-reference/parameters.html#client-memory-limit)",
+                         numberMillisWaitingForChunks,
+                         Runtime.getRuntime().totalMemory(), Runtime.getRuntime().maxMemory(),
+                         totalMillisDownloadingChunks.get(),
+                         totalMillisParsingChunks.get(), chunks.size(), currentMemoryUsage, memoryLimit,
+                         nextChunkToDownload, nextChunkToConsume);
+          }
+
           throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
                                           ErrorCode.INTERNAL_ERROR.getMessageCode(),
                                           currentChunk.getDownloadError());
@@ -563,7 +581,7 @@ public class SnowflakeChunkDownloader
         if (nextChunkToConsume == this.chunks.size())
         {
           // make sure to release the last chunk
-          releaseCurrentMemoryUsage(nextChunkToConsume - 1);
+          releaseCurrentMemoryUsage(nextChunkToConsume - 1, chunks.get(nextChunkToConsume - 1).computeNeededChunkMemory());
         }
         if (terminateDownloader)
         {
@@ -828,7 +846,9 @@ public class SnowflakeChunkDownloader
             resultChunk.getLock().lock();
 
             resultChunk.setDownloadState(DownloadState.FAILURE);
-            resultChunk.setDownloadError(ex.getLocalizedMessage());
+            StringWriter errors = new StringWriter();
+            ex.printStackTrace(new PrintWriter(errors));
+            resultChunk.setDownloadError(errors.toString());
 
             logger.debug(
                 "wake up consumer if it is waiting for a chunk to be ready");
