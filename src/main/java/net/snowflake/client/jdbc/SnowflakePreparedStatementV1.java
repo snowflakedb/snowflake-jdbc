@@ -655,7 +655,7 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
       // convert the date from to be in local time zone to be in UTC
       String value = String.valueOf(x.getTime() +
                                     cal.getTimeZone().getOffset(x.getTime())
-                                   - ResultUtil.msDiffJulianToGregorian(x));
+                                    - ResultUtil.msDiffJulianToGregorian(x));
 
       ParameterBindingDTO binding = new ParameterBindingDTO(
           SnowflakeUtil.javaTypeToSFTypeString(Types.DATE), value);
