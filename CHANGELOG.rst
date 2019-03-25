@@ -1,3 +1,8 @@
+**JDBC Driver 3.7.0**
+
+- \|SNOW-65887|Change source and target Java version to 1.8 for JDBC driver
+- \      
+
 **JDBC Driver 3.6.28**
 
 - \|SNOW-67095|Fix a bug which caused the 3.6.x JDBC Driver hangs when resultSet is not consumed. The JDBC driver now always releases resultSet and its memory usage when a statement is closed.
