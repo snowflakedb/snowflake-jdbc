@@ -120,7 +120,7 @@ public class BindingDataIT extends AbstractDriverIT
 
   @DataPoints
   public static byte[] byteValues = {0, 1, -1, Byte.MAX_VALUE,
-      Byte.MIN_VALUE};
+                                     Byte.MIN_VALUE};
 
   @Theory
   public void testBindByte(byte byteValue) throws SQLException
@@ -155,7 +155,7 @@ public class BindingDataIT extends AbstractDriverIT
     Connection connection = getConnection();
     Statement statement = connection.createStatement();
     statement.execute("create or replace table test_bind_null(id number, val " +
-                          "number)");
+                      "number)");
 
     PreparedStatement preparedStatement = connection.prepareStatement(
         "insert into test_bind_null values (?, ?)");
@@ -178,12 +178,12 @@ public class BindingDataIT extends AbstractDriverIT
     preparedStatement.executeBatch();
 
     ResultSet rs = statement.executeQuery("select * from test_bind_null " +
-                                              "order by id asc");
+                                          "order by id asc");
     int count = 0;
-    while(rs.next())
+    while (rs.next())
     {
       assertThat(rs.getBigDecimal("VAL"), is(nullValue()));
-      count ++;
+      count++;
     }
 
     assertThat(count, is(4));
@@ -204,7 +204,7 @@ public class BindingDataIT extends AbstractDriverIT
       Time.valueOf("15:30:00"),
       Time.valueOf("13:01:01"),
       Time.valueOf("12:00:00"),
-  };
+      };
 
   @Theory
   public void testBindTime(Time timeVal) throws SQLException
@@ -246,7 +246,7 @@ public class BindingDataIT extends AbstractDriverIT
     Connection connection = getConnection();
     Statement statement = connection.createStatement();
     statement.execute("create or replace table test_bind_time_calendar(c1 " +
-                          "time)");
+                      "time)");
 
     PreparedStatement preparedStatement = connection.prepareStatement(
         "insert into test_bind_time_calendar values (?)");

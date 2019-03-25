@@ -102,6 +102,7 @@ public class TelemetryService
       logger.debug("Failed to add shutdown hook for telemetry service");
     }
   }
+
   private ExecutorService uploader = Executors.newFixedThreadPool(3);
 
   public void resetNumOfRetryToTriggerTelemetry()
