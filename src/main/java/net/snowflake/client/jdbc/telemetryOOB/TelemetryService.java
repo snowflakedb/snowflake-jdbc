@@ -260,37 +260,43 @@ public class TelemetryService
     this.batchSize = DEFAULT_BATCH_SIZE;
   }
 
-  private enum TELEMETRY_SERVER_URL
+  private enum TELEMETRY_API
   {
-    SFCTEST("https://lximwp8945.execute-api.us-west-2.amazonaws.com/sfctest/enqueue"),
-    SFCDEV("https://lol6l3j52m.execute-api.us-west-2.amazonaws.com/sfcdev/enqueue"),
-    US2("https://lol6l3j52m.execute-api.us-west-2.amazonaws.com/sfctest/enqueue"); // todo: change the url
+    SFCTEST("https://lximwp8945.execute-api.us-west-2.amazonaws.com/sfctest/enqueue",
+            "zJHB5wqSZL7JSilRbQEHB52ZUG0ajdd166gsMmKv"),
+    SFCDEV("https://lol6l3j52m.execute-api.us-west-2.amazonaws.com/sfcdev/enqueue",
+           ""),
+    US2("https://4yss82lml2.execute-api.us-east-1.amazonaws.com/us2/enqueue",
+        ""); // todo: update the api keys
 
     private final String url;
 
-    TELEMETRY_SERVER_URL(String url)
+    private final String apiKey;
+
+    TELEMETRY_API(String url, String key)
     {
       this.url = url;
+      this.apiKey = key;
     }
   }
 
   public enum TELEMETRY_SERVER_DEPLOYMENT
   {
-    DEV("dev", TELEMETRY_SERVER_URL.SFCTEST.url),
-    REG("reg", TELEMETRY_SERVER_URL.SFCTEST.url),
-    QA1("qa1", TELEMETRY_SERVER_URL.SFCDEV.url),
-    PREPROD2("preprod2", TELEMETRY_SERVER_URL.SFCDEV.url),
-    PROD("prod", TELEMETRY_SERVER_URL.US2.url),
-    NONEXISTENT("nonexistent",
-                "https://nonexist.execute-api.us-west-2.amazonaws.com/sfctest/enqueue");
+    DEV("dev", TELEMETRY_API.SFCTEST),
+    REG("reg", TELEMETRY_API.SFCTEST),
+    QA1("qa1", TELEMETRY_API.SFCDEV),
+    PREPROD2("preprod2", TELEMETRY_API.SFCDEV),
+    PROD("prod", TELEMETRY_API.US2);
 
     private final String name;
     private final String url;
+    private final String apiKey;
 
-    TELEMETRY_SERVER_DEPLOYMENT(String name, String url)
+    TELEMETRY_SERVER_DEPLOYMENT(String name, TELEMETRY_API api)
     {
       this.name = name;
-      this.url = url;
+      this.url = api.url;
+      this.apiKey = api.apiKey;
     }
 
     public String getURL()
@@ -301,6 +307,11 @@ public class TelemetryService
     public String getName()
     {
       return name;
+    }
+
+    public String getApiKey()
+    {
+      return apiKey;
     }
   }
 
@@ -410,6 +421,7 @@ public class TelemetryService
         HttpPost post = new HttpPost(instance.serverDeployment.url);
         post.setEntity(new StringEntity(payload));
         post.setHeader("Content-type", "application/json");
+        post.setHeader("x-api-key", instance.serverDeployment.getApiKey());
         // start a request with retry timeout = 10 secs
         response = httpClient.execute(post);
         int statusCode = response.getStatusLine().getStatusCode();
