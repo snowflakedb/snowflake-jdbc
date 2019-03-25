@@ -21,8 +21,10 @@ import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.sql.Statement;
 import java.sql.Types;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -1217,7 +1219,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
     }
     resultSet.close();
 
-    final HashSet<String> inputValidTableTypes = new HashSet<>();
+    List<String> inputValidTableTypes = new ArrayList<>();
     // then filter on the input table types;
     if (types != null)
     {
@@ -1231,7 +1233,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
     }
     else
     {
-      inputValidTableTypes.addAll(supportedTableTypes);
+      inputValidTableTypes = new ArrayList<String>(supportedTableTypes);
     }
 
     // if the input table types don't have types supported by Snowflake,
@@ -1256,11 +1258,11 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
     final Pattern compiledSchemaPattern = Wildcard.toRegexPattern(schemaPattern, true);
     final Pattern compiledTablePattern = Wildcard.toRegexPattern(tableNamePattern, true);
 
-    String showCommand;
-    final boolean viewOnly = inputValidTableTypes.size() == 1 &&
-                             inputValidTableTypes.contains(TableType.VIEW.name());
-    final boolean tableOnly =
-        !inputValidTableTypes.contains(TableType.VIEW.name());
+    String showCommand = null;
+    final boolean viewOnly = inputValidTableTypes.size() == 1
+        && "VIEW".equalsIgnoreCase(inputValidTableTypes.get(0));
+    final boolean tableOnly = inputValidTableTypes.size() == 1
+        && "TABLE".equalsIgnoreCase(inputValidTableTypes.get(0));
     if (viewOnly)
     {
       showCommand = "show /* JDBC:DatabaseMetaData.getTables() */ views";
@@ -1332,14 +1334,12 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
           String schemaName;
           String kind;
           String comment;
-          boolean isKindIncluded;
 
           if (viewOnly)
           {
             dbName = showObjectResultSet.getString(4);
             schemaName = showObjectResultSet.getString(5);
             kind = "VIEW";
-            isKindIncluded = true;
             comment = showObjectResultSet.getString(7);
           }
           else
@@ -1348,10 +1348,9 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
             schemaName = showObjectResultSet.getString(4);
             kind = showObjectResultSet.getString(5);
             comment = showObjectResultSet.getString(6);
-            isKindIncluded = inputValidTableTypes.contains(kind);
           }
 
-          if (isKindIncluded && (compiledTablePattern == null
+          if ((compiledTablePattern == null
                                  || compiledTablePattern.matcher(tableName).matches())
               && (compiledSchemaPattern == null
                   || compiledSchemaPattern.matcher(schemaName).matches()))
@@ -1422,20 +1421,6 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
     };
   }
 
-  private enum TableType
-  {
-    TABLE,
-    TEMPORARY,
-    TRANSIENT,
-    VIEW
-  }
-
-  /**
-   * Snowflake supports the following table types:
-   * table, temporary, transient, and view
-   *
-   * @see <a href="https://docs.snowflake.net/manuals/user-guide/tables-temp-transient.html#comparison-of-table-types">table types</a>
-   */
   @Override
   public ResultSet getTableTypes() throws SQLException
   {
@@ -1443,6 +1428,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
 
     Statement statement = connection.createStatement();
 
+    // TODO: We should really get the list of table types from GS
     return new SnowflakeDatabaseMetaDataResultSet(
         Arrays.asList("TABLE_TYPE"),
         Arrays.asList("TEXT"),
@@ -1450,16 +1436,10 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
         new Object[][]
             {
                 {
-                    TableType.TABLE.name()
+                    "TABLE"
                 },
                 {
-                    TableType.TEMPORARY.name()
-                },
-                {
-                    TableType.TRANSIENT.name()
-                },
-                {
-                    TableType.VIEW.name()
+                    "VIEW"
                 }
             }, statement);
   }
