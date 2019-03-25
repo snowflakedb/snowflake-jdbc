@@ -930,6 +930,8 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
   {
     super.clearBatch();
     batchParameterBindings.clear();
+    parameterBindings.clear();
+    wasPrevValueNull.clear();
     batchSize = 0;
     sfStatement.setHasUnsupportedStageBind(false);
   }
