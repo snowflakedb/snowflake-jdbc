@@ -340,7 +340,7 @@ public class SnowflakeChunkDownloader
           if (logger.isDebugEnabled())
           {
             logger.debug("{}: currentMemoryUsage in MB: {}, nextChunkToDownload: {}, nextChunkToConsume: {}, " +
-                        "newReservedMemory in B: {} ",
+                         "newReservedMemory in B: {} ",
                          Thread.currentThread().getName(),
                          currentMemoryUsage / 1024 / 1024,
                          nextChunkToDownload,
@@ -376,7 +376,7 @@ public class SnowflakeChunkDownloader
         if (logger.isDebugEnabled())
         {
           logger.debug("{} waiting for {}s: currentMemoryUsage in MB: {}, neededChunkMemory in MB: {}, " +
-                      "nextChunkToDownload: {}, nextChunkToConsume: {} ",
+                       "nextChunkToDownload: {}, nextChunkToConsume: {} ",
                        Thread.currentThread().getName(),
                        waitingTime / 1000.0,
                        currentMemoryUsage / 1024 / 1024,
@@ -496,7 +496,8 @@ public class SnowflakeChunkDownloader
       if (nextChunkToConsume == this.chunks.size())
       {
         // make sure to release the last chunk
-        releaseCurrentMemoryUsage(nextChunkToConsume - 1, chunks.get(nextChunkToConsume - 1).computeNeededChunkMemory());
+        releaseCurrentMemoryUsage(
+            nextChunkToConsume - 1, chunks.get(nextChunkToConsume - 1).computeNeededChunkMemory());
       }
       return currentChunk;
     }
@@ -542,7 +543,7 @@ public class SnowflakeChunkDownloader
           if (currentChunk.getDownloadError().contains("java.lang.OutOfMemoryError: Java heap space"))
           {
             logger.error("Dump some crucial information below:\n" +
-                    "Total milliseconds waiting for chunks: {},\n" +
+                         "Total milliseconds waiting for chunks: {},\n" +
                          "Total memory used: {}, Max heap size: {}, total download time: {} millisec,\n" +
                          "total parsing time: {} milliseconds, total chunks: {},\n" +
                          "currentMemoryUsage in Byte: {}, currentMemoryLimit in Bytes: {} \n" +
@@ -581,7 +582,8 @@ public class SnowflakeChunkDownloader
         if (nextChunkToConsume == this.chunks.size())
         {
           // make sure to release the last chunk
-          releaseCurrentMemoryUsage(nextChunkToConsume - 1, chunks.get(nextChunkToConsume - 1).computeNeededChunkMemory());
+          releaseCurrentMemoryUsage(
+              nextChunkToConsume - 1, chunks.get(nextChunkToConsume - 1).computeNeededChunkMemory());
         }
         if (terminateDownloader)
         {

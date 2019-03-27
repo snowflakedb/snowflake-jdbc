@@ -530,6 +530,7 @@ public class SnowflakeDriverIT extends AbstractDriverIT
       // show primary keys
       resultSet = metadata.getPrimaryKeys(null, null, "TESTCONSTRAINTSP1");
 
+
       // primary key for testConstraintsP1 should contain two rows
       assertConstraintResults(resultSet, 2, 6, "testConstraintsP1", null);
 

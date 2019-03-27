@@ -28,7 +28,7 @@ public class PrepareMultiStmtIT extends BaseJDBCTest
 
     PreparedStatement preparedStatement = connection.prepareStatement(
         "insert into test_multi_bind(c1) values(?); insert into " +
-            "test_multi_bind values (?), (?)", true);
+        "test_multi_bind values (?), (?)", true);
 
     preparedStatement.setInt(1, 20);
     preparedStatement.setInt(2, 30);
@@ -73,7 +73,7 @@ public class PrepareMultiStmtIT extends BaseJDBCTest
 
     PreparedStatement preparedStatement = connection.prepareStatement(
         "insert into test_multi_bind(c1) values(?); insert into " +
-            "test_multi_bind values (?), (?)", true);
+        "test_multi_bind values (?), (?)", true);
 
     preparedStatement.setInt(1, 20);
     preparedStatement.setInt(2, 30);
@@ -84,7 +84,7 @@ public class PrepareMultiStmtIT extends BaseJDBCTest
       preparedStatement.executeUpdate();
       Assert.fail();
     }
-    catch(SQLException e)
+    catch (SQLException e)
     {
       // error code comes from xp, which is js execution failed.
       assertThat(e.getErrorCode(), is(100132));
@@ -106,7 +106,7 @@ public class PrepareMultiStmtIT extends BaseJDBCTest
 
     PreparedStatement preparedStatement = connection.prepareStatement(
         "insert into test_multi_bind(c1) values(?); insert into " +
-            "test_multi_bind values (?), (?)", true);
+        "test_multi_bind values (?), (?)", true);
 
     preparedStatement.setInt(1, 20);
     preparedStatement.setInt(2, 30);
