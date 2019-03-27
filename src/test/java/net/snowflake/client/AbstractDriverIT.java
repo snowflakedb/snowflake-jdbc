@@ -6,9 +6,7 @@ package net.snowflake.client;
 import com.google.common.base.Strings;
 import org.junit.Rule;
 
-import java.io.UnsupportedEncodingException;
 import java.net.URL;
-import java.net.URLDecoder;
 import java.sql.Connection;
 import java.sql.Date;
 import java.sql.DriverManager;
@@ -20,7 +18,6 @@ import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
-import java.util.TimeZone;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -31,6 +28,10 @@ import static org.hamcrest.MatcherAssert.assertThat;
  */
 public class AbstractDriverIT
 {
+  // This is required to use ConditionalIgnore annotation.
+  @Rule
+  public ConditionalIgnoreRule rule = new ConditionalIgnoreRule();
+
   public static final String DRIVER_CLASS = "net.snowflake.client.jdbc.SnowflakeDriver";
   public static final int DONT_INJECT_SOCKET_TIMEOUT = 0;
 
@@ -59,9 +60,6 @@ public class AbstractDriverIT
       = 2210;
 
   protected final int ERROR_CODE_DOMAIN_OBJECT_DOES_NOT_EXIST = 2003;
-
-  @Rule
-  public ConditionalIgnoreRule rule = new ConditionalIgnoreRule();
 
   public static Map<String, String> getConnectionParameters()
   {
@@ -281,6 +279,25 @@ public class AbstractDriverIT
     {
       resultSet.close();
     }
+    if (statement != null)
+    {
+      statement.close();
+    }
+    if (connection != null)
+    {
+      connection.close();
+    }
+  }
+
+  /**
+   * Close SQL Objects
+   *
+   * @param statement  a statement object
+   * @param connection a connection
+   * @throws SQLException raised if any error occurs
+   */
+  public void closeSQLObjects(Statement statement, Connection connection) throws SQLException
+  {
     if (statement != null)
     {
       statement.close();

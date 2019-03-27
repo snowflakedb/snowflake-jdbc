@@ -518,10 +518,10 @@ public class ResultSetIT extends BaseJDBCTest
     assertEquals("NUMBER", resultSetMetaData.getColumnTypeName(1));
     assertEquals(20, resultSetMetaData.getPrecision(1));
     assertEquals(5, resultSetMetaData.getScale(1));
-    assertTrue(!resultSetMetaData.isAutoIncrement(1));
-    assertTrue(!resultSetMetaData.isCaseSensitive(1));
-    assertTrue(!resultSetMetaData.isCurrency(1));
-    assertTrue(!resultSetMetaData.isDefinitelyWritable(1));
+    assertFalse(resultSetMetaData.isAutoIncrement(1));
+    assertFalse(resultSetMetaData.isCaseSensitive(1));
+    assertFalse(resultSetMetaData.isCurrency(1));
+    assertFalse(resultSetMetaData.isDefinitelyWritable(1));
     assertEquals(resultSetMetaData.columnNullable, resultSetMetaData.isNullable(1));
     assertTrue(resultSetMetaData.isReadOnly(1));
     assertTrue(resultSetMetaData.isSearchable(1));
@@ -1072,10 +1072,8 @@ public class ResultSetIT extends BaseJDBCTest
     assertThat(resultSet.getTimestamp(1).toString(), equalTo("1000-01-01 17:00:00.0"));
     assertThat(resultSet.getString(1), equalTo("Mon, 01 Jan 1000 17:00:00 Z"));
 
-    statement.close();
-
     statement.execute("drop table if exists testOldTs");
-
+    statement.close();
     con.close();
   }
 
@@ -1100,9 +1098,9 @@ public class ResultSetIT extends BaseJDBCTest
     assertThat(resultSet.getTimestamp(1).toString(), equalTo("0001-01-01 08:00:00.0"));
     assertThat(resultSet.getDate(2).toString(), equalTo("0001-01-01"));
 
-    statement.close();
-
     statement.execute("drop table if exists testPrepOldTs");
+
+    statement.close();
 
     con.close();
   }
@@ -1122,7 +1120,7 @@ public class ResultSetIT extends BaseJDBCTest
       ++cnt;
     }
     assertTrue(cnt >= 0);
-    Telemetry telemetry = ((SnowflakeConnectionV1) con).getSfSession().getTelemetryClient();
+    Telemetry telemetry = con.unwrap(SnowflakeConnectionV1.class).getSfSession().getTelemetryClient();
     LinkedList<TelemetryData> logs = telemetry.logBuffer();
 
     // there should be a log for each of the following fields

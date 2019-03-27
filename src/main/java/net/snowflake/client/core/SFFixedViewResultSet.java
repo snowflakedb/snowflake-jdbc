@@ -20,8 +20,6 @@ import net.snowflake.client.log.SFLoggerFactory;
 /**
  * Fixed view result set. This class iterates through any fixed view
  * implementation and return the objects as rows
- *
- * @author jhuang
  */
 public class SFFixedViewResultSet extends SFBaseResultSet
 {

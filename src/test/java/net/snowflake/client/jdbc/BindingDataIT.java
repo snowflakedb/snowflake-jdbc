@@ -10,6 +10,7 @@ import org.junit.experimental.theories.Theories;
 import org.junit.experimental.theories.Theory;
 import org.junit.runner.RunWith;
 
+import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.Date;
 import java.sql.PreparedStatement;
@@ -24,6 +25,7 @@ import java.util.TimeZone;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertNull;
 
 /**
  * Integration tests for binding variable
@@ -415,5 +417,45 @@ public class BindingDataIT extends AbstractDriverIT
 
     statement.execute("drop table if exists test_bind_object_0");
     connection.close();
+  }
+
+  /**
+   * Binding null as all types.
+   */
+  @Test
+  public void testBindNullForAllTypes() throws Throwable
+  {
+    try (Connection connection = getConnection())
+    {
+      connection.createStatement().execute(
+          "create or replace table TEST_BIND_ALL_TYPES(C0 string," +
+          "C1 number(20, 3), C2 INTEGER, C3 double, C4 varchar(1000)," +
+          "C5 string, C6 date, C7 time, C8 timestamp_ntz, " +
+          "C9 timestamp_ltz, C10 timestamp_tz," +
+          "C11 BINARY, C12 BOOLEAN)");
+
+      for (SnowflakeType.JavaSQLType t : SnowflakeType.JavaSQLType.ALL_TYPES)
+      {
+        PreparedStatement preparedStatement = connection.prepareStatement(
+            "insert into TEST_BIND_ALL_TYPES values(?, ?,?,?, ?,?,?, ?,?,?, ?,?,?)"
+        );
+        preparedStatement.setString(1, t.toString());
+        for (int i = 2; i <= 13; ++i)
+        {
+          preparedStatement.setNull(i, t.getType());
+        }
+        preparedStatement.executeUpdate();
+      }
+
+      ResultSet result = connection.createStatement().executeQuery("select * from TEST_BIND_ALL_TYPES");
+      while (result.next())
+      {
+        String testType = result.getString(1);
+        for (int i = 2; i <= 13; ++i)
+        {
+          assertNull(String.format("Java Type: %s is not null", testType), result.getString(i));
+        }
+      }
+    }
   }
 }

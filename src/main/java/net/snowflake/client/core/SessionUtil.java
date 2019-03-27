@@ -54,7 +54,7 @@ import java.util.UUID;
 import static net.snowflake.client.core.SFTrustManager.resetOCSPResponseCacherServerURL;
 
 /**
- * Created by jhuang on 1/23/16.
+ * Low level session util
  */
 public class SessionUtil
 {
@@ -70,51 +70,42 @@ public class SessionUtil
 
   public static final String SF_PATH_AUTHENTICATOR_REQUEST
       = "/session/authenticator-request";
-
-  private static final String SF_PATH_LOGIN_REQUEST =
-      "/session/v1/login-request";
-
-  private static final String SF_PATH_TOKEN_REQUEST = "/session/token-request";
-
   public static final String SF_QUERY_SESSION_DELETE = "delete";
-
-  private static final String SF_PATH_SESSION = "/session";
-
-  private static ObjectMapper mapper = ObjectMapperFactory.getObjectMapper();
-
   public static final String SF_HEADER_AUTHORIZATION = HttpHeaders.AUTHORIZATION;
-
   public static final String SF_HEADER_BASIC_AUTHTYPE = "Basic";
-
   public static final String SF_HEADER_SNOWFLAKE_AUTHTYPE = "Snowflake";
-
   public static final String SF_HEADER_TOKEN_TAG = "Token";
-
-  static final String SF_HEADER_SERVICE_NAME = "X-Snowflake-Service";
-
-  private static int DEFAULT_HTTP_CLIENT_CONNECTION_TIMEOUT = 60000; // millisec
-
-  private static int DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT = 300000; // millisec
-
-  private static int DEFAULT_HEALTH_CHECK_INTERVAL = 45; // sec
-
-  public static long DEFAULT_CLIENT_MEMORY_LIMIT = 1536; // MB
-
   public static final String CLIENT_STORE_TEMPORARY_CREDENTIAL = "CLIENT_STORE_TEMPORARY_CREDENTIAL";
   public static final String SERVICE_NAME = "SERVICE_NAME";
   public static final String CLIENT_RESULT_COLUMN_CASE_INSENSITIVE = "CLIENT_RESULT_COLUMN_CASE_INSENSITIVE";
   public static final String JDBC_RS_COLUMN_CASE_INSENSITIVE = "JDBC_RS_COLUMN_CASE_INSENSITIVE";
-
   public static final String CLIENT_RESULT_CHUNK_SIZE_JVM = "net.snowflake.jdbc.clientResultChunkSize";
   public static final String CLIENT_RESULT_CHUNK_SIZE = "CLIENT_RESULT_CHUNK_SIZE";
   public static final String CLIENT_MEMORY_LIMIT_JVM = "net.snowflake.jdbc.clientMemoryLimit";
   public static final String CLIENT_MEMORY_LIMIT = "CLIENT_MEMORY_LIMIT";
   public static final String CLIENT_PREFETCH_THREADS_JVM = "net.snowflake.jdbc.clientPrefetchThreads";
   public static final String CLIENT_PREFETCH_THREADS = "CLIENT_PREFETCH_THREADS";
-
+  public static final String CACHE_FILE_NAME = "temporary_credential.json";
+  protected static final FileCacheManager fileCacheManager;
+  static final String SF_HEADER_SERVICE_NAME = "X-Snowflake-Service";
   static final
   SFLogger logger = SFLoggerFactory.getLogger(SessionUtil.class);
-
+  private static final String SF_PATH_LOGIN_REQUEST =
+      "/session/v1/login-request";
+  private static final String SF_PATH_TOKEN_REQUEST = "/session/token-request";
+  private static final String SF_PATH_SESSION = "/session";
+  private static final String CACHE_DIR_PROP = "net.snowflake.jdbc.temporaryCredentialCacheDir";
+  private static final String CACHE_DIR_ENV = "SF_TEMPORARY_CREDENTIAL_CACHE_DIR";
+  private static final long CACHE_EXPIRATION_IN_SECONDS = 86400L;
+  private static final long CACHE_FILE_LOCK_EXPIRATION_IN_SECONDS = 60L;
+  private final static Map<String, Map<String, String>> ID_TOKEN_CACHE = new HashMap<>();
+  private final static Object ID_TOKEN_CACHE_LOCK = new Object();
+  public static long DEFAULT_CLIENT_MEMORY_LIMIT = 1536; // MB
+  public static Map<String, String> JVM_PARAMS_TO_PARAMS = new HashMap<>();
+  private static ObjectMapper mapper = ObjectMapperFactory.getObjectMapper();
+  private static int DEFAULT_HTTP_CLIENT_CONNECTION_TIMEOUT = 60000; // millisec
+  private static int DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT = 300000; // millisec
+  private static int DEFAULT_HEALTH_CHECK_INTERVAL = 45; // sec
   private static Set<String> STRING_PARAMS = new HashSet<>(Arrays.asList(
       "TIMEZONE",
       "TIMESTAMP_OUTPUT_FORMAT",
@@ -126,7 +117,6 @@ public class SessionUtil
       "BINARY_OUTPUT_FORMAT",
       "CLIENT_TIMESTAMP_TYPE_MAPPING",
       SERVICE_NAME));
-
   private static Set<String> INT_PARAMS = new HashSet<>(Arrays.asList(
       "CLIENT_RESULT_PREFETCH_SLOTS",
       "CLIENT_RESULT_PREFETCH_THREADS",
@@ -134,7 +124,6 @@ public class SessionUtil
       CLIENT_MEMORY_LIMIT,
       CLIENT_RESULT_CHUNK_SIZE,
       "CLIENT_STAGE_ARRAY_BINDING_THRESHOLD"));
-
   private static Set<String> BOOLEAN_PARAMS = new HashSet<>(Arrays.asList(
       "CLIENT_HONOR_CLIENT_TZ_FOR_TIMESTAMP_NTZ",
       "JDBC_EXECUTE_RETURN_COUNT_FOR_DML",
@@ -151,8 +140,6 @@ public class SessionUtil
       "JDBC_TREAT_DECIMAL_AS_INT",
       "JDBC_ENABLE_COMBINED_DESCRIBE"));
 
-  public static Map<String, String> JVM_PARAMS_TO_PARAMS = new HashMap<>();
-
   static
   {
     JVM_PARAMS_TO_PARAMS.put(
@@ -163,28 +150,6 @@ public class SessionUtil
         CLIENT_PREFETCH_THREADS_JVM, CLIENT_PREFETCH_THREADS);
   }
 
-  enum TokenRequestType
-  {
-    RENEW("RENEW"),
-    CLONE("CLONE"),
-    ISSUE("ISSUE");
-
-    private String value;
-
-    TokenRequestType(String value)
-    {
-      this.value = value;
-    }
-  }
-
-  private static final String CACHE_DIR_PROP = "net.snowflake.jdbc.temporaryCredentialCacheDir";
-  private static final String CACHE_DIR_ENV = "SF_TEMPORARY_CREDENTIAL_CACHE_DIR";
-  public static final String CACHE_FILE_NAME = "temporary_credential.json";
-  private static final long CACHE_EXPIRATION_IN_SECONDS = 86400L;
-  private static final long CACHE_FILE_LOCK_EXPIRATION_IN_SECONDS = 60L;
-
-  protected static final FileCacheManager fileCacheManager;
-
   static
   {
     fileCacheManager = FileCacheManager
@@ -194,570 +159,6 @@ public class SessionUtil
         .setBaseCacheFileName(CACHE_FILE_NAME)
         .setCacheExpirationInSeconds(CACHE_EXPIRATION_IN_SECONDS)
         .setCacheFileLockExpirationInSeconds(CACHE_FILE_LOCK_EXPIRATION_IN_SECONDS).build();
-  }
-
-  private final static Map<String, Map<String, String>> ID_TOKEN_CACHE = new HashMap<>();
-  private final static Object ID_TOKEN_CACHE_LOCK = new Object();
-
-  /**
-   * A class for holding all information required for login
-   */
-  public static class LoginInput
-  {
-    private String serverUrl;
-    private String databaseName;
-    private String schemaName;
-    private String warehouse;
-    private String role;
-    private String authenticator;
-    private String accountName;
-    private int loginTimeout = -1; // default is invalid
-    private String userName;
-    private String password;
-    private Properties clientInfo;
-    private boolean passcodeInPassword;
-    private String passcode;
-    private String token;
-    private int connectionTimeout = DEFAULT_HTTP_CLIENT_CONNECTION_TIMEOUT;
-    private int socketTimeout = DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT;
-    private String appId;
-    private String appVersion;
-    private String sessionToken;
-    private String masterToken;
-    private Map<String, Object> sessionParameters;
-    private PrivateKey privateKey;
-    private String application;
-    private String idToken;
-    private String serviceName;
-
-    public LoginInput()
-    {
-    }
-
-    public LoginInput setServerUrl(String serverUrl)
-    {
-      this.serverUrl = serverUrl;
-      return this;
-    }
-
-    public LoginInput setDatabaseName(String databaseName)
-    {
-      this.databaseName = databaseName;
-      return this;
-    }
-
-    public LoginInput setSchemaName(String schemaName)
-    {
-      this.schemaName = schemaName;
-      return this;
-    }
-
-    public LoginInput setWarehouse(String warehouse)
-    {
-      this.warehouse = warehouse;
-      return this;
-    }
-
-    public LoginInput setRole(String role)
-    {
-      this.role = role;
-      return this;
-    }
-
-    public LoginInput setAuthenticator(String authenticator)
-    {
-      this.authenticator = authenticator;
-      return this;
-    }
-
-    public LoginInput setAccountName(String accountName)
-    {
-      this.accountName = accountName;
-      return this;
-    }
-
-    public LoginInput setLoginTimeout(int loginTimeout)
-    {
-      this.loginTimeout = loginTimeout;
-      return this;
-    }
-
-    public LoginInput setUserName(String userName)
-    {
-      this.userName = userName;
-      return this;
-    }
-
-    public LoginInput setPassword(String password)
-    {
-      this.password = password;
-      return this;
-    }
-
-    public LoginInput setToken(String token)
-    {
-      this.token = token;
-      return this;
-    }
-
-    public LoginInput setClientInfo(Properties clientInfo)
-    {
-      this.clientInfo = clientInfo;
-      return this;
-    }
-
-    public LoginInput setPasscodeInPassword(boolean passcodeInPassword)
-    {
-      this.passcodeInPassword = passcodeInPassword;
-      return this;
-    }
-
-    public LoginInput setPasscode(String passcode)
-    {
-      this.passcode = passcode;
-      return this;
-    }
-
-    public LoginInput setConnectionTimeout(int connectionTimeout)
-    {
-      this.connectionTimeout = connectionTimeout;
-      return this;
-    }
-
-    public LoginInput setSocketTimeout(int socketTimeout)
-    {
-      this.socketTimeout = socketTimeout;
-      return this;
-    }
-
-    public LoginInput setAppId(String appId)
-    {
-      this.appId = appId;
-      return this;
-    }
-
-    public LoginInput setAppVersion(String appVersion)
-    {
-      this.appVersion = appVersion;
-      return this;
-    }
-
-    public LoginInput setSessionToken(String sessionToken)
-    {
-      this.sessionToken = sessionToken;
-      return this;
-    }
-
-    public LoginInput setMasterToken(String masterToken)
-    {
-      this.masterToken = masterToken;
-      return this;
-    }
-
-    public LoginInput setIdToken(String idToken)
-    {
-      this.idToken = idToken;
-      return this;
-    }
-
-    public LoginInput setSessionParameters(Map<String, Object> sessionParameters)
-    {
-      this.sessionParameters = sessionParameters;
-      return this;
-    }
-
-    public LoginInput setPrivateKey(PrivateKey privateKey)
-    {
-      this.privateKey = privateKey;
-      return this;
-    }
-
-    public LoginInput setApplication(String application)
-    {
-      this.application = application;
-      return this;
-    }
-
-    public LoginInput setServiceName(String serviceName)
-    {
-      this.serviceName = serviceName;
-      return this;
-    }
-
-    public String getServerUrl()
-    {
-      return serverUrl;
-    }
-
-    public String getDatabaseName()
-    {
-      return databaseName;
-    }
-
-    public String getSchemaName()
-    {
-      return schemaName;
-    }
-
-    public String getWarehouse()
-    {
-      return warehouse;
-    }
-
-    public String getRole()
-    {
-      return role;
-    }
-
-    public String getAuthenticator()
-    {
-      return authenticator;
-    }
-
-    public String getAccountName()
-    {
-      return accountName;
-    }
-
-    public int getLoginTimeout()
-    {
-      return loginTimeout;
-    }
-
-    public String getUserName()
-    {
-      return userName;
-    }
-
-    public String getPassword()
-    {
-      return password;
-    }
-
-    public Properties getClientInfo()
-    {
-      return clientInfo;
-    }
-
-    public String getPasscode()
-    {
-      return passcode;
-    }
-
-    public String getToken()
-    {
-      return token;
-    }
-
-    public int getConnectionTimeout()
-    {
-      return connectionTimeout;
-    }
-
-    public int getSocketTimeout()
-    {
-      return socketTimeout;
-    }
-
-    public boolean isPasscodeInPassword()
-    {
-      return passcodeInPassword;
-    }
-
-    public String getAppId()
-    {
-      return appId;
-    }
-
-    public String getAppVersion()
-    {
-      return appVersion;
-    }
-
-    public String getSessionToken()
-    {
-      return sessionToken;
-    }
-
-    public String getMasterToken()
-    {
-      return masterToken;
-    }
-
-    public String getIdToken()
-    {
-      return idToken;
-    }
-
-    public Map<String, Object> getSessionParameters()
-    {
-      return sessionParameters;
-    }
-
-    public PrivateKey getPrivateKey()
-    {
-      return privateKey;
-    }
-
-    public String getApplication()
-    {
-      return application;
-    }
-
-    public String getServiceName()
-    {
-      return serviceName;
-    }
-
-  }
-
-  /**
-   * Login output information including session tokens, database versions
-   */
-  public static class LoginOutput
-  {
-    String sessionToken;
-    String masterToken;
-    long masterTokenValidityInSeconds;
-    String remMeToken;
-    String idToken;
-    String databaseVersion;
-    int databaseMajorVersion;
-    int databaseMinorVersion;
-    String newClientForUpgrade;
-    int healthCheckInterval;
-    int httpClientSocketTimeout;
-    String sessionDatabase;
-    String sessionSchema;
-    String sessionRole;
-    String sessionWarehouse;
-    Map<String, Object> commonParams;
-    boolean updatedByTokenRequest;
-    boolean updatedByTokenRequestIssue;
-
-    public LoginOutput()
-    {
-    }
-
-    public LoginOutput(String sessionToken, String masterToken,
-                       long masterTokenValidityInSeconds,
-                       String remMeToken,
-                       String idToken,
-                       String databaseVersion,
-                       int databaseMajorVersion, int databaseMinorVersion,
-                       String newClientForUpgrade, int healthCheckInterval,
-                       int httpClientSocketTimeout,
-                       String sessionDatabase,
-                       String sessionSchema,
-                       String sessionRole,
-                       String sessionWarehouse,
-                       Map<String, Object> commonParams)
-    {
-      this.sessionToken = sessionToken;
-      this.masterToken = masterToken;
-      this.remMeToken = remMeToken;
-      this.idToken = idToken;
-      this.databaseVersion = databaseVersion;
-      this.databaseMajorVersion = databaseMajorVersion;
-      this.databaseMinorVersion = databaseMinorVersion;
-      this.newClientForUpgrade = newClientForUpgrade;
-      this.healthCheckInterval = healthCheckInterval;
-      this.httpClientSocketTimeout = httpClientSocketTimeout;
-      this.sessionDatabase = sessionDatabase;
-      this.sessionSchema = sessionSchema;
-      this.sessionRole = sessionRole;
-      this.sessionWarehouse = sessionWarehouse;
-      this.commonParams = commonParams;
-      this.masterTokenValidityInSeconds = masterTokenValidityInSeconds;
-    }
-
-    public LoginOutput setSessionToken(String sessionToken)
-    {
-      this.sessionToken = sessionToken;
-      return this;
-    }
-
-    public LoginOutput setMasterToken(String masterToken)
-    {
-      this.masterToken = masterToken;
-      return this;
-    }
-
-    public LoginOutput setIdToken(String idToken)
-    {
-      this.idToken = idToken;
-      return this;
-    }
-
-    public LoginOutput setRemMeToken(String remMeToken)
-    {
-      this.remMeToken = remMeToken;
-      return this;
-    }
-
-    public LoginOutput setDatabaseVersion(String databaseVersion)
-    {
-      this.databaseVersion = databaseVersion;
-      return this;
-    }
-
-    public LoginOutput setDatabaseMajorVersion(int databaseMajorVersion)
-    {
-      this.databaseMajorVersion = databaseMajorVersion;
-      return this;
-    }
-
-    public LoginOutput setDatabaseMinorVersion(int databaseMinorVersion)
-    {
-      this.databaseMinorVersion = databaseMinorVersion;
-      return this;
-    }
-
-    public LoginOutput setNewClientForUpgrade(String newClientForUpgrade)
-    {
-      this.newClientForUpgrade = newClientForUpgrade;
-      return this;
-    }
-
-    public LoginOutput setHealthCheckInterval(int healthCheckInterval)
-    {
-      this.healthCheckInterval = healthCheckInterval;
-      return this;
-    }
-
-    public LoginOutput setHttpClientSocketTimeout(int httpClientSocketTimeout)
-    {
-      this.httpClientSocketTimeout = httpClientSocketTimeout;
-      return this;
-    }
-
-    public LoginOutput setCommonParams(Map<String, Object> commonParams)
-    {
-      this.commonParams = commonParams;
-      return this;
-    }
-
-    public String getSessionToken()
-    {
-      return sessionToken;
-    }
-
-    public String getMasterToken()
-    {
-      return masterToken;
-    }
-
-    public String getRemMeToken()
-    {
-      return remMeToken;
-    }
-
-    public String getIdToken()
-    {
-      return idToken;
-    }
-
-    public String getDatabaseVersion()
-    {
-      return databaseVersion;
-    }
-
-    public int getDatabaseMajorVersion()
-    {
-      return databaseMajorVersion;
-    }
-
-    public int getDatabaseMinorVersion()
-    {
-      return databaseMinorVersion;
-    }
-
-    public String getNewClientForUpgrade()
-    {
-      return newClientForUpgrade;
-    }
-
-    public int getHealthCheckInterval()
-    {
-      return healthCheckInterval;
-    }
-
-    public int getHttpClientSocketTimeout()
-    {
-      return httpClientSocketTimeout;
-    }
-
-    public Map<String, Object> getCommonParams()
-    {
-      return commonParams;
-    }
-
-    public String getSessionDatabase()
-    {
-      return sessionDatabase;
-    }
-
-    public void setSessionDatabase(String sessionDatabase)
-    {
-      this.sessionDatabase = sessionDatabase;
-    }
-
-    public String getSessionSchema()
-    {
-      return sessionSchema;
-    }
-
-    public void setSessionSchema(String sessionSchema)
-    {
-      this.sessionSchema = sessionSchema;
-    }
-
-    void setSessionRole(String sessionRole)
-    {
-      this.sessionRole = sessionRole;
-    }
-
-    public String getSessionRole()
-    {
-      return sessionRole;
-    }
-
-    void setSessionWarehouse(String sessionWarehouse)
-    {
-      this.sessionWarehouse = sessionWarehouse;
-    }
-
-    String getSessionWarehouse()
-    {
-      return sessionWarehouse;
-    }
-
-    public long getMasterTokenValidityInSeconds()
-    {
-      return masterTokenValidityInSeconds;
-    }
-
-    boolean isUpdatedByTokenRequest()
-    {
-      return updatedByTokenRequest;
-    }
-
-    LoginOutput setUpdatedByTokenRequest(boolean updatedByTokenRequest)
-    {
-      this.updatedByTokenRequest = updatedByTokenRequest;
-      return this;
-    }
-
-    boolean isUpdatedByTokenRequestIssue()
-    {
-      return updatedByTokenRequestIssue;
-    }
-
-    LoginOutput setUpdatedByTokenRequestIssue(boolean updatedByTokenRequestIssue)
-    {
-      this.updatedByTokenRequestIssue = updatedByTokenRequestIssue;
-      return this;
-    }
   }
 
   /**
@@ -1365,8 +766,6 @@ public class SessionUtil
       if (healthCheckIntervalFromGS > 0 &&
           healthCheckIntervalFromGS != healthCheckInterval)
       {
-        healthCheckInterval = healthCheckIntervalFromGS;
-
         // add health check interval to socket timeout
         httpClientSocketTimeout = loginInput.getSocketTimeout() +
                                   (healthCheckIntervalFromGS * 1000);
@@ -1423,8 +822,6 @@ public class SessionUtil
                                       databaseVersion,
                                       databaseMajorVersion,
                                       databaseMinorVersion,
-                                      newClientForUpgrade,
-                                      healthCheckInterval,
                                       httpClientSocketTimeout,
                                       sessionDatabase,
                                       sessionSchema,
@@ -1458,7 +855,6 @@ public class SessionUtil
     }
     return value;
   }
-
 
   /**
    * Delete the id token cache
@@ -2198,6 +1594,519 @@ public class SessionUtil
           session.setServiceName((String) entry.getValue());
         }
       }
+    }
+  }
+
+  enum TokenRequestType
+  {
+    RENEW("RENEW"),
+    CLONE("CLONE"),
+    ISSUE("ISSUE");
+
+    private String value;
+
+    TokenRequestType(String value)
+    {
+      this.value = value;
+    }
+  }
+
+  /**
+   * A class for holding all information required for login
+   */
+  public static class LoginInput
+  {
+    private String serverUrl;
+    private String databaseName;
+    private String schemaName;
+    private String warehouse;
+    private String role;
+    private String authenticator;
+    private String accountName;
+    private int loginTimeout = -1; // default is invalid
+    private String userName;
+    private String password;
+    private Properties clientInfo;
+    private boolean passcodeInPassword;
+    private String passcode;
+    private String token;
+    private int connectionTimeout = DEFAULT_HTTP_CLIENT_CONNECTION_TIMEOUT;
+    private int socketTimeout = DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT;
+    private String appId;
+    private String appVersion;
+    private String sessionToken;
+    private String masterToken;
+    private Map<String, Object> sessionParameters;
+    private PrivateKey privateKey;
+    private String application;
+    private String idToken;
+    private String serviceName;
+
+    public LoginInput()
+    {
+    }
+
+    public String getServerUrl()
+    {
+      return serverUrl;
+    }
+
+    public LoginInput setServerUrl(String serverUrl)
+    {
+      this.serverUrl = serverUrl;
+      return this;
+    }
+
+    public String getDatabaseName()
+    {
+      return databaseName;
+    }
+
+    public LoginInput setDatabaseName(String databaseName)
+    {
+      this.databaseName = databaseName;
+      return this;
+    }
+
+    public String getSchemaName()
+    {
+      return schemaName;
+    }
+
+    public LoginInput setSchemaName(String schemaName)
+    {
+      this.schemaName = schemaName;
+      return this;
+    }
+
+    public String getWarehouse()
+    {
+      return warehouse;
+    }
+
+    public LoginInput setWarehouse(String warehouse)
+    {
+      this.warehouse = warehouse;
+      return this;
+    }
+
+    public String getRole()
+    {
+      return role;
+    }
+
+    public LoginInput setRole(String role)
+    {
+      this.role = role;
+      return this;
+    }
+
+    public String getAuthenticator()
+    {
+      return authenticator;
+    }
+
+    public LoginInput setAuthenticator(String authenticator)
+    {
+      this.authenticator = authenticator;
+      return this;
+    }
+
+    public String getAccountName()
+    {
+      return accountName;
+    }
+
+    public LoginInput setAccountName(String accountName)
+    {
+      this.accountName = accountName;
+      return this;
+    }
+
+    public int getLoginTimeout()
+    {
+      return loginTimeout;
+    }
+
+    public LoginInput setLoginTimeout(int loginTimeout)
+    {
+      this.loginTimeout = loginTimeout;
+      return this;
+    }
+
+    public String getUserName()
+    {
+      return userName;
+    }
+
+    public LoginInput setUserName(String userName)
+    {
+      this.userName = userName;
+      return this;
+    }
+
+    public String getPassword()
+    {
+      return password;
+    }
+
+    public LoginInput setPassword(String password)
+    {
+      this.password = password;
+      return this;
+    }
+
+    public Properties getClientInfo()
+    {
+      return clientInfo;
+    }
+
+    public LoginInput setClientInfo(Properties clientInfo)
+    {
+      this.clientInfo = clientInfo;
+      return this;
+    }
+
+    public String getPasscode()
+    {
+      return passcode;
+    }
+
+    public LoginInput setPasscode(String passcode)
+    {
+      this.passcode = passcode;
+      return this;
+    }
+
+    public String getToken()
+    {
+      return token;
+    }
+
+    public LoginInput setToken(String token)
+    {
+      this.token = token;
+      return this;
+    }
+
+    public int getConnectionTimeout()
+    {
+      return connectionTimeout;
+    }
+
+    public LoginInput setConnectionTimeout(int connectionTimeout)
+    {
+      this.connectionTimeout = connectionTimeout;
+      return this;
+    }
+
+    public int getSocketTimeout()
+    {
+      return socketTimeout;
+    }
+
+    public LoginInput setSocketTimeout(int socketTimeout)
+    {
+      this.socketTimeout = socketTimeout;
+      return this;
+    }
+
+    public boolean isPasscodeInPassword()
+    {
+      return passcodeInPassword;
+    }
+
+    public LoginInput setPasscodeInPassword(boolean passcodeInPassword)
+    {
+      this.passcodeInPassword = passcodeInPassword;
+      return this;
+    }
+
+    public String getAppId()
+    {
+      return appId;
+    }
+
+    public LoginInput setAppId(String appId)
+    {
+      this.appId = appId;
+      return this;
+    }
+
+    public String getAppVersion()
+    {
+      return appVersion;
+    }
+
+    public LoginInput setAppVersion(String appVersion)
+    {
+      this.appVersion = appVersion;
+      return this;
+    }
+
+    public String getSessionToken()
+    {
+      return sessionToken;
+    }
+
+    public LoginInput setSessionToken(String sessionToken)
+    {
+      this.sessionToken = sessionToken;
+      return this;
+    }
+
+    public String getMasterToken()
+    {
+      return masterToken;
+    }
+
+    public LoginInput setMasterToken(String masterToken)
+    {
+      this.masterToken = masterToken;
+      return this;
+    }
+
+    public String getIdToken()
+    {
+      return idToken;
+    }
+
+    public LoginInput setIdToken(String idToken)
+    {
+      this.idToken = idToken;
+      return this;
+    }
+
+    public Map<String, Object> getSessionParameters()
+    {
+      return sessionParameters;
+    }
+
+    public LoginInput setSessionParameters(Map<String, Object> sessionParameters)
+    {
+      this.sessionParameters = sessionParameters;
+      return this;
+    }
+
+    public PrivateKey getPrivateKey()
+    {
+      return privateKey;
+    }
+
+    public LoginInput setPrivateKey(PrivateKey privateKey)
+    {
+      this.privateKey = privateKey;
+      return this;
+    }
+
+    public String getApplication()
+    {
+      return application;
+    }
+
+    public LoginInput setApplication(String application)
+    {
+      this.application = application;
+      return this;
+    }
+
+    public String getServiceName()
+    {
+      return serviceName;
+    }
+
+    public LoginInput setServiceName(String serviceName)
+    {
+      this.serviceName = serviceName;
+      return this;
+    }
+
+  }
+
+  /**
+   * Login output information including session tokens, database versions
+   */
+  public static class LoginOutput
+  {
+    String sessionToken;
+    String masterToken;
+    long masterTokenValidityInSeconds;
+    String remMeToken;
+    String idToken;
+    String databaseVersion;
+    int databaseMajorVersion;
+    int databaseMinorVersion;
+    int httpClientSocketTimeout;
+    String sessionDatabase;
+    String sessionSchema;
+    String sessionRole;
+    String sessionWarehouse;
+    Map<String, Object> commonParams;
+    boolean updatedByTokenRequest;
+    boolean updatedByTokenRequestIssue;
+
+    public LoginOutput()
+    {
+    }
+
+    public LoginOutput(String sessionToken, String masterToken,
+                       long masterTokenValidityInSeconds,
+                       String remMeToken,
+                       String idToken,
+                       String databaseVersion,
+                       int databaseMajorVersion, int databaseMinorVersion,
+                       int httpClientSocketTimeout,
+                       String sessionDatabase,
+                       String sessionSchema,
+                       String sessionRole,
+                       String sessionWarehouse,
+                       Map<String, Object> commonParams)
+    {
+      this.sessionToken = sessionToken;
+      this.masterToken = masterToken;
+      this.remMeToken = remMeToken;
+      this.idToken = idToken;
+      this.databaseVersion = databaseVersion;
+      this.databaseMajorVersion = databaseMajorVersion;
+      this.databaseMinorVersion = databaseMinorVersion;
+      this.httpClientSocketTimeout = httpClientSocketTimeout;
+      this.sessionDatabase = sessionDatabase;
+      this.sessionSchema = sessionSchema;
+      this.sessionRole = sessionRole;
+      this.sessionWarehouse = sessionWarehouse;
+      this.commonParams = commonParams;
+      this.masterTokenValidityInSeconds = masterTokenValidityInSeconds;
+    }
+
+    public String getSessionToken()
+    {
+      return sessionToken;
+    }
+
+    public LoginOutput setSessionToken(String sessionToken)
+    {
+      this.sessionToken = sessionToken;
+      return this;
+    }
+
+    public String getMasterToken()
+    {
+      return masterToken;
+    }
+
+    public LoginOutput setMasterToken(String masterToken)
+    {
+      this.masterToken = masterToken;
+      return this;
+    }
+
+    public String getIdToken()
+    {
+      return idToken;
+    }
+
+    public LoginOutput setIdToken(String idToken)
+    {
+      this.idToken = idToken;
+      return this;
+    }
+
+    public String getDatabaseVersion()
+    {
+      return databaseVersion;
+    }
+
+    public int getDatabaseMajorVersion()
+    {
+      return databaseMajorVersion;
+    }
+
+    public int getDatabaseMinorVersion()
+    {
+      return databaseMinorVersion;
+    }
+
+    public int getHttpClientSocketTimeout()
+    {
+      return httpClientSocketTimeout;
+    }
+
+    public Map<String, Object> getCommonParams()
+    {
+      return commonParams;
+    }
+
+    public LoginOutput setCommonParams(Map<String, Object> commonParams)
+    {
+      this.commonParams = commonParams;
+      return this;
+    }
+
+    public String getSessionDatabase()
+    {
+      return sessionDatabase;
+    }
+
+    public void setSessionDatabase(String sessionDatabase)
+    {
+      this.sessionDatabase = sessionDatabase;
+    }
+
+    public String getSessionSchema()
+    {
+      return sessionSchema;
+    }
+
+    public void setSessionSchema(String sessionSchema)
+    {
+      this.sessionSchema = sessionSchema;
+    }
+
+    public String getSessionRole()
+    {
+      return sessionRole;
+    }
+
+    void setSessionRole(String sessionRole)
+    {
+      this.sessionRole = sessionRole;
+    }
+
+    String getSessionWarehouse()
+    {
+      return sessionWarehouse;
+    }
+
+    void setSessionWarehouse(String sessionWarehouse)
+    {
+      this.sessionWarehouse = sessionWarehouse;
+    }
+
+    public long getMasterTokenValidityInSeconds()
+    {
+      return masterTokenValidityInSeconds;
+    }
+
+    boolean isUpdatedByTokenRequest()
+    {
+      return updatedByTokenRequest;
+    }
+
+    LoginOutput setUpdatedByTokenRequest(boolean updatedByTokenRequest)
+    {
+      this.updatedByTokenRequest = updatedByTokenRequest;
+      return this;
+    }
+
+    boolean isUpdatedByTokenRequestIssue()
+    {
+      return updatedByTokenRequestIssue;
+    }
+
+    LoginOutput setUpdatedByTokenRequestIssue(boolean updatedByTokenRequestIssue)
+    {
+      this.updatedByTokenRequestIssue = updatedByTokenRequestIssue;
+      return this;
     }
   }
 }

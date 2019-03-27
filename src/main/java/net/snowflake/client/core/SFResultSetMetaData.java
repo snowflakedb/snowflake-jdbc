@@ -25,8 +25,6 @@ import net.snowflake.client.log.SFLoggerFactory;
 
 /**
  * Snowflake ResultSetMetaData
- *
- * @author jhuang
  */
 public class SFResultSetMetaData
 {
@@ -134,16 +132,16 @@ public class SFResultSetMetaData
     this.timeFormatter = timeFormatter;
     calculateDateTimeStringLength();
 
-    this.columnNames = new ArrayList<String>(this.columnCount);
-    this.columnTypeNames = new ArrayList<String>(this.columnCount);
-    this.columnTypes = new ArrayList<Integer>(this.columnCount);
-    this.precisions = new ArrayList<Integer>(this.columnCount);
-    this.scales = new ArrayList<Integer>(this.columnCount);
-    this.nullables = new ArrayList<Integer>(this.columnCount);
-    this.columnSrcDatabases = new ArrayList<String>(this.columnCount);
-    this.columnSrcSchemas = new ArrayList<String>(this.columnCount);
-    this.columnSrcTables = new ArrayList<String>(this.columnCount);
-    this.columnDisplaySizes = new ArrayList<Integer>(this.columnCount);
+    this.columnNames = new ArrayList<>(this.columnCount);
+    this.columnTypeNames = new ArrayList<>(this.columnCount);
+    this.columnTypes = new ArrayList<>(this.columnCount);
+    this.precisions = new ArrayList<>(this.columnCount);
+    this.scales = new ArrayList<>(this.columnCount);
+    this.nullables = new ArrayList<>(this.columnCount);
+    this.columnSrcDatabases = new ArrayList<>(this.columnCount);
+    this.columnSrcSchemas = new ArrayList<>(this.columnCount);
+    this.columnSrcTables = new ArrayList<>(this.columnCount);
+    this.columnDisplaySizes = new ArrayList<>(this.columnCount);
 
     for (int colIdx = 0; colIdx < columnCount; colIdx++)
     {
@@ -384,7 +382,7 @@ public class SFResultSetMetaData
       throw new SFException(ErrorCode.COLUMN_DOES_NOT_EXIST, column);
     }
 
-    if (columnTypeNames == null || columnTypeNames.get(column - 1) == null)
+    if (columnTypeNames.get(column - 1) == null)
     {
       throw
           IncidentUtil.generateIncidentWithSignatureAndException(

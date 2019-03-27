@@ -5,13 +5,8 @@
 package net.snowflake.client.jdbc;
 
 import net.snowflake.common.core.ResourceBundleManager;
-import net.snowflake.client.core.EventHandler;
-import net.snowflake.client.core.EventUtil;
 import net.snowflake.common.core.SqlState;
 
-import java.io.InputStream;
-import java.net.URI;
-import java.net.URL;
 import java.sql.Connection;
 import java.sql.Driver;
 import java.sql.DriverManager;
@@ -19,17 +14,7 @@ import java.sql.DriverPropertyInfo;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.util.Properties;
-import java.util.jar.Attributes;
-import java.util.jar.JarInputStream;
-import java.util.jar.Manifest;
-import java.util.logging.Handler;
-import java.util.logging.FileHandler;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.logging.SimpleFormatter;
 import java.util.regex.Pattern;
-
-import net.snowflake.client.log.*;
 
 /**
  * JDBC Driver implementation of Snowflake for production.
@@ -38,8 +23,6 @@ import net.snowflake.client.log.*;
  * <p>
  * Note: don't add logger to this class since logger init will potentially
  * break driver class loading
- *
- * @author jhuang
  */
 public class SnowflakeDriver implements Driver
 {
@@ -48,16 +31,16 @@ public class SnowflakeDriver implements Driver
       "jdbc:snowflake://([a-zA-Z_\\-0-9\\.]+(:\\d+)?)?"
       + "(/?(\\?\\w+=\\w+)?(\\&\\w+=\\w+)*)?";
 
-  public static SnowflakeDriver INSTANCE = null;
+  static SnowflakeDriver INSTANCE;
 
   private static final
   DriverPropertyInfo[] EMPTY_INFO = new DriverPropertyInfo[0];
 
   public static String implementVersion = null;
 
-  public static int majorVersion = 0;
-  public static int minorVersion = 0;
-  public static long changeVersion = 0;
+  static int majorVersion = 0;
+  static int minorVersion = 0;
+  static long patchVersion = 0;
 
   protected static boolean disableIncidents = false;
 
@@ -100,7 +83,7 @@ public class SnowflakeDriver implements Driver
         {
           majorVersion = Integer.parseInt(versionBreakdown[0]);
           minorVersion = Integer.parseInt(versionBreakdown[1]);
-          changeVersion = Long.parseLong(versionBreakdown[2]);
+          patchVersion = Long.parseLong(versionBreakdown[2]);
         }
         else
         {

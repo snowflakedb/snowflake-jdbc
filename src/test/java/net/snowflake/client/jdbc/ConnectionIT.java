@@ -13,7 +13,6 @@ import org.apache.commons.codec.binary.Base64;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.security.KeyPair;
@@ -25,8 +24,10 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
 import java.sql.SQLWarning;
 import java.sql.Statement;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Map;
 import java.util.Properties;
@@ -36,6 +37,7 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -45,7 +47,6 @@ import static org.junit.Assert.fail;
 public class ConnectionIT extends BaseJDBCTest
 {
   private boolean defaultState;
-  private String defaultDeployment;
 
   @Before
   public void setUp()
@@ -53,7 +54,6 @@ public class ConnectionIT extends BaseJDBCTest
     TelemetryService service = TelemetryService.getInstance();
     service.updateContext(getConnectionParameters());
     defaultState = service.isEnabled();
-    defaultDeployment = service.getServerDeploymentName();
     service.setNumOfRetryToTriggerTelemetry(3);
     service.disableRunFlushBeforeException();
     service.enable();
@@ -90,12 +90,13 @@ public class ConnectionIT extends BaseJDBCTest
     statement.close();
     con.close();
     assertTrue(con.isClosed());
+    con.close(); // ensure no exception
   }
 
   /**
    * Test that login timeout kick in when connect through datasource
    *
-   * @throws SQLException
+   * @throws SQLException if any SQL error occurs
    */
   @Test
   public void testLoginTimeoutViaDataSource() throws SQLException
@@ -157,6 +158,32 @@ public class ConnectionIT extends BaseJDBCTest
   }
 
   @Test
+  public void testSetCatalogSchema() throws Throwable
+  {
+    try (Connection connection = getConnection())
+    {
+      String db = connection.getCatalog();
+      String schema = connection.getSchema();
+      connection.setCatalog(db);
+      connection.setSchema("PUBLIC");
+
+      // get the current schema
+      ResultSet rst = connection.createStatement().executeQuery("select current_schema()");
+      assertTrue(rst.next());
+      assertEquals("PUBLIC", rst.getString(1));
+      assertEquals(db, connection.getCatalog());
+      assertEquals("PUBLIC", connection.getSchema());
+
+      // get the current schema
+      connection.setSchema(schema);
+      rst = connection.createStatement().executeQuery("select current_schema()");
+      assertTrue(rst.next());
+      assertEquals(schema, rst.getString(1));
+      rst.close();
+    }
+  }
+
+  @Test
   @ConditionalIgnore(condition = RunningOnTravisCI.class)
   public void testConnectionGetAndSetDBAndSchema() throws SQLException
   {
@@ -209,21 +236,6 @@ public class ConnectionIT extends BaseJDBCTest
     assertEquals(3, ci.size());
     String name = con.getClientInfo("name");
     assertEquals("Peter", name);
-    con.close();
-  }
-
-  @Ignore("not supported yet")
-  @Test
-  public void testReadOnlyConneciton() throws SQLException
-  {
-    Connection con = getConnection();
-    assertTrue(!con.isReadOnly());
-    con.setReadOnly(true);
-    assertTrue(con.isReadOnly());
-    Statement statement = con.createStatement();
-    statement.execute("create or replace table TEST_JDBC_READ_ONLY(colA VARCHAR)");
-    statement.execute("drop table if exists TEST_JDBC_READ_ONLY");
-    statement.close();
     con.close();
   }
 
@@ -806,6 +818,130 @@ public class ConnectionIT extends BaseJDBCTest
       System.clearProperty("net.snowflake.jdbc.clientPrefetchThreads");
       System.clearProperty("net.snowflake.jdbc.clientResultChunkSize");
       System.clearProperty("net.snowflake.jdbc.clientMemoryLimit");
+    }
+  }
+
+  @Test
+  public void testReadOnly() throws Throwable
+  {
+    try (Connection connection = getConnection())
+    {
+      try
+      {
+        connection.setReadOnly(true);
+        fail("must raise SQLFeatureNotSupportedException");
+      }
+      catch (SQLFeatureNotSupportedException ex)
+      {
+        // nop
+      }
+
+      connection.setReadOnly(false);
+      connection.createStatement().execute("create or replace table readonly_test(c1 int)");
+      assertFalse(connection.isReadOnly());
+      connection.createStatement().execute("drop table if exists readonly_test");
+    }
+  }
+
+  @Test
+  public void testNativeSQL() throws Throwable
+  {
+    try (Connection connection = getConnection())
+    {
+      // today returning the source SQL.
+      assertEquals("select 1", connection.nativeSQL("select 1"));
+    }
+  }
+
+  @Test
+  public void testGetTypeMap() throws Throwable
+  {
+    try (Connection connection = getConnection())
+    {
+      // return an empty type map. setTypeMap is not supported.
+      assertEquals(Collections.emptyMap(), connection.getTypeMap());
+    }
+  }
+
+  @Test
+  public void testHolderbility() throws Throwable
+  {
+    try (Connection connection = getConnection())
+    {
+      try
+      {
+        connection.setHoldability(0);
+      }
+      catch (SQLFeatureNotSupportedException ex)
+      {
+        // nop
+      }
+      // return an empty type map. setTypeMap is not supported.
+      assertEquals(ResultSet.CLOSE_CURSORS_AT_COMMIT, connection.getHoldability());
+    }
+  }
+
+  @Test
+  public void testIsValid() throws Throwable
+  {
+    try (Connection connection = getConnection())
+    {
+      assertTrue(connection.isValid(10));
+      try
+      {
+        assertTrue(connection.isValid(-10));
+        fail("must fail");
+      }
+      catch (SQLException ex)
+      {
+        // nop, no specific error code is provided.
+      }
+    }
+  }
+
+  @Test
+  public void testClientInfo() throws Throwable
+  {
+    try (Connection connection = getConnection())
+    {
+      // no name or value validation is in place.
+      // in fact, nop.
+      Properties props = new Properties();
+      props.setProperty("name", "value");
+      connection.setClientInfo(props);
+      connection.setClientInfo("name2", "value2");
+      Properties retProps = connection.getClientInfo();
+      assertEquals(2, retProps.size());
+      assertEquals("value", props.getProperty("name"));
+      assertEquals("value", connection.getClientInfo("name"));
+    }
+  }
+
+  @Test
+  public void testUnwrapper() throws Throwable
+  {
+    try (Connection connection = getConnection())
+    {
+      boolean canUnwrap = connection.isWrapperFor(SnowflakeConnectionV1.class);
+      assertTrue(canUnwrap);
+      if (canUnwrap)
+      {
+        SnowflakeConnectionV1 sfconnection = connection.unwrap(SnowflakeConnectionV1.class);
+        sfconnection.createStatement();
+      }
+      else
+      {
+        fail("should be able to unwrap");
+      }
+      try
+      {
+        connection.unwrap(SnowflakeDriver.class);
+        fail("should fail to cast");
+      }
+      catch (SQLException ex)
+      {
+        // nop
+      }
     }
   }
 }

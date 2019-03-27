@@ -15,8 +15,6 @@ import net.snowflake.client.log.SFLoggerFactory;
 
 /**
  * Snowflake ResultSetMetaData
- *
- * @author jhuang
  */
 class SnowflakeResultSetMetaDataV1 extends SnowflakeResultSetMetaData
 {

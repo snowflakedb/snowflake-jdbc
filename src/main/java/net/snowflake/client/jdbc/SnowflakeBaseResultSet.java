@@ -4,13 +4,13 @@
 
 package net.snowflake.client.jdbc;
 
-import net.snowflake.common.core.SqlState;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
 
 import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringReader;
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.net.URL;
 import java.sql.Array;
 import java.sql.Blob;
@@ -31,270 +31,48 @@ import java.sql.Timestamp;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
-import java.sql.Types;
 import java.util.TimeZone;
-
-import net.snowflake.client.log.SFLogger;
-import net.snowflake.client.log.SFLoggerFactory;
 
 /**
  * Base class for query result set and metadata result set
- *
- * @author jhuang
  */
 abstract class SnowflakeBaseResultSet implements ResultSet
 {
-
   static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeBaseResultSet.class);
-
-  protected Statement statement;
-
-  private boolean wasNull = false;
-
-  protected Object[] nextRow = null;
-
+  private final int resultSetType;
+  private final int resultSetConcurrency;
+  private final int resultSetHoldability;
+  protected final Statement statement;
   protected SnowflakeResultSetMetaData resultSetMetaData = null;
-
-  protected int row = 0;
-
   protected Map<String, Object> parameters = new HashMap<>();
-
   private int fetchSize = 0;
+
+  SnowflakeBaseResultSet(Statement statement)
+  throws SQLException
+  {
+    this.statement = statement;
+    this.resultSetType = statement.getResultSetType();
+    this.resultSetConcurrency = statement.getResultSetConcurrency();
+    this.resultSetHoldability = statement.getResultSetHoldability();
+  }
 
   @Override
   abstract public boolean next() throws SQLException;
 
   @Override
-  abstract public void close() throws SQLException;
-
-  @Override
-  public boolean wasNull() throws SQLException
-  {
-    logger.debug("public boolean wasNull() returning {}", wasNull);
-
-    return wasNull;
-  }
-
-  @Override
-  public String getString(int columnIndex) throws SQLException
-  {
-    logger.debug("public String getString(int columnIndex)");
-
-    // Column index starts from 1, not 0.
-    Object obj = getObjectInternal(columnIndex);
-
-    return obj == null ? null : obj.toString();
-  }
-
-  @Override
-  public boolean getBoolean(int columnIndex) throws SQLException
-  {
-    logger.debug(
-        "public boolean getBoolean(int columnIndex)");
-
-    // Column index starts from 1, not 0.
-    Object obj = getObjectInternal(columnIndex);
-
-    if (obj == null)
-    {
-      return false;
-    }
-
-    if (obj instanceof String)
-    {
-      if (obj.toString().equals("1"))
-      {
-        return Boolean.TRUE;
-      }
-      return Boolean.FALSE;
-    }
-    else
-    {
-      return ((Boolean) obj).booleanValue();
-    }
-  }
-
-  @Override
-  public byte getByte(int columnIndex) throws SQLException
-  {
-    logger.debug("public byte getByte(int columnIndex)");
-
-    // Column index starts from 1, not 0.
-    Object obj = getObjectInternal(columnIndex);
-
-    if (obj == null)
-    {
-      return 0;
-    }
-
-    if (obj instanceof String)
-    {
-      return Byte.valueOf((String) obj);
-    }
-    else
-    {
-      return (Byte) obj;
-    }
-  }
-
-  @Override
-  public short getShort(int columnIndex) throws SQLException
-  {
-    logger.debug("public short getShort(int columnIndex)");
-
-    // Column index starts from 1, not 0.
-    Object obj = getObjectInternal(columnIndex);
-
-    if (obj == null)
-    {
-      return 0;
-    }
-
-    if (obj instanceof String)
-    {
-      return (Short.valueOf((String) obj)).shortValue();
-    }
-    else
-    {
-      return ((Number) obj).shortValue();
-    }
-  }
-
-  @Override
-  public int getInt(int columnIndex) throws SQLException
-  {
-    logger.debug("public int getInt(int columnIndex)");
-
-    // Column index starts from 1, not 0.
-    Object obj = getObjectInternal(columnIndex);
-
-    if (obj == null)
-    {
-      return 0;
-    }
-
-    if (obj instanceof String)
-    {
-      return (Integer.valueOf((String) obj)).intValue();
-    }
-    else
-    {
-      return ((Number) obj).intValue();
-    }
-
-  }
-
-  @Override
-  public long getLong(int columnIndex) throws SQLException
-  {
-    logger.debug("public long getLong(int columnIndex)");
-
-    // Column index starts from 1, not 0.
-    Object obj = getObjectInternal(columnIndex);
-
-    if (obj == null)
-    {
-      return 0;
-    }
-
-    try
-    {
-      if (obj instanceof String)
-      {
-        return (Long.valueOf((String) obj)).longValue();
-      }
-      else
-      {
-        return ((Number) obj).longValue();
-      }
-    }
-    catch (NumberFormatException nfe)
-    {
-      throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
-                                      ErrorCode.INTERNAL_ERROR.getMessageCode(),
-                                      "Invalid long: " + (String) obj);
-    }
-  }
-
-  @Override
-  public float getFloat(int columnIndex) throws SQLException
-  {
-    logger.debug("public float getFloat(int columnIndex)");
-
-    // Column index starts from 1, not 0.
-    Object obj = getObjectInternal(columnIndex);
-
-    if (obj == null)
-    {
-      return 0;
-    }
-
-    if (obj instanceof String)
-    {
-      return (Float.valueOf((String) obj)).floatValue();
-    }
-    else
-    {
-      return ((Number) obj).floatValue();
-    }
-  }
-
-  @Override
-  public double getDouble(int columnIndex) throws SQLException
-  {
-    logger.debug("public double getDouble(int columnIndex)");
-
-    // Column index starts from 1, not 0.
-    Object obj = getObjectInternal(columnIndex);
-
-    // snow-11974: null for getDouble should return 0
-    if (obj == null)
-    {
-      return 0;
-    }
-
-    if (obj instanceof String)
-    {
-      return (Double.valueOf((String) obj)).doubleValue();
-    }
-    else
-    {
-      return ((Number) obj).doubleValue();
-    }
-  }
+  abstract public boolean isClosed() throws SQLException;
 
   /**
-   * @deprecated
+   * Raises SQLException if the result set is closed
+   *
+   * @throws SQLException if the result set is closed.
    */
-  @Override
-  public BigDecimal getBigDecimal(int columnIndex, int scale)
-  throws SQLException
+  protected void raiseSQLExceptionIfResultSetIsClosed() throws SQLException
   {
-    logger.debug(
-        "public BigDecimal getBigDecimal(int columnIndex, int scale)");
-
-    BigDecimal value = null;
-
-    // Column index starts from 1, not 0.
-    Object obj = getObjectInternal(columnIndex);
-
-    if (obj == null)
+    if (isClosed())
     {
-      return null;
+      throw new SnowflakeSQLException(ErrorCode.RESULTSET_ALREADY_CLOSED);
     }
-
-    if (obj instanceof String)
-    {
-      value = new BigDecimal((String) obj);
-    }
-    else
-    {
-      value = new BigDecimal(obj.toString());
-    }
-
-    value = value.setScale(scale, RoundingMode.HALF_UP);
-
-    return value;
   }
 
   @Override
@@ -305,6 +83,7 @@ abstract class SnowflakeBaseResultSet implements ResultSet
   @Override
   public Date getDate(int columnIndex) throws SQLException
   {
+    raiseSQLExceptionIfResultSetIsClosed();
     return getDate(columnIndex, TimeZone.getDefault());
   }
 
@@ -314,37 +93,12 @@ abstract class SnowflakeBaseResultSet implements ResultSet
   @Override
   public Timestamp getTimestamp(int columnIndex) throws SQLException
   {
+    raiseSQLExceptionIfResultSetIsClosed();
     return getTimestamp(columnIndex, TimeZone.getDefault());
   }
 
   abstract public Timestamp getTimestamp(int columnIndex, TimeZone tz)
   throws SQLException;
-
-  /**
-   * Parse seconds since epoch with both seconds and fractional seconds after
-   * decimal point (e.g 123.456 with a scale of 3) to a representation with
-   * fractions normalized to an integer (e.g. 123456)
-   *
-   * @param secondsSinceEpochStr
-   * @param scale
-   * @return a BigDecimal containing the number of fractional seconds since
-   * epoch.
-   */
-  private BigDecimal parseSecondsSinceEpoch(String secondsSinceEpochStr,
-                                            int scale)
-  {
-    // seconds since epoch has both seconds and fractional seconds after decimal
-    // point. Ex: 134567890.12345678
-    // Note: can actually contain timezone in the lowest part
-    // Example: obj is e.g. "123.456" (scale=3)
-    //          Then, secondsSinceEpoch is 123.456
-    BigDecimal secondsSinceEpoch = new BigDecimal(secondsSinceEpochStr);
-
-    // Representation with fractions normalized to an integer
-    // Note: can actually contain timezone in the lowest part
-    // Example: fractionsSinceEpoch is 123456
-    return secondsSinceEpoch.scaleByPowerOfTen(scale);
-  }
 
   @Override
   public InputStream getAsciiStream(int columnIndex) throws SQLException
@@ -379,8 +133,7 @@ abstract class SnowflakeBaseResultSet implements ResultSet
   @Override
   public String getString(String columnLabel) throws SQLException
   {
-    logger.debug(
-        "public String getString(String columnLabel)");
+    logger.debug("public String getString(String columnLabel)");
 
     return getString(findColumn(columnLabel));
   }
@@ -388,8 +141,7 @@ abstract class SnowflakeBaseResultSet implements ResultSet
   @Override
   public boolean getBoolean(String columnLabel) throws SQLException
   {
-    logger.debug(
-        "public boolean getBoolean(String columnLabel)");
+    logger.debug("public boolean getBoolean(String columnLabel)");
 
     return getBoolean(findColumn(columnLabel));
   }
@@ -398,6 +150,7 @@ abstract class SnowflakeBaseResultSet implements ResultSet
   public byte getByte(String columnLabel) throws SQLException
   {
     logger.debug("public byte getByte(String columnLabel)");
+    raiseSQLExceptionIfResultSetIsClosed();
 
     return getByte(findColumn(columnLabel));
   }
@@ -527,7 +280,7 @@ abstract class SnowflakeBaseResultSet implements ResultSet
   public SQLWarning getWarnings() throws SQLException
   {
     logger.debug("public SQLWarning getWarnings()");
-
+    raiseSQLExceptionIfResultSetIsClosed();
     return null;
   }
 
@@ -535,8 +288,7 @@ abstract class SnowflakeBaseResultSet implements ResultSet
   public void clearWarnings() throws SQLException
   {
     logger.debug("public void clearWarnings()");
-
-    // do nothing since warnings are not tracked
+    raiseSQLExceptionIfResultSetIsClosed();
   }
 
   @Override
@@ -551,85 +303,8 @@ abstract class SnowflakeBaseResultSet implements ResultSet
   public ResultSetMetaData getMetaData() throws SQLException
   {
     logger.debug("public ResultSetMetaData getMetaData()");
-
+    raiseSQLExceptionIfResultSetIsClosed();
     return resultSetMetaData;
-  }
-
-  protected Object getObjectInternal(int columnIndex) throws SQLException
-  {
-    logger.debug(
-        "public Object getObjectInternal(int columnIndex)");
-
-    if (nextRow == null)
-    {
-      throw new SQLException("No row found.");
-    }
-
-    if (columnIndex > nextRow.length)
-    {
-      throw new SQLException("Invalid column index: " + columnIndex);
-    }
-
-    wasNull = nextRow[columnIndex - 1] == null;
-
-    logger.debug(
-        "Returning column: " + columnIndex + ": "
-        + nextRow[columnIndex - 1]);
-
-    return nextRow[columnIndex - 1];
-  }
-
-  @Override
-  public Object getObject(int columnIndex) throws SQLException
-  {
-    logger.debug(
-        "public Object getObject(int columnIndex)");
-
-    int type = resultSetMetaData.getColumnType(columnIndex);
-
-    Object internalObj = getObjectInternal(columnIndex);
-    if (internalObj == null)
-    {
-      return null;
-    }
-
-    switch (type)
-    {
-      case Types.VARCHAR:
-      case Types.CHAR:
-        return getString(columnIndex);
-
-      case Types.BINARY:
-        return getBytes(columnIndex);
-
-      case Types.INTEGER:
-      case Types.SMALLINT:
-        return Integer.valueOf(getInt(columnIndex));
-
-      case Types.DECIMAL:
-        return getBigDecimal(columnIndex);
-
-      case Types.BIGINT:
-        return getLong(columnIndex);
-
-      case Types.DOUBLE:
-        return Double.valueOf(getDouble(columnIndex));
-
-      case Types.TIMESTAMP:
-        return getTimestamp(columnIndex);
-
-      case Types.DATE:
-        return getDate(columnIndex);
-
-      case Types.TIME:
-        return getTime(columnIndex);
-
-      case Types.BOOLEAN:
-        return getBoolean(columnIndex);
-
-      default:
-        throw new SQLFeatureNotSupportedException();
-    }
   }
 
   @Override
@@ -646,6 +321,7 @@ abstract class SnowflakeBaseResultSet implements ResultSet
   {
     logger.debug(
         "public int findColumn(String columnLabel)");
+    raiseSQLExceptionIfResultSetIsClosed();
 
     int columnIndex = resultSetMetaData.getColumnIndex(columnLabel);
 
@@ -662,47 +338,16 @@ abstract class SnowflakeBaseResultSet implements ResultSet
   @Override
   public Reader getCharacterStream(int columnIndex) throws SQLException
   {
-    logger.debug(
-        "public Reader getCharacterStream(int columnIndex)");
-
-    throw new SQLFeatureNotSupportedException();
+    logger.debug("public Reader getCharacterStream(int columnIndex)");
+    raiseSQLExceptionIfResultSetIsClosed();
+    return new StringReader(getString(columnIndex));
   }
 
   @Override
   public Reader getCharacterStream(String columnLabel) throws SQLException
   {
-    logger.debug(
-        "public Reader getCharacterStream(String columnLabel)");
-
+    logger.debug("public Reader getCharacterStream(String columnLabel)");
     return getCharacterStream(findColumn(columnLabel));
-  }
-
-  @Override
-  public BigDecimal getBigDecimal(int columnIndex) throws SQLException
-  {
-    logger.debug(
-        "public BigDecimal getBigDecimal(int columnIndex)");
-
-    BigDecimal value = null;
-
-    // Column index starts from 1, not 0.
-    Object obj = getObjectInternal(columnIndex);
-
-    if (obj == null)
-    {
-      return null;
-    }
-
-    if (obj instanceof String)
-    {
-      value = new BigDecimal((String) obj);
-    }
-    else
-    {
-      value = new BigDecimal(obj.toString());
-    }
-
-    return value;
   }
 
   @Override
@@ -712,38 +357,6 @@ abstract class SnowflakeBaseResultSet implements ResultSet
         "public BigDecimal getBigDecimal(String columnLabel)");
 
     return getBigDecimal(findColumn(columnLabel));
-  }
-
-  @Override
-  public boolean isBeforeFirst() throws SQLException
-  {
-    logger.debug("public boolean isBeforeFirst()");
-
-    throw new SQLFeatureNotSupportedException();
-  }
-
-  @Override
-  public boolean isAfterLast() throws SQLException
-  {
-    logger.debug("public boolean isAfterLast()");
-
-    throw new SQLFeatureNotSupportedException();
-  }
-
-  @Override
-  public boolean isFirst() throws SQLException
-  {
-    logger.debug("public boolean isFirst()");
-
-    return row == 1;
-  }
-
-  @Override
-  public boolean isLast() throws SQLException
-  {
-    logger.debug("public boolean isLast()");
-
-    throw new SQLFeatureNotSupportedException();
   }
 
   @Override
@@ -779,14 +392,6 @@ abstract class SnowflakeBaseResultSet implements ResultSet
   }
 
   @Override
-  public int getRow() throws SQLException
-  {
-    logger.debug("public int getRow()");
-
-    return row;
-  }
-
-  @Override
   public boolean absolute(int row) throws SQLException
   {
     logger.debug("public boolean absolute(int row)");
@@ -811,11 +416,20 @@ abstract class SnowflakeBaseResultSet implements ResultSet
   }
 
   @Override
+  public int getFetchDirection() throws SQLException
+  {
+    logger.debug("public int getFetchDirection()");
+    raiseSQLExceptionIfResultSetIsClosed();
+    return ResultSet.FETCH_FORWARD;
+  }
+
+  @Override
   public void setFetchDirection(int direction) throws SQLException
   {
     logger.debug(
         "public void setFetchDirection(int direction)");
 
+    raiseSQLExceptionIfResultSetIsClosed();
     if (direction != ResultSet.FETCH_FORWARD)
     {
       throw new SQLFeatureNotSupportedException();
@@ -823,46 +437,36 @@ abstract class SnowflakeBaseResultSet implements ResultSet
   }
 
   @Override
-  public int getFetchDirection() throws SQLException
+  public int getFetchSize() throws SQLException
   {
-    logger.debug("public int getFetchDirection()");
-
-    return ResultSet.FETCH_FORWARD;
+    logger.debug("public int getFetchSize()");
+    raiseSQLExceptionIfResultSetIsClosed();
+    return this.fetchSize;
   }
 
   @Override
   public void setFetchSize(int rows) throws SQLException
   {
     logger.debug("public void setFetchSize(int rows)");
+    raiseSQLExceptionIfResultSetIsClosed();
 
     this.fetchSize = rows;
-  }
-
-  @Override
-  public int getFetchSize() throws SQLException
-  {
-    logger.debug("public int getFetchSize()");
-
-    return this.fetchSize;
   }
 
   @Override
   public int getType() throws SQLException
   {
     logger.debug("public int getType()");
-
-    return ResultSet.TYPE_FORWARD_ONLY;
+    raiseSQLExceptionIfResultSetIsClosed();
+    return resultSetType;
   }
 
   @Override
   public int getConcurrency() throws SQLException
   {
     logger.debug("public int getConcurrency()");
-
-    throw new SQLFeatureNotSupportedException(
-        "Feature not supported",
-        ErrorCode.FEATURE_UNSUPPORTED.getSqlState(),
-        ErrorCode.FEATURE_UNSUPPORTED.getMessageCode());
+    raiseSQLExceptionIfResultSetIsClosed();
+    return resultSetConcurrency;
   }
 
   @Override
@@ -1310,7 +914,7 @@ abstract class SnowflakeBaseResultSet implements ResultSet
   public Statement getStatement() throws SQLException
   {
     logger.debug("public Statement getStatement()");
-
+    raiseSQLExceptionIfResultSetIsClosed();
     return statement;
   }
 
@@ -1345,8 +949,7 @@ abstract class SnowflakeBaseResultSet implements ResultSet
   public Clob getClob(int columnIndex) throws SQLException
   {
     logger.debug("public Clob getClob(int columnIndex)");
-
-    throw new SQLFeatureNotSupportedException();
+    return new SnowflakeClob(getString(columnIndex));
   }
 
   @Override
@@ -1585,16 +1188,8 @@ abstract class SnowflakeBaseResultSet implements ResultSet
   public int getHoldability() throws SQLException
   {
     logger.debug("public int getHoldability()");
-
-    throw new SQLFeatureNotSupportedException();
-  }
-
-  @Override
-  public boolean isClosed() throws SQLException
-  {
-    logger.debug("public boolean isClosed()");
-
-    throw new SQLFeatureNotSupportedException();
+    raiseSQLExceptionIfResultSetIsClosed();
+    return resultSetHoldability;
   }
 
   @Override
