@@ -124,6 +124,27 @@ public class TelemetryServiceIT extends BaseJDBCTest
 
   @Ignore
   @Test
+  public void testCreateLogWithAWSSecret()
+  {
+    // this log will be delivered to snowflake
+    TelemetryService service = TelemetryService.getInstance();
+    TelemetryEvent.LogBuilder logBuilder = new TelemetryEvent.LogBuilder();
+    TelemetryEvent log = logBuilder
+        .withName("ExampleLog")
+        .withValue("This is an example log: credentials=(\n" +
+                   "  aws_key_id='xxdsdfsafds'\n" +
+                   "  aws_secret_key='safas+asfsad+safasf')\n")
+        .build();
+    service.add(log);
+    String marked = service.exportQueueToString();
+
+    assertThat("marked aws_key_id", !marked.contains("xxdsdfsafds"));
+    assertThat("marked aws_secret_key", !marked.contains("safas+asfsad+safasf"));
+    service.flush();
+  }
+
+  @Ignore
+  @Test
   public void stressTestCreateLog()
   {
     // this log will be delivered to snowflake
