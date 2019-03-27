@@ -4,6 +4,9 @@
 
 package net.snowflake.client.core;
 
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
+
 import java.util.HashSet;
 import java.util.Set;
 import java.util.WeakHashMap;
@@ -12,9 +15,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
-
-import net.snowflake.client.log.SFLogger;
-import net.snowflake.client.log.SFLoggerFactory;
 
 /**
  * This class is a singleton which is running inside driver to heartbeat
@@ -52,9 +52,9 @@ public class HeartbeatBackground implements Runnable
    * care of the case when some application does not close session before it
    * goes out of scope.
    */
-  WeakHashMap<SFSession, Boolean> sessions = new WeakHashMap<SFSession, Boolean>();
+  WeakHashMap<SFSession, Boolean> sessions = new WeakHashMap<>();
 
-  // When is the last time hearbeat started
+  // When is the last time heartbeat started
   private long lastHeartbeatStartTimeInSecs = 0;
 
   // Method to get the heartbeat instance
@@ -113,7 +113,7 @@ public class HeartbeatBackground implements Runnable
     // add session to the list to be heartbeated
     sessions.put(session, Boolean.TRUE);
 
-    /**
+    /*
      * Create scheduler if it is the first time. It uses a custom thread
      * factory that will create daemon thread so that it will not block
      * JVM from exiting.
@@ -121,19 +121,20 @@ public class HeartbeatBackground implements Runnable
     if (this.scheduler == null)
     {
       LOGGER.debug("create heartbeat thread pool");
-      this.scheduler = Executors.newScheduledThreadPool(1,
-                                                        new ThreadFactory()
-                                                        {
-                                                          @Override
-                                                          public Thread newThread(Runnable runnable)
-                                                          {
-                                                            Thread thread =
-                                                                Executors.defaultThreadFactory().newThread(runnable);
-                                                            thread.setName("heartbeat (" + thread.getId() + ")");
-                                                            thread.setDaemon(true);
-                                                            return thread;
-                                                          }
-                                                        });
+      this.scheduler = Executors.newScheduledThreadPool(
+          1,
+          new ThreadFactory()
+          {
+            @Override
+            public Thread newThread(Runnable runnable)
+            {
+              Thread thread =
+                  Executors.defaultThreadFactory().newThread(runnable);
+              thread.setName("heartbeat (" + thread.getId() + ")");
+              thread.setDaemon(true);
+              return thread;
+            }
+          });
     }
 
     // schedule a heartbeat task if none exists
@@ -183,7 +184,7 @@ public class HeartbeatBackground implements Runnable
     long elapsedSecsSinceLastHeartBeat =
         System.currentTimeMillis() / 1000 - lastHeartbeatStartTimeInSecs;
 
-    /**
+    /*
      * The initial delay for the new scheduling is 0 if the elapsed
      * time is more than the heartbeat time interval, otherwise it is the
      * difference between the heartbeat time interval and the elapsed time.

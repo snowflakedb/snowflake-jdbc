@@ -6,21 +6,19 @@ package net.snowflake.client.jdbc;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Collections;
+import java.util.List;
 
 /**
  * For function call getTables/getSchemas, we returned resultset.
  * We stored these resultSetMetadata here
- * <p>
- * Created by hyu on 12/15/16.
  */
 public enum DBMetadataResultSetMetadata
 {
   GET_CATALOGS(
-      Arrays.asList("TABLE_CAT"),
-      Arrays.asList("TEXT"),
-      Arrays.asList(Types.VARCHAR)),
+      Collections.singletonList("TABLE_CAT"),
+      Collections.singletonList("TEXT"),
+      Collections.singletonList(Types.VARCHAR)),
 
   GET_SCHEMAS(
       Arrays.asList("TABLE_SCHEM", "TABLE_CATALOG"),

@@ -23,6 +23,7 @@ import java.sql.Statement;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -55,65 +56,74 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   static final private String JDBCVersion = "1.0";
   // Open Group CLI Functions
   // LOG10 is not supported
-  static final private String NumericFunctionsSupported = "ABS,ACOS,ASIN,"
-                                                          +
-                                                          "CEILING,COS,COT,DEGREES,EXP,FLOOR,LOG,MOD,PI,POWER,RADIANS,RAND,"
-                                                          + "ROUND,SIGN,SQRT,TAN,TRUNCATE";
+  static final private String NumericFunctionsSupported =
+      "ABS,ACOS,ASIN,"
+      + "CEILING,COS,COT,DEGREES,EXP,FLOOR,LOG,MOD,PI,POWER,RADIANS,RAND,"
+      + "ROUND,SIGN,SQRT,TAN,TRUNCATE";
   // DIFFERENCE and SOUNDEX are not supported
-  static final private String StringFunctionsSupported = "ASCII,CHAR,"
-                                                         +
-                                                         "CONCAT,INSERT,LCASE,LEFT,LENGTH,LOCATE,LTRIM,REPEAT,REPLACE,"
-                                                         + "RIGHT,RTRIM,SPACE,SUBSTRING,UCASE";
-  static final private String DateAndTimeFunctionsSupported = "CURDATE," +
-                                                              "CURTIME,DAYNAME,DAYOFMONTH,DAYOFWEEK,DAYOFYEAR,HOUR,MINUTE,MONTH," +
-                                                              "MONTHNAME,NOW,QUARTER,SECOND,TIMESTAMPADD,TIMESTAMPDIFF,WEEK,YEAR";
-  static final private String SystemFunctionsSupported = "DATABASE,IFNULL,USER";
+  static final private String StringFunctionsSupported =
+      "ASCII,CHAR,"
+      + "CONCAT,INSERT,LCASE,LEFT,LENGTH,LOCATE,LTRIM,REPEAT,REPLACE,"
+      + "RIGHT,RTRIM,SPACE,SUBSTRING,UCASE";
+  static final private String DateAndTimeFunctionsSupported =
+      "CURDATE," +
+      "CURTIME,DAYNAME,DAYOFMONTH,DAYOFWEEK,DAYOFYEAR,HOUR,MINUTE,MONTH," +
+      "MONTHNAME,NOW,QUARTER,SECOND,TIMESTAMPADD,TIMESTAMPDIFF,WEEK,YEAR";
+  static final private String SystemFunctionsSupported =
+      "DATABASE,IFNULL,USER";
 
   // These are keywords not in SQL2003 standard
-  static final private String notSQL2003Keywords = "ACCOUNT,DATABASE,SCHEMA,VIEW,ISSUE,DATE_PART,EXTRACT," +
-                                                   "POSITION,TRY_CAST,BIT,DATETIME,NUMBERC,OBJECT,BYTEINT,STRING,TEXT," +
-                                                   "TIMESTAMPLTZ,TIMESTAMPNTZ,TIMESTAMPTZ,TIMESTAMP_LTZ,TIMESTAMP_NTZ,TIMESTAMP_TZ,TINYINT," +
-                                                   "VARBINARY,VARIANT,ACCOUNTS,ACTION,ACTIVATE,ASC,AUTOINCREMENT,BEFORE," +
-                                                   "BUILTIN,BYTE,CACHE,CHANGE,CLEAREPCACHE,CLONE,CLUSTER,CLUSTERS,COLUMNS,COMMENT," +
-                                                   "COMPRESSION,CONSTRAINTS,COPY,CP,CREDENTIALS,D,DATA,DATABASES,DEFERRABLE," +
-                                                   "DEFERRED,DELIMITED,DESC,DIRECTORY,DISABLE,DUAL,ENABLE,ENFORCED," +
-                                                   "EXCLUSIVE,EXPLAIN,EXPORTED,FAIL,FIELDS,FILE,FILES,FIRST,FN,FORCE,FORMAT," +
-                                                   "FORMATS,FUNCTIONS,GRANTS,GSINSTANCE,GSINSTANCES,HELP,HIBERNATE,HINTS," +
-                                                   "HISTORY,IDENTIFIED,IMMUTABLE,IMPORTED,INCIDENT,INCIDENTS,INFO,INITIALLY," +
-                                                   "ISSUES,KEEP,KEY,KEYS,LAST,LIMIT,LIST,LOAD,LOCATION,LOCK,LOCKS,LS,MANAGE,MAP,MATCHED," +
-                                                   "MATERIALIZED,MODIFY,MONITOR,MONITORS,NAME,NETWORK,NEXT,NORELY,NOTIFY,NOVALIDATE,NULLS,OBJECTS," +
-                                                   "OFFSET,OJ,OPERATE,OPERATION,OPTION,OWNERSHIP,PARAMETERS,PARTIAL," +
-                                                   "PERCENT,PLAN,PLUS,POLICIES,POLICY,POOL,PRESERVE,PRIVILEGES,PUBLIC,PURGE,PUT,QUIESCE," +
-                                                   "READ,RECLUSTER,REFERENCE,RELY,REMOVE,RENAME,REPLACE,REPLACE_FAIL,RESOURCE," +
-                                                   "RESTART,RESTORE,RESTRICT,RESUME,REWRITE,RM,ROLE,ROLES,RULE,SAMPLE,SCHEMAS,SEMI," +
-                                                   "SEQUENCE,SEQUENCES,SERVER,SERVERS,SESSION,SETLOGLEVEL,SETS,SFC,SHARE,SHARED,SHARES,SHOW,SHUTDOWN,SIMPLE,SORT," +
-                                                   "STAGE,STAGES,STATEMENT,STATISTICS,STOP,STORED,STRICT,STRUCT,SUSPEND,SUSPEND_IMMEDIATE,SWAP,SWITCH,T," +
-                                                   "TABLES,TEMP,TEMPORARY,TRANSACTION,TRANSACTIONS,TRANSIENT,TRIGGERS,TRUNCATE,TS,TYPE,UNDROP,UNLOCK,UNSET," +
-                                                   "UPGRADE,USAGE,USE,USERS,UTC,UTCTIMESTAMP,VALIDATE,VARIABLES,VERSION,VIEWS,VOLATILE,VOLUME," +
-                                                   "VOLUMES,WAREHOUSE,WAREHOUSES,WARN,WORK,WRITE,ZONE,INCREMENT,MINUS,REGEXP,RLIKE";
+  static final private String notSQL2003Keywords =
+      "ACCOUNT,DATABASE,SCHEMA,VIEW,ISSUE,DATE_PART,EXTRACT," +
+      "POSITION,TRY_CAST,BIT,DATETIME,NUMBERC,OBJECT,BYTEINT,STRING,TEXT," +
+      "TIMESTAMPLTZ,TIMESTAMPNTZ,TIMESTAMPTZ,TIMESTAMP_LTZ,TIMESTAMP_NTZ,TIMESTAMP_TZ,TINYINT," +
+      "VARBINARY,VARIANT,ACCOUNTS,ACTION,ACTIVATE,ASC,AUTOINCREMENT,BEFORE," +
+      "BUILTIN,BYTE,CACHE,CHANGE,CLEAREPCACHE,CLONE,CLUSTER,CLUSTERS,COLUMNS,COMMENT," +
+      "COMPRESSION,CONSTRAINTS,COPY,CP,CREDENTIALS,D,DATA,DATABASES,DEFERRABLE," +
+      "DEFERRED,DELIMITED,DESC,DIRECTORY,DISABLE,DUAL,ENABLE,ENFORCED," +
+      "EXCLUSIVE,EXPLAIN,EXPORTED,FAIL,FIELDS,FILE,FILES,FIRST,FN,FORCE,FORMAT," +
+      "FORMATS,FUNCTIONS,GRANTS,GSINSTANCE,GSINSTANCES,HELP,HIBERNATE,HINTS," +
+      "HISTORY,IDENTIFIED,IMMUTABLE,IMPORTED,INCIDENT,INCIDENTS,INFO,INITIALLY," +
+      "ISSUES,KEEP,KEY,KEYS,LAST,LIMIT,LIST,LOAD,LOCATION,LOCK,LOCKS,LS,MANAGE,MAP,MATCHED," +
+      "MATERIALIZED,MODIFY,MONITOR,MONITORS,NAME,NETWORK,NEXT,NORELY,NOTIFY,NOVALIDATE,NULLS,OBJECTS," +
+      "OFFSET,OJ,OPERATE,OPERATION,OPTION,OWNERSHIP,PARAMETERS,PARTIAL," +
+      "PERCENT,PLAN,PLUS,POLICIES,POLICY,POOL,PRESERVE,PRIVILEGES,PUBLIC,PURGE,PUT,QUIESCE," +
+      "READ,RECLUSTER,REFERENCE,RELY,REMOVE,RENAME,REPLACE,REPLACE_FAIL,RESOURCE," +
+      "RESTART,RESTORE,RESTRICT,RESUME,REWRITE,RM,ROLE,ROLES,RULE,SAMPLE,SCHEMAS,SEMI," +
+      "SEQUENCE,SEQUENCES,SERVER,SERVERS,SESSION,SETLOGLEVEL,SETS,SFC,SHARE,SHARED,SHARES,SHOW,SHUTDOWN,SIMPLE,SORT," +
+      "STAGE,STAGES,STATEMENT,STATISTICS,STOP,STORED,STRICT,STRUCT,SUSPEND,SUSPEND_IMMEDIATE,SWAP,SWITCH,T," +
+      "TABLES,TEMP,TEMPORARY,TRANSACTION,TRANSACTIONS,TRANSIENT,TRIGGERS,TRUNCATE,TS,TYPE,UNDROP,UNLOCK,UNSET," +
+      "UPGRADE,USAGE,USE,USERS,UTC,UTCTIMESTAMP,VALIDATE,VARIABLES,VERSION,VIEWS,VOLATILE,VOLUME," +
+      "VOLUMES,WAREHOUSE,WAREHOUSES,WARN,WORK,WRITE,ZONE,INCREMENT,MINUS,REGEXP,RLIKE";
 
-  private Connection connection;
+  private final Connection connection;
 
-  private SFSession session;
+  private final SFSession session;
 
-  private boolean metadataRequestUseConnectionCtx;
+  private final boolean metadataRequestUseConnectionCtx;
 
-  public SnowflakeDatabaseMetaData(Connection connection)
+  SnowflakeDatabaseMetaData(Connection connection) throws SQLException
   {
-    logger.debug(
-        "public SnowflakeDatabaseMetaData(SnowflakeConnection connection)");
+    logger.debug("public SnowflakeDatabaseMetaData(SnowflakeConnection connection)");
 
     this.connection = connection;
-    this.session = ((SnowflakeConnectionV1) connection).getSfSession();
+    this.session = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
     this.metadataRequestUseConnectionCtx = session.getMetadataRequestUseConnectionCtx();
+  }
+
+  private void raiseSQLExceptionIfConnectionIsClosed() throws SQLException
+  {
+    if (connection.isClosed())
+    {
+      throw new SnowflakeSQLException(ErrorCode.CONNECTION_CLOSED);
+    }
   }
 
   @Override
   public boolean allProceduresAreCallable() throws SQLException
   {
-    logger.debug(
-        "public boolean allProceduresAreCallable()");
-
+    logger.debug("public boolean allProceduresAreCallable()");
+    raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
@@ -121,7 +131,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public boolean allTablesAreSelectable() throws SQLException
   {
     logger.debug("public boolean allTablesAreSelectable()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return true;
   }
 
@@ -129,7 +139,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public String getURL() throws SQLException
   {
     logger.debug("public String getURL()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     String url = session.getUrl();
     return url.startsWith("http://") ? url.replace("http://", "jdbc:snowflake://")
                                      : url.replace("https://", "jdbc:snowflake://");
@@ -139,7 +149,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public String getUserName() throws SQLException
   {
     logger.debug("public String getUserName()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return session.getUser();
   }
 
@@ -147,7 +157,8 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public boolean isReadOnly() throws SQLException
   {
     logger.debug("public boolean isReadOnly()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
+    // no read only mode is supported.
     return false;
   }
 
@@ -155,7 +166,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public boolean nullsAreSortedHigh() throws SQLException
   {
     logger.debug("public boolean nullsAreSortedHigh()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return true;
   }
 
@@ -163,7 +174,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public boolean nullsAreSortedLow() throws SQLException
   {
     logger.debug("public boolean nullsAreSortedLow()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
@@ -171,7 +182,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public boolean nullsAreSortedAtStart() throws SQLException
   {
     logger.debug("public boolean nullsAreSortedAtStart()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
@@ -179,7 +190,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public boolean nullsAreSortedAtEnd() throws SQLException
   {
     logger.debug("public boolean nullsAreSortedAtEnd()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
@@ -187,7 +198,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public String getDatabaseProductName() throws SQLException
   {
     logger.debug("public String getDatabaseProductName()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return DatabaseProductName;
   }
 
@@ -195,18 +206,15 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public String getDatabaseProductVersion() throws SQLException
   {
     logger.debug("public String getDatabaseProductVersion()");
-
-    // We will use the same version numbers for client, GS and XP +
-
-    return ((SnowflakeConnectionV1) connection).getDatabaseVersion() +
-           " (" + getDriverVersion() + ")";
+    raiseSQLExceptionIfConnectionIsClosed();
+    return connection.unwrap(SnowflakeConnectionV1.class).getDatabaseVersion();
   }
 
   @Override
   public String getDriverName() throws SQLException
   {
     logger.debug("public String getDriverName()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return DriverName;
   }
 
@@ -214,34 +222,16 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public String getDriverVersion() throws SQLException
   {
     logger.debug("public String getDriverVersion()");
-
-    StringBuilder versionBuilder = new StringBuilder();
-
-    versionBuilder.append(("driver change version: "));
-    versionBuilder.append(SnowflakeDriver.majorVersion);
-    versionBuilder.append(".");
-    versionBuilder.append(SnowflakeDriver.minorVersion);
-    versionBuilder.append(".");
-    versionBuilder.append(SnowflakeDriver.changeVersion);
-
-    String newClientForUpdate =
-        ((SnowflakeConnectionV1) connection).getNewClientForUpdate();
-
-    // add new client version if current is older
-    if (newClientForUpdate != null)
-    {
-      versionBuilder.append(", latest change version: ");
-      versionBuilder.append(newClientForUpdate);
-    }
-
-    return versionBuilder.toString();
+    raiseSQLExceptionIfConnectionIsClosed();
+    return SnowflakeDriver.majorVersion + "." +
+           SnowflakeDriver.minorVersion + "." +
+           SnowflakeDriver.patchVersion;
   }
 
   @Override
   public int getDriverMajorVersion()
   {
     logger.debug("public int getDriverMajorVersion()");
-
     return SnowflakeDriver.majorVersion;
   }
 
@@ -249,7 +239,6 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public int getDriverMinorVersion()
   {
     logger.debug("public int getDriverMinorVersion()");
-
     return SnowflakeDriver.minorVersion;
   }
 
@@ -257,7 +246,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public boolean usesLocalFiles() throws SQLException
   {
     logger.debug("public boolean usesLocalFiles()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
@@ -265,7 +254,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public boolean usesLocalFilePerTable() throws SQLException
   {
     logger.debug("public boolean usesLocalFilePerTable()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
@@ -274,7 +263,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   {
     logger.debug(
         "public boolean supportsMixedCaseIdentifiers()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
@@ -283,7 +272,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   {
     logger.debug(
         "public boolean storesUpperCaseIdentifiers()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return true;
   }
 
@@ -292,7 +281,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   {
     logger.debug(
         "public boolean storesLowerCaseIdentifiers()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
@@ -301,7 +290,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   {
     logger.debug(
         "public boolean storesMixedCaseIdentifiers()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
@@ -310,7 +299,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   {
     logger.debug(
         "public boolean supportsMixedCaseQuotedIdentifiers()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return true;
   }
 
@@ -319,7 +308,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   {
     logger.debug(
         "public boolean storesUpperCaseQuotedIdentifiers()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
@@ -328,7 +317,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   {
     logger.debug(
         "public boolean storesLowerCaseQuotedIdentifiers()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
@@ -337,7 +326,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   {
     logger.debug(
         "public boolean storesMixedCaseQuotedIdentifiers()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return true;
   }
 
@@ -346,7 +335,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   {
     logger.debug(
         "public String getIdentifierQuoteString()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return "\"";
   }
 
@@ -354,7 +343,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public String getSQLKeywords() throws SQLException
   {
     logger.debug("public String getSQLKeywords()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return notSQL2003Keywords;
   }
 
@@ -362,7 +351,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public String getNumericFunctions() throws SQLException
   {
     logger.debug("public String getNumericFunctions()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return NumericFunctionsSupported;
   }
 
@@ -370,7 +359,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public String getStringFunctions() throws SQLException
   {
     logger.debug("public String getStringFunctions()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return StringFunctionsSupported;
   }
 
@@ -378,7 +367,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public String getSystemFunctions() throws SQLException
   {
     logger.debug("public String getSystemFunctions()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return SystemFunctionsSupported;
   }
 
@@ -386,7 +375,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public String getTimeDateFunctions() throws SQLException
   {
     logger.debug("public String getTimeDateFunctions()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return DateAndTimeFunctionsSupported;
   }
 
@@ -394,7 +383,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public String getSearchStringEscape() throws SQLException
   {
     logger.debug("public String getSearchStringEscape()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return Character.toString(SEARCH_STRING_ESCAPE);
   }
 
@@ -402,7 +391,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public String getExtraNameCharacters() throws SQLException
   {
     logger.debug("public String getExtraNameCharacters()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return "$";
   }
 
@@ -411,7 +400,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   {
     logger.debug(
         "public boolean supportsAlterTableWithAddColumn()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return true;
   }
 
@@ -420,7 +409,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   {
     logger.debug(
         "public boolean supportsAlterTableWithDropColumn()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return true;
   }
 
@@ -428,7 +417,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public boolean supportsColumnAliasing() throws SQLException
   {
     logger.debug("public boolean supportsColumnAliasing()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return true;
   }
 
@@ -436,7 +425,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public boolean nullPlusNonNullIsNull() throws SQLException
   {
     logger.debug("public boolean nullPlusNonNullIsNull()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return true;
   }
 
@@ -444,7 +433,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public boolean supportsConvert() throws SQLException
   {
     logger.debug("public boolean supportsConvert()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
@@ -453,7 +442,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   {
     logger.debug(
         "public boolean supportsConvert(int fromType, int toType)");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
@@ -462,7 +451,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   {
     logger.debug(
         "public boolean supportsTableCorrelationNames()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return true;
   }
 
@@ -471,7 +460,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   {
     logger.debug(
         "public boolean supportsDifferentTableCorrelationNames()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
@@ -480,7 +469,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   {
     logger.debug(
         "public boolean supportsExpressionsInOrderBy()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return true;
   }
 
@@ -489,7 +478,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   {
     logger.debug(
         "public boolean supportsOrderByUnrelated()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return true;
   }
 
@@ -497,7 +486,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public boolean supportsGroupBy() throws SQLException
   {
     logger.debug("public boolean supportsGroupBy()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return true;
   }
 
@@ -506,7 +495,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   {
     logger.debug(
         "public boolean supportsGroupByUnrelated()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
@@ -515,7 +504,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   {
     logger.debug(
         "public boolean supportsGroupByBeyondSelect()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return true;
   }
 
@@ -524,7 +513,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   {
     logger.debug(
         "public boolean supportsLikeEscapeClause()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
@@ -533,7 +522,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   {
     logger.debug(
         "public boolean supportsMultipleResultSets()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
@@ -542,7 +531,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   {
     logger.debug(
         "public boolean supportsMultipleTransactions()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return true;
   }
 
@@ -551,7 +540,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   {
     logger.debug(
         "public boolean supportsNonNullableColumns()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return true;
   }
 
@@ -560,7 +549,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   {
     logger.debug(
         "public boolean supportsMinimumSQLGrammar()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
@@ -568,7 +557,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public boolean supportsCoreSQLGrammar() throws SQLException
   {
     logger.debug("public boolean supportsCoreSQLGrammar()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
@@ -577,7 +566,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   {
     logger.debug(
         "public boolean supportsExtendedSQLGrammar()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
@@ -586,7 +575,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   {
     logger.debug(
         "public boolean supportsANSI92EntryLevelSQL()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return true;
   }
 
@@ -595,7 +584,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   {
     logger.debug(
         "public boolean supportsANSI92IntermediateSQL()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
@@ -603,7 +592,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public boolean supportsANSI92FullSQL() throws SQLException
   {
     logger.debug("public boolean supportsANSI92FullSQL()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
@@ -612,7 +601,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   {
     logger.debug(
         "public boolean supportsIntegrityEnhancementFacility()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
@@ -620,7 +609,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public boolean supportsOuterJoins() throws SQLException
   {
     logger.debug("public boolean supportsOuterJoins()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return true;
   }
 
@@ -628,7 +617,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public boolean supportsFullOuterJoins() throws SQLException
   {
     logger.debug("public boolean supportsFullOuterJoins()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return true;
   }
 
@@ -637,7 +626,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   {
     logger.debug(
         "public boolean supportsLimitedOuterJoins()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return true;
   }
 
@@ -645,7 +634,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public String getSchemaTerm() throws SQLException
   {
     logger.debug("public String getSchemaTerm()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return "schema";
   }
 
@@ -653,7 +642,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public String getProcedureTerm() throws SQLException
   {
     logger.debug("public String getProcedureTerm()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return "procedure";
   }
 
@@ -661,7 +650,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public String getCatalogTerm() throws SQLException
   {
     logger.debug("public String getCatalogTerm()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return "database";
   }
 
@@ -669,7 +658,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public boolean isCatalogAtStart() throws SQLException
   {
     logger.debug("public boolean isCatalogAtStart()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return true;
   }
 
@@ -677,7 +666,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public String getCatalogSeparator() throws SQLException
   {
     logger.debug("public String getCatalogSeparator()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return ".";
   }
 
@@ -686,7 +675,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   {
     logger.debug(
         "public boolean supportsSchemasInDataManipulation()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return true;
   }
 
@@ -695,7 +684,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   {
     logger.debug(
         "public boolean supportsSchemasInProcedureCalls()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
@@ -704,7 +693,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   {
     logger.debug(
         "public boolean supportsSchemasInTableDefinitions()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return true;
   }
 
@@ -713,7 +702,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   {
     logger.debug(
         "public boolean supportsSchemasInIndexDefinitions()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
@@ -722,7 +711,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   {
     logger.debug(
         "public boolean supportsSchemasInPrivilegeDefinitions()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
@@ -731,7 +720,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   {
     logger.debug(
         "public boolean supportsCatalogsInDataManipulation()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return true;
   }
 
@@ -740,7 +729,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   {
     logger.debug(
         "public boolean supportsCatalogsInProcedureCalls()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
@@ -749,7 +738,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   {
     logger.debug(
         "public boolean supportsCatalogsInTableDefinitions()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return true;
   }
 
@@ -758,7 +747,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   {
     logger.debug(
         "public boolean supportsCatalogsInIndexDefinitions()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
@@ -767,7 +756,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   {
     logger.debug(
         "public boolean supportsCatalogsInPrivilegeDefinitions()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
@@ -776,7 +765,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   {
     logger.debug(
         "public boolean supportsPositionedDelete()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
@@ -785,7 +774,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   {
     logger.debug(
         "public boolean supportsPositionedUpdate()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
@@ -794,7 +783,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   {
     logger.debug(
         "public boolean supportsSelectForUpdate()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
@@ -803,7 +792,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   {
     logger.debug(
         "public boolean supportsStoredProcedures()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
@@ -812,7 +801,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   {
     logger.debug(
         "public boolean supportsSubqueriesInComparisons()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return true;
   }
 
@@ -821,7 +810,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   {
     logger.debug(
         "public boolean supportsSubqueriesInExists()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return true;
   }
 
@@ -830,7 +819,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   {
     logger.debug(
         "public boolean supportsSubqueriesInIns()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return true;
   }
 
@@ -839,7 +828,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   {
     logger.debug(
         "public boolean supportsSubqueriesInQuantifieds()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
@@ -848,7 +837,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   {
     logger.debug(
         "public boolean supportsCorrelatedSubqueries()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return true;
   }
 
@@ -856,7 +845,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public boolean supportsUnion() throws SQLException
   {
     logger.debug("public boolean supportsUnion()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return true;
   }
 
@@ -864,7 +853,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public boolean supportsUnionAll() throws SQLException
   {
     logger.debug("public boolean supportsUnionAll()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return true;
   }
 
@@ -873,7 +862,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   {
     logger.debug(
         "public boolean supportsOpenCursorsAcrossCommit()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
@@ -882,7 +871,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   {
     logger.debug(
         "public boolean supportsOpenCursorsAcrossRollback()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
@@ -891,7 +880,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   {
     logger.debug(
         "public boolean supportsOpenStatementsAcrossCommit()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
@@ -900,7 +889,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   {
     logger.debug(
         "public boolean supportsOpenStatementsAcrossRollback()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
@@ -908,15 +897,15 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public int getMaxBinaryLiteralLength() throws SQLException
   {
     logger.debug("public int getMaxBinaryLiteralLength()");
-
-    return 0;
+    raiseSQLExceptionIfConnectionIsClosed();
+    return 8388608;
   }
 
   @Override
   public int getMaxCharLiteralLength() throws SQLException
   {
     logger.debug("public int getMaxCharLiteralLength()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return 16777216;
   }
 
@@ -924,7 +913,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public int getMaxColumnNameLength() throws SQLException
   {
     logger.debug("public int getMaxColumnNameLength()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return 255;
   }
 
@@ -932,7 +921,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public int getMaxColumnsInGroupBy() throws SQLException
   {
     logger.debug("public int getMaxColumnsInGroupBy()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return 0;
   }
 
@@ -940,7 +929,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public int getMaxColumnsInIndex() throws SQLException
   {
     logger.debug("public int getMaxColumnsInIndex()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return 0;
   }
 
@@ -948,7 +937,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public int getMaxColumnsInOrderBy() throws SQLException
   {
     logger.debug("public int getMaxColumnsInOrderBy()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return 0;
   }
 
@@ -956,7 +945,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public int getMaxColumnsInSelect() throws SQLException
   {
     logger.debug("public int getMaxColumnsInSelect()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return 0;
   }
 
@@ -964,7 +953,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public int getMaxColumnsInTable() throws SQLException
   {
     logger.debug("public int getMaxColumnsInTable()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return 0;
   }
 
@@ -972,7 +961,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public int getMaxConnections() throws SQLException
   {
     logger.debug("public int getMaxConnections()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return 0;
   }
 
@@ -980,7 +969,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public int getMaxCursorNameLength() throws SQLException
   {
     logger.debug("public int getMaxCursorNameLength()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return 0;
   }
 
@@ -988,7 +977,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public int getMaxIndexLength() throws SQLException
   {
     logger.debug("public int getMaxIndexLength()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return 0;
   }
 
@@ -996,7 +985,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public int getMaxSchemaNameLength() throws SQLException
   {
     logger.debug("public int getMaxSchemaNameLength()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return 255;
   }
 
@@ -1004,7 +993,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public int getMaxProcedureNameLength() throws SQLException
   {
     logger.debug("public int getMaxProcedureNameLength()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return 0;
   }
 
@@ -1012,7 +1001,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public int getMaxCatalogNameLength() throws SQLException
   {
     logger.debug("public int getMaxCatalogNameLength()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return 255;
   }
 
@@ -1020,7 +1009,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public int getMaxRowSize() throws SQLException
   {
     logger.debug("public int getMaxRowSize()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return 0;
   }
 
@@ -1029,7 +1018,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   {
     logger.debug(
         "public boolean doesMaxRowSizeIncludeBlobs()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return true;
   }
 
@@ -1037,7 +1026,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public int getMaxStatementLength() throws SQLException
   {
     logger.debug("public int getMaxStatementLength()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return 0;
   }
 
@@ -1045,7 +1034,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public int getMaxStatements() throws SQLException
   {
     logger.debug("public int getMaxStatements()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return 0;
   }
 
@@ -1053,7 +1042,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public int getMaxTableNameLength() throws SQLException
   {
     logger.debug("public int getMaxTableNameLength()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return 255;
   }
 
@@ -1061,7 +1050,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public int getMaxTablesInSelect() throws SQLException
   {
     logger.debug("public int getMaxTablesInSelect()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return 0;
   }
 
@@ -1069,7 +1058,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public int getMaxUserNameLength() throws SQLException
   {
     logger.debug("public int getMaxUserNameLength()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return 255;
   }
 
@@ -1078,7 +1067,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   {
     logger.debug(
         "public int getDefaultTransactionIsolation()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return Connection.TRANSACTION_READ_COMMITTED;
   }
 
@@ -1086,7 +1075,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public boolean supportsTransactions() throws SQLException
   {
     logger.debug("public boolean supportsTransactions()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return true;
   }
 
@@ -1096,7 +1085,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   {
     logger.debug(
         "public boolean supportsTransactionIsolationLevel(int level)");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return (level == Connection.TRANSACTION_NONE)
            || (level == Connection.TRANSACTION_READ_COMMITTED);
   }
@@ -1108,7 +1097,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
     logger.debug(
         "public boolean "
         + "supportsDataDefinitionAndDataManipulationTransactions()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return true;
   }
 
@@ -1117,7 +1106,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   {
     logger.debug(
         "public boolean supportsDataManipulationTransactionsOnly()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
@@ -1126,7 +1115,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   {
     logger.debug(
         "public boolean dataDefinitionCausesTransactionCommit()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return true;
   }
 
@@ -1135,7 +1124,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   {
     logger.debug(
         "public boolean dataDefinitionIgnoredInTransactions()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
@@ -1147,7 +1136,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
     logger.debug(
         "public ResultSet getProcedures(String catalog, "
         + "String schemaPattern,String procedureNamePattern)");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     Statement statement = connection.createStatement();
 
     // Return empty result set since we don't have primary keys yet
@@ -1173,7 +1162,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
         "public ResultSet getProcedureColumns(String catalog, "
         + "String schemaPattern,String procedureNamePattern,"
         + "String columnNamePattern)");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     Statement statement = connection.createStatement();
     //throw new SQLFeatureNotSupportedException();
     return new SnowflakeDatabaseMetaDataResultSet(
@@ -1210,6 +1199,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
           catalog, schemaPattern, tableNamePattern,
           Arrays.toString(types));
     }
+    raiseSQLExceptionIfConnectionIsClosed();
 
     Set<String> supportedTableTypes = new HashSet<>();
     ResultSet resultSet = getTableTypes();
@@ -1223,11 +1213,11 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
     // then filter on the input table types;
     if (types != null)
     {
-      for (int i = 0; i < types.length; i++)
+      for (String t : types)
       {
-        if (supportedTableTypes.contains(types[i]))
+        if (supportedTableTypes.contains(t))
         {
-          inputValidTableTypes.add(types[i]);
+          inputValidTableTypes.add(t);
         }
       }
     }
@@ -1318,11 +1308,13 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
 
     resultSet = executeAndReturnEmptyResultIfNotFound(statement, showCommand, GET_TABLES);
 
-    return new SnowflakeDatabaseMetaDataResultSet(GET_TABLES, resultSet, statement)
+    return new SnowflakeDatabaseMetaDataQueryResultSet(GET_TABLES, resultSet, statement)
     {
+      @Override
       public boolean next() throws SQLException
       {
         logger.debug("public boolean next()");
+        increamentRow();
 
         // iterate throw the show table result until we find an entry
         // that matches the table name
@@ -1369,11 +1361,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
           }
         }
 
-        if (statement != null)
-        {
-          statement.close();
-          statement = null;
-        }
+        close(); // close
         return false;
       }
     };
@@ -1391,31 +1379,30 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public ResultSet getCatalogs() throws SQLException
   {
     logger.debug("public ResultSet getCatalogs()");
+    raiseSQLExceptionIfConnectionIsClosed();
 
     String showDB = "show /* JDBC:DatabaseMetaData.getCatalogs() */ databases in account";
 
     Statement statement = connection.createStatement();
-    return new SnowflakeDatabaseMetaDataResultSet(GET_CATALOGS,
-                                                  statement.executeQuery(showDB), statement)
+    return new SnowflakeDatabaseMetaDataQueryResultSet(
+        GET_CATALOGS,
+        statement.executeQuery(showDB), statement)
     {
+      @Override
       public boolean next() throws SQLException
       {
         logger.debug("public boolean next()");
+        increamentRow();
 
         // iterate throw the show databases result
-        while (showObjectResultSet.next())
+        if (showObjectResultSet.next())
         {
           String dbName = showObjectResultSet.getString(2);
 
           nextRow[0] = dbName;
           return true;
         }
-
-        if (statement != null)
-        {
-          statement.close();
-          statement = null;
-        }
+        close();
         return false;
       }
     };
@@ -1425,14 +1412,15 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public ResultSet getTableTypes() throws SQLException
   {
     logger.debug("public ResultSet getTableTypes()");
+    raiseSQLExceptionIfConnectionIsClosed();
 
     Statement statement = connection.createStatement();
 
     // TODO: We should really get the list of table types from GS
     return new SnowflakeDatabaseMetaDataResultSet(
-        Arrays.asList("TABLE_TYPE"),
-        Arrays.asList("TEXT"),
-        Arrays.asList(Types.VARCHAR),
+        Collections.singletonList("TABLE_TYPE"),
+        Collections.singletonList("TEXT"),
+        Collections.singletonList(Types.VARCHAR),
         new Object[][]
             {
                 {
@@ -1460,10 +1448,11 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
                               final boolean extendedSet)
   throws SQLException
   {
-    Statement statement = connection.createStatement();
     logger.debug("public ResultSet getColumns(String catalog={}, String schemaPattern={}" +
                  "String tableNamePattern={}, String columnNamePattern={}, boolean extendedSet={}",
                  catalog, schemaPattern, tableNamePattern, columnNamePattern, extendedSet);
+    raiseSQLExceptionIfConnectionIsClosed();
+    Statement statement = connection.createStatement();
 
     // apply session context when catalog is unspecified
     if (catalog == null && metadataRequestUseConnectionCtx)
@@ -1537,7 +1526,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
     ResultSet resultSet = executeAndReturnEmptyResultIfNotFound(statement, showColumnCommand,
                                                                 extendedSet ? GET_COLUMNS_EXTENDED_SET : GET_COLUMNS);
 
-    return new SnowflakeDatabaseMetaDataResultSet(
+    return new SnowflakeDatabaseMetaDataQueryResultSet(
         extendedSet ? GET_COLUMNS_EXTENDED_SET : GET_COLUMNS,
         resultSet, statement)
     {
@@ -1548,6 +1537,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
       public boolean next() throws SQLException
       {
         logger.debug("public boolean next()");
+        increamentRow();
 
         // iterate throw the show table result until we find an entry
         // that matches the table name
@@ -1626,7 +1616,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
               externalColumnType = Types.TIMESTAMP;
             }
 
-            nextRow[4] = new Integer(externalColumnType);
+            nextRow[4] = externalColumnType;
             nextRow[5] = columnMetadata.getTypeName();
 
             int columnSize = 0;
@@ -1654,9 +1644,9 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
               columnSize = columnMetadata.getPrecision();
             }
 
-            nextRow[6] = new Integer(columnSize);
+            nextRow[6] = columnSize;
             nextRow[7] = null;
-            nextRow[8] = new Integer(columnMetadata.getScale());
+            nextRow[8] = columnMetadata.getScale();
             nextRow[9] = null;
             nextRow[10] = (columnMetadata.isNullable()
                            ? columnNullable : columnNoNulls);
@@ -1671,8 +1661,8 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
             nextRow[14] = null;
             nextRow[15] = (columnMetadata.getType() == Types.VARCHAR
                            || columnMetadata.getType() == Types.CHAR)
-                          ? new Integer(columnMetadata.getLength()) : null;
-            nextRow[16] = new Integer(ordinalPosition);
+                          ? columnMetadata.getLength() : null;
+            nextRow[16] = ordinalPosition;
 
             nextRow[17] = (columnMetadata.isNullable() ? "YES" : "NO");
             nextRow[18] = null;
@@ -1688,12 +1678,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
             return true;
           }
         }
-
-        if (statement != null)
-        {
-          statement.close();
-          statement = null;
-        }
+        close();
         return false;
       }
     };
@@ -1707,6 +1692,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
     logger.debug(
         "public ResultSet getColumnPrivileges(String catalog, "
         + "String schema,String table, String columnNamePattern)");
+    raiseSQLExceptionIfConnectionIsClosed();
 
     Statement statement = connection.createStatement();
     return new SnowflakeDatabaseMetaDataResultSet(
@@ -1729,6 +1715,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
     logger.debug(
         "public ResultSet getTablePrivileges(String catalog, "
         + "String schemaPattern,String tableNamePattern)");
+    raiseSQLExceptionIfConnectionIsClosed();
 
     Statement statement = connection.createStatement();
 
@@ -1773,10 +1760,11 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public ResultSet getPrimaryKeys(String catalog, String schema, final String table)
   throws SQLException
   {
-    Statement statement = connection.createStatement();
     logger.debug(
         "public ResultSet getPrimaryKeys(String catalog={}, "
         + "String schema={}, String table={})", catalog, schema, table);
+    raiseSQLExceptionIfConnectionIsClosed();
+    Statement statement = connection.createStatement();
     String showPKCommand = "show /* JDBC:DatabaseMetaData.getPrimaryKeys() */ primary keys in ";
 
     // apply session context when catalog is unspecified
@@ -1835,12 +1823,13 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
 
     ResultSet resultSet = executeAndReturnEmptyResultIfNotFound(statement, showPKCommand, GET_PRIMARY_KEYS);
     // Return empty result set since we don't have primary keys yet
-    return new SnowflakeDatabaseMetaDataResultSet(GET_PRIMARY_KEYS, resultSet, statement)
+    return new SnowflakeDatabaseMetaDataQueryResultSet(GET_PRIMARY_KEYS, resultSet, statement)
     {
       @Override
       public boolean next() throws SQLException
       {
         logger.debug("public boolean next()");
+        increamentRow();
 
         while (showObjectResultSet.next())
         {
@@ -1866,25 +1855,23 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
             return true;
           }
         }
-        if (statement != null)
-        {
-          statement.close();
-          statement = null;
-        }
+        close();
         return false;
       }
     };
   }
 
   /**
-   * @param client
-   * @param parentCatalog
-   * @param parentSchema
-   * @param parentTable
-   * @param foreignCatalog
-   * @param foreignSchema
-   * @param foreignTable
-   * @return
+   * Retrieves the foreign keys
+   *
+   * @param client         type of foreign key
+   * @param parentCatalog  database name
+   * @param parentSchema   schema name
+   * @param parentTable    table name
+   * @param foreignCatalog other database name
+   * @param foreignSchema  other schema name
+   * @param foreignTable   other table name
+   * @return foreign key columns in result set
    */
   private ResultSet getForeignKeys(
       final String client, String parentCatalog,
@@ -1893,6 +1880,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
       final String foreignSchema,
       final String foreignTable) throws SQLException
   {
+    raiseSQLExceptionIfConnectionIsClosed();
     Statement statement = connection.createStatement();
     StringBuilder commandBuilder = new StringBuilder();
 
@@ -1951,12 +1939,13 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
 
     ResultSet resultSet = executeAndReturnEmptyResultIfNotFound(statement, command, GET_FOREIGN_KEYS);
 
-    return new SnowflakeDatabaseMetaDataResultSet(GET_FOREIGN_KEYS, resultSet, statement)
+    return new SnowflakeDatabaseMetaDataQueryResultSet(GET_FOREIGN_KEYS, resultSet, statement)
     {
       @Override
       public boolean next() throws SQLException
       {
         logger.debug("public boolean next()");
+        increamentRow();
 
         while (showObjectResultSet.next())
         {
@@ -2039,68 +2028,60 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
             return true;
           }
         }
-
-        if (statement != null)
-        {
-          statement.close();
-          statement = null;
-        }
+        close();
         return false;
       }
     };
   }
 
   /**
-   * Returns the ODBC standard property string for the property string used
+   * Returns the JDBC standard property string for the property string used
    * in our show constraint commands
    *
-   * @param property_name
-   * @param property
-   * @return
+   * @param property_name operation type
+   * @param property      property value
+   * @return metdata property value
    */
   private short getForeignKeyConstraintProperty(
       String property_name, String property)
   {
     short result = 0;
-    if (property_name.equals("update") || property_name.equals("delete"))
+    switch (property_name)
     {
-      if (property.equals("NO ACTION"))
-      {
-        result = importedKeyNoAction;
-      }
-      if (property.equals("CASCADE"))
-      {
-        result = importedKeyCascade;
-      }
-      if (property.equals("SET NULL"))
-      {
-        result = importedKeySetNull;
-      }
-      if (property.equals("SET DEFAULT"))
-      {
-        result = importedKeySetDefault;
-      }
-      if (property.equals("RESTRICT"))
-      {
-        result = importedKeyRestrict;
-      }
+      case "update":
+      case "delete":
+        switch (property)
+        {
+          case "NO ACTION":
+            result = importedKeyNoAction;
+            break;
+          case "CASCADE":
+            result = importedKeyCascade;
+            break;
+          case "SET NULL":
+            result = importedKeySetNull;
+            break;
+          case "SET DEFAULT":
+            result = importedKeySetDefault;
+            break;
+          case "RESTRICT":
+            result = importedKeyRestrict;
+            break;
+        }
+      case "deferrability":
+        switch (property)
+        {
+          case "INITIALLY DEFERRED":
+            result = importedKeyInitiallyDeferred;
+            break;
+          case "INITIALLY IMMEDIATE":
+            result = importedKeyInitiallyImmediate;
+            break;
+          case "NOT DEFERRABLE":
+            result = importedKeyNotDeferrable;
+            break;
+        }
     }
-    else // deferrability
-    {
-      if (property.equals("INITIALLY DEFERRED"))
-      {
-        result = importedKeyInitiallyDeferred;
-      }
-      else if (property.equals("INITIALLY IMMEDIATE"))
-      {
-        result = importedKeyInitiallyImmediate;
-      }
-      else if (property.equals("NOT DEFERRABLE"))
-      {
-        result = importedKeyNotDeferrable;
-      }
-    }
-
     return result;
   }
 
@@ -2148,6 +2129,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public ResultSet getTypeInfo() throws SQLException
   {
     logger.debug("public ResultSet getTypeInfo()");
+    raiseSQLExceptionIfConnectionIsClosed();
 
     Statement statement = connection.createStatement();
 
@@ -2223,6 +2205,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
     logger.debug(
         "public ResultSet getIndexInfo(String catalog, String schema, "
         + "String table,boolean unique, boolean approximate)");
+    raiseSQLExceptionIfConnectionIsClosed();
 
     Statement statement = connection.createStatement();
 
@@ -2251,7 +2234,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   {
     logger.debug(
         "public boolean supportsResultSetType(int type)");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return (type == ResultSet.TYPE_FORWARD_ONLY);
   }
 
@@ -2262,7 +2245,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
     logger.debug(
         "public boolean supportsResultSetConcurrency(int type, "
         + "int concurrency)");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return (type == ResultSet.TYPE_FORWARD_ONLY
             && concurrency == ResultSet.CONCUR_READ_ONLY);
   }
@@ -2272,7 +2255,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   {
     logger.debug(
         "public boolean ownUpdatesAreVisible(int type)");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
@@ -2281,7 +2264,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   {
     logger.debug(
         "public boolean ownDeletesAreVisible(int type)");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
@@ -2290,7 +2273,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   {
     logger.debug(
         "public boolean ownInsertsAreVisible(int type)");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
@@ -2299,7 +2282,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   {
     logger.debug(
         "public boolean othersUpdatesAreVisible(int type)");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
@@ -2308,7 +2291,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   {
     logger.debug(
         "public boolean othersDeletesAreVisible(int type)");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
@@ -2317,7 +2300,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   {
     logger.debug(
         "public boolean othersInsertsAreVisible(int type)");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
@@ -2326,7 +2309,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   {
     logger.debug(
         "public boolean updatesAreDetected(int type)");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
@@ -2335,7 +2318,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   {
     logger.debug(
         "public boolean deletesAreDetected(int type)");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
@@ -2344,7 +2327,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   {
     logger.debug(
         "public boolean insertsAreDetected(int type)");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
@@ -2352,7 +2335,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public boolean supportsBatchUpdates() throws SQLException
   {
     logger.debug("public boolean supportsBatchUpdates()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return true;
   }
 
@@ -2364,7 +2347,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
     logger.debug(
         "public ResultSet getUDTs(String catalog, "
         + "String schemaPattern,String typeNamePattern, int[] types)");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     // We don't user-defined types, so return an empty result set
     Statement statement = connection.createStatement();
     return new SnowflakeDatabaseMetaDataResultSet(
@@ -2383,7 +2366,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public Connection getConnection() throws SQLException
   {
     logger.debug("public Connection getConnection()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return connection;
   }
 
@@ -2391,7 +2374,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public boolean supportsSavepoints() throws SQLException
   {
     logger.debug("public boolean supportsSavepoints()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
@@ -2400,7 +2383,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   {
     logger.debug(
         "public boolean supportsNamedParameters()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
@@ -2409,7 +2392,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   {
     logger.debug(
         "public boolean supportsMultipleOpenResults()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
@@ -2418,7 +2401,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   {
     logger.debug(
         "public boolean supportsGetGeneratedKeys()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
@@ -2464,39 +2447,38 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   {
     logger.debug(
         "public boolean supportsResultSetHoldability(int holdability)");
-
-    return false;
+    raiseSQLExceptionIfConnectionIsClosed();
+    return holdability == ResultSet.CLOSE_CURSORS_AT_COMMIT;
   }
 
   @Override
   public int getResultSetHoldability() throws SQLException
   {
     logger.debug("public int getResultSetHoldability()");
-
-    throw new SQLFeatureNotSupportedException();
+    return ResultSet.CLOSE_CURSORS_AT_COMMIT;
   }
 
   @Override
   public int getDatabaseMajorVersion() throws SQLException
   {
     logger.debug("public int getDatabaseMajorVersion()");
-
-    return ((SnowflakeConnectionV1) connection).getDatabaseMajorVersion();
+    raiseSQLExceptionIfConnectionIsClosed();
+    return connection.unwrap(SnowflakeConnectionV1.class).getDatabaseMajorVersion();
   }
 
   @Override
   public int getDatabaseMinorVersion() throws SQLException
   {
     logger.debug("public int getDatabaseMinorVersion()");
-
-    return ((SnowflakeConnectionV1) connection).getDatabaseMinorVersion();
+    raiseSQLExceptionIfConnectionIsClosed();
+    return connection.unwrap(SnowflakeConnectionV1.class).getDatabaseMinorVersion();
   }
 
   @Override
   public int getJDBCMajorVersion() throws SQLException
   {
     logger.debug("public int getJDBCMajorVersion()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return Integer.parseInt(JDBCVersion.split("\\.", 2)[0]);
   }
 
@@ -2504,7 +2486,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public int getJDBCMinorVersion() throws SQLException
   {
     logger.debug("public int getJDBCMinorVersion()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return Integer.parseInt(JDBCVersion.split("\\.", 2)[1]);
   }
 
@@ -2529,7 +2511,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   {
     logger.debug(
         "public boolean supportsStatementPooling()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
@@ -2548,6 +2530,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
     logger.debug(
         "public ResultSet getSchemas(String catalog={}, String "
         + "schemaPattern={})", catalog, schemaPattern);
+    raiseSQLExceptionIfConnectionIsClosed();
 
     // apply session context when catalog is unspecified
     if (catalog == null && metadataRequestUseConnectionCtx)
@@ -2590,11 +2573,12 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
                  showSchemas);
 
     ResultSet resultSet = executeAndReturnEmptyResultIfNotFound(statement, showSchemas, GET_SCHEMAS);
-    return new SnowflakeDatabaseMetaDataResultSet(GET_SCHEMAS, resultSet, statement)
+    return new SnowflakeDatabaseMetaDataQueryResultSet(GET_SCHEMAS, resultSet, statement)
     {
       public boolean next() throws SQLException
       {
         logger.debug("public boolean next()");
+        increamentRow();
 
         // iterate throw the show table result until we find an entry
         // that matches the table name
@@ -2611,12 +2595,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
             return true;
           }
         }
-
-        if (statement != null)
-        {
-          statement.close();
-          statement = null;
-        }
+        close();
         return false;
       }
     };
@@ -2627,7 +2606,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   {
     logger.debug(
         "public boolean supportsStoredFunctionsUsingCallSyntax()");
-
+    raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
@@ -2653,6 +2632,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   public ResultSet getFunctions(String catalog, String schemaPattern,
                                 String functionNamePattern) throws SQLException
   {
+    raiseSQLExceptionIfConnectionIsClosed();
     Statement statement = connection.createStatement();
     logger.debug("public ResultSet getFunctions(String catalog={}, String schemaPattern={}, " +
                  "String functionNamePattern={}",
@@ -2712,11 +2692,12 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
 
     ResultSet resultSet = executeAndReturnEmptyResultIfNotFound(statement, showFunctionCommand, GET_FUNCTIONS);
 
-    return new SnowflakeDatabaseMetaDataResultSet(GET_FUNCTIONS, resultSet, statement)
+    return new SnowflakeDatabaseMetaDataQueryResultSet(GET_FUNCTIONS, resultSet, statement)
     {
       public boolean next() throws SQLException
       {
         logger.debug("public boolean next()");
+        increamentRow();
 
         // iterate throw the show table result until we find an entry
         // that matches the table name
@@ -2747,11 +2728,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
             return true;
           }
         }
-        if (statement != null)
-        {
-          statement.close();
-          statement = null;
-        }
+        close();
         return false;
       }
     };
@@ -2767,6 +2744,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
         "public ResultSet getFunctionColumns(String catalog, "
         + "String schemaPattern,String functionNamePattern,"
         + "String columnNamePattern)");
+    raiseSQLExceptionIfConnectionIsClosed();
 
     return SnowflakeDatabaseMetaDataResultSet.getEmptyResultSet(
         GET_FUNCTION_COLUMNS, connection.createStatement());

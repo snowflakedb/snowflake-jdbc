@@ -29,8 +29,6 @@ import net.snowflake.client.log.SFLoggerFactory;
 
 /**
  * Base class for query result set and metadata result set
- *
- * @author jhuang
  */
 public abstract class SFBaseResultSet
 {
@@ -66,7 +64,7 @@ public abstract class SFBaseResultSet
   protected SFSession session;
 
   // indicate whether the result set has been closed or not.
-  protected boolean isClosed = true;
+  protected boolean isClosed;
 
   abstract public boolean isLast();
 
@@ -81,7 +79,6 @@ public abstract class SFBaseResultSet
   public boolean next() throws SFException, SnowflakeSQLException
   {
     logger.debug("public boolean next()");
-
     return false;
   }
 
@@ -89,6 +86,7 @@ public abstract class SFBaseResultSet
   {
     logger.debug("public void close()");
 
+    // no exception even if already closed.
     resultSetMetaData = null;
     isClosed = true;
   }

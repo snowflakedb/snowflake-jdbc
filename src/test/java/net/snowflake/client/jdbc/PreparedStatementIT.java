@@ -14,6 +14,7 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
 import java.math.BigDecimal;
+import java.net.URL;
 import java.sql.Connection;
 import java.sql.Date;
 import java.sql.PreparedStatement;
@@ -23,7 +24,6 @@ import java.sql.Statement;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Set;
 
@@ -1626,7 +1626,7 @@ public class PreparedStatementIT extends BaseJDBCTest
   public void testPreparedStatementWithSkipParsing() throws Exception
   {
     Connection con = getConnection();
-    PreparedStatement stmt = ((SnowflakeConnectionV1) con).prepareStatement(
+    PreparedStatement stmt = con.unwrap(SnowflakeConnectionV1.class).prepareStatement(
         "select 1", true);
     ResultSet rs = stmt.executeQuery();
     assertThat(rs.next(), is(true));
@@ -1642,12 +1642,12 @@ public class PreparedStatementIT extends BaseJDBCTest
     con.createStatement().execute("create or replace table t(c1 int)");
     try
     {
-      PreparedStatement stmt = ((SnowflakeConnectionV1) con).prepareStatement(
+      PreparedStatement stmt = con.unwrap(SnowflakeConnectionV1.class).prepareStatement(
           "insert into t(c1) values(?)", true);
       stmt.setInt(1, 123);
       int ret = stmt.executeUpdate();
       assertThat(ret, is(1));
-      stmt = ((SnowflakeConnectionV1) con).prepareStatement(
+      stmt = con.unwrap(SnowflakeConnectionV1.class).prepareStatement(
           "select * from t", true);
       ResultSet rs = stmt.executeQuery();
       assertThat(rs.next(), is(true));
@@ -1836,6 +1836,80 @@ public class PreparedStatementIT extends BaseJDBCTest
   private interface RunnableWithSQLException
   {
     void run() throws SQLException;
+  }
+
+  @Test
+  public void testCreatePreparedStatementWithParameters() throws Throwable
+  {
+    try (Connection connection = getConnection())
+    {
+      connection.prepareStatement("select 1", ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+      try
+      {
+        connection.prepareStatement("select 1", ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_UPDATABLE);
+        fail("updateable cursor is not supported.");
+      }
+      catch (SQLException ex)
+      {
+        assertEquals((int) ErrorCode.FEATURE_UNSUPPORTED.getMessageCode(), ex.getErrorCode());
+      }
+      connection.prepareStatement("select 1", ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY,
+                                  ResultSet.CLOSE_CURSORS_AT_COMMIT);
+      try
+      {
+        connection.prepareStatement("select 1", ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY,
+                                    ResultSet.HOLD_CURSORS_OVER_COMMIT);
+        fail("hold cursor over commit is not supported.");
+      }
+      catch (SQLException ex)
+      {
+        assertEquals((int) ErrorCode.FEATURE_UNSUPPORTED.getMessageCode(), ex.getErrorCode());
+      }
+
+    }
+  }
+
+  @Test
+  public void testFeatureNotSupportedException() throws Throwable
+  {
+    try (Connection connection = getConnection())
+    {
+      PreparedStatement preparedStatement = connection.prepareStatement("select ?");
+      expectFeatureNotSupportedException(() -> preparedStatement.setArray(1, new FakeArray()));
+      expectFeatureNotSupportedException(() -> preparedStatement.setAsciiStream(1, new FakeInputStream()));
+      expectFeatureNotSupportedException(() -> preparedStatement.setAsciiStream(1, new FakeInputStream(), 1));
+      expectFeatureNotSupportedException(() -> preparedStatement.setUnicodeStream(1, new FakeInputStream(), 1));
+      expectFeatureNotSupportedException(() -> preparedStatement.setBinaryStream(1, new FakeInputStream()));
+      expectFeatureNotSupportedException(() -> preparedStatement.setBinaryStream(1, new FakeInputStream(), 1));
+      expectFeatureNotSupportedException(() -> preparedStatement.setCharacterStream(1, new FakeReader()));
+      expectFeatureNotSupportedException(() -> preparedStatement.setCharacterStream(1, new FakeReader(), 1));
+      expectFeatureNotSupportedException(() -> preparedStatement.setRef(1, new FakeRef()));
+      expectFeatureNotSupportedException(() -> preparedStatement.setBlob(1, new FakeBlob()));
+
+      URL fakeURL = new URL("http://localhost:8888/");
+      expectFeatureNotSupportedException(() -> preparedStatement.setURL(1, fakeURL));
+      expectFeatureNotSupportedException(preparedStatement::getParameterMetaData);
+
+      expectFeatureNotSupportedException(() -> preparedStatement.setRowId(1, new FakeRowId()));
+      expectFeatureNotSupportedException(() -> preparedStatement.setNString(1, "test"));
+      expectFeatureNotSupportedException(() -> preparedStatement.setNCharacterStream(1, new FakeReader()));
+      expectFeatureNotSupportedException(() -> preparedStatement.setNCharacterStream(1, new FakeReader(), 1));
+      expectFeatureNotSupportedException(() -> preparedStatement.setNClob(1, new FakeNClob()));
+      expectFeatureNotSupportedException(() -> preparedStatement.setNClob(1, new FakeReader(), 1));
+
+      expectFeatureNotSupportedException(() -> preparedStatement.setClob(1, new FakeReader()));
+      expectFeatureNotSupportedException(() -> preparedStatement.setClob(1, new FakeReader(), 1));
+      expectFeatureNotSupportedException(() -> preparedStatement.setBlob(1, new FakeInputStream()));
+      expectFeatureNotSupportedException(() -> preparedStatement.setBlob(1, new FakeInputStream(), 1));
+      expectFeatureNotSupportedException(() -> preparedStatement.setSQLXML(1, new FakeSQLXML()));
+
+      expectFeatureNotSupportedException(() -> preparedStatement.execute("select 1", 1));
+      expectFeatureNotSupportedException(() -> preparedStatement.execute("select 1", new int[]{}));
+      expectFeatureNotSupportedException(() -> preparedStatement.execute("select 1", new String[]{}));
+      expectFeatureNotSupportedException(() -> preparedStatement.executeUpdate("select 1", 1));
+      expectFeatureNotSupportedException(() -> preparedStatement.executeUpdate("select 1", new int[]{}));
+      expectFeatureNotSupportedException(() -> preparedStatement.executeUpdate("select 1", new String[]{}));
+    }
   }
 }
 
