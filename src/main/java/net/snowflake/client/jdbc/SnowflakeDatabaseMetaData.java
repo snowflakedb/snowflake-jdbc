@@ -1260,9 +1260,9 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
 
     String showCommand = null;
     final boolean viewOnly = inputValidTableTypes.size() == 1
-        && "VIEW".equalsIgnoreCase(inputValidTableTypes.get(0));
+                             && "VIEW".equalsIgnoreCase(inputValidTableTypes.get(0));
     final boolean tableOnly = inputValidTableTypes.size() == 1
-        && "TABLE".equalsIgnoreCase(inputValidTableTypes.get(0));
+                              && "TABLE".equalsIgnoreCase(inputValidTableTypes.get(0));
     if (viewOnly)
     {
       showCommand = "show /* JDBC:DatabaseMetaData.getTables() */ views";
@@ -1351,7 +1351,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
           }
 
           if ((compiledTablePattern == null
-                                 || compiledTablePattern.matcher(tableName).matches())
+               || compiledTablePattern.matcher(tableName).matches())
               && (compiledSchemaPattern == null
                   || compiledSchemaPattern.matcher(schemaName).matches()))
           {
