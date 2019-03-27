@@ -577,38 +577,6 @@
       </build>
     </profile>
     <profile>
-      <id>make-sfsql</id>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.codehaus.gmaven</groupId>
-            <artifactId>gmaven-plugin</artifactId>
-            <version>1.5</version>
-            <executions>
-              <execution>
-                <id>build-customer-client-zip</id>
-                <phase>package</phase>
-                  <goals>
-                    <goal>execute</goal>
-                  </goals>
-                  <configuration>
-                    <providerSelection>1.8</providerSelection>
-                    <properties>
-                       <script>${basedir}/make_client_package.sh -a __default__ -g __default__.snowflakecomputing.com -p 443 -o ${basedir}/target/default_client.zip</script>
-                    </properties>
-                    <source>
-                      def command = project.properties.script
-                      def process = command.execute()
-                      process.waitFor()
-                    </source>
-                  </configuration>
-               </execution>
-             </executions>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-    <profile>
       <id>ingest-testing</id>
       <build>
         <plugins>
