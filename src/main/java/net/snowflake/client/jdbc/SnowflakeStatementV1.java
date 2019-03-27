@@ -9,36 +9,38 @@ import net.snowflake.client.core.ResultUtil;
 import net.snowflake.client.core.SFBaseResultSet;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SFStatement;
+import net.snowflake.client.core.StmtUtil;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
 
 import java.sql.BatchUpdateException;
-import java.util.ArrayList;
-import java.util.List;
-
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.sql.SQLWarning;
 import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
-import net.snowflake.client.core.StmtUtil;
-import net.snowflake.client.log.SFLogger;
-import net.snowflake.client.log.SFLoggerFactory;
+import static net.snowflake.client.jdbc.ErrorCode.FEATURE_UNSUPPORTED;
 
 /**
  * Snowflake statement
- *
- * @author jhuang
  */
 class SnowflakeStatementV1 implements Statement
 {
 
   static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeStatementV1.class);
 
-  static final int NO_UPDATES = -1;
+  private static final int NO_UPDATES = -1;
 
-  protected SnowflakeConnectionV1 connection;
+  protected final SnowflakeConnectionV1 connection;
+
+  protected final int resultSetType;
+  protected final int resultSetConcurrency;
+  protected final int resultSetHoldability;
 
   /*
    * The maximum number of rows this statement ( should return (0 => all rows).
@@ -54,31 +56,80 @@ class SnowflakeStatementV1 implements Statement
 
   private int updateCount = NO_UPDATES;
 
-  // TODO: escape processing for sql statement
-  private boolean escapeProcessing = false;
-
   // timeout in seconds
   private int queryTimeout = 0;
 
   // max field size limited to 16MB
   private final int maxFieldSize = 16777216;
 
-  protected SFStatement sfStatement;
+  SFStatement sfStatement;
+
+  private boolean poolable;
 
   /**
    * batch of sql strings added by addBatch
    */
   protected final List<BatchEntry> batch = new ArrayList<>();
 
-  protected SQLWarning sqlWarnings;
+  private SQLWarning sqlWarnings;
 
-  SnowflakeStatementV1(SnowflakeConnectionV1 conn)
+  /**
+   * Construct SnowflakeStatementV1
+   *
+   * @param connection           connection object
+   * @param resultSetType        result set type: ResultSet.TYPE_FORWARD_ONLY.
+   * @param resultSetConcurrency result set conconcurrency: ResultSet.CONCUR_READ_ONLY.
+   * @param resultSetHoldability result set holdability: ResultSet.CLOSE_CURSORS_AT_COMMIT
+   * @throws SQLException if any SQL error occurs.
+   */
+  SnowflakeStatementV1(
+      SnowflakeConnectionV1 connection,
+      int resultSetType,
+      int resultSetConcurrency,
+      int resultSetHoldability) throws SQLException
   {
     logger.debug(
         " public SnowflakeStatement(SnowflakeConnectionV1 conn)");
 
-    connection = conn;
-    sfStatement = new SFStatement(conn.getSfSession());
+    this.connection = connection;
+
+    if (resultSetType != ResultSet.TYPE_FORWARD_ONLY)
+    {
+      throw new SQLFeatureNotSupportedException(
+          String.format("ResultSet type %d is not supported.", resultSetType),
+          FEATURE_UNSUPPORTED.getSqlState(),
+          FEATURE_UNSUPPORTED.getMessageCode());
+    }
+
+    if (resultSetConcurrency != ResultSet.CONCUR_READ_ONLY)
+    {
+      throw new SQLFeatureNotSupportedException(
+          String.format("ResultSet concurrency %d is not supported.", resultSetConcurrency),
+          FEATURE_UNSUPPORTED.getSqlState(),
+          FEATURE_UNSUPPORTED.getMessageCode());
+    }
+
+    if (resultSetHoldability != ResultSet.CLOSE_CURSORS_AT_COMMIT)
+    {
+      throw new SQLFeatureNotSupportedException(
+          String.format("ResultSet holdability %d is not supported.", resultSetHoldability),
+          FEATURE_UNSUPPORTED.getSqlState(),
+          FEATURE_UNSUPPORTED.getMessageCode());
+    }
+
+    this.resultSetType = resultSetType;
+    this.resultSetConcurrency = resultSetConcurrency;
+    this.resultSetHoldability = resultSetHoldability;
+
+    sfStatement = new SFStatement(connection.getSfSession());
+  }
+
+  protected void raiseSQLExceptionIfStatementIsClosed() throws SQLException
+  {
+    if (isClosed)
+    {
+      throw new SnowflakeSQLException(ErrorCode.STATEMENT_CLOSED);
+    }
   }
 
   /**
@@ -86,11 +137,12 @@ class SnowflakeStatementV1 implements Statement
    *
    * @param sql sql statement
    * @return ResultSet
-   * @throws java.sql.SQLException if @link{#executeQueryInternal(String, Map)} throws an exception
+   * @throws SQLException if @link{#executeQueryInternal(String, Map)} throws an exception
    */
   @Override
   public ResultSet executeQuery(String sql) throws SQLException
   {
+    raiseSQLExceptionIfStatementIsClosed();
     return executeQueryInternal(sql, null);
   }
 
@@ -99,7 +151,7 @@ class SnowflakeStatementV1 implements Statement
    *
    * @param sql sql statement
    * @return number of rows updated
-   * @throws java.sql.SQLException if @link{#executeUpdateInternal(String, Map)} throws exception
+   * @throws SQLException if @link{#executeUpdateInternal(String, Map)} throws exception
    */
   @Override
   public int executeUpdate(String sql) throws SQLException
@@ -112,33 +164,36 @@ class SnowflakeStatementV1 implements Statement
                             boolean updateQueryRequired)
   throws SQLException
   {
+    raiseSQLExceptionIfStatementIsClosed();
+
     if (StmtUtil.checkStageManageCommand(sql) != null)
     {
-      throw new SnowflakeSQLException(ErrorCode.
-                                          UNSUPPORTED_STATEMENT_TYPE_IN_EXECUTION_API,
-                                      sql.length() > 20 ? sql.substring(0, 20) + "..." : sql);
+      throw new SnowflakeSQLException(
+          ErrorCode.UNSUPPORTED_STATEMENT_TYPE_IN_EXECUTION_API, StmtUtil.truncateSQL(sql));
     }
 
-    SFBaseResultSet sfResultSet = null;
+    SFBaseResultSet sfResultSet;
     try
     {
       sfResultSet = sfStatement.execute(sql, parameterBindings,
                                         SFStatement.CallingMethod.EXECUTE_UPDATE);
       sfResultSet.setSession(this.connection.getSfSession());
       updateCount = ResultUtil.calculateUpdateCount(sfResultSet);
-      resultSet = null;
     }
     catch (SFException ex)
     {
       throw new SnowflakeSQLException(ex.getCause(),
                                       ex.getSqlState(), ex.getVendorCode(), ex.getParams());
     }
+    finally
+    {
+      resultSet = null;
+    }
 
     if (getUpdateCount() == NO_UPDATES && updateQueryRequired)
     {
-      throw new SnowflakeSQLException(ErrorCode.
-                                          UNSUPPORTED_STATEMENT_TYPE_IN_EXECUTION_API,
-                                      sql.length() > 20 ? sql.substring(0, 20) + "..." : sql);
+      throw new SnowflakeSQLException(
+          ErrorCode.UNSUPPORTED_STATEMENT_TYPE_IN_EXECUTION_API, StmtUtil.truncateSQL(sql));
     }
 
     return getUpdateCount();
@@ -157,7 +212,7 @@ class SnowflakeStatementV1 implements Statement
       Map<String, ParameterBindingDTO> parameterBindings)
   throws SQLException
   {
-    SFBaseResultSet sfResultSet = null;
+    SFBaseResultSet sfResultSet;
     try
     {
       sfResultSet = sfStatement.execute(sql, parameterBindings,
@@ -181,12 +236,13 @@ class SnowflakeStatementV1 implements Statement
    * @param sql               sql statement
    * @param parameterBindings a map of binds to use for this query
    * @return whether there is result set or not
-   * @throws java.sql.SQLException if @link{#executeQuery(String)} throws exception
+   * @throws SQLException if @link{#executeQuery(String)} throws exception
    */
   boolean executeInternal(String sql,
                           Map<String, ParameterBindingDTO> parameterBindings)
   throws SQLException
   {
+    raiseSQLExceptionIfStatementIsClosed();
     connection.injectedDelay();
 
     logger.debug("execute: {}", sql);
@@ -201,7 +257,7 @@ class SnowflakeStatementV1 implements Statement
       return false;
     }
 
-    SFBaseResultSet sfResultSet = null;
+    SFBaseResultSet sfResultSet;
     try
     {
       sfResultSet = sfStatement.execute(sql, parameterBindings,
@@ -237,7 +293,7 @@ class SnowflakeStatementV1 implements Statement
    *
    * @param sql sql statement
    * @return whether there is result set or not
-   * @throws java.sql.SQLException if @link{#executeQuery(String)} throws exception
+   * @throws SQLException if @link{#executeQuery(String)} throws exception
    */
   @Override
   public boolean execute(String sql) throws SQLException
@@ -286,8 +342,8 @@ class SnowflakeStatementV1 implements Statement
    * continuing processing and throw BatchUpdateException after all commands
    * are processed.
    *
-   * @return
-   * @throws SQLException
+   * @return an array of update counts
+   * @throws SQLException if any error occurs.
    */
   @Override
   public int[] executeBatch() throws SQLException
@@ -304,25 +360,23 @@ class SnowflakeStatementV1 implements Statement
    * Note, array binds use a different code path since only one network
    * roundtrip in the array bind execution case.
    *
-   * @return
-   * @throws SQLException
+   * @return the number of updated rows
+   * @throws SQLException raises if statement is closed or any db error occurs
    */
   int[] executeBatchInternal() throws SQLException
   {
-    if (isClosed)
-    {
-      throw new SnowflakeSQLException(ErrorCode.STATEMENT_CLOSED);
-    }
+    raiseSQLExceptionIfStatementIsClosed();
 
     SQLException exceptionReturned = null;
-    int updateCounts[] = new int[batch.size()];
+    int[] updateCounts = new int[batch.size()];
 
     for (int i = 0; i < batch.size(); i++)
     {
+      BatchEntry b = batch.get(i);
       try
       {
         int cnt = this.executeUpdateInternal(
-            batch.get(i).getSql(), batch.get(i).getParameterBindings(), false);
+            b.getSql(), b.getParameterBindings(), false);
         if (cnt == NO_UPDATES)
         {
           // in executeBatch we set updateCount to SUCCESS_NO_INFO
@@ -391,7 +445,7 @@ class SnowflakeStatementV1 implements Statement
   public Connection getConnection() throws SQLException
   {
     logger.debug("public Connection getConnection()");
-
+    raiseSQLExceptionIfStatementIsClosed();
     return connection;
   }
 
@@ -399,7 +453,7 @@ class SnowflakeStatementV1 implements Statement
   public int getFetchDirection() throws SQLException
   {
     logger.debug("public int getFetchDirection()");
-
+    raiseSQLExceptionIfStatementIsClosed();
     return ResultSet.FETCH_FORWARD;
   }
 
@@ -407,7 +461,7 @@ class SnowflakeStatementV1 implements Statement
   public int getFetchSize() throws SQLException
   {
     logger.debug("public int getFetchSize()");
-
+    raiseSQLExceptionIfStatementIsClosed();
     return fetchSize;
   }
 
@@ -415,15 +469,15 @@ class SnowflakeStatementV1 implements Statement
   public ResultSet getGeneratedKeys() throws SQLException
   {
     logger.debug("public ResultSet getGeneratedKeys()");
-
-    throw new SQLFeatureNotSupportedException();
+    raiseSQLExceptionIfStatementIsClosed();
+    return new SnowflakeResultSetV1.EmptyResultSet();
   }
 
   @Override
   public int getMaxFieldSize() throws SQLException
   {
     logger.debug("public int getMaxFieldSize()");
-
+    raiseSQLExceptionIfStatementIsClosed();
     return maxFieldSize;
   }
 
@@ -431,7 +485,7 @@ class SnowflakeStatementV1 implements Statement
   public int getMaxRows() throws SQLException
   {
     logger.debug("public int getMaxRows()");
-
+    raiseSQLExceptionIfStatementIsClosed();
     return maxRows;
   }
 
@@ -447,6 +501,7 @@ class SnowflakeStatementV1 implements Statement
   public boolean getMoreResults(int current) throws SQLException
   {
     logger.debug("public boolean getMoreResults(int current)");
+    raiseSQLExceptionIfStatementIsClosed();
 
     // clean up the current result set, if it exists
     if (resultSet != null &&
@@ -491,7 +546,7 @@ class SnowflakeStatementV1 implements Statement
   public int getQueryTimeout() throws SQLException
   {
     logger.debug("public int getQueryTimeout()");
-
+    raiseSQLExceptionIfStatementIsClosed();
     return this.queryTimeout;
   }
 
@@ -499,7 +554,7 @@ class SnowflakeStatementV1 implements Statement
   public ResultSet getResultSet() throws SQLException
   {
     logger.debug("public ResultSet getResultSet()");
-
+    raiseSQLExceptionIfStatementIsClosed();
     return resultSet;
   }
 
@@ -507,31 +562,31 @@ class SnowflakeStatementV1 implements Statement
   public int getResultSetConcurrency() throws SQLException
   {
     logger.debug("public int getResultSetConcurrency()");
-
-    throw new SQLFeatureNotSupportedException();
+    raiseSQLExceptionIfStatementIsClosed();
+    return resultSetConcurrency;
   }
 
   @Override
   public int getResultSetHoldability() throws SQLException
   {
     logger.debug("public int getResultSetHoldability()");
-
-    throw new SQLFeatureNotSupportedException();
+    raiseSQLExceptionIfStatementIsClosed();
+    return resultSetHoldability;
   }
 
   @Override
   public int getResultSetType() throws SQLException
   {
     logger.debug("public int getResultSetType()");
-
-    return ResultSet.TYPE_FORWARD_ONLY;
+    raiseSQLExceptionIfStatementIsClosed();
+    return this.resultSetType;
   }
 
   @Override
   public int getUpdateCount() throws SQLException
   {
     logger.debug("public int getUpdateCount()");
-
+    raiseSQLExceptionIfStatementIsClosed();
     return updateCount;
   }
 
@@ -539,7 +594,7 @@ class SnowflakeStatementV1 implements Statement
   public SQLWarning getWarnings() throws SQLException
   {
     logger.debug("public SQLWarning getWarnings()");
-
+    raiseSQLExceptionIfStatementIsClosed();
     return sqlWarnings;
   }
 
@@ -547,16 +602,15 @@ class SnowflakeStatementV1 implements Statement
   public boolean isClosed() throws SQLException
   {
     logger.debug("public boolean isClosed()");
-
-    return isClosed;
+    return isClosed; // no exception
   }
 
   @Override
   public boolean isPoolable() throws SQLException
   {
     logger.debug("public boolean isPoolable()");
-
-    throw new SQLFeatureNotSupportedException();
+    raiseSQLExceptionIfStatementIsClosed();
+    return poolable;
   }
 
   @Override
@@ -571,15 +625,17 @@ class SnowflakeStatementV1 implements Statement
   public void setEscapeProcessing(boolean enable) throws SQLException
   {
     logger.debug("public void setEscapeProcessing(boolean enable)");
-
-    escapeProcessing = true;
+    // NOTE: We could raise an exception here, because not implemented
+    // but it may break the existing applications. For now returning nothnig.
+    // we should revisit.
+    raiseSQLExceptionIfStatementIsClosed();
   }
 
   @Override
   public void setFetchDirection(int direction) throws SQLException
   {
     logger.debug("public void setFetchDirection(int direction)");
-
+    raiseSQLExceptionIfStatementIsClosed();
     if (direction != ResultSet.FETCH_FORWARD)
     {
       throw new SQLFeatureNotSupportedException();
@@ -590,7 +646,7 @@ class SnowflakeStatementV1 implements Statement
   public void setFetchSize(int rows) throws SQLException
   {
     logger.debug("public void setFetchSize(int rows), rows={}", rows);
-
+    raiseSQLExceptionIfStatementIsClosed();
     fetchSize = rows;
   }
 
@@ -607,6 +663,8 @@ class SnowflakeStatementV1 implements Statement
   {
     logger.debug("public void setMaxRows(int max)");
 
+    raiseSQLExceptionIfStatementIsClosed();
+
     this.maxRows = max;
     try
     {
@@ -617,8 +675,8 @@ class SnowflakeStatementV1 implements Statement
     }
     catch (SFException ex)
     {
-      throw new SnowflakeSQLException(ex.getCause(),
-                                      ex.getSqlState(), ex.getVendorCode(), ex.getParams());
+      throw new SnowflakeSQLException(
+          ex.getCause(), ex.getSqlState(), ex.getVendorCode(), ex.getParams());
     }
   }
 
@@ -626,19 +684,23 @@ class SnowflakeStatementV1 implements Statement
   public void setPoolable(boolean poolable) throws SQLException
   {
     logger.debug("public void setPoolable(boolean poolable)");
+    raiseSQLExceptionIfStatementIsClosed();
 
     if (poolable)
     {
       throw new SQLFeatureNotSupportedException();
     }
+    this.poolable = poolable;
   }
 
   /**
    * Sets a parameter at the statement level. Used for internal testing.
    *
-   * @throws Exception
+   * @param name  parameter name.
+   * @param value parameter value.
+   * @throws Exception if any SQL error occurs.
    */
-  public void setParameter(String name, Object value) throws Exception
+  void setParameter(String name, Object value) throws Exception
   {
     logger.debug("public void setParameter");
 
@@ -659,6 +721,7 @@ class SnowflakeStatementV1 implements Statement
   public void setQueryTimeout(int seconds) throws SQLException
   {
     logger.debug("public void setQueryTimeout(int seconds)");
+    raiseSQLExceptionIfStatementIsClosed();
 
     this.queryTimeout = seconds;
     try
@@ -670,8 +733,8 @@ class SnowflakeStatementV1 implements Statement
     }
     catch (SFException ex)
     {
-      throw new SnowflakeSQLException(ex.getCause(),
-                                      ex.getSqlState(), ex.getVendorCode(), ex.getParams());
+      throw new SnowflakeSQLException(
+          ex.getCause(), ex.getSqlState(), ex.getVendorCode(), ex.getParams());
     }
   }
 
@@ -702,7 +765,6 @@ class SnowflakeStatementV1 implements Statement
   public void closeOnCompletion() throws SQLException
   {
     logger.debug("public void closeOnCompletion()");
-
     throw new SQLFeatureNotSupportedException();
   }
 
@@ -710,7 +772,6 @@ class SnowflakeStatementV1 implements Statement
   public boolean isCloseOnCompletion() throws SQLException
   {
     logger.debug("public boolean isCloseOnCompletion()");
-
     throw new SQLFeatureNotSupportedException();
   }
 
@@ -719,6 +780,7 @@ class SnowflakeStatementV1 implements Statement
   {
     logger.debug("public void close()");
 
+    // No exception is raised even if the statement is closed.
     if (resultSet != null)
     {
       resultSet.close();
@@ -734,6 +796,7 @@ class SnowflakeStatementV1 implements Statement
   public void cancel() throws SQLException
   {
     logger.debug("public void cancel()");
+    raiseSQLExceptionIfStatementIsClosed();
 
     try
     {
@@ -750,7 +813,7 @@ class SnowflakeStatementV1 implements Statement
   public void clearWarnings() throws SQLException
   {
     logger.debug("public void clearWarnings()");
-
+    raiseSQLExceptionIfStatementIsClosed();
     sqlWarnings = null;
   }
 
@@ -759,10 +822,7 @@ class SnowflakeStatementV1 implements Statement
   {
     logger.debug("public void addBatch(String sql)");
 
-    if (isClosed)
-    {
-      throw new SnowflakeSQLException(ErrorCode.STATEMENT_CLOSED);
-    }
+    raiseSQLExceptionIfStatementIsClosed();
 
     batch.add(new BatchEntry(sql, null));
   }
@@ -772,10 +832,7 @@ class SnowflakeStatementV1 implements Statement
   {
     logger.debug("public void clearBatch()");
 
-    if (isClosed)
-    {
-      throw new SnowflakeSQLException(ErrorCode.STATEMENT_CLOSED);
-    }
+    raiseSQLExceptionIfStatementIsClosed();
 
     batch.clear();
   }
@@ -787,7 +844,7 @@ class SnowflakeStatementV1 implements Statement
     // tokenize the sql
     String[] tokens = sql.split("\\s+");
 
-    if (tokens == null || tokens.length < 2)
+    if (tokens.length < 2)
     {
       return;
     }
@@ -813,18 +870,6 @@ class SnowflakeStatementV1 implements Statement
   public SFStatement getSfStatement()
   {
     return sfStatement;
-  }
-
-  protected void appendWarning(SQLWarning w)
-  {
-    if (sqlWarnings == null)
-    {
-      sqlWarnings = w;
-    }
-    else
-    {
-      sqlWarnings.setNextWarning(w);
-    }
   }
 
   final class BatchEntry

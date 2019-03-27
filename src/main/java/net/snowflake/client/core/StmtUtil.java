@@ -34,7 +34,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.zip.GZIPOutputStream;
 
 /**
- * Created by jhuang on 1/28/16.
+ * Statement Util
  */
 public class StmtUtil
 {
@@ -101,11 +101,9 @@ public class StmtUtil
 
     String serviceName;
 
-    public StmtInput()
+    StmtInput()
     {
     }
-
-    ;
 
     public StmtInput setSql(String sql)
     {
@@ -864,5 +862,16 @@ public class StmtUtil
     {
       return null;
     }
+  }
+
+  /**
+   * Truncate a SQL text for logging
+   *
+   * @param sql original SQL
+   * @return truncated SQL command
+   */
+  public static String truncateSQL(String sql)
+  {
+    return sql.length() > 20 ? sql.substring(0, 20) + "..." : sql;
   }
 }

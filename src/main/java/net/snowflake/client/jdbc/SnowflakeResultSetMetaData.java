@@ -4,9 +4,11 @@
 
 package net.snowflake.client.jdbc;
 
-import net.snowflake.common.core.SqlState;
-import net.snowflake.client.core.SFSession;
 import net.snowflake.client.core.ResultUtil;
+import net.snowflake.client.core.SFSession;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
+import net.snowflake.common.core.SqlState;
 
 import java.math.BigDecimal;
 import java.sql.Date;
@@ -16,17 +18,12 @@ import java.sql.SQLFeatureNotSupportedException;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
-import java.util.List;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-
-import net.snowflake.client.log.SFLogger;
-import net.snowflake.client.log.SFLoggerFactory;
 
 /**
  * Snowflake ResultSetMetaData
- *
- * @author jhuang
  */
 public class SnowflakeResultSetMetaData implements ResultSetMetaData
 {
@@ -46,13 +43,9 @@ public class SnowflakeResultSetMetaData implements ResultSetMetaData
 
   private List<Integer> scales;
 
-  private String queryId;
+  private Map<String, Integer> columnNamePositionMap = new HashMap<>();
 
-  private Map<String, Integer> columnNamePositionMap =
-      new HashMap<>();
-
-  private Map<String, Integer> columnNameUpperCasePositionMap =
-      new HashMap<>();
+  private Map<String, Integer> columnNameUpperCasePositionMap = new HashMap<>();
 
   private SFSession session;
 
@@ -72,14 +65,6 @@ public class SnowflakeResultSetMetaData implements ResultSetMetaData
     this.columnTypeNames = columnTypeNames;
     this.columnTypes = columnTypes;
     this.session = session;
-  }
-
-  /**
-   * @return query id
-   */
-  public String getQueryId()
-  {
-    return queryId;
   }
 
   /**
@@ -205,7 +190,7 @@ public class SnowflakeResultSetMetaData implements ResultSetMetaData
     }
     else
     {
-      return "C" + Integer.toString(column - 1);
+      return "C" + (column - 1);
     }
   }
 
@@ -336,7 +321,7 @@ public class SnowflakeResultSetMetaData implements ResultSetMetaData
       throw new SQLException("Invalid column index: " + column);
     }
 
-    if (columnTypeNames == null || columnTypeNames.get(column - 1) == null)
+    if (columnTypeNames.get(column - 1) == null)
     {
       throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
                                       ErrorCode.INTERNAL_ERROR.getMessageCode(),
@@ -350,7 +335,7 @@ public class SnowflakeResultSetMetaData implements ResultSetMetaData
   public boolean isReadOnly(int column) throws SQLException
   {
     logger.debug("public boolean isReadOnly(int column)");
-
+    // metadata column is always readonly
     return true;
   }
 

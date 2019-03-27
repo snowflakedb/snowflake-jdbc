@@ -16,6 +16,7 @@ import org.apache.http.entity.StringEntity;
 import java.io.IOException;
 import java.rmi.UnexpectedException;
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.LinkedList;
 
 
@@ -103,12 +104,15 @@ public class Telemetry
    */
   public static Telemetry createTelemetry(Connection conn, int flushSize)
   {
-    if (conn instanceof SnowflakeConnectionV1)
+    try
     {
-      return createTelemetry(((SnowflakeConnectionV1) conn).getSfSession(), flushSize);
+      return createTelemetry(conn.unwrap(SnowflakeConnectionV1.class).getSfSession(), flushSize);
     }
-    logger.debug("input connection is not a SnowflakeConnection");
-    return null;
+    catch (SQLException ex)
+    {
+      logger.debug("input connection is not a SnowflakeConnection");
+      return null;
+    }
   }
 
   /**

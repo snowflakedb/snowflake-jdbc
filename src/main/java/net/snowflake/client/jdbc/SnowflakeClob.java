@@ -21,7 +21,6 @@ public class SnowflakeClob implements Clob
   {
     private StringBuffer main;
     private StringBuffer current;
-    private int offset;
 
     /**
      *
@@ -31,7 +30,6 @@ public class SnowflakeClob implements Clob
       super();
       this.main = buffer;
       this.current = new StringBuffer();
-      this.offset = pos - 1;
     }
 
     @Override

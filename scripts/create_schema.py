@@ -11,17 +11,11 @@ test_schema = None
 if 'TRAVIS_JOB_ID' in os.environ:
     job_id = os.getenv('TRAVIS_JOB_ID')
     test_schema = 'TRAVIS_JOB_{0}'.format(job_id)
-
-if 'APPVEYOR_BUILD_ID' in os.environ:
+elif 'APPVEYOR_BUILD_ID' in os.environ:
     job_id = os.getenv('APPVEYOR_BUILD_ID')
     test_schema = 'APPVEYOR_BUILD_{0}'.format(job_id)
-
-if 'BUILD_TAG' in os.environ:
+else:
     test_schema = os.getenv('SNOWFLAKE_TEST_SCHEMA')
-
-if test_schema is None:
-    print("[WARN] The environment variable TRAVIS_JOB_ID or APPVEYOR_BUILD_ID or JENKINS_BUILD_TAG is not set. No test schema will be created.")
-    sys.exit(1)
 
 params = {
     'account': os.getenv("SNOWFLAKE_TEST_ACCOUNT"),
