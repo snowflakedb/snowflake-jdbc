@@ -4,6 +4,7 @@ import net.minidev.json.JSONArray;
 import net.minidev.json.JSONObject;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
+import net.snowflake.client.util.SecretDetector;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -95,7 +96,7 @@ public class TelemetryService
       }
 
       Runtime.getRuntime().addShutdownHook(new Thread(
-          new TelemetryUploader(this, logsToString(queue))));
+          new TelemetryUploader(this, exportQueueToString())));
     }
     catch (SecurityException e)
     {
@@ -337,7 +338,7 @@ public class TelemetryService
     {
       // When the queue is full or the event is urgent,
       // then start a new thread to upload without blocking the current thread
-      Runnable runUpload = new TelemetryUploader(this, logsToString(queue));
+      Runnable runUpload = new TelemetryUploader(this, exportQueueToString());
       uploader.execute(runUpload);
     }
   }
@@ -354,7 +355,7 @@ public class TelemetryService
     if (!queue.isEmpty())
     {
       // start a new thread to upload without blocking the current thread
-      Runnable runUpload = new TelemetryUploader(this, logsToString(queue));
+      Runnable runUpload = new TelemetryUploader(this, exportQueueToString());
       uploader.execute(runUpload);
     }
   }
@@ -362,17 +363,16 @@ public class TelemetryService
   /**
    * convert a list of json objects to a string
    *
-   * @param queue a list of json objects
    * @return the result json string
    */
-  public String logsToString(ConcurrentLinkedQueue<TelemetryEvent> queue)
+  public String exportQueueToString()
   {
     JSONArray logs = new JSONArray();
     while (!queue.isEmpty())
     {
       logs.add(queue.poll());
     }
-    return logs.toString();
+    return SecretDetector.maskAWSSecret(logs.toString());
   }
 
   static class TelemetryUploader implements Runnable
