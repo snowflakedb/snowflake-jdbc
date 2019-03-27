@@ -37,8 +37,8 @@ class TestDataConfigBuilder
   );
   private List<String> keys;
   private String tableName = TARGET_TABLE_NAME;
-  private String schemaName = "LOADER";
-  private String databaseName = "TESTDB";
+  private String schemaName;
+  private String databaseName;
   private String remoteStage = "~";
   private long csvFileBucketSize = 64;
   private long csvFileSize = 50 * 1024 * 1024;
@@ -55,10 +55,12 @@ class TestDataConfigBuilder
 
   private ResultListener listener;
 
-  TestDataConfigBuilder(Connection testConnection, Connection putConnection)
+  TestDataConfigBuilder(Connection testConnection, Connection putConnection) throws Exception
   {
     this.testConnection = testConnection;
     this.putConnection = putConnection;
+    this.databaseName = testConnection.getCatalog();
+    this.schemaName = testConnection.getSchema();
   }
 
   TestDataConfigBuilder setTestMode(boolean testMode)
@@ -231,7 +233,7 @@ class TestDataConfigBuilder
       // generates a new data set and ingest
       for (int i = 0; i < numberOfRows; i++)
       {
-        final String json = "{\"key\":" + String.valueOf(rnd.nextInt()) + ","
+        final String json = "{\"key\":" + rnd.nextInt() + ","
                             + "\"bar\":" + i + "}";
         Object[] row = new Object[]
             {
@@ -265,7 +267,7 @@ class TestDataConfigBuilder
 
     ResultSet rs = testConnection.createStatement().executeQuery(
         String.format("SELECT COUNT(*) AS N"
-                      + " FROM LOADER.\"%s\"", tableName));
+                      + " FROM \"%s\"", tableName));
 
     rs.next();
     int count = rs.getInt("N");
