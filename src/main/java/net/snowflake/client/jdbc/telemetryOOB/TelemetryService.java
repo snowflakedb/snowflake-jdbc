@@ -58,7 +58,9 @@ public class TelemetryService
       TELEMETRY_SERVER_DEPLOYMENT.DEV.name,
       TELEMETRY_SERVER_DEPLOYMENT.REG.name,
       TELEMETRY_SERVER_DEPLOYMENT.QA1.name,
-      TELEMETRY_SERVER_DEPLOYMENT.PREPROD2.name
+      TELEMETRY_SERVER_DEPLOYMENT.PREPROD2.name//,
+//      TELEMETRY_SERVER_DEPLOYMENT.PROD.name
+      // disable prod telemetry before release
   ));
 
   /**
@@ -266,12 +268,13 @@ public class TelemetryService
     SFCTEST("https://lximwp8945.execute-api.us-west-2.amazonaws.com/sfctest/enqueue",
             "zJHB5wqSZL7JSilRbQEHB52ZUG0ajdd166gsMmKv"),
     SFCDEV("https://lol6l3j52m.execute-api.us-west-2.amazonaws.com/sfcdev/enqueue",
-           ""),
+           "kyTKLWpEZSaJnrzTZ63I96QXZHKsgfqbaGmAaIWf"),
     US2("https://4yss82lml2.execute-api.us-east-1.amazonaws.com/us2/enqueue",
-        ""); // todo: update the api keys
+        "wLpEKqnLOW9tGNwTjab5N611YQApOb3t9xOnE1rX");
 
     private final String url;
 
+    // Note that this key is public available and only used as usage plan for throttling
     private final String apiKey;
 
     TELEMETRY_API(String url, String key)
