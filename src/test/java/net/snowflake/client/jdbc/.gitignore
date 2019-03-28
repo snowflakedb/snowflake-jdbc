@@ -1,7 +1,6 @@
 BindUploaderIT.java
 ClientMemoryLimitParallelIT.java
 ConnectionManual.java
-DatabaseMetaDataIT.java
 HeartbeatIT.java
 OpenGroupCLIFuncIT.java
 SSOConnectionTest.java
