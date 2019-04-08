@@ -89,7 +89,7 @@ class SSDManager
   SFLogger LOGGER = SFLoggerFactory.getLogger(SSDManager.class);
 
   private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-  private static Map<String, String> SF_SSD_CACHE = new HashMap<>();
+  private static String SF_SSD_CACHE;
   private static SSDKeyManager pub_key_dep1 = new SSDKeyManager();
   private static SSDKeyManager pub_key_dep2 = new SSDKeyManager();
 
@@ -189,24 +189,19 @@ class SSDManager
     return SSDManager.ACTIVATE_SSD;
   }
 
-  void addToSSDCache(String hostname, String host_spec_ssd)
+  void addToSSDCache(String host_spec_ssd)
   {
-    SF_SSD_CACHE.put(hostname, host_spec_ssd);
-  }
-
-  void removeFromSSDCache(String hostname)
-  {
-    SF_SSD_CACHE.remove(hostname);
-  }
-
-  String findInSSDCache(String hostname)
-  {
-    return SF_SSD_CACHE.get(hostname);
+    SF_SSD_CACHE = host_spec_ssd;
   }
 
   void clearSSDCache()
   {
-    SF_SSD_CACHE.clear();
+    SF_SSD_CACHE = null;
+  }
+
+  String getSSDFromCache()
+  {
+    return SF_SSD_CACHE;
   }
 
   void updateKey(String dep, String pub_key, float ver)

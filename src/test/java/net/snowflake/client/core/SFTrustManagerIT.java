@@ -30,6 +30,7 @@ import static org.hamcrest.core.AnyOf.anyOf;
 public class SFTrustManagerIT
 {
   private static final String[] TARGET_HOSTS = {
+      "ocspssd.us-east-1.snowflakecomputing.com/ocsp/fetch",
       "sfcsupport.snowflakecomputing.com",
       "sfcsupport.us-east-1.snowflakecomputing.com",
       "sfcsupport.eu-central-1.snowflakecomputing.com",
