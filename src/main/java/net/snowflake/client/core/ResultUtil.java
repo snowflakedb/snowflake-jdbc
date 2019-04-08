@@ -359,31 +359,13 @@ public class ResultUtil
         /*
          * Should JsonParser be used instead of the original Json deserializer.
          */
-        boolean useJsonParser = true;
+        boolean useJsonParserV2 = false;
         if (resultOutput.parameters.get("JDBC_USE_JSON_PARSER") != null)
         {
-          useJsonParser =
+          useJsonParserV2 =
               (boolean) resultOutput.parameters.get("JDBC_USE_JSON_PARSER");
         }
 
-        boolean efficientChunkStorage = false;
-        if (resultOutput.parameters.get("JDBC_EFFICIENT_CHUNK_STORAGE") != null)
-        {
-          efficientChunkStorage = (boolean)
-              resultOutput.parameters.get("JDBC_EFFICIENT_CHUNK_STORAGE");
-        }
-
-        if (useJsonParser && efficientChunkStorage)
-        {
-          resultPrefetchThreads =
-              Math.max(Math.min(resultPrefetchThreads,
-                                Runtime.getRuntime().availableProcessors() / 2),
-                       2);
-        }
-        else
-        {
-          resultPrefetchThreads = 1;
-        }
         // initialize the chunk downloader
         resultOutput.chunkDownloader =
             new SnowflakeChunkDownloader(resultOutput.columnCount,
@@ -392,9 +374,8 @@ public class ResultUtil
                                          qrmk,
                                          chunkHeaders,
                                          resultData.networkTimeoutInMilli,
-                                         useJsonParser,
-                                         initMemoryLimit(resultOutput),
-                                         efficientChunkStorage);
+                                         useJsonParserV2,
+                                         initMemoryLimit(resultOutput));
       }
     }
 

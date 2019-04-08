@@ -31,6 +31,7 @@ import java.io.PrintWriter;
 import java.io.SequenceInputStream;
 import java.io.StringWriter;
 import java.net.URISyntaxException;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -77,6 +78,7 @@ public class SnowflakeChunkDownloader
 
   private static final SFLogger logger =
       SFLoggerFactory.getLogger(SnowflakeChunkDownloader.class);
+  private static final int STREAM_BUFFER_SIZE = 1*1024*1024;
 
   private SnowflakeResultChunk.ResultChunkDataCache chunkDataCache
       = new SnowflakeResultChunk.ResultChunkDataCache();
@@ -91,8 +93,8 @@ public class SnowflakeChunkDownloader
   // number of prefetch slots
   private final int prefetchSlots;
 
-  // TRUE if JsonParser should be used FALSE otherwise.
-  private boolean useJsonParser = false;
+  // TRUE if JsonParserV2 should be used FALSE otherwise.
+  private boolean useJsonParserV2;
 
   // thread pool
   private ThreadPoolExecutor executor;
@@ -205,9 +207,8 @@ public class SnowflakeChunkDownloader
    * @param qrmk                  Query Result Master Key
    * @param chunkHeaders          JSON object contains information about chunk headers
    * @param networkTimeoutInMilli network timeout
-   * @param useJsonParser         should JsonParser be used instead of object
+   * @param useJsonParserV2         should JsonParserV2 be used instead of object
    * @param memoryLimit           memory limit for chunk buffer
-   * @param efficientChunkStorage use new efficient storage format
    */
   public SnowflakeChunkDownloader(int colCount,
                                   JsonNode chunksData,
@@ -215,15 +216,14 @@ public class SnowflakeChunkDownloader
                                   String qrmk,
                                   JsonNode chunkHeaders,
                                   int networkTimeoutInMilli,
-                                  boolean useJsonParser,
-                                  long memoryLimit,
-                                  boolean efficientChunkStorage)
+                                  boolean useJsonParserV2,
+                                  long memoryLimit)
   throws SnowflakeSQLException
   {
     this.qrmk = qrmk;
     this.networkTimeoutInMilli = networkTimeoutInMilli;
     this.prefetchSlots = prefetchThreads * 2;
-    this.useJsonParser = useJsonParser;
+    this.useJsonParserV2 = useJsonParserV2;
     this.memoryLimit = memoryLimit;
     logger.debug("qrmk = {}", qrmk);
 
@@ -269,7 +269,7 @@ public class SnowflakeChunkDownloader
               chunkNode.path("rowCount").asInt(),
               colCount,
               chunkNode.path("uncompressedSize").asInt(),
-              efficientChunkStorage);
+              useJsonParserV2);
 
       logger.debug("add chunk, url={} rowCount={} uncompressedSize={} neededChunkMemory={}",
                    chunk.getUrl(), chunk.getRowCount(), chunk.getUncompressedSize(), chunk.computeNeededChunkMemory());
@@ -355,7 +355,8 @@ public class SnowflakeChunkDownloader
                                                    nextChunk,
                                                    qrmk, nextChunkToDownload,
                                                    chunkHeadersMap,
-                                                   networkTimeoutInMilli));
+                                                   networkTimeoutInMilli,
+                                                   useJsonParserV2));
 
           // increment next chunk to download
           nextChunkToDownload++;
@@ -656,6 +657,7 @@ public class SnowflakeChunkDownloader
    *                              chunks. This is mainly for logging purpose
    * @param chunkHeadersMap       contains headers needed to be added when downloading from s3
    * @param networkTimeoutInMilli network timeout
+   * @param useJsonParserV2       use the json parser V2
    * @return A callable responsible for downloading chunk
    */
   private static Callable<Void> getDownloadChunkCallable(
@@ -663,7 +665,7 @@ public class SnowflakeChunkDownloader
       final SnowflakeResultChunk resultChunk,
       final String qrmk, final int chunkIndex,
       final Map<String, String> chunkHeadersMap,
-      final int networkTimeoutInMilli)
+      final int networkTimeoutInMilli, boolean useJsonParserV2)
   {
     return new Callable<Void>()
     {
@@ -727,7 +729,7 @@ public class SnowflakeChunkDownloader
               if (encoding.getValue().equalsIgnoreCase("gzip"))
               {
                 /* specify buffer size for GZIPInputStream */
-                is = new GZIPInputStream(is, 65536);
+                is = new GZIPInputStream(is, STREAM_BUFFER_SIZE);
               }
               else
               {
@@ -740,19 +742,26 @@ public class SnowflakeChunkDownloader
               }
             }
 
-            // Build a sequence of streams to wrap the input stream
-            // with '[' ... ']' to be able to plug this in the
-            // Jackson JSON parser.
-            // gzip stream uses 64KB
-            // no buffering as json parser does it internally
-            jsonInputStream =
-                new SequenceInputStream(
-                    Collections.enumeration(Arrays.asList(
-                        new ByteArrayInputStream("[".getBytes(
-                            StandardCharsets.UTF_8)),
-                        is,
-                        new ByteArrayInputStream("]".getBytes(
-                            StandardCharsets.UTF_8)))));
+            if (useJsonParserV2)
+            {
+              jsonInputStream = is;
+            }
+            else
+            {
+              // Build a sequence of streams to wrap the input stream
+              // with '[' ... ']' to be able to plug this in the
+              // Jackson JSON parser.
+              // gzip stream uses 64KB
+              // no buffering as json parser does it internally
+              jsonInputStream =
+                  new SequenceInputStream(
+                      Collections.enumeration(Arrays.asList(
+                          new ByteArrayInputStream("[".getBytes(
+                              StandardCharsets.UTF_8)),
+                          is,
+                          new ByteArrayInputStream("]".getBytes(
+                              StandardCharsets.UTF_8)))));
+            }
           }
           catch (Exception ex)
           {
@@ -777,15 +786,13 @@ public class SnowflakeChunkDownloader
           // parse the result json
           try
           {
-            if (downloader.useJsonParser)
+            if (downloader.useJsonParserV2)
             {
-              parseJsonToChunk(jsonInputStream, resultChunk);
+              parseJsonToChunkV2(jsonInputStream, resultChunk);
             }
             else
             {
-              // Use Jackson deserialization if not using JsonParser
-              // tokenization.
-              resultData = mapper.readTree(jsonInputStream);
+              parseJsonToChunk(jsonInputStream, resultChunk);
             }
           }
           catch (Exception ex)
@@ -874,6 +881,34 @@ public class SnowflakeChunkDownloader
         }
 
         return null;
+      }
+
+      private void parseJsonToChunkV2(InputStream jsonInputStream,
+                                    SnowflakeResultChunk resultChunk)
+      throws IOException, SnowflakeSQLException
+      {
+        /*
+         * This is a hand-written binary parser that
+         * handle.
+         *   [ "c1", "c2", null, ... ],
+         *   [ null, "c2", "c3", ... ],
+         *   ...
+         *   [ "c1", "c2", "c3", ... ],
+         * in UTF-8
+         * The number of rows is known and the number of expected columns
+         * is also known.
+         */
+        ResultJsonParserV2 jp = new ResultJsonParserV2();
+        jp.startParsing(resultChunk);
+
+        byte[] buf = new byte[STREAM_BUFFER_SIZE];
+        int len;
+        while((len = jsonInputStream.read(buf)) != -1)
+        {
+          jp.continueParsing(ByteBuffer.wrap(buf, 0, len));
+        }
+
+        jp.endParsing();
       }
 
       private void parseJsonToChunk(InputStream jsonInputStream,
