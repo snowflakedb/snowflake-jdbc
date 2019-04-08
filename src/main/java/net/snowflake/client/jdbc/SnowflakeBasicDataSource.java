@@ -62,7 +62,7 @@ public class SnowflakeBasicDataSource implements DataSource
 
     try
     {
-      Connection con = DriverManager.getConnection(getUrl(), properties);
+      Connection con = SnowflakeDriver.INSTANCE.connect(getUrl(), properties);
       if (logger.isTraceEnabled())
       {
         logger.trace("Created a connection for {} at {}",
