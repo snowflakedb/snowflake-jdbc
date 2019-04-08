@@ -1867,7 +1867,6 @@ public class PreparedStatementIT extends BaseJDBCTest
 
       URL fakeURL = new URL("http://localhost:8888/");
       expectFeatureNotSupportedException(() -> preparedStatement.setURL(1, fakeURL));
-      expectFeatureNotSupportedException(preparedStatement::getParameterMetaData);
 
       expectFeatureNotSupportedException(() -> preparedStatement.setRowId(1, new FakeRowId()));
       expectFeatureNotSupportedException(() -> preparedStatement.setNString(1, "test"));
