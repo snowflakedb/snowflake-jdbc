@@ -28,7 +28,10 @@ public class PrepareMultiStmtIT extends BaseJDBCTest
 
     PreparedStatement preparedStatement = connection.prepareStatement(
         "insert into test_multi_bind(c1) values(?); insert into " +
-        "test_multi_bind values (?), (?)", true);
+        "test_multi_bind values (?), (?)");
+
+    assertThat(preparedStatement.getParameterMetaData().getParameterCount(),
+               is(3));
 
     preparedStatement.setInt(1, 20);
     preparedStatement.setInt(2, 30);
@@ -73,7 +76,10 @@ public class PrepareMultiStmtIT extends BaseJDBCTest
 
     PreparedStatement preparedStatement = connection.prepareStatement(
         "insert into test_multi_bind(c1) values(?); insert into " +
-        "test_multi_bind values (?), (?)", true);
+        "test_multi_bind values (?), (?)");
+
+    assertThat(preparedStatement.getParameterMetaData().getParameterCount(),
+               is(3));
 
     preparedStatement.setInt(1, 20);
     preparedStatement.setInt(2, 30);
@@ -106,7 +112,10 @@ public class PrepareMultiStmtIT extends BaseJDBCTest
 
     PreparedStatement preparedStatement = connection.prepareStatement(
         "insert into test_multi_bind(c1) values(?); insert into " +
-        "test_multi_bind values (?), (?)", true);
+        "test_multi_bind values (?), (?)");
+
+    assertThat(preparedStatement.getParameterMetaData().getParameterCount(),
+               is(3));
 
     preparedStatement.setInt(1, 20);
     preparedStatement.setInt(2, 30);
@@ -148,7 +157,10 @@ public class PrepareMultiStmtIT extends BaseJDBCTest
     statement.execute("alter session set ENABLE_MULTISTATEMENT=true");
 
     PreparedStatement preparedStatement = connection.prepareStatement(
-        "select ?; select ?, ?; select ?, ?, ?", true);
+        "select ?; select ?, ?; select ?, ?, ?");
+
+    assertThat(preparedStatement.getParameterMetaData().getParameterCount(),
+               is(6));
 
     preparedStatement.setInt(1, 10);
     preparedStatement.setInt(2, 20);
@@ -190,7 +202,10 @@ public class PrepareMultiStmtIT extends BaseJDBCTest
     statement.execute("alter session set ENABLE_MULTISTATEMENT=true");
 
     PreparedStatement preparedStatement = connection.prepareStatement(
-        "select 10; select 20, 30; select 40, 50, 60", true);
+        "select 10; select 20, 30; select 40, 50, 60");
+
+    assertThat(preparedStatement.getParameterMetaData().getParameterCount(),
+               is(0));
 
     // first statement
     ResultSet resultSet = preparedStatement.executeQuery();

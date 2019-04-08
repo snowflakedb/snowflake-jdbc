@@ -713,7 +713,7 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
   @Override
   public ParameterMetaData getParameterMetaData() throws SQLException
   {
-    throw new SQLFeatureNotSupportedException();
+    return new SnowflakeParameterMetadata(statementMetaData);
   }
 
   @Override
