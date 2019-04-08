@@ -10,7 +10,9 @@ import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SqlState;
 
 import java.lang.ref.SoftReference;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.locks.Condition;
@@ -34,8 +36,6 @@ public class SnowflakeResultChunk
     SUCCESS,
     FAILURE
   }
-
-  ;
 
   // url for result chunk
   private final String url;
@@ -74,20 +74,20 @@ public class SnowflakeResultChunk
   private int currentRow;
 
   public SnowflakeResultChunk(String url, int rowCount, int colCount,
-                              int uncompressedSize, boolean efficientStorage)
+                              int uncompressedSize, boolean useJsonParserV2)
   {
     this.url = url;
     this.rowCount = rowCount;
     this.colCount = colCount;
     this.uncompressedSize = uncompressedSize;
-    if (efficientStorage)
+    if (useJsonParserV2)
     {
-      data = new BlockResultChunkData(computeCharactersNeeded(),
-                                      rowCount * colCount);
+      data = new BlockResultChunkDataV2(computeCharactersNeeded(),
+                                      rowCount, colCount);
     }
     else
     {
-      data = new LegacyResultChunkData(computeCharactersNeeded(),
+      data = new BlockResultChunkData(computeCharactersNeeded(),
                                        rowCount * colCount);
     }
   }
@@ -299,12 +299,47 @@ public class SnowflakeResultChunk
     this.downloadState = downloadState;
   }
 
-  private int computeCharactersNeeded()
+  public int computeCharactersNeeded()
   {
     // remove [ , ] characters, they won't be stored
     return uncompressedSize
            - (rowCount * 2) // opening [ and komma separating rows
            - (rowCount * colCount); // komma separating cells and closing ]
+  }
+
+  public void addOffset(int offset) throws SnowflakeSQLException
+  {
+    data.addOffset(offset);
+  }
+
+  public void setIsNull() throws SnowflakeSQLException
+  {
+    data.setIsNull();
+  }
+
+  public void setLastLength(int len) throws SnowflakeSQLException
+  {
+    data.setLastLength(len);
+  }
+
+  public void nextIndex() throws SnowflakeSQLException
+  {
+    data.nextIndex();
+  }
+
+  public byte get(int offset) throws SnowflakeSQLException
+  {
+    return data.getByte(offset);
+  }
+
+  public void addByte(byte b, int pos) throws SnowflakeSQLException
+  {
+    data.addByte(b, pos);
+  }
+
+  public void addBytes(byte[] src, int offset, int pos, int length) throws SnowflakeSQLException
+  {
+    data.addBytes(src, offset, pos, length);
   }
 
   /**
@@ -318,7 +353,7 @@ public class SnowflakeResultChunk
      *
      * @param string value to add
      */
-    void add(String string);
+    void add(String string) throws SnowflakeSQLException;
 
     /**
      * Access an element by an index
@@ -339,6 +374,58 @@ public class SnowflakeResultChunk
      * Let GC collect the memory
      */
     void freeData();
+
+    /**
+     * add offset into offset buffer
+     * @param offset
+     * @throws SnowflakeSQLException
+     */
+    void addOffset(int offset) throws SnowflakeSQLException;
+
+    /**
+     * label current value as null
+     * @throws SnowflakeSQLException
+     */
+    void setIsNull() throws SnowflakeSQLException;
+
+    /**
+     * increase index
+     * @throws SnowflakeSQLException
+     */
+    void nextIndex() throws SnowflakeSQLException;
+
+    /**
+     * set the last length
+     * @param len
+     * @throws SnowflakeSQLException
+     */
+    void setLastLength(int len) throws SnowflakeSQLException;
+
+    /**
+     * get one byte from the byte array
+     * @param offset
+     * @return
+     * @throws SnowflakeSQLException
+     */
+    byte getByte(int offset) throws SnowflakeSQLException;
+
+    /**
+     * add one byte to the byte array at nextIndex
+     * @param b
+     * @param pos
+     * @throws SnowflakeSQLException
+     */
+    void addByte(byte b, int pos) throws SnowflakeSQLException;
+
+    /**
+     * add bytes to the byte array
+     * @param src
+     * @param src_offset
+     * @param pos
+     * @param length
+     * @throws SnowflakeSQLException
+     */
+    void addBytes(byte[] src, int src_offset, int pos, int length) throws SnowflakeSQLException;
   }
 
   /**
@@ -405,6 +492,76 @@ public class SnowflakeResultChunk
         currentDatOffset += string.length();
       }
       nextIndex++;
+    }
+
+    @Override
+    public void addOffset(int offset) throws SnowflakeSQLException
+    {
+      throw new SnowflakeSQLException(
+          SqlState.INTERNAL_ERROR,
+          ErrorCode.INTERNAL_ERROR
+              .getMessageCode(),
+          "Unimplemented");
+    }
+
+    @Override
+    public void setIsNull() throws SnowflakeSQLException
+    {
+      throw new SnowflakeSQLException(
+          SqlState.INTERNAL_ERROR,
+          ErrorCode.INTERNAL_ERROR
+              .getMessageCode(),
+          "Unimplemented");
+    }
+
+    @Override
+    public void setLastLength(int len) throws SnowflakeSQLException
+    {
+      throw new SnowflakeSQLException(
+          SqlState.INTERNAL_ERROR,
+          ErrorCode.INTERNAL_ERROR
+              .getMessageCode(),
+          "Unimplemented");
+    }
+
+    @Override
+    public byte getByte(int offset) throws SnowflakeSQLException
+    {
+      throw new SnowflakeSQLException(
+          SqlState.INTERNAL_ERROR,
+          ErrorCode.INTERNAL_ERROR
+              .getMessageCode(),
+          "Unimplemented");
+    }
+
+    @Override
+    public void addByte(byte b, int pos) throws SnowflakeSQLException
+    {
+      throw new SnowflakeSQLException(
+          SqlState.INTERNAL_ERROR,
+          ErrorCode.INTERNAL_ERROR
+              .getMessageCode(),
+          "Unimplemented");
+    }
+
+    @Override
+    public void nextIndex() throws SnowflakeSQLException
+    {
+      throw new SnowflakeSQLException(
+          SqlState.INTERNAL_ERROR,
+          ErrorCode.INTERNAL_ERROR
+              .getMessageCode(),
+          "Unimplemented");
+    }
+
+    @Override
+    public void addBytes(byte[] src, int src_offset, int pos, int length) throws SnowflakeSQLException
+    {
+      throw new SnowflakeSQLException(
+          SqlState.INTERNAL_ERROR,
+          ErrorCode.INTERNAL_ERROR
+              .getMessageCode(),
+          "Unimplemented");
     }
 
     @Override
@@ -521,50 +678,243 @@ public class SnowflakeResultChunk
     private int nextIndex = 0;
   }
 
-  private static class LegacyResultChunkData implements ResultChunkData
+  /**
+   * BlockResultChunkDataV2:
+   * This implementation copies the strings to byte arrays and stores the
+   * offsets and bitmaps.
+   * This design can save half of the memory usage compared to the original one
+   *
+   */
+  private static class BlockResultChunkDataV2 implements ResultChunkData
   {
-    private final int totalLength, count;
-    ArrayList<String> list;
-
-    LegacyResultChunkData(int totalLength, int count)
+    BlockResultChunkDataV2(int totalLength, int rowCount, int colCount)
     {
-      this.totalLength = totalLength;
-      this.count = count;
+      this.blockCount = getBlock(totalLength - 1) + 1;
+      this.rowCount = rowCount;
+      this.colCount = colCount;
+      this.metaBlockCount = getMetaBlock(this.rowCount*this.colCount - 1) + 1;
     }
 
     @Override
-    public void add(String string)
+    public void addOffset(int offset)
     {
-      if (list == null)
+      if (data.size() < blockCount || offsets.size() < metaBlockCount)
       {
-        list = new ArrayList<>(count);
+        allocateArrays();
       }
-      list.add(string);
+      offsets.get(getMetaBlock(nextIndex))
+          [getMetaBlockIndex(nextIndex)] = offset;
+    }
+
+    @Override
+    public void setIsNull()
+    {
+      isNulls.get(getMetaBlock(nextIndex)).set(getMetaBlockIndex(nextIndex));
+    }
+
+    @Override
+    public void setLastLength(int len)
+    {
+      lastLength = len;
+    }
+
+    @Override
+    public byte getByte(int offset)
+    {
+      return data.get(getBlock(offset))[getBlockOffset(offset)];
+    }
+
+    @Override
+    public void addByte(byte b, int pos)
+    {
+      if (data.size() < blockCount || offsets.size() < metaBlockCount)
+      {
+        allocateArrays();
+      }
+      data.get(getBlock(pos))[getBlockOffset(pos)] = b;
+    }
+
+
+    @Override
+    public void addBytes(byte[] src, int src_offset, int pos, int length)
+    {
+      if (data.size() < blockCount || offsets.size() < metaBlockCount)
+      {
+        allocateArrays();
+      }
+
+
+      final int offset = pos;
+
+      // copy string to the char array
+      int copied = 0;
+      if (spaceLeftOnBlock(offset) < length)
+      {
+        while (copied < length)
+        {
+          final int copySize
+              = Math.min(length - copied, spaceLeftOnBlock(offset + copied));
+          System.arraycopy(src, src_offset+copied,
+                           data.get(getBlock(offset + copied)),
+                           getBlockOffset(offset + copied),
+                           copySize);
+          copied += copySize;
+        }
+      }
+      else
+      {
+        System.arraycopy(src, src_offset,
+                         data.get(getBlock(offset)),
+                         getBlockOffset(offset), length);
+      }
+    }
+
+
+    @Override
+    public void nextIndex()
+    {
+      nextIndex++;
+    }
+
+    @Override
+    public void add(String string) throws SnowflakeSQLException
+    {
+      throw new SnowflakeSQLException(
+          SqlState.INTERNAL_ERROR,
+          ErrorCode.INTERNAL_ERROR
+              .getMessageCode(),
+          "Unimplemented");
+    }
+
+    private int getLength(int index, int offset)
+    {
+      if (index == rowCount*colCount-1)
+      {
+        // last one
+        return lastLength;
+      }
+      else
+      {
+        int nextOffset = offsets.get(getMetaBlock(index+1))
+            [getMetaBlockIndex(index+1)];
+        return nextOffset - offset;
+      }
     }
 
     @Override
     public String get(int index)
     {
-      return list.get(index);
+      final boolean isNull = isNulls.get(getMetaBlock(index)).get(getMetaBlockIndex(index));
+      if (isNull)
+      {
+        return null;
+      }
+      else
+      {
+        final int offset = offsets.get(getMetaBlock(index))
+            [getMetaBlockIndex(index)];
+        final int length = getLength(index, offset);
+
+        // Create string from the char arrays
+        if (spaceLeftOnBlock(offset) < length)
+        {
+          int copied = 0;
+          byte[] cell = new byte[length];
+          while (copied < length)
+          {
+            final int copySize
+                = Math.min(length - copied, spaceLeftOnBlock(offset + copied));
+            System.arraycopy(data.get(getBlock(offset + copied)),
+                             getBlockOffset(offset + copied),
+                             cell, copied,
+                             copySize);
+
+            copied += copySize;
+          }
+          return new String(cell, StandardCharsets.UTF_8);
+        }
+        else
+        {
+          return new String(data.get(getBlock(offset)), getBlockOffset(offset), length, StandardCharsets.UTF_8);
+        }
+      }
     }
 
     @Override
     public long computeNeededChunkMemory()
     {
-      return totalLength + 8 * count + 45 * count;
+      long dataRequirement = blockCount * blockLength * 1L;
+      long metadataRequirement = metaBlockCount * metaBlockLength * 4L // offsets
+                                 + metaBlockCount * metaBlockLength / 8L // isNulls
+                                 + 1L; // lastLength
+
+      return dataRequirement + metadataRequirement;
     }
 
     @Override
     public void freeData()
     {
-      if (list != null)
-      {
-        list.clear();
-        list.trimToSize();
-      }
+      data.clear();
+      offsets.clear();
+      isNulls.clear();
     }
-  }
 
+    private static int getBlock(int offset)
+    {
+      return offset >> blockLengthBits;
+    }
+
+    private static int getBlockOffset(int offset)
+    {
+      return offset & (blockLength - 1);
+    }
+
+    private static int spaceLeftOnBlock(int offset)
+    {
+      return blockLength - getBlockOffset(offset);
+    }
+
+    private static int getMetaBlock(int index)
+    {
+      return index >> metaBlockLengthBits;
+    }
+
+    private static int getMetaBlockIndex(int index)
+    {
+      return index & (metaBlockLength - 1);
+    }
+
+    private void allocateArrays()
+    {
+      logger.debug("allocating {} B for ResultChunk", computeNeededChunkMemory());
+      while (data.size() < blockCount)
+      {
+        data.add(new byte[1 << blockLengthBits]);
+      }
+      while (offsets.size() < metaBlockCount)
+      {
+        offsets.add(new int[1 << metaBlockLengthBits]);
+        isNulls.add(new BitSet(1 << metaBlockLengthBits));
+      }
+      logger.debug("allocated {} B for ResultChunk", computeNeededChunkMemory());
+    }
+
+    // blocks for storing the string data
+    int blockCount;
+    private static final int blockLengthBits = 23;
+    private static int blockLength = 1 << blockLengthBits;
+    private final ArrayList<byte[]> data = new ArrayList<>();
+
+    // blocks for storing offsets and lengths
+    int metaBlockCount;
+    private static int metaBlockLengthBits = 15;
+    private static int metaBlockLength = 1 << metaBlockLengthBits;
+    private final ArrayList<int[]> offsets = new ArrayList<>();
+    private final ArrayList<BitSet> isNulls = new ArrayList<>();
+    private int lastLength;
+    private int rowCount, colCount;
+    private int nextIndex = 0;
+  }
   /**
    * Cache the data, offset and length blocks
    */
@@ -625,22 +975,28 @@ public class SnowflakeResultChunk
               return;
             }
           }
-          else if (dat instanceof LegacyResultChunkData)
+          else if (dat instanceof BlockResultChunkDataV2)
           {
-            LegacyResultChunkData lTargetData = (LegacyResultChunkData) data;
-            LegacyResultChunkData lCachedDat = (LegacyResultChunkData) dat;
-
-            if (lCachedDat.list == null)
+            BlockResultChunkDataV2 bTargetData = (BlockResultChunkDataV2) data;
+            BlockResultChunkDataV2 bCachedDat = (BlockResultChunkDataV2) dat;
+            if (bCachedDat.data.size() == 0 && bCachedDat.offsets.size() == 0)
             {
               remove.add(ref);
               continue;
             }
-            if (lTargetData.list == null)
+
+            while (bTargetData.data.size() < bTargetData.blockCount && bCachedDat.data.size() > 0)
             {
-              lTargetData.list = lCachedDat.list;
-              lTargetData.list.clear();
-              lCachedDat.list = null;
-              remove.add(ref);
+              bTargetData.data.add(bCachedDat.data.remove(bCachedDat.data.size() - 1));
+            }
+            while (bTargetData.offsets.size() < bTargetData.metaBlockCount && bCachedDat.offsets.size() > 0)
+            {
+              bTargetData.offsets.add(bCachedDat.offsets.remove(bCachedDat.offsets.size() - 1));
+              bTargetData.isNulls.add(bCachedDat.isNulls.remove(bCachedDat.isNulls.size() - 1));
+            }
+            if (bTargetData.data.size() == bTargetData.blockCount &&
+                bTargetData.offsets.size() == bTargetData.metaBlockCount)
+            {
               return;
             }
           }
