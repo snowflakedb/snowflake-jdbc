@@ -1417,27 +1417,6 @@ public class PreparedStatementIT extends BaseJDBCTest
     connection.close();
   }
 
-  @Test
-  @ConditionalIgnore(condition = RunningOnTravisCI.class)
-  public void testMultiStmtPrepareUnsupported() throws SQLException
-  {
-    connection = getConnection();
-
-    statement = connection.createStatement();
-    statement.execute("alter session set ENABLE_MULTISTATEMENT=true");
-    statement.close();
-
-    try
-    {
-      PreparedStatement stmt = connection.prepareStatement("select 1; select cola from identifier(?)");
-      fail("Preparing a multi-statement query should fail");
-    }
-    catch (SQLException ex)
-    {
-      assertEquals(ex.getErrorCode(), 8); // SQLErrorCode.MULTIPLE_STATEMENT_PREPARE_NOT_SUPPORTED
-    }
-  }
-
   /**
    * Test to ensure that when {@link SqlBindRef} is in a {@link SqlConstantList}
    * the sub-expression remover does not treat expressions with different
