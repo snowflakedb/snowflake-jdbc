@@ -1,3 +1,8 @@
+**JDBC Driver 3.7.1**
+
+- \| SNOW-73421 | Internal change for future improvement
+- \|SNOW-70354 | Throw SQLException when calling methods of the closed objects.
+
 **JDBC Driver 3.7.0**
 
 - \|SNOW-65887|Change source and target Java version to 1.8 for JDBC driver
