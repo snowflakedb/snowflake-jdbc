@@ -196,6 +196,44 @@ class SFTrustManager extends X509ExtendedTrustManager
    */
   static String SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN;
 
+  class OCSPCacheServer
+  {
+    String SF_OCSP_RESPONSE_CACHE_SERVER;
+    String SF_OCSP_RESPONSE_RETRY_URL;
+    boolean new_endpoint_enabled;
+
+    void resetOCSPResponseCacheServer(String host)
+    {
+      String ocspCacheServerUrl;
+      if (host.indexOf(".global.snowflakecomputing.com") > 0)
+      {
+        ocspCacheServerUrl = String.format(
+            "https://ocspssd%s/%s",
+            host.substring(host.indexOf('-')),
+            "ocsp");
+      }
+      else if (host.indexOf(".snowflakecomputing.com") > 0)
+      {
+        ocspCacheServerUrl = String.format(
+            "https://ocspssd%s/%s",
+            host.substring(host.indexOf('.')),
+            "ocsp");
+      }
+      else
+      {
+        ocspCacheServerUrl = "https://ocspssd.snowflakecomputing.com/ocsp";
+      }
+      SF_OCSP_RESPONSE_CACHE_SERVER = String.format("%s/%s",
+                                                    ocspCacheServerUrl,
+                                                    "fetch");
+      SF_OCSP_RESPONSE_RETRY_URL = String.format("%s/%s",
+                                                 ocspCacheServerUrl,
+                                                 "retry");
+    }
+  }
+
+  OCSPCacheServer ocspCacheServer = new OCSPCacheServer();
+
   /**
    * Tolerable validity date range ratio.
    */
@@ -319,9 +357,10 @@ class SFTrustManager extends X509ExtendedTrustManager
     this.exTrustManager = (X509ExtendedTrustManager) getTrustManager(
         KeyManagerFactory.getDefaultAlgorithm());
 
+    checkNewOCSPEndpointAvailability();
+
     if (ssdManager.getSSDSupportStatus())
     {
-      SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN = SF_DEFAULT_OCSP_RESPONSE_RETRY_URL;
       readDirectives();
     }
 
@@ -361,10 +400,40 @@ class SFTrustManager extends X509ExtendedTrustManager
 
     if (hostSpecDir != null)
     {
-      ssdManager.addToSSDCache(hostSpecDir.getHostname(), hostSpecDir.getHostSpecDirective());
+      ssdManager.addToSSDCache(hostSpecDir.getHostSpecDirective());
     }
   }
 
+
+  void checkNewOCSPEndpointAvailability()
+  {
+    String new_ocsp_ept = null;
+    try
+    {
+      new_ocsp_ept = System.getenv("SF_OCSP_ACTIVATE_NEW_ENDPOINT");
+      if(new_ocsp_ept != null)
+      {
+        ocspCacheServer.new_endpoint_enabled = true;
+      }
+      else
+      {
+        ocspCacheServer.new_endpoint_enabled = false;
+      }
+    }
+    catch (Throwable ex)
+    {
+      LOGGER.debug("Could not get environment variable to check for New OCSP Endpoint Availability");
+      new_ocsp_ept =  System.getProperty("net.snowflake.jdbc.ocsp_activate_new_endpoint");
+      if (new_ocsp_ept != null)
+      {
+        ocspCacheServer.new_endpoint_enabled = true;
+      }
+      else
+      {
+        ocspCacheServer.new_endpoint_enabled = false;
+      }
+    }
+  }
 
   /**
    * Reset OCSP Cache server URL
@@ -383,35 +452,17 @@ class SFTrustManager extends X509ExtendedTrustManager
       try
       {
         URL url = new URL(SF_OCSP_RESPONSE_CACHE_SERVER_URL);
-        if (!ssdManager.getSSDSupportStatus())
+        if (url.getPort() > 0)
         {
-          if (url.getPort() > 0)
-          {
-            SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN =
-                String.format("%s://%s:%d/retry/%s",
-                              url.getProtocol(), url.getHost(), url.getPort(), "%s/%s");
-          }
-          else
-          {
-            SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN =
-                String.format("%s://%s/retry/%s",
-                              url.getProtocol(), url.getHost(), "%s/%s");
-          }
+          SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN =
+              String.format("%s://%s:%d/retry/%s",
+                            url.getProtocol(), url.getHost(), url.getPort(), "%s/%s");
         }
         else
         {
-          if (url.getPort() > 0)
-          {
-            SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN =
-                String.format("%s://%s:%d/retry",
-                              url.getProtocol(), url.getHost(), url.getPort());
-          }
-          else
-          {
-            SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN =
-                String.format("%s://%s/retry",
-                              url.getProtocol(), url.getHost());
-          }
+          SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN =
+              String.format("%s://%s/retry/%s",
+                            url.getProtocol(), url.getHost(), "%s/%s");
         }
       }
       catch (IOException e)
@@ -420,18 +471,6 @@ class SFTrustManager extends X509ExtendedTrustManager
             String.format(
                 "Failed to parse SF_OCSP_RESPONSE_CACHE_SERVER_URL: %s",
                 SF_OCSP_RESPONSE_CACHE_SERVER_URL));
-      }
-    }
-    else
-    {
-      if (!ssdManager.getSSDSupportStatus())
-      {
-        // default OCSP doesn't support retry endpoint yet
-        SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN = null;
-      }
-      else
-      {
-        SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN = SF_DEFAULT_OCSP_RESPONSE_RETRY_URL;
       }
     }
   }
@@ -548,14 +587,34 @@ class SFTrustManager extends X509ExtendedTrustManager
     final List<Certificate> bcChain = convertToBouncyCastleCertificate(chain);
     final List<SFPair<Certificate, Certificate>> pairIssuerSubjectList =
         getPairIssuerSubject(bcChain);
+
+    if (peerHost.startsWith("ocspssd"))
+    {
+      return;
+    }
+
+    if (ocspCacheServer.new_endpoint_enabled)
+    {
+      ocspCacheServer.resetOCSPResponseCacheServer(peerHost);
+    }
+
     synchronized (OCSP_RESPONSE_CACHE_LOCK)
     {
       boolean isCached = isCached(pairIssuerSubjectList);
       if (this.useOcspResponseCacheServer && !isCached)
       {
-        LOGGER.debug(
-            "Downloading OCSP response cache from the server. URL: {}",
-            SF_OCSP_RESPONSE_CACHE_SERVER_URL);
+        if (!ocspCacheServer.new_endpoint_enabled)
+        {
+          LOGGER.debug(
+              "Downloading OCSP response cache from the server. URL: {}",
+              SF_OCSP_RESPONSE_CACHE_SERVER_URL);
+        }
+        else
+        {
+          LOGGER.debug(
+              "Downloading OCSP response cache from the server. URL: {}",
+              ocspCacheServer.SF_OCSP_RESPONSE_CACHE_SERVER);
+        }
         readOcspResponseCacheServer();
         // if the cache is downloaded from the server, it should be written
         // to the file cache at all times.
@@ -655,7 +714,7 @@ class SFTrustManager extends X509ExtendedTrustManager
       {
         boolean retval = false;
         SFPair<Long, String> resp = OCSP_RESPONSE_CACHE.get(ssdManager.getWildCardCertId());
-        if ((hostSpecSSD = ssdManager.findInSSDCache(peerHost)) != null)
+        if ((hostSpecSSD = ssdManager.getSSDFromCache()) != null)
         {
           try
           {
@@ -668,14 +727,14 @@ class SFTrustManager extends X509ExtendedTrustManager
             else
             {
               /* remove invalid entry from SSD Cache */
-              ssdManager.removeFromSSDCache(peerHost);
+              ssdManager.clearSSDCache();
             }
           }
           catch (Throwable ex)
           {
             LOGGER.info("Unable to process Host Specific OCSP Response. Removing" +
                         "it from the SSD Cache");
-            ssdManager.removeFromSSDCache(peerHost);
+            ssdManager.clearSSDCache();
           }
         }
         else if (resp.right != null)
@@ -936,18 +995,29 @@ class SFTrustManager extends X509ExtendedTrustManager
    * <p>
    * Must be synchronized by OCSP_RESPONSE_CACHE_LOCK.
    */
-  private static void readOcspResponseCacheServer()
+  private void readOcspResponseCacheServer()
   {
     long sleepTime = INITIAL_SLEEPING_TIME_IN_MILLISECONDS;
     DecorrelatedJitterBackoff backoff = new DecorrelatedJitterBackoff(
         sleepTime, MAX_SLEEPING_TIME_IN_MILLISECONDS);
     Exception error = null;
+    String ocspCacheServerInUse;
+
+    if (ocspCacheServer.new_endpoint_enabled)
+    {
+      ocspCacheServerInUse = ocspCacheServer.SF_OCSP_RESPONSE_CACHE_SERVER;
+    }
+    else
+    {
+      ocspCacheServerInUse = SF_OCSP_RESPONSE_CACHE_SERVER_URL;
+    }
+
     for (int retry = 0; retry < MAX_RETRY_COUNTER; ++retry)
     {
       try
       {
         HttpClient client = getHttpClient();
-        URI uri = new URI(SF_OCSP_RESPONSE_CACHE_SERVER_URL);
+        URI uri = new URI(ocspCacheServerInUse);
         HttpGet get = new HttpGet(uri);
         HttpResponse response = client.execute(get);
 
@@ -985,7 +1055,7 @@ class SFTrustManager extends X509ExtendedTrustManager
     }
     LOGGER.debug(
         "Failed to read the OCSP response cache from the server. " +
-        "Server: {}, Err: {}", SF_OCSP_RESPONSE_CACHE_SERVER_URL, error);
+        "Server: {}, Err: {}", ocspCacheServerInUse, error);
   }
 
   private static void readJsonStoreCache(JsonNode m)
@@ -1061,7 +1131,7 @@ class SFTrustManager extends X509ExtendedTrustManager
       String ocspUrlStr = ocspUrls.iterator().next(); // first one
       URL url;
 
-      if (!ssdManager.getSSDSupportStatus())
+      if (!ocspCacheServer.new_endpoint_enabled)
       {
         if (SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN != null)
         {
@@ -1080,7 +1150,7 @@ class SFTrustManager extends X509ExtendedTrustManager
       }
       else
       {
-        url = new URL(SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN);
+        url = new URL(ocspCacheServer.SF_OCSP_RESPONSE_RETRY_URL);
         LOGGER.debug(
             "not hit cache. Fetching OCSP response from Snowflake OCSP Response Fetcher. {}", url.toString());
       }
@@ -1093,7 +1163,7 @@ class SFTrustManager extends X509ExtendedTrustManager
 
       for (int retry = 0; retry < MAX_RETRY_COUNTER; ++retry)
       {
-        if (!ssdManager.getSSDSupportStatus())
+        if (!ocspCacheServer.new_endpoint_enabled)
         {
           HttpClient client = getHttpClient();
           HttpGet get = new HttpGet(url.toString());
@@ -1658,9 +1728,22 @@ class SFTrustManager extends X509ExtendedTrustManager
           {
             if (!sfc_endpoint.equals("*"))
             {
-              if (sfc_endpoint.equals(hostname))
+              /**
+               * In case there are multiple hostnames
+               * associated to the same account. The
+               * code expects a space separated list
+               * of all hostnames associated with this
+               * account in sfcEndpoint field
+               */
+
+              String [] splitString = sfc_endpoint.split("\\s+");
+
+              for (String s : splitString)
               {
-                return true;
+                if (s.equals(hostname))
+                {
+                  return true;
+                }
               }
               return false;
             }
