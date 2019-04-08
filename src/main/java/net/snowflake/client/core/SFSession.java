@@ -12,10 +12,10 @@ import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.jdbc.SnowflakeType;
 import net.snowflake.client.jdbc.SnowflakeUtil;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
+import net.snowflake.client.log.JDK14Logger;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.ClientAuthnDTO;
-import net.snowflake.client.log.JDK14Logger;
 import org.apache.http.HttpHeaders;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
@@ -371,6 +371,46 @@ public class SFSession
 
     HttpUtil.initHttpClient(insecureMode != null ? insecureMode : false, null);
 
+    logger.debug(
+        "input: server={}, account={}, user={}, password={}, role={}, " +
+        "database={}, schema={}, warehouse={}, authenticator={}, insecure_mode={}, " +
+        "passcode_in_passward={}, passcode={}, private_key={}, " +
+        "use_proxy={}, proxy_host={}, proxy_port={}, proxy_user={}, proxy_password={}, disable_socks_proxy={}, " +
+        "application={}, app_id={}, app_version={}, " +
+        "login_timeout={}, network_timeout={}, query_timeout={}, tracing={}",
+        connectionPropertiesMap.get(SFSessionProperty.SERVER_URL),
+        connectionPropertiesMap.get(SFSessionProperty.ACCOUNT),
+        connectionPropertiesMap.get(SFSessionProperty.USER),
+        !Strings.isNullOrEmpty((String)connectionPropertiesMap.get(SFSessionProperty.PASSWORD)) ? "***" : "(empty)",
+        connectionPropertiesMap.get(SFSessionProperty.ROLE),
+        connectionPropertiesMap.get(SFSessionProperty.DATABASE),
+        connectionPropertiesMap.get(SFSessionProperty.SCHEMA),
+        connectionPropertiesMap.get(SFSessionProperty.WAREHOUSE),
+        connectionPropertiesMap.get(SFSessionProperty.AUTHENTICATOR),
+
+        connectionPropertiesMap.get(SFSessionProperty.INSECURE_MODE),
+        connectionPropertiesMap.get(SFSessionProperty.PASSCODE_IN_PASSWORD),
+        !Strings.isNullOrEmpty((String)connectionPropertiesMap.get(SFSessionProperty.PASSCODE)) ? "***" : "(empty)",
+
+        connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY) != null ? "(not null)" : "(null)",
+
+        connectionPropertiesMap.get(SFSessionProperty.USE_PROXY),
+        connectionPropertiesMap.get(SFSessionProperty.PROXY_HOST),
+        connectionPropertiesMap.get(SFSessionProperty.PROXY_PORT),
+        connectionPropertiesMap.get(SFSessionProperty.PROXY_USER),
+        !Strings.isNullOrEmpty((String)connectionPropertiesMap.get(SFSessionProperty.PROXY_PASSWORD)) ? "***" :
+        "(empty)",
+        connectionPropertiesMap.get(SFSessionProperty.DISABLE_SOCKS_PROXY),
+
+        connectionPropertiesMap.get(SFSessionProperty.APPLICATION),
+        connectionPropertiesMap.get(SFSessionProperty.APP_ID),
+        connectionPropertiesMap.get(SFSessionProperty.APP_VERSION),
+
+        connectionPropertiesMap.get(SFSessionProperty.LOGIN_TIMEOUT),
+        connectionPropertiesMap.get(SFSessionProperty.NETWORK_TIMEOUT),
+        connectionPropertiesMap.get(SFSessionProperty.QUERY_TIMEOUT),
+        connectionPropertiesMap.get(SFSessionProperty.TRACING)
+    );
     SessionUtil.LoginInput loginInput = new SessionUtil.LoginInput();
     loginInput.setServerUrl(
         (String) connectionPropertiesMap.get(SFSessionProperty.SERVER_URL))
@@ -613,7 +653,7 @@ public class SFSession
    */
   public void close() throws SFException, SnowflakeSQLException
   {
-    logger.debug(" public void close() throws SFException");
+    logger.debug(" public void close()");
 
     // stop heartbeat for this session
     stopHeartbeatForThisSession();
