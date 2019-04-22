@@ -29,14 +29,7 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.List;
-import java.util.Properties;
-import java.util.TimeZone;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -1260,7 +1253,6 @@ public class SnowflakeDriverIT extends BaseJDBCTest
       connection = getConnection();
 
       statement = connection.createStatement();
-
       // set timestamp format
       statement.execute(
           "alter session set timestamp_input_format = 'YYYY-MM-DD HH24:MI:SS';");
@@ -1396,6 +1388,43 @@ public class SnowflakeDriverIT extends BaseJDBCTest
     preparedStatement.setDate(20, sqlDate);
     preparedStatement.setString(21, "h");
     preparedStatement.addBatch();
+  }
+
+  @Test
+  public void test31448() throws Throwable
+  {
+    Connection connection = getConnection();
+
+    Statement statement = connection.createStatement();
+
+
+    statement.execute("alter session set enable_fix_31448_2=2, " +
+        "error_on_generic_pruner=true;");
+
+    statement.execute("alter session set timestamp_type_mapping=timestamp_ntz");
+
+    statement.execute("create or replace table " +
+        "bug56658(iv number, tsv timestamp_ntz)");
+    statement.execute("insert into bug56658 select seq8(), " +
+        "timestampadd(day, seq8(), '1970-01-13 00:00:00'::timestamp_ntz)\n" +
+        "from table(generator(rowcount=>20))");
+
+    if (true)
+    {
+      ((SnowflakeConnectionV1) connection).getSfSession().
+          setTimestampMappedType(SnowflakeType.TIMESTAMP_NTZ);
+      Timestamp ts = buildTimestamp(1970, 0, 15, 10, 14, 30, 0);
+      PreparedStatement preparedStatement =
+          connection.prepareStatement("select iv, tsv from bug56658 where tsv" +
+              " >= ? and tsv <= ? order by iv;");
+      statement.execute("alter session set timestamp_type_mapping=timestamp_ntz");
+      Timestamp ts2 = buildTimestamp(1970, 0, 18, 10, 14, 30, 0);
+      preparedStatement.setTimestamp(1, ts);
+      preparedStatement.setTimestamp(2, ts2);
+      ResultSet rs = preparedStatement.executeQuery();
+    }
+
+
   }
 
   @Test
