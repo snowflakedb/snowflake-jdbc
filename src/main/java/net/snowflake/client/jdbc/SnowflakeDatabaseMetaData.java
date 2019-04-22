@@ -6,11 +6,11 @@ package net.snowflake.client.jdbc;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import javafx.util.Pair;
 import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
+import net.snowflake.client.util.SFPair;
 import net.snowflake.common.core.SqlState;
 import net.snowflake.common.util.Wildcard;
 
@@ -1187,7 +1187,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   }
 
   // apply session context when catalog is unspecified
-  private Pair<String, String> applySessionContext(String catalog,
+  private SFPair<String, String> applySessionContext(String catalog,
                                                    String schemaPattern)
   {
     if (catalog == null && metadataRequestUseConnectionCtx)
@@ -1199,7 +1199,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
         schemaPattern = session.getSchema();
       }
     }
-    return new Pair<String, String>(catalog, schemaPattern);
+    return SFPair.of(catalog, schemaPattern);
   }
 
   @Override
@@ -1251,10 +1251,10 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
       return SnowflakeDatabaseMetaDataResultSet.getEmptyResultSet(GET_TABLES, statement);
     }
 
-    Pair<String, String> resPair = applySessionContext(catalog,
-                                                       schemaPattern);
-    catalog = resPair.getKey();
-    schemaPattern = resPair.getValue();
+    SFPair<String, String> resPair = applySessionContext(catalog,
+                                                         schemaPattern);
+    catalog = resPair.left;
+    schemaPattern = resPair.right;
 
     final Pattern compiledSchemaPattern = Wildcard.toRegexPattern(schemaPattern, true);
     final Pattern compiledTablePattern = Wildcard.toRegexPattern(tableNamePattern, true);
@@ -1466,10 +1466,10 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
     Statement statement = connection.createStatement();
 
     // apply session context when catalog is unspecified
-    Pair<String, String> resPair = applySessionContext(catalog,
+    SFPair<String, String> resPair = applySessionContext(catalog,
                                                        schemaPattern);
-    catalog = resPair.getKey();
-    schemaPattern = resPair.getValue();
+    catalog = resPair.left;
+    schemaPattern = resPair.right;
 
     final Pattern compiledSchemaPattern = Wildcard.toRegexPattern(schemaPattern, true);
     final Pattern compiledTablePattern = Wildcard.toRegexPattern(tableNamePattern, true);
@@ -1774,10 +1774,10 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
     String showPKCommand = "show /* JDBC:DatabaseMetaData.getPrimaryKeys() */ primary keys in ";
 
     // apply session context when catalog is unspecified
-    Pair<String, String> resPair = applySessionContext(catalog,
+    SFPair<String, String> resPair = applySessionContext(catalog,
                                                        schema);
-    catalog = resPair.getKey();
-    schema = resPair.getValue();
+    catalog = resPair.left;
+    schema = resPair.right;
 
     if (catalog == null)
     {
@@ -1886,10 +1886,10 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
     StringBuilder commandBuilder = new StringBuilder();
 
     // apply session context when catalog is unspecified
-    Pair<String, String> resPair = applySessionContext(parentCatalog,
+    SFPair<String, String> resPair = applySessionContext(parentCatalog,
                                                        parentSchema);
-    parentCatalog = resPair.getKey();
-    parentSchema = resPair.getValue();
+    parentCatalog = resPair.left;
+    parentSchema = resPair.right;
 
     if (client.equals("export") || client.equals("cross"))
     {
@@ -2101,10 +2101,10 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
         + "String schema={}, String table={})", catalog, schema, table);
 
     // apply session context when catalog is unspecified
-    Pair<String, String> resPair = applySessionContext(catalog,
+    SFPair<String, String> resPair = applySessionContext(catalog,
                                                        schema);
-    catalog = resPair.getKey();
-    schema = resPair.getValue();
+    catalog = resPair.left;
+    schema = resPair.right;
 
     return getForeignKeys("import", catalog, schema, table, null, null, null);
   }
@@ -2118,10 +2118,10 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
         + "String schema={}, String table={})", catalog, schema, table);
 
     // apply session context when catalog is unspecified
-    Pair<String, String> resPair = applySessionContext(catalog,
+    SFPair<String, String> resPair = applySessionContext(catalog,
                                                        schema);
-    catalog = resPair.getKey();
-    schema = resPair.getValue();
+    catalog = resPair.left;
+    schema = resPair.right;
     return getForeignKeys("export", catalog, schema, table, null, null, null);
   }
 
@@ -2139,10 +2139,10 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
         parentCatalog, parentSchema, parentTable,
         foreignCatalog, foreignSchema, foreignTable);
     // apply session context when catalog is unspecified
-    Pair<String, String> resPair = applySessionContext(parentCatalog,
+    SFPair<String, String> resPair = applySessionContext(parentCatalog,
                                                        parentSchema);
-    parentCatalog = resPair.getKey();
-    parentSchema = resPair.getValue();
+    parentCatalog = resPair.left;
+    parentSchema = resPair.right;
 
     return getForeignKeys("cross", parentCatalog, parentSchema, parentTable,
                           foreignCatalog, foreignSchema, foreignTable);
@@ -2556,10 +2556,10 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
     raiseSQLExceptionIfConnectionIsClosed();
 
     // apply session context when catalog is unspecified
-    Pair<String, String> resPair = applySessionContext(catalog,
+    SFPair<String, String> resPair = applySessionContext(catalog,
                                                        schemaPattern);
-    catalog = resPair.getKey();
-    schemaPattern = resPair.getValue();
+    catalog = resPair.left;
+    schemaPattern = resPair.right;
 
     final Pattern compiledSchemaPattern = Wildcard.toRegexPattern(schemaPattern, true);
 
@@ -2657,10 +2657,10 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
                  catalog, schemaPattern, functionNamePattern);
 
     // apply session context when catalog is unspecified
-    Pair<String, String> resPair = applySessionContext(catalog,
+    SFPair<String, String> resPair = applySessionContext(catalog,
                                                        schemaPattern);
-    catalog = resPair.getKey();
-    schemaPattern = resPair.getValue();
+    catalog = resPair.left;
+    schemaPattern = resPair.right;
 
     final Pattern compiledSchemaPattern = Wildcard.toRegexPattern(schemaPattern, true);
     final Pattern compiledFunctionPattern = Wildcard.toRegexPattern(functionNamePattern, true);
