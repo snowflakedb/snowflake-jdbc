@@ -1,3 +1,16 @@
+**JDBC Driver 3.7.2**
+
+- \|SNOW-67615| Apply CLIENT_METADATA_REQUEST_USE_CONNECTION_CTX behavior to all JDBC get functions with catalog and schema as inputs
+- \|SNOW-68058| CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY for JDBC
+- \|SNOW-73034| Setting the index 0 for binding is ignored. It should raise an exception.
+- \|SNOW-68756| JAVA heap space error when querying data: provide detailed error message and suggestions when hits OOM
+- \|SNOW-70356| Ensure all associated objects are freed when closed.
+- \|SNOW-70409| Close all associated objects when the parent object is closed.
+- \|SNOW-71689| Update Client Driver to use new OCSP Endpoint URL based on Client Failover
+- \|SNOW-73555| Fixed Not dropping unselected columns after creating temp table
+- \|SNOW-67871| Add getQueryId() method to SnowflakeStatementV1 and SnowflakeResultSetV1
+- \|SNOW-74238| JDBC SnowflakeBasicDatasource use a driver does not comes from Snowflake
+
 **JDBC Driver 3.7.1**
 
 - \| SNOW-73421 | Internal change for future improvement
