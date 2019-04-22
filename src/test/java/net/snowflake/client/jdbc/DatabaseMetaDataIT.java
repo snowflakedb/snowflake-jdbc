@@ -292,9 +292,9 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
       // create tables within current schema.
       connection.createStatement().execute("create or replace schema TEST_CTX");
       connection.createStatement().execute("create or replace table CTX_TBL_A (colA string, colB decimal, " +
-                 "colC number PRIMARY KEY);");
+                                           "colC number PRIMARY KEY);");
       connection.createStatement().execute("create or replace table CTX_TBL_B (colA string, colB decimal, " +
-                 "colC number FOREIGN KEY REFERENCES CTX_TBL_A (colC));");
+                                           "colC number FOREIGN KEY REFERENCES CTX_TBL_A (colC));");
       connection.createStatement().execute("create or replace table CTX_TBL_C (colA string, colB decimal, " +
                                            "colC number, colD int, colE timestamp, colF string, colG number);");
       // now create more tables under current schema
@@ -1025,7 +1025,6 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
   }
 
 
-
   @Test
   public void testTypeInfo() throws SQLException
   {
@@ -1053,7 +1052,6 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
       assertFalse(resultSet.next());
     }
   }
-
 
 
   @Test
@@ -1248,7 +1246,6 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
 
     }
   }
-
 
 
   @Test

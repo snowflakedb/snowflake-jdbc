@@ -83,12 +83,12 @@ public class SnowflakeResultChunk
     if (useJsonParserV2)
     {
       data = new BlockResultChunkDataV2(computeCharactersNeeded(),
-                                      rowCount, colCount);
+                                        rowCount, colCount);
     }
     else
     {
       data = new BlockResultChunkData(computeCharactersNeeded(),
-                                       rowCount * colCount);
+                                      rowCount * colCount);
     }
   }
 
@@ -377,6 +377,7 @@ public class SnowflakeResultChunk
 
     /**
      * add offset into offset buffer
+     *
      * @param offset
      * @throws SnowflakeSQLException
      */
@@ -384,18 +385,21 @@ public class SnowflakeResultChunk
 
     /**
      * label current value as null
+     *
      * @throws SnowflakeSQLException
      */
     void setIsNull() throws SnowflakeSQLException;
 
     /**
      * increase index
+     *
      * @throws SnowflakeSQLException
      */
     void nextIndex() throws SnowflakeSQLException;
 
     /**
      * set the last length
+     *
      * @param len
      * @throws SnowflakeSQLException
      */
@@ -403,6 +407,7 @@ public class SnowflakeResultChunk
 
     /**
      * get one byte from the byte array
+     *
      * @param offset
      * @return
      * @throws SnowflakeSQLException
@@ -411,6 +416,7 @@ public class SnowflakeResultChunk
 
     /**
      * add one byte to the byte array at nextIndex
+     *
      * @param b
      * @param pos
      * @throws SnowflakeSQLException
@@ -419,6 +425,7 @@ public class SnowflakeResultChunk
 
     /**
      * add bytes to the byte array
+     *
      * @param src
      * @param src_offset
      * @param pos
@@ -683,7 +690,6 @@ public class SnowflakeResultChunk
    * This implementation copies the strings to byte arrays and stores the
    * offsets and bitmaps.
    * This design can save half of the memory usage compared to the original one
-   *
    */
   private static class BlockResultChunkDataV2 implements ResultChunkData
   {
@@ -692,7 +698,7 @@ public class SnowflakeResultChunk
       this.blockCount = getBlock(totalLength - 1) + 1;
       this.rowCount = rowCount;
       this.colCount = colCount;
-      this.metaBlockCount = getMetaBlock(this.rowCount*this.colCount - 1) + 1;
+      this.metaBlockCount = getMetaBlock(this.rowCount * this.colCount - 1) + 1;
     }
 
     @Override
@@ -754,7 +760,7 @@ public class SnowflakeResultChunk
         {
           final int copySize
               = Math.min(length - copied, spaceLeftOnBlock(offset + copied));
-          System.arraycopy(src, src_offset+copied,
+          System.arraycopy(src, src_offset + copied,
                            data.get(getBlock(offset + copied)),
                            getBlockOffset(offset + copied),
                            copySize);
@@ -788,15 +794,15 @@ public class SnowflakeResultChunk
 
     private int getLength(int index, int offset)
     {
-      if (index == rowCount*colCount-1)
+      if (index == rowCount * colCount - 1)
       {
         // last one
         return lastLength;
       }
       else
       {
-        int nextOffset = offsets.get(getMetaBlock(index+1))
-            [getMetaBlockIndex(index+1)];
+        int nextOffset = offsets.get(getMetaBlock(index + 1))
+            [getMetaBlockIndex(index + 1)];
         return nextOffset - offset;
       }
     }
@@ -915,6 +921,7 @@ public class SnowflakeResultChunk
     private int rowCount, colCount;
     private int nextIndex = 0;
   }
+
   /**
    * Cache the data, offset and length blocks
    */
