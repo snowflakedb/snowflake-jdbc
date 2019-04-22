@@ -23,6 +23,7 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -71,6 +72,16 @@ class SnowflakeStatementV1 implements Statement
   SFStatement sfStatement;
 
   private boolean poolable;
+
+  /**
+   * Snowflake query ID from the latest executed query
+   */
+  private String queryID;
+
+  /**
+   * Snowflake query IDs from the latest executed batch
+   */
+  private List<String> batchQueryIDs = new LinkedList<>();
 
   /**
    * batch of sql strings added by addBatch
@@ -185,6 +196,7 @@ class SnowflakeStatementV1 implements Statement
                                         SFStatement.CallingMethod.EXECUTE_UPDATE);
       sfResultSet.setSession(this.connection.getSfSession());
       updateCount = ResultUtil.calculateUpdateCount(sfResultSet);
+      queryID = sfResultSet.getQueryId();
     }
     catch (SFException ex)
     {
@@ -282,6 +294,7 @@ class SnowflakeStatementV1 implements Statement
         openResultSets.add(resultSet);
       }
       resultSet = new SnowflakeResultSetV1(sfResultSet, this);
+      queryID = sfResultSet.getQueryId();
 
       // Legacy behavior treats update counts as result sets for single-
       // statement execute, so we only treat update counts as update counts
@@ -308,6 +321,27 @@ class SnowflakeStatementV1 implements Statement
       throw new SnowflakeSQLException(ex.getCause(),
                                       ex.getSqlState(), ex.getVendorCode(), ex.getParams());
     }
+  }
+
+  /**
+   *
+   * @return the query ID of the latest executed query
+   * @throws SQLException
+   */
+  public String getQueryID() throws SQLException
+  {
+    // return the queryID for the query executed last time
+    return queryID;
+  }
+
+  /**
+   *
+   * @return the query IDs of the latest executed batch queries
+   * @throws SQLException
+   */
+  public List<String> getBatchQueryIDs() throws SQLException
+  {
+    return Collections.unmodifiableList(batchQueryIDs);
   }
 
   /**
@@ -391,7 +425,7 @@ class SnowflakeStatementV1 implements Statement
 
     SQLException exceptionReturned = null;
     int[] updateCounts = new int[batch.size()];
-
+    batchQueryIDs.clear();
     for (int i = 0; i < batch.size(); i++)
     {
       BatchEntry b = batch.get(i);
@@ -406,6 +440,7 @@ class SnowflakeStatementV1 implements Statement
           cnt = SUCCESS_NO_INFO;
         }
         updateCounts[i] = cnt;
+        batchQueryIDs.add(queryID);
       }
       catch (SQLException e)
       {

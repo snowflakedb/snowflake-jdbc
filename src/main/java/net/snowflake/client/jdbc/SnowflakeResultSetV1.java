@@ -105,6 +105,11 @@ class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
     }
   }
 
+  public String getQueryID() throws SQLException
+  {
+    return sfBaseResultSet.getQueryId();
+  }
+
 
   public boolean wasNull() throws SQLException
   {
@@ -373,6 +378,29 @@ class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
   {
     raiseSQLExceptionIfResultSetIsClosed();
     return sfBaseResultSet.isBeforeFirst();
+  }
+
+  @Override
+  public boolean isWrapperFor(Class<?> iface) throws SQLException
+  {
+    logger.debug("public boolean isWrapperFor(Class<?> iface)");
+
+    return iface.isInstance(this);
+  }
+
+  @SuppressWarnings("unchecked")
+  @Override
+  public <T> T unwrap(Class<T> iface) throws SQLException
+  {
+    logger.debug("public <T> T unwrap(Class<T> iface)");
+
+    if (!iface.isInstance(this))
+    {
+      throw new SQLException(
+          this.getClass().getName() + " not unwrappable from " + iface
+              .getName());
+    }
+    return (T) this;
   }
 
   /**
