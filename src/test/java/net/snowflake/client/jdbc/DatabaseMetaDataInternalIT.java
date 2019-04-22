@@ -154,31 +154,31 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest
   {
     connection = getConnection();
     statement = connection.createStatement();
-    statement.execute("create or replace function JDBC_DB1.JDBC_SCHEMA11.FUNC111 " +
+    statement.execute("create or replace function JDBC_DB1.JDBC_SCHEMA11.JDBCFUNCTEST111 " +
                       "(a number, b number) RETURNS NUMBER COMMENT='mutiply numbers' as 'a*b'");
-    statement.execute("create or replace function JDBC_DB1.JDBC_SCHEMA12.FUNC121 " +
+    statement.execute("create or replace function JDBC_DB1.JDBC_SCHEMA12.JDBCFUNCTEST121 " +
                       "(a number, b number) RETURNS NUMBER COMMENT='mutiply numbers' as 'a*b'");
-    statement.execute("create or replace function JDBC_DB1.JDBC_SCHEMA12.FUNC122 " +
+    statement.execute("create or replace function JDBC_DB1.JDBC_SCHEMA12.JDBCFUNCTEST122 " +
                       "(a number, b number) RETURNS NUMBER COMMENT='mutiply numbers' as 'a*b'");
-    statement.execute("create or replace function JDBC_DB2.JDBC_SCHEMA21.FUNC211 " +
+    statement.execute("create or replace function JDBC_DB2.JDBC_SCHEMA21.JDBCFUNCTEST211 " +
                       "(a number, b number) RETURNS NUMBER COMMENT='mutiply numbers' as 'a*b'");
-    statement.execute("create or replace function JDBC_DB2.JDBC_SCHEMA21.FUNC212 " +
+    statement.execute("create or replace function JDBC_DB2.JDBC_SCHEMA21.JDBCFUNCTEST212 " +
                       "() RETURNS TABLE(colA varchar) as 'select COLA from JDBC_DB2.JDBC_SCHEMA21.JDBC_TBL211'");
     databaseMetaData = connection.getMetaData();
 
     // test each column return the right value
-    resultSet = databaseMetaData.getFunctions("JDBC_DB1", "JDBC_SCHEMA11", "FUNC111");
+    resultSet = databaseMetaData.getFunctions("JDBC_DB1", "JDBC_SCHEMA11", "JDBCFUNCTEST111");
     resultSet.next();
     assertEquals("JDBC_DB1", resultSet.getString("FUNCTION_CAT"));
     assertEquals("JDBC_SCHEMA11", resultSet.getString("FUNCTION_SCHEM"));
-    assertEquals("FUNC111", resultSet.getString("FUNCTION_NAME"));
+    assertEquals("JDBCFUNCTEST111", resultSet.getString("FUNCTION_NAME"));
     assertEquals("mutiply numbers", resultSet.getString("REMARKS"));
     assertEquals(DatabaseMetaData.functionNoTable, resultSet.getInt("FUNCTION_TYPE"));
-    assertEquals("FUNC111", resultSet.getString("SPECIFIC_NAME"));
+    assertEquals("JDBCFUNCTEST111", resultSet.getString("SPECIFIC_NAME"));
     assertTrue(!resultSet.next());
 
     // test a table function
-    resultSet = databaseMetaData.getFunctions("JDBC_DB2", "JDBC_SCHEMA21", "FUNC212");
+    resultSet = databaseMetaData.getFunctions("JDBC_DB2", "JDBC_SCHEMA21", "JDBCFUNCTEST212");
     resultSet.next();
     assertEquals(DatabaseMetaData.functionReturnsTable, resultSet.getInt("FUNCTION_TYPE"));
     assertFalse(resultSet.next());
@@ -194,24 +194,24 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest
     assertTrue(!resultSet.next());
 
     // test pattern
-    resultSet = databaseMetaData.getFunctions(null, null, "FUNC%");
+    resultSet = databaseMetaData.getFunctions(null, null, "JDBCFUNCTEST%");
     assertEquals(5, getSizeOfResultSet(resultSet));
-    resultSet = databaseMetaData.getFunctions(null, "JDBC_SCHEMA1_", "_UNC%");
+    resultSet = databaseMetaData.getFunctions(null, "JDBC_SCHEMA1_", "_DBCFUNCTEST%");
     assertEquals(3, getSizeOfResultSet(resultSet));
     //resultSet = databaseMetaData.getFunctions("JDBC_DB1", "AAAAAAAAAAA", "AAAAAAA");
     try
     {
-      resultSet = databaseMetaData.getFunctions("JDBC_DB3", "JDBC_SCHEMA1_", "_UNC%");
+      resultSet = databaseMetaData.getFunctions("JDBC_DB3", "JDBC_SCHEMA1_", "_DBCFUNCTEST%");
     }
     catch (SQLException e)
     {
       assertEquals(2003, e.getErrorCode());
     }
-    resultSet = databaseMetaData.getFunctions("JDBC_DB1", "JDBC_SCHEMA__", "_UNC%");
+    resultSet = databaseMetaData.getFunctions("JDBC_DB1", "JDBC_SCHEMA__", "_DBCFUNCTEST%");
     assertEquals(3, getSizeOfResultSet(resultSet));
-    resultSet = databaseMetaData.getFunctions("JDBC_DB1", "JDBC_SCHEMA1_", "_UNC11_");
+    resultSet = databaseMetaData.getFunctions("JDBC_DB1", "JDBC_SCHEMA1_", "_DBCFUNCTEST11_");
     assertEquals(1, getSizeOfResultSet(resultSet));
-    resultSet = databaseMetaData.getFunctions("JDBC_DB1", null, "_UNC11_");
+    resultSet = databaseMetaData.getFunctions("JDBC_DB1", null, "_DBCFUNCTEST11_");
     assertEquals(1, getSizeOfResultSet(resultSet));
 
     resultSet.close();
