@@ -137,8 +137,6 @@ public class SFSession
 
   private boolean enableHeartbeat = false;
 
-  private int heartbeatFrequency = 3600;
-
   private AtomicBoolean autoCommit = new AtomicBoolean(true);
 
   private boolean resultColumnCaseInsensitive = false;
@@ -688,7 +686,7 @@ public class SFSession
                    masterTokenValidityInSeconds);
 
       HeartbeatBackground.getInstance().addSession(this,
-                                                   this.heartbeatFrequency);
+                                                   masterTokenValidityInSeconds);
     }
     else
     {
@@ -955,13 +953,6 @@ public class SFSession
   {
     this.enableHeartbeat = enableHeartbeat;
   }
-
-  public void setHeartbeatFrequency(int frequency)
-  {
-    this.heartbeatFrequency = frequency;
-  }
-
-  public long getHeartbeatFrequency() {return this.heartbeatFrequency; }
 
   public boolean getAutoCommit()
   {
