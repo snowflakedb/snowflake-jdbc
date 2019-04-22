@@ -2122,6 +2122,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
                                                       schema);
     catalog = resPair.getKey();
     schema = resPair.getValue();
+
     return getForeignKeys("export", catalog, schema, table, null, null, null);
   }
 
