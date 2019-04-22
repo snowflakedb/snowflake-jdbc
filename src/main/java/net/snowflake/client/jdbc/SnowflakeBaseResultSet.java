@@ -1639,7 +1639,12 @@ abstract class SnowflakeBaseResultSet implements ResultSet
   {
     logger.debug("public <T> T unwrap(Class<T> iface)");
 
-    throw new SQLFeatureNotSupportedException();
+    if (!iface.isInstance(this))
+    {
+      throw new SQLException(
+          this.getClass().getName() + " not unwrappable from " + iface.getName());
+    }
+    return (T) this;
   }
 
   @Override
@@ -1649,6 +1654,6 @@ abstract class SnowflakeBaseResultSet implements ResultSet
     logger.debug(
         "public boolean isWrapperFor(Class<?> iface)");
 
-    throw new SQLFeatureNotSupportedException();
+    return iface.isInstance(this);
   }
 }

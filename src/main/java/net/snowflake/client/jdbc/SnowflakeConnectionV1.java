@@ -35,9 +35,11 @@ import java.sql.Statement;
 import java.sql.Struct;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.GZIPInputStream;
@@ -92,6 +94,11 @@ public class SnowflakeConnectionV1 implements Connection
   private int transactionIsolation = Connection.TRANSACTION_NONE;
 
   private SFSession sfSession;
+
+  /**
+   * Refer to all created and open statements from this connection
+   */
+  private final Set<Statement> openStatements = Collections.synchronizedSet(new HashSet<>());
 
   /**
    * A connection will establish a session token from snowflake
@@ -284,9 +291,11 @@ public class SnowflakeConnectionV1 implements Connection
   public Statement createStatement() throws SQLException
   {
     raiseSQLExceptionIfConnectionIsClosed();
-    return createStatement(
+    Statement stmt = createStatement(
         ResultSet.TYPE_FORWARD_ONLY,
         ResultSet.CONCUR_READ_ONLY);
+    openStatements.add(stmt);
+    return stmt;
   }
 
   /**
@@ -312,6 +321,26 @@ public class SnowflakeConnectionV1 implements Connection
       {
         sfSession.close();
         sfSession = null;
+      }
+
+      // make sure to close all created statements
+      synchronized (openStatements)
+      {
+        for (Statement stmt : openStatements)
+        {
+          if (stmt != null && !stmt.isClosed())
+          {
+            if (stmt.isWrapperFor(SnowflakeStatementV1.class))
+            {
+              stmt.unwrap(SnowflakeStatementV1.class).close(false);
+            }
+            else
+            {
+              stmt.close();
+            }
+          }
+        }
+        openStatements.clear();
       }
     }
     catch (SFException ex)
@@ -522,8 +551,10 @@ public class SnowflakeConnectionV1 implements Connection
         "Statement createStatement(int resultSetType, "
         + "int resultSetConcurrency)");
 
-    return createStatement(
+    Statement stmt = createStatement(
         resultSetType, resultSetConcurrency, ResultSet.CLOSE_CURSORS_AT_COMMIT);
+    openStatements.add(stmt);
+    return stmt;
   }
 
   @Override
@@ -535,8 +566,10 @@ public class SnowflakeConnectionV1 implements Connection
         "Statement createStatement(int resultSetType, "
         + "int resultSetConcurrency, int resultSetHoldability");
 
-    return new SnowflakeStatementV1(
+    Statement stmt = new SnowflakeStatementV1(
         this, resultSetType, resultSetConcurrency, resultSetHoldability);
+    openStatements.add(stmt);
+    return stmt;
   }
 
   @Override
@@ -544,7 +577,9 @@ public class SnowflakeConnectionV1 implements Connection
   {
     logger.debug("PreparedStatement prepareStatement(String sql)");
     raiseSQLExceptionIfConnectionIsClosed();
-    return prepareStatement(sql, false);
+    PreparedStatement stmt = prepareStatement(sql, false);
+    openStatements.add(stmt);
+    return stmt;
   }
 
   @Override
@@ -591,7 +626,10 @@ public class SnowflakeConnectionV1 implements Connection
         "PreparedStatement prepareStatement(String sql, "
         + "int resultSetType,");
 
-    return prepareStatement(sql, resultSetType, resultSetConcurrency, ResultSet.CLOSE_CURSORS_AT_COMMIT);
+    PreparedStatement stmt = prepareStatement(sql, resultSetType, resultSetConcurrency,
+                                            ResultSet.CLOSE_CURSORS_AT_COMMIT);
+    openStatements.add(stmt);
+    return stmt;
   }
 
   @Override
@@ -606,12 +644,14 @@ public class SnowflakeConnectionV1 implements Connection
         "PreparedStatement prepareStatement(String sql, "
         + "int resultSetType,");
 
-    return new SnowflakePreparedStatementV1(
+    PreparedStatement stmt = new SnowflakePreparedStatementV1(
         this, sql,
         false,
         resultSetType,
         resultSetConcurrency,
         resultSetHoldability);
+    openStatements.add(stmt);
+    return stmt;
   }
 
   public PreparedStatement prepareStatement(String sql, boolean skipParsing)
@@ -620,13 +660,15 @@ public class SnowflakeConnectionV1 implements Connection
     logger.debug(
         "PreparedStatement prepareStatement(String sql, boolean skipParsing)");
     raiseSQLExceptionIfConnectionIsClosed();
-    return new SnowflakePreparedStatementV1(
+    PreparedStatement stmt = new SnowflakePreparedStatementV1(
         this,
         sql,
         skipParsing,
         ResultSet.TYPE_FORWARD_ONLY,
         ResultSet.CONCUR_READ_ONLY,
         ResultSet.CLOSE_CURSORS_AT_COMMIT);
+    openStatements.add(stmt);
+    return stmt;
   }
 
   @Override
@@ -1194,5 +1236,10 @@ public class SnowflakeConnectionV1 implements Connection
                                    e.getSqlState(),
                                    e.getVendorCode()));
     }
+  }
+
+  public void removeClosedStatement(Statement stmt)
+  {
+    openStatements.remove(stmt);
   }
 }

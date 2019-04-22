@@ -92,8 +92,17 @@ class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
   @Override
   public void close() throws SQLException
   {
+    close(true);
+  }
+
+  public void close(boolean removeClosedResultSetFromStatement) throws SQLException
+  {
     // no SQLException is raised.
     sfBaseResultSet.close();
+    if(removeClosedResultSetFromStatement && statement.isWrapperFor(SnowflakeStatementV1.class))
+    {
+      statement.unwrap(SnowflakeStatementV1.class).removeClosedResultSet(this);
+    }
   }
 
 
