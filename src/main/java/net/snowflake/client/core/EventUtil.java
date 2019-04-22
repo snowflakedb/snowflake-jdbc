@@ -4,7 +4,6 @@
 
 package net.snowflake.client.core;
 
-import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -85,15 +84,6 @@ public class EventUtil
     }
   }
 
-  public static void triggerIncident(Map<String, Object> incidentInfo)
-  {
-    EventHandler eh = eventHandler.get();
-    if (eh != null)
-    {
-      eh.triggerIncident(incidentInfo);
-    }
-  }
-
   public static String getDumpPathPrefix()
   {
     return DUMP_PATH_PREFIX + "/" + DUMP_SUBDIR;
@@ -107,5 +97,14 @@ public class EventUtil
   public static long getmaxDumpFileSizeBytes()
   {
     return MAX_DUMP_FILE_SIZE_BYTES;
+  }
+
+  public static void triggerIncident(Incident incident)
+  {
+    EventHandler eh = eventHandler.get();
+    if (eh != null)
+    {
+      eh.triggerIncident(incident);
+    }
   }
 }

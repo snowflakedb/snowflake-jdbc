@@ -296,12 +296,12 @@ public class SFStatement
       // SNOW-22813 log exception
       logger.error("Exception creating result", ex);
 
-      throw IncidentUtil.generateIncidentWithException(
+      throw (SFException) IncidentUtil.generateIncidentV2WithException(
           session,
+          new SFException(ErrorCode.INTERNAL_ERROR,
+                          IncidentUtil.oneLiner("exception creating result", ex)),
           null,
-          null, ex,
-          ErrorCode.INTERNAL_ERROR,
-          "exception creating result");
+          null);
     }
     logger.debug("Done creating result set");
 
@@ -417,8 +417,13 @@ public class SFStatement
           logger.debug("Exception encountered trying to upload binds to stage. Attaching binds in payload instead. ", ex);
           TelemetryData errorLog = TelemetryUtil.buildJobData(this.requestId, ex.type.field, 1);
           this.session.getTelemetryClient().tryAddLogToBatch(errorLog);
-          IncidentUtil.generateIncident(session, "Failed to upload binds to stage",
-                                        null, requestId, null, ex);
+          IncidentUtil.generateIncidentV2WithException(
+              session,
+              new SFException(ErrorCode.NON_FATAL_ERROR,
+                              IncidentUtil.oneLiner("Failed to upload binds " +
+                                                        "to stage:", ex)),
+              null,
+              requestId);
         }
       }
 
@@ -521,11 +526,11 @@ public class SFStatement
       if (System.getProperty("snowflake.enable_incident_test1") != null &&
           System.getProperty("snowflake.enable_incident_test1").equals("true"))
       {
-        SFException sfe =
-            IncidentUtil.generateIncidentWithException(session, this.requestId,
-                                                       null, ErrorCode.STATEMENT_CLOSED);
-
-        throw sfe;
+        throw (SFException) IncidentUtil.generateIncidentV2WithException(
+            session,
+            new SFException(ErrorCode.STATEMENT_CLOSED),
+            null,
+            this.requestId);
       }
 
       synchronized (this)

@@ -11,10 +11,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.util.ISO8601DateFormat;
 import com.fasterxml.jackson.datatype.joda.JodaModule;
-import com.google.common.base.Preconditions;
-import net.snowflake.client.jdbc.ErrorCode;
-import net.snowflake.client.jdbc.SnowflakeDriver;
-import net.snowflake.common.core.LoginInfoDTO;
 import com.yammer.metrics.Metrics;
 import com.yammer.metrics.core.Clock;
 import com.yammer.metrics.core.VirtualMachineMetrics;
@@ -24,467 +20,29 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.zip.GZIPOutputStream;
 
-import org.joda.time.DateTime;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 
-import static net.snowflake.client.core.Incident.generateIncidentId;
 
 /**
- * @author jrosen
+ * @author jrosen + mkeller
  */
 public class IncidentUtil
 {
   private static final SFLogger logger =
       SFLoggerFactory.getLogger(IncidentUtil.class);
 
-  // Determines size of stacktrace to be sent to GS
-  private static final int STACK_TRACE_SIZE = 10;
-
   // Json message variables
-  public static final String CLIENT_TYPE = "clientType";
-  public static final String CLIENT_VERSION = "clientVersion";
-  public static final String CLIENT_BUILD_ID = "clientBuildId";
-  public static final String INCIDENT_ID = "incidentId";
-  public static final String STACKTRACE = "stackTrace";
-  public static final String REQUEST_ID = "requestId";
-  public static final String JOB_ID = "jobId";
-  public static final String SIGNATURE = "signature";
-  public static final String REPORTER = "reporter";
-  public static final String DETAIL = "detail";
-  public static final String INCIDENT_TYPE = "incidentType";
   public static final String TIMESTAMP = "timestamp";
-  public static final String INCIDENT_REPORT = "incidentReport";
-  public static final String CLIENT_INFO = "clientInfo";
   public static final String INCIDENT_INFO = "incidentInfo";
-  public static final String THROTTLE_SIGNATURE = "throttleSignature";
 
   // Determines name of dump file.
   public static final String INC_DUMP_FILE_NAME = "sf_incident_";
   public static final String INC_DUMP_FILE_EXT = ".dmp.gz";
-
-  /**
-   * Creates an SFException without a cause to be thrown and generates/triggers
-   * an incident based on that exception with the specified signature.
-   *
-   * @param session   session that will generate incident
-   * @param requestId request id
-   * @param jobUuid   job uuid
-   * @param signature incident signature for identification
-   * @param errorCode error code that caused the incident
-   * @param params    option parameters
-   * @return generated SFException
-   */
-  public static SFException generateIncidentWithSignatureAndException(
-      SFSession session,
-      String requestId,
-      String jobUuid,
-      String signature,
-      ErrorCode errorCode,
-      Object... params)
-  {
-    return generateIncidentWithSignatureAndException(
-        session != null ?
-        session.getSessionToken() : null,
-        session != null ?
-        session.getServerUrl() : null,
-        requestId,
-        jobUuid,
-        signature,
-        errorCode,
-        params);
-  }
-
-
-  public static SFException generateIncidentWithSignatureAndException(
-      String sessionToken,
-      String serverUrl,
-      String requestId,
-      String jobUuid,
-      String signature,
-      ErrorCode errorCode,
-      Object... params)
-  {
-    SFException sfe = new SFException(errorCode, params);
-
-    // Figure out who the caller is: that's who should be the reporter.
-    StackTraceElement[] stack = sfe.getStackTrace();
-    String caller = null;
-    for (int i = 1; i < stack.length; i++)
-    {
-      if (!stack[i].getMethodName().equals("generateIncidentWithException"))
-      {
-        caller = String.valueOf(stack[i]);
-        break;
-      }
-    }
-    String causeStr = sfe.toString() + " at " + caller;
-
-    // Build message for GS Incident reporting
-    if (sessionToken != null && serverUrl != null)
-    {
-
-      Map<String, Object> incidentInfo =
-          IncidentUtil.buildIncidentReport(sessionToken,
-                                           serverUrl,
-                                           signature,
-                                           null,
-                                           requestId,
-                                           jobUuid,
-                                           causeStr);
-
-      // Send Incident message to GS and trigger log dump
-      EventUtil.triggerIncident(incidentInfo);
-    }
-    else
-    {
-      logger.debug("Failed to generate incident, sessionToken valid={} "
-                   + "serverUrl={}",
-                   sessionToken != null, serverUrl);
-    }
-
-    return sfe;
-  }
-
-  /**
-   * Creates an SFException without a cause to be thrown and generates/triggers
-   * an incident based on that exception.
-   *
-   * @param session   session that will generate incident
-   * @param requestId request id
-   * @param jobUuid   job uuid
-   * @param errorCode error code that caused the incident
-   * @param params    option parameters
-   * @return generated SFException
-   */
-  public static SFException generateIncidentWithException(SFSession session,
-                                                          String requestId,
-                                                          String jobUuid,
-                                                          ErrorCode errorCode,
-                                                          Object... params)
-  {
-    return generateIncidentWithException(session != null ?
-                                         session.getSessionToken() : null,
-                                         session != null ?
-                                         session.getServerUrl() : null,
-                                         requestId,
-                                         jobUuid,
-                                         errorCode,
-                                         params);
-  }
-
-  public static SFException generateIncidentWithException(SFSession session,
-                                                          String requestId,
-                                                          String jobUuid,
-                                                          Throwable cause,
-                                                          ErrorCode errorCode,
-                                                          Object... params)
-  {
-    return generateIncidentWithException(session != null ?
-                                         session.getSessionToken() : null,
-                                         session != null ?
-                                         session.getServerUrl() : null,
-                                         requestId,
-                                         jobUuid,
-                                         cause,
-                                         errorCode,
-                                         params);
-
-  }
-
-  /**
-   * Creates an SFException to be thrown and generates/triggers an incident
-   * based on that exception.
-   *
-   * @param sessionToken session token
-   * @param serverUrl    snowflake url
-   * @param requestId    request id
-   * @param jobUuid      job uuid
-   * @param cause        cause of the incident
-   * @param errorCode    error code of the incident
-   * @param params       optional parameters
-   * @return generated SFException
-   */
-  public static SFException generateIncidentWithException(String sessionToken,
-                                                          String serverUrl,
-                                                          String requestId,
-                                                          String jobUuid,
-                                                          Throwable cause,
-                                                          ErrorCode errorCode,
-                                                          Object... params)
-  {
-    String causeStr = null;
-
-    // Should use generateIncidentWithException without cause argument if
-    // there is no cause.
-    if (cause != null)
-    {
-      // Use cause's caller as the reporter
-      StackTraceElement[] stack = cause.getStackTrace();
-      String topOfStack = null;
-      if (stack.length > 0)
-      {
-        topOfStack = String.valueOf(stack[0]);
-      }
-      causeStr = cause.toString() + " at " + topOfStack;
-    }
-    else
-    {
-      logger.debug("Attempting to generate incident and"
-                   + " SFException with null cause");
-    }
-
-    SFException sfe = new SFException(cause, errorCode, params);
-
-    // Build message for GS Incident reporting
-    if (sessionToken != null && serverUrl != null)
-    {
-      Map<String, Object> incidentInfo =
-          IncidentUtil.buildIncidentReport(sessionToken,
-                                           serverUrl,
-                                           causeStr,
-                                           null,
-                                           requestId,
-                                           jobUuid,
-                                           causeStr);
-
-      // Send Incident message to GS and trigger log dump
-      EventUtil.triggerIncident(incidentInfo);
-    }
-    else
-    {
-      logger.debug("Failed to generate incident, sessionToken valid={} "
-                   + "serverUrl={}",
-                   sessionToken != null, serverUrl);
-    }
-
-    return sfe;
-  }
-
-  public static SFException generateIncidentWithException(String sessionToken,
-                                                          String serverUrl,
-                                                          String requestId,
-                                                          String jobUuid,
-                                                          ErrorCode errorCode,
-                                                          Object... params)
-  {
-    SFException sfe = new SFException(errorCode, params);
-
-    // Figure out who the caller is: that's who should be the reporter.
-    StackTraceElement[] stack = sfe.getStackTrace();
-    String caller = null;
-    for (int i = 1; i < stack.length; i++)
-    {
-      if (!stack[i].getMethodName().equals("generateIncidentWithException"))
-      {
-        caller = String.valueOf(stack[i]);
-        break;
-      }
-    }
-    String causeStr = sfe.toString() + " at " + caller;
-
-    // Build message for GS Incident reporting
-    if (sessionToken != null && serverUrl != null)
-    {
-
-      Map<String, Object> incidentInfo =
-          IncidentUtil.buildIncidentReport(sessionToken,
-                                           serverUrl,
-                                           causeStr,
-                                           null,
-                                           requestId,
-                                           jobUuid,
-                                           causeStr);
-
-      // Send Incident message to GS and trigger log dump
-      EventUtil.triggerIncident(incidentInfo);
-    }
-    else
-    {
-      logger.debug("Failed to generate incident, sessionToken valid={} "
-                   + "serverUrl={}",
-                   sessionToken != null, serverUrl);
-    }
-
-    return sfe;
-  }
-
-  public static void generateIncident(SFSession session,
-                                      String signature,
-                                      String detail,
-                                      String requestId,
-                                      String jobUuid,
-                                      Throwable cause)
-  {
-    if (session != null)
-    {
-      generateIncident(session.getSessionToken(),
-                       session.getServerUrl(),
-                       signature,
-                       detail,
-                       requestId,
-                       jobUuid,
-                       cause);
-    }
-  }
-
-  /**
-   * Generates an incident report based on the parameters passed in and
-   * triggers an incident with the EventHandler
-   *
-   * @param sessionToken session token
-   * @param serverUrl    server url
-   * @param signature    incident signature
-   * @param detail       incident detail
-   * @param requestId    request id
-   * @param jobUuid      job uuid
-   * @param cause        cause of incident
-   */
-  public static void generateIncident(String sessionToken,
-                                      String serverUrl,
-                                      String signature,
-                                      String detail,
-                                      String requestId,
-                                      String jobUuid,
-                                      Throwable cause)
-  {
-    String causeStr = null;
-
-    if (cause != null)
-    {
-      // Whoever is generating the incident is the reporter.
-      StackTraceElement[] stack = cause.getStackTrace();
-      String topOfStack = null;
-      if (stack.length > 0)
-      {
-        topOfStack = String.valueOf(stack[0]);
-      }
-      causeStr = cause.toString() + " at " + topOfStack;
-    }
-    else
-    {
-      logger.debug("Attempting to generate incident without cause, " +
-                   "signature={}, detail={}", signature, detail);
-    }
-
-    if (sessionToken != null && serverUrl != null)
-    {
-      // Build message for GS Incident reporting
-      Map<String, Object> incidentInfo =
-          IncidentUtil.buildIncidentReport(sessionToken,
-                                           serverUrl,
-                                           signature,
-                                           detail,
-                                           requestId,
-                                           jobUuid,
-                                           causeStr);
-
-      // Send Incident message to GS and trigger log dump
-      EventUtil.triggerIncident(incidentInfo);
-    }
-    else
-    {
-      logger.debug("Failed to generate incident, sessionToken valid={} "
-                   + "serverUrl={}",
-                   sessionToken != null, serverUrl);
-    }
-  }
-
-  /**
-   * Builds an incident report to be serialized for consumption by Global Services.
-   *
-   * @param signature
-   * @param detail
-   * @param requestId
-   * @param jobUuid
-   * @param cause
-   * @return
-   */
-  private static Map<String, Object> buildIncidentReport(String sessionToken,
-                                                         String serverUrl,
-                                                         String signature,
-                                                         String detail,
-                                                         String requestId,
-                                                         String jobUuid,
-                                                         String cause)
-  {
-    // No session, no incident.
-    Preconditions.checkArgument(sessionToken != null && serverUrl != null);
-
-    Map<String, Object> incident = new HashMap<>();
-    Map<String, Object> incidentInfo = new HashMap<>();
-    Map<String, Object> incidentReport = new HashMap<>();
-
-    // Record environment info
-    incidentReport.put(CLIENT_TYPE, LoginInfoDTO.SF_JDBC_APP_ID);
-    incidentReport.put(CLIENT_VERSION, SnowflakeDriver.implementVersion);
-
-    // Incident data
-    incidentReport.put(INCIDENT_ID, generateIncidentId());
-
-    // The reporter is whoever called this method
-    int topOfStack = 2;
-    StackTraceElement[] stes = Thread.currentThread().getStackTrace();
-
-    // Find the function that started this incident
-    while (stes[topOfStack].getMethodName().startsWith("generateIncident"))
-    {
-      topOfStack++;
-    }
-
-    StackTraceElement caller = stes[topOfStack];
-
-    String reporter = caller.getClassName() + ":" + caller.getMethodName() +
-                      ":" + caller.getLineNumber();
-
-    String detailMessage = (detail == null && cause == null) ? null :
-                           ((detail == null ? "" : (detail + " : ")) +
-                            (cause == null ? "" : cause));
-
-    // First N lines of the stacktrace
-    StackTraceElement[] strace = new StackTraceElement[STACK_TRACE_SIZE];
-    for (int i = 0; i < STACK_TRACE_SIZE && (i + topOfStack) < stes.length; i++)
-    {
-      strace[i] = stes[i + topOfStack];
-    }
-    incidentReport.put(STACKTRACE, strace);
-
-    // Request ID associated with incident, if any
-    incidentReport.put(REQUEST_ID, requestId);
-
-    // Job ID associated with incident, if any
-    incidentReport.put(JOB_ID, jobUuid);
-
-    // Type of incident
-    incidentReport.put(INCIDENT_TYPE, Event.EventType.INCIDENT.getDescription());
-
-    // Error signature for calculating hash in GS.
-    incidentInfo.put(SIGNATURE, signature);
-
-    // What function reported this incident?
-    incidentInfo.put(REPORTER, reporter);
-
-    // Incident detail and exception for GS error message generation.
-    incidentInfo.put(DETAIL, detailMessage);
-
-    // Other metadata
-    incidentInfo.put(TIMESTAMP, DateTime.now().toString());
-    incidentInfo.put(INCIDENT_REPORT, incidentReport);
-
-    incident.put(SFSessionProperty.SERVER_URL.getPropertyKey(), serverUrl);
-    incident.put(SFSession.SF_HEADER_TOKEN_TAG, sessionToken);
-    incident.put(INCIDENT_INFO, incidentInfo);
-
-    // This is the incident string that we'll throttle on
-    incident.put(THROTTLE_SIGNATURE, signature);
-
-    return incident;
-  }
 
   /**
    * Produce a one line description of the throwable, suitable for error message
@@ -499,9 +57,22 @@ public class IncidentUtil
     String topOfStack = null;
     if (stack.length > 0)
     {
-      topOfStack = String.valueOf(stack[0]);
+      topOfStack = " at " + stack[0];
     }
-    return thrown.toString() + " at " + topOfStack;
+    return thrown.toString() + topOfStack;
+  }
+
+  /**
+   * Produce a one line description of the throwable, suitable for error message
+   * and log printing with a prefix
+   *
+   * @param prefix String to prefix oneliner summary
+   * @param thrown thrown object
+   * @return description of the thrown object
+   */
+  public static String oneLiner(String prefix, Throwable thrown)
+  {
+    return prefix + " " + oneLiner(thrown);
   }
 
   /**
@@ -693,5 +264,48 @@ public class IncidentUtil
       json.writeEndObject();
     }
     json.writeEndObject();
+  }
+
+  /**
+   * Makes a V2 incident object and triggers ir, effectively reporting the
+   * given exception to GS and possibly to crashmanager
+   * @param session     SFSession object to talk to GS through
+   * @param exc         the Throwable we should report
+   * @param jobId       jobId that failed
+   * @param requestId   requestId that failed
+   * @return            the given Throwable object
+   */
+  public static Throwable generateIncidentV2WithException(SFSession session,
+                                                          Throwable exc,
+                                                          String jobId,
+                                                          String requestId)
+  {
+    new Incident(session, exc, jobId, requestId).trigger();
+    return exc;
+  }
+
+  /**
+   * Makes a V2 incident object and triggers it, effectively reporting the
+   * given exception to GS and possibly to crashmanager.
+   *
+   * This function should be proceeded by a throw as it returns the
+   * originally given exception.
+   *
+   * @param serverUrl     url of GS to report incident to
+   * @param sessionToken  session token to be used to report incident
+   * @param exc           the Throwable we should report
+   * @param jobId         jobId that failed
+   * @param requestId     requestId that failed
+   * @return              the given Exception object
+   */
+  public static Throwable generateIncidentV2WithException(
+      String serverUrl,
+      String sessionToken,
+      Throwable exc,
+      String jobId,
+      String requestId)
+  {
+    new Incident(serverUrl, sessionToken, exc, jobId, requestId).trigger();
+    return exc;
   }
 }

@@ -86,6 +86,38 @@ public class EventHandler extends Handler
   private static final int DEFAULT_MAX_DUMP_FILES = 100;
   private static final int DEFAULT_MAX_DUMPDIR_SIZE_MB = 128;
 
+  void triggerIncident(Incident incident)
+  {
+    logger.debug("New incident V2 triggered, flushing event buffer");
+
+    if (SnowflakeDriver.isDisableIncidents())
+    {
+      logger.debug("Incidents disabled by Snowflake, creation failed");
+      return;
+    }
+
+    // Do we need to throttle based on the signature to this incident?
+    if (needsToThrottle(incident.signature))
+    {
+      logger.debug("Incident throttled, not reported");
+      return;
+    }
+
+    // Push the incident event and flush the event buffer.
+    pushEvent(incident, true);
+
+    if (System.getProperty(DISABLE_DUMPS_PROP) == null)
+    {
+      logger.debug("Dumping log buffer to local disk");
+
+      // Dump the buffered log contents to disk.
+      this.dumpLogBuffer(incident.uuid);
+
+      // Dump thread state
+      IncidentUtil.dumpVmMetrics(incident.uuid);
+    }
+  }
+
   /**
    * Runnable to handle periodic flushing of the event buffer
    */
@@ -268,63 +300,6 @@ public class EventHandler extends Handler
 
   }
 
-  /**
-   * Triggers a new Incident with message @message and flushes the eventBuffer.
-   *
-   * @param incidentInfo incident information
-   */
-  void triggerIncident(Map<String, Object> incidentInfo)
-  {
-    logger.debug("New incident triggered, flushing event buffer");
-
-    if (SnowflakeDriver.isDisableIncidents())
-    {
-      logger.debug("Incidents disabled by Snowflake, creation failed");
-      return;
-    }
-
-    // Extract some info about the incident
-    Map<String, Object> incidentMap =
-        (Map<String, Object>) incidentInfo.get(IncidentUtil.INCIDENT_INFO);
-
-    Map<String, Object> incidentReport = incidentMap == null ? null :
-                                         (Map<String, Object>) incidentMap.get(IncidentUtil.INCIDENT_REPORT);
-
-    // Get the incident ID
-    String incidentId = incidentReport == null ? null :
-                        (String) incidentReport.get(IncidentUtil.INCIDENT_ID);
-
-    // Get the incident signature
-    String signature = (String) incidentInfo.get(IncidentUtil.THROTTLE_SIGNATURE);
-
-    if (incidentId == null)
-    {
-      logger.debug("Unexpected incidentInfo format encountered");
-    }
-
-    // Do we need to throttle based on the signature to this incident?
-    if (needsToThrottle(signature))
-    {
-      logger.debug("Incident throttled, not reported");
-      return;
-    }
-
-    Event incident = new Incident(Event.EventType.INCIDENT, incidentInfo);
-
-    // Push the incident event and flush the event buffer.
-    pushEvent(incident, true);
-
-    if (System.getProperty(DISABLE_DUMPS_PROP) == null)
-    {
-      logger.debug("Dumping log buffer to local disk");
-
-      // Dump the buffered log contents to disk.
-      this.dumpLogBuffer(incidentId);
-
-      // Dump thread state
-      IncidentUtil.dumpVmMetrics(incidentId);
-    }
-  }
 
   /**
    * Dumps the contents of the in-memory log buffer to disk and clears the buffer.

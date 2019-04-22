@@ -363,11 +363,12 @@ public class SFResultSetMetaData
 
     if (columnTypes.get(columnIdx) == null)
     {
-      throw IncidentUtil.generateIncidentWithSignatureAndException(
-          session, null, queryId,
-          "Missing column type",
-          ErrorCode.INTERNAL_ERROR,
-          "Missing column type for column " + column);
+      throw (SFException) IncidentUtil.generateIncidentV2WithException(
+          session,
+          new SFException(ErrorCode.INTERNAL_ERROR,
+                          "Missing column type for column " + column),
+          queryId,
+          null);
     }
 
     return columnTypes.get(columnIdx);
@@ -384,12 +385,12 @@ public class SFResultSetMetaData
 
     if (columnTypeNames.get(column - 1) == null)
     {
-      throw
-          IncidentUtil.generateIncidentWithSignatureAndException(
-              session, null, queryId,
-              "Missing column type",
-              ErrorCode.INTERNAL_ERROR,
-              "Missing column type for column " + column);
+      throw (SFException) IncidentUtil.generateIncidentV2WithException(
+          session,
+          new SFException(ErrorCode.INTERNAL_ERROR,
+                          "Missing column type for column " + column),
+          queryId,
+          null);
     }
 
     return columnTypeNames.get(column - 1);
