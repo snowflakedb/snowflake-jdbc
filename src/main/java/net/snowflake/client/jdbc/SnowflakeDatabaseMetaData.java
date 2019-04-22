@@ -6,6 +6,7 @@ package net.snowflake.client.jdbc;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import javafx.util.Pair;
 import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.log.SFLogger;
@@ -1185,6 +1186,22 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
     );
   }
 
+  // apply session context when catalog is unspecified
+  private Pair<String,String> applySessionContext(String catalog,
+                                   String schemaPattern)
+  {
+    if (catalog == null && metadataRequestUseConnectionCtx)
+    {
+      catalog= session.getDatabase();
+
+      if (schemaPattern == null)
+      {
+        schemaPattern = session.getSchema();
+      }
+    }
+    return new Pair <String,String>(catalog, schemaPattern);
+  }
+
   @Override
   public ResultSet getTables(String catalog, String schemaPattern,
                              String tableNamePattern, String[] types)
@@ -1234,16 +1251,10 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
       return SnowflakeDatabaseMetaDataResultSet.getEmptyResultSet(GET_TABLES, statement);
     }
 
-    // apply session context when catalog is unspecified
-    if (catalog == null && metadataRequestUseConnectionCtx)
-    {
-      catalog = session.getDatabase();
-
-      if (schemaPattern == null)
-      {
-        schemaPattern = session.getSchema();
-      }
-    }
+    Pair<String,String> resPair = applySessionContext(catalog,
+                        schemaPattern);
+    catalog = resPair.getKey();
+    schemaPattern = resPair.getValue();
 
     final Pattern compiledSchemaPattern = Wildcard.toRegexPattern(schemaPattern, true);
     final Pattern compiledTablePattern = Wildcard.toRegexPattern(tableNamePattern, true);
@@ -1455,15 +1466,10 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
     Statement statement = connection.createStatement();
 
     // apply session context when catalog is unspecified
-    if (catalog == null && metadataRequestUseConnectionCtx)
-    {
-      catalog = session.getDatabase();
-
-      if (schemaPattern == null)
-      {
-        schemaPattern = session.getSchema();
-      }
-    }
+    Pair<String,String> resPair = applySessionContext(catalog,
+                                                      schemaPattern);
+    catalog = resPair.getKey();
+    schemaPattern = resPair.getValue();
 
     final Pattern compiledSchemaPattern = Wildcard.toRegexPattern(schemaPattern, true);
     final Pattern compiledTablePattern = Wildcard.toRegexPattern(tableNamePattern, true);
@@ -1768,15 +1774,10 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
     String showPKCommand = "show /* JDBC:DatabaseMetaData.getPrimaryKeys() */ primary keys in ";
 
     // apply session context when catalog is unspecified
-    if (catalog == null && metadataRequestUseConnectionCtx)
-    {
-      catalog = session.getDatabase();
-
-      if (schema == null)
-      {
-        schema = session.getSchema();
-      }
-    }
+    Pair<String,String> resPair = applySessionContext(catalog,
+                                                      schema);
+    catalog = resPair.getKey();
+    schema = resPair.getValue();
 
     if (catalog == null)
     {
@@ -1883,6 +1884,12 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
     raiseSQLExceptionIfConnectionIsClosed();
     Statement statement = connection.createStatement();
     StringBuilder commandBuilder = new StringBuilder();
+
+    // apply session context when catalog is unspecified
+    Pair<String,String> resPair = applySessionContext(parentCatalog,
+                                                      parentSchema);
+    parentCatalog = resPair.getKey();
+    parentSchema = resPair.getValue();
 
     if (client.equals("export") || client.equals("cross"))
     {
@@ -2093,6 +2100,12 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
         "public ResultSet getImportedKeys(String catalog={}, "
         + "String schema={}, String table={})", catalog, schema, table);
 
+    // apply session context when catalog is unspecified
+    Pair<String,String> resPair = applySessionContext(catalog,
+                                                      schema);
+    catalog = resPair.getKey();
+    schema = resPair.getValue();
+
     return getForeignKeys("import", catalog, schema, table, null, null, null);
   }
 
@@ -2102,8 +2115,13 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   {
     logger.debug(
         "public ResultSet getExportedKeys(String catalog={}, "
-        + "String schema={}, String table={})", catalog, schema, table);
+            + "String schema={}, String table={})", catalog, schema, table);
 
+    // apply session context when catalog is unspecified
+    Pair<String,String> resPair = applySessionContext(catalog,
+                                                      schema);
+    catalog = resPair.getKey();
+    schema = resPair.getValue();
     return getForeignKeys("export", catalog, schema, table, null, null, null);
   }
 
@@ -2115,11 +2133,16 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   {
     logger.debug(
         "public ResultSet getCrossReference(String parentCatalog={}, "
-        + "String parentSchema={}, String parentTable={}, "
-        + "String foreignCatalog={}, String foreignSchema={}, "
-        + "String foreignTable={})",
+            + "String parentSchema={}, String parentTable={}, "
+            + "String foreignCatalog={}, String foreignSchema={}, "
+            + "String foreignTable={})",
         parentCatalog, parentSchema, parentTable,
         foreignCatalog, foreignSchema, foreignTable);
+    // apply session context when catalog is unspecified
+    Pair<String,String> resPair = applySessionContext(parentCatalog,
+                                                      parentSchema);
+    parentCatalog = resPair.getKey();
+    parentSchema = resPair.getValue();
 
     return getForeignKeys("cross", parentCatalog, parentSchema, parentTable,
                           foreignCatalog, foreignSchema, foreignTable);
@@ -2533,15 +2556,10 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
     raiseSQLExceptionIfConnectionIsClosed();
 
     // apply session context when catalog is unspecified
-    if (catalog == null && metadataRequestUseConnectionCtx)
-    {
-      catalog = session.getDatabase();
-
-      if (schemaPattern == null)
-      {
-        schemaPattern = session.getSchema();
-      }
-    }
+    Pair<String,String> resPair = applySessionContext(catalog,
+                                                      schemaPattern);
+    catalog = resPair.getKey();
+    schemaPattern = resPair.getValue();
 
     final Pattern compiledSchemaPattern = Wildcard.toRegexPattern(schemaPattern, true);
 
@@ -2639,15 +2657,10 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
                  catalog, schemaPattern, functionNamePattern);
 
     // apply session context when catalog is unspecified
-    if (catalog == null && metadataRequestUseConnectionCtx)
-    {
-      catalog = session.getDatabase();
-
-      if (schemaPattern == null)
-      {
-        schemaPattern = session.getSchema();
-      }
-    }
+    Pair<String,String> resPair = applySessionContext(catalog,
+                                                      schemaPattern);
+    catalog = resPair.getKey();
+    schemaPattern = resPair.getValue();
 
     final Pattern compiledSchemaPattern = Wildcard.toRegexPattern(schemaPattern, true);
     final Pattern compiledFunctionPattern = Wildcard.toRegexPattern(functionNamePattern, true);
