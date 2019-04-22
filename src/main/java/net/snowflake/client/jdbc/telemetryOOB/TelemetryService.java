@@ -265,8 +265,8 @@ public class TelemetryService
 
   private enum TELEMETRY_API
   {
-    SFCTEST("https://lximwp8945.execute-api.us-west-2.amazonaws.com/sfctest/enqueue",
-            "zJHB5wqSZL7JSilRbQEHB52ZUG0ajdd166gsMmKv"),
+    SFCTEST("https://3mi9aq3m74.execute-api.us-west-2.amazonaws.com/sfctest/enqueue",
+            "rRNY3EPNsB4U89XYuqsZKa7TSxb9QVX93yNM4tS6"),
     SFCDEV("https://lol6l3j52m.execute-api.us-west-2.amazonaws.com/sfcdev/enqueue",
            "kyTKLWpEZSaJnrzTZ63I96QXZHKsgfqbaGmAaIWf"),
     US2("https://4yss82lml2.execute-api.us-east-1.amazonaws.com/us2/enqueue",
