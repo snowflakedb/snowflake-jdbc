@@ -91,9 +91,9 @@ public class HeartbeatBackground implements Runnable
     long oldHeartBeatIntervalInSecs = this.heartBeatIntervalInSecs;
     this.heartBeatIntervalInSecs = (long) heartbeatFrequencyInSecs;
 
-    if (this.heartBeatIntervalInSecs > masterTokenValidityInSecs/4)
+    if (this.heartBeatIntervalInSecs > masterTokenValidityInSecs / 4)
     {
-      this.heartBeatIntervalInSecs = masterTokenValidityInSecs/4;
+      this.heartBeatIntervalInSecs = masterTokenValidityInSecs / 4;
     }
 
     LOGGER.debug("update heartbeat interval"

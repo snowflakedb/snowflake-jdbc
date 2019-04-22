@@ -627,7 +627,7 @@ public class SnowflakeConnectionV1 implements Connection
         + "int resultSetType,");
 
     PreparedStatement stmt = prepareStatement(sql, resultSetType, resultSetConcurrency,
-                                            ResultSet.CLOSE_CURSORS_AT_COMMIT);
+                                              ResultSet.CLOSE_CURSORS_AT_COMMIT);
     openStatements.add(stmt);
     return stmt;
   }
