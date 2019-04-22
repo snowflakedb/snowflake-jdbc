@@ -84,31 +84,25 @@ public class HeartbeatBackground implements Runnable
    *                                  check validity of master token with server
    */
   synchronized protected void addSession(SFSession session,
-                                         long masterTokenValidityInSecs)
+                                         long masterTokenValidityInSecs, int heartbeatFrequencyInSecs)
   {
     boolean requireReschedule = false;
 
-    // update heartbeat interval if master token validity has become smaller
-    if (masterTokenValidityInSecs < this.masterTokenValidityInSecs)
+    long oldHeartBeatIntervalInSecs = this.heartBeatIntervalInSecs;
+    this.heartBeatIntervalInSecs = (long) heartbeatFrequencyInSecs;
+
+    if (this.heartBeatIntervalInSecs > masterTokenValidityInSecs/4)
     {
-      long oldMasterTokenValidityInSecs = this.masterTokenValidityInSecs;
-      long oldHeartbeatIntervalInSecs = this.heartBeatIntervalInSecs;
-
-      this.heartBeatIntervalInSecs = masterTokenValidityInSecs / 4;
-
-      // save master token validity
-      this.masterTokenValidityInSecs = masterTokenValidityInSecs;
-
-      LOGGER.debug("update heartbeat interval, master token validity"
-                   + " from {} to {}, heart beat interval from {} to {}",
-                   oldMasterTokenValidityInSecs,
-                   this.masterTokenValidityInSecs,
-                   oldHeartbeatIntervalInSecs,
-                   this.heartBeatIntervalInSecs);
-
-      // heartbeat rescheduling required
-      requireReschedule = true;
+      this.heartBeatIntervalInSecs = masterTokenValidityInSecs/4;
     }
+
+    LOGGER.debug("update heartbeat interval"
+                 + " from {} to {}",
+                 oldHeartBeatIntervalInSecs,
+                 this.heartBeatIntervalInSecs);
+
+    // heartbeat rescheduling required
+    requireReschedule = true;
 
     // add session to the list to be heartbeated
     sessions.put(session, Boolean.TRUE);
