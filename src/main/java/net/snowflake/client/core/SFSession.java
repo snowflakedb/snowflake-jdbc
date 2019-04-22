@@ -797,16 +797,12 @@ public class SFSession
 
         logger.error("unexpected exception", ex);
 
-        SFException sfe =
-            IncidentUtil.generateIncidentWithException(
-                this,
-                requestId,
-                null,
-                ex,
-                ErrorCode.INTERNAL_ERROR,
-                "unexpected exception: " + ex.getMessage());
-
-        throw sfe;
+        throw (SFException) IncidentUtil.generateIncidentV2WithException(
+            this,
+            new SFException(ErrorCode.INTERNAL_ERROR,
+                            IncidentUtil.oneLiner("unexpected exception", ex)),
+            null,
+            requestId);
       }
     }
     while (retry);

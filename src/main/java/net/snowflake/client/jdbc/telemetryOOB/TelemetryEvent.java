@@ -2,18 +2,15 @@ package net.snowflake.client.jdbc.telemetryOOB;
 
 import net.minidev.json.JSONArray;
 import net.minidev.json.JSONObject;
+import net.snowflake.client.util.SFTimestamp;
 import net.snowflake.client.core.SFException;
-import net.snowflake.client.core.SessionUtilExternalBrowser;
 import net.snowflake.common.core.ResourceBundleManager;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.TimeZone;
 import java.util.UUID;
 
 /**
@@ -171,15 +168,6 @@ public class TelemetryEvent extends JSONObject
       }
     }
 
-    private String getUTCNow()
-    {
-      SimpleDateFormat dateFormatGmt = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-      dateFormatGmt.setTimeZone(TimeZone.getTimeZone("GMT"));
-
-      //Time in GMT
-      return dateFormatGmt.format(new Date());
-    }
-
     public T withName(String name)
     {
       body.put("Name", name);
@@ -209,7 +197,7 @@ public class TelemetryEvent extends JSONObject
     protected TelemetryEvent build()
     {
       body.put("UUID", UUID.randomUUID().toString());
-      body.put("Created_On", getUTCNow());
+      body.put("Created_On", SFTimestamp.getUTCNow());
       this.putMap("Tags", tags);
       return body;
     }

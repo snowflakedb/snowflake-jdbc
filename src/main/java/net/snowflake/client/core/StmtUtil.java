@@ -466,10 +466,12 @@ public class StmtUtil
          */
         if (retries >= MAX_RETRIES)
         {
-          throw IncidentUtil.generateIncidentWithException(
+          throw (SFException) IncidentUtil.generateIncidentV2WithException(
+              stmtInput.serverUrl,
               stmtInput.sessionToken,
-              stmtInput.serverUrl, stmtInput.requestId, null,
-              ErrorCode.BAD_RESPONSE, resultAsString);
+              new SFException(ErrorCode.BAD_RESPONSE, resultAsString),
+              null,
+              stmtInput.requestId);
         }
         else
         {

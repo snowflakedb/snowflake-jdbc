@@ -77,10 +77,13 @@ public class SFFixedViewResultSet extends SFBaseResultSet
     }
     catch (Exception ex)
     {
-      throw IncidentUtil.
-          generateIncidentWithException(session, null, null,
-                                        ex, ErrorCode.INTERNAL_ERROR,
-                                        "Error getting next row from fixed view");
+      throw (SFException) IncidentUtil.generateIncidentV2WithException(
+          session,
+          new SFException(ErrorCode.INTERNAL_ERROR,
+                          IncidentUtil.oneLiner("Error getting next row from " +
+                                                    "fixed view:", ex)),
+          null,
+          null);
     }
 
     row++;

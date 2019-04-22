@@ -714,12 +714,12 @@ public class ResultUtil
     }
     catch (IllegalArgumentException ex)
     {
-      throw IncidentUtil.
-          generateIncidentWithSignatureAndException(
-              session, null, null,
-              "Invalid timestamp value",
-              ErrorCode.IO_ERROR,
-              "Invalid timestamp value: " + timestampStr);
+      throw (SFException) IncidentUtil.generateIncidentV2WithException(
+          session,
+          new SFException(ErrorCode.IO_ERROR,
+                          "Invalid timestamp value: " + timestampStr),
+          null,
+          null);
     }
   }
 
@@ -744,12 +744,12 @@ public class ResultUtil
     }
     catch (IllegalArgumentException ex)
     {
-      throw IncidentUtil.
-          generateIncidentWithSignatureAndException(
-              session, null, null,
-              "Invalid time value",
-              ErrorCode.INTERNAL_ERROR,
-              "Invalid time value: " + obj);
+      throw (SFException) IncidentUtil.generateIncidentV2WithException(
+          session,
+          new SFException(ErrorCode.INTERNAL_ERROR,
+                          "Invalid time value: " + obj),
+          null,
+          null);
     }
   }
 
@@ -815,10 +815,12 @@ public class ResultUtil
 
     if (formatter == null)
     {
-      throw IncidentUtil.
-          generateIncidentWithException(session, null, null,
-                                        ErrorCode.INTERNAL_ERROR,
-                                        "missing timestamp formatter");
+      throw (SFException) IncidentUtil.generateIncidentV2WithException(
+          session,
+          new SFException(ErrorCode.INTERNAL_ERROR,
+                          "missing timestamp formatter"),
+          null,
+          null);
     }
 
     try
@@ -917,12 +919,12 @@ public class ResultUtil
     }
     catch (NumberFormatException ex)
     {
-      SFException sfe = new SFException(ErrorCode.INTERNAL_ERROR,
-                                        "Invalid date value: " + str);
-
-      IncidentUtil.generateIncident(session, "Invalid date value",
-                                    null, null, null, sfe);
-      throw sfe;
+      throw (SFException) IncidentUtil.generateIncidentV2WithException(
+          session,
+          new SFException(ErrorCode.INTERNAL_ERROR,
+                          "Invalid date value: " + str),
+          null,
+          null);
     }
   }
 
@@ -1076,12 +1078,13 @@ public class ResultUtil
 
     if (ids.size() != types.size())
     {
-      throw IncidentUtil.
-          generateIncidentWithException(
-              session, requestId, null,
-              ErrorCode.CHILD_RESULT_IDS_AND_TYPES_DIFFERENT_SIZES,
-              ids.size(),
-              types.size());
+      throw (SFException) IncidentUtil.generateIncidentV2WithException(
+          session,
+          new SFException(ErrorCode.CHILD_RESULT_IDS_AND_TYPES_DIFFERENT_SIZES,
+                          ids.size(),
+                          types.size()),
+          null,
+          requestId);
     }
 
     List<SFChildResult> res = new ArrayList<>();
