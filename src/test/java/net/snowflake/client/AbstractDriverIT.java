@@ -33,6 +33,7 @@ public class AbstractDriverIT
   public ConditionalIgnoreRule rule = new ConditionalIgnoreRule();
 
   public static final String DRIVER_CLASS = "net.snowflake.client.jdbc.SnowflakeDriver";
+  public static final String DRIVER_CLASS_COM = "com.snowflake.client.jdbc.SnowflakeDriver";
   public static final int DONT_INJECT_SOCKET_TIMEOUT = 0;
 
   // data files
@@ -41,20 +42,6 @@ public class AbstractDriverIT
 
   private static Logger logger =
       Logger.getLogger(AbstractDriverIT.class.getName());
-
-  static
-  {
-    // Load Snowflake JDBC class
-    try
-    {
-      Class.forName(DRIVER_CLASS);
-    }
-    catch (Exception e)
-    {
-      logger.log(Level.SEVERE, "Cannot find Driver", e);
-      throw new RuntimeException(e.getCause());
-    }
-  }
 
   protected final int ERROR_CODE_BIND_VARIABLE_NOT_ALLOWED_IN_VIEW_OR_UDF_DEF
       = 2210;
@@ -147,7 +134,7 @@ public class AbstractDriverIT
   public static Connection getConnection(Properties paramProperties)
   throws SQLException
   {
-    return getConnection(DONT_INJECT_SOCKET_TIMEOUT, paramProperties, false);
+    return getConnection(DONT_INJECT_SOCKET_TIMEOUT, paramProperties, false, false);
   }
 
   /**
@@ -159,7 +146,7 @@ public class AbstractDriverIT
   public static Connection getConnection()
   throws SQLException
   {
-    return getConnection(DONT_INJECT_SOCKET_TIMEOUT, null, false);
+    return getConnection(DONT_INJECT_SOCKET_TIMEOUT, null, false, false);
   }
 
   /**
@@ -173,7 +160,7 @@ public class AbstractDriverIT
   public static Connection getConnection(int injectSocketTimeout)
   throws SQLException
   {
-    return getConnection(injectSocketTimeout, null, false);
+    return getConnection(injectSocketTimeout, null, false, false);
   }
 
   /**
@@ -185,7 +172,7 @@ public class AbstractDriverIT
   protected static Connection getSnowflakeAdminConnection()
   throws SQLException
   {
-    return getConnection(DONT_INJECT_SOCKET_TIMEOUT, null, true);
+    return getConnection(DONT_INJECT_SOCKET_TIMEOUT, null, true, false);
   }
 
   /**
@@ -198,7 +185,7 @@ public class AbstractDriverIT
   protected static Connection getSnowflakeAdminConnection(Properties paramProperties)
   throws SQLException
   {
-    return getConnection(DONT_INJECT_SOCKET_TIMEOUT, paramProperties, true);
+    return getConnection(DONT_INJECT_SOCKET_TIMEOUT, paramProperties, true, false);
   }
 
   /**
@@ -212,9 +199,24 @@ public class AbstractDriverIT
    * @throws SQLException raised if any error occurs
    */
   public static Connection getConnection(
-      int injectSocketTimeout, Properties paramProperties, boolean isAdmin)
+      int injectSocketTimeout, Properties paramProperties, boolean isAdmin, boolean usesCom)
   throws SQLException
   {
+    // Load Snowflake JDBC class
+    String driverClass = DRIVER_CLASS;
+    if (usesCom)
+    {
+      driverClass = DRIVER_CLASS_COM;
+    }
+    try
+    {
+      Class.forName(driverClass);
+    }
+    catch (Exception e)
+    {
+      logger.log(Level.SEVERE, "Cannot find Driver", e);
+      throw new RuntimeException(e.getCause());
+    }
     Map<String, String> params = getConnectionParameters();
 
     // build connection properties
