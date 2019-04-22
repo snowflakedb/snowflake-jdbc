@@ -214,6 +214,19 @@ public class SnowflakeConnectionV1 implements Connection
 
     for (Map.Entry<String, Object> property : properties.entrySet())
     {
+      // possibly this is where we want to add heartbeat checks to make sure
+      // value is good
+      if (property.getKey() == "CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY")
+      {
+        if ((Integer) property.getValue() > 3600)
+        {
+          properties.replace(property.getKey(), 3600);
+        }
+        if ((Integer) property.getValue() < 900)
+        {
+          properties.replace(property.getKey(), 900);
+        }
+      }
       sfSession.addProperty(property.getKey(), property.getValue());
     }
 
