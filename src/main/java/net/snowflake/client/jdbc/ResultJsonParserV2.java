@@ -36,7 +36,7 @@ public class ResultJsonParserV2
   private ByteBuffer partialEscapedUnicode;
 
   private int outputDataLength;
-//  private int currentRow;
+  //  private int currentRow;
   private SnowflakeResultChunk resultChunk;
 
   public void startParsing(SnowflakeResultChunk resultChunk) throws SnowflakeSQLException
@@ -90,6 +90,7 @@ public class ResultJsonParserV2
 
   /**
    * Continue parsing with the given data
+   *
    * @param in readOnly byteBuffer backed by an array (the data to be reed is from position to limit)
    */
   public void continueParsing(ByteBuffer in) throws SnowflakeSQLException
@@ -109,8 +110,8 @@ public class ResultJsonParserV2
       {
         resizePartialEscapedUnicode(lenToCopy);
       }
-      partialEscapedUnicode.put(in.array(), in.arrayOffset()+in.position(), lenToCopy);
-      in.position(in.position()+lenToCopy);
+      partialEscapedUnicode.put(in.array(), in.arrayOffset() + in.position(), lenToCopy);
+      in.position(in.position() + lenToCopy);
 
       if (partialEscapedUnicode.position() < 12)
       {
@@ -143,8 +144,7 @@ public class ResultJsonParserV2
 
 
   /**
-   *
-   * @param in readOnly byteBuffer backed by an array (the data is from position to limit)
+   * @param in       readOnly byteBuffer backed by an array (the data is from position to limit)
    * @param lastData
    * @throws SnowflakeSQLException
    */
@@ -193,7 +193,7 @@ public class ResultJsonParserV2
               throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
                                               ErrorCode.INTERNAL_ERROR.getMessageCode(),
                                               "SFResultJsonParser2Failed: encountered unexpected character 0x%x " +
-                                              "between rows", in.get(in.position()-1));
+                                              "between rows", in.get(in.position() - 1));
             }
           }
           break;
@@ -214,7 +214,7 @@ public class ResultJsonParserV2
               throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
                                               ErrorCode.INTERNAL_ERROR.getMessageCode(),
                                               "SFResultJsonParser2Failed: encountered unexpected character 0x%x after" +
-                                              " array", in.get(in.position()-1));
+                                              " array", in.get(in.position() - 1));
             }
           }
           break;
@@ -232,7 +232,7 @@ public class ResultJsonParserV2
               addNullValue();
               state = State.WAIT_FOR_NEXT;
               // reread the comma in the WAIT_FOR_NEXT state
-              in.position(in.position()-1);
+              in.position(in.position() - 1);
               continue;
             case 0x5d: // ']'
               // null value (only saw spaces)
@@ -250,7 +250,7 @@ public class ResultJsonParserV2
               outputCurValuePosition = outputPosition;
               // write
               resultChunk.addOffset(outputPosition);
-              addByteToOutput(in.get(in.position()-1));
+              addByteToOutput(in.get(in.position() - 1));
 
               state = State.IN_VALUE;
               break;
@@ -280,11 +280,11 @@ public class ResultJsonParserV2
                 resultChunk.setLastLength(length);
               }
               state = State.WAIT_FOR_NEXT;
-              in.position(in.position()-1);
+              in.position(in.position() - 1);
               continue;// reread this char in WAIT_FOR_NEXT
             }
             default:
-              addByteToOutput(in.get(in.position()-1));
+              addByteToOutput(in.get(in.position() - 1));
               break;
           }
           break;
@@ -301,7 +301,7 @@ public class ResultJsonParserV2
             default:
               // Check how many characters don't have escape characters
               // copy those with one memcpy
-              int inputPositionStart = in.position()-1;
+              int inputPositionStart = in.position() - 1;
               while (in.hasRemaining())
               {
                 byte cur = in.get();
@@ -310,13 +310,13 @@ public class ResultJsonParserV2
                     cur == 0x5c /* '\\' */)
                 {
                   // end of string chunk
-                  in.position(in.position()-1);
+                  in.position(in.position() - 1);
                   break;
                 }
               }
 
-              addByteArrayToOutput(in.array(), in.arrayOffset()+inputPositionStart,
-                                   in.position()-inputPositionStart);
+              addByteArrayToOutput(in.array(), in.arrayOffset() + inputPositionStart,
+                                   in.position() - inputPositionStart);
 
               if (in.hasRemaining() &&
                   (in.get(in.position()) == 0x22 /* '"' */ ||
@@ -343,7 +343,7 @@ public class ResultJsonParserV2
               state = State.IN_STRING;
               break;
             case 0x62: //'b'
-              addByteToOutput((byte)0x0b /*'\b'*/);
+              addByteToOutput((byte) 0x0b /*'\b'*/);
               state = State.IN_STRING;
               break;
             case 0x66: // 'f'
@@ -351,7 +351,7 @@ public class ResultJsonParserV2
               state = State.IN_STRING;
               break;
             case 0x6e: //'n'
-              addByteToOutput((byte)0xa /* '\n' */);
+              addByteToOutput((byte) 0xa /* '\n' */);
               state = State.IN_STRING;
               break;
             case 0x72: // 'r'
@@ -384,14 +384,14 @@ public class ResultJsonParserV2
               else
               {
                 // store until next data arrives
-                if (partialEscapedUnicode.remaining() < in.remaining()+2)
+                if (partialEscapedUnicode.remaining() < in.remaining() + 2)
                 {
-                  resizePartialEscapedUnicode(in.remaining()+2);
+                  resizePartialEscapedUnicode(in.remaining() + 2);
                 }
                 partialEscapedUnicode.put((byte) 0x5c /* '\\' */);
-                partialEscapedUnicode.put(in.array(), in.arrayOffset()+in.position()-1, in.remaining()+1);
+                partialEscapedUnicode.put(in.array(), in.arrayOffset() + in.position() - 1, in.remaining() + 1);
 
-                in.position(in.position()+in.remaining());
+                in.position(in.position() + in.remaining());
                 state = State.IN_STRING;
                 return;
               }
@@ -401,7 +401,7 @@ public class ResultJsonParserV2
               throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
                                               ErrorCode.INTERNAL_ERROR.getMessageCode(),
                                               "SFResultJsonParser2Failed: encountered unexpected escape character " +
-                                              "0x%x", in.get(in.position()-1));
+                                              "0x%x", in.get(in.position() - 1));
 
             }
           }
@@ -436,7 +436,7 @@ public class ResultJsonParserV2
               throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
                                               ErrorCode.INTERNAL_ERROR.getMessageCode(),
                                               "SFResultJsonParser2Failed: encountered unexpected character 0x%x " +
-                                              "between columns", in.get(in.position()-1));
+                                              "between columns", in.get(in.position() - 1));
 
             }
           }
@@ -449,7 +449,7 @@ public class ResultJsonParserV2
   {
     int pos = outputPosition;
     if (resultChunk.get(--pos) == BNULL[3]
-      && resultChunk.get(--pos) == BNULL[2]
+        && resultChunk.get(--pos) == BNULL[2]
         && resultChunk.get(--pos) == BNULL[1]
         && resultChunk.get(--pos) == BNULL[0])
     {
@@ -497,7 +497,7 @@ public class ResultJsonParserV2
   private void addByteToOutput(byte c) throws SnowflakeSQLException
   {
     resultChunk.addByte(c, outputPosition);
-    outputPosition ++;
+    outputPosition++;
   }
 
   private void addByteArrayToOutput(byte[] src, int offset, int length) throws SnowflakeSQLException

@@ -411,7 +411,7 @@ class SFTrustManager extends X509ExtendedTrustManager
     try
     {
       new_ocsp_ept = System.getenv("SF_OCSP_ACTIVATE_NEW_ENDPOINT");
-      if(new_ocsp_ept != null)
+      if (new_ocsp_ept != null)
       {
         ocspCacheServer.new_endpoint_enabled = true;
       }
@@ -423,7 +423,7 @@ class SFTrustManager extends X509ExtendedTrustManager
     catch (Throwable ex)
     {
       LOGGER.debug("Could not get environment variable to check for New OCSP Endpoint Availability");
-      new_ocsp_ept =  System.getProperty("net.snowflake.jdbc.ocsp_activate_new_endpoint");
+      new_ocsp_ept = System.getProperty("net.snowflake.jdbc.ocsp_activate_new_endpoint");
       if (new_ocsp_ept != null)
       {
         ocspCacheServer.new_endpoint_enabled = true;
@@ -1736,7 +1736,7 @@ class SFTrustManager extends X509ExtendedTrustManager
                * account in sfcEndpoint field
                */
 
-              String [] splitString = sfc_endpoint.split("\\s+");
+              String[] splitString = sfc_endpoint.split("\\s+");
 
               for (String s : splitString)
               {

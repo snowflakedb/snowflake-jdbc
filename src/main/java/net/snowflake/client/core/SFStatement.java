@@ -421,7 +421,7 @@ public class SFStatement
               session,
               new SFException(ErrorCode.NON_FATAL_ERROR,
                               IncidentUtil.oneLiner("Failed to upload binds " +
-                                                        "to stage:", ex)),
+                                                    "to stage:", ex)),
               null,
               requestId);
         }

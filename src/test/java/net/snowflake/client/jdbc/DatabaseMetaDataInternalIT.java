@@ -42,9 +42,9 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest
     st.execute("create or replace table JDBC_TBL111(colA string, colB decimal, colC timestamp)");
     st.execute("create or replace schema TEST_CTX");
     st.execute("create or replace table JDBC_A (colA string, colB decimal, " +
-                   "colC number PRIMARY KEY);");
+               "colC number PRIMARY KEY);");
     st.execute("create or replace table JDBC_B (colA string, colB decimal, " +
-                   "colC number FOREIGN KEY REFERENCES JDBC_A(colC));");
+               "colC number FOREIGN KEY REFERENCES JDBC_A(colC));");
     st.execute("create or replace schema JDBC_SCHEMA12");
     st.execute("create or replace table JDBC_TBL121(colA varchar)");
     st.execute("create or replace table JDBC_TBL122(colA NUMBER(20, 2) AUTOINCREMENT comment " +

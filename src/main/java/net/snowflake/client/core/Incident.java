@@ -50,9 +50,10 @@ public class Incident extends Event
   /**
    * Submit an exception to GS from a Throwable, this is the only constructor
    * that should be used to report incidents
-   * @param exc         a Throwable we want to report
-   * @param jobId       job id String
-   * @param requestId   request id string
+   *
+   * @param exc       a Throwable we want to report
+   * @param jobId     job id String
+   * @param requestId request id string
    */
   public Incident(SFSession session,
                   Throwable exc,
@@ -70,11 +71,12 @@ public class Incident extends Event
   /**
    * Submit an exception to GS from a Throwable, this is the only constructor
    * that should be used to report incidents
-   * @param serverUrl     GS's url
-   * @param sessionToken  GS's session token
-   * @param exc           an Throwable we want to report
-   * @param jobId         job id String
-   * @param requestId     request id string
+   *
+   * @param serverUrl    GS's url
+   * @param sessionToken GS's session token
+   * @param exc          an Throwable we want to report
+   * @param jobId        job id String
+   * @param requestId    request id string
    */
   public Incident(String serverUrl,
                   String sessionToken,
@@ -93,12 +95,13 @@ public class Incident extends Event
 
   /**
    * A constructor for a V2 client incident with all fields explicitly given
-   * @param session           current session's SFSession object
-   * @param jobId             offending job id
-   * @param requestId         offending request id
-   * @param errorMessage      error message to be reported
-   * @param errorStackTrace   stack trace to be reported
-   * @param raiser            string representation of top of stack trace
+   *
+   * @param session         current session's SFSession object
+   * @param jobId           offending job id
+   * @param requestId       offending request id
+   * @param errorMessage    error message to be reported
+   * @param errorStackTrace stack trace to be reported
+   * @param raiser          string representation of top of stack trace
    */
   Incident(SFSession session,
            String jobId,
@@ -115,15 +118,17 @@ public class Incident extends Event
          errorStackTrace,
          raiser);
   }
+
   /**
    * A constructor for a V2 client incident with all fields explicitly given
-   * @param serverUrl         GS server's URL
-   * @param sessionToken      current session token
-   * @param jobId             offending job id
-   * @param requestId         offending request id
-   * @param errorMessage      error message of exception to be reported
-   * @param errorStackTrace   stack trace to be reported
-   * @param raiser            String representation of top of the stack
+   *
+   * @param serverUrl       GS server's URL
+   * @param sessionToken    current session token
+   * @param jobId           offending job id
+   * @param requestId       offending request id
+   * @param errorMessage    error message of exception to be reported
+   * @param errorStackTrace stack trace to be reported
+   * @param raiser          String representation of top of the stack
    */
   Incident(String serverUrl,
            String sessionToken,
@@ -151,9 +156,10 @@ public class Incident extends Event
   /**
    * Generate Signature of the incident automatically, signature should not
    * be written manually
-   * @param errorMessage    error message of exception to be reported
-   * @param raiser          String representation of top of stack
-   * @return                String of signature created
+   *
+   * @param errorMessage error message of exception to be reported
+   * @param raiser       String representation of top of stack
+   * @return String of signature created
    */
   static private String generateSignature(String errorMessage,
                                           String raiser)
@@ -178,7 +184,7 @@ public class Incident extends Event
     {
 
       logger.error("Incident registration failed, could not map "
-                       + "incident report to json string. Exception: {}", ex.getMessage());
+                   + "incident report to json string. Exception: {}", ex.getMessage());
       return;
     }
 
@@ -194,15 +200,15 @@ public class Incident extends Event
     catch (URISyntaxException ex)
     {
       logger.error("Incident registration failed, "
-                       + "URI could not be built. Exception: {}", ex.getMessage());
+                   + "URI could not be built. Exception: {}", ex.getMessage());
       return;
     }
 
     HttpPost postRequest = new HttpPost(incidentURI);
     postRequest.setHeader(SFSession.SF_HEADER_AUTHORIZATION,
                           SFSession.SF_HEADER_SNOWFLAKE_AUTHTYPE + " "
-                              + SFSession.SF_HEADER_TOKEN_TAG + "=\""
-                              + this.sessionToken + "\"");
+                          + SFSession.SF_HEADER_TOKEN_TAG + "=\""
+                          + this.sessionToken + "\"");
 
     // Compress the payload.
     ByteArrayEntity input = null;
@@ -219,7 +225,7 @@ public class Incident extends Event
     catch (IOException exc)
     {
       logger.debug("Incident registration failed, could not compress"
-                       + " payload. Exception: {}", exc.getMessage());
+                   + " payload. Exception: {}", exc.getMessage());
     }
 
     postRequest.setEntity(input);
@@ -228,8 +234,8 @@ public class Incident extends Event
     try
     {
       String response = HttpUtil.executeRequest(postRequest,
-                                         1000, 0,
-                                         null);
+                                                1000, 0,
+                                                null);
       logger.debug("Incident registration was successful. Response: '{}'",
                    response);
     }

@@ -381,7 +381,7 @@ public class SFSession
         connectionPropertiesMap.get(SFSessionProperty.SERVER_URL),
         connectionPropertiesMap.get(SFSessionProperty.ACCOUNT),
         connectionPropertiesMap.get(SFSessionProperty.USER),
-        !Strings.isNullOrEmpty((String)connectionPropertiesMap.get(SFSessionProperty.PASSWORD)) ? "***" : "(empty)",
+        !Strings.isNullOrEmpty((String) connectionPropertiesMap.get(SFSessionProperty.PASSWORD)) ? "***" : "(empty)",
         connectionPropertiesMap.get(SFSessionProperty.ROLE),
         connectionPropertiesMap.get(SFSessionProperty.DATABASE),
         connectionPropertiesMap.get(SFSessionProperty.SCHEMA),
@@ -390,7 +390,7 @@ public class SFSession
 
         connectionPropertiesMap.get(SFSessionProperty.INSECURE_MODE),
         connectionPropertiesMap.get(SFSessionProperty.PASSCODE_IN_PASSWORD),
-        !Strings.isNullOrEmpty((String)connectionPropertiesMap.get(SFSessionProperty.PASSCODE)) ? "***" : "(empty)",
+        !Strings.isNullOrEmpty((String) connectionPropertiesMap.get(SFSessionProperty.PASSCODE)) ? "***" : "(empty)",
 
         connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY) != null ? "(not null)" : "(null)",
 
@@ -398,7 +398,7 @@ public class SFSession
         connectionPropertiesMap.get(SFSessionProperty.PROXY_HOST),
         connectionPropertiesMap.get(SFSessionProperty.PROXY_PORT),
         connectionPropertiesMap.get(SFSessionProperty.PROXY_USER),
-        !Strings.isNullOrEmpty((String)connectionPropertiesMap.get(SFSessionProperty.PROXY_PASSWORD)) ? "***" :
+        !Strings.isNullOrEmpty((String) connectionPropertiesMap.get(SFSessionProperty.PROXY_PASSWORD)) ? "***" :
         "(empty)",
         connectionPropertiesMap.get(SFSessionProperty.DISABLE_SOCKS_PROXY),
 
