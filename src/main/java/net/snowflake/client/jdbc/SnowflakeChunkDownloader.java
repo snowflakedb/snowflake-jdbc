@@ -288,7 +288,19 @@ public class SnowflakeChunkDownloader
         createChunkDownloaderExecutorService("result-chunk-downloader-",
                                              effectiveThreads);
 
-    startNextDownloaders();
+    try
+    {
+      startNextDownloaders();
+    }
+    catch (OutOfMemoryError outOfMemoryError)
+    {
+      logOutOfMemoryError();
+      StringWriter errors = new StringWriter();
+      outOfMemoryError.printStackTrace(new PrintWriter(errors));
+      throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
+                                      ErrorCode.INTERNAL_ERROR.getMessageCode(),
+                                      errors);
+    }
   }
 
   /**
@@ -486,7 +498,19 @@ public class SnowflakeChunkDownloader
     }
 
     // prefetch next chunks
-    startNextDownloaders();
+    try
+    {
+      startNextDownloaders();
+    }
+    catch (OutOfMemoryError outOfMemoryError)
+    {
+      logOutOfMemoryError();
+      StringWriter errors = new StringWriter();
+      outOfMemoryError.printStackTrace(new PrintWriter(errors));
+      throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
+                                      ErrorCode.INTERNAL_ERROR.getMessageCode(),
+                                      errors);
+    }
 
     SnowflakeResultChunk currentChunk = this.chunks.get(nextChunkToConsume);
 
@@ -543,21 +567,7 @@ public class SnowflakeChunkDownloader
 
           if (currentChunk.getDownloadError().contains("java.lang.OutOfMemoryError: Java heap space"))
           {
-            logger.error("Dump some crucial information below:\n" +
-                         "Total milliseconds waiting for chunks: {},\n" +
-                         "Total memory used: {}, Max heap size: {}, total download time: {} millisec,\n" +
-                         "total parsing time: {} milliseconds, total chunks: {},\n" +
-                         "currentMemoryUsage in Byte: {}, currentMemoryLimit in Bytes: {} \n" +
-                         "nextChunkToDownload: {}, nextChunkToConsume: {}\n" +
-                         "Several suggestions to try to resolve the OOM issue:\n" +
-                         "1. increase the JVM heap size; \n" +
-                         "2. use CLIENT_MEMORY_LIMIT to tune the memory usage by the JDBC driver " +
-                         "(https://docs.snowflake.net/manuals/sql-reference/parameters.html#client-memory-limit)",
-                         numberMillisWaitingForChunks,
-                         Runtime.getRuntime().totalMemory(), Runtime.getRuntime().maxMemory(),
-                         totalMillisDownloadingChunks.get(),
-                         totalMillisParsingChunks.get(), chunks.size(), currentMemoryUsage, memoryLimit,
-                         nextChunkToDownload, nextChunkToConsume);
+            logOutOfMemoryError();
           }
 
           throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
@@ -593,6 +603,30 @@ public class SnowflakeChunkDownloader
         }
       }
     }
+  }
+
+  /**
+   * log out of memory error and provide the suggestion to avoid this error
+   */
+  private void logOutOfMemoryError()
+  {
+    logger.error("Dump some crucial information below:\n" +
+                 "Total milliseconds waiting for chunks: {},\n" +
+                 "Total memory used: {}, Max heap size: {}, total download time: {} millisec,\n" +
+                 "total parsing time: {} milliseconds, total chunks: {},\n" +
+                 "currentMemoryUsage in Byte: {}, currentMemoryLimit in Bytes: {} \n" +
+                 "nextChunkToDownload: {}, nextChunkToConsume: {}\n" +
+                 "Several suggestions to try to resolve the OOM issue:\n" +
+                 "1. increase the JVM heap size if you have more space; or \n" +
+                 "2. use CLIENT_MEMORY_LIMIT to reduce the memory usage by the JDBC driver " +
+                 "(https://docs.snowflake.net/manuals/sql-reference/parameters.html#client-memory-limit)" +
+                 "3. please make sure 2 * CLIENT_PREFETCH_THREADS * CLIENT_RESULT_CHUNK_SIZE < CLIENT_MEMORY_LIMIT. " +
+                 "If not, please reduce CLIENT_PREFETCH_THREADS and CLIENT_RESULT_CHUNK_SIZE too.",
+                 numberMillisWaitingForChunks,
+                 Runtime.getRuntime().totalMemory(), Runtime.getRuntime().maxMemory(),
+                 totalMillisDownloadingChunks.get(),
+                 totalMillisParsingChunks.get(), chunks.size(), currentMemoryUsage, memoryLimit,
+                 nextChunkToDownload, nextChunkToConsume);
   }
 
   /**
