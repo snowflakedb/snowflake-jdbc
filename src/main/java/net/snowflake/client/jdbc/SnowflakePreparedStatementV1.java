@@ -175,6 +175,13 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
         "setNull(int parameterIndex, int sqlType)");
     raiseSQLExceptionIfStatementIsClosed();
 
+    if (parameterIndex < 1 || parameterIndex > this.statementMetaData.getNumberOfBinds())
+    {
+      throw new SnowflakeSQLException(SqlState.NUMERIC_VALUE_OUT_OF_RANGE,
+                                      ErrorCode.NUMERIC_VALUE_OUT_OF_RANGE.getMessageCode(), parameterIndex,
+                                      this.statementMetaData.getNumberOfBinds());
+    }
+
     ParameterBindingDTO binding = new ParameterBindingDTO(
         SnowflakeType.ANY.toString(), null);
     parameterBindings.put(String.valueOf(parameterIndex), binding);
