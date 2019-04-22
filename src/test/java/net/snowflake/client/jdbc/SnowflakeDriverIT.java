@@ -1391,6 +1391,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest
   }
 
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
   public void test31448() throws Throwable
   {
     Connection connection = getConnection();
