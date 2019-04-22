@@ -22,6 +22,7 @@ import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
@@ -1021,5 +1022,47 @@ public class ConnectionIT extends BaseJDBCTest
         // nop
       }
     }
+  }
+
+  @Test
+  public void testStatementsAndResultSetsClosedByConnection() throws SQLException
+  {
+    Connection connection = getConnection();
+    Statement statement1 = connection.createStatement();
+    Statement statement2 = connection.createStatement();
+    ResultSet rs1 = statement2.executeQuery("select 2;");
+    ResultSet rs2 = statement2.executeQuery("select 2;");
+    ResultSet rs3 = statement2.executeQuery("select 2;");
+    PreparedStatement statement3 = connection.prepareStatement("select 2;");
+    connection.close();
+    assertTrue(statement1.isClosed());
+    assertTrue(statement2.isClosed());
+    assertTrue(statement3.isClosed());
+    assertTrue(rs1.isClosed());
+    assertTrue(rs2.isClosed());
+    assertTrue(rs3.isClosed());
+  }
+
+  @Test
+  public void testResultSetsClosedByStatement() throws SQLException
+  {
+    Connection connection = getConnection();
+    Statement statement2 = connection.createStatement();
+    ResultSet rs1 = statement2.executeQuery("select 2;");
+    ResultSet rs2 = statement2.executeQuery("select 2;");
+    ResultSet rs3 = statement2.executeQuery("select 2;");
+    PreparedStatement statement3 = connection.prepareStatement("select 2;");
+    ResultSet rs4 = statement3.executeQuery();
+    assertFalse(rs1.isClosed());
+    assertFalse(rs2.isClosed());
+    assertFalse(rs3.isClosed());
+    assertFalse(rs4.isClosed());
+    statement2.close();
+    statement3.close();
+    assertTrue(rs1.isClosed());
+    assertTrue(rs2.isClosed());
+    assertTrue(rs3.isClosed());
+    assertTrue(rs4.isClosed());
+    connection.close();
   }
 }
