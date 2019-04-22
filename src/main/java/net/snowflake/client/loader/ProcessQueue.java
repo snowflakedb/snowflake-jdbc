@@ -125,7 +125,7 @@ public class ProcessQueue implements Runnable
           currentCommand = "CREATE TEMPORARY TABLE \""
                            + stage.getId() + "\" LIKE "
                            + _loader.getFullTableName();
-          String selectedColumns = _loader.getColumnsAsString();
+          List<String> selectedColumns = _loader.getColumns();
           conn.createStatement().execute(currentCommand);
 
           // the temp table can contain only a subset of columns
