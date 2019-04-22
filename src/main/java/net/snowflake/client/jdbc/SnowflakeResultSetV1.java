@@ -99,7 +99,7 @@ class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
   {
     // no SQLException is raised.
     sfBaseResultSet.close();
-    if(removeClosedResultSetFromStatement && statement.isWrapperFor(SnowflakeStatementV1.class))
+    if (removeClosedResultSetFromStatement && statement.isWrapperFor(SnowflakeStatementV1.class))
     {
       statement.unwrap(SnowflakeStatementV1.class).removeClosedResultSet(this);
     }
