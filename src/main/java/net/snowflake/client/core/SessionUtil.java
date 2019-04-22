@@ -123,7 +123,9 @@ public class SessionUtil
       CLIENT_PREFETCH_THREADS,
       CLIENT_MEMORY_LIMIT,
       CLIENT_RESULT_CHUNK_SIZE,
-      "CLIENT_STAGE_ARRAY_BINDING_THRESHOLD"));
+      "CLIENT_STAGE_ARRAY_BINDING_THRESHOLD",
+      "CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY"));
+
   private static Set<String> BOOLEAN_PARAMS = new HashSet<>(Arrays.asList(
       "CLIENT_HONOR_CLIENT_TZ_FOR_TIMESTAMP_NTZ",
       "JDBC_EXECUTE_RETURN_COUNT_FOR_DML",
@@ -1517,6 +1519,14 @@ public class SessionUtil
         if (session != null)
         {
           session.setEnableHeartbeat((Boolean) entry.getValue());
+        }
+      }
+      else if (
+          "CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY".equalsIgnoreCase(entry.getKey()))
+      {
+        if (session != null)
+        {
+          session.setHeartbeatFrequency((int) entry.getValue());
         }
       }
       else if (
