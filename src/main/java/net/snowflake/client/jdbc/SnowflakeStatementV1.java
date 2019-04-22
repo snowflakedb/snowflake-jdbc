@@ -21,8 +21,11 @@ import java.sql.SQLFeatureNotSupportedException;
 import java.sql.SQLWarning;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static net.snowflake.client.jdbc.ErrorCode.FEATURE_UNSUPPORTED;
 
@@ -46,6 +49,9 @@ class SnowflakeStatementV1 implements Statement
    * The maximum number of rows this statement ( should return (0 => all rows).
    */
   private int maxRows = 0;
+
+  // Refer to all open resultSets from this statement
+  private final Set<ResultSet> openResultSets = Collections.synchronizedSet(new HashSet<>());
 
   // result set currently in use
   private ResultSet resultSet = null;
@@ -78,7 +84,7 @@ class SnowflakeStatementV1 implements Statement
    *
    * @param connection           connection object
    * @param resultSetType        result set type: ResultSet.TYPE_FORWARD_ONLY.
-   * @param resultSetConcurrency result set conconcurrency: ResultSet.CONCUR_READ_ONLY.
+   * @param resultSetConcurrency result set concurrency: ResultSet.CONCUR_READ_ONLY.
    * @param resultSetHoldability result set holdability: ResultSet.CLOSE_CURSORS_AT_COMMIT
    * @throws SQLException if any SQL error occurs.
    */
@@ -187,6 +193,10 @@ class SnowflakeStatementV1 implements Statement
     }
     finally
     {
+      if (resultSet != null)
+      {
+        openResultSets.add(resultSet);
+      }
       resultSet = null;
     }
 
@@ -225,6 +235,10 @@ class SnowflakeStatementV1 implements Statement
                                       ex.getSqlState(), ex.getVendorCode(), ex.getParams());
     }
 
+    if (resultSet != null)
+    {
+      openResultSets.add(resultSet);
+    }
     resultSet = new SnowflakeResultSetV1(sfResultSet, this);
 
     return getResultSet();
@@ -263,6 +277,10 @@ class SnowflakeStatementV1 implements Statement
       sfResultSet = sfStatement.execute(sql, parameterBindings,
                                         SFStatement.CallingMethod.EXECUTE);
       sfResultSet.setSession(this.connection.getSfSession());
+      if (resultSet != null)
+      {
+        openResultSets.add(resultSet);
+      }
       resultSet = new SnowflakeResultSetV1(sfResultSet, this);
 
       // Legacy behavior treats update counts as result sets for single-
@@ -274,6 +292,10 @@ class SnowflakeStatementV1 implements Statement
            sfStatement.hasChildren()))
       {
         updateCount = ResultUtil.calculateUpdateCount(sfResultSet);
+        if (resultSet != null)
+        {
+          openResultSets.add(resultSet);
+        }
         resultSet = null;
         return false;
       }
@@ -518,12 +540,20 @@ class SnowflakeStatementV1 implements Statement
     if (hasResultSet) // result set returned
     {
       sfResultSet.setSession(this.connection.getSfSession());
+      if (resultSet != null)
+      {
+        openResultSets.add(resultSet);
+      }
       resultSet = new SnowflakeResultSetV1(sfResultSet, this);
       updateCount = NO_UPDATES;
       return true;
     }
     else if (sfResultSet != null) // update count returned
     {
+      if (resultSet != null)
+      {
+        openResultSets.add(resultSet);
+      }
       resultSet = null;
       try
       {
@@ -778,6 +808,11 @@ class SnowflakeStatementV1 implements Statement
   @Override
   public void close() throws SQLException
   {
+    close(true);
+  }
+
+  public void close(boolean removeClosedStatementFromConnection) throws SQLException
+  {
     logger.debug("public void close()");
 
     // No exception is raised even if the statement is closed.
@@ -789,7 +824,30 @@ class SnowflakeStatementV1 implements Statement
     isClosed = true;
     batch.clear();
 
+    // also make sure to close all created resultSets from this statement
+    synchronized (openResultSets)
+    {
+      for (ResultSet rs : openResultSets)
+      {
+        if (rs != null && !rs.isClosed())
+        {
+          if (rs.isWrapperFor(SnowflakeResultSetV1.class))
+          {
+            rs.unwrap(SnowflakeResultSetV1.class).close(false);
+          }
+          else
+          {
+            rs.close();
+          }
+        }
+      }
+      openResultSets.clear();
+    }
     sfStatement.close();
+    if (removeClosedStatementFromConnection)
+    {
+      connection.removeClosedStatement(this);
+    }
   }
 
   @Override
@@ -870,6 +928,11 @@ class SnowflakeStatementV1 implements Statement
   public SFStatement getSfStatement()
   {
     return sfStatement;
+  }
+
+  public void removeClosedResultSet(ResultSet rs)
+  {
+    openResultSets.remove(rs);
   }
 
   final class BatchEntry
