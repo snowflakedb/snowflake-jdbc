@@ -141,10 +141,12 @@ public abstract class SFBaseResultSet
 
         if (dateFormatter == null)
         {
-          throw IncidentUtil.
-              generateIncidentWithException(session, null, null,
-                                            ErrorCode.INTERNAL_ERROR,
-                                            "missing date formatter");
+          throw (SFException) IncidentUtil.generateIncidentV2WithException(
+              session,
+              new SFException(ErrorCode.INTERNAL_ERROR,
+                              "missing date formatter"),
+              null,
+              null);
         }
 
         String dateStr = ResultUtil.getDateAsString(date, dateFormatter);
@@ -161,10 +163,12 @@ public abstract class SFBaseResultSet
 
         if (timeFormatter == null)
         {
-          throw IncidentUtil
-              .generateIncidentWithException(session, null, null,
-                                             ErrorCode.INTERNAL_ERROR,
-                                             "missing time formatter");
+          throw (SFException) IncidentUtil.generateIncidentV2WithException(
+              session,
+              new SFException(ErrorCode.INTERNAL_ERROR,
+                              "missing time formatter"),
+              null,
+              null);
         }
 
         int scale = resultSetMetaData.getScale(columnIndex);
@@ -180,10 +184,12 @@ public abstract class SFBaseResultSet
       case Types.BINARY:
         if (binaryFormatter == null)
         {
-          throw IncidentUtil
-              .generateIncidentWithException(session, null, null,
-                                             ErrorCode.INTERNAL_ERROR,
-                                             "missing binary formatter");
+          throw (SFException) IncidentUtil.generateIncidentV2WithException(
+              session,
+              new SFException(ErrorCode.INTERNAL_ERROR,
+                              "missing binary formatter"),
+              null,
+              null);
         }
 
         if (binaryFormatter == SFBinaryFormat.HEX)
@@ -319,11 +325,12 @@ public abstract class SFBaseResultSet
       if (Types.INTEGER == columnType
           || Types.SMALLINT == columnType)
       {
-        SFException sfe = new SFException(ErrorCode.INTERNAL_ERROR,
-                                          "Invalid long: " + obj.toString());
-        IncidentUtil.generateIncident(session, "Unable to Convert to Long",
-                                      null, null, null, sfe);
-        throw sfe;
+        throw (SFException) IncidentUtil.generateIncidentV2WithException(
+            session,
+            new SFException(ErrorCode.INTERNAL_ERROR,
+                            " long: " + obj.toString()),
+            null,
+            null);
       }
       else
       {
@@ -627,10 +634,12 @@ public abstract class SFBaseResultSet
         return getBoolean(columnIndex);
 
       default:
-        throw IncidentUtil.
-            generateIncidentWithException(session, null, null,
-                                          ErrorCode.FEATURE_UNSUPPORTED,
-                                          "data type: " + type);
+        throw (SFException) IncidentUtil.generateIncidentV2WithException(
+            session,
+            new SFException(ErrorCode.FEATURE_UNSUPPORTED,
+                            "data type: " + type),
+            null,
+            null);
     }
   }
 

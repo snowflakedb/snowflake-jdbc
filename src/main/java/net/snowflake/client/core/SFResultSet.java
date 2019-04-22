@@ -308,9 +308,11 @@ public class SFResultSet extends SFBaseResultSet
           System.getProperty("snowflake.enable_incident_test2") != null &&
           System.getProperty("snowflake.enable_incident_test2").equals("true"))
       {
-        throw IncidentUtil.
-            generateIncidentWithException(session, null, queryId,
-                                          ErrorCode.MAX_RESULT_LIMIT_EXCEEDED);
+        throw (SFException) IncidentUtil.generateIncidentV2WithException(
+            session,
+            new SFException(ErrorCode.MAX_RESULT_LIMIT_EXCEEDED),
+            queryId,
+            null);
       }
 
       // mark end of result
