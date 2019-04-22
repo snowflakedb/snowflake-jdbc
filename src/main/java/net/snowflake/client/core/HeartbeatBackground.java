@@ -31,7 +31,7 @@ public class HeartbeatBackground implements Runnable
       SFLoggerFactory.getLogger(HeartbeatBackground.class);
 
   // default master token validity (in seconds) is 4 hours
-  private final long masterTokenValidityInSecs = 4 * 3600;
+  private long masterTokenValidityInSecs = 4 * 3600;
 
   /**
    * How often heartbeat executes is calculated based on master token validity
@@ -80,24 +80,35 @@ public class HeartbeatBackground implements Runnable
    * This method is called when a session is created.
    *
    * @param session                   the session will be added
-   * @param heartbeatFrequencyInSecs time interval of a heartbeat
+   * @param masterTokenValidityInSecs time interval for which client need to
+   *                                  check validity of master token with server
    */
   synchronized protected void addSession(SFSession session,
-                                         int heartbeatFrequencyInSecs)
+                                         long masterTokenValidityInSecs)
   {
     boolean requireReschedule = false;
 
-    long oldHeartBeatIntervalInSecs = this.heartBeatIntervalInSecs;
-    this.heartBeatIntervalInSecs = (long) heartbeatFrequencyInSecs;
+    // update heartbeat interval if master token validity has become smaller
+    if (masterTokenValidityInSecs < this.masterTokenValidityInSecs)
+    {
+      long oldMasterTokenValidityInSecs = this.masterTokenValidityInSecs;
+      long oldHeartbeatIntervalInSecs = this.heartBeatIntervalInSecs;
 
-      LOGGER.debug("update heartbeat interval"
-                   + " from {} to {}",
-                   oldHeartBeatIntervalInSecs,
+      this.heartBeatIntervalInSecs = masterTokenValidityInSecs / 4;
+
+      // save master token validity
+      this.masterTokenValidityInSecs = masterTokenValidityInSecs;
+
+      LOGGER.debug("update heartbeat interval, master token validity"
+                   + " from {} to {}, heart beat interval from {} to {}",
+                   oldMasterTokenValidityInSecs,
+                   this.masterTokenValidityInSecs,
+                   oldHeartbeatIntervalInSecs,
                    this.heartBeatIntervalInSecs);
 
       // heartbeat rescheduling required
       requireReschedule = true;
-
+    }
 
     // add session to the list to be heartbeated
     sessions.put(session, Boolean.TRUE);
