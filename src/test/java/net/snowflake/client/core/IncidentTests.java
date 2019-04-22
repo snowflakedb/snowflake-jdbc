@@ -29,105 +29,109 @@ public class IncidentTests extends BaseIncidentTest
   private static int countLines(String input)
   {
     if (input == null || input.isEmpty())
+    {
       return 0;
+    }
 
     int lines = 1;
     Matcher m = Pattern.compile("(\r\n)|(\r)|(\n)").matcher(input);
     while (m.find())
-      lines ++;
+    {
+      lines++;
+    }
     return lines;
   }
 
-    /**
-     * Create an incident from pieces, explicit signature
-     */
-    @Test
-    public void SimpleIncidentCreationTestExplicit()
-    {
-      // Constants
-      String jobId = "ji";
-      String requestId = "ri";
-      String raiser = "net.snowflake.client.core.IncidentTests$" +
-          "CreateIncidentTests.SimpleIncidentCreationTestExpliciit";
-      String errorMessage = "error Message";
-      String errorStackTrace = "this is a stack element\nthis is another " +
-          "element";
-      Incident incident = new Incident(new SFSession(),
-                                       jobId,
-                                       requestId,
-                                       errorMessage,
-                                       errorStackTrace,
-                                       raiser);
-      Assert.assertEquals(jobId, incident.jobId);
-      Assert.assertEquals(requestId, incident.requestId);
-      Assert.assertTrue(incident.signature.startsWith(errorMessage + " at " +
-                                                          raiser));
-      Assert.assertEquals(errorMessage, incident.errorMessage);
-      Assert.assertEquals(errorStackTrace, incident.errorStackTrace);
-      Assert.assertNotNull(incident.osName);
-      Assert.assertNotNull(incident.osVersion);
-      Assert.assertNotNull(incident.timestamp);
-      Assert.assertEquals(Event.EventType.INCIDENT, incident.getType());
-    }
+  /**
+   * Create an incident from pieces, explicit signature
+   */
+  @Test
+  public void SimpleIncidentCreationTestExplicit()
+  {
+    // Constants
+    String jobId = "ji";
+    String requestId = "ri";
+    String raiser = "net.snowflake.client.core.IncidentTests$" +
+                    "CreateIncidentTests.SimpleIncidentCreationTestExpliciit";
+    String errorMessage = "error Message";
+    String errorStackTrace = "this is a stack element\nthis is another " +
+                             "element";
+    Incident incident = new Incident(new SFSession(),
+                                     jobId,
+                                     requestId,
+                                     errorMessage,
+                                     errorStackTrace,
+                                     raiser);
+    Assert.assertEquals(jobId, incident.jobId);
+    Assert.assertEquals(requestId, incident.requestId);
+    Assert.assertTrue(incident.signature.startsWith(errorMessage + " at " +
+                                                    raiser));
+    Assert.assertEquals(errorMessage, incident.errorMessage);
+    Assert.assertEquals(errorStackTrace, incident.errorStackTrace);
+    Assert.assertNotNull(incident.osName);
+    Assert.assertNotNull(incident.osVersion);
+    Assert.assertNotNull(incident.timestamp);
+    Assert.assertEquals(Event.EventType.INCIDENT, incident.getType());
+  }
 
-    /**
-     * Create an incident from a dummy RuntimeException
-     */
-    @Test
-    @SuppressWarnings("ThrowableNotThrown")
-    public void SimpleIncidentCreationTestRuntimeException()
-    {
-      // Constants
-      String jobId = "ji";
-      String requestId = "ri";
-      String errorMessage = "This is a test exception";
+  /**
+   * Create an incident from a dummy RuntimeException
+   */
+  @Test
+  @SuppressWarnings("ThrowableNotThrown")
+  public void SimpleIncidentCreationTestRuntimeException()
+  {
+    // Constants
+    String jobId = "ji";
+    String requestId = "ri";
+    String errorMessage = "This is a test exception";
 
-      ErrorCode ec = ErrorCode.INTERNAL_ERROR;
-      SFException exc = new SFException(ec,
-                                        errorMessage);
-      Incident incident = new Incident(new SFSession(),
-                                       exc,
-                                       jobId,
-                                       requestId);
-      Assert.assertEquals("jdbc", incident.driverName);
-      Assert.assertNotNull(incident.driverVersion);
-      Assert.assertNotNull(incident.signature);
-      Assert.assertEquals(errorResourceBundleManager.getLocalizedMessage(
-          String.valueOf(ec.getMessageCode()), errorMessage),
-          incident.errorMessage);
-      Assert.assertTrue(countLines(incident.errorStackTrace) > 1);
-      Assert.assertNotNull(incident.osName);
-      Assert.assertNotNull(incident.osVersion);
-      Assert.assertNotNull(incident.timestamp);
-      Assert.assertEquals(jobId, incident.jobId);
-      Assert.assertEquals(requestId, incident.requestId);
-      Assert.assertEquals(Event.EventType.INCIDENT, incident.getType());
-    }
+    ErrorCode ec = ErrorCode.INTERNAL_ERROR;
+    SFException exc = new SFException(ec,
+                                      errorMessage);
+    Incident incident = new Incident(new SFSession(),
+                                     exc,
+                                     jobId,
+                                     requestId);
+    Assert.assertEquals("jdbc", incident.driverName);
+    Assert.assertNotNull(incident.driverVersion);
+    Assert.assertNotNull(incident.signature);
+    Assert.assertEquals(errorResourceBundleManager.getLocalizedMessage(
+        String.valueOf(ec.getMessageCode()), errorMessage),
+                        incident.errorMessage);
+    Assert.assertTrue(countLines(incident.errorStackTrace) > 1);
+    Assert.assertNotNull(incident.osName);
+    Assert.assertNotNull(incident.osVersion);
+    Assert.assertNotNull(incident.timestamp);
+    Assert.assertEquals(jobId, incident.jobId);
+    Assert.assertEquals(requestId, incident.requestId);
+    Assert.assertEquals(Event.EventType.INCIDENT, incident.getType());
+  }
 
-    /**
-     * Create an incident from a dummy RuntimeException
-     */
-    @Test
-    @SuppressWarnings("ThrowableNotThrown")
-    public void VerifyUniqueUUIDTest()
-    {
-      // Constants
-      String jobId = "ji";
-      String requestId = "ri";
-      String errorMessage = "This is a test exception";
+  /**
+   * Create an incident from a dummy RuntimeException
+   */
+  @Test
+  @SuppressWarnings("ThrowableNotThrown")
+  public void VerifyUniqueUUIDTest()
+  {
+    // Constants
+    String jobId = "ji";
+    String requestId = "ri";
+    String errorMessage = "This is a test exception";
 
-      SFException exc = new SFException(ErrorCode.INTERNAL_ERROR,
-                                        errorMessage);
-      Incident incident1 = new Incident(new SFSession(),
-                                        exc,
-                                        jobId,
-                                        requestId);
-      Incident incident2 = new Incident(new SFSession(),
-                                        exc,
-                                        jobId,
-                                        requestId);
-      Assert.assertNotEquals(incident1.uuid, incident2.uuid);
-    }
+    SFException exc = new SFException(ErrorCode.INTERNAL_ERROR,
+                                      errorMessage);
+    Incident incident1 = new Incident(new SFSession(),
+                                      exc,
+                                      jobId,
+                                      requestId);
+    Incident incident2 = new Incident(new SFSession(),
+                                      exc,
+                                      jobId,
+                                      requestId);
+    Assert.assertNotEquals(incident1.uuid, incident2.uuid);
+  }
 
   /**
    * Tests for triggering a client incident on GS
@@ -137,12 +141,12 @@ public class IncidentTests extends BaseIncidentTest
   {
     String jobId = "ji";
     String requestId = "ri";
-    String errorMessage =  RandomStringUtils.randomAlphabetic(5);
+    String errorMessage = RandomStringUtils.randomAlphabetic(5);
     SFException exc = new SFException(ErrorCode.INTERNAL_ERROR,
                                       errorMessage);
     String expected_signature =
         errorMessage + ". at net.snowflake.client.core" +
-            ".IncidentTests.simpleFlushTest(IncidentTests.java:";
+        ".IncidentTests.simpleFlushTest(IncidentTests.java:";
     Connection connection = getConnection();
 
     Incident incident = new Incident(
@@ -195,9 +199,9 @@ public class IncidentTests extends BaseIncidentTest
     Connection connection = getConnection();
     Statement statement = connection.createStatement();
     String dpoScanString = "select $1:\"WAIncidentDPO:primary\":\"summary\"" +
-        "from table(dposcan('{\"slices\" : [{\"name\" : \"WAIncidentDPO:primary\"}]}')) dpo " +
-        "where $1:\"WAIncidentDPO:primary\":\"sourceErrorSignature\" = '" +
-        signature + "'";
+                           "from table(dposcan('{\"slices\" : [{\"name\" : \"WAIncidentDPO:primary\"}]}')) dpo " +
+                           "where $1:\"WAIncidentDPO:primary\":\"sourceErrorSignature\" = '" +
+                           signature + "'";
 
     statement.execute(dpoScanString);
     ResultSet resultSet = statement.getResultSet();

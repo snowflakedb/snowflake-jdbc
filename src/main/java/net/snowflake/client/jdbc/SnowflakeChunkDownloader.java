@@ -78,7 +78,7 @@ public class SnowflakeChunkDownloader
 
   private static final SFLogger logger =
       SFLoggerFactory.getLogger(SnowflakeChunkDownloader.class);
-  private static final int STREAM_BUFFER_SIZE = 1*1024*1024;
+  private static final int STREAM_BUFFER_SIZE = 1 * 1024 * 1024;
 
   private SnowflakeResultChunk.ResultChunkDataCache chunkDataCache
       = new SnowflakeResultChunk.ResultChunkDataCache();
@@ -207,7 +207,7 @@ public class SnowflakeChunkDownloader
    * @param qrmk                  Query Result Master Key
    * @param chunkHeaders          JSON object contains information about chunk headers
    * @param networkTimeoutInMilli network timeout
-   * @param useJsonParserV2         should JsonParserV2 be used instead of object
+   * @param useJsonParserV2       should JsonParserV2 be used instead of object
    * @param memoryLimit           memory limit for chunk buffer
    */
   public SnowflakeChunkDownloader(int colCount,
@@ -918,7 +918,7 @@ public class SnowflakeChunkDownloader
       }
 
       private void parseJsonToChunkV2(InputStream jsonInputStream,
-                                    SnowflakeResultChunk resultChunk)
+                                      SnowflakeResultChunk resultChunk)
       throws IOException, SnowflakeSQLException
       {
         /*
@@ -937,7 +937,7 @@ public class SnowflakeChunkDownloader
 
         byte[] buf = new byte[STREAM_BUFFER_SIZE];
         int len;
-        while((len = jsonInputStream.read(buf)) != -1)
+        while ((len = jsonInputStream.read(buf)) != -1)
         {
           jp.continueParsing(ByteBuffer.wrap(buf, 0, len));
         }

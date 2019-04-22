@@ -1399,15 +1399,15 @@ public class SnowflakeDriverIT extends BaseJDBCTest
 
 
     statement.execute("alter session set enable_fix_31448_2=2, " +
-        "error_on_generic_pruner=true;");
+                      "error_on_generic_pruner=true;");
 
     statement.execute("alter session set timestamp_type_mapping=timestamp_ntz");
 
     statement.execute("create or replace table " +
-        "bug56658(iv number, tsv timestamp_ntz)");
+                      "bug56658(iv number, tsv timestamp_ntz)");
     statement.execute("insert into bug56658 select seq8(), " +
-        "timestampadd(day, seq8(), '1970-01-13 00:00:00'::timestamp_ntz)\n" +
-        "from table(generator(rowcount=>20))");
+                      "timestampadd(day, seq8(), '1970-01-13 00:00:00'::timestamp_ntz)\n" +
+                      "from table(generator(rowcount=>20))");
 
     if (true)
     {
@@ -1416,7 +1416,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest
       Timestamp ts = buildTimestamp(1970, 0, 15, 10, 14, 30, 0);
       PreparedStatement preparedStatement =
           connection.prepareStatement("select iv, tsv from bug56658 where tsv" +
-              " >= ? and tsv <= ? order by iv;");
+                                      " >= ? and tsv <= ? order by iv;");
       statement.execute("alter session set timestamp_type_mapping=timestamp_ntz");
       Timestamp ts2 = buildTimestamp(1970, 0, 18, 10, 14, 30, 0);
       preparedStatement.setTimestamp(1, ts);

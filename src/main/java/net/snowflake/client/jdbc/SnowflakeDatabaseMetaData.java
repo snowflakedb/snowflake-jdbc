@@ -1187,19 +1187,19 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   }
 
   // apply session context when catalog is unspecified
-  private Pair<String,String> applySessionContext(String catalog,
-                                   String schemaPattern)
+  private Pair<String, String> applySessionContext(String catalog,
+                                                   String schemaPattern)
   {
     if (catalog == null && metadataRequestUseConnectionCtx)
     {
-      catalog= session.getDatabase();
+      catalog = session.getDatabase();
 
       if (schemaPattern == null)
       {
         schemaPattern = session.getSchema();
       }
     }
-    return new Pair <String,String>(catalog, schemaPattern);
+    return new Pair<String, String>(catalog, schemaPattern);
   }
 
   @Override
@@ -1251,8 +1251,8 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
       return SnowflakeDatabaseMetaDataResultSet.getEmptyResultSet(GET_TABLES, statement);
     }
 
-    Pair<String,String> resPair = applySessionContext(catalog,
-                        schemaPattern);
+    Pair<String, String> resPair = applySessionContext(catalog,
+                                                       schemaPattern);
     catalog = resPair.getKey();
     schemaPattern = resPair.getValue();
 
@@ -1466,8 +1466,8 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
     Statement statement = connection.createStatement();
 
     // apply session context when catalog is unspecified
-    Pair<String,String> resPair = applySessionContext(catalog,
-                                                      schemaPattern);
+    Pair<String, String> resPair = applySessionContext(catalog,
+                                                       schemaPattern);
     catalog = resPair.getKey();
     schemaPattern = resPair.getValue();
 
@@ -1774,8 +1774,8 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
     String showPKCommand = "show /* JDBC:DatabaseMetaData.getPrimaryKeys() */ primary keys in ";
 
     // apply session context when catalog is unspecified
-    Pair<String,String> resPair = applySessionContext(catalog,
-                                                      schema);
+    Pair<String, String> resPair = applySessionContext(catalog,
+                                                       schema);
     catalog = resPair.getKey();
     schema = resPair.getValue();
 
@@ -1886,8 +1886,8 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
     StringBuilder commandBuilder = new StringBuilder();
 
     // apply session context when catalog is unspecified
-    Pair<String,String> resPair = applySessionContext(parentCatalog,
-                                                      parentSchema);
+    Pair<String, String> resPair = applySessionContext(parentCatalog,
+                                                       parentSchema);
     parentCatalog = resPair.getKey();
     parentSchema = resPair.getValue();
 
@@ -2101,8 +2101,8 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
         + "String schema={}, String table={})", catalog, schema, table);
 
     // apply session context when catalog is unspecified
-    Pair<String,String> resPair = applySessionContext(catalog,
-                                                      schema);
+    Pair<String, String> resPair = applySessionContext(catalog,
+                                                       schema);
     catalog = resPair.getKey();
     schema = resPair.getValue();
 
@@ -2115,11 +2115,11 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   {
     logger.debug(
         "public ResultSet getExportedKeys(String catalog={}, "
-            + "String schema={}, String table={})", catalog, schema, table);
+        + "String schema={}, String table={})", catalog, schema, table);
 
     // apply session context when catalog is unspecified
-    Pair<String,String> resPair = applySessionContext(catalog,
-                                                      schema);
+    Pair<String, String> resPair = applySessionContext(catalog,
+                                                       schema);
     catalog = resPair.getKey();
     schema = resPair.getValue();
     return getForeignKeys("export", catalog, schema, table, null, null, null);
@@ -2133,14 +2133,14 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   {
     logger.debug(
         "public ResultSet getCrossReference(String parentCatalog={}, "
-            + "String parentSchema={}, String parentTable={}, "
-            + "String foreignCatalog={}, String foreignSchema={}, "
-            + "String foreignTable={})",
+        + "String parentSchema={}, String parentTable={}, "
+        + "String foreignCatalog={}, String foreignSchema={}, "
+        + "String foreignTable={})",
         parentCatalog, parentSchema, parentTable,
         foreignCatalog, foreignSchema, foreignTable);
     // apply session context when catalog is unspecified
-    Pair<String,String> resPair = applySessionContext(parentCatalog,
-                                                      parentSchema);
+    Pair<String, String> resPair = applySessionContext(parentCatalog,
+                                                       parentSchema);
     parentCatalog = resPair.getKey();
     parentSchema = resPair.getValue();
 
@@ -2556,8 +2556,8 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
     raiseSQLExceptionIfConnectionIsClosed();
 
     // apply session context when catalog is unspecified
-    Pair<String,String> resPair = applySessionContext(catalog,
-                                                      schemaPattern);
+    Pair<String, String> resPair = applySessionContext(catalog,
+                                                       schemaPattern);
     catalog = resPair.getKey();
     schemaPattern = resPair.getValue();
 
@@ -2657,8 +2657,8 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
                  catalog, schemaPattern, functionNamePattern);
 
     // apply session context when catalog is unspecified
-    Pair<String,String> resPair = applySessionContext(catalog,
-                                                      schemaPattern);
+    Pair<String, String> resPair = applySessionContext(catalog,
+                                                       schemaPattern);
     catalog = resPair.getKey();
     schemaPattern = resPair.getValue();
 

@@ -11,6 +11,7 @@ public class SFTimestamp
 {
   /**
    * Get current time in UTC in the following format
+   *
    * @return String representation in this format: yyyy-MM-dd HH:mm:ss
    */
   public static String getUTCNow()

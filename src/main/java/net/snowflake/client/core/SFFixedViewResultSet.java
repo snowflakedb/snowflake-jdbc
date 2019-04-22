@@ -81,7 +81,7 @@ public class SFFixedViewResultSet extends SFBaseResultSet
           session,
           new SFException(ErrorCode.INTERNAL_ERROR,
                           IncidentUtil.oneLiner("Error getting next row from " +
-                                                    "fixed view:", ex)),
+                                                "fixed view:", ex)),
           null,
           null);
     }
