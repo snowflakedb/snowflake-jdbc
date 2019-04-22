@@ -30,14 +30,21 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest
   private DatabaseMetaData databaseMetaData;
   private ResultSet resultSet;
 
+
   @Before
   public void setUp() throws SQLException
   {
     Connection con = getConnection();
     Statement st = con.createStatement();
+
     st.execute("create or replace database JDBC_DB1");
     st.execute("create or replace schema JDBC_SCHEMA11");
     st.execute("create or replace table JDBC_TBL111(colA string, colB decimal, colC timestamp)");
+    st.execute("create or replace schema TEST_CTX");
+    st.execute("create or replace table JDBC_A (colA string, colB decimal, " +
+                   "colC number PRIMARY KEY);");
+    st.execute("create or replace table JDBC_B (colA string, colB decimal, " +
+                   "colC number FOREIGN KEY REFERENCES JDBC_A(colC));");
     st.execute("create or replace schema JDBC_SCHEMA12");
     st.execute("create or replace table JDBC_TBL121(colA varchar)");
     st.execute("create or replace table JDBC_TBL122(colA NUMBER(20, 2) AUTOINCREMENT comment " +
@@ -71,6 +78,7 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest
     connection = getConnection();
     statement = connection.createStatement();
     databaseMetaData = connection.getMetaData();
+
     resultSet = databaseMetaData.getColumns(null, null, null, null);
     assertEquals(getAllObjectCountInDBViaInforSchema(getAllColumsCount), getSizeOfResultSet(resultSet));
 
@@ -536,6 +544,20 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest
 
     resultSet = databaseMetaData.getColumns(null, null, null, null);
     assertEquals(4, getSizeOfResultSet(resultSet));
+
+    statement.execute("use schema TEST_CTX");
+    resultSet = databaseMetaData.getPrimaryKeys(null, null, null);
+    assertEquals(1, getSizeOfResultSet(resultSet));
+
+    resultSet = databaseMetaData.getImportedKeys(null, null, null);
+    assertEquals(1, getSizeOfResultSet(resultSet));
+
+    resultSet = databaseMetaData.getExportedKeys(null, null, null);
+    assertEquals(1, getSizeOfResultSet(resultSet));
+
+    resultSet = databaseMetaData.getCrossReference(null, null, null, null,
+                                                   null, null);
+    assertEquals(1, getSizeOfResultSet(resultSet));
   }
 
   private int getAllObjectCountInDBViaInforSchema(String SQLCmdTemplate) throws SQLException
