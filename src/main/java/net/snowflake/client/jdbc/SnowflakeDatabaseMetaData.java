@@ -1188,7 +1188,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
 
   // apply session context when catalog is unspecified
   private SFPair<String, String> applySessionContext(String catalog,
-                                                   String schemaPattern)
+                                                     String schemaPattern)
   {
     if (catalog == null && metadataRequestUseConnectionCtx)
     {
@@ -1467,7 +1467,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
 
     // apply session context when catalog is unspecified
     SFPair<String, String> resPair = applySessionContext(catalog,
-                                                       schemaPattern);
+                                                         schemaPattern);
     catalog = resPair.left;
     schemaPattern = resPair.right;
 
@@ -1775,7 +1775,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
 
     // apply session context when catalog is unspecified
     SFPair<String, String> resPair = applySessionContext(catalog,
-                                                       schema);
+                                                         schema);
     catalog = resPair.left;
     schema = resPair.right;
 
@@ -1887,7 +1887,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
 
     // apply session context when catalog is unspecified
     SFPair<String, String> resPair = applySessionContext(parentCatalog,
-                                                       parentSchema);
+                                                         parentSchema);
     parentCatalog = resPair.left;
     parentSchema = resPair.right;
 
@@ -2102,7 +2102,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
 
     // apply session context when catalog is unspecified
     SFPair<String, String> resPair = applySessionContext(catalog,
-                                                       schema);
+                                                         schema);
     catalog = resPair.left;
     schema = resPair.right;
 
@@ -2119,7 +2119,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
 
     // apply session context when catalog is unspecified
     SFPair<String, String> resPair = applySessionContext(catalog,
-                                                       schema);
+                                                         schema);
     catalog = resPair.left;
     schema = resPair.right;
     return getForeignKeys("export", catalog, schema, table, null, null, null);
@@ -2140,7 +2140,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
         foreignCatalog, foreignSchema, foreignTable);
     // apply session context when catalog is unspecified
     SFPair<String, String> resPair = applySessionContext(parentCatalog,
-                                                       parentSchema);
+                                                         parentSchema);
     parentCatalog = resPair.left;
     parentSchema = resPair.right;
 
@@ -2557,7 +2557,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
 
     // apply session context when catalog is unspecified
     SFPair<String, String> resPair = applySessionContext(catalog,
-                                                       schemaPattern);
+                                                         schemaPattern);
     catalog = resPair.left;
     schemaPattern = resPair.right;
 
@@ -2658,7 +2658,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
 
     // apply session context when catalog is unspecified
     SFPair<String, String> resPair = applySessionContext(catalog,
-                                                       schemaPattern);
+                                                         schemaPattern);
     catalog = resPair.left;
     schemaPattern = resPair.right;
 

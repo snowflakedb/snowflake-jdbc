@@ -324,7 +324,6 @@ class SnowflakeStatementV1 implements Statement
   }
 
   /**
-   *
    * @return the query ID of the latest executed query
    * @throws SQLException
    */
@@ -335,7 +334,6 @@ class SnowflakeStatementV1 implements Statement
   }
 
   /**
-   *
    * @return the query IDs of the latest executed batch queries
    * @throws SQLException
    */

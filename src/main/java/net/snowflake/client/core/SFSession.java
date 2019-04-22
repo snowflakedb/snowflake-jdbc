@@ -961,7 +961,10 @@ public class SFSession
     this.heartbeatFrequency = frequency;
   }
 
-  public long getHeartbeatFrequency() {return this.heartbeatFrequency; }
+  public long getHeartbeatFrequency()
+  {
+    return this.heartbeatFrequency;
+  }
 
   public boolean getAutoCommit()
   {
