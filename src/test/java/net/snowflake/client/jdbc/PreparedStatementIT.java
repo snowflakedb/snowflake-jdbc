@@ -33,6 +33,8 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -686,6 +688,10 @@ public class PreparedStatementIT extends BaseJDBCTest
     assertEquals(1, count);
     resultSet = connection.createStatement().executeQuery(selectAllSQL);
     assertEquals(1, getSizeOfResultSet(resultSet));
+    // evaluate query ids
+    assertTrue(prepStatement.isWrapperFor(SnowflakePreparedStatement.class));
+    String qid1 = prepStatement.unwrap(SnowflakePreparedStatement.class).getQueryID();
+    assertNotNull(qid1);
 
     prepStatement = connection.prepareStatement(deleteSQL);
     prepStatement.setInt(1, 2);
@@ -693,6 +699,11 @@ public class PreparedStatementIT extends BaseJDBCTest
     assertEquals(1, prepStatement.getUpdateCount());
     resultSet = connection.createStatement().executeQuery(selectAllSQL);
     assertEquals(0, getSizeOfResultSet(resultSet));
+    // evaluate query ids
+    assertTrue(prepStatement.isWrapperFor(SnowflakePreparedStatement.class));
+    String qid2 = prepStatement.unwrap(SnowflakePreparedStatement.class).getQueryID();
+    assertNotNull(qid2);
+    assertNotEquals(qid1, qid2);
     resultSet.close();
   }
 
@@ -1691,6 +1702,11 @@ public class PreparedStatementIT extends BaseJDBCTest
         stmt.setObject(2, 4.0f);
         stmt.addBatch();
         stmt.executeBatch();
+
+        // evaluate query ids
+        assertTrue(stmt.isWrapperFor(SnowflakePreparedStatement.class));
+        String qid1 = stmt.unwrap(SnowflakePreparedStatement.class).getQueryID();
+        assertNotNull(qid1);
 
         // Null CHAR followed by FLOAT. CHAR type is ignored.
         stmt = connection.prepareStatement(sql);

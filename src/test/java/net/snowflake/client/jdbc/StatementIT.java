@@ -145,26 +145,26 @@ public class StatementIT extends BaseJDBCTest
   {
     Connection connection = getConnection();
     Statement statement = connection.createStatement();
-    assertNull(statement.unwrap(SnowflakeStatementV1.class).getQueryID());
+    assertNull(statement.unwrap(SnowflakeStatement.class).getQueryID());
     statement.execute("alter session set JDBC_EXECUTE_RETURN_COUNT_FOR_DML = true");
-    String queryID1 = statement.unwrap(SnowflakeStatementV1.class).getQueryID();
+    String queryID1 = statement.unwrap(SnowflakeStatement.class).getQueryID();
     assertNotNull(queryID1);
 
     String sqlSelect = "select seq4() from table(generator(rowcount=>3))";
     boolean success = statement.execute(sqlSelect);
     assertTrue(success);
-    String queryID2 = statement.unwrap(SnowflakeStatementV1.class).getQueryID();
+    String queryID2 = statement.unwrap(SnowflakeStatement.class).getQueryID();
     assertNotNull(queryID2);
     assertNotEquals(queryID1, queryID2);
 
     ResultSet rs = statement.getResultSet();
     assertEquals(3, getSizeOfResultSet(rs));
     assertEquals(-1, statement.getUpdateCount());
-    String queryID3 = rs.unwrap(SnowflakeResultSetV1.class).getQueryID();
+    String queryID3 = rs.unwrap(SnowflakeResultSet.class).getQueryID();
     assertEquals(queryID2, queryID3);
     rs = statement.executeQuery(sqlSelect);
     assertEquals(3, getSizeOfResultSet(rs));
-    String queryID4 = rs.unwrap(SnowflakeResultSetV1.class).getQueryID();
+    String queryID4 = rs.unwrap(SnowflakeResultSet.class).getQueryID();
     assertNotEquals(queryID4, queryID3);
     rs.close();
 
@@ -420,9 +420,9 @@ public class StatementIT extends BaseJDBCTest
     assertThat(updateCounts[1], is(2));
     assertThat(updateCounts[2], is(1));
 
-    List<String> batchQueryIDs = statement.unwrap(SnowflakeStatementV1.class).getBatchQueryIDs();
+    List<String> batchQueryIDs = statement.unwrap(SnowflakeStatement.class).getBatchQueryIDs();
     assertEquals(3, batchQueryIDs.size());
-    assertEquals(statement.unwrap(SnowflakeStatementV1.class).getQueryID(), batchQueryIDs.get(2));
+    assertEquals(statement.unwrap(SnowflakeStatement.class).getQueryID(), batchQueryIDs.get(2));
 
     ResultSet resultSet = statement.executeQuery("select * from test_batch order by b asc");
     resultSet.next();
