@@ -369,13 +369,27 @@ public class SFSession
     Boolean insecureMode = (Boolean) connectionPropertiesMap.get(
         SFSessionProperty.INSECURE_MODE);
 
+    Boolean ocspSoftfailMode;
+
+    if (!connectionPropertiesMap.containsKey(SFSessionProperty.OCSP_SOFTFAIL_MODE))
+    {
+      ocspSoftfailMode = true;
+    }
+    else
+    {
+      ocspSoftfailMode = (Boolean) connectionPropertiesMap.get(
+          SFSessionProperty.OCSP_SOFTFAIL_MODE);
+    }
     HttpUtil.configureCustomProxyProperties(connectionPropertiesMap);
 
-    HttpUtil.initHttpClient(insecureMode != null ? insecureMode : false, null);
+    /*
+    OCSP Softfail turned on by default
+     */
+    HttpUtil.initHttpClient(insecureMode != null ? insecureMode : false, ocspSoftfailMode, null);
 
     logger.debug(
         "input: server={}, account={}, user={}, password={}, role={}, " +
-        "database={}, schema={}, warehouse={}, authenticator={}, insecure_mode={}, " +
+        "database={}, schema={}, warehouse={}, authenticator={}, insecure_mode={}, ocsp_softfail_mode={}, " +
         "passcode_in_passward={}, passcode={}, private_key={}, " +
         "use_proxy={}, proxy_host={}, proxy_port={}, proxy_user={}, proxy_password={}, disable_socks_proxy={}, " +
         "application={}, app_id={}, app_version={}, " +
@@ -391,6 +405,7 @@ public class SFSession
         connectionPropertiesMap.get(SFSessionProperty.AUTHENTICATOR),
 
         connectionPropertiesMap.get(SFSessionProperty.INSECURE_MODE),
+        connectionPropertiesMap.get(SFSessionProperty.OCSP_SOFTFAIL_MODE),
         connectionPropertiesMap.get(SFSessionProperty.PASSCODE_IN_PASSWORD),
         !Strings.isNullOrEmpty((String) connectionPropertiesMap.get(SFSessionProperty.PASSCODE)) ? "***" : "(empty)",
 

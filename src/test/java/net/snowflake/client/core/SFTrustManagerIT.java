@@ -21,7 +21,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.security.cert.Certificate;
-import java.security.cert.CertificateEncodingException;
+import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
@@ -96,6 +96,7 @@ public class SFTrustManagerIT extends BaseJDBCTest
     {
       HttpClient client = HttpUtil.buildHttpClient(
           false, // NOT insecure mode
+          false, // SOFT Fail turned off for testing
           null, // default OCSP response cache file
           true // use OCSP response cache server
       );
@@ -117,6 +118,7 @@ public class SFTrustManagerIT extends BaseJDBCTest
     {
       HttpClient client = HttpUtil.buildHttpClient(
           false, // NOT insecure mode
+          false, // OCSP Soft Fail Mode
           ocspCacheFile, // a temp OCSP response cache file
           false // NOT use OCSP response cache server
       );
@@ -136,6 +138,7 @@ public class SFTrustManagerIT extends BaseJDBCTest
     {
       HttpClient client = HttpUtil.buildHttpClient(
           false, // NOT insecure mode
+          false, // OCSP Soft Fail Mode
           ocspCacheFile, // a temp OCSP response cache file
           true // use OCSP response cache server
       );
@@ -155,6 +158,7 @@ public class SFTrustManagerIT extends BaseJDBCTest
     String host = TARGET_HOSTS[0];
     HttpClient client = HttpUtil.buildHttpClient(
         false, // NOT insecure mode
+        false, // OCSP Soft Fail Mode
         ocspCacheFile, // a temp OCSP response cache file
         true // use OCSP response cache server
     );
@@ -198,6 +202,7 @@ public class SFTrustManagerIT extends BaseJDBCTest
         "revoked_certs.pem");
     SFTrustManager sft = new SFTrustManager(
         ocspCacheFile,  // a temp OCSP response cache file
+        true, // OCSP SoftFail Mode. Fails for revoked cert.
         true);
     int queueSize = TelemetryService.getInstance().size();
     try
@@ -205,7 +210,7 @@ public class SFTrustManagerIT extends BaseJDBCTest
       sft.validateRevocationStatus(certList.toArray(new X509Certificate[0]), "test_host");
       fail();
     }
-    catch (CertificateEncodingException ex)
+    catch (CertificateException ex)
     {
       assertThat(ex.getMessage(), containsString("has been revoked"));
       if (TelemetryService.getInstance().isDeploymentEnabled())
@@ -216,7 +221,15 @@ public class SFTrustManagerIT extends BaseJDBCTest
         assertEquals("revokedOCSPException", te.get("Name"));
         assertEquals("revoked",
                      values.get("eventType").toString());
-        assertNotNull(values.get("peerHost"));
+        assertNotNull(values.get("sfcPeerHost"));
+        assertNotNull(values.get("certId"));
+        assertNotNull(values.get("ocspResponderURL"));
+        assertNotNull(values.get("ocspReqBase64"));
+        assertNotNull(values.get("errorMessage"));
+        assertNotNull(values.get("insecureMode"));
+        assertNotNull(values.get("softFailMode"));
+        assertNotNull(values.get("cacheEnabled"));
+        assertNotNull(values.get("cacheHit"));
         assertNotNull(values.get("exceptionStackTrace"));
         assertNotNull(values.get("exceptionMessage"));
       }
