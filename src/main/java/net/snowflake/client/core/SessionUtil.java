@@ -87,6 +87,8 @@ public class SessionUtil
   public static final String CLIENT_PREFETCH_THREADS_JVM = "net.snowflake.jdbc.clientPrefetchThreads";
   public static final String CLIENT_PREFETCH_THREADS = "CLIENT_PREFETCH_THREADS";
   public static final String CACHE_FILE_NAME = "temporary_credential.json";
+  public static final String OCSP_SOFTFAIL_MODE_JVM = "net.snowflake.jdbc.ocspSoftfailMode";
+  public static final String OCSP_SOFTFAIL_MODE = "ocspSoftfailMode";
   protected static final FileCacheManager fileCacheManager;
   static final String SF_HEADER_SERVICE_NAME = "X-Snowflake-Service";
   static final
@@ -150,6 +152,8 @@ public class SessionUtil
         CLIENT_MEMORY_LIMIT_JVM, CLIENT_MEMORY_LIMIT);
     JVM_PARAMS_TO_PARAMS.put(
         CLIENT_PREFETCH_THREADS_JVM, CLIENT_PREFETCH_THREADS);
+    JVM_PARAMS_TO_PARAMS.put(
+        OCSP_SOFTFAIL_MODE_JVM, OCSP_SOFTFAIL_MODE);
   }
 
   static

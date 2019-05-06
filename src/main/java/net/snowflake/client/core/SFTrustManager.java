@@ -9,10 +9,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeType;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.nimbusds.jose.JWSVerifier;
+import com.google.common.base.Strings;
 import com.nimbusds.jose.crypto.RSASSAVerifier;
-import com.nimbusds.jwt.SignedJWT;
-import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
+import com.sun.org.apache.xpath.internal.operations.Bool;
+import net.snowflake.client.jdbc.OCSPErrorCode;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.util.DecorrelatedJitterBackoff;
@@ -33,6 +33,7 @@ import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DLSequence;
 import org.bouncycastle.asn1.ocsp.CertID;
+import org.bouncycastle.asn1.ocsp.OCSPResponse;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.Certificate;
@@ -57,34 +58,26 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.DigestCalculator;
 
 import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.SSLEngine;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
-import javax.net.ssl.X509ExtendedTrustManager;
 import javax.net.ssl.X509TrustManager;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.OutputStream;
+import javax.net.ssl.X509ExtendedTrustManager;
+import javax.net.ssl.SSLEngine;
+
+import java.io.*;
 import java.math.BigInteger;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.security.InvalidKeyException;
-import java.security.KeyFactory;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
-import java.security.Security;
-import java.security.Signature;
-import java.security.SignatureException;
+import java.security.*;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPublicKey;
+import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.text.MessageFormat;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -97,6 +90,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
+
+import com.nimbusds.jose.*;
+import com.nimbusds.jwt.*;
+import org.bouncycastle.util.io.pem.PemReader;
 
 
 /**
@@ -179,6 +176,11 @@ class SFTrustManager extends X509ExtendedTrustManager
    * SSD Support management
    */
   static SSDManager ssdManager = new SSDManager();
+
+  /**
+   * OCSP Soft Fail Mode
+   */
+  static boolean OCSP_SOFTFAIL_MODE = true;
 
   static
   {
@@ -353,15 +355,32 @@ class SFTrustManager extends X509ExtendedTrustManager
    * is used.
    *
    * @param cacheFile                  cache file.
+   * @param ocspSoftfailMode           OCSP Soft Fail Mode - True by default
    * @param useOcspResponseCacheServer true if use OCSP response cache server is used.
    */
-  SFTrustManager(File cacheFile, boolean useOcspResponseCacheServer)
+  SFTrustManager(File cacheFile, boolean ocspSoftfailMode, boolean useOcspResponseCacheServer)
   {
     this.trustManager = getTrustManager(
         KeyManagerFactory.getDefaultAlgorithm());
 
     this.exTrustManager = (X509ExtendedTrustManager) getTrustManager(
         KeyManagerFactory.getDefaultAlgorithm());
+
+    String softfailSysProperty = System.getProperty("net.snowflake.jdbc.ocspSoftfailMode");
+    String softfailEnv = System.getenv("SF_OCSP_SOFTFAIL_MODE");
+
+    if (!Strings.isNullOrEmpty(softfailSysProperty))
+    {
+      SFTrustManager.OCSP_SOFTFAIL_MODE = !("false".equalsIgnoreCase(softfailSysProperty));
+    }
+    else if (!Strings.isNullOrEmpty(softfailEnv))
+    {
+      SFTrustManager.OCSP_SOFTFAIL_MODE = !("false".equalsIgnoreCase(softfailEnv));
+    }
+    else
+    {
+      SFTrustManager.OCSP_SOFTFAIL_MODE = ocspSoftfailMode;
+    }
 
     checkNewOCSPEndpointAvailability();
 
@@ -388,6 +407,14 @@ class SFTrustManager extends X509ExtendedTrustManager
   }
 
   /**
+   * Soft fail mode current state
+   */
+  static boolean isEnabledSoftfailMode()
+  {
+    return SFTrustManager.OCSP_SOFTFAIL_MODE;
+  }
+
+  /**
    * Look for Out of Band Server Side Directives
    * <p>
    * These can be two types only:
@@ -409,7 +436,6 @@ class SFTrustManager extends X509ExtendedTrustManager
       ssdManager.addToSSDCache(hostSpecDir.getHostSpecDirective());
     }
   }
-
 
   void checkNewOCSPEndpointAvailability()
   {
@@ -621,7 +647,17 @@ class SFTrustManager extends X509ExtendedTrustManager
               "Downloading OCSP response cache from the server. URL: {}",
               ocspCacheServer.SF_OCSP_RESPONSE_CACHE_SERVER);
         }
-        readOcspResponseCacheServer();
+        try
+        {
+          readOcspResponseCacheServer();
+        }
+        catch (SFOCSPException ex)
+        {
+          LOGGER.debug(
+              "Error downloading OCSP Response from cache server : {}." +
+              "OCSP Responses will be fetched directly from the CA OCSP" +
+              "Responder ", ex.getErrorMsg());
+        }
         // if the cache is downloaded from the server, it should be written
         // to the file cache at all times.
         WAS_CACHE_UPDATED = true;
@@ -712,155 +748,217 @@ class SFTrustManager extends X509ExtendedTrustManager
     CertificateException error = null;
     boolean success = false;
     boolean telemetrySent = false;
-    for (int retry = 0; retry < MAX_RETRY_COUNTER; ++retry)
+    OCSPTelemetryData telemetryData = new OCSPTelemetryData();
+    telemetryData.setSfcPeerHost(peerHost);
+    telemetryData.setCertId(encodeCacheKey(keyOcspResponse));
+    telemetryData.setCacheEnabled(this.useOcspResponseCacheServer);
+    telemetryData.setSoftfailMode(this.isEnabledSoftfailMode());
+    telemetryData.setInsecureMode(false);
+    try
     {
-      /**
-       * Look for Host Specific SSD in SSD Cache
-       */
-      if (ssdManager.getSSDSupportStatus())
+      for (int retry = 0; retry < MAX_RETRY_COUNTER; ++retry)
       {
-        boolean retval = false;
-        SFPair<Long, String> resp = OCSP_RESPONSE_CACHE.get(ssdManager.getWildCardCertId());
-        if ((hostSpecSSD = ssdManager.getSSDFromCache()) != null)
-        {
-          try
-          {
-            retval = this.processOCSPBypassSSD(hostSpecSSD, keyOcspResponse, peerHost);
-            if (retval)
-            {
-              success = true;
-              break;
-            }
-            else
-            {
-              /* remove invalid entry from SSD Cache */
-              ssdManager.clearSSDCache();
-            }
-          }
-          catch (Throwable ex)
-          {
-            LOGGER.info("Unable to process Host Specific OCSP Response. Removing" +
-                        "it from the SSD Cache");
-            ssdManager.clearSSDCache();
-          }
-        }
-        else if (resp.right != null)
+        try
         {
           /**
-           * Process WildCard SSD if present
+           * Look for Host Specific SSD in SSD Cache
            */
-          if (this.processOCSPBypassSSD(resp.right, ssdManager.getWildCardCertId(), "*"))
-          {
-            success = true;
-            break;
-          }
-          else
-          {
-            /**
-             * Delete WildCard from cache
-             */
-            LOGGER.info("Found invalid wildcard SSD in cache, removing.");
-            OCSP_RESPONSE_CACHE.remove(ssdManager.getWildCardCertId());
-          }
-        }
-      }
-      SFPair<Long, String> value0 = OCSP_RESPONSE_CACHE.get(keyOcspResponse);
-      OCSPResp ocspResp;
-      try
-      {
-        if (value0 == null)
-        {
-          LOGGER.debug("not hit cache.");
-          ocspResp = fetchOcspResponse(pairIssuerSubject, req,
-                                       encodeCacheKey(keyOcspResponse), peerHost);
-
-          OCSP_RESPONSE_CACHE.put(
-              keyOcspResponse, SFPair.of(currentTimeSecond,
-                                         ocspResponseToB64(ocspResp)));
-          WAS_CACHE_UPDATED = true;
-          value0 = SFPair.of(currentTimeSecond,
-                             ocspResponseToB64(ocspResp));
-        }
-
-        LOGGER.debug("validating. {}",
-                     CertificateIDToString(req.getRequestList()[0].getCertID()));
-        try
-        {
-          validateRevocationStatusMain(pairIssuerSubject, value0.right);
-          success = true;
-          break;
-        }
-        catch (Throwable ex)
-        {
           if (ssdManager.getSSDSupportStatus())
           {
-            /**
-             *  Failed processing OCSP response
-             *  Try processing cache value as SSD
-             */
-            if (this.processOCSPBypassSSD(value0.right, keyOcspResponse, peerHost))
+            boolean retval = false;
+            SFPair<Long, String> resp = OCSP_RESPONSE_CACHE.get(ssdManager.getWildCardCertId());
+            if ((hostSpecSSD = ssdManager.getSSDFromCache()) != null)
             {
+              try
+              {
+                retval = this.processOCSPBypassSSD(hostSpecSSD, keyOcspResponse, peerHost);
+                if (retval)
+                {
+                  success = true;
+                  break;
+                }
+                else
+                {
+                  /* remove invalid entry from SSD Cache */
+                  ssdManager.clearSSDCache();
+                }
+              }
+              catch (SFOCSPException ex)
+              {
+                LOGGER.info("Unable to process Host Specific OCSP Response. Removing" +
+                            "it from the SSD Cache");
+                ssdManager.clearSSDCache();
+              }
+            }
+            else if (resp.right != null)
+            {
+              /**
+               * Process WildCard SSD if present
+               */
+              try
+              {
+                if (this.processOCSPBypassSSD(resp.right, ssdManager.getWildCardCertId(), "*"))
+                {
+                  success = true;
+                  break;
+                }
+                else
+                {
+                  /**
+                   * Delete WildCard from cache
+                   */
+                  LOGGER.info("Found invalid wildcard SSD in cache, removing.");
+                  OCSP_RESPONSE_CACHE.remove(ssdManager.getWildCardCertId());
+                }
+              }
+              catch (SFOCSPException ex)
+              {
+                /**
+                 * Delete WildCard from cache
+                 */
+                LOGGER.info("Found invalid wildcard SSD in cache, removing.");
+                OCSP_RESPONSE_CACHE.remove(ssdManager.getWildCardCertId());
+              }
+            }
+          }
+          SFPair<Long, String> value0 = OCSP_RESPONSE_CACHE.get(keyOcspResponse);
+          OCSPResp ocspResp;
+          try
+          {
+            try
+            {
+              if (value0 == null)
+              {
+                LOGGER.debug("not hit cache.");
+                telemetryData.setCacheHit(false);
+                ocspResp = fetchOcspResponse(pairIssuerSubject, req,
+                                             encodeCacheKey(keyOcspResponse), peerHost,
+                                             telemetryData);
+
+                OCSP_RESPONSE_CACHE.put(
+                    keyOcspResponse, SFPair.of(currentTimeSecond,
+                                               ocspResponseToB64(ocspResp)));
+                WAS_CACHE_UPDATED = true;
+                value0 = SFPair.of(currentTimeSecond,
+                                   ocspResponseToB64(ocspResp));
+              }
+              else
+              {
+                telemetryData.setCacheHit(true);
+              }
+            }
+            catch (Throwable ex)
+            {
+              LOGGER.debug("Exception occurred while trying to fetch OCSP Response - %s", ex.getMessage());
+              throw new SFOCSPException(OCSPErrorCode.OCSP_RESPONSE_FETCH_FAILRE,
+                                        "Exception occurred while trying to fetch OCSP Response");
+            }
+
+            LOGGER.debug("validating. {}",
+                         CertificateIDToString(req.getRequestList()[0].getCertID()));
+            try
+            {
+              validateRevocationStatusMain(pairIssuerSubject, value0.right);
               success = true;
               break;
             }
-            else
+            catch (SFOCSPException ex)
             {
-              throw ex;
+              if (ex.getErrorCode() == OCSPErrorCode.REVOCATION_CHECK_FAILURE)
+              {
+                if (ssdManager.getSSDSupportStatus())
+                {
+                  /**
+                   *  Failed processing OCSP response
+                   *  Try processing cache value as SSD
+                   */
+                  if (this.processOCSPBypassSSD(value0.right, keyOcspResponse, peerHost))
+                  {
+                    success = true;
+                    break;
+                  }
+                  else
+                  {
+                    throw new CertificateException(ex.getErrorMsg());
+                  }
+                }
+                else
+                {
+                  throw new CertificateException(ex.getErrorMsg());
+                }
+              }
+              else
+              {
+                throw ex;
+              }
             }
           }
-          else
+          catch (SFOCSPException ex)
           {
-            throw ex;
+            if (ex.getErrorCode() == OCSPErrorCode.CERTIFICATE_STATUS_REVOKED)
+            {
+              if (OCSP_RESPONSE_CACHE.containsKey(keyOcspResponse))
+              {
+                LOGGER.debug("deleting the invalid OCSP cache.");
+                OCSP_RESPONSE_CACHE.remove(keyOcspResponse);
+                WAS_CACHE_UPDATED = true;
+              }
+              success = false;
+              throw new SFOCSPException(ex.getErrorCode(),
+                                        ex.getErrorMsg());
+            }
+            else
+            {
+              throw new CertificateException(ex.getErrorMsg());
+            }
           }
         }
-      }
-      catch (CertificateException ex)
-      {
-        if (!telemetrySent && ex instanceof CertificateEncodingException)
+        catch (CertificateException ex)
         {
-          String eventType;
-          // send out of band telemetry
-          if (ex.getMessage().toLowerCase().contains("revoked"))
+          if (OCSP_RESPONSE_CACHE.containsKey(keyOcspResponse))
           {
-            // this is a revoked exception
-            eventType = "revoked";
+            LOGGER.debug("deleting the invalid OCSP cache.");
+            OCSP_RESPONSE_CACHE.remove(keyOcspResponse);
+            WAS_CACHE_UPDATED = true;
           }
-          else
+          error = ex;
+          LOGGER.debug("Retrying {}/{} after sleeping {}(ms)",
+                       retry + 1, MAX_RETRY_COUNTER, sleepTime);
+          try
           {
-            // this is a unknown exception
-            eventType = "unknown";
+            Thread.sleep(sleepTime);
+            sleepTime = backoff.nextSleepTime(sleepTime);
           }
-          TelemetryService.getInstance().logOCSPExceptionTelemetryEvent(eventType,
-                                                                        peerHost,
-                                                                        (CertificateEncodingException) ex);
-
-          // don't need to send again
-          telemetrySent = true;
-        }
-
-        if (OCSP_RESPONSE_CACHE.containsKey(keyOcspResponse))
-        {
-          LOGGER.debug("deleting the invalid OCSP cache.");
-          OCSP_RESPONSE_CACHE.remove(keyOcspResponse);
-          WAS_CACHE_UPDATED = true;
-        }
-        error = ex;
-        LOGGER.debug("Retrying {}/{} after sleeping {}(ms)",
-                     retry + 1, MAX_RETRY_COUNTER, sleepTime);
-        try
-        {
-          Thread.sleep(sleepTime);
-          sleepTime = backoff.nextSleepTime(sleepTime);
-        }
-        catch (InterruptedException ex0)
-        { // nop
+          catch (InterruptedException ex0)
+          { // nop
+          }
         }
       }
     }
+    catch (SFOCSPException ex)
+    {
+      // Revoked Certificate
+      error = new CertificateException(ex.getErrorMsg());
+      telemetryData.setErrorMsg(ex.getErrorMsg());
+      telemetryData.generateTelemetry("revoked", error);
+      throw error;
+    }
+
     if (!success)
     {
-      // still not success, raise an error.
-      throw error;
+      error = new CertificateException("Certificate Revocation check failed. Could not retrieve OCSP Response");
+      LOGGER.debug(error.getMessage());
+      telemetryData.setErrorMsg(error.getMessage());
+      telemetryData.generateTelemetry("unknown", error);
+      if (SFTrustManager.isEnabledSoftfailMode())
+      {
+        LOGGER.warn("Softfail is enabled! Driver will disregard Certificate Revocation Check Failure!");
+      }
+      else
+      {
+        // still not success, raise an error.
+        throw error;
+      }
     }
   }
 
@@ -906,7 +1004,7 @@ class SFTrustManager extends X509ExtendedTrustManager
           {
             validateRevocationStatusMain(pairIssuerSubject, res.right);
           }
-          catch (CertificateException ex)
+          catch (CertificateException | SFOCSPException ex)
           {
             LOGGER.debug("Cache includes invalid OCSPResponse. " +
                          "Will download the OCSP cache from Snowflake OCSP server");
@@ -1024,7 +1122,7 @@ class SFTrustManager extends X509ExtendedTrustManager
    * <p>
    * Must be synchronized by OCSP_RESPONSE_CACHE_LOCK.
    */
-  private void readOcspResponseCacheServer()
+  private void readOcspResponseCacheServer() throws SFOCSPException
   {
     long sleepTime = INITIAL_SLEEPING_TIME_IN_MILLISECONDS;
     DecorrelatedJitterBackoff backoff = new DecorrelatedJitterBackoff(
@@ -1067,7 +1165,7 @@ class SFTrustManager extends X509ExtendedTrustManager
         LOGGER.debug("Successfully downloaded OCSP cache from the server.");
         return;
       }
-      catch (IOException | URISyntaxException ex)
+      catch (IOException ex)
       {
         error = ex;
         LOGGER.debug("Retrying {}/{} after sleeping {}(ms)",
@@ -1081,7 +1179,15 @@ class SFTrustManager extends X509ExtendedTrustManager
         { // nop
         }
       }
+      catch (URISyntaxException ex)
+      {
+        error = ex;
+        LOGGER.debug("Indicate that a string could not be parsed as a URI reference.");
+        throw new SFOCSPException(OCSPErrorCode.INVALID_CACHE_SERVER_URL,
+                                  "Invalid OCSP Cache Server URL used");
+      }
     }
+
     LOGGER.debug(
         "Failed to read the OCSP response cache from the server. " +
         "Server: {}, Err: {}", ocspCacheServerInUse, error);
@@ -1148,7 +1254,7 @@ class SFTrustManager extends X509ExtendedTrustManager
    */
   private OCSPResp fetchOcspResponse(
       SFPair<Certificate, Certificate> pairIssuerSubject, OCSPReq req,
-      String cid_enc, String hname)
+      String cid_enc, String hname, OCSPTelemetryData telemetryData)
   throws CertificateEncodingException
   {
     try
@@ -1159,6 +1265,8 @@ class SFTrustManager extends X509ExtendedTrustManager
       Set<String> ocspUrls = getOcspUrls(pairIssuerSubject.right);
       String ocspUrlStr = ocspUrls.iterator().next(); // first one
       URL url;
+      telemetryData.setOcspUrl(ocspUrlStr);
+      telemetryData.setOcspReq(ocspReqDerBase64);
 
       if (!ocspCacheServer.new_endpoint_enabled)
       {
@@ -1268,7 +1376,7 @@ class SFTrustManager extends X509ExtendedTrustManager
    */
   private void validateRevocationStatusMain(
       SFPair<Certificate, Certificate> pairIssuerSubject,
-      String ocspRespB64) throws CertificateException
+      String ocspRespB64) throws CertificateException, SFOCSPException
   {
     try
     {
@@ -1285,22 +1393,32 @@ class SFTrustManager extends X509ExtendedTrustManager
         signVerifyCert = attachedCerts[0];
         if (currentTime.after(signVerifyCert.getNotAfter()) || currentTime.before(signVerifyCert.getNotBefore()))
         {
-          throw new OCSPException(String.format("Cert attached to OCSP Response is invalid." +
-                                                "Current time - %s" +
-                                                "Certificate not before time - %s" +
-                                                "Certificate not after time - %s",
-                                                currentTime.toString(),
-                                                signVerifyCert.getNotBefore().toString(),
-                                                signVerifyCert.getNotAfter().toString()));
+          throw new SFOCSPException(OCSPErrorCode.EXPIRED_OCSP_SIGNING_CERTIFICATE,
+                                    String.format("Cert attached to " +
+                                                  "OCSP Response is invalid." +
+                                                  "Current time - %s" +
+                                                  "Certificate not before time - %s" +
+                                                  "Certificate not after time - %s",
+                                                  currentTime.toString(),
+                                                  signVerifyCert.getNotBefore().toString(),
+                                                  signVerifyCert.getNotAfter().toString()));
         }
-        verifySignature(
-            new X509CertificateHolder(pairIssuerSubject.left.getEncoded()),
-            signVerifyCert.getSignature(),
-            CONVERTER_X509.getCertificate(signVerifyCert).getTBSCertificate(),
-            signVerifyCert.getSignatureAlgorithm());
+        try
+        {
+          verifySignature(
+              new X509CertificateHolder(pairIssuerSubject.left.getEncoded()),
+              signVerifyCert.getSignature(),
+              CONVERTER_X509.getCertificate(signVerifyCert).getTBSCertificate(),
+              signVerifyCert.getSignatureAlgorithm());
+        }
+        catch (CertificateEncodingException ex)
+        {
+          LOGGER.debug("OCSP Signing Certificate signature verification failed");
+          throw new SFOCSPException(OCSPErrorCode.INVALID_CERTIFICATE_SIGNATURE,
+                                    "OCSP Signing Certificate signature verification failed");
+        }
         LOGGER.debug(
-            "Verifying OCSP signature by the attached certificate public key."
-        );
+            "Verifying OCSP signature by the attached certificate public key.");
       }
       else
       {
@@ -1309,18 +1427,27 @@ class SFTrustManager extends X509ExtendedTrustManager
         signVerifyCert = new X509CertificateHolder(
             pairIssuerSubject.left.getEncoded());
       }
-      verifySignature(
-          signVerifyCert,
-          basicOcspResp.getSignature(),
-          basicOcspResp.getTBSResponseData(),
-          basicOcspResp.getSignatureAlgorithmID());
+      try
+      {
+        verifySignature(
+            signVerifyCert,
+            basicOcspResp.getSignature(),
+            basicOcspResp.getTBSResponseData(),
+            basicOcspResp.getSignatureAlgorithmID());
+      }
+      catch (CertificateEncodingException ex)
+      {
+        LOGGER.debug("OCSP signature verification failed");
+        throw new SFOCSPException(OCSPErrorCode.INVALID_OCSP_RESPONSE_SIGNATURE,
+                                  "OCSP signature verification failed");
+      }
 
       validateBasicOcspResponse(currentTime, basicOcspResp);
     }
     catch (IOException | OCSPException ex)
     {
-      throw new CertificateEncodingException(
-          "Failed to check revocation status.", ex);
+      throw new SFOCSPException(OCSPErrorCode.REVOCATION_CHECK_FAILURE,
+                                "Failed to check revocation status.");
     }
   }
 
@@ -1329,11 +1456,11 @@ class SFTrustManager extends X509ExtendedTrustManager
    *
    * @param currentTime   the current timestamp.
    * @param basicOcspResp BasicOcspResponse data.
-   * @throws CertificateEncodingException raises if any failure occurs.
+   * @throws SFOCSPException raises if any failure occurs.
    */
   private void validateBasicOcspResponse(
       Date currentTime, BasicOCSPResp basicOcspResp)
-  throws CertificateEncodingException
+  throws SFOCSPException
   {
     for (SingleResp singleResps : basicOcspResp.getResponses())
     {
@@ -1357,27 +1484,27 @@ class SFTrustManager extends X509ExtendedTrustManager
             reason = -1;
           }
           Date revocationTime = status.getRevocationTime();
-          throw new CertificateEncodingException(
-              String.format(
-                  "The certificate has been revoked. Reason: %d, Time: %s",
-                  reason, DATE_FORMAT_UTC.format(revocationTime)));
+          throw new SFOCSPException(OCSPErrorCode.CERTIFICATE_STATUS_REVOKED,
+                                    String.format(
+                                        "The certificate has been revoked. Reason: %d, Time: %s",
+                                        reason, DATE_FORMAT_UTC.format(revocationTime)));
         }
         else
         {
           // Unknown status
-          throw new CertificateEncodingException(
-              "Failed to validate the certificate for UNKNOWN reason.");
+          throw new SFOCSPException(OCSPErrorCode.CERTIFICATE_STATUS_UNKNOWN,
+                                    "Failed to validate the certificate for UNKNOWN reason.");
         }
       }
       if (!isValidityRange(currentTime, thisUpdate, nextUpdate))
       {
-        throw new CertificateEncodingException(
-            String.format(
-                "The validity is out of range: " +
-                "Current Time: %s, This Update: %s, Next Update: %s",
-                DATE_FORMAT_UTC.format(currentTime),
-                DATE_FORMAT_UTC.format(thisUpdate),
-                DATE_FORMAT_UTC.format(nextUpdate)));
+        throw new SFOCSPException(OCSPErrorCode.INVALID_OCSP_RESPONSE_VALIDITY,
+                                  String.format(
+                                      "The validity is out of range: " +
+                                      "Current Time: %s, This Update: %s, Next Update: %s",
+                                      DATE_FORMAT_UTC.format(currentTime),
+                                      DATE_FORMAT_UTC.format(thisUpdate),
+                                      DATE_FORMAT_UTC.format(nextUpdate)));
       }
     }
     LOGGER.debug("OK. Verified the certificate revocation status.");
@@ -1711,7 +1838,7 @@ class SFTrustManager extends X509ExtendedTrustManager
     }
   }
 
-  private boolean processOCSPBypassSSD(String ocsp_ssd, OcspResponseCacheKey cid, String hostname)
+  private boolean processOCSPBypassSSD(String ocsp_ssd, OcspResponseCacheKey cid, String hostname) throws SFOCSPException
   {
     try
     {
@@ -1807,7 +1934,8 @@ class SFTrustManager extends X509ExtendedTrustManager
       catch (Throwable ex)
       {
         LOGGER.debug("Failed to verify JWT Token");
-        throw ex;
+        throw new SFOCSPException(OCSPErrorCode.INVALID_SSD,
+                                  "Failed to verify Server Side Directive");
       }
     }
     catch (Throwable ex)
