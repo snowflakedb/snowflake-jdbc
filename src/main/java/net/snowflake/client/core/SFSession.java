@@ -366,30 +366,13 @@ public class SFSession
   {
     performSanityCheckOnProperties();
 
-    Boolean insecureMode = (Boolean) connectionPropertiesMap.get(
-        SFSessionProperty.INSECURE_MODE);
-
-    Boolean ocspSoftfailMode;
-
-    if (!connectionPropertiesMap.containsKey(SFSessionProperty.OCSP_SOFTFAIL_MODE))
-    {
-      ocspSoftfailMode = true;
-    }
-    else
-    {
-      ocspSoftfailMode = (Boolean) connectionPropertiesMap.get(
-          SFSessionProperty.OCSP_SOFTFAIL_MODE);
-    }
     HttpUtil.configureCustomProxyProperties(connectionPropertiesMap);
 
-    /*
-    OCSP Softfail turned on by default
-     */
-    HttpUtil.initHttpClient(insecureMode != null ? insecureMode : false, ocspSoftfailMode, null);
+    HttpUtil.initHttpClient(getOCSPMode(), null);
 
     logger.debug(
         "input: server={}, account={}, user={}, password={}, role={}, " +
-        "database={}, schema={}, warehouse={}, authenticator={}, insecure_mode={}, ocsp_softfail_mode={}, " +
+        "database={}, schema={}, warehouse={}, authenticator={}, ocsp_mode={}, " +
         "passcode_in_passward={}, passcode={}, private_key={}, " +
         "use_proxy={}, proxy_host={}, proxy_port={}, proxy_user={}, proxy_password={}, disable_socks_proxy={}, " +
         "application={}, app_id={}, app_version={}, " +
@@ -403,9 +386,7 @@ public class SFSession
         connectionPropertiesMap.get(SFSessionProperty.SCHEMA),
         connectionPropertiesMap.get(SFSessionProperty.WAREHOUSE),
         connectionPropertiesMap.get(SFSessionProperty.AUTHENTICATOR),
-
-        connectionPropertiesMap.get(SFSessionProperty.INSECURE_MODE),
-        connectionPropertiesMap.get(SFSessionProperty.OCSP_SOFTFAIL_MODE),
+        getOCSPMode().name(),
         connectionPropertiesMap.get(SFSessionProperty.PASSCODE_IN_PASSWORD),
         !Strings.isNullOrEmpty((String) connectionPropertiesMap.get(SFSessionProperty.PASSCODE)) ? "***" : "(empty)",
 
@@ -429,6 +410,7 @@ public class SFSession
         connectionPropertiesMap.get(SFSessionProperty.TRACING)
     );
     SessionUtil.LoginInput loginInput = new SessionUtil.LoginInput();
+
     loginInput.setServerUrl(
         (String) connectionPropertiesMap.get(SFSessionProperty.SERVER_URL))
         .setDatabaseName(
@@ -465,7 +447,8 @@ public class SFSession
             SFSessionProperty.PRIVATE_KEY))
         .setApplication((String) connectionPropertiesMap.get(
             SFSessionProperty.APPLICATION))
-        .setServiceName(this.getServiceName());
+        .setServiceName(this.getServiceName())
+        .setOCSPMode(getOCSPMode());
 
     SessionUtil.LoginOutput loginOutput = SessionUtil.openSession(loginInput);
     isClosed = false;
@@ -534,6 +517,31 @@ public class SFSession
 
     // start heartbeat for this session so that the master token will not expire
     startHeartbeatForThisSession();
+  }
+
+  public OCSPMode getOCSPMode()
+  {
+    OCSPMode ret;
+
+    Boolean insecureMode = (Boolean) connectionPropertiesMap.get(
+        SFSessionProperty.INSECURE_MODE);
+    if (insecureMode != null && insecureMode)
+    {
+      // skip OCSP checks
+      ret = OCSPMode.INSECURE;
+    }
+    else if (!connectionPropertiesMap.containsKey(SFSessionProperty.OCSP_FAIL_OPEN) ||
+             (boolean) connectionPropertiesMap.get(SFSessionProperty.OCSP_FAIL_OPEN))
+    {
+      // fail open (by default, not set)
+      ret = OCSPMode.FAIL_OPEN;
+    }
+    else
+    {
+      // explicitly set ocspFailOpen=false
+      ret = OCSPMode.FAIL_CLOSED;
+    }
+    return ret;
   }
 
   /**

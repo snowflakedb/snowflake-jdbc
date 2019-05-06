@@ -87,8 +87,8 @@ public class SessionUtil
   public static final String CLIENT_PREFETCH_THREADS_JVM = "net.snowflake.jdbc.clientPrefetchThreads";
   public static final String CLIENT_PREFETCH_THREADS = "CLIENT_PREFETCH_THREADS";
   public static final String CACHE_FILE_NAME = "temporary_credential.json";
-  public static final String OCSP_SOFTFAIL_MODE_JVM = "net.snowflake.jdbc.ocspSoftfailMode";
-  public static final String OCSP_SOFTFAIL_MODE = "ocspSoftfailMode";
+  public static final String OCSP_FAIL_OPEN_JVM = "net.snowflake.jdbc.ocspFailOpen";
+  public static final String OCSP_FAIL_OPEN = "ocspFailOpen";
   protected static final FileCacheManager fileCacheManager;
   static final String SF_HEADER_SERVICE_NAME = "X-Snowflake-Service";
   static final
@@ -153,7 +153,7 @@ public class SessionUtil
     JVM_PARAMS_TO_PARAMS.put(
         CLIENT_PREFETCH_THREADS_JVM, CLIENT_PREFETCH_THREADS);
     JVM_PARAMS_TO_PARAMS.put(
-        OCSP_SOFTFAIL_MODE_JVM, OCSP_SOFTFAIL_MODE);
+        OCSP_FAIL_OPEN_JVM, OCSP_FAIL_OPEN);
   }
 
   static
@@ -543,6 +543,7 @@ public class SessionUtil
       clientEnv.put("JAVA_VERSION", System.getProperty("java.version"));
       clientEnv.put("JAVA_RUNTIME", System.getProperty("java.runtime.name"));
       clientEnv.put("JAVA_VM", System.getProperty("java.vm.name"));
+      clientEnv.put("OCSP_MODE", loginInput.getOCSPMode().name());
 
       if (loginInput.getApplication() != null)
       {
@@ -1642,6 +1643,7 @@ public class SessionUtil
     private String application;
     private String idToken;
     private String serviceName;
+    private OCSPMode ocspMode;
 
     public LoginInput()
     {
@@ -1922,6 +1924,16 @@ public class SessionUtil
       return this;
     }
 
+    public OCSPMode getOCSPMode()
+    {
+      return ocspMode;
+    }
+
+    public LoginInput setOCSPMode(OCSPMode ocspMode)
+    {
+      this.ocspMode = ocspMode;
+      return this;
+    }
   }
 
   /**

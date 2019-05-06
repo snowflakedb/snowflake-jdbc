@@ -39,7 +39,7 @@ public enum SFSessionProperty
   INJECT_CLIENT_PAUSE("injectClientPause", false, Integer.class),
   APP_ID("appId", false, String.class),
   APP_VERSION("appVersion", false, String.class),
-  OCSP_SOFTFAIL_MODE("ocspSoftfailMode", false, Boolean.class),
+  OCSP_FAIL_OPEN("ocspFailOpen", false, Boolean.class),
   INSECURE_MODE("insecureMode", false, Boolean.class),
   QUERY_TIMEOUT("queryTimeout", false, Integer.class),
   APPLICATION("application", false, String.class),
