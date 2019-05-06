@@ -72,7 +72,7 @@ public class SFTrustManagerTest
     {
       System.setProperty("net.snowflake.jdbc.ocsp_activate_new_endpoint", "true");
       SFTrustManager tManager = new SFTrustManager(null, // OCSP Cache file custom location
-                                                   false, // OCSP SoftFail Mode
+                                                   false, // OCSP FailOpen Mode
                                                    true); // Use OCSP Cache Server
       tManager.ocspCacheServer.resetOCSPResponseCacheServer("a1.snowflakecomputing.com");
       assertThat(

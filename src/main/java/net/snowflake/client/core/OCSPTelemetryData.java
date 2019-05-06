@@ -16,13 +16,11 @@ public class OCSPTelemetryData
   private String ocspReq;
   private Boolean cacheEnabled;
   private Boolean cacheHit;
-  private Boolean insecureMode;
-  private Boolean softfailMode;
+  private OCSPMode ocspMode;
 
   public OCSPTelemetryData()
   {
-    this.insecureMode = false;
-    this.softfailMode = true;
+    this.ocspMode = OCSPMode.FAIL_OPEN;
     this.cacheEnabled = true;
   }
 
@@ -30,8 +28,7 @@ public class OCSPTelemetryData
                            String sfc_peer_host,
                            String ocsp_url,
                            String ocsp_req,
-                           Boolean softfail_mode,
-                           Boolean insecure_mode,
+                           OCSPMode ocspMode,
                            Boolean cache_enabled,
                            Boolean cache_hit)
   {
@@ -39,8 +36,7 @@ public class OCSPTelemetryData
     this.sfcPeerHost = sfc_peer_host;
     this.ocspUrl = ocsp_url;
     this.ocspReq = ocsp_req;
-    this.insecureMode = insecure_mode;
-    this.softfailMode = softfail_mode;
+    this.ocspMode = ocspMode;
     this.cacheEnabled = cache_enabled;
     this.cacheHit = cache_hit;
   }
@@ -87,14 +83,9 @@ public class OCSPTelemetryData
     }
   }
 
-  public void setInsecureMode(Boolean insecureMode)
+  public void setOCSPMode(OCSPMode ocspMode)
   {
-    this.insecureMode = insecureMode;
-  }
-
-  public void setSoftfailMode(Boolean softfailMode)
-  {
-    this.softfailMode = softfailMode;
+    this.ocspMode = ocspMode;
   }
 
   public JSONObject generateTelemetry(String eventType, CertificateException ex)
@@ -105,13 +96,11 @@ public class OCSPTelemetryData
     value.put("certId", this.certId);
     value.put("ocspResponderURL", this.ocspUrl);
     value.put("ocspReqBase64", this.ocspReq);
-    value.put("insecureMode", this.insecureMode);
-    value.put("softFailMode", this.softfailMode);
+    value.put("ocspMode", this.ocspMode.name());
     value.put("cacheEnabled", this.cacheEnabled);
     value.put("cacheHit", this.cacheHit);
-    TelemetryService.getInstance().logOCSPExceptionTelemetryEvent(eventType,
-                                                                  value,
-                                                                  ex);
+    TelemetryService.getInstance().logOCSPExceptionTelemetryEvent(
+        eventType, value, ex);
     return value;
   }
 }

@@ -132,6 +132,7 @@ public class RestRequest
         // to the injected socket timeout value
         if (injectSocketTimeout != 0 && retryCount == 0)
         {
+          // test code path
           logger.debug("Injecting socket timeout by setting " +
                        "socket timeout to {} millisecond ", injectSocketTimeout);
           httpRequest.setConfig(
@@ -200,8 +201,9 @@ public class RestRequest
       {
         // Reset the socket timeout to its original value if it is not the
         // very first iteration.
-        if ((injectSocketTimeout != 0) && retryCount == 0)
+        if (injectSocketTimeout != 0 && retryCount == 0)
         {
+          // test code path
           httpRequest.setConfig(
               HttpUtil.getDefaultRequestConfigWithSocketTimeout(
                   origSocketTimeout, withoutCookies));
