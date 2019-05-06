@@ -36,10 +36,10 @@ pushd .
     download_tarball "$SNOWFLAKE_DEP_DIR" "$DIR_TARGET_NAME" "$TAR_FILE_NAME" "$TAR_FILE_SIZE" "$FOLDER_HASH"
 popd
 
-if ps -ewo args | grep -v 'grep' | grep -q 'com.intellij.idea.Main'; then
-    echo "[ERROR] Exit IntelliJ and run the script again"
-    exit 1 
-fi
+#if ps -ewo args | grep -v 'grep' | grep -q 'com.intellij.idea.Main'; then
+#    echo "[ERROR] Exit IntelliJ and run the script again"
+#    exit 1 
+#fi
 
 SOURCE_DIR=$THIS_DIR/../src
 
