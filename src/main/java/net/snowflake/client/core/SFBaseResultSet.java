@@ -21,7 +21,9 @@ import java.sql.SQLException;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
 
@@ -60,6 +62,8 @@ public abstract class SFBaseResultSet
   protected long resultVersion = 0;
 
   protected int numberOfBinds = 0;
+
+  protected List<MetaDataOfBinds> metaDataOfBinds = new ArrayList<>();
 
   // For creating incidents
   protected SFSession session;
@@ -708,6 +712,11 @@ public abstract class SFBaseResultSet
   protected int getNumberOfBinds()
   {
     return numberOfBinds;
+  }
+
+  protected List<MetaDataOfBinds> getMetaDataOfBinds()
+  {
+    return metaDataOfBinds;
   }
 
   public boolean isFirst()

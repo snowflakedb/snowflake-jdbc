@@ -87,6 +87,105 @@ public enum SnowflakeType
     }
   }
 
+  /**
+   * Converts text of data type (returned from SQL query) into Types type, represented by an int
+   */
+  public static int convertStringToType(String typeName)
+  {
+    int retval = Types.NULL;
+    if (typeName == null || typeName.trim().isEmpty())
+    {
+      return retval;
+    }
+    String typeNameTrimmed = typeName.trim();
+    if (typeNameTrimmed.contains("("))
+    {
+      typeNameTrimmed = typeNameTrimmed.substring(0, typeNameTrimmed.indexOf('('));
+    }
+    switch (typeNameTrimmed.toLowerCase())
+    {
+      case "number":
+      case "numeric":
+        retval = Types.NUMERIC;
+        break;
+      case "decimal":
+        retval = Types.DECIMAL;
+        break;
+      case "int":
+      case "integer":
+      case "byteint":
+        retval = Types.INTEGER;
+        break;
+      case "tinyint":
+        retval = Types.TINYINT;
+        break;
+      case "smallint":
+        retval = Types.SMALLINT;
+        break;
+      case "bigint":
+        retval = Types.BIGINT;
+        break;
+      case "float":
+      case "float4":
+      case "float8":
+        retval = Types.FLOAT;
+        break;
+      case "double":
+      case "double precision":
+        retval = Types.DOUBLE;
+        break;
+      case "real":
+        retval = Types.REAL;
+        break;
+      case "char":
+      case "character":
+        retval = Types.CHAR;
+        break;
+      case "varchar":
+      case "string":
+      case "text":
+        retval = Types.VARCHAR;
+        break;
+      case "binary":
+        retval = Types.BINARY;
+        break;
+      case "varbinary":
+        retval = Types.VARBINARY;
+        break;
+      case "boolean":
+        retval = Types.BOOLEAN;
+        break;
+      case "date":
+        retval = Types.DATE;
+        break;
+      case "time":
+        retval = Types.TIME;
+        break;
+      case "timestamp":
+      case "datetime":
+      case "timestamp_ntz":
+        retval = Types.TIMESTAMP;
+        break;
+      case "timestamp_ltz":
+      case "timestamp_tz":
+        retval = Types.TIMESTAMP_WITH_TIMEZONE;
+        break;
+      case "variant":
+        retval = Types.OTHER;
+        break;
+      case "object":
+        retval = Types.JAVA_OBJECT;
+        break;
+      case "array":
+        retval = Types.ARRAY;
+        break;
+      default:
+        retval = Types.OTHER;
+        break;
+    }
+    return retval;
+  }
+
   public enum JavaDataType
   {
 

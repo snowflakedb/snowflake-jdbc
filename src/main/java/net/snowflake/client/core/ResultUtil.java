@@ -94,8 +94,7 @@ public class ResultUtil
     boolean totalRowCountTruncated;
     Map<String, Object> parameters = new HashMap<>();
     int columnCount;
-    private List<SnowflakeColumnMetadata> resultColumnMetadata =
-        new ArrayList<SnowflakeColumnMetadata>();
+    private List<SnowflakeColumnMetadata> resultColumnMetadata = new ArrayList<>();
     private JsonNode currentChunkRowset = null;
     int currentChunkRowCount;
     long resultVersion;
@@ -111,6 +110,7 @@ public class ResultUtil
     boolean honorClientTZForTimestampNTZ;
     SFBinaryFormat binaryFormatter;
     long sendResultTime;
+    List<MetaDataOfBinds> metaDataOfBinds = new ArrayList<>();
 
     public long getChunkCount()
     {
@@ -243,7 +243,11 @@ public class ResultUtil
     {
       return sendResultTime;
     }
+
+    public List<MetaDataOfBinds> getMetaDataOfBinds() { return metaDataOfBinds; }
   }
+
+
 
   /**
    * A common helper to process result response
@@ -465,8 +469,30 @@ public class ResultUtil
 
     logger.debug("result version={}", resultOutput.resultVersion);
 
+    // Bind parameter metadata
+    JsonNode bindData = rootNode.path("data").path("metaDataOfBinds");
+    if (!bindData.isMissingNode())
+    {
+      List<MetaDataOfBinds> returnVal = new ArrayList<>();
+      for (JsonNode child : bindData)
+      {
+        int precision = child.path("precision").asInt();
+        boolean nullable = child.path("nullable").asBoolean();
+        int scale = child.path("scale").asInt();
+        int byteLength = child.path("byteLength").asInt();
+        int length = child.path("length").asInt();
+        String name = child.path("name").asText();
+        String type = child.path("type").asText();
+        MetaDataOfBinds param = new MetaDataOfBinds(precision, nullable, scale, byteLength, length, name, type);
+        returnVal.add(param);
+      }
+      resultOutput.metaDataOfBinds = returnVal;
+    }
+
     return resultOutput;
   }
+
+
 
   /**
    * initialize memory limit in bytes

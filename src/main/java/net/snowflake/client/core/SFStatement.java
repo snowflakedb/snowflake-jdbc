@@ -199,7 +199,8 @@ public class SFStatement
     return new SFStatementMetaData(baseResultSet.getMetaData(),
                                    baseResultSet.getStatementType(),
                                    baseResultSet.getNumberOfBinds(),
-                                   baseResultSet.isArrayBindSupported());
+                                   baseResultSet.isArrayBindSupported(),
+                                   baseResultSet.getMetaDataOfBinds());
   }
 
   /**

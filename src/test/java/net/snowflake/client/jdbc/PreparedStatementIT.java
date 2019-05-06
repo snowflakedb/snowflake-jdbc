@@ -12,11 +12,11 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
-
 import java.math.BigDecimal;
 import java.net.URL;
 import java.sql.Connection;
 import java.sql.Date;
+import java.sql.ParameterMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -27,6 +27,7 @@ import java.sql.Types;
 import java.util.Calendar;
 import java.util.Set;
 
+import static net.snowflake.client.jdbc.ErrorCode.NUMERIC_VALUE_OUT_OF_RANGE;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
@@ -78,6 +79,44 @@ public class PreparedStatementIT extends BaseJDBCTest
     Statement st = con.createStatement();
     st.execute(deleteTableSQL);
     con.close();
+  }
+
+  @Test
+  public void testGetParameterMetaData() throws SQLException
+  {
+    connection = getConnection();
+    statement = connection.createStatement();
+    PreparedStatement preparedStatement = connection.prepareStatement(updateSQL);
+    /* All binding parameters are of type text and have null precision and scale and are not nullable. Since every
+    binding parameter currently has identical properties, testing is minimal until this changes.
+     */
+    assertThat(preparedStatement.getParameterMetaData().getParameterCount(), is(1));
+    assertThat(preparedStatement.getParameterMetaData().getParameterType(1), is(Types.VARCHAR));
+    assertThat(preparedStatement.getParameterMetaData().getPrecision(1), is(0));
+    assertThat(preparedStatement.getParameterMetaData().getScale(1), is(0));
+    assertThat(preparedStatement.getParameterMetaData().isNullable(1), is(ParameterMetaData.parameterNoNulls));
+    assertThat(preparedStatement.getParameterMetaData().getParameterTypeName(1), is("text"));
+
+    preparedStatement = connection.prepareStatement(insertSQL);
+    assertThat(preparedStatement.getParameterMetaData().getParameterCount(), is(6));
+    assertThat(preparedStatement.getParameterMetaData().getParameterType(1), is(Types.VARCHAR));
+    assertThat(preparedStatement.getParameterMetaData().getParameterTypeName(1), is("text"));
+    assertThat(preparedStatement.getParameterMetaData().getParameterType(6), is(Types.VARCHAR));
+    assertThat(preparedStatement.getParameterMetaData().getParameterTypeName(6), is("text"));
+    // test a statement with no binding parameters to ensure the count is 0
+    preparedStatement = connection.prepareStatement(selectAllSQL);
+    assertThat(preparedStatement.getParameterMetaData().getParameterCount(), is(0));
+    // try to access a binding parameter that is out of range of the list of parameters (in this case, the list is
+    // empty so everything is out of range) and ensure an exception is thrown
+    try
+    {
+      preparedStatement.getParameterMetaData().getParameterType(3);
+      fail("An exception should have been thrown");
+    }
+    catch (SQLException e)
+    {
+      assertThat(e.getErrorCode(), is(NUMERIC_VALUE_OUT_OF_RANGE.getMessageCode()));
+    }
   }
 
   /**
