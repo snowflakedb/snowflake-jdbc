@@ -9,8 +9,10 @@ import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.RestRequest;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.jdbc.SnowflakeUtil;
+import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
+import net.snowflake.client.util.SecretDetector;
 import net.snowflake.common.core.SqlState;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpHost;
@@ -416,12 +418,14 @@ public class HttpUtil
                                                boolean includeRequestGuid)
   throws SnowflakeSQLException, IOException
   {
-    if (logger.isDebugEnabled())
-    {
-      logger.debug("Pool: {} Executing: {}",
-                   HttpUtil.getHttpClientStats(),
-                   httpRequest);
-    }
+    // HttpRequest.toString() contains request URI. Scrub any credentials, if
+    // present, before logging
+    String requestInfoScrubbed = SecretDetector.maskSASToken(
+        httpRequest.toString());
+
+    logger.debug("Pool: {} Executing: {}",
+                 (ArgSupplier) HttpUtil::getHttpClientStats,
+                 requestInfoScrubbed);
 
     String theString;
     StringWriter writer = null;
@@ -440,8 +444,7 @@ public class HttpUtil
       if (response == null ||
           response.getStatusLine().getStatusCode() != 200)
       {
-        logger.error("Error executing request: {}",
-                     httpRequest.toString());
+        logger.error("Error executing request: {}", requestInfoScrubbed);
 
         SnowflakeUtil.logResponseDetails(response, logger);
 
@@ -472,13 +475,10 @@ public class HttpUtil
       IOUtils.closeQuietly(response);
     }
 
-    if (logger.isDebugEnabled())
-    {
-      logger.debug(
-          "Pool: {} Request returned for: {}",
-          HttpUtil.getHttpClientStats(),
-          httpRequest);
-    }
+    logger.debug(
+        "Pool: {} Request returned for: {}",
+        (ArgSupplier) HttpUtil::getHttpClientStats,
+        requestInfoScrubbed);
 
     return theString;
   }

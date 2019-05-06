@@ -4,6 +4,7 @@
 
 package net.snowflake.client.core;
 
+import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
@@ -79,10 +80,8 @@ public class SFSSLConnectionSocketFactory extends SSLConnectionSocketFactory
 
     // cipher suites need to be picked up in code explicitly for jdk 1.7
     // https://stackoverflow.com/questions/44378970/
-    if (logger.isTraceEnabled())
-    {
-      logger.trace("Cipher suites used: {}", Arrays.toString(cipherSuites));
-    }
+    logger.trace("Cipher suites used: {}",
+                 (ArgSupplier) () -> Arrays.toString(cipherSuites));
 
     return cipherSuites;
   }

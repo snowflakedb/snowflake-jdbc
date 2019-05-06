@@ -67,7 +67,8 @@ public class SLF4JLogger implements SFLogger
   {
     if (isDebugEnabled())
     {
-      FormattingTuple ft = MessageFormatter.arrayFormat(msg, arguments);
+      FormattingTuple ft = MessageFormatter.arrayFormat(
+          msg, evaluateLambdaArgs(arguments));
       this.debug(ft.getMessage());
     }
   }
@@ -100,7 +101,8 @@ public class SLF4JLogger implements SFLogger
   {
     if (isErrorEnabled())
     {
-      FormattingTuple ft = MessageFormatter.arrayFormat(msg, arguments);
+      FormattingTuple ft = MessageFormatter.arrayFormat(
+          msg, evaluateLambdaArgs(arguments));
       this.error(ft.getMessage());
     }
   }
@@ -133,7 +135,8 @@ public class SLF4JLogger implements SFLogger
   {
     if (isInfoEnabled())
     {
-      FormattingTuple ft = MessageFormatter.arrayFormat(msg, arguments);
+      FormattingTuple ft = MessageFormatter.arrayFormat(
+          msg, evaluateLambdaArgs(arguments));
       this.info(ft.getMessage());
     }
   }
@@ -166,7 +169,8 @@ public class SLF4JLogger implements SFLogger
   {
     if (isTraceEnabled())
     {
-      FormattingTuple ft = MessageFormatter.arrayFormat(msg, arguments);
+      FormattingTuple ft = MessageFormatter.arrayFormat(
+          msg, evaluateLambdaArgs(arguments));
       this.trace(ft.getMessage());
     }
   }
@@ -199,7 +203,8 @@ public class SLF4JLogger implements SFLogger
   {
     if (isWarnEnabled())
     {
-      FormattingTuple ft = MessageFormatter.arrayFormat(msg, arguments);
+      FormattingTuple ft = MessageFormatter.arrayFormat(
+          msg, evaluateLambdaArgs(arguments));
       this.warn(ft.getMessage());
     }
   }
@@ -214,5 +219,19 @@ public class SLF4JLogger implements SFLogger
     {
       slf4jLogger.error(msg, t);
     }
+  }
+
+  private static Object[] evaluateLambdaArgs(Object... args)
+  {
+    final Object[] result = new Object[args.length];
+
+    for (int i = 0; i < args.length; i++)
+    {
+      result[i] = args[i] instanceof ArgSupplier
+                  ? ((ArgSupplier) args[i]).get()
+                  : args[i];
+    }
+
+    return result;
   }
 }

@@ -376,7 +376,7 @@ public class TelemetryService
     {
       logs.add(queue.poll());
     }
-    return SecretDetector.maskAWSSecret(logs.toString());
+    return SecretDetector.maskSecrets(logs.toString());
   }
 
   static class TelemetryUploader implements Runnable

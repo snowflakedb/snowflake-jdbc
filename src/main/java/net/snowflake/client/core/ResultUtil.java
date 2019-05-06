@@ -10,6 +10,7 @@ import net.snowflake.client.jdbc.SnowflakeChunkDownloader;
 import net.snowflake.client.jdbc.SnowflakeColumnMetadata;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.jdbc.SnowflakeUtil;
+import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.common.core.SFBinaryFormat;
 import net.snowflake.common.core.SFTime;
 import net.snowflake.common.core.SFTimestamp;
@@ -284,10 +285,7 @@ public class ResultUtil
     resultOutput.totalRowCountTruncated
         = rootNode.path("data").path("totalTruncated").asBoolean();
 
-    if (logger.isDebugEnabled())
-    {
-      logger.debug("query id: {}", resultOutput.queryId);
-    }
+    logger.debug("query id: {}", resultOutput.queryId);
 
     // extract parameters
     resultOutput.parameters =
@@ -306,11 +304,8 @@ public class ResultUtil
 
       resultOutput.resultColumnMetadata.add(columnMetadata);
 
-      if (logger.isDebugEnabled())
-      {
-        logger.debug("Get column metadata: {}",
-                     columnMetadata.toString());
-      }
+      logger.debug("Get column metadata: {}",
+                   (ArgSupplier) () -> columnMetadata.toString());
     }
 
     resultOutput.currentChunkRowset = rootNode.path("data").path("rowset");
@@ -407,24 +402,21 @@ public class ResultUtil
 
     resultOutput.dateFormatter = new SnowflakeDateTimeFormat(sqlDateFormat);
 
-    if (logger.isDebugEnabled())
-    {
-      logger.debug("sql date format: {}, java date format: {}",
-                   sqlDateFormat,
-                   resultOutput.dateFormatter.toSimpleDateTimePattern());
-    }
+    logger.debug("sql date format: {}, java date format: {}",
+                 sqlDateFormat,
+                 (ArgSupplier) () ->
+                     resultOutput.dateFormatter.toSimpleDateTimePattern());
 
     String sqlTimeFormat = (String) effectiveParamValue(
         resultOutput.parameters,
         "TIME_OUTPUT_FORMAT");
 
     resultOutput.timeFormatter = new SnowflakeDateTimeFormat(sqlTimeFormat);
-    if (logger.isDebugEnabled())
-    {
-      logger.debug("sql time format: {}, java time format: {}",
-                   sqlTimeFormat,
-                   resultOutput.timeFormatter.toSimpleDateTimePattern());
-    }
+
+    logger.debug("sql time format: {}, java time format: {}",
+                 sqlTimeFormat,
+                 (ArgSupplier) () ->
+                     resultOutput.timeFormatter.toSimpleDateTimePattern());
 
     String timeZoneName = (String) effectiveParamValue(
         resultOutput.parameters, "TIMEZONE");
@@ -579,12 +571,9 @@ public class ResultUtil
             (String) effectiveParamValue(parameters, param),
             defaultFormat);
     SnowflakeDateTimeFormat formatter = new SnowflakeDateTimeFormat(sqlFormat);
-    if (logger.isDebugEnabled())
-    {
-      logger.debug("sql {} format: {}, java {} format: {}",
-                   id, sqlFormat,
-                   id, formatter.toSimpleDateTimePattern());
-    }
+    logger.debug("sql {} format: {}, java {} format: {}",
+                 id, sqlFormat,
+                 id, (ArgSupplier) formatter::toSimpleDateTimePattern);
     return formatter;
   }
 
@@ -600,11 +589,8 @@ public class ResultUtil
 
     if (milliToAdjust != 0)
     {
-
-      if (logger.isDebugEnabled())
-      {
-        logger.debug("adjust timestamp by {} days", milliToAdjust / 86400000);
-      }
+      logger.debug("adjust timestamp by {} days",
+                   (ArgSupplier) () -> milliToAdjust / 86400000);
 
       Timestamp newTimestamp = new Timestamp(timestamp.getTime()
                                              + milliToAdjust);
@@ -898,11 +884,9 @@ public class ResultUtil
 
       SFTimestamp tsInClientTZ = tsInUTC.moveToTimeZone(tz);
 
-      if (logger.isDebugEnabled())
-      {
-        logger.debug("getDate: tz offset={}",
-                     tsInClientTZ.getTimeZone().getOffset(tsInClientTZ.getTime()));
-      }
+      logger.debug("getDate: tz offset={}", (ArgSupplier) () ->
+          tsInClientTZ.getTimeZone().getOffset(tsInClientTZ.getTime()));
+
       // return the date adjusted to the JVM default time zone
       Date preDate = new Date(tsInClientTZ.getTime());
 
@@ -910,11 +894,9 @@ public class ResultUtil
       // by (H-H/4-2) where H is the hundreds digit of the year according to:
       // http://en.wikipedia.org/wiki/Gregorian_calendar
       Date newDate = adjustDate(preDate);
-      if (logger.isDebugEnabled())
-      {
-        logger.debug("Adjust date from {} to {}",
-                     preDate.toString(), newDate.toString());
-      }
+      logger.debug("Adjust date from {} to {}",
+                   (ArgSupplier) preDate::toString,
+                   (ArgSupplier) newDate::toString);
       return newDate;
     }
     catch (NumberFormatException ex)

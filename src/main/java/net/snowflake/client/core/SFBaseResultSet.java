@@ -7,6 +7,7 @@ package net.snowflake.client.core;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.jdbc.SnowflakeUtil;
+import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.common.core.SFBinary;
 import net.snowflake.common.core.SFBinaryFormat;
 import net.snowflake.common.core.SFTime;
@@ -128,11 +129,8 @@ public abstract class SFBaseResultSet
             sfTS, columnType, columnScale, timestampNTZFormatter,
             timestampLTZFormatter, timestampTZFormatter, session);
 
-        if (logger.isDebugEnabled())
-        {
-          logger.debug("Converting timestamp to string from: {} to: {}",
-                       obj.toString(), timestampStr);
-        }
+        logger.debug("Converting timestamp to string from: {} to: {}",
+                     (ArgSupplier) obj::toString, timestampStr);
 
         return timestampStr;
 
@@ -151,11 +149,9 @@ public abstract class SFBaseResultSet
 
         String dateStr = ResultUtil.getDateAsString(date, dateFormatter);
 
-        if (logger.isDebugEnabled())
-        {
-          logger.debug("Converting date to string from: {} to: {}",
-                       obj.toString(), dateStr);
-        }
+        logger.debug("Converting date to string from: {} to: {}",
+                     (ArgSupplier) obj::toString, dateStr);
+
         return dateStr;
 
       case Types.TIME:
@@ -174,11 +170,9 @@ public abstract class SFBaseResultSet
         int scale = resultSetMetaData.getScale(columnIndex);
         String timeStr = ResultUtil.getSFTimeAsString(sfTime, scale, timeFormatter);
 
-        if (logger.isDebugEnabled())
-        {
-          logger.debug("Converting time to string from: {} to: {}",
-                       obj.toString(), timeStr);
-        }
+        logger.debug("Converting time to string from: {} to: {}",
+                     (ArgSupplier) obj::toString, timeStr);
+
         return timeStr;
 
       case Types.BINARY:

@@ -1,12 +1,12 @@
 package net.snowflake.client.jdbc;
 
+import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 
 import javax.sql.DataSource;
 import java.io.PrintWriter;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.util.Properties;
@@ -63,11 +63,8 @@ public class SnowflakeBasicDataSource implements DataSource
     try
     {
       Connection con = SnowflakeDriver.INSTANCE.connect(getUrl(), properties);
-      if (logger.isTraceEnabled())
-      {
-        logger.trace("Created a connection for {} at {}",
-                     user, getUrl());
-      }
+      logger.trace("Created a connection for {} at {}",
+                   user, (ArgSupplier) this::getUrl);
       return con;
     }
     catch (SQLException e)
