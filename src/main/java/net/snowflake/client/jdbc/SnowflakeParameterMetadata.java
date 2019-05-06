@@ -1,10 +1,12 @@
 package net.snowflake.client.jdbc;
 
+import net.snowflake.client.core.MetaDataOfBinds;
 import net.snowflake.client.core.SFStatementMetaData;
-
 import java.sql.ParameterMetaData;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
+
+import static net.snowflake.client.jdbc.SnowflakeType.convertStringToType;
 
 /**
  * Naive implementation of ParameterMetadata class.
@@ -30,7 +32,12 @@ class SnowflakeParameterMetadata implements ParameterMetaData
   @Override
   public int isNullable(int param) throws SQLException
   {
-    throw new SQLFeatureNotSupportedException();
+    MetaDataOfBinds paramInfo = statementMetaData.getMetaDataForBindParam(param);
+    if (paramInfo.isNullable())
+    {
+      return ParameterMetaData.parameterNullable;
+    }
+    return ParameterMetaData.parameterNoNulls;
   }
 
   @Override
@@ -42,25 +49,29 @@ class SnowflakeParameterMetadata implements ParameterMetaData
   @Override
   public int getPrecision(int param) throws SQLException
   {
-    throw new SQLFeatureNotSupportedException();
+    MetaDataOfBinds paramInfo = statementMetaData.getMetaDataForBindParam(param);
+    return paramInfo.getPrecision();
   }
 
   @Override
   public int getScale(int param) throws SQLException
   {
-    throw new SQLFeatureNotSupportedException();
+    MetaDataOfBinds paramInfo = statementMetaData.getMetaDataForBindParam(param);
+    return paramInfo.getScale();
   }
 
   @Override
   public int getParameterType(int param) throws SQLException
   {
-    throw new SQLFeatureNotSupportedException();
+    MetaDataOfBinds paramInfo = statementMetaData.getMetaDataForBindParam(param);
+    return convertStringToType(paramInfo.getTypeName());
   }
 
   @Override
   public String getParameterTypeName(int param) throws SQLException
   {
-    throw new SQLFeatureNotSupportedException();
+    MetaDataOfBinds paramInfo = statementMetaData.getMetaDataForBindParam(param);
+    return paramInfo.getTypeName();
   }
 
   @Override

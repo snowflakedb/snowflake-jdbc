@@ -8,7 +8,13 @@ package net.snowflake.client.core;
  * Created by jhuang on 1/21/16.
  */
 
+import net.snowflake.client.jdbc.ErrorCode;
+import net.snowflake.client.jdbc.SnowflakeSQLException;
+import net.snowflake.common.core.SqlState;
+import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 
 /**
  * Statement metadata which includes the result metadata and bind information.
@@ -25,15 +31,19 @@ public class SFStatementMetaData
 
   private final boolean arrayBindSupported;
 
+  private List<MetaDataOfBinds> metaDataOfBinds;
+
   SFStatementMetaData(SFResultSetMetaData resultSetMetaData,
                       SFStatementType statementType,
                       int numberOfBinds,
-                      boolean arrayBindSupported)
+                      boolean arrayBindSupported,
+                      List<MetaDataOfBinds> metaDataOfBinds)
   {
     this.resultSetMetaData = resultSetMetaData;
     this.statementType = statementType;
     this.numberOfBinds = numberOfBinds;
     this.arrayBindSupported = arrayBindSupported;
+    this.metaDataOfBinds = metaDataOfBinds;
   }
 
   public SFResultSetMetaData getResultSetMetaData()
@@ -49,6 +59,21 @@ public class SFStatementMetaData
   public int getNumberOfBinds()
   {
     return numberOfBinds;
+  }
+
+  public MetaDataOfBinds getMetaDataForBindParam (int param) throws SQLException
+  {
+    if (param < 1 || param > numberOfBinds)
+    {
+      throw new SnowflakeSQLException(SqlState.NUMERIC_VALUE_OUT_OF_RANGE,
+                                      ErrorCode.NUMERIC_VALUE_OUT_OF_RANGE.getMessageCode(), param,
+                                      numberOfBinds);
+    }
+    if (numberOfBinds != metaDataOfBinds.size() || metaDataOfBinds.size() == 0)
+    {
+      throw new SnowflakeSQLException(SqlState.NO_DATA, ErrorCode.NO_VALID_DATA.getMessageCode());
+    }
+    return metaDataOfBinds.get(param-1);
   }
 
   public void setNumberOfBinds(int numberOfBinds)
@@ -83,6 +108,7 @@ public class SFStatementMetaData
                                 null),
         SFStatementType.UNKNOWN,
         0,
-        false);
+        false,
+        new ArrayList<>());
   }
 }
