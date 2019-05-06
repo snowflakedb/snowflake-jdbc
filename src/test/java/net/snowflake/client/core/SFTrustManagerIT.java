@@ -3,9 +3,15 @@
  */
 package net.snowflake.client.core;
 
+import net.minidev.json.JSONObject;
+import net.snowflake.client.jdbc.BaseJDBCTest;
+import net.snowflake.client.jdbc.telemetryOOB.TelemetryEvent;
+import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -20,14 +26,17 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import static junit.framework.TestCase.fail;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.AnyOf.anyOf;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
-public class SFTrustManagerIT
+public class SFTrustManagerIT extends BaseJDBCTest
 {
   private static final String[] TARGET_HOSTS = {
       "ocspssd.us-east-1.snowflakecomputing.com/ocsp/fetch",
@@ -39,6 +48,38 @@ public class SFTrustManagerIT
       "snowflake.okta.com",
       "sfcdev1.blob.core.windows.net"
   };
+
+  private boolean defaultState;
+
+  @Before
+  public void setUp()
+  {
+    TelemetryService service = TelemetryService.getInstance();
+    service.updateContext(getConnectionParameters());
+    defaultState = service.isEnabled();
+    service.setNumOfRetryToTriggerTelemetry(3);
+    service.disableRunFlushBeforeException();
+    service.enable();
+  }
+
+  @After
+  public void tearDown() throws InterruptedException
+  {
+    TelemetryService service = TelemetryService.getInstance();
+    service.flush();
+    // wait 5 seconds while the service is flushing
+    TimeUnit.SECONDS.sleep(5);
+
+    if (defaultState)
+    {
+      service.enable();
+    }
+    else
+    {
+      service.disable();
+    }
+    service.enableRunFlushBeforeException();
+  }
 
   @Rule
   public TemporaryFolder tmpFolder = new TemporaryFolder();
@@ -158,6 +199,7 @@ public class SFTrustManagerIT
     SFTrustManager sft = new SFTrustManager(
         ocspCacheFile,  // a temp OCSP response cache file
         true);
+    int queueSize = TelemetryService.getInstance().size();
     try
     {
       sft.validateRevocationStatus(certList.toArray(new X509Certificate[0]), "test_host");
@@ -166,6 +208,18 @@ public class SFTrustManagerIT
     catch (CertificateEncodingException ex)
     {
       assertThat(ex.getMessage(), containsString("has been revoked"));
+      if (TelemetryService.getInstance().isDeploymentEnabled())
+      {
+        assertEquals(TelemetryService.getInstance().size(), queueSize + 1);
+        TelemetryEvent te = TelemetryService.getInstance().peek();
+        JSONObject values = (JSONObject) te.get("Value");
+        assertEquals("revokedOCSPException", te.get("Name"));
+        assertEquals("revoked",
+                     values.get("eventType").toString());
+        assertNotNull(values.get("peerHost"));
+        assertNotNull(values.get("exceptionStackTrace"));
+        assertNotNull(values.get("exceptionMessage"));
+      }
     }
   }
 
