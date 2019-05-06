@@ -87,7 +87,8 @@ public enum ErrorCode
   INVALID_PROXY_PROPERTIES(200051, SqlState.CONNECTION_EXCEPTION),
   CONNECTION_CLOSED(200052, SqlState.CONNECTION_DOES_NOT_EXIST),
   NON_FATAL_ERROR(200053, SqlState.WARNING),
-  NUMERIC_VALUE_OUT_OF_RANGE(200054, SqlState.NUMERIC_VALUE_OUT_OF_RANGE);
+  NUMERIC_VALUE_OUT_OF_RANGE(200054, SqlState.NUMERIC_VALUE_OUT_OF_RANGE),
+  NO_VALID_DATA(200055, SqlState.NO_DATA);
 
   public final static String errorMessageResource =
       "net.snowflake.client.jdbc.jdbc_error_messages";
