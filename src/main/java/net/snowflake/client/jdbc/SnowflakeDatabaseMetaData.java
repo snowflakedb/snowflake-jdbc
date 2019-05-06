@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.SFSession;
+import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.util.SFPair;
@@ -1207,15 +1208,12 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
                              String tableNamePattern, String[] types)
   throws SQLException
   {
-    if (logger.isDebugEnabled())
-    {
-      logger.debug(
-          "public ResultSet getTables(String catalog={}, String "
-          + "schemaPattern={}, String tableNamePattern={}, " +
-          "String[] types={})",
-          catalog, schemaPattern, tableNamePattern,
-          Arrays.toString(types));
-    }
+    logger.debug(
+        "public ResultSet getTables(String catalog={}, String " +
+        "schemaPattern={}, String tableNamePattern={}, String[] types={})",
+        catalog, schemaPattern, tableNamePattern,
+        (ArgSupplier) () -> Arrays.toString(types));
+
     raiseSQLExceptionIfConnectionIsClosed();
 
     Set<String> supportedTableTypes = new HashSet<>();

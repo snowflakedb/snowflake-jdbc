@@ -228,12 +228,6 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-jdk14</artifactId>
-      <version>${slf4j.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
       <groupId>org.jsoup</groupId>
       <artifactId>jsoup</artifactId>
       <version>${jsoup.version}</version>
@@ -263,6 +257,12 @@
       <artifactId>javax.activation</artifactId>
       <version>1.2.0</version>
       <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>ch.qos.logback</groupId>
+      <artifactId>logback-classic</artifactId>
+      <version>1.2.3</version>
+      <scope>test</scope>
     </dependency>
   </dependencies>
 

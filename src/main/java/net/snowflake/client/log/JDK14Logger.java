@@ -160,7 +160,12 @@ public class JDK14Logger implements SFLogger
     if (jdkLogger.isLoggable(level))
     {
       String[] source = findSourceInStack();
-      jdkLogger.logp(level, source[0], source[1], refactorString(msg), arguments);
+      jdkLogger.logp(
+          level,
+          source[0],
+          source[1],
+          refactorString(msg),
+          evaluateLambdaArgs(arguments));
     }
   }
 
@@ -337,5 +342,19 @@ public class JDK14Logger implements SFLogger
     catch (IOException e)
     {
     }
+  }
+
+  private static Object[] evaluateLambdaArgs(Object... args)
+  {
+    final Object[] result = new Object[args.length];
+
+    for (int i = 0; i < args.length; i++)
+    {
+      result[i] = args[i] instanceof ArgSupplier
+                  ? ((ArgSupplier) args[i]).get()
+                  : args[i];
+    }
+
+    return result;
   }
 }

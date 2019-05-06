@@ -54,30 +54,85 @@ public interface SFLogger
 
   void debug(String msg);
 
+  /**
+   * Logs message at DEBUG level.
+   *
+   * @param msg       Message or message format
+   * @param arguments objects that supply value to placeholders in the message
+   *                  format. Expensive operations that supply these values can
+   *                  be specified using lambdas implementing {@link ArgSupplier}
+   *                  so that they are run only if the message is going to be
+   *                  logged. E.g.,
+   *                  {@code Logger.debug("Value: {}", (ArgSupplier) () -> expensiveOperation());}
+   */
   void debug(String msg, Object... arguments);
 
   void debug(String msg, Throwable t);
 
   void error(String msg);
 
+  /**
+   * Logs message at ERROR level.
+   *
+   * @param msg       Message or message format
+   * @param arguments objects that supply value to placeholders in the message
+   *                  format. Expensive operations that supply these values can
+   *                  be specified using lambdas implementing {@link ArgSupplier}
+   *                  so that they are run only if the message is going to be
+   *                  logged. E.g.,
+   *                  {@code Logger.warn("Value: {}", (ArgSupplier) () -> expensiveOperation());}
+   */
   void error(String msg, Object... arguments);
 
   void error(String msg, Throwable t);
 
   void info(String msg);
 
+  /**
+   * Logs message at INFO level.
+   *
+   * @param msg       Message or message format
+   * @param arguments objects that supply value to placeholders in the message
+   *                  format. Expensive operations that supply these values can
+   *                  be specified using lambdas implementing {@link ArgSupplier}
+   *                  so that they are run only if the message is going to be
+   *                  logged. E.g.,
+   *                  {@code Logger.info("Value: {}", (ArgSupplier) () -> expensiveOperation());}
+   */
   void info(String msg, Object... arguments);
 
   void info(String msg, Throwable t);
 
   void trace(String msg);
 
+  /**
+   * Logs message at TRACE level.
+   *
+   * @param msg       Message or message format
+   * @param arguments objects that supply value to placeholders in the message
+   *                  format. Expensive operations that supply these values can
+   *                  be specified using lambdas implementing {@link ArgSupplier}
+   *                  so that they are run only if the message is going to be
+   *                  logged. E.g.,
+   *                  {@code Logger.trace("Value: {}", (ArgSupplier) () -> expensiveOperation());}
+   */
   void trace(String msg, Object... arguments);
 
   void trace(String msg, Throwable t);
 
   void warn(String msg);
 
+  /**
+   * Logs message at WARN level.
+   *
+   * @param msg       Message or message format
+   * @param arguments objects that supply value to placeholders in the message
+   *                  format. Expensive operations that supply these values can
+   *                  be specified using lambdas implementing {@link ArgSupplier}
+   *                  so that they are run only if the message is going to be
+   *                  logged. E.g.,
+   *                  {@code Logger.warn("Value: {}", (ArgSupplier) () -> expensiveOperation());}
+   */
   void warn(String msg, Object... arguments);
 
   void warn(String msg, Throwable t);

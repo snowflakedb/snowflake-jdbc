@@ -13,7 +13,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Search for credentials in a sql text
+ * Search for credentials in sql and/or other text
  */
 public class SecretDetector
 {
@@ -21,7 +21,7 @@ public class SecretDetector
   // '%' character in the regex) strings.
   // This will match some things that it shouldn't. The minimum number of
   // characters is essentially a random choice - long enough to not mask other
-  // strings but not so long that it might miss things.  
+  // strings but not so long that it might miss things.
   private static final Pattern GENERIC_CREDS_PATTERN = Pattern.compile(
       "([a-z0-9+/%]{18,})", Pattern.CASE_INSENSITIVE);
 
@@ -33,8 +33,12 @@ public class SecretDetector
   private static final Pattern AWS_TOKEN_PATTERN = Pattern.compile(
       "(accessToken|tempToken|keySecret)\"\\s*:\\s*\"([a-z0-9/+]{32,}={0,2})\"",
       Pattern.CASE_INSENSITIVE);
+
+  // Signature added in the query string of a URL in SAS based authentication
+  // for S3 or Azure Storage requests
   private static final Pattern SAS_TOKEN_PATTERN = Pattern.compile(
-      "sig=([a-z0-9%]{32,})", Pattern.CASE_INSENSITIVE);
+      "(sig|signature|AWSAccessKeyId)=(?<secret>[a-z0-9%/+]{16,})",
+      Pattern.CASE_INSENSITIVE);
 
   private static final int LOOK_AHEAD = 10;
 
@@ -118,13 +122,44 @@ public class SecretDetector
     return awsSecretRanges;
   }
 
+  /**
+   * Finds positions of occurrences of all sensitive fields of SAS tokens in the
+   * given text.
+   *
+   * @param text text which may contain SAS tokens
+   * @return A list of begin/end positions of sensitive fields of SAS tokens
+   */
+  private static List<SecretRange> getSASTokenPos(String text)
+  {
+    // log before and after in case this is causing StackOverflowError
+    LOGGER.debug("pre-regex getSASTokenPos");
+
+    Matcher matcher = SAS_TOKEN_PATTERN.matcher(
+        text.length() <= MAX_LENGTH ? text : text.substring(0, MAX_LENGTH));
+
+    List<SecretRange> secretRanges = new ArrayList<>();
+
+    while (matcher.find())
+    {
+      // Gets begin/end position of only 'secret' group in the matched regex
+      secretRanges.add(
+          new SecretRange(
+              matcher.start("secret"), matcher.end("secret")));
+    }
+
+    LOGGER.debug("post-regex getSASTokenPos");
+
+    return secretRanges;
+  }
+
   private static boolean isBase64(char ch)
   {
     return ('A' <= ch && ch <= 'Z')
            || ('a' <= ch && ch <= 'z')
            || ('0' <= ch && ch <= '9')
            || ch == '+'
-           || ch == '/';
+           || ch == '/'
+           || ch == '=';
   }
 
   /**
@@ -135,32 +170,66 @@ public class SecretDetector
    */
   public static String maskAWSSecret(String sql)
   {
-    List<SecretDetector.SecretRange> secretRanges =
-        SecretDetector.getAWSSecretPos(sql);
-    for (SecretDetector.SecretRange secretRange : secretRanges)
-    {
-      sql = maskText(sql, secretRange.beginPos, secretRange.endPos);
-    }
-    return sql;
+    List<SecretRange> secretRanges = SecretDetector.getAWSSecretPos(sql);
+
+    return maskText(sql, secretRanges);
   }
 
   /**
-   * Masks given text between begin position and end position.
+   * Masks SAS token(s) in the input string
+   *
+   * @param text Text which may contain SAS token(s)
+   * @return Masked string
+   */
+  public static String maskSASToken(String text)
+  {
+    List<SecretRange> secretRanges = SecretDetector.getSASTokenPos(text);
+
+    return maskText(text, secretRanges);
+  }
+
+  /**
+   * Masks any secrets present in the input string. This currently checks for
+   * SAS tokens ({@link SecretDetector#maskSASToken(String)}) and AWS keys
+   * ({@link SecretDetector#maskAWSSecret(String)}.
+   *
+   * @param text Text which may contain secrets
+   * @return Masked string
+   */
+  public static String maskSecrets(String text)
+  {
+    List<SecretRange> secretRanges = SecretDetector.getAWSSecretPos(text);
+    secretRanges.addAll(SecretDetector.getSASTokenPos(text));
+
+    return maskText(text, secretRanges);
+  }
+
+  /**
+   * Masks given text between given list of begin/end positions.
    *
    * @param text   text to mask
-   * @param begPos begin position (inclusive)
-   * @param endPos end position (exclusive)
+   * @param ranges List of begin/end positions of text that need to be masked
    * @return masked text
    */
-  private static String maskText(String text, int begPos, int endPos)
+  private static String maskText(String text, List<SecretRange> ranges)
   {
-    // Convert the SQL statement to a char array to obe able to modify it.
+    if (ranges.isEmpty())
+    {
+      return text;
+    }
+
+    // Convert the text to a char array to be able to modify it.
     char[] chars = text.toCharArray();
 
-    // Mask the value in the SQL statement using *.
-    for (int curPos = begPos; curPos < endPos; curPos++)
+    for (SecretRange range : ranges)
     {
-      chars[curPos] = '☺';
+      int beginPos = range.beginPos;
+      int endPos = range.endPos;
+
+      for (int curPos = beginPos; curPos < endPos; curPos++)
+      {
+        chars[curPos] = '☺';
+      }
     }
 
     // Convert it back to a string

@@ -18,6 +18,7 @@ import net.snowflake.client.core.SFFixedViewResultSet;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.core.SFStatement;
 import net.snowflake.client.jdbc.cloud.storage.*;
+import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.RemoteStoreFileEncryptionMaterial;
@@ -36,7 +37,6 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.DigestOutputStream;
@@ -1896,13 +1896,13 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
                      (!remoteLocation.path.endsWith("/") ? "/" : "")
                      + destFileName;
     }
-    if (logger.isDebugEnabled())
-    {
-      logger.debug("upload object. location={}, key={}, srcFile={}, encryption={}",
-                   remoteLocation.location, destFileName, srcFile,
-                   (encMat == null ? "NULL" :
-                    Long.toString(encMat.getSmkId()) + "|" + encMat.getQueryId()));
-    }
+
+    logger.debug("upload object. location={}, key={}, srcFile={}, encryption={}",
+                 remoteLocation.location, destFileName, srcFile,
+                 (ArgSupplier) () -> (
+                     encMat == null
+                     ? "NULL"
+                     : encMat.getSmkId() + "|" + encMat.getQueryId()));
 
     StorageObjectMetadata meta = storageFactory.createStorageMetadataObj(stage.getStageType());
     meta.setContentLength(uploadSize);
@@ -1977,13 +1977,13 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
       stageFilePath = SnowflakeUtil.concatFilePathNames(remoteLocation.path,
                                                         filePath, "/");
     }
-    if (logger.isDebugEnabled())
-    {
-      logger.debug("Download object. location={}, key={}, srcFile={}, encryption={}",
-                   remoteLocation.location, stageFilePath, filePath,
-                   (encMat == null ? "NULL" : Long.toString(encMat.getSmkId()) +
-                                              "|" + encMat.getQueryId()));
-    }
+
+    logger.debug("Download object. location={}, key={}, srcFile={}, encryption={}",
+                 remoteLocation.location, stageFilePath, filePath,
+                 (ArgSupplier) () -> (
+                     encMat == null
+                     ? "NULL"
+                     : encMat.getSmkId() + "|" + encMat.getQueryId()));
 
     initialClient.download(connection, command,
                            localLocation, destFileName, parallel,

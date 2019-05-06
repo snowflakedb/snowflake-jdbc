@@ -7,6 +7,7 @@ package net.snowflake.client.jdbc;
 import com.fasterxml.jackson.databind.JsonNode;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
+import net.snowflake.client.util.SecretDetector;
 import net.snowflake.common.core.SqlState;
 
 import java.lang.ref.SoftReference;
@@ -39,6 +40,10 @@ public class SnowflakeResultChunk
 
   // url for result chunk
   private final String url;
+
+  // url for result chunk, with any credentials present (e.g. SAS tokens)
+  // masked
+  private final String scrubbedUrl;
 
   // number of columns to expect
   private final int colCount;
@@ -77,6 +82,7 @@ public class SnowflakeResultChunk
                               int uncompressedSize, boolean useJsonParserV2)
   {
     this.url = url;
+    this.scrubbedUrl = SecretDetector.maskSASToken(this.url);
     this.rowCount = rowCount;
     this.colCount = colCount;
     this.uncompressedSize = uncompressedSize;
@@ -149,6 +155,11 @@ public class SnowflakeResultChunk
   public final String getUrl()
   {
     return url;
+  }
+
+  public final String getScrubbedUrl()
+  {
+    return this.scrubbedUrl;
   }
 
   public final int getRowCount()

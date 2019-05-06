@@ -10,8 +10,10 @@ import net.snowflake.client.core.SFBaseResultSet;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SFStatement;
 import net.snowflake.client.core.StmtUtil;
+import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
+import net.snowflake.client.util.SecretDetector;
 
 import java.sql.BatchUpdateException;
 import java.sql.Connection;
@@ -271,7 +273,8 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement
     raiseSQLExceptionIfStatementIsClosed();
     connection.injectedDelay();
 
-    logger.debug("execute: {}", sql);
+    logger.debug("execute: {}",
+                 (ArgSupplier) () -> SecretDetector.maskSecrets(sql));
 
     String trimmedSql = sql.trim();
 

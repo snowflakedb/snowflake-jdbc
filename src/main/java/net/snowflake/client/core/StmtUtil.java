@@ -4,7 +4,6 @@
 
 package net.snowflake.client.core;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
@@ -12,8 +11,10 @@ import net.snowflake.client.core.BasicEvent.QueryState;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.jdbc.SnowflakeUtil;
+import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
+import net.snowflake.client.util.SecretDetector;
 import net.snowflake.common.api.QueryInProgressResponse;
 import org.apache.http.HttpHeaders;
 import org.apache.http.client.methods.HttpGet;
@@ -331,10 +332,8 @@ public class StmtUtil
 
         String json = mapper.writeValueAsString(sqlJsonBody);
 
-        if (logger.isDebugEnabled())
-        {
-          logger.debug("JSON: {}", json);
-        }
+        logger.debug("JSON: {}",
+                     (ArgSupplier) () -> SecretDetector.maskSecrets(json));
 
         // SNOW-18057: compress the post body in gzip
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -484,20 +483,6 @@ public class StmtUtil
       else
       {
         retries = 0; // reset retry counter after a successful response
-      }
-
-      // trace the response if requested
-      if (logger.isDebugEnabled())
-      {
-        try
-        {
-          String json = mapper.writeValueAsString(resultAsString);
-          logger.debug("Response: {}", json);
-        }
-        catch (JsonProcessingException ex)
-        {
-          logger.debug("Response: {}", resultAsString);
-        }
       }
 
       if (pingPongResponseJson != null)
@@ -727,7 +712,8 @@ public class StmtUtil
     {
       URIBuilder uriBuilder = new URIBuilder(stmtInput.serverUrl);
 
-      logger.debug("Aborting query: {}", stmtInput.sql);
+      logger.debug("Aborting query: {}",
+                   (ArgSupplier) () -> SecretDetector.maskSecrets(stmtInput.sql));
 
       uriBuilder.setPath(SF_PATH_ABORT_REQUEST_V1);
 
@@ -744,7 +730,8 @@ public class StmtUtil
 
       String json = mapper.writeValueAsString(sqlJsonBody);
 
-      logger.debug("JSON for cancel request: {}", json);
+      logger.debug("JSON for cancel request: {}",
+                   (ArgSupplier) () -> SecretDetector.maskSecrets(json));
 
       StringEntity input = new StringEntity(json, Charset.forName("UTF-8"));
       input.setContentType("application/json");
@@ -804,7 +791,11 @@ public class StmtUtil
     // skip commenting prefixed with //
     while (trimmedSql.startsWith("//"))
     {
-      logger.debug("skipping // comments in: \n{}", trimmedSql);
+      if (logger.isDebugEnabled())
+      {
+        logger.debug("skipping // comments in: \n{}",
+                     SecretDetector.maskSecrets(trimmedSql));
+      }
 
       if (trimmedSql.indexOf('\n') > 0)
       {
@@ -816,15 +807,21 @@ public class StmtUtil
         break;
       }
 
-      logger.debug("New sql after skipping // comments: \n{}",
-                   trimmedSql);
-
+      if (logger.isDebugEnabled())
+      {
+        logger.debug("New sql after skipping // comments: \n{}",
+                     SecretDetector.maskSecrets(trimmedSql));
+      }
     }
 
     // skip commenting enclosed with /* */
     while (trimmedSql.startsWith("/*"))
     {
-      logger.debug("skipping /* */ comments in: \n{}", trimmedSql);
+      if (logger.isDebugEnabled())
+      {
+        logger.debug("skipping /* */ comments in: \n{}",
+                     SecretDetector.maskSecrets(trimmedSql));
+      }
 
       if (trimmedSql.indexOf("*/") > 0)
       {
@@ -836,8 +833,12 @@ public class StmtUtil
         break;
 
       }
-      logger.debug("New sql after skipping /* */ comments: \n{}", trimmedSql);
 
+      if (logger.isDebugEnabled())
+      {
+        logger.debug("New sql after skipping /* */ comments: \n{}",
+                     SecretDetector.maskSecrets(trimmedSql));
+      }
     }
 
     trimmedSql = trimmedSql.toLowerCase();
