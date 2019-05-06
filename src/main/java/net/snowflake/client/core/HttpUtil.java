@@ -98,7 +98,7 @@ public class HttpUtil
    * @return HttpClient object
    */
   static CloseableHttpClient buildHttpClient(
-      boolean insecureMode, boolean ocspSoftfailMode, File ocspCacheFile, boolean useOcspCacheServer)
+      OCSPMode ocspMode, File ocspCacheFile, boolean useOcspCacheServer)
   {
     // set timeout so that we don't wait forever.
     // Setup the default configuration for all requests on this client
@@ -110,15 +110,15 @@ public class HttpUtil
             .build();
 
     TrustManager[] trustManagers = null;
-    if (!insecureMode)
+    if (ocspMode != OCSPMode.INSECURE)
     {
       // A custom TrustManager is required only if insecureMode is disabled,
       // which is by default in the production. insecureMode can be enabled
       // 1) OCSP service is down for reasons, 2) PowerMock test tht doesn't
       // care OCSP checks.
-      // OCSP Softfail is on by default
+      // OCSP FailOpen is ON by default
       TrustManager[] tm = {
-          new SFTrustManager(ocspCacheFile, ocspSoftfailMode, useOcspCacheServer)};
+          new SFTrustManager(ocspCacheFile, ocspMode == OCSPMode.FAIL_OPEN, useOcspCacheServer)};
       trustManagers = tm;
     }
     try
@@ -190,18 +190,18 @@ public class HttpUtil
    */
   public static CloseableHttpClient getHttpClient()
   {
-    return initHttpClient(true, true, null);
+    return initHttpClient(OCSPMode.FAIL_OPEN, null);
   }
 
   /**
    * Accessor for the HTTP client singleton.
    *
-   * @param insecureMode  skip OCSP revocation check if true.
+   * @param ocspMode      OCSPMode
    * @param ocspCacheFile OCSP response cache file name. if null, the default
    *                      file will be used.
    * @return HttpClient object shared across all connections
    */
-  public static CloseableHttpClient initHttpClient(boolean insecureMode, boolean ocspSoftfailMode, File ocspCacheFile)
+  public static CloseableHttpClient initHttpClient(OCSPMode ocspMode, File ocspCacheFile)
   {
     if (httpClient == null)
     {
@@ -210,8 +210,7 @@ public class HttpUtil
         if (httpClient == null)
         {
           httpClient = buildHttpClient(
-              insecureMode,
-              ocspSoftfailMode, // True By Default
+              ocspMode,
               ocspCacheFile,
               enableOcspResponseCacheServer());
         }

@@ -474,7 +474,7 @@ public class TelemetryService
   {
     if (enabled)
     {
-      String eventName = "OCSP Exception";
+      String eventName = "OCSPException";
       TelemetryEvent.LogBuilder logBuilder = new TelemetryEvent.LogBuilder();
 
       if (ex != null)

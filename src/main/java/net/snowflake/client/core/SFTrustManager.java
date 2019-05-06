@@ -10,9 +10,9 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeType;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Strings;
-import com.microsoft.azure.storage.core.Logger;
+import com.nimbusds.jose.JWSVerifier;
 import com.nimbusds.jose.crypto.RSASSAVerifier;
-import com.sun.org.apache.xpath.internal.operations.Bool;
+import com.nimbusds.jwt.SignedJWT;
 import net.minidev.json.JSONObject;
 import net.snowflake.client.jdbc.OCSPErrorCode;
 import net.snowflake.client.log.SFLogger;
@@ -35,7 +35,6 @@ import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DLSequence;
 import org.bouncycastle.asn1.ocsp.CertID;
-import org.bouncycastle.asn1.ocsp.OCSPResponse;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.Certificate;
@@ -60,26 +59,34 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.DigestCalculator;
 
 import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLEngine;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
-import javax.net.ssl.X509TrustManager;
 import javax.net.ssl.X509ExtendedTrustManager;
-import javax.net.ssl.SSLEngine;
-
-import java.io.*;
+import javax.net.ssl.X509TrustManager;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.math.BigInteger;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.security.*;
+import java.security.InvalidKeyException;
+import java.security.KeyFactory;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.Security;
+import java.security.Signature;
+import java.security.SignatureException;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPublicKey;
-import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.text.MessageFormat;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -92,10 +99,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
-
-import com.nimbusds.jose.*;
-import com.nimbusds.jwt.*;
-import org.bouncycastle.util.io.pem.PemReader;
 
 
 /**
@@ -180,9 +183,9 @@ class SFTrustManager extends X509ExtendedTrustManager
   static SSDManager ssdManager = new SSDManager();
 
   /**
-   * OCSP Soft Fail Mode
+   * OCSP Fail Open Mode
    */
-  static boolean OCSP_SOFTFAIL_MODE = true;
+  static boolean OCSP_FAIL_OPEN = true;
 
   static
   {
@@ -357,10 +360,10 @@ class SFTrustManager extends X509ExtendedTrustManager
    * is used.
    *
    * @param cacheFile                  cache file.
-   * @param ocspSoftfailMode           OCSP Soft Fail Mode - True by default
+   * @param ocspFailOpen               OCSP Soft Fail Mode - True by default
    * @param useOcspResponseCacheServer true if use OCSP response cache server is used.
    */
-  SFTrustManager(File cacheFile, boolean ocspSoftfailMode, boolean useOcspResponseCacheServer)
+  SFTrustManager(File cacheFile, boolean ocspFailOpen, boolean useOcspResponseCacheServer)
   {
     this.trustManager = getTrustManager(
         KeyManagerFactory.getDefaultAlgorithm());
@@ -368,18 +371,17 @@ class SFTrustManager extends X509ExtendedTrustManager
     this.exTrustManager = (X509ExtendedTrustManager) getTrustManager(
         KeyManagerFactory.getDefaultAlgorithm());
 
-    String softfailEnv = System.getenv("SF_OCSP_SOFTFAIL_MODE");
-
-    if (!Strings.isNullOrEmpty(softfailEnv))
+    String failOpenEnvVariable = System.getenv("SF_OCSP_FAIL_OPEN");
+    if (!Strings.isNullOrEmpty(failOpenEnvVariable))
     {
       /* failOpen Env Variable is for internal usage/ testing only.
        * Using it in production is not advised and not supported.
        */
-      SFTrustManager.OCSP_SOFTFAIL_MODE = !("false".equalsIgnoreCase(softfailEnv));
+      SFTrustManager.OCSP_FAIL_OPEN = !("false".equalsIgnoreCase(failOpenEnvVariable));
     }
     else
     {
-      SFTrustManager.OCSP_SOFTFAIL_MODE = ocspSoftfailMode;
+      SFTrustManager.OCSP_FAIL_OPEN = ocspFailOpen;
     }
 
     checkNewOCSPEndpointAvailability();
@@ -407,11 +409,11 @@ class SFTrustManager extends X509ExtendedTrustManager
   }
 
   /**
-   * Soft fail mode current state
+   * fail open mode current state
    */
-  static boolean isEnabledSoftfailMode()
+  private static boolean isOCSPFailOpen()
   {
-    return SFTrustManager.OCSP_SOFTFAIL_MODE;
+    return SFTrustManager.OCSP_FAIL_OPEN;
   }
 
   /**
@@ -421,7 +423,7 @@ class SFTrustManager extends X509ExtendedTrustManager
    * 1. Key Update Directive - key_upd_ssd.ssd
    * 2. Host Specific OCSP Bypass Directive - host_spec_bypass_ssd.ssd
    */
-  void readDirectives()
+  private void readDirectives()
   {
     KeyUpdSSD keyUpdDir = ssdManager.getKeyUpdateSSD();
     HostSpecSSD hostSpecDir = ssdManager.getHostSpecBypassSSD();
@@ -437,7 +439,7 @@ class SFTrustManager extends X509ExtendedTrustManager
     }
   }
 
-  void checkNewOCSPEndpointAvailability()
+  private void checkNewOCSPEndpointAvailability()
   {
     String new_ocsp_ept = null;
     try
@@ -721,13 +723,12 @@ class SFTrustManager extends X509ExtendedTrustManager
     return null;
   }
 
-  String generateFailOpenLog(String logData)
+  private String generateFailOpenLog(String logData)
   {
-    String ocspFailOpenLog = "WARNING!!! Using fail-open to connect. Driver is connecting to an " +
-                             "HTTPS endpoint without OCSP based Certificate Revocation checking " +
-                             "as it could not obtain a valid OCSP Response to use from the CA OCSP " +
-                             "responder. Details: \n" + logData;
-    return ocspFailOpenLog;
+    return "WARNING!!! Using fail-open to connect. Driver is connecting to an " +
+           "HTTPS endpoint without OCSP based Certificate Revocation checking " +
+           "as it could not obtain a valid OCSP Response to use from the CA OCSP " +
+           "responder. Details: \n" + logData;
   }
 
   /**
@@ -749,38 +750,38 @@ class SFTrustManager extends X509ExtendedTrustManager
         cid.getIssuerNameHash().getEncoded(),
         cid.getIssuerKeyHash().getEncoded(),
         cid.getSerialNumber().getValue());
-    String hostSpecSSD = null;
+    String hostSpecSSD;
 
     long sleepTime = INITIAL_SLEEPING_TIME_IN_MILLISECONDS;
     DecorrelatedJitterBackoff backoff = new DecorrelatedJitterBackoff(
         sleepTime, MAX_SLEEPING_TIME_IN_MILLISECONDS);
-    CertificateException error = null;
+    CertificateException error;
     boolean success = false;
     JSONObject ocspLog;
     OCSPTelemetryData telemetryData = new OCSPTelemetryData();
     telemetryData.setSfcPeerHost(peerHost);
     telemetryData.setCertId(encodeCacheKey(keyOcspResponse));
     telemetryData.setCacheEnabled(this.useOcspResponseCacheServer);
-    telemetryData.setSoftfailMode(this.isEnabledSoftfailMode());
-    telemetryData.setInsecureMode(false);
+    telemetryData.setOCSPMode(
+        SFTrustManager.isOCSPFailOpen() ?
+        OCSPMode.FAIL_OPEN : OCSPMode.FAIL_CLOSED);
     try
     {
       for (int retry = 0; retry < MAX_RETRY_COUNTER; ++retry)
       {
         try
         {
-          /**
+          /*
            * Look for Host Specific SSD in SSD Cache
            */
           if (ssdManager.getSSDSupportStatus())
           {
-            boolean retval = false;
             SFPair<Long, String> resp = OCSP_RESPONSE_CACHE.get(ssdManager.getWildCardCertId());
             if ((hostSpecSSD = ssdManager.getSSDFromCache()) != null)
             {
               try
               {
-                retval = this.processOCSPBypassSSD(hostSpecSSD, keyOcspResponse, peerHost);
+                boolean retval = this.processOCSPBypassSSD(hostSpecSSD, keyOcspResponse, peerHost);
                 if (retval)
                 {
                   success = true;
@@ -801,7 +802,7 @@ class SFTrustManager extends X509ExtendedTrustManager
             }
             else if (resp.right != null)
             {
-              /**
+              /*
                * Process WildCard SSD if present
                */
               try
@@ -813,7 +814,7 @@ class SFTrustManager extends X509ExtendedTrustManager
                 }
                 else
                 {
-                  /**
+                  /*
                    * Delete WildCard from cache
                    */
                   LOGGER.info("Found invalid wildcard SSD in cache, removing.");
@@ -822,7 +823,7 @@ class SFTrustManager extends X509ExtendedTrustManager
               }
               catch (SFOCSPException ex)
               {
-                /**
+                /*
                  * Delete WildCard from cache
                  */
                 LOGGER.info("Found invalid wildcard SSD in cache, removing.");
@@ -877,7 +878,7 @@ class SFTrustManager extends X509ExtendedTrustManager
               {
                 if (ssdManager.getSSDSupportStatus())
                 {
-                  /**
+                  /*
                    *  Failed processing OCSP response
                    *  Try processing cache value as SSD
                    */
@@ -930,7 +931,6 @@ class SFTrustManager extends X509ExtendedTrustManager
             OCSP_RESPONSE_CACHE.remove(keyOcspResponse);
             WAS_CACHE_UPDATED = true;
           }
-          error = ex;
           LOGGER.debug("Retrying {}/{} after sleeping {}(ms)",
                        retry + 1, MAX_RETRY_COUNTER, sleepTime);
           try
@@ -957,9 +957,10 @@ class SFTrustManager extends X509ExtendedTrustManager
     {
       error = new CertificateException("Certificate Revocation check failed. Could not retrieve OCSP Response");
       LOGGER.debug(error.getMessage());
+
       ocspLog = telemetryData.generateTelemetry("OCSPValidationError", error);
       String ocspFailOpenLog;
-      if (SFTrustManager.isEnabledSoftfailMode())
+      if (SFTrustManager.isOCSPFailOpen())
       {
         // Log includes fail-open warning.
         ocspFailOpenLog = generateFailOpenLog(ocspLog.toString());
@@ -1086,7 +1087,7 @@ class SFTrustManager extends X509ExtendedTrustManager
     else
     {
       // delete cache
-      return SFPair.of(k, SFPair.of(producedAt, (String) null));
+      return SFPair.of(k, SFPair.of(producedAt, null));
     }
   }
 
@@ -1193,7 +1194,6 @@ class SFTrustManager extends X509ExtendedTrustManager
       }
       catch (URISyntaxException ex)
       {
-        error = ex;
         LOGGER.debug("Indicate that a string could not be parsed as a URI reference.");
         throw new SFOCSPException(OCSPErrorCode.INVALID_CACHE_SERVER_URL,
                                   "Invalid OCSP Cache Server URL used");
@@ -1771,7 +1771,7 @@ class SFTrustManager extends X509ExtendedTrustManager
   {
     try
     {
-      /**
+      /*
        * Get unverified part of the JWT to extract issuer.
        *
        */
@@ -1807,7 +1807,7 @@ class SFTrustManager extends X509ExtendedTrustManager
       X509EncodedKeySpec keySpecX509 = new X509EncodedKeySpec(Base64.decodeBase64(publicKeyContent));
       RSAPublicKey rsaPubKey = (RSAPublicKey) kf.generatePublic(keySpecX509);
 
-      /**
+      /*
        * Verify signature of the JWT Token
        */
       SignedJWT jwt_token_verified = SignedJWT.parse(ssd);
@@ -1816,7 +1816,7 @@ class SFTrustManager extends X509ExtendedTrustManager
       {
         if (jwt_token_verified.verify(jwsVerifier))
         {
-          /**
+          /*
            * verify nbf time
            */
           long cur_time = System.currentTimeMillis();
@@ -1854,12 +1854,12 @@ class SFTrustManager extends X509ExtendedTrustManager
   {
     try
     {
-      /**
+      /*
        * Get unverified part of the JWT to extract issuer.
        */
       SignedJWT jwt_unverified = SignedJWT.parse(ocsp_ssd);
       String jwt_issuer = (String) jwt_unverified.getHeader().getCustomParam("ssd_iss");
-      String ssd_pubKey = null;
+      String ssd_pubKey;
 
       if (jwt_issuer.equals("dep1"))
       {
@@ -1876,7 +1876,7 @@ class SFTrustManager extends X509ExtendedTrustManager
       X509EncodedKeySpec keySpecX509 = new X509EncodedKeySpec(Base64.decodeBase64(publicKeyContent));
       RSAPublicKey rsaPubKey = (RSAPublicKey) kf.generatePublic(keySpecX509);
 
-      /**
+      /*
        * Verify signature of the JWT Token
        * Verify time validity of the JWT Token (API does not do this)
        */
@@ -1896,7 +1896,7 @@ class SFTrustManager extends X509ExtendedTrustManager
           {
             if (!sfc_endpoint.equals("*"))
             {
-              /**
+              /*
                * In case there are multiple hostnames
                * associated to the same account. The
                * code expects a space separated list
@@ -1915,7 +1915,7 @@ class SFTrustManager extends X509ExtendedTrustManager
               }
               return false;
             }
-            /**
+            /*
              * No In Band token can have > 7 days validity
              */
             if (jwt_exp.getTime() - jwt_nbf.getTime() > (7 * 24 * 60 * 60 * 1000))
