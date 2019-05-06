@@ -98,7 +98,7 @@ public class HttpUtil
    * @return HttpClient object
    */
   static CloseableHttpClient buildHttpClient(
-      boolean insecureMode, File ocspCacheFile, boolean useOcspCacheServer)
+      boolean insecureMode, boolean ocspSoftfailMode, File ocspCacheFile, boolean useOcspCacheServer)
   {
     // set timeout so that we don't wait forever.
     // Setup the default configuration for all requests on this client
@@ -116,8 +116,9 @@ public class HttpUtil
       // which is by default in the production. insecureMode can be enabled
       // 1) OCSP service is down for reasons, 2) PowerMock test tht doesn't
       // care OCSP checks.
+      // OCSP Softfail is on by default
       TrustManager[] tm = {
-          new SFTrustManager(ocspCacheFile, useOcspCacheServer)};
+          new SFTrustManager(ocspCacheFile, ocspSoftfailMode, useOcspCacheServer)};
       trustManagers = tm;
     }
     try
@@ -189,7 +190,7 @@ public class HttpUtil
    */
   public static CloseableHttpClient getHttpClient()
   {
-    return initHttpClient(true, null);
+    return initHttpClient(true, true, null);
   }
 
   /**
@@ -200,7 +201,7 @@ public class HttpUtil
    *                      file will be used.
    * @return HttpClient object shared across all connections
    */
-  public static CloseableHttpClient initHttpClient(boolean insecureMode, File ocspCacheFile)
+  public static CloseableHttpClient initHttpClient(boolean insecureMode, boolean ocspSoftfailMode, File ocspCacheFile)
   {
     if (httpClient == null)
     {
@@ -210,6 +211,7 @@ public class HttpUtil
         {
           httpClient = buildHttpClient(
               insecureMode,
+              ocspSoftfailMode, // True By Default
               ocspCacheFile,
               enableOcspResponseCacheServer());
         }
