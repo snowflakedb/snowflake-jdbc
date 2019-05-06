@@ -2,6 +2,7 @@ package net.snowflake.client.jdbc;
 
 import net.snowflake.client.core.MetaDataOfBinds;
 import net.snowflake.client.core.SFStatementMetaData;
+
 import java.sql.ParameterMetaData;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;

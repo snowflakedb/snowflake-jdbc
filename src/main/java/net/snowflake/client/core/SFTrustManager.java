@@ -10,8 +10,10 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeType;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Strings;
+import com.microsoft.azure.storage.core.Logger;
 import com.nimbusds.jose.crypto.RSASSAVerifier;
 import com.sun.org.apache.xpath.internal.operations.Bool;
+import net.minidev.json.JSONObject;
 import net.snowflake.client.jdbc.OCSPErrorCode;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -366,15 +368,13 @@ class SFTrustManager extends X509ExtendedTrustManager
     this.exTrustManager = (X509ExtendedTrustManager) getTrustManager(
         KeyManagerFactory.getDefaultAlgorithm());
 
-    String softfailSysProperty = System.getProperty("net.snowflake.jdbc.ocspSoftfailMode");
     String softfailEnv = System.getenv("SF_OCSP_SOFTFAIL_MODE");
 
-    if (!Strings.isNullOrEmpty(softfailSysProperty))
+    if (!Strings.isNullOrEmpty(softfailEnv))
     {
-      SFTrustManager.OCSP_SOFTFAIL_MODE = !("false".equalsIgnoreCase(softfailSysProperty));
-    }
-    else if (!Strings.isNullOrEmpty(softfailEnv))
-    {
+      /* failOpen Env Variable is for internal usage/ testing only.
+       * Using it in production is not advised and not supported.
+       */
       SFTrustManager.OCSP_SOFTFAIL_MODE = !("false".equalsIgnoreCase(softfailEnv));
     }
     else
@@ -721,6 +721,15 @@ class SFTrustManager extends X509ExtendedTrustManager
     return null;
   }
 
+  String generateFailOpenLog(String logData)
+  {
+    String ocspFailOpenLog = "WARNING!!! Using fail-open to connect. Driver is connecting to an " +
+                             "HTTPS endpoint without OCSP based Certificate Revocation checking " +
+                             "as it could not obtain a valid OCSP Response to use from the CA OCSP " +
+                             "responder. Details: \n" + logData;
+    return ocspFailOpenLog;
+  }
+
   /**
    * Executes a single revocation status check
    *
@@ -747,7 +756,7 @@ class SFTrustManager extends X509ExtendedTrustManager
         sleepTime, MAX_SLEEPING_TIME_IN_MILLISECONDS);
     CertificateException error = null;
     boolean success = false;
-    boolean telemetrySent = false;
+    JSONObject ocspLog;
     OCSPTelemetryData telemetryData = new OCSPTelemetryData();
     telemetryData.setSfcPeerHost(peerHost);
     telemetryData.setCertId(encodeCacheKey(keyOcspResponse));
@@ -939,8 +948,8 @@ class SFTrustManager extends X509ExtendedTrustManager
     {
       // Revoked Certificate
       error = new CertificateException(ex.getErrorMsg());
-      telemetryData.setErrorMsg(ex.getErrorMsg());
-      telemetryData.generateTelemetry("revoked", error);
+      ocspLog = telemetryData.generateTelemetry("RevokedCertificateError", error);
+      LOGGER.error(ocspLog.toString());
       throw error;
     }
 
@@ -948,15 +957,18 @@ class SFTrustManager extends X509ExtendedTrustManager
     {
       error = new CertificateException("Certificate Revocation check failed. Could not retrieve OCSP Response");
       LOGGER.debug(error.getMessage());
-      telemetryData.setErrorMsg(error.getMessage());
-      telemetryData.generateTelemetry("unknown", error);
+      ocspLog = telemetryData.generateTelemetry("OCSPValidationError", error);
+      String ocspFailOpenLog;
       if (SFTrustManager.isEnabledSoftfailMode())
       {
-        LOGGER.warn("Softfail is enabled! Driver will disregard Certificate Revocation Check Failure!");
+        // Log includes fail-open warning.
+        ocspFailOpenLog = generateFailOpenLog(ocspLog.toString());
+        LOGGER.error(ocspFailOpenLog);
       }
       else
       {
         // still not success, raise an error.
+        LOGGER.debug(ocspLog.toString());
         throw error;
       }
     }

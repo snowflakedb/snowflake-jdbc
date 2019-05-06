@@ -14,7 +14,6 @@ public class OCSPTelemetryData
   private String sfcPeerHost;
   private String ocspUrl;
   private String ocspReq;
-  private String errorMsg;
   private Boolean cacheEnabled;
   private Boolean cacheHit;
   private Boolean insecureMode;
@@ -31,7 +30,6 @@ public class OCSPTelemetryData
                            String sfc_peer_host,
                            String ocsp_url,
                            String ocsp_req,
-                           String error_msg,
                            Boolean softfail_mode,
                            Boolean insecure_mode,
                            Boolean cache_enabled,
@@ -41,7 +39,6 @@ public class OCSPTelemetryData
     this.sfcPeerHost = sfc_peer_host;
     this.ocspUrl = ocsp_url;
     this.ocspReq = ocsp_req;
-    this.errorMsg = error_msg;
     this.insecureMode = insecure_mode;
     this.softfailMode = softfail_mode;
     this.cacheEnabled = cache_enabled;
@@ -68,10 +65,6 @@ public class OCSPTelemetryData
     this.ocspReq = ocspReq;
   }
 
-  public void setErrorMsg(String errorMsg)
-  {
-    this.errorMsg = errorMsg;
-  }
 
   public void setCacheEnabled(Boolean cacheEnabled)
   {
@@ -104,7 +97,7 @@ public class OCSPTelemetryData
     this.softfailMode = softfailMode;
   }
 
-  public void generateTelemetry(String eventType, CertificateException ex)
+  public JSONObject generateTelemetry(String eventType, CertificateException ex)
   {
     JSONObject value = new JSONObject();
     value.put("eventType", eventType);
@@ -112,7 +105,6 @@ public class OCSPTelemetryData
     value.put("certId", this.certId);
     value.put("ocspResponderURL", this.ocspUrl);
     value.put("ocspReqBase64", this.ocspReq);
-    value.put("errorMessage", this.errorMsg);
     value.put("insecureMode", this.insecureMode);
     value.put("softFailMode", this.softfailMode);
     value.put("cacheEnabled", this.cacheEnabled);
@@ -120,5 +112,6 @@ public class OCSPTelemetryData
     TelemetryService.getInstance().logOCSPExceptionTelemetryEvent(eventType,
                                                                   value,
                                                                   ex);
+    return value;
   }
 }

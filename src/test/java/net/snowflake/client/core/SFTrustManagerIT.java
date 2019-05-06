@@ -218,14 +218,13 @@ public class SFTrustManagerIT extends BaseJDBCTest
         assertEquals(TelemetryService.getInstance().size(), queueSize + 1);
         TelemetryEvent te = TelemetryService.getInstance().peek();
         JSONObject values = (JSONObject) te.get("Value");
-        assertEquals("revokedOCSPException", te.get("Name"));
-        assertEquals("revoked",
+        assertEquals("OCSP Exception", te.get("Name"));
+        assertEquals("RevokedCertificateError",
                      values.get("eventType").toString());
         assertNotNull(values.get("sfcPeerHost"));
         assertNotNull(values.get("certId"));
         assertNotNull(values.get("ocspResponderURL"));
         assertNotNull(values.get("ocspReqBase64"));
-        assertNotNull(values.get("errorMessage"));
         assertNotNull(values.get("insecureMode"));
         assertNotNull(values.get("softFailMode"));
         assertNotNull(values.get("cacheEnabled"));
