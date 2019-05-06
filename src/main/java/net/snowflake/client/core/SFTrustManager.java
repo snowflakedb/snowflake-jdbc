@@ -9,7 +9,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeType;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.nimbusds.jose.JWSVerifier;
 import com.nimbusds.jose.crypto.RSASSAVerifier;
+import com.nimbusds.jwt.SignedJWT;
+import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.util.DecorrelatedJitterBackoff;
@@ -30,7 +33,6 @@ import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DLSequence;
 import org.bouncycastle.asn1.ocsp.CertID;
-import org.bouncycastle.asn1.ocsp.OCSPResponse;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.Certificate;
@@ -55,26 +57,34 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.DigestCalculator;
 
 import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLEngine;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
-import javax.net.ssl.X509TrustManager;
 import javax.net.ssl.X509ExtendedTrustManager;
-import javax.net.ssl.SSLEngine;
-
-import java.io.*;
+import javax.net.ssl.X509TrustManager;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.math.BigInteger;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.security.*;
+import java.security.InvalidKeyException;
+import java.security.KeyFactory;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.Security;
+import java.security.Signature;
+import java.security.SignatureException;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPublicKey;
-import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.text.MessageFormat;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -87,10 +97,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
-
-import com.nimbusds.jose.*;
-import com.nimbusds.jwt.*;
-import org.bouncycastle.util.io.pem.PemReader;
 
 
 /**
@@ -705,6 +711,7 @@ class SFTrustManager extends X509ExtendedTrustManager
         sleepTime, MAX_SLEEPING_TIME_IN_MILLISECONDS);
     CertificateException error = null;
     boolean success = false;
+    boolean telemetrySent = false;
     for (int retry = 0; retry < MAX_RETRY_COUNTER; ++retry)
     {
       /**
@@ -809,6 +816,28 @@ class SFTrustManager extends X509ExtendedTrustManager
       }
       catch (CertificateException ex)
       {
+        if (!telemetrySent && ex instanceof CertificateEncodingException)
+        {
+          String eventType;
+          // send out of band telemetry
+          if (ex.getMessage().toLowerCase().contains("revoked"))
+          {
+            // this is a revoked exception
+            eventType = "revoked";
+          }
+          else
+          {
+            // this is a unknown exception
+            eventType = "unknown";
+          }
+          TelemetryService.getInstance().logOCSPExceptionTelemetryEvent(eventType,
+                                                                        peerHost,
+                                                                        (CertificateEncodingException) ex);
+
+          // don't need to send again
+          telemetrySent = true;
+        }
+
         if (OCSP_RESPONSE_CACHE.containsKey(keyOcspResponse))
         {
           LOGGER.debug("deleting the invalid OCSP cache.");

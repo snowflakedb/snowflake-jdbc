@@ -17,6 +17,7 @@ import org.apache.http.util.EntityUtils;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.security.cert.CertificateEncodingException;
 import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashSet;
@@ -461,6 +462,39 @@ public class TelemetryService
   public int size()
   {
     return queue.size();
+  }
+
+  /**
+   * log OCSP exception to telemetry
+   */
+  public void logOCSPExceptionTelemetryEvent(
+      String eventType,
+      String peerHost,
+      CertificateEncodingException ex)
+  {
+    if (enabled)
+    {
+      String eventName = eventType.equals("revoked") ? "revokedOCSPException" : "unknownOCSPException";
+      TelemetryEvent.LogBuilder logBuilder = new TelemetryEvent.LogBuilder();
+      JSONObject value = new JSONObject();
+      value.put("eventType", eventType);
+      value.put("peerHost", peerHost);
+
+      if (ex != null)
+      {
+        value.put("exceptionMessage", ex.getLocalizedMessage());
+        StringWriter sw = new StringWriter();
+        ex.printStackTrace(new PrintWriter(sw));
+        value.put("exceptionStackTrace", sw.toString());
+      }
+
+      TelemetryEvent log = logBuilder
+          .withName(eventName)
+          .withValue(value)
+          .withTag("eventType", eventType)
+          .build();
+      this.add(log);
+    }
   }
 
   /**

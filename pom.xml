@@ -764,6 +764,7 @@
                 <configuration>
                   <includes>
                     <include>**/ConnectionIT.java</include>
+                    <include>**/SFTrustManagerIT.java</include>
                   </includes>
                   <argLine>
                     @{argLine}
@@ -838,6 +839,7 @@
                 <configuration>
                   <includes>
                     <include>**/ConnectionIT.java</include>
+                    <include>**/SFTrustManagerIT.java</include>
                   </includes>
                   <argLine>
                     @{argLine}
