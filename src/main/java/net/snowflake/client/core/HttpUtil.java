@@ -92,7 +92,7 @@ public class HttpUtil
   /**
    * Build an Http client using our set of default.
    *
-   * @param insecureMode  skip OCSP revocation check if true or false.
+   * @param ocspMode INSECURE/FAILOPEN/FAILCLOSED.
    * @param ocspCacheFile OCSP response cache file. If null, the default
    *                      OCSP response file will be used.
    * @return HttpClient object
