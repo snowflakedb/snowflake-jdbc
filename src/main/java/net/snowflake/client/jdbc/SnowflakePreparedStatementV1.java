@@ -47,7 +47,7 @@ import java.util.Set;
 import java.util.TimeZone;
 
 final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
-    implements PreparedStatement
+    implements PreparedStatement, SnowflakePreparedStatement
 {
   static final SFLogger logger = SFLoggerFactory.getLogger(
       SnowflakePreparedStatementV1.class);
