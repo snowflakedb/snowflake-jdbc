@@ -474,7 +474,7 @@ public class TelemetryService
   {
     if (enabled)
     {
-      String eventName = eventType.equals("revoked") ? "revokedOCSPException" : "unknownOCSPException";
+      String eventName = "OCSP Exception";
       TelemetryEvent.LogBuilder logBuilder = new TelemetryEvent.LogBuilder();
 
       if (ex != null)

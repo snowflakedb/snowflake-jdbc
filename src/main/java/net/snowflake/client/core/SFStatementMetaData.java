@@ -11,6 +11,7 @@ package net.snowflake.client.core;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.common.core.SqlState;
+
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -61,7 +62,7 @@ public class SFStatementMetaData
     return numberOfBinds;
   }
 
-  public MetaDataOfBinds getMetaDataForBindParam (int param) throws SQLException
+  public MetaDataOfBinds getMetaDataForBindParam(int param) throws SQLException
   {
     if (param < 1 || param > numberOfBinds)
     {
@@ -73,7 +74,7 @@ public class SFStatementMetaData
     {
       throw new SnowflakeSQLException(SqlState.NO_DATA, ErrorCode.NO_VALID_DATA.getMessageCode());
     }
-    return metaDataOfBinds.get(param-1);
+    return metaDataOfBinds.get(param - 1);
   }
 
   public void setNumberOfBinds(int numberOfBinds)
