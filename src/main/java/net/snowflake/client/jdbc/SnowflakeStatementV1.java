@@ -33,7 +33,7 @@ import static net.snowflake.client.jdbc.ErrorCode.FEATURE_UNSUPPORTED;
 /**
  * Snowflake statement
  */
-class SnowflakeStatementV1 implements Statement
+class SnowflakeStatementV1 implements Statement, SnowflakeStatement
 {
 
   static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeStatementV1.class);
@@ -327,7 +327,7 @@ class SnowflakeStatementV1 implements Statement
    * @return the query ID of the latest executed query
    * @throws SQLException
    */
-  public String getQueryID() throws SQLException
+  public String getQueryID()
   {
     // return the queryID for the query executed last time
     return queryID;
@@ -337,7 +337,7 @@ class SnowflakeStatementV1 implements Statement
    * @return the query IDs of the latest executed batch queries
    * @throws SQLException
    */
-  public List<String> getBatchQueryIDs() throws SQLException
+  public List<String> getBatchQueryIDs()
   {
     return Collections.unmodifiableList(batchQueryIDs);
   }

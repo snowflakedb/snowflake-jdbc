@@ -33,7 +33,7 @@ import java.util.TimeZone;
 /**
  * Snowflake ResultSet implementation
  */
-class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
+class SnowflakeResultSetV1 extends SnowflakeBaseResultSet implements SnowflakeResultSet
 {
   private final SFBaseResultSet sfBaseResultSet;
 
@@ -105,7 +105,7 @@ class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
     }
   }
 
-  public String getQueryID() throws SQLException
+  public String getQueryID()
   {
     return sfBaseResultSet.getQueryId();
   }
