@@ -14,6 +14,7 @@ import net.snowflake.client.jdbc.SnowflakeReauthenticationRequest;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.jdbc.telemetry.TelemetryData;
 import net.snowflake.client.jdbc.telemetry.TelemetryUtil;
+import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.util.SecretDetector;
@@ -224,10 +225,8 @@ public class SFStatement
   {
     resetState();
 
-    if (logger.isDebugEnabled())
-    {
-      logger.debug("executeQuery: {}", SecretDetector.maskAWSSecret(sql));
-    }
+    logger.debug("executeQuery: {}",
+                 (ArgSupplier) () -> SecretDetector.maskSecrets(sql));
 
     if (session == null || session.isClosed())
     {
@@ -668,10 +667,8 @@ public class SFStatement
 
     session.injectedDelay();
 
-    if (logger.isDebugEnabled())
-    {
-      logger.debug("execute: {}", SecretDetector.maskAWSSecret(sql));
-    }
+    logger.debug("execute: {}",
+                 (ArgSupplier) () -> SecretDetector.maskSecrets(sql));
 
     String trimmedSql = sql.trim();
 

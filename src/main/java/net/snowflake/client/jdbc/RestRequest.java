@@ -7,10 +7,12 @@ package net.snowflake.client.jdbc;
 import net.snowflake.client.core.Event;
 import net.snowflake.client.core.EventUtil;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
+import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.util.DecorrelatedJitterBackoff;
+import net.snowflake.client.util.SecretDetector;
 import net.snowflake.common.core.SqlState;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpRequestBase;
@@ -76,6 +78,9 @@ public class RestRequest
       boolean includeRequestGuid) throws SnowflakeSQLException
   {
     CloseableHttpResponse response = null;
+
+    String requestInfoScrubbed = SecretDetector.maskSASToken(
+        httpRequest.toString());
 
     // time the client started attempting to submit request
     final long startTime = System.currentTimeMillis();
@@ -187,7 +192,9 @@ public class RestRequest
         StringWriter sw = new StringWriter();
         savedEx.printStackTrace(new PrintWriter(sw));
         logger.debug("Exception encountered for: {}, {}, {}",
-                     httpRequest.toString(), ex.getLocalizedMessage(), sw.toString());
+                     requestInfoScrubbed,
+                     ex.getLocalizedMessage(),
+                     (ArgSupplier) sw::toString);
       }
       finally
       {
@@ -221,7 +228,7 @@ public class RestRequest
           logger.debug("Error response not retriable, " +
                        "HTTP Response Code={}, request={}",
                        response.getStatusLine().getStatusCode(),
-                       httpRequest);
+                       requestInfoScrubbed);
           EventUtil.triggerBasicEvent(
               Event.EventType.NETWORK_ERROR,
               "StatusCode: " + response.getStatusLine().getStatusCode() +
@@ -240,11 +247,11 @@ public class RestRequest
           logger.debug(
               "HTTP response not ok: status code={}, request={}",
               response.getStatusLine().getStatusCode(),
-              httpRequest);
+              requestInfoScrubbed);
         }
         else
         {
-          logger.debug("Null response for request={}", httpRequest);
+          logger.debug("Null response for request={}", requestInfoScrubbed);
         }
 
         // get the elapsed time for the last request
@@ -318,7 +325,7 @@ public class RestRequest
           }
         }
 
-        logger.debug("Retrying request: {}", httpRequest);
+        logger.debug("Retrying request: {}", requestInfoScrubbed);
 
         // sleep for backoff - elapsed amount of time
         if (backoffInMilli > elapsedMilliForLastCall)
@@ -367,14 +374,13 @@ public class RestRequest
     if (response == null)
     {
       logger.error("Returning null response for request: {}",
-                   httpRequest);
+                   requestInfoScrubbed);
     }
     else if (response.getStatusLine().getStatusCode() != 200)
     {
       logger.error(
           "Error response: HTTP Response code={}, request={}",
-          response.getStatusLine().getStatusCode(),
-          httpRequest);
+          response.getStatusLine().getStatusCode(), requestInfoScrubbed);
     }
     if ((response == null ||
          response.getStatusLine().getStatusCode() != 200))

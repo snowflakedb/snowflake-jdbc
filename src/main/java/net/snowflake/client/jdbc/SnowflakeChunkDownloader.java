@@ -13,8 +13,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.jdbc.SnowflakeResultChunk.DownloadState;
+import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
+import net.snowflake.client.util.SecretDetector;
 import net.snowflake.common.core.SqlState;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
@@ -272,7 +274,7 @@ public class SnowflakeChunkDownloader
               useJsonParserV2);
 
       logger.debug("add chunk, url={} rowCount={} uncompressedSize={} neededChunkMemory={}",
-                   chunk.getUrl(), chunk.getRowCount(), chunk.getUncompressedSize(), chunk.computeNeededChunkMemory());
+                   chunk.getScrubbedUrl(), chunk.getRowCount(), chunk.getUncompressedSize(), chunk.computeNeededChunkMemory());
 
       chunks.add(chunk);
     }
@@ -326,13 +328,11 @@ public class SnowflakeChunkDownloader
         // make sure memoryLimit > neededChunkMemory; otherwise, the thread hangs
         if (neededChunkMemory > memoryLimit)
         {
-          if (logger.isDebugEnabled())
-          {
-            logger.debug("{}: reset memoryLimit from {} MB to current chunk size {} MB",
-                         Thread.currentThread().getName(),
-                         memoryLimit / 1024 / 1024,
-                         neededChunkMemory / 1024 / 1024);
-          }
+          logger.debug("{}: reset memoryLimit from {} MB to current chunk size {} MB",
+                       (ArgSupplier) () -> Thread.currentThread().getName(),
+                       (ArgSupplier) () -> memoryLimit / 1024 / 1024,
+                       (ArgSupplier) () -> neededChunkMemory / 1024 / 1024);
+
           memoryLimit = neededChunkMemory;
         }
 
@@ -349,19 +349,17 @@ public class SnowflakeChunkDownloader
           nextChunk.tryReuse(chunkDataCache);
 
           currentMemoryUsage += neededChunkMemory;
-          if (logger.isDebugEnabled())
-          {
-            logger.debug("{}: currentMemoryUsage in MB: {}, nextChunkToDownload: {}, nextChunkToConsume: {}, " +
-                         "newReservedMemory in B: {} ",
-                         Thread.currentThread().getName(),
-                         currentMemoryUsage / 1024 / 1024,
-                         nextChunkToDownload,
-                         nextChunkToConsume,
-                         neededChunkMemory);
-          }
+
+          logger.debug("{}: currentMemoryUsage in MB: {}, nextChunkToDownload: {}, " +
+                       "nextChunkToConsume: {}, newReservedMemory in B: {} ",
+                       (ArgSupplier) () -> Thread.currentThread().getName(),
+                       (ArgSupplier) () -> currentMemoryUsage / 1024 / 1024,
+                       nextChunkToDownload,
+                       nextChunkToConsume,
+                       neededChunkMemory);
 
           logger.debug("submit chunk #{} for downloading, url={}",
-                       this.nextChunkToDownload, nextChunk.getUrl());
+                       this.nextChunkToDownload, nextChunk.getScrubbedUrl());
 
           executor.submit(getDownloadChunkCallable(this,
                                                    nextChunk,
@@ -419,14 +417,11 @@ public class SnowflakeChunkDownloader
     {
       // has to be before reusing the memory
       currentMemoryUsage -= releaseSize;
-      if (logger.isDebugEnabled())
-      {
-        logger.debug("{}: currentMemoryUsage in MB: {}, released in MB: {}, chunk: {}",
-                     Thread.currentThread().getName(),
-                     currentMemoryUsage / 1024 / 1024,
-                     releaseSize,
-                     chunkId);
-      }
+      logger.debug("{}: currentMemoryUsage in MB: {}, released in MB: {}, chunk: {}",
+                   (ArgSupplier) () -> Thread.currentThread().getName(),
+                   (ArgSupplier) () -> currentMemoryUsage / 1024 / 1024,
+                   releaseSize,
+                   chunkId);
     }
   }
 
@@ -719,7 +714,7 @@ public class SnowflakeChunkDownloader
           }
 
           logger.debug("Downloading chunk {}, url={}",
-                       chunkIndex, resultChunk.getUrl());
+                       chunkIndex, resultChunk.getScrubbedUrl());
 
           long startTime = System.currentTimeMillis();
 
@@ -733,7 +728,7 @@ public class SnowflakeChunkDownloader
               || response.getStatusLine().getStatusCode() != 200)
           {
             logger.error("Error fetching chunk from: {}",
-                         resultChunk.getUrl());
+                         resultChunk.getScrubbedUrl());
 
             SnowflakeUtil.logResponseDetails(response, logger);
 
@@ -856,7 +851,7 @@ public class SnowflakeChunkDownloader
           logger.debug(
               "Finished preparing chunk data for {}, " +
               "total download time={}ms, total parse time={}ms",
-              resultChunk.getUrl(),
+              resultChunk.getScrubbedUrl(),
               resultChunk.getDownloadTime(),
               resultChunk.getParseTime());
 
@@ -909,7 +904,7 @@ public class SnowflakeChunkDownloader
               "Exception encountered ({}:{}) fetching chunk from: {}",
               ex.getClass().getName(),
               ex.getLocalizedMessage(),
-              resultChunk.getUrl());
+              resultChunk.getScrubbedUrl());
 
           logger.error("Exception: ", ex);
         }
@@ -1011,7 +1006,7 @@ public class SnowflakeChunkDownloader
           logger.debug("Adding SSE-C headers");
         }
 
-        logger.debug("Fetching result: {}", resultChunk.getUrl());
+        logger.debug("Fetching result: {}", resultChunk.getScrubbedUrl());
 
         //TODO move this s3 request to HttpUtil class. In theory, upper layer
         //TODO does not need to know about http client
@@ -1030,7 +1025,7 @@ public class SnowflakeChunkDownloader
             );
 
         logger.debug("Call returned for URL: {}",
-                     chunkUrl);
+                     (ArgSupplier) () -> SecretDetector.maskSASToken(chunkUrl));
         return response;
       }
     };

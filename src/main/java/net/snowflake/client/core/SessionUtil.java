@@ -15,6 +15,7 @@ import net.snowflake.client.jdbc.SnowflakeReauthenticationRequest;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.jdbc.SnowflakeType;
 import net.snowflake.client.jdbc.SnowflakeUtil;
+import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.ClientAuthnDTO;
@@ -665,8 +666,6 @@ public class SessionUtil
                                                  loginInput.getLoginTimeout(),
                                                  0, null);
 
-      logger.debug("login response: {}", theString);
-
       // general method, same as with data binding
       JsonNode jsonNode = mapper.readTree(theString);
 
@@ -996,16 +995,13 @@ public class SessionUtil
 
       setServiceNameHeader(loginInput, postRequest);
 
-      if (logger.isDebugEnabled())
-      {
-        logger.debug(
-            "request type: {}, old session token: {}, " +
-            "master token: {}, id token: {}",
-            requestType.value,
-            loginInput.getSessionToken() != null ? "******" : null,
-            loginInput.getMasterToken() != null ? "******" : null,
-            loginInput.getIdToken() != null ? "******" : null);
-      }
+      logger.debug(
+          "request type: {}, old session token: {}, " +
+          "master token: {}, id token: {}",
+          requestType.value,
+          (ArgSupplier) () -> loginInput.getSessionToken() != null ? "******" : null,
+          (ArgSupplier) () -> loginInput.getMasterToken() != null ? "******" : null,
+          (ArgSupplier) () -> loginInput.getIdToken() != null ? "******" : null);
 
       String theString = HttpUtil.executeRequest(postRequest,
                                                  loginInput.getLoginTimeout(), 0, null);
