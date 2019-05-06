@@ -244,9 +244,11 @@ public class ResultUtil
       return sendResultTime;
     }
 
-    public List<MetaDataOfBinds> getMetaDataOfBinds() { return metaDataOfBinds; }
+    public List<MetaDataOfBinds> getMetaDataOfBinds()
+    {
+      return metaDataOfBinds;
+    }
   }
-
 
 
   /**
@@ -491,7 +493,6 @@ public class ResultUtil
 
     return resultOutput;
   }
-
 
 
   /**
