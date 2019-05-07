@@ -1074,15 +1074,176 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
   }
 
   /**
-   * No function column support
+   * Test function getFunctionColumns. This function has input parameters of database, schema, UDF name, and optional
+   * UDF parameter names. It returns rows of information about the UDF, and returns 1 row per return value and 1 row
+   * per input parameter.
    */
   @Test
   public void testGetFunctionColumns() throws Exception
   {
     try (Connection connection = getConnection())
     {
+      String database = connection.getCatalog();
+      String schema = connection.getSchema();
+
+      /* Create a table and put values into it */
+      connection.createStatement().execute("create or replace table FuncColTest (colA int, colB string, colC " +
+                                           "number);");
+      connection.createStatement().execute("INSERT INTO FuncColTest VALUES (4, 'Hello', 6);");
+      connection.createStatement().execute("INSERT INTO FuncColTest VALUES (8, 'World', 10);");
+      /* Create a UDF that counts up the total rows in the table just created */
+      connection.createStatement().execute("create or replace function total_rows_in_table() returns number as " +
+                                           "'select count(*) from FuncColTest';");
+      /* Create another UDF that takes in 2 numbers and multiplies them together */
+      connection.createStatement().execute("create or replace function FUNC111 " +
+                                           "(a number, b number) RETURNS NUMBER COMMENT='multiply numbers' as 'a*b'");
+      /* Create another 2 tables to be used for another UDF */
+      connection.createStatement().execute("create or replace table BIN_TABLE(bin1 binary, bin2 binary(100), " +
+                                           "sharedCol decimal)");
+      connection.createStatement().execute("create or replace table JDBC_TBL111(colA string, colB decimal, colC " +
+                                           "timestamp)");
+      /* Create a UDF that returns a table made up of 4 columns from 2 different tables, joined together */
+      connection.createStatement().execute("create or replace function FUNC112 " +
+                                           "() RETURNS TABLE(colA string, colB decimal, bin2 binary, sharedCol decimal) COMMENT= 'returns " +
+                                           "table of 4 columns' as 'select JDBC_TBL111.colA, JDBC_TBL111.colB, " +
+                                           "BIN_TABLE.bin2, BIN_TABLE.sharedCol from JDBC_TBL111 inner join BIN_TABLE on JDBC_TBL111" +
+                                           ".colB =BIN_TABLE.sharedCol'");
       DatabaseMetaData metaData = connection.getMetaData();
-      ResultSet resultSet = metaData.getFunctionColumns("%", "%", "%", "%");
+      /* Call getFunctionColumns on FUNC111 and since there's no parameter name, get all rows back */
+      ResultSet resultSet = metaData.getFunctionColumns(database, schema, "FUNC111", "%");
+      resultSet.next();
+      assertEquals(database, resultSet.getString("FUNCTION_CAT"));
+      assertEquals(schema, resultSet.getString("FUNCTION_SCHEM"));
+      assertEquals("FUNC111", resultSet.getString("FUNCTION_NAME"));
+      assertEquals("", resultSet.getString("COLUMN_NAME"));
+      assertEquals(DatabaseMetaData.functionReturn, resultSet.getInt("COLUMN_TYPE"));
+      assertEquals(Types.NUMERIC, resultSet.getInt("DATA_TYPE"));
+      assertEquals("NUMBER(38,0)", resultSet.getString("TYPE_NAME"));
+      assertEquals(38, resultSet.getInt("PRECISION"));
+      // length column is not supported and will always be 0
+      assertEquals(0, resultSet.getInt("LENGTH"));
+      assertEquals(0, resultSet.getShort("SCALE"));
+      // radix column is not supported and will always be default of 10 (assumes base 10 system)
+      assertEquals(10, resultSet.getInt("RADIX"));
+      // nullable column is not supported and always returns NullableUnknown
+      assertEquals(DatabaseMetaData.functionNullableUnknown, resultSet.getInt("NULLABLE"));
+      assertEquals("multiply numbers", resultSet.getString("REMARKS"));
+      // char octet length column is not supported and always returns 0
+      assertEquals(0, resultSet.getInt("CHAR_OCTET_LENGTH"));
+      assertEquals(0, resultSet.getInt("ORDINAL_POSITION"));
+      // is_nullable column is not supported and always returns empty string
+      assertEquals("", resultSet.getString("IS_NULLABLE"));
+      assertEquals("FUNC111(NUMBER, NUMBER) RETURN NUMBER", resultSet.getString("SPECIFIC_NAME"));
+      /* Call next function to get next row in resultSet, which contains row with info about first parameter of FUNC111
+      function */
+      resultSet.next();
+      assertEquals(database, resultSet.getString("FUNCTION_CAT"));
+      assertEquals(schema, resultSet.getString("FUNCTION_SCHEM"));
+      assertEquals("FUNC111", resultSet.getString("FUNCTION_NAME"));
+      assertEquals("A", resultSet.getString("COLUMN_NAME"));
+      assertEquals(1, resultSet.getInt("COLUMN_TYPE"));
+      assertEquals(Types.NUMERIC, resultSet.getInt("DATA_TYPE"));
+      assertEquals("NUMBER", resultSet.getString("TYPE_NAME"));
+      assertEquals(38, resultSet.getInt("PRECISION"));
+      // length column is not supported and will always be 0
+      assertEquals(0, resultSet.getInt("LENGTH"));
+      assertEquals(0, resultSet.getShort("SCALE"));
+      // radix column is not supported and will always be default of 10 (assumes base 10 system)
+      assertEquals(10, resultSet.getInt("RADIX"));
+      // nullable column is not supported and always returns NullableUnknown
+      assertEquals(DatabaseMetaData.functionNullableUnknown, resultSet.getInt("NULLABLE"));
+      assertEquals("multiply numbers", resultSet.getString("REMARKS"));
+      // char octet length column is not supported and always returns 0
+      assertEquals(0, resultSet.getInt("CHAR_OCTET_LENGTH"));
+      assertEquals(1, resultSet.getInt("ORDINAL_POSITION"));
+      // is_nullable column is not supported and always returns empty string
+      assertEquals("", resultSet.getString("IS_NULLABLE"));
+      assertEquals("FUNC111(NUMBER, NUMBER) RETURN NUMBER", resultSet.getString("SPECIFIC_NAME"));
+      /* Call next to get next row with info about second parameter of FUNC111 function */
+      resultSet.next();
+      assertEquals(database, resultSet.getString("FUNCTION_CAT"));
+      assertEquals(schema, resultSet.getString("FUNCTION_SCHEM"));
+      assertEquals("FUNC111", resultSet.getString("FUNCTION_NAME"));
+      assertEquals("B", resultSet.getString("COLUMN_NAME"));
+      assertEquals(1, resultSet.getInt("COLUMN_TYPE"));
+      assertEquals(Types.NUMERIC, resultSet.getInt("DATA_TYPE"));
+      assertEquals("NUMBER", resultSet.getString("TYPE_NAME"));
+      assertEquals(38, resultSet.getInt("PRECISION"));
+      // length column is not supported and will always be 0
+      assertEquals(0, resultSet.getInt("LENGTH"));
+      assertEquals(0, resultSet.getShort("SCALE"));
+      // radix column is not supported and will always be default of 10 (assumes base 10 system)
+      assertEquals(10, resultSet.getInt("RADIX"));
+      // nullable column is not supported and always returns NullableUnknown
+      assertEquals(DatabaseMetaData.functionNullableUnknown, resultSet.getInt("NULLABLE"));
+      assertEquals("multiply numbers", resultSet.getString("REMARKS"));
+      // char octet length column is not supported and always returns 0
+      assertEquals(0, resultSet.getInt("CHAR_OCTET_LENGTH"));
+      assertEquals(2, resultSet.getInt("ORDINAL_POSITION"));
+      // is_nullable column is not supported and always returns empty string
+      assertEquals("", resultSet.getString("IS_NULLABLE"));
+      assertEquals("FUNC111(NUMBER, NUMBER) RETURN NUMBER", resultSet.getString("SPECIFIC_NAME"));
+      /* Assert that there are no more rows left in resultSet */
+      assertFalse(resultSet.next());
+      /* Look at resultSet from calling getFunctionColumns on FUNC112 */
+      resultSet = metaData.getFunctionColumns(database, schema, "FUNC112", "%");
+      resultSet.next();
+      assertEquals(database, resultSet.getString("FUNCTION_CAT"));
+      assertEquals(schema, resultSet.getString("FUNCTION_SCHEM"));
+      assertEquals("FUNC112", resultSet.getString("FUNCTION_NAME"));
+      assertEquals("", resultSet.getString("COLUMN_NAME"));
+      assertEquals(DatabaseMetaData.functionColumnOut, resultSet.getInt("COLUMN_TYPE"));
+      assertEquals(Types.OTHER, resultSet.getInt("DATA_TYPE"));
+      assertEquals("TABLE (COLA VARCHAR, COLB NUMBER, BIN2 BINARY, SHAREDCOL NUMBER)", resultSet.getString("TYPE_NAME"));
+      assertEquals(0, resultSet.getInt("PRECISION"));
+      // length column is not supported and will always be 0
+      assertEquals(0, resultSet.getInt("LENGTH"));
+      assertEquals(0, resultSet.getInt("SCALE"));
+      // radix column is not supported and will always be default of 10 (assumes base 10 system)
+      assertEquals(10, resultSet.getInt("RADIX"));
+      // nullable column is not supported and always returns NullableUnknown
+      assertEquals(DatabaseMetaData.functionNullableUnknown, resultSet.getInt("NULLABLE"));
+      assertEquals("returns table of 4 columns", resultSet.getString("REMARKS"));
+      // char octet length column is not supported and always returns 0
+      assertEquals(0, resultSet.getInt("CHAR_OCTET_LENGTH"));
+      assertEquals(0, resultSet.getInt("ORDINAL_POSITION"));
+      // is_nullable column is not supported and always returns empty string
+      assertEquals("", resultSet.getString("IS_NULLABLE"));
+      assertEquals("FUNC112() RETURN TABLE (COLA VARCHAR, COLB NUMBER, BIN2 BINARY, SHAREDCOL NUMBER)",
+                   resultSet.getString("SPECIFIC_NAME"));
+      /* There are no input parameters so only 1 row is returned, describing return value of function */
+      assertFalse(resultSet.next());
+      /* Assert that calling getFunctionColumns with no parameters returns empty result set */
+      resultSet = metaData.getFunctionColumns("%", "%", "%", "%");
+      assertFalse(resultSet.next());
+      /* Look at result set from calling getFunctionColumns on total_rows_in_table */
+      resultSet = metaData.getFunctionColumns(database, schema, "total_rows_in_table%", "%");
+      /* Assert there are 17 columns in result set and 1 row */
+      assertEquals(17, resultSet.getMetaData().getColumnCount());
+      assertEquals(1, getSizeOfResultSet(resultSet));
+      resultSet.next();
+      assertEquals(database, resultSet.getString("FUNCTION_CAT"));
+      assertEquals(schema, resultSet.getString("FUNCTION_SCHEM"));
+      assertEquals("TOTAL_ROWS_IN_TABLE", resultSet.getString("FUNCTION_NAME"));
+      assertEquals("", resultSet.getString("COLUMN_NAME"));
+      assertEquals(DatabaseMetaData.functionReturn, resultSet.getInt("COLUMN_TYPE"));
+      assertEquals(Types.NUMERIC, resultSet.getInt("DATA_TYPE"));
+      assertEquals("NUMBER(38,0)", resultSet.getString("TYPE_NAME"));
+      assertEquals(38, resultSet.getInt("PRECISION"));
+      // length column is not supported and will always be 0
+      assertEquals(0, resultSet.getInt("LENGTH"));
+      assertEquals(0, resultSet.getShort("SCALE"));
+      // radix column is not supported and will always be default of 10 (assumes base 10 system)
+      assertEquals(10, resultSet.getInt("RADIX"));
+      // nullable column is not supported and always returns NullableUnknown
+      assertEquals(DatabaseMetaData.functionNullableUnknown, resultSet.getInt("NULLABLE"));
+      assertEquals("user-defined function", resultSet.getString("REMARKS"));
+      // char octet length column is not supported and always returns 0
+      assertEquals(0, resultSet.getInt("CHAR_OCTET_LENGTH"));
+      assertEquals(0, resultSet.getInt("ORDINAL_POSITION"));
+      // is_nullable column is not supported and always returns empty string
+      assertEquals("", resultSet.getString("IS_NULLABLE"));
+      assertEquals("TOTAL_ROWS_IN_TABLE() RETURN NUMBER", resultSet.getString("SPECIFIC_NAME"));
       assertFalse(resultSet.next());
     }
   }
