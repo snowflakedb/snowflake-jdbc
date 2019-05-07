@@ -121,7 +121,7 @@ class SnowflakeDatabaseMetaDataResultSet extends SnowflakeBaseResultSet
   public boolean next() throws SQLException
   {
     logger.debug("public boolean next()");
-    increamentRow();
+    incrementRow();
 
     // no exception is raised even after the result set is closed.
     if (row < rows.length)
@@ -137,7 +137,7 @@ class SnowflakeDatabaseMetaDataResultSet extends SnowflakeBaseResultSet
    * Increments result set row pointer. Mainly used to check the result set
    * isBeforeFirst or isFirst.
    */
-  protected void increamentRow()
+  protected void incrementRow()
   {
     ++row;
   }

@@ -14,6 +14,7 @@ import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.util.SFPair;
 import net.snowflake.common.core.SqlState;
 import net.snowflake.common.util.Wildcard;
+import net.snowflake.client.jdbc.SnowflakeType;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -40,6 +41,7 @@ import static net.snowflake.client.jdbc.DBMetadataResultSetMetadata.GET_FUNCTION
 import static net.snowflake.client.jdbc.DBMetadataResultSetMetadata.GET_PRIMARY_KEYS;
 import static net.snowflake.client.jdbc.DBMetadataResultSetMetadata.GET_SCHEMAS;
 import static net.snowflake.client.jdbc.DBMetadataResultSetMetadata.GET_TABLES;
+import static net.snowflake.client.jdbc.SnowflakeType.convertStringToType;
 
 public class SnowflakeDatabaseMetaData implements DatabaseMetaData
 {
@@ -1323,7 +1325,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
       public boolean next() throws SQLException
       {
         logger.debug("public boolean next()");
-        increamentRow();
+        incrementRow();
 
         // iterate throw the show table result until we find an entry
         // that matches the table name
@@ -1401,7 +1403,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
       public boolean next() throws SQLException
       {
         logger.debug("public boolean next()");
-        increamentRow();
+        incrementRow();
 
         // iterate throw the show databases result
         if (showObjectResultSet.next())
@@ -1541,7 +1543,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
       public boolean next() throws SQLException
       {
         logger.debug("public boolean next()");
-        increamentRow();
+        incrementRow();
 
         // iterate throw the show table result until we find an entry
         // that matches the table name
@@ -1828,7 +1830,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
       public boolean next() throws SQLException
       {
         logger.debug("public boolean next()");
-        increamentRow();
+        incrementRow();
 
         while (showObjectResultSet.next())
         {
@@ -1950,7 +1952,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
       public boolean next() throws SQLException
       {
         logger.debug("public boolean next()");
-        increamentRow();
+        incrementRow();
 
         while (showObjectResultSet.next())
         {
@@ -2594,7 +2596,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
       public boolean next() throws SQLException
       {
         logger.debug("public boolean next()");
-        increamentRow();
+        incrementRow();
 
         // iterate throw the show table result until we find an entry
         // that matches the table name
@@ -2708,7 +2710,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
       public boolean next() throws SQLException
       {
         logger.debug("public boolean next()");
-        increamentRow();
+        incrementRow();
 
         // iterate throw the show table result until we find an entry
         // that matches the table name
@@ -2745,6 +2747,19 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
     };
   }
 
+
+  /**
+   * This is a function that takes in a string containing a function name, its parameter names, and its parameter
+   * types, and splits the string into a list of parameter names and types. The names will be every odd index and
+   * the types will be every even index.
+   */
+  private String[] parseParams(String args)
+  {
+    String chopped = args.substring(args.indexOf('(') + 1, args.lastIndexOf(')'));
+    String[] params = chopped.split("\\s+|, ");
+    return params;
+  }
+
   @Override
   public ResultSet getFunctionColumns(String catalog, String schemaPattern,
                                       String functionNamePattern,
@@ -2756,9 +2771,205 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
         + "String schemaPattern,String functionNamePattern,"
         + "String columnNamePattern)");
     raiseSQLExceptionIfConnectionIsClosed();
+    Statement statement = connection.createStatement();
+    boolean addAllRows = false;
 
-    return SnowflakeDatabaseMetaDataResultSet.getEmptyResultSet(
-        GET_FUNCTION_COLUMNS, connection.createStatement());
+    // apply session context when catalog is unspecified
+    SFPair<String, String> resPair = applySessionContext(catalog,
+                                                         schemaPattern);
+    catalog = resPair.left;
+    schemaPattern = resPair.right;
+
+    String showFunctionCommand = "show /* JDBC:DatabaseMetaData.getFunctionColumns() */ functions";
+
+    if (functionNamePattern != null && !functionNamePattern.isEmpty() &&
+        !functionNamePattern.trim().equals("%") &&
+        !functionNamePattern.trim().equals(".*"))
+    {
+      showFunctionCommand += " like '" + functionNamePattern + "'";
+    }
+
+    if (catalog == null)
+    {
+      showFunctionCommand += " in account";
+    }
+    else if (catalog.isEmpty())
+    {
+      return SnowflakeDatabaseMetaDataResultSet.getEmptyResultSet(GET_FUNCTION_COLUMNS, statement);
+    }
+    else
+    {
+      if (schemaPattern == null || Wildcard.isWildcardPatternStr(schemaPattern))
+      {
+        showFunctionCommand += " in database \"" + catalog + "\"";
+      }
+      else if (schemaPattern.isEmpty())
+      {
+        return SnowflakeDatabaseMetaDataResultSet.getEmptyResultSet(GET_FUNCTION_COLUMNS, statement);
+      }
+      else
+      {
+        schemaPattern = schemaPattern.replace("\\", "");
+        showFunctionCommand += " in schema \"" + catalog + "\".\"" +
+                               schemaPattern + "\"";
+      }
+    }
+    if (columnNamePattern == null || columnNamePattern.isEmpty() || columnNamePattern.trim().equals("%")
+        || columnNamePattern.trim().equals(".*"))
+    {
+      addAllRows = true;
+    }
+
+    logger.debug("sql command to get column metadata: {}",
+                 showFunctionCommand);
+    ResultSet resultSetStepOne = executeAndReturnEmptyResultIfNotFound(statement, showFunctionCommand,
+                                                                       GET_FUNCTION_COLUMNS);
+    ArrayList<Object[]> rows = new ArrayList<Object[]>();
+    while (resultSetStepOne.next())
+    {
+      String functionNameUnparsed = resultSetStepOne.getString("arguments").trim();
+      String functionName = functionNameUnparsed.substring(0, functionNameUnparsed.indexOf(" RETURN"));
+      String functionNameNoArgs = functionName;
+      if (functionName.contains("("))
+      {
+        functionNameNoArgs = functionName.substring(0, functionName.indexOf('('));
+      }
+      String showFunctionColCommand =
+          "desc function " + catalog + "." + schemaPattern + "." + functionName;
+
+      ResultSet resultSetStepTwo = executeAndReturnEmptyResultIfNotFound(statement, showFunctionColCommand,
+                                                                         GET_FUNCTION_COLUMNS);
+      resultSetStepTwo.next();
+      String[] params = parseParams(resultSetStepTwo.getString("value"));
+      resultSetStepTwo.next();
+      String res = resultSetStepTwo.getString("value");
+      String paramNames[] = new String[params.length / 2 + 1];
+      String paramTypes[] = new String[params.length / 2 + 1];
+      if (params.length > 1)
+      {
+        for (int i = 0; i < params.length; i++)
+        {
+          if (i % 2 == 0)
+          {
+            paramNames[i / 2 + 1] = params[i];
+          }
+          else
+          {
+            paramTypes[i / 2 + 1] = params[i];
+          }
+        }
+      }
+      paramNames[0] = "";
+      paramTypes[0] = res;
+      for (int i = 0; i < paramNames.length; i++)
+      {
+        // if it's the 1st in for loop, it's the result
+        if (i == 0 || paramNames[i].equalsIgnoreCase(columnNamePattern) || addAllRows)
+        {
+          Object[] nextRow = new Object[17];
+          // add a row to resultSet
+          nextRow[0] = catalog; //function catalog. Can be null.
+          nextRow[1] = schemaPattern; //function schema. Can be null.
+          nextRow[2] = functionNameNoArgs; //function name
+          nextRow[3] = paramNames[i]; //column/parameter name
+          if (i == 0)
+          {
+            if (paramTypes[i].substring(0, 5).equalsIgnoreCase("table"))
+            {
+              nextRow[4] = functionColumnOut;
+            }
+            else
+            {
+              nextRow[4] = functionReturn;
+            }
+          }
+          else
+          {
+            nextRow[4] = functionColumnIn; //kind of column/parameter
+          }
+          String typeName = paramTypes[i];
+          int type = convertStringToType(typeName);
+          nextRow[5] = type; // data type
+          nextRow[6] = typeName; //type name
+          // precision and scale. Values only exist for numbers
+          int precision = 38;
+          short scale = 0;
+          if (type < 10)
+          {
+            if (typeName.contains("(") && typeName.contains(")"))
+            {
+              precision =
+                  Integer.parseInt(typeName.substring(typeName.indexOf('(') + 1, typeName.indexOf(',')));
+              scale =
+                  Short.parseShort(typeName.substring(typeName.indexOf(',') + 1, typeName.indexOf(')')));
+              nextRow[7] = precision;
+              nextRow[9] = scale;
+            }
+            else if (type == Types.FLOAT)
+            {
+              nextRow[7] = 0;
+              nextRow[9] = null;
+            }
+            else
+            {
+              nextRow[7] = precision;
+              nextRow[9] = scale;
+            }
+          }
+          else
+          {
+            nextRow[7] = 0;
+            nextRow[9] = null;
+          }
+          nextRow[8] = 0; //length in bytes. not supported
+          nextRow[10] = 10; //radix. Probably 10 is default, but unknown.
+          nextRow[11] = functionNullableUnknown; //nullable. We don't know from current function info.
+          nextRow[12] = resultSetStepOne.getString("description").trim(); //remarks
+          if (type == Types.BINARY || type == Types.VARBINARY || type == Types.CHAR || type == Types.VARCHAR)
+          {
+            if (typeName.contains("(") && typeName.contains(")"))
+            {
+              int char_octet_len = Integer.parseInt(typeName.substring(typeName.indexOf('(') + 1,
+                                                                       typeName.indexOf(')')));
+              nextRow[13] = char_octet_len;
+            }
+            else if (type == Types.CHAR || type == Types.VARCHAR)
+            {
+              nextRow[13] = 16777216;
+            }
+            else if (type == Types.BINARY || type == Types.VARBINARY)
+            {
+              nextRow[13] = 8388608;
+            }
+          }
+          else
+          {
+            nextRow[13] = null;
+          }
+          nextRow[14] = i; //ordinal position.
+          nextRow[15] = ""; //nullability again. Not supported.
+          nextRow[16] = functionNameUnparsed;
+          rows.add(nextRow);
+        }
+      }
+    }
+    Object[][] resultRows = new Object[rows.size()][17];
+    for (int i = 0; i < resultRows.length; i++)
+    {
+      resultRows[i] = rows.get(i);
+    }
+    return new SnowflakeDatabaseMetaDataResultSet(Arrays.asList("FUNCTION_CAT", "FUNCTION_SCHEM", "FUNCTION_NAME",
+                                                                "COLUMN_NAME", "COLUMN_TYPE", "DATA_TYPE", "TYPE_NAME", "PRECISION",
+                                                                "LENGTH", "SCALE", "RADIX", "NULLABLE", "REMARKS", "CHAR_OCTET_LENGTH",
+                                                                "ORDINAL_POSITION", "IS_NULLABLE", "SPECIFIC_NAME"),
+                                                  Arrays.asList("TEXT", "TEXT", "TEXT", "TEXT", "SHORT", "INTEGER", "TEXT",
+                                                                "INTEGER", "INTEGER", "SHORT", "SHORT", "SHORT", "TEXT", "INTEGER",
+                                                                "INTEGER", "TEXT", "TEXT"),
+                                                  Arrays.asList(Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR,
+                                                                Types.SMALLINT, Types.INTEGER, Types.VARCHAR, Types.INTEGER,
+                                                                Types.INTEGER, Types.SMALLINT, Types.SMALLINT, Types.SMALLINT,
+                                                                Types.VARCHAR, Types.INTEGER, Types.INTEGER, Types.VARCHAR,
+                                                                Types.VARCHAR), resultRows, statement);
   }
 
   //@Override
