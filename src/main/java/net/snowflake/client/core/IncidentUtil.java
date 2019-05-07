@@ -10,7 +10,6 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.util.ISO8601DateFormat;
-import com.fasterxml.jackson.datatype.joda.JodaModule;
 import com.yammer.metrics.Metrics;
 import com.yammer.metrics.core.Clock;
 import com.yammer.metrics.core.VirtualMachineMetrics;
@@ -100,7 +99,6 @@ public class IncidentUtil
       jf.disable(JsonGenerator.Feature.AUTO_CLOSE_TARGET);
       ObjectMapper mapper = new ObjectMapper(jf);
 
-      mapper.registerModule(new JodaModule());
       mapper.setDateFormat(new ISO8601DateFormat());
       mapper.configure(SerializationFeature.INDENT_OUTPUT, true);
       MetricsServlet metrics = new MetricsServlet(Clock.defaultClock(),
