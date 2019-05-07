@@ -1,3 +1,14 @@
+**JDBC Driver 3.8.0**
+
+- \|SNOW-75285|Remove sensitive data from URL for JDBC logging
+- \|SNOW-75925|Create JDBC interfaces SnowflakeStatement, SnowflakeResultSet, and, SnowflakePreparedStatement to expose Snowflake specific APIs: SnowflakeStatement.getQueryID(), SnowflakeStatement.getBatchQueryID(), SnowflakeResultSet.getQueryID(), SnowflakePreparedStatement.getQueryID()
+- \|SNOW-76010|Updated c3p0 version for tests
+- \|SNOW-76375|Implements DataBaseMetaData.getParameterMetaData() and ParameterMetaData.getType()
+- \|SNOW-75285|Scrub secrets before logging
+- \|SNOW-77160|Add OCSP_MODE metric
+- \|SNOW-76150|OCSP SoftFail support JDBC
+- \
+
 **JDBC Driver 3.7.2**
 
 - \|SNOW-67615| Apply CLIENT_METADATA_REQUEST_USE_CONNECTION_CTX behavior to all JDBC get functions with catalog and schema as inputs
