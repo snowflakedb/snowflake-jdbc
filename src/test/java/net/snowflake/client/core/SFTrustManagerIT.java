@@ -144,6 +144,26 @@ public class SFTrustManagerIT extends BaseJDBCTest
   }
 
   /**
+   * OCSP tests for the Snowflake and AWS S3 HTTPS connections without using the
+   * server cache.
+   * This test should always pass - even with OCSP Outage.
+   */
+  @Test
+  public void testOcspWithoutServerCache() throws Throwable
+  {
+    File ocspCacheFile = tmpFolder.newFile();
+    for (String host : TARGET_HOSTS)
+    {
+      HttpClient client = HttpUtil.buildHttpClient(
+          OCSPMode.FAIL_OPEN,
+          ocspCacheFile, // a temp OCSP response cache file
+          false // use OCSP response cache server
+      );
+      accessHost(host, client);
+    }
+  }
+
+  /**
    * OCSP tests for the Snowflake and AWS S3 HTTPS connections using the
    * server cache.
    */

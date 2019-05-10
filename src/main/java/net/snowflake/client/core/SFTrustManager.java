@@ -757,7 +757,7 @@ class SFTrustManager extends X509ExtendedTrustManager
         sleepTime, MAX_SLEEPING_TIME_IN_MILLISECONDS);
     CertificateException error;
     boolean success = false;
-    JSONObject ocspLog;
+    String ocspLog;
     OCSPTelemetryData telemetryData = new OCSPTelemetryData();
     telemetryData.setSfcPeerHost(peerHost);
     telemetryData.setCertId(encodeCacheKey(keyOcspResponse));
@@ -907,12 +907,6 @@ class SFTrustManager extends X509ExtendedTrustManager
           {
             if (ex.getErrorCode() == OCSPErrorCode.CERTIFICATE_STATUS_REVOKED)
             {
-              if (OCSP_RESPONSE_CACHE.containsKey(keyOcspResponse))
-              {
-                LOGGER.debug("deleting the invalid OCSP cache.");
-                OCSP_RESPONSE_CACHE.remove(keyOcspResponse);
-                WAS_CACHE_UPDATED = true;
-              }
               success = false;
               throw new SFOCSPException(ex.getErrorCode(),
                                         ex.getErrorMsg());
@@ -949,7 +943,7 @@ class SFTrustManager extends X509ExtendedTrustManager
       // Revoked Certificate
       error = new CertificateException(ex.getErrorMsg());
       ocspLog = telemetryData.generateTelemetry("RevokedCertificateError", error);
-      LOGGER.error(ocspLog.toString());
+      LOGGER.error(ocspLog);
       throw error;
     }
 
@@ -963,13 +957,13 @@ class SFTrustManager extends X509ExtendedTrustManager
       if (SFTrustManager.isOCSPFailOpen())
       {
         // Log includes fail-open warning.
-        ocspFailOpenLog = generateFailOpenLog(ocspLog.toString());
+        ocspFailOpenLog = generateFailOpenLog(ocspLog);
         LOGGER.error(ocspFailOpenLog);
       }
       else
       {
         // still not success, raise an error.
-        LOGGER.debug(ocspLog.toString());
+        LOGGER.debug(ocspLog);
         throw error;
       }
     }

@@ -88,9 +88,10 @@ public class OCSPTelemetryData
     this.ocspMode = ocspMode;
   }
 
-  public JSONObject generateTelemetry(String eventType, CertificateException ex)
+  public String generateTelemetry(String eventType, CertificateException ex)
   {
     JSONObject value = new JSONObject();
+    String valueStr;
     value.put("eventType", eventType);
     value.put("sfcPeerHost", this.sfcPeerHost);
     value.put("certId", this.certId);
@@ -99,8 +100,9 @@ public class OCSPTelemetryData
     value.put("ocspMode", this.ocspMode.name());
     value.put("cacheEnabled", this.cacheEnabled);
     value.put("cacheHit", this.cacheHit);
+    valueStr = value.toString(); // Avoid adding exception stacktrace to user logs.
     TelemetryService.getInstance().logOCSPExceptionTelemetryEvent(
         eventType, value, ex);
-    return value;
+    return valueStr;
   }
 }
