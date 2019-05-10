@@ -6,7 +6,8 @@
 - \|SNOW-76375|Implements DataBaseMetaData.getParameterMetaData() and ParameterMetaData.getType()
 - \|SNOW-75285|Scrub secrets before logging
 - \|SNOW-77160|Add OCSP_MODE metric
-- \|SNOW-76150|OCSP SoftFail support JDBC
+- \|SNOW-74086|Add getFunctionColumns
+- \|SNOW-76150|OCSP SoftFail support for JDBC
 - \
 
 **JDBC Driver 3.7.2**
