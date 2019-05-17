@@ -254,8 +254,8 @@ public class ResultUtil
   /**
    * A common helper to process result response
    *
-   * @param resultData wrapper object over simple json result
-   * @param sfStatement  the Snowflake statement
+   * @param resultData  wrapper object over simple json result
+   * @param sfStatement the Snowflake statement
    * @return processed result output
    * @throws SnowflakeSQLException if failed to get number of columns
    */

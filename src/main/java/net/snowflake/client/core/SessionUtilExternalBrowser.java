@@ -113,7 +113,7 @@ public class SessionUtilExternalBrowser
 
   private final ObjectMapper mapper;
 
-  private final SessionUtil.LoginInput loginInput;
+  private final SFLoginInput loginInput;
 
   String token;
   private boolean consentCacheIdToken;
@@ -131,13 +131,14 @@ public class SessionUtilExternalBrowser
     UTF8_CHARSET = Charset.forName("UTF-8");
   }
 
-  public static SessionUtilExternalBrowser createInstance(SessionUtil.LoginInput loginInput)
+  public static SessionUtilExternalBrowser createInstance(SFLoginInput loginInput)
   {
     return new SessionUtilExternalBrowser(
         loginInput, new DefaultAuthExternalBrowserHandlers());
   }
 
-  public SessionUtilExternalBrowser(SessionUtil.LoginInput loginInput, AuthExternalBrowserHandlers handlers)
+  public SessionUtilExternalBrowser(SFLoginInput loginInput,
+                                    AuthExternalBrowserHandlers handlers)
   {
     this.mapper = ObjectMapperFactory.getObjectMapper();
     this.loginInput = loginInput;

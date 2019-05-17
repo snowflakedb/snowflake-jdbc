@@ -6,8 +6,6 @@ package net.snowflake.client.core;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.JsonNodeType;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Strings;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeDriver;
@@ -40,7 +38,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.Charset;
-import java.security.PrivateKey;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -49,6 +46,8 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static net.snowflake.client.core.SFTrustManager.resetOCSPResponseCacherServerURL;
 
@@ -57,20 +56,27 @@ import static net.snowflake.client.core.SFTrustManager.resetOCSPResponseCacherSe
  */
 public class SessionUtil
 {
-  public static final String SF_QUERY_DATABASE = "databaseName";
+  private static final
+  SFLogger logger = SFLoggerFactory.getLogger(SessionUtil.class);
+  // Response Field Name
+  private static final String SF_QUERY_DATABASE = "databaseName";
+  private static final String SF_QUERY_SCHEMA = "schemaName";
+  private static final String SF_QUERY_WAREHOUSE = "warehouse";
+  private static final String SF_QUERY_ROLE = "roleName";
 
-  public static final String SF_QUERY_SCHEMA = "schemaName";
-
-  public static final String SF_QUERY_WAREHOUSE = "warehouse";
-
-  public static final String SF_QUERY_ROLE = "roleName";
-
-  public static final String SF_QUERY_REQUEST_ID = "requestId";
-
-  public static final String SF_PATH_AUTHENTICATOR_REQUEST
+  // Request path
+  private static final String SF_PATH_LOGIN_REQUEST =
+      "/session/v1/login-request";
+  private static final String SF_PATH_TOKEN_REQUEST = "/session/token-request";
+  protected static final String SF_PATH_AUTHENTICATOR_REQUEST
       = "/session/authenticator-request";
+
   public static final String SF_QUERY_SESSION_DELETE = "delete";
+
+  // Headers
   public static final String SF_HEADER_AUTHORIZATION = HttpHeaders.AUTHORIZATION;
+
+  // Authentication type
   public static final String SF_HEADER_BASIC_AUTHTYPE = "Basic";
   public static final String SF_HEADER_SNOWFLAKE_AUTHTYPE = "Snowflake";
   public static final String SF_HEADER_TOKEN_TAG = "Token";
@@ -96,29 +102,24 @@ public class SessionUtil
       "CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY";
   public static final String CLIENT_SFSQL = "CLIENT_SFSQL";
 
-  protected static final FileCacheManager fileCacheManager;
   static final String SF_HEADER_SERVICE_NAME = "X-Snowflake-Service";
-  static final
-  SFLogger logger = SFLoggerFactory.getLogger(SessionUtil.class);
-  private static final String SF_PATH_LOGIN_REQUEST =
-      "/session/v1/login-request";
-  private static final String SF_PATH_TOKEN_REQUEST = "/session/token-request";
+
   private static final String SF_PATH_SESSION = "/session";
-  private static final String CACHE_DIR_PROP = "net.snowflake.jdbc.temporaryCredentialCacheDir";
-  private static final String CACHE_DIR_ENV = "SF_TEMPORARY_CREDENTIAL_CACHE_DIR";
-  private static final long CACHE_EXPIRATION_IN_SECONDS = 86400L;
-  private static final long CACHE_FILE_LOCK_EXPIRATION_IN_SECONDS = 60L;
-  private final static Map<String, Map<String, String>> ID_TOKEN_CACHE = new HashMap<>();
-  private final static Object ID_TOKEN_CACHE_LOCK = new Object();
   public static long DEFAULT_CLIENT_MEMORY_LIMIT = 1536; // MB
   public static int DEFAULT_CLIENT_PREFETCH_THREADS = 4;
   public static int DEFAULT_CLIENT_CHUNK_SIZE = 160;
   public static int MIN_CLIENT_CHUNK_SIZE = 48;
   public static int MAX_CLIENT_CHUNK_SIZE = 160;
-  public static Map<String, String> JVM_PARAMS_TO_PARAMS = new HashMap<>();
+  public static Map<String, String> JVM_PARAMS_TO_PARAMS = Stream.of(
+      new String[][]{
+          {CLIENT_RESULT_CHUNK_SIZE_JVM, CLIENT_RESULT_CHUNK_SIZE},
+          {CLIENT_MEMORY_LIMIT_JVM, CLIENT_MEMORY_LIMIT},
+          {CLIENT_PREFETCH_THREADS_JVM, CLIENT_PREFETCH_THREADS},
+          {OCSP_FAIL_OPEN_JVM, OCSP_FAIL_OPEN},
+          {CLIENT_ENABLE_CONSERVATIVE_MEMORY_USAGE_JVM,
+           CLIENT_ENABLE_CONSERVATIVE_MEMORY_USAGE}
+      }).collect(Collectors.toMap(data -> data[0], data -> data[1]));
   private static ObjectMapper mapper = ObjectMapperFactory.getObjectMapper();
-  private static int DEFAULT_HTTP_CLIENT_CONNECTION_TIMEOUT = 60000; // millisec
-  private static int DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT = 300000; // millisec
   private static int DEFAULT_HEALTH_CHECK_INTERVAL = 45; // sec
   private static Set<String> STRING_PARAMS = new HashSet<>(Arrays.asList(
       "TIMEZONE",
@@ -131,15 +132,16 @@ public class SessionUtil
       "BINARY_OUTPUT_FORMAT",
       "CLIENT_TIMESTAMP_TYPE_MAPPING",
       SERVICE_NAME));
-  private static Set<String> INT_PARAMS = new HashSet<>(Arrays.asList(
+  private static final Set<String> INT_PARAMS = new HashSet<>(Arrays.asList(
       "CLIENT_RESULT_PREFETCH_SLOTS",
       "CLIENT_RESULT_PREFETCH_THREADS",
       CLIENT_PREFETCH_THREADS,
       CLIENT_MEMORY_LIMIT,
       CLIENT_RESULT_CHUNK_SIZE,
       "CLIENT_STAGE_ARRAY_BINDING_THRESHOLD",
-      CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY));
-  private static Set<String> BOOLEAN_PARAMS = new HashSet<>(Arrays.asList(
+      "CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY"));
+  private static final Set<String> BOOLEAN_PARAMS = new HashSet<>(Arrays.asList(
+      CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY,
       "CLIENT_HONOR_CLIENT_TZ_FOR_TIMESTAMP_NTZ",
       "CLIENT_DISABLE_INCIDENTS",
       "CLIENT_SESSION_KEEP_ALIVE",
@@ -156,31 +158,6 @@ public class SessionUtil
       "JDBC_ENABLE_COMBINED_DESCRIBE",
       CLIENT_ENABLE_CONSERVATIVE_MEMORY_USAGE));
 
-  static
-  {
-    JVM_PARAMS_TO_PARAMS.put(
-        CLIENT_RESULT_CHUNK_SIZE_JVM, CLIENT_RESULT_CHUNK_SIZE);
-    JVM_PARAMS_TO_PARAMS.put(
-        CLIENT_MEMORY_LIMIT_JVM, CLIENT_MEMORY_LIMIT);
-    JVM_PARAMS_TO_PARAMS.put(
-        CLIENT_PREFETCH_THREADS_JVM, CLIENT_PREFETCH_THREADS);
-    JVM_PARAMS_TO_PARAMS.put(
-        OCSP_FAIL_OPEN_JVM, OCSP_FAIL_OPEN);
-    JVM_PARAMS_TO_PARAMS.put(
-        CLIENT_ENABLE_CONSERVATIVE_MEMORY_USAGE_JVM, CLIENT_ENABLE_CONSERVATIVE_MEMORY_USAGE);
-  }
-
-  static
-  {
-    fileCacheManager = FileCacheManager
-        .builder()
-        .setCacheDirectorySystemProperty(CACHE_DIR_PROP)
-        .setCacheDirectoryEnvironmentVariable(CACHE_DIR_ENV)
-        .setBaseCacheFileName(CACHE_FILE_NAME)
-        .setCacheExpirationInSeconds(CACHE_EXPIRATION_IN_SECONDS)
-        .setCacheFileLockExpirationInSeconds(CACHE_FILE_LOCK_EXPIRATION_IN_SECONDS).build();
-  }
-
   /**
    * Returns Authenticator type
    *
@@ -188,7 +165,7 @@ public class SessionUtil
    * @return Authenticator type
    */
   static private ClientAuthnDTO.AuthenticatorType getAuthenticator(
-      LoginInput loginInput)
+      SFLoginInput loginInput)
   {
     if (loginInput.getAuthenticator() != null)
     {
@@ -234,7 +211,7 @@ public class SessionUtil
    * @throws SFException           if unexpected uri syntax
    * @throws SnowflakeSQLException if failed to establish connection with snowflake
    */
-  static public LoginOutput openSession(LoginInput loginInput)
+  static public SFLoginOutput openSession(SFLoginInput loginInput)
   throws SFException, SnowflakeSQLException
   {
     AssertUtil.assertTrue(loginInput.getServerUrl() != null,
@@ -257,123 +234,37 @@ public class SessionUtil
     if (authenticator.equals(ClientAuthnDTO.AuthenticatorType.EXTERNALBROWSER))
     {
       // force to set the flag.
-      loginInput.sessionParameters.put(CLIENT_STORE_TEMPORARY_CREDENTIAL, true);
+      loginInput.getSessionParameters().put(CLIENT_STORE_TEMPORARY_CREDENTIAL, true);
     }
     else
     {
       // TODO: patch for now. We should update mergeProperteis
       // to normalize all parameters using STRING_PARAMS, INT_PARAMS and
       // BOOLEAN_PARAMS.
-      Object value = loginInput.sessionParameters.get(
+      Object value = loginInput.getSessionParameters().get(
           CLIENT_STORE_TEMPORARY_CREDENTIAL);
       if (value != null)
       {
-        loginInput.sessionParameters.put(
+        loginInput.getSessionParameters().put(
             CLIENT_STORE_TEMPORARY_CREDENTIAL, asBoolean(value));
       }
     }
 
     boolean isClientStoreTemporaryCredential = asBoolean(
-        loginInput.sessionParameters.get(CLIENT_STORE_TEMPORARY_CREDENTIAL));
-    LoginOutput loginOutput;
-    if (isClientStoreTemporaryCredential &&
-        (loginOutput = readTemporaryCredential(loginInput)) != null)
+        loginInput.getSessionParameters().get(CLIENT_STORE_TEMPORARY_CREDENTIAL));
+    if (isClientStoreTemporaryCredential && CredentialManager.getInstance().fillCachedIdToken(loginInput))
     {
-      return loginOutput;
+      try
+      {
+        return issueSession(loginInput);
+      }
+      catch (SnowflakeReauthenticationRequest ex)
+      {
+        logger.debug("The token expired. errorCode. Reauthenticating...");
+      }
     }
+
     return newSession(loginInput);
-  }
-
-  static private LoginOutput readTemporaryCredential(LoginInput loginInput)
-  throws SFException, SnowflakeSQLException
-  {
-    String idToken;
-    synchronized (ID_TOKEN_CACHE_LOCK)
-    {
-      JsonNode res = fileCacheManager.readCacheFile();
-      readJsonStoreCache(res);
-
-      Map<String, String> userMap = ID_TOKEN_CACHE.get(
-          loginInput.getAccountName().toUpperCase());
-      if (userMap == null)
-      {
-        return null;
-      }
-      idToken = userMap.get(loginInput.getUserName().toUpperCase());
-    }
-    if (idToken == null)
-    {
-      return null;
-    }
-    loginInput.setIdToken(idToken);
-    try
-    {
-      return issueSession(loginInput);
-    }
-    catch (SnowflakeReauthenticationRequest ex)
-    {
-      logger.debug("The token expired. errorCode. Reauthenticating...");
-    }
-    return null;
-  }
-
-  static private void readJsonStoreCache(JsonNode m)
-  {
-    if (m == null || !m.getNodeType().equals(JsonNodeType.OBJECT))
-    {
-      logger.debug("Invalid cache file format.");
-      return;
-    }
-    for (Iterator<Map.Entry<String, JsonNode>> itr = m.fields(); itr.hasNext(); )
-    {
-      Map.Entry<String, JsonNode> accountMap = itr.next();
-      String account = accountMap.getKey();
-      if (!ID_TOKEN_CACHE.containsKey(account))
-      {
-        ID_TOKEN_CACHE.put(account, new HashMap<String, String>());
-      }
-      JsonNode userJsonNode = accountMap.getValue();
-      for (Iterator<Map.Entry<String, JsonNode>> itr0 = userJsonNode.fields(); itr0.hasNext(); )
-      {
-        Map.Entry<String, JsonNode> userMap = itr0.next();
-        ID_TOKEN_CACHE.get(account).put(
-            userMap.getKey(), userMap.getValue().asText());
-      }
-    }
-  }
-
-  static private void writeTemporaryCredential(
-      LoginInput loginInput, LoginOutput loginOutput)
-  {
-    if (Strings.isNullOrEmpty(loginOutput.getIdToken()))
-    {
-      return; // no idToken
-    }
-    synchronized (ID_TOKEN_CACHE_LOCK)
-    {
-      String currentAccount = loginInput.getAccountName().toUpperCase();
-      Map<String, String> currentUserMap = ID_TOKEN_CACHE.get(currentAccount);
-      if (currentUserMap == null)
-      {
-        currentUserMap = new HashMap<>();
-        ID_TOKEN_CACHE.put(currentAccount, currentUserMap);
-      }
-      currentUserMap.put(loginInput.getUserName().toUpperCase(), loginOutput.getIdToken());
-
-      ObjectNode out = mapper.createObjectNode();
-      for (Map.Entry<String, Map<String, String>> elem : ID_TOKEN_CACHE.entrySet())
-      {
-        String account = elem.getKey();
-        Map<String, String> userMap = elem.getValue();
-        ObjectNode userNode = mapper.createObjectNode();
-        for (Map.Entry<String, String> elem0 : userMap.entrySet())
-        {
-          userNode.put(elem0.getKey(), elem0.getValue());
-        }
-        out.set(account, userNode);
-      }
-      fileCacheManager.writeCacheFile(out);
-    }
   }
 
   static private boolean asBoolean(Object value)
@@ -392,7 +283,7 @@ public class SessionUtil
     return false;
   }
 
-  static private LoginOutput newSession(LoginInput loginInput)
+  static private SFLoginOutput newSession(SFLoginInput loginInput)
   throws SFException, SnowflakeSQLException
   {
     // build URL for login request
@@ -409,7 +300,6 @@ public class SessionUtil
     String sessionRole;
     String sessionWarehouse;
     long masterTokenValidityInSeconds;
-    String remMeToken;
     String idToken;
     String databaseVersion = null;
     int databaseMajorVersion = 0;
@@ -470,7 +360,8 @@ public class SessionUtil
         loginInput.setToken(s.issueJwtToken());
       }
 
-      uriBuilder.addParameter(SF_QUERY_REQUEST_ID, UUID.randomUUID().toString());
+      uriBuilder.addParameter(SFSession.SF_QUERY_REQUEST_ID,
+                              UUID.randomUUID().toString());
 
 
       uriBuilder.setPath(SF_PATH_LOGIN_REQUEST);
@@ -704,7 +595,6 @@ public class SessionUtil
       // session token is in the data field of the returned json response
       sessionToken = jsonNode.path("data").path("token").asText();
       masterToken = jsonNode.path("data").path("masterToken").asText();
-      remMeToken = jsonNode.path("data").path("remMeToken").asText();
       idToken = nullStringAsEmptyString(
           jsonNode.path("data").path("idToken").asText());
       masterTokenValidityInSeconds = jsonNode.path("data").
@@ -830,30 +720,29 @@ public class SessionUtil
                                       ErrorCode.CONNECTION_ERROR.getMessageCode(), ex.getMessage());
     }
 
-    LoginOutput ret = new LoginOutput(sessionToken,
-                                      masterToken,
-                                      masterTokenValidityInSeconds,
-                                      remMeToken,
-                                      idToken,
-                                      databaseVersion,
-                                      databaseMajorVersion,
-                                      databaseMinorVersion,
-                                      httpClientSocketTimeout,
-                                      sessionDatabase,
-                                      sessionSchema,
-                                      sessionRole,
-                                      sessionWarehouse,
-                                      commonParams);
+    SFLoginOutput ret = new SFLoginOutput(sessionToken,
+                                          masterToken,
+                                          masterTokenValidityInSeconds,
+                                          idToken,
+                                          databaseVersion,
+                                          databaseMajorVersion,
+                                          databaseMinorVersion,
+                                          httpClientSocketTimeout,
+                                          sessionDatabase,
+                                          sessionSchema,
+                                          sessionRole,
+                                          sessionWarehouse,
+                                          commonParams);
     ret.setUpdatedByTokenRequest(false);
 
     if (consentCacheIdToken)
     {
-      writeTemporaryCredential(loginInput, ret);
+      CredentialManager.getInstance().writeTemporaryCredential(loginInput, ret);
     }
     return ret;
   }
 
-  private static void setServiceNameHeader(LoginInput loginInput, HttpPost postRequest)
+  private static void setServiceNameHeader(SFLoginInput loginInput, HttpPost postRequest)
   {
     if (!Strings.isNullOrEmpty(loginInput.getServiceName()))
     {
@@ -877,7 +766,7 @@ public class SessionUtil
    */
   static public void deleteIdTokenCache()
   {
-    fileCacheManager.deleteCacheFile();
+    CredentialManager.getInstance().deleteIdTokenCache();
   }
 
   /**
@@ -900,7 +789,7 @@ public class SessionUtil
    * @throws SFException           if unexpected uri information
    * @throws SnowflakeSQLException if failed to renew the session
    */
-  static public LoginOutput renewSession(LoginInput loginInput)
+  static public SFLoginOutput renewSession(SFLoginInput loginInput)
   throws SFException, SnowflakeSQLException
   {
     try
@@ -925,14 +814,14 @@ public class SessionUtil
    * @throws SFException           if unexpected uri information
    * @throws SnowflakeSQLException if failed to renew the session
    */
-  static public LoginOutput issueSession(LoginInput loginInput)
+  static public SFLoginOutput issueSession(SFLoginInput loginInput)
   throws SFException, SnowflakeSQLException
   {
     return tokenRequest(loginInput, TokenRequestType.ISSUE);
   }
 
-  static private LoginOutput tokenRequest(
-      LoginInput loginInput, TokenRequestType requestType)
+  static private SFLoginOutput tokenRequest(
+      SFLoginInput loginInput, TokenRequestType requestType)
   throws SFException, SnowflakeSQLException
   {
     AssertUtil.assertTrue(loginInput.getServerUrl() != null,
@@ -1056,7 +945,7 @@ public class SessionUtil
       throw new SFException(ex, ErrorCode.NETWORK_ERROR, ex.getMessage());
     }
 
-    LoginOutput loginOutput = new LoginOutput();
+    SFLoginOutput loginOutput = new SFLoginOutput();
     loginOutput
         .setSessionToken(sessionToken)
         .setMasterToken(masterToken)
@@ -1073,7 +962,7 @@ public class SessionUtil
    * @throws SnowflakeSQLException if failed to close session
    * @throws SFException           if failed to close session
    */
-  static public void closeSession(LoginInput loginInput)
+  static public void closeSession(SFLoginInput loginInput)
   throws SFException, SnowflakeSQLException
   {
     logger.debug(" public void close() throws SFException");
@@ -1165,7 +1054,7 @@ public class SessionUtil
    *                               the SAML assertion does not match
    */
   private static String federatedFlowStep4(
-      LoginInput loginInput,
+      SFLoginInput loginInput,
       String ssoUrl,
       String oneTimeToken) throws SnowflakeSQLException
   {
@@ -1216,7 +1105,7 @@ public class SessionUtil
    * @return Returns the one time token
    * @throws SnowflakeSQLException Will be thrown if the execute request fails
    */
-  private static String federatedFlowStep3(LoginInput loginInput, String tokenUrl)
+  private static String federatedFlowStep3(SFLoginInput loginInput, String tokenUrl)
   throws SnowflakeSQLException
 
   {
@@ -1270,7 +1159,7 @@ public class SessionUtil
    *                               tokenUrl and ssoUrl do not match
    */
   private static void federatedFlowStep2(
-      LoginInput loginInput,
+      SFLoginInput loginInput,
       String tokenUrl,
       String ssoUrl) throws SnowflakeSQLException
   {
@@ -1299,7 +1188,7 @@ public class SessionUtil
    * @throws SnowflakeSQLException Will be thrown if the execute request step
    *                               fails
    */
-  private static JsonNode federatedFlowStep1(LoginInput loginInput)
+  private static JsonNode federatedFlowStep1(SFLoginInput loginInput)
   throws SnowflakeSQLException
   {
     JsonNode dataNode = null;
@@ -1364,7 +1253,7 @@ public class SessionUtil
    * @param ex         The exception to process
    * @throws SnowflakeSQLException Will be thrown for all calls to this method
    */
-  private static void handleFederatedFlowError(LoginInput loginInput, Exception ex)
+  private static void handleFederatedFlowError(SFLoginInput loginInput, Exception ex)
   throws SnowflakeSQLException
 
   {
@@ -1394,7 +1283,7 @@ public class SessionUtil
    * @throws SnowflakeSQLException Will be thrown if any of the federated
    *                               steps fail
    */
-  static private String getSamlResponseUsingOkta(LoginInput loginInput)
+  static private String getSamlResponseUsingOkta(SFLoginInput loginInput)
   throws SnowflakeSQLException
   {
     JsonNode dataNode = federatedFlowStep1(loginInput);
@@ -1657,516 +1546,6 @@ public class SessionUtil
     TokenRequestType(String value)
     {
       this.value = value;
-    }
-  }
-
-  /**
-   * A class for holding all information required for login
-   */
-  public static class LoginInput
-  {
-    private String serverUrl;
-    private String databaseName;
-    private String schemaName;
-    private String warehouse;
-    private String role;
-    private String authenticator;
-    private String accountName;
-    private int loginTimeout = -1; // default is invalid
-    private String userName;
-    private String password;
-    private Properties clientInfo;
-    private boolean passcodeInPassword;
-    private String passcode;
-    private String token;
-    private int connectionTimeout = DEFAULT_HTTP_CLIENT_CONNECTION_TIMEOUT;
-    private int socketTimeout = DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT;
-    private String appId;
-    private String appVersion;
-    private String sessionToken;
-    private String masterToken;
-    private Map<String, Object> sessionParameters;
-    private PrivateKey privateKey;
-    private String application;
-    private String idToken;
-    private String serviceName;
-    private OCSPMode ocspMode;
-
-    public LoginInput()
-    {
-    }
-
-    public String getServerUrl()
-    {
-      return serverUrl;
-    }
-
-    public LoginInput setServerUrl(String serverUrl)
-    {
-      this.serverUrl = serverUrl;
-      return this;
-    }
-
-    public String getDatabaseName()
-    {
-      return databaseName;
-    }
-
-    public LoginInput setDatabaseName(String databaseName)
-    {
-      this.databaseName = databaseName;
-      return this;
-    }
-
-    public String getSchemaName()
-    {
-      return schemaName;
-    }
-
-    public LoginInput setSchemaName(String schemaName)
-    {
-      this.schemaName = schemaName;
-      return this;
-    }
-
-    public String getWarehouse()
-    {
-      return warehouse;
-    }
-
-    public LoginInput setWarehouse(String warehouse)
-    {
-      this.warehouse = warehouse;
-      return this;
-    }
-
-    public String getRole()
-    {
-      return role;
-    }
-
-    public LoginInput setRole(String role)
-    {
-      this.role = role;
-      return this;
-    }
-
-    public String getAuthenticator()
-    {
-      return authenticator;
-    }
-
-    public LoginInput setAuthenticator(String authenticator)
-    {
-      this.authenticator = authenticator;
-      return this;
-    }
-
-    public String getAccountName()
-    {
-      return accountName;
-    }
-
-    public LoginInput setAccountName(String accountName)
-    {
-      this.accountName = accountName;
-      return this;
-    }
-
-    public int getLoginTimeout()
-    {
-      return loginTimeout;
-    }
-
-    public LoginInput setLoginTimeout(int loginTimeout)
-    {
-      this.loginTimeout = loginTimeout;
-      return this;
-    }
-
-    public String getUserName()
-    {
-      return userName;
-    }
-
-    public LoginInput setUserName(String userName)
-    {
-      this.userName = userName;
-      return this;
-    }
-
-    public String getPassword()
-    {
-      return password;
-    }
-
-    public LoginInput setPassword(String password)
-    {
-      this.password = password;
-      return this;
-    }
-
-    public Properties getClientInfo()
-    {
-      return clientInfo;
-    }
-
-    public LoginInput setClientInfo(Properties clientInfo)
-    {
-      this.clientInfo = clientInfo;
-      return this;
-    }
-
-    public String getPasscode()
-    {
-      return passcode;
-    }
-
-    public LoginInput setPasscode(String passcode)
-    {
-      this.passcode = passcode;
-      return this;
-    }
-
-    public String getToken()
-    {
-      return token;
-    }
-
-    public LoginInput setToken(String token)
-    {
-      this.token = token;
-      return this;
-    }
-
-    public int getConnectionTimeout()
-    {
-      return connectionTimeout;
-    }
-
-    public LoginInput setConnectionTimeout(int connectionTimeout)
-    {
-      this.connectionTimeout = connectionTimeout;
-      return this;
-    }
-
-    public int getSocketTimeout()
-    {
-      return socketTimeout;
-    }
-
-    public LoginInput setSocketTimeout(int socketTimeout)
-    {
-      this.socketTimeout = socketTimeout;
-      return this;
-    }
-
-    public boolean isPasscodeInPassword()
-    {
-      return passcodeInPassword;
-    }
-
-    public LoginInput setPasscodeInPassword(boolean passcodeInPassword)
-    {
-      this.passcodeInPassword = passcodeInPassword;
-      return this;
-    }
-
-    public String getAppId()
-    {
-      return appId;
-    }
-
-    public LoginInput setAppId(String appId)
-    {
-      this.appId = appId;
-      return this;
-    }
-
-    public String getAppVersion()
-    {
-      return appVersion;
-    }
-
-    public LoginInput setAppVersion(String appVersion)
-    {
-      this.appVersion = appVersion;
-      return this;
-    }
-
-    public String getSessionToken()
-    {
-      return sessionToken;
-    }
-
-    public LoginInput setSessionToken(String sessionToken)
-    {
-      this.sessionToken = sessionToken;
-      return this;
-    }
-
-    public String getMasterToken()
-    {
-      return masterToken;
-    }
-
-    public LoginInput setMasterToken(String masterToken)
-    {
-      this.masterToken = masterToken;
-      return this;
-    }
-
-    public String getIdToken()
-    {
-      return idToken;
-    }
-
-    public LoginInput setIdToken(String idToken)
-    {
-      this.idToken = idToken;
-      return this;
-    }
-
-    public Map<String, Object> getSessionParameters()
-    {
-      return sessionParameters;
-    }
-
-    public LoginInput setSessionParameters(Map<String, Object> sessionParameters)
-    {
-      this.sessionParameters = sessionParameters;
-      return this;
-    }
-
-    public PrivateKey getPrivateKey()
-    {
-      return privateKey;
-    }
-
-    public LoginInput setPrivateKey(PrivateKey privateKey)
-    {
-      this.privateKey = privateKey;
-      return this;
-    }
-
-    public String getApplication()
-    {
-      return application;
-    }
-
-    public LoginInput setApplication(String application)
-    {
-      this.application = application;
-      return this;
-    }
-
-    public String getServiceName()
-    {
-      return serviceName;
-    }
-
-    public LoginInput setServiceName(String serviceName)
-    {
-      this.serviceName = serviceName;
-      return this;
-    }
-
-    public OCSPMode getOCSPMode()
-    {
-      return ocspMode;
-    }
-
-    public LoginInput setOCSPMode(OCSPMode ocspMode)
-    {
-      this.ocspMode = ocspMode;
-      return this;
-    }
-  }
-
-  /**
-   * Login output information including session tokens, database versions
-   */
-  public static class LoginOutput
-  {
-    String sessionToken;
-    String masterToken;
-    long masterTokenValidityInSeconds;
-    String remMeToken;
-    String idToken;
-    String databaseVersion;
-    int databaseMajorVersion;
-    int databaseMinorVersion;
-    int httpClientSocketTimeout;
-    String sessionDatabase;
-    String sessionSchema;
-    String sessionRole;
-    String sessionWarehouse;
-    Map<String, Object> commonParams;
-    boolean updatedByTokenRequest;
-    boolean updatedByTokenRequestIssue;
-
-    public LoginOutput()
-    {
-    }
-
-    public LoginOutput(String sessionToken, String masterToken,
-                       long masterTokenValidityInSeconds,
-                       String remMeToken,
-                       String idToken,
-                       String databaseVersion,
-                       int databaseMajorVersion, int databaseMinorVersion,
-                       int httpClientSocketTimeout,
-                       String sessionDatabase,
-                       String sessionSchema,
-                       String sessionRole,
-                       String sessionWarehouse,
-                       Map<String, Object> commonParams)
-    {
-      this.sessionToken = sessionToken;
-      this.masterToken = masterToken;
-      this.remMeToken = remMeToken;
-      this.idToken = idToken;
-      this.databaseVersion = databaseVersion;
-      this.databaseMajorVersion = databaseMajorVersion;
-      this.databaseMinorVersion = databaseMinorVersion;
-      this.httpClientSocketTimeout = httpClientSocketTimeout;
-      this.sessionDatabase = sessionDatabase;
-      this.sessionSchema = sessionSchema;
-      this.sessionRole = sessionRole;
-      this.sessionWarehouse = sessionWarehouse;
-      this.commonParams = commonParams;
-      this.masterTokenValidityInSeconds = masterTokenValidityInSeconds;
-    }
-
-    public String getSessionToken()
-    {
-      return sessionToken;
-    }
-
-    public LoginOutput setSessionToken(String sessionToken)
-    {
-      this.sessionToken = sessionToken;
-      return this;
-    }
-
-    public String getMasterToken()
-    {
-      return masterToken;
-    }
-
-    public LoginOutput setMasterToken(String masterToken)
-    {
-      this.masterToken = masterToken;
-      return this;
-    }
-
-    public String getIdToken()
-    {
-      return idToken;
-    }
-
-    public LoginOutput setIdToken(String idToken)
-    {
-      this.idToken = idToken;
-      return this;
-    }
-
-    public String getDatabaseVersion()
-    {
-      return databaseVersion;
-    }
-
-    public int getDatabaseMajorVersion()
-    {
-      return databaseMajorVersion;
-    }
-
-    public int getDatabaseMinorVersion()
-    {
-      return databaseMinorVersion;
-    }
-
-    public int getHttpClientSocketTimeout()
-    {
-      return httpClientSocketTimeout;
-    }
-
-    public Map<String, Object> getCommonParams()
-    {
-      return commonParams;
-    }
-
-    public LoginOutput setCommonParams(Map<String, Object> commonParams)
-    {
-      this.commonParams = commonParams;
-      return this;
-    }
-
-    public String getSessionDatabase()
-    {
-      return sessionDatabase;
-    }
-
-    public void setSessionDatabase(String sessionDatabase)
-    {
-      this.sessionDatabase = sessionDatabase;
-    }
-
-    public String getSessionSchema()
-    {
-      return sessionSchema;
-    }
-
-    public void setSessionSchema(String sessionSchema)
-    {
-      this.sessionSchema = sessionSchema;
-    }
-
-    public String getSessionRole()
-    {
-      return sessionRole;
-    }
-
-    void setSessionRole(String sessionRole)
-    {
-      this.sessionRole = sessionRole;
-    }
-
-    String getSessionWarehouse()
-    {
-      return sessionWarehouse;
-    }
-
-    void setSessionWarehouse(String sessionWarehouse)
-    {
-      this.sessionWarehouse = sessionWarehouse;
-    }
-
-    public long getMasterTokenValidityInSeconds()
-    {
-      return masterTokenValidityInSeconds;
-    }
-
-    boolean isUpdatedByTokenRequest()
-    {
-      return updatedByTokenRequest;
-    }
-
-    LoginOutput setUpdatedByTokenRequest(boolean updatedByTokenRequest)
-    {
-      this.updatedByTokenRequest = updatedByTokenRequest;
-      return this;
-    }
-
-    boolean isUpdatedByTokenRequestIssue()
-    {
-      return updatedByTokenRequestIssue;
-    }
-
-    LoginOutput setUpdatedByTokenRequestIssue(boolean updatedByTokenRequestIssue)
-    {
-      this.updatedByTokenRequestIssue = updatedByTokenRequestIssue;
-      return this;
     }
   }
 }
