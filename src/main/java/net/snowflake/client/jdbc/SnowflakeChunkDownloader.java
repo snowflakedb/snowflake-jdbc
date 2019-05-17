@@ -82,8 +82,8 @@ public class SnowflakeChunkDownloader
       SFLoggerFactory.getLogger(SnowflakeChunkDownloader.class);
   private static final int STREAM_BUFFER_SIZE = 1 * 1024 * 1024;
 
-  private SnowflakeResultChunk.ResultChunkDataCache chunkDataCache
-      = new SnowflakeResultChunk.ResultChunkDataCache();
+  private JsonResultChunk.ResultChunkDataCache chunkDataCache
+      = new JsonResultChunk.ResultChunkDataCache();
   private List<SnowflakeResultChunk> chunks = null;
 
   // index of next chunk to be consumed (it may not be ready yet)
@@ -266,7 +266,7 @@ public class SnowflakeChunkDownloader
       JsonNode chunkNode = chunksData.get(idx);
 
       SnowflakeResultChunk chunk =
-          new SnowflakeResultChunk(
+          new JsonResultChunk(
               chunkNode.path("url").asText(),
               chunkNode.path("rowCount").asInt(),
               colCount,
@@ -346,7 +346,7 @@ public class SnowflakeChunkDownloader
         // only allocate memory when the future usage is less than the limit
         if (currentMemoryUsage + neededChunkMemory <= memoryLimit)
         {
-          nextChunk.tryReuse(chunkDataCache);
+          ((JsonResultChunk) nextChunk).tryReuse(chunkDataCache);
 
           currentMemoryUsage += neededChunkMemory;
 
@@ -470,7 +470,7 @@ public class SnowflakeChunkDownloader
       {
         // Reuse the set of object to avoid reallocation
         // It is important to do this BEFORE starting the next download
-        chunkDataCache.add(this.chunks.get(prevChunk));
+        chunkDataCache.add((JsonResultChunk) this.chunks.get(prevChunk));
       }
       else
       {
@@ -923,7 +923,7 @@ public class SnowflakeChunkDownloader
          * is also known.
          */
         ResultJsonParserV2 jp = new ResultJsonParserV2();
-        jp.startParsing(resultChunk);
+        jp.startParsing((JsonResultChunk) resultChunk);
 
         byte[] buf = new byte[STREAM_BUFFER_SIZE];
         int len;
@@ -972,9 +972,10 @@ public class SnowflakeChunkDownloader
           while (jp.nextToken() != JsonToken.END_ARRAY)
           {
             // Position to the current row in the result
-            resultChunk.addRow(mapper.readValue(jp, Object[].class));
+            ((JsonResultChunk) resultChunk).addRow(
+                mapper.readValue(jp, Object[].class));
           }
-          resultChunk.ensureRowsComplete();
+          ((JsonResultChunk) resultChunk).ensureRowsComplete();
         }
       }
 

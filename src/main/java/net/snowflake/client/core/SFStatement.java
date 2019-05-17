@@ -131,7 +131,7 @@ public class SFStatement
    * Sanity check query text
    *
    * @param sql The SQL statement to check
-   * @throws SQLException  Will be thrown if sql is null or empty
+   * @throws SQLException Will be thrown if sql is null or empty
    */
   private void sanityCheckQuery(String sql) throws SQLException
   {

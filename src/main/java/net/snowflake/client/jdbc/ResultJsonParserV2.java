@@ -37,9 +37,9 @@ public class ResultJsonParserV2
 
   private int outputDataLength;
   //  private int currentRow;
-  private SnowflakeResultChunk resultChunk;
+  private JsonResultChunk resultChunk;
 
-  public void startParsing(SnowflakeResultChunk resultChunk) throws SnowflakeSQLException
+  public void startParsing(JsonResultChunk resultChunk) throws SnowflakeSQLException
   {
     this.resultChunk = resultChunk;
     if (state != State.UNINITIALIZED)

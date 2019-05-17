@@ -1125,7 +1125,7 @@ public class PreparedStatementIT extends BaseJDBCTest
    * 1 seconds before client coming back with execution request.
    * Sleep thread for 5 second will leads to gs recompiling the statement.
    *
-   * @throws SQLException Will be thrown if any of driver calls fail
+   * @throws SQLException         Will be thrown if any of driver calls fail
    * @throws InterruptedException Will be thrown if the sleep is interrupted
    */
   @Test

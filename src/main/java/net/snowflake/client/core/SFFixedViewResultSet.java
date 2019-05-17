@@ -21,10 +21,9 @@ import net.snowflake.client.log.SFLoggerFactory;
  * Fixed view result set. This class iterates through any fixed view
  * implementation and return the objects as rows
  */
-public class SFFixedViewResultSet extends SFBaseResultSet
+public class SFFixedViewResultSet extends SFJsonResultSet
 {
-
-  static final SFLogger logger = SFLoggerFactory.getLogger(
+  static private final SFLogger logger = SFLoggerFactory.getLogger(
       SFFixedViewResultSet.class);
 
   private SnowflakeFixedView fixedView;

@@ -1143,7 +1143,7 @@ public class SessionUtil
    * @param loginInput   Login Info for the request
    * @param ssoUrl       URL to use for SSO
    * @param oneTimeToken The token used for SSO
-   * @return             The response in HTML form
+   * @return The response in HTML form
    * @throws SnowflakeSQLException Will be thrown if the destination URL in
    *                               the SAML assertion does not match
    */
@@ -1196,7 +1196,7 @@ public class SessionUtil
    *
    * @param loginInput The login info for the request
    * @param tokenUrl   The URL used to retrieve the access token
-   * @return           Returns the one time token
+   * @return Returns the one time token
    * @throws SnowflakeSQLException Will be thrown if the execute request fails
    */
   private static String federatedFlowStep3(LoginInput loginInput, String tokenUrl)
@@ -1344,7 +1344,7 @@ public class SessionUtil
    * Note that we seperate IOExceptions since those tend to be network related.
    *
    * @param loginInput The login info from the request
-   * @param ex The exception to process
+   * @param ex         The exception to process
    * @throws SnowflakeSQLException Will be thrown for all calls to this method
    */
   private static void handleFederatedFlowError(LoginInput loginInput, Exception ex)
