@@ -167,12 +167,6 @@ public class StmtUtil
       return this;
     }
 
-    public StmtInput parametersMap(Map<String, Object> parametersMap)
-    {
-      this.parametersMap = parametersMap;
-      return this;
-    }
-
     public StmtInput setSessionToken(String sessionToken)
     {
       this.sessionToken = sessionToken;

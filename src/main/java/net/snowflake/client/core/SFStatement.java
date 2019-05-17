@@ -35,6 +35,11 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static net.snowflake.client.core.SessionUtil.DEFAULT_CLIENT_MEMORY_LIMIT;
+import static net.snowflake.client.core.SessionUtil.DEFAULT_CLIENT_PREFETCH_THREADS;
+import static net.snowflake.client.core.SessionUtil.MAX_CLIENT_CHUNK_SIZE;
+import static net.snowflake.client.core.SessionUtil.MIN_CLIENT_CHUNK_SIZE;
+
 /**
  * Snowflake statement
  */
@@ -88,6 +93,11 @@ public class SFStatement
 
   // list of child result objects for queries called by the current query, if any
   private List<SFChildResult> childResults = null;
+
+  // Three parameters adjusted in conservative memory usage mode
+  private int conservativePrefetchThreads;
+  private int conservativeResultChunkSize;
+  private long conservativeMemoryLimit; // in bytes
 
   /**
    * Add a statement parameter
@@ -427,6 +437,12 @@ public class SFStatement
         }
       }
 
+      if (session.isConservativeMemoryUsageEnabled())
+      {
+        logger.debug("JDBC conservative memory usage is enabled.");
+        calculateConservativeMemoryUsage();
+      }
+
       StmtUtil.StmtInput stmtInput = new StmtUtil.StmtInput();
       stmtInput.setSql(sql)
           .setMediaType(mediaType)
@@ -573,6 +589,96 @@ public class SFStatement
       // if this query enabled the new SQL format, re-disable it now
       setUseNewSqlFormat(false);
     }
+  }
+
+  /**
+   * calculate conservative memory limit and the number of prefetch threads before query execution
+   */
+  private void calculateConservativeMemoryUsage()
+  {
+    int clientMemoryLimit = session.getClientMemoryLimit();
+    int clientPrefetchThread = session.getClientPrefetchThreads();
+    int clientChunkSize = session.getClientResultChunkSize();
+
+    long memoryLimitInBytes;
+    if (clientMemoryLimit == DEFAULT_CLIENT_MEMORY_LIMIT)
+    {
+      // this is all default scenario
+      // only allows JDBC use at most 80% of free memory
+      long freeMemoryToUse = Runtime.getRuntime().freeMemory() * 8 /10;
+      memoryLimitInBytes = Math.min((long)2*clientPrefetchThread*clientChunkSize*1024*1024, freeMemoryToUse);
+    }
+    else
+    {
+      memoryLimitInBytes = clientMemoryLimit * 1024 * 1024;
+    }
+    conservativeMemoryLimit = memoryLimitInBytes;
+    reducePrefetchThreadsAndChunkSizeToFitMemoryLimit(conservativeMemoryLimit, clientPrefetchThread, clientChunkSize);
+  }
+
+  private void updateConservativeResultChunkSize(int clientChunkSize)
+  {
+    if (clientChunkSize != conservativeResultChunkSize)
+    {
+      logger.debug("conservativeResultChunkSize changed from {} to {}", conservativeResultChunkSize,
+                   clientChunkSize);
+      conservativeResultChunkSize = clientChunkSize;
+      statementParametersMap.put("CLIENT_RESULT_CHUNK_SIZE", conservativeResultChunkSize);
+    }
+  }
+
+  private void reducePrefetchThreadsAndChunkSizeToFitMemoryLimit(long clientMemoryLimit, int clientPrefetchThread,
+                                                                 int clientChunkSize)
+  {
+    if (clientPrefetchThread != DEFAULT_CLIENT_PREFETCH_THREADS)
+    {
+      // prefetch threads are configured so only reduce chunk size
+      conservativePrefetchThreads = clientPrefetchThread;
+      for(;clientChunkSize>=MIN_CLIENT_CHUNK_SIZE;clientChunkSize-=16)
+      {
+        if (clientMemoryLimit >= (long)2*clientPrefetchThread*clientChunkSize*1024*1024)
+        {
+          updateConservativeResultChunkSize(clientChunkSize);
+          return;
+        }
+      }
+      updateConservativeResultChunkSize(MIN_CLIENT_CHUNK_SIZE);
+    }
+    else
+    {
+      // reduce both prefetch threads and chunk size
+      while (clientPrefetchThread > 1)
+      {
+        for(clientChunkSize=MAX_CLIENT_CHUNK_SIZE;clientChunkSize>=MIN_CLIENT_CHUNK_SIZE;clientChunkSize-=16)
+        {
+          if (clientMemoryLimit >= (long)2*clientPrefetchThread*clientChunkSize*1024*1024)
+          {
+            conservativePrefetchThreads = clientPrefetchThread;
+            updateConservativeResultChunkSize(clientChunkSize);
+            return;
+          }
+        }
+        clientPrefetchThread--;
+      }
+      conservativePrefetchThreads = clientPrefetchThread;
+      updateConservativeResultChunkSize(MIN_CLIENT_CHUNK_SIZE);
+    }
+  }
+
+  /**
+   * @return conservative prefetch threads before fetching results
+   */
+  public int getConservativePrefetchThreads()
+  {
+    return conservativePrefetchThreads;
+  }
+
+  /**
+   * @return conservative memory limit before fetching results
+   */
+  public long getConservativeMemoryLimit()
+  {
+    return conservativeMemoryLimit;
   }
 
   private void reauthenticate() throws SFException, SnowflakeSQLException

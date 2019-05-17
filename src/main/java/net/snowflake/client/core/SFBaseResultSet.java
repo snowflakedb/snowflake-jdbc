@@ -6,6 +6,8 @@ package net.snowflake.client.core;
 
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SFBinaryFormat;
 import net.snowflake.common.core.SnowflakeDateTimeFormat;
 
@@ -19,9 +21,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
-
-import net.snowflake.client.log.SFLogger;
-import net.snowflake.client.log.SFLoggerFactory;
 
 /**
  * Base class for query result set and metadata result set
@@ -135,38 +134,28 @@ public abstract class SFBaseResultSet
 
   public SFResultSetMetaData getMetaData() throws SFException
   {
-    logger.debug("public ResultSetMetaData getMetaData()");
-
     return resultSetMetaData;
   }
 
   public int getRow() throws SQLException
   {
-    logger.debug("public int getRow()");
-
     return row;
   }
 
   public boolean absolute(int row) throws SFException
   {
-    logger.debug("public boolean absolute(int row)");
-
     throw new SFException(
         ErrorCode.FEATURE_UNSUPPORTED, "seek to a specific row");
   }
 
   public boolean relative(int rows) throws SFException
   {
-    logger.debug("public boolean relative(int rows)");
-
     throw new SFException(
         ErrorCode.FEATURE_UNSUPPORTED, "seek to a row relative to current row");
   }
 
   public boolean previous() throws SFException
   {
-    logger.debug("public boolean previous()");
-
     throw new SFException(
         ErrorCode.FEATURE_UNSUPPORTED, "seek to a previous row");
   }
@@ -183,8 +172,6 @@ public abstract class SFBaseResultSet
 
   public boolean isFirst()
   {
-    logger.debug("public boolean isFirst()");
-
     return row == 1;
   }
 

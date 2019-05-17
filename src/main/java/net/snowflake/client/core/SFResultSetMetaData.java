@@ -330,15 +330,11 @@ public class SFResultSetMetaData
    */
   public int getColumnCount()
   {
-    logger.debug("public int getColumnCount()");
-
     return columnCount;
   }
 
   public int getColumnType(int column) throws SFException
   {
-    logger.debug("public int getColumnType(int column)");
-
     int internalColumnType = getInternalColumnType(column);
 
     int externalColumnType = internalColumnType;
@@ -356,8 +352,6 @@ public class SFResultSetMetaData
 
   public int getInternalColumnType(int column) throws SFException
   {
-    logger.debug("public int getInternalColumnType(int column)");
-
     int columnIdx = column - 1;
     if (column < 1 || column > columnTypes.size())
     {
@@ -379,8 +373,6 @@ public class SFResultSetMetaData
 
   public String getColumnTypeName(int column) throws SFException
   {
-    logger.debug("public String getColumnTypeName(int column)");
-
     if (column < 1 || column > columnTypeNames.size())
     {
       throw new SFException(ErrorCode.COLUMN_DOES_NOT_EXIST, column);
@@ -401,8 +393,6 @@ public class SFResultSetMetaData
 
   public int getScale(int column)
   {
-    logger.debug("public int getScale(int column)");
-
     if (scales != null && scales.size() >= column)
     {
       return scales.get(column - 1);
@@ -416,8 +406,6 @@ public class SFResultSetMetaData
 
   public int getPrecision(int column)
   {
-    logger.debug("public int getPrecision(int column)");
-
     if (precisions != null && precisions.size() >= column)
     {
       return precisions.get(column - 1);
@@ -431,8 +419,6 @@ public class SFResultSetMetaData
 
   public boolean isSigned(int column)
   {
-    logger.debug("public boolean isSigned(int column)");
-
     return (columnTypes.get(column - 1) == Types.INTEGER ||
             columnTypes.get(column - 1) == Types.DECIMAL ||
             columnTypes.get(column - 1) == Types.BIGINT ||
@@ -441,8 +427,6 @@ public class SFResultSetMetaData
 
   public String getColumnLabel(int column)
   {
-    logger.debug("public String getColumnLabel(int column)");
-
     if (columnNames != null)
     {
       return columnNames.get(column - 1);
@@ -455,8 +439,6 @@ public class SFResultSetMetaData
 
   public String getColumnName(int column)
   {
-    logger.debug("public String getColumnName(int column)");
-
     if (columnNames != null)
     {
       return columnNames.get(column - 1);
