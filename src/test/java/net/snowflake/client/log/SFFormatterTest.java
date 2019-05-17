@@ -52,7 +52,7 @@ public class SFFormatterTest
    * their difference would be limited within TIME_DIFFERENCE_BOUNDARY if the log record's timestamp
    * is in UTC timezone
    *
-   * @throws ParseException
+   * @throws ParseException Will be thrown if date extraction fails
    */
   @Test
   public void testUTCTimeStampSimple() throws ParseException
@@ -77,7 +77,7 @@ public class SFFormatterTest
   /**
    * The bulk version test of testUTCTimeStampSimple()
    *
-   * @throws ParseException
+   * @throws ParseException Will be thrown if timestamp parsing fails
    */
   @Test
   public void testUTCTimeStampStress() throws ParseException
@@ -139,7 +139,7 @@ public class SFFormatterTest
     /**
      * Formatter setter
      *
-     * @param formatter
+     * @param formatter The formatter to use for the log record generator
      */
     public void setFormatter(Formatter formatter)
     {
@@ -152,7 +152,7 @@ public class SFFormatterTest
    *
    * @param string log record representation
    * @return a date specified by the log record
-   * @throws ParseException
+   * @throws ParseException Will be thrown if parsing fails
    */
   private Date extractDate(String string) throws ParseException
   {

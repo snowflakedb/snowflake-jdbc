@@ -101,7 +101,7 @@ public class ResultJsonParserV2Test
   /**
    * Test the largest column size 16 MB
    *
-   * @throws SnowflakeSQLException
+   * @throws SnowflakeSQLException Will be thrown if parsing fails
    */
   @Test
   public void LargestColumnTest() throws SnowflakeSQLException

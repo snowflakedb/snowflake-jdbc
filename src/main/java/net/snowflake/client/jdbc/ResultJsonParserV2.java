@@ -145,8 +145,9 @@ public class ResultJsonParserV2
 
   /**
    * @param in       readOnly byteBuffer backed by an array (the data is from position to limit)
-   * @param lastData
-   * @throws SnowflakeSQLException
+   * @param lastData If true, this signifies this is the last data in parsing
+   * @throws SnowflakeSQLException Will be thrown if parsing the chunk data
+   *                               fails
    */
   private void continueParsingInternal(ByteBuffer in, boolean lastData) throws SnowflakeSQLException
   {

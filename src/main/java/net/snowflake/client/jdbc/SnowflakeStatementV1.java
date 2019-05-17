@@ -328,7 +328,6 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement
 
   /**
    * @return the query ID of the latest executed query
-   * @throws SQLException
    */
   public String getQueryID()
   {
@@ -338,7 +337,6 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement
 
   /**
    * @return the query IDs of the latest executed batch queries
-   * @throws SQLException
    */
   public List<String> getBatchQueryIDs()
   {

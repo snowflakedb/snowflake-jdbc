@@ -550,7 +550,8 @@ public class SFSession
    * - verifying that a server url is present
    * - verifying various combinations of properties given the authenticator
    *
-   * @throws SFException
+   * @throws SFException Will be thrown if any of the necessary properties
+   *                     are missing
    */
   private void performSanityCheckOnProperties() throws SFException
   {
@@ -1217,8 +1218,8 @@ public class SFSession
    * if the session is created by the id token, which doesn't carry the current
    * objects.
    *
-   * @param loginInput
-   * @param loginOutput
+   * @param loginInput  The login input to use for this session
+   * @param loginOutput The login output to ose for this session
    */
   void setCurrentObjects(
       SessionUtil.LoginInput loginInput, SessionUtil.LoginOutput loginOutput)
