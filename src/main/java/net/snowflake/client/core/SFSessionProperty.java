@@ -66,7 +66,7 @@ public enum SFSessionProperty
   private String[] aliases;
 
   // application name matcher
-  static Pattern APPLICATION_REGEX = Pattern.compile("^[A-Za-z][A-Za-z0-9\\.\\-_]{1,50}$");
+  public static Pattern APPLICATION_REGEX = Pattern.compile("^[A-Za-z][A-Za-z0-9\\.\\-_]{1,50}$");
 
   public boolean isRequired()
   {
