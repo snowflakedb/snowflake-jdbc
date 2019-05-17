@@ -50,12 +50,6 @@ import java.util.Map;
 
 import net.snowflake.client.jdbc.MatDesc;
 
-import javax.crypto.Cipher;
-import javax.crypto.CipherInputStream;
-import javax.crypto.SecretKey;
-import javax.crypto.spec.IvParameterSpec;
-import javax.crypto.spec.SecretKeySpec;
-
 /**
  * Encapsulates the Azure Storage client
  * and all Azure Storage operations and logic

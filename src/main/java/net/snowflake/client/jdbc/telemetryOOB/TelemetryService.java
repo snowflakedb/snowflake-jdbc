@@ -209,8 +209,8 @@ public class TelemetryService
    * Note: it is not thread-safe while connecting to different deployments
    * simultaneously.
    *
-   * @param url
-   * @param account
+   * @param url The connection URL
+   * @param account The account we are connecting to
    */
   private void configureDeployment(final String url, final String account,
                                    final String port)

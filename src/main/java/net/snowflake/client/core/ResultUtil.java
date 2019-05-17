@@ -498,7 +498,7 @@ public class ResultUtil
   /**
    * initialize memory limit in bytes
    *
-   * @param resultOutput
+   * @param resultOutput The output from the request to the server
    * @return memory limit in bytes
    */
   private static long initMemoryLimit(final ResultOutput resultOutput)

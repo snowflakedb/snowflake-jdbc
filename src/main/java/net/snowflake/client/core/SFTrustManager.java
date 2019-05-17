@@ -13,7 +13,6 @@ import com.google.common.base.Strings;
 import com.nimbusds.jose.JWSVerifier;
 import com.nimbusds.jose.crypto.RSASSAVerifier;
 import com.nimbusds.jwt.SignedJWT;
-import net.minidev.json.JSONObject;
 import net.snowflake.client.jdbc.OCSPErrorCode;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;

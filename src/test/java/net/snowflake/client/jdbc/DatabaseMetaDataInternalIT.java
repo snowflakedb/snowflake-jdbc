@@ -366,8 +366,6 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest
    * when it is called from JDBC's getTables() function
    * Author: Andong Zhan
    * Created on 09/28/2018
-   *
-   * @throws SQLException
    */
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)

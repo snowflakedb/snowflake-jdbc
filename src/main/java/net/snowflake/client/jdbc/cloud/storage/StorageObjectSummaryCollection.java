@@ -4,7 +4,6 @@
 package net.snowflake.client.jdbc.cloud.storage;
 
 import com.amazonaws.services.s3.model.S3ObjectSummary;
-import com.microsoft.azure.storage.blob.CloudBlobDirectory;
 import com.microsoft.azure.storage.blob.ListBlobItem;
 
 import java.util.Iterator;

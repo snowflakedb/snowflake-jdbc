@@ -540,9 +540,10 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
    * Compress an input stream with GZIP and return the result size, digest and
    * compressed stream.
    *
-   * @param inputStream
+   * @param inputStream The input stream to compress
    * @return the compressed stream
-   * @throws SnowflakeSQLException
+   * @throws SnowflakeSQLException Will be thrown if there is a problem with
+   *                               compression
    * @deprecated Can be removed when all accounts are encrypted
    */
   @Deprecated
@@ -965,7 +966,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
    * We send the command to the GS to do the parsing. In the future, we
    * will delegate more work to GS such as copying files from HTTP to the remote store.
    *
-   * @throws SQLException failure to parse the PUT/GET command
+   * @throws SnowflakeSQLException failure to parse the PUT/GET command
    */
   private void parseCommand() throws SnowflakeSQLException
   {
@@ -1185,7 +1186,8 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
    * SNOW-15153.
    *
    * @param localFilePathFromGS the local file path to verify
-   * @throws SnowflakeSQLException
+   * @throws SnowflakeSQLException Will be thrown if the log path if empty or
+   *                               if it doesn't match what comes back from GS
    */
   private void verifyLocalFilePath(String localFilePathFromGS)
   throws SnowflakeSQLException
@@ -1273,7 +1275,8 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
 
   /**
    * @return JSON doc containing the command options returned by GS
-   * @throws SnowflakeSQLException
+   * @throws SnowflakeSQLException Will be thrown if parsing the command by
+   *                               GS fails
    */
   private static JsonNode parseCommandInGS(SFStatement statement,
                                            String command)
@@ -1305,7 +1308,8 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
 
   /**
    * @param rootNode JSON doc returned by GS
-   * @throws SnowflakeSQLException
+   * @throws SnowflakeSQLException Will be thrown if we fail to parse the
+   *                               stage credentials
    */
   private static Map<?, ?> extractStageCreds(JsonNode rootNode)
   throws SnowflakeSQLException
@@ -1581,7 +1585,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
    *
    * @param fileList The set of files to upload
    * @param parallel degree of parallelism for the upload
-   * @throws SnowflakeSQLException
+   * @throws SnowflakeSQLException Will be thrown if uploading the files fails
    */
   private void uploadFiles(Set<String> fileList,
                            int parallel) throws SnowflakeSQLException
@@ -2504,9 +2508,10 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
   /**
    * Derive compression type from mime type
    *
-   * @param mimeTypeStr
-   * @return
-   * @throws MimeTypeParseException
+   * @param mimeTypeStr The mime type passed to us
+   * @return the compression type
+   * @throws MimeTypeParseException Will be thrown if we get an invalid mime
+   *                                type
    */
   private FileCompressionType mimeTypeToCompressionType(String mimeTypeStr)
   throws MimeTypeParseException
@@ -2530,7 +2535,8 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
   /**
    * Detect file compression type for all files to be uploaded
    *
-   * @throws SnowflakeSQLException
+   * @throws SnowflakeSQLException Will be thrown if the compression type is
+   *                               unknown or unsupported
    */
   private void processFileCompressionTypes() throws SnowflakeSQLException
   {
@@ -2748,8 +2754,8 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
   /**
    * Derive mime type from file extension
    *
-   * @param srcFile
-   * @return
+   * @param srcFile The source file name
+   * @return the mime type derived from the file extension
    */
   private String getMimeTypeFromFileExtension(String srcFile)
   {

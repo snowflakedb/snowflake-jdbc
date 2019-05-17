@@ -389,59 +389,61 @@ public class SnowflakeResultChunk
     /**
      * add offset into offset buffer
      *
-     * @param offset
-     * @throws SnowflakeSQLException
+     * @param offset The amount of offset to add
+     * @throws SnowflakeSQLException Will be thrown if offset can't be added
      */
     void addOffset(int offset) throws SnowflakeSQLException;
 
     /**
      * label current value as null
      *
-     * @throws SnowflakeSQLException
+     * @throws SnowflakeSQLException Will be thrown if value can't be set as
+     *                               null
      */
     void setIsNull() throws SnowflakeSQLException;
 
     /**
      * increase index
      *
-     * @throws SnowflakeSQLException
+     * @throws SnowflakeSQLException Will be thrown if there is no next index
      */
     void nextIndex() throws SnowflakeSQLException;
 
     /**
      * set the last length
      *
-     * @param len
-     * @throws SnowflakeSQLException
+     * @param len The last length value
+     * @throws SnowflakeSQLException Will be thrown if last length can't be set
      */
     void setLastLength(int len) throws SnowflakeSQLException;
 
     /**
      * get one byte from the byte array
      *
-     * @param offset
-     * @return
-     * @throws SnowflakeSQLException
+     * @param offset The offset of the desired byte value in the byte array
+     * @return The desired byte
+     * @throws SnowflakeSQLException Will be thrown if there is no byte to get
      */
     byte getByte(int offset) throws SnowflakeSQLException;
 
     /**
      * add one byte to the byte array at nextIndex
      *
-     * @param b
-     * @param pos
-     * @throws SnowflakeSQLException
+     * @param b The byte to add
+     * @param pos The position to add the byte
+     * @throws SnowflakeSQLException Will be thrown if the byte cannot be added
      */
     void addByte(byte b, int pos) throws SnowflakeSQLException;
 
     /**
      * add bytes to the byte array
      *
-     * @param src
-     * @param src_offset
-     * @param pos
-     * @param length
-     * @throws SnowflakeSQLException
+     * @param src The source byte array to add
+     * @param src_offset The offset to start adding byte from in the source
+     *                   byte array
+     * @param pos The position to start add the bytes
+     * @param length The number of bytes to add from the source byte array
+     * @throws SnowflakeSQLException Will be thrown if bytes cannot be added
      */
     void addBytes(byte[] src, int src_offset, int pos, int length) throws SnowflakeSQLException;
   }

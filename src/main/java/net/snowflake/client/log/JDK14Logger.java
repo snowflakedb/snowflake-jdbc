@@ -7,9 +7,6 @@ import net.snowflake.client.core.EventHandler;
 import net.snowflake.client.core.EventUtil;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
@@ -18,7 +15,6 @@ import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.util.logging.Handler;
 import java.util.logging.SimpleFormatter;
-import java.util.logging.StreamHandler;
 
 /**
  * Use java.util.logging to implements SFLogger.

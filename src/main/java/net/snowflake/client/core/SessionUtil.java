@@ -1140,11 +1140,12 @@ public class SessionUtil
    * preventing a SAML assertion issued to one SP from being sent to
    * another SP.
    *
-   * @param loginInput
-   * @param ssoUrl
-   * @param oneTimeToken
-   * @return
-   * @throws SnowflakeSQLException
+   * @param loginInput   Login Info for the request
+   * @param ssoUrl       URL to use for SSO
+   * @param oneTimeToken The token used for SSO
+   * @return             The response in HTML form
+   * @throws SnowflakeSQLException Will be thrown if the destination URL in
+   *                               the SAML assertion does not match
    */
   private static String federatedFlowStep4(
       LoginInput loginInput,
@@ -1193,10 +1194,10 @@ public class SessionUtil
   /**
    * Query IDP token url to authenticate and retrieve access token
    *
-   * @param loginInput
-   * @param tokenUrl
-   * @return
-   * @throws SnowflakeSQLException
+   * @param loginInput The login info for the request
+   * @param tokenUrl   The URL used to retrieve the access token
+   * @return           Returns the one time token
+   * @throws SnowflakeSQLException Will be thrown if the execute request fails
    */
   private static String federatedFlowStep3(LoginInput loginInput, String tokenUrl)
   throws SnowflakeSQLException
@@ -1245,10 +1246,11 @@ public class SessionUtil
    * sending his/her credentials to.  Without such a check, the user could
    * be coerced to provide credentials to an IDP impersonator.
    *
-   * @param loginInput
-   * @param tokenUrl
-   * @param ssoUrl
-   * @throws SnowflakeSQLException
+   * @param loginInput The login info for the request
+   * @param tokenUrl   The token URL
+   * @param ssoUrl     The SSO URL
+   * @throws SnowflakeSQLException Will be thrown if the prefix for the
+   *                               tokenUrl and ssoUrl do not match
    */
   private static void federatedFlowStep2(
       LoginInput loginInput,
@@ -1276,8 +1278,9 @@ public class SessionUtil
   /**
    * Query Snowflake to obtain IDP token url and IDP SSO url
    *
-   * @param loginInput
-   * @throws SnowflakeSQLException
+   * @param loginInput The login info for the request
+   * @throws SnowflakeSQLException Will be thrown if the execute request step
+   *                               fails
    */
   private static JsonNode federatedFlowStep1(LoginInput loginInput)
   throws SnowflakeSQLException
@@ -1340,9 +1343,9 @@ public class SessionUtil
    * re-throws it as a SnowflakeSQLException.
    * Note that we seperate IOExceptions since those tend to be network related.
    *
-   * @param loginInput
-   * @param ex
-   * @throws SnowflakeSQLException
+   * @param loginInput The login info from the request
+   * @param ex The exception to process
+   * @throws SnowflakeSQLException Will be thrown for all calls to this method
    */
   private static void handleFederatedFlowError(LoginInput loginInput, Exception ex)
   throws SnowflakeSQLException
@@ -1369,8 +1372,10 @@ public class SessionUtil
    * FEDERATED FLOW
    * See SNOW-27798 for additional details.
    *
+   * @param loginInput The login info from the request
    * @return saml response
-   * @throws SnowflakeSQLException
+   * @throws SnowflakeSQLException Will be thrown if any of the federated
+   *                               steps fail
    */
   static private String getSamlResponseUsingOkta(LoginInput loginInput)
   throws SnowflakeSQLException
@@ -1419,8 +1424,8 @@ public class SessionUtil
   /**
    * Extracts post back url from the HTML returned by the IDP
    *
-   * @param html
-   * @return
+   * @param html The HTML that we are parsing to find the post back url
+   * @return The post back url
    */
   static private String getPostBackUrlFromHTML(String html)
   {

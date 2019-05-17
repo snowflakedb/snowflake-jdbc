@@ -343,7 +343,7 @@ public class BufferStage
    * Escape file separator char to underscore. This prevents the file name
    * from using file path separator.
    *
-   * @param fname
+   * @param fname The file name to escape
    * @return escaped file name
    */
   private static String escapeFileSeparatorChar(String fname)

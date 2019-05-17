@@ -28,7 +28,10 @@ public class StorageObjectSummary
   /**
    * Contructs a StorageObjectSummary object from the S3 equivalent S3ObjectSummary
    *
-   * @param
+   * @param location Location of the S3 object
+   * @param key Key of the S3Object
+   * @param md5 The MD5 hash of the object
+   * @param size The size of the S3 object
    */
   private StorageObjectSummary(String location, String key, String md5, long size)
   {

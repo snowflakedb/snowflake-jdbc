@@ -1,12 +1,10 @@
 package net.snowflake.client.jdbc;
 
 import net.snowflake.client.AbstractDriverIT;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.io.File;
-import java.io.IOException;
 import java.security.Policy;
 import java.sql.Connection;
 import java.sql.ResultSet;
