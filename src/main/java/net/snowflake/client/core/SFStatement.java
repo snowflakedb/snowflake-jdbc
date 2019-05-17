@@ -78,7 +78,7 @@ public class SFStatement
   private SnowflakeFileTransferAgent transferAgent = null;
 
   // statement level parameters
-  private final Map<String, Object> statementParametersMap = new HashMap<String, Object>();
+  private final Map<String, Object> statementParametersMap = new HashMap<>();
 
   final private static int MAX_STATEMENT_PARAMETERS = 1000;
 
@@ -605,8 +605,8 @@ public class SFStatement
     {
       // this is all default scenario
       // only allows JDBC use at most 80% of free memory
-      long freeMemoryToUse = Runtime.getRuntime().freeMemory() * 8 /10;
-      memoryLimitInBytes = Math.min((long)2*clientPrefetchThread*clientChunkSize*1024*1024, freeMemoryToUse);
+      long freeMemoryToUse = Runtime.getRuntime().freeMemory() * 8 / 10;
+      memoryLimitInBytes = Math.min((long) 2 * clientPrefetchThread * clientChunkSize * 1024 * 1024, freeMemoryToUse);
     }
     else
     {
@@ -634,9 +634,9 @@ public class SFStatement
     {
       // prefetch threads are configured so only reduce chunk size
       conservativePrefetchThreads = clientPrefetchThread;
-      for(;clientChunkSize>=MIN_CLIENT_CHUNK_SIZE;clientChunkSize-=16)
+      for (; clientChunkSize >= MIN_CLIENT_CHUNK_SIZE; clientChunkSize -= 16)
       {
-        if (clientMemoryLimit >= (long)2*clientPrefetchThread*clientChunkSize*1024*1024)
+        if (clientMemoryLimit >= (long) 2 * clientPrefetchThread * clientChunkSize * 1024 * 1024)
         {
           updateConservativeResultChunkSize(clientChunkSize);
           return;
@@ -649,9 +649,9 @@ public class SFStatement
       // reduce both prefetch threads and chunk size
       while (clientPrefetchThread > 1)
       {
-        for(clientChunkSize=MAX_CLIENT_CHUNK_SIZE;clientChunkSize>=MIN_CLIENT_CHUNK_SIZE;clientChunkSize-=16)
+        for (clientChunkSize = MAX_CLIENT_CHUNK_SIZE; clientChunkSize >= MIN_CLIENT_CHUNK_SIZE; clientChunkSize -= 16)
         {
-          if (clientMemoryLimit >= (long)2*clientPrefetchThread*clientChunkSize*1024*1024)
+          if (clientMemoryLimit >= (long) 2 * clientPrefetchThread * clientChunkSize * 1024 * 1024)
           {
             conservativePrefetchThreads = clientPrefetchThread;
             updateConservativeResultChunkSize(clientChunkSize);
@@ -683,8 +683,8 @@ public class SFStatement
 
   private void reauthenticate() throws SFException, SnowflakeSQLException
   {
-    SessionUtil.LoginInput input = new SessionUtil.LoginInput();
-    SessionUtil.LoginOutput output = new SessionUtil.LoginOutput();
+    SFLoginInput input = new SFLoginInput();
+    SFLoginOutput output = new SFLoginOutput();
     output.setSessionToken(session.getSessionToken());
     input.setRole(session.getRole());
     input.setWarehouse(session.getWarehouse());
@@ -822,7 +822,7 @@ public class SFStatement
     }
   }
 
-  public void close() throws SQLException
+  public void close()
   {
     logger.debug("public void close()");
 
