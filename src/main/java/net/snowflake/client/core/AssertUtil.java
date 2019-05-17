@@ -15,7 +15,7 @@ public class AssertUtil
    * Assert the condition is true, otherwise throw an internal error
    * exception with the given message.
    *
-   * @param condition The variable to test the 'truthiness' of
+   * @param condition         The variable to test the 'truthiness' of
    * @param internalErrorMesg The error message to display if condition is false
    * @throws SFException Will be thrown if condition is false
    */
