@@ -5,13 +5,14 @@
 package net.snowflake.client.core;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.base.Strings;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeChunkDownloader;
 import net.snowflake.client.jdbc.SnowflakeColumnMetadata;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.jdbc.SnowflakeUtil;
 import net.snowflake.client.log.ArgSupplier;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SFBinaryFormat;
 import net.snowflake.common.core.SFTime;
 import net.snowflake.common.core.SFTimestamp;
@@ -20,9 +21,9 @@ import net.snowflake.common.util.TimeUtil;
 
 import java.math.BigDecimal;
 import java.sql.Date;
+import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.sql.Types;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -32,11 +33,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
 
-import net.snowflake.client.log.SFLogger;
-import net.snowflake.client.log.SFLoggerFactory;
-
+import static net.snowflake.client.core.SessionUtil.CLIENT_ENABLE_CONSERVATIVE_MEMORY_USAGE;
 import static net.snowflake.client.core.SessionUtil.CLIENT_MEMORY_LIMIT;
 import static net.snowflake.client.core.SessionUtil.CLIENT_PREFETCH_THREADS;
+import static net.snowflake.client.core.SessionUtil.CLIENT_RESULT_CHUNK_SIZE;
+import static net.snowflake.client.core.SessionUtil.DEFAULT_CLIENT_MEMORY_LIMIT;
+import static net.snowflake.client.core.SessionUtil.DEFAULT_CLIENT_PREFETCH_THREADS;
 
 public class ResultUtil
 {
@@ -253,14 +255,15 @@ public class ResultUtil
    * A common helper to process result response
    *
    * @param resultData wrapper object over simple json result
-   * @param sfSession  the Snowflake session
+   * @param sfStatement  the Snowflake statement
    * @return processed result output
    * @throws SnowflakeSQLException if failed to get number of columns
    */
   static public ResultOutput processResult(ResultInput resultData,
-                                           SFSession sfSession)
+                                           SFStatement sfStatement)
   throws SnowflakeSQLException
   {
+    SFSession sfSession = sfStatement.getSession();
     ResultOutput resultOutput = new ResultOutput();
 
     logger.debug("Entering processResult");
@@ -347,12 +350,29 @@ public class ResultUtil
         logger.debug("#chunks={}, initialize chunk downloader",
                      resultOutput.chunkCount);
 
-        // prefetch threads
-        int resultPrefetchThreads = 4;
-        if (resultOutput.parameters.get(CLIENT_PREFETCH_THREADS) != null)
+        int resultPrefetchThreads = DEFAULT_CLIENT_PREFETCH_THREADS;
+        long memoryLimit;
+        if (resultOutput.statementType.isSelect()
+            && resultOutput.parameters.containsKey(CLIENT_ENABLE_CONSERVATIVE_MEMORY_USAGE)
+            && (boolean) resultOutput.parameters.get(CLIENT_ENABLE_CONSERVATIVE_MEMORY_USAGE))
         {
-          resultPrefetchThreads =
-              (int) resultOutput.parameters.get(CLIENT_PREFETCH_THREADS);
+          // use conservative memory settings
+          resultPrefetchThreads = sfStatement.getConservativePrefetchThreads();
+          memoryLimit = sfStatement.getConservativeMemoryLimit();
+          int chunkSize = (int) resultOutput.parameters.get(CLIENT_RESULT_CHUNK_SIZE);
+          logger.debug("enable conservative memory usage with prefetchThreads = {} and memoryLimit = {} and " +
+                       "resultChunkSize = {}",
+                       resultPrefetchThreads, memoryLimit, chunkSize);
+        }
+        else
+        {
+          // prefetch threads
+          if (resultOutput.parameters.get(CLIENT_PREFETCH_THREADS) != null)
+          {
+            resultPrefetchThreads =
+                (int) resultOutput.parameters.get(CLIENT_PREFETCH_THREADS);
+          }
+          memoryLimit = initMemoryLimit(resultOutput);
         }
 
         /*
@@ -364,7 +384,6 @@ public class ResultUtil
           useJsonParserV2 =
               (boolean) resultOutput.parameters.get("JDBC_USE_JSON_PARSER");
         }
-
         // initialize the chunk downloader
         resultOutput.chunkDownloader =
             new SnowflakeChunkDownloader(resultOutput.columnCount,
@@ -374,7 +393,7 @@ public class ResultUtil
                                          chunkHeaders,
                                          resultData.networkTimeoutInMilli,
                                          useJsonParserV2,
-                                         initMemoryLimit(resultOutput));
+                                         memoryLimit);
       }
     }
 
@@ -502,7 +521,7 @@ public class ResultUtil
   private static long initMemoryLimit(final ResultOutput resultOutput)
   {
     // default setting
-    long memoryLimit = SessionUtil.DEFAULT_CLIENT_MEMORY_LIMIT * 1024 * 1024;
+    long memoryLimit = DEFAULT_CLIENT_MEMORY_LIMIT * 1024 * 1024;
     if (resultOutput.parameters.get(CLIENT_MEMORY_LIMIT) != null)
     {
       // use the settings from the customer
@@ -512,7 +531,7 @@ public class ResultUtil
 
     long maxMemoryToUse = Runtime.getRuntime().maxMemory() * 8 / 10;
     if ((int) resultOutput.parameters.get(CLIENT_MEMORY_LIMIT)
-        == SessionUtil.DEFAULT_CLIENT_MEMORY_LIMIT)
+        == DEFAULT_CLIENT_MEMORY_LIMIT)
     {
       // if the memory limit is the default value and best effort memory is enabled
       // set the memory limit to 80% of the maximum as the best effort

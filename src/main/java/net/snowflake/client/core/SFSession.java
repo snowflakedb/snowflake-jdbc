@@ -189,6 +189,14 @@ public class SFSession
   // service name for multi clustering support
   private String serviceName;
 
+  // whether to enable conservative memory usage mode
+  private boolean enableConservativeMemoryUsage;
+
+  // parameters used for conservative memory usage
+  private int clientMemoryLimit;
+  private int clientResultChunkSize;
+  private int clientPrefetchThreads;
+
   public void addProperty(SFSessionProperty sfSessionProperty,
                           Object propertyValue)
   throws SFException
@@ -1268,4 +1276,43 @@ public class SFSession
   }
 
 
+  public boolean isConservativeMemoryUsageEnabled()
+  {
+    return enableConservativeMemoryUsage;
+  }
+
+  public void setEnableConservativeMemoryUsage(boolean value)
+  {
+    enableConservativeMemoryUsage = value;
+  }
+
+  public void setClientMemoryLimit(int clientMemoryLimit)
+  {
+    this.clientMemoryLimit = clientMemoryLimit;
+  }
+
+  public int getClientMemoryLimit()
+  {
+    return clientMemoryLimit;
+  }
+
+  public void setClientResultChunkSize(int clientResultChunkSize)
+  {
+    this.clientResultChunkSize = clientResultChunkSize;
+  }
+
+  public int getClientResultChunkSize()
+  {
+    return clientResultChunkSize;
+  }
+
+  public void setClientPrefetchThreads(int clientPrefetchThreads)
+  {
+    this.clientPrefetchThreads = clientPrefetchThreads;
+  }
+
+  public int getClientPrefetchThreads()
+  {
+    return clientPrefetchThreads;
+  }
 }

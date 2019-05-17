@@ -147,4 +147,9 @@ public enum SFStatementType
   {
     return this.generateResultSet;
   }
+
+  public boolean isSelect()
+  {
+    return this.statementTypeId == SELECT.statementTypeId;
+  }
 }

@@ -103,7 +103,7 @@ public class SFResultSet extends SFJsonResultSet
         .setNetworkTimeoutInMilli(session.getNetworkTimeoutInMilli());
 
     ResultUtil.ResultOutput resultOutput = ResultUtil
-        .processResult(resultInput, statement.getSession());
+        .processResult(resultInput, statement);
 
     this.queryId = resultOutput.getQueryId();
     this.statementType = resultOutput.getStatementType();
@@ -199,8 +199,6 @@ public class SFResultSet extends SFJsonResultSet
 
   private boolean fetchNextRowUnsorted() throws SFException, SnowflakeSQLException
   {
-    logger.debug("Entering fetchJSONNextRow");
-
     currentChunkRowIndex++;
 
     if (currentChunkRowIndex < currentChunkRowCount)
@@ -325,7 +323,6 @@ public class SFResultSet extends SFJsonResultSet
   @Override
   protected Object getObjectInternal(int columnIndex) throws SFException
   {
-    logger.debug("getObjectInternal: {}", columnIndex);
     if (columnIndex <= 0 || columnIndex > resultSetMetaData.getColumnCount())
     {
       throw new SFException(ErrorCode.COLUMN_DOES_NOT_EXIST, columnIndex);
