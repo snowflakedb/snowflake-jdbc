@@ -5,6 +5,7 @@
 package net.snowflake.client.core;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.google.common.base.Strings;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeChunkDownloader;
 import net.snowflake.client.jdbc.SnowflakeColumnMetadata;
@@ -37,9 +38,6 @@ import net.snowflake.client.log.SFLoggerFactory;
 import static net.snowflake.client.core.SessionUtil.CLIENT_MEMORY_LIMIT;
 import static net.snowflake.client.core.SessionUtil.CLIENT_PREFETCH_THREADS;
 
-/**
- * Created by jhuang on 2/1/16.
- */
 public class ResultUtil
 {
   static final SFLogger logger = SFLoggerFactory.getLogger(ResultUtil.class);
@@ -546,7 +544,6 @@ public class ResultUtil
     map.put("CLIENT_RESULT_PREFETCH_SLOTS", 2);
     map.put("CLIENT_RESULT_PREFETCH_THREADS", 1);
     map.put("CLIENT_HONOR_CLIENT_TZ_FOR_TIMESTAMP_NTZ", Boolean.TRUE);
-    map.put("JDBC_EXECUTE_RETURN_COUNT_FOR_DML", Boolean.FALSE);
     map.put("CLIENT_DISABLE_INCIDENTS", Boolean.TRUE);
     map.put("BINARY_OUTPUT_FORMAT", "HEX");
     defaultParameters = map;

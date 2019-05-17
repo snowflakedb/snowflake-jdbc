@@ -5,6 +5,7 @@
 package net.snowflake.client.jdbc;
 
 import java.sql.SQLException;
+import java.sql.ResultSet;
 
 /**
  * This interface defines Snowflake specific APIs for ResultSet

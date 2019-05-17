@@ -4,15 +4,15 @@
 
 package net.snowflake.client.loader;
 
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
+
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.LinkedList;
 import java.util.List;
-
-import net.snowflake.client.log.SFLogger;
-import net.snowflake.client.log.SFLoggerFactory;
 
 /**
  * This class is responsible for processing a collection of uploaded data files
@@ -334,8 +334,6 @@ public class ProcessQueue implements Runnable
           LOGGER.debug("Load Statement: {}", loadStatement);
           Statement s = conn.createStatement();
           s.execute(loadStatement);
-          ResultSet prs = s.getResultSet();
-          prs.next();
 
           stage.setState(BufferStage.State.PROCESSED);
           currentState = State.FINISH;
@@ -343,46 +341,28 @@ public class ProcessQueue implements Runnable
           switch (stage.getOp())
           {
             case INSERT:
-            {
-              _loader.getListener().addProcessedRecordCount(
-                  stage.getOp(), stage.getRowCount());
-
-              _loader.getListener().addOperationRecordCount(
-                  Operation.INSERT, prs.getInt(1));
-              break;
-            }
-            case DELETE:
-            {
-              // the number of successful DELETE is the number 
-              // of processed rows and not the number of given
-              // rows.
-              _loader.getListener().addProcessedRecordCount(
-                  stage.getOp(), prs.getInt(1));
-
-              _loader.getListener().addOperationRecordCount(
-                  Operation.DELETE, prs.getInt(1));
-              break;
-            }
-            case MODIFY:
-            {
-              // the number of successful UPDATE
-              _loader.getListener().addProcessedRecordCount(
-                  stage.getOp(), prs.getInt(1));
-
-              _loader.getListener().addOperationRecordCount(
-                  Operation.MODIFY, prs.getInt(1));
-              break;
-            }
             case UPSERT:
             {
               _loader.getListener().addProcessedRecordCount(
                   stage.getOp(), stage.getRowCount());
 
               _loader.getListener().addOperationRecordCount(
-                  Operation.UPSERT, prs.getInt(1) + prs.getInt(2));
+                  stage.getOp(), s.getUpdateCount());
               break;
             }
+            case DELETE:
+            case MODIFY:
+            {
+              // the number of successful DELETE is the number 
+              // of processed rows and not the number of given
+              // rows.
+              _loader.getListener().addProcessedRecordCount(
+                  stage.getOp(), s.getUpdateCount());
 
+              _loader.getListener().addOperationRecordCount(
+                  stage.getOp(), s.getUpdateCount());
+              break;
+            }
           }
 
           // delete stage file if all success

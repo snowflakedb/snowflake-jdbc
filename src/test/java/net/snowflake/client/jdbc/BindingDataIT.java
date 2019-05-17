@@ -24,6 +24,7 @@ import java.util.TimeZone;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
 /**
@@ -45,7 +46,7 @@ public class BindingDataIT extends AbstractDriverIT
     PreparedStatement preparedStatement = connection.prepareStatement(
         "insert into test_bind_short values (?)");
     preparedStatement.setShort(1, shortValue);
-    preparedStatement.executeUpdate();
+    assertEquals(1, preparedStatement.executeUpdate());
 
     preparedStatement = connection.prepareStatement(
         "select * from test_bind_short where c1 = ?");
