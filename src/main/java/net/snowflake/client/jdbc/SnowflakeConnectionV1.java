@@ -48,8 +48,6 @@ import java.util.zip.GZIPInputStream;
 
 import static net.snowflake.client.core.ClientInfo.APPLICATION_NAME;
 import static net.snowflake.client.core.SFSessionProperty.APPLICATION_REGEX;
-import static net.snowflake.client.core.SessionUtil.CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY;
-import static net.snowflake.client.core.SessionUtil.CLIENT_SFSQL;
 import static net.snowflake.client.core.SessionUtil.JVM_PARAMS_TO_PARAMS;
 import static net.snowflake.client.jdbc.ErrorCode.FEATURE_UNSUPPORTED;
 
@@ -67,18 +65,20 @@ public class SnowflakeConnectionV1 implements Connection
   private static final String NATIVE_PROTOCOL = "http";
 
   private static final String SSL_NATIVE_PROTOCOL = "https";
-  /**
-   * Refer to all created and open statements from this connection
-   */
-  private final Set<Statement> openStatements = Collections.synchronizedSet(new HashSet<>());
+
   private boolean isClosed;
+
   private SQLWarning sqlWarnings = null;
+
   // Injected delay for the purpose of connection timeout testing
   // Any statement execution will sleep for the specified number of milliseconds
   private AtomicInteger _injectedDelay = new AtomicInteger(0);
+
   private String databaseVersion;
   private int databaseMajorVersion;
   private int databaseMinorVersion;
+
+
   /**
    * Amount of milliseconds a user is willing to tolerate for network related
    * issues (e.g. HTTP 503/504) or database transient issues (e.g. GS
@@ -89,12 +89,20 @@ public class SnowflakeConnectionV1 implements Connection
    * Default: 300 seconds
    */
   private int networkTimeoutInMilli = 0; // in milliseconds
+
   private Properties clientInfo = new Properties();
+
   // TODO this should be set to Connection.TRANSACTION_READ_COMMITTED
   // TODO There may not be many implications here since the call to
   // TODO setTransactionIsolation doesn't do anything.
   private int transactionIsolation = Connection.TRANSACTION_NONE;
+
   private SFSession sfSession;
+
+  /**
+   * Refer to all created and open statements from this connection
+   */
+  private final Set<Statement> openStatements = Collections.synchronizedSet(new HashSet<>());
 
   /**
    * A connection will establish a session token from snowflake
@@ -135,6 +143,14 @@ public class SnowflakeConnectionV1 implements Connection
     appendWarnings(sfSession.getSqlWarnings());
 
     isClosed = false;
+  }
+
+  private void raiseSQLExceptionIfConnectionIsClosed() throws SQLException
+  {
+    if (isClosed)
+    {
+      throw new SnowflakeSQLException(ErrorCode.CONNECTION_CLOSED);
+    }
   }
 
   /**
@@ -203,35 +219,13 @@ public class SnowflakeConnectionV1 implements Connection
     return properties;
   }
 
-  private static boolean getBooleanTrueByDefault(Object value)
-  {
-    if (value instanceof String)
-    {
-      final String value0 = (String) value;
-      return !("off".equalsIgnoreCase(value0) || "false".equalsIgnoreCase(value0));
-    }
-    else if (value instanceof Boolean)
-    {
-      return (boolean) value;
-    }
-    return true;
-  }
-
-  private void raiseSQLExceptionIfConnectionIsClosed() throws SQLException
-  {
-    if (isClosed)
-    {
-      throw new SnowflakeSQLException(ErrorCode.CONNECTION_CLOSED);
-    }
-  }
-
   private void initSessionProperties(String url, Properties info) throws SFException
   {
     Map<String, Object> properties = mergeProperties(url, info);
 
     for (Map.Entry<String, Object> property : properties.entrySet())
     {
-      if (CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY.equals(property.getKey()))
+      if (property.getKey() == "CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY")
       {
         if ((Integer) property.getValue() > 3600)
         {
@@ -241,11 +235,6 @@ public class SnowflakeConnectionV1 implements Connection
         {
           properties.replace(property.getKey(), 900);
         }
-      }
-      else if (CLIENT_SFSQL.equals(property.getKey()))
-      {
-        sfSession.setSfSQLMode((boolean) property.getValue());
-        continue;
       }
       sfSession.addProperty(property.getKey(), property.getValue());
     }
@@ -264,6 +253,20 @@ public class SnowflakeConnectionV1 implements Connection
         sfSession.addProperty(entry.getValue(), value);
       }
     }
+  }
+
+  private static boolean getBooleanTrueByDefault(Object value)
+  {
+    if (value instanceof String)
+    {
+      final String value0 = (String) value;
+      return !("off".equalsIgnoreCase(value0) || "false".equalsIgnoreCase(value0));
+    }
+    else if (value instanceof Boolean)
+    {
+      return (boolean) value;
+    }
+    return true;
   }
 
   /**
@@ -417,20 +420,20 @@ public class SnowflakeConnectionV1 implements Connection
   }
 
   @Override
-  public boolean getAutoCommit() throws SQLException
-  {
-    logger.debug("boolean getAutoCommit()");
-    raiseSQLExceptionIfConnectionIsClosed();
-    return sfSession.getAutoCommit();
-  }
-
-  @Override
   public void setAutoCommit(boolean isAutoCommit) throws SQLException
   {
     logger.debug("void setAutoCommit(boolean isAutoCommit)");
     this.executeImmediate(
         "alter session /* JDBC:SnowflakeConnectionV1.setAutoCommit*/ set autocommit=" +
         isAutoCommit);
+  }
+
+  @Override
+  public boolean getAutoCommit() throws SQLException
+  {
+    logger.debug("boolean getAutoCommit()");
+    raiseSQLExceptionIfConnectionIsClosed();
+    return sfSession.getAutoCommit();
   }
 
   @Override
@@ -457,14 +460,6 @@ public class SnowflakeConnectionV1 implements Connection
   }
 
   @Override
-  public boolean isReadOnly() throws SQLException
-  {
-    logger.debug("boolean isReadOnly()");
-    raiseSQLExceptionIfConnectionIsClosed();
-    return false;
-  }
-
-  @Override
   public void setReadOnly(boolean readOnly) throws SQLException
   {
     logger.debug(
@@ -477,10 +472,11 @@ public class SnowflakeConnectionV1 implements Connection
   }
 
   @Override
-  public String getCatalog() throws SQLException
+  public boolean isReadOnly() throws SQLException
   {
+    logger.debug("boolean isReadOnly()");
     raiseSQLExceptionIfConnectionIsClosed();
-    return sfSession.getDatabase();
+    return false;
   }
 
   @Override
@@ -494,11 +490,10 @@ public class SnowflakeConnectionV1 implements Connection
   }
 
   @Override
-  public int getTransactionIsolation() throws SQLException
+  public String getCatalog() throws SQLException
   {
-    logger.debug("int getTransactionIsolation()");
     raiseSQLExceptionIfConnectionIsClosed();
-    return this.transactionIsolation;
+    return sfSession.getDatabase();
   }
 
   /**
@@ -525,6 +520,14 @@ public class SnowflakeConnectionV1 implements Connection
           FEATURE_UNSUPPORTED.getSqlState(),
           FEATURE_UNSUPPORTED.getMessageCode());
     }
+  }
+
+  @Override
+  public int getTransactionIsolation() throws SQLException
+  {
+    logger.debug("int getTransactionIsolation()");
+    raiseSQLExceptionIfConnectionIsClosed();
+    return this.transactionIsolation;
   }
 
   @Override
@@ -686,16 +689,16 @@ public class SnowflakeConnectionV1 implements Connection
   }
 
   @Override
+  public void setHoldability(int holdability) throws SQLException
+  {
+    throw new SQLFeatureNotSupportedException();
+  }
+
+  @Override
   public int getHoldability() throws SQLException
   {
     raiseSQLExceptionIfConnectionIsClosed();
     return ResultSet.CLOSE_CURSORS_AT_COMMIT; // nop
-  }
-
-  @Override
-  public void setHoldability(int holdability) throws SQLException
-  {
-    throw new SQLFeatureNotSupportedException();
   }
 
   @Override
@@ -753,6 +756,26 @@ public class SnowflakeConnectionV1 implements Connection
   }
 
   @Override
+  public void setClientInfo(Properties properties)
+  throws SQLClientInfoException
+  {
+    logger.debug(
+        "void setClientInfo(Properties properties)");
+    if (isClosed)
+    {
+      throw new SQLClientInfoException();
+    }
+    this.clientInfo.clear();
+    Enumeration<?> propList = properties.propertyNames();
+    while (propList.hasMoreElements())
+    {
+      String key = (String) propList.nextElement();
+      String value = properties.getProperty(key);
+      this.setClientInfo(key, value);
+    }
+  }
+
+  @Override
   public void setClientInfo(String name, String value)
   throws SQLClientInfoException
   {
@@ -762,7 +785,7 @@ public class SnowflakeConnectionV1 implements Connection
     {
       throw new SQLClientInfoException();
     }
-    if (APPLICATION_NAME.equals(name))
+    if (APPLICATION_NAME.equalsIgnoreCase(name))
     {
       if (APPLICATION_REGEX.matcher(value).find())
       {
@@ -800,27 +823,6 @@ public class SnowflakeConnectionV1 implements Connection
   }
 
   @Override
-  public void setClientInfo(Properties properties)
-  throws SQLClientInfoException
-  {
-    logger.debug(
-        "void setClientInfo(Properties properties)");
-
-    if (isClosed)
-    {
-      throw new SQLClientInfoException();
-    }
-
-    // make a copy, don't point to the properties directly since we don't
-    // own it.
-    this.clientInfo.clear();
-    this.clientInfo.putAll(properties);
-
-    // sfSession must not be null if the connection is not closed.
-    sfSession.setClientInfo(properties);
-  }
-
-  @Override
   public String getClientInfo(String name) throws SQLException
   {
     logger.debug("String getClientInfo(String name)");
@@ -853,13 +855,6 @@ public class SnowflakeConnectionV1 implements Connection
   }
 
   @Override
-  public String getSchema() throws SQLException
-  {
-    raiseSQLExceptionIfConnectionIsClosed();
-    return sfSession.getSchema();
-  }
-
-  @Override
   public void setSchema(String schema) throws SQLException
   {
     logger.debug(
@@ -876,6 +871,13 @@ public class SnowflakeConnectionV1 implements Connection
     {
       this.executeImmediate("use schema \"" + databaseName + "\".\"" + schema + "\"");
     }
+  }
+
+  @Override
+  public String getSchema() throws SQLException
+  {
+    raiseSQLExceptionIfConnectionIsClosed();
+    return sfSession.getSchema();
   }
 
   @Override
