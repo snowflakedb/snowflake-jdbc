@@ -835,17 +835,6 @@ public class SFSession
     while (retry);
   }
 
-  public void setClientInfo(Properties properties)
-  throws SQLClientInfoException
-  {
-    logger.debug(" public void setClientInfo(Properties properties)");
-
-    // make a copy, don't point to the properties directly since we don't
-    // own it.
-    this.clientInfo.clear();
-    this.clientInfo.putAll(properties);
-  }
-
   public void setClientInfo(String name, String value)
   throws SQLClientInfoException
   {
