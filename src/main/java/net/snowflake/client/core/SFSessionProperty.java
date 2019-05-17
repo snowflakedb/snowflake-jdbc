@@ -119,7 +119,7 @@ public enum SFSessionProperty
   /**
    * Check if property value is desired class. Convert if possible
    *
-   * @param property The session property to check
+   * @param property      The session property to check
    * @param propertyValue The property value to check
    * @return The checked property value
    * @throws SFException Will be thrown if an invalid property value is

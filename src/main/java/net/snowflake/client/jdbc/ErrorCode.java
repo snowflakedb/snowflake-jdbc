@@ -103,7 +103,7 @@ public enum ErrorCode
    * <p/>
    *
    * @param messageCode Snowflake internal error code
-   * @param sqlState  SQL state error code
+   * @param sqlState    SQL state error code
    */
   ErrorCode(Integer messageCode, String sqlState)
   {

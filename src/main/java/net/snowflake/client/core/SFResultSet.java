@@ -7,6 +7,7 @@ package net.snowflake.client.core;
 import com.fasterxml.jackson.databind.JsonNode;
 import net.snowflake.client.core.BasicEvent.QueryState;
 import net.snowflake.client.jdbc.ErrorCode;
+import net.snowflake.client.jdbc.JsonResultChunk;
 import net.snowflake.client.jdbc.SnowflakeChunkDownloader;
 import net.snowflake.client.jdbc.SnowflakeResultChunk;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
@@ -30,7 +31,7 @@ import static net.snowflake.client.core.StmtUtil.eventHandler;
  *
  * @author jhuang
  */
-public class SFResultSet extends SFBaseResultSet
+public class SFResultSet extends SFJsonResultSet
 {
   static final SFLogger logger = SFLoggerFactory.getLogger(SFResultSet.class);
 
@@ -42,7 +43,7 @@ public class SFResultSet extends SFBaseResultSet
 
   private JsonNode firstChunkRowset = null;
 
-  private SnowflakeResultChunk currentChunk = null;
+  private JsonResultChunk currentChunk = null;
 
   private String queryId;
 
@@ -232,7 +233,7 @@ public class SFResultSet extends SFBaseResultSet
 
         currentChunkRowIndex = 0;
         currentChunkRowCount = nextChunk.getRowCount();
-        currentChunk = nextChunk;
+        currentChunk = (JsonResultChunk) nextChunk;
 
         logger.debug("Moving to chunk index {}, row count={}",
                      nextChunkIndex, currentChunkRowCount);
@@ -339,9 +340,9 @@ public class SFResultSet extends SFBaseResultSet
     }
     else if (firstChunkRowset != null)
     {
-      retValue = SnowflakeResultChunk.extractCell(firstChunkRowset,
-                                                  currentChunkRowIndex,
-                                                  internalColumnIndex);
+      retValue = JsonResultChunk.extractCell(firstChunkRowset,
+                                             currentChunkRowIndex,
+                                             internalColumnIndex);
     }
     else if (currentChunk != null)
     {
@@ -366,8 +367,7 @@ public class SFResultSet extends SFBaseResultSet
       for (int colIdx = 0; colIdx < columnCount; colIdx++)
       {
         firstChunkSortedRowSet[rowIdx][colIdx] =
-            SnowflakeResultChunk.extractCell(firstChunkRowset,
-                                             rowIdx, colIdx);
+            JsonResultChunk.extractCell(firstChunkRowset, rowIdx, colIdx);
       }
     }
 
