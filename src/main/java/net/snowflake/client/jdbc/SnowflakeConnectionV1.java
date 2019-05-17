@@ -48,6 +48,7 @@ import java.util.zip.GZIPInputStream;
 
 import static net.snowflake.client.core.ClientInfo.APPLICATION_NAME;
 import static net.snowflake.client.core.SFSessionProperty.APPLICATION_REGEX;
+import static net.snowflake.client.core.SessionUtil.CLIENT_SFSQL;
 import static net.snowflake.client.core.SessionUtil.JVM_PARAMS_TO_PARAMS;
 import static net.snowflake.client.jdbc.ErrorCode.FEATURE_UNSUPPORTED;
 
@@ -235,6 +236,11 @@ public class SnowflakeConnectionV1 implements Connection
         {
           properties.replace(property.getKey(), 900);
         }
+      }
+      else if (CLIENT_SFSQL.equals(property.getKey()))
+      {
+        sfSession.setSfSQLMode((boolean) property.getValue());
+        continue;
       }
       sfSession.addProperty(property.getKey(), property.getValue());
     }
