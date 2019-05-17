@@ -185,7 +185,9 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement
   {
     raiseSQLExceptionIfStatementIsClosed();
 
-    if (StmtUtil.checkStageManageCommand(sql) != null)
+    /* If sql command is a staging command that has parameter binding, throw an exception because parameter binding
+    is not supported for staging commands. */
+    if (StmtUtil.checkStageManageCommand(sql) != null && parameterBindings != null)
     {
       throw new SnowflakeSQLException(
           ErrorCode.UNSUPPORTED_STATEMENT_TYPE_IN_EXECUTION_API, StmtUtil.truncateSQL(sql));

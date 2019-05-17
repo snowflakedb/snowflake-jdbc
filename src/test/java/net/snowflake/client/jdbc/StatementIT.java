@@ -9,8 +9,11 @@ import net.snowflake.client.RunningOnTravisCI;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
 import net.snowflake.common.core.SqlState;
 import org.junit.Ignore;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
+import java.io.File;
 import java.net.URL;
 import java.sql.BatchUpdateException;
 import java.sql.Connection;
@@ -37,6 +40,16 @@ import static org.junit.Assert.fail;
  */
 public class StatementIT extends BaseJDBCTest
 {
+  private void enableMultiStmt(Connection connection) throws SQLException
+  {
+    Statement statement = connection.createStatement();
+    statement.execute("alter session set ENABLE_MULTISTATEMENT=true");
+    statement.close();
+  }
+
+  @Rule
+  public TemporaryFolder tmpFolder = new TemporaryFolder();
+
   @Test
   public void testFetchDirection() throws SQLException
   {
@@ -389,7 +402,7 @@ public class StatementIT extends BaseJDBCTest
   }
 
   @Test
-  public void testExecuteBatch() throws SQLException
+  public void testExecuteBatch() throws Exception
   {
     Connection connection = getConnection();
     Statement statement = connection.createStatement();
@@ -428,9 +441,7 @@ public class StatementIT extends BaseJDBCTest
       statement.addBatch("select * from test_batch");
       statement.addBatch("select * from test_batch_not_exist");
       statement.addBatch("insert into test_batch values('str4', 4)");
-
       statement.executeBatch();
-
       fail();
     }
     catch (BatchUpdateException e)
@@ -448,9 +459,18 @@ public class StatementIT extends BaseJDBCTest
 
     statement.clearBatch();
 
+    statement.addBatch("put file://" + getFullPathFileInResource(TEST_DATA_FILE) + " @%test_batch auto_compress=false");
+    File tempFolder = tmpFolder.newFolder("test_downloads_folder");
+    statement.addBatch("get @%test_batch file://" + tempFolder);
+
+    rowCounts = statement.executeBatch();
+    assertThat(rowCounts.length, is(2));
+    assertThat(rowCounts[0], is(Statement.SUCCESS_NO_INFO));
+    assertThat(rowCounts[0], is(Statement.SUCCESS_NO_INFO));
+    statement.clearBatch();
+
     statement.execute("drop table if exists test_batch");
     statement.close();
-
     connection.close();
   }
 
