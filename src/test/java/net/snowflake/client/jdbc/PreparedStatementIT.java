@@ -1125,8 +1125,8 @@ public class PreparedStatementIT extends BaseJDBCTest
    * 1 seconds before client coming back with execution request.
    * Sleep thread for 5 second will leads to gs recompiling the statement.
    *
-   * @throws SQLException
-   * @throws InterruptedException
+   * @throws SQLException Will be thrown if any of driver calls fail
+   * @throws InterruptedException Will be thrown if the sleep is interrupted
    */
   @Test
   @ConditionalIgnore(condition = RunningOnTravisCI.class)
@@ -1240,8 +1240,6 @@ public class PreparedStatementIT extends BaseJDBCTest
   /**
    * Tests binding of object literals, including binding with object names as
    * well as binding with object IDs
-   *
-   * @throws Exception
    */
   @Test
   @ConditionalIgnore(condition = RunningOnTravisCI.class)
@@ -1469,7 +1467,7 @@ public class PreparedStatementIT extends BaseJDBCTest
   }
 
   /**
-   * Test to ensure that when {@link SqlBindRef} is in a {@link SqlConstantList}
+   * Test to ensure that when SqlBindRef is in a SqlConstantList
    * the sub-expression remover does not treat expressions with different
    * bind values are same expressions. SNOW-41620
    *
@@ -1607,7 +1605,7 @@ public class PreparedStatementIT extends BaseJDBCTest
    *
    * @param rs1 ResultSet1 to compare
    * @param rs2 ResultSet2 to compare
-   * @throws SQLException
+   * @throws SQLException Will be thrown if any of the Driver calls fail
    */
   private void checkResultSetEqual(ResultSet rs1, ResultSet rs2)
   throws SQLException

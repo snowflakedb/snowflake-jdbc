@@ -6,9 +6,6 @@ package net.snowflake.client.jdbc;
 
 import net.snowflake.common.core.SqlState;
 
-import java.util.HashMap;
-import java.util.Map;
-
 /**
  * Internal JDBC driver error codes
  *
@@ -105,7 +102,8 @@ public enum ErrorCode
    * code and SQL state error code.
    * <p/>
    *
-   * @param messageCode
+   * @param messageCode Snowflake internal error code
+   * @param sqlState  SQL state error code
    */
   ErrorCode(Integer messageCode, String sqlState)
   {

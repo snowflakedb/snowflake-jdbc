@@ -14,7 +14,6 @@ import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.util.SFPair;
 import net.snowflake.common.core.SqlState;
 import net.snowflake.common.util.Wildcard;
-import net.snowflake.client.jdbc.SnowflakeType;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
