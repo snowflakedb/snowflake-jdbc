@@ -214,13 +214,13 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement
       resultSet = null;
     }
 
-    if (getUpdateCount() == NO_UPDATES && updateQueryRequired)
+    if (updateCount == NO_UPDATES && updateQueryRequired)
     {
       throw new SnowflakeSQLException(
           ErrorCode.UNSUPPORTED_STATEMENT_TYPE_IN_EXECUTION_API, StmtUtil.truncateSQL(sql));
     }
 
-    return getUpdateCount();
+    return updateCount;
   }
 
   /**
@@ -301,10 +301,10 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement
 
       // Legacy behavior treats update counts as result sets for single-
       // statement execute, so we only treat update counts as update counts
-      // if JDBC_EXECUTE_RETURN_COUNT_FOR_DML is set, or if a statement
+      // if CLIENT_SFSQL is not set, or if a statement
       // is multi-statement
       if (!sfResultSet.getStatementType().isGenerateResultSet() &&
-          (connection.getSfSession().isExecuteReturnCountForDML() ||
+          (!connection.getSfSession().isSfSQLMode() ||
            sfStatement.hasChildren()))
       {
         updateCount = ResultUtil.calculateUpdateCount(sfResultSet);
@@ -321,8 +321,8 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement
     }
     catch (SFException ex)
     {
-      throw new SnowflakeSQLException(ex.getCause(),
-                                      ex.getSqlState(), ex.getVendorCode(), ex.getParams());
+      throw new SnowflakeSQLException(
+          ex.getCause(), ex.getSqlState(), ex.getVendorCode(), ex.getParams());
     }
   }
 
@@ -651,7 +651,11 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement
   {
     logger.debug("public int getUpdateCount()");
     raiseSQLExceptionIfStatementIsClosed();
-    return updateCount;
+    if (updateCount != -1 && sfStatement.getResultSet().getStatementType().isDML())
+    {
+      return updateCount;
+    }
+    return -1;
   }
 
   @Override

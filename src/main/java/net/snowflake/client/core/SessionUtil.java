@@ -86,6 +86,10 @@ public class SessionUtil
   public static final String CACHE_FILE_NAME = "temporary_credential.json";
   public static final String OCSP_FAIL_OPEN_JVM = "net.snowflake.jdbc.ocspFailOpen";
   public static final String OCSP_FAIL_OPEN = "ocspFailOpen";
+  public static final String CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY =
+      "CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY";
+  public static final String CLIENT_SFSQL = "CLIENT_SFSQL";
+
   protected static final FileCacheManager fileCacheManager;
   static final String SF_HEADER_SERVICE_NAME = "X-Snowflake-Service";
   static final
@@ -124,10 +128,9 @@ public class SessionUtil
       CLIENT_MEMORY_LIMIT,
       CLIENT_RESULT_CHUNK_SIZE,
       "CLIENT_STAGE_ARRAY_BINDING_THRESHOLD",
-      "CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY"));
+      CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY));
   private static Set<String> BOOLEAN_PARAMS = new HashSet<>(Arrays.asList(
       "CLIENT_HONOR_CLIENT_TZ_FOR_TIMESTAMP_NTZ",
-      "JDBC_EXECUTE_RETURN_COUNT_FOR_DML",
       "CLIENT_DISABLE_INCIDENTS",
       "CLIENT_SESSION_KEEP_ALIVE",
       "CLIENT_TELEMETRY_ENABLED",
@@ -1503,14 +1506,6 @@ public class SessionUtil
       if ("CLIENT_DISABLE_INCIDENTS".equalsIgnoreCase(entry.getKey()))
       {
         SnowflakeDriver.setDisableIncidents((Boolean) entry.getValue());
-      }
-      else if (
-          "JDBC_EXECUTE_RETURN_COUNT_FOR_DML".equalsIgnoreCase(entry.getKey()))
-      {
-        if (session != null)
-        {
-          session.setExecuteReturnCountForDML((Boolean) entry.getValue());
-        }
       }
       else if (
           "CLIENT_SESSION_KEEP_ALIVE".equalsIgnoreCase(entry.getKey()))

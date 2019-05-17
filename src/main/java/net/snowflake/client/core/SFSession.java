@@ -133,7 +133,7 @@ public class SFSession
 
   private boolean passcodeInPassword = false;
 
-  private boolean executeReturnCountForDML = false;
+  private boolean sfSQLMode = false;
 
   private boolean enableHeartbeat = false;
 
@@ -961,14 +961,14 @@ public class SFSession
     return sequenceId.getAndIncrement();
   }
 
-  public void setExecuteReturnCountForDML(boolean executeReturnCountForDML)
+  public void setSfSQLMode(boolean sfSQLMode)
   {
-    this.executeReturnCountForDML = executeReturnCountForDML;
+    this.sfSQLMode = sfSQLMode;
   }
 
-  public boolean isExecuteReturnCountForDML()
+  public boolean isSfSQLMode()
   {
-    return this.executeReturnCountForDML;
+    return this.sfSQLMode;
   }
 
   public boolean isEnableHeartbeat()

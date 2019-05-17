@@ -38,8 +38,8 @@ public class PrepareMultiStmtIT extends BaseJDBCTest
     preparedStatement.setInt(3, 40);
 
     // first statement
-    int updateCount = preparedStatement.executeUpdate();
-    assertThat(updateCount, is(1));
+    int rowCount = preparedStatement.executeUpdate();
+    assertThat(rowCount, is(1));
     assertThat(preparedStatement.getResultSet(), is(nullValue()));
     assertThat(preparedStatement.getUpdateCount(), is(1));
 
@@ -124,8 +124,8 @@ public class PrepareMultiStmtIT extends BaseJDBCTest
     preparedStatement.setInt(4, 50);
 
     // first statement
-    int updateCount = preparedStatement.executeUpdate();
-    assertThat(updateCount, is(1));
+    int rowCount = preparedStatement.executeUpdate();
+    assertThat(rowCount, is(1));
     assertThat(preparedStatement.getResultSet(), is(nullValue()));
     assertThat(preparedStatement.getUpdateCount(), is(1));
 
