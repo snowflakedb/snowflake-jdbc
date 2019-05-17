@@ -721,10 +721,10 @@ public class ConnectionIT extends BaseJDBCTest
     paramProperties.put("CLIENT_MEMORY_LIMIT", 1000);
     Connection connection = getConnection(paramProperties);
 
-    for (Enumeration<String> enums = (Enumeration<String>) paramProperties.propertyNames();
+    for (Enumeration<?> enums = paramProperties.propertyNames();
          enums.hasMoreElements(); )
     {
-      String key = enums.nextElement();
+      String key = (String) enums.nextElement();
       ResultSet rs = connection.createStatement().executeQuery(
           String.format("show parameters like '%s'", key));
       rs.next();
@@ -756,10 +756,10 @@ public class ConnectionIT extends BaseJDBCTest
     {
       Connection connection = getConnection();
 
-      for (Enumeration<String> enums = (Enumeration<String>) paramProperties.propertyNames();
+      for (Enumeration<?> enums = paramProperties.propertyNames();
            enums.hasMoreElements(); )
       {
-        String key = enums.nextElement();
+        String key = (String) enums.nextElement();
         ResultSet rs = connection.createStatement().executeQuery(
             String.format("show parameters like '%s'", key));
         rs.next();
@@ -803,10 +803,10 @@ public class ConnectionIT extends BaseJDBCTest
     {
       Connection connection = getConnection(paramProperties);
 
-      for (Enumeration<String> enums = (Enumeration<String>) paramProperties.propertyNames();
+      for (Enumeration<?> enums = paramProperties.propertyNames();
            enums.hasMoreElements(); )
       {
-        String key = enums.nextElement();
+        String key = (String) enums.nextElement();
         ResultSet rs = connection.createStatement().executeQuery(
             String.format("show parameters like '%s'", key));
         rs.next();
@@ -835,10 +835,10 @@ public class ConnectionIT extends BaseJDBCTest
 
     connection.getClientInfo("CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY");
 
-    for (Enumeration<String> enums = (Enumeration<String>) paramProperties.propertyNames();
+    for (Enumeration<?> enums = paramProperties.propertyNames();
          enums.hasMoreElements(); )
     {
-      String key = enums.nextElement();
+      String key = (String) enums.nextElement();
       ResultSet rs = connection.createStatement().executeQuery(
           String.format("show parameters like '%s'", key));
       rs.next();
@@ -861,10 +861,10 @@ public class ConnectionIT extends BaseJDBCTest
 
     connection.getClientInfo("CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY");
 
-    for (Enumeration<String> enums = (Enumeration<String>) paramProperties.propertyNames();
+    for (Enumeration<?> enums = paramProperties.propertyNames();
          enums.hasMoreElements(); )
     {
-      String key = enums.nextElement();
+      String key = (String) enums.nextElement();
       ResultSet rs = connection.createStatement().executeQuery(
           String.format("show parameters like '%s'", key));
       rs.next();
@@ -887,10 +887,10 @@ public class ConnectionIT extends BaseJDBCTest
 
     connection.getClientInfo("CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY");
 
-    for (Enumeration<String> enums = (Enumeration<String>) paramProperties.propertyNames();
+    for (Enumeration<?> enums = paramProperties.propertyNames();
          enums.hasMoreElements(); )
     {
-      String key = enums.nextElement();
+      String key = (String) enums.nextElement();
       ResultSet rs = connection.createStatement().executeQuery(
           String.format("show parameters like '%s'", key));
       rs.next();

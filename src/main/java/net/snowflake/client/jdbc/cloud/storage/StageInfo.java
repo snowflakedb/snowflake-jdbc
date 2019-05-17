@@ -18,7 +18,7 @@ public class StageInfo
   ;
   private StageType stageType;        // The stage type
   private String location;            // The container or bucket
-  private Map credentials;            // the credentials required for the stage
+  private Map<?, ?> credentials;       // the credentials required for the  stage
   private String region;              // AWS/S3 region (S3 only)
   private String endPoint;            // The Azure Storage endpoint (Azure only)
   private String storageAccount;      // The Azure Storage account (Azure only)
@@ -35,7 +35,8 @@ public class StageInfo
    * @param storageAccount The Azure Storage account (azure only)
    * @throws IllegalArgumentException one or more parameters required were missing
    */
-  public static StageInfo createStageInfo(String locationType, String location, Map credentials,
+  public static StageInfo createStageInfo(String locationType,
+                                          String location, Map<?, ?> credentials,
                                           String region, String endPoint, String storageAccount)
   throws IllegalArgumentException
   {
@@ -86,7 +87,7 @@ public class StageInfo
    * @param endPoint The Azure Storage end point (Azure only)
    * @param storageAccount The Azure Storage account (azure only)
    */
-  private StageInfo(StageType stageType, String location, Map credentials,
+  private StageInfo(StageType stageType, String location, Map<?, ?> credentials,
                     String region, String endPoint, String storageAccount)
   {
     this.stageType = stageType;
@@ -107,12 +108,12 @@ public class StageInfo
     return location;
   }
 
-  public Map getCredentials()
+  public Map<?, ?> getCredentials()
   {
     return credentials;
   }
 
-  public void setCredentials(Map credentials)
+  public void setCredentials(Map<?, ?> credentials)
   {
     this.credentials = credentials;
   }

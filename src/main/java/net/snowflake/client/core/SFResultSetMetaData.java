@@ -17,6 +17,7 @@ import java.sql.Date;
 import java.sql.ResultSetMetaData;
 import java.sql.Types;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -263,7 +264,10 @@ public class SFResultSetMetaData
       }
       if (dateFormatter != null)
       {
-        dateStringLength = ResultUtil.getDateAsString(new Date(2015, 11, 11), dateFormatter).length();
+        final Calendar calendar = Calendar.getInstance();
+        calendar.set(2015, Calendar.DECEMBER, 11);
+        dateStringLength = ResultUtil.getDateAsString(new Date(calendar.getTimeInMillis()),
+                                                      dateFormatter).length();
       }
     }
     catch (SFException e)

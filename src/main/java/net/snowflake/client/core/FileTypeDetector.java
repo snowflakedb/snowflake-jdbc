@@ -10,11 +10,9 @@ import java.nio.file.Path;
 import org.apache.tika.Tika;
 
 /**
- * @author jhuang
- */
-
-/**
  * Use Tika to detect the mime type of files
+ *
+ * @author jhuang
  */
 public class FileTypeDetector extends java.nio.file.spi.FileTypeDetector
 {

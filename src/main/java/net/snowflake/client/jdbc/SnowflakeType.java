@@ -198,12 +198,12 @@ public enum SnowflakeType
     JAVA_BOOLEAN(Boolean.class),
     JAVA_OBJECT(Object.class);
 
-    JavaDataType(Class c)
+    JavaDataType(Class<?> c)
     {
       this._class = c;
     }
 
-    private Class _class;
+    private Class<?> _class;
   }
 
   public enum JavaSQLType
@@ -329,7 +329,7 @@ public enum SnowflakeType
       return null;
     }
 
-    Class c = o.getClass();
+    Class<?> c = o.getClass();
 
     if (c == Date.class || c == java.sql.Date.class)
     {

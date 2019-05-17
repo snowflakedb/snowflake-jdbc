@@ -2075,6 +2075,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
             result = importedKeyRestrict;
             break;
         }
+        break;
       case "deferrability":
         switch (property)
         {
@@ -2088,6 +2089,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
             result = importedKeyNotDeferrable;
             break;
         }
+        break;
     }
     return result;
   }

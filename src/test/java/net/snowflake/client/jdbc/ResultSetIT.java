@@ -258,9 +258,6 @@ public class ResultSetIT extends BaseJDBCTest
     assertEquals(bigDecimal2, resultSet.getBigDecimal(1));
     assertEquals(bigDecimal2, resultSet.getBigDecimal("COLA"));
 
-    assertEquals(new BigDecimal("100000000.123"), resultSet.getBigDecimal(1, 3));
-    assertEquals(new BigDecimal("100000000.123"), resultSet.getBigDecimal("COLA", 3));
-
     preparedStatement.close();
     statement.execute("drop table if exists test_get");
     statement.close();
@@ -522,7 +519,7 @@ public class ResultSetIT extends BaseJDBCTest
     assertFalse(resultSetMetaData.isCaseSensitive(1));
     assertFalse(resultSetMetaData.isCurrency(1));
     assertFalse(resultSetMetaData.isDefinitelyWritable(1));
-    assertEquals(resultSetMetaData.columnNullable, resultSetMetaData.isNullable(1));
+    assertEquals(ResultSetMetaData.columnNullable, resultSetMetaData.isNullable(1));
     assertTrue(resultSetMetaData.isReadOnly(1));
     assertTrue(resultSetMetaData.isSearchable(1));
     assertTrue(resultSetMetaData.isSigned(1));
