@@ -154,7 +154,8 @@ public class TelemetryEvent extends JSONObject
       Package pkg = Package.getPackage("net.snowflake.client.jdbc");
       tags.put("version", version);
       TelemetryService instance = TelemetryService.getInstance();
-      tags.put("deployment", instance.getServerDeploymentName());
+      tags.put("telemetryServerDeployment", instance.getServerDeploymentName());
+      tags.put("connectionString", instance.getDriverConnectionString());
       JSONObject context = instance.getContext();
       if (context != null)
       {

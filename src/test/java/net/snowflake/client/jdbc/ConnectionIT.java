@@ -55,7 +55,7 @@ public class ConnectionIT extends BaseJDBCTest
   public void setUp()
   {
     TelemetryService service = TelemetryService.getInstance();
-    service.updateContext(getConnectionParameters());
+    service.updateContextForIT(getConnectionParameters());
     defaultState = service.isEnabled();
     service.setNumOfRetryToTriggerTelemetry(3);
     service.disableRunFlushBeforeException();
