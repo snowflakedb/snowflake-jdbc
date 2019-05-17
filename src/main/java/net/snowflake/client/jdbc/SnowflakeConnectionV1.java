@@ -225,7 +225,7 @@ public class SnowflakeConnectionV1 implements Connection
 
     for (Map.Entry<String, Object> property : properties.entrySet())
     {
-      if (property.getKey() == "CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY")
+      if ("CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY".equals(property.getKey()))
       {
         if ((Integer) property.getValue() > 3600)
         {
