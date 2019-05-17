@@ -810,8 +810,6 @@ public class SnowflakeChunkDownloader
           // trace the response if requested
           logger.debug("Json response: {}", response);
 
-          JsonNode resultData = null;
-
           // parse the result json
           try
           {
@@ -844,9 +842,6 @@ public class SnowflakeChunkDownloader
           // add parsing time
           resultChunk.setParseTime(System.currentTimeMillis() - startTime);
           downloader.addParsingTime(resultChunk.getParseTime());
-
-          // remember the result data (it can be null if using rowsets)
-          resultChunk.setResultData(resultData);
 
           logger.debug(
               "Finished preparing chunk data for {}, " +

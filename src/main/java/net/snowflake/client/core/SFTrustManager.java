@@ -1684,7 +1684,7 @@ class SFTrustManager extends X509ExtendedTrustManager
     }
 
     Set<String> ocsp = new HashSet<>();
-    for (Enumeration en = bcExts.oids(); en.hasMoreElements(); )
+    for (Enumeration<?> en = bcExts.oids(); en.hasMoreElements(); )
     {
       ASN1ObjectIdentifier oid = (ASN1ObjectIdentifier) en.nextElement();
       Extension bcExt = bcExts.getExtension(oid);

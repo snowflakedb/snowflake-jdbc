@@ -258,7 +258,7 @@ public class AbstractDriverIT
     // Set the session parameter properties
     if (paramProperties != null)
     {
-      for (Map.Entry entry : paramProperties.entrySet())
+      for (Map.Entry<?, ?> entry : paramProperties.entrySet())
       {
         properties.put(entry.getKey(), entry.getValue());
       }

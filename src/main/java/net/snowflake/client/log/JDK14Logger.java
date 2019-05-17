@@ -194,7 +194,6 @@ public class JDK14Logger implements SFLogger
    * This is legacy way of enable logging in JDBC (through TRACING parameter)
    * Only effective when java.util.logging.config.file is not specified
    */
-  @Deprecated
   public static synchronized void honorTracingParameter(Level level)
   {
     if (!isLegacyLoggerInit &&

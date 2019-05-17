@@ -8,6 +8,8 @@ import net.snowflake.client.jdbc.telemetry.TelemetryField;
 
 public class BindException extends Exception
 {
+  private static final long serialVersionUID = 1L;
+
   public enum Type
   {
     SERIALIZATION(TelemetryField.FAILED_BIND_SERIALIZATION),

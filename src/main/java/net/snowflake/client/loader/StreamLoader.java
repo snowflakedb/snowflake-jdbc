@@ -15,6 +15,7 @@ import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.List;
@@ -163,9 +164,9 @@ public class StreamLoader implements Loader, Runnable
   {
     _putConn = putConnection;
     _processConn = processConnection;
-    for (Map.Entry e : properties.entrySet())
+    for (Map.Entry<LoaderProperty, Object> e : properties.entrySet())
     {
-      setProperty((LoaderProperty) e.getKey(), e.getValue());
+      setProperty(e.getKey(), e.getValue());
     }
 
     _noise = SnowflakeUtil.randomAlphaNumeric(6);
@@ -189,10 +190,34 @@ public class StreamLoader implements Loader, Runnable
         _remoteStage = (String) value;
         break;
       case columns:
-        _columns = (List<String>) value;
+        if (value == null)
+        {
+          _columns = null;
+        }
+        else
+        {
+          final List<String> typeCheckedColumns = new ArrayList<>();
+          for (Object e : (List<?>) value)
+          {
+            typeCheckedColumns.add((String) e);
+          }
+          _columns = typeCheckedColumns;
+        }
         break;
       case keys:
-        _keys = (List<String>) value;
+        if (value == null)
+        {
+          _keys = null;
+        }
+        else
+        {
+          final List<String> typeCheckedKeys = new ArrayList<>();
+          for (Object e : (List<?>) value)
+          {
+            typeCheckedKeys.add((String) e);
+          }
+          _keys = typeCheckedKeys;
+        }
         break;
       case operation:
         _op = (Operation) value;
@@ -256,6 +281,7 @@ public class StreamLoader implements Loader, Runnable
         {
           throw new IllegalArgumentException("invalid compression level");
         }
+        break;
       case onError:
         String v = String.valueOf(value);
         _onError = OnError.validate(v) ? v : OnError.DEFAULT;

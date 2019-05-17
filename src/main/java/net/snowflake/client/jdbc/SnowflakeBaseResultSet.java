@@ -112,6 +112,7 @@ abstract class SnowflakeBaseResultSet implements ResultSet
   /**
    * @deprecated
    */
+  @Deprecated
   @Override
   public InputStream getUnicodeStream(int columnIndex) throws SQLException
   {
@@ -201,6 +202,7 @@ abstract class SnowflakeBaseResultSet implements ResultSet
   /**
    * @deprecated
    */
+  @Deprecated
   @Override
   public BigDecimal getBigDecimal(String columnLabel, int scale)
   throws SQLException
@@ -258,6 +260,7 @@ abstract class SnowflakeBaseResultSet implements ResultSet
   /**
    * @deprecated
    */
+  @Deprecated
   @Override
   public InputStream getUnicodeStream(String columnLabel) throws SQLException
   {
@@ -1633,6 +1636,7 @@ abstract class SnowflakeBaseResultSet implements ResultSet
     throw new SQLFeatureNotSupportedException();
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   public <T> T unwrap(
       Class<T> iface) throws SQLException

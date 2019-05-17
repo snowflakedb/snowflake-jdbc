@@ -339,7 +339,7 @@ public class SnowflakeUtil
   }
 
   static List<SnowflakeColumnMetadata> describeFixedViewColumns(
-      Class clazz) throws SnowflakeSQLException
+      Class<?> clazz) throws SnowflakeSQLException
   {
     Field[] columns
         = ClassUtil.getAnnotatedDeclaredFields(clazz, FixedViewColumn.class,

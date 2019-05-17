@@ -4,10 +4,6 @@
 
 package net.snowflake.client.core;
 
-/**
- * Created by jhuang on 11/3/15.
- */
-
 import net.snowflake.client.jdbc.ErrorCode;
 
 import java.security.PrivateKey;
@@ -15,6 +11,10 @@ import java.util.regex.Pattern;
 
 /**
  * session properties accepted for opening a new session.
+ *
+ * @author jhuang
+ * <p>
+ * Created on 11/3/15
  */
 public enum SFSessionProperty
 {
@@ -60,7 +60,7 @@ public enum SFSessionProperty
   private boolean required;
 
   // value type
-  private Class valueType;
+  private Class<?> valueType;
 
   // alias to property key
   private String[] aliases;
@@ -78,14 +78,14 @@ public enum SFSessionProperty
     return propertyKey;
   }
 
-  public Class getValueType()
+  public Class<?> getValueType()
   {
     return valueType;
   }
 
   SFSessionProperty(String propertyKey,
                     boolean required,
-                    Class valueType,
+                    Class<?> valueType,
                     String... aliases)
   {
     this.propertyKey = propertyKey;

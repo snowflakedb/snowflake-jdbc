@@ -8,11 +8,16 @@ import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.auth.AWSCredentials;
+import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.auth.BasicSessionCredentials;
+import com.amazonaws.client.builder.ExecutorFactory;
 import com.amazonaws.regions.Region;
 import com.amazonaws.regions.RegionUtils;
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3Builder;
 import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.AmazonS3EncryptionClient;
 import com.amazonaws.services.s3.S3ClientOptions;
 import com.amazonaws.services.s3.model.AmazonS3Exception;
@@ -26,6 +31,7 @@ import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.StaticEncryptionMaterialsProvider;
 import com.amazonaws.services.s3.transfer.Download;
 import com.amazonaws.services.s3.transfer.TransferManager;
+import com.amazonaws.services.s3.transfer.TransferManagerBuilder;
 import com.amazonaws.services.s3.transfer.Upload;
 import com.amazonaws.util.Base64;
 import net.snowflake.client.core.HttpUtil;
@@ -63,6 +69,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
 
 /**
  * Wrapper around AmazonS3Client.
@@ -83,7 +90,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient
   private final static String EXPIRED_AWS_TOKEN_ERROR_CODE = "ExpiredToken";
 
   private int encryptionKeySize = 0; // used for PUTs
-  private AmazonS3Client amazonClient = null;
+  private AmazonS3 amazonClient = null;
   private RemoteStoreFileEncryptionMaterial encMat = null;
   private ClientConfiguration clientConfig = null;
   private String stageRegion = null;
@@ -91,7 +98,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient
   // socket factory used by s3 client's http client.
   private static SSLConnectionSocketFactory s3ConnectionSocketFactory = null;
 
-  public SnowflakeS3Client(Map stageCredentials,
+  public SnowflakeS3Client(Map<?, ?> stageCredentials,
                            ClientConfiguration clientConfig,
                            RemoteStoreFileEncryptionMaterial encMat,
                            String stageRegion)
@@ -101,7 +108,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient
                            encMat, stageRegion);
   }
 
-  private void setupSnowflakeS3Client(Map stageCredentials,
+  private void setupSnowflakeS3Client(Map<?, ?> stageCredentials,
                                       ClientConfiguration clientConfig,
                                       RemoteStoreFileEncryptionMaterial encMat,
                                       String stageRegion)
@@ -130,6 +137,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient
     clientConfig.withSignerOverride("AWSS3V4SignerType");
     clientConfig.getApacheHttpClientConfig().setSslSocketFactory(
         getSSLConnectionSocketFactory());
+    AmazonS3Builder<?, ?> amazonS3Builder = AmazonS3Client.builder();
     if (encMat != null)
     {
       byte[] decodedKey = Base64.decode(encMat.getQueryStageMasterKey());
@@ -148,13 +156,18 @@ public class SnowflakeS3Client implements SnowflakeStorageClient
         CryptoConfiguration cryptoConfig =
             new CryptoConfiguration(CryptoMode.EncryptionOnly);
 
-        amazonClient = new AmazonS3EncryptionClient(awsCredentials,
-                                                    new StaticEncryptionMaterialsProvider(encryptionMaterials),
-                                                    clientConfig, cryptoConfig);
+        amazonS3Builder = AmazonS3EncryptionClient.encryptionBuilder()
+            .withCredentials(new AWSStaticCredentialsProvider(awsCredentials))
+            .withEncryptionMaterials(new StaticEncryptionMaterialsProvider(encryptionMaterials))
+            .withClientConfiguration(clientConfig)
+            .withCryptoConfiguration(cryptoConfig);
+
       }
       else if (encryptionKeySize == 128)
       {
-        amazonClient = new AmazonS3Client(awsCredentials, clientConfig);
+        amazonS3Builder = AmazonS3Client.builder()
+            .withCredentials(new AWSStaticCredentialsProvider(awsCredentials))
+            .withClientConfiguration(clientConfig);
       }
       else
       {
@@ -165,7 +178,9 @@ public class SnowflakeS3Client implements SnowflakeStorageClient
     }
     else
     {
-      amazonClient = new AmazonS3Client(awsCredentials, clientConfig);
+      amazonS3Builder = AmazonS3Client.builder()
+          .withCredentials(new AWSStaticCredentialsProvider(awsCredentials))
+          .withClientConfiguration(clientConfig);
     }
 
     if (stageRegion != null)
@@ -173,11 +188,13 @@ public class SnowflakeS3Client implements SnowflakeStorageClient
       Region region = RegionUtils.getRegion(stageRegion);
       if (region != null)
       {
-        amazonClient.setRegion(region);
+        amazonS3Builder.withRegion(region.getName());
       }
     }
     // Explicitly force to use virtual address style
-    amazonClient.setS3ClientOptions(S3ClientOptions.builder().setPathStyleAccess(false).build());
+    amazonS3Builder.withPathStyleAccessEnabled(false);
+
+    amazonClient = (AmazonS3) amazonS3Builder.build();
   }
 
   // Returns the Max number of retry attempts
@@ -221,7 +238,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient
    * @throws SnowflakeSQLException if any error occurs
    */
   @Override
-  public void renew(Map stageCredentials)
+  public void renew(Map<?, ?> stageCredentials)
   throws SnowflakeSQLException
   {
     // We renew the client with fresh credentials and with its original parameters
@@ -286,10 +303,19 @@ public class SnowflakeS3Client implements SnowflakeStorageClient
         logger.debug("Creating executor service for transfer" +
                      "manager with {} threads", parallelism);
 
-        // download file from s3
-        tx = new TransferManager(amazonClient,
-                                 SnowflakeUtil.createDefaultExecutorService(
-                                     "s3-transfer-manager-downloader-", parallelism));
+        // download files from s3
+        tx = TransferManagerBuilder.standard()
+            .withS3Client(amazonClient)
+            .withExecutorFactory(new ExecutorFactory()
+            {
+              @Override
+              public ExecutorService newExecutor()
+              {
+                return SnowflakeUtil.createDefaultExecutorService(
+                    "s3-transfer-manager-downloader-", parallelism);
+              }
+            })
+            .build();
 
         Download myDownload = tx.download(remoteStorageLocation,
                                           stageFilePath, localFile);
@@ -481,10 +507,18 @@ public class SnowflakeS3Client implements SnowflakeStorageClient
                      "manager with {} threads", parallelism);
 
         // upload files to s3
-        tx = new TransferManager(this.amazonClient,
-                                 SnowflakeUtil.createDefaultExecutorService(
-                                     "s3-transfer-manager-uploader-",
-                                     parallelism));
+        tx = TransferManagerBuilder.standard()
+            .withS3Client(amazonClient)
+            .withExecutorFactory(new ExecutorFactory()
+            {
+              @Override
+              public ExecutorService newExecutor()
+              {
+                return SnowflakeUtil.createDefaultExecutorService(
+                    "s3-transfer-manager-uploader-", parallelism);
+              }
+            })
+            .build();
 
         final Upload myUpload;
 

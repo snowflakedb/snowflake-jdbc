@@ -20,6 +20,7 @@ import java.util.UUID;
  */
 public class TelemetryEvent extends JSONObject
 {
+  private static final long serialVersionUID = 1L;
 
   public enum Type
   {
@@ -148,7 +149,7 @@ public class TelemetryEvent extends JSONObject
     {
       body = new TelemetryEvent();
       this.builderClass = builderClass;
-      tags = new HashMap();
+      tags = new HashMap<>();
       tags.put("driver", driver);
       Package pkg = Package.getPackage("net.snowflake.client.jdbc");
       tags.put("version", version);
@@ -205,10 +206,10 @@ public class TelemetryEvent extends JSONObject
     private void putMap(String name, HashMap<String, String> map)
     {
       JSONArray array = new JSONArray();
-      Iterator it = map.entrySet().iterator();
+      Iterator<?> it = map.entrySet().iterator();
       while (it.hasNext())
       {
-        Map.Entry pairs = (Map.Entry) it.next();
+        Map.Entry<?, ?> pairs = (Map.Entry) it.next();
         JSONObject obj = new JSONObject();
         obj.put("Name", pairs.getKey());
         obj.put("Value", pairs.getValue());

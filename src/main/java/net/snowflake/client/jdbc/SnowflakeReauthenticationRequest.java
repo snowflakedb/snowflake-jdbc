@@ -8,6 +8,8 @@ package net.snowflake.client.jdbc;
  */
 public class SnowflakeReauthenticationRequest extends SnowflakeSQLException
 {
+  private static final long serialVersionUID = 1L;
+
   public SnowflakeReauthenticationRequest(String queryId,
                                           String reason,
                                           String sqlState,

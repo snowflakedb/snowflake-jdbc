@@ -1913,7 +1913,6 @@ public class PreparedStatementIT extends BaseJDBCTest
       expectFeatureNotSupportedException(() -> preparedStatement.setArray(1, new FakeArray()));
       expectFeatureNotSupportedException(() -> preparedStatement.setAsciiStream(1, new FakeInputStream()));
       expectFeatureNotSupportedException(() -> preparedStatement.setAsciiStream(1, new FakeInputStream(), 1));
-      expectFeatureNotSupportedException(() -> preparedStatement.setUnicodeStream(1, new FakeInputStream(), 1));
       expectFeatureNotSupportedException(() -> preparedStatement.setBinaryStream(1, new FakeInputStream()));
       expectFeatureNotSupportedException(() -> preparedStatement.setBinaryStream(1, new FakeInputStream(), 1));
       expectFeatureNotSupportedException(() -> preparedStatement.setCharacterStream(1, new FakeReader()));

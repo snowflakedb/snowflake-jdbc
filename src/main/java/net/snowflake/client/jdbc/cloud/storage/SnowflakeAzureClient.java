@@ -203,7 +203,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient
    * @throws SnowflakeSQLException failure to renew the client
    **/
   @Override
-  public void renew(Map stageCredentials) throws SnowflakeSQLException
+  public void renew(Map<?, ?> stageCredentials) throws SnowflakeSQLException
   {
     stageInfo.setCredentials(stageCredentials);
     setupAzureClient(stageInfo, encMat);
@@ -803,10 +803,10 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient
   throws SnowflakeSQLException
   {
     ObjectMapper mapper = ObjectMapperFactory.getObjectMapper();
-    JsonFactory factory = mapper.getJsonFactory();
+    JsonFactory factory = mapper.getFactory();
     try
     {
-      JsonParser parser = factory.createJsonParser(jsonEncryptionData);
+      JsonParser parser = factory.createParser(jsonEncryptionData);
       JsonNode encryptionDataNode = mapper.readTree(parser);
 
       String iv = encryptionDataNode.get("ContentEncryptionIV").asText();

@@ -13,6 +13,8 @@ public class SFOCSPException extends Throwable
 {
   static final SFLogger logger = SFLoggerFactory.getLogger(SFOCSPException.class);
 
+  private static final long serialVersionUID = 1L;
+
   private String errorMsg;
   private OCSPErrorCode errorCode;
 

@@ -282,6 +282,7 @@ public class SFSession
           {
             HttpUtil.setSocksProxyDisabled((Boolean) propertyValue);
           }
+          break;
 
         default:
           break;
