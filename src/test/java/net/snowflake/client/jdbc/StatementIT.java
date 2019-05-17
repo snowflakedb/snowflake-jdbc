@@ -483,82 +483,82 @@ public class StatementIT extends BaseJDBCTest
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
   public void testExecuteUpdateZeroCount() throws SQLException
   {
-    Connection connection = getConnection();
-
-    String[] testCommands = {
-        "use role accountadmin",
-        "use database testdb",
-        "use schema testschema",
-        "create or replace table testExecuteUpdate(cola number)",
-        "comment on table testExecuteUpdate is 'comments'",
-        "alter table testExecuteUpdate rename column cola to colb",
-        "create or replace role testRole",
-        "create or replace user testuser",
-        "grant SELECT on table testExecuteUpdate to role testrole",
-        "grant role testrole to user testuser",
-        "revoke SELECT on table testExecuteUpdate from role testrole",
-        "revoke role testrole from user testuser",
-        "truncate table testExecuteUpdate",
-        "alter session set autocommit=false",
-        "alter session unset autocommit",
-        "drop table if exists testExecuteUpdate",
-        "set v1 = 10",
-        "unset v1",
-        "undrop table testExecuteUpdate"
-    };
-    try
+    try (Connection connection = getConnection())
     {
-      for (String testCommand : testCommands)
+
+      String[] testCommands = {
+          "use role accountadmin",
+          "use database testdb",
+          "use schema testschema",
+          "create or replace table testExecuteUpdate(cola number)",
+          "comment on table testExecuteUpdate is 'comments'",
+          "alter table testExecuteUpdate rename column cola to colb",
+          "create or replace role testRole",
+          "create or replace user testuser",
+          "grant SELECT on table testExecuteUpdate to role testrole",
+          "grant role testrole to user testuser",
+          "revoke SELECT on table testExecuteUpdate from role testrole",
+          "revoke role testrole from user testuser",
+          "truncate table testExecuteUpdate",
+          "alter session set autocommit=false",
+          "alter session unset autocommit",
+          "drop table if exists testExecuteUpdate",
+          "set v1 = 10",
+          "unset v1",
+          "undrop table testExecuteUpdate"
+      };
+      try
+      {
+        for (String testCommand : testCommands)
+        {
+          Statement statement = connection.createStatement();
+          int updateCount = statement.executeUpdate(testCommand);
+          assertThat(updateCount, is(0));
+          statement.close();
+        }
+      }
+      finally
       {
         Statement statement = connection.createStatement();
-        int updateCount = statement.executeUpdate(testCommand);
-        assertThat(updateCount, is(0));
-        statement.close();
+        statement.execute("use role accountadmin");
+        statement.execute("drop table if exists testExecuteUpdate");
+        statement.execute("drop role if exists testrole");
+        statement.execute("drop user if exists testuser");
       }
-    }
-    finally
-    {
-      Statement statement = connection.createStatement();
-      statement.execute("use role accountadmin");
-      statement.execute("drop table if exists testExecuteUpdate");
-      statement.execute("drop role if exists testrole");
-      statement.execute("drop user if exists testuser");
-      connection.close();
     }
   }
 
   @Test
-  public void testExecuteUpdateFail() throws SQLException
+  public void testExecuteUpdateFail() throws Exception
   {
-    Connection connection = getConnection();
-
-    String[] testCommands = {
-        "put file:///tmp/testfile @~",
-        "list @~",
-        "ls @~",
-        "get @~/testfile file:///tmp",
-        "remove @~/testfile",
-        "rm @~/testfile",
-        "select 1",
-        "show databases",
-        "desc database " + AbstractDriverIT.getConnectionParameters().get("database")
-    };
-
-    for (String testCommand : testCommands)
+    try (Connection connection = getConnection())
     {
-      try
+
+      String[] testCommands = {
+          "list @~",
+          "ls @~",
+          "remove @~/testfile",
+          "rm @~/testfile",
+          "select 1",
+          "show databases",
+          "desc database " + AbstractDriverIT.getConnectionParameters().get("database")
+      };
+
+      for (String testCommand : testCommands)
       {
-        Statement statement = connection.createStatement();
-        statement.executeUpdate(testCommand);
-        fail("TestCommand: " + testCommand + " is expected to be failed to execute");
-      }
-      catch (SQLException e)
-      {
-        assertThat(e.getErrorCode(), is(ErrorCode.
-            UNSUPPORTED_STATEMENT_TYPE_IN_EXECUTION_API.getMessageCode()));
+        try
+        {
+          Statement statement = connection.createStatement();
+          statement.executeUpdate(testCommand);
+          fail("TestCommand: " + testCommand + " is expected to be failed to execute");
+        }
+        catch (SQLException e)
+        {
+          assertThat(testCommand, e.getErrorCode(), is(ErrorCode.
+              UNSUPPORTED_STATEMENT_TYPE_IN_EXECUTION_API.getMessageCode()));
+        }
       }
     }
-    connection.close();
   }
 
   @Test
