@@ -83,6 +83,9 @@ public class SessionUtil
   public static final String CLIENT_MEMORY_LIMIT = "CLIENT_MEMORY_LIMIT";
   public static final String CLIENT_PREFETCH_THREADS_JVM = "net.snowflake.jdbc.clientPrefetchThreads";
   public static final String CLIENT_PREFETCH_THREADS = "CLIENT_PREFETCH_THREADS";
+  public static final String CLIENT_ENABLE_CONSERVATIVE_MEMORY_USAGE_JVM
+      = "net.snowflake.jdbc.clientEnableConservativeMemoryUsage";
+  public static final String CLIENT_ENABLE_CONSERVATIVE_MEMORY_USAGE = "CLIENT_ENABLE_CONSERVATIVE_MEMORY_USAGE";
   public static final String CACHE_FILE_NAME = "temporary_credential.json";
   public static final String OCSP_FAIL_OPEN_JVM = "net.snowflake.jdbc.ocspFailOpen";
   public static final String OCSP_FAIL_OPEN = "ocspFailOpen";
@@ -105,6 +108,10 @@ public class SessionUtil
   private final static Map<String, Map<String, String>> ID_TOKEN_CACHE = new HashMap<>();
   private final static Object ID_TOKEN_CACHE_LOCK = new Object();
   public static long DEFAULT_CLIENT_MEMORY_LIMIT = 1536; // MB
+  public static int DEFAULT_CLIENT_PREFETCH_THREADS = 4;
+  public static int DEFAULT_CLIENT_CHUNK_SIZE = 160;
+  public static int MIN_CLIENT_CHUNK_SIZE = 48;
+  public static int MAX_CLIENT_CHUNK_SIZE = 160;
   public static Map<String, String> JVM_PARAMS_TO_PARAMS = new HashMap<>();
   private static ObjectMapper mapper = ObjectMapperFactory.getObjectMapper();
   private static int DEFAULT_HTTP_CLIENT_CONNECTION_TIMEOUT = 60000; // millisec
@@ -142,7 +149,8 @@ public class SessionUtil
       CLIENT_RESULT_COLUMN_CASE_INSENSITIVE,
       "CLIENT_METADATA_REQUEST_USE_CONNECTION_CTX",
       "JDBC_TREAT_DECIMAL_AS_INT",
-      "JDBC_ENABLE_COMBINED_DESCRIBE"));
+      "JDBC_ENABLE_COMBINED_DESCRIBE",
+      CLIENT_ENABLE_CONSERVATIVE_MEMORY_USAGE));
 
   static
   {
@@ -154,6 +162,8 @@ public class SessionUtil
         CLIENT_PREFETCH_THREADS_JVM, CLIENT_PREFETCH_THREADS);
     JVM_PARAMS_TO_PARAMS.put(
         OCSP_FAIL_OPEN_JVM, OCSP_FAIL_OPEN);
+    JVM_PARAMS_TO_PARAMS.put(
+        CLIENT_ENABLE_CONSERVATIVE_MEMORY_USAGE_JVM, CLIENT_ENABLE_CONSERVATIVE_MEMORY_USAGE);
   }
 
   static
@@ -1588,6 +1598,34 @@ public class SessionUtil
         if (session != null)
         {
           session.setServiceName((String) entry.getValue());
+        }
+      }
+      else if (CLIENT_ENABLE_CONSERVATIVE_MEMORY_USAGE.equalsIgnoreCase(entry.getKey()))
+      {
+        if (session != null)
+        {
+          session.setEnableConservativeMemoryUsage((boolean) entry.getValue());
+        }
+      }
+      else if (CLIENT_MEMORY_LIMIT.equalsIgnoreCase(entry.getKey()))
+      {
+        if (session != null)
+        {
+          session.setClientMemoryLimit((int) entry.getValue());
+        }
+      }
+      else if (CLIENT_RESULT_CHUNK_SIZE.equalsIgnoreCase(entry.getKey()))
+      {
+        if (session != null)
+        {
+          session.setClientResultChunkSize((int) entry.getValue());
+        }
+      }
+      else if (CLIENT_PREFETCH_THREADS.equalsIgnoreCase(entry.getKey()))
+      {
+        if (session != null)
+        {
+          session.setClientPrefetchThreads((int) entry.getValue());
         }
       }
     }

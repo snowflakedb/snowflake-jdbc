@@ -276,7 +276,6 @@ class SnowflakeResultSetV1 extends SnowflakeBaseResultSet implements SnowflakeRe
 
   public ResultSetMetaData getMetaData() throws SQLException
   {
-    logger.debug("public ResultSetMetaData getMetaData()");
     raiseSQLExceptionIfResultSetIsClosed();
 
     return resultSetMetaData;
@@ -342,14 +341,12 @@ class SnowflakeResultSetV1 extends SnowflakeBaseResultSet implements SnowflakeRe
   public int getRow() throws SQLException
   {
     raiseSQLExceptionIfResultSetIsClosed();
-    logger.debug("public int getRow()");
 
     return sfBaseResultSet.getRow();
   }
 
   public boolean isFirst() throws SQLException
   {
-    logger.debug("public boolean isFirst()");
     raiseSQLExceptionIfResultSetIsClosed();
     return sfBaseResultSet.isFirst();
   }
