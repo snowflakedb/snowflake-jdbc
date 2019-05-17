@@ -33,7 +33,7 @@ import java.util.TimeZone;
 /**
  * Snowflake ResultSet implementation
  */
-class SnowflakeResultSetV1 extends SnowflakeBaseResultSet implements SnowflakeResultSet
+class SnowflakeResultSetV1 extends SnowflakeBaseResultSet implements SnowflakeResultSet, ResultSet
 {
   private final SFBaseResultSet sfBaseResultSet;
 

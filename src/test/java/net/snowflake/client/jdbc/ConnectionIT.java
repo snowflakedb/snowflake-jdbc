@@ -35,6 +35,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
+import static net.snowflake.client.core.SessionUtil.CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -838,10 +839,10 @@ public class ConnectionIT extends BaseJDBCTest
   public void testHeartbeatFrequencyTooSmall() throws Exception
   {
     Properties paramProperties = new Properties();
-    paramProperties.put("CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY", 2);
+    paramProperties.put(CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY, 2);
     Connection connection = getConnection(paramProperties);
 
-    connection.getClientInfo("CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY");
+    connection.getClientInfo(CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY);
 
     for (Enumeration<?> enums = paramProperties.propertyNames();
          enums.hasMoreElements(); )
@@ -864,10 +865,10 @@ public class ConnectionIT extends BaseJDBCTest
   public void testHeartbeatFrequencyTooLarge() throws Exception
   {
     Properties paramProperties = new Properties();
-    paramProperties.put("CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY", 4000);
+    paramProperties.put(CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY, 4000);
     Connection connection = getConnection(paramProperties);
 
-    connection.getClientInfo("CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY");
+    connection.getClientInfo(CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY);
 
     for (Enumeration<?> enums = paramProperties.propertyNames();
          enums.hasMoreElements(); )
@@ -890,10 +891,10 @@ public class ConnectionIT extends BaseJDBCTest
   public void testHeartbeatFrequencyValidValue() throws Exception
   {
     Properties paramProperties = new Properties();
-    paramProperties.put("CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY", 1800);
+    paramProperties.put(CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY, 1800);
     Connection connection = getConnection(paramProperties);
 
-    connection.getClientInfo("CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY");
+    connection.getClientInfo(CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY);
 
     for (Enumeration<?> enums = paramProperties.propertyNames();
          enums.hasMoreElements(); )

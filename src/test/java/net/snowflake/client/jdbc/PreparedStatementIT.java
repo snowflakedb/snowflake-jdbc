@@ -238,7 +238,8 @@ public class PreparedStatementIT extends BaseJDBCTest
 
     for (int threshold : thresholds)
     {
-      connection.createStatement().execute("DELETE FROM TEST_PREPST WHERE 1=1"); // clear table
+      connection.createStatement().execute(
+          "DELETE FROM TEST_PREPST WHERE 1=1"); // clear table
       connection.createStatement().execute(
           String.format("ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = %d", threshold));
       prepStatement = connection.prepareStatement(insertSQL);
@@ -650,12 +651,11 @@ public class PreparedStatementIT extends BaseJDBCTest
   }
 
   @Test
-  @ConditionalIgnore(condition = RunningOnTravisCI.class)
   public void testInsertOneRow() throws SQLException
   {
-    int count = 0;
+    int count;
     connection = getConnection();
-    connection.createStatement().execute("alter session set JDBC_EXECUTE_RETURN_COUNT_FOR_DML = true");
+    connection.createStatement().execute("CREATE OR REPLACE TABLE test_prepst_date (id INTEGER, d DATE)");
     prepStatement = connection.prepareStatement(insertSQL);
     bindOneParamSet(prepStatement, 1, 1.22222, (float) 1.2, "test", 12121212121L, (short) 12);
     count = prepStatement.executeUpdate();
@@ -666,7 +666,7 @@ public class PreparedStatementIT extends BaseJDBCTest
 
     prepStatement = connection.prepareStatement(insertSQL);
     bindOneParamSet(prepStatement, 2, 2.22222, (float) 2.2, "test2", 1221221123131L, (short) 1);
-    assertTrue(!prepStatement.execute());
+    assertFalse(prepStatement.execute());
     count = prepStatement.getUpdateCount();
     assertEquals(1, count);
 
@@ -674,11 +674,10 @@ public class PreparedStatementIT extends BaseJDBCTest
   }
 
   @Test
-  @ConditionalIgnore(condition = RunningOnTravisCI.class)
   public void testUpdateOneRow() throws SQLException
   {
     connection = getConnection();
-    connection.createStatement().execute("alter session set JDBC_EXECUTE_RETURN_COUNT_FOR_DML = true");
+    connection.createStatement().execute("CREATE OR REPLACE TABLE test_prepst_date (id INTEGER, d DATE)");
     prepStatement = connection.prepareStatement(insertSQL);
     bindOneParamSet(prepStatement, 1, 1.22222, (float) 1.2, "test", 12121212121L, (short) 12);
     prepStatement.addBatch();
@@ -698,7 +697,7 @@ public class PreparedStatementIT extends BaseJDBCTest
 
     prepStatement = connection.prepareStatement(updateSQL);
     prepStatement.setInt(1, 2);
-    assertTrue(!prepStatement.execute());
+    assertFalse(prepStatement.execute());
     assertEquals(1, prepStatement.getUpdateCount());
     resultSet = connection.createStatement().executeQuery(selectAllSQL);
     resultSet.next();
@@ -709,11 +708,10 @@ public class PreparedStatementIT extends BaseJDBCTest
   }
 
   @Test
-  @ConditionalIgnore(condition = RunningOnTravisCI.class)
   public void testDeleteOneRow() throws SQLException
   {
     connection = getConnection();
-    connection.createStatement().execute("alter session set JDBC_EXECUTE_RETURN_COUNT_FOR_DML = true");
+    connection.createStatement().execute("CREATE OR REPLACE TABLE test_prepst_date (id INTEGER, d DATE)");
     prepStatement = connection.prepareStatement(insertSQL);
     bindOneParamSet(prepStatement, 1, 1.22222, (float) 1.2, "test", 12121212121L, (short) 12);
     prepStatement.addBatch();
@@ -735,7 +733,7 @@ public class PreparedStatementIT extends BaseJDBCTest
 
     prepStatement = connection.prepareStatement(deleteSQL);
     prepStatement.setInt(1, 2);
-    assertTrue(!prepStatement.execute());
+    assertFalse(prepStatement.execute());
     assertEquals(1, prepStatement.getUpdateCount());
     resultSet = connection.createStatement().executeQuery(selectAllSQL);
     assertEquals(0, getSizeOfResultSet(resultSet));
@@ -750,7 +748,6 @@ public class PreparedStatementIT extends BaseJDBCTest
   @Test
   public void testSelectOneRow() throws SQLException
   {
-    boolean isResultSet;
     connection = getConnection();
     prepStatement = connection.prepareStatement(insertSQL);
     bindOneParamSet(prepStatement, 1, 1.22222, (float) 1.2, "test", 12121212121L, (short) 12);
@@ -1699,7 +1696,8 @@ public class PreparedStatementIT extends BaseJDBCTest
   public void testSnow44393() throws Exception
   {
     Connection con = getConnection();
-    con.createStatement().execute("alter session set timestamp_ntz_output_format='YYYY-MM-DD HH24:MI:SS'");
+    assertFalse(
+        con.createStatement().execute("alter session set timestamp_ntz_output_format='YYYY-MM-DD HH24:MI:SS'"));
     try
     {
       PreparedStatement stmt = con.prepareStatement("select to_timestamp_ntz(?, 3)");

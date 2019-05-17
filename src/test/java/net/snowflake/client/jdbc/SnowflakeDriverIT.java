@@ -29,8 +29,14 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
 import java.text.SimpleDateFormat;
-import java.util.*;
-import java.util.concurrent.Callable;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.List;
+import java.util.Properties;
+import java.util.TimeZone;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -157,49 +163,45 @@ public class SnowflakeDriverIT extends BaseJDBCTest
 
       futures.add(
           executorService.submit(
-              new Callable<Boolean>()
+              () ->
               {
-                @Override
-                public Boolean call() throws Exception
+                Connection connection = null;
+                Statement statement = null;
+                ResultSet resultSet = null;
+                ResultSetMetaData resultSetMetaData;
+
+                try
                 {
-                  Connection connection = null;
-                  Statement statement = null;
-                  ResultSet resultSet = null;
-                  ResultSetMetaData resultSetMetaData;
+                  connection = getConnection();
+                  statement = connection.createStatement();
+                  resultSet = statement.executeQuery(
+                      "SELECT system$sleep(10) % 1");
+                  resultSetMetaData = resultSet.getMetaData();
 
-                  try
+                  // assert column count
+                  assertEquals(1, resultSetMetaData.getColumnCount());
+
+                  // assert we get 1 row
+                  for (int i = 0; i < 1; i++)
                   {
-                    connection = getConnection();
-                    statement = connection.createStatement();
-                    resultSet = statement.executeQuery(
-                        "SELECT system$sleep(10) % 1");
-                    resultSetMetaData = resultSet.getMetaData();
+                    assertTrue(resultSet.next());
 
-                    // assert column count
-                    assertEquals(1, resultSetMetaData.getColumnCount());
-
-                    // assert we get 1 row
-                    for (int i = 0; i < 1; i++)
+                    // assert each column is not null except the last one
+                    for (int j = 1; j < 2; j++)
                     {
-                      assertTrue(resultSet.next());
-
-                      // assert each column is not null except the last one
-                      for (int j = 1; j < 2; j++)
-                      {
-                        assertEquals(0, resultSet.getInt(j));
-                      }
+                      assertEquals(0, resultSet.getInt(j));
                     }
-
-                    logger.info("Query " + queryIdx + " passed ");
-
-                    statement.close();
                   }
-                  finally
-                  {
-                    closeSQLObjects(resultSet, statement, connection);
-                  }
-                  return true;
+
+                  logger.info("Query " + queryIdx + " passed ");
+
+                  statement.close();
                 }
+                finally
+                {
+                  closeSQLObjects(resultSet, statement, connection);
+                }
+                return true;
               }
           ));
     }
@@ -1211,7 +1213,6 @@ public class SnowflakeDriverIT extends BaseJDBCTest
   {
     Connection connection = null;
     Statement statement = null;
-    ResultSet resultSet = null;
 
     try
     {
@@ -1236,7 +1237,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest
       {
         statement.execute("DROP TABLE if exists testUpdateCount");
       }
-      closeSQLObjects(resultSet, statement, connection);
+      closeSQLObjects(null, statement, connection);
     }
   }
 
@@ -1318,7 +1319,6 @@ public class SnowflakeDriverIT extends BaseJDBCTest
   {
     Connection connection = null;
     Statement statement = null;
-    ResultSet resultSet = null;
 
     String tableName =
         String.format("snow4394_%s", UUID.randomUUID().toString()).
@@ -1359,7 +1359,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest
             String.format("DROP TABLE if exists %s", tableName));
         statement.close();
       }
-      closeSQLObjects(resultSet, statement, connection);
+      closeSQLObjects(null, statement, connection);
     }
   }
 
@@ -1410,22 +1410,17 @@ public class SnowflakeDriverIT extends BaseJDBCTest
                       "timestampadd(day, seq8(), '1970-01-13 00:00:00'::timestamp_ntz)\n" +
                       "from table(generator(rowcount=>20))");
 
-    if (true)
-    {
-      ((SnowflakeConnectionV1) connection).getSfSession().
-          setTimestampMappedType(SnowflakeType.TIMESTAMP_NTZ);
-      Timestamp ts = buildTimestamp(1970, 0, 15, 10, 14, 30, 0);
-      PreparedStatement preparedStatement =
-          connection.prepareStatement("select iv, tsv from bug56658 where tsv" +
-                                      " >= ? and tsv <= ? order by iv;");
-      statement.execute("alter session set timestamp_type_mapping=timestamp_ntz");
-      Timestamp ts2 = buildTimestamp(1970, 0, 18, 10, 14, 30, 0);
-      preparedStatement.setTimestamp(1, ts);
-      preparedStatement.setTimestamp(2, ts2);
-      ResultSet rs = preparedStatement.executeQuery();
-    }
-
-
+    connection.unwrap(SnowflakeConnectionV1.class).getSfSession().
+        setTimestampMappedType(SnowflakeType.TIMESTAMP_NTZ);
+    Timestamp ts = buildTimestamp(1970, 0, 15, 10, 14, 30, 0);
+    PreparedStatement preparedStatement =
+        connection.prepareStatement("select iv, tsv from bug56658 where tsv" +
+                                    " >= ? and tsv <= ? order by iv;");
+    statement.execute("alter session set timestamp_type_mapping=timestamp_ntz");
+    Timestamp ts2 = buildTimestamp(1970, 0, 18, 10, 14, 30, 0);
+    preparedStatement.setTimestamp(1, ts);
+    preparedStatement.setTimestamp(2, ts2);
+    preparedStatement.executeQuery();
   }
 
   @Test
@@ -1579,10 +1574,10 @@ public class SnowflakeDriverIT extends BaseJDBCTest
       preparedStatement.setDate(4, sqlDate);
       preparedStatement.setTimestamp(5, ts);
       preparedStatement.setTime(6, tm);
-      int updateCount = preparedStatement.executeUpdate();
+      int rowCount = preparedStatement.executeUpdate();
 
       // update count should be 1
-      assertEquals("update count", 1, updateCount);
+      assertEquals("update count", 1, rowCount);
 
       // test the inserted rows
       resultSet = regularStatement.executeQuery("select * from testBind");
@@ -2661,7 +2656,6 @@ public class SnowflakeDriverIT extends BaseJDBCTest
   {
     Connection connection = null;
     Statement statement = null;
-    ResultSet resultSet = null;
 
     try
     {
@@ -2718,7 +2712,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest
     }
     finally
     {
-      closeSQLObjects(resultSet, statement, connection);
+      closeSQLObjects(null, statement, connection);
     }
   }
 
@@ -2846,7 +2840,6 @@ public class SnowflakeDriverIT extends BaseJDBCTest
   {
     Connection connection = null;
     Statement statement = null;
-    ResultSet resultSet = null;
     try
     {
       connection = getConnection();
@@ -2867,7 +2860,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest
     }
     finally
     {
-      closeSQLObjects(resultSet, statement, connection);
+      closeSQLObjects(null, statement, connection);
     }
   }
 
@@ -2971,7 +2964,6 @@ public class SnowflakeDriverIT extends BaseJDBCTest
     Connection connection = null;
     PreparedStatement preparedStatement = null;
     Statement regularStatement = null;
-    ResultSet resultSet = null;
 
     try
     {
@@ -3038,7 +3030,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest
         regularStatement.close();
       }
 
-      closeSQLObjects(resultSet, preparedStatement, connection);
+      closeSQLObjects(null, preparedStatement, connection);
     }
   }
 
@@ -3114,7 +3106,6 @@ public class SnowflakeDriverIT extends BaseJDBCTest
   {
     Connection connection = null;
     Statement statement = null;
-    ResultSet resultSet = null;
 
     try
     {
@@ -3163,7 +3154,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest
     }
     finally
     {
-      closeSQLObjects(resultSet, statement, connection);
+      closeSQLObjects(null, statement, connection);
     }
   }
 

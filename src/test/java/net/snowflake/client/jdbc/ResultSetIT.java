@@ -129,23 +129,6 @@ public class ResultSetIT extends BaseJDBCTest
     con.close();
   }
 
-  @Ignore("Feature Not Supported")
-  @Test
-  public void testMovingCursor() throws SQLException
-  {
-    Connection connection = getConnection();
-    Statement statement = connection.createStatement();
-    ResultSet resultSet = statement.executeQuery(selectAllSQL);
-    assertTrue(resultSet.next());
-    assertTrue(resultSet.next());
-    assertTrue(resultSet.next());
-
-    resultSet.first();
-    //  assertEquals("rowOne", resultSet.getString(1));
-    statement.close();
-    connection.close();
-  }
-
   @Test
   public void testFindColumn() throws SQLException
   {
@@ -291,7 +274,6 @@ public class ResultSetIT extends BaseJDBCTest
   @Test
   public void testGetDateAndTime() throws SQLException
   {
-    final String insertTime = "insert into datetime values(?, ?, ?)";
     Connection connection = getConnection();
     Statement statement = connection.createStatement();
     statement.execute(
@@ -301,6 +283,7 @@ public class ResultSetIT extends BaseJDBCTest
     Date date = buildDate(2016, 3, 20);
     Timestamp ts = new Timestamp(today.getTime());
     Time tm = new Time(12345678); // 03:25:45.678
+    final String insertTime = "insert into datetime values(?, ?, ?)";
     PreparedStatement prepStatement = connection.prepareStatement(insertTime);
     prepStatement.setDate(1, date);
     prepStatement.setTimestamp(2, ts);
@@ -378,7 +361,7 @@ public class ResultSetIT extends BaseJDBCTest
     final String insertTime = "insert into datetime values (?, ?, ?)";
     Connection connection = getConnection();
 
-    assertTrue(connection.createStatement().
+    assertFalse(connection.createStatement().
         execute("alter session set TIMEZONE='UTC'"));
 
     Statement statement = connection.createStatement();
@@ -495,8 +478,7 @@ public class ResultSetIT extends BaseJDBCTest
     Statement statement = connection.createStatement();
 
     statement.execute("create or replace table test_rsmd(colA number(20, 5), colB string)");
-    statement.execute("insert into test_rsmd values(1.00, 'str')");
-    statement.execute("insert into test_rsmd values(2.00, 'str2')");
+    statement.execute("insert into test_rsmd values(1.00, 'str'),(2.00, 'str2')");
 
     ResultSet resultSet = statement.executeQuery("select * from test_rsmd");
     ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
@@ -1156,13 +1138,13 @@ public class ResultSetIT extends BaseJDBCTest
     statement.execute("create or replace table testcopy(cola string)");
 
     // stage table has no file. Should return 0.
-    int updateCount = statement.executeUpdate("copy into testcopy");
-    assertThat(updateCount, is(0));
+    int rowCount = statement.executeUpdate("copy into testcopy");
+    assertThat(rowCount, is(0));
 
     // copy one file into table stage
     statement.execute("copy into @%testcopy from (select 'test_string')");
-    updateCount = statement.executeUpdate("copy into testcopy");
-    assertThat(updateCount, is(1));
+    rowCount = statement.executeUpdate("copy into testcopy");
+    assertThat(rowCount, is(1));
 
     //cleanup
     statement.execute("drop table if exists testcopy");
