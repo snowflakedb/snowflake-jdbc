@@ -310,6 +310,7 @@ class SnowflakeResultSetV1 extends SnowflakeBaseResultSet implements SnowflakeRe
     }
   }
 
+  @Deprecated
   public BigDecimal getBigDecimal(int columnIndex, int scale) throws SQLException
   {
     raiseSQLExceptionIfResultSetIsClosed();
@@ -533,6 +534,7 @@ class SnowflakeResultSetV1 extends SnowflakeBaseResultSet implements SnowflakeRe
       return null;
     }
 
+    @Deprecated
     @Override
     public InputStream getUnicodeStream(int columnIndex) throws SQLException
     {
@@ -603,6 +605,7 @@ class SnowflakeResultSetV1 extends SnowflakeBaseResultSet implements SnowflakeRe
       return 0;
     }
 
+    @Deprecated
     @Override
     public BigDecimal getBigDecimal(String columnLabel, int scale) throws SQLException
     {
@@ -1603,6 +1606,7 @@ class SnowflakeResultSetV1 extends SnowflakeBaseResultSet implements SnowflakeRe
       return null;
     }
 
+    @Deprecated
     @Override
     public BigDecimal getBigDecimal(int columnIndex, int scale) throws SQLException
     {
@@ -1617,6 +1621,7 @@ class SnowflakeResultSetV1 extends SnowflakeBaseResultSet implements SnowflakeRe
       return null;
     }
 
+    @Deprecated
     @Override
     public InputStream getUnicodeStream(String columnLabel) throws SQLException
     {

@@ -89,7 +89,7 @@ public class StorageClientFactory
    * @return the SnowflakeS3Client  instance created
    * @throws SnowflakeSQLException failure to create the S3 client
    */
-  private SnowflakeS3Client createS3Client(Map stageCredentials,
+  private SnowflakeS3Client createS3Client(Map<?, ?> stageCredentials,
                                            int parallel,
                                            RemoteStoreFileEncryptionMaterial encMat,
                                            String stageRegion)

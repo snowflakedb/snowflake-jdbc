@@ -4,10 +4,6 @@
 
 package net.snowflake.client.core;
 
-/**
- * Created by jhuang on 1/21/16.
- */
-
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.common.core.SqlState;
@@ -19,6 +15,10 @@ import java.util.List;
 
 /**
  * Statement metadata which includes the result metadata and bind information.
+ *
+ * @author jhuang
+ * <p>
+ * Created on 1/21/16
  */
 public class SFStatementMetaData
 {

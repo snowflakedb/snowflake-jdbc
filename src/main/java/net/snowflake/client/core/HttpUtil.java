@@ -92,7 +92,7 @@ public class HttpUtil
   /**
    * Build an Http client using our set of default.
    *
-   * @param ocspMode INSECURE/FAILOPEN/FAILCLOSED.
+   * @param ocspMode      INSECURE/FAILOPEN/FAILCLOSED.
    * @param ocspCacheFile OCSP response cache file. If null, the default
    *                      OCSP response file will be used.
    * @return HttpClient object
@@ -102,12 +102,15 @@ public class HttpUtil
   {
     // set timeout so that we don't wait forever.
     // Setup the default configuration for all requests on this client
-    DefaultRequestConfig =
-        RequestConfig.custom()
-            .setConnectTimeout(DEFAULT_CONNECTION_TIMEOUT)
-            .setConnectionRequestTimeout(DEFAULT_CONNECTION_TIMEOUT)
-            .setSocketTimeout(DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT)
-            .build();
+    if (DefaultRequestConfig == null)
+    {
+      DefaultRequestConfig =
+          RequestConfig.custom()
+              .setConnectTimeout(DEFAULT_CONNECTION_TIMEOUT)
+              .setConnectionRequestTimeout(DEFAULT_CONNECTION_TIMEOUT)
+              .setSocketTimeout(DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT)
+              .build();
+    }
 
     TrustManager[] trustManagers = null;
     if (ocspMode != OCSPMode.INSECURE)
@@ -274,6 +277,11 @@ public class HttpUtil
     return RequestConfig.copy(DefaultRequestConfig)
         .setCookieSpec(IGNORE_COOKIES)
         .build();
+  }
+
+  public static void setRequestConfig(RequestConfig requestConfig)
+  {
+    DefaultRequestConfig = requestConfig;
   }
 
   /**

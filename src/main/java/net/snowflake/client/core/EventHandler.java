@@ -346,7 +346,7 @@ public class EventHandler extends Handler
 
     File outputFile = new File(logDumpPath);
 
-    /**
+    /*
      * Because log files could potentially be very large, we should never open
      * them in append mode. It's rare that this should happen anyways...
      */
@@ -540,7 +540,7 @@ public class EventHandler extends Handler
   }
 
 
-  /** Overridden methods for Handler interface */
+  /* Overridden methods for Handler interface */
 
   /**
    * Flushes all eventBuffer entries.

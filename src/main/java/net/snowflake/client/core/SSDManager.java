@@ -18,71 +18,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-
-class KeyUpdSSD
-{
-  private String issuer;
-  private String keyUpdDirective;
-
-  KeyUpdSSD()
-  {
-    this.issuer = null;
-    this.keyUpdDirective = null;
-  }
-
-  String getIssuer()
-  {
-    return this.issuer;
-  }
-
-  String getKeyUpdDirective()
-  {
-    return this.keyUpdDirective;
-  }
-
-  void setIssuer(String issuer)
-  {
-    this.issuer = issuer;
-  }
-
-  void setKeyUpdDirective(String ssd)
-  {
-    this.keyUpdDirective = ssd;
-  }
-}
-
-class HostSpecSSD
-{
-  private String hostname;
-  private String hostSpecDirective;
-
-  HostSpecSSD()
-  {
-    this.hostname = null;
-    this.hostSpecDirective = null;
-  }
-
-  String getHostname()
-  {
-    return this.hostname;
-  }
-
-  String getHostSpecDirective()
-  {
-    return this.hostSpecDirective;
-  }
-
-  void setHostname(String hname)
-  {
-    this.hostname = hname;
-  }
-
-  void setHostSpecDirective(String ssd)
-  {
-    this.hostSpecDirective = ssd;
-  }
-}
-
 class SSDManager
 {
   private static final
@@ -135,7 +70,7 @@ class SSDManager
     if (SSDManager.ACTIVATE_SSD)
     {
       this.clearSSDCache();
-      /**
+      /*
        * Initialize in memory pub key to
        * packaged public keys
        */
@@ -167,8 +102,8 @@ class SSDManager
         }
 
         JsonNode jnode_host_spec = OBJECT_MAPPER.readTree(host_spec_ssd);
-        Map keyVal = OBJECT_MAPPER.readValue(host_spec_ssd, HashMap.class);
-        Iterator itr = keyVal.keySet().iterator();
+        Map<?, ?> keyVal = OBJECT_MAPPER.readValue(host_spec_ssd, HashMap.class);
+        Iterator<?> itr = keyVal.keySet().iterator();
         while (itr.hasNext())
         {
           String key_val = (String) itr.next();

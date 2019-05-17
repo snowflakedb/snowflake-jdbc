@@ -131,19 +131,19 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
   // Index: Source file to encryption material
   HashMap<String, RemoteStoreFileEncryptionMaterial> srcFileToEncMat;
 
-  public Map getStageCredentials()
+  public Map<?, ?> getStageCredentials()
   {
-    return new HashMap(stageInfo.getCredentials());
+    return new HashMap<>(stageInfo.getCredentials());
   }
 
   public List<RemoteStoreFileEncryptionMaterial> getEncryptionMaterial()
   {
-    return new ArrayList(encryptionMaterial);
+    return new ArrayList<>(encryptionMaterial);
   }
 
   public Map<String, RemoteStoreFileEncryptionMaterial> getSrcToMaterialsMap()
   {
-    return new HashMap(srcFileToEncMat);
+    return new HashMap<>(srcFileToEncMat);
   }
 
   public String getStageLocation()
@@ -545,6 +545,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
    * @throws SnowflakeSQLException
    * @deprecated Can be removed when all accounts are encrypted
    */
+  @Deprecated
   private static InputStreamWithMetadata compressStreamWithGZIPNoDigest(
       InputStream inputStream) throws SnowflakeSQLException
   {
@@ -1025,7 +1026,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
     else
     {
       // do download command specific parsing
-      srcFileToEncMat = new HashMap();
+      srcFileToEncMat = new HashMap<>();
 
       // create mapping from source file to encryption materials
       if (src_locations.length == encryptionMaterial.size())
@@ -1172,7 +1173,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
       logger.debug("storageAccount: {}", storageAccount);
     }
 
-    Map stageCredentials = extractStageCreds(jsonNode);
+    Map<?, ?> stageCredentials = extractStageCreds(jsonNode);
 
     stageInfo = StageInfo.createStageInfo(stageLocationType, stageLocation, stageCredentials,
                                           stageRegion, endPoint, storageAccount);
@@ -1306,11 +1307,11 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
    * @param rootNode JSON doc returned by GS
    * @throws SnowflakeSQLException
    */
-  private static Map extractStageCreds(JsonNode rootNode)
+  private static Map<?, ?> extractStageCreds(JsonNode rootNode)
   throws SnowflakeSQLException
   {
     JsonNode credsNode = rootNode.path("data").path("stageInfo").path("creds");
-    Map stageCredentials = null;
+    Map<?, ?> stageCredentials = null;
 
     try
     {
@@ -1604,7 +1605,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
           continue;
         }
 
-        /**
+        /*
          * For small files, we upload files in parallel, so we don't
          * want the remote store uploader to upload parts in parallel for each file.
          * For large files, we upload them in serial, and we want remote store uploader
@@ -1950,7 +1951,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
   {
     SFStatement statement = new SFStatement(connection);
     JsonNode jsonNode = parseCommandInGS(statement, command);
-    Map stageCredentials = extractStageCreds(jsonNode);
+    Map<?, ?> stageCredentials = extractStageCreds(jsonNode);
 
     // renew client with the fresh token
     logger.debug("Renewing expired access token");
@@ -2315,7 +2316,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
         String localFileHashText = null;
         String stageFileHashText = null;
 
-        List<FileBackedOutputStream> fileBackedOutputStreams = new ArrayList();
+        List<FileBackedOutputStream> fileBackedOutputStreams = new ArrayList<>();
         InputStream localFileStream = null;
         try
         {
@@ -2892,7 +2893,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
 
     if (sortResult)
     {
-      Comparator comparator =
+      Comparator<Object> comparator =
           (commandType == CommandType.UPLOAD) ?
           new Comparator<Object>()
           {

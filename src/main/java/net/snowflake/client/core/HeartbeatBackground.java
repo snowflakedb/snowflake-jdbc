@@ -43,7 +43,7 @@ public class HeartbeatBackground implements Runnable
   private ScheduledExecutorService scheduler = null;
 
   // future for a scheduled heartbeat task
-  ScheduledFuture heartbeatFuture;
+  ScheduledFuture<?> heartbeatFuture;
 
   /**
    * List of sessions to heartbeat. Use weak hash map so that if a session
@@ -210,7 +210,7 @@ public class HeartbeatBackground implements Runnable
   @Override
   public void run()
   {
-    /**
+    /*
      * Remember current time as the heartbeat start time. This is used for
      * calculating the delay for the next heartbeat.
      */
@@ -237,7 +237,7 @@ public class HeartbeatBackground implements Runnable
       }
     }
 
-    /**
+    /*
      * The following is synchronized with the methods to add or remove a
      * session so that we always make sure we have one heartbeat task scheduled
      * when there is any session left.

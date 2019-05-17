@@ -14,6 +14,8 @@ import org.apache.http.HttpStatus;
  */
 public class StorageProviderException extends RuntimeException
 {
+  private static final long serialVersionUID = 1L;
+
   /**
    * Constructor that accepts an arbitrary Exception.
    *

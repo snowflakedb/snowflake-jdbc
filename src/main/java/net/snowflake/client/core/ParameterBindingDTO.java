@@ -41,4 +41,9 @@ public class ParameterBindingDTO
   {
     this.type = type;
   }
+
+  public void setValue(Object value)
+  {
+    this.value = value;
+  }
 }

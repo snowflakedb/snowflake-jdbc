@@ -311,7 +311,7 @@ public class StmtUtil
 
         httpRequest = new HttpPost(uriBuilder.build());
 
-        /**
+        /*
          * sequence id is only needed for old query API, when old query API
          * is deprecated, we can remove sequence id.
          */
@@ -418,7 +418,7 @@ public class StmtUtil
                                           HttpPost httpRequest)
   throws SFException, SnowflakeSQLException
   {
-    /**
+    /*
      * Check response for error or for ping pong response
      *
      * For ping-pong: want to make sure our connection is not silently dropped
@@ -459,7 +459,7 @@ public class StmtUtil
 
       if (pingPongResponseJson == null)
       {
-        /**
+        /*
          * Retry for bad response for server.
          * But we don't want to retry too many times
          */
@@ -724,7 +724,7 @@ public class StmtUtil
       /*
        * The JSON input has two fields: sqlText and requestId
        */
-      Map sqlJsonBody = new HashMap<String, Object>();
+      Map<String, Object> sqlJsonBody = new HashMap<String, Object>();
       sqlJsonBody.put("sqlText", stmtInput.sql);
       sqlJsonBody.put("requestId", stmtInput.requestId);
 

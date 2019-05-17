@@ -87,6 +87,7 @@ class SnowflakeParameterMetadata implements ParameterMetaData
     throw new SQLFeatureNotSupportedException();
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   public <T> T unwrap(java.lang.Class<T> iface) throws SQLException
   {

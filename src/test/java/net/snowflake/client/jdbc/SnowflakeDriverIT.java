@@ -145,7 +145,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest
     ExecutorService executorService =
         Executors.newFixedThreadPool(MAX_CONCURRENT_QUERIES_PER_USER);
 
-    List<Future> futures = new ArrayList<>();
+    List<Future<?>> futures = new ArrayList<>();
 
     // create 30 threads, each open a connection and submit a query that
     // runs for 10 seconds

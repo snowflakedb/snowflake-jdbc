@@ -20,6 +20,8 @@ public class SnowflakeSQLException extends SQLException
   static final SFLogger logger =
       SFLoggerFactory.getLogger(SnowflakeSQLException.class);
 
+  private static final long serialVersionUID = 1L;
+
   static final ResourceBundleManager errorResourceBundleManager =
       ResourceBundleManager.getSingleton(ErrorCode.errorMessageResource);
 

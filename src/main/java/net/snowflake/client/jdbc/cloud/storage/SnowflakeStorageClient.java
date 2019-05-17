@@ -54,7 +54,7 @@ public interface SnowflakeStorageClient
    * @param stageCredentials a Map (as returned by GS) which contains the new credential properties
    * @throws SnowflakeSQLException failure to renew the storage client
    **/
-  void renew(Map stageCredentials) throws SnowflakeSQLException;
+  void renew(Map<?, ?> stageCredentials) throws SnowflakeSQLException;
 
   /**
    * shuts down the client

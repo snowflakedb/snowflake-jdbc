@@ -40,7 +40,7 @@ public class SFPair<L, R>
       return false;
     }
 
-    SFPair<L, R> pair2 = (SFPair<L, R>) other;
+    SFPair<?, ?> pair2 = (SFPair<?, ?>) other;
     return Objects.equals(this.left, pair2.left) &&
            Objects.equals(this.right, pair2.right);
   }

@@ -70,6 +70,8 @@ public interface Loader
   // Raised for data conversion errors, if requested
   class DataError extends RuntimeException
   {
+    private static final long serialVersionUID = 1L;
+
     DataError(String msg)
     {
       super(msg);
@@ -89,6 +91,8 @@ public interface Loader
   // Raised for connection and other system errors.
   class ConnectionError extends RuntimeException
   {
+    private static final long serialVersionUID = 1L;
+
     ConnectionError(String msg)
     {
       super(msg);

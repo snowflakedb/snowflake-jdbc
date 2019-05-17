@@ -240,25 +240,28 @@ public class BindUploader implements Closeable
       try
       {
         String type = value.getType();
-        List<String> list = (List<String>) value.getValue();
+        List<?> list = (List<?>) value.getValue();
         List<String> convertedList = new ArrayList<>(list.size());
         if ("TIMESTAMP_LTZ".equals(type) || "TIMESTAMP_NTZ".equals(type))
         {
-          for (String e : list)
+          for (Object e : list)
           {
-            convertedList.add(synchronizedTimestampFormat(e));
+            convertedList.add(synchronizedTimestampFormat((String) e));
           }
         }
         else if ("DATE".equals(type))
         {
-          for (String e : list)
+          for (Object e : list)
           {
-            convertedList.add(synchronizedDateFormat(e));
+            convertedList.add(synchronizedDateFormat((String) e));
           }
         }
         else
         {
-          convertedList = list;
+          for (Object e : list)
+          {
+            convertedList.add((String) e);
+          }
         }
         columns.add(i - 1, new ColumnTypeDataPair(type, convertedList));
       }
@@ -574,7 +577,7 @@ public class BindUploader implements Closeable
     else
     {
       ParameterBindingDTO bindSample = bindValues.values().iterator().next();
-      List<String> bindSampleValues = (List<String>) bindSample.getValue();
+      List<?> bindSampleValues = (List<?>) bindSample.getValue();
       return bindValues.size() * bindSampleValues.size();
     }
   }

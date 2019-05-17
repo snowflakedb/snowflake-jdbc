@@ -17,6 +17,8 @@ public class SFException extends Throwable
 {
   static final SFLogger logger = SFLoggerFactory.getLogger(SFException.class);
 
+  private static final long serialVersionUID = 1L;
+
   static final ResourceBundleManager errorResourceBundleManager =
       ResourceBundleManager.getSingleton(ErrorCode.errorMessageResource);
 

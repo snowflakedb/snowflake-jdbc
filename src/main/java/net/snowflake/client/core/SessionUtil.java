@@ -22,16 +22,13 @@ import net.snowflake.common.core.ClientAuthnDTO;
 import net.snowflake.common.core.ClientAuthnParameter;
 import net.snowflake.common.core.SqlState;
 import org.apache.http.HttpHeaders;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.SystemDefaultHttpClient;
 import org.apache.http.message.BasicHeader;
 import org.apache.http.message.HeaderGroup;
-import org.apache.http.params.BasicHttpParams;
-import org.apache.http.params.HttpConnectionParams;
-import org.apache.http.params.HttpParams;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
@@ -571,7 +568,7 @@ public class SessionUtil
       Properties clientInfo = loginInput.getClientInfo();
       if (clientInfo != null)
       {
-        for (Map.Entry property : clientInfo.entrySet())
+        for (Map.Entry<?, ?> property : clientInfo.entrySet())
         {
           if (property != null && property.getKey() != null &&
               property.getValue() != null)
@@ -775,16 +772,13 @@ public class SessionUtil
         httpClientSocketTimeout = loginInput.getSocketTimeout() +
                                   (healthCheckIntervalFromGS * 1000);
 
-        final HttpParams httpParams = new BasicHttpParams();
+        final RequestConfig requestConfig = RequestConfig
+            .copy(HttpUtil.getRequestConfigWithoutcookies())
+            .setConnectTimeout(loginInput.getConnectionTimeout())
+            .setSocketTimeout(httpClientSocketTimeout)
+            .build();
 
-        // set timeout so that we don't wait forever
-        HttpConnectionParams.setConnectionTimeout(httpParams,
-                                                  loginInput.getConnectionTimeout());
-
-        HttpConnectionParams.setSoTimeout(httpParams,
-                                          httpClientSocketTimeout);
-
-        ((SystemDefaultHttpClient) HttpUtil.getHttpClient()).setParams(httpParams);
+        HttpUtil.setRequestConfig(requestConfig);
 
         logger.debug(
             "adjusted connection timeout to = {}",

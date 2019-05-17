@@ -571,7 +571,12 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
             String row = "Unknown";
             if (bindingValueAndType.getValue() instanceof Collection)
             {
-              values = (List<String>) bindingValueAndType.getValue();
+              final List<String> typeCheckedList = new ArrayList<>();
+              for (Object e : (List<?>) bindingValueAndType.getValue())
+              {
+                typeCheckedList.add((String) e);
+              }
+              values = typeCheckedList;
               row = Integer.toString(values.size() + 1);
             }
             throw new SnowflakeSQLException(SqlState.FEATURE_NOT_SUPPORTED,
@@ -582,11 +587,17 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
           }
 
           // found the existing map so just get the value list
-          values = (List<String>) bindingValueAndType.getValue();
+          final List<String> typeCheckedList = new ArrayList<>();
+          for (Object e : (List<?>) bindingValueAndType.getValue())
+          {
+            typeCheckedList.add((String) e);
+          }
+          values = typeCheckedList;
         }
 
         // add the value to the list of values in batch binding map
         values.add((String) newValue);
+        bindingValueAndType.setValue(values);
       }
       batchSize++;
     }
