@@ -19,6 +19,7 @@ import java.io.InputStream;
 import java.sql.Array;
 import java.sql.Blob;
 import java.sql.CallableStatement;
+import java.sql.ClientInfoStatus;
 import java.sql.Clob;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -34,6 +35,7 @@ import java.sql.Savepoint;
 import java.sql.Statement;
 import java.sql.Struct;
 import java.util.Collections;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -44,6 +46,8 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.GZIPInputStream;
 
+import static net.snowflake.client.core.ClientInfo.APPLICATION_NAME;
+import static net.snowflake.client.core.SFSessionProperty.APPLICATION_REGEX;
 import static net.snowflake.client.core.SessionUtil.JVM_PARAMS_TO_PARAMS;
 import static net.snowflake.client.jdbc.ErrorCode.FEATURE_UNSUPPORTED;
 
@@ -757,19 +761,18 @@ public class SnowflakeConnectionV1 implements Connection
   {
     logger.debug(
         "void setClientInfo(Properties properties)");
-
     if (isClosed)
     {
       throw new SQLClientInfoException();
     }
-
-    // make a copy, don't point to the properties directly since we don't
-    // own it.
     this.clientInfo.clear();
-    this.clientInfo.putAll(properties);
-
-    // sfSession must not be null if the connection is not closed.
-    sfSession.setClientInfo(properties);
+    Enumeration propList = properties.propertyNames();
+    while (propList.hasMoreElements())
+    {
+      String key = (String) propList.nextElement();
+      String value = properties.getProperty(key);
+      this.setClientInfo(key, value);
+    }
   }
 
   @Override
@@ -782,11 +785,32 @@ public class SnowflakeConnectionV1 implements Connection
     {
       throw new SQLClientInfoException();
     }
+    if (APPLICATION_NAME.equalsIgnoreCase(name))
+    {
+      if (APPLICATION_REGEX.matcher(value).find())
+      {
+        this.clientInfo.setProperty(name, value);
+        // sfSession must not be null if the connection is not closed.
+        sfSession.setClientInfo(name, value);
+      }
+      else
+      {
+        Map<String, ClientInfoStatus> failedProps = new HashMap<>();
+        failedProps.put(name, ClientInfoStatus.REASON_VALUE_INVALID);
+        throw new SQLClientInfoException("Application name must start with a letter and contain no special characters.",
+                                         SqlState.VALIDATION_FAILURE,
+                                         ErrorCode.INVALID_APP_NAME.getMessageCode(), failedProps);
+      }
+    }
+    else
+    {
+      Map<String, ClientInfoStatus> failedProps = new HashMap<>();
+      failedProps.put(name, ClientInfoStatus.REASON_UNKNOWN_PROPERTY);
+      throw new SQLClientInfoException("The only allowable value is application name.",
+                                       SqlState.INVALID_PARAMETER_VALUE,
+                                       ErrorCode.INVALID_PARAMETER_VALUE.getMessageCode(), failedProps);
 
-    this.clientInfo.setProperty(name, value);
-
-    // sfSession must not be null if the connection is not closed.
-    sfSession.setClientInfo(name, value);
+    }
   }
 
   @Override

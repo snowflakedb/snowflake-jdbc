@@ -24,6 +24,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLClientInfoException;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.sql.SQLWarning;
@@ -230,13 +231,20 @@ public class ConnectionIT extends BaseJDBCTest
     Properties clientInfo = new Properties();
     clientInfo.setProperty("name", "Peter");
     clientInfo.setProperty("description", "SNOWFLAKE JDBC");
-
-    con.setClientInfo(clientInfo);
-    con.setClientInfo("clinetinfoA", "valueA");
+    try
+    {
+      con.setClientInfo(clientInfo);
+      fail("setClientInfo should fail when properties other than application are set.");
+    }
+    catch (SQLClientInfoException e)
+    {
+      assertEquals(200047, e.getErrorCode());
+    }
+    con.setClientInfo("ApplicationName", "valueA");
     Properties ci = con.getClientInfo();
-    assertEquals(3, ci.size());
-    String name = con.getClientInfo("name");
-    assertEquals("Peter", name);
+    assertEquals(1, ci.size());
+    String name = con.getClientInfo("ApplicationName");
+    assertEquals("valueA", name);
     con.close();
   }
 
@@ -986,13 +994,31 @@ public class ConnectionIT extends BaseJDBCTest
       // no name or value validation is in place.
       // in fact, nop.
       Properties props = new Properties();
-      props.setProperty("name", "value");
+      props.setProperty("ApplicationName", "value");
+      props.setProperty("ApplicationName", "hello");
       connection.setClientInfo(props);
-      connection.setClientInfo("name2", "value2");
+      connection.setClientInfo("ApplicationName", "value2");
       Properties retProps = connection.getClientInfo();
-      assertEquals(2, retProps.size());
-      assertEquals("value", props.getProperty("name"));
-      assertEquals("value", connection.getClientInfo("name"));
+      assertEquals(1, retProps.size());
+      assertEquals("value2", retProps.getProperty("ApplicationName"));
+      try
+      {
+        connection.setClientInfo("name", "Meg");
+        fail("setClientInfo should fail on trying to set any value other than application name.");
+      }
+      catch (SQLClientInfoException e)
+      {
+        assertEquals(200047, e.getErrorCode());
+      }
+      try
+      {
+        connection.setClientInfo("ApplicationName", "cr@zy#Name");
+        fail("setClientInfo should fail when application name is invalid.");
+      }
+      catch (SQLClientInfoException e)
+      {
+        assertEquals(200056, e.getErrorCode());
+      }
     }
   }
 
