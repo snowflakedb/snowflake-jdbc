@@ -418,7 +418,7 @@ public class SFSession
         connectionPropertiesMap.get(SFSessionProperty.QUERY_TIMEOUT),
         connectionPropertiesMap.get(SFSessionProperty.TRACING)
     );
-    SessionUtil.LoginInput loginInput = new SessionUtil.LoginInput();
+    SFLoginInput loginInput = new SFLoginInput();
 
     loginInput.setServerUrl(
         (String) connectionPropertiesMap.get(SFSessionProperty.SERVER_URL))
@@ -459,7 +459,7 @@ public class SFSession
         .setServiceName(this.getServiceName())
         .setOCSPMode(getOCSPMode());
 
-    SessionUtil.LoginOutput loginOutput = SessionUtil.openSession(loginInput);
+    SFLoginOutput loginOutput = SessionUtil.openSession(loginInput);
     isClosed = false;
 
     if (loginOutput.isUpdatedByTokenRequest())
@@ -648,7 +648,7 @@ public class SFSession
       return;
     }
 
-    SessionUtil.LoginInput loginInput = new SessionUtil.LoginInput();
+    SFLoginInput loginInput = new SFLoginInput();
     loginInput.setServerUrl(
         (String) connectionPropertiesMap.get(SFSessionProperty.SERVER_URL))
         .setSessionToken(sessionToken)
@@ -660,7 +660,7 @@ public class SFSession
         .setRole(this.getRole())
         .setWarehouse(this.getWarehouse());
 
-    SessionUtil.LoginOutput loginOutput = SessionUtil.renewSession(loginInput);
+    SFLoginOutput loginOutput = SessionUtil.renewSession(loginInput);
 
     if (loginOutput.isUpdatedByTokenRequestIssue())
     {
@@ -698,7 +698,7 @@ public class SFSession
       return;
     }
 
-    SessionUtil.LoginInput loginInput = new SessionUtil.LoginInput();
+    SFLoginInput loginInput = new SFLoginInput();
     loginInput.setServerUrl(
         (String) connectionPropertiesMap.get(SFSessionProperty.SERVER_URL))
         .setSessionToken(sessionToken)
@@ -1219,9 +1219,9 @@ public class SFSession
    * @param loginOutput The login output to ose for this session
    */
   void setCurrentObjects(
-      SessionUtil.LoginInput loginInput, SessionUtil.LoginOutput loginOutput)
+      SFLoginInput loginInput, SFLoginOutput loginOutput)
   {
-    this.sessionToken = loginOutput.sessionToken; // used to run the commands.
+    this.sessionToken = loginOutput.getSessionToken(); // used to run the commands.
     runInternalCommand(
         "USE ROLE IDENTIFIER(?)", loginInput.getRole());
     runInternalCommand(
