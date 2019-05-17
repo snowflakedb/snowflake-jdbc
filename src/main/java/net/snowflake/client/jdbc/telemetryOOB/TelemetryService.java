@@ -7,6 +7,7 @@ import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.util.SecretDetector;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpRequestBase;
@@ -14,7 +15,6 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
 
-import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.security.cert.CertificateException;
@@ -50,6 +50,9 @@ public class TelemetryService
       };
 
   // Global parameters:
+
+  private static final String TELEMETRY_SERVER_URL_PATTERN
+      = "https://.*?\\.client-telemetry\\.snowflakecomputing\\.com/enqueue";
   /**
    * control which deployments are enabled:
    * the service skips all events for the disabled deployments
@@ -59,10 +62,12 @@ public class TelemetryService
       TELEMETRY_SERVER_DEPLOYMENT.DEV.name,
       TELEMETRY_SERVER_DEPLOYMENT.REG.name,
       TELEMETRY_SERVER_DEPLOYMENT.QA1.name,
-      TELEMETRY_SERVER_DEPLOYMENT.PREPROD2.name//,
-//      TELEMETRY_SERVER_DEPLOYMENT.PROD.name
-      // disable prod telemetry before release
+      TELEMETRY_SERVER_DEPLOYMENT.PREPROD2.name,
+      TELEMETRY_SERVER_DEPLOYMENT.PROD.name
   ));
+
+  // connection string for current connection
+  private String connStr = "";
 
   /**
    * @return return thread local instance
@@ -130,7 +135,7 @@ public class TelemetryService
    * control enable/disable the whole service:
    * disabled service will skip added events and uploading to the server
    */
-  private boolean enabled = false;
+  private boolean enabled = true;
 
   public void enable()
   {
@@ -173,7 +178,10 @@ public class TelemetryService
     return context;
   }
 
-  public void updateContext(Map<String, String> params)
+  /**
+   * Note: Only used for IT
+   */
+  public void updateContextForIT(Map<String, String> params)
   {
     Properties info = new Properties();
     for (String key : params.keySet())
@@ -208,37 +216,45 @@ public class TelemetryService
    * configure telemetry deployment based on connection url and info
    * Note: it is not thread-safe while connecting to different deployments
    * simultaneously.
-   *
-   * @param url     The connection URL
-   * @param account The account we are connecting to
+   *  @param url
+   * @param account
    */
   private void configureDeployment(final String url, final String account,
                                    final String port)
   {
-    // default value
-    TELEMETRY_SERVER_DEPLOYMENT deployment = TELEMETRY_SERVER_DEPLOYMENT.PROD;
-    if (url != null)
+    if (url != null && url.length()>0)
     {
-      if (url.contains("reg") || url.contains("local"))
+      connStr = url.toLowerCase();
+      // default value
+      TELEMETRY_SERVER_DEPLOYMENT deployment = TELEMETRY_SERVER_DEPLOYMENT.PROD;
+      if (url != null)
       {
-        deployment = TELEMETRY_SERVER_DEPLOYMENT.REG;
-        if ((port != null && port.compareTo("8080") == 0)
-            || url.contains("8080"))
+        if (url.contains("reg") || url.contains("local"))
         {
-          deployment = TELEMETRY_SERVER_DEPLOYMENT.DEV;
+          deployment = TELEMETRY_SERVER_DEPLOYMENT.REG;
+          if ((port != null && port.compareTo("8080") == 0)
+              || url.contains("8080"))
+          {
+            deployment = TELEMETRY_SERVER_DEPLOYMENT.DEV;
+          }
+        }
+        else if (url.contains("qa1") ||
+                 (account != null && account.contains("qa1")))
+        {
+          deployment = TELEMETRY_SERVER_DEPLOYMENT.QA1;
+        }
+        else if (url.contains("preprod2"))
+        {
+          deployment = TELEMETRY_SERVER_DEPLOYMENT.PREPROD2;
         }
       }
-      else if (url.contains("qa1") ||
-               (account != null && account.contains("qa1")))
+      if (deployment == null)
       {
-        deployment = TELEMETRY_SERVER_DEPLOYMENT.QA1;
+        // then the deployment should be in production
+        deployment = TELEMETRY_SERVER_DEPLOYMENT.PROD;
       }
-      else if (url.contains("preprod2"))
-      {
-        deployment = TELEMETRY_SERVER_DEPLOYMENT.PREPROD2;
-      }
+      this.setDeployment(deployment);
     }
-    this.setDeployment(deployment);
   }
 
   /**
@@ -264,13 +280,18 @@ public class TelemetryService
     this.batchSize = DEFAULT_BATCH_SIZE;
   }
 
+  public String getDriverConnectionString()
+  {
+    return this.connStr;
+  }
+
   private enum TELEMETRY_API
   {
-    SFCTEST("https://3mi9aq3m74.execute-api.us-west-2.amazonaws.com/sfctest/enqueue",
+    SFCTEST("https://sfctest.client-telemetry.snowflakecomputing.com/enqueue",
             "rRNY3EPNsB4U89XYuqsZKa7TSxb9QVX93yNM4tS6"),
-    SFCDEV("https://lol6l3j52m.execute-api.us-west-2.amazonaws.com/sfcdev/enqueue",
+    SFCDEV("https://sfcdev.client-telemetry.snowflakecomputing.com/enqueue",
            "kyTKLWpEZSaJnrzTZ63I96QXZHKsgfqbaGmAaIWf"),
-    US2("https://4yss82lml2.execute-api.us-east-1.amazonaws.com/us2/enqueue",
+    PROD("https://client-telemetry.snowflakecomputing.com/enqueue",
         "wLpEKqnLOW9tGNwTjab5N611YQApOb3t9xOnE1rX");
 
     private final String url;
@@ -278,9 +299,9 @@ public class TelemetryService
     // Note that this key is public available and only used as usage plan for throttling
     private final String apiKey;
 
-    TELEMETRY_API(String url, String key)
+    TELEMETRY_API(String host, String key)
     {
-      this.url = url;
+      this.url = host;
       this.apiKey = key;
     }
   }
@@ -291,10 +312,10 @@ public class TelemetryService
     REG("reg", TELEMETRY_API.SFCTEST),
     QA1("qa1", TELEMETRY_API.SFCDEV),
     PREPROD2("preprod2", TELEMETRY_API.SFCDEV),
-    PROD("prod", TELEMETRY_API.US2);
+    PROD("prod", TELEMETRY_API.PROD);
 
-    private final String name;
-    private final String url;
+    private String name;
+    private String url;
     private final String apiKey;
 
     TELEMETRY_SERVER_DEPLOYMENT(String name, TELEMETRY_API api)
@@ -317,6 +338,11 @@ public class TelemetryService
     public String getApiKey()
     {
       return apiKey;
+    }
+
+    public void setURL(String url)
+    {
+      this.url = url;
     }
   }
 
@@ -383,11 +409,18 @@ public class TelemetryService
   {
     TelemetryService instance;
     String payload;
+    RequestConfig config;
+    static final int TIMEOUT = 3000; // 3 second timeout limit
 
     public TelemetryUploader(TelemetryService _instance, String _payload)
     {
       instance = _instance;
       payload = _payload;
+      config = RequestConfig.custom()
+          .setConnectionRequestTimeout(TIMEOUT)
+          .setConnectionRequestTimeout(TIMEOUT)
+          .setSocketTimeout(TIMEOUT)
+          .build();
     }
 
     public void run()
@@ -417,16 +450,25 @@ public class TelemetryService
         if (!instance.isDeploymentEnabled())
         {
           // skip the disabled deployment
-          logger.debug("skip the disabled deployment: "
-                       + instance.serverDeployment.name);
+          logger.debug("skip the disabled deployment: ", instance.serverDeployment.name);
           return;
         }
-        HttpClient httpClient = HttpClientBuilder.create().build();
+
+        if (!instance.serverDeployment.url.matches(TELEMETRY_SERVER_URL_PATTERN))
+        {
+          // skip the disabled deployment
+          logger.debug("ignore invalid url: ", instance.serverDeployment.url);
+          return;
+        }
+
         HttpPost post = new HttpPost(instance.serverDeployment.url);
         post.setEntity(new StringEntity(payload));
         post.setHeader("Content-type", "application/json");
         post.setHeader("x-api-key", instance.serverDeployment.getApiKey());
-        // start a request with retry timeout = 10 secs
+        // start a request with retry timeout = 3 secs
+        HttpClient httpClient = HttpClientBuilder.create()
+            .setDefaultRequestConfig(config)
+            .build();
         response = httpClient.execute(post);
         int statusCode = response.getStatusLine().getStatusCode();
 
@@ -442,10 +484,11 @@ public class TelemetryService
 
         logger.debug(EntityUtils.toString(response.getEntity(), "UTF-8"));
       }
-      catch (IOException e)
+      catch (Exception e)
       {
+        // exception from here is always captured
         logger.debug(
-            "Telemetry request failed, IOException" +
+            "Telemetry request failed, Exception" +
             "response: {}, exception: {}", response, e.getMessage());
         success = false;
       }
@@ -518,7 +561,6 @@ public class TelemetryService
       TelemetryEvent.LogBuilder logBuilder = new TelemetryEvent.LogBuilder();
       JSONObject value = new JSONObject();
       value.put("request", request.toString());
-      value.put("retryTimeout", retryTimeout);
       value.put("injectSocketTimeout", injectSocketTimeout);
       value.put("canceling", canceling == null ? "null" : canceling.get());
       value.put("withoutCookies", withoutCookies);

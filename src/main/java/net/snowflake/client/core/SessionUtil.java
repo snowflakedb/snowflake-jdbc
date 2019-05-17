@@ -16,6 +16,7 @@ import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.jdbc.SnowflakeType;
 import net.snowflake.client.jdbc.SnowflakeUtil;
 import net.snowflake.client.log.ArgSupplier;
+import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.ClientAuthnDTO;
@@ -75,6 +76,8 @@ public class SessionUtil
   public static final String SF_HEADER_TOKEN_TAG = "Token";
   public static final String CLIENT_STORE_TEMPORARY_CREDENTIAL = "CLIENT_STORE_TEMPORARY_CREDENTIAL";
   public static final String SERVICE_NAME = "SERVICE_NAME";
+  public static final String CLIENT_IN_BAND_TELEMETRY_ENABLED = "CLIENT_TELEMETRY_ENABLED";
+  public static final String CLIENT_OUT_OF_BAND_TELEMETRY_ENABLED = "CLIENT_OUT_OF_BAND_TELEMETRY_ENABLED";
   public static final String CLIENT_RESULT_COLUMN_CASE_INSENSITIVE = "CLIENT_RESULT_COLUMN_CASE_INSENSITIVE";
   public static final String JDBC_RS_COLUMN_CASE_INSENSITIVE = "JDBC_RS_COLUMN_CASE_INSENSITIVE";
   public static final String CLIENT_RESULT_CHUNK_SIZE_JVM = "net.snowflake.jdbc.clientResultChunkSize";
@@ -140,7 +143,8 @@ public class SessionUtil
       "CLIENT_HONOR_CLIENT_TZ_FOR_TIMESTAMP_NTZ",
       "CLIENT_DISABLE_INCIDENTS",
       "CLIENT_SESSION_KEEP_ALIVE",
-      "CLIENT_TELEMETRY_ENABLED",
+      CLIENT_IN_BAND_TELEMETRY_ENABLED,
+      CLIENT_OUT_OF_BAND_TELEMETRY_ENABLED,
       CLIENT_STORE_TEMPORARY_CREDENTIAL,
       "JDBC_USE_JSON_PARSER",
       "AUTOCOMMIT",
@@ -1572,7 +1576,7 @@ public class SessionUtil
           session.setEnableCombineDescribe((boolean) entry.getValue());
         }
       }
-      else if ("CLIENT_TELEMETRY_ENABLED".equalsIgnoreCase(entry.getKey()))
+      else if (CLIENT_IN_BAND_TELEMETRY_ENABLED.equalsIgnoreCase(entry.getKey()))
       {
         if (session != null)
         {
@@ -1626,6 +1630,17 @@ public class SessionUtil
         if (session != null)
         {
           session.setClientPrefetchThreads((int) entry.getValue());
+        }
+      }
+      else if (CLIENT_OUT_OF_BAND_TELEMETRY_ENABLED.equalsIgnoreCase(entry.getKey()))
+      {
+        if ((boolean) entry.getValue())
+        {
+          TelemetryService.getInstance().enable();
+        }
+        else
+        {
+          TelemetryService.getInstance().disable();
         }
       }
     }
