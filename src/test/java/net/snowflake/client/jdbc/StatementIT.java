@@ -40,13 +40,6 @@ import static org.junit.Assert.fail;
  */
 public class StatementIT extends BaseJDBCTest
 {
-  private void enableMultiStmt(Connection connection) throws SQLException
-  {
-    Statement statement = connection.createStatement();
-    statement.execute("alter session set ENABLE_MULTISTATEMENT=true");
-    statement.close();
-  }
-
   @Rule
   public TemporaryFolder tmpFolder = new TemporaryFolder();
 
