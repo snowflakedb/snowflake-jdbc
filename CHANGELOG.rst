@@ -1,3 +1,14 @@
+**JDBC Driver 3.8.1**
+
+- \|SNOW-76035 | DML returns the number of updated rows in getUpdateCount() otherwise -1
+- \|SNOW-70751 | Connection.setClientInfo for JDBC to support ApplicationName
+- \|SNOW-74086 | Implement DatabaseMetaData.getFunctionColumns
+- \|SNOW-76375 | Implement PreparedStatement.getParameterMetaData(), ParameterMetaData.getParameterCount() ParameterMetaData.getParameterType(int)
+- \|SNOW-77987 | Revoked OCSP Response persists in in-memory cache
+- \|SNOW-67078 | executeBatch supports PUT and GET
+- \|SNOW-79011 | Ignore session is missing error when closing connection
+- \
+
 **JDBC Driver 3.8.0**
 
 - \|SNOW-75285|Remove sensitive data from URL for JDBC logging
