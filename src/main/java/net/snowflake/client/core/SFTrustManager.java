@@ -1687,7 +1687,7 @@ class SFTrustManager extends X509ExtendedTrustManager
     {
       ASN1ObjectIdentifier oid = (ASN1ObjectIdentifier) en.nextElement();
       Extension bcExt = bcExts.getExtension(oid);
-      if (bcExt.getExtnId() == Extension.authorityInfoAccess)
+      if (Extension.authorityInfoAccess.equals(bcExt.getExtnId()))
       {
         // OCSP URLS are included in authorityInfoAccess
         DLSequence seq = (DLSequence) bcExt.getParsedValue();
@@ -1697,7 +1697,7 @@ class SFTrustManager extends X509ExtendedTrustManager
           if (pairOfAsn.length == 2)
           {
             ASN1ObjectIdentifier key = (ASN1ObjectIdentifier) pairOfAsn[0];
-            if (key == OIDocsp)
+            if (OIDocsp.equals(key))
             {
               // ensure OCSP and not CRL
               GeneralName gn = GeneralName.getInstance(pairOfAsn[1]);
