@@ -1025,8 +1025,10 @@ public class SessionUtil
     }
     catch (SnowflakeSQLException ex)
     {
-      // ignore session expiration exception
-      if (ex.getErrorCode() != Constants.SESSION_EXPIRED_GS_CODE)
+      // ignore exceptions for session expiration exceptions and for
+      // sessions that no longer exist
+      if (ex.getErrorCode() != Constants.SESSION_EXPIRED_GS_CODE &&
+          ex.getErrorCode() != Constants.SESSION_GONE)
       {
         throw ex;
       }

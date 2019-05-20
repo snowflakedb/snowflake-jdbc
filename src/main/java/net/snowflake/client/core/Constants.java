@@ -9,7 +9,11 @@ package net.snowflake.client.core;
  */
 public final class Constants
 {
+  // Session expired error code as returned from Snowflake
   public static final int SESSION_EXPIRED_GS_CODE = 390112;
+
+  // Session gone error code as returned from Snowflake
+  public static final int SESSION_GONE = 390111;
 
   public enum OS
   {
