@@ -294,7 +294,6 @@
           <target>1.8</target>
           <compilerArgs>
             <arg>-Xlint:all,-path</arg>
-            <arg>-Werror</arg>
           </compilerArgs>
         </configuration>
       </plugin>
