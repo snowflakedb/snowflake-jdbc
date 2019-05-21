@@ -4,6 +4,8 @@
 package net.snowflake.client.jdbc;
 
 import com.google.common.base.Strings;
+import net.snowflake.client.ConditionalIgnoreRule;
+import net.snowflake.client.RunningOnTravisCI;
 import org.junit.Test;
 
 import java.sql.Connection;
@@ -1079,6 +1081,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
    * per input parameter.
    */
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
   public void testGetFunctionColumns() throws Exception
   {
     try (Connection connection = getConnection())
