@@ -216,13 +216,14 @@ public class TelemetryService
    * configure telemetry deployment based on connection url and info
    * Note: it is not thread-safe while connecting to different deployments
    * simultaneously.
-   *  @param url
+   *
+   * @param url
    * @param account
    */
   private void configureDeployment(final String url, final String account,
                                    final String port)
   {
-    if (url != null && url.length()>0)
+    if (url != null && url.length() > 0)
     {
       connStr = url.toLowerCase();
       // default value
@@ -292,7 +293,7 @@ public class TelemetryService
     SFCDEV("https://sfcdev.client-telemetry.snowflakecomputing.com/enqueue",
            "kyTKLWpEZSaJnrzTZ63I96QXZHKsgfqbaGmAaIWf"),
     PROD("https://client-telemetry.snowflakecomputing.com/enqueue",
-        "wLpEKqnLOW9tGNwTjab5N611YQApOb3t9xOnE1rX");
+         "wLpEKqnLOW9tGNwTjab5N611YQApOb3t9xOnE1rX");
 
     private final String url;
 
