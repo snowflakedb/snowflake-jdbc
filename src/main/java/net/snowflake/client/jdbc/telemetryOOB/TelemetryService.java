@@ -52,7 +52,7 @@ public class TelemetryService
   // Global parameters:
 
   private static final String TELEMETRY_SERVER_URL_PATTERN
-      = "https://.*?\\.client-telemetry\\.snowflakecomputing\\.com/enqueue";
+      = "https://(sfcdev\\.|sfctest\\.|)client-telemetry\\.snowflakecomputing\\.com/enqueue";
   /**
    * control which deployments are enabled:
    * the service skips all events for the disabled deployments
