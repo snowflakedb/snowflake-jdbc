@@ -101,7 +101,7 @@ class SnowflakeDatabaseMetaDataResultSet extends SnowflakeBaseResultSet
     this.nextRow = new Object[columnNames.size()];
   }
 
-  private SnowflakeDatabaseMetaDataResultSet(
+  protected SnowflakeDatabaseMetaDataResultSet(
       DBMetadataResultSetMetadata metadataType,
       Object[][] rows,
       Statement statement) throws SQLException

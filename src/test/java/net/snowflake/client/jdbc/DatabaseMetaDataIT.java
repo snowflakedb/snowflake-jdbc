@@ -22,6 +22,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static java.sql.DatabaseMetaData.procedureReturnsResult;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.junit.Assert.assertEquals;
@@ -38,6 +39,22 @@ import static org.junit.Assert.fail;
 public class DatabaseMetaDataIT extends BaseJDBCTest
 {
   private static Pattern VERSION_PATTERN = Pattern.compile("^(\\d+)\\.(\\d+)(?:\\.\\d+)+\\s*.*");
+  private static String PI_PROCEDURE = "create or replace procedure GETPI()\n" +
+                                       "    returns float not null\n" +
+                                       "    language javascript\n" +
+                                       "    as\n" +
+                                       "    $$\n" +
+                                       "    return 3.1415926;\n" +
+                                       "    $$\n" +
+                                       "    ;";
+  private static String STPROC1_PROCEDURE = "create or replace procedure stproc1(param1 float, param2 string)\n" +
+                                            "    returns table(retval varchar)\n" +
+                                            "    language javascript\n" +
+                                            "    as\n" +
+                                            "    $$\n" +
+                                            "    var sql_command = \"Hello, world!\"\n" +
+                                            "    $$\n" +
+                                            "    ;";
 
   @Test
   public void testGetConnection() throws SQLException
@@ -1026,7 +1043,6 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
     }
   }
 
-
   @Test
   public void testTypeInfo() throws SQLException
   {
@@ -1248,6 +1264,161 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
       assertEquals("", resultSet.getString("IS_NULLABLE"));
       assertEquals("TOTAL_ROWS_IN_TABLE() RETURN NUMBER", resultSet.getString("SPECIFIC_NAME"));
       assertFalse(resultSet.next());
+    }
+  }
+
+  @Test
+  public void testGetProcedures() throws SQLException
+  {
+    try (Connection connection = getConnection())
+    {
+      String database = connection.getCatalog();
+      String schema = connection.getSchema();
+
+      /* Create a procedure and put values into it */
+      connection.createStatement().execute(PI_PROCEDURE);
+      DatabaseMetaData metaData = connection.getMetaData();
+      /* Call getFunctionColumns on FUNC111 and since there's no parameter name, get all rows back */
+      ResultSet resultSet = metaData.getProcedures(database, schema, "GETPI");
+      resultSet.next();
+      assertEquals("GETPI", resultSet.getString("PROCEDURE_NAME"));
+      assertEquals(database, resultSet.getString("PROCEDURE_CAT"));
+      assertEquals(schema, resultSet.getString("PROCEDURE_SCHEM"));
+      assertEquals("GETPI", resultSet.getString("PROCEDURE_NAME"));
+      assertEquals("user-defined procedure", resultSet.getString("REMARKS"));
+      assertEquals(procedureReturnsResult, resultSet.getShort("PROCEDURE_TYPE"));
+      assertEquals("GETPI() RETURN FLOAT", resultSet.getString("SPECIFIC_NAME"));
+      connection.createStatement().execute("drop procedure if exists GETPI()");
+    }
+  }
+
+  @Test
+  public void testGetProcedureColumns() throws Exception
+  {
+    try (Connection connection = getConnection())
+    {
+      String database = connection.getCatalog();
+      String schema = connection.getSchema();
+      connection.createStatement().execute(PI_PROCEDURE);
+      connection.createStatement().execute(STPROC1_PROCEDURE);
+      DatabaseMetaData metaData = connection.getMetaData();
+      /* Call getProcedureColumns with no parameters for procedure name or column. This should return  all procedures
+       in the current database and schema. It will return all rows as well (1 row per result and 1 row per parameter
+       for each procedure) */
+      ResultSet resultSet = metaData.getProcedureColumns(database, schema, "GETPI", "%");
+      resultSet.next();
+      assertEquals(database, resultSet.getString("PROCEDURE_CAT"));
+      assertEquals(schema, resultSet.getString("PROCEDURE_SCHEM"));
+      assertEquals("GETPI", resultSet.getString("PROCEDURE_NAME"));
+      assertEquals("", resultSet.getString("COLUMN_NAME"));
+      assertEquals(DatabaseMetaData.procedureColumnReturn, resultSet.getInt("COLUMN_TYPE"));
+      assertEquals(Types.FLOAT, resultSet.getInt("DATA_TYPE"));
+      assertEquals("FLOAT", resultSet.getString("TYPE_NAME"));
+      assertEquals(38, resultSet.getInt("PRECISION"));
+      // length column is not supported and will always be 0
+      assertEquals(0, resultSet.getInt("LENGTH"));
+      assertEquals(0, resultSet.getShort("SCALE"));
+      // radix column is not supported and will always be default of 10 (assumes base 10 system)
+      assertEquals(10, resultSet.getInt("RADIX"));
+      // nullable column is not supported and always returns NullableUnknown
+      assertEquals(DatabaseMetaData.procedureNoNulls, resultSet.getInt("NULLABLE"));
+      assertEquals("user-defined procedure", resultSet.getString("REMARKS"));
+      assertEquals(null, resultSet.getString("COLUMN_DEF"));
+      assertEquals(0, resultSet.getInt("SQL_DATA_TYPE"));
+      assertEquals(0, resultSet.getInt("SQL_DATETIME_SUB"));
+      // char octet length column is not supported and always returns 0
+      assertEquals(0, resultSet.getInt("CHAR_OCTET_LENGTH"));
+      assertEquals(0, resultSet.getInt("ORDINAL_POSITION"));
+      // is_nullable column is not supported and always returns empty string
+      assertEquals("NO", resultSet.getString("IS_NULLABLE"));
+      assertEquals("GETPI() RETURN FLOAT", resultSet.getString("SPECIFIC_NAME"));
+      resultSet = metaData.getProcedureColumns(database, schema, "STPROC1", "%");
+      resultSet.next();
+      assertEquals(database, resultSet.getString("PROCEDURE_CAT"));
+      assertEquals(schema, resultSet.getString("PROCEDURE_SCHEM"));
+      assertEquals("STPROC1", resultSet.getString("PROCEDURE_NAME"));
+      assertEquals("", resultSet.getString("COLUMN_NAME"));
+      assertEquals(DatabaseMetaData.procedureColumnOut, resultSet.getInt("COLUMN_TYPE"));
+      assertEquals(Types.OTHER, resultSet.getInt("DATA_TYPE"));
+      assertEquals("TABLE (RETVAL VARCHAR)", resultSet.getString("TYPE_NAME"));
+      assertEquals(0, resultSet.getInt("PRECISION"));
+      // length column is not supported and will always be 0
+      assertEquals(0, resultSet.getInt("LENGTH"));
+      assertEquals(0, resultSet.getShort("SCALE"));
+      // radix column is not supported and will always be default of 10 (assumes base 10 system)
+      assertEquals(10, resultSet.getInt("RADIX"));
+      // nullable column is not supported and always returns NullableUnknown
+      assertEquals(DatabaseMetaData.procedureNullable, resultSet.getInt("NULLABLE"));
+      assertEquals("user-defined procedure", resultSet.getString("REMARKS"));
+      assertEquals(null, resultSet.getString("COLUMN_DEF"));
+      assertEquals(0, resultSet.getInt("SQL_DATA_TYPE"));
+      assertEquals(0, resultSet.getInt("SQL_DATETIME_SUB"));
+      // char octet length column is not supported and always returns 0
+      assertEquals(0, resultSet.getInt("CHAR_OCTET_LENGTH"));
+      assertEquals(0, resultSet.getInt("ORDINAL_POSITION"));
+      // is_nullable column is not supported and always returns empty string
+      assertEquals("YES", resultSet.getString("IS_NULLABLE"));
+      assertEquals("STPROC1(FLOAT, VARCHAR) RETURN TABLE (RETVAL VARCHAR)", resultSet.getString("SPECIFIC_NAME"));
+      resultSet.next();
+      assertEquals(database, resultSet.getString("PROCEDURE_CAT"));
+      assertEquals(schema, resultSet.getString("PROCEDURE_SCHEM"));
+      assertEquals("STPROC1", resultSet.getString("PROCEDURE_NAME"));
+      assertEquals("PARAM1", resultSet.getString("COLUMN_NAME"));
+      assertEquals(DatabaseMetaData.procedureColumnIn, resultSet.getInt("COLUMN_TYPE"));
+      assertEquals(Types.FLOAT, resultSet.getInt("DATA_TYPE"));
+      assertEquals("FLOAT", resultSet.getString("TYPE_NAME"));
+      assertEquals(38, resultSet.getInt("PRECISION"));
+      // length column is not supported and will always be 0
+      assertEquals(0, resultSet.getInt("LENGTH"));
+      assertEquals(0, resultSet.getShort("SCALE"));
+      // radix column is not supported and will always be default of 10 (assumes base 10 system)
+      assertEquals(10, resultSet.getInt("RADIX"));
+      // nullable column is not supported and always returns NullableUnknown
+      assertEquals(DatabaseMetaData.procedureNullableUnknown, resultSet.getInt("NULLABLE"));
+      assertEquals("user-defined procedure", resultSet.getString("REMARKS"));
+      assertEquals(null, resultSet.getString("COLUMN_DEF"));
+      assertEquals(0, resultSet.getInt("SQL_DATA_TYPE"));
+      assertEquals(0, resultSet.getInt("SQL_DATETIME_SUB"));
+      // char octet length column is not supported and always returns 0
+      assertEquals(0, resultSet.getInt("CHAR_OCTET_LENGTH"));
+      assertEquals(1, resultSet.getInt("ORDINAL_POSITION"));
+      // is_nullable column is not supported and always returns empty string
+      assertEquals("", resultSet.getString("IS_NULLABLE"));
+      assertEquals("STPROC1(FLOAT, VARCHAR) RETURN TABLE (RETVAL VARCHAR)", resultSet.getString("SPECIFIC_NAME"));
+      resultSet.next();
+      assertEquals(database, resultSet.getString("PROCEDURE_CAT"));
+      assertEquals(schema, resultSet.getString("PROCEDURE_SCHEM"));
+      assertEquals("STPROC1", resultSet.getString("PROCEDURE_NAME"));
+      assertEquals("PARAM2", resultSet.getString("COLUMN_NAME"));
+      assertEquals(DatabaseMetaData.procedureColumnIn, resultSet.getInt("COLUMN_TYPE"));
+      assertEquals(Types.VARCHAR, resultSet.getInt("DATA_TYPE"));
+      assertEquals("VARCHAR", resultSet.getString("TYPE_NAME"));
+      assertEquals(0, resultSet.getInt("PRECISION"));
+      // length column is not supported and will always be 0
+      assertEquals(0, resultSet.getInt("LENGTH"));
+      assertEquals(0, resultSet.getShort("SCALE"));
+      // radix column is not supported and will always be default of 10 (assumes base 10 system)
+      assertEquals(10, resultSet.getInt("RADIX"));
+      // nullable column is not supported and always returns NullableUnknown
+      assertEquals(DatabaseMetaData.procedureNullableUnknown, resultSet.getInt("NULLABLE"));
+      assertEquals("user-defined procedure", resultSet.getString("REMARKS"));
+      assertEquals(null, resultSet.getString("COLUMN_DEF"));
+      assertEquals(0, resultSet.getInt("SQL_DATA_TYPE"));
+      assertEquals(0, resultSet.getInt("SQL_DATETIME_SUB"));
+      // char octet length column is not supported and always returns 0
+      assertEquals(16777216, resultSet.getInt("CHAR_OCTET_LENGTH"));
+      assertEquals(2, resultSet.getInt("ORDINAL_POSITION"));
+      // is_nullable column is not supported and always returns empty string
+      assertEquals("", resultSet.getString("IS_NULLABLE"));
+      assertEquals("STPROC1(FLOAT, VARCHAR) RETURN TABLE (RETVAL VARCHAR)", resultSet.getString("SPECIFIC_NAME"));
+      assertFalse(resultSet.next());
+      /* Call getProcedureColumns with specified procedure name and column name. This will return 2 rows: 1 for the
+      result values of the procedure, and 1 for the parameter values for the specified parameter. */
+      resultSet = metaData.getProcedureColumns(null, null, "stproc1", "param2");
+      assertEquals(20, resultSet.getMetaData().getColumnCount());
+      assertEquals(2, getSizeOfResultSet(resultSet));
+      connection.createStatement().execute("drop procedure if exists stproc1(float, string)");
+      connection.createStatement().execute("drop procedure if exists GETPI()");
     }
   }
 
