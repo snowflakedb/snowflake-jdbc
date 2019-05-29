@@ -133,8 +133,6 @@ public class SessionUtil
       "CLIENT_TIMESTAMP_TYPE_MAPPING",
       SERVICE_NAME));
   private static final Set<String> INT_PARAMS = new HashSet<>(Arrays.asList(
-      "CLIENT_RESULT_PREFETCH_SLOTS",
-      "CLIENT_RESULT_PREFETCH_THREADS",
       CLIENT_PREFETCH_THREADS,
       CLIENT_MEMORY_LIMIT,
       CLIENT_RESULT_CHUNK_SIZE,
