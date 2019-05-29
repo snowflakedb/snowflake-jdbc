@@ -560,8 +560,6 @@ public class ResultUtil
     map.put("TIMESTAMP_TZ_OUTPUT_FORMAT", "");
     map.put("DATE_OUTPUT_FORMAT", "YYYY-MM-DD");
     map.put("TIME_OUTPUT_FORMAT", "HH24:MI:SS");
-    map.put("CLIENT_RESULT_PREFETCH_SLOTS", 2);
-    map.put("CLIENT_RESULT_PREFETCH_THREADS", 1);
     map.put("CLIENT_HONOR_CLIENT_TZ_FOR_TIMESTAMP_NTZ", Boolean.TRUE);
     map.put("CLIENT_DISABLE_INCIDENTS", Boolean.TRUE);
     map.put("BINARY_OUTPUT_FORMAT", "HEX");
