@@ -3035,6 +3035,209 @@ public class SnowflakeDriverIT extends BaseJDBCTest
   }
 
   /**
+   * Test NULL in LIMIT and OFFSET
+   * with Snow-76376 enabled this should be handled as without LIMIT and OFFSET
+   */
+  @Test
+  public void testSnow76376() throws Throwable
+  {
+    Connection connection = null;
+    PreparedStatement preparedStatement = null;
+    Statement regularStatement = null;
+    ResultSet resultSet = null;
+
+    try
+    {
+      connection = getConnection();
+      regularStatement = connection.createStatement();
+      regularStatement.execute(
+          "create or replace table t(a int) as select * from values" +
+          "(1),(2),(8),(10)");
+
+      preparedStatement = connection.prepareStatement("SELECT * FROM t " +
+                                                      "ORDER BY a LIMIT " +
+                                                      "? OFFSET ?");
+
+      ////////////////////////////
+      // both NULL
+      preparedStatement.setNull(1, 4); //int
+      preparedStatement.setNull(2, 4); //int
+
+      if (preparedStatement.execute())
+      {
+        resultSet = preparedStatement.getResultSet();
+        resultSet.next();
+        assertEquals(1, resultSet.getInt(1));
+        resultSet.next();
+        assertEquals(2, resultSet.getInt(1));
+        resultSet.next();
+        assertEquals(8, resultSet.getInt(1));
+        resultSet.next();
+        assertEquals(10, resultSet.getInt(1));
+      }
+      else
+      {
+        fail("Could not execute preparedStatement with OFFSET and LIMIT set " +
+             "to NULL");
+      }
+
+      ////////////////////////////
+      // both empty string
+      preparedStatement.setString(1, "");
+      preparedStatement.setString(2, "");
+
+      if (preparedStatement.execute())
+      {
+        resultSet = preparedStatement.getResultSet();
+        resultSet.next();
+        assertEquals(1, resultSet.getInt(1));
+        resultSet.next();
+        assertEquals(2, resultSet.getInt(1));
+        resultSet.next();
+        assertEquals(8, resultSet.getInt(1));
+        resultSet.next();
+        assertEquals(10, resultSet.getInt(1));
+      }
+      else
+      {
+        fail("Could not execute preparedStatement with OFFSET and LIMIT set " +
+             "to empty string");
+      }
+
+      ////////////////////////////
+      // only LIMIT NULL
+      preparedStatement.setNull(1, 4); //int
+      preparedStatement.setInt(2, 2);
+
+      if (preparedStatement.execute())
+      {
+        resultSet = preparedStatement.getResultSet();
+        resultSet.next();
+        assertEquals(8, resultSet.getInt(1));
+        resultSet.next();
+        assertEquals(10, resultSet.getInt(1));
+      }
+      else
+      {
+        fail("Could not execute preparedStatement with LIMIT set to NULL");
+      }
+
+      ////////////////////////////
+      // only LIMIT empty string
+      preparedStatement.setString(1, "");
+      preparedStatement.setInt(2, 2);
+
+      if (preparedStatement.execute())
+      {
+        resultSet = preparedStatement.getResultSet();
+        resultSet.next();
+        assertEquals(8, resultSet.getInt(1));
+        resultSet.next();
+        assertEquals(10, resultSet.getInt(1));
+      }
+      else
+      {
+        fail("Could not execute preparedStatement with LIMIT set to empty " +
+             "string");
+      }
+
+      ////////////////////////////
+      // only OFFSET NULL
+      preparedStatement.setInt(1, 3); //int
+      preparedStatement.setNull(2, 4);
+
+      if (preparedStatement.execute())
+      {
+        resultSet = preparedStatement.getResultSet();
+        resultSet.next();
+        assertEquals(1, resultSet.getInt(1));
+        resultSet.next();
+        assertEquals(2, resultSet.getInt(1));
+        resultSet.next();
+        assertEquals(8, resultSet.getInt(1));
+      }
+      else
+      {
+        fail("Could not execute preparedStatement with OFFSET set to NULL");
+      }
+
+      ////////////////////////////
+      // only OFFSET empty string
+      preparedStatement.setInt(1, 3); //int
+      preparedStatement.setNull(2, 4);
+
+      if (preparedStatement.execute())
+      {
+        resultSet = preparedStatement.getResultSet();
+        resultSet.next();
+        assertEquals(1, resultSet.getInt(1));
+        resultSet.next();
+        assertEquals(2, resultSet.getInt(1));
+        resultSet.next();
+        assertEquals(8, resultSet.getInt(1));
+      }
+      else
+      {
+        fail("Could not execute preparedStatement with OFFSET set to empty " +
+             "string");
+      }
+
+
+      ////////////////////////////
+      // OFFSET and LIMIT NULL for constant select query
+      preparedStatement = connection.prepareStatement("SELECT 1 FROM t " +
+                                                      "ORDER BY a LIMIT " +
+                                                      "? OFFSET ?");
+      preparedStatement.setNull(1, 4); //int
+      preparedStatement.setNull(2, 4); //int
+      if (preparedStatement.execute())
+      {
+        resultSet = preparedStatement.getResultSet();
+        for (int i = 0; i < 4; i++)
+        {
+          resultSet.next();
+          assertEquals(1, resultSet.getInt(1));
+        }
+      }
+      else
+      {
+        fail("Could not execute constant preparedStatement with OFFSET and " +
+             "LIMIT set to NULL");
+      }
+
+      ////////////////////////////
+      // OFFSET and LIMIT empty string for constant select query
+      preparedStatement.setString(1, ""); //int
+      preparedStatement.setString(2, ""); //int
+      if (preparedStatement.execute())
+      {
+        resultSet = preparedStatement.getResultSet();
+        for (int i = 0; i < 4; i++)
+        {
+          resultSet.next();
+          assertEquals(1, resultSet.getInt(1));
+        }
+      }
+      else
+      {
+        fail("Could not execute constant preparedStatement with OFFSET and " +
+             "LIMIT set to empty string");
+      }
+
+    }
+    finally
+    {
+      if (regularStatement != null)
+      {
+        regularStatement.execute("drop table t");
+        regularStatement.close();
+      }
+
+      closeSQLObjects(resultSet, preparedStatement, connection);
+    }
+  }
+
+  /**
    * SNOW-31104 improves the type inference for string constants that need to
    * be coerced to numbers.
    * Verify that the same improvements work when the constant is a bind ref.
