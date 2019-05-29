@@ -97,10 +97,16 @@ public enum SnowflakeType
     {
       return retval;
     }
+    // Trim all whitespace and extra information off typeName so it can be interpreted by switch statement. Ex: turns
+    // "NUMBER(38,0)" -> "NUMBER" and "FLOAT NOT NULL" ->" FLOAT"
     String typeNameTrimmed = typeName.trim();
     if (typeNameTrimmed.contains("("))
     {
       typeNameTrimmed = typeNameTrimmed.substring(0, typeNameTrimmed.indexOf('('));
+    }
+    if (typeNameTrimmed.contains(" "))
+    {
+      typeNameTrimmed = typeNameTrimmed.substring(0, typeNameTrimmed.indexOf(' '));
     }
     switch (typeNameTrimmed.toLowerCase())
     {

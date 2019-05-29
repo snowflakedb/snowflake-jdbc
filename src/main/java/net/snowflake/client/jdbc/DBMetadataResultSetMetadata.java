@@ -111,6 +111,28 @@ public enum DBMetadataResultSetMetadata
                     Types.VARCHAR, Types.INTEGER, Types.INTEGER, Types.VARCHAR,
                     Types.VARCHAR)),
 
+  GET_PROCEDURES(
+      Arrays.asList("PROCEDURE_CAT", "PROCEDURE_SCHEM", "PROCEDURE_NAME",
+                    "REMARKS", "PROCEDURE_TYPE", "SPECIFIC_NAME"),
+      Arrays.asList("TEXT", "TEXT", "TEXT", "TEXT",
+                    "SHORT", "TEXT"),
+      Arrays.asList(Types.VARCHAR, Types.VARCHAR, Types.VARCHAR,
+                    Types.VARCHAR, Types.SMALLINT, Types.VARCHAR)),
+  GET_PROCEDURE_COLUMNS(
+      Arrays.asList("PROCEDURE_CAT", "PROCEDURE_SCHEM", "PROCEDURE_NAME",
+                    "COLUMN_NAME", "COLUMN_TYPE", "DATA_TYPE", "TYPE_NAME",
+                    "PRECISION", "LENGTH", "SCALE", "RADIX", "NULLABLE",
+                    "REMARKS", "COLUMN_DEF", "SQL_DATA_TYPE", "SQL_DATETIME_SUB",
+                    "CHAR_OCTET_LENGTH", "ORDINAL_POSITION", "IS_NULLABLE",
+                    "SPECIFIC_NAME"),
+      Arrays.asList("TEXT", "TEXT", "TEXT", "TEXT", "SHORT", "INTEGER", "TEXT",
+                    "INTEGER", "INTEGER", "SHORT", "SHORT", "SHORT", "TEXT",
+                    "TEXT", "INTEGER", "INTEGER", "INTEGER", "INTEGER", "TEXT", "TEXT"),
+      Arrays.asList(Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR,
+                    Types.SMALLINT, Types.INTEGER, Types.VARCHAR, Types.INTEGER,
+                    Types.INTEGER, Types.SMALLINT, Types.SMALLINT, Types.SMALLINT,
+                    Types.VARCHAR, Types.VARCHAR, Types.INTEGER, Types.INTEGER,
+                    Types.INTEGER, Types.INTEGER, Types.VARCHAR, Types.VARCHAR)),
   ;
 
 

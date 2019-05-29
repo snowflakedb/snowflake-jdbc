@@ -38,6 +38,8 @@ import static net.snowflake.client.jdbc.DBMetadataResultSetMetadata.GET_FOREIGN_
 import static net.snowflake.client.jdbc.DBMetadataResultSetMetadata.GET_FUNCTIONS;
 import static net.snowflake.client.jdbc.DBMetadataResultSetMetadata.GET_FUNCTION_COLUMNS;
 import static net.snowflake.client.jdbc.DBMetadataResultSetMetadata.GET_PRIMARY_KEYS;
+import static net.snowflake.client.jdbc.DBMetadataResultSetMetadata.GET_PROCEDURES;
+import static net.snowflake.client.jdbc.DBMetadataResultSetMetadata.GET_PROCEDURE_COLUMNS;
 import static net.snowflake.client.jdbc.DBMetadataResultSetMetadata.GET_SCHEMAS;
 import static net.snowflake.client.jdbc.DBMetadataResultSetMetadata.GET_TABLES;
 import static net.snowflake.client.jdbc.SnowflakeType.convertStringToType;
@@ -1136,23 +1138,63 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
                                  String procedureNamePattern)
   throws SQLException
   {
+    raiseSQLExceptionIfConnectionIsClosed();
+    Statement statement = connection.createStatement();
     logger.debug(
         "public ResultSet getProcedures(String catalog, "
         + "String schemaPattern,String procedureNamePattern)");
-    raiseSQLExceptionIfConnectionIsClosed();
-    Statement statement = connection.createStatement();
 
-    // Return empty result set since we don't have primary keys yet
-    return new SnowflakeDatabaseMetaDataResultSet(
-        Arrays.asList("PROCEDURE_CAT", "PROCEDURE_SCHEM", "PROCEDURE_NAME",
-                      "REMARKS", "PROCEDURE_TYPE", "SPECIFIC_NAME"),
-        Arrays.asList("TEXT", "TEXT", "TEXT", "TEXT",
-                      "SHORT", "TEXT"),
-        Arrays.asList(Types.VARCHAR, Types.VARCHAR, Types.VARCHAR,
-                      Types.VARCHAR, Types.SMALLINT, Types.VARCHAR),
-        new Object[][]
-            {
-            }, statement);
+    String showProcedureCommand = getFirstResultSetCommand(catalog, schemaPattern, procedureNamePattern, "procedures");
+
+    if(showProcedureCommand.isEmpty())
+    {
+      return SnowflakeDatabaseMetaDataResultSet.getEmptyResultSet(GET_PROCEDURES, statement);
+    }
+
+    final Pattern compiledSchemaPattern = Wildcard.toRegexPattern(schemaPattern, true);
+    final Pattern compiledProcedurePattern = Wildcard.toRegexPattern(procedureNamePattern, true);
+
+    ResultSet resultSet = executeAndReturnEmptyResultIfNotFound(statement, showProcedureCommand, GET_PROCEDURES);
+
+    return new SnowflakeDatabaseMetaDataQueryResultSet(GET_PROCEDURES, resultSet, statement)
+    {
+      public boolean next() throws SQLException
+      {
+        logger.debug("public boolean next()");
+        incrementRow();
+
+        // iterate throw the show table result until we find an entry
+        // that matches the table name
+        while (showObjectResultSet.next())
+        {
+          String catalogName = showObjectResultSet.getString("catalog_name");
+          String schemaName = showObjectResultSet.getString("schema_name");
+          String procedureName = showObjectResultSet.getString("name");
+          String remarks = showObjectResultSet.getString("description");
+          String specificName = showObjectResultSet.getString("arguments");
+          short procedureType = procedureReturnsResult;
+          if ((compiledProcedurePattern == null
+               || compiledProcedurePattern.matcher(procedureName).matches())
+              && (compiledSchemaPattern == null
+                  || compiledSchemaPattern.matcher(schemaName).matches()))
+          {
+            logger.debug(
+                "Found a matched function:" + schemaName
+                + "." + procedureName);
+
+            nextRow[0] = catalogName;
+            nextRow[1] = schemaName;
+            nextRow[2] = procedureName;
+            nextRow[3] = remarks;
+            nextRow[4] = procedureType;
+            nextRow[5] = specificName;
+            return true;
+          }
+        }
+        close();
+        return false;
+      }
+    };
   }
 
   @Override
@@ -1167,25 +1209,176 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
         + "String columnNamePattern)");
     raiseSQLExceptionIfConnectionIsClosed();
     Statement statement = connection.createStatement();
-    //throw new SQLFeatureNotSupportedException();
-    return new SnowflakeDatabaseMetaDataResultSet(
-        Arrays.asList("PROCEDURE_CAT", "PROCEDURE_SCHEM", "PROCEDURE_NAME",
-                      "COLUMN_NAME", "COLUMN_TYPE", "DATA_TYPE", "TYPE_NAME",
-                      "PRECISION", "LENGTH", "SCALE", "RADIX", "NULLABLE",
-                      "REMARKS", "COLUMN_DEF", "SQL_DATA_TYPE", "SQL_DATETIME_SUB",
-                      "CHAR_OCTET_LENGTH", "ORDINAL_POSITION", "IS_NULLABLE",
-                      "SPECIFIC_NAME"),
-        Arrays.asList("TEXT", "TEXT", "TEXT", "TEXT", "SHORT", "INTEGER", "TEXT",
-                      "INTEGER", "INTEGER", "SHORT", "SHORT", "SHORT", "TEXT",
-                      "TEXT", "INTEGER", "INTEGER", "INTEGER", "INTEGER", "TEXT", "TEXT"),
-        Arrays.asList(Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR,
-                      Types.SMALLINT, Types.INTEGER, Types.VARCHAR, Types.INTEGER,
-                      Types.INTEGER, Types.SMALLINT, Types.SMALLINT, Types.SMALLINT,
-                      Types.VARCHAR, Types.VARCHAR, Types.INTEGER, Types.INTEGER,
-                      Types.INTEGER, Types.INTEGER, Types.VARCHAR, Types.VARCHAR),
-        new Object[][]{},
-        statement
-    );
+    boolean addAllRows = false;
+
+    String showProcedureCommand = getFirstResultSetCommand(catalog, schemaPattern, procedureNamePattern, "procedures");
+    if (showProcedureCommand.isEmpty())
+    {
+      return SnowflakeDatabaseMetaDataResultSet.getEmptyResultSet(GET_PROCEDURE_COLUMNS, statement);
+    }
+
+    if (columnNamePattern == null || columnNamePattern.isEmpty() || columnNamePattern.trim().equals("%")
+        || columnNamePattern.trim().equals(".*"))
+    {
+      addAllRows = true;
+    }
+
+    ResultSet resultSetStepOne = executeAndReturnEmptyResultIfNotFound(statement, showProcedureCommand,
+                                                                       GET_PROCEDURE_COLUMNS);
+    ArrayList<Object[]> rows = new ArrayList<Object[]>();
+    while (resultSetStepOne.next())
+    {
+      String procedureNameUnparsed = resultSetStepOne.getString("arguments").trim();
+      String procedureNameNoArgs = resultSetStepOne.getString("name");
+      String showProcedureColCommand = getSecondResultSetCommand(catalog, schemaPattern, procedureNameUnparsed,
+                                                                 "procedure");
+
+      ResultSet resultSetStepTwo = executeAndReturnEmptyResultIfNotFound(statement, showProcedureColCommand,
+                                                                         GET_PROCEDURE_COLUMNS);
+      resultSetStepTwo.next();
+      String[] params = parseParams(resultSetStepTwo.getString("value"));
+      resultSetStepTwo.next();
+      String res = resultSetStepTwo.getString("value");
+      String paramNames[] = new String[params.length / 2 + 1];
+      String paramTypes[] = new String[params.length / 2 + 1];
+      if (params.length > 1)
+      {
+        for (int i = 0; i < params.length; i++)
+        {
+          if (i % 2 == 0)
+          {
+            paramNames[i / 2 + 1] = params[i];
+          }
+          else
+          {
+            paramTypes[i / 2 + 1] = params[i];
+          }
+        }
+      }
+      paramNames[0] = "";
+      paramTypes[0] = res;
+      for (int i = 0; i < paramNames.length; i++)
+      {
+        // if it's the 1st in for loop, it's the result
+        if (i == 0 || paramNames[i].equalsIgnoreCase(columnNamePattern) || addAllRows)
+        {
+          Object[] nextRow = new Object[20];
+          // add a row to resultSet
+          nextRow[0] = catalog; //catalog. Can be null.
+          nextRow[1] = schemaPattern; //schema. Can be null.
+          nextRow[2] = procedureNameNoArgs; //procedure name
+          nextRow[3] = paramNames[i]; //column/parameter name
+          // column type
+          if (i == 0)
+          {
+            if (paramTypes[i].substring(0, 5).equalsIgnoreCase("table"))
+            {
+              nextRow[4] = procedureColumnOut;
+            }
+            else
+            {
+              nextRow[4] = procedureColumnReturn;
+            }
+          }
+          else
+          {
+            nextRow[4] = procedureColumnIn; //kind of column/parameter
+          }
+          String typeName = paramTypes[i];
+          String typeNameTrimmed = typeName;
+          // don't include nullability in type name, such as NUMBER NOT NULL. Just include NUMBER.
+          if (typeName.contains(" NOT NULL"))
+          {
+            typeNameTrimmed = typeName.substring(0, typeName.indexOf(' '));
+          }
+          int type = convertStringToType(typeName);
+          nextRow[5] = type; // data type
+          nextRow[6] = typeNameTrimmed; //type name
+          // precision and scale. Values only exist for numbers
+          int precision = 38;
+          short scale = 0;
+          if (type < 10)
+          {
+            if (typeName.contains("(") && typeName.contains(")"))
+            {
+              precision =
+                  Integer.parseInt(typeName.substring(typeName.indexOf('(') + 1, typeName.indexOf(',')));
+              scale =
+                  Short.parseShort(typeName.substring(typeName.indexOf(',') + 1, typeName.indexOf(')')));
+              nextRow[7] = precision;
+              nextRow[9] = scale;
+            }
+            else
+            {
+              nextRow[7] = precision;
+              nextRow[9] = scale;
+            }
+          }
+          else
+          {
+            nextRow[7] = 0;
+            nextRow[9] = null;
+          }
+          nextRow[8] = 0; //length in bytes. not supported
+          nextRow[10] = 10; //radix. Probably 10 is default, but unknown.
+          // if type specifies "not null", no null values are allowed.
+          if (typeName.toLowerCase().contains("not null"))
+          {
+            nextRow[11] = procedureNoNulls;
+            nextRow[18] = "NO";
+          }
+          // if the type is a return value (only when i = 0), it can always be specified as "not null." The fact that
+          // this isn't specified means it has nullable return values.
+          else if (i == 0)
+          {
+            nextRow[11] = procedureNullable;
+            nextRow[18] = "YES";
+          }
+          // if the row is for an input parameter, it's impossible to know from the description whether the values
+          // are allowed to be null or not. Nullability is unknown.
+          else
+          {
+            nextRow[11] = procedureNullableUnknown; //nullable. We don't know from current function info.
+            nextRow[18] = "";
+          }
+          nextRow[12] = resultSetStepOne.getString("description").trim(); //remarks
+          nextRow[13] = null; //default value for column. Not supported
+          nextRow[14] = 0; // Sql data type: reserved for future use
+          nextRow[15] = 0; // sql datetime sub: reserved for future use
+          //char octet length
+          if (type == Types.BINARY || type == Types.VARBINARY || type == Types.CHAR || type == Types.VARCHAR)
+          {
+            if (typeName.contains("(") && typeName.contains(")"))
+            {
+              int char_octet_len = Integer.parseInt(typeName.substring(typeName.indexOf('(') + 1,
+                                                                       typeName.indexOf(')')));
+              nextRow[16] = char_octet_len;
+            }
+            else if (type == Types.CHAR || type == Types.VARCHAR)
+            {
+              nextRow[16] = 16777216;
+            }
+            else if (type == Types.BINARY || type == Types.VARBINARY)
+            {
+              nextRow[16] = 8388608;
+            }
+          }
+          else
+          {
+            nextRow[16] = null;
+          }
+          nextRow[17] = i; //ordinal position.
+          nextRow[19] = procedureNameUnparsed; //specific name
+          rows.add(nextRow);
+        }
+      }
+    }
+    Object[][] resultRows = new Object[rows.size()][20];
+    for (int i = 0; i < resultRows.length; i++)
+    {
+      resultRows[i] = rows.get(i);
+    }
+    return new SnowflakeDatabaseMetaDataResultSet(GET_PROCEDURE_COLUMNS, resultRows, statement);
   }
 
   // apply session context when catalog is unspecified
@@ -1202,6 +1395,77 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
       }
     }
     return SFPair.of(catalog, schemaPattern);
+  }
+
+  /* helper function for getProcedures, getFunctionColumns, etc. Returns sql command to show some type of result such
+   as procedures or udfs */
+  private String getFirstResultSetCommand(String catalog, String schemaPattern, String name, String type)
+  {
+    // apply session context when catalog is unspecified
+    SFPair<String, String> resPair = applySessionContext(catalog,
+                                                         schemaPattern);
+    catalog = resPair.left;
+    schemaPattern = resPair.right;
+
+    String showProcedureCommand = "show /* JDBC:DatabaseMetaData.getProcedures() */ " + type;
+
+    if (name != null && !name.isEmpty() &&
+        !name.trim().equals("%") &&
+        !name.trim().equals(".*"))
+    {
+      showProcedureCommand += " like '" + name + "'";
+    }
+
+    if (catalog == null)
+    {
+      showProcedureCommand += " in account";
+    }
+    else if (catalog.isEmpty())
+    {
+      return "";
+    }
+    else
+    {
+      if (schemaPattern == null || Wildcard.isWildcardPatternStr(schemaPattern))
+      {
+        showProcedureCommand += " in database \"" + catalog + "\"";
+      }
+      else if (schemaPattern.isEmpty())
+      {
+        return "";
+      }
+      else
+      {
+        schemaPattern = schemaPattern.replace("\\", "");
+        showProcedureCommand += " in schema \"" + catalog + "\".\"" +
+                                schemaPattern + "\"";
+      }
+    }
+    logger.debug("sql command to get column metadata: {}",
+                 showProcedureCommand);
+
+    return showProcedureCommand;
+  }
+
+  /* another helper function for getProcedures, getFunctionColumns, etc. Returns sql command that describes
+  procedures or functions */
+  private String getSecondResultSetCommand(String catalog, String schemaPattern, String name, String type)
+  {
+    String procedureName = name.substring(0, name.indexOf(" RETURN"));
+    String showProcedureColCommand;
+    if (catalog != null && schemaPattern != null)
+    {
+      showProcedureColCommand = "desc " + type + " " + catalog + "." + schemaPattern + "." + procedureName;
+    }
+    else if (schemaPattern != null)
+    {
+      showProcedureColCommand = "desc " + type + " " + schemaPattern + "." + procedureName;
+    }
+    else
+    {
+      showProcedureColCommand = "desc " + type + " " + procedureName;
+    }
+    return showProcedureColCommand;
   }
 
   @Override
@@ -2657,52 +2921,13 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
                  "String functionNamePattern={}",
                  catalog, schemaPattern, functionNamePattern);
 
-    // apply session context when catalog is unspecified
-    SFPair<String, String> resPair = applySessionContext(catalog,
-                                                         schemaPattern);
-    catalog = resPair.left;
-    schemaPattern = resPair.right;
-
-    final Pattern compiledSchemaPattern = Wildcard.toRegexPattern(schemaPattern, true);
-    final Pattern compiledFunctionPattern = Wildcard.toRegexPattern(functionNamePattern, true);
-
-    String showFunctionCommand = "show /* JDBC:DatabaseMetaData.getFunctions() */ functions";
-
-    if (functionNamePattern != null && !functionNamePattern.isEmpty() &&
-        !functionNamePattern.trim().equals("%") &&
-        !functionNamePattern.trim().equals(".*"))
-    {
-      showFunctionCommand += " like '" + functionNamePattern + "'";
-    }
-
-    if (catalog == null)
-    {
-      showFunctionCommand += " in account";
-    }
-    else if (catalog.isEmpty())
+    String showFunctionCommand = getFirstResultSetCommand(catalog, schemaPattern, functionNamePattern, "functions");
+    if (showFunctionCommand.isEmpty())
     {
       return SnowflakeDatabaseMetaDataResultSet.getEmptyResultSet(GET_FUNCTIONS, statement);
     }
-    else
-    {
-      if (schemaPattern == null || Wildcard.isWildcardPatternStr(schemaPattern))
-      {
-        showFunctionCommand += " in database \"" + catalog + "\"";
-      }
-      else if (schemaPattern.isEmpty())
-      {
-        return SnowflakeDatabaseMetaDataResultSet.getEmptyResultSet(GET_FUNCTIONS, statement);
-      }
-      else
-      {
-        schemaPattern = schemaPattern.replace("\\", "");
-        showFunctionCommand += " in schema \"" + catalog + "\".\"" +
-                               schemaPattern + "\"";
-      }
-    }
-
-    logger.debug("sql command to get column metadata: {}",
-                 showFunctionCommand);
+    final Pattern compiledSchemaPattern = Wildcard.toRegexPattern(schemaPattern, true);
+    final Pattern compiledFunctionPattern = Wildcard.toRegexPattern(functionNamePattern, true);
 
     ResultSet resultSet = executeAndReturnEmptyResultIfNotFound(statement, showFunctionCommand, GET_FUNCTIONS);
 
@@ -2774,69 +2999,28 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
     raiseSQLExceptionIfConnectionIsClosed();
     Statement statement = connection.createStatement();
     boolean addAllRows = false;
+    String showFunctionCommand = getFirstResultSetCommand(catalog, schemaPattern, functionNamePattern, "functions");
 
-    // apply session context when catalog is unspecified
-    SFPair<String, String> resPair = applySessionContext(catalog,
-                                                         schemaPattern);
-    catalog = resPair.left;
-    schemaPattern = resPair.right;
-
-    String showFunctionCommand = "show /* JDBC:DatabaseMetaData.getFunctionColumns() */ functions";
-
-    if (functionNamePattern != null && !functionNamePattern.isEmpty() &&
-        !functionNamePattern.trim().equals("%") &&
-        !functionNamePattern.trim().equals(".*"))
-    {
-      showFunctionCommand += " like '" + functionNamePattern + "'";
-    }
-
-    if (catalog == null)
-    {
-      showFunctionCommand += " in account";
-    }
-    else if (catalog.isEmpty())
+    if (showFunctionCommand.isEmpty())
     {
       return SnowflakeDatabaseMetaDataResultSet.getEmptyResultSet(GET_FUNCTION_COLUMNS, statement);
     }
-    else
-    {
-      if (schemaPattern == null || Wildcard.isWildcardPatternStr(schemaPattern))
-      {
-        showFunctionCommand += " in database \"" + catalog + "\"";
-      }
-      else if (schemaPattern.isEmpty())
-      {
-        return SnowflakeDatabaseMetaDataResultSet.getEmptyResultSet(GET_FUNCTION_COLUMNS, statement);
-      }
-      else
-      {
-        schemaPattern = schemaPattern.replace("\\", "");
-        showFunctionCommand += " in schema \"" + catalog + "\".\"" +
-                               schemaPattern + "\"";
-      }
-    }
+
     if (columnNamePattern == null || columnNamePattern.isEmpty() || columnNamePattern.trim().equals("%")
         || columnNamePattern.trim().equals(".*"))
     {
       addAllRows = true;
     }
 
-    logger.debug("sql command to get column metadata: {}",
-                 showFunctionCommand);
     ResultSet resultSetStepOne = executeAndReturnEmptyResultIfNotFound(statement, showFunctionCommand,
                                                                        GET_FUNCTION_COLUMNS);
     ArrayList<Object[]> rows = new ArrayList<Object[]>();
     while (resultSetStepOne.next())
     {
       String functionNameUnparsed = resultSetStepOne.getString("arguments").trim();
-      String functionName = functionNameUnparsed.substring(0, functionNameUnparsed.indexOf(" RETURN"));
-      String functionNameNoArgs = functionName;
-      if (functionName.contains("("))
-      {
-        functionNameNoArgs = functionName.substring(0, functionName.indexOf('('));
-      }
-      String showFunctionColCommand =
-          "desc function " + catalog + "." + schemaPattern + "." + functionName;
+      String functionNameNoArgs = resultSetStepOne.getString("name");
+      String showFunctionColCommand = getSecondResultSetCommand(catalog, schemaPattern, functionNameUnparsed,
+                                                                "function");
 
       ResultSet resultSetStepTwo = executeAndReturnEmptyResultIfNotFound(statement, showFunctionColCommand,
                                                                          GET_FUNCTION_COLUMNS);
@@ -2959,18 +3143,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
     {
       resultRows[i] = rows.get(i);
     }
-    return new SnowflakeDatabaseMetaDataResultSet(Arrays.asList("FUNCTION_CAT", "FUNCTION_SCHEM", "FUNCTION_NAME",
-                                                                "COLUMN_NAME", "COLUMN_TYPE", "DATA_TYPE", "TYPE_NAME", "PRECISION",
-                                                                "LENGTH", "SCALE", "RADIX", "NULLABLE", "REMARKS", "CHAR_OCTET_LENGTH",
-                                                                "ORDINAL_POSITION", "IS_NULLABLE", "SPECIFIC_NAME"),
-                                                  Arrays.asList("TEXT", "TEXT", "TEXT", "TEXT", "SHORT", "INTEGER", "TEXT",
-                                                                "INTEGER", "INTEGER", "SHORT", "SHORT", "SHORT", "TEXT", "INTEGER",
-                                                                "INTEGER", "TEXT", "TEXT"),
-                                                  Arrays.asList(Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR,
-                                                                Types.SMALLINT, Types.INTEGER, Types.VARCHAR, Types.INTEGER,
-                                                                Types.INTEGER, Types.SMALLINT, Types.SMALLINT, Types.SMALLINT,
-                                                                Types.VARCHAR, Types.INTEGER, Types.INTEGER, Types.VARCHAR,
-                                                                Types.VARCHAR), resultRows, statement);
+    return new SnowflakeDatabaseMetaDataResultSet(GET_FUNCTION_COLUMNS, resultRows, statement);
   }
 
   //@Override
