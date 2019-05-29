@@ -430,7 +430,7 @@ public class TelemetryService
       {
         return;
       }
-      if (payload == null || payload.isEmpty())
+      if (payload == null || payload.equals("[]") || payload.isEmpty())
       {
         logger.debug("skip to run telemetry uploader for empty payload");
       }
