@@ -1,3 +1,13 @@
+**JDBC Driver 3.8.2**
+
+- \| SNOW-62766 | Deprecate CLIENT_RESULT_PREFETCH_THREADS and CLIENT_RESULT_PREFETCH_SLOTS
+- \| SNOW-77592 | Implemented getProcedures and getProcedureColumns
+- \| SNOW-79011 | JDBC don't surface errors when the session is gone
+- \| SNOW-79125 | Key comparison should be done by equals method instead of double equal signs
+- \| SNOW-79699 | Upgrade com.fasterxml.jackson.core:jackson-databind to version 2.9.9 or later
+- \| SNOW-80208 | Fixed a missing data bug on JDBC 3.7.1+’s resultChunkV2: strictly clean isNulls while using from the cache
+- \
+
 **JDBC Driver 3.8.1**
 
 - \|SNOW-76035 | DML returns the number of updated rows in getUpdateCount() otherwise -1
