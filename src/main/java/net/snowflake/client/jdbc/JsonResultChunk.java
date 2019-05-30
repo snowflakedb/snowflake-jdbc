@@ -866,7 +866,9 @@ public class JsonResultChunk extends SnowflakeResultChunk
             while (bTargetData.offsets.size() < bTargetData.metaBlockCount && bCachedDat.offsets.size() > 0)
             {
               bTargetData.offsets.add(bCachedDat.offsets.remove(bCachedDat.offsets.size() - 1));
-              bTargetData.isNulls.add(bCachedDat.isNulls.remove(bCachedDat.isNulls.size() - 1));
+              BitSet isNulls = bCachedDat.isNulls.remove(bCachedDat.isNulls.size() - 1);
+              isNulls.clear(); // SNOW-80208 have to clear isNulls explicitly
+              bTargetData.isNulls.add(isNulls);
             }
             if (bTargetData.data.size() == bTargetData.blockCount &&
                 bTargetData.offsets.size() == bTargetData.metaBlockCount)
