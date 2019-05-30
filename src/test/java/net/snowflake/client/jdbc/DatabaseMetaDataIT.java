@@ -380,6 +380,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
   }
 
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
   public void testGetTables() throws Throwable
   {
     try (Connection connection = getConnection())
