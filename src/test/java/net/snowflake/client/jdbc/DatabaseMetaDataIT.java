@@ -1294,6 +1294,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
   }
 
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
   public void testGetProcedureColumns() throws Exception
   {
     try (Connection connection = getConnection())
