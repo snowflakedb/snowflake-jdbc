@@ -2,6 +2,7 @@ package net.snowflake.client.jdbc;
 
 import org.apache.commons.text.StringEscapeUtils;
 import org.junit.Test;
+
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 
