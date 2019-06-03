@@ -382,8 +382,8 @@ public class SessionUtil
         String host = url.getHost();
         logger.debug("HOST: {}", host);
         String ocspCacheServerUrl = String.format(
-            "http://ocsp%s/%s",
-            host.substring(host.indexOf('.')),
+            "http://ocsp.%s/%s",
+            host,
             SFTrustManager.CACHE_FILE_NAME);
         logger.debug("OCSP Cache Server for Privatelink: {}",
                      ocspCacheServerUrl);
