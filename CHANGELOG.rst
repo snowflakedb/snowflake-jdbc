@@ -1,3 +1,8 @@
+**JDBC Driver 3.8.3**
+
+- \| SNOW-70888 | JDBC OCSP URL Update for Privatelink
+- \
+
 **JDBC Driver 3.8.2**
 
 - \| SNOW-62766 | Deprecate CLIENT_RESULT_PREFETCH_THREADS and CLIENT_RESULT_PREFETCH_SLOTS
