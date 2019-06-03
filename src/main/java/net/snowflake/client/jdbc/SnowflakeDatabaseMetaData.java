@@ -1146,7 +1146,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
 
     String showProcedureCommand = getFirstResultSetCommand(catalog, schemaPattern, procedureNamePattern, "procedures");
 
-    if(showProcedureCommand.isEmpty())
+    if (showProcedureCommand.isEmpty())
     {
       return SnowflakeDatabaseMetaDataResultSet.getEmptyResultSet(GET_PROCEDURES, statement);
     }
