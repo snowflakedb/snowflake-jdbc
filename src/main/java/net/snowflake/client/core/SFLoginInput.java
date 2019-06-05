@@ -157,17 +157,6 @@ public class SFLoginInput
     return this;
   }
 
-  Properties getClientInfo()
-  {
-    return clientInfo;
-  }
-
-  SFLoginInput setClientInfo(Properties clientInfo)
-  {
-    this.clientInfo = clientInfo;
-    return this;
-  }
-
   String getPasscode()
   {
     return passcode;

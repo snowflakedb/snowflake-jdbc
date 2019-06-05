@@ -227,27 +227,36 @@ public class ConnectionIT extends BaseJDBCTest
   @Test
   public void testConnectionClientInfo() throws SQLException
   {
-    Connection con = getConnection();
-    Properties property = con.getClientInfo();
-    assertEquals(0, property.size());
-    Properties clientInfo = new Properties();
-    clientInfo.setProperty("name", "Peter");
-    clientInfo.setProperty("description", "SNOWFLAKE JDBC");
-    try
+    try (Connection con = getConnection())
     {
-      con.setClientInfo(clientInfo);
-      fail("setClientInfo should fail when properties other than application are set.");
+      Properties property = con.getClientInfo();
+      assertEquals(0, property.size());
+      Properties clientInfo = new Properties();
+      clientInfo.setProperty("name", "Peter");
+      clientInfo.setProperty("description", "SNOWFLAKE JDBC");
+      try
+      {
+        con.setClientInfo(clientInfo);
+        fail("setClientInfo should fail for any parameter.");
+      }
+      catch (SQLClientInfoException e)
+      {
+        assertEquals(SqlState.INVALID_PARAMETER_VALUE, e.getSQLState());
+        assertEquals(200047, e.getErrorCode());
+        assertEquals(2, e.getFailedProperties().size());
+      }
+      try
+      {
+        con.setClientInfo("ApplicationName", "valueA");
+        fail("setClientInfo should fail for any parameter.");
+      }
+      catch (SQLClientInfoException e)
+      {
+        assertEquals(SqlState.INVALID_PARAMETER_VALUE, e.getSQLState());
+        assertEquals(200047, e.getErrorCode());
+        assertEquals(1, e.getFailedProperties().size());
+      }
     }
-    catch (SQLClientInfoException e)
-    {
-      assertEquals(200047, e.getErrorCode());
-    }
-    con.setClientInfo("ApplicationName", "valueA");
-    Properties ci = con.getClientInfo();
-    assertEquals(1, ci.size());
-    String name = con.getClientInfo("ApplicationName");
-    assertEquals("valueA", name);
-    con.close();
   }
 
   // only support get and set
@@ -990,42 +999,6 @@ public class ConnectionIT extends BaseJDBCTest
       catch (SQLException ex)
       {
         // nop, no specific error code is provided.
-      }
-    }
-  }
-
-  @Test
-  public void testClientInfo() throws Throwable
-  {
-    try (Connection connection = getConnection())
-    {
-      // no name or value validation is in place.
-      // in fact, nop.
-      Properties props = new Properties();
-      props.setProperty("ApplicationName", "value");
-      props.setProperty("ApplicationName", "hello");
-      connection.setClientInfo(props);
-      connection.setClientInfo("ApplicationName", "value2");
-      Properties retProps = connection.getClientInfo();
-      assertEquals(1, retProps.size());
-      assertEquals("value2", retProps.getProperty("ApplicationName"));
-      try
-      {
-        connection.setClientInfo("name", "Meg");
-        fail("setClientInfo should fail on trying to set any value other than application name.");
-      }
-      catch (SQLClientInfoException e)
-      {
-        assertEquals(200047, e.getErrorCode());
-      }
-      try
-      {
-        connection.setClientInfo("ApplicationName", "cr@zy#Name");
-        fail("setClientInfo should fail when application name is invalid.");
-      }
-      catch (SQLClientInfoException e)
-      {
-        assertEquals(200056, e.getErrorCode());
       }
     }
   }
