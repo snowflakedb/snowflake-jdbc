@@ -100,7 +100,7 @@ public class ResultUtil
     long resultVersion;
     int numberOfBinds;
     boolean arrayBindSupported;
-    SnowflakeChunkDownloader chunkDownloader;
+    ChunkDownloader chunkDownloader;
     SnowflakeDateTimeFormat timestampNTZFormatter;
     SnowflakeDateTimeFormat timestampLTZFormatter;
     SnowflakeDateTimeFormat timestampTZFormatter;
@@ -194,7 +194,7 @@ public class ResultUtil
       return numberOfBinds;
     }
 
-    public SnowflakeChunkDownloader getChunkDownloader()
+    public ChunkDownloader getChunkDownloader()
     {
       return chunkDownloader;
     }

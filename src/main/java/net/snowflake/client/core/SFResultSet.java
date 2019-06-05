@@ -8,7 +8,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import net.snowflake.client.core.BasicEvent.QueryState;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.JsonResultChunk;
-import net.snowflake.client.jdbc.SnowflakeChunkDownloader;
 import net.snowflake.client.jdbc.SnowflakeResultChunk;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
@@ -62,7 +61,7 @@ public class SFResultSet extends SFJsonResultSet
 
   private long nextChunkIndex = 0;
 
-  private SnowflakeChunkDownloader chunkDownloader;
+  private ChunkDownloader chunkDownloader;
 
   protected SFStatement statement;
 
@@ -249,7 +248,7 @@ public class SFResultSet extends SFJsonResultSet
     else if (chunkCount > 0)
     {
       logger.debug("End of chunks");
-      SnowflakeChunkDownloader.Metrics metrics = chunkDownloader.terminate();
+      DownloaderMetrics metrics = chunkDownloader.terminate();
       logChunkDownloaderMetrics(metrics);
     }
 
@@ -262,13 +261,16 @@ public class SFResultSet extends SFJsonResultSet
     this.telemetryClient.tryAddLogToBatch(data);
   }
 
-  private void logChunkDownloaderMetrics(SnowflakeChunkDownloader.Metrics metrics)
+  private void logChunkDownloaderMetrics(DownloaderMetrics metrics)
   {
     if (metrics != null)
     {
-      logMetric(TelemetryField.TIME_WAITING_FOR_CHUNKS, metrics.millisWaiting);
-      logMetric(TelemetryField.TIME_DOWNLOADING_CHUNKS, metrics.millisDownloading);
-      logMetric(TelemetryField.TIME_PARSING_CHUNKS, metrics.millisParsing);
+      logMetric(TelemetryField.TIME_WAITING_FOR_CHUNKS,
+                metrics.getMillisWaiting());
+      logMetric(TelemetryField.TIME_DOWNLOADING_CHUNKS,
+                metrics.getMillisDownloading());
+      logMetric(TelemetryField.TIME_PARSING_CHUNKS,
+                metrics.getMillisParsing());
     }
   }
 
@@ -433,8 +435,7 @@ public class SFResultSet extends SFJsonResultSet
 
     if (chunkDownloader != null)
     {
-      chunkDownloader.releaseAllChunkMemoryUsage();
-      SnowflakeChunkDownloader.Metrics metrics = chunkDownloader.terminate();
+      DownloaderMetrics metrics = chunkDownloader.terminate();
       logChunkDownloaderMetrics(metrics);
       firstChunkSortedRowSet = null;
       firstChunkRowset = null;
