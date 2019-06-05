@@ -32,6 +32,8 @@ import java.sql.Statement;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
+import java.text.Format;
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.LinkedList;
 import java.util.Map;
@@ -300,6 +302,23 @@ public class ResultSetIT extends BaseJDBCTest
     assertEquals(tm, resultSet.getTime(3));
     assertEquals(tm, resultSet.getTime("COLC"));
 
+    statement.execute("create or replace table datetime(colA timestamp_ltz, colB timestamp_ntz, colC timestamp_tz)");
+    statement.execute("insert into dateTime values ('2019-01-01 17:17:17', '2019-01-01 17:17:17', '2019-01-01 " +
+                      "17:17:17')");
+    prepStatement =
+        connection.prepareStatement("insert into datetime values(?, '2019-01-01 17:17:17', '2019-01-01 17:17:17')");
+    Timestamp dateTime = new Timestamp(date.getTime());
+    prepStatement.setTimestamp(1, dateTime);
+    prepStatement.execute();
+    resultSet = statement.executeQuery("select * from datetime");
+    resultSet.next();
+    SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    formatter.setTimeZone(TimeZone.getDefault());
+    String d = formatter.format(resultSet.getDate("COLA"));
+    assertEquals("2019-01-02 01:17:17", d);
+    resultSet.next();
+    assertEquals(date, resultSet.getDate(1));
+    assertEquals(date, resultSet.getDate("COLA"));
     statement.execute("drop table if exists datetime");
     connection.close();
   }
