@@ -470,21 +470,6 @@ public class SessionUtil
         }
       }
 
-      // add properties from client info
-      Properties clientInfo = loginInput.getClientInfo();
-      if (clientInfo != null)
-      {
-        for (Map.Entry<?, ?> property : clientInfo.entrySet())
-        {
-          if (property != null && property.getKey() != null &&
-              property.getValue() != null)
-          {
-            clientEnv.put(property.getKey().toString(),
-                          property.getValue().toString());
-          }
-        }
-      }
-
       // SNOW-20103: track additional client info in session
       String clientInfoJSONStr = System.getProperty("snowflake.client.info");
       if (clientInfoJSONStr != null)

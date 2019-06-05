@@ -442,7 +442,6 @@ public class SFSession
             (String) connectionPropertiesMap.get(SFSessionProperty.TOKEN))
         .setIdToken(
             (String) connectionPropertiesMap.get(SFSessionProperty.ID_TOKEN))
-        .setClientInfo(this.getClientInfo())
         .setPasscodeInPassword(passcodeInPassword)
         .setPasscode(
             (String) connectionPropertiesMap.get(SFSessionProperty.PASSCODE))
@@ -841,14 +840,6 @@ public class SFSession
       }
     }
     while (retry);
-  }
-
-  public void setClientInfo(String name, String value)
-  throws SQLClientInfoException
-  {
-    logger.debug(" public void setClientInfo(String name, String value)");
-
-    this.clientInfo.setProperty(name, value);
   }
 
   public Properties getClientInfo()
