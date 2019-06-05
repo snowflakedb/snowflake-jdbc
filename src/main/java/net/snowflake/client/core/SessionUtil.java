@@ -13,8 +13,8 @@ import net.snowflake.client.jdbc.SnowflakeReauthenticationRequest;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.jdbc.SnowflakeType;
 import net.snowflake.client.jdbc.SnowflakeUtil;
-import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
+import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.ClientAuthnDTO;
@@ -43,7 +43,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -77,16 +76,16 @@ public class SessionUtil
   public static final String SF_HEADER_AUTHORIZATION = HttpHeaders.AUTHORIZATION;
 
   // Authentication type
-  public static final String SF_HEADER_BASIC_AUTHTYPE = "Basic";
-  public static final String SF_HEADER_SNOWFLAKE_AUTHTYPE = "Snowflake";
-  public static final String SF_HEADER_TOKEN_TAG = "Token";
-  public static final String CLIENT_STORE_TEMPORARY_CREDENTIAL = "CLIENT_STORE_TEMPORARY_CREDENTIAL";
-  public static final String SERVICE_NAME = "SERVICE_NAME";
-  public static final String CLIENT_IN_BAND_TELEMETRY_ENABLED = "CLIENT_TELEMETRY_ENABLED";
-  public static final String CLIENT_OUT_OF_BAND_TELEMETRY_ENABLED = "CLIENT_OUT_OF_BAND_TELEMETRY_ENABLED";
-  public static final String CLIENT_RESULT_COLUMN_CASE_INSENSITIVE = "CLIENT_RESULT_COLUMN_CASE_INSENSITIVE";
-  public static final String JDBC_RS_COLUMN_CASE_INSENSITIVE = "JDBC_RS_COLUMN_CASE_INSENSITIVE";
-  public static final String CLIENT_RESULT_CHUNK_SIZE_JVM = "net.snowflake.jdbc.clientResultChunkSize";
+  private static final String SF_HEADER_BASIC_AUTHTYPE = "Basic";
+  private static final String SF_HEADER_SNOWFLAKE_AUTHTYPE = "Snowflake";
+  private static final String SF_HEADER_TOKEN_TAG = "Token";
+  private static final String CLIENT_STORE_TEMPORARY_CREDENTIAL = "CLIENT_STORE_TEMPORARY_CREDENTIAL";
+  private static final String SERVICE_NAME = "SERVICE_NAME";
+  private static final String CLIENT_IN_BAND_TELEMETRY_ENABLED = "CLIENT_TELEMETRY_ENABLED";
+  private static final String CLIENT_OUT_OF_BAND_TELEMETRY_ENABLED = "CLIENT_OUT_OF_BAND_TELEMETRY_ENABLED";
+  private static final String CLIENT_RESULT_COLUMN_CASE_INSENSITIVE = "CLIENT_RESULT_COLUMN_CASE_INSENSITIVE";
+  private static final String JDBC_RS_COLUMN_CASE_INSENSITIVE = "JDBC_RS_COLUMN_CASE_INSENSITIVE";
+  private static final String CLIENT_RESULT_CHUNK_SIZE_JVM = "net.snowflake.jdbc.clientResultChunkSize";
   public static final String CLIENT_RESULT_CHUNK_SIZE = "CLIENT_RESULT_CHUNK_SIZE";
   public static final String CLIENT_MEMORY_LIMIT_JVM = "net.snowflake.jdbc.clientMemoryLimit";
   public static final String CLIENT_MEMORY_LIMIT = "CLIENT_MEMORY_LIMIT";
@@ -95,19 +94,18 @@ public class SessionUtil
   public static final String CLIENT_ENABLE_CONSERVATIVE_MEMORY_USAGE_JVM
       = "net.snowflake.jdbc.clientEnableConservativeMemoryUsage";
   public static final String CLIENT_ENABLE_CONSERVATIVE_MEMORY_USAGE = "CLIENT_ENABLE_CONSERVATIVE_MEMORY_USAGE";
-  public static final String CACHE_FILE_NAME = "temporary_credential.json";
   public static final String OCSP_FAIL_OPEN_JVM = "net.snowflake.jdbc.ocspFailOpen";
-  public static final String OCSP_FAIL_OPEN = "ocspFailOpen";
+  private static final String OCSP_FAIL_OPEN = "ocspFailOpen";
   public static final String CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY =
       "CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY";
   public static final String CLIENT_SFSQL = "CLIENT_SFSQL";
 
   static final String SF_HEADER_SERVICE_NAME = "X-Snowflake-Service";
 
+  private static final String NO_QUERY_ID = "";
   private static final String SF_PATH_SESSION = "/session";
   public static long DEFAULT_CLIENT_MEMORY_LIMIT = 1536; // MB
   public static int DEFAULT_CLIENT_PREFETCH_THREADS = 4;
-  public static int DEFAULT_CLIENT_CHUNK_SIZE = 160;
   public static int MIN_CLIENT_CHUNK_SIZE = 48;
   public static int MAX_CLIENT_CHUNK_SIZE = 160;
   public static Map<String, String> JVM_PARAMS_TO_PARAMS = Stream.of(
@@ -209,7 +207,7 @@ public class SessionUtil
    * @throws SFException           if unexpected uri syntax
    * @throws SnowflakeSQLException if failed to establish connection with snowflake
    */
-  static public SFLoginOutput openSession(SFLoginInput loginInput)
+  static SFLoginOutput openSession(SFLoginInput loginInput)
   throws SFException, SnowflakeSQLException
   {
     AssertUtil.assertTrue(loginInput.getServerUrl() != null,
@@ -302,7 +300,7 @@ public class SessionUtil
     String databaseVersion = null;
     int databaseMajorVersion = 0;
     int databaseMinorVersion = 0;
-    String newClientForUpgrade = null;
+    String newClientForUpgrade;
     int healthCheckInterval = DEFAULT_HEALTH_CHECK_INTERVAL;
     int httpClientSocketTimeout = loginInput.getSocketTimeout();
     final ClientAuthnDTO.AuthenticatorType authenticator = getAuthenticator(
@@ -440,7 +438,7 @@ public class SessionUtil
         data.put(ClientAuthnParameter.TOKEN.name(), loginInput.getToken());
       }
 
-      Map<String, Object> clientEnv = new HashMap<String, Object>();
+      Map<String, Object> clientEnv = new HashMap<>();
       clientEnv.put("OS", System.getProperty("os.name"));
       clientEnv.put("OS_VERSION", System.getProperty("os.version"));
       clientEnv.put("JAVA_VERSION", System.getProperty("java.version"));
@@ -567,12 +565,10 @@ public class SessionUtil
       {
         logger.debug("response = {}", theString);
 
-        String errorCode = jsonNode.path("code").asText();
-
+        int errorCode = jsonNode.path("code").asInt();
         throw new SnowflakeSQLException(
-            SqlState.SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION,
-            ErrorCode.CONNECTION_ERROR.getMessageCode(),
-            errorCode, jsonNode.path("message").asText());
+            NO_QUERY_ID, jsonNode.path("message").asText(),
+            SqlState.SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION, errorCode);
       }
 
       // session token is in the data field of the returned json response
@@ -619,7 +615,7 @@ public class SessionUtil
       if (databaseVersion != null)
       {
         String[] components = databaseVersion.split("\\.");
-        if (components != null && components.length >= 2)
+        if (components.length >= 2)
         {
           try
           {
@@ -772,7 +768,7 @@ public class SessionUtil
    * @throws SFException           if unexpected uri information
    * @throws SnowflakeSQLException if failed to renew the session
    */
-  static public SFLoginOutput renewSession(SFLoginInput loginInput)
+  static SFLoginOutput renewSession(SFLoginInput loginInput)
   throws SFException, SnowflakeSQLException
   {
     try
@@ -797,7 +793,7 @@ public class SessionUtil
    * @throws SFException           if unexpected uri information
    * @throws SnowflakeSQLException if failed to renew the session
    */
-  static public SFLoginOutput issueSession(SFLoginInput loginInput)
+  static private SFLoginOutput issueSession(SFLoginInput loginInput)
   throws SFException, SnowflakeSQLException
   {
     return tokenRequest(loginInput, TokenRequestType.ISSUE);
@@ -945,7 +941,7 @@ public class SessionUtil
    * @throws SnowflakeSQLException if failed to close session
    * @throws SFException           if failed to close session
    */
-  static public void closeSession(SFLoginInput loginInput)
+  static void closeSession(SFLoginInput loginInput)
   throws SFException, SnowflakeSQLException
   {
     logger.debug(" public void close() throws SFException");
@@ -1212,11 +1208,11 @@ public class SessionUtil
       if (!jsonNode.path("success").asBoolean())
       {
         logger.debug("response = {}", gsResponse);
-        String errorCode = jsonNode.path("code").asText();
+        int errorCode = jsonNode.path("code").asInt();
+
         throw new SnowflakeSQLException(
-            SqlState.SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION,
-            ErrorCode.CONNECTION_ERROR.getMessageCode(),
-            errorCode, jsonNode.path("message").asText());
+            NO_QUERY_ID, jsonNode.path("message").asText(),
+            SqlState.SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION, errorCode);
       }
 
       // session token is in the data field of the returned json response
@@ -1276,9 +1272,7 @@ public class SessionUtil
     String ssoUrl = dataNode.path("ssoUrl").asText();
     federatedFlowStep2(loginInput, tokenUrl, ssoUrl);
     final String oneTimeToken = federatedFlowStep3(loginInput, tokenUrl);
-    final String responseHtml = federatedFlowStep4(
-        loginInput, ssoUrl, oneTimeToken);
-    return responseHtml;
+    return federatedFlowStep4(loginInput, ssoUrl, oneTimeToken);
   }
 
   /**
@@ -1323,8 +1317,7 @@ public class SessionUtil
     Document doc = Jsoup.parse(html);
     Elements e1 = doc.getElementsByTag("body");
     Elements e2 = e1.get(0).getElementsByTag("form");
-    String postBackUrl = e2.first().attr("action");
-    return postBackUrl;
+    return e2.first().attr("action");
   }
 
   /**
@@ -1334,7 +1327,7 @@ public class SessionUtil
    * @param paramsNode parameters in JSON form
    * @return map object including key and value pairs
    */
-  public static Map<String, Object> getCommonParams(JsonNode paramsNode)
+  static Map<String, Object> getCommonParams(JsonNode paramsNode)
   {
     Map<String, Object> parameters = new HashMap<>();
 
@@ -1383,7 +1376,7 @@ public class SessionUtil
     return parameters;
   }
 
-  public static void updateSfDriverParamValues(
+  static void updateSfDriverParamValues(
       Map<String, Object> parameters,
       SFSession session)
   {
