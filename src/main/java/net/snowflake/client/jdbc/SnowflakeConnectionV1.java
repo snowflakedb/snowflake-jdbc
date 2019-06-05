@@ -46,8 +46,6 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.GZIPInputStream;
 
-import static net.snowflake.client.core.ClientInfo.APPLICATION_NAME;
-import static net.snowflake.client.core.SFSessionProperty.APPLICATION_REGEX;
 import static net.snowflake.client.core.SessionUtil.CLIENT_SFSQL;
 import static net.snowflake.client.core.SessionUtil.JVM_PARAMS_TO_PARAMS;
 import static net.snowflake.client.jdbc.ErrorCode.FEATURE_UNSUPPORTED;
@@ -90,8 +88,6 @@ public class SnowflakeConnectionV1 implements Connection
    * Default: 300 seconds
    */
   private int networkTimeoutInMilli = 0; // in milliseconds
-
-  private Properties clientInfo = new Properties();
 
   // TODO this should be set to Connection.TRANSACTION_READ_COMMITTED
   // TODO There may not be many implications here since the call to
@@ -765,58 +761,39 @@ public class SnowflakeConnectionV1 implements Connection
   public void setClientInfo(Properties properties)
   throws SQLClientInfoException
   {
-    logger.debug(
-        "void setClientInfo(Properties properties)");
-    if (isClosed)
-    {
-      throw new SQLClientInfoException();
-    }
-    this.clientInfo.clear();
+    Map<String, ClientInfoStatus> failedProps = new HashMap<>();
     Enumeration<?> propList = properties.propertyNames();
     while (propList.hasMoreElements())
     {
-      String key = (String) propList.nextElement();
-      String value = properties.getProperty(key);
-      this.setClientInfo(key, value);
+      String name = (String) propList.nextElement();
+      failedProps.put(name, ClientInfoStatus.REASON_UNKNOWN_PROPERTY);
     }
+    raiseSetClietnInfoException(failedProps);
   }
 
   @Override
   public void setClientInfo(String name, String value)
   throws SQLClientInfoException
   {
-    logger.debug("void setClientInfo(String name, String value)");
+    Map<String, ClientInfoStatus> failedProps = new HashMap<>();
+    failedProps.put(name, ClientInfoStatus.REASON_UNKNOWN_PROPERTY);
+    raiseSetClietnInfoException(failedProps);
+  }
 
+  private void raiseSetClietnInfoException(Map<String, ClientInfoStatus> failedProps) throws SQLClientInfoException
+  {
     if (isClosed)
     {
-      throw new SQLClientInfoException();
+      throw new SQLClientInfoException(
+          "The connection is not opened.",
+          ErrorCode.CONNECTION_CLOSED.getSqlState(),
+          ErrorCode.CONNECTION_CLOSED.getMessageCode(), failedProps);
     }
-    if (APPLICATION_NAME.equalsIgnoreCase(name))
-    {
-      if (APPLICATION_REGEX.matcher(value).find())
-      {
-        this.clientInfo.setProperty(name, value);
-        // sfSession must not be null if the connection is not closed.
-        sfSession.setClientInfo(name, value);
-      }
-      else
-      {
-        Map<String, ClientInfoStatus> failedProps = new HashMap<>();
-        failedProps.put(name, ClientInfoStatus.REASON_VALUE_INVALID);
-        throw new SQLClientInfoException("Application name must start with a letter and contain no special characters.",
-                                         SqlState.INVALID_PARAMETER_VALUE,
-                                         ErrorCode.INVALID_APP_NAME.getMessageCode(), failedProps);
-      }
-    }
-    else
-    {
-      Map<String, ClientInfoStatus> failedProps = new HashMap<>();
-      failedProps.put(name, ClientInfoStatus.REASON_UNKNOWN_PROPERTY);
-      throw new SQLClientInfoException("The only allowable value is application name.",
-                                       SqlState.INVALID_PARAMETER_VALUE,
-                                       ErrorCode.INVALID_PARAMETER_VALUE.getMessageCode(), failedProps);
 
-    }
+    throw new SQLClientInfoException(
+        "The client property cannot be set by setClientInfo.",
+        ErrorCode.INVALID_PARAMETER_VALUE.getSqlState(),
+        ErrorCode.INVALID_PARAMETER_VALUE.getMessageCode(), failedProps);
   }
 
   @Override
@@ -1106,7 +1083,7 @@ public class SnowflakeConnectionV1 implements Connection
 
     putCommand.append(" overwrite=true");
 
-    SnowflakeFileTransferAgent transferAgent = null;
+    SnowflakeFileTransferAgent transferAgent;
     transferAgent = new SnowflakeFileTransferAgent(putCommand.toString(),
                                                    sfSession, stmt.getSfStatement());
 
@@ -1268,7 +1245,7 @@ public class SnowflakeConnectionV1 implements Connection
     }
   }
 
-  public void removeClosedStatement(Statement stmt)
+  void removeClosedStatement(Statement stmt)
   {
     openStatements.remove(stmt);
   }
