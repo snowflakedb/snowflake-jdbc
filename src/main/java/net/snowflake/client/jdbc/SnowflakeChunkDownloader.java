@@ -10,6 +10,8 @@ import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.MappingJsonFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import net.snowflake.client.core.ChunkDownloader;
+import net.snowflake.client.core.DownloaderMetrics;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.jdbc.SnowflakeResultChunk.DownloadState;
@@ -56,7 +58,7 @@ import java.util.zip.GZIPInputStream;
  * <p>
  * Created by jhuang on 11/12/14.
  */
-public class SnowflakeChunkDownloader
+public class SnowflakeChunkDownloader implements ChunkDownloader
 {
   // SSE-C algorithm header
   private static final String SSE_C_ALGORITHM =
@@ -125,7 +127,7 @@ public class SnowflakeChunkDownloader
   // the current memory usage across JVM
   private static Long currentMemoryUsage = 0L;
 
-  public static long getCurrentMemoryUsage()
+  static long getCurrentMemoryUsage()
   {
     synchronized (currentMemoryUsage)
     {
@@ -183,21 +185,6 @@ public class SnowflakeChunkDownloader
     };
     return (ThreadPoolExecutor) Executors.newFixedThreadPool(parallel,
                                                              threadFactory);
-  }
-
-  public class Metrics
-  {
-    public final long millisWaiting;
-    public final long millisDownloading;
-    public final long millisParsing;
-
-    private Metrics()
-    {
-      SnowflakeChunkDownloader outer = SnowflakeChunkDownloader.this;
-      millisWaiting = outer.numberMillisWaitingForChunks;
-      millisDownloading = outer.totalMillisDownloadingChunks.get();
-      millisParsing = outer.totalMillisParsingChunks.get();
-    }
   }
 
   /**
@@ -428,7 +415,7 @@ public class SnowflakeChunkDownloader
   /**
    * release all existing chunk memory usage before close
    */
-  public void releaseAllChunkMemoryUsage()
+  private void releaseAllChunkMemoryUsage()
   {
     if (chunks == null || chunks.size() == 0)
     {
@@ -629,10 +616,12 @@ public class SnowflakeChunkDownloader
    *
    * @return chunk downloader metrics collected over instance lifetime
    */
-  public Metrics terminate()
+  @Override
+  public DownloaderMetrics terminate()
   {
     if (!terminated)
     {
+      releaseAllChunkMemoryUsage();
 
       logger.debug("Total milliseconds waiting for chunks: {}, " +
                    "Total memory used: {}, total download time: {} millisec, " +
@@ -650,7 +639,9 @@ public class SnowflakeChunkDownloader
       chunkDataCache.clear();
 
       terminated = true;
-      return new Metrics();
+      return new DownloaderMetrics(numberMillisWaitingForChunks,
+                                   totalMillisDownloadingChunks.get(),
+                                   totalMillisParsingChunks.get());
     }
     return null;
   }
