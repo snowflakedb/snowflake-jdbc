@@ -50,6 +50,9 @@ import static org.junit.Assert.fail;
  */
 public class ConnectionIT extends BaseJDBCTest
 {
+  // create a local constant for this code for testing purposes (already defined in GS)
+  private static final int INVALID_CONNECTION_INFO_CODE = 390100;
+
   private boolean defaultState;
 
   @Before
@@ -155,8 +158,7 @@ public class ConnectionIT extends BaseJDBCTest
       }
       catch (SQLException e)
       {
-        assertThat(e.getErrorCode(), is(
-            ErrorCode.CONNECTION_ERROR.getMessageCode()));
+        assertThat(e.getErrorCode(), is(INVALID_CONNECTION_INFO_CODE));
       }
     }
   }
@@ -380,7 +382,7 @@ public class ConnectionIT extends BaseJDBCTest
         // a connection error response (wrong user and password)
         // with status code 200 is returned in RT
         assertThat("Communication error", e.getErrorCode(),
-                   equalTo(ErrorCode.CONNECTION_ERROR.getMessageCode()));
+                   equalTo(INVALID_CONNECTION_INFO_CODE));
 
         // since it returns normal response,
         // the telemetry does not create new event
@@ -568,12 +570,12 @@ public class ConnectionIT extends BaseJDBCTest
     properties.put("privateKey", privateKey2);
     try
     {
-      connection = DriverManager.getConnection(uri, properties);
+      DriverManager.getConnection(uri, properties);
       fail();
     }
     catch (SQLException e)
     {
-      Assert.assertEquals(200002, e.getErrorCode());
+      Assert.assertEquals(390144, e.getErrorCode());
     }
 
     // test multiple key pair
@@ -710,8 +712,7 @@ public class ConnectionIT extends BaseJDBCTest
     }
     catch (SQLException e)
     {
-      assertThat(e.getErrorCode(), is(
-          ErrorCode.CONNECTION_ERROR.getMessageCode()));
+      assertThat(e.getErrorCode(), is(INVALID_CONNECTION_INFO_CODE));
     }
 
     deploymentUrl =
@@ -729,8 +730,7 @@ public class ConnectionIT extends BaseJDBCTest
     }
     catch (SQLException e)
     {
-      assertThat(e.getErrorCode(), is(
-          ErrorCode.CONNECTION_ERROR.getMessageCode()));
+      assertThat(e.getErrorCode(), is(INVALID_CONNECTION_INFO_CODE));
     }
   }
 
