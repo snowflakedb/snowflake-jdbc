@@ -254,6 +254,11 @@
       <version>1.2.3</version>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>org.apache.arrow</groupId>
+      <artifactId>arrow-vector</artifactId>
+      <version>0.13.0</version>
+    </dependency>
   </dependencies>
 
   <build>
@@ -518,6 +523,10 @@
                        <shadedPattern>${shadeBase}.javax.activation</shadedPattern>
                      </relocation>
                      <relocation>
+                       <pattern>javax.annotation</pattern>
+                       <shadedPattern>${shadeBase}.javax.annotation</shadedPattern>
+                     </relocation>
+                     <relocation>
                        <pattern>net.jcip</pattern>
                        <shadedPattern>${shadeBase}.net.jcip</shadedPattern>
                      </relocation>
@@ -532,6 +541,14 @@
                      <relocation>
                        <pattern>com.sun</pattern>
                        <shadedPattern>${shadeBase}.com.sun</shadedPattern>
+                     </relocation>
+                     <relocation>
+                       <pattern>io.netty</pattern>
+                       <shadedPattern>${shadeBase}.io.netty</shadedPattern>
+                     </relocation>
+                     <relocation>
+                       <pattern>com.carrotsearch</pattern>
+                       <shadedPattern>${shadeBase}.com.carrotsearch</shadedPattern>
                      </relocation>
                    </relocations>
                    <filters>
@@ -548,7 +565,15 @@
                             <exclude>META-INF/*.DSA</exclude>
                             <exclude>META-INF/*.RSA</exclude>
                             <exclude>.netbeans_automatic_build</exclude>
+                            <exclude>git.properties</exclude>
                          </excludes>
+                      </filter>
+                      <filter>
+                        <artifact>org.apache.arrow:arrow-vector</artifact>
+                        <excludes>
+                          <!-- codegen directory is used to generate java code for arrow vector package. Excludes them since we only need class file -->
+                          <exclude>codegen/**</exclude>
+                        </excludes>
                       </filter>
                       <filter>
                         <artifact>com.google.guava:guava</artifact>

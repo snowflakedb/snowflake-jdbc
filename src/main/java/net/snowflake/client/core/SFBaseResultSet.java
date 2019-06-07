@@ -5,7 +5,11 @@
 package net.snowflake.client.core;
 
 import net.snowflake.client.jdbc.ErrorCode;
+import net.snowflake.client.jdbc.SnowflakeChunkDownloader;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
+import net.snowflake.client.jdbc.telemetry.TelemetryData;
+import net.snowflake.client.jdbc.telemetry.TelemetryField;
+import net.snowflake.client.jdbc.telemetry.TelemetryUtil;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SFBinaryFormat;
