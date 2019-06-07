@@ -14,6 +14,7 @@ import net.snowflake.client.core.ChunkDownloader;
 import net.snowflake.client.core.DownloaderMetrics;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.ObjectMapperFactory;
+import net.snowflake.client.core.QueryResultFormat;
 import net.snowflake.client.jdbc.SnowflakeResultChunk.DownloadState;
 import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
@@ -127,6 +128,11 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
   // the current memory usage across JVM
   private static Long currentMemoryUsage = 0L;
 
+  /**
+   * query result format
+   */
+  private QueryResultFormat queryResultFormat;
+
   static long getCurrentMemoryUsage()
   {
     synchronized (currentMemoryUsage)
@@ -206,7 +212,8 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
                                   JsonNode chunkHeaders,
                                   int networkTimeoutInMilli,
                                   boolean useJsonParserV2,
-                                  long memoryLimit)
+                                  long memoryLimit,
+                                  QueryResultFormat queryResultFormat)
   throws SnowflakeSQLException
   {
     this.qrmk = qrmk;
@@ -214,6 +221,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
     this.prefetchSlots = prefetchThreads * 2;
     this.useJsonParserV2 = useJsonParserV2;
     this.memoryLimit = memoryLimit;
+    this.queryResultFormat = queryResultFormat;
     logger.debug("qrmk = {}", qrmk);
 
     if (chunkHeaders != null && !chunkHeaders.isMissingNode())
@@ -251,17 +259,33 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
     for (int idx = 0; idx < numChunks; idx++)
     {
       JsonNode chunkNode = chunksData.get(idx);
+      String url = chunkNode.path("url").asText();
+      int rowCount = chunkNode.path("rowCount").asInt();
+      int uncompressedSize = chunkNode.path("uncompressedSize").asInt();
 
-      SnowflakeResultChunk chunk =
-          new JsonResultChunk(
-              chunkNode.path("url").asText(),
-              chunkNode.path("rowCount").asInt(),
-              colCount,
-              chunkNode.path("uncompressedSize").asInt(),
-              useJsonParserV2);
+      SnowflakeResultChunk chunk;
+      switch (this.queryResultFormat)
+      {
+        case ARROW:
+          chunk = new ArrowResultChunk(url, rowCount, colCount, uncompressedSize);
+          break;
 
-      logger.debug("add chunk, url={} rowCount={} uncompressedSize={} neededChunkMemory={}",
-                   chunk.getScrubbedUrl(), chunk.getRowCount(), chunk.getUncompressedSize(), chunk.computeNeededChunkMemory());
+        case JSON:
+          chunk = new JsonResultChunk(url, rowCount, colCount,
+                                      uncompressedSize, useJsonParserV2);
+          break;
+
+        default:
+          throw new SnowflakeSQLException(ErrorCode.INTERNAL_ERROR,
+                                          "Invalid result format: " + queryResultFormat.name());
+      }
+
+      logger.debug("add chunk, url={} rowCount={} uncompressedSize={} " +
+                   "neededChunkMemory={}, chunkResultFormat={}",
+                   chunk.getScrubbedUrl(), chunk.getRowCount(),
+                   chunk.getUncompressedSize(),
+                   chunk.computeNeededChunkMemory(),
+                   queryResultFormat.name());
 
       chunks.add(chunk);
     }
@@ -333,7 +357,10 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
         // only allocate memory when the future usage is less than the limit
         if (currentMemoryUsage + neededChunkMemory <= memoryLimit)
         {
-          ((JsonResultChunk) nextChunk).tryReuse(chunkDataCache);
+          if (queryResultFormat == QueryResultFormat.JSON)
+          {
+            ((JsonResultChunk) nextChunk).tryReuse(chunkDataCache);
+          }
 
           currentMemoryUsage += neededChunkMemory;
 
@@ -352,8 +379,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
                                                    nextChunk,
                                                    qrmk, nextChunkToDownload,
                                                    chunkHeadersMap,
-                                                   networkTimeoutInMilli,
-                                                   useJsonParserV2));
+                                                   networkTimeoutInMilli));
 
           // increment next chunk to download
           nextChunkToDownload++;
@@ -453,16 +479,21 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
                    prevChunk);
 
       long chunkMemUsage = chunks.get(prevChunk).computeNeededChunkMemory();
-      if (this.nextChunkToDownload < this.chunks.size())
+
+      // reuse chunkcache if json result
+      if (this.queryResultFormat == QueryResultFormat.JSON)
       {
-        // Reuse the set of object to avoid reallocation
-        // It is important to do this BEFORE starting the next download
-        chunkDataCache.add((JsonResultChunk) this.chunks.get(prevChunk));
-      }
-      else
-      {
-        // clear the cache if we don't need it anymore
-        chunkDataCache.clear();
+        if (this.nextChunkToDownload < this.chunks.size())
+        {
+          // Reuse the set of object to avoid reallocation
+          // It is important to do this BEFORE starting the next download
+          chunkDataCache.add((JsonResultChunk) this.chunks.get(prevChunk));
+        }
+        else
+        {
+          // clear the cache if we don't need it anymore
+          chunkDataCache.clear();
+        }
       }
 
       // Free any memory the previous chunk might hang on
@@ -539,6 +570,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
           logger.debug(
               "woken up from waiting for chunk #{} to be ready",
               nextChunkToConsume);
+
         }
 
         // downloader thread encountered an error
@@ -677,7 +709,6 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
    *                              chunks. This is mainly for logging purpose
    * @param chunkHeadersMap       contains headers needed to be added when downloading from s3
    * @param networkTimeoutInMilli network timeout
-   * @param useJsonParserV2       use the json parser V2
    * @return A callable responsible for downloading chunk
    */
   private static Callable<Void> getDownloadChunkCallable(
@@ -685,7 +716,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
       final SnowflakeResultChunk resultChunk,
       final String qrmk, final int chunkIndex,
       final Map<String, String> chunkHeadersMap,
-      final int networkTimeoutInMilli, boolean useJsonParserV2)
+      final int networkTimeoutInMilli)
   {
     return new Callable<Void>()
     {
@@ -733,7 +764,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
                                                : "null response"));
           }
 
-          InputStream jsonInputStream;
+          InputStream inputStream;
           final HttpEntity entity = response.getEntity();
           try
           {
@@ -762,9 +793,10 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
               }
             }
 
-            if (useJsonParserV2)
+            if (downloader.useJsonParserV2 ||
+                downloader.queryResultFormat == QueryResultFormat.ARROW)
             {
-              jsonInputStream = is;
+              inputStream = is;
             }
             else
             {
@@ -773,7 +805,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
               // Jackson JSON parser.
               // gzip stream uses 64KB
               // no buffering as json parser does it internally
-              jsonInputStream =
+              inputStream =
                   new SequenceInputStream(
                       Collections.enumeration(Arrays.asList(
                           new ByteArrayInputStream("[".getBytes(
@@ -799,18 +831,29 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
           startTime = System.currentTimeMillis();
 
           // trace the response if requested
-          logger.debug("Json response: {}", response);
+          if (downloader.queryResultFormat == QueryResultFormat.JSON)
+          {
+            logger.debug("Json response: {}", response);
+          }
 
           // parse the result json
           try
           {
-            if (downloader.useJsonParserV2)
+            if (downloader.queryResultFormat == QueryResultFormat.ARROW)
             {
-              parseJsonToChunkV2(jsonInputStream, resultChunk);
+              ArrowResultChunk.readArrowStream(inputStream,
+                                               (ArrowResultChunk) resultChunk);
             }
             else
             {
-              parseJsonToChunk(jsonInputStream, resultChunk);
+              if (downloader.useJsonParserV2)
+              {
+                parseJsonToChunkV2(inputStream, resultChunk);
+              }
+              else
+              {
+                parseJsonToChunk(inputStream, resultChunk);
+              }
             }
           }
           catch (Exception ex)
@@ -827,7 +870,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
           finally
           {
             // close the buffer reader will close underlying stream
-            jsonInputStream.close();
+            inputStream.close();
           }
 
           // add parsing time

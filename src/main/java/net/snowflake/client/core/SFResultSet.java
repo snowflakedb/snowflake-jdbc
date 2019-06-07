@@ -18,6 +18,7 @@ import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SqlState;
 
+import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -69,23 +70,21 @@ public class SFResultSet extends SFJsonResultSet
 
   private Telemetry telemetryClient;
 
-
   /**
    * Constructor takes a result from the API response that we get from
    * executing a SQL statement.
    * <p>
    * The constructor will initialize the ResultSetMetaData.
    *
-   * @param result     result data in JSON form
-   * @param statement  statement object
-   * @param sortResult true if sort results otherwise false
+   * @param resultOutput result data after parsing
+   * @param statement    statement object
+   * @param sortResult   true if sort results otherwise false
    * @throws SQLException exception raised from general SQL layers
-   * @throws SFException  exception raised from Snowflake components
    */
-  public SFResultSet(JsonNode result,
-                     SFStatement statement,
-                     boolean sortResult)
-  throws SQLException, SFException
+  SFResultSet(ResultUtil.ResultOutput resultOutput,
+              SFStatement statement,
+              boolean sortResult)
+  throws SQLException
   {
     this.statement = statement;
     this.columnCount = 0;
@@ -94,16 +93,6 @@ public class SFResultSet extends SFJsonResultSet
 
     SFSession session = this.statement.getSession();
     this.telemetryClient = session.getTelemetryClient();
-
-    ResultUtil.ResultInput resultInput = new ResultUtil.ResultInput();
-    resultInput.setResultJSON(result)
-        .setConnectionTimeout(session.getHttpClientConnectionTimeout())
-        .setSocketTimeout(session.getHttpClientSocketTimeout())
-        .setNetworkTimeoutInMilli(session.getNetworkTimeoutInMilli());
-
-    ResultUtil.ResultOutput resultOutput = ResultUtil
-        .processResult(resultInput, statement);
-
     this.queryId = resultOutput.getQueryId();
     this.statementType = resultOutput.getStatementType();
     this.totalRowCountTruncated = resultOutput.isTotalRowCountTruncated();
