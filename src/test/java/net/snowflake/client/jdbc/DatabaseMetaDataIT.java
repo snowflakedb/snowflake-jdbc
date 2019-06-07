@@ -431,7 +431,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
       resultSet = metaData.getTablePrivileges(
           database, schema, targetTable
       );
-      assertEquals(0, getSizeOfResultSet(resultSet));
+      assertEquals(1, getSizeOfResultSet(resultSet));
 
       connection.createStatement().execute("drop table if exists " + targetTable);
       connection.createStatement().execute("drop view if exists " + targetView);
@@ -815,6 +815,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
       connection.createStatement().execute("drop table if exists T0");
     }
   }
+
 
   @Test
   public void testGetPrimarykeys() throws Throwable
@@ -1265,6 +1266,53 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
       assertEquals("", resultSet.getString("IS_NULLABLE"));
       assertEquals("TOTAL_ROWS_IN_TABLE() RETURN NUMBER", resultSet.getString("SPECIFIC_NAME"));
       assertFalse(resultSet.next());
+    }
+  }
+
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
+  public void testGetTablePrivileges() throws Exception
+  {
+    try (Connection connection = getConnection())
+    {
+      String database = connection.getCatalog();
+      String schema = connection.getSchema();
+      connection.createStatement().execute("create or replace table PRIVTEST(colA string, colB number, colC " +
+                                           "timestamp)");
+      DatabaseMetaData metaData = connection.getMetaData();
+      ResultSet resultSet = metaData.getTablePrivileges(database, schema, "PRIVTEST");
+      resultSet.next();
+      assertEquals(database, resultSet.getString("TABLE_CAT"));
+      assertEquals(schema, resultSet.getString("TABLE_SCHEM"));
+      assertEquals("PRIVTEST", resultSet.getString("TABLE_NAME"));
+      assertEquals("SYSADMIN", resultSet.getString("GRANTOR"));
+      assertEquals("SYSADMIN", resultSet.getString("GRANTEE"));
+      assertEquals("OWNERSHIP", resultSet.getString("PRIVILEGE"));
+      assertEquals("YES", resultSet.getString("IS_GRANTABLE"));
+      // grant select privileges to table for role security admin and test that a new row of table privileges is added
+      connection.createStatement().execute("grant select on table PRIVTEST to role securityadmin");
+      resultSet = metaData.getTablePrivileges(database, schema, "PRIVTEST");
+      resultSet.next();
+      assertEquals(database, resultSet.getString("TABLE_CAT"));
+      assertEquals(schema, resultSet.getString("TABLE_SCHEM"));
+      assertEquals("PRIVTEST", resultSet.getString("TABLE_NAME"));
+      assertEquals("SYSADMIN", resultSet.getString("GRANTOR"));
+      assertEquals("SYSADMIN", resultSet.getString("GRANTEE"));
+      assertEquals("OWNERSHIP", resultSet.getString("PRIVILEGE"));
+      assertEquals("YES", resultSet.getString("IS_GRANTABLE"));
+      resultSet.next();
+      assertEquals(database, resultSet.getString("TABLE_CAT"));
+      assertEquals(schema, resultSet.getString("TABLE_SCHEM"));
+      assertEquals("PRIVTEST", resultSet.getString("TABLE_NAME"));
+      assertEquals("SYSADMIN", resultSet.getString("GRANTOR"));
+      assertEquals("SECURITYADMIN", resultSet.getString("GRANTEE"));
+      assertEquals("SELECT", resultSet.getString("PRIVILEGE"));
+      assertEquals("NO", resultSet.getString("IS_GRANTABLE"));
+      //if tableNamePattern is null, empty resultSet is returned.
+      resultSet = metaData.getTablePrivileges(null, null, null);
+      assertEquals(7, resultSet.getMetaData().getColumnCount());
+      assertEquals(0, getSizeOfResultSet(resultSet));
+      connection.createStatement().execute("drop table if exists PRIVTEST");
     }
   }
 
