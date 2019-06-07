@@ -42,6 +42,7 @@ import static net.snowflake.client.jdbc.DBMetadataResultSetMetadata.GET_PROCEDUR
 import static net.snowflake.client.jdbc.DBMetadataResultSetMetadata.GET_PROCEDURE_COLUMNS;
 import static net.snowflake.client.jdbc.DBMetadataResultSetMetadata.GET_SCHEMAS;
 import static net.snowflake.client.jdbc.DBMetadataResultSetMetadata.GET_TABLES;
+import static net.snowflake.client.jdbc.DBMetadataResultSetMetadata.GET_TABLE_PRIVILEGES;
 import static net.snowflake.client.jdbc.SnowflakeType.convertStringToType;
 
 public class SnowflakeDatabaseMetaData implements DatabaseMetaData
@@ -1988,18 +1989,90 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
 
     Statement statement = connection.createStatement();
 
-    // Return empty result set since we don't have primary keys yet
-    return new SnowflakeDatabaseMetaDataResultSet(
-        Arrays.asList("TABLE_CAT", "TABLE_SCHEM", "TABLE_NAME", "GRANTOR",
-                      "GRANTEE", "PRIVILEGE", "IS_GRANTABLE"),
-        Arrays.asList("TEXT", "TEXT", "TEXT", "TEXT", "TEXT",
-                      "TEXT", "TEXT"),
-        Arrays.asList(Types.VARCHAR, Types.VARCHAR, Types.VARCHAR,
-                      Types.VARCHAR, Types.VARCHAR, Types.VARCHAR,
-                      Types.VARCHAR),
-        new Object[][]
-            {
-            }, statement);
+    if (tableNamePattern == null)
+    {
+        return SnowflakeDatabaseMetaDataResultSet.getEmptyResultSet(
+          GET_TABLE_PRIVILEGES, statement);
+    }
+    // apply session context when catalog is unspecified
+    SFPair<String, String> resPair = applySessionContext(catalog,
+                                                         schemaPattern);
+    catalog = resPair.left;
+    schemaPattern = resPair.right;
+
+    String showView = "select * from ";
+
+    if (catalog != null && !catalog.isEmpty() &&
+                        !catalog.trim().equals("%") &&
+                        !catalog.trim().equals(".*"))
+    {
+      showView += catalog + ".";
+    }
+    showView += "information_schema.table_privileges";
+
+    if (tableNamePattern != null && !tableNamePattern.isEmpty() &&
+        !tableNamePattern.trim().equals("%") &&
+        !tableNamePattern.trim().equals(".*"))
+    {
+      showView += " where table_name = '" + tableNamePattern + "'";
+    }
+
+    if (schemaPattern != null && !schemaPattern.isEmpty() &&
+        !schemaPattern.trim().equals("%") &&
+        !schemaPattern.trim().equals(".*"))
+    {
+      if (showView.contains("where table_name"))
+      {
+        showView += " and table_schema = '" + schemaPattern + "'";
+      }
+      else
+      {
+        showView += " where table_schema = '" + schemaPattern + "'";
+      }
+    }
+    showView += " order by table_catalog, table_schema, table_name, privilege_type";
+
+    final String catalogIn = catalog;
+    final String schemaIn = schemaPattern;
+    final String tableIn = tableNamePattern;
+
+    ResultSet resultSet = executeAndReturnEmptyResultIfNotFound(statement, showView, GET_TABLE_PRIVILEGES);
+    return new SnowflakeDatabaseMetaDataQueryResultSet(GET_TABLE_PRIVILEGES, resultSet, statement)
+    {
+      @Override
+      public boolean next() throws SQLException
+      {
+        logger.debug("public boolean next()");
+        incrementRow();
+
+        while (showObjectResultSet.next())
+        {
+          String table_cat = showObjectResultSet.getString("TABLE_CATALOG");
+          String table_schema = showObjectResultSet.getString("TABLE_SCHEMA");
+          String table_name = showObjectResultSet.getString("TABLE_NAME");
+          String grantor = showObjectResultSet.getString("GRANTOR");
+          String grantee = showObjectResultSet.getString("GRANTEE");
+          String privilege = showObjectResultSet.getString("PRIVILEGE_TYPE");
+          String is_grantable = showObjectResultSet.getString("IS_GRANTABLE");
+
+          if ((catalogIn == null || catalogIn.trim().equals("%") || catalogIn.trim().equals(table_cat)) &&
+              (schemaIn == null || schemaIn.trim().equals("%") || schemaIn.trim().equals(table_schema)) &&
+              (tableIn.trim().equals(table_name) || tableIn.trim().equals("%")))
+          {
+            nextRow[0] = table_cat;
+            nextRow[1] = table_schema;
+            nextRow[2] = table_name;
+            nextRow[3] = grantor;
+            nextRow[4] = grantee;
+            nextRow[5] = privilege;
+            nextRow[6] = is_grantable;
+            return true;
+          }
+        }
+        close();
+        return false;
+      }
+    };
   }
 
   @Override
