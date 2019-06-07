@@ -64,6 +64,9 @@ public abstract class SnowflakeResultChunk
    */
   abstract long computeNeededChunkMemory();
 
+  /**
+   * Free the data stored in this chunk. Called when finish consuming the chunk
+   */
   abstract void freeData();
 
   public SnowflakeResultChunk(String url, int rowCount, int colCount,

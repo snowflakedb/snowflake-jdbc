@@ -31,6 +31,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.TimeZone;
 
 import static net.snowflake.client.core.SessionUtil.CLIENT_ENABLE_CONSERVATIVE_MEMORY_USAGE;
@@ -96,6 +97,7 @@ public class ResultUtil
     int columnCount;
     private List<SnowflakeColumnMetadata> resultColumnMetadata = new ArrayList<>();
     private JsonNode currentChunkRowset = null;
+    private String rowsetBase64;
     int currentChunkRowCount;
     long resultVersion;
     int numberOfBinds;
@@ -111,6 +113,7 @@ public class ResultUtil
     SFBinaryFormat binaryFormatter;
     long sendResultTime;
     List<MetaDataOfBinds> metaDataOfBinds = new ArrayList<>();
+    QueryResultFormat queryResultFormat;
 
     public long getChunkCount()
     {
@@ -248,6 +251,11 @@ public class ResultUtil
     {
       return metaDataOfBinds;
     }
+
+    String getRowsetBase64()
+    {
+      return rowsetBase64;
+    }
   }
 
 
@@ -294,6 +302,11 @@ public class ResultUtil
 
     logger.debug("query id: {}", resultOutput.queryId);
 
+    Optional<QueryResultFormat> queryResultFormat = QueryResultFormat
+        .lookupByName(rootNode.path("data").path("queryResultFormat").asText());
+    resultOutput.queryResultFormat =
+        queryResultFormat.orElse(QueryResultFormat.JSON);
+
     // extract parameters
     resultOutput.parameters =
         SessionUtil.getCommonParams(rootNode.path("data").path("parameters"));
@@ -315,20 +328,29 @@ public class ResultUtil
                    (ArgSupplier) () -> columnMetadata.toString());
     }
 
-    resultOutput.currentChunkRowset = rootNode.path("data").path("rowset");
-
-    if (resultOutput.currentChunkRowset == null ||
-        resultOutput.currentChunkRowset.isMissingNode())
+    if (resultOutput.queryResultFormat == QueryResultFormat.ARROW)
     {
-      resultOutput.currentChunkRowCount = 0;
+      resultOutput.rowsetBase64 =
+          rootNode.path("data").path("rowsetBase64").asText();
     }
     else
     {
-      resultOutput.currentChunkRowCount = resultOutput.currentChunkRowset.size();
-    }
+      resultOutput.currentChunkRowset = rootNode.path("data").path("rowset");
 
-    logger.debug("First chunk row count: {}",
-                 resultOutput.currentChunkRowCount);
+      if (resultOutput.currentChunkRowset == null ||
+          resultOutput.currentChunkRowset.isMissingNode())
+      {
+        resultOutput.currentChunkRowCount = 0;
+      }
+      else
+      {
+        resultOutput.currentChunkRowCount =
+            resultOutput.currentChunkRowset.size();
+      }
+
+      logger.debug("First chunk row count: {}",
+                   resultOutput.currentChunkRowCount);
+    }
 
     JsonNode chunksNode = rootNode.path("data").path("chunks");
 
@@ -393,7 +415,8 @@ public class ResultUtil
                                          chunkHeaders,
                                          resultData.networkTimeoutInMilli,
                                          useJsonParserV2,
-                                         memoryLimit);
+                                         memoryLimit,
+                                         resultOutput.queryResultFormat);
       }
     }
 

@@ -269,7 +269,7 @@ public class SFStatement
     try
     {
       JsonNode jsonResult = (JsonNode) result;
-      resultSet = new SFResultSet(jsonResult, this, sortResult);
+      resultSet = SFResultSetFactory.getResultSet(jsonResult, this, sortResult);
       childResults = ResultUtil.getChildResults(session, requestId, jsonResult);
 
       // if child results are available, skip over this result set and set the
@@ -1003,7 +1003,7 @@ public class SFStatement
           nextResult.getId(), session);
       Object sortProperty = session.getSFSessionProperty("sort");
       boolean sortResult = sortProperty != null && (Boolean) sortProperty;
-      resultSet = new SFResultSet(result, this, sortResult);
+      resultSet = SFResultSetFactory.getResultSet(result, this, sortResult);
       // override statement type so we can treat the result set like a result of
       // the original statement called (and not the result scan)
       resultSet.setStatementType(nextResult.getType());
