@@ -468,6 +468,49 @@ public class StatementIT extends BaseJDBCTest
     connection.close();
   }
 
+  @Test
+  public void testExecuteLargeBatch() throws SQLException
+  {
+    Connection connection = getConnection();
+    Statement statement = connection.createStatement();
+    /** Generate a table with several rows and 1 column named test_large_batch
+     * Note: to truly test that executeLargeBatch works with a number of rows greater than MAX_INT, replace rowcount
+     * => 15 in next code line with rowcount => 2147483648, or some other number larger than MAX_INT. Test will take
+     * about 15 minutes to run.
+     */
+    statement.execute("create or replace table test_large_batch (a number) as (select * from (select 5 from table" +
+                      "(generator(rowcount => 15)) v));");
+    // update values in table so that all rows are updated
+    statement.addBatch("update test_large_batch set a = 7 where a = 5;");
+    long[] rowsUpdated = statement.executeLargeBatch();
+    assertThat(rowsUpdated.length, is(1));
+    long testVal = 15L;
+    assertThat(rowsUpdated[0], is(testVal));
+    statement.clearBatch();
+    /** To test SQLException for integer overflow when using executeBatch() for row updates of larger than MAX_INT,
+     * uncomment the following lines of code. Test will take about 15 minutes to run.
+     *
+     * statement.execute("create or replace table test_large_batch (a number) as (select * from (select 5 from table" +
+     *                        "(generator(rowcount => 2147483648)) v));");
+     * statement.addBatch("update test_large_batch set a = 7 where a = 5;");
+     * try
+     * {
+     *    int[] rowsUpdated = statement.executeBatch();
+     *    fail();
+     * }
+     * catch (SnowflakeSQLException e)
+     * {
+     *    assertEquals((int) ErrorCode.EXECUTE_BATCH_INTEGER_OVERFLOW.getMessageCode(), e.getErrorCode());
+     *    assertEquals(ErrorCode.EXECUTE_BATCH_INTEGER_OVERFLOW.getSqlState(), e.getSQLState());
+     * }
+     * statement.clearBatch();
+     *
+     */
+    statement.execute("drop table if exists test_large_batch");
+    statement.close();
+    connection.close();
+  }
+
   /**
    * Mainly tested which types of statement CAN be executed by executeUpdate
    *
