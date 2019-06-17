@@ -58,7 +58,7 @@ public class ResultJsonParserV2
     }
     else
     {
-      partialEscapedUnicode.clear();
+      ((Buffer) partialEscapedUnicode).clear();
     }
     currentColumn = 0;
 
@@ -72,11 +72,11 @@ public class ResultJsonParserV2
    */
   public void endParsing() throws SnowflakeSQLException
   {
-    if (partialEscapedUnicode.position() > 0)
+    if (((Buffer) partialEscapedUnicode).position() > 0)
     {
-      partialEscapedUnicode.flip();
+      ((Buffer) partialEscapedUnicode).flip();
       continueParsingInternal(partialEscapedUnicode, true);
-      partialEscapedUnicode.clear();
+      ((Buffer) partialEscapedUnicode).clear();
     }
 
     if (state != State.ROW_FINISHED)
@@ -104,9 +104,9 @@ public class ResultJsonParserV2
     }
 
     // If stopped during a \\u, continue here
-    if (partialEscapedUnicode.position() > 0)
+    if (((Buffer) partialEscapedUnicode).position() > 0)
     {
-      int lenToCopy = Math.min(12 - partialEscapedUnicode.position(), in.remaining());
+      int lenToCopy = Math.min(12 - ((Buffer) partialEscapedUnicode).position(), in.remaining());
       if (lenToCopy > partialEscapedUnicode.remaining())
       {
         resizePartialEscapedUnicode(lenToCopy);
@@ -114,15 +114,15 @@ public class ResultJsonParserV2
       partialEscapedUnicode.put(in.array(), in.arrayOffset() + ((Buffer)in).position(), lenToCopy);
       ((Buffer)in).position(((Buffer)in).position() + lenToCopy);
 
-      if (partialEscapedUnicode.position() < 12)
+      if (((Buffer) partialEscapedUnicode).position() < 12)
       {
         // Not enough data to parse escaped unicode
         return;
       }
       ByteBuffer toBeParsed = partialEscapedUnicode.duplicate();
-      toBeParsed.flip();
+      ((Buffer) toBeParsed).flip();
       continueParsingInternal(toBeParsed, false);
-      partialEscapedUnicode.clear();
+      ((Buffer) partialEscapedUnicode).clear();
     }
     continueParsingInternal(in, false);
   }
@@ -136,10 +136,10 @@ public class ResultJsonParserV2
     }
     byte[] newArray = new byte[newSize];
     System.arraycopy(partialEscapedUnicode.array(), partialEscapedUnicode.arrayOffset(), newArray, 0,
-                     partialEscapedUnicode.position());
+                     ((Buffer) partialEscapedUnicode).position());
     ByteBuffer newBuf = ByteBuffer.wrap(newArray);
-    newBuf.position(partialEscapedUnicode.position());
-    partialEscapedUnicode.clear();
+    ((Buffer) newBuf).position(((Buffer) partialEscapedUnicode).position());
+    ((Buffer) partialEscapedUnicode).clear();
     partialEscapedUnicode = newBuf;
   }
 
