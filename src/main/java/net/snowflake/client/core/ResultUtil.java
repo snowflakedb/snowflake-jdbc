@@ -995,10 +995,10 @@ public class ResultUtil
    * @throws SFException  if failed to calculate update count
    * @throws SQLException if failed to calculate update count
    */
-  static public int calculateUpdateCount(SFBaseResultSet resultSet)
+  static public long calculateUpdateCount(SFBaseResultSet resultSet)
   throws SFException, SQLException
   {
-    int updateCount = 0;
+    long updateCount = 0;
     SFStatementType statementType = resultSet.getStatementType();
     if (statementType.isDML())
     {

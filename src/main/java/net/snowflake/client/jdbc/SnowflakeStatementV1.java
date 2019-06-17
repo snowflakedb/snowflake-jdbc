@@ -4,6 +4,7 @@
 
 package net.snowflake.client.jdbc;
 
+import com.sun.org.apache.xpath.internal.operations.Variable;
 import net.snowflake.client.core.ParameterBindingDTO;
 import net.snowflake.client.core.ResultUtil;
 import net.snowflake.client.core.SFBaseResultSet;
@@ -14,6 +15,8 @@ import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.util.SecretDetector;
+import net.snowflake.client.util.VariableTypeArray;
+import net.snowflake.common.core.SqlState;
 
 import java.sql.BatchUpdateException;
 import java.sql.Connection;
@@ -37,10 +40,9 @@ import static net.snowflake.client.jdbc.ErrorCode.FEATURE_UNSUPPORTED;
  */
 class SnowflakeStatementV1 implements Statement, SnowflakeStatement
 {
-
   static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeStatementV1.class);
 
-  private static final int NO_UPDATES = -1;
+  private static final long NO_UPDATES = -1;
 
   protected final SnowflakeConnectionV1 connection;
 
@@ -63,7 +65,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement
 
   private Boolean isClosed = false;
 
-  private int updateCount = NO_UPDATES;
+  private long updateCount = NO_UPDATES;
 
   // timeout in seconds
   private int queryTimeout = 0;
@@ -175,12 +177,12 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement
   @Override
   public int executeUpdate(String sql) throws SQLException
   {
-    return executeUpdateInternal(sql, null, true);
+    return (int) executeUpdateInternal(sql, null, true);
   }
 
-  int executeUpdateInternal(String sql,
-                            Map<String, ParameterBindingDTO> parameterBindings,
-                            boolean updateQueryRequired)
+  long executeUpdateInternal(String sql,
+                             Map<String, ParameterBindingDTO> parameterBindings,
+                             boolean updateQueryRequired)
   throws SQLException
   {
     raiseSQLExceptionIfStatementIsClosed();
@@ -406,8 +408,22 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement
   public int[] executeBatch() throws SQLException
   {
     logger.debug("public int[] executeBatch()");
+    return executeBatchInternal(false).intArr;
+  }
 
-    return executeBatchInternal();
+  /**
+   * Batch Execute. If one of the commands in the batch failed, JDBC will
+   * continuing processing and throw BatchUpdateException after all commands
+   * are processed.
+   *
+   * @return an array of update counts
+   * @throws SQLException if any error occurs.
+   */
+  @Override
+  public long[] executeLargeBatch() throws SQLException
+  {
+    logger.debug("public int[] executeBatch()");
+    return executeBatchInternal(true).longArr;
   }
 
   /**
@@ -420,19 +436,30 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement
    * @return the number of updated rows
    * @throws SQLException raises if statement is closed or any db error occurs
    */
-  int[] executeBatchInternal() throws SQLException
+  VariableTypeArray executeBatchInternal(boolean isLong) throws SQLException
   {
     raiseSQLExceptionIfStatementIsClosed();
 
     SQLException exceptionReturned = null;
-    int[] updateCounts = new int[batch.size()];
+    VariableTypeArray updateCounts;
+    if (isLong)
+    {
+      long[] arr = new long[batch.size()];
+      updateCounts = new VariableTypeArray(null, arr);
+    }
+    else
+    {
+      int size = batch.size();
+      int[] arr = new int[size];
+      updateCounts = new VariableTypeArray(arr, null);
+    }
     batchQueryIDs.clear();
     for (int i = 0; i < batch.size(); i++)
     {
       BatchEntry b = batch.get(i);
       try
       {
-        int cnt = this.executeUpdateInternal(
+        long cnt = this.executeUpdateInternal(
             b.getSql(), b.getParameterBindings(), false);
         if (cnt == NO_UPDATES)
         {
@@ -440,22 +467,49 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement
           // for successful query with no updates
           cnt = SUCCESS_NO_INFO;
         }
-        updateCounts[i] = cnt;
+        if (isLong)
+        {
+          updateCounts.longArr[i] = cnt;
+        }
+        else if (cnt <= Integer.MAX_VALUE)
+        {
+          updateCounts.intArr[i] = (int) cnt;
+        }
+        else
+        {
+          throw new SnowflakeSQLException(SqlState.NUMERIC_VALUE_OUT_OF_RANGE,
+                                          ErrorCode.EXECUTE_BATCH_INTEGER_OVERFLOW.getMessageCode(), i);
+        }
         batchQueryIDs.add(queryID);
       }
       catch (SQLException e)
       {
         exceptionReturned = exceptionReturned == null ? e : exceptionReturned;
-        updateCounts[i] = EXECUTE_FAILED;
+        if (isLong)
+        {
+          updateCounts.longArr[i] = (long) EXECUTE_FAILED;
+        }
+        else
+        {
+          updateCounts.intArr[i] = EXECUTE_FAILED;
+        }
       }
     }
 
-    if (exceptionReturned != null)
+    if (exceptionReturned != null && isLong)
     {
       throw new BatchUpdateException(exceptionReturned.getLocalizedMessage(),
                                      exceptionReturned.getSQLState(),
                                      exceptionReturned.getErrorCode(),
-                                     updateCounts,
+                                     updateCounts.longArr,
+                                     exceptionReturned);
+    }
+    else if (exceptionReturned != null)
+    {
+      throw new BatchUpdateException(exceptionReturned.getLocalizedMessage(),
+                                     exceptionReturned.getSQLState(),
+                                     exceptionReturned.getErrorCode(),
+                                     updateCounts.intArr,
                                      exceptionReturned);
     }
 
@@ -655,7 +709,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement
     raiseSQLExceptionIfStatementIsClosed();
     if (updateCount != -1 && sfStatement.getResultSet().getStatementType().isDML())
     {
-      return updateCount;
+      return (int) updateCount;
     }
     return -1;
   }
