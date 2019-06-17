@@ -426,15 +426,18 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
 
   private void releaseCurrentMemoryUsage(int chunkId, long releaseSize)
   {
-    synchronized (currentMemoryUsage)
+    if (releaseSize>0)
     {
-      // has to be before reusing the memory
-      currentMemoryUsage -= releaseSize;
-      logger.debug("{}: currentMemoryUsage in MB: {}, released in MB: {}, chunk: {}",
-                   (ArgSupplier) () -> Thread.currentThread().getName(),
-                   (ArgSupplier) () -> currentMemoryUsage / 1024 / 1024,
-                   releaseSize,
-                   chunkId);
+      synchronized (currentMemoryUsage)
+      {
+        // has to be before reusing the memory
+        currentMemoryUsage -= releaseSize;
+        logger.debug("{}: currentMemoryUsage in MB: {}, released in MB: {}, chunk: {}",
+                     (ArgSupplier) () -> Thread.currentThread().getName(),
+                     (ArgSupplier) () -> currentMemoryUsage / 1024 / 1024,
+                     releaseSize,
+                     chunkId);
+      }
     }
   }
 
