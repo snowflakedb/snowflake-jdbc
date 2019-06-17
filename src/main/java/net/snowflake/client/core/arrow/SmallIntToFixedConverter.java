@@ -31,16 +31,17 @@ public class SmallIntToFixedConverter extends AbstractArrowVectorConverter
   @Override
   public byte toByte(int index) throws SFException
   {
-    short val = toShort(index);
+    short shortVal = toShort(index);
+    byte byteVal = (byte) shortVal;
 
-    if (val >> 8 == 0)
+    if (byteVal == shortVal)
     {
-      return (byte) val;
+      return byteVal;
     }
     else
     {
       throw new SFException(ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr,
-                            "byte", val);
+                            "byte", shortVal);
     }
   }
 
@@ -92,29 +93,15 @@ public class SmallIntToFixedConverter extends AbstractArrowVectorConverter
   }
 
   @Override
-  public BigDecimal toBigDecimal(int index, int scale)
+  public Object toObject(int index) throws SFException
   {
-    if (smallIntVector.isNull(index))
-    {
-      return null;
-    }
-    else
-    {
-      short val = smallIntVector.getDataBuffer().getShort(
-          index * SmallIntVector.TYPE_WIDTH);
-      return BigDecimal.valueOf((long) val, scale);
-    }
-  }
-
-  @Override
-  public Object toObject(int index)
-  {
-    return toBigDecimal(index);
+    return isNull(index) ? null :
+           (sfScale == 0 ? toShort(index) : toBigDecimal(index));
   }
 
   @Override
   public String toString(int index)
   {
-    return toBigDecimal(index).toString();
+    return isNull(index) ? null : toBigDecimal(index).toString();
   }
 }

@@ -3,6 +3,7 @@
  */
 package net.snowflake.client.jdbc;
 
+import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.arrow.ArrowVectorConverter;
 import net.snowflake.client.core.arrow.BigIntToFixedConverter;
 import net.snowflake.client.core.arrow.DoubleToRealConverter;
@@ -11,6 +12,7 @@ import net.snowflake.client.core.arrow.IntToFixedConverter;
 import net.snowflake.client.core.arrow.SmallIntToFixedConverter;
 import net.snowflake.client.core.arrow.TinyIntToBooleanConverter;
 import net.snowflake.client.core.arrow.TinyIntToFixedConverter;
+import net.snowflake.client.core.arrow.VarBinaryToBinaryConverter;
 import net.snowflake.client.core.arrow.VarBinaryToTextConverter;
 import org.apache.arrow.memory.RootAllocator;
 import org.apache.arrow.vector.FieldVector;
@@ -115,7 +117,8 @@ public class ArrowResultChunk extends SnowflakeResultChunk
    * @return list of converters on top of each converters
    */
   private static List<ArrowVectorConverter> initConverters(
-      List<ValueVector> vectors)
+      List<ValueVector> vectors,
+      DataConversionContext context)
   {
     List<ArrowVectorConverter> converters = new ArrayList<>();
     vectors.forEach(vector ->
@@ -163,7 +166,13 @@ public class ArrowResultChunk extends SnowflakeResultChunk
                           break;
 
                         case DATE:
-                          converters.add(new IntToDateConverter(vector));
+                          converters.add(new IntToDateConverter(
+                              vector, context.getDateFormatter()));
+                          break;
+
+                        case BINARY:
+                          converters.add(new VarBinaryToBinaryConverter(
+                              vector, context.getBinaryFormatter()));
                           break;
 
                         //TODO add for other data types converter
@@ -177,9 +186,9 @@ public class ArrowResultChunk extends SnowflakeResultChunk
   /**
    * @return an iterator to iterate over current chunk
    */
-  public ArrowChunkIterator getIterator()
+  public ArrowChunkIterator getIterator(DataConversionContext context)
   {
-    return new ArrowChunkIterator(this);
+    return new ArrowChunkIterator(this, context);
   }
 
   public static ArrowChunkIterator getEmptyChunkIterator()
@@ -224,13 +233,20 @@ public class ArrowResultChunk extends SnowflakeResultChunk
      */
     private List<ArrowVectorConverter> currentConverters;
 
-    ArrowChunkIterator(ArrowResultChunk resultChunk)
+    /**
+     * formatters to each data type
+     */
+    private final DataConversionContext dataConversionContext;
+
+    ArrowChunkIterator(ArrowResultChunk resultChunk,
+                       DataConversionContext conversionContext)
     {
       this.resultChunk = resultChunk;
       this.currentRecordBatchIndex = -1;
       this.totalRecordBatch = resultChunk.batchOfVectors.size();
       this.currentRowInRecordBatch = -1;
       this.rowCountInCurrentRecordBatch = 0;
+      this.dataConversionContext = conversionContext;
     }
 
     ArrowChunkIterator(EmptyArrowResultChunk emptyArrowResultChunk)
@@ -241,6 +257,7 @@ public class ArrowResultChunk extends SnowflakeResultChunk
       this.currentRowInRecordBatch = -1;
       this.rowCountInCurrentRecordBatch = 0;
       this.currentConverters = Collections.emptyList();
+      this.dataConversionContext = null;
     }
 
     /**
@@ -264,7 +281,8 @@ public class ArrowResultChunk extends SnowflakeResultChunk
               resultChunk.batchOfVectors.get(currentRecordBatchIndex)
                   .get(0).getValueCount();
           currentConverters = initConverters(
-              resultChunk.batchOfVectors.get(currentRecordBatchIndex));
+              resultChunk.batchOfVectors.get(currentRecordBatchIndex),
+              dataConversionContext);
 
           return true;
         }

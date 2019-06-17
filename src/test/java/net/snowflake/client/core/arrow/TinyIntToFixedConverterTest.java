@@ -8,7 +8,7 @@ import net.snowflake.client.core.SFException;
 import net.snowflake.client.jdbc.ErrorCode;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.memory.RootAllocator;
-import org.apache.arrow.vector.BigIntVector;
+import org.apache.arrow.vector.TinyIntVector;
 import org.apache.arrow.vector.types.Types;
 import org.apache.arrow.vector.types.pojo.FieldType;
 import org.junit.Test;
@@ -26,7 +26,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-public class BigIntToFixedConverterTest
+public class TinyIntToFixedConverterTest
 {
   /**
    * allocator for arrow
@@ -42,11 +42,11 @@ public class BigIntToFixedConverterTest
   public void testFixedNoScale() throws SFException
   {
     final int rowCount = 1000;
-    List<Long> expectedValues = new ArrayList<>();
+    List<Byte> expectedValues = new ArrayList<>();
     Set<Integer> nullValIndex = new HashSet<>();
     for (int i = 0; i < rowCount; i++)
     {
-      expectedValues.add(random.nextLong());
+      expectedValues.add((byte) random.nextInt(1 << 8));
     }
 
     Map<String, String> customFieldMeta = new HashMap<>();
@@ -55,10 +55,10 @@ public class BigIntToFixedConverterTest
     customFieldMeta.put("scale", "0");
 
     FieldType fieldType = new FieldType(true,
-                                        Types.MinorType.BIGINT.getType(),
+                                        Types.MinorType.TINYINT.getType(),
                                         null, customFieldMeta);
 
-    BigIntVector vector = new BigIntVector("col_one", fieldType, allocator);
+    TinyIntVector vector = new TinyIntVector("col_one", fieldType, allocator);
     for (int i = 0; i < rowCount; i++)
     {
       boolean isNull = random.nextBoolean();
@@ -73,25 +73,25 @@ public class BigIntToFixedConverterTest
       }
     }
 
-    ArrowVectorConverter converter = new BigIntToFixedConverter(vector);
+    ArrowVectorConverter converter = new TinyIntToFixedConverter(vector);
 
     for (int i = 0; i < rowCount; i++)
     {
-      long longVal = converter.toLong(i);
-      Object longObject = converter.toObject(i);
-      String longString = converter.toString(i);
+      byte byteVal = converter.toByte(i);
+      Object byteObject = converter.toObject(i);
+      String byteString = converter.toString(i);
 
       if (nullValIndex.contains(i))
       {
-        assertThat(longVal, is(0L));
-        assertThat(longObject, is(nullValue()));
-        assertThat(longString, is(nullValue()));
+        assertThat(byteVal, is((byte) 0));
+        assertThat(byteObject, is(nullValue()));
+        assertThat(byteString, is(nullValue()));
       }
       else
       {
-        assertThat(longVal, is(expectedValues.get(i)));
-        assertThat(longObject, is(expectedValues.get(i)));
-        assertThat(longString, is(expectedValues.get(i).toString()));
+        assertThat(byteVal, is(expectedValues.get(i)));
+        assertThat(byteObject, is(expectedValues.get(i)));
+        assertThat(byteString, is(expectedValues.get(i).toString()));
       }
     }
     vector.clear();
@@ -101,23 +101,23 @@ public class BigIntToFixedConverterTest
   public void testFixedWithScale() throws SFException
   {
     final int rowCount = 1000;
-    List<Long> expectedValues = new ArrayList<>();
+    List<Byte> expectedValues = new ArrayList<>();
     Set<Integer> nullValIndex = new HashSet<>();
     for (int i = 0; i < rowCount; i++)
     {
-      expectedValues.add(random.nextLong());
+      expectedValues.add((byte) random.nextInt(1 << 8));
     }
 
     Map<String, String> customFieldMeta = new HashMap<>();
     customFieldMeta.put("logicalType", "FIXED");
     customFieldMeta.put("precision", "10");
-    customFieldMeta.put("scale", "3");
+    customFieldMeta.put("scale", "1");
 
     FieldType fieldType = new FieldType(true,
-                                        Types.MinorType.BIGINT.getType(),
+                                        Types.MinorType.TINYINT.getType(),
                                         null, customFieldMeta);
 
-    BigIntVector vector = new BigIntVector("col_one", fieldType, allocator);
+    TinyIntVector vector = new TinyIntVector("col_one", fieldType, allocator);
     for (int i = 0; i < rowCount; i++)
     {
       boolean isNull = random.nextBoolean();
@@ -132,7 +132,7 @@ public class BigIntToFixedConverterTest
       }
     }
 
-    ArrowVectorConverter converter = new BigIntToFixedConverter(vector);
+    ArrowVectorConverter converter = new TinyIntToFixedConverter(vector);
 
     for (int i = 0; i < rowCount; i++)
     {
@@ -148,7 +148,7 @@ public class BigIntToFixedConverterTest
       }
       else
       {
-        BigDecimal expectedVal = BigDecimal.valueOf(expectedValues.get(i), 3);
+        BigDecimal expectedVal = BigDecimal.valueOf(expectedValues.get(i), 1);
         assertThat(bigDecimalVal, is(expectedVal));
         assertThat(objectVal, is(expectedVal));
         assertThat(stringVal, is(expectedVal.toString()));
@@ -165,16 +165,16 @@ public class BigIntToFixedConverterTest
     Map<String, String> customFieldMeta = new HashMap<>();
     customFieldMeta.put("logicalType", "FIXED");
     customFieldMeta.put("precision", "10");
-    customFieldMeta.put("scale", "3");
+    customFieldMeta.put("scale", "1");
 
     FieldType fieldType = new FieldType(true,
-                                        Types.MinorType.BIGINT.getType(),
+                                        Types.MinorType.TINYINT.getType(),
                                         null, customFieldMeta);
 
-    BigIntVector vector = new BigIntVector("col_one", fieldType, allocator);
-    vector.setSafe(0, 123456789L);
+    TinyIntVector vector = new TinyIntVector("col_one", fieldType, allocator);
+    vector.setSafe(0, 200);
 
-    final ArrowVectorConverter converter = new BigIntToFixedConverter(vector);
+    final ArrowVectorConverter converter = new TinyIntToFixedConverter(vector);
     final int invalidConversionErrorCode =
         ErrorCode.INVALID_VALUE_CONVERT.getMessageCode();
 
@@ -213,49 +213,25 @@ public class BigIntToFixedConverterTest
     customFieldMeta.put("scale", "0");
 
     FieldType fieldType = new FieldType(true,
-                                        Types.MinorType.BIGINT.getType(),
+                                        Types.MinorType.TINYINT.getType(),
                                         null, customFieldMeta);
 
-    // test value which is out of range of int, but falls in long
-    BigIntVector vectorFoo = new BigIntVector("col_one", fieldType, allocator);
-    vectorFoo.setSafe(0, 2147483650L);
-    vectorFoo.setSafe(1, -2147483650L);
-
-    final ArrowVectorConverter converterFoo =
-        new BigIntToFixedConverter(vectorFoo);
-
-    final int invalidConversionErrorCode =
-        ErrorCode.INVALID_VALUE_CONVERT.getMessageCode();
-
-    TestUtil.assertSFException(invalidConversionErrorCode,
-                               () -> converterFoo.toInt(0));
-    TestUtil.assertSFException(invalidConversionErrorCode,
-                               () -> converterFoo.toShort(0));
-    TestUtil.assertSFException(invalidConversionErrorCode,
-                               () -> converterFoo.toByte(0));
-    TestUtil.assertSFException(invalidConversionErrorCode,
-                               () -> converterFoo.toInt(1));
-    TestUtil.assertSFException(invalidConversionErrorCode,
-                               () -> converterFoo.toShort(1));
-    TestUtil.assertSFException(invalidConversionErrorCode,
-                               () -> converterFoo.toByte(1));
-    vectorFoo.clear();
-
     // test value which is in range of byte, all get method should return
-    BigIntVector vectorBar = new BigIntVector("col_one", fieldType, allocator);
+    TinyIntVector vectorBar = new TinyIntVector("col_one", fieldType,
+                                                allocator);
     // set value which is out of range of int, but falls in long
-    vectorBar.setSafe(0, 10L);
-    vectorBar.setSafe(1, -10L);
+    vectorBar.setSafe(0, 10);
+    vectorBar.setSafe(1, -10);
 
     final ArrowVectorConverter converterBar =
-        new BigIntToFixedConverter(vectorBar);
+        new TinyIntToFixedConverter(vectorBar);
 
-    assertThat(converterBar.toByte(0), is((byte) 10));
-    assertThat(converterBar.toByte(1), is((byte) -10));
     assertThat(converterBar.toShort(0), is((short) 10));
     assertThat(converterBar.toShort(1), is((short) -10));
     assertThat(converterBar.toInt(0), is(10));
     assertThat(converterBar.toInt(1), is(-10));
+    assertThat(converterBar.toLong(0), is(10L));
+    assertThat(converterBar.toLong(1), is(-10L));
     vectorBar.clear();
   }
 }

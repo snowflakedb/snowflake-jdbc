@@ -19,6 +19,7 @@ import net.snowflake.common.core.SqlState;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.sql.Date;
 import java.sql.SQLException;
 import java.sql.Time;
@@ -100,6 +101,11 @@ public class SFArrowResultSet extends SFBaseResultSet
   private final Telemetry telemetryClient;
 
   /**
+   * dataConversionContext to data type
+   */
+  private final DataConversionContext dataConversionContext;
+
+  /**
    * Constructor takes a result from the API response that we get from
    * executing a SQL statement.
    * <p>
@@ -164,21 +170,22 @@ public class SFArrowResultSet extends SFBaseResultSet
     this.parameters = resultOutput.getParameters();
     this.chunkCount = resultOutput.getChunkCount();
     this.chunkDownloader = resultOutput.getChunkDownloader();
-    this.timestampNTZFormatter = resultOutput.getTimestampNTZFormatter();
-    this.timestampLTZFormatter = resultOutput.getTimestampLTZFormatter();
-    this.timestampTZFormatter = resultOutput.getTimestampTZFormatter();
-    this.dateFormatter = resultOutput.getDateFormatter();
-    this.timeFormatter = resultOutput.getTimeFormatter();
     this.timeZone = resultOutput.getTimeZone();
     this.honorClientTZForTimestampNTZ =
         resultOutput.isHonorClientTZForTimestampNTZ();
-    this.binaryFormatter = resultOutput.getBinaryFormatter();
     this.resultVersion = resultOutput.getResultVersion();
     this.numberOfBinds = resultOutput.getNumberOfBinds();
     this.arrayBindSupported = resultOutput.isArrayBindSupported();
     this.metaDataOfBinds = resultOutput.getMetaDataOfBinds();
     this.telemetryClient = telemetryClient;
     this.firstChunkTime = System.currentTimeMillis();
+    this.dataConversionContext = new DataConversionContext(
+        resultOutput.getTimestampLTZFormatter(),
+        resultOutput.getTimestampNTZFormatter(),
+        resultOutput.getTimestampTZFormatter(),
+        resultOutput.getDateFormatter(),
+        resultOutput.getTimeFormatter(),
+        resultOutput.getBinaryFormatter());
 
     // sort result set if needed
     String rowsetBase64 = resultOutput.getRowsetBase64();
@@ -199,12 +206,13 @@ public class SFArrowResultSet extends SFBaseResultSet
         }
 
         this.currentChunkIterator = getSortedFirstResultChunk(
-            resultOutput.getRowsetBase64()).getIterator();
+            resultOutput.getRowsetBase64()).getIterator(dataConversionContext);
       }
       else
       {
         this.currentChunkIterator =
-            buildFirstChunk(resultOutput.getRowsetBase64()).getIterator();
+            buildFirstChunk(resultOutput.getRowsetBase64()).getIterator(
+                dataConversionContext);
       }
     }
 
@@ -270,7 +278,7 @@ public class SFArrowResultSet extends SFBaseResultSet
           }
 
           currentChunkIterator.getChunk().freeData();
-          currentChunkIterator = nextChunk.getIterator();
+          currentChunkIterator = nextChunk.getIterator(dataConversionContext);
           if (currentChunkIterator.next())
           {
 
@@ -562,11 +570,7 @@ public class SFArrowResultSet extends SFBaseResultSet
   @Override
   public BigDecimal getBigDecimal(int columnIndex, int scale) throws SFException
   {
-    ArrowVectorConverter converter =
-        currentChunkIterator.getCurrentConverter(columnIndex - 1);
-    int index = currentChunkIterator.getCurrentRowInRecordBatch();
-    wasNull = converter.isNull(index);
-    return converter.toBigDecimal(index, scale);
+    return getBigDecimal(columnIndex).setScale(scale, RoundingMode.HALF_UP);
   }
 
   @Override

@@ -86,29 +86,15 @@ public class TinyIntToFixedConverter extends AbstractArrowVectorConverter
   }
 
   @Override
-  public BigDecimal toBigDecimal(int index, int scale)
+  public Object toObject(int index) throws SFException
   {
-    if (tinyIntVector.isNull(index))
-    {
-      return null;
-    }
-    else
-    {
-      byte val = tinyIntVector.getDataBuffer().getByte(
-          index * TinyIntVector.TYPE_WIDTH);
-      return BigDecimal.valueOf((long) val, scale);
-    }
-  }
-
-  @Override
-  public Object toObject(int index)
-  {
-    return toBigDecimal(index);
+    return isNull(index) ? null :
+           (sfScale == 0 ? toByte(index) : toBigDecimal(index));
   }
 
   @Override
   public String toString(int index)
   {
-    return toBigDecimal(index).toString();
+    return isNull(index) ? null : toBigDecimal(index).toString();
   }
 }
