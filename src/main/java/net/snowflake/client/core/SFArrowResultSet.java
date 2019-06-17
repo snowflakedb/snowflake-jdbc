@@ -115,7 +115,48 @@ public class SFArrowResultSet extends SFBaseResultSet
                    boolean sortResult)
   throws SQLException
   {
+    this(resultOutput, statement.getSession().getTelemetryClient(), sortResult);
+
+    // update the session db/schema/wh/role etc
     this.statement = statement;
+    SFSession session = this.statement.getSession();
+    session.setDatabase(resultOutput.getFinalDatabaseName());
+    session.setSchema(resultOutput.getFinalSchemaName());
+    session.setRole(resultOutput.getFinalRoleName());
+    session.setWarehouse(resultOutput.getFinalWarehouseName());
+
+    // update the driver/session with common parameters from GS
+    SessionUtil
+        .updateSfDriverParamValues(this.parameters, statement.getSession());
+
+    // if server gives a send time, log time it took to arrive
+    if (resultOutput.getSendResultTime() != 0)
+    {
+      long timeConsumeFirstResult = this.firstChunkTime - resultOutput.getSendResultTime();
+      logMetric(TelemetryField.TIME_CONSUME_FIRST_RESULT, timeConsumeFirstResult);
+    }
+
+    eventHandler.triggerStateTransition(BasicEvent.QueryState.CONSUMING_RESULT,
+                                        String.format(
+                                            BasicEvent.QueryState.CONSUMING_RESULT
+                                                .getArgString(), queryId, 0));
+
+
+  }
+
+  /**
+   * This is a minimum initialization for SFArrowResult. Mainly used for testing
+   * purpose. However, real prod constructor will call this constructor as well
+   *
+   * @param resultOutput    data returned in query response
+   * @param telemetryClient telemetryClient
+   * @throws SQLException
+   */
+  SFArrowResultSet(ResultUtil.ResultOutput resultOutput,
+                   Telemetry telemetryClient,
+                   boolean sortResult)
+  throws SQLException
+  {
     this.sortResult = sortResult;
     this.queryId = resultOutput.getQueryId();
     this.statementType = resultOutput.getStatementType();
@@ -136,50 +177,36 @@ public class SFArrowResultSet extends SFBaseResultSet
     this.numberOfBinds = resultOutput.getNumberOfBinds();
     this.arrayBindSupported = resultOutput.isArrayBindSupported();
     this.metaDataOfBinds = resultOutput.getMetaDataOfBinds();
+    this.telemetryClient = telemetryClient;
     this.firstChunkTime = System.currentTimeMillis();
 
-    SFSession session = this.statement.getSession();
-    session.setDatabase(resultOutput.getFinalDatabaseName());
-    session.setSchema(resultOutput.getFinalSchemaName());
-    session.setRole(resultOutput.getFinalRoleName());
-    session.setWarehouse(resultOutput.getFinalWarehouseName());
-    this.telemetryClient = session.getTelemetryClient();
-
-    // update the driver/session with common parameters from GS
-    SessionUtil
-        .updateSfDriverParamValues(this.parameters, statement.getSession());
-
     // sort result set if needed
-    if (sortResult)
+    String rowsetBase64 = resultOutput.getRowsetBase64();
+    if (rowsetBase64 == null || rowsetBase64.isEmpty())
     {
-      // we don't support sort result when there are offline chunks
-      if (resultOutput.getChunkCount() > 0)
-      {
-        throw new SnowflakeSQLException(SqlState.FEATURE_NOT_SUPPORTED,
-                                        ErrorCode.CLIENT_SIDE_SORTING_NOT_SUPPORTED
-                                            .getMessageCode());
-      }
-
-      this.currentChunkIterator = getSortedFirstResultChunk(
-          resultOutput.getRowsetBase64()).getIterator();
+      this.currentChunkIterator = ArrowResultChunk.getEmptyChunkIterator();
     }
     else
     {
-      this.currentChunkIterator =
-          buildFirstChunk(resultOutput.getRowsetBase64()).getIterator();
-    }
+      if (sortResult)
+      {
+        // we don't support sort result when there are offline chunks
+        if (resultOutput.getChunkCount() > 0)
+        {
+          throw new SnowflakeSQLException(SqlState.FEATURE_NOT_SUPPORTED,
+                                          ErrorCode.CLIENT_SIDE_SORTING_NOT_SUPPORTED
+                                              .getMessageCode());
+        }
 
-    // if server gives a send time, log time it took to arrive
-    if (resultOutput.getSendResultTime() != 0)
-    {
-      long timeConsumeFirstResult = this.firstChunkTime - resultOutput.getSendResultTime();
-      logMetric(TelemetryField.TIME_CONSUME_FIRST_RESULT, timeConsumeFirstResult);
+        this.currentChunkIterator = getSortedFirstResultChunk(
+            resultOutput.getRowsetBase64()).getIterator();
+      }
+      else
+      {
+        this.currentChunkIterator =
+            buildFirstChunk(resultOutput.getRowsetBase64()).getIterator();
+      }
     }
-
-    eventHandler.triggerStateTransition(BasicEvent.QueryState.CONSUMING_RESULT,
-                                        String.format(
-                                            BasicEvent.QueryState.CONSUMING_RESULT
-                                                .getArgString(), queryId, 0));
 
     resultSetMetaData =
         new SFResultSetMetaData(resultOutput.getResultColumnMetadata(),

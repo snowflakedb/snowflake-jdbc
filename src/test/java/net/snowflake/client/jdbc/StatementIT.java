@@ -7,6 +7,7 @@ import net.snowflake.client.AbstractDriverIT;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnTravisCI;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
+import net.snowflake.client.jdbc.telemetry.TelemetryClient;
 import net.snowflake.common.core.SqlState;
 import org.junit.Ignore;
 import org.junit.Rule;
@@ -573,12 +574,14 @@ public class StatementIT extends BaseJDBCTest
     rs.close();
 
     Telemetry telemetryClient = ((SnowflakeStatementV1) statement).connection.getSfSession().getTelemetryClient();
-    assertTrue(telemetryClient.bufferSize() > 0); // there should be logs ready to be sent
+
+    // there should be logs ready to be sent
+    assertTrue(((TelemetryClient) telemetryClient).bufferSize() > 0);
 
     statement.close();
 
-    assertEquals(telemetryClient.bufferSize(), 0); // closing the statement should flush the buffer
-
+    // closing the statement should flush the buffer
+    assertEquals(((TelemetryClient) telemetryClient).bufferSize(), 0);
     connection.close();
   }
 
