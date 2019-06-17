@@ -8,6 +8,8 @@ import net.snowflake.client.RunningOnTravisCI;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.common.core.SqlState;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -26,8 +28,34 @@ import static org.junit.Assert.fail;
 /**
  * Multi Statement tests
  */
+@RunWith(Parameterized.class)
 public class MultiStatementIT extends BaseJDBCTest
 {
+  @Parameterized.Parameters
+  public static Object[][] data()
+  {
+    // all tests in this class need to run for both query result formats json and arrow
+    return new Object[][] {
+        {"JSON"},
+        {"Arrow"}
+    };
+  }
+
+  private static String queryResultFormat;
+
+  public MultiStatementIT(String format)
+  {
+    queryResultFormat = format;
+  }
+
+  public static Connection getConnection()
+  throws SQLException
+  {
+    Connection conn = BaseJDBCTest.getConnection();
+    conn.createStatement().execute("alter session set query_result_format = '" + queryResultFormat + "'");
+    return conn;
+  }
+
   private void enableMultiStmt(Connection connection) throws SQLException
   {
     Statement statement = connection.createStatement();
