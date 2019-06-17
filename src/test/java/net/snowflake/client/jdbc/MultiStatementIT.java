@@ -36,8 +36,8 @@ public class MultiStatementIT extends BaseJDBCTest
   {
     // all tests in this class need to run for both query result formats json and arrow
     return new Object[][]{
-        {"JSON"},
-        {"Arrow"}
+        {"JSON"}
+        // , {"Arrow"}
     };
   }
 
@@ -52,7 +52,7 @@ public class MultiStatementIT extends BaseJDBCTest
   throws SQLException
   {
     Connection conn = BaseJDBCTest.getConnection();
-    conn.createStatement().execute("alter session set query_result_format = '" + queryResultFormat + "'");
+    // conn.createStatement().execute("alter session set query_result_format = '" + queryResultFormat + "'");
     return conn;
   }
 
