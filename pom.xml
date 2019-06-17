@@ -699,10 +699,14 @@
                 <configuration>
                   <argLine>
                     @{argLine}
-                    -Djava.util.logging.config.file=jenkins_it_logging.properties
                     -Dsnowflake.throttle_duration=0
                     -Dsnowflake.throttle_limit=10
                   </argLine>
+                  <systemPropertyVariables>
+                    <logback.configurationFile>
+                      ${basedir}/src/test/resources/logback-test.xml
+                    </logback.configurationFile>
+                  </systemPropertyVariables>
                   <test>Incident2IT.java</test>
                 </configuration>
               </execution>
@@ -717,10 +721,11 @@
                     <exclude>**/ingest/*.java</exclude>
                     <exclude>**/DellBoomiCloudIT.java</exclude>
                   </excludes>
-                  <argLine>
-                    @{argLine}
-                    -Dlogback.configurationFile=file:jenkins_it_logback.xml
-                  </argLine>
+                  <systemPropertyVariables>
+                    <logback.configurationFile>
+                      ${basedir}/src/test/resources/logback-test.xml
+                    </logback.configurationFile>
+                  </systemPropertyVariables>
                 </configuration>
               </execution>
               <execution>
@@ -788,10 +793,11 @@
                     <include>**/ConnectionIT.java</include>
                     <include>**/SFTrustManagerIT.java</include>
                   </includes>
-                  <argLine>
-                    @{argLine}
-                    -Djava.util.logging.config.file=jenkins_it_logging.properties
-                  </argLine>
+                  <systemPropertyVariables>
+                    <logback.configurationFile>
+                      ${basedir}/src/test/resources/logback-test.xml
+                    </logback.configurationFile>
+                  </systemPropertyVariables>
                 </configuration>
               </execution>
               <execution>
@@ -823,10 +829,6 @@
                   <goal>integration-test</goal>
                 </goals>
                 <configuration>
-                  <argLine>
-                    @{argLine}
-                    -Djava.util.logging.config.file=jenkins_it_logging.properties
-                  </argLine>
                   <test>DellBoomiCloudIT.java</test>
                 </configuration>
               </execution>
@@ -863,10 +865,11 @@
                     <include>**/ConnectionIT.java</include>
                     <include>**/SFTrustManagerIT.java</include>
                   </includes>
-                  <argLine>
-                    @{argLine}
-                    -Djava.util.logging.config.file=jenkins_it_logging.properties
-                  </argLine>
+                  <systemPropertyVariables>
+                    <logback.configurationFile>
+                      ${basedir}/src/test/resources/logback-test.xml
+                    </logback.configurationFile>
+                  </systemPropertyVariables>
                 </configuration>
               </execution>
               <execution>
@@ -901,9 +904,11 @@
                     <exclude>**/DellBoomiCloudIT.java</exclude>
                     <exclude>**/ingest/*.java</exclude>
                   </excludes>
-                  <argLine>
-                    @{argLine} -Djava.util.logging.config.file=travis_it_logging.properties
-                  </argLine>
+                  <systemPropertyVariables>
+                    <logback.configurationFile>
+                      ${basedir}/src/test/resources/logback-test.xml
+                    </logback.configurationFile>
+                  </systemPropertyVariables>
                 </configuration>
               </execution>
               <execution>
