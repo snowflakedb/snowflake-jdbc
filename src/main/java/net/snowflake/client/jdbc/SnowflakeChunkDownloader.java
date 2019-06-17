@@ -426,7 +426,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
 
   private void releaseCurrentMemoryUsage(int chunkId, long releaseSize)
   {
-    if (releaseSize>0)
+    if (releaseSize > 0)
     {
       synchronized (currentMemoryUsage)
       {

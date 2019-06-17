@@ -86,7 +86,8 @@ public enum ErrorCode
   NON_FATAL_ERROR(200053, SqlState.WARNING),
   NUMERIC_VALUE_OUT_OF_RANGE(200054, SqlState.NUMERIC_VALUE_OUT_OF_RANGE),
   NO_VALID_DATA(200055, SqlState.NO_DATA),
-  INVALID_APP_NAME(200056, SqlState.INVALID_PARAMETER_VALUE);
+  INVALID_APP_NAME(200056, SqlState.INVALID_PARAMETER_VALUE),
+  EXECUTE_BATCH_INTEGER_OVERFLOW(200058, SqlState.NUMERIC_VALUE_OUT_OF_RANGE);
 
   public final static String errorMessageResource =
       "net.snowflake.client.jdbc.jdbc_error_messages";

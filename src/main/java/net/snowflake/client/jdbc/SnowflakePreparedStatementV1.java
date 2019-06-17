@@ -165,7 +165,7 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
   {
     logger.debug("executeUpdate()");
 
-    return executeUpdateInternal(sql, parameterBindings, true);
+    return (int) executeUpdateInternal(sql, parameterBindings, true);
   }
 
   @Override
@@ -942,7 +942,7 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
     {
       if (this.statementMetaData.isArrayBindSupported())
       {
-        int updateCount = executeUpdateInternal(
+        int updateCount = (int) executeUpdateInternal(
             this.sql, batchParameterBindings, false);
 
         // when update count is the same as the number of bindings in the batch,
@@ -960,7 +960,7 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
       }
       else
       {
-        updateCounts = executeBatchInternal();
+        updateCounts = executeBatchInternal(false).intArr;
       }
     }
     finally
