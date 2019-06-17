@@ -13,6 +13,8 @@ import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import java.io.File;
 import java.net.URL;
@@ -39,8 +41,34 @@ import static org.junit.Assert.fail;
 /**
  * Statement tests
  */
+@RunWith(Parameterized.class)
 public class StatementIT extends BaseJDBCTest
 {
+  @Parameterized.Parameters
+  public static Object[][] data()
+  {
+    // all tests in this class need to run for both query result formats json and arrow
+    return new Object[][] {
+        {"JSON"},
+        {"Arrow"}
+    };
+  }
+
+  private static String queryResultFormat;
+
+  public StatementIT(String format)
+  {
+    queryResultFormat = format;
+  }
+
+  public static Connection getConnection()
+  throws SQLException
+  {
+    Connection conn = BaseJDBCTest.getConnection();
+    conn.createStatement().execute("alter session set query_result_format = '" + queryResultFormat + "'");
+    return conn;
+  }
+
   @Rule
   public TemporaryFolder tmpFolder = new TemporaryFolder();
 

@@ -12,6 +12,8 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import java.math.BigDecimal;
 import java.net.URL;
@@ -44,8 +46,34 @@ import static org.junit.Assert.fail;
 /**
  * Prepared statement integration tests
  */
+@RunWith(Parameterized.class)
 public class PreparedStatementIT extends BaseJDBCTest
 {
+  @Parameterized.Parameters
+  public static Object[][] data()
+  {
+    // all tests in this class need to run for both query result formats json and arrow
+    return new Object[][] {
+        {"JSON"},
+        {"Arrow"}
+    };
+  }
+
+  private static String queryResultFormat;
+
+  public PreparedStatementIT(String format)
+  {
+    queryResultFormat = format;
+  }
+
+  public static Connection getConnection()
+  throws SQLException
+  {
+    Connection conn = BaseJDBCTest.getConnection();
+    conn.createStatement().execute("alter session set query_result_format = '" + queryResultFormat + "'");
+    return conn;
+  }
+
   private Connection connection = null;
   private PreparedStatement prepStatement = null;
   private Statement statement = null;

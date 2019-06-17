@@ -12,8 +12,9 @@ import net.snowflake.client.jdbc.telemetry.TelemetryField;
 import net.snowflake.client.jdbc.telemetry.TelemetryUtil;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -33,7 +34,6 @@ import java.sql.Statement;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
-import java.text.Format;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.LinkedList;
@@ -56,8 +56,26 @@ import static org.junit.Assert.fail;
 /**
  * Test ResultSet
  */
+@RunWith(Parameterized.class)
 public class ResultSetIT extends BaseJDBCTest
 {
+  @Parameterized.Parameters
+  public static Object[][] data()
+  {
+    // all tests in this class need to run for both query result formats json and arrow
+    return new Object[][] {
+        {"JSON"},
+        {"Arrow"}
+    };
+  }
+
+  private static String queryResultFormat;
+
+  public ResultSetIT(String queryResultFormat)
+  {
+    this.queryResultFormat = queryResultFormat;
+  }
+
   private final String selectAllSQL = "select * from test_rs";
 
   public static Connection getConnection(int injectSocketTimeout)
@@ -81,9 +99,18 @@ public class ResultSetIT extends BaseJDBCTest
   public static Connection getConnection()
   throws SQLException
   {
-    return getConnection(BaseJDBCTest.DONT_INJECT_SOCKET_TIMEOUT);
+    Connection conn = getConnection(BaseJDBCTest.DONT_INJECT_SOCKET_TIMEOUT);
+    conn.createStatement().execute("alter session set query_result_format = '" + queryResultFormat + "'");
+    return conn;
   }
 
+  public static Connection getConnection(Properties paramProperties)
+  throws SQLException
+  {
+    Connection conn = getConnection(DONT_INJECT_SOCKET_TIMEOUT, paramProperties, false, false);
+    conn.createStatement().execute("alter session set query_result_format = '" + queryResultFormat + "'");
+    return conn;
+  }
 
   @Before
   public void setUp() throws SQLException
