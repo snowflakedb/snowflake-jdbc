@@ -97,7 +97,7 @@ public class ResultUtil
     int columnCount;
     private List<SnowflakeColumnMetadata> resultColumnMetadata = new ArrayList<>();
     private JsonNode currentChunkRowset = null;
-    private String rowsetBase64;
+    String rowsetBase64;
     int currentChunkRowCount;
     long resultVersion;
     int numberOfBinds;

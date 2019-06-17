@@ -6,6 +6,7 @@ package net.snowflake.client.jdbc;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnTravisCI;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
+import net.snowflake.client.jdbc.telemetry.TelemetryClient;
 import net.snowflake.client.jdbc.telemetry.TelemetryData;
 import net.snowflake.client.jdbc.telemetry.TelemetryField;
 import net.snowflake.client.jdbc.telemetry.TelemetryUtil;
@@ -1119,7 +1120,7 @@ public class ResultSetIT extends BaseJDBCTest
     }
     assertTrue(cnt >= 0);
     Telemetry telemetry = con.unwrap(SnowflakeConnectionV1.class).getSfSession().getTelemetryClient();
-    LinkedList<TelemetryData> logs = telemetry.logBuffer();
+    LinkedList<TelemetryData> logs = ((TelemetryClient) telemetry).logBuffer();
 
     // there should be a log for each of the following fields
     TelemetryField[] expectedFields =

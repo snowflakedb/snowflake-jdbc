@@ -23,6 +23,7 @@ import org.apache.arrow.vector.util.TransferPair;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -71,24 +72,25 @@ public class ArrowResultChunk extends SnowflakeResultChunk
                                      ArrowResultChunk resultChunk)
   throws IOException
   {
-    ArrowStreamReader reader = new ArrowStreamReader(is, rootAllocator);
-
-    while (reader.loadNextBatch())
+    try (ArrowStreamReader reader = new ArrowStreamReader(is, rootAllocator))
     {
-      List<ValueVector> valueVectors = new ArrayList<>();
-
-      VectorSchemaRoot root = reader.getVectorSchemaRoot();
-
-      for (FieldVector f : root.getFieldVectors())
+      while (reader.loadNextBatch())
       {
-        // transfer will not copy data but transfer ownership of memory
-        // from streamReader to resultChunk
-        TransferPair t = f.getTransferPair(rootAllocator);
-        t.transfer();
-        valueVectors.add(t.getTo());
-      }
+        List<ValueVector> valueVectors = new ArrayList<>();
 
-      resultChunk.addBatchData(valueVectors);
+        VectorSchemaRoot root = reader.getVectorSchemaRoot();
+
+        for (FieldVector f : root.getFieldVectors())
+        {
+          // transfer will not copy data but transfer ownership of memory
+          // from streamReader to resultChunk
+          TransferPair t = f.getTransferPair(rootAllocator);
+          t.transfer();
+          valueVectors.add(t.getTo());
+        }
+
+        resultChunk.addBatchData(valueVectors);
+      }
     }
   }
 
@@ -180,10 +182,15 @@ public class ArrowResultChunk extends SnowflakeResultChunk
     return new ArrowChunkIterator(this);
   }
 
+  public static ArrowChunkIterator getEmptyChunkIterator()
+  {
+    return new ArrowChunkIterator();
+  }
+
   /**
    * Iterator class used to go through the arrow chunk row by row
    */
-  public class ArrowChunkIterator
+  public static class ArrowChunkIterator
   {
     /**
      * chunk that iterator will iterate through
@@ -226,6 +233,15 @@ public class ArrowResultChunk extends SnowflakeResultChunk
       this.rowCountInCurrentRecordBatch = 0;
     }
 
+    ArrowChunkIterator()
+    {
+      this.currentRecordBatchIndex = 0;
+      this.totalRecordBatch = 0;
+      this.currentRowInRecordBatch = -1;
+      this.rowCountInCurrentRecordBatch = 0;
+      this.currentConverters = Collections.emptyList();
+    }
+
     /**
      * advance to next row
      */
@@ -263,7 +279,7 @@ public class ArrowResultChunk extends SnowflakeResultChunk
 
     public boolean isAfterLast()
     {
-      return currentRecordBatchIndex + 1 == totalRecordBatch
+      return currentRecordBatchIndex >= totalRecordBatch
              && currentRowInRecordBatch >= rowCountInCurrentRecordBatch;
     }
 

@@ -12,6 +12,7 @@ import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.jdbc.SnowflakeType;
 import net.snowflake.client.jdbc.SnowflakeUtil;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
+import net.snowflake.client.jdbc.telemetry.TelemetryClient;
 import net.snowflake.client.log.JDK14Logger;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -1115,7 +1116,7 @@ public class SFSession
         logger.error("Telemetry client created before session properties set.");
         return null;
       }
-      telemetryClient = Telemetry.createTelemetry(this);
+      telemetryClient = TelemetryClient.createTelemetry(this);
     }
     return telemetryClient;
   }
