@@ -3,6 +3,7 @@ package net.snowflake.client.jdbc;
 import net.snowflake.common.core.SqlState;
 
 import java.nio.ByteBuffer;
+import java.nio.Buffer;
 
 /**
  * Copyright (c) 2018-2019 Snowflake Computing Inc. All rights reserved.
@@ -110,8 +111,8 @@ public class ResultJsonParserV2
       {
         resizePartialEscapedUnicode(lenToCopy);
       }
-      partialEscapedUnicode.put(in.array(), in.arrayOffset() + in.position(), lenToCopy);
-      in.position(in.position() + lenToCopy);
+      partialEscapedUnicode.put(in.array(), in.arrayOffset() + ((Buffer)in).position(), lenToCopy);
+      ((Buffer)in).position(((Buffer)in).position() + lenToCopy);
 
       if (partialEscapedUnicode.position() < 12)
       {
@@ -194,7 +195,7 @@ public class ResultJsonParserV2
               throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
                                               ErrorCode.INTERNAL_ERROR.getMessageCode(),
                                               "SFResultJsonParser2Failed: encountered unexpected character 0x%x " +
-                                              "between rows", in.get(in.position() - 1));
+                                              "between rows", in.get(((Buffer)in).position() - 1));
             }
           }
           break;
@@ -215,7 +216,7 @@ public class ResultJsonParserV2
               throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
                                               ErrorCode.INTERNAL_ERROR.getMessageCode(),
                                               "SFResultJsonParser2Failed: encountered unexpected character 0x%x after" +
-                                              " array", in.get(in.position() - 1));
+                                              " array", in.get(((Buffer)in).position() - 1));
             }
           }
           break;
@@ -233,7 +234,7 @@ public class ResultJsonParserV2
               addNullValue();
               state = State.WAIT_FOR_NEXT;
               // reread the comma in the WAIT_FOR_NEXT state
-              in.position(in.position() - 1);
+              ((Buffer)in).position(((Buffer)in).position() - 1);
               continue;
             case 0x5d: // ']'
               // null value (only saw spaces)
@@ -251,7 +252,7 @@ public class ResultJsonParserV2
               outputCurValuePosition = outputPosition;
               // write
               resultChunk.addOffset(outputPosition);
-              addByteToOutput(in.get(in.position() - 1));
+              addByteToOutput(in.get(((Buffer)in).position() - 1));
 
               state = State.IN_VALUE;
               break;
@@ -281,11 +282,11 @@ public class ResultJsonParserV2
                 resultChunk.setLastLength(length);
               }
               state = State.WAIT_FOR_NEXT;
-              in.position(in.position() - 1);
+              ((Buffer)in).position(((Buffer)in).position() - 1);
               continue;// reread this char in WAIT_FOR_NEXT
             }
             default:
-              addByteToOutput(in.get(in.position() - 1));
+              addByteToOutput(in.get(((Buffer)in).position() - 1));
               break;
           }
           break;
@@ -302,7 +303,7 @@ public class ResultJsonParserV2
             default:
               // Check how many characters don't have escape characters
               // copy those with one memcpy
-              int inputPositionStart = in.position() - 1;
+              int inputPositionStart = ((Buffer)in).position() - 1;
               while (in.hasRemaining())
               {
                 byte cur = in.get();
@@ -311,17 +312,17 @@ public class ResultJsonParserV2
                     cur == 0x5c /* '\\' */)
                 {
                   // end of string chunk
-                  in.position(in.position() - 1);
+                  ((Buffer)in).position(((Buffer)in).position() - 1);
                   break;
                 }
               }
 
               addByteArrayToOutput(in.array(), in.arrayOffset() + inputPositionStart,
-                                   in.position() - inputPositionStart);
+                                   ((Buffer)in).position() - inputPositionStart);
 
               if (in.hasRemaining() &&
-                  (in.get(in.position()) == 0x22 /* '"' */ ||
-                   in.get(in.position()) == 0x5c /* '\\' */))
+                  (in.get(((Buffer)in).position()) == 0x22 /* '"' */ ||
+                   in.get(((Buffer)in).position()) == 0x5c /* '\\' */))
               {
                 // Those need special parsing
                 continue;
@@ -390,9 +391,9 @@ public class ResultJsonParserV2
                   resizePartialEscapedUnicode(in.remaining() + 2);
                 }
                 partialEscapedUnicode.put((byte) 0x5c /* '\\' */);
-                partialEscapedUnicode.put(in.array(), in.arrayOffset() + in.position() - 1, in.remaining() + 1);
+                partialEscapedUnicode.put(in.array(), in.arrayOffset() + ((Buffer)in).position() - 1, in.remaining() + 1);
 
-                in.position(in.position() + in.remaining());
+                ((Buffer)in).position(((Buffer)in).position() + in.remaining());
                 state = State.IN_STRING;
                 return;
               }
@@ -402,7 +403,7 @@ public class ResultJsonParserV2
               throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
                                               ErrorCode.INTERNAL_ERROR.getMessageCode(),
                                               "SFResultJsonParser2Failed: encountered unexpected escape character " +
-                                              "0x%x", in.get(in.position() - 1));
+                                              "0x%x", in.get(((Buffer)in).position() - 1));
 
             }
           }
@@ -437,7 +438,7 @@ public class ResultJsonParserV2
               throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
                                               ErrorCode.INTERNAL_ERROR.getMessageCode(),
                                               "SFResultJsonParser2Failed: encountered unexpected character 0x%x " +
-                                              "between columns", in.get(in.position() - 1));
+                                              "between columns", in.get(((Buffer)in).position() - 1));
 
             }
           }
