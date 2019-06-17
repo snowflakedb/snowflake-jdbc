@@ -13,7 +13,7 @@ public class DoubleToRealConverter extends AbstractArrowVectorConverter
 
   public DoubleToRealConverter(ValueVector fieldVector)
   {
-    super(SnowflakeType.REAL, fieldVector);
+    super(SnowflakeType.REAL.name(), fieldVector);
     this.float8Vector = (Float8Vector) fieldVector;
   }
 

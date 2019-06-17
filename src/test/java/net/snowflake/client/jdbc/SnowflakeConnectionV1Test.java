@@ -129,7 +129,7 @@ public class SnowflakeConnectionV1Test
 
     // testcase 9 (Global URL with account specified)
     url = "jdbc:snowflake://testaccount-1234567890qwertyupalsjhfg" +
-        ".global.snowflakecomputing.com:8080/?prop1=value";
+          ".global.snowflakecomputing.com:8080/?prop1=value";
     prop = new Properties();
     prop.put("user", "snowman");
     prop.put("account", "s3testaccount");
@@ -141,5 +141,18 @@ public class SnowflakeConnectionV1Test
     assertThat((String) result.get("USER"), is("snowman"));
     assertThat((String) result.get("SERVERURL"), is("https://testaccount-1234567890qwertyupalsjhfg.global.snowflakecomputing.com:8080/"));
     assertThat((String) result.get("PROP1"), is("value"));
+
+    // test case when http is already embedded in URL
+    url = "jdbc:snowflake://http://testaccount.localhost:8080/?prop1=value1";
+    prop = new Properties();
+
+    result = SnowflakeConnectionV1.mergeProperties(url, prop);
+    assertThat((String) result.get("SERVERURL"), is("http://testaccount.localhost:8080/"));
+
+    url = "jdbc:snowflake:https://testaccount.localhost:8080/?prop1=value1";
+    prop = new Properties();
+
+    result = SnowflakeConnectionV1.mergeProperties(url, prop);
+    assertThat((String) result.get("SERVERURL"), is("https://testaccount.localhost:8080/"));
   }
 }

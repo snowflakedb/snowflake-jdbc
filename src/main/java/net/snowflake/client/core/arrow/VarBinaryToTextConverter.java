@@ -15,7 +15,7 @@ public class VarBinaryToTextConverter extends AbstractArrowVectorConverter
 
   public VarBinaryToTextConverter(ValueVector valueVector)
   {
-    super(SnowflakeType.TEXT, valueVector);
+    super(SnowflakeType.TEXT.name(), valueVector);
     this.varBinaryVector = (VarBinaryVector) valueVector;
   }
 
@@ -29,7 +29,7 @@ public class VarBinaryToTextConverter extends AbstractArrowVectorConverter
   @Override
   public byte[] toBytes(int index)
   {
-    return varBinaryVector.get(index);
+    return isNull(index) ? null : varBinaryVector.get(index);
   }
 
   @Override

@@ -95,13 +95,13 @@ public class ArrowResultChunk extends SnowflakeResultChunk
   }
 
   @Override
-  public final long computeNeededChunkMemory()
+  public long computeNeededChunkMemory()
   {
     return getUncompressedSize();
   }
 
   @Override
-  public final void freeData()
+  public void freeData()
   {
     batchOfVectors.forEach(list -> list.forEach(ValueVector::clear));
   }
@@ -184,7 +184,7 @@ public class ArrowResultChunk extends SnowflakeResultChunk
 
   public static ArrowChunkIterator getEmptyChunkIterator()
   {
-    return new ArrowChunkIterator();
+    return new ArrowChunkIterator(new EmptyArrowResultChunk());
   }
 
   /**
@@ -233,8 +233,9 @@ public class ArrowResultChunk extends SnowflakeResultChunk
       this.rowCountInCurrentRecordBatch = 0;
     }
 
-    ArrowChunkIterator()
+    ArrowChunkIterator(EmptyArrowResultChunk emptyArrowResultChunk)
     {
+      this.resultChunk = emptyArrowResultChunk;
       this.currentRecordBatchIndex = 0;
       this.totalRecordBatch = 0;
       this.currentRowInRecordBatch = -1;
@@ -300,5 +301,30 @@ public class ArrowResultChunk extends SnowflakeResultChunk
     {
       return currentRowInRecordBatch;
     }
+  }
+
+  /**
+   * Empty arrow result chunk implementation. Used when rowset from server is
+   * null or empty or in testing
+   */
+  private static class EmptyArrowResultChunk extends ArrowResultChunk
+  {
+    EmptyArrowResultChunk()
+    {
+      super("", 0, 0, 0);
+    }
+
+    @Override
+    public final long computeNeededChunkMemory()
+    {
+      return 0;
+    }
+
+    @Override
+    public final void freeData()
+    {
+      // do nothing
+    }
+
   }
 }
