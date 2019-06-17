@@ -209,6 +209,12 @@ public class SnowflakeConnectionV1 implements Connection
       String accountName = serverUrl.substring(serverUrl.indexOf("://") + 3,
                                                serverUrl.indexOf("."));
 
+      // If this is a global URL, then extract out the external ID part
+      if (serverUrl.contains(".global."))
+      {
+        accountName = accountName.substring(0, accountName.lastIndexOf('-'));
+      }
+
       logger.debug("set account name to {}", accountName);
       properties.put("ACCOUNT", accountName);
     }
