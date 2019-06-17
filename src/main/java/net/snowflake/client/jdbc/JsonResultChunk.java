@@ -154,7 +154,11 @@ public class JsonResultChunk extends SnowflakeResultChunk
   @Override
   public final long computeNeededChunkMemory()
   {
-    return data.computeNeededChunkMemory();
+    if (data != null)
+    {
+      return data.computeNeededChunkMemory();
+    }
+    return 0;
   }
 
   @Override
