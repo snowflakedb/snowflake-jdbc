@@ -4,26 +4,31 @@
 package net.snowflake.client.core.arrow;
 
 import net.snowflake.client.jdbc.SnowflakeType;
+import net.snowflake.common.core.SFBinary;
+import net.snowflake.common.core.SFBinaryFormat;
 import org.apache.arrow.vector.ValueVector;
 import org.apache.arrow.vector.VarBinaryVector;
 
-import java.nio.charset.StandardCharsets;
-
-public class VarBinaryToTextConverter extends AbstractArrowVectorConverter
+public class VarBinaryToBinaryConverter extends AbstractArrowVectorConverter
 {
   private VarBinaryVector varBinaryVector;
 
-  public VarBinaryToTextConverter(ValueVector valueVector)
+  private SFBinaryFormat binaryFormat;
+
+  public VarBinaryToBinaryConverter(ValueVector valueVector,
+                                    SFBinaryFormat binaryFormat)
   {
-    super(SnowflakeType.TEXT.name(), valueVector);
+    super(SnowflakeType.BINARY.name(), valueVector);
     this.varBinaryVector = (VarBinaryVector) valueVector;
+    this.binaryFormat = binaryFormat;
   }
 
   @Override
   public String toString(int index)
   {
     byte[] bytes = toBytes(index);
-    return bytes == null ? null : new String(bytes, StandardCharsets.UTF_8);
+    SFBinary binary = new SFBinary(bytes);
+    return bytes == null ? null : binaryFormat.format(binary);
   }
 
   @Override
@@ -35,6 +40,6 @@ public class VarBinaryToTextConverter extends AbstractArrowVectorConverter
   @Override
   public Object toObject(int index)
   {
-    return toString(index);
+    return toBytes(index);
   }
 }

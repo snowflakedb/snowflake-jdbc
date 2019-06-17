@@ -141,16 +141,6 @@ public interface ArrowVectorConverter
   BigDecimal toBigDecimal(int index) throws SFException;
 
   /**
-   * Convert value in arrow vector to BigDecimal of desired scale
-   *
-   * @param index index of the value to be converted in the vector
-   * @param scale target scale of converted BigDecimal value
-   * @return BigDecimal converted from arrow vector
-   * @throws SFException invalid data conversion
-   */
-  BigDecimal toBigDecimal(int index, int scale) throws SFException;
-
-  /**
    * Convert value in arrow vector to Object
    *
    * @param index index of the value to be converted in the vector

@@ -4,6 +4,7 @@
 package net.snowflake.client.core.arrow;
 
 import net.snowflake.client.jdbc.SnowflakeType;
+import net.snowflake.common.core.SnowflakeDateTimeFormat;
 import org.apache.arrow.vector.IntVector;
 import org.apache.arrow.vector.ValueVector;
 
@@ -13,10 +14,17 @@ public class IntToDateConverter extends AbstractArrowVectorConverter
 {
   private IntVector intVector;
 
-  public IntToDateConverter(ValueVector fieldVector)
+  /**
+   * date data formatter
+   */
+  private SnowflakeDateTimeFormat dateFormatter;
+
+  public IntToDateConverter(ValueVector fieldVector,
+                            SnowflakeDateTimeFormat dateFormatter)
   {
     super(SnowflakeType.DATE.name(), fieldVector);
     this.intVector = (IntVector) fieldVector;
+    this.dateFormatter = dateFormatter;
   }
 
   @Override

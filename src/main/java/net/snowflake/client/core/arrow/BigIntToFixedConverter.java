@@ -10,7 +10,6 @@ import org.apache.arrow.vector.BigIntVector;
 import org.apache.arrow.vector.ValueVector;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 
 /**
  * Data vector whose snowflake logical type is fixed while represented as a
@@ -128,14 +127,6 @@ public class BigIntToFixedConverter extends AbstractArrowVectorConverter
           index * BigIntVector.TYPE_WIDTH);
       return BigDecimal.valueOf(val, sfScale);
     }
-  }
-
-  @Override
-  public BigDecimal toBigDecimal(int index, int scale)
-  {
-    BigDecimal val = toBigDecimal(index);
-
-    return val == null ? null : val.setScale(scale, RoundingMode.HALF_UP);
   }
 
   @Override
