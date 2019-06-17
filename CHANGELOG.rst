@@ -1,3 +1,14 @@
+**JDBC Driver 3.8.4**
+
+- \| SNOW-38957 | Connection errors will return multiple error codes instead of 200002
+- \| SNOW-70888 | Update Client Driver OCSP Endpoint URL for Private Link Customers
+- \| SNOW-19476 | Implement DatabaseMetadata.getTablePrivileges
+- \| SNOW-80773 | Connection.setClientInfo refuses any parameter
+- \| SNOW-81015 | proxyUser and proxyPassword are optional in the JDBC connect string.
+- \| SNOW-81829 | Use Standard Connection Fields for Global URL
+- \| SNOW-78996 | Remove https from account name if specified.
+- \| SNOW-74255 | Implement java.sql.Statement.executeLargeBatch
+
 **JDBC Driver 3.8.3**
 
 - \| SNOW-70888 | JDBC OCSP URL Update for Privatelink
