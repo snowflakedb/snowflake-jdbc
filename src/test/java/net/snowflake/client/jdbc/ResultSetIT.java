@@ -64,8 +64,8 @@ public class ResultSetIT extends BaseJDBCTest
   {
     // all tests in this class need to run for both query result formats json and arrow
     return new Object[][]{
-        {"JSON"},
-        {"Arrow"}
+        {"JSON"}
+        // , {"Arrow"}
     };
   }
 
@@ -100,7 +100,7 @@ public class ResultSetIT extends BaseJDBCTest
   throws SQLException
   {
     Connection conn = getConnection(BaseJDBCTest.DONT_INJECT_SOCKET_TIMEOUT);
-    conn.createStatement().execute("alter session set query_result_format = '" + queryResultFormat + "'");
+    // conn.createStatement().execute("alter session set query_result_format = '" + queryResultFormat + "'");
     return conn;
   }
 
@@ -108,7 +108,7 @@ public class ResultSetIT extends BaseJDBCTest
   throws SQLException
   {
     Connection conn = getConnection(DONT_INJECT_SOCKET_TIMEOUT, paramProperties, false, false);
-    conn.createStatement().execute("alter session set query_result_format = '" + queryResultFormat + "'");
+    // conn.createStatement().execute("alter session set query_result_format = '" + queryResultFormat + "'");
     return conn;
   }
 
