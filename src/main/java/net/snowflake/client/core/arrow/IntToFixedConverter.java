@@ -19,7 +19,10 @@ public class IntToFixedConverter extends AbstractArrowVectorConverter
 
   public IntToFixedConverter(ValueVector fieldVector)
   {
-    super(SnowflakeType.FIXED, fieldVector);
+    super(String.format("%s(%s,%s)", SnowflakeType.FIXED,
+                        fieldVector.getField().getMetadata().get("precision"),
+                        fieldVector.getField().getMetadata().get("scale")),
+          fieldVector);
     this.intVector = (IntVector) fieldVector;
     String scaleStr = fieldVector.getField().getMetadata().get("scale");
     this.sfScale = Integer.parseInt(scaleStr);
@@ -36,7 +39,7 @@ public class IntToFixedConverter extends AbstractArrowVectorConverter
     }
     else
     {
-      throw new SFException(ErrorCode.INVALID_VALUE_CONVERT, logicalType.name(),
+      throw new SFException(ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr,
                             "byte", val);
     }
   }
@@ -52,7 +55,7 @@ public class IntToFixedConverter extends AbstractArrowVectorConverter
     }
     else
     {
-      throw new SFException(ErrorCode.INVALID_VALUE_CONVERT, logicalType.name(),
+      throw new SFException(ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr,
                             "byte", val);
     }
   }
@@ -66,8 +69,9 @@ public class IntToFixedConverter extends AbstractArrowVectorConverter
     }
     else if (sfScale != 0)
     {
-      throw new SFException(ErrorCode.INVALID_VALUE_CONVERT, logicalType.name(),
-                            "int");
+      int val = intVector.getDataBuffer().getInt(index * IntVector.TYPE_WIDTH);
+      throw new SFException(ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr,
+                            "int", val);
     }
     else
     {

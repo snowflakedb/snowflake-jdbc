@@ -96,6 +96,9 @@ public class SFArrowResultSetIT
       assertThat(val, equalTo(data[0][i]));
       i++;
     }
+
+    // assert that total rowcount is 1000
+    assertThat(i, is(1000));
   }
 
   @Test
@@ -128,6 +131,7 @@ public class SFArrowResultSetIT
   public void testOnlyOfflineData() throws Throwable
   {
     final int colCount = 2;
+    final int chunkCount = 10;
 
     // generate data
     List<Field> fieldList = new ArrayList<>();
@@ -146,7 +150,7 @@ public class SFArrowResultSetIT
     // genreate 10 chunk of data
     List<Object[][]> dataLists = new ArrayList<>();
     List<File> fileLists = new ArrayList<>();
-    for (int i = 0; i < 10; i++)
+    for (int i = 0; i < chunkCount; i++)
     {
       Object[][] data = generateData(schema, 500);
       File file = createArrowFile("testOnlyOfflineData_" + i, schema, data,
@@ -156,6 +160,7 @@ public class SFArrowResultSetIT
     }
     ResultOutput resultOutput = new ResultOutput();
     resultOutput.chunkDownloader = new MockChunkDownloader(fileLists);
+    resultOutput.chunkCount = chunkCount;
 
 
     SFArrowResultSet resultSet = new SFArrowResultSet(
@@ -173,6 +178,9 @@ public class SFArrowResultSetIT
       }
       index++;
     }
+
+    // assert that total rowcount is 5000
+    assertThat(index, is(5000));
   }
 
   /**
@@ -182,6 +190,7 @@ public class SFArrowResultSetIT
   public void testFirstResponseAndOfflineData() throws Throwable
   {
     final int colCount = 2;
+    final int chunkCount = 10;
 
     // generate data
     List<Field> fieldList = new ArrayList<>();
@@ -216,9 +225,10 @@ public class SFArrowResultSetIT
 
     ResultOutput resultOutput = new ResultOutput();
     resultOutput.rowsetBase64 = Base64.getEncoder().encodeToString(dataBytes);
+    resultOutput.chunkCount = chunkCount;
 
     // build chunk downloader
-    for (int i = 0; i < 10; i++)
+    for (int i = 0; i < chunkCount; i++)
     {
       Object[][] data = generateData(schema, 500);
       File file = createArrowFile("testOnlyOfflineData_" + (i + 1), schema,
@@ -245,6 +255,9 @@ public class SFArrowResultSetIT
       }
       index++;
     }
+
+    // assert that total rowcount is 5500
+    assertThat(index, is(5500));
   }
 
   /**

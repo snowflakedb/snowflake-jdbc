@@ -10,16 +10,30 @@ import org.apache.arrow.vector.BigIntVector;
 import org.apache.arrow.vector.ValueVector;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 
+/**
+ * Data vector whose snowflake logical type is fixed while represented as a
+ * long value vector
+ */
 public class BigIntToFixedConverter extends AbstractArrowVectorConverter
 {
+  /**
+   * Underlying vector that this converter will convert from
+   */
   private BigIntVector bigIntVector;
 
+  /**
+   * scale of the fixed value
+   */
   private Integer sfScale;
 
   public BigIntToFixedConverter(ValueVector fieldVector)
   {
-    super(SnowflakeType.FIXED, fieldVector);
+    super(String.format("%s(%s,%s)", SnowflakeType.FIXED,
+                        fieldVector.getField().getMetadata().get("precision"),
+                        fieldVector.getField().getMetadata().get("scale")),
+          fieldVector);
     this.bigIntVector = (BigIntVector) fieldVector;
     String scaleStr = fieldVector.getField().getMetadata().get("scale");
     this.sfScale = Integer.parseInt(scaleStr);
@@ -28,48 +42,54 @@ public class BigIntToFixedConverter extends AbstractArrowVectorConverter
   @Override
   public byte toByte(int index) throws SFException
   {
-    long val = toLong(index);
+    long longVal = toLong(index);
+    byte byteVal = (byte) longVal;
 
-    if (val >> 8 == 0)
+    if (byteVal == longVal)
     {
-      return (byte) val;
+      return byteVal;
     }
     else
     {
-      throw new SFException(ErrorCode.INVALID_VALUE_CONVERT, logicalType.name(),
-                            "byte", val);
+      throw new SFException(ErrorCode.INVALID_VALUE_CONVERT,
+                            logicalTypeStr,
+                            "byte", longVal);
     }
   }
 
   @Override
   public short toShort(int index) throws SFException
   {
-    long val = toLong(index);
+    long longVal = toLong(index);
+    short shortVal = (short) longVal;
 
-    if (val >> 16 == 0)
+    if (shortVal == longVal)
     {
-      return (short) val;
+      return shortVal;
     }
     else
     {
-      throw new SFException(ErrorCode.INVALID_VALUE_CONVERT, logicalType.name(),
-                            "byte", val);
+      throw new SFException(ErrorCode.INVALID_VALUE_CONVERT,
+                            logicalTypeStr,
+                            "byte", longVal);
     }
   }
 
   @Override
   public int toInt(int index) throws SFException
   {
-    long val = toLong(index);
+    long longVal = toLong(index);
+    int intVal = (int) longVal;
 
-    if (val >> 32 == 0)
+    if (intVal == longVal)
     {
-      return (int) val;
+      return intVal;
     }
     else
     {
-      throw new SFException(ErrorCode.INVALID_VALUE_CONVERT, logicalType.name(),
-                            "byte", val);
+      throw new SFException(ErrorCode.INVALID_VALUE_CONVERT,
+                            logicalTypeStr,
+                            "byte", longVal);
     }
   }
 
@@ -82,12 +102,16 @@ public class BigIntToFixedConverter extends AbstractArrowVectorConverter
     }
     else if (sfScale != 0)
     {
-      throw new SFException(ErrorCode.INVALID_VALUE_CONVERT, logicalType.name(),
-                            "int");
+      long val =
+          bigIntVector.getDataBuffer().getLong(index * BigIntVector.TYPE_WIDTH);
+      throw new SFException(ErrorCode.INVALID_VALUE_CONVERT,
+                            logicalTypeStr,
+                            "long",
+                            val);
     }
     else
     {
-      return bigIntVector.getDataBuffer().getShort(index * BigIntVector.TYPE_WIDTH);
+      return bigIntVector.getDataBuffer().getLong(index * BigIntVector.TYPE_WIDTH);
     }
   }
 
@@ -100,7 +124,7 @@ public class BigIntToFixedConverter extends AbstractArrowVectorConverter
     }
     else
     {
-      long val = bigIntVector.getDataBuffer().getByte(
+      long val = bigIntVector.getDataBuffer().getLong(
           index * BigIntVector.TYPE_WIDTH);
       return BigDecimal.valueOf(val, sfScale);
     }
@@ -109,27 +133,21 @@ public class BigIntToFixedConverter extends AbstractArrowVectorConverter
   @Override
   public BigDecimal toBigDecimal(int index, int scale)
   {
-    if (bigIntVector.isNull(index))
-    {
-      return null;
-    }
-    else
-    {
-      long val = bigIntVector.getDataBuffer().getByte(
-          index * BigIntVector.TYPE_WIDTH);
-      return BigDecimal.valueOf(val, scale);
-    }
+    BigDecimal val = toBigDecimal(index);
+
+    return val == null ? null : val.setScale(scale, RoundingMode.HALF_UP);
   }
 
   @Override
-  public Object toObject(int index)
+  public Object toObject(int index) throws SFException
   {
-    return toBigDecimal(index);
+    return isNull(index) ? null :
+           (sfScale == 0 ? toLong(index) : toBigDecimal(index));
   }
 
   @Override
   public String toString(int index)
   {
-    return toBigDecimal(index).toString();
+    return isNull(index) ? null : toBigDecimal(index).toString();
   }
 }

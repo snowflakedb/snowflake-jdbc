@@ -194,9 +194,16 @@ public class SnowflakeConnectionV1 implements Connection
     }
 
     boolean sslOn = getBooleanTrueByDefault(properties.get("SSL"));
-
-    serverUrl = serverUrl.replace(JDBC_PROTOCOL_PREFIX,
-                                  sslOn ? SSL_NATIVE_PROTOCOL : NATIVE_PROTOCOL);
+    // if string already contains http or https, cut off everything that comes before it
+    if (serverUrl.contains("http://") || serverUrl.contains("https://"))
+    {
+      serverUrl = serverUrl.substring(serverUrl.indexOf("http"));
+    }
+    else
+    {
+      serverUrl = serverUrl.replace(JDBC_PROTOCOL_PREFIX,
+                                    sslOn ? SSL_NATIVE_PROTOCOL : NATIVE_PROTOCOL);
+    }
 
     properties.put("SERVERURL", serverUrl);
     properties.remove("SSL");

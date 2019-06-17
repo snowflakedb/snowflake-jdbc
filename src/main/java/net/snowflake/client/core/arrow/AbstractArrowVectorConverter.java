@@ -5,7 +5,6 @@ package net.snowflake.client.core.arrow;
 
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.jdbc.ErrorCode;
-import net.snowflake.client.jdbc.SnowflakeType;
 import org.apache.arrow.vector.ValueVector;
 
 import java.math.BigDecimal;
@@ -25,110 +24,135 @@ abstract class AbstractArrowVectorConverter implements ArrowVectorConverter
   /**
    * snowflake logical type of the target arrow vector
    */
-  SnowflakeType logicalType;
+  String logicalTypeStr;
 
   /**
    * value vector
    */
   private ValueVector valueVector;
 
-  AbstractArrowVectorConverter(SnowflakeType logicalType,
+  AbstractArrowVectorConverter(String logicalTypeStr,
                                ValueVector valueVector)
   {
-    this.logicalType = logicalType;
+    this.logicalTypeStr = logicalTypeStr;
     this.valueVector = valueVector;
   }
 
   @Override
   public boolean toBoolean(int rowIndex) throws SFException
   {
-    throw new SFException(ErrorCode.INVALID_VALUE_CONVERT, logicalType.name(),
-                          "boolean");
+    throw new SFException(ErrorCode.INVALID_VALUE_CONVERT,
+                          logicalTypeStr,
+                          "boolean",
+                          "");
   }
 
   @Override
   public byte toByte(int rowIndex) throws SFException
   {
-    throw new SFException(ErrorCode.INVALID_VALUE_CONVERT, logicalType.name(),
-                          "byte");
+    throw new SFException(ErrorCode.INVALID_VALUE_CONVERT,
+                          logicalTypeStr,
+                          "byte",
+                          "");
   }
 
   @Override
   public short toShort(int rowIndex) throws SFException
   {
-    throw new SFException(ErrorCode.INVALID_VALUE_CONVERT, logicalType.name(),
-                          "short");
+    throw new SFException(ErrorCode.INVALID_VALUE_CONVERT,
+                          logicalTypeStr,
+                          "short",
+                          "");
   }
 
   @Override
   public int toInt(int rowIndex) throws SFException
   {
-    throw new SFException(ErrorCode.INVALID_VALUE_CONVERT, logicalType.name(),
+    throw new SFException(ErrorCode.INVALID_VALUE_CONVERT,
+                          logicalTypeStr,
                           "int");
   }
 
   @Override
   public long toLong(int rowIndex) throws SFException
   {
-    throw new SFException(ErrorCode.INVALID_VALUE_CONVERT, logicalType.name(),
-                          "long");
+    throw new SFException(ErrorCode.INVALID_VALUE_CONVERT,
+                          logicalTypeStr,
+                          "long",
+                          "");
   }
 
   @Override
   public double toDouble(int rowIndex) throws SFException
   {
-    throw new SFException(ErrorCode.INVALID_VALUE_CONVERT, logicalType.name(),
-                          "double");
+    throw new SFException(ErrorCode.INVALID_VALUE_CONVERT,
+                          logicalTypeStr,
+                          "double",
+                          "");
   }
 
   @Override
   public float toFloat(int rowIndex) throws SFException
   {
-    throw new SFException(ErrorCode.INVALID_VALUE_CONVERT, logicalType.name(),
-                          "float");
+    throw new SFException(ErrorCode.INVALID_VALUE_CONVERT,
+                          logicalTypeStr,
+                          "float",
+                          "");
   }
 
   @Override
   public byte[] toBytes(int index) throws SFException
   {
-    throw new SFException(ErrorCode.INVALID_VALUE_CONVERT, logicalType.name(),
-                          "byteArray");
+    throw new SFException(ErrorCode.INVALID_VALUE_CONVERT,
+                          logicalTypeStr,
+                          "byteArray",
+                          "");
   }
 
 
   @Override
   public Date toDate(int index) throws SFException
   {
-    throw new SFException(ErrorCode.INVALID_VALUE_CONVERT, logicalType.name(),
-                          "Date");
+    throw new SFException(ErrorCode.INVALID_VALUE_CONVERT,
+                          logicalTypeStr,
+                          "Date",
+                          "");
   }
 
   @Override
   public Time toTime(int index) throws SFException
   {
-    throw new SFException(ErrorCode.INVALID_VALUE_CONVERT, logicalType.name(),
-                          "Date");
+    throw new SFException(ErrorCode.INVALID_VALUE_CONVERT,
+                          logicalTypeStr,
+                          "Date",
+                          "");
   }
 
   @Override
   public Timestamp toTimestamp(int index) throws SFException
   {
-    throw new SFException(ErrorCode.INVALID_VALUE_CONVERT, logicalType.name(),
-                          "Date");
+    throw new SFException(ErrorCode.INVALID_VALUE_CONVERT,
+                          logicalTypeStr,
+                          "Date",
+                          "");
   }
 
   @Override
   public BigDecimal toBigDecimal(int index) throws SFException
   {
-    throw new SFException(ErrorCode.INVALID_VALUE_CONVERT, logicalType.name(),
-                          "BigDecimal");
+    throw new SFException(ErrorCode.INVALID_VALUE_CONVERT,
+                          logicalTypeStr,
+                          "BigDecimal",
+                          "");
   }
 
   @Override
   public BigDecimal toBigDecimal(int index, int scale) throws SFException
   {
-    throw new SFException(ErrorCode.INVALID_VALUE_CONVERT, logicalType.name(),
-                          "BigDecimal");
+    throw new SFException(ErrorCode.INVALID_VALUE_CONVERT,
+                          logicalTypeStr,
+                          "BigDecimal",
+                          "");
   }
 
   @Override
