@@ -28,7 +28,8 @@ public class TelemetryIT extends AbstractDriverIT
   @Test
   public void test() throws IOException
   {
-    Telemetry telemetry = Telemetry.createTelemetry(connection, 100);
+    TelemetryClient telemetry =
+        (TelemetryClient) TelemetryClient.createTelemetry(connection, 100);
     ObjectNode node1 = mapper.createObjectNode();
     node1.put("type", "query");
     node1.put("query_id", "sdasdasdasdasds");
@@ -70,7 +71,8 @@ public class TelemetryIT extends AbstractDriverIT
   @Test(expected = IOException.class)
   public void close1() throws IOException
   {
-    Telemetry telemetry = Telemetry.createTelemetry(connection);
+    TelemetryClient telemetry =
+        (TelemetryClient) TelemetryClient.createTelemetry(connection);
     telemetry.close();
     ObjectNode node = mapper.createObjectNode();
     node.put("type", "query");
@@ -81,7 +83,7 @@ public class TelemetryIT extends AbstractDriverIT
   @Test(expected = IOException.class)
   public void close2() throws IOException
   {
-    Telemetry telemetry = Telemetry.createTelemetry(connection);
+    TelemetryClient telemetry = (TelemetryClient) TelemetryClient.createTelemetry(connection);
     telemetry.close();
     ObjectNode node = mapper.createObjectNode();
     node.put("type", "query");
@@ -92,7 +94,8 @@ public class TelemetryIT extends AbstractDriverIT
   @Test(expected = IOException.class)
   public void close3() throws IOException
   {
-    Telemetry telemetry = Telemetry.createTelemetry(connection);
+    TelemetryClient telemetry =
+        (TelemetryClient) TelemetryClient.createTelemetry(connection);
     telemetry.close();
     telemetry.close();
   }
@@ -100,7 +103,8 @@ public class TelemetryIT extends AbstractDriverIT
   @Test
   public void test4() throws IOException
   {
-    Telemetry telemetry = Telemetry.createTelemetry(connection, 100);
+    TelemetryClient telemetry =
+        (TelemetryClient) TelemetryClient.createTelemetry(connection, 100);
 
     ObjectNode node1 = mapper.createObjectNode();
     node1.put("type", "query");

@@ -716,7 +716,7 @@
                   </excludes>
                   <argLine>
                     @{argLine}
-                    -Djava.util.logging.config.file=jenkins_it_logging.properties
+                    -Dlogback.configurationFile=file:jenkins_it_logback.xml
                   </argLine>
                 </configuration>
               </execution>

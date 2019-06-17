@@ -31,7 +31,7 @@ public class TelemetryTest
     list.add(new TelemetryData(log1, timestamp1));
     list.add(new TelemetryData(log2, timestamp2));
 
-    String result = Telemetry.logsToString(list);
+    String result = TelemetryClient.logsToString(list);
 
     ObjectNode expect = mapper.createObjectNode();
     ArrayNode logs = mapper.createArrayNode();

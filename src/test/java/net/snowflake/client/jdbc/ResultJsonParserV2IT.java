@@ -14,7 +14,7 @@ import static org.junit.Assert.assertNull;
  * <p>
  * This is the unit tests for ResultJsonParserV2
  */
-public class ResultJsonParserV2Test
+public class ResultJsonParserV2IT
 {
   @Test
   public void simpleTest() throws SnowflakeSQLException
