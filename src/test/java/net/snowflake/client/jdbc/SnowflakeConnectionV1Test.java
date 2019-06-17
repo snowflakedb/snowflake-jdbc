@@ -112,5 +112,34 @@ public class SnowflakeConnectionV1Test
     assertThat((String) result.get("USER"), is("snowman"));
     assertThat((String) result.get("SERVERURL"), is("http://testaccount.localhost:8080/"));
     assertThat((String) result.get("PROP1"), is("value2"));
+
+    // testcase 8 (Global URL with no account specified)
+    url = "jdbc:snowflake://testaccount-1234567890qwertyupalsjhfg" +
+          ".global.snowflakecomputing.com:8080/?prop1=value";
+    prop = new Properties();
+    prop.put("user", "snowman");
+
+    result = SnowflakeConnectionV1.mergeProperties(url, prop);
+
+    assertThat(result.size(), is(4));
+    assertThat((String) result.get("ACCOUNT"), is("testaccount"));
+    assertThat((String) result.get("USER"), is("snowman"));
+    assertThat((String) result.get("SERVERURL"), is("https://testaccount-1234567890qwertyupalsjhfg.global.snowflakecomputing.com:8080/"));
+    assertThat((String) result.get("PROP1"), is("value"));
+
+    // testcase 9 (Global URL with account specified)
+    url = "jdbc:snowflake://testaccount-1234567890qwertyupalsjhfg" +
+        ".global.snowflakecomputing.com:8080/?prop1=value";
+    prop = new Properties();
+    prop.put("user", "snowman");
+    prop.put("account", "s3testaccount");
+
+    result = SnowflakeConnectionV1.mergeProperties(url, prop);
+
+    assertThat(result.size(), is(4));
+    assertThat((String) result.get("ACCOUNT"), is("s3testaccount"));
+    assertThat((String) result.get("USER"), is("snowman"));
+    assertThat((String) result.get("SERVERURL"), is("https://testaccount-1234567890qwertyupalsjhfg.global.snowflakecomputing.com:8080/"));
+    assertThat((String) result.get("PROP1"), is("value"));
   }
 }
