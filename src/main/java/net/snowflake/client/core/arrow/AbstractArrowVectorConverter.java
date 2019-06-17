@@ -109,7 +109,6 @@ abstract class AbstractArrowVectorConverter implements ArrowVectorConverter
                           "");
   }
 
-
   @Override
   public Date toDate(int index) throws SFException
   {
@@ -139,15 +138,6 @@ abstract class AbstractArrowVectorConverter implements ArrowVectorConverter
 
   @Override
   public BigDecimal toBigDecimal(int index) throws SFException
-  {
-    throw new SFException(ErrorCode.INVALID_VALUE_CONVERT,
-                          logicalTypeStr,
-                          "BigDecimal",
-                          "");
-  }
-
-  @Override
-  public BigDecimal toBigDecimal(int index, int scale) throws SFException
   {
     throw new SFException(ErrorCode.INVALID_VALUE_CONVERT,
                           logicalTypeStr,

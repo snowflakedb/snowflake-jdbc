@@ -43,6 +43,7 @@ public abstract class SFBaseResultSet
   protected Map<String, Object> parameters = new HashMap<>();
 
   // Formatters for different datatypes
+  //TODO move all formatter to DataConversionContext.java
   SnowflakeDateTimeFormat timestampNTZFormatter;
   SnowflakeDateTimeFormat timestampLTZFormatter;
   SnowflakeDateTimeFormat timestampTZFormatter;

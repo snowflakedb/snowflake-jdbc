@@ -1,0 +1,97 @@
+/*
+ * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
+ */
+package net.snowflake.client.core.arrow;
+
+import net.snowflake.client.core.SFException;
+import org.apache.arrow.memory.BufferAllocator;
+import org.apache.arrow.memory.RootAllocator;
+import org.apache.arrow.vector.Float8Vector;
+import org.apache.arrow.vector.types.Types;
+import org.apache.arrow.vector.types.pojo.FieldType;
+import org.junit.Test;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
+
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
+
+public class DoubleToRealConverterTest
+{
+  /**
+   * allocator for arrow
+   */
+  private BufferAllocator allocator = new RootAllocator(Integer.MAX_VALUE);
+
+  /**
+   * Random seed
+   */
+  private Random random = new Random();
+
+  @Test
+  public void testConvertToDouble() throws SFException
+  {
+    final int rowCount = 1000;
+    List<Double> expectedValues = new ArrayList<>();
+    Set<Integer> nullValIndex = new HashSet<>();
+    for (int i = 0; i < rowCount; i++)
+    {
+      expectedValues.add(random.nextDouble());
+    }
+
+    Map<String, String> customFieldMeta = new HashMap<>();
+    customFieldMeta.put("logicalType", "REAL");
+
+    FieldType fieldType = new FieldType(true,
+                                        Types.MinorType.FLOAT8.getType(),
+                                        null, customFieldMeta);
+
+    Float8Vector vector = new Float8Vector("col_one", fieldType, allocator);
+    for (int i = 0; i < rowCount; i++)
+    {
+      boolean isNull = random.nextBoolean();
+      if (isNull)
+      {
+        vector.setNull(i);
+        nullValIndex.add(i);
+      }
+      else
+      {
+        vector.setSafe(i, expectedValues.get(i));
+      }
+    }
+
+    ArrowVectorConverter converter = new DoubleToRealConverter(vector);
+
+    for (int i = 0; i < rowCount; i++)
+    {
+      double doubleVal = converter.toDouble(i);
+      float floatVal = converter.toFloat(i);
+      Object doubleObject = converter.toObject(i);
+      String doubleString = converter.toString(i);
+
+      if (nullValIndex.contains(i))
+      {
+        assertThat(doubleVal, is((double) 0));
+        assertThat(floatVal, is((float) 0));
+        assertThat(doubleObject, is(nullValue()));
+        assertThat(doubleString, is(nullValue()));
+      }
+      else
+      {
+        assertThat(doubleVal, is(expectedValues.get(i)));
+        assertThat(floatVal, is(expectedValues.get(i).floatValue()));
+        assertThat(doubleObject, is(expectedValues.get(i)));
+        assertThat(doubleString, is(expectedValues.get(i).toString()));
+      }
+    }
+    vector.clear();
+  }
+}

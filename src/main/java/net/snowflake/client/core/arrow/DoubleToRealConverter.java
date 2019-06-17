@@ -31,14 +31,20 @@ public class DoubleToRealConverter extends AbstractArrowVectorConverter
   }
 
   @Override
+  public float toFloat(int index)
+  {
+    return (float) toDouble(index);
+  }
+
+  @Override
   public Object toObject(int index)
   {
-    return toDouble(index);
+    return isNull(index) ? null : toDouble(index);
   }
 
   @Override
   public String toString(int index)
   {
-    return String.valueOf(toDouble(index));
+    return isNull(index) ? null : String.valueOf(toDouble(index));
   }
 }

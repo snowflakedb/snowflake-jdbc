@@ -31,32 +31,34 @@ public class IntToFixedConverter extends AbstractArrowVectorConverter
   @Override
   public byte toByte(int index) throws SFException
   {
-    int val = toInt(index);
+    int intVal = toInt(index);
+    byte byteVal = (byte) intVal;
 
-    if (val >> 8 == 0)
+    if (byteVal == intVal)
     {
-      return (byte) val;
+      return byteVal;
     }
     else
     {
       throw new SFException(ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr,
-                            "byte", val);
+                            "byte", intVal);
     }
   }
 
   @Override
   public short toShort(int index) throws SFException
   {
-    int val = toInt(index);
+    int intVal = toInt(index);
+    short shortVal = (short) intVal;
 
-    if (val >> 16 == 0)
+    if (shortVal == intVal)
     {
-      return (short) val;
+      return shortVal;
     }
     else
     {
       throw new SFException(ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr,
-                            "byte", val);
+                            "byte", intVal);
     }
   }
 
@@ -101,30 +103,16 @@ public class IntToFixedConverter extends AbstractArrowVectorConverter
   }
 
   @Override
-  public BigDecimal toBigDecimal(int index, int scale)
+  public Object toObject(int index) throws SFException
   {
-    if (intVector.isNull(index))
-    {
-      return null;
-    }
-    else
-    {
-      int val = intVector.getDataBuffer().getInt(
-          index * IntVector.TYPE_WIDTH);
-      return BigDecimal.valueOf((long) val, scale);
-    }
-  }
-
-  @Override
-  public Object toObject(int index)
-  {
-    return toBigDecimal(index);
+    return isNull(index) ? null :
+           (sfScale == 0 ? toInt(index) : toBigDecimal(index));
   }
 
   @Override
   public String toString(int index)
   {
-    return toBigDecimal(index).toString();
+    return isNull(index) ? null : toBigDecimal(index).toString();
   }
 
 }

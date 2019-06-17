@@ -34,12 +34,12 @@ public class TinyIntToBooleanConverter extends AbstractArrowVectorConverter
   @Override
   public Object toObject(int index)
   {
-    return toBoolean(index);
+    return isNull(index) ? null : toBoolean(index);
   }
 
   @Override
   public String toString(int index)
   {
-    return String.valueOf(toBoolean(index));
+    return isNull(index) ? null : String.valueOf(toBoolean(index));
   }
 }
