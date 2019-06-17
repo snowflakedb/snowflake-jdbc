@@ -3,7 +3,10 @@ package net.snowflake.client.jdbc;
 import net.snowflake.client.RunningOnTravisCI;
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -15,8 +18,34 @@ import static org.hamcrest.CoreMatchers.is;
 
 import static net.snowflake.client.ConditionalIgnoreRule.ConditionalIgnore;
 
-public class PrepareMultiStmtIT extends BaseJDBCTest
+@RunWith(Parameterized.class)
+public class PreparedMultiStmtIT extends BaseJDBCTest
 {
+  @Parameterized.Parameters
+  public static Object[][] data()
+  {
+    // all tests in this class need to run for both query result formats json and arrow
+    return new Object[][] {
+        {"JSON"},
+        {"Arrow"}
+    };
+  }
+
+  private static String queryResultFormat;
+
+  public PreparedMultiStmtIT(String format)
+  {
+    queryResultFormat = format;
+  }
+
+  public static Connection getConnection()
+  throws SQLException
+  {
+    Connection conn = BaseJDBCTest.getConnection();
+    conn.createStatement().execute("alter session set query_result_format = '" + queryResultFormat + "'");
+    return conn;
+  }
+
   @Test
   @ConditionalIgnore(condition = RunningOnTravisCI.class)
   public void testExecuteUpdateCount() throws Exception
