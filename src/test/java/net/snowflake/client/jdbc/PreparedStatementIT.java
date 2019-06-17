@@ -53,7 +53,7 @@ public class PreparedStatementIT extends BaseJDBCTest
   public static Object[][] data()
   {
     // all tests in this class need to run for both query result formats json and arrow
-    return new Object[][] {
+    return new Object[][]{
         {"JSON"},
         {"Arrow"}
     };
