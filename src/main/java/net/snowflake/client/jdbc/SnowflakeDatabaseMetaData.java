@@ -1991,7 +1991,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
 
     if (tableNamePattern == null)
     {
-        return SnowflakeDatabaseMetaDataResultSet.getEmptyResultSet(
+      return SnowflakeDatabaseMetaDataResultSet.getEmptyResultSet(
           GET_TABLE_PRIVILEGES, statement);
     }
     // apply session context when catalog is unspecified
@@ -2003,8 +2003,8 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
     String showView = "select * from ";
 
     if (catalog != null && !catalog.isEmpty() &&
-                        !catalog.trim().equals("%") &&
-                        !catalog.trim().equals(".*"))
+        !catalog.trim().equals("%") &&
+        !catalog.trim().equals(".*"))
     {
       showView += catalog + ".";
     }
