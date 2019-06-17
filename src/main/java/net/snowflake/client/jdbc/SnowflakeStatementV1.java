@@ -4,7 +4,6 @@
 
 package net.snowflake.client.jdbc;
 
-import com.sun.org.apache.xpath.internal.operations.Variable;
 import net.snowflake.client.core.ParameterBindingDTO;
 import net.snowflake.client.core.ResultUtil;
 import net.snowflake.client.core.SFBaseResultSet;

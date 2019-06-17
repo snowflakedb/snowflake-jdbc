@@ -22,7 +22,10 @@ public class TinyIntToFixedConverter extends AbstractArrowVectorConverter
 
   public TinyIntToFixedConverter(ValueVector fieldVector)
   {
-    super(SnowflakeType.FIXED, fieldVector);
+    super(String.format("%s(%s,%s)", SnowflakeType.FIXED,
+                        fieldVector.getField().getMetadata().get("precision"),
+                        fieldVector.getField().getMetadata().get("scale")),
+          fieldVector);
     this.tinyIntVector = (TinyIntVector) fieldVector;
     String scaleStr = fieldVector.getField().getMetadata().get("scale");
     this.sfScale = Integer.parseInt(scaleStr);
@@ -37,8 +40,10 @@ public class TinyIntToFixedConverter extends AbstractArrowVectorConverter
     }
     else if (sfScale != 0)
     {
-      throw new SFException(ErrorCode.INVALID_VALUE_CONVERT, logicalType.name(),
-                            "byte");
+      byte val = tinyIntVector.getDataBuffer().getByte(
+          index * TinyIntVector.TYPE_WIDTH);
+      throw new SFException(ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr,
+                            "byte", val);
     }
     else
     {
