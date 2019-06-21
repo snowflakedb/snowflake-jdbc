@@ -3,10 +3,11 @@
  */
 
 package net.snowflake.client.jdbc;
-
+import java.io.UnsupportedEncodingException;
+import java.net.URI;
 import net.snowflake.common.core.ResourceBundleManager;
 import net.snowflake.common.core.SqlState;
-
+import java.net.URLDecoder;
 import java.sql.Connection;
 import java.sql.Driver;
 import java.sql.DriverManager;
@@ -14,7 +15,6 @@ import java.sql.DriverPropertyInfo;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.util.Properties;
-import java.util.regex.Pattern;
 
 /**
  * JDBC Driver implementation of Snowflake for production.
@@ -26,11 +26,6 @@ import java.util.regex.Pattern;
  */
 public class SnowflakeDriver implements Driver
 {
-  // pattern for jdbc:snowflake://[host[:port]]/?q1=v1&q2=v2...
-  private static final String JDBC_PROTOCOL_REGEX =
-      "jdbc:snowflake://([a-zA-Z_\\-0-9\\.]+(:\\d+)?)?"
-      + "(/?(\\?\\w+=\\w+)?(\\&\\w+=\\w+)*)?";
-
   static SnowflakeDriver INSTANCE;
 
   private static final
@@ -125,11 +120,88 @@ public class SnowflakeDriver implements Driver
     {
       return false;
     }
-
-    return url.indexOf("/?") > 0 ?
-           Pattern.matches(JDBC_PROTOCOL_REGEX,
-                           url.substring(0, url.indexOf("/?"))) :
-           Pattern.matches(JDBC_PROTOCOL_REGEX, url);
+    // must start with jdbc:
+    if (url.startsWith("jdbc:"))
+    {
+      try
+      {
+        // URI class gets confused by ":" within jdbc:snowflake, so start after :
+        URI uri;
+        if (url.contains("http://") || url.contains("https://"))
+        {
+          uri = URI.create(url.substring(url.indexOf("http")));
+        }
+        else
+        {
+          uri = URI.create(url.substring(url.indexOf("snowflake")));
+        }
+        String scheme = uri.getScheme();
+        String host = uri.getHost();
+        int port = uri.getPort();
+        String queryData = uri.getRawQuery();
+        String path = uri.getPath();
+        // scheme must be snowflake, else return false
+        if(scheme.equals("snowflake") || scheme.equals("http") || scheme.equals("https"))
+        {
+          // host exists
+          if (host != null)
+          {
+            // query data can only exist if followed by scheme and host
+            if (queryData != null)
+            {
+              String[] params = queryData.split("&");
+              for (String p : params)
+              {
+                String[] keyVals = p.split("=");
+                // if it didn't have an = to split in 2, it's invalid. Must follow format a=b
+                if (keyVals.length != 2)
+                {
+                  return false;
+                }
+                try
+                {
+                  // decode values and throw exceptions for odd values like %%
+                  URLDecoder.decode(keyVals[0], "UTF-8");
+                  URLDecoder.decode(keyVals[1], "UTF-8");
+                }
+                // if there's a decoding exception, return false
+                catch (UnsupportedEncodingException e)
+                {
+                  return false;
+                }
+              }
+              return (params.length > 0);
+            }
+            else
+            {
+              if (!path.isEmpty())
+              {
+                // path must be / with nothing after it
+                return url.endsWith("/");
+              }
+              else if (port != -1)
+              {
+                // if there's no path, last thing in URL should be port
+                return url.endsWith(Integer.toString(port));
+              }
+              else
+              {
+                // if there's no path or port, last thing in URL should be host
+                return url.endsWith(host);
+              }
+            }
+          }
+        }
+        //scheme does not equal snowflake
+        return false;
+      }
+      // if URL cannot be made into URI object, it is invalid. Return false.
+      catch (Exception e)
+      {
+        return false;
+      }
+    }
+    return false;
   }
 
   /**
