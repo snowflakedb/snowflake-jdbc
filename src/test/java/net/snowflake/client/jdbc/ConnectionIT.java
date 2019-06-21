@@ -13,6 +13,7 @@ import org.apache.commons.codec.binary.Base64;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.security.KeyPair;
@@ -461,6 +462,7 @@ public class ConnectionIT extends BaseJDBCTest
     fail();
   }
 
+  @Ignore("invalid db, schema or role no longer raises SQLWarnigs")
   @Test
   public void testInvalidDbOrSchemaOrRole() throws SQLException
   {
