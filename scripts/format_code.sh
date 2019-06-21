@@ -53,7 +53,7 @@ $DIR_TARGET_NAME/bin/format.sh \
 new_hash=$(find $SOURCE_DIR -name "*.java" -exec md5sum {} \; | cut -d " " -f1 | sort -k 1 | md5sum | cut -d " " -f1)
 echo "Code hash after  format: $new_hash"
 if [[ "$old_hash" != "$new_hash" ]]; then
-    (>&2 echo "[ERROR] Must run $THIS_DIR/scripts/format_code.sh before commiting, pre-commiting or running tests")
+    (>&2 echo "[ERROR] Must run $THIS_DIR/format_code.sh before commiting, pre-commiting or running tests")
     # exit 1 #temporally turn off error message to release the block on BPTP
 fi
 exit 0

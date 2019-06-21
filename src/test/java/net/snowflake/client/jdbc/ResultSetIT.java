@@ -111,7 +111,7 @@ public class ResultSetIT extends BaseJDBCTest
     Connection conn = getConnection(BaseJDBCTest.DONT_INJECT_SOCKET_TIMEOUT);
     if (isArrowTestsEnabled())
     {
-       conn.createStatement().execute("alter session set query_result_format = '" + queryResultFormat + "'");
+      conn.createStatement().execute("alter session set query_result_format = '" + queryResultFormat + "'");
     }
     return conn;
   }
@@ -122,7 +122,7 @@ public class ResultSetIT extends BaseJDBCTest
     Connection conn = getConnection(DONT_INJECT_SOCKET_TIMEOUT, paramProperties, false, false);
     if (isArrowTestsEnabled())
     {
-       conn.createStatement().execute("alter session set query_result_format = '" + queryResultFormat + "'");
+      conn.createStatement().execute("alter session set query_result_format = '" + queryResultFormat + "'");
     }
     return conn;
   }
