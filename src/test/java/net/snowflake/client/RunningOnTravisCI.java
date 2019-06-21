@@ -15,4 +15,11 @@ public class RunningOnTravisCI implements
         System.getenv("TRAVIS_JOB_ID") != null ||
         System.getenv("APPVEYOR_BUILD_ID") != null;
   }
+
+  public static boolean isRunningOnTravisCI()
+  {
+    return
+        System.getenv("TRAVIS_JOB_ID") != null ||
+        System.getenv("APPVEYOR_BUILD_ID") != null;
+  }
 }

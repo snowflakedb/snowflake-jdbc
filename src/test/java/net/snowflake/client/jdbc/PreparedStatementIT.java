@@ -53,10 +53,19 @@ public class PreparedStatementIT extends BaseJDBCTest
   public static Object[][] data()
   {
     // all tests in this class need to run for both query result formats json and arrow
-    return new Object[][]{
-        {"JSON"}
-        //, {"Arrow"}
-    };
+    if (BaseJDBCTest.isArrowTestsEnabled())
+    {
+      return new Object[][]{
+          {"JSON"}
+          , {"Arrow"}
+      };
+    }
+    else
+    {
+      return new Object[][]{
+          {"JSON"}
+      };
+    }
   }
 
   private static String queryResultFormat;
@@ -70,7 +79,10 @@ public class PreparedStatementIT extends BaseJDBCTest
   throws SQLException
   {
     Connection conn = BaseJDBCTest.getConnection();
-    // conn.createStatement().execute("alter session set query_result_format = '" + queryResultFormat + "'");
+    if (isArrowTestsEnabled())
+    {
+      conn.createStatement().execute("alter session set query_result_format = '" + queryResultFormat + "'");
+    }
     return conn;
   }
 

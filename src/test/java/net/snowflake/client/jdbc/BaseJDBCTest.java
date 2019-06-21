@@ -4,6 +4,7 @@
 package net.snowflake.client.jdbc;
 
 import net.snowflake.client.AbstractDriverIT;
+import net.snowflake.client.RunningOnTravisCI;
 
 import javax.xml.transform.Result;
 import javax.xml.transform.Source;
@@ -37,6 +38,15 @@ public class BaseJDBCTest extends AbstractDriverIT
 {
   // Test UUID unique per session
   static final String TEST_UUID = UUID.randomUUID().toString();
+
+  public static boolean isArrowTestsEnabled()
+  {
+    if (RunningOnTravisCI.isRunningOnTravisCI())
+    {
+      return false;
+    }
+    return true;
+  }
 
   protected interface MethodRaisesSQLException
   {
