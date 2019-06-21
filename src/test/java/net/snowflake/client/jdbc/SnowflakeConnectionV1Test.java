@@ -147,9 +147,9 @@ public class SnowflakeConnectionV1Test
     prop = new Properties();
 
     result = SnowflakeConnectionV1.mergeProperties(url, prop);
-    assertThat((String) result.get("SERVERURL"), is("http://testaccount.localhost:8080/"));
+    assertThat((String) result.get("SERVERURL"), is("https://testaccount.localhost:8080/"));
 
-    url = "jdbc:snowflake:https://testaccount.localhost:8080/?prop1=value1";
+    url = "jdbc:snowflake://https://testaccount.localhost:8080/?prop1=value1";
     prop = new Properties();
 
     result = SnowflakeConnectionV1.mergeProperties(url, prop);

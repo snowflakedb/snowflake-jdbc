@@ -16,6 +16,9 @@ import net.snowflake.common.core.SqlState;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
+import java.net.URI;
+import java.net.URLDecoder;
 import java.sql.Array;
 import java.sql.Blob;
 import java.sql.CallableStatement;
@@ -59,11 +62,11 @@ public class SnowflakeConnectionV1 implements Connection
   static private final
   SFLogger logger = SFLoggerFactory.getLogger(SnowflakeConnectionV1.class);
 
-  private static final String JDBC_PROTOCOL_PREFIX = "jdbc:snowflake";
+  private static final String JDBC_PROTOCOL_PREFIX = "jdbc:snowflake:";
 
-  private static final String NATIVE_PROTOCOL = "http";
+  private static final String NATIVE_PROTOCOL = "http:";
 
-  private static final String SSL_NATIVE_PROTOCOL = "https";
+  private static final String SSL_NATIVE_PROTOCOL = "https:";
 
   private boolean isClosed;
 
@@ -164,14 +167,35 @@ public class SnowflakeConnectionV1 implements Connection
   static Map<String, Object> mergeProperties(String url, Properties info)
   {
     final Map<String, Object> properties = new HashMap<>();
-
+    String queryParams = null;
+    String accountName = null;
+    String serverUrl = url;
+    // Format jdbc:snowflake://http:// is incorrect. Get rid of snowflake:jdbc and replace with http if it's not
+    // already there so URL is uniform and can be processed by URI class
+    if (url.contains("http://") || url.contains("https://"))
+    {
+      serverUrl = url.substring(url.indexOf("http"));
+    }
+    else
+    {
+      serverUrl = serverUrl.replace(JDBC_PROTOCOL_PREFIX, NATIVE_PROTOCOL);
+    }
     // first deal with url
-    int queryParamsIndex = url.indexOf("?");
+    try
+    {
+      URI uri = URI.create(serverUrl);
+      queryParams = uri.getRawQuery();
+      accountName = uri.getHost();
 
-    String serverUrl = queryParamsIndex > 0 ? url.substring(0, queryParamsIndex)
-                                            : url;
-    String queryParams = queryParamsIndex > 0 ? url.substring(queryParamsIndex + 1)
-                                              : null;
+    }
+    // this exception should never occur, since url was already vetted previously in acceptsUrl() function
+    catch (Exception e)
+    {
+      return properties;
+    }
+    int queryParamsIndex = serverUrl.indexOf("?");
+
+    serverUrl = queryParamsIndex > 0 ? serverUrl.substring(0, queryParamsIndex) : serverUrl;
 
     if (queryParams != null && !queryParams.isEmpty())
     {
@@ -182,8 +206,16 @@ public class SnowflakeConnectionV1 implements Connection
         int sep = entry.indexOf("=");
         if (sep > 0)
         {
-          String key = entry.substring(0, sep).toUpperCase();
-          properties.put(key, entry.substring(sep + 1));
+          try
+          {
+            String key = URLDecoder.decode(entry.substring(0, sep).toUpperCase(), "UTF-8");
+            String value = URLDecoder.decode(entry.substring(sep + 1), "UTF-8");
+            properties.put(key, value);
+          }
+          catch (UnsupportedEncodingException e)
+          {
+            // continue with for loop; just ignore property that wasn't added
+          }
         }
       }
     }
@@ -192,29 +224,20 @@ public class SnowflakeConnectionV1 implements Connection
     {
       properties.put(entry.getKey().toString().toUpperCase(), entry.getValue());
     }
-
     boolean sslOn = getBooleanTrueByDefault(properties.get("SSL"));
     // if string already contains http or https, cut off everything that comes before it
-    if (serverUrl.contains("http://") || serverUrl.contains("https://"))
-    {
-      serverUrl = serverUrl.substring(serverUrl.indexOf("http"));
-    }
-    else
-    {
-      serverUrl = serverUrl.replace(JDBC_PROTOCOL_PREFIX,
+
+    serverUrl = serverUrl.replace(NATIVE_PROTOCOL,
                                     sslOn ? SSL_NATIVE_PROTOCOL : NATIVE_PROTOCOL);
-    }
 
     properties.put("SERVERURL", serverUrl);
     properties.remove("SSL");
 
     // extracting ACCOUNT from URL if not set in the parameter
-    if (properties.get("ACCOUNT") == null &&
-        serverUrl.indexOf(".") > 0 &&
-        serverUrl.indexOf("://") > 0)
+    if (properties.get("ACCOUNT") == null && accountName != null &&
+        accountName.indexOf(".") > 0)
     {
-      String accountName = serverUrl.substring(serverUrl.indexOf("://") + 3,
-                                               serverUrl.indexOf("."));
+      accountName = accountName.substring(0, accountName.indexOf("."));
 
       // If this is a global URL, then extract out the external ID part
       if (serverUrl.contains(".global."))
