@@ -37,8 +37,23 @@ public class SecretDetector
   // Signature added in the query string of a URL in SAS based authentication
   // for S3 or Azure Storage requests
   private static final Pattern SAS_TOKEN_PATTERN = Pattern.compile(
-      "(sig|signature|AWSAccessKeyId)=(?<secret>[a-z0-9%/+]{16,})",
+      "(sig|signature|AWSAccessKeyId|password|passcode)=(?<secret>[a-z0-9%/+]{16,})",
       Pattern.CASE_INSENSITIVE);
+
+  private static final Pattern PASSWORD_KEY_PATTERN = Pattern.compile(
+      "(password|passcode)=",
+      Pattern.CASE_INSENSITIVE);
+
+  // "-----BEGIN PRIVATE KEY-----\n[PRIVATE-KEY]\n-----END PRIVATE KEY-----"
+  private static final Pattern PRIVATE_KEY_PATTERN = Pattern.compile(
+      "-----BEGIN PRIVATE KEY-----\\\\n([a-z0-9/+=\\\\n]{32,})\\\\n-----END PRIVATE KEY-----",
+      Pattern.MULTILINE | Pattern.CASE_INSENSITIVE);
+
+  // "privateKeyData": "[PRIVATE-KEY]"
+  private static final Pattern PRIVATE_KEY_DATA_PATTERN = Pattern.compile(
+      "\"privateKeyData\": \"([a-z0-9/+=\\\\n]{10,})\"",
+      Pattern.MULTILINE | Pattern.CASE_INSENSITIVE);
+
 
   private static final int LOOK_AHEAD = 10;
 
@@ -152,6 +167,46 @@ public class SecretDetector
     return secretRanges;
   }
 
+  /**
+   * Finds positions of occurrences of all password fields in the
+   * given text.
+   *
+   * @param text text which may contain passwords
+   * @return A list of begin/end positions of password fields
+   */
+  private static List<SecretRange> getPasswordPos(String text)
+  {
+    // log before and after in case this is causing StackOverflowError
+    LOGGER.debug("pre-regex getPasswordPos");
+
+    Matcher matcher = PASSWORD_KEY_PATTERN.matcher(
+        text.length() <= MAX_LENGTH ? text : text.substring(0, MAX_LENGTH));
+
+    List<SecretRange> secretRanges = new ArrayList<>();
+
+    while (matcher.find())
+    {
+      // Gets begin/end position of only 'secret' group in the matched regex
+      int begin = matcher.end();
+      int end = begin + 1;
+      while (end < text.length())
+      {
+        if (text.charAt(end) == '&' || text.charAt(end) == '"' )
+        {
+          break;
+        }
+        end++;
+      }
+
+      secretRanges.add(new SecretRange(begin, end));
+    }
+
+
+    LOGGER.debug("post-regex getPasswordPos");
+
+    return secretRanges;
+  }
+
   private static boolean isBase64(char ch)
   {
     return ('A' <= ch && ch <= 'Z')
@@ -199,9 +254,12 @@ public class SecretDetector
   public static String maskSecrets(String text)
   {
     List<SecretRange> secretRanges = SecretDetector.getAWSSecretPos(text);
+    secretRanges.addAll(SecretDetector.getAWSSecretPos(text));
     secretRanges.addAll(SecretDetector.getSASTokenPos(text));
-
-    return maskText(text, secretRanges);
+    secretRanges.addAll(SecretDetector.getPasswordPos(text));
+    text = maskText(text, secretRanges);
+    text = filterAccessTokens(text);
+    return text;
   }
 
   /**
@@ -246,5 +304,46 @@ public class SecretDetector
       this.beginPos = beginPos;
       this.endPos = endPos;
     }
+  }
+
+  /**
+   * Filter access tokens that might be buried in JSON. Currently only used
+   * to filter the scopedCreds passed for XP binary downloads
+   *
+   * @param message  the message text which may contain secrets
+   * @return Return filtered message
+   */
+  public static String filterAccessTokens(String message)
+  {
+    Matcher awsMatcher = AWS_TOKEN_PATTERN.matcher(message);
+
+    // aws
+    if (awsMatcher.find())
+    {
+      message = awsMatcher.replaceAll("$1\":\"XXXX\"");
+    }
+
+    // azure
+    Matcher azureMatcher = SAS_TOKEN_PATTERN.matcher(message);
+
+    if (azureMatcher.find())
+    {
+      message = azureMatcher.replaceAll("sig=XXXX");
+    }
+
+    // GCS
+    Matcher gcsMatcher = PRIVATE_KEY_PATTERN.matcher(message);
+    if (gcsMatcher.find())
+    {
+      message = gcsMatcher.replaceAll("-----BEGIN PRIVATE KEY-----\\\\nXXXX\\\\n-----END PRIVATE KEY-----");
+    }
+
+    gcsMatcher = PRIVATE_KEY_DATA_PATTERN.matcher(message);
+    if (gcsMatcher.find())
+    {
+      message = gcsMatcher.replaceAll("\"privateKeyData\": \"XXXX\"");
+    }
+
+    return message;
   }
 }

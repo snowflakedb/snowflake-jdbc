@@ -1,6 +1,7 @@
 package net.snowflake.client.util;
 
 import org.apache.commons.lang3.RandomStringUtils;
+import org.junit.Assert;
 import org.junit.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -40,7 +41,7 @@ public class SecretDetectorTest
                      "HEADER = TRUE \n" +
                      "FILE_FORMAT = (TYPE = PARQUET SNAPPY_COMPRESSION = TRUE )\n" +
                      ";";
-    String masked = SecretDetector.maskAWSSecret(sql);
+    String masked = SecretDetector.maskSecrets(sql);
     assertThat("secret masked", correct.compareTo(masked) == 0);
   }
 
@@ -78,26 +79,26 @@ public class SecretDetectorTest
 
     assertThat("Azure SAS token is not masked",
                maskedAzureSasToken.equals(
-                   SecretDetector.maskSASToken(azureSasToken)));
+                   SecretDetector.maskSecrets(azureSasToken)));
 
     assertThat("S3 SAS token is not masked",
-               maskedS3SasToken.equals(SecretDetector.maskSASToken(s3SasToken)));
+               maskedS3SasToken.equals(SecretDetector.maskSecrets(s3SasToken)));
 
     String randomString = RandomStringUtils.random(200);
     assertThat("Text without secrets is not unmodified",
-               randomString.equals(SecretDetector.maskSASToken(randomString)));
+               randomString.equals(SecretDetector.maskSecrets(randomString)));
 
     assertThat("Text with 2 Azure SAS tokens is not masked",
                (maskedAzureSasToken + maskedAzureSasToken).equals(
-                   SecretDetector.maskSASToken(azureSasToken + azureSasToken)));
+                   SecretDetector.maskSecrets(azureSasToken + azureSasToken)));
 
     assertThat("Text with 2 S3 SAS tokens is not masked",
                (maskedAzureSasToken + maskedAzureSasToken).equals(
-                   SecretDetector.maskSASToken(azureSasToken + azureSasToken)));
+                   SecretDetector.maskSecrets(azureSasToken + azureSasToken)));
 
     assertThat("Text with Azure and S3 SAS tokens is not masked",
                (maskedAzureSasToken + maskedS3SasToken).equals(
-                   SecretDetector.maskSASToken(azureSasToken + s3SasToken)));
+                   SecretDetector.maskSecrets(azureSasToken + s3SasToken)));
   }
 
   @Test
@@ -128,11 +129,56 @@ public class SecretDetectorTest
         "st=2017-06-27T02:05:50Z&spr=https,http&" +
         "sig=☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺')";
 
+    String masked = SecretDetector.maskSecrets(sqlText);
     assertThat("Text with AWS secret and Azure SAS token is not masked",
-               maskedSqlText.equals(SecretDetector.maskSecrets(sqlText)));
+               maskedSqlText.equals(masked));
 
     String randomString = RandomStringUtils.random(500);
     assertThat("Text without secrets is not unmodified",
                randomString.equals(SecretDetector.maskSecrets(randomString)));
+  }
+
+  @Test
+  public void testMaskPasswordFromConnectionString()
+  {
+    String connectionStr = "\"jdbc:snowflake://xxx.snowflakecomputing" +
+                                 ".com/?user=xxx&password=xxxxxx&role=xxx\"";
+    String maskedConnectionStr = "\"jdbc:snowflake://xxx.snowflakecomputing" +
+                                 ".com/?user=xxx&password=☺☺☺☺☺☺&role=xxx\"";
+    assertThat("Text with password is not masked",
+               maskedConnectionStr.equals(SecretDetector.maskSecrets(connectionStr)));
+
+    connectionStr = "\"jdbc:snowflake://xxx.snowflakecomputing" +
+                           ".com/?user=xxx&password=xxxxxx\"";
+    maskedConnectionStr = "\"jdbc:snowflake://xxx.snowflakecomputing" +
+                                 ".com/?user=xxx&password=☺☺☺☺☺☺\"";
+    assertThat("Text with password is not masked",
+               maskedConnectionStr.equals(SecretDetector.maskSecrets(connectionStr)));
+
+    connectionStr = "\"jdbc:snowflake://xxx.snowflakecomputing" +
+                    ".com/?user=xxx&passcode=xxxxxx\"";
+    maskedConnectionStr = "\"jdbc:snowflake://xxx.snowflakecomputing" +
+                          ".com/?user=xxx&passcode=☺☺☺☺☺☺\"";
+    assertThat("Text with password is not masked",
+               maskedConnectionStr.equals(SecretDetector.maskSecrets(connectionStr)));
+
+    connectionStr = "\"jdbc:snowflake://xxx.snowflakecomputing" +
+                    ".com/?user=xxx&passWord=xxxxxx\"";
+    maskedConnectionStr = "\"jdbc:snowflake://xxx.snowflakecomputing" +
+                          ".com/?user=xxx&passWord=☺☺☺☺☺☺\"";
+    assertThat("Text with password is not masked",
+               maskedConnectionStr.equals(SecretDetector.maskSecrets(connectionStr)));
+  }
+
+  @Test
+  public void sasTokenFilterTest() throws Exception
+  {
+    String messageText = "\"privateKeyData\": \"aslkjdflasjf\"";
+
+    String filteredMessageText = "\"privateKeyData\": \"XXXX\"";
+
+    String result = SecretDetector.maskSecrets(messageText);
+
+    Assert.assertEquals(filteredMessageText, result);
   }
 }
