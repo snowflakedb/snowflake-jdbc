@@ -191,7 +191,7 @@ public class SecretDetector
       int end = begin + 1;
       while (end < text.length())
       {
-        if (text.charAt(end) == '&' || text.charAt(end) == '"' )
+        if (text.charAt(end) == '&' || text.charAt(end) == '"')
         {
           break;
         }
@@ -310,7 +310,7 @@ public class SecretDetector
    * Filter access tokens that might be buried in JSON. Currently only used
    * to filter the scopedCreds passed for XP binary downloads
    *
-   * @param message  the message text which may contain secrets
+   * @param message the message text which may contain secrets
    * @return Return filtered message
    */
   public static String filterAccessTokens(String message)

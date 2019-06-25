@@ -142,16 +142,16 @@ public class SecretDetectorTest
   public void testMaskPasswordFromConnectionString()
   {
     String connectionStr = "\"jdbc:snowflake://xxx.snowflakecomputing" +
-                                 ".com/?user=xxx&password=xxxxxx&role=xxx\"";
+                           ".com/?user=xxx&password=xxxxxx&role=xxx\"";
     String maskedConnectionStr = "\"jdbc:snowflake://xxx.snowflakecomputing" +
                                  ".com/?user=xxx&password=☺☺☺☺☺☺&role=xxx\"";
     assertThat("Text with password is not masked",
                maskedConnectionStr.equals(SecretDetector.maskSecrets(connectionStr)));
 
     connectionStr = "\"jdbc:snowflake://xxx.snowflakecomputing" +
-                           ".com/?user=xxx&password=xxxxxx\"";
+                    ".com/?user=xxx&password=xxxxxx\"";
     maskedConnectionStr = "\"jdbc:snowflake://xxx.snowflakecomputing" +
-                                 ".com/?user=xxx&password=☺☺☺☺☺☺\"";
+                          ".com/?user=xxx&password=☺☺☺☺☺☺\"";
     assertThat("Text with password is not masked",
                maskedConnectionStr.equals(SecretDetector.maskSecrets(connectionStr)));
 

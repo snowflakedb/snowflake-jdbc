@@ -48,7 +48,7 @@ public class ResultUtilTest
     TimeZone tz = TimeZone.getDefault();
     for (int i = 0; i < times; i++)
     {
-      int day = random.nextInt(dateBound) - dateBound/2;
+      int day = random.nextInt(dateBound) - dateBound / 2;
       ResultUtil.getDate(Integer.toString(day), tz, session);
     }
     long duration1 = System.currentTimeMillis() - start;
@@ -57,7 +57,7 @@ public class ResultUtilTest
     start = System.currentTimeMillis();
     for (int i = 0; i < times; i++)
     {
-      int day = random.nextInt(dateBound) - dateBound/2;
+      int day = random.nextInt(dateBound) - dateBound / 2;
       ResultUtil.getDate(day, tz);
     }
     long duration2 = System.currentTimeMillis() - start;
@@ -66,6 +66,7 @@ public class ResultUtilTest
 
   /**
    * Note: better to test it in different local time zone
+   *
    * @throws SFException
    */
   @Test
