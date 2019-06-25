@@ -2,12 +2,37 @@ package net.snowflake.client.core;
 
 import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
+import java.sql.Date;
 import java.util.Random;
 import java.util.TimeZone;
 
+import static org.junit.Assert.assertEquals;
+
+@RunWith(Parameterized.class)
 public class ResultUtilTest
 {
+  @Parameterized.Parameters
+  public static Object[][] data()
+  {
+    return new Object[][]{
+        {"UTC"},
+        {"America/Los_Angeles"},
+        {"America/New_York"},
+        {"Pacific/Honolulu"},
+        {"Asia/Singapore"},
+        {"MEZ"},
+        {"MESZ"}
+    };
+  }
+
+  public ResultUtilTest(String tz)
+  {
+    System.setProperty("user.timezone", tz);
+  }
+
   @Test
   @Ignore
   /**
@@ -37,5 +62,18 @@ public class ResultUtilTest
     }
     long duration2 = System.currentTimeMillis() - start;
     System.out.println(duration1 + " " + duration2);
+  }
+
+  /**
+   * Note: better to test it in different local time zone
+   * @throws SFException
+   */
+  @Test
+  public void testGetDate() throws SFException
+  {
+    int day = -8865;
+    Date newDate = ResultUtil.getDate(day, TimeZone.getDefault());
+    Date oldDate = ResultUtil.getDate(Integer.toString(day), TimeZone.getDefault(), new SFSession());
+    assertEquals(newDate, oldDate);
   }
 }
