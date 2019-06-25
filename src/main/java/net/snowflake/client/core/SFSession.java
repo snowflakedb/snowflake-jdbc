@@ -23,7 +23,6 @@ import org.apache.http.client.utils.URIBuilder;
 
 import java.io.IOException;
 import java.security.PrivateKey;
-import java.sql.SQLClientInfoException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -345,9 +344,7 @@ public class SFSession
     String authenticator = (String) connectionPropertiesMap.get(
         SFSessionProperty.AUTHENTICATOR);
 
-    PrivateKey privateKey = (PrivateKey) connectionPropertiesMap.get(
-        SFSessionProperty.PRIVATE_KEY);
-
+    PrivateKey privateKey = (PrivateKey) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY);
     return (authenticator == null && privateKey == null) ||
            ClientAuthnDTO.AuthenticatorType.SNOWFLAKE.name()
                .equalsIgnoreCase(authenticator);
@@ -452,8 +449,7 @@ public class SFSession
         .setAppVersion(
             (String) connectionPropertiesMap.get(SFSessionProperty.APP_VERSION))
         .setSessionParameters(sessionParametersMap)
-        .setPrivateKey((PrivateKey) connectionPropertiesMap.get(
-            SFSessionProperty.PRIVATE_KEY))
+        .setPrivateKey((PrivateKey) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY))
         .setApplication((String) connectionPropertiesMap.get(
             SFSessionProperty.APPLICATION))
         .setServiceName(this.getServiceName())

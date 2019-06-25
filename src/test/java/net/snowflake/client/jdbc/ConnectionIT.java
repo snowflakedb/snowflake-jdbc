@@ -94,7 +94,7 @@ public class ConnectionIT extends BaseJDBCTest
     Statement statement = con.createStatement();
     ResultSet resultSet = statement.executeQuery("show parameters");
     assertTrue(resultSet.next());
-    assertTrue(!con.isClosed());
+    assertFalse(con.isClosed());
     statement.close();
     con.close();
     assertTrue(con.isClosed());
