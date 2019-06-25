@@ -100,6 +100,8 @@ public class PreparedStatementIT extends BaseJDBCTest
                                         + "colD NUMBER, col INTEGER)";
   private final String deleteTableSQL = "drop table if exists TEST_PREPST";
   private final String enableCacheReuse = "alter session set USE_CACHED_RESULT=true";
+  private final String tableFuncSQL = "select 1 from table(generator(rowCount => ?))";
+
   @Rule
   public final ExpectedException exception = ExpectedException.none();
 
@@ -1465,6 +1467,18 @@ public class PreparedStatementIT extends BaseJDBCTest
    * has to use the specific timestamp format:
    * YYYY-MM-DD HH24:MI:SS.FF9 TZH:TZM
    */
+  //@Test
+  public void testTableFuncBindInput() throws SQLException
+  {
+    int[] countResult;
+    connection = getConnection();
+    prepStatement = connection.prepareStatement(tableFuncSQL);
+    prepStatement.setInt(1, 2);
+    resultSet = prepStatement.executeQuery();
+    assertEquals(2, getSizeOfResultSet(resultSet));
+    connection.close();
+  }
+
   @Test
   @ConditionalIgnore(condition = RunningOnTravisCI.class)
   public void testBindTimestampTZViaStringBatch() throws SQLException
