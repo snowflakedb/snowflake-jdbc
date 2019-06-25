@@ -17,33 +17,30 @@ public class SnowflakeDriverTest
   public void testAcceptUrls() throws Exception
   {
     SnowflakeDriver snowflakeDriver = SnowflakeDriver.INSTANCE;
+
     // positive tests
+    assertTrue(snowflakeDriver.acceptsURL("jdbc:snowflake://"));
     assertTrue(snowflakeDriver.acceptsURL("jdbc:snowflake://localhost"));
     assertTrue(snowflakeDriver.acceptsURL("jdbc:snowflake://localhost:8081"));
-    assertTrue(snowflakeDriver.acceptsURL("jdbc:snowflake://localhost8081?a=b"));
+    assertTrue(snowflakeDriver.acceptsURL("jdbc:snowflake://localhost:8081?a=b"));
     assertTrue(snowflakeDriver.acceptsURL("jdbc:snowflake://localhost:8081/?a=b"));
     assertTrue(snowflakeDriver.acceptsURL("jdbc:snowflake://localhost:8081?a=b&c=d"));
     assertTrue(snowflakeDriver.acceptsURL("jdbc:snowflake://localhost:8081/?a=b&c=d"));
-    assertTrue(snowflakeDriver.acceptsURL("jdbc:snowflake://testaccount.snowflakecomputing" +
-                                          ".com:443?CLIENT_SESSION_KEEP_ALIVE=true&db=TEST_DB&proxyHost=your-host" +
-                                          ".com&proxyPort=1234&schema=PUBLIC&useProxy=true&warehouse=TEST_WH"));
-    assertTrue(snowflakeDriver.acceptsURL("jdbc:snowflake://testaccount.snowflakecomputing.com?proxyHost=72.1.32" +
-                                          ".55&proxyPort=port%55"));
-    assertTrue(snowflakeDriver.acceptsURL("jdbc:snowflake://localhost:8080?proxyHost=%3d%2f&proxyPort=777"));
-    assertTrue(snowflakeDriver.acceptsURL("jdbc:snowflake://localhost:8080?proxyHost=cheese&proxyPort=!@"));
-    assertTrue(snowflakeDriver.acceptsURL("jdbc:snowflake://http://testaccount.localhost?prop1=value1"));
+
+    assertTrue(snowflakeDriver.acceptsURL(
+        "jdbc:snowflake://localhost:8082/?account=TESTACCOUNT&" +
+        "user=qa@snowflakecomputing.com&ssl=off&schema=testschema&db=testdb"));
+    assertTrue(snowflakeDriver.acceptsURL("jdbc:snowflake://snowflake.reg.local:8082/?account=TESTACCOUNT&" +
+    "user=qa@snowflakecomputing.com&ssl=off&schema=testschema&db=testdb&networkTimeout=3600"));
+
+    assertTrue(snowflakeDriver.acceptsURL("jdbc:snowflake://snowflake.reg.local:8082/?account=testaccount&authenticator=https://snowflakecomputing.okta.com/app/template_saml_2_0/ky7gy61iAOAMLLSOZSVX/sso/saml&user=qa&ssl=off&schema=testschema&db=testdb&networkTimeout=3600&retryQuery=on"));
     // negative tests
     assertFalse(snowflakeDriver.acceptsURL("jdbc:"));
-    assertFalse(snowflakeDriver.acceptsURL("jdbc:snowflake://"));
     assertFalse(snowflakeDriver.acceptsURL("jdbc:snowflake://:"));
     assertFalse(snowflakeDriver.acceptsURL("jdbc:snowflake://localhost:"));
     assertFalse(snowflakeDriver.acceptsURL("jdbc:snowflake://:8080"));
     assertFalse(snowflakeDriver.acceptsURL("jdbc:snowflake://localhost:xyz"));
     assertFalse(snowflakeDriver.acceptsURL("jdbc:snowflak://localhost:8080"));
     assertFalse(snowflakeDriver.acceptsURL("jdbc:snowflake://localhost:8080/a=b"));
-    assertFalse(snowflakeDriver.acceptsURL("jdbc:snowflake://testaccount.com?proxyHost=%%"));
-    assertFalse(snowflakeDriver.acceptsURL("jdbc:snowflake://testaccount.com?proxyHost=puppy==dog&proxyPort=781"));
-    assertFalse(snowflakeDriver.acceptsURL("jdbc:snowflake://testaccount.com?proxyHost=&&&proxyPort=5"));
-    assertFalse(snowflakeDriver.acceptsURL("jdbc:snowflake://testaccount.com?proxyHost=%b&proxyPort="));
   }
 }
