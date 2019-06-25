@@ -18,6 +18,7 @@ import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.TimeZone;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -345,6 +346,15 @@ public class AbstractDriverIT
   protected static Date buildDate(int year, int month, int day)
   {
     Calendar cal = Calendar.getInstance();
+    cal.set(year, month, day, 0, 0, 0);
+    cal.set(Calendar.MILLISECOND, 0);
+    return new Date(cal.getTime().getTime());
+  }
+
+  protected static Date buildDateWithTZ(int year, int month, int day, TimeZone tz)
+  {
+    Calendar cal = Calendar.getInstance();
+    cal.setTimeZone(tz);
     cal.set(year, month, day, 0, 0, 0);
     cal.set(Calendar.MILLISECOND, 0);
     return new Date(cal.getTime().getTime());

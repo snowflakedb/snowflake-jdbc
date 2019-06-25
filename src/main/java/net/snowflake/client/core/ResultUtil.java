@@ -44,6 +44,7 @@ import static net.snowflake.client.core.SessionUtil.DEFAULT_CLIENT_PREFETCH_THRE
 public class ResultUtil
 {
   static final SFLogger logger = SFLoggerFactory.getLogger(ResultUtil.class);
+  public static final int MILLIS_IN_ONE_DAY = 86400000;
 
   // Construct a default UTC zone for TIMESTAMPNTZ
   private static TimeZone timeZoneUTC = TimeZone.getTimeZone("UTC");
@@ -654,7 +655,7 @@ public class ResultUtil
     if (milliToAdjust != 0)
     {
       logger.debug("adjust timestamp by {} days",
-                   (ArgSupplier) () -> milliToAdjust / 86400000);
+                   (ArgSupplier) () -> milliToAdjust / MILLIS_IN_ONE_DAY);
 
       Timestamp newTimestamp = new Timestamp(timestamp.getTime()
                                              + milliToAdjust);
@@ -677,18 +678,18 @@ public class ResultUtil
    */
   static public long msDiffJulianToGregorian(java.util.Date date)
   {
-    // get the year of the date
-    Calendar cal = Calendar.getInstance();
-    cal.setTime(date);
-    int year = cal.get(Calendar.YEAR);
-    int month = cal.get(Calendar.MONTH);
-    int dayOfMonth = cal.get(Calendar.DAY_OF_MONTH);
-
     // if date is before 1582-10-05, apply the difference
     // by (H-(H/4)-2) where H is the hundreds digit of the year according to:
     // http://en.wikipedia.org/wiki/Gregorian_calendar
     if (date.getTime() < -12220156800000L)
     {
+      // get the year of the date
+      Calendar cal = Calendar.getInstance();
+      cal.setTime(date);
+      int year = cal.get(Calendar.YEAR);
+      int month = cal.get(Calendar.MONTH);
+      int dayOfMonth = cal.get(Calendar.DAY_OF_MONTH);
+
       // for dates on or before 02/28, use the previous year otherwise use
       // current year.
       // TODO: we need to revisit this since there is a potential issue using
@@ -704,7 +705,7 @@ public class ResultUtil
       int hundreds = year / 100;
       int differenceInDays = hundreds - (hundreds / 4) - 2;
 
-      return differenceInDays * 86400000;
+      return differenceInDays * MILLIS_IN_ONE_DAY;
     }
     else
     {
@@ -941,7 +942,7 @@ public class ResultUtil
   {
     try
     {
-      long milliSecsSinceEpoch = Long.valueOf(str) * 86400000;
+      long milliSecsSinceEpoch = Long.valueOf(str) * MILLIS_IN_ONE_DAY;
 
       SFTimestamp tsInUTC = SFTimestamp.fromDate(new Date(milliSecsSinceEpoch),
                                                  0, TimeZone.getTimeZone("UTC"));
@@ -972,6 +973,35 @@ public class ResultUtil
           null,
           null);
     }
+  }
+
+  /**
+   * new method to get Date from integer
+   * @param day
+   * @param tz
+   * @return
+   * @throws SFException
+   */
+  static public Date getDate(int day, TimeZone tz) throws SFException
+  {
+    // return the date adjusted to the JVM default time zone
+    long milliSecsSinceEpoch = (long) day * MILLIS_IN_ONE_DAY;
+
+    long millsecsOffset = tz.getOffset(milliSecsSinceEpoch);
+
+    milliSecsSinceEpoch -= millsecsOffset;
+
+    Date preDate = new Date(milliSecsSinceEpoch);
+
+
+    // if date is on or before 1582-10-04, apply the difference
+    // by (H-H/4-2) where H is the hundreds digit of the year according to:
+    // http://en.wikipedia.org/wiki/Gregorian_calendar
+    Date newDate = adjustDate(preDate);
+    logger.debug("Adjust date from {} to {}",
+                 (ArgSupplier) preDate::toString,
+                 (ArgSupplier) newDate::toString);
+    return newDate;
   }
 
   /**

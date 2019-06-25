@@ -233,6 +233,7 @@ class SnowflakeResultSetV1 extends SnowflakeBaseResultSet implements SnowflakeRe
 
   public Date getDate(int columnIndex, TimeZone tz) throws SQLException
   {
+    // Note: currently we provide this API but it does not use TimeZone tz.
     raiseSQLExceptionIfResultSetIsClosed();
     try
     {
