@@ -2,15 +2,13 @@ package net.snowflake.client.jdbc.telemetryOOB;
 
 import net.minidev.json.JSONArray;
 import net.minidev.json.JSONObject;
-import net.snowflake.client.util.SFTimestamp;
 import net.snowflake.client.core.SFException;
+import net.snowflake.client.util.SFTimestamp;
 import net.snowflake.common.core.ResourceBundleManager;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -21,6 +19,7 @@ import java.util.UUID;
 public class TelemetryEvent extends JSONObject
 {
   private static final long serialVersionUID = 1L;
+  private static final int schemaVersion = 1;
 
   public enum Type
   {
@@ -151,7 +150,6 @@ public class TelemetryEvent extends JSONObject
       this.builderClass = builderClass;
       tags = new HashMap<>();
       tags.put("driver", driver);
-      Package pkg = Package.getPackage("net.snowflake.client.jdbc");
       tags.put("version", version);
       TelemetryService instance = TelemetryService.getInstance();
       tags.put("telemetryServerDeployment", instance.getServerDeploymentName());
@@ -200,23 +198,19 @@ public class TelemetryEvent extends JSONObject
     {
       body.put("UUID", UUID.randomUUID().toString());
       body.put("Created_On", SFTimestamp.getUTCNow());
+      body.put("SchemaVersion", schemaVersion);
       this.putMap("Tags", tags);
       return body;
     }
 
     private void putMap(String name, HashMap<String, String> map)
     {
-      JSONArray array = new JSONArray();
-      Iterator<?> it = map.entrySet().iterator();
-      while (it.hasNext())
+      JSONObject tags = new JSONObject();
+      for (String key : map.keySet())
       {
-        Map.Entry<?, ?> pairs = (Map.Entry) it.next();
-        JSONObject obj = new JSONObject();
-        obj.put("Name", pairs.getKey());
-        obj.put("Value", pairs.getValue());
-        array.appendElement(obj);
+        tags.put(key, map.get(key));
       }
-      body.put(name, array);
+      body.put(name, tags);
     }
   }
 
