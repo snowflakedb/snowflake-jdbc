@@ -978,6 +978,7 @@ public class ResultUtil
 
   /**
    * new method to get Date from integer
+   *
    * @param day
    * @param tz
    * @return
@@ -1005,6 +1006,7 @@ public class ResultUtil
 
   /**
    * simplified moveToTimeZone method for JDBC
+   *
    * @param epoch
    * @param oldTZ
    * @param newTZ
@@ -1023,8 +1025,8 @@ public class ResultUtil
     calendar.setTimeInMillis(epoch);
 
     int millisecondWithinDay = ((calendar.get(Calendar.HOUR_OF_DAY) * 60 +
-                                 calendar.get(Calendar.MINUTE))*60 +
-                                calendar.get(Calendar.SECOND))*1000+
+                                 calendar.get(Calendar.MINUTE)) * 60 +
+                                calendar.get(Calendar.SECOND)) * 1000 +
                                calendar.get(Calendar.MILLISECOND);
 
     int era = calendar.get(Calendar.ERA);

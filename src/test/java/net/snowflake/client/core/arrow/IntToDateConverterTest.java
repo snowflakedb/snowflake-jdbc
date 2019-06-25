@@ -127,9 +127,9 @@ public class IntToDateConverterTest
       else
       {
         assertThat(intVal, is(testDates[i]));
-        assertThat(((Date)obj).getTime(), is(((Date) oldObj).getTime()));
+        assertThat(((Date) obj).getTime(), is(((Date) oldObj).getTime()));
         assertThat(obj.toString(), is(expectedDates[i]));
-        assertThat(((Date)obj).getTime(), is(((Date)oldObj).getTime()));
+        assertThat(((Date) obj).getTime(), is(((Date) oldObj).getTime()));
         assertThat(oldObj.toString(), is(expectedDates[i++]));
       }
       j++;
@@ -162,7 +162,7 @@ public class IntToDateConverterTest
       }
       else
       {
-        rawDates[i] = random.nextInt(dateBound) - dateBound/2;
+        rawDates[i] = random.nextInt(dateBound) - dateBound / 2;
         vector.setSafe(i, rawDates[i]);
       }
     }
