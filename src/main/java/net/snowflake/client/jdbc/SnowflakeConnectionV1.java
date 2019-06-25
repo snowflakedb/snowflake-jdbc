@@ -49,6 +49,7 @@ import java.util.zip.GZIPInputStream;
 import static net.snowflake.client.core.SessionUtil.CLIENT_SFSQL;
 import static net.snowflake.client.core.SessionUtil.JVM_PARAMS_TO_PARAMS;
 import static net.snowflake.client.jdbc.ErrorCode.FEATURE_UNSUPPORTED;
+import static net.snowflake.client.jdbc.ErrorCode.INVALID_CONNECT_STRING;
 
 /**
  * Snowflake connection implementation
@@ -58,12 +59,6 @@ public class SnowflakeConnectionV1 implements Connection
 
   static private final
   SFLogger logger = SFLoggerFactory.getLogger(SnowflakeConnectionV1.class);
-
-  private static final String JDBC_PROTOCOL_PREFIX = "jdbc:snowflake";
-
-  private static final String NATIVE_PROTOCOL = "http";
-
-  private static final String SSL_NATIVE_PROTOCOL = "https";
 
   private boolean isClosed;
 
@@ -89,9 +84,10 @@ public class SnowflakeConnectionV1 implements Connection
    */
   private int networkTimeoutInMilli = 0; // in milliseconds
 
-  // TODO this should be set to Connection.TRANSACTION_READ_COMMITTED
-  // TODO There may not be many implications here since the call to
-  // TODO setTransactionIsolation doesn't do anything.
+  /* this should be set to Connection.TRANSACTION_READ_COMMITTED
+   * There may not be many implications here since the call to
+   * setTransactionIsolation doesn't do anything.
+   */
   private int transactionIsolation = Connection.TRANSACTION_NONE;
 
   private SFSession sfSession;
@@ -109,20 +105,30 @@ public class SnowflakeConnectionV1 implements Connection
    * @throws SQLException if failed to create a snowflake connection
    *                      i.e. username or password not specified
    */
-  public SnowflakeConnectionV1(String url,
-                               Properties info)
+  public SnowflakeConnectionV1(String url, Properties info)
+  throws SQLException
+  {
+    SnowflakeConnectString conStr = SnowflakeConnectString.parse(url, info);
+    if (!conStr.isValid())
+    {
+      throw new SnowflakeSQLException(INVALID_CONNECT_STRING, url);
+    }
+    intialize(conStr);
+  }
+
+  private void intialize(SnowflakeConnectString conStr)
   throws SQLException
   {
     logger.debug("Trying to establish session, JDBC driver version: {}",
                  SnowflakeDriver.implementVersion);
-    TelemetryService.getInstance().updateContext(url, info);
+    TelemetryService.getInstance().updateContext(conStr);
     // open connection to GS
     sfSession = new SFSession();
 
     try
     {
       // pass the parameters to sfSession
-      initSessionProperties(url, info);
+      initSessionProperties(conStr);
 
       sfSession.open();
 
@@ -158,98 +164,58 @@ public class SnowflakeConnectionV1 implements Connection
    * jdbc:snowflake://host:port/?user=v&password=v&account=v&
    * db=v&schema=v&ssl=v&[passcode=v|passcodeInPassword=on]
    *
-   * @param url  a URL string
-   * @param info additional properties
+   * @param conStr Connection string object
    */
-  static Map<String, Object> mergeProperties(String url, Properties info)
+  static Map<String, Object> mergeProperties(SnowflakeConnectString conStr)
   {
-    final Map<String, Object> properties = new HashMap<>();
-
-    // first deal with url
-    int queryParamsIndex = url.indexOf("?");
-
-    String serverUrl = queryParamsIndex > 0 ? url.substring(0, queryParamsIndex)
-                                            : url;
-    String queryParams = queryParamsIndex > 0 ? url.substring(queryParamsIndex + 1)
-                                              : null;
-
-    if (queryParams != null && !queryParams.isEmpty())
-    {
-      String[] entries = queryParams.split("&");
-
-      for (String entry : entries)
-      {
-        int sep = entry.indexOf("=");
-        if (sep > 0)
-        {
-          String key = entry.substring(0, sep).toUpperCase();
-          properties.put(key, entry.substring(sep + 1));
-        }
-      }
-    }
-
-    for (Map.Entry<Object, Object> entry : info.entrySet())
-    {
-      properties.put(entry.getKey().toString().toUpperCase(), entry.getValue());
-    }
-
-    boolean sslOn = getBooleanTrueByDefault(properties.get("SSL"));
-    // if string already contains http or https, cut off everything that comes before it
-    if (serverUrl.contains("http://") || serverUrl.contains("https://"))
-    {
-      serverUrl = serverUrl.substring(serverUrl.indexOf("http"));
-    }
-    else
-    {
-      serverUrl = serverUrl.replace(JDBC_PROTOCOL_PREFIX,
-                                    sslOn ? SSL_NATIVE_PROTOCOL : NATIVE_PROTOCOL);
-    }
-
-    properties.put("SERVERURL", serverUrl);
-    properties.remove("SSL");
-
-    // extracting ACCOUNT from URL if not set in the parameter
-    if (properties.get("ACCOUNT") == null &&
-        serverUrl.indexOf(".") > 0 &&
-        serverUrl.indexOf("://") > 0)
-    {
-      String accountName = serverUrl.substring(serverUrl.indexOf("://") + 3,
-                                               serverUrl.indexOf("."));
-
-      // If this is a global URL, then extract out the external ID part
-      if (serverUrl.contains(".global."))
-      {
-        accountName = accountName.substring(0, accountName.lastIndexOf('-'));
-      }
-
-      logger.debug("set account name to {}", accountName);
-      properties.put("ACCOUNT", accountName);
-    }
-
-    return properties;
+    conStr.getParameters().remove("SSL");
+    conStr.getParameters().put("SERVERURL",
+                               conStr.getScheme() + "://" + conStr.getHost() + ":" + conStr.getPort() + "/");
+    return conStr.getParameters();
   }
 
-  private void initSessionProperties(String url, Properties info) throws SFException
+  private void initSessionProperties(SnowflakeConnectString conStr) throws SFException
   {
-    Map<String, Object> properties = mergeProperties(url, info);
+    Map<String, Object> properties = mergeProperties(conStr);
 
     for (Map.Entry<String, Object> property : properties.entrySet())
     {
       if ("CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY".equals(property.getKey()))
       {
-        if ((Integer) property.getValue() > 3600)
+        try
         {
-          properties.replace(property.getKey(), 3600);
+          Object v0 = property.getValue();
+          int intV;
+          if (v0 instanceof Integer)
+          {
+            intV = (Integer) v0;
+          }
+          else
+          {
+            intV = Integer.parseInt((String) v0);
+          }
+          if (intV > 3600)
+          {
+            properties.replace(property.getKey(), "3600");
+          }
+          if (intV < 900)
+          {
+            properties.replace(property.getKey(), "900");
+          }
         }
-        if ((Integer) property.getValue() < 900)
+        catch (NumberFormatException ex)
         {
-          properties.replace(property.getKey(), 900);
+          logger.info(
+              "Invalid data type for CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY: {}",
+              property.getValue());
+          continue;
         }
       }
       else if (CLIENT_SFSQL.equals(property.getKey()))
       {
-        sfSession.setSfSQLMode((boolean) property.getValue());
-        continue;
+        Object v0 = property.getValue();
+        boolean booleanV = v0 instanceof Boolean ? (Boolean) v0 : Boolean.parseBoolean((String) v0);
+        sfSession.setSfSQLMode(booleanV);
       }
       sfSession.addProperty(property.getKey(), property.getValue());
     }
@@ -268,20 +234,6 @@ public class SnowflakeConnectionV1 implements Connection
         sfSession.addProperty(entry.getValue(), value);
       }
     }
-  }
-
-  private static boolean getBooleanTrueByDefault(Object value)
-  {
-    if (value instanceof String)
-    {
-      final String value0 = (String) value;
-      return !("off".equalsIgnoreCase(value0) || "false".equalsIgnoreCase(value0));
-    }
-    else if (value instanceof Boolean)
-    {
-      return (boolean) value;
-    }
-    return true;
   }
 
   /**

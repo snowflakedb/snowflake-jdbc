@@ -14,7 +14,6 @@ import java.sql.DriverPropertyInfo;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.util.Properties;
-import java.util.regex.Pattern;
 
 /**
  * JDBC Driver implementation of Snowflake for production.
@@ -26,17 +25,12 @@ import java.util.regex.Pattern;
  */
 public class SnowflakeDriver implements Driver
 {
-  // pattern for jdbc:snowflake://[host[:port]]/?q1=v1&q2=v2...
-  private static final String JDBC_PROTOCOL_REGEX =
-      "jdbc:snowflake://([a-zA-Z_\\-0-9\\.]+(:\\d+)?)?"
-      + "(/?(\\?\\w+=\\w+)?(\\&\\w+=\\w+)*)?";
-
   static SnowflakeDriver INSTANCE;
 
-  private static final
-  DriverPropertyInfo[] EMPTY_INFO = new DriverPropertyInfo[0];
-
+  public final static Properties EMPTY_PROPERTIES = new Properties();
   public static String implementVersion = null;
+
+  private static final DriverPropertyInfo[] EMPTY_INFO = new DriverPropertyInfo[0];
 
   static int majorVersion = 0;
   static int minorVersion = 0;
@@ -121,15 +115,7 @@ public class SnowflakeDriver implements Driver
   @Override
   public boolean acceptsURL(String url)
   {
-    if (url == null)
-    {
-      return false;
-    }
-
-    return url.indexOf("/?") > 0 ?
-           Pattern.matches(JDBC_PROTOCOL_REGEX,
-                           url.substring(0, url.indexOf("/?"))) :
-           Pattern.matches(JDBC_PROTOCOL_REGEX, url);
+    return SnowflakeConnectString.parse(url, EMPTY_PROPERTIES).isValid();
   }
 
   /**
@@ -143,11 +129,12 @@ public class SnowflakeDriver implements Driver
   @Override
   public Connection connect(String url, Properties info) throws SQLException
   {
-    if (acceptsURL(url))
+    SnowflakeConnectString conStr = SnowflakeConnectString.parse(url, info);
+    if (!conStr.isValid())
     {
-      return new SnowflakeConnectionV1(url, info);
+      return null;
     }
-    return null;
+    return new SnowflakeConnectionV1(url, info);
   }
 
   @Override

@@ -2,6 +2,7 @@ package net.snowflake.client.jdbc.telemetryOOB;
 
 import net.minidev.json.JSONArray;
 import net.minidev.json.JSONObject;
+import net.snowflake.client.jdbc.SnowflakeConnectString;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.util.SecretDetector;
@@ -19,7 +20,6 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.security.cert.CertificateException;
 import java.util.Arrays;
-import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Properties;
@@ -192,22 +192,22 @@ public class TelemetryService
         info.put(key, val);
       }
     }
-    this.updateContext(params.get("uri"), info);
+    SnowflakeConnectString conStr = SnowflakeConnectString.parse(params.get("uri"), info);
+    this.updateContext(conStr);
   }
 
-  public void updateContext(final String url, final Properties info)
+  public void updateContext(SnowflakeConnectString conStr)
   {
-    configureDeployment(url, info.getProperty("account"),
-                        info.getProperty("port"));
-    final Enumeration<?> names = info.propertyNames();
+    configureDeployment(conStr);
     context = new JSONObject();
-    while (names.hasMoreElements())
+
+    for (Map.Entry<String, Object> entry : conStr.getParameters().entrySet())
     {
-      String name = (String) names.nextElement();
-      // remove sensitive properties
-      if (name.compareTo("password") != 0 && name.compareTo("privateKey") != 0)
+      String k = entry.getKey();
+      Object v = entry.getValue();
+      if (!"password".equalsIgnoreCase(k) && !"privateKey".equalsIgnoreCase(k) && !"passcode".equalsIgnoreCase(k))
       {
-        context.put(name, info.getProperty(name));
+        context.put(k, v);
       }
     }
   }
@@ -217,45 +217,37 @@ public class TelemetryService
    * Note: it is not thread-safe while connecting to different deployments
    * simultaneously.
    *
-   * @param url
-   * @param account
+   * @param conStr Connect String
    */
-  private void configureDeployment(final String url, final String account,
-                                   final String port)
+  private void configureDeployment(SnowflakeConnectString conStr)
   {
-    if (url != null && url.length() > 0)
+    if (!conStr.isValid())
     {
-      connStr = url.toLowerCase();
-      // default value
-      TELEMETRY_SERVER_DEPLOYMENT deployment = TELEMETRY_SERVER_DEPLOYMENT.PROD;
-      if (url != null)
-      {
-        if (url.contains("reg") || url.contains("local"))
-        {
-          deployment = TELEMETRY_SERVER_DEPLOYMENT.REG;
-          if ((port != null && port.compareTo("8080") == 0)
-              || url.contains("8080"))
-          {
-            deployment = TELEMETRY_SERVER_DEPLOYMENT.DEV;
-          }
-        }
-        else if (url.contains("qa1") ||
-                 (account != null && account.contains("qa1")))
-        {
-          deployment = TELEMETRY_SERVER_DEPLOYMENT.QA1;
-        }
-        else if (url.contains("preprod2"))
-        {
-          deployment = TELEMETRY_SERVER_DEPLOYMENT.PREPROD2;
-        }
-      }
-      if (deployment == null)
-      {
-        // then the deployment should be in production
-        deployment = TELEMETRY_SERVER_DEPLOYMENT.PROD;
-      }
-      this.setDeployment(deployment);
+      return;
     }
+    connStr = conStr.toString();
+    String account = conStr.getAccount();
+    int port = conStr.getPort();
+    // default value
+    TELEMETRY_SERVER_DEPLOYMENT deployment = TELEMETRY_SERVER_DEPLOYMENT.PROD;
+    if (conStr.getHost().contains("reg") || conStr.getHost().contains("local"))
+    {
+      deployment = TELEMETRY_SERVER_DEPLOYMENT.REG;
+      if (port == 8080)
+      {
+        deployment = TELEMETRY_SERVER_DEPLOYMENT.DEV;
+      }
+    }
+    else if (conStr.getHost().contains("qa1") || account.contains("qa1"))
+    {
+      deployment = TELEMETRY_SERVER_DEPLOYMENT.QA1;
+    }
+    else if (conStr.getHost().contains("preprod2"))
+    {
+      deployment = TELEMETRY_SERVER_DEPLOYMENT.PREPROD2;
+    }
+
+    this.setDeployment(deployment);
   }
 
   /**
