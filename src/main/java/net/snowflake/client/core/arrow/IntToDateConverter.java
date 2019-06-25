@@ -3,12 +3,15 @@
  */
 package net.snowflake.client.core.arrow;
 
+import net.snowflake.client.core.ResultUtil;
+import net.snowflake.client.core.SFException;
 import net.snowflake.client.jdbc.SnowflakeType;
 import net.snowflake.common.core.SnowflakeDateTimeFormat;
 import org.apache.arrow.vector.IntVector;
 import org.apache.arrow.vector.ValueVector;
 
 import java.sql.Date;
+import java.util.TimeZone;
 
 public class IntToDateConverter extends AbstractArrowVectorConverter
 {
@@ -18,6 +21,7 @@ public class IntToDateConverter extends AbstractArrowVectorConverter
    * date data formatter
    */
   private SnowflakeDateTimeFormat dateFormatter;
+  private TimeZone defaultTimeZone;
 
   public IntToDateConverter(ValueVector fieldVector,
                             SnowflakeDateTimeFormat dateFormatter)
@@ -25,10 +29,11 @@ public class IntToDateConverter extends AbstractArrowVectorConverter
     super(SnowflakeType.DATE.name(), fieldVector);
     this.intVector = (IntVector) fieldVector;
     this.dateFormatter = dateFormatter;
+    this.defaultTimeZone = TimeZone.getDefault();
   }
 
   @Override
-  public Date toDate(int index)
+  public Date toDate(int index) throws SFException
   {
     if (intVector.isNull(index))
     {
@@ -36,20 +41,34 @@ public class IntToDateConverter extends AbstractArrowVectorConverter
     }
     else
     {
-      int val = intVector.getDataBuffer().getInt(index);
-      return new Date(val * 86400000);
+      int val = intVector.getDataBuffer().getInt(index * IntVector.TYPE_WIDTH);
+      return ResultUtil.getDate(val, defaultTimeZone);
     }
   }
 
   @Override
-  public String toString(int index)
+  public int toInt(int index)
   {
-    return toDate(index).toString();
+    if (intVector.isNull(index))
+    {
+      return 0;
+    }
+    else
+    {
+      int val = intVector.getDataBuffer().getInt(index * IntVector.TYPE_WIDTH);
+      return val;
+    }
   }
 
   @Override
-  public Object toObject(int index)
+  public String toString(int index) throws SFException
   {
-    return toDate(index);
+    return isNull(index) ? null : ResultUtil.getDateAsString(toDate(index), dateFormatter);
+  }
+
+  @Override
+  public Object toObject(int index) throws SFException
+  {
+    return isNull(index) ? null : toDate(index);
   }
 }

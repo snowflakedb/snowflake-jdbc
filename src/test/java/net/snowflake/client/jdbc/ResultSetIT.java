@@ -336,10 +336,18 @@ public class ResultSetIT extends BaseJDBCTest
 
     prepStatement.execute();
 
+    TimeZone gmt = TimeZone.getTimeZone("GMT");
+    Calendar cal = Calendar.getInstance(gmt);
+    Date dateTZ = buildDateWithTZ(2016, 3, 20, gmt);
     ResultSet resultSet = statement.executeQuery("select * from datetime");
     resultSet.next();
     assertEquals(date, resultSet.getDate(1));
     assertEquals(date, resultSet.getDate("COLA"));
+
+    // Note: Currently calendar does not affect getDate result
+    assertEquals(resultSet.getDate(1), resultSet.getDate(1, cal));
+    assertEquals(resultSet.getDate("COLA"), resultSet.getDate("COLA", cal));
+
     assertEquals(ts, resultSet.getTimestamp(2));
     assertEquals(ts, resultSet.getTimestamp("COLB"));
     assertEquals(tm, resultSet.getTime(3));
