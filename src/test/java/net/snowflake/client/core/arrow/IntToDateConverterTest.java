@@ -10,6 +10,8 @@ import org.apache.arrow.vector.IntVector;
 import org.apache.arrow.vector.types.Types;
 import org.apache.arrow.vector.types.pojo.FieldType;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import java.sql.Date;
 import java.util.HashMap;
@@ -23,9 +25,28 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-
+@RunWith(Parameterized.class)
 public class IntToDateConverterTest
 {
+  @Parameterized.Parameters
+  public static Object[][] data()
+  {
+    return new Object[][]{
+        {"UTC"},
+        {"America/Los_Angeles"},
+        {"America/New_York"},
+        {"Pacific/Honolulu"},
+        {"Asia/Singapore"},
+        {"MEZ"},
+        {"MESZ"}
+    };
+  }
+
+  public IntToDateConverterTest(String tz)
+  {
+    System.setProperty("user.timezone", tz);
+  }
+
   /**
    * allocator for arrow
    */
@@ -36,6 +57,7 @@ public class IntToDateConverterTest
   private SnowflakeDateTimeFormat df = new SnowflakeDateTimeFormat("YYYY-MM-DD");
   // test old and new dates
   int[] testDates = {
+      -8865,
       -719162,
       -354285,
       -244712,
@@ -47,6 +69,7 @@ public class IntToDateConverterTest
   };
 
   String[] expectedDates = {
+      "1945-09-24",
       "0001-01-01",
       "1000-01-01",
       "1300-01-01",
@@ -57,7 +80,7 @@ public class IntToDateConverterTest
       "2016-04-20"
   };
 
-//  @Test
+  @Test
   public void testDate() throws SFException
   {
     Map<String, String> customFieldMeta = new HashMap<>();
@@ -105,19 +128,20 @@ public class IntToDateConverterTest
       {
         assertThat(intVal, is(testDates[i]));
         assertThat(((Date)obj).getTime(), is(((Date) oldObj).getTime()));
-        assertThat(strVal, is(expectedDates[i]));
-        assertThat(obj.toString(), is(expectedDates[i++]));
+        assertThat(obj.toString(), is(expectedDates[i]));
+        assertThat(((Date)obj).getTime(), is(((Date)oldObj).getTime()));
+        assertThat(oldObj.toString(), is(expectedDates[i++]));
       }
       j++;
     }
     vector.clear();
   }
 
-//  @Test
+  @Test
   public void testRandomDates() throws SFException
   {
     int dateBound = 50000;
-    int rowCount = 10000;
+    int rowCount = 50000;
     Map<String, String> customFieldMeta = new HashMap<>();
     customFieldMeta.put("logicalType", "DATE");
     Set<Integer> nullValIndex = new HashSet<>();
