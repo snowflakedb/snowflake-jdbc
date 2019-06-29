@@ -1,9 +1,9 @@
 package net.snowflake.client.core.arrow;
 
+import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.ResultUtil;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SFSession;
-import net.snowflake.common.core.SnowflakeDateTimeFormat;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.memory.RootAllocator;
 import org.apache.arrow.vector.IntVector;
@@ -26,7 +26,7 @@ import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @RunWith(Parameterized.class)
-public class IntToDateConverterTest
+public class IntToDateConverterTest extends BaseConverterTest
 {
   @Parameterized.Parameters
   public static Object[][] data()
@@ -54,7 +54,8 @@ public class IntToDateConverterTest
 
   private Random random = new Random();
 
-  private SnowflakeDateTimeFormat df = new SnowflakeDateTimeFormat("YYYY-MM-DD");
+  private SFSession session = new SFSession();
+
   // test old and new dates
   int[] testDates = {
       -8865,
@@ -108,7 +109,7 @@ public class IntToDateConverterTest
       j++;
     }
 
-    ArrowVectorConverter converter = new IntToDateConverter(vector, df);
+    ArrowVectorConverter converter = new IntToDateConverter(vector, this);
     int rowCount = j;
     i = 0;
     j = 0;
@@ -167,7 +168,7 @@ public class IntToDateConverterTest
       }
     }
 
-    ArrowVectorConverter converter = new IntToDateConverter(vector, df);
+    ArrowVectorConverter converter = new IntToDateConverter(vector, this);
 
     for (int i = 0; i < rowCount; i++)
     {
@@ -184,7 +185,7 @@ public class IntToDateConverterTest
       else
       {
         Date oldObj = ResultUtil.getDate(Integer.toString(intVal), TimeZone.getDefault(), new SFSession());
-        String oldStr = ResultUtil.getDateAsString(oldObj, df);
+        String oldStr = ResultUtil.getDateAsString(oldObj, ((DataConversionContext) this).getDateFormatter());
         assertThat(intVal, is(rawDates[i]));
         assertThat(obj.getTime(), is(oldObj.getTime()));
         assertThat(str, is(oldStr));

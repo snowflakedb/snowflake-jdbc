@@ -21,12 +21,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+import java.util.TimeZone;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-public class TinyIntToFixedConverterTest
+public class TinyIntToFixedConverterTest extends BaseConverterTest
 {
   /**
    * allocator for arrow
@@ -73,7 +74,7 @@ public class TinyIntToFixedConverterTest
       }
     }
 
-    ArrowVectorConverter converter = new TinyIntToFixedConverter(vector);
+    ArrowVectorConverter converter = new TinyIntToFixedConverter(vector, this);
 
     for (int i = 0; i < rowCount; i++)
     {
@@ -132,7 +133,7 @@ public class TinyIntToFixedConverterTest
       }
     }
 
-    ArrowVectorConverter converter = new TinyIntToFixedConverter(vector);
+    ArrowVectorConverter converter = new TinyIntToFixedConverter(vector, this);
 
     for (int i = 0; i < rowCount; i++)
     {
@@ -174,7 +175,7 @@ public class TinyIntToFixedConverterTest
     TinyIntVector vector = new TinyIntVector("col_one", fieldType, allocator);
     vector.setSafe(0, 200);
 
-    final ArrowVectorConverter converter = new TinyIntToFixedConverter(vector);
+    final ArrowVectorConverter converter = new TinyIntToFixedConverter(vector, this);
     final int invalidConversionErrorCode =
         ErrorCode.INVALID_VALUE_CONVERT.getMessageCode();
 
@@ -199,7 +200,7 @@ public class TinyIntToFixedConverterTest
     TestUtil.assertSFException(invalidConversionErrorCode,
                                () -> converter.toTime(0));
     TestUtil.assertSFException(invalidConversionErrorCode,
-                               () -> converter.toTimestamp(0));
+                               () -> converter.toTimestamp(0, TimeZone.getDefault()));
     vector.clear();
   }
 
@@ -224,7 +225,7 @@ public class TinyIntToFixedConverterTest
     vectorBar.setSafe(1, -10);
 
     final ArrowVectorConverter converterBar =
-        new TinyIntToFixedConverter(vectorBar);
+        new TinyIntToFixedConverter(vectorBar, this);
 
     assertThat(converterBar.toShort(0), is((short) 10));
     assertThat(converterBar.toShort(1), is((short) -10));

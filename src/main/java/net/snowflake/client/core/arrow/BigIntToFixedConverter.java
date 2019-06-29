@@ -3,6 +3,7 @@
  */
 package net.snowflake.client.core.arrow;
 
+import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeType;
@@ -27,12 +28,13 @@ public class BigIntToFixedConverter extends AbstractArrowVectorConverter
    */
   private Integer sfScale;
 
-  public BigIntToFixedConverter(ValueVector fieldVector)
+  public BigIntToFixedConverter(ValueVector fieldVector, DataConversionContext context)
   {
     super(String.format("%s(%s,%s)", SnowflakeType.FIXED,
                         fieldVector.getField().getMetadata().get("precision"),
                         fieldVector.getField().getMetadata().get("scale")),
-          fieldVector);
+          fieldVector,
+          context);
     this.bigIntVector = (BigIntVector) fieldVector;
     String scaleStr = fieldVector.getField().getMetadata().get("scale");
     this.sfScale = Integer.parseInt(scaleStr);

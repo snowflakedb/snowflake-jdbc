@@ -9,6 +9,7 @@ import java.math.BigDecimal;
 import java.sql.Date;
 import java.sql.Time;
 import java.sql.Timestamp;
+import java.util.TimeZone;
 
 /**
  * Interface to convert from arrow vector values into java data types.
@@ -126,10 +127,11 @@ public interface ArrowVectorConverter
    * Convert value in arrow vector to Timestamp
    *
    * @param index index of the value to be converted in the vector
+   * @param tz time zone
    * @return Timestamp converted from arrow vector
    * @throws SFException invalid data conversion
    */
-  Timestamp toTimestamp(int index) throws SFException;
+  Timestamp toTimestamp(int index, TimeZone tz) throws SFException;
 
   /**
    * Convert value in arrow vector to BigDecimal

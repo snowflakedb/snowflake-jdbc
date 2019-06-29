@@ -21,23 +21,23 @@ import java.util.Set;
 public enum SnowflakeType
 {
 
-  TEXT,
+  ANY,
+  ARRAY,
+  BINARY,
+  BOOLEAN,
   CHAR,
-  INTEGER,
+  DATE,
   FIXED,
+  INTEGER,
+  OBJECT,
   REAL,
+  TEXT,
+  TIME,
   TIMESTAMP,
   TIMESTAMP_LTZ,
   TIMESTAMP_NTZ,
   TIMESTAMP_TZ,
-  DATE,
-  TIME,
-  BOOLEAN,
-  ARRAY,
-  OBJECT,
-  VARIANT,
-  BINARY,
-  ANY;
+  VARIANT;
 
   public static final String DATE_OR_TIME_FORMAT_PATTERN = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX";
   public static final String TIMESTAMP_FORMAT_PATTERN = "yyyy-MM-dd'T'HH:mm:ss.";

@@ -3,9 +3,9 @@
  */
 package net.snowflake.client.core.arrow;
 
+import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.jdbc.SnowflakeType;
 import net.snowflake.common.core.SFBinary;
-import net.snowflake.common.core.SFBinaryFormat;
 import org.apache.arrow.vector.ValueVector;
 import org.apache.arrow.vector.VarBinaryVector;
 
@@ -13,14 +13,10 @@ public class VarBinaryToBinaryConverter extends AbstractArrowVectorConverter
 {
   private VarBinaryVector varBinaryVector;
 
-  private SFBinaryFormat binaryFormat;
-
-  public VarBinaryToBinaryConverter(ValueVector valueVector,
-                                    SFBinaryFormat binaryFormat)
+  public VarBinaryToBinaryConverter(ValueVector valueVector, DataConversionContext context)
   {
-    super(SnowflakeType.BINARY.name(), valueVector);
+    super(SnowflakeType.BINARY.name(), valueVector, context);
     this.varBinaryVector = (VarBinaryVector) valueVector;
-    this.binaryFormat = binaryFormat;
   }
 
   @Override
@@ -28,7 +24,7 @@ public class VarBinaryToBinaryConverter extends AbstractArrowVectorConverter
   {
     byte[] bytes = toBytes(index);
     SFBinary binary = new SFBinary(bytes);
-    return bytes == null ? null : binaryFormat.format(binary);
+    return bytes == null ? null : context.getBinaryFormatter().format(binary);
   }
 
   @Override

@@ -14,6 +14,8 @@ import net.snowflake.client.jdbc.telemetry.TelemetryField;
 import net.snowflake.client.jdbc.telemetry.TelemetryUtil;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
+import net.snowflake.common.core.SFBinaryFormat;
+import net.snowflake.common.core.SnowflakeDateTimeFormat;
 import net.snowflake.common.core.SqlState;
 
 import java.io.ByteArrayInputStream;
@@ -27,13 +29,12 @@ import java.sql.Timestamp;
 import java.util.Base64;
 import java.util.TimeZone;
 
-
 import static net.snowflake.client.core.StmtUtil.eventHandler;
 
 /**
  * Arrow result set implementation
  */
-public class SFArrowResultSet extends SFBaseResultSet
+public class SFArrowResultSet extends SFBaseResultSet implements DataConversionContext
 {
   static final SFLogger logger =
       SFLoggerFactory.getLogger(SFArrowResultSet.class);
@@ -99,11 +100,6 @@ public class SFArrowResultSet extends SFBaseResultSet
    * telemetry client to push stats to server
    */
   private final Telemetry telemetryClient;
-
-  /**
-   * dataConversionContext to data type
-   */
-  private final DataConversionContext dataConversionContext;
 
   /**
    * Constructor takes a result from the API response that we get from
@@ -179,13 +175,6 @@ public class SFArrowResultSet extends SFBaseResultSet
     this.metaDataOfBinds = resultOutput.getMetaDataOfBinds();
     this.telemetryClient = telemetryClient;
     this.firstChunkTime = System.currentTimeMillis();
-    this.dataConversionContext = new DataConversionContext(
-        resultOutput.getTimestampLTZFormatter(),
-        resultOutput.getTimestampNTZFormatter(),
-        resultOutput.getTimestampTZFormatter(),
-        resultOutput.getDateFormatter(),
-        resultOutput.getTimeFormatter(),
-        resultOutput.getBinaryFormatter());
 
     // sort result set if needed
     String rowsetBase64 = resultOutput.getRowsetBase64();
@@ -206,13 +195,12 @@ public class SFArrowResultSet extends SFBaseResultSet
         }
 
         this.currentChunkIterator = getSortedFirstResultChunk(
-            resultOutput.getRowsetBase64()).getIterator(dataConversionContext);
+            resultOutput.getRowsetBase64()).getIterator(this);
       }
       else
       {
         this.currentChunkIterator =
-            buildFirstChunk(resultOutput.getRowsetBase64()).getIterator(
-                dataConversionContext);
+            buildFirstChunk(resultOutput.getRowsetBase64()).getIterator(this);
       }
     }
 
@@ -278,7 +266,7 @@ public class SFArrowResultSet extends SFBaseResultSet
           }
 
           currentChunkIterator.getChunk().freeData();
-          currentChunkIterator = nextChunk.getIterator(dataConversionContext);
+          currentChunkIterator = nextChunk.getIterator(this);
           if (currentChunkIterator.next())
           {
 
@@ -544,7 +532,7 @@ public class SFArrowResultSet extends SFBaseResultSet
         currentChunkIterator.getCurrentConverter(columnIndex - 1);
     int index = currentChunkIterator.getCurrentRowInRecordBatch();
     wasNull = converter.isNull(index);
-    return converter.toTimestamp(index);
+    return converter.toTimestamp(index, tz);
   }
 
   @Override
@@ -640,5 +628,71 @@ public class SFArrowResultSet extends SFBaseResultSet
       logMetric(TelemetryField.TIME_PARSING_CHUNKS,
                 metrics.getMillisParsing());
     }
+  }
+
+  @Override
+  public SnowflakeDateTimeFormat getTimestampLTZFormatter()
+  {
+    return timestampLTZFormatter;
+  }
+
+  @Override
+  public SnowflakeDateTimeFormat getTimestampNTZFormatter()
+  {
+    return timestampNTZFormatter;
+  }
+
+  @Override
+  public SnowflakeDateTimeFormat getTimestampTZFormatter()
+  {
+    return timestampTZFormatter;
+  }
+
+  @Override
+  public SnowflakeDateTimeFormat getDateFormatter()
+  {
+    return dateFormatter;
+  }
+
+  @Override
+  public SnowflakeDateTimeFormat getTimeFormatter()
+  {
+    return timeFormatter;
+  }
+
+  @Override
+  public SFBinaryFormat getBinaryFormatter()
+  {
+    return binaryFormatter;
+  }
+
+  @Override
+  public int getScale(int columnIndex)
+  {
+    return resultSetMetaData.getScale(columnIndex);
+  }
+
+  @Override
+  public SFSession getSession()
+  {
+    return session;
+  }
+
+  @Override
+  public TimeZone getTimeZone()
+  {
+    return timeZone;
+  }
+
+  @Override
+  public boolean getHonorClientTZForTimestampNTZ()
+  {
+    return honorClientTZForTimestampNTZ;
+  }
+
+  @Override
+  public long getResultVersion()
+  {
+    return resultVersion;
   }
 }
