@@ -23,6 +23,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static java.sql.DatabaseMetaData.procedureReturnsResult;
+import static java.sql.ResultSetMetaData.columnNullableUnknown;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.junit.Assert.assertEquals;
@@ -102,32 +103,8 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
       assertEquals("database", metaData.getCatalogTerm());
 
       ResultSet resultSet = metaData.getCatalogs();
+      verifyResultSetMetaDataColumns(resultSet, DBMetadataResultSetMetadata.GET_CATALOGS);
       assertTrue(resultSet.isBeforeFirst());
-
-      ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
-      assertEquals(1, resultSetMetaData.getColumnCount());
-
-      assertFalse(resultSetMetaData.isAutoIncrement(1));
-      assertFalse(resultSetMetaData.isCaseSensitive(1));
-      assertTrue(resultSetMetaData.isSearchable(1));
-      assertFalse(resultSetMetaData.isCurrency(1));
-      assertTrue(resultSetMetaData.isReadOnly(1));
-      assertEquals(ResultSetMetaData.columnNullableUnknown, resultSetMetaData.isNullable(1));
-      assertFalse(resultSetMetaData.isSigned(1));
-      assertFalse(resultSetMetaData.isWritable(1));
-      assertFalse(resultSetMetaData.isDefinitelyWritable(1));
-
-      assertEquals(25, resultSetMetaData.getColumnDisplaySize(1)); // fix this
-      assertEquals("TABLE_CAT", resultSetMetaData.getColumnLabel(1));
-      assertEquals("TABLE_CAT", resultSetMetaData.getColumnName(1));
-
-      assertEquals(9, resultSetMetaData.getPrecision(1)); // fix this
-      assertEquals(9, resultSetMetaData.getScale(1)); // fix this
-      assertEquals("T", resultSetMetaData.getTableName(1)); // fix this
-      assertEquals("", resultSetMetaData.getCatalogName(1));
-      assertEquals(Types.VARCHAR, resultSetMetaData.getColumnType(1));
-      assertEquals("TEXT", resultSetMetaData.getColumnTypeName(1));
-      assertEquals("java.lang.String", resultSetMetaData.getColumnClassName(1));
 
       int cnt = 0;
       Set<String> allVisibleDatabases = new HashSet<>();
@@ -187,7 +164,6 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
     }
   }
 
-
   @Test
   public void testGetSchemas() throws Throwable
   {
@@ -197,51 +173,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
       DatabaseMetaData metaData = connection.getMetaData();
       assertEquals("schema", metaData.getSchemaTerm());
       ResultSet resultSet = metaData.getSchemas();
-
-      ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
-      assertEquals(2, resultSetMetaData.getColumnCount());
-
-      // first column
-      assertFalse(resultSetMetaData.isAutoIncrement(1));
-      assertFalse(resultSetMetaData.isCaseSensitive(1));
-      assertTrue(resultSetMetaData.isSearchable(1));
-      assertFalse(resultSetMetaData.isCurrency(1));
-      assertTrue(resultSetMetaData.isReadOnly(1));
-      assertEquals(ResultSetMetaData.columnNullableUnknown, resultSetMetaData.isNullable(1));
-      assertFalse(resultSetMetaData.isSigned(1));
-      assertFalse(resultSetMetaData.isWritable(1));
-      assertFalse(resultSetMetaData.isDefinitelyWritable(1));
-      assertEquals(25, resultSetMetaData.getColumnDisplaySize(1)); // fix this
-      assertEquals("TABLE_SCHEM", resultSetMetaData.getColumnLabel(1));
-      assertEquals("TABLE_SCHEM", resultSetMetaData.getColumnName(1));
-      assertEquals(9, resultSetMetaData.getPrecision(1)); // fix this
-      assertEquals(9, resultSetMetaData.getScale(1)); // fix this
-      assertEquals("T", resultSetMetaData.getTableName(1)); // fix this
-      assertEquals("", resultSetMetaData.getCatalogName(1));
-      assertEquals(Types.VARCHAR, resultSetMetaData.getColumnType(1));
-      assertEquals("TEXT", resultSetMetaData.getColumnTypeName(1));
-      assertEquals("java.lang.String", resultSetMetaData.getColumnClassName(1));
-
-      // second column
-      assertFalse(resultSetMetaData.isAutoIncrement(2));
-      assertFalse(resultSetMetaData.isCaseSensitive(2));
-      assertTrue(resultSetMetaData.isSearchable(2));
-      assertFalse(resultSetMetaData.isCurrency(2));
-      assertTrue(resultSetMetaData.isReadOnly(2));
-      assertEquals(ResultSetMetaData.columnNullableUnknown, resultSetMetaData.isNullable(2));
-      assertFalse(resultSetMetaData.isSigned(2));
-      assertFalse(resultSetMetaData.isWritable(2));
-      assertFalse(resultSetMetaData.isDefinitelyWritable(2));
-      assertEquals(25, resultSetMetaData.getColumnDisplaySize(2)); // fix this
-      assertEquals("TABLE_CATALOG", resultSetMetaData.getColumnLabel(2));
-      assertEquals("TABLE_CATALOG", resultSetMetaData.getColumnName(2));
-      assertEquals(9, resultSetMetaData.getPrecision(2)); // fix this
-      assertEquals(9, resultSetMetaData.getScale(2)); // fix this
-      assertEquals("T", resultSetMetaData.getTableName(2)); // fix this
-      assertEquals("", resultSetMetaData.getCatalogName(2));
-      assertEquals(Types.VARCHAR, resultSetMetaData.getColumnType(2));
-      assertEquals("TEXT", resultSetMetaData.getColumnTypeName(2));
-      assertEquals("java.lang.String", resultSetMetaData.getColumnClassName(2));
+      verifyResultSetMetaDataColumns(resultSet, DBMetadataResultSetMetadata.GET_SCHEMAS);
 
       Set<String> schemas = new HashSet<>();
       while (resultSet.next())
@@ -398,8 +330,8 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
       ResultSet resultSet;
 
       // match table
-      resultSet = metaData.getTables(
-          database, schema, "%", new String[]{"TABLE"});
+      resultSet = metaData.getTables(database, schema, "%", new String[]{"TABLE"});
+      verifyResultSetMetaDataColumns(resultSet, DBMetadataResultSetMetadata.GET_TABLES);
       Set<String> tables = new HashSet<>();
       while (resultSet.next())
       {
@@ -455,10 +387,8 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
 
       DatabaseMetaData metaData = connection.getMetaData();
 
-      ResultSet resultSet;
-
-      resultSet = metaData.getColumns(database, schema, targetTable, "%");
-      assertEquals(24, resultSet.getMetaData().getColumnCount());
+      ResultSet resultSet = metaData.getColumns(database, schema, targetTable, "%");
+      verifyResultSetMetaDataColumns(resultSet, DBMetadataResultSetMetadata.GET_COLUMNS);
 
       // C1 metadata
       assertTrue(resultSet.next());
@@ -834,6 +764,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
       ResultSet resultSet;
 
       resultSet = metaData.getPrimaryKeys(database, schema, targetTable);
+      verifyResultSetMetaDataColumns(resultSet, DBMetadataResultSetMetadata.GET_PRIMARY_KEYS);
       assertTrue(resultSet.next());
       assertEquals(database, resultSet.getString("TABLE_CAT"));
       assertEquals(schema, resultSet.getString("TABLE_SCHEM"));
@@ -843,6 +774,46 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
       assertNotEquals("", resultSet.getString("PK_NAME"));
 
       connection.createStatement().execute("drop table if exists " + targetTable);
+    }
+  }
+
+  public static void verifyResultSetMetaDataColumns(ResultSet resultSet, DBMetadataResultSetMetadata metadata) throws SQLException
+  {
+    final int numCol = metadata.getColumnNames().size();
+    ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
+    assertEquals(numCol, resultSetMetaData.getColumnCount());
+
+    for (int col = 1; col <= numCol; ++col)
+    {
+      List<String> colNames = metadata.getColumnNames();
+      List<String> colTypeNames = metadata.getColumnTypeNames();
+      List<Integer> colTypes = metadata.getColumnTypes();
+
+      assertEquals("", resultSetMetaData.getCatalogName(col));
+      assertEquals("", resultSetMetaData.getSchemaName(col));
+      assertEquals("T", resultSetMetaData.getTableName(col));
+      assertEquals(colNames.get(col - 1), resultSetMetaData.getColumnName(col));
+
+      assertEquals(colNames.get(col - 1), resultSetMetaData.getColumnLabel(col));
+      assertEquals(SnowflakeType.javaTypeToClassName(
+          resultSetMetaData.getColumnType(col)), resultSetMetaData.getColumnClassName(col));
+      assertEquals(25, resultSetMetaData.getColumnDisplaySize(col));
+      assertEquals((int) colTypes.get(col - 1), resultSetMetaData.getColumnType(col));
+      assertEquals(colTypeNames.get(col - 1), resultSetMetaData.getColumnTypeName(col));
+      assertEquals(9, resultSetMetaData.getPrecision(col));
+      assertEquals(9, resultSetMetaData.getScale(col));
+
+      assertEquals(SnowflakeType.isJavaTypeSigned(
+          resultSetMetaData.getColumnType(col)), resultSetMetaData.isSigned(col));
+      assertFalse(resultSetMetaData.isAutoIncrement(col));
+      assertFalse(resultSetMetaData.isCaseSensitive(col));
+      assertFalse(resultSetMetaData.isCurrency(col));
+      assertTrue(resultSetMetaData.isReadOnly(col));
+      assertTrue(resultSetMetaData.isSearchable(col));
+      assertFalse(resultSetMetaData.isWritable(col));
+      assertFalse(resultSetMetaData.isDefinitelyWritable(col));
+
+      assertEquals(columnNullableUnknown, resultSetMetaData.isNullable(col));
     }
   }
 
@@ -866,9 +837,8 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
 
       DatabaseMetaData metaData = connection.getMetaData();
 
-      ResultSet resultSet;
-
-      resultSet = metaData.getImportedKeys(database, schema, targetTable2);
+      ResultSet resultSet = metaData.getImportedKeys(database, schema, targetTable2);
+      verifyResultSetMetaDataColumns(resultSet, DBMetadataResultSetMetadata.GET_FOREIGN_KEYS);
       assertTrue(resultSet.next());
       assertEquals(database, resultSet.getString("PKTABLE_CAT"));
       assertEquals(schema, resultSet.getString("PKTABLE_SCHEM"));
@@ -913,9 +883,9 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
 
       DatabaseMetaData metaData = connection.getMetaData();
 
-      ResultSet resultSet;
+      ResultSet resultSet = metaData.getExportedKeys(database, schema, targetTable1);
+      verifyResultSetMetaDataColumns(resultSet, DBMetadataResultSetMetadata.GET_FOREIGN_KEYS);
 
-      resultSet = metaData.getExportedKeys(database, schema, targetTable1);
       assertTrue(resultSet.next());
       assertEquals(database, resultSet.getString("PKTABLE_CAT"));
       assertEquals(schema, resultSet.getString("PKTABLE_SCHEM"));
@@ -960,10 +930,10 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
 
       DatabaseMetaData metaData = connection.getMetaData();
 
-      ResultSet resultSet;
-
-      resultSet = metaData.getCrossReference(
+      ResultSet resultSet = metaData.getCrossReference(
           database, schema, targetTable1, database, schema, targetTable2);
+      verifyResultSetMetaDataColumns(resultSet, DBMetadataResultSetMetadata.GET_FOREIGN_KEYS);
+
       assertTrue(resultSet.next());
       assertEquals(database, resultSet.getString("PKTABLE_CAT"));
       assertEquals(schema, resultSet.getString("PKTABLE_SCHEM"));
@@ -1132,6 +1102,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
       DatabaseMetaData metaData = connection.getMetaData();
       /* Call getFunctionColumns on FUNC111 and since there's no parameter name, get all rows back */
       ResultSet resultSet = metaData.getFunctionColumns(database, schema, "FUNC111", "%");
+      verifyResultSetMetaDataColumns(resultSet, DBMetadataResultSetMetadata.GET_FUNCTION_COLUMNS);
       resultSet.next();
       assertEquals(database, resultSet.getString("FUNCTION_CAT"));
       assertEquals(schema, resultSet.getString("FUNCTION_SCHEM"));
@@ -1281,6 +1252,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
                                            "timestamp)");
       DatabaseMetaData metaData = connection.getMetaData();
       ResultSet resultSet = metaData.getTablePrivileges(database, schema, "PRIVTEST");
+      verifyResultSetMetaDataColumns(resultSet, DBMetadataResultSetMetadata.GET_TABLE_PRIVILEGES);
       resultSet.next();
       assertEquals(database, resultSet.getString("TABLE_CAT"));
       assertEquals(schema, resultSet.getString("TABLE_SCHEM"));
@@ -1329,6 +1301,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
       DatabaseMetaData metaData = connection.getMetaData();
       /* Call getFunctionColumns on FUNC111 and since there's no parameter name, get all rows back */
       ResultSet resultSet = metaData.getProcedures(database, schema, "GETPI");
+      verifyResultSetMetaDataColumns(resultSet, DBMetadataResultSetMetadata.GET_PROCEDURES);
       resultSet.next();
       assertEquals("GETPI", resultSet.getString("PROCEDURE_NAME"));
       assertEquals(database, resultSet.getString("PROCEDURE_CAT"));
@@ -1356,6 +1329,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
        in the current database and schema. It will return all rows as well (1 row per result and 1 row per parameter
        for each procedure) */
       ResultSet resultSet = metaData.getProcedureColumns(database, schema, "GETPI", "%");
+      verifyResultSetMetaDataColumns(resultSet, DBMetadataResultSetMetadata.GET_PROCEDURE_COLUMNS);
       resultSet.next();
       assertEquals(database, resultSet.getString("PROCEDURE_CAT"));
       assertEquals(schema, resultSet.getString("PROCEDURE_SCHEM"));
@@ -1373,7 +1347,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
       // nullable column is not supported and always returns NullableUnknown
       assertEquals(DatabaseMetaData.procedureNoNulls, resultSet.getInt("NULLABLE"));
       assertEquals("user-defined procedure", resultSet.getString("REMARKS"));
-      assertEquals(null, resultSet.getString("COLUMN_DEF"));
+      assertNull(resultSet.getString("COLUMN_DEF"));
       assertEquals(0, resultSet.getInt("SQL_DATA_TYPE"));
       assertEquals(0, resultSet.getInt("SQL_DATETIME_SUB"));
       // char octet length column is not supported and always returns 0
@@ -1400,7 +1374,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
       // nullable column is not supported and always returns NullableUnknown
       assertEquals(DatabaseMetaData.procedureNullable, resultSet.getInt("NULLABLE"));
       assertEquals("user-defined procedure", resultSet.getString("REMARKS"));
-      assertEquals(null, resultSet.getString("COLUMN_DEF"));
+      assertNull(resultSet.getString("COLUMN_DEF"));
       assertEquals(0, resultSet.getInt("SQL_DATA_TYPE"));
       assertEquals(0, resultSet.getInt("SQL_DATETIME_SUB"));
       // char octet length column is not supported and always returns 0
@@ -1426,7 +1400,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
       // nullable column is not supported and always returns NullableUnknown
       assertEquals(DatabaseMetaData.procedureNullableUnknown, resultSet.getInt("NULLABLE"));
       assertEquals("user-defined procedure", resultSet.getString("REMARKS"));
-      assertEquals(null, resultSet.getString("COLUMN_DEF"));
+      assertNull(resultSet.getString("COLUMN_DEF"));
       assertEquals(0, resultSet.getInt("SQL_DATA_TYPE"));
       assertEquals(0, resultSet.getInt("SQL_DATETIME_SUB"));
       // char octet length column is not supported and always returns 0
@@ -1452,7 +1426,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
       // nullable column is not supported and always returns NullableUnknown
       assertEquals(DatabaseMetaData.procedureNullableUnknown, resultSet.getInt("NULLABLE"));
       assertEquals("user-defined procedure", resultSet.getString("REMARKS"));
-      assertEquals(null, resultSet.getString("COLUMN_DEF"));
+      assertNull(resultSet.getString("COLUMN_DEF"));
       assertEquals(0, resultSet.getInt("SQL_DATA_TYPE"));
       assertEquals(0, resultSet.getInt("SQL_DATETIME_SUB"));
       // char octet length column is not supported and always returns 0

@@ -168,6 +168,7 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest
 
     // test each column return the right value
     resultSet = databaseMetaData.getFunctions("JDBC_DB1", "JDBC_SCHEMA11", "JDBCFUNCTEST111");
+    DatabaseMetaDataIT.verifyResultSetMetaDataColumns(resultSet, DBMetadataResultSetMetadata.GET_FUNCTIONS);
     resultSet.next();
     assertEquals("JDBC_DB1", resultSet.getString("FUNCTION_CAT"));
     assertEquals("JDBC_SCHEMA11", resultSet.getString("FUNCTION_SCHEM"));
@@ -175,7 +176,7 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest
     assertEquals("mutiply numbers", resultSet.getString("REMARKS"));
     assertEquals(DatabaseMetaData.functionNoTable, resultSet.getInt("FUNCTION_TYPE"));
     assertEquals("JDBCFUNCTEST111", resultSet.getString("SPECIFIC_NAME"));
-    assertTrue(!resultSet.next());
+    assertFalse(resultSet.next());
 
     // test a table function
     resultSet = databaseMetaData.getFunctions("JDBC_DB2", "JDBC_SCHEMA21", "JDBCFUNCTEST212");
@@ -191,7 +192,7 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest
     assertEquals("AND", resultSet.getString("FUNCTION_NAME"));
     assertEquals(DatabaseMetaData.functionNoTable, resultSet.getInt("FUNCTION_TYPE"));
     assertEquals("AND", resultSet.getString("SPECIFIC_NAME"));
-    assertTrue(!resultSet.next());
+    assertFalse(resultSet.next());
 
     // test pattern
     resultSet = databaseMetaData.getFunctions(null, null, "JDBCFUNCTEST%");

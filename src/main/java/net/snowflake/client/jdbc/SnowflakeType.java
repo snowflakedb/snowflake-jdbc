@@ -8,6 +8,9 @@ import net.snowflake.common.core.SFBinary;
 import net.snowflake.common.core.SqlState;
 
 import java.math.BigDecimal;
+import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
+import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
 import java.text.DateFormat;
@@ -456,5 +459,53 @@ public enum SnowflakeType
             ErrorCode.DATA_TYPE_NOT_SUPPORTED.getMessageCode(),
             javaType);
     }
+  }
+
+  public static String javaTypeToClassName(int type) throws SQLException
+  {
+    switch (type)
+    {
+      case Types.VARCHAR:
+      case Types.CHAR:
+      case Types.BINARY:
+        return String.class.getName();
+
+      case Types.INTEGER:
+        return Integer.class.getName();
+
+      case Types.DECIMAL:
+        return BigDecimal.class.getName();
+
+      case Types.DOUBLE:
+        return Double.class.getName();
+
+      case Types.TIMESTAMP:
+        return Timestamp.class.getName();
+
+      case Types.DATE:
+        return java.sql.Date.class.getName();
+
+      case Types.TIME:
+        return Time.class.getName();
+
+      case Types.BOOLEAN:
+        return Boolean.class.getName();
+
+      case Types.BIGINT:
+        return Long.class.getName();
+
+      case Types.SMALLINT:
+        return Short.class.getName();
+
+      default:
+        throw new SQLFeatureNotSupportedException(
+            String.format("No corresponding Java type is found for java.sql.Type: %d", type));
+    }
+  }
+
+  public static boolean isJavaTypeSigned(int type)
+  {
+    return type == Types.INTEGER || type == Types.DECIMAL || type == Types.DOUBLE;
+
   }
 }
