@@ -53,7 +53,7 @@ public class VarCharToTextConverterTest extends BaseConverterTest
                                         null, customFieldMeta);
 
     VarCharVector vector = new VarCharVector("col_one", fieldType,
-                                               allocator);
+                                             allocator);
     for (int i = 0; i < rowCount; i++)
     {
       boolean isNull = random.nextBoolean();
