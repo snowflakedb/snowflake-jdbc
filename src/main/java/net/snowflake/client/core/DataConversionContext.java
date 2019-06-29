@@ -51,25 +51,25 @@ public interface DataConversionContext
   int getScale(int columnIndex);
 
   /**
-   *
    * @return current session
    */
   SFSession getSession();
 
   /**
-   *
    * @return session time zone
    */
   TimeZone getTimeZone();
 
   /**
    * whether to honor client time zone for timestamp_ntz
+   *
    * @return
    */
   boolean getHonorClientTZForTimestampNTZ();
 
   /**
    * result version
+   *
    * @return
    */
   long getResultVersion();

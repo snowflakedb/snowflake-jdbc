@@ -29,6 +29,7 @@ public class BigIntToTimeConverter extends AbstractArrowVectorConverter
 
   /**
    * parse long into SFTime
+   *
    * @param index
    * @return
    */

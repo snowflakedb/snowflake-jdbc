@@ -24,7 +24,7 @@ public class VarCharToTextConverter extends AbstractArrowVectorConverter
   public String toString(int index)
   {
     byte[] bytes = toBytes(index);
-    return bytes == null ? null : new String(toBytes(index), StandardCharsets.UTF_8);
+    return bytes == null ? null : new String(bytes, StandardCharsets.UTF_8);
   }
 
   @Override
