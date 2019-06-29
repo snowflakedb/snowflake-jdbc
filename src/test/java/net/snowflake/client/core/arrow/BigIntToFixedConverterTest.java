@@ -21,12 +21,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+import java.util.TimeZone;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-public class BigIntToFixedConverterTest
+public class BigIntToFixedConverterTest extends BaseConverterTest
 {
   /**
    * allocator for arrow
@@ -73,7 +74,7 @@ public class BigIntToFixedConverterTest
       }
     }
 
-    ArrowVectorConverter converter = new BigIntToFixedConverter(vector);
+    ArrowVectorConverter converter = new BigIntToFixedConverter(vector, this);
 
     for (int i = 0; i < rowCount; i++)
     {
@@ -132,7 +133,7 @@ public class BigIntToFixedConverterTest
       }
     }
 
-    ArrowVectorConverter converter = new BigIntToFixedConverter(vector);
+    ArrowVectorConverter converter = new BigIntToFixedConverter(vector, this);
 
     for (int i = 0; i < rowCount; i++)
     {
@@ -174,7 +175,7 @@ public class BigIntToFixedConverterTest
     BigIntVector vector = new BigIntVector("col_one", fieldType, allocator);
     vector.setSafe(0, 123456789L);
 
-    final ArrowVectorConverter converter = new BigIntToFixedConverter(vector);
+    final ArrowVectorConverter converter = new BigIntToFixedConverter(vector, this);
     final int invalidConversionErrorCode =
         ErrorCode.INVALID_VALUE_CONVERT.getMessageCode();
 
@@ -199,7 +200,7 @@ public class BigIntToFixedConverterTest
     TestUtil.assertSFException(invalidConversionErrorCode,
                                () -> converter.toTime(0));
     TestUtil.assertSFException(invalidConversionErrorCode,
-                               () -> converter.toTimestamp(0));
+                               () -> converter.toTimestamp(0, TimeZone.getDefault()));
     vector.clear();
   }
 
@@ -222,7 +223,7 @@ public class BigIntToFixedConverterTest
     vectorFoo.setSafe(1, -2147483650L);
 
     final ArrowVectorConverter converterFoo =
-        new BigIntToFixedConverter(vectorFoo);
+        new BigIntToFixedConverter(vectorFoo, this);
 
     final int invalidConversionErrorCode =
         ErrorCode.INVALID_VALUE_CONVERT.getMessageCode();
@@ -248,7 +249,7 @@ public class BigIntToFixedConverterTest
     vectorBar.setSafe(1, -10L);
 
     final ArrowVectorConverter converterBar =
-        new BigIntToFixedConverter(vectorBar);
+        new BigIntToFixedConverter(vectorBar, this);
 
     assertThat(converterBar.toByte(0), is((byte) 10));
     assertThat(converterBar.toByte(1), is((byte) -10));

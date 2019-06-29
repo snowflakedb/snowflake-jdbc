@@ -1,5 +1,12 @@
-package net.snowflake.client.core;
+/*
+ * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
+ */
 
+package net.snowflake.client.core.arrow;
+
+import net.snowflake.client.core.ResultUtil;
+import net.snowflake.client.core.SFException;
+import net.snowflake.client.core.SFSession;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -12,8 +19,9 @@ import java.util.TimeZone;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(Parameterized.class)
-public class ResultUtilTest
+public class ArrowResultUtilTest
 {
+  // test on multiple time zones
   @Parameterized.Parameters
   public static Object[][] data()
   {
@@ -28,7 +36,7 @@ public class ResultUtilTest
     };
   }
 
-  public ResultUtilTest(String tz)
+  public ArrowResultUtilTest(String tz)
   {
     System.setProperty("user.timezone", tz);
   }
@@ -58,7 +66,7 @@ public class ResultUtilTest
     for (int i = 0; i < times; i++)
     {
       int day = random.nextInt(dateBound) - dateBound / 2;
-      ResultUtil.getDate(day, tz);
+      ArrowResultUtil.getDate(day, tz, session);
     }
     long duration2 = System.currentTimeMillis() - start;
     System.out.println(duration1 + " " + duration2);
@@ -73,7 +81,7 @@ public class ResultUtilTest
   public void testGetDate() throws SFException
   {
     int day = -8865;
-    Date newDate = ResultUtil.getDate(day, TimeZone.getDefault());
+    Date newDate = ArrowResultUtil.getDate(day, TimeZone.getDefault(), new SFSession());
     Date oldDate = ResultUtil.getDate(Integer.toString(day), TimeZone.getDefault(), new SFSession());
     assertEquals(newDate, oldDate);
   }

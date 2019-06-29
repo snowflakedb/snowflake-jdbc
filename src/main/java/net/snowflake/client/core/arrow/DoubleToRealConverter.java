@@ -3,6 +3,7 @@
  */
 package net.snowflake.client.core.arrow;
 
+import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.jdbc.SnowflakeType;
 import org.apache.arrow.vector.Float8Vector;
 import org.apache.arrow.vector.ValueVector;
@@ -11,9 +12,9 @@ public class DoubleToRealConverter extends AbstractArrowVectorConverter
 {
   private Float8Vector float8Vector;
 
-  public DoubleToRealConverter(ValueVector fieldVector)
+  public DoubleToRealConverter(ValueVector fieldVector, DataConversionContext context)
   {
-    super(SnowflakeType.REAL.name(), fieldVector);
+    super(SnowflakeType.REAL.name(), fieldVector, context);
     this.float8Vector = (Float8Vector) fieldVector;
   }
 

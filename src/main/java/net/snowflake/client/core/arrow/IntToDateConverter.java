@@ -3,53 +3,48 @@
  */
 package net.snowflake.client.core.arrow;
 
+import net.snowflake.client.core.DataConversionContext;
+import net.snowflake.client.core.IncidentUtil;
 import net.snowflake.client.core.ResultUtil;
 import net.snowflake.client.core.SFException;
+import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeType;
-import net.snowflake.common.core.SnowflakeDateTimeFormat;
 import org.apache.arrow.vector.IntVector;
 import org.apache.arrow.vector.ValueVector;
 
 import java.sql.Date;
+import java.sql.Timestamp;
 import java.util.TimeZone;
 
 public class IntToDateConverter extends AbstractArrowVectorConverter
 {
   private IntVector intVector;
 
-  /**
-   * date data formatter
-   */
-  private SnowflakeDateTimeFormat dateFormatter;
-  private TimeZone defaultTimeZone;
-
-  public IntToDateConverter(ValueVector fieldVector,
-                            SnowflakeDateTimeFormat dateFormatter)
+  public IntToDateConverter(ValueVector fieldVector, DataConversionContext context)
   {
-    super(SnowflakeType.DATE.name(), fieldVector);
+    super(SnowflakeType.DATE.name(), fieldVector, context);
     this.intVector = (IntVector) fieldVector;
-    this.dateFormatter = dateFormatter;
-    this.defaultTimeZone = TimeZone.getDefault();
   }
 
   @Override
   public Date toDate(int index) throws SFException
   {
-    if (intVector.isNull(index))
+    if (isNull(index))
     {
       return null;
     }
     else
     {
       int val = intVector.getDataBuffer().getInt(index * IntVector.TYPE_WIDTH);
-      return ResultUtil.getDate(val, defaultTimeZone);
+      // Note: use default time zone to match with current getDate() behavior
+      return ArrowResultUtil.getDate(val, TimeZone.getDefault(), context.getSession());
     }
   }
 
   @Override
   public int toInt(int index)
   {
-    if (intVector.isNull(index))
+    if (isNull(index))
     {
       return 0;
     }
@@ -61,9 +56,32 @@ public class IntToDateConverter extends AbstractArrowVectorConverter
   }
 
   @Override
+  public Timestamp toTimestamp(int index, TimeZone tz) throws SFException
+  {
+    if (isNull(index))
+    {
+      return null;
+    }
+    else
+    {
+      return new Timestamp(toDate(index).getTime());
+    }
+  }
+
+  @Override
   public String toString(int index) throws SFException
   {
-    return isNull(index) ? null : ResultUtil.getDateAsString(toDate(index), dateFormatter);
+    if (context.getDateFormatter() == null)
+    {
+      throw (SFException) IncidentUtil.generateIncidentV2WithException(
+          context.getSession(),
+          new SFException(ErrorCode.INTERNAL_ERROR,
+                          "missing date formatter"),
+          null,
+          null);
+    }
+    return isNull(index) ? null :
+           ResultUtil.getDateAsString(toDate(index), context.getDateFormatter());
   }
 
   @Override

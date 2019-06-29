@@ -4,7 +4,6 @@
 package net.snowflake.client.core.arrow;
 
 import net.snowflake.client.core.SFException;
-import net.snowflake.common.core.SFBinaryFormat;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.memory.RootAllocator;
 import org.apache.arrow.vector.VarBinaryVector;
@@ -26,7 +25,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-public class VarBinaryToBinaryConverterTest
+public class VarBinaryToBinaryConverterTest extends BaseConverterTest
 {
   /**
    * allocator for arrow
@@ -70,7 +69,7 @@ public class VarBinaryToBinaryConverterTest
     }
 
     ArrowVectorConverter converter = new VarBinaryToBinaryConverter(
-        vector, SFBinaryFormat.BASE64);
+        vector, this);
 
     for (int i = 0; i < rowCount; i++)
     {

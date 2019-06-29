@@ -20,7 +20,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-public class TinyIntToBooleanConverterTest
+public class TinyIntToBooleanConverterTest extends BaseConverterTest
 {
   /**
    * allocator for arrow
@@ -63,7 +63,7 @@ public class TinyIntToBooleanConverterTest
       }
     }
 
-    ArrowVectorConverter converter = new TinyIntToBooleanConverter(vector);
+    ArrowVectorConverter converter = new TinyIntToBooleanConverter(vector, this);
 
     for (int i = 0; i < rowCount; i++)
     {
