@@ -175,6 +175,15 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     this.metaDataOfBinds = resultOutput.getMetaDataOfBinds();
     this.telemetryClient = telemetryClient;
     this.firstChunkTime = System.currentTimeMillis();
+    this.timestampNTZFormatter = resultOutput.getTimestampNTZFormatter();
+    this.timestampLTZFormatter = resultOutput.getTimestampLTZFormatter();
+    this.timestampTZFormatter = resultOutput.getTimestampTZFormatter();
+    this.dateFormatter = resultOutput.getDateFormatter();
+    this.timeFormatter = resultOutput.getTimeFormatter();
+    this.timeZone = resultOutput.getTimeZone();
+    this.honorClientTZForTimestampNTZ =
+        resultOutput.isHonorClientTZForTimestampNTZ();
+    this.binaryFormatter = resultOutput.getBinaryFormatter();
 
     // sort result set if needed
     String rowsetBase64 = resultOutput.getRowsetBase64();
@@ -431,7 +440,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
         currentChunkIterator.getCurrentConverter(columnIndex - 1);
     int index = currentChunkIterator.getCurrentRowInRecordBatch();
     wasNull = converter.isNull(index);
-    return converter.toString();
+    return converter.toString(index);
   }
 
   @Override

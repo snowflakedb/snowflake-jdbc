@@ -111,7 +111,7 @@ public class BigIntToTimeConverterTest extends BaseConverterTest
       Time oldTime =
           new Time(ResultUtil.getSFTime(
               testTimesJson[i], scale, new SFSession()).getFractionalSeconds(
-                  ResultUtil.DEFAULT_SCALE_OF_SFTIME_FRACTION_SECONDS));
+              ResultUtil.DEFAULT_SCALE_OF_SFTIME_FRACTION_SECONDS));
       if (nullValIndex.contains(j))
       {
         assertThat(obj, is(nullValue()));
