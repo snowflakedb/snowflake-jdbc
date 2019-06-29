@@ -6,86 +6,71 @@ package net.snowflake.client.core;
 import net.snowflake.common.core.SFBinaryFormat;
 import net.snowflake.common.core.SnowflakeDateTimeFormat;
 
+import java.util.TimeZone;
+
 /**
  * This class contains formatter info about each data type and related flags
  * etc. And it is scoped to a single result set. a.k.a each result set object
  * should have its own formatter info
  */
-public class DataConversionContext
+public interface DataConversionContext
 {
   /**
    * timestamp_ltz formatter
    */
-  final private SnowflakeDateTimeFormat timestampLTZFormatter;
+  SnowflakeDateTimeFormat getTimestampLTZFormatter();
 
   /**
    * timestamp_ntz formatter
    */
-  final private SnowflakeDateTimeFormat timestampNTZFormatter;
+  SnowflakeDateTimeFormat getTimestampNTZFormatter();
 
   /**
    * timestamp_tz formatter
    */
-  final private SnowflakeDateTimeFormat timestampTZFormatter;
+  SnowflakeDateTimeFormat getTimestampTZFormatter();
 
   /**
    * date formatter
    */
-  final private SnowflakeDateTimeFormat dateFormatter;
+  SnowflakeDateTimeFormat getDateFormatter();
 
   /**
    * time formatter
    */
-  final private SnowflakeDateTimeFormat timeFormatter;
+  SnowflakeDateTimeFormat getTimeFormatter();
 
   /**
    * binary formatter
    */
-  private SFBinaryFormat binaryFormatter;
+  SFBinaryFormat getBinaryFormatter();
 
-  public DataConversionContext(
-      SnowflakeDateTimeFormat timestampLTZFormatter,
-      SnowflakeDateTimeFormat timestampNTZFormatter,
-      SnowflakeDateTimeFormat timestampTZFormatter,
-      SnowflakeDateTimeFormat dateFormatter,
-      SnowflakeDateTimeFormat timeFormatter,
-      SFBinaryFormat binaryFormatter)
-  {
-    this.timestampLTZFormatter = timestampLTZFormatter;
-    this.timestampNTZFormatter = timestampNTZFormatter;
-    this.timestampTZFormatter = timestampTZFormatter;
-    this.dateFormatter = dateFormatter;
-    this.timeFormatter = timeFormatter;
-    this.binaryFormatter = binaryFormatter;
-  }
+  /**
+   * get scale from Snowflake metadata
+   */
+  int getScale(int columnIndex);
 
-  public SnowflakeDateTimeFormat getTimestampLTZFormatter()
-  {
-    return timestampLTZFormatter;
-  }
+  /**
+   *
+   * @return current session
+   */
+  SFSession getSession();
 
-  public SnowflakeDateTimeFormat getTimestampNTZFormatter()
-  {
-    return timestampNTZFormatter;
-  }
+  /**
+   *
+   * @return session time zone
+   */
+  TimeZone getTimeZone();
 
-  public SnowflakeDateTimeFormat getTimestampTZFormatter()
-  {
-    return timestampTZFormatter;
-  }
+  /**
+   * whether to honor client time zone for timestamp_ntz
+   * @return
+   */
+  boolean getHonorClientTZForTimestampNTZ();
 
-  public SnowflakeDateTimeFormat getDateFormatter()
-  {
-    return dateFormatter;
-  }
-
-  public SnowflakeDateTimeFormat getTimeFormatter()
-  {
-    return timeFormatter;
-  }
-
-  public SFBinaryFormat getBinaryFormatter()
-  {
-    return binaryFormatter;
-  }
+  /**
+   * result version
+   * @return
+   */
+  long getResultVersion();
 }

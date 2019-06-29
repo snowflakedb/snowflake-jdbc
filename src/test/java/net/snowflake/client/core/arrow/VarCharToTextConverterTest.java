@@ -6,7 +6,7 @@ package net.snowflake.client.core.arrow;
 import net.snowflake.client.core.SFException;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.memory.RootAllocator;
-import org.apache.arrow.vector.VarBinaryVector;
+import org.apache.arrow.vector.VarCharVector;
 import org.apache.arrow.vector.types.Types;
 import org.apache.arrow.vector.types.pojo.FieldType;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -25,7 +25,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-public class VarBinaryToTextConverterTest
+public class VarCharToTextConverterTest extends BaseConverterTest
 {
   /**
    * allocator for arrow
@@ -52,8 +52,8 @@ public class VarBinaryToTextConverterTest
                                         Types.MinorType.VARCHAR.getType(),
                                         null, customFieldMeta);
 
-    VarBinaryVector vector = new VarBinaryVector("col_one", fieldType,
-                                                 allocator);
+    VarCharVector vector = new VarCharVector("col_one", fieldType,
+                                               allocator);
     for (int i = 0; i < rowCount; i++)
     {
       boolean isNull = random.nextBoolean();
@@ -68,7 +68,7 @@ public class VarBinaryToTextConverterTest
       }
     }
 
-    ArrowVectorConverter converter = new VarBinaryToTextConverter(vector);
+    ArrowVectorConverter converter = new VarCharToTextConverter(vector, this);
 
     for (int i = 0; i < rowCount; i++)
     {

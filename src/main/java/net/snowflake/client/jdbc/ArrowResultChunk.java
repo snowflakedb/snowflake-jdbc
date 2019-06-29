@@ -6,6 +6,7 @@ package net.snowflake.client.jdbc;
 import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.arrow.ArrowVectorConverter;
 import net.snowflake.client.core.arrow.BigIntToFixedConverter;
+import net.snowflake.client.core.arrow.BigIntToTimeConverter;
 import net.snowflake.client.core.arrow.DoubleToRealConverter;
 import net.snowflake.client.core.arrow.IntToDateConverter;
 import net.snowflake.client.core.arrow.IntToFixedConverter;
@@ -13,7 +14,7 @@ import net.snowflake.client.core.arrow.SmallIntToFixedConverter;
 import net.snowflake.client.core.arrow.TinyIntToBooleanConverter;
 import net.snowflake.client.core.arrow.TinyIntToFixedConverter;
 import net.snowflake.client.core.arrow.VarBinaryToBinaryConverter;
-import net.snowflake.client.core.arrow.VarBinaryToTextConverter;
+import net.snowflake.client.core.arrow.VarCharToTextConverter;
 import org.apache.arrow.memory.RootAllocator;
 import org.apache.arrow.vector.FieldVector;
 import org.apache.arrow.vector.ValueVector;
@@ -117,67 +118,94 @@ public class ArrowResultChunk extends SnowflakeResultChunk
    * @return list of converters on top of each converters
    */
   private static List<ArrowVectorConverter> initConverters(
-      List<ValueVector> vectors,
-      DataConversionContext context)
+      List<ValueVector> vectors, DataConversionContext context)
   {
     List<ArrowVectorConverter> converters = new ArrayList<>();
-    vectors.forEach(vector ->
-                    {
-                      // arrow minor type
-                      Types.MinorType type = Types.getMinorTypeForArrowType(
-                          vector.getField().getType());
+    for (int i = 0; i < vectors.size(); i++)
+    {
+      ValueVector vector = vectors.get(i);
+      // arrow minor type
+      Types.MinorType type = Types.getMinorTypeForArrowType(
+          vector.getField().getType());
 
-                      // each column's metadata
-                      Map<String, String> customMeta = vector.getField().getMetadata();
+      // each column's metadata
+      Map<String, String> customMeta = vector.getField().getMetadata();
+      SnowflakeType st = SnowflakeType.valueOf(customMeta.get("logicalType"));
+      switch (st)
+      {
+        case ANY:
+          // TODO
+          break;
 
-                      switch (SnowflakeType.valueOf(customMeta.get("logicalType")))
-                      {
-                        case BOOLEAN:
-                          converters.add(new TinyIntToBooleanConverter(vector));
-                          break;
+        case ARRAY:
+          // TODO
+          break;
 
-                        case FIXED:
-                          switch (type)
-                          {
-                            case TINYINT:
-                              converters.add(new TinyIntToFixedConverter(vector));
-                              break;
+        case CHAR:
+        case TEXT:
+          converters.add(new VarCharToTextConverter(vector, context));
+          break;
 
-                            case SMALLINT:
-                              converters.add(new SmallIntToFixedConverter(vector));
-                              break;
+        case BINARY:
+          converters.add(new VarBinaryToBinaryConverter(vector, context));
+          break;
 
-                            case INT:
-                              converters.add(new IntToFixedConverter(vector));
-                              break;
+        case BOOLEAN:
+          converters.add(new TinyIntToBooleanConverter(vector, context));
+          break;
 
-                            case BIGINT:
-                              converters.add(new BigIntToFixedConverter(vector));
-                              break;
-                          }
-                          break;
+        case DATE:
+          converters.add(new IntToDateConverter(vector, context));
+          break;
 
-                        case REAL:
-                          converters.add(new DoubleToRealConverter(vector));
-                          break;
+        case FIXED:
+          switch (type)
+          {
+            case TINYINT:
+              converters.add(new TinyIntToFixedConverter(vector, context));
+              break;
 
-                        case TEXT:
-                          converters.add(new VarBinaryToTextConverter(vector));
-                          break;
+            case SMALLINT:
+              converters.add(new SmallIntToFixedConverter(vector, context));
+              break;
 
-                        case DATE:
-                          converters.add(new IntToDateConverter(
-                              vector, context.getDateFormatter()));
-                          break;
+            case INT:
+              converters.add(new IntToFixedConverter(vector, context));
+              break;
 
-                        case BINARY:
-                          converters.add(new VarBinaryToBinaryConverter(
-                              vector, context.getBinaryFormatter()));
-                          break;
+            case BIGINT:
+              converters.add(new BigIntToFixedConverter(vector, context));
+              break;
+          }
+          break;
 
-                        //TODO add for other data types converter
-                      }
-                    });
+        case INTEGER:
+          // TODO
+          break;
+
+        case OBJECT:
+          // TODO
+          break;
+
+        case REAL:
+          converters.add(new DoubleToRealConverter(vector, context));
+          break;
+
+        case TIME:
+          converters.add(new BigIntToTimeConverter(vector, context));
+          break;
+
+        case TIMESTAMP:
+        case TIMESTAMP_LTZ:
+        case TIMESTAMP_NTZ:
+        case TIMESTAMP_TZ:
+          // TODO
+          break;
+
+        case VARIANT:
+          break;
+      }
+    }
 
     return converters;
   }
@@ -186,9 +214,9 @@ public class ArrowResultChunk extends SnowflakeResultChunk
   /**
    * @return an iterator to iterate over current chunk
    */
-  public ArrowChunkIterator getIterator(DataConversionContext context)
+  public ArrowChunkIterator getIterator(DataConversionContext dataConversionContext)
   {
-    return new ArrowChunkIterator(this, context);
+    return new ArrowChunkIterator(this, dataConversionContext);
   }
 
   public static ArrowChunkIterator getEmptyChunkIterator()
@@ -236,17 +264,17 @@ public class ArrowResultChunk extends SnowflakeResultChunk
     /**
      * formatters to each data type
      */
-    private final DataConversionContext dataConversionContext;
+    private DataConversionContext dataConversionContext;
 
     ArrowChunkIterator(ArrowResultChunk resultChunk,
-                       DataConversionContext conversionContext)
+                       DataConversionContext dataConversionContext)
     {
       this.resultChunk = resultChunk;
       this.currentRecordBatchIndex = -1;
       this.totalRecordBatch = resultChunk.batchOfVectors.size();
       this.currentRowInRecordBatch = -1;
       this.rowCountInCurrentRecordBatch = 0;
-      this.dataConversionContext = conversionContext;
+      this.dataConversionContext = dataConversionContext;
     }
 
     ArrowChunkIterator(EmptyArrowResultChunk emptyArrowResultChunk)
@@ -257,7 +285,6 @@ public class ArrowResultChunk extends SnowflakeResultChunk
       this.currentRowInRecordBatch = -1;
       this.rowCountInCurrentRecordBatch = 0;
       this.currentConverters = Collections.emptyList();
-      this.dataConversionContext = null;
     }
 
     /**

@@ -3,6 +3,7 @@
  */
 package net.snowflake.client.core.arrow;
 
+import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.jdbc.SnowflakeType;
 import org.apache.arrow.vector.TinyIntVector;
 import org.apache.arrow.vector.ValueVector;
@@ -11,9 +12,9 @@ public class TinyIntToBooleanConverter extends AbstractArrowVectorConverter
 {
   private TinyIntVector tinyIntVector;
 
-  public TinyIntToBooleanConverter(ValueVector fieldVector)
+  public TinyIntToBooleanConverter(ValueVector fieldVector, DataConversionContext context)
   {
-    super(SnowflakeType.BOOLEAN.name(), fieldVector);
+    super(SnowflakeType.BOOLEAN.name(), fieldVector, context);
     this.tinyIntVector = (TinyIntVector) fieldVector;
   }
 

@@ -21,12 +21,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+import java.util.TimeZone;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-public class IntToFixedConverterTest
+public class IntToFixedConverterTest extends BaseConverterTest
 {
   /**
    * allocator for arrow
@@ -73,7 +74,7 @@ public class IntToFixedConverterTest
       }
     }
 
-    ArrowVectorConverter converter = new IntToFixedConverter(vector);
+    ArrowVectorConverter converter = new IntToFixedConverter(vector, this);
 
     for (int i = 0; i < rowCount; i++)
     {
@@ -132,7 +133,7 @@ public class IntToFixedConverterTest
       }
     }
 
-    ArrowVectorConverter converter = new IntToFixedConverter(vector);
+    ArrowVectorConverter converter = new IntToFixedConverter(vector, this);
 
     for (int i = 0; i < rowCount; i++)
     {
@@ -174,7 +175,7 @@ public class IntToFixedConverterTest
     IntVector vector = new IntVector("col_one", fieldType, allocator);
     vector.setSafe(0, 33000);
 
-    final ArrowVectorConverter converter = new IntToFixedConverter(vector);
+    final ArrowVectorConverter converter = new IntToFixedConverter(vector, this);
     final int invalidConversionErrorCode =
         ErrorCode.INVALID_VALUE_CONVERT.getMessageCode();
 
@@ -199,7 +200,7 @@ public class IntToFixedConverterTest
     TestUtil.assertSFException(invalidConversionErrorCode,
                                () -> converter.toTime(0));
     TestUtil.assertSFException(invalidConversionErrorCode,
-                               () -> converter.toTimestamp(0));
+                               () -> converter.toTimestamp(0, TimeZone.getDefault()));
     vector.clear();
   }
 
@@ -222,7 +223,7 @@ public class IntToFixedConverterTest
     vectorFoo.setSafe(1, -33000);
 
     final ArrowVectorConverter converterFoo =
-        new IntToFixedConverter(vectorFoo);
+        new IntToFixedConverter(vectorFoo, this);
     final int invalidConversionErrorCode =
         ErrorCode.INVALID_VALUE_CONVERT.getMessageCode();
 
@@ -246,7 +247,7 @@ public class IntToFixedConverterTest
     vectorBar.setSafe(1, -10);
 
     final ArrowVectorConverter converterBar =
-        new IntToFixedConverter(vectorBar);
+        new IntToFixedConverter(vectorBar, this);
 
     assertThat(converterBar.toByte(0), is((byte) 10));
     assertThat(converterBar.toByte(1), is((byte) -10));

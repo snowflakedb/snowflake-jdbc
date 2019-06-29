@@ -13,7 +13,6 @@ import net.snowflake.client.jdbc.SnowflakeUtil;
 import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
-import net.snowflake.common.core.CalendarCache;
 import net.snowflake.common.core.SFBinaryFormat;
 import net.snowflake.common.core.SFTime;
 import net.snowflake.common.core.SFTimestamp;
@@ -45,7 +44,9 @@ import static net.snowflake.client.core.SessionUtil.DEFAULT_CLIENT_PREFETCH_THRE
 public class ResultUtil
 {
   static final SFLogger logger = SFLoggerFactory.getLogger(ResultUtil.class);
+
   public static final int MILLIS_IN_ONE_DAY = 86400000;
+  public static final int DEFAULT_SCALE_OF_SFTIME_FRACTION_SECONDS = 3; // default scale for sftime fraction seconds
 
   // Construct a default UTC zone for TIMESTAMPNTZ
   private static TimeZone timeZoneUTC = TimeZone.getTimeZone("UTC");
@@ -975,78 +976,6 @@ public class ResultUtil
           null);
     }
   }
-
-  /**
-   * new method to get Date from integer
-   *
-   * @param day
-   * @param tz
-   * @return
-   * @throws SFException
-   */
-  public static Date getDate(int day, TimeZone tz) throws SFException
-  {
-    // return the date adjusted to the JVM default time zone
-    long milliSecsSinceEpoch = (long) day * MILLIS_IN_ONE_DAY;
-
-    long milliSecsSinceEpochNew = moveToTimeZone(milliSecsSinceEpoch, TimeZone.getTimeZone("UTC"), tz);
-
-    Date preDate = new Date(milliSecsSinceEpochNew);
-
-
-    // if date is on or before 1582-10-04, apply the difference
-    // by (H-H/4-2) where H is the hundreds digit of the year according to:
-    // http://en.wikipedia.org/wiki/Gregorian_calendar
-    Date newDate = adjustDate(preDate);
-    logger.debug("Adjust date from {} to {}",
-                 (ArgSupplier) preDate::toString,
-                 (ArgSupplier) newDate::toString);
-    return newDate;
-  }
-
-  /**
-   * simplified moveToTimeZone method for JDBC
-   *
-   * @param epoch
-   * @param oldTZ
-   * @param newTZ
-   * @return moved epoch
-   */
-  public static long moveToTimeZone(long epoch, TimeZone oldTZ, TimeZone newTZ)
-  {
-    if (oldTZ.getRawOffset() == newTZ.getRawOffset())
-    {
-      // same time zone
-      return epoch;
-    }
-    int offsetMillisInOldTZ = oldTZ.getOffset(epoch);
-
-    Calendar calendar = CalendarCache.get(oldTZ);
-    calendar.setTimeInMillis(epoch);
-
-    int millisecondWithinDay = ((calendar.get(Calendar.HOUR_OF_DAY) * 60 +
-                                 calendar.get(Calendar.MINUTE)) * 60 +
-                                calendar.get(Calendar.SECOND)) * 1000 +
-                               calendar.get(Calendar.MILLISECOND);
-
-    int era = calendar.get(Calendar.ERA);
-    int year = calendar.get(Calendar.YEAR);
-    int month = calendar.get(Calendar.MONTH);
-    int dayOfMonth = calendar.get(Calendar.DAY_OF_MONTH);
-    int dayOfWeek = calendar.get(Calendar.DAY_OF_WEEK);
-
-    int offsetMillisInNewTZ = newTZ.getOffset(
-        era,
-        year,
-        month,
-        dayOfMonth,
-        dayOfWeek,
-        millisecondWithinDay);
-
-    int offsetMillis = offsetMillisInOldTZ - offsetMillisInNewTZ;
-    return epoch + offsetMillis;
-  }
-
 
   /**
    * Convert snowflake bool to java boolean

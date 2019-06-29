@@ -413,7 +413,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet
       {
         return null;
       }
-      return new Time(sfTime.getFractionalSeconds(3));
+      return new Time(sfTime.getFractionalSeconds(ResultUtil.DEFAULT_SCALE_OF_SFTIME_FRACTION_SECONDS));
     }
     else if (Types.TIMESTAMP == columnType)
     {

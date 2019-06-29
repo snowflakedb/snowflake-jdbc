@@ -21,12 +21,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+import java.util.TimeZone;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-public class SmallIntToFixedConverterTest
+public class SmallIntToFixedConverterTest extends BaseConverterTest
 {
   /**
    * allocator for arrow
@@ -73,7 +74,7 @@ public class SmallIntToFixedConverterTest
       }
     }
 
-    ArrowVectorConverter converter = new SmallIntToFixedConverter(vector);
+    ArrowVectorConverter converter = new SmallIntToFixedConverter(vector, this);
 
     for (int i = 0; i < rowCount; i++)
     {
@@ -132,7 +133,7 @@ public class SmallIntToFixedConverterTest
       }
     }
 
-    ArrowVectorConverter converter = new SmallIntToFixedConverter(vector);
+    ArrowVectorConverter converter = new SmallIntToFixedConverter(vector, this);
 
     for (int i = 0; i < rowCount; i++)
     {
@@ -174,7 +175,7 @@ public class SmallIntToFixedConverterTest
     SmallIntVector vector = new SmallIntVector("col_one", fieldType, allocator);
     vector.setSafe(0, 200);
 
-    final ArrowVectorConverter converter = new SmallIntToFixedConverter(vector);
+    final ArrowVectorConverter converter = new SmallIntToFixedConverter(vector, this);
     final int invalidConversionErrorCode =
         ErrorCode.INVALID_VALUE_CONVERT.getMessageCode();
 
@@ -199,7 +200,7 @@ public class SmallIntToFixedConverterTest
     TestUtil.assertSFException(invalidConversionErrorCode,
                                () -> converter.toTime(0));
     TestUtil.assertSFException(invalidConversionErrorCode,
-                               () -> converter.toTimestamp(0));
+                               () -> converter.toTimestamp(0, TimeZone.getDefault()));
     vector.clear();
   }
 
@@ -223,7 +224,7 @@ public class SmallIntToFixedConverterTest
     vectorFoo.setSafe(1, -200);
 
     final ArrowVectorConverter converterFoo =
-        new SmallIntToFixedConverter(vectorFoo);
+        new SmallIntToFixedConverter(vectorFoo, this);
     final int invalidConversionErrorCode =
         ErrorCode.INVALID_VALUE_CONVERT.getMessageCode();
 
@@ -241,7 +242,7 @@ public class SmallIntToFixedConverterTest
     vectorBar.setSafe(1, -10);
 
     final ArrowVectorConverter converterBar =
-        new SmallIntToFixedConverter(vectorBar);
+        new SmallIntToFixedConverter(vectorBar, this);
 
     assertThat(converterBar.toByte(0), is((byte) 10));
     assertThat(converterBar.toByte(1), is((byte) -10));

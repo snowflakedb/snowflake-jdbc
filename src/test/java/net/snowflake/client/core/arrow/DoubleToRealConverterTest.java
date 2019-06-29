@@ -3,6 +3,7 @@
  */
 package net.snowflake.client.core.arrow;
 
+import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.SFException;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.memory.RootAllocator;
@@ -23,7 +24,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-public class DoubleToRealConverterTest
+public class DoubleToRealConverterTest extends BaseConverterTest
 {
   /**
    * allocator for arrow
@@ -68,7 +69,7 @@ public class DoubleToRealConverterTest
       }
     }
 
-    ArrowVectorConverter converter = new DoubleToRealConverter(vector);
+    ArrowVectorConverter converter = new DoubleToRealConverter(vector, (DataConversionContext) this);
 
     for (int i = 0; i < rowCount; i++)
     {
