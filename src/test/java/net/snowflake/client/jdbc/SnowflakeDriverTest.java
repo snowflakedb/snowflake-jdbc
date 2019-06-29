@@ -27,14 +27,16 @@ public class SnowflakeDriverTest
     String scheme;
     String host;
     int port;
+    String account;
     Map<String, String> parameters;
 
-    TestCase(String url, String scheme, String host, int port, Map<String, String> parameters)
+    TestCase(String url, String scheme, String host, int port, String account, Map<String, String> parameters)
     {
       this.url = url;
       this.scheme = scheme;
       this.host = host;
       this.port = port;
+      this.account = account;
       this.parameters = parameters;
     }
 
@@ -49,6 +51,7 @@ public class SnowflakeDriverTest
       assertEquals("URL scheme: " + url, this.host, host);
       assertEquals("URL scheme: " + url, this.port, port);
       assertEquals("URL scheme: " + url, this.parameters.size(), parameters.size());
+      assertEquals("URL scheme. " + url, this.account, account);
 
       for (Map.Entry<String, String> entry : this.parameters.entrySet())
       {
@@ -73,25 +76,25 @@ public class SnowflakeDriverTest
     testCases.add(
         new TestCase(
             "jdbc:snowflake://localhost",
-            "https", "localhost", 443, EMPTY_PARAMETERS));
+            "https", "localhost", 443, null, EMPTY_PARAMETERS));
     testCases.add(
         new TestCase(
             "jdbc:snowflake://localhost:8081",
-            "https", "localhost", 8081, EMPTY_PARAMETERS));
+            "https", "localhost", 8081, null, EMPTY_PARAMETERS));
 
     expectedParameters = new HashMap<>();
     expectedParameters.put("a", "b");
     testCases.add(
         new TestCase(
             "jdbc:snowflake://localhost8081?a=b",
-            "https", "localhost8081", 443, expectedParameters));
+            "https", "localhost8081", 443, null, expectedParameters));
 
     expectedParameters = new HashMap<>();
     expectedParameters.put("a", "b");
     testCases.add(
         new TestCase(
             "jdbc:snowflake://localhost:8081/?a=b",
-            "https", "localhost", 8081, expectedParameters));
+            "https", "localhost", 8081, null, expectedParameters));
 
     expectedParameters = new HashMap<>();
     expectedParameters.put("a", "b");
@@ -99,7 +102,7 @@ public class SnowflakeDriverTest
     testCases.add(
         new TestCase(
             "jdbc:snowflake://localhost:8081?a=b&c=d",
-            "https", "localhost", 8081, expectedParameters));
+            "https", "localhost", 8081, null, expectedParameters));
 
     expectedParameters = new HashMap<>();
     expectedParameters.put("a", "b");
@@ -107,7 +110,7 @@ public class SnowflakeDriverTest
     testCases.add(
         new TestCase(
             "jdbc:snowflake://localhost:8081/?a=b&c=d",
-            "https", "localhost", 8081, expectedParameters));
+            "https", "localhost", 8081, null, expectedParameters));
 
     expectedParameters = new HashMap<>();
     expectedParameters.put("prop1", "value1");
@@ -115,7 +118,7 @@ public class SnowflakeDriverTest
     testCases.add(
         new TestCase(
             "jdbc:snowflake://http://testaccount.localhost?prop1=value1",
-            "http", "testaccount.localhost", 443,
+            "http", "testaccount.localhost", 443, "testaccount",
             expectedParameters));
 
     // value including dash
@@ -133,7 +136,7 @@ public class SnowflakeDriverTest
             "jdbc:snowflake://testaccount.snowflakecomputing.com:443" +
             "?CLIENT_SESSION_KEEP_ALIVE=true&db=TEST_DB&proxyHost=your-host.com&proxyPort=1234" +
             "&schema=PUBLIC&useProxy=true&warehouse=TEST_WH",
-            "https", "testaccount.snowflakecomputing.com", 443,
+            "https", "testaccount.snowflakecomputing.com", 443, "testaccount",
             expectedParameters));
 
     // value including dot
@@ -145,7 +148,7 @@ public class SnowflakeDriverTest
         new TestCase(
             "jdbc:snowflake://testaccount.snowflakecomputing.com" +
             "?proxyHost=72.1.32.55&proxyPort=port%55",
-            "https", "testaccount.snowflakecomputing.com", 443,
+            "https", "testaccount.snowflakecomputing.com", 443, "testaccount",
             expectedParameters));
 
     // value in escaped value
@@ -156,7 +159,7 @@ public class SnowflakeDriverTest
     testCases.add(
         new TestCase(
             "jdbc:snowflake://localhost:8080?proxyHost=%3d%2f&proxyPort=777&ssl=off",
-            "http", "localhost", 8080,
+            "http", "localhost", 8080, null,
             expectedParameters));
 
     // value including non ascii characters
@@ -166,7 +169,7 @@ public class SnowflakeDriverTest
     testCases.add(
         new TestCase(
             "jdbc:snowflake://localhost:8080?proxyHost=cheese&proxyPort=!@",
-            "https", "localhost", 8080,
+            "https", "localhost", 8080, null,
             expectedParameters));
 
     // value including non ascii characters
@@ -176,7 +179,7 @@ public class SnowflakeDriverTest
     testCases.add(
         new TestCase(
             "jdbc:snowflake://https://localhost:8080?proxyHost=cheese&proxyPort=cake",
-            "https", "localhost", 8080,
+            "https", "localhost", 8080, null,
             expectedParameters));
 
     // host including underscore
@@ -185,7 +188,7 @@ public class SnowflakeDriverTest
     testCases.add(
         new TestCase(
             "jdbc:snowflake://snowflake.reg-RT-Replication1-7387_2.local:8082",
-            "https", "snowflake.reg-RT-Replication1-7387_2.local", 8082,
+            "https", "snowflake.reg-RT-Replication1-7387_2.local", 8082, "snowflake",
             expectedParameters));
 
     // host including underscore with parameters
@@ -197,7 +200,7 @@ public class SnowflakeDriverTest
         new TestCase(
             "jdbc:snowflake://snowflake.reg-RT-Replication1-7387_2.local:8082"
             + "?db=testdb&schema=testschema",
-            "https", "snowflake.reg-RT-Replication1-7387_2.local", 8082,
+            "https", "snowflake.reg-RT-Replication1-7387_2.local", 8082, "snowflake",
             expectedParameters));
 
     // host including underscore with parameters after a path slash
@@ -209,7 +212,7 @@ public class SnowflakeDriverTest
         new TestCase(
             "jdbc:snowflake://snowflake.reg-RT-Replication1-7387_2.local:8082/"
             + "?db=testdb&schema=testschema",
-            "https", "snowflake.reg-RT-Replication1-7387_2.local", 8082,
+            "https", "snowflake.reg-RT-Replication1-7387_2.local", 8082, "snowflake",
             expectedParameters));
 
     // host including underscore with parameters after a path slash
@@ -220,7 +223,7 @@ public class SnowflakeDriverTest
         new TestCase(
             "jdbc:snowflake://testaccount.snowflakecomputing.com/"
             + "?authenticator=https://snowflakecomputing.okta.com",
-            "https", "testaccount.snowflakecomputing.com", 443,
+            "https", "testaccount.snowflakecomputing.com", 443, "testaccount",
             expectedParameters));
 
     // localhost without port
@@ -228,7 +231,7 @@ public class SnowflakeDriverTest
     testCases.add(
         new TestCase(
             "jdbc:snowflake://localhost:",
-            "https", "localhost", 443,
+            "https", "localhost", 443, null,
             expectedParameters));
 
     expectedParameters = new HashMap<>();
@@ -249,7 +252,7 @@ public class SnowflakeDriverTest
             "&authenticator=https://snowflakecomputing.okta.com/app/template_saml_2_0/ky7gy61iAOAMLLSOZSVX/sso/saml" +
             "&user=qa&ssl=off" +
             "&schema=testschema&db=testdb&networkTimeout=3600&retryQuery=on",
-            "http", "snowflake.reg.local", 8082,
+            "http", "snowflake.reg.local", 8082, "testaccount",
             expectedParameters));
 
     // invalid key value pair including multiple equal signs
@@ -259,7 +262,7 @@ public class SnowflakeDriverTest
     testCases.add(
         new TestCase(
             "jdbc:snowflake://testaccount.com?proxyHost=puppy==dog&proxyPort=781",
-            "https", "testaccount.com", 443,
+            "https", "testaccount.com", 443, "testaccount",
             expectedParameters));
 
     // invalid key value including multiple amp
@@ -269,7 +272,7 @@ public class SnowflakeDriverTest
     testCases.add(
         new TestCase(
             "jdbc:snowflake://testaccount.com?proxyHost=&&&proxyPort=5",
-            "https", "testaccount.com", 443,
+            "https", "testaccount.com", 443, "testaccount",
             expectedParameters));
 
     // NOT global url
@@ -279,7 +282,7 @@ public class SnowflakeDriverTest
     testCases.add(
         new TestCase(
             "jdbc:snowflake://globalaccount-12345.com?proxyHost=&&&proxyPort=45.12.34.5",
-            "https", "globalaccount-12345.com", 443,
+            "https", "globalaccount-12345.com", 443, "globalaccount-12345",
             expectedParameters));
 
     // global url
@@ -288,8 +291,9 @@ public class SnowflakeDriverTest
     expectedParameters.put("proxyPort", "45-12-34-5");
     testCases.add(
         new TestCase(
-            "jdbc:snowflake://globalaccount-12345.global.snowflakecomputing.com?proxyHost=&&&proxyPort=45-12-34-5",
-            "https", "globalaccount-12345.global.snowflakecomputing.com", 443,
+            "jdbc:snowflake://globalaccount-12345.global.snowflakecomputing.com" +
+            "?proxyHost=&&&proxyPort=45-12-34-5",
+            "https", "globalaccount-12345.global.snowflakecomputing.com", 443, "globalaccount",
             expectedParameters));
 
     // rt-language1
@@ -301,8 +305,37 @@ public class SnowflakeDriverTest
     expectedParameters.put("ssl", "off");
     testCases.add(
         new TestCase(
-            "jdbc:snowflake://snowflake.reg-RT-PC-Language1-10850.local:8082/?account=snowflake&user=admin&ssl=off&networkTimeout=3600&retryQuery=on",
-            "http", "snowflake.reg-RT-PC-Language1-10850.local", 8082,
+            "jdbc:snowflake://snowflake.reg-RT-PC-Language1-10850.local:8082/" +
+            "?account=snowflake&user=admin&ssl=off&networkTimeout=3600&retryQuery=on",
+            "http", "snowflake.reg-RT-PC-Language1-10850.local", 8082, "snowflake",
+            expectedParameters));
+
+    // rt-language1 with account parameter
+    expectedParameters = new HashMap<>();
+    expectedParameters.put("ACCOUNT", "testaccount100");
+    expectedParameters.put("user", "admin");
+    expectedParameters.put("networkTimeout", "3600");
+    expectedParameters.put("retryQuery", "on");
+    expectedParameters.put("ssl", "off");
+    testCases.add(
+        new TestCase(
+            "jdbc:snowflake://snowflake.reg-RT-PC-Language1-10850.local:8082/" +
+            "?account=testaccount100&user=admin&ssl=off&networkTimeout=3600&retryQuery=on",
+            "http", "snowflake.reg-RT-PC-Language1-10850.local", 8082, "snowflake",
+            expectedParameters));
+
+    // first_t_single
+    expectedParameters = new HashMap<>();
+    expectedParameters.put("ACCOUNT", "cutoff_ds_consumer");
+    expectedParameters.put("user", "snowman");
+    expectedParameters.put("tracing", "off");
+    expectedParameters.put("retryQuery", "on");
+    expectedParameters.put("ssl", "off");
+    expectedParameters.put("password", "test");
+    testCases.add(
+        new TestCase(
+            "jdbc:snowflake://10.180.189.160:7510/?account=cutoff_ds_consumer&user=snowman&password=test&tracing=off&ssl=off&retryQuery=on",
+            "http", "10.180.189.160", 7510, "cutoff_ds_consumer",
             expectedParameters));
 
     for (TestCase t : testCases)

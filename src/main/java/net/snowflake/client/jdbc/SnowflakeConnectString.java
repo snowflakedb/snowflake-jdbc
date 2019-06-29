@@ -89,6 +89,7 @@ public class SnowflakeConnectString
       {
         return INVALID_CONNECT_STRING;
       }
+      String account = null;
       if (!Strings.isNullOrEmpty(queryData))
       {
         String[] params = queryData.split("&");
@@ -107,6 +108,10 @@ public class SnowflakeConnectString
             {
               scheme = "http";
             }
+            else if ("account".equalsIgnoreCase(k))
+            {
+              account = v;
+            }
             parameters.put(k.toUpperCase(Locale.US), v);
           }
           catch (UnsupportedEncodingException ex0)
@@ -117,10 +122,9 @@ public class SnowflakeConnectString
       }
       if ("snowflake".equals(scheme))
       {
-        scheme = "https";
+        scheme = "https"; // by default
       }
 
-      String account = null;
       if (info.size() > 0)
       {
         // NOTE: value in info could be any data type.
@@ -133,7 +137,7 @@ public class SnowflakeConnectString
           {
             scheme = "http";
           }
-          if ("account".equalsIgnoreCase(k))
+          else if ("account".equalsIgnoreCase(k))
           {
             account = (String) v;
           }
