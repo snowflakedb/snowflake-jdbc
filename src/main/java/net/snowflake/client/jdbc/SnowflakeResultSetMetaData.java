@@ -117,73 +117,48 @@ public class SnowflakeResultSetMetaData implements ResultSetMetaData
   @Override
   public boolean isAutoIncrement(int column) throws SQLException
   {
-    logger.debug("public boolean isAutoIncrement(int column)");
-
     return false;
   }
 
   @Override
   public boolean isCaseSensitive(int column) throws SQLException
   {
-    logger.debug("public boolean isCaseSensitive(int column)");
-
     return false;
   }
 
   @Override
   public boolean isSearchable(int column) throws SQLException
   {
-    logger.debug("public boolean isSearchable(int column)");
-
     return true;
   }
 
   @Override
   public boolean isCurrency(int column) throws SQLException
   {
-    logger.debug("public boolean isCurrency(int column)");
-
     return false;
   }
 
   @Override
   public int isNullable(int column) throws SQLException
   {
-    logger.debug("public int isNullable(int column)");
-
     return columnNullableUnknown;
   }
 
   @Override
   public boolean isSigned(int column) throws SQLException
   {
-    logger.debug("public boolean isSigned(int column)");
-
-    if (columnTypes.get(column - 1) == Types.INTEGER ||
-        columnTypes.get(column - 1) == Types.DECIMAL ||
-        columnTypes.get(column - 1) == Types.DOUBLE)
-    {
-      return true;
-    }
-    else
-    {
-      return false;
-    }
+    return SnowflakeType.isJavaTypeSigned(columnTypes.get(column - 1));
   }
 
   @Override
   public int getColumnDisplaySize(int column) throws SQLException
   {
-    logger.debug("public int getColumnDisplaySize(int column)");
-
     return 25;
   }
 
   @Override
   public String getColumnLabel(int column) throws SQLException
   {
-    logger.debug("public String getColumnLabel(int column)");
-
     if (columnNames != null)
     {
       return columnNames.get(column - 1);
@@ -197,23 +172,19 @@ public class SnowflakeResultSetMetaData implements ResultSetMetaData
   @Override
   public String getColumnName(int column) throws SQLException
   {
-    logger.debug("public String getColumnName(int column)");
-
     if (columnNames != null)
     {
       return columnNames.get(column - 1);
     }
     else
     {
-      return "C" + Integer.toString(column - 1);
+      return "C" + (column - 1);
     }
   }
 
   @Override
   public String getSchemaName(int column) throws SQLException
   {
-    logger.debug("public String getSchemaName(int column)");
-
     return "";
   }
 
@@ -252,16 +223,12 @@ public class SnowflakeResultSetMetaData implements ResultSetMetaData
   @Override
   public String getTableName(int column) throws SQLException
   {
-    logger.debug("public String getTableName(int column)");
-
     return "T";
   }
 
   @Override
   public String getCatalogName(int column) throws SQLException
   {
-    logger.debug("public String getCatalogName(int column)");
-
     return "";
   }
 
@@ -334,25 +301,19 @@ public class SnowflakeResultSetMetaData implements ResultSetMetaData
   @Override
   public boolean isReadOnly(int column) throws SQLException
   {
-    logger.debug("public boolean isReadOnly(int column)");
-    // metadata column is always readonly
-    return true;
+    return true; // metadata column is always readonly
   }
 
   @Override
   public boolean isWritable(int column) throws SQLException
   {
-    logger.debug("public boolean isWritable(int column)");
-
-    return false;
+    return false; // never writable
   }
 
   @Override
   public boolean isDefinitelyWritable(int column) throws SQLException
   {
-    logger.debug("public boolean isDefinitelyWritable(int column)");
-
-    return false;
+    return false; // never writable
   }
 
   @Override
@@ -362,40 +323,7 @@ public class SnowflakeResultSetMetaData implements ResultSetMetaData
 
     int type = this.getColumnType(column);
 
-    switch (type)
-    {
-      case Types.VARCHAR:
-      case Types.CHAR:
-      case Types.BINARY:
-        return String.class.getName();
-
-      case Types.INTEGER:
-        return Integer.class.getName();
-
-      case Types.DECIMAL:
-        return BigDecimal.class.getName();
-
-      case Types.DOUBLE:
-        return Double.class.getName();
-
-      case Types.TIMESTAMP:
-        return Timestamp.class.getName();
-
-      case Types.DATE:
-        return Date.class.getName();
-
-      case Types.TIME:
-        return Time.class.getName();
-
-      case Types.BOOLEAN:
-        return Boolean.class.getName();
-
-      case Types.BIGINT:
-        return Long.class.getName();
-
-      default:
-        throw new SQLFeatureNotSupportedException();
-    }
+    return SnowflakeType.javaTypeToClassName(type);
   }
 
   @Override
