@@ -4,6 +4,7 @@
 
 package net.snowflake.client.core;
 
+import com.amazonaws.ClientConfiguration;
 import com.amazonaws.http.apache.SdkProxyRoutePlanner;
 import com.google.common.base.Strings;
 import net.snowflake.client.jdbc.ErrorCode;
@@ -89,6 +90,21 @@ public class HttpUtil
   private static String proxyUser;
   private static String proxyPassword;
   private static String nonProxyHosts;
+
+  public static void setProxyForS3(ClientConfiguration clientConfig)
+  {
+    if (useProxy)
+    {
+      clientConfig.setProxyHost(proxyHost);
+      clientConfig.setProxyPort(proxyPort);
+      clientConfig.setNonProxyHosts(nonProxyHosts);
+      if (!Strings.isNullOrEmpty(proxyUser) && !Strings.isNullOrEmpty(proxyPassword))
+      {
+        clientConfig.setProxyUsername(proxyUser);
+        clientConfig.setProxyPassword(proxyPassword);
+      }
+    }
+  }
 
   /**
    * Build an Http client using our set of default.
