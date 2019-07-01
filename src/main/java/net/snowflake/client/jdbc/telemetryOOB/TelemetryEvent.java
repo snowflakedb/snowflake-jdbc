@@ -162,7 +162,7 @@ public class TelemetryEvent extends JSONObject
           Object val = context.get(key);
           if (val != null)
           {
-            tags.put("ctx_" + key, val.toString());
+            tags.put("ctx_" + key.toLowerCase(), val.toString());
           }
         }
       }
