@@ -1,3 +1,10 @@
+**JDBC Driver 3.8.5**
+
+- \| SNOW-82723 | Support proxyHost including dash and dot
+- \| SNOW-84129 | JDBC turn on CLIENT_ENABLE_CONSERVATIVE_MEMORY_USAGE except prod for testing
+- \| SNOW-83666 | PUT to S3 endpoint return timeout when using a JDBC connection through proxy
+- \| SNOW-84396 | Types.SMALLINT not supported in getColumnClassName
+
 **JDBC Driver 3.8.4**
 
 - \| SNOW-38957 | Connection errors will return multiple error codes instead of 200002
