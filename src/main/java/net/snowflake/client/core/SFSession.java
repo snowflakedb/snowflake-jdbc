@@ -233,6 +233,27 @@ public class SFSession
         throw new SFException(ErrorCode.DUPLICATE_CONNECTION_PROPERTY_SPECIFIED,
                               propertyName);
       }
+      else if (propertyValue != null && connectionProperty == SFSessionProperty.AUTHENTICATOR)
+      {
+        String[] authenticatorWithParams = propertyValue.toString().split(";");
+        if (authenticatorWithParams.length == 1)
+        {
+          connectionPropertiesMap.put(connectionProperty, propertyValue);
+        }
+        else
+        {
+          String[] oktaUserKeyPair = authenticatorWithParams[1].split("=");
+          if (oktaUserKeyPair.length == 2)
+          {
+            connectionPropertiesMap.put(connectionProperty, authenticatorWithParams[0]);
+            connectionPropertiesMap.put(SFSessionProperty.OKTA_USERNAME, oktaUserKeyPair[1]);
+          }
+          else
+          {
+            throw new SFException(ErrorCode.INVALID_OKTA_USERNAME, propertyName);
+          }
+        }
+      }
       else
       {
         connectionPropertiesMap.put(connectionProperty, propertyValue);
@@ -364,6 +385,17 @@ public class SFSession
   }
 
   /**
+   * Returns true if authenticator is OKTA native
+   *
+   * @return true or false
+   */
+  boolean isOKTAAuthenticator()
+  {
+    String authenticator = (String) connectionPropertiesMap.get(SFSessionProperty.AUTHENTICATOR);
+    return !Strings.isNullOrEmpty(authenticator) && authenticator.startsWith("https://");
+  }
+
+  /**
    * Open a new database session
    *
    * @throws SFException           this is a runtime exception
@@ -429,6 +461,8 @@ public class SFSession
         .setRole((String) connectionPropertiesMap.get(SFSessionProperty.ROLE))
         .setAuthenticator(
             (String) connectionPropertiesMap.get(SFSessionProperty.AUTHENTICATOR))
+        .setOKTAUserName(
+            (String) connectionPropertiesMap.get(SFSessionProperty.OKTA_USERNAME))
         .setAccountName(
             (String) connectionPropertiesMap.get(SFSessionProperty.ACCOUNT))
         .setLoginTimeout(loginTimeout)
@@ -576,23 +610,17 @@ public class SFSession
       }
     }
 
-    String authenticator = (String) connectionPropertiesMap.get(
-        SFSessionProperty.AUTHENTICATOR);
-    if (isSnowflakeAuthenticator() ||
-        ClientAuthnDTO.AuthenticatorType.OKTA.name().equalsIgnoreCase(
-            authenticator))
+    if (isSnowflakeAuthenticator() || isOKTAAuthenticator())
     {
       // userName and password are expected for both Snowflake and Okta.
-      String userName = (String) connectionPropertiesMap.get(
-          SFSessionProperty.USER);
-      if (userName == null || userName.isEmpty())
+      String userName = (String) connectionPropertiesMap.get(SFSessionProperty.USER);
+      if (Strings.isNullOrEmpty(userName))
       {
         throw new SFException(ErrorCode.MISSING_USERNAME);
       }
 
-      String password = (String) connectionPropertiesMap.get(
-          SFSessionProperty.PASSWORD);
-      if (password == null || password.isEmpty())
+      String password = (String) connectionPropertiesMap.get(SFSessionProperty.PASSWORD);
+      if (Strings.isNullOrEmpty(password))
 
       {
         throw new SFException(ErrorCode.MISSING_PASSWORD);

@@ -6,7 +6,6 @@ package net.snowflake.client.core;
 
 import java.security.PrivateKey;
 import java.util.Map;
-import java.util.Properties;
 
 /**
  * A class for holding all information required for login
@@ -22,11 +21,11 @@ public class SFLoginInput
   private String warehouse;
   private String role;
   private String authenticator;
+  private String oktaUserName;
   private String accountName;
   private int loginTimeout = -1; // default is invalid
   private String userName;
   private String password;
-  private Properties clientInfo;
   private boolean passcodeInPassword;
   private String passcode;
   private String token;
@@ -110,6 +109,17 @@ public class SFLoginInput
   public SFLoginInput setAuthenticator(String authenticator)
   {
     this.authenticator = authenticator;
+    return this;
+  }
+
+  public String getOKTAUserName()
+  {
+    return oktaUserName;
+  }
+
+  public SFLoginInput setOKTAUserName(String oktaUserName)
+  {
+    this.oktaUserName = oktaUserName;
     return this;
   }
 

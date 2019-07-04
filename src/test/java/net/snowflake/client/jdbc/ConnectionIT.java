@@ -316,7 +316,6 @@ public class ConnectionIT extends BaseJDBCTest
     // only when ssl is on can trigger the login timeout
     // ssl is off will trigger 404
     properties.put("ssl", "on");
-    int queueSize = TelemetryService.getInstance().size();
     try
     {
       connStart = System.currentTimeMillis();
@@ -1073,5 +1072,38 @@ public class ConnectionIT extends BaseJDBCTest
     assertTrue(rs3.isClosed());
     assertTrue(rs4.isClosed());
     connection.close();
+  }
+
+  @Test
+  @ConditionalIgnore(condition = RunningOnTravisCI.class)
+  public void testOKTAConnection() throws Throwable
+  {
+    Map<String, String> params = getConnectionParameters();
+    Properties properties = new Properties();
+    properties.put("user", params.get("ssoUser"));
+    properties.put("password", params.get("ssoPassword"));
+    properties.put("ssl", params.get("ssl"));
+    properties.put("authenticator", "https://snowflakecomputing.okta.com/");
+
+    DriverManager.getConnection(String.format(
+        "jdbc:snowflake://%s.reg.snowflakecomputing.com:%s/",
+        params.get("account"), params.get("port")), properties);
+  }
+
+  @Test
+  @ConditionalIgnore(condition = RunningOnTravisCI.class)
+  public void testOKTAConnectionWithOktauserParam() throws Throwable
+  {
+    Map<String, String> params = getConnectionParameters();
+    Properties properties = new Properties();
+    properties.put("user", "test");
+    properties.put("password", params.get("ssoPassword"));
+    properties.put("ssl", params.get("ssl"));
+    properties.put("authenticator",
+                   String.format("https://snowflakecomputing.okta.com;oktausername=%s;", params.get("ssoUser")));
+
+    DriverManager.getConnection(String.format(
+        "jdbc:snowflake://%s.reg.snowflakecomputing.com:%s/",
+        params.get("account"), params.get("port")), properties);
   }
 }

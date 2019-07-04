@@ -120,6 +120,9 @@ public class AbstractDriverIT
     String ssoUser = System.getenv("SNOWFLAKE_TEST_SSO_USER");
     params.put("ssoUser", ssoUser);
 
+    String ssoPassword = System.getenv("SNOWFLAKE_TEST_SSO_PASSWORD");
+    params.put("ssoPassword", ssoPassword);
+
     return params;
   }
 
