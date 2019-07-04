@@ -68,7 +68,7 @@ public class VarCharToTextConverterTest extends BaseConverterTest
       }
     }
 
-    ArrowVectorConverter converter = new VarCharToTextConverter(vector, this);
+    ArrowVectorConverter converter = new VarCharToTextConverter(vector, 0, this);
 
     for (int i = 0; i < rowCount; i++)
     {

@@ -109,7 +109,7 @@ public class IntToDateConverterTest extends BaseConverterTest
       j++;
     }
 
-    ArrowVectorConverter converter = new IntToDateConverter(vector, this);
+    ArrowVectorConverter converter = new IntToDateConverter(vector, 0, this);
     int rowCount = j;
     i = 0;
     j = 0;
@@ -168,7 +168,7 @@ public class IntToDateConverterTest extends BaseConverterTest
       }
     }
 
-    ArrowVectorConverter converter = new IntToDateConverter(vector, this);
+    ArrowVectorConverter converter = new IntToDateConverter(vector,0, this);
 
     for (int i = 0; i < rowCount; i++)
     {

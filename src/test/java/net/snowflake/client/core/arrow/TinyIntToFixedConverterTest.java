@@ -74,7 +74,7 @@ public class TinyIntToFixedConverterTest extends BaseConverterTest
       }
     }
 
-    ArrowVectorConverter converter = new TinyIntToFixedConverter(vector, this);
+    ArrowVectorConverter converter = new TinyIntToFixedConverter(vector, 0, this);
 
     for (int i = 0; i < rowCount; i++)
     {
@@ -133,7 +133,7 @@ public class TinyIntToFixedConverterTest extends BaseConverterTest
       }
     }
 
-    ArrowVectorConverter converter = new TinyIntToFixedConverter(vector, this);
+    ArrowVectorConverter converter = new TinyIntToFixedConverter(vector, 0, this);
 
     for (int i = 0; i < rowCount; i++)
     {
@@ -175,7 +175,7 @@ public class TinyIntToFixedConverterTest extends BaseConverterTest
     TinyIntVector vector = new TinyIntVector("col_one", fieldType, allocator);
     vector.setSafe(0, 200);
 
-    final ArrowVectorConverter converter = new TinyIntToFixedConverter(vector, this);
+    final ArrowVectorConverter converter = new TinyIntToFixedConverter(vector, 0, this);
     final int invalidConversionErrorCode =
         ErrorCode.INVALID_VALUE_CONVERT.getMessageCode();
 
@@ -225,7 +225,7 @@ public class TinyIntToFixedConverterTest extends BaseConverterTest
     vectorBar.setSafe(1, -10);
 
     final ArrowVectorConverter converterBar =
-        new TinyIntToFixedConverter(vectorBar, this);
+        new TinyIntToFixedConverter(vectorBar, 0, this);
 
     assertThat(converterBar.toShort(0), is((short) 10));
     assertThat(converterBar.toShort(1), is((short) -10));

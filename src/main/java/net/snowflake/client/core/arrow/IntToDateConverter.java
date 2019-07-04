@@ -20,9 +20,9 @@ public class IntToDateConverter extends AbstractArrowVectorConverter
 {
   private IntVector intVector;
 
-  public IntToDateConverter(ValueVector fieldVector, DataConversionContext context)
+  public IntToDateConverter(ValueVector fieldVector, int columnIndex, DataConversionContext context)
   {
-    super(SnowflakeType.DATE.name(), fieldVector, context);
+    super(SnowflakeType.DATE.name(), fieldVector, columnIndex, context);
     this.intVector = (IntVector) fieldVector;
   }
 

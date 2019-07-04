@@ -69,7 +69,7 @@ public class VarBinaryToBinaryConverterTest extends BaseConverterTest
     }
 
     ArrowVectorConverter converter = new VarBinaryToBinaryConverter(
-        vector, this);
+        vector, 0, this);
 
     for (int i = 0; i < rowCount; i++)
     {
