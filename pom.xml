@@ -10,6 +10,10 @@
   <name>snowflake-jdbc</name>
   <url>http://maven.apache.org</url>
 
+  <prerequisites>
+    <maven>3.3.9</maven>
+  </prerequisites>
+
   <!-- dummy scm connection required to get the buildnumber plugin working -->
   <scm>
     <connection>scm:svn:http://127.0.0.1/svn/dummy</connection>
@@ -26,7 +30,7 @@
     <jackson.version>2.9.9</jackson.version>
     <httpclient.version>4.5.5</httpclient.version>
     <powermock.version>1.7.4</powermock.version>
-    <jacoco.version>0.8.1</jacoco.version>
+    <jacoco.version>0.8.4</jacoco.version>
     <jacoco.skip.instrument>true</jacoco.skip.instrument>
     <awssdk.version>1.11.364</awssdk.version>
     <!-- the following fields are for setting unique information in the RPM Release field
@@ -458,7 +462,7 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-shade-plugin</artifactId>
-            <version>2.3</version>
+            <version>3.2.1</version>
             <configuration>
             </configuration>
             <executions>
