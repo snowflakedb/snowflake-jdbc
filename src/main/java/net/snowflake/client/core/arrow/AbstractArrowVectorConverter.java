@@ -35,12 +35,24 @@ abstract class AbstractArrowVectorConverter implements ArrowVectorConverter
 
   protected DataConversionContext context;
 
+  protected int columnIndex;
+
+  /**
+   * Field names of the struct vectors used by timestamp
+   */
+  public static final String FIELD_NAME_EPOCH = "EPOCH";  // seconds since epoch
+  public static final String FIELD_NAME_TIME_ZONE_INDEX = "TIMEZONE";  // time zone index
+  public static final String FIELD_NAME_FRACTION = "FRACTION";  // fraction in nanoseconds
+
+
   AbstractArrowVectorConverter(String logicalTypeStr,
                                ValueVector valueVector,
+                               int columnIndex,
                                DataConversionContext context)
   {
     this.logicalTypeStr = logicalTypeStr;
     this.valueVector = valueVector;
+    this.columnIndex = columnIndex;
     this.context = context;
   }
 

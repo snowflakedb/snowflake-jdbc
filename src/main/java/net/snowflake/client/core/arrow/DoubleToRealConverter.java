@@ -12,9 +12,9 @@ public class DoubleToRealConverter extends AbstractArrowVectorConverter
 {
   private Float8Vector float8Vector;
 
-  public DoubleToRealConverter(ValueVector fieldVector, DataConversionContext context)
+  public DoubleToRealConverter(ValueVector fieldVector, int columnIndex, DataConversionContext context)
   {
-    super(SnowflakeType.REAL.name(), fieldVector, context);
+    super(SnowflakeType.REAL.name(), fieldVector, columnIndex, context);
     this.float8Vector = (Float8Vector) fieldVector;
   }
 

@@ -4,6 +4,7 @@ import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.common.core.SFBinaryFormat;
 import net.snowflake.common.core.SnowflakeDateTimeFormat;
+import org.junit.After;
 
 import java.util.TimeZone;
 
@@ -11,28 +12,36 @@ public class BaseConverterTest implements DataConversionContext
 {
   private SnowflakeDateTimeFormat dateTimeFormat = new SnowflakeDateTimeFormat("YYYY-MM-DD");
   private SnowflakeDateTimeFormat timeFormat = new SnowflakeDateTimeFormat("HH24:MI:SS");
+  private SnowflakeDateTimeFormat timestampLTZFormat = new SnowflakeDateTimeFormat("DY, DD MON YYYY HH24:MI:SS TZHTZM");
+  private SnowflakeDateTimeFormat timestampNTZFormat = new SnowflakeDateTimeFormat("DY, DD MON YYYY HH24:MI:SS TZHTZM");
+  private SnowflakeDateTimeFormat timestampTZFormat = new SnowflakeDateTimeFormat("DY, DD MON YYYY HH24:MI:SS TZHTZM");
+
   private SFSession session = new SFSession();
   private int testScale = 9;
+  private boolean honorClientTZForTimestampNTZ;
+
+  @After
+  public void clearTimeZone()
+  {
+    System.clearProperty("user.timezone");
+  }
 
   @Override
   public SnowflakeDateTimeFormat getTimestampLTZFormatter()
   {
-    // TODO
-    return null;
+    return timestampLTZFormat;
   }
 
   @Override
   public SnowflakeDateTimeFormat getTimestampNTZFormatter()
   {
-    // TODO
-    return null;
+    return timestampNTZFormat;
   }
 
   @Override
   public SnowflakeDateTimeFormat getTimestampTZFormatter()
   {
-    // TODO
-    return null;
+    return timestampTZFormat;
   }
 
   @Override
@@ -79,14 +88,18 @@ public class BaseConverterTest implements DataConversionContext
   @Override
   public boolean getHonorClientTZForTimestampNTZ()
   {
-    // TODO
-    return false;
+    return honorClientTZForTimestampNTZ;
+  }
+
+  public void setHonorClientTZForTimestampNTZ(boolean val)
+  {
+    honorClientTZForTimestampNTZ = val;
   }
 
   @Override
   public long getResultVersion()
   {
-    // TODO
-    return 0;
+    // Note: only cover current result version
+    return 1;
   }
 }

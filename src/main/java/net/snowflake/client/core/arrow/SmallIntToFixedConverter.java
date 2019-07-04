@@ -18,12 +18,13 @@ public class SmallIntToFixedConverter extends AbstractArrowVectorConverter
 
   private Integer sfScale;
 
-  public SmallIntToFixedConverter(ValueVector fieldVector, DataConversionContext context)
+  public SmallIntToFixedConverter(ValueVector fieldVector, int columnIndex, DataConversionContext context)
   {
     super(String.format("%s(%s,%s)", SnowflakeType.FIXED,
                         fieldVector.getField().getMetadata().get("precision"),
                         fieldVector.getField().getMetadata().get("scale")),
           fieldVector,
+          columnIndex,
           context);
     this.smallIntVector = (SmallIntVector) fieldVector;
     String scaleStr = fieldVector.getField().getMetadata().get("scale");

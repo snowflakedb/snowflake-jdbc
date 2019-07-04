@@ -69,7 +69,7 @@ public class DoubleToRealConverterTest extends BaseConverterTest
       }
     }
 
-    ArrowVectorConverter converter = new DoubleToRealConverter(vector, (DataConversionContext) this);
+    ArrowVectorConverter converter = new DoubleToRealConverter(vector, 0, (DataConversionContext) this);
 
     for (int i = 0; i < rowCount; i++)
     {

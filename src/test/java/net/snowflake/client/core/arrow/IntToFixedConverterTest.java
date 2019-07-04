@@ -74,7 +74,7 @@ public class IntToFixedConverterTest extends BaseConverterTest
       }
     }
 
-    ArrowVectorConverter converter = new IntToFixedConverter(vector, this);
+    ArrowVectorConverter converter = new IntToFixedConverter(vector, 0, this);
 
     for (int i = 0; i < rowCount; i++)
     {
@@ -133,7 +133,7 @@ public class IntToFixedConverterTest extends BaseConverterTest
       }
     }
 
-    ArrowVectorConverter converter = new IntToFixedConverter(vector, this);
+    ArrowVectorConverter converter = new IntToFixedConverter(vector, 0, this);
 
     for (int i = 0; i < rowCount; i++)
     {
@@ -175,7 +175,7 @@ public class IntToFixedConverterTest extends BaseConverterTest
     IntVector vector = new IntVector("col_one", fieldType, allocator);
     vector.setSafe(0, 33000);
 
-    final ArrowVectorConverter converter = new IntToFixedConverter(vector, this);
+    final ArrowVectorConverter converter = new IntToFixedConverter(vector, 0, this);
     final int invalidConversionErrorCode =
         ErrorCode.INVALID_VALUE_CONVERT.getMessageCode();
 
@@ -223,7 +223,7 @@ public class IntToFixedConverterTest extends BaseConverterTest
     vectorFoo.setSafe(1, -33000);
 
     final ArrowVectorConverter converterFoo =
-        new IntToFixedConverter(vectorFoo, this);
+        new IntToFixedConverter(vectorFoo, 0, this);
     final int invalidConversionErrorCode =
         ErrorCode.INVALID_VALUE_CONVERT.getMessageCode();
 
@@ -247,7 +247,7 @@ public class IntToFixedConverterTest extends BaseConverterTest
     vectorBar.setSafe(1, -10);
 
     final ArrowVectorConverter converterBar =
-        new IntToFixedConverter(vectorBar, this);
+        new IntToFixedConverter(vectorBar, 0, this);
 
     assertThat(converterBar.toByte(0), is((byte) 10));
     assertThat(converterBar.toByte(1), is((byte) -10));

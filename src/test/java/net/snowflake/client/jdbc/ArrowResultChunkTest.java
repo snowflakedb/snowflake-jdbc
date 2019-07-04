@@ -11,7 +11,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 public class ArrowResultChunkTest
 {
   @Test
-  public void testEmptyChunkIterator()
+  public void testEmptyChunkIterator() throws SnowflakeSQLException
   {
     ArrowResultChunk.ArrowChunkIterator iterator =
         ArrowResultChunk.getEmptyChunkIterator();

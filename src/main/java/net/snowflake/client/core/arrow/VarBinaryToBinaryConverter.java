@@ -13,9 +13,9 @@ public class VarBinaryToBinaryConverter extends AbstractArrowVectorConverter
 {
   private VarBinaryVector varBinaryVector;
 
-  public VarBinaryToBinaryConverter(ValueVector valueVector, DataConversionContext context)
+  public VarBinaryToBinaryConverter(ValueVector valueVector, int columnIndex, DataConversionContext context)
   {
-    super(SnowflakeType.BINARY.name(), valueVector, context);
+    super(SnowflakeType.BINARY.name(), valueVector, columnIndex, context);
     this.varBinaryVector = (VarBinaryVector) valueVector;
   }
 

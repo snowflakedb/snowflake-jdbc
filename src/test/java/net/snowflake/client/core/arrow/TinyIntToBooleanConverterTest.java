@@ -63,7 +63,7 @@ public class TinyIntToBooleanConverterTest extends BaseConverterTest
       }
     }
 
-    ArrowVectorConverter converter = new TinyIntToBooleanConverter(vector, this);
+    ArrowVectorConverter converter = new TinyIntToBooleanConverter(vector, 0, this);
 
     for (int i = 0; i < rowCount; i++)
     {

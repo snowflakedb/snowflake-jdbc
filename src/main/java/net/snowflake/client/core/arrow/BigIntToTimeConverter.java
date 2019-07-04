@@ -21,9 +21,9 @@ public class BigIntToTimeConverter extends AbstractArrowVectorConverter
 {
   private BigIntVector bigIntVector;
 
-  public BigIntToTimeConverter(ValueVector fieldVector, DataConversionContext context)
+  public BigIntToTimeConverter(ValueVector fieldVector, int columnIndex, DataConversionContext context)
   {
-    super(SnowflakeType.TIME.name(), fieldVector, context);
+    super(SnowflakeType.TIME.name(), fieldVector, columnIndex, context);
     this.bigIntVector = (BigIntVector) fieldVector;
   }
 
@@ -36,7 +36,7 @@ public class BigIntToTimeConverter extends AbstractArrowVectorConverter
   private SFTime toSFTime(int index)
   {
     long val = bigIntVector.getDataBuffer().getLong(index * BigIntVector.TYPE_WIDTH);
-    return SFTime.fromFractionalSeconds(val, context.getScale(index));
+    return SFTime.fromFractionalSeconds(val, context.getScale(columnIndex));
   }
 
   @Override
@@ -70,7 +70,7 @@ public class BigIntToTimeConverter extends AbstractArrowVectorConverter
           null);
     }
     return isNull(index) ? null :
-           ResultUtil.getSFTimeAsString(toSFTime(index), context.getScale(index), context.getTimeFormatter());
+           ResultUtil.getSFTimeAsString(toSFTime(index), context.getScale(columnIndex), context.getTimeFormatter());
   }
 
   @Override
