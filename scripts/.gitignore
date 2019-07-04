@@ -3,3 +3,5 @@ manage_client_packages.py
 not_exists_version.py
 update_dependency_version.py
 update_project_version.py
+setup_sso_okta_snowflake.sql
+setup_sso_okta_testaccount.sql

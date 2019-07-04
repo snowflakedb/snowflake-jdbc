@@ -113,10 +113,10 @@ public class SnowflakeConnectionV1 implements Connection
     {
       throw new SnowflakeSQLException(INVALID_CONNECT_STRING, url);
     }
-    intialize(conStr);
+    initialize(conStr);
   }
 
-  private void intialize(SnowflakeConnectString conStr)
+  private void initialize(SnowflakeConnectString conStr)
   throws SQLException
   {
     logger.debug("Trying to establish session, JDBC driver version: {}",
