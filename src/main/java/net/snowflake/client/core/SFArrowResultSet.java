@@ -358,7 +358,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
    * Fetch next row of first chunkd in sorted order. If the result set huge,
    * then rest of the chunks are ignored.
    */
-  private boolean fetchNextRowSorted()
+  private boolean fetchNextRowSorted() throws SnowflakeSQLException
   {
     boolean hasNext = currentChunkIterator.next();
     if (hasNext)

@@ -12,9 +12,9 @@ public class TinyIntToBooleanConverter extends AbstractArrowVectorConverter
 {
   private TinyIntVector tinyIntVector;
 
-  public TinyIntToBooleanConverter(ValueVector fieldVector, DataConversionContext context)
+  public TinyIntToBooleanConverter(ValueVector fieldVector, int columnIndex, DataConversionContext context)
   {
-    super(SnowflakeType.BOOLEAN.name(), fieldVector, context);
+    super(SnowflakeType.BOOLEAN.name(), fieldVector, columnIndex, context);
     this.tinyIntVector = (TinyIntVector) fieldVector;
   }
 

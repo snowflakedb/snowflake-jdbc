@@ -14,9 +14,9 @@ public class VarCharToTextConverter extends AbstractArrowVectorConverter
 {
   private VarCharVector varCharVector;
 
-  public VarCharToTextConverter(ValueVector valueVector, DataConversionContext context)
+  public VarCharToTextConverter(ValueVector valueVector, int columnIndex, DataConversionContext context)
   {
-    super(SnowflakeType.TEXT.name(), valueVector, context);
+    super(SnowflakeType.TEXT.name(), valueVector, columnIndex, context);
     this.varCharVector = (VarCharVector) valueVector;
   }
 

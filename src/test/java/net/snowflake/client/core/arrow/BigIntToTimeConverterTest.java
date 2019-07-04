@@ -99,7 +99,7 @@ public class BigIntToTimeConverterTest extends BaseConverterTest
       j++;
     }
 
-    ArrowVectorConverter converter = new BigIntToTimeConverter(vector, this);
+    ArrowVectorConverter converter = new BigIntToTimeConverter(vector, 0, this);
     int rowCount = j;
     i = 0;
     j = 0;

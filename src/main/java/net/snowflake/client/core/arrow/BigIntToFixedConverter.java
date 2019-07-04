@@ -28,12 +28,13 @@ public class BigIntToFixedConverter extends AbstractArrowVectorConverter
    */
   private Integer sfScale;
 
-  public BigIntToFixedConverter(ValueVector fieldVector, DataConversionContext context)
+  public BigIntToFixedConverter(ValueVector fieldVector, int columnIndex, DataConversionContext context)
   {
     super(String.format("%s(%s,%s)", SnowflakeType.FIXED,
                         fieldVector.getField().getMetadata().get("precision"),
                         fieldVector.getField().getMetadata().get("scale")),
           fieldVector,
+          columnIndex,
           context);
     this.bigIntVector = (BigIntVector) fieldVector;
     String scaleStr = fieldVector.getField().getMetadata().get("scale");

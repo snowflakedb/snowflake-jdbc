@@ -7,6 +7,7 @@ package net.snowflake.client.core.arrow;
 import net.snowflake.client.core.ResultUtil;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SFSession;
+import org.junit.After;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -35,6 +36,13 @@ public class ArrowResultUtilTest
         {"MESZ"}
     };
   }
+
+  @After
+  public void clearTimeZone()
+  {
+    System.clearProperty("user.timezone");
+  }
+
 
   public ArrowResultUtilTest(String tz)
   {
