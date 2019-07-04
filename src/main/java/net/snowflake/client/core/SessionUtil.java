@@ -185,8 +185,7 @@ public class SessionUtil
       else if (!loginInput.getAuthenticator().equalsIgnoreCase(
           ClientAuthnDTO.AuthenticatorType.SNOWFLAKE.name()))
       {
-        // OKTA authenticator v1. This will be deprecated once externalbrowser
-        // is in production.
+        // OKTA authenticator v1.
         return ClientAuthnDTO.AuthenticatorType.OKTA;
       }
     }
@@ -303,8 +302,7 @@ public class SessionUtil
     String newClientForUpgrade;
     int healthCheckInterval = DEFAULT_HEALTH_CHECK_INTERVAL;
     int httpClientSocketTimeout = loginInput.getSocketTimeout();
-    final ClientAuthnDTO.AuthenticatorType authenticator = getAuthenticator(
-        loginInput);
+    final ClientAuthnDTO.AuthenticatorType authenticatorType = getAuthenticator(loginInput);
     Map<String, Object> commonParams;
 
     try
@@ -332,7 +330,7 @@ public class SessionUtil
         uriBuilder.addParameter(SF_QUERY_ROLE, loginInput.getRole());
       }
 
-      if (authenticator == ClientAuthnDTO.AuthenticatorType.EXTERNALBROWSER)
+      if (authenticatorType == ClientAuthnDTO.AuthenticatorType.EXTERNALBROWSER)
       {
         // SAML 2.0 compliant service/application
         SessionUtilExternalBrowser s =
@@ -342,12 +340,12 @@ public class SessionUtil
         samlProofKey = s.getProofKey();
         consentCacheIdToken = s.isConsentCacheIdToken();
       }
-      else if (authenticator == ClientAuthnDTO.AuthenticatorType.OKTA)
+      else if (authenticatorType == ClientAuthnDTO.AuthenticatorType.OKTA)
       {
         // okta authenticator v1
         tokenOrSamlResponse = getSamlResponseUsingOkta(loginInput);
       }
-      else if (authenticator == ClientAuthnDTO.AuthenticatorType.SNOWFLAKE_JWT)
+      else if (authenticatorType == ClientAuthnDTO.AuthenticatorType.SNOWFLAKE_JWT)
       {
         SessionUtilKeyPair s = new SessionUtilKeyPair(loginInput.getPrivateKey(),
                                                       loginInput.getAccountName(),
@@ -416,25 +414,25 @@ public class SessionUtil
        * authenticate with the IDP provider only, and GS should not have any
        * trace for this information.
        */
-      if (authenticator == ClientAuthnDTO.AuthenticatorType.SNOWFLAKE)
+      if (authenticatorType == ClientAuthnDTO.AuthenticatorType.SNOWFLAKE)
       {
         data.put(ClientAuthnParameter.PASSWORD.name(), loginInput.getPassword());
       }
-      else if (authenticator == ClientAuthnDTO.AuthenticatorType.EXTERNALBROWSER)
+      else if (authenticatorType == ClientAuthnDTO.AuthenticatorType.EXTERNALBROWSER)
       {
         data.put(ClientAuthnParameter.AUTHENTICATOR.name(),
                  ClientAuthnDTO.AuthenticatorType.EXTERNALBROWSER.name());
         data.put(ClientAuthnParameter.PROOF_KEY.name(), samlProofKey);
         data.put(ClientAuthnParameter.TOKEN.name(), tokenOrSamlResponse);
       }
-      else if (authenticator == ClientAuthnDTO.AuthenticatorType.OKTA)
+      else if (authenticatorType == ClientAuthnDTO.AuthenticatorType.OKTA)
       {
         data.put(ClientAuthnParameter.RAW_SAML_RESPONSE.name(), tokenOrSamlResponse);
       }
-      else if (authenticator == ClientAuthnDTO.AuthenticatorType.OAUTH ||
-               authenticator == ClientAuthnDTO.AuthenticatorType.SNOWFLAKE_JWT)
+      else if (authenticatorType == ClientAuthnDTO.AuthenticatorType.OAUTH ||
+               authenticatorType == ClientAuthnDTO.AuthenticatorType.SNOWFLAKE_JWT)
       {
-        data.put(ClientAuthnParameter.AUTHENTICATOR.name(), authenticator.name());
+        data.put(ClientAuthnParameter.AUTHENTICATOR.name(), authenticatorType.name());
         data.put(ClientAuthnParameter.TOKEN.name(), loginInput.getToken());
       }
 
@@ -1097,8 +1095,17 @@ public class SessionUtil
       URI tokenUri = url.toURI();
       final HttpPost postRequest = new HttpPost(tokenUri);
 
+      String userName;
+      if (Strings.isNullOrEmpty(loginInput.getOKTAUserName()))
+      {
+        userName = loginInput.getUserName();
+      }
+      else
+      {
+        userName = loginInput.getOKTAUserName();
+      }
       StringEntity params = new StringEntity("{\"username\":\"" +
-                                             loginInput.getUserName() + "\",\"password\":\"" +
+                                             userName + "\",\"password\":\"" +
                                              loginInput.getPassword() + "\"}");
       postRequest.setEntity(params);
 

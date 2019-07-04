@@ -31,6 +31,7 @@ public enum SFSessionProperty
   ID_TOKEN_PASSWORD("id_token_password", false, String.class),
   ROLE("role", false, String.class),
   AUTHENTICATOR("authenticator", false, String.class),
+  OKTA_USERNAME("oktausername", false, String.class),
   PRIVATE_KEY("privateKey", false, PrivateKey.class),
   WAREHOUSE("warehouse", false, String.class),
   LOGIN_TIMEOUT("loginTimeout", false, Integer.class),
