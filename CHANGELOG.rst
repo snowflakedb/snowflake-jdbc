@@ -1,3 +1,8 @@
+**JDBC Driver 3.8.6**
+
+- \| SNOW-84683 | Add oktausername parameter support to OKTA authenticator
+- \
+
 **JDBC Driver 3.8.5**
 
 - \| SNOW-82723 | Support proxyHost including dash and dot
