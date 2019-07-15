@@ -66,3 +66,4 @@ parameters*.json
 snowflake-whitelist
 Golang
 ClientTelemetryFramework
+lib/*
