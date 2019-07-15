@@ -6,16 +6,21 @@ package net.snowflake.client.jdbc;
 import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.arrow.ArrowVectorConverter;
 import net.snowflake.client.core.arrow.BigIntToFixedConverter;
+import net.snowflake.client.core.arrow.BigIntToScaledFixedConverter;
 import net.snowflake.client.core.arrow.BigIntToTimeConverter;
 import net.snowflake.client.core.arrow.BigIntToTimestampLTZConverter;
 import net.snowflake.client.core.arrow.BigIntToTimestampNTZConverter;
+import net.snowflake.client.core.arrow.DecimalToScaledFixedConverter;
 import net.snowflake.client.core.arrow.DoubleToRealConverter;
 import net.snowflake.client.core.arrow.IntToDateConverter;
 import net.snowflake.client.core.arrow.IntToFixedConverter;
+import net.snowflake.client.core.arrow.IntToScaledFixedConverter;
 import net.snowflake.client.core.arrow.SmallIntToFixedConverter;
+import net.snowflake.client.core.arrow.SmallIntToScaledFixedConverter;
 import net.snowflake.client.core.arrow.ThreeFieldStructToTimestampTZConverter;
 import net.snowflake.client.core.arrow.TinyIntToBooleanConverter;
 import net.snowflake.client.core.arrow.TinyIntToFixedConverter;
+import net.snowflake.client.core.arrow.TinyIntToScaledFixedConverter;
 import net.snowflake.client.core.arrow.TwoFieldStructToTimestampLTZConverter;
 import net.snowflake.client.core.arrow.TwoFieldStructToTimestampNTZConverter;
 import net.snowflake.client.core.arrow.TwoFieldStructToTimestampTZConverter;
@@ -121,6 +126,23 @@ public class ArrowResultChunk extends SnowflakeResultChunk
    * return list of arrow vector converter. Note, converter is built on top of
    * arrow vector, so that arrow data can be converted back to java data
    *
+   *
+   * Arrow converter mappings for Snowflake fixed-point numbers
+   * -----------------------------------------------------------------------------------------
+   * Max position & scale                    Converter
+   * -----------------------------------------------------------------------------------------
+   * number(3,0)                             {@link TinyIntToFixedConverter}
+   * number(3,2)                             {@link TinyIntToScaledFixedConverter}
+   * number(5,0)                             {@link SmallIntToFixedConverter}
+   * number(5,4)                             {@link SmallIntToScaledFixedConverter}
+   * number(10,0)                            {@link IntToFixedConverter}
+   * number(10,9)                            {@link IntToScaledFixedConverter}
+   * number(19,0)                            {@link BigIntToFixedConverter}
+   * number(19,18)                           {@link BigIntToFixedConverter}
+   * number(38,37)                           {@link DecimalToScaledFixedConverter}
+   * ------------------------------------------------------------------------------------------
+   *
+   *
    * @param vectors list of arrow vectors
    * @return list of converters on top of each converters
    */
@@ -137,133 +159,174 @@ public class ArrowResultChunk extends SnowflakeResultChunk
 
       // each column's metadata
       Map<String, String> customMeta = vector.getField().getMetadata();
-      SnowflakeType st = SnowflakeType.valueOf(customMeta.get("logicalType"));
-      switch (st)
+      if (type == Types.MinorType.DECIMAL)
       {
-        case ANY:
-          // TODO
-          break;
+        // Note: Decimal vector is different from others
+        converters.add(new DecimalToScaledFixedConverter(vector, i, context));
+      }
+      else if (!customMeta.isEmpty())
+      {
+        SnowflakeType st = SnowflakeType.valueOf(customMeta.get("logicalType"));
+        switch (st)
+        {
+          case ANY:
+          case ARRAY:
+          case CHAR:
+          case TEXT:
+          case OBJECT:
+          case VARIANT:
+            converters.add(new VarCharToTextConverter(vector, i, context));
+            break;
 
-        case ARRAY:
-          // TODO
-          break;
+          case BINARY:
+            converters.add(new VarBinaryToBinaryConverter(vector, i, context));
+            break;
 
-        case CHAR:
-        case TEXT:
-          converters.add(new VarCharToTextConverter(vector, i, context));
-          break;
+          case BOOLEAN:
+            converters.add(new TinyIntToBooleanConverter(vector, i, context));
+            break;
 
-        case BINARY:
-          converters.add(new VarBinaryToBinaryConverter(vector, i, context));
-          break;
+          case DATE:
+            converters.add(new IntToDateConverter(vector, i, context));
+            break;
 
-        case BOOLEAN:
-          converters.add(new TinyIntToBooleanConverter(vector, i, context));
-          break;
+          case FIXED:
+            String scaleStr = vector.getField().getMetadata().get("scale");
+            int sfScale = Integer.parseInt(scaleStr);
+            switch (type)
+            {
+              case TINYINT:
+                if (sfScale == 0)
+                {
+                  converters.add(new TinyIntToFixedConverter(vector, i, context));
+                }
+                else
+                {
+                  converters.add(new TinyIntToScaledFixedConverter(vector, i, context, sfScale));
+                }
+                break;
+              case SMALLINT:
+                if (sfScale == 0)
+                {
+                  converters.add(new SmallIntToFixedConverter(vector, i, context));
+                }
+                else
+                {
+                  converters.add(new SmallIntToScaledFixedConverter(vector, i, context, sfScale));
+                }
+                break;
+              case INT:
+                if (sfScale == 0)
+                {
+                  converters.add(new IntToFixedConverter(vector, i, context));
+                }
+                else
+                {
+                  converters.add(new IntToScaledFixedConverter(vector, i, context, sfScale));
+                }
+                break;
 
-        case DATE:
-          converters.add(new IntToDateConverter(vector, i, context));
-          break;
+              case BIGINT:
+                if (sfScale == 0)
+                {
+                  converters.add(new BigIntToFixedConverter(vector, i, context));
+                }
+                else
+                {
+                  converters.add(new BigIntToScaledFixedConverter(vector, i, context, sfScale));
+                }
+                break;
+            }
+            break;
 
-        case FIXED:
-          switch (type)
-          {
-            case TINYINT:
-              converters.add(new TinyIntToFixedConverter(vector, i, context));
-              break;
+          case REAL:
+            converters.add(new DoubleToRealConverter(vector, i, context));
+            break;
 
-            case SMALLINT:
-              converters.add(new SmallIntToFixedConverter(vector, i, context));
-              break;
+          case TIME:
+            converters.add(new BigIntToTimeConverter(vector, i, context));
+            break;
 
-            case INT:
-              converters.add(new IntToFixedConverter(vector, i, context));
-              break;
+          case TIMESTAMP_LTZ:
+            if (vector.getField().getChildren().isEmpty())
+            {
+              // case when the scale of the timestamp is equal or smaller than millisecs since epoch
+              converters.add(new BigIntToTimestampLTZConverter(vector, i, context));
+            }
+            else if (vector.getField().getChildren().size() == 2)
+            {
+              // case when the scale of the timestamp is larger than millisecs since epoch, e.g., nanosecs
+              converters.add(new TwoFieldStructToTimestampLTZConverter(vector, i, context));
+            }
+            else
+            {
+              throw new SnowflakeSQLException(
+                  SqlState.INTERNAL_ERROR,
+                  ErrorCode.INTERNAL_ERROR.getMessageCode(),
+                  "Unexpected Arrow Field for ",
+                  st.name());
+            }
+            break;
 
-            case BIGINT:
-              converters.add(new BigIntToFixedConverter(vector, i, context));
-              break;
-          }
-          break;
+          case TIMESTAMP_NTZ:
+            if (vector.getField().getChildren().isEmpty())
+            {
+              // case when the scale of the timestamp is equal or smaller than millisecs since epoch
+              converters.add(new BigIntToTimestampNTZConverter(vector, i, context));
+            }
+            else if (vector.getField().getChildren().size() == 2)
+            {
+              // case when the scale of the timestamp is larger than millisecs since epoch, e.g., nanosecs
+              converters.add(new TwoFieldStructToTimestampNTZConverter(vector, i, context));
+            }
+            else
+            {
+              throw new SnowflakeSQLException(
+                  SqlState.INTERNAL_ERROR,
+                  ErrorCode.INTERNAL_ERROR.getMessageCode(),
+                  "Unexpected Arrow Field for ",
+                  st.name());
+            }
+            break;
 
-        case INTEGER:
-          // TODO
-          break;
+          case TIMESTAMP_TZ:
+            if (vector.getField().getChildren().size() == 2)
+            {
+              // case when the scale of the timestamp is equal or smaller than millisecs since epoch
+              converters.add(new TwoFieldStructToTimestampTZConverter(vector, i, context));
+            }
+            else if (vector.getField().getChildren().size() == 3)
+            {
+              // case when the scale of the timestamp is larger than millisecs since epoch, e.g., nanosecs
+              converters.add(new ThreeFieldStructToTimestampTZConverter(vector, i, context));
+            }
+            else
+            {
+              throw new SnowflakeSQLException(
+                  SqlState.INTERNAL_ERROR,
+                  ErrorCode.INTERNAL_ERROR.getMessageCode(),
+                  "Unexpected SnowflakeType ",
+                  st.name());
+            }
+            break;
 
-        case OBJECT:
-          // TODO
-          break;
-
-        case REAL:
-          converters.add(new DoubleToRealConverter(vector, i, context));
-          break;
-
-        case TIME:
-          converters.add(new BigIntToTimeConverter(vector, i, context));
-          break;
-
-        case TIMESTAMP_LTZ:
-          if (vector.getField().getChildren().isEmpty())
-          {
-            // case when the scale of the timestamp is equal or smaller than millisecs since epoch
-            converters.add(new BigIntToTimestampLTZConverter(vector, i, context));
-          }
-          else if (vector.getField().getChildren().size() == 2)
-          {
-            // case when the scale of the timestamp is larger than millisecs since epoch, e.g., nanosecs
-            converters.add(new TwoFieldStructToTimestampLTZConverter(vector, i, context));
-          }
-          else
-          {
+          default:
             throw new SnowflakeSQLException(
                 SqlState.INTERNAL_ERROR,
                 ErrorCode.INTERNAL_ERROR.getMessageCode(),
                 "Unexpected Arrow Field for ",
                 st.name());
-          }
-        case TIMESTAMP_NTZ:
-          if (vector.getField().getChildren().isEmpty())
-          {
-            // case when the scale of the timestamp is equal or smaller than millisecs since epoch
-            converters.add(new BigIntToTimestampNTZConverter(vector, i, context));
-          }
-          else if (vector.getField().getChildren().size() == 2)
-          {
-            // case when the scale of the timestamp is larger than millisecs since epoch, e.g., nanosecs
-            converters.add(new TwoFieldStructToTimestampNTZConverter(vector, i, context));
-          }
-          else
-          {
-            throw new SnowflakeSQLException(
-                SqlState.INTERNAL_ERROR,
-                ErrorCode.INTERNAL_ERROR.getMessageCode(),
-                "Unexpected Arrow Field for ",
-                st.name());
-          }
-        case TIMESTAMP_TZ:
-          if (vector.getField().getChildren().size() == 2)
-          {
-            // case when the scale of the timestamp is equal or smaller than millisecs since epoch
-            converters.add(new TwoFieldStructToTimestampTZConverter(vector, i, context));
-          }
-          else if (vector.getField().getChildren().size() == 3)
-          {
-            // case when the scale of the timestamp is larger than millisecs since epoch, e.g., nanosecs
-            converters.add(new ThreeFieldStructToTimestampTZConverter(vector, i, context));
-          }
-          else
-          {
-            throw new SnowflakeSQLException(
-                SqlState.INTERNAL_ERROR,
-                ErrorCode.INTERNAL_ERROR.getMessageCode(),
-                "Unexpected Arrow Field for ",
-                st.name());
-          }
-        case VARIANT:
-          break;
+        }
+      }
+      else
+      {
+        throw new SnowflakeSQLException(
+            SqlState.INTERNAL_ERROR,
+            ErrorCode.INTERNAL_ERROR.getMessageCode(),
+            "Unexpected Arrow Field for ",
+            type.toString());
       }
     }
-
     return converters;
   }
 

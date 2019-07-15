@@ -28,8 +28,15 @@ public class ArrowResultUtil
 
   private static final int[] POWERS_OF_10 = {1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 1000000000};
 
+  public static final int MAX_SCALE_POWERS_OF_10 = 9;
+
   public static int powerOfTen(int pow) {
     return POWERS_OF_10[pow];
+  }
+
+  public static String getStringFormat(int scale){
+    StringBuilder sb = new StringBuilder();
+    return sb.append("%.").append(scale).append('f').toString();
   }
 
   /**
