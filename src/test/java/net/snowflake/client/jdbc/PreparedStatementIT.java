@@ -1463,9 +1463,9 @@ public class PreparedStatementIT extends BaseJDBCTest
   }
 
   @Test
+  @ConditionalIgnore(condition = RunningOnTravisCI.class)
   public void testTableFuncBindInput() throws SQLException
   {
-    int[] countResult;
     connection = getConnection();
     prepStatement = connection.prepareStatement(tableFuncSQL);
     prepStatement.setInt(1, 2);
