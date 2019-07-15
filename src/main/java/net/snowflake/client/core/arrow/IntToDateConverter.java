@@ -58,13 +58,14 @@ public class IntToDateConverter extends AbstractArrowVectorConverter
   @Override
   public Timestamp toTimestamp(int index, TimeZone tz) throws SFException
   {
-    if (isNull(index))
+    Date date = toDate(index);
+    if (date == null)
     {
       return null;
     }
     else
     {
-      return new Timestamp(toDate(index).getTime());
+      return new Timestamp(date.getTime());
     }
   }
 
@@ -80,13 +81,14 @@ public class IntToDateConverter extends AbstractArrowVectorConverter
           null,
           null);
     }
-    return isNull(index) ? null :
-           ResultUtil.getDateAsString(toDate(index), context.getDateFormatter());
+    Date date = toDate(index);
+    return date == null ? null :
+           ResultUtil.getDateAsString(date, context.getDateFormatter());
   }
 
   @Override
   public Object toObject(int index) throws SFException
   {
-    return isNull(index) ? null : toDate(index);
+    return toDate(index);
   }
 }
