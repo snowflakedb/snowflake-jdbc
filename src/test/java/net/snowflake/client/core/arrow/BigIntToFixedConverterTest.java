@@ -133,7 +133,7 @@ public class BigIntToFixedConverterTest extends BaseConverterTest
       }
     }
 
-    ArrowVectorConverter converter = new BigIntToFixedConverter(vector, 0, this);
+    ArrowVectorConverter converter = new BigIntToScaledFixedConverter(vector, 0, this, 3);
 
     for (int i = 0; i < rowCount; i++)
     {
@@ -175,16 +175,12 @@ public class BigIntToFixedConverterTest extends BaseConverterTest
     BigIntVector vector = new BigIntVector("col_one", fieldType, allocator);
     vector.setSafe(0, 123456789L);
 
-    final ArrowVectorConverter converter = new BigIntToFixedConverter(vector, 0, this);
+    final ArrowVectorConverter converter = new BigIntToScaledFixedConverter(vector, 0, this, 3);
     final int invalidConversionErrorCode =
         ErrorCode.INVALID_VALUE_CONVERT.getMessageCode();
 
     TestUtil.assertSFException(invalidConversionErrorCode,
                                () -> converter.toBoolean(0));
-    TestUtil.assertSFException(invalidConversionErrorCode,
-                               () -> converter.toFloat(0));
-    TestUtil.assertSFException(invalidConversionErrorCode,
-                               () -> converter.toDouble(0));
     TestUtil.assertSFException(invalidConversionErrorCode,
                                () -> converter.toLong(0));
     TestUtil.assertSFException(invalidConversionErrorCode,
@@ -193,8 +189,6 @@ public class BigIntToFixedConverterTest extends BaseConverterTest
                                () -> converter.toShort(0));
     TestUtil.assertSFException(invalidConversionErrorCode,
                                () -> converter.toByte(0));
-    TestUtil.assertSFException(invalidConversionErrorCode,
-                               () -> converter.toBytes(0));
     TestUtil.assertSFException(invalidConversionErrorCode,
                                () -> converter.toDate(0));
     TestUtil.assertSFException(invalidConversionErrorCode,

@@ -1,0 +1,106 @@
+/*
+ * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
+ */
+package net.snowflake.client.core.arrow;
+
+import net.snowflake.client.core.DataConversionContext;
+import net.snowflake.client.core.SFException;
+import net.snowflake.client.jdbc.ErrorCode;
+import net.snowflake.client.jdbc.SnowflakeType;
+import org.apache.arrow.vector.ValueVector;
+
+import java.math.BigDecimal;
+
+/**
+ * Data vector whose snowflake logical type is fixed while represented as a
+ * long value vector with scale
+ */
+public class BigIntToScaledFixedConverter extends BigIntToFixedConverter
+{
+  public BigIntToScaledFixedConverter(ValueVector fieldVector, int columnIndex, DataConversionContext context,
+                                      int scale)
+  {
+    super(fieldVector,
+          columnIndex,
+          context);
+    logicalTypeStr = String.format("%s(%s,%s)", SnowflakeType.FIXED,
+                                   fieldVector.getField().getMetadata().get("precision"),
+                                   fieldVector.getField().getMetadata().get("scale"));
+    sfScale = scale;
+  }
+
+  @Override
+  public float toFloat(int index) throws SFException
+  {
+    return (float) toDouble(index);
+  }
+
+  @Override
+  public double toDouble(int index) throws SFException
+  {
+    if (isNull(index))
+    {
+      return 0;
+    }
+    int scale = sfScale;
+    double res = getLong(index);
+    while (scale > ArrowResultUtil.MAX_SCALE_POWERS_OF_10)
+    {
+      res = res / ArrowResultUtil.powerOfTen(ArrowResultUtil.MAX_SCALE_POWERS_OF_10);
+      scale -= ArrowResultUtil.MAX_SCALE_POWERS_OF_10;
+    }
+    if (scale > 0)
+    {
+      res = res / ArrowResultUtil.powerOfTen(scale);
+    }
+    return res;
+  }
+
+  @Override
+  public short toShort(int index) throws SFException
+  {
+    if (isNull(index))
+    {
+      return 0;
+    }
+    BigDecimal val = toBigDecimal(index);
+    throw new SFException(ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr,
+                          "Short", val.toPlainString());
+  }
+
+  @Override
+  public int toInt(int index) throws SFException
+  {
+    if (isNull(index))
+    {
+      return 0;
+    }
+    BigDecimal val = toBigDecimal(index);
+    throw new SFException(ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr,
+                          "Int", val.toPlainString());
+  }
+
+  @Override
+  public long toLong(int index) throws SFException
+  {
+    if (isNull(index))
+    {
+      return 0;
+    }
+    BigDecimal val = toBigDecimal(index);
+    throw new SFException(ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr,
+                          "Long", val.toPlainString());
+  }
+
+  @Override
+  public Object toObject(int index)
+  {
+    return toBigDecimal(index);
+  }
+
+  @Override
+  public String toString(int index)
+  {
+    return isNull(index) ? null : BigDecimal.valueOf(getLong(index), sfScale).toPlainString();
+  }
+}
