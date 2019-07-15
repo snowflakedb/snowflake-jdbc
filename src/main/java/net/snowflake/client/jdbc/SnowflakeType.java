@@ -46,6 +46,8 @@ public enum SnowflakeType
   public static final String TIMESTAMP_FORMAT_PATTERN = "yyyy-MM-dd'T'HH:mm:ss.";
   public static final String TIMESTAMP_FORMAT_TZ_PATTERN = "XXX";
   public static final String TIME_FORMAT_PATTERN = "HH:mm:ss.SSS";
+  private static final byte[] BYTE_ARRAY = new byte[0];
+  public static final String BINARY_CLASS_NAME = BYTE_ARRAY.getClass().getName();
 
   public static SnowflakeType fromString(String name)
   {
@@ -467,8 +469,10 @@ public enum SnowflakeType
     {
       case Types.VARCHAR:
       case Types.CHAR:
-      case Types.BINARY:
         return String.class.getName();
+
+      case Types.BINARY:
+        return BINARY_CLASS_NAME;
 
       case Types.INTEGER:
         return Integer.class.getName();
