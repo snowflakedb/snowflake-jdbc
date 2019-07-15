@@ -25,21 +25,15 @@ import java.nio.charset.StandardCharsets;
 import java.sql.Clob;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
-import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.sql.Time;
-import java.sql.Timestamp;
 import java.sql.Types;
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Properties;
-import java.util.TimeZone;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
@@ -48,7 +42,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -317,179 +310,6 @@ public class ResultSetIT extends BaseJDBCTest
   }
 
   @Test
-  public void testGetDateAndTime() throws SQLException
-  {
-    Connection connection = getConnection();
-    Statement statement = connection.createStatement();
-    statement.execute(
-        "create or replace table dateTime(colA Date, colB Timestamp, colC Time)");
-
-    java.util.Date today = new java.util.Date();
-    Date date = buildDate(2016, 3, 20);
-    Timestamp ts = new Timestamp(today.getTime());
-    Time tm = new Time(12345678); // 03:25:45.678
-    final String insertTime = "insert into datetime values(?, ?, ?)";
-    PreparedStatement prepStatement = connection.prepareStatement(insertTime);
-    prepStatement.setDate(1, date);
-    prepStatement.setTimestamp(2, ts);
-    prepStatement.setTime(3, tm);
-
-    prepStatement.execute();
-
-    TimeZone gmt = TimeZone.getTimeZone("GMT");
-    Calendar cal = Calendar.getInstance(gmt);
-    Date dateTZ = buildDateWithTZ(2016, 3, 20, gmt);
-    ResultSet resultSet = statement.executeQuery("select * from datetime");
-    resultSet.next();
-    assertEquals(date, resultSet.getDate(1));
-    assertEquals(date, resultSet.getDate("COLA"));
-
-    // Note: Currently calendar does not affect getDate result
-    assertEquals(resultSet.getDate(1), resultSet.getDate(1, cal));
-    assertEquals(resultSet.getDate("COLA"), resultSet.getDate("COLA", cal));
-
-    assertEquals(ts, resultSet.getTimestamp(2));
-    assertEquals(ts, resultSet.getTimestamp("COLB"));
-    assertEquals(tm, resultSet.getTime(3));
-    assertEquals(tm, resultSet.getTime("COLC"));
-
-    statement.execute("create or replace table datetime(colA timestamp_ltz, colB timestamp_ntz, colC timestamp_tz)");
-    statement.execute("insert into dateTime values ('2019-01-01 17:17:17', '2019-01-01 17:17:17', '2019-01-01 " +
-                      "17:17:17')");
-    prepStatement =
-        connection.prepareStatement("insert into datetime values(?, '2019-01-01 17:17:17', '2019-01-01 17:17:17')");
-    Timestamp dateTime = new Timestamp(date.getTime());
-    prepStatement.setTimestamp(1, dateTime);
-    prepStatement.execute();
-    resultSet = statement.executeQuery("select * from datetime");
-    resultSet.next();
-    SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-    formatter.setTimeZone(TimeZone.getDefault());
-    String d = formatter.format(resultSet.getDate("COLA"));
-    assertEquals("2019-01-02 01:17:17", d);
-    resultSet.next();
-    assertEquals(date, resultSet.getDate(1));
-    assertEquals(date, resultSet.getDate("COLA"));
-    statement.execute("drop table if exists datetime");
-    connection.close();
-  }
-
-  // SNOW-25029: The driver should reduce Time milliseconds mod 24h.
-  @Test
-  public void testTimeRange() throws SQLException
-  {
-    final String insertTime = "insert into timeTest values (?), (?), (?), (?)";
-    Connection connection = getConnection();
-    Statement statement = connection.createStatement();
-    statement.execute("create or replace table timeTest (c1 time)");
-
-    long ms1 = -2202968667333L; // 1900-03-11 09:15:33.667
-    long ms2 = -1;              // 1969-12-31 23:59:99.999
-    long ms3 = 86400 * 1000;    // 1970-01-02 00:00:00
-    long ms4 = 1451680250123L;  // 2016-01-01 12:30:50.123
-
-    Time tm1 = new Time(ms1);
-    Time tm2 = new Time(ms2);
-    Time tm3 = new Time(ms3);
-    Time tm4 = new Time(ms4);
-
-    PreparedStatement prepStatement = connection.prepareStatement(insertTime);
-    prepStatement.setTime(1, tm1);
-    prepStatement.setTime(2, tm2);
-    prepStatement.setTime(3, tm3);
-    prepStatement.setTime(4, tm4);
-
-    prepStatement.execute();
-
-    // Note that the resulting Time objects are NOT equal because they have
-    // their milliseconds in the range 0 to 86,399,999, i.e. inside Jan 1, 1970.
-    // PreparedStatement accepts Time objects outside this range, but it reduces
-    // modulo 24 hours to discard the date information before sending to GS.
-
-    final long M = 86400 * 1000;
-    ResultSet resultSet = statement.executeQuery("select * from timeTest");
-    resultSet.next();
-    assertNotEquals(tm1, resultSet.getTime(1));
-    assertEquals(new Time((ms1 % M + M) % M), resultSet.getTime(1));
-    resultSet.next();
-    assertNotEquals(tm2, resultSet.getTime(1));
-    assertEquals(new Time((ms2 % M + M) % M), resultSet.getTime(1));
-    resultSet.next();
-    assertNotEquals(tm3, resultSet.getTime(1));
-    assertEquals(new Time((ms3 % M + M) % M), resultSet.getTime(1));
-    resultSet.next();
-    assertNotEquals(tm4, resultSet.getTime(1));
-    assertEquals(new Time((ms4 % M + M) % M), resultSet.getTime(1));
-
-    statement.execute("drop table if exists timeTest");
-    connection.close();
-  }
-
-  @Test
-  public void testCurrentTime() throws SQLException
-  {
-    final String insertTime = "insert into datetime values (?, ?, ?)";
-    Connection connection = getConnection();
-
-    assertFalse(connection.createStatement().
-        execute("alter session set TIMEZONE='UTC'"));
-
-    Statement statement = connection.createStatement();
-    statement.execute(
-        "create or replace table datetime (d date, ts timestamp, tm time)");
-    PreparedStatement prepStatement = connection.prepareStatement(insertTime);
-
-    long currentMillis = System.currentTimeMillis();
-    Date currentDate = new Date(currentMillis);
-    Timestamp currentTS = new Timestamp(currentMillis);
-    Time currentTime = new Time(currentMillis);
-
-    prepStatement.setDate(1, currentDate);
-    prepStatement.setTimestamp(2, currentTS);
-    prepStatement.setTime(3, currentTime);
-
-    prepStatement.execute();
-
-    ResultSet resultSet = statement.executeQuery("select ts::date = d from datetime");
-    resultSet.next();
-    assertTrue(resultSet.getBoolean(1));
-    resultSet = statement.executeQuery("select ts::time = tm from datetime");
-    resultSet.next();
-    assertTrue(resultSet.getBoolean(1));
-
-    statement.execute("drop table if exists datetime");
-    connection.close();
-  }
-
-
-  @Test
-  public void testBindTimestampTZ() throws SQLException
-  {
-    Connection connection = getConnection();
-    Statement statement = connection.createStatement();
-    statement.execute(
-        "create or replace table testBindTimestampTZ(" +
-        "cola int, colb timestamp_tz)");
-
-    long millSeconds = System.currentTimeMillis();
-    Timestamp ts = new Timestamp(millSeconds);
-    PreparedStatement prepStatement = connection.prepareStatement(
-        "insert into testBindTimestampTZ values (?, ?)");
-    prepStatement.setInt(1, 123);
-    prepStatement.setTimestamp(2, ts, Calendar.getInstance(TimeZone.getTimeZone("UTC")));
-    prepStatement.execute();
-
-    ResultSet resultSet = statement.executeQuery(
-        "select cola, colb from testBindTimestampTz");
-    resultSet.next();
-    assertThat("integer", resultSet.getInt(1), equalTo(123));
-    assertThat("timestamp_tz", resultSet.getTimestamp(2), equalTo(ts));
-
-    statement.execute("drop table if exists testBindTimestampTZ");
-    connection.close();
-  }
-
-  @Test
   public void testGetBytes() throws SQLException
   {
     Properties props = new Properties();
@@ -602,43 +422,6 @@ public class ResultSetIT extends BaseJDBCTest
 
     statement.execute("drop table if exists testColDecimal");
 
-    connection.close();
-  }
-
-  @Test
-  public void testGetOldDate() throws SQLException
-  {
-    Connection connection = getConnection();
-    Statement statement = connection.createStatement();
-
-    statement.execute("create or replace table testOldDate(d date)");
-    statement.execute("insert into testOldDate values ('0001-01-01'), " +
-                      "(to_date('1000-01-01')), ('1300-01-01'), ('1400-02-02'), " +
-                      "('1500-01-01'), ('1600-02-03')");
-
-    ResultSet resultSet = statement.executeQuery("select * from testOldDate order by d");
-    resultSet.next();
-    assertEquals("0001-01-01", resultSet.getString(1));
-    assertEquals(Date.valueOf("0001-01-01"), resultSet.getDate(1));
-    resultSet.next();
-    assertEquals("1000-01-01", resultSet.getString(1));
-    assertEquals(Date.valueOf("1000-01-01"), resultSet.getDate(1));
-    resultSet.next();
-    assertEquals("1300-01-01", resultSet.getString(1));
-    assertEquals(Date.valueOf("1300-01-01"), resultSet.getDate(1));
-    resultSet.next();
-    assertEquals("1400-02-02", resultSet.getString(1));
-    assertEquals(Date.valueOf("1400-02-02"), resultSet.getDate(1));
-    resultSet.next();
-    assertEquals("1500-01-01", resultSet.getString(1));
-    assertEquals(Date.valueOf("1500-01-01"), resultSet.getDate(1));
-    resultSet.next();
-    assertEquals("1600-02-03", resultSet.getString(1));
-    assertEquals(Date.valueOf("1600-02-03"), resultSet.getDate(1));
-
-    resultSet.close();
-    statement.execute("drop table if exists testOldDate");
-    statement.close();
     connection.close();
   }
 
@@ -818,75 +601,6 @@ public class ResultSetIT extends BaseJDBCTest
     assertThat("closing statement didn't release memory allocated for result",
                SnowflakeChunkDownloader.getCurrentMemoryUsage(), equalTo(initialMemoryUsage));
     connection.close();
-  }
-
-  @Test
-  public void testDateTimeRelatedTypeConversion() throws SQLException
-  {
-    Connection connection = getConnection();
-    Statement statement = connection.createStatement();
-    statement.execute(
-        "create or replace table testDateTime" +
-        "(colDate DATE, colTS timestamp_ltz, colTime TIME, colString string)");
-    PreparedStatement preparedStatement = connection.prepareStatement(
-        "insert into testDateTime values(?, ?, ?, ?)");
-
-    Timestamp ts = buildTimestamp(2016, 3, 20, 3, 25, 45, 67800000);
-    Date date = buildDate(2016, 3, 20);
-    Time time = new Time(12345678); // 03:25:45.678
-
-    preparedStatement.setDate(1, date);
-    preparedStatement.setTimestamp(2, ts);
-    preparedStatement.setTime(3, time);
-    preparedStatement.setString(4, "aaa");
-
-    preparedStatement.execute();
-    ResultSet resultSet = statement.executeQuery("select * from testDateTime");
-    resultSet.next();
-
-    // ResultSet.getDate()
-    assertEquals(date, resultSet.getDate("COLDATE"));
-    try
-    {
-      resultSet.getDate("COLTIME");
-      fail();
-    }
-    catch (SnowflakeSQLException e)
-    {
-      assertEquals((int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), e.getErrorCode());
-      assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), e.getSQLState());
-    }
-
-    // ResultSet.getTimestamp()
-    assertEquals(new Timestamp(date.getTime()), resultSet.getTimestamp("COLDATE"));
-    assertEquals(ts, resultSet.getTimestamp("COLTS"));
-    assertEquals(new Timestamp(time.getTime()), resultSet.getTimestamp("COLTIME"));
-    try
-    {
-      resultSet.getTimestamp("COLSTRING");
-      fail();
-    }
-    catch (SnowflakeSQLException e)
-    {
-      assertEquals((int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), e.getErrorCode());
-      assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), e.getSQLState());
-    }
-
-    // ResultSet.getTime()
-    try
-    {
-      resultSet.getTime("COLDATE");
-      fail();
-    }
-    catch (SnowflakeSQLException e)
-    {
-      assertEquals((int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), e.getErrorCode());
-      assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), e.getSQLState());
-    }
-    assertEquals(time, resultSet.getTime("COLTIME"));
-    assertEquals(new Time(ts.getTime()), resultSet.getTime("COLTS"));
-
-    statement.execute("drop table if exists testDateTime");
   }
 
   @Test
@@ -1098,60 +812,6 @@ public class ResultSetIT extends BaseJDBCTest
 
     assertFalse("should not be the last", ret.isLast());
     assertTrue("should be after the last", ret.isAfterLast());
-  }
-
-  @Test
-  public void testGetOldTimestamp() throws SQLException
-  {
-    Connection con = getConnection();
-    Statement statement = con.createStatement();
-
-    statement.execute("create or replace table testOldTs(cola timestamp_ntz)");
-    statement.execute("insert into testOldTs values ('1582-06-22 17:00:00'), " +
-                      "('1000-01-01 17:00:00')");
-
-    ResultSet resultSet = statement.executeQuery("select * from testOldTs");
-
-    resultSet.next();
-
-    assertThat(resultSet.getTimestamp(1).toString(), equalTo("1582-06-22 17:00:00.0"));
-    assertThat(resultSet.getString(1), equalTo("Fri, 22 Jun 1582 17:00:00 Z"));
-
-    resultSet.next();
-    assertThat(resultSet.getTimestamp(1).toString(), equalTo("1000-01-01 17:00:00.0"));
-    assertThat(resultSet.getString(1), equalTo("Mon, 01 Jan 1000 17:00:00 Z"));
-
-    statement.execute("drop table if exists testOldTs");
-    statement.close();
-    con.close();
-  }
-
-  @Test
-  public void testPrepareOldTimestamp() throws SQLException
-  {
-    Connection con = getConnection();
-    Statement statement = con.createStatement();
-
-    statement.execute("create or replace table testPrepOldTs(cola timestamp_ntz, colb date)");
-    statement.execute("alter session set client_timestamp_type_mapping=timestamp_ntz");
-    PreparedStatement ps = con.prepareStatement("insert into testPrepOldTs values (?, ?)");
-
-    TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
-    ps.setTimestamp(1, Timestamp.valueOf("0001-01-01 08:00:00"));
-    ps.setDate(2, java.sql.Date.valueOf("0001-01-01"));
-    ps.executeUpdate();
-
-    ResultSet resultSet = statement.executeQuery("select * from testPrepOldTs");
-
-    resultSet.next();
-    assertThat(resultSet.getTimestamp(1).toString(), equalTo("0001-01-01 08:00:00.0"));
-    assertThat(resultSet.getDate(2).toString(), equalTo("0001-01-01"));
-
-    statement.execute("drop table if exists testPrepOldTs");
-
-    statement.close();
-
-    con.close();
   }
 
   @Test
