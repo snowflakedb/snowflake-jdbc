@@ -1,3 +1,12 @@
+**JDBC Driver 3.8.7**
+
+- \| SNOW-85251 | Increase the adjust steps in conservative memory usage mode to better utilize result cache
+- \| SNOW-83429 | Build JDBC driver with FIPS certified Bouncy Castle libraries
+- \| SNOW-83666 | PUT to S3 endpoint return timeout when using a JDBC connection through proxy
+- \| SNOW-83815 | Query id no longer accessible via JDBC as of 3.7.1
+- \| SNOW-84396 | Types.SMALLINT not supported in getColumnClassName
+- \
+
 **JDBC Driver 3.8.6**
 
 - \| SNOW-84683 | Add oktausername parameter support to OKTA authenticator
