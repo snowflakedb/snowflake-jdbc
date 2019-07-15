@@ -1075,6 +1075,7 @@ public class ConnectionIT extends BaseJDBCTest
   }
 
   @Test
+  @Ignore
   @ConditionalIgnore(condition = RunningOnTravisCI.class)
   public void testOKTAConnection() throws Throwable
   {
@@ -1091,6 +1092,7 @@ public class ConnectionIT extends BaseJDBCTest
   }
 
   @Test
+  @Ignore
   @ConditionalIgnore(condition = RunningOnTravisCI.class)
   public void testOKTAConnectionWithOktauserParam() throws Throwable
   {
