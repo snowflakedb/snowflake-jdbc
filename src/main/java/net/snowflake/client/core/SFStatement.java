@@ -634,7 +634,7 @@ public class SFStatement
     {
       // prefetch threads are configured so only reduce chunk size
       conservativePrefetchThreads = clientPrefetchThread;
-      for (; clientChunkSize >= MIN_CLIENT_CHUNK_SIZE; clientChunkSize -= 16)
+      for (; clientChunkSize >= MIN_CLIENT_CHUNK_SIZE; clientChunkSize -= session.getConservativeMemoryAdjustStep())
       {
         if (clientMemoryLimit >= (long) 2 * clientPrefetchThread * clientChunkSize * 1024 * 1024)
         {
@@ -649,7 +649,8 @@ public class SFStatement
       // reduce both prefetch threads and chunk size
       while (clientPrefetchThread > 1)
       {
-        for (clientChunkSize = MAX_CLIENT_CHUNK_SIZE; clientChunkSize >= MIN_CLIENT_CHUNK_SIZE; clientChunkSize -= 16)
+        for (clientChunkSize = MAX_CLIENT_CHUNK_SIZE; clientChunkSize >= MIN_CLIENT_CHUNK_SIZE;
+             clientChunkSize -= session.getConservativeMemoryAdjustStep())
         {
           if (clientMemoryLimit >= (long) 2 * clientPrefetchThread * clientChunkSize * 1024 * 1024)
           {

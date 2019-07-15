@@ -94,6 +94,7 @@ public class SessionUtil
   public static final String CLIENT_ENABLE_CONSERVATIVE_MEMORY_USAGE_JVM
       = "net.snowflake.jdbc.clientEnableConservativeMemoryUsage";
   public static final String CLIENT_ENABLE_CONSERVATIVE_MEMORY_USAGE = "CLIENT_ENABLE_CONSERVATIVE_MEMORY_USAGE";
+  public static final String CLIENT_CONSERVATIVE_MEMORY_ADJUST_STEP = "CLIENT_CONSERVATIVE_MEMORY_ADJUST_STEP";
   public static final String OCSP_FAIL_OPEN_JVM = "net.snowflake.jdbc.ocspFailOpen";
   private static final String OCSP_FAIL_OPEN = "ocspFailOpen";
   public static final String CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY =
@@ -1483,6 +1484,13 @@ public class SessionUtil
         if (session != null)
         {
           session.setEnableConservativeMemoryUsage((boolean) entry.getValue());
+        }
+      }
+      else if (CLIENT_CONSERVATIVE_MEMORY_ADJUST_STEP.equalsIgnoreCase(entry.getKey()))
+      {
+        if (session != null)
+        {
+          session.setConservativeMemoryAdjustStep((int) entry.getValue());
         }
       }
       else if (CLIENT_MEMORY_LIMIT.equalsIgnoreCase(entry.getKey()))
