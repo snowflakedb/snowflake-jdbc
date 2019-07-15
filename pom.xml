@@ -10,6 +10,18 @@
   <name>snowflake-jdbc</name>
   <url>http://maven.apache.org</url>
 
+  <repositories>
+    <repository>
+      <id>Repo2</id>
+      <name>Maven Central Repo2</name>
+      <layout>default</layout>
+      <url>http://repo2.maven.org/maven2</url>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+    </repository>
+  </repositories>
+
   <prerequisites>
     <maven>3.3.9</maven>
   </prerequisites>
@@ -238,8 +250,8 @@
     </dependency>
     <dependency>
       <groupId>org.bouncycastle</groupId>
-      <artifactId>bcpkix-jdk15on</artifactId>
-      <version>1.59</version>
+      <artifactId>bcpkix-fips</artifactId>
+      <version>1.0.3</version>
     </dependency>
     <dependency>
       <groupId>com.amazonaws</groupId>
