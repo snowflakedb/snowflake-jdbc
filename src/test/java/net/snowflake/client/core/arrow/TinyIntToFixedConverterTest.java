@@ -26,6 +26,7 @@ import java.util.TimeZone;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertEquals;
 
 public class TinyIntToFixedConverterTest extends BaseConverterTest
 {
@@ -79,19 +80,19 @@ public class TinyIntToFixedConverterTest extends BaseConverterTest
     for (int i = 0; i < rowCount; i++)
     {
       byte byteVal = converter.toByte(i);
-      Object byteObject = converter.toObject(i);
+      Object longObject = converter.toObject(i); // the logical type is long
       String byteString = converter.toString(i);
 
       if (nullValIndex.contains(i))
       {
         assertThat(byteVal, is((byte) 0));
-        assertThat(byteObject, is(nullValue()));
+        assertThat(longObject, is(nullValue()));
         assertThat(byteString, is(nullValue()));
       }
       else
       {
         assertThat(byteVal, is(expectedValues.get(i)));
-        assertThat(byteObject, is(expectedValues.get(i)));
+        assertEquals(longObject, (long) expectedValues.get(i));
         assertThat(byteString, is(expectedValues.get(i).toString()));
       }
     }
@@ -133,7 +134,7 @@ public class TinyIntToFixedConverterTest extends BaseConverterTest
       }
     }
 
-    ArrowVectorConverter converter = new TinyIntToFixedConverter(vector, 0, this);
+    ArrowVectorConverter converter = new TinyIntToScaledFixedConverter(vector, 0, this, 1);
 
     for (int i = 0; i < rowCount; i++)
     {
@@ -175,26 +176,18 @@ public class TinyIntToFixedConverterTest extends BaseConverterTest
     TinyIntVector vector = new TinyIntVector("col_one", fieldType, allocator);
     vector.setSafe(0, 200);
 
-    final ArrowVectorConverter converter = new TinyIntToFixedConverter(vector, 0, this);
+    final ArrowVectorConverter converter = new TinyIntToScaledFixedConverter(vector, 0, this, 1);
     final int invalidConversionErrorCode =
         ErrorCode.INVALID_VALUE_CONVERT.getMessageCode();
 
     TestUtil.assertSFException(invalidConversionErrorCode,
                                () -> converter.toBoolean(0));
     TestUtil.assertSFException(invalidConversionErrorCode,
-                               () -> converter.toFloat(0));
-    TestUtil.assertSFException(invalidConversionErrorCode,
-                               () -> converter.toDouble(0));
-    TestUtil.assertSFException(invalidConversionErrorCode,
                                () -> converter.toLong(0));
     TestUtil.assertSFException(invalidConversionErrorCode,
                                () -> converter.toInt(0));
     TestUtil.assertSFException(invalidConversionErrorCode,
                                () -> converter.toShort(0));
-    TestUtil.assertSFException(invalidConversionErrorCode,
-                               () -> converter.toByte(0));
-    TestUtil.assertSFException(invalidConversionErrorCode,
-                               () -> converter.toBytes(0));
     TestUtil.assertSFException(invalidConversionErrorCode,
                                () -> converter.toDate(0));
     TestUtil.assertSFException(invalidConversionErrorCode,

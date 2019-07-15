@@ -11,12 +11,17 @@ import org.apache.arrow.vector.SmallIntVector;
 import org.apache.arrow.vector.ValueVector;
 
 import java.math.BigDecimal;
+import java.nio.ByteBuffer;
 
+/**
+ * Data vector whose snowflake logical type is fixed while represented as a
+ * short value vector
+ */
 public class SmallIntToFixedConverter extends AbstractArrowVectorConverter
 {
-  private SmallIntVector smallIntVector;
-
-  private Integer sfScale;
+  protected int sfScale;
+  protected SmallIntVector smallIntVector;
+  ByteBuffer byteBuf = ByteBuffer.allocate(SmallIntVector.TYPE_WIDTH);
 
   public SmallIntToFixedConverter(ValueVector fieldVector, int columnIndex, DataConversionContext context)
   {
@@ -27,8 +32,25 @@ public class SmallIntToFixedConverter extends AbstractArrowVectorConverter
           columnIndex,
           context);
     this.smallIntVector = (SmallIntVector) fieldVector;
-    String scaleStr = fieldVector.getField().getMetadata().get("scale");
-    this.sfScale = Integer.parseInt(scaleStr);
+  }
+
+  protected short getShort(int index) throws SFException
+  {
+    return smallIntVector.getDataBuffer().getShort(index * SmallIntVector.TYPE_WIDTH);
+  }
+
+  @Override
+  public byte[] toBytes(int index) throws SFException
+  {
+    if (isNull(index))
+    {
+      return null;
+    }
+    else
+    {
+      byteBuf.putShort(0, getShort(index));
+      return byteBuf.array();
+    }
   }
 
   @Override
@@ -41,11 +63,8 @@ public class SmallIntToFixedConverter extends AbstractArrowVectorConverter
     {
       return byteVal;
     }
-    else
-    {
-      throw new SFException(ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr,
+    throw new SFException(ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr,
                             "byte", shortVal);
-    }
   }
 
   @Override
@@ -55,16 +74,9 @@ public class SmallIntToFixedConverter extends AbstractArrowVectorConverter
     {
       return 0;
     }
-    else if (sfScale != 0)
-    {
-      short val =
-          smallIntVector.getDataBuffer().getShort(index * SmallIntVector.TYPE_WIDTH);
-      throw new SFException(ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr,
-                            "int", val);
-    }
     else
     {
-      return smallIntVector.getDataBuffer().getShort(index * SmallIntVector.TYPE_WIDTH);
+      return getShort(index);
     }
   }
 
@@ -81,7 +93,7 @@ public class SmallIntToFixedConverter extends AbstractArrowVectorConverter
   }
 
   @Override
-  public BigDecimal toBigDecimal(int index)
+  public BigDecimal toBigDecimal(int index) throws SFException
   {
     if (smallIntVector.isNull(index))
     {
@@ -89,22 +101,35 @@ public class SmallIntToFixedConverter extends AbstractArrowVectorConverter
     }
     else
     {
-      short val = smallIntVector.getDataBuffer().getShort(
-          index * SmallIntVector.TYPE_WIDTH);
-      return BigDecimal.valueOf((long) val, sfScale);
+      return BigDecimal.valueOf((long) getShort(index), sfScale);
     }
+  }
+
+  @Override
+  public float toFloat(int index) throws SFException
+  {
+    return toShort(index);
+  }
+
+  @Override
+  public double toDouble(int index) throws SFException
+  {
+    return toFloat(index);
   }
 
   @Override
   public Object toObject(int index) throws SFException
   {
-    return isNull(index) ? null :
-           (sfScale == 0 ? toShort(index) : toBigDecimal(index));
+    if (isNull(index))
+    {
+      return null;
+    }
+    return (long) getShort(index);
   }
 
   @Override
-  public String toString(int index)
+  public String toString(int index) throws SFException
   {
-    return isNull(index) ? null : toBigDecimal(index).toString();
+    return isNull(index) ? null : Short.toString(getShort(index));
   }
 }

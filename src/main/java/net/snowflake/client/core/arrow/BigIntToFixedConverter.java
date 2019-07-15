@@ -11,6 +11,7 @@ import org.apache.arrow.vector.BigIntVector;
 import org.apache.arrow.vector.ValueVector;
 
 import java.math.BigDecimal;
+import java.nio.ByteBuffer;
 
 /**
  * Data vector whose snowflake logical type is fixed while represented as a
@@ -21,12 +22,14 @@ public class BigIntToFixedConverter extends AbstractArrowVectorConverter
   /**
    * Underlying vector that this converter will convert from
    */
-  private BigIntVector bigIntVector;
+  protected BigIntVector bigIntVector;
 
   /**
    * scale of the fixed value
    */
-  private Integer sfScale;
+  protected int sfScale;
+
+  protected ByteBuffer byteBuf = ByteBuffer.allocate(BigIntVector.TYPE_WIDTH);
 
   public BigIntToFixedConverter(ValueVector fieldVector, int columnIndex, DataConversionContext context)
   {
@@ -37,8 +40,20 @@ public class BigIntToFixedConverter extends AbstractArrowVectorConverter
           columnIndex,
           context);
     this.bigIntVector = (BigIntVector) fieldVector;
-    String scaleStr = fieldVector.getField().getMetadata().get("scale");
-    this.sfScale = Integer.parseInt(scaleStr);
+  }
+
+  @Override
+  public byte[] toBytes(int index)
+  {
+    if (isNull(index))
+    {
+      return null;
+    }
+    else
+    {
+      byteBuf.putLong(0, getLong(index));
+      return byteBuf.array();
+    }
   }
 
   @Override
@@ -53,8 +68,7 @@ public class BigIntToFixedConverter extends AbstractArrowVectorConverter
     }
     else
     {
-      throw new SFException(ErrorCode.INVALID_VALUE_CONVERT,
-                            logicalTypeStr,
+      throw new SFException(ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr,
                             "byte", longVal);
     }
   }
@@ -73,7 +87,7 @@ public class BigIntToFixedConverter extends AbstractArrowVectorConverter
     {
       throw new SFException(ErrorCode.INVALID_VALUE_CONVERT,
                             logicalTypeStr,
-                            "byte", longVal);
+                            "short", longVal);
     }
   }
 
@@ -91,8 +105,13 @@ public class BigIntToFixedConverter extends AbstractArrowVectorConverter
     {
       throw new SFException(ErrorCode.INVALID_VALUE_CONVERT,
                             logicalTypeStr,
-                            "byte", longVal);
+                            "int", longVal);
     }
+  }
+
+  protected long getLong(int index)
+  {
+    return bigIntVector.getDataBuffer().getLong(index * BigIntVector.TYPE_WIDTH);
   }
 
   @Override
@@ -102,19 +121,22 @@ public class BigIntToFixedConverter extends AbstractArrowVectorConverter
     {
       return 0;
     }
-    else if (sfScale != 0)
-    {
-      long val =
-          bigIntVector.getDataBuffer().getLong(index * BigIntVector.TYPE_WIDTH);
-      throw new SFException(ErrorCode.INVALID_VALUE_CONVERT,
-                            logicalTypeStr,
-                            "long",
-                            val);
-    }
     else
     {
-      return bigIntVector.getDataBuffer().getLong(index * BigIntVector.TYPE_WIDTH);
+      return getLong(index);
     }
+  }
+
+  @Override
+  public float toFloat(int index) throws SFException
+  {
+    return toLong(index);
+  }
+
+  @Override
+  public double toDouble(int index) throws SFException
+  {
+    return toLong(index);
   }
 
   @Override
@@ -126,22 +148,26 @@ public class BigIntToFixedConverter extends AbstractArrowVectorConverter
     }
     else
     {
-      long val = bigIntVector.getDataBuffer().getLong(
-          index * BigIntVector.TYPE_WIDTH);
-      return BigDecimal.valueOf(val, sfScale);
+      return BigDecimal.valueOf(getLong(index), sfScale);
     }
   }
 
   @Override
   public Object toObject(int index) throws SFException
   {
-    return isNull(index) ? null :
-           (sfScale == 0 ? toLong(index) : toBigDecimal(index));
+    if (bigIntVector.isNull(index))
+    {
+      return null;
+    }
+    else
+    {
+      return getLong(index);
+    }
   }
 
   @Override
   public String toString(int index)
   {
-    return isNull(index) ? null : toBigDecimal(index).toString();
+    return isNull(index) ? null : Long.toString(getLong(index));
   }
 }

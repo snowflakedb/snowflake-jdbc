@@ -26,7 +26,7 @@ abstract class AbstractArrowVectorConverter implements ArrowVectorConverter
   /**
    * snowflake logical type of the target arrow vector
    */
-  String logicalTypeStr;
+  protected String logicalTypeStr;
 
   /**
    * value vector
