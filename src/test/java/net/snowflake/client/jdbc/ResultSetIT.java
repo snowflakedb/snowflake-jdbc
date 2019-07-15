@@ -35,6 +35,7 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.Properties;
 
+import static java.lang.Class.forName;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -174,6 +175,30 @@ public class ResultSetIT extends BaseJDBCTest
     Statement statement = connection.createStatement();
     ResultSet resultSet = statement.executeQuery(selectAllSQL);
     assertEquals(1, resultSet.findColumn("COLA"));
+    statement.close();
+    connection.close();
+  }
+
+  @Test
+  public void testGetColumnClassNameForBinary() throws Throwable
+  {
+    Connection connection = getConnection();
+    Statement statement = connection.createStatement();
+    statement.execute("create or replace table bintable (b binary)");
+    statement.execute("insert into bintable values ('00f1f2')");
+    ResultSet resultSet = statement.executeQuery("select * from bintable");
+    ResultSetMetaData metaData = resultSet.getMetaData();
+    assertEquals(SnowflakeType.BINARY_CLASS_NAME, metaData.getColumnClassName(1));
+    assertTrue(resultSet.next());
+    Class<?> klass = Class.forName(SnowflakeType.BINARY_CLASS_NAME);
+    Object ret0 = resultSet.getObject(1);
+    assertEquals(ret0.getClass(), klass);
+    byte[] ret = (byte[])ret0;
+    assertEquals(3, ret.length);
+    assertEquals(ret[0], (byte)0);
+    assertEquals(ret[1], (byte)-15);
+    assertEquals(ret[2], (byte)-14);
+    statement.execute("drop table if exists bintable");
     statement.close();
     connection.close();
   }
