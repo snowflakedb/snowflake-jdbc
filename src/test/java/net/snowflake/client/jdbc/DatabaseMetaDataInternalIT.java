@@ -7,6 +7,7 @@ import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnTravisCI;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.sql.Connection;
@@ -369,6 +370,8 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest
    * Created on 09/28/2018
    */
   @Test
+  @Ignore // SNOW-85084 detected this is a flaky test, so ignore it here.
+  // We have other regression tests to cover it
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
   public void testGetTablesReusingCachedResults() throws SQLException
   {
