@@ -1462,12 +1462,7 @@ public class PreparedStatementIT extends BaseJDBCTest
     connection.close();
   }
 
-  /**
-   * Ensures binding a string type with TIMESTAMP_TZ works. The customer
-   * has to use the specific timestamp format:
-   * YYYY-MM-DD HH24:MI:SS.FF9 TZH:TZM
-   */
-  //@Test
+  @Test
   public void testTableFuncBindInput() throws SQLException
   {
     int[] countResult;
@@ -1479,6 +1474,11 @@ public class PreparedStatementIT extends BaseJDBCTest
     connection.close();
   }
 
+  /**
+   * Ensures binding a string type with TIMESTAMP_TZ works. The customer
+   * has to use the specific timestamp format:
+   * YYYY-MM-DD HH24:MI:SS.FF9 TZH:TZM
+   */
   @Test
   @ConditionalIgnore(condition = RunningOnTravisCI.class)
   public void testBindTimestampTZViaStringBatch() throws SQLException
