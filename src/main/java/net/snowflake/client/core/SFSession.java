@@ -192,6 +192,9 @@ public class SFSession
   // whether to enable conservative memory usage mode
   private boolean enableConservativeMemoryUsage;
 
+  // the step in MB to adjust memory usage
+  private int conservativeMemoryAdjustStep = 64;
+
   // parameters used for conservative memory usage
   private int clientMemoryLimit;
   private int clientResultChunkSize;
@@ -1300,6 +1303,16 @@ public class SFSession
   public void setEnableConservativeMemoryUsage(boolean value)
   {
     enableConservativeMemoryUsage = value;
+  }
+
+  public void setConservativeMemoryAdjustStep(int step)
+  {
+    conservativeMemoryAdjustStep = step;
+  }
+
+  public int getConservativeMemoryAdjustStep()
+  {
+    return conservativeMemoryAdjustStep;
   }
 
   public void setClientMemoryLimit(int clientMemoryLimit)
