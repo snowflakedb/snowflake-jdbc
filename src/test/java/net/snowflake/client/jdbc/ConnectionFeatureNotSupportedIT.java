@@ -18,18 +18,6 @@ public class ConnectionFeatureNotSupportedIT extends BaseJDBCTest
   {
     try (Connection connection = getConnection())
     {
-      expectFeatureNotSupportedException(() -> connection.prepareCall(
-          "select 1"));
-      expectFeatureNotSupportedException(() -> connection.prepareCall(
-          "select 1",
-          ResultSet.TYPE_FORWARD_ONLY,
-          ResultSet.CONCUR_READ_ONLY));
-      expectFeatureNotSupportedException(() -> connection.prepareCall(
-          "select 1",
-          ResultSet.TYPE_FORWARD_ONLY,
-          ResultSet.CONCUR_READ_ONLY,
-          ResultSet.HOLD_CURSORS_OVER_COMMIT));
-
       expectFeatureNotSupportedException(() -> connection.rollback(new FakeSavepoint()));
       expectFeatureNotSupportedException(() -> connection.setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE));
       expectFeatureNotSupportedException(() -> connection.setTransactionIsolation(Connection.TRANSACTION_REPEATABLE_READ));
