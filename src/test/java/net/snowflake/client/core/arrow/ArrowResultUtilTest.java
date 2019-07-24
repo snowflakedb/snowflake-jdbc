@@ -14,6 +14,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.sql.Date;
+import java.sql.Timestamp;
 import java.util.Random;
 import java.util.TimeZone;
 
@@ -92,5 +93,21 @@ public class ArrowResultUtilTest
     Date newDate = ArrowResultUtil.getDate(day, TimeZone.getDefault(), new SFSession());
     Date oldDate = ResultUtil.getDate(Integer.toString(day), TimeZone.getDefault(), new SFSession());
     assertEquals(newDate, oldDate);
+  }
+
+  @Test
+  public void testToJavaTimestamp()
+  {
+    // ex: -1.123456789, -0.123456789, 0.123456789, 123.123456789, -123.123456789
+    long[] cases = {-1123456789, -123456789, 123456789, 123123456789l, -123123456789l};
+    long[] millsecs = {-1124, -124, 123, 123123, -123124};
+    int[] nanos = {876543211, 876543211, 123456789, 123456789, 876543211};
+    int scale = 9;
+    for (int i = 0; i< cases.length;i++)
+    {
+      Timestamp ts = ArrowResultUtil.toJavaTimestamp(cases[i], scale);
+      assertEquals(millsecs[i], ts.getTime());
+      assertEquals(nanos[i], ts.getNanos());
+    }
   }
 }

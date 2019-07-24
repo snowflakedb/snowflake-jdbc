@@ -92,17 +92,17 @@ public class TwoFieldStructToTimestampNTZConverterTest extends BaseConverterTest
     long[] testSecondsInt64 = {
         1546391837,
         0,
-        -1546391837,
-        -1546391837,
-        -1546391837
+        -1546391838,
+        -1546391838,
+        -1546391838
     };
 
     int[] testNanoSecs = {
         0,
         1,
-        10,
-        123456789,
-        999999999
+        999999990,
+        876543211,
+        1
     };
 
     String[] testTimesJson = {

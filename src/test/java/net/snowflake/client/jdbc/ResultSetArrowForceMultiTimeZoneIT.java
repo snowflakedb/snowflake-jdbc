@@ -283,7 +283,6 @@ public class ResultSetArrowForceMultiTimeZoneIT extends BaseJDBCTest
     while(i < cases.length)
     {
       rs.next();
-      System.out.println(rs.getTimestamp(1).getNanos());
       assertEquals(times[i], rs.getTimestamp(1).getTime());
       assertEquals(nanos[i++], rs.getTimestamp(1).getNanos());
     }
