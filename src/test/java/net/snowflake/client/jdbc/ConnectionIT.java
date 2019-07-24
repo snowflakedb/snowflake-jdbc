@@ -5,6 +5,7 @@ package net.snowflake.client.jdbc;
 
 import net.minidev.json.JSONObject;
 import net.snowflake.client.ConditionalIgnoreRule.ConditionalIgnore;
+import net.snowflake.client.RunningNotOnTestaccount;
 import net.snowflake.client.RunningOnTravisCI;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryEvent;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
@@ -1075,8 +1076,7 @@ public class ConnectionIT extends BaseJDBCTest
   }
 
   @Test
-  @Ignore
-  @ConditionalIgnore(condition = RunningOnTravisCI.class)
+  @ConditionalIgnore (condition = RunningNotOnTestaccount.class)
   public void testOKTAConnection() throws Throwable
   {
     Map<String, String> params = getConnectionParameters();
@@ -1092,8 +1092,7 @@ public class ConnectionIT extends BaseJDBCTest
   }
 
   @Test
-  @Ignore
-  @ConditionalIgnore(condition = RunningOnTravisCI.class)
+  @ConditionalIgnore(condition = RunningNotOnTestaccount.class)
   public void testOKTAConnectionWithOktauserParam() throws Throwable
   {
     Map<String, String> params = getConnectionParameters();
