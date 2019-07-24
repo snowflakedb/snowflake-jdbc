@@ -61,16 +61,14 @@ public interface DataConversionContext
   TimeZone getTimeZone();
 
   /**
-   * whether to honor client time zone for timestamp_ntz
    *
-   * @return
+   * @return whether to honor client time zone for timestamp_ntz
    */
   boolean getHonorClientTZForTimestampNTZ();
 
   /**
-   * result version
    *
-   * @return
+   * @return result version
    */
   long getResultVersion();
 }

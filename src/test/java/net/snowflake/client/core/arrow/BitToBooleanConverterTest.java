@@ -3,7 +3,7 @@ package net.snowflake.client.core.arrow;
 import net.snowflake.client.core.SFException;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.memory.RootAllocator;
-import org.apache.arrow.vector.TinyIntVector;
+import org.apache.arrow.vector.BitVector;
 import org.apache.arrow.vector.types.Types;
 import org.apache.arrow.vector.types.pojo.FieldType;
 import org.junit.Test;
@@ -20,7 +20,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-public class TinyIntToBooleanConverterTest extends BaseConverterTest
+public class BitToBooleanConverterTest extends BaseConverterTest
 {
   /**
    * allocator for arrow
@@ -47,8 +47,8 @@ public class TinyIntToBooleanConverterTest extends BaseConverterTest
                                         Types.MinorType.BIT.getType(),
                                         null, customFieldMeta);
 
-    TinyIntVector vector = new TinyIntVector("col_one", fieldType,
-                                             allocator);
+    BitVector vector = new BitVector("col_one", fieldType,
+                                         allocator);
     for (int i = 0; i < rowCount; i++)
     {
       boolean isNull = random.nextBoolean();
@@ -63,7 +63,7 @@ public class TinyIntToBooleanConverterTest extends BaseConverterTest
       }
     }
 
-    ArrowVectorConverter converter = new TinyIntToBooleanConverter(vector, 0, this);
+    ArrowVectorConverter converter = new BitToBooleanConverter(vector, 0, this);
 
     for (int i = 0; i < rowCount; i++)
     {
@@ -74,8 +74,8 @@ public class TinyIntToBooleanConverterTest extends BaseConverterTest
       if (nullValIndex.contains(i))
       {
         assertThat(boolVal, is(false));
-        assertThat(objectVal, is(nullValue()));
-        assertThat(stringVal, is(nullValue()));
+        assertThat(objectVal, is(false)); // current behavior
+        assertThat(stringVal, is(nullValue())); // current behavior
       }
       else
       {

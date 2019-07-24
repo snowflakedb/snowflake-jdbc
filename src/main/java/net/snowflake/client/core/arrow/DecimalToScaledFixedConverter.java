@@ -18,14 +18,14 @@ import java.math.BigDecimal;
  */
 public class DecimalToScaledFixedConverter extends AbstractArrowVectorConverter
 {
-  private DecimalVector decimalVector;
-  public DecimalToScaledFixedConverter(ValueVector fieldVector, int columnIndex, DataConversionContext context)
+  protected DecimalVector decimalVector;
+  public DecimalToScaledFixedConverter(ValueVector fieldVector, int vectorIndex, DataConversionContext context)
   {
     super(String.format("%s(%s,%s)", SnowflakeType.FIXED,
                         fieldVector.getField().getMetadata().get("precision"),
                         fieldVector.getField().getMetadata().get("scale")),
           fieldVector,
-          columnIndex,
+          vectorIndex,
           context);
     decimalVector = (DecimalVector) fieldVector;
   }
@@ -189,7 +189,7 @@ public class DecimalToScaledFixedConverter extends AbstractArrowVectorConverter
   }
 
   @Override
-  public Object toObject(int index)
+  public Object toObject(int index) throws SFException
   {
     return toBigDecimal(index);
   }

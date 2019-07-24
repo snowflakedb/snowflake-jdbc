@@ -6,7 +6,7 @@ import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SFSession;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.memory.RootAllocator;
-import org.apache.arrow.vector.IntVector;
+import org.apache.arrow.vector.DateDayVector;
 import org.apache.arrow.vector.types.Types;
 import org.apache.arrow.vector.types.pojo.FieldType;
 import org.junit.Test;
@@ -26,7 +26,7 @@ import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @RunWith(Parameterized.class)
-public class IntToDateConverterTest extends BaseConverterTest
+public class DateConverterTest extends BaseConverterTest
 {
   @Parameterized.Parameters
   public static Object[][] data()
@@ -42,7 +42,7 @@ public class IntToDateConverterTest extends BaseConverterTest
     };
   }
 
-  public IntToDateConverterTest(String tz)
+  public DateConverterTest(String tz)
   {
     System.setProperty("user.timezone", tz);
   }
@@ -89,10 +89,10 @@ public class IntToDateConverterTest extends BaseConverterTest
     Set<Integer> nullValIndex = new HashSet<>();
     // test normal date
     FieldType fieldType = new FieldType(true,
-                                        Types.MinorType.INT.getType(),
+                                        Types.MinorType.DATEDAY.getType(),
                                         null, customFieldMeta);
 
-    IntVector vector = new IntVector("date", fieldType, allocator);
+    DateDayVector vector = new DateDayVector("date", fieldType, allocator);
     int i = 0, j = 0;
     while (i < testDates.length)
     {
@@ -109,7 +109,7 @@ public class IntToDateConverterTest extends BaseConverterTest
       j++;
     }
 
-    ArrowVectorConverter converter = new IntToDateConverter(vector, 0, this);
+    ArrowVectorConverter converter = new DateConverter(vector, 0, this);
     int rowCount = j;
     i = 0;
     j = 0;
@@ -148,10 +148,10 @@ public class IntToDateConverterTest extends BaseConverterTest
     Set<Integer> nullValIndex = new HashSet<>();
     // test normal date
     FieldType fieldType = new FieldType(true,
-                                        Types.MinorType.INT.getType(),
+                                        Types.MinorType.DATEDAY.getType(),
                                         null, customFieldMeta);
 
-    IntVector vector = new IntVector("date", fieldType, allocator);
+    DateDayVector vector = new DateDayVector("date", fieldType, allocator);
     int[] rawDates = new int[rowCount];
     for (int i = 0; i < rowCount; i++)
     {
@@ -168,7 +168,7 @@ public class IntToDateConverterTest extends BaseConverterTest
       }
     }
 
-    ArrowVectorConverter converter = new IntToDateConverter(vector,0, this);
+    ArrowVectorConverter converter = new DateConverter(vector, 0, this);
 
     for (int i = 0; i < rowCount; i++)
     {

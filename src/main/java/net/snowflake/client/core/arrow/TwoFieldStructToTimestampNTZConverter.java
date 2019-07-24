@@ -39,6 +39,12 @@ public class TwoFieldStructToTimestampNTZConverter extends AbstractArrowVectorCo
   }
 
   @Override
+  public boolean isNull(int index)
+  {
+    return epochs.isNull(index);
+  }
+
+  @Override
   public String toString(int index) throws SFException
   {
     if (context.getTimestampNTZFormatter() == null)
@@ -50,7 +56,7 @@ public class TwoFieldStructToTimestampNTZConverter extends AbstractArrowVectorCo
           null,
           null);
     }
-    Timestamp ts = epochs.isNull(index) ? null : getTimestamp(index, TimeZone.getDefault(), true);
+    Timestamp ts = isNull(index) ? null : getTimestamp(index, TimeZone.getDefault(), true);
 
     return ts == null ? null : context.getTimestampNTZFormatter().format(ts,
                                                                          TimeZone.getTimeZone("UTC"),
@@ -66,7 +72,7 @@ public class TwoFieldStructToTimestampNTZConverter extends AbstractArrowVectorCo
   @Override
   public Timestamp toTimestamp(int index, TimeZone tz) throws SFException
   {
-    return epochs.isNull(index) ? null : getTimestamp(index, tz, false);
+    return isNull(index) ? null : getTimestamp(index, tz, false);
   }
 
   private Timestamp getTimestamp(int index, TimeZone tz, boolean fromToString) throws SFException
@@ -95,7 +101,7 @@ public class TwoFieldStructToTimestampNTZConverter extends AbstractArrowVectorCo
   @Override
   public Date toDate(int index) throws SFException
   {
-    return epochs.isNull(index) ? null : new Date(getTimestamp(index, TimeZone.getDefault(), false).getTime());
+    return isNull(index) ? null : new Date(getTimestamp(index, TimeZone.getDefault(), false).getTime());
   }
 
   @Override
