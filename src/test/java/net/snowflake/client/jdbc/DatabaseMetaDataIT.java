@@ -1052,7 +1052,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
       DatabaseMetaData metaData = connection.getMetaData();
       assertEquals("procedure", metaData.getProcedureTerm());
       // no stored procedure support
-      assertFalse(metaData.supportsStoredProcedures());
+      assertTrue(metaData.supportsStoredProcedures());
       ResultSet resultSet;
       resultSet = metaData.getProcedureColumns(
           "%", "%", "%", "%");
@@ -1587,7 +1587,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
       assertTrue(metaData.supportsSchemasInTableDefinitions());
       assertFalse(metaData.supportsSelectForUpdate());
       assertFalse(metaData.supportsStatementPooling());
-      assertFalse(metaData.supportsStoredFunctionsUsingCallSyntax());
+      assertTrue(metaData.supportsStoredFunctionsUsingCallSyntax());
       assertTrue(metaData.supportsSubqueriesInComparisons());
       assertTrue(metaData.supportsSubqueriesInExists());
       assertTrue(metaData.supportsSubqueriesInIns());
