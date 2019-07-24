@@ -37,6 +37,12 @@ public class TwoFieldStructToTimestampLTZConverter extends AbstractArrowVectorCo
   }
 
   @Override
+  public boolean isNull(int index)
+  {
+    return epochs.isNull(index);
+  }
+
+  @Override
   public String toString(int index) throws SFException
   {
     if (context.getTimestampLTZFormatter() == null)
@@ -63,7 +69,7 @@ public class TwoFieldStructToTimestampLTZConverter extends AbstractArrowVectorCo
   @Override
   public Timestamp toTimestamp(int index, TimeZone tz) throws SFException
   {
-    return epochs.isNull(index) ? null : getTimestamp(index, tz);
+    return isNull(index) ? null : getTimestamp(index, tz);
   }
 
   private Timestamp getTimestamp(int index, TimeZone tz) throws SFException
@@ -86,7 +92,7 @@ public class TwoFieldStructToTimestampLTZConverter extends AbstractArrowVectorCo
   @Override
   public Date toDate(int index) throws SFException
   {
-    if (epochs.isNull(index))
+    if (isNull(index))
     {
       return null;
     }

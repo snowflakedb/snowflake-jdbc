@@ -25,7 +25,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-public class VarCharToTextConverterTest extends BaseConverterTest
+public class VarCharConverterTest extends BaseConverterTest
 {
   /**
    * allocator for arrow
@@ -68,7 +68,7 @@ public class VarCharToTextConverterTest extends BaseConverterTest
       }
     }
 
-    ArrowVectorConverter converter = new VarCharToTextConverter(vector, 0, this);
+    ArrowVectorConverter converter = new VarCharConverter(vector, 0, this);
 
     for (int i = 0; i < rowCount; i++)
     {

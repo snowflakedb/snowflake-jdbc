@@ -29,7 +29,7 @@ public class PreparedMultiStmtIT extends BaseJDBCTest
     {
       return new Object[][]{
           {"JSON"}
-          , {"Arrow"}
+          , {"Arrow_force"}
       };
     }
     else

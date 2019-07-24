@@ -196,7 +196,7 @@ public class TwoFieldStructToTimestampNTZConverterTest extends BaseConverterTest
       j++;
     }
 
-    ArrowVectorConverter converter = new TwoFieldStructToTimestampNTZConverter(structVector, 0,this);
+    ArrowVectorConverter converter = new TwoFieldStructToTimestampNTZConverter(structVector, 0, this);
     int rowCount = j;
     i = 0;
     j = 0;
