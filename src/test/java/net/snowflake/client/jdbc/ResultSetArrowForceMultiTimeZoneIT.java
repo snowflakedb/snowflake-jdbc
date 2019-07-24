@@ -8,7 +8,6 @@ import org.junit.runners.Parameterized;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Timestamp;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.TimeZone;
@@ -36,13 +35,13 @@ public class ResultSetArrowForceMultiTimeZoneIT extends BaseJDBCTest
           {"json", "Asia/Singapore"},
           {"json", "MEZ"},
           {"json", "MESZ"},
-          {"arrow", "UTC"},
-          {"arrow", "America/Los_Angeles"},
-          {"arrow", "America/New_York"},
-          {"arrow", "Pacific/Honolulu"},
-          {"arrow", "Asia/Singapore"},
-          {"arrow", "MEZ"},
-          {"arrow", "MESZ"}
+          {"arrow_force", "UTC"},
+          {"arrow_force", "America/Los_Angeles"},
+          {"arrow_force", "America/New_York"},
+          {"arrow_force", "Pacific/Honolulu"},
+          {"arrow_force", "Asia/Singapore"},
+          {"arrow_force", "MEZ"},
+          {"arrow_force", "MESZ"}
       };
     }
     else
@@ -54,24 +53,19 @@ public class ResultSetArrowForceMultiTimeZoneIT extends BaseJDBCTest
           {"json", "Pacific/Honolulu"},
           {"json", "Asia/Singapore"},
           {"json", "MEZ"},
-          {"json", "MESZ"},
-          {"arrow", "UTC"},
-          {"arrow", "America/Los_Angeles"},
-          {"arrow", "America/New_York"},
-          {"arrow", "Pacific/Honolulu"},
-          {"arrow", "Asia/Singapore"},
-          {"arrow", "MEZ"},
-          {"arrow", "MESZ"}
+          {"json", "MESZ"}
       };
     }
   }
 
   private static String queryResultFormat;
+  private String tz;
 
   public ResultSetArrowForceMultiTimeZoneIT(String queryResultFormat, String timeZone)
   {
     this.queryResultFormat = queryResultFormat;
     System.setProperty("user.timezone", timeZone);
+    tz = timeZone;
   }
 
   private Connection init(String table, String column, String values) throws SQLException
@@ -205,6 +199,18 @@ public class ResultSetArrowForceMultiTimeZoneIT extends BaseJDBCTest
         "0001-12-31 11:59:59 Z"
     };
 
+    long[] times =
+    {
+        1483272000000l,
+        1388678400000l,
+        1388666096000l,
+        0,
+        1000,
+        -43201000,
+        -62167391999000l,
+        -62104276801000l
+    };
+
     SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     dateFormat.setTimeZone(TimeZone.getDefault());
 
@@ -219,7 +225,8 @@ public class ResultSetArrowForceMultiTimeZoneIT extends BaseJDBCTest
     while(i < cases.length)
     {
       rs.next();
-      assertEquals(new Timestamp(dateFormat.parse(cases[i++]).getTime()), rs.getTimestamp(1));
+      assertEquals(times[i++], rs.getTimestamp(1).getTime());
+      assertEquals(0, rs.getTimestamp(1).getNanos());
     }
     rs.next();
     assertNull(rs.getString(1));
@@ -229,14 +236,40 @@ public class ResultSetArrowForceMultiTimeZoneIT extends BaseJDBCTest
   @Test
   public void testTimestampLTZWithNanos() throws SQLException, ParseException
   {
-    String[] cases = {
+    String[] cases =
+    {
         "2017-01-01 12:00:00.123456789",
         "2014-01-02 16:00:00.000000001",
         "2014-01-02 12:34:56.1",
+        "1969-12-31 23:59:59.000000001",
         "1970-01-01 00:00:00.123412423",
         "1970-01-01 00:00:01.000001",
         "1969-12-31 11:59:59.001",
         "0001-12-31 11:59:59.11"
+    };
+
+    long[] times =
+    {
+        1483272000123l,
+        1388678400000l,
+        1388666096100l,
+        -1000,
+        123,
+        1000,
+        -43200999,
+        -62104276800890l
+    };
+
+    int[] nanos =
+    {
+        123456789,
+        1,
+        100000000,
+        1,
+        123412423,
+        1000,
+        1000000,
+        110000000
     };
 
     String table = "test_arrow_ts_ltz";
@@ -244,13 +277,15 @@ public class ResultSetArrowForceMultiTimeZoneIT extends BaseJDBCTest
     String column = "(a timestamp_ltz)";
 
     String values = "('" + StringUtils.join(cases, " Z'),('") + " Z'), (null)";
-      Connection con = init(table, column, values);
+    Connection con = init(table, column, values);
     ResultSet rs = con.createStatement().executeQuery("select * from " + table);
     int i = 0;
     while(i < cases.length)
     {
       rs.next();
-      assertEquals(cases[i++], rs.getTimestamp(1).toString());
+      System.out.println(rs.getTimestamp(1).getNanos());
+      assertEquals(times[i], rs.getTimestamp(1).getTime());
+      assertEquals(nanos[i++], rs.getTimestamp(1).getNanos());
     }
     rs.next();
     assertNull(rs.getString(1));
@@ -279,7 +314,17 @@ public class ResultSetArrowForceMultiTimeZoneIT extends BaseJDBCTest
         "0001-12-31 11:59:59 Z"
     };
 
-    SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    long[] times =
+    {
+        1483272000000l,
+        1388678400000l,
+        1388666096000l,
+        0,
+        1000,
+        -43201000l,
+        -62167391999000l,
+        -62104276801000l
+    };
 
     String table = "test_arrow_ts_tz";
 
@@ -292,8 +337,9 @@ public class ResultSetArrowForceMultiTimeZoneIT extends BaseJDBCTest
     while(i < cases.length)
     {
       rs.next();
-      assertEquals(new Timestamp(dateFormat.parse(cases[i++]).getTime()),
-                   rs.getTimestamp(1));
+      assertEquals(times[i++], rs.getTimestamp(1).getTime());
+      assertEquals(0, rs.getTimestamp(1).getNanos());
+
     }
     rs.next();
     assertNull(rs.getString(1));
@@ -307,11 +353,36 @@ public class ResultSetArrowForceMultiTimeZoneIT extends BaseJDBCTest
         "2017-01-01 12:00:00.1",
         "2014-01-02 16:00:00.123456789",
         "2014-01-02 12:34:56.999999999",
+        "1969-12-31 23:59:59.000000001",
         "1970-01-01 00:00:00.000000001",
         "1970-01-01 00:00:01.0000001",
         "1969-12-31 11:59:59.134",
         "0001-12-31 11:59:59.234141",
         "0000-01-01 00:00:01.790870987"
+    };
+
+    long[] times = {
+        1483272000100l,
+        1388678400123l,
+        1388666096999l,
+        -1000,
+        0,
+        1000,
+        -43200866,
+        -62104276800766l,
+        -62167391998210l
+    };
+
+    int[] nanos = {
+        100000000,
+        123456789,
+        999999999,
+        1,
+        1,
+        100,
+        134000000,
+        234141000,
+        790870987
     };
 
     SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -327,16 +398,14 @@ public class ResultSetArrowForceMultiTimeZoneIT extends BaseJDBCTest
     while(i < cases.length)
     {
       rs.next();
-      if (i == cases.length-1)
+      if (i == cases.length-1 && tz.equalsIgnoreCase("utc"))
       {
-        // TODO: This is a JDBC bug which happens in both arrow and json cases
+        // TODO: Is this a JDBC bug which happens in both arrow and json cases?
         assertEquals("0001-01-01 00:00:01.790870987", rs.getTimestamp(1).toString());
-        i++;
       }
-      else
-      {
-        assertEquals(cases[i++], rs.getTimestamp(1).toString());
-      }
+
+      assertEquals(times[i], rs.getTimestamp(1).getTime());
+      assertEquals(nanos[i++], rs.getTimestamp(1).getNanos());
     }
     rs.next();
     assertNull(rs.getString(1));
