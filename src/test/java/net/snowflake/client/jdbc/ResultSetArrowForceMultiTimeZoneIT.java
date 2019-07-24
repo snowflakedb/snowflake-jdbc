@@ -97,7 +97,7 @@ public class ResultSetArrowForceMultiTimeZoneIT extends BaseJDBCTest
   @Test
   public void testTimestampNTZ() throws SQLException
   {
-    for(int scale = 0; scale <= 9; scale++)
+    for (int scale = 0; scale <= 9; scale++)
     {
       testTimestampNTZWithScale(scale);
     }
@@ -129,13 +129,13 @@ public class ResultSetArrowForceMultiTimeZoneIT extends BaseJDBCTest
 
     String table = "test_arrow_ts_ntz";
 
-    String column = "(a timestamp_ntz("+scale+"))";
+    String column = "(a timestamp_ntz(" + scale + "))";
 
     String values = "('" + StringUtils.join(cases, "'),('") + "'), (null)";
     Connection con = init(table, column, values);
     ResultSet rs = con.createStatement().executeQuery("select * from " + table);
     int i = 0;
-    while(i < cases.length)
+    while (i < cases.length)
     {
       rs.next();
       assertEquals(results[i++], rs.getString(1));
@@ -167,7 +167,7 @@ public class ResultSetArrowForceMultiTimeZoneIT extends BaseJDBCTest
     Connection con = init(table, column, values);
     ResultSet rs = con.createStatement().executeQuery("select * from " + table);
     int i = 0;
-    while(i < cases.length)
+    while (i < cases.length)
     {
       rs.next();
       assertEquals(cases[i++], rs.getTimestamp(1).toString());
@@ -180,7 +180,7 @@ public class ResultSetArrowForceMultiTimeZoneIT extends BaseJDBCTest
   @Test
   public void testTimestampLTZ() throws SQLException, ParseException
   {
-    for(int scale = 0; scale <= 9; scale++)
+    for (int scale = 0; scale <= 9; scale++)
     {
       testTimestampLTZWithScale(scale);
     }
@@ -200,29 +200,29 @@ public class ResultSetArrowForceMultiTimeZoneIT extends BaseJDBCTest
     };
 
     long[] times =
-    {
-        1483272000000l,
-        1388678400000l,
-        1388666096000l,
-        0,
-        1000,
-        -43201000,
-        -62167391999000l,
-        -62104276801000l
-    };
+        {
+            1483272000000l,
+            1388678400000l,
+            1388666096000l,
+            0,
+            1000,
+            -43201000,
+            -62167391999000l,
+            -62104276801000l
+        };
 
     SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     dateFormat.setTimeZone(TimeZone.getDefault());
 
     String table = "test_arrow_ts_ltz";
 
-    String column = "(a timestamp_ltz("+scale+"))";
+    String column = "(a timestamp_ltz(" + scale + "))";
 
     String values = "('" + StringUtils.join(cases, "'),('") + "'), (null)";
     Connection con = init(table, column, values);
     ResultSet rs = con.createStatement().executeQuery("select * from " + table);
     int i = 0;
-    while(i < cases.length)
+    while (i < cases.length)
     {
       rs.next();
       assertEquals(times[i++], rs.getTimestamp(1).getTime());
@@ -237,40 +237,40 @@ public class ResultSetArrowForceMultiTimeZoneIT extends BaseJDBCTest
   public void testTimestampLTZWithNanos() throws SQLException, ParseException
   {
     String[] cases =
-    {
-        "2017-01-01 12:00:00.123456789",
-        "2014-01-02 16:00:00.000000001",
-        "2014-01-02 12:34:56.1",
-        "1969-12-31 23:59:59.000000001",
-        "1970-01-01 00:00:00.123412423",
-        "1970-01-01 00:00:01.000001",
-        "1969-12-31 11:59:59.001",
-        "0001-12-31 11:59:59.11"
-    };
+        {
+            "2017-01-01 12:00:00.123456789",
+            "2014-01-02 16:00:00.000000001",
+            "2014-01-02 12:34:56.1",
+            "1969-12-31 23:59:59.000000001",
+            "1970-01-01 00:00:00.123412423",
+            "1970-01-01 00:00:01.000001",
+            "1969-12-31 11:59:59.001",
+            "0001-12-31 11:59:59.11"
+        };
 
     long[] times =
-    {
-        1483272000123l,
-        1388678400000l,
-        1388666096100l,
-        -1000,
-        123,
-        1000,
-        -43200999,
-        -62104276800890l
-    };
+        {
+            1483272000123l,
+            1388678400000l,
+            1388666096100l,
+            -1000,
+            123,
+            1000,
+            -43200999,
+            -62104276800890l
+        };
 
     int[] nanos =
-    {
-        123456789,
-        1,
-        100000000,
-        1,
-        123412423,
-        1000,
-        1000000,
-        110000000
-    };
+        {
+            123456789,
+            1,
+            100000000,
+            1,
+            123412423,
+            1000,
+            1000000,
+            110000000
+        };
 
     String table = "test_arrow_ts_ltz";
 
@@ -280,7 +280,7 @@ public class ResultSetArrowForceMultiTimeZoneIT extends BaseJDBCTest
     Connection con = init(table, column, values);
     ResultSet rs = con.createStatement().executeQuery("select * from " + table);
     int i = 0;
-    while(i < cases.length)
+    while (i < cases.length)
     {
       rs.next();
       assertEquals(times[i], rs.getTimestamp(1).getTime());
@@ -294,7 +294,7 @@ public class ResultSetArrowForceMultiTimeZoneIT extends BaseJDBCTest
   @Test
   public void testTimestampTZ() throws SQLException, ParseException
   {
-    for(int scale = 0; scale <= 9; scale++)
+    for (int scale = 0; scale <= 9; scale++)
     {
       testTimestampTZWithScale(scale);
     }
@@ -314,26 +314,26 @@ public class ResultSetArrowForceMultiTimeZoneIT extends BaseJDBCTest
     };
 
     long[] times =
-    {
-        1483272000000l,
-        1388678400000l,
-        1388666096000l,
-        0,
-        1000,
-        -43201000l,
-        -62167391999000l,
-        -62104276801000l
-    };
+        {
+            1483272000000l,
+            1388678400000l,
+            1388666096000l,
+            0,
+            1000,
+            -43201000l,
+            -62167391999000l,
+            -62104276801000l
+        };
 
     String table = "test_arrow_ts_tz";
 
-    String column = "(a timestamp_tz("+scale+"))";
+    String column = "(a timestamp_tz(" + scale + "))";
 
     String values = "('" + StringUtils.join(cases, "'),('") + "'), (null)";
     Connection con = init(table, column, values);
     ResultSet rs = con.createStatement().executeQuery("select * from " + table);
     int i = 0;
-    while(i < cases.length)
+    while (i < cases.length)
     {
       rs.next();
       assertEquals(times[i++], rs.getTimestamp(1).getTime());
@@ -394,10 +394,10 @@ public class ResultSetArrowForceMultiTimeZoneIT extends BaseJDBCTest
     Connection con = init(table, column, values);
     ResultSet rs = con.createStatement().executeQuery("select * from " + table);
     int i = 0;
-    while(i < cases.length)
+    while (i < cases.length)
     {
       rs.next();
-      if (i == cases.length-1 && tz.equalsIgnoreCase("utc"))
+      if (i == cases.length - 1 && tz.equalsIgnoreCase("utc"))
       {
         // TODO: Is this a JDBC bug which happens in both arrow and json cases?
         assertEquals("0001-01-01 00:00:01.790870987", rs.getTimestamp(1).toString());

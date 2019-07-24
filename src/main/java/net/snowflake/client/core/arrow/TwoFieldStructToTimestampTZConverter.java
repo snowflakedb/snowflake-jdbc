@@ -74,7 +74,7 @@ public class TwoFieldStructToTimestampTZConverter extends AbstractArrowVectorCon
     long epoch = epochs.getDataBuffer().getLong(index * BigIntVector.TYPE_WIDTH);
     int timeZoneIndex = timeZoneIndices.getDataBuffer().getInt(index * IntVector.TYPE_WIDTH);
 
-    Timestamp ts = ArrowResultUtil.toJavaTimestamp(epoch,context.getScale(columnIndex));
+    Timestamp ts = ArrowResultUtil.toJavaTimestamp(epoch, context.getScale(columnIndex));
 
     if (context.getResultVersion() > 0)
     {

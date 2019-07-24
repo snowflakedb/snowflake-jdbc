@@ -148,18 +148,18 @@ public class ThreeFieldStructToTimestampTZConverterTest extends BaseConverterTes
                                         Types.MinorType.BIGINT.getType(),
                                         null, customFieldMeta);
     FieldType fieldType2 = new FieldType(true,
-                                        Types.MinorType.INT.getType(),
-                                        null, customFieldMeta);
+                                         Types.MinorType.INT.getType(),
+                                         null, customFieldMeta);
     FieldType fieldType3 = new FieldType(true,
-                                        Types.MinorType.INT.getType(),
-                                        null, customFieldMeta);
+                                         Types.MinorType.INT.getType(),
+                                         null, customFieldMeta);
 
     StructVector structVector = StructVector.empty("testVector", allocator);
     List<Field> fieldList = new LinkedList<Field>();
     Field bigIntField = new Field(ThreeFieldStructToTimestampTZConverter.FIELD_NAME_EPOCH, fieldType, null);
     Field fractionField = new Field(ThreeFieldStructToTimestampTZConverter.FIELD_NAME_FRACTION, fieldType2, null);
     Field timeZoneIndexField = new Field(ThreeFieldStructToTimestampTZConverter.FIELD_NAME_TIME_ZONE_INDEX, fieldType3,
-                                    null);
+                                         null);
 
     fieldList.add(bigIntField);
     fieldList.add(fractionField);
@@ -194,7 +194,6 @@ public class ThreeFieldStructToTimestampTZConverterTest extends BaseConverterTes
       }
       j++;
     }
-
 
 
     ArrowVectorConverter converter = new ThreeFieldStructToTimestampTZConverter(structVector, 0, this);

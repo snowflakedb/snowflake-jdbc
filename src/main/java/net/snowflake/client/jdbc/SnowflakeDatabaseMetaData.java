@@ -799,7 +799,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
     logger.debug(
         "public boolean supportsStoredProcedures()");
     raiseSQLExceptionIfConnectionIsClosed();
-    return false;
+    return true;
   }
 
   @Override
@@ -2963,7 +2963,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
     logger.debug(
         "public boolean supportsStoredFunctionsUsingCallSyntax()");
     raiseSQLExceptionIfConnectionIsClosed();
-    return false;
+    return true;
   }
 
   @Override

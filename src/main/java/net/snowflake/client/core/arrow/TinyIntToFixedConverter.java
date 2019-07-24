@@ -59,7 +59,7 @@ public class TinyIntToFixedConverter extends AbstractArrowVectorConverter
   protected byte getByte(int index) throws SFException
   {
     return tinyIntVector.getDataBuffer().getByte(
-          index * TinyIntVector.TYPE_WIDTH);
+        index * TinyIntVector.TYPE_WIDTH);
   }
 
   @Override

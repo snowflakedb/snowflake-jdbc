@@ -90,7 +90,7 @@ public class BigIntToTimestampNTZConverterTest extends BaseConverterTest
 
     // test scale from seconds to microseconds
     int[] testScales = {
-        0,1,2,3,4,5,6
+        0, 1, 2, 3, 4, 5, 6
     };
 
     String[] testTimesJson = {

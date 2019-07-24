@@ -148,8 +148,8 @@ public class ArrowResultChunk extends SnowflakeResultChunk
    * Given a list of arrow vectors (all columns in a single record batch),
    * return list of arrow vector converter. Note, converter is built on top of
    * arrow vector, so that arrow data can be converted back to java data
-   *
-   *
+   * <p>
+   * <p>
    * Arrow converter mappings for Snowflake fixed-point numbers
    * -----------------------------------------------------------------------------------------
    * Max position & scale                    Converter
@@ -164,7 +164,6 @@ public class ArrowResultChunk extends SnowflakeResultChunk
    * number(19,18)                           {@link BigIntToFixedConverter}
    * number(38,37)                           {@link DecimalToScaledFixedConverter}
    * ------------------------------------------------------------------------------------------
-   *
    *
    * @param vectors list of arrow vectors
    * @return list of converters on top of each converters
@@ -488,7 +487,7 @@ public class ArrowResultChunk extends SnowflakeResultChunk
     {
       if (columnIdx < 0 || columnIdx >= currentConverters.size())
       {
-        throw new SFException(ErrorCode.COLUMN_DOES_NOT_EXIST, columnIdx+1);
+        throw new SFException(ErrorCode.COLUMN_DOES_NOT_EXIST, columnIdx + 1);
       }
 
       return currentConverters.get(columnIdx);
