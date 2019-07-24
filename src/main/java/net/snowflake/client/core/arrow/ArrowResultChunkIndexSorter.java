@@ -49,6 +49,7 @@ public class ArrowResultChunkIndexSorter
 
   /**
    * This method is only used when sf-property sort is on
+   *
    * @return sorted indices
    * @throws SFException
    */
@@ -60,7 +61,8 @@ public class ArrowResultChunkIndexSorter
 
   private void quickSort(int low, int high) throws SFException
   {
-    if (low < high) {
+    if (low < high)
+    {
       int mid = partition(low, high);
       quickSort(low, mid - 1);
       quickSort(mid + 1, high);
@@ -73,12 +75,14 @@ public class ArrowResultChunkIndexSorter
 
     while (low < high)
     {
-      while (low < high && compare(indices.get(high), pivotIndex) >= 0) {
+      while (low < high && compare(indices.get(high), pivotIndex) >= 0)
+      {
         high -= 1;
       }
       indices.set(low, indices.get(high));
 
-      while (low < high && compare(indices.get(low), pivotIndex) <= 0) {
+      while (low < high && compare(indices.get(low), pivotIndex) <= 0)
+      {
         low += 1;
       }
       indices.set(high, indices.get(low));
@@ -96,7 +100,7 @@ public class ArrowResultChunkIndexSorter
   private int compare(int index1, int index2) throws SFException
   {
     int numCols = converters.size();
-    for(int colIdx = 0; colIdx < numCols; colIdx++)
+    for (int colIdx = 0; colIdx < numCols; colIdx++)
     {
       if (converters.get(colIdx).isNull(index1) && converters.get(colIdx).isNull(index2))
       {

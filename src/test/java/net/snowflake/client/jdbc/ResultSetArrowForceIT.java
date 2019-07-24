@@ -59,7 +59,6 @@ public class ResultSetArrowForceIT extends BaseJDBCTest
   }
 
 
-
   public static Connection getConnection()
   throws SQLException
   {
@@ -73,6 +72,7 @@ public class ResultSetArrowForceIT extends BaseJDBCTest
 
   /**
    * Note: Arrow format does not include space and \n in the string values
+   *
    * @throws SQLException
    */
   @Test
@@ -152,7 +152,7 @@ public class ResultSetArrowForceIT extends BaseJDBCTest
 
   /**
    * compare behaviors (json vs arrow)
-   *
+   * <p>
    * VALUE_IS_NULL      Yes                                          No
    * -----------------------------------------------------------------------
    * getColumnType      BIGINT                                       0
@@ -166,7 +166,7 @@ public class ResultSetArrowForceIT extends BaseJDBCTest
    * getObject          same                                         null
    * getByte            same                                         0
    * getBytes           INTERNAL_ERROR vs SUCCESS                    null
-   *-------------------------------------------------------------------------
+   * -------------------------------------------------------------------------
    *
    * @throws SQLException
    */
@@ -183,7 +183,7 @@ public class ResultSetArrowForceIT extends BaseJDBCTest
     double delta = 0.1;
     int columnType = rs.getMetaData().getColumnType(1);
     assertEquals(Types.BIGINT, columnType);
-    for (int i =0;i < cases.length;i++)
+    for (int i = 0; i < cases.length; i++)
     {
       rs.next();
       assertEquals(cases[i], rs.getInt(1));
@@ -235,7 +235,7 @@ public class ResultSetArrowForceIT extends BaseJDBCTest
 
   /**
    * compare behaviors (json vs arrow)
-   *
+   * <p>
    * VALUE_IS_NULL      Yes                                                                   No
    * ------------------------------------------------------------------------------------------------
    * getColumnType      DECIMAL                                                               0
@@ -249,7 +249,7 @@ public class ResultSetArrowForceIT extends BaseJDBCTest
    * getObject          same                                                                  null
    * getByte            INTERNAL_ERROR vs SUCCESS                                             0
    * getBytes           INTERNAL_ERROR vs SUCCESS                                             null
-   *--------------------------------------------------------------------------------------------------
+   * --------------------------------------------------------------------------------------------------
    *
    * @throws SQLException
    */
@@ -268,7 +268,7 @@ public class ResultSetArrowForceIT extends BaseJDBCTest
     int columnType = rs.getMetaData().getColumnType(1);
     assertEquals(Types.DECIMAL, columnType);
 
-    for (int i =0;i < cases.length;i++)
+    for (int i = 0; i < cases.length; i++)
     {
       rs.next();
       try
@@ -316,8 +316,8 @@ public class ResultSetArrowForceIT extends BaseJDBCTest
       catch (Exception e)
       {
         SQLException se = (SQLException) e;
-          assertEquals((int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
-          assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
+        assertEquals((int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
+        assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
       }
 
       assertEquals((String.format("%.2f", cases[i])), rs.getString(1));
@@ -385,7 +385,7 @@ public class ResultSetArrowForceIT extends BaseJDBCTest
 
   /**
    * compare behaviors (json vs arrow)
-   *
+   * <p>
    * VALUE_IS_NULL      Yes                                          No
    * -----------------------------------------------------------------------
    * getColumnType      BIGINT                                       0
@@ -399,7 +399,7 @@ public class ResultSetArrowForceIT extends BaseJDBCTest
    * getObject          same                                         null
    * getByte            INTERNAL_ERROR vs INVALID_VALUE_CONVERT      0
    * getBytes           INTERNAL_ERROR vs SUCCESS                    null
-   *-------------------------------------------------------------------------
+   * -------------------------------------------------------------------------
    *
    * @throws SQLException
    */
@@ -416,7 +416,7 @@ public class ResultSetArrowForceIT extends BaseJDBCTest
     double delta = 0.1;
     int columnType = rs.getMetaData().getColumnType(1);
     assertEquals(Types.BIGINT, columnType);
-    for (int i =0;i < cases.length;i++)
+    for (int i = 0; i < cases.length; i++)
     {
       rs.next();
       assertEquals(cases[i], rs.getInt(1));
@@ -493,7 +493,7 @@ public class ResultSetArrowForceIT extends BaseJDBCTest
 
   /**
    * compare behaviors (json vs arrow)
-   *
+   * <p>
    * VALUE_IS_NULL      Yes                                                 No
    * -----------------------------------------------------------------------------
    * getColumnType      DECIMAL                                             0
@@ -507,7 +507,7 @@ public class ResultSetArrowForceIT extends BaseJDBCTest
    * getObject          same                                                null
    * getByte            NumberFormatException vs INVALID_VALUE_CONVERT      0
    * getBytes           INTERNAL_ERROR        vs SUCCESS                    null
-   *-------------------------------------------------------------------------------
+   * -------------------------------------------------------------------------------
    *
    * @throws SQLException
    */
@@ -527,7 +527,7 @@ public class ResultSetArrowForceIT extends BaseJDBCTest
     int columnType = rs.getMetaData().getColumnType(1);
     assertEquals(Types.DECIMAL, columnType);
 
-    for (int i =0;i < cases.length;i++)
+    for (int i = 0; i < cases.length; i++)
     {
       rs.next();
       try
@@ -645,7 +645,7 @@ public class ResultSetArrowForceIT extends BaseJDBCTest
 
   /**
    * compare behaviors (json vs arrow)
-   *
+   * <p>
    * VALUE_IS_NULL      Yes                                               No
    * --------------------------------------------------------------------------
    * getColumnType      BIGINT                                            0
@@ -659,8 +659,8 @@ public class ResultSetArrowForceIT extends BaseJDBCTest
    * getObject          same                                              null
    * getByte            INTERNAL_ERROR         vs INVALID_VALUE_CONVERT   0
    * getBytes           INTERNAL_ERROR OR      vs SUCCESS                 null
-   *                    Return wrong result
-   *-------------------------------------------------------------------------
+   * Return wrong result
+   * -------------------------------------------------------------------------
    *
    * @throws SQLException
    */
@@ -677,7 +677,7 @@ public class ResultSetArrowForceIT extends BaseJDBCTest
     double delta = 0.1;
     int columnType = rs.getMetaData().getColumnType(1);
     assertEquals(Types.BIGINT, columnType);
-    for (int i =0;i < cases.length;i++)
+    for (int i = 0; i < cases.length; i++)
     {
       rs.next();
       assertEquals(cases[i], rs.getInt(1));
@@ -781,7 +781,7 @@ public class ResultSetArrowForceIT extends BaseJDBCTest
 
   /**
    * compare behaviors (json vs arrow)
-   *
+   * <p>
    * VALUE_IS_NULL      Yes                                                 No
    * -----------------------------------------------------------------------------
    * getColumnType      DECIMAL                                             0
@@ -795,7 +795,7 @@ public class ResultSetArrowForceIT extends BaseJDBCTest
    * getObject          same                                                null
    * getByte            NumberFormatException vs INVALID_VALUE_CONVERT      0
    * getBytes           INTERNAL_ERROR        vs SUCCESS                    null
-   *-------------------------------------------------------------------------------
+   * -------------------------------------------------------------------------------
    *
    * @throws SQLException
    */
@@ -823,7 +823,7 @@ public class ResultSetArrowForceIT extends BaseJDBCTest
     int columnType = rs.getMetaData().getColumnType(1);
     assertEquals(Types.DECIMAL, columnType);
 
-    for (int i =0;i < cases.length;i++)
+    for (int i = 0; i < cases.length; i++)
     {
       rs.next();
       try
@@ -941,7 +941,7 @@ public class ResultSetArrowForceIT extends BaseJDBCTest
 
   /**
    * compare behaviors (json vs arrow)
-   *
+   * <p>
    * VALUE_IS_NULL      Yes                                               No
    * --------------------------------------------------------------------------
    * getColumnType      BIGINT                                            0
@@ -955,8 +955,8 @@ public class ResultSetArrowForceIT extends BaseJDBCTest
    * getObject          same                                              null
    * getByte            INTERNAL_ERROR         vs INVALID_VALUE_CONVERT   0
    * getBytes           INTERNAL_ERROR OR      vs SUCCESS                 null
-   *                    Return wrong result
-   *-------------------------------------------------------------------------
+   * Return wrong result
+   * -------------------------------------------------------------------------
    *
    * @throws SQLException
    */
@@ -974,7 +974,7 @@ public class ResultSetArrowForceIT extends BaseJDBCTest
     double delta = 0.1;
     int columnType = rs.getMetaData().getColumnType(1);
     assertEquals(Types.BIGINT, columnType);
-    for (int i =0;i < cases.length;i++)
+    for (int i = 0; i < cases.length; i++)
     {
       rs.next();
 
@@ -1106,7 +1106,7 @@ public class ResultSetArrowForceIT extends BaseJDBCTest
 
   /**
    * compare behaviors (json vs arrow)
-   *
+   * <p>
    * VALUE_IS_NULL      Yes                                                 No
    * -----------------------------------------------------------------------------
    * getColumnType      DECIMAL                                             0
@@ -1120,7 +1120,7 @@ public class ResultSetArrowForceIT extends BaseJDBCTest
    * getObject          same                                                null
    * getByte            NumberFormatException vs INVALID_VALUE_CONVERT      0
    * getBytes           INTERNAL_ERROR        vs SUCCESS                    null
-   *-------------------------------------------------------------------------------
+   * -------------------------------------------------------------------------------
    *
    * @throws SQLException
    */
@@ -1148,7 +1148,7 @@ public class ResultSetArrowForceIT extends BaseJDBCTest
     int columnType = rs.getMetaData().getColumnType(1);
     assertEquals(Types.DECIMAL, columnType);
 
-    for (int i =0;i < cases.length;i++)
+    for (int i = 0; i < cases.length; i++)
     {
       rs.next();
       try
@@ -1266,7 +1266,7 @@ public class ResultSetArrowForceIT extends BaseJDBCTest
 
   /**
    * compare behaviors (json vs arrow)
-   *
+   * <p>
    * VALUE_IS_NULL      Yes                                                 No
    * -----------------------------------------------------------------------------
    * getColumnType      DECIMAL                                             0
@@ -1280,7 +1280,7 @@ public class ResultSetArrowForceIT extends BaseJDBCTest
    * getObject          INTERNAL_ERROR        vs SUCCESS                    null
    * getByte            NumberFormatException vs INVALID_VALUE_CONVERT      0
    * getBytes           INTERNAL_ERROR        vs SUCCESS                    null
-   *-------------------------------------------------------------------------------
+   * -------------------------------------------------------------------------------
    *
    * @throws SQLException
    */
@@ -1311,7 +1311,7 @@ public class ResultSetArrowForceIT extends BaseJDBCTest
 
     assertEquals(Types.BIGINT, columnType);
 
-    for (int i =0;i < cases.length;i++)
+    for (int i = 0; i < cases.length; i++)
     {
       rs.next();
       try
@@ -1436,7 +1436,7 @@ public class ResultSetArrowForceIT extends BaseJDBCTest
 
   /**
    * compare behaviors (json vs arrow)
-   *
+   * <p>
    * VALUE_IS_NULL      Yes                                                 No
    * -----------------------------------------------------------------------------
    * getColumnType      DECIMAL                                             0
@@ -1450,7 +1450,7 @@ public class ResultSetArrowForceIT extends BaseJDBCTest
    * getObject          same                                                null
    * getByte            NumberFormatException vs INVALID_VALUE_CONVERT      0
    * getBytes           INTERNAL_ERROR        vs SUCCESS                    null
-   *-------------------------------------------------------------------------------
+   * -------------------------------------------------------------------------------
    *
    * @throws SQLException
    */
@@ -1480,7 +1480,7 @@ public class ResultSetArrowForceIT extends BaseJDBCTest
     int columnType = rs.getMetaData().getColumnType(1);
     assertEquals(Types.DECIMAL, columnType);
 
-    for (int i =0;i < cases.length;i++)
+    for (int i = 0; i < cases.length; i++)
     {
       rs.next();
       try
@@ -1596,7 +1596,7 @@ public class ResultSetArrowForceIT extends BaseJDBCTest
 
   /**
    * compare behaviors (json vs arrow)
-   *
+   * <p>
    * VALUE_IS_NULL      Yes                                                 No
    * -----------------------------------------------------------------------------
    * getColumnType      DECIMAL                                             0
@@ -1610,7 +1610,7 @@ public class ResultSetArrowForceIT extends BaseJDBCTest
    * getObject          same                                                null
    * getByte            NumberFormatException vs INVALID_VALUE_CONVERT      0
    * getBytes           INTERNAL_ERROR        vs SUCCESS                    null
-   *-------------------------------------------------------------------------------
+   * -------------------------------------------------------------------------------
    *
    * @throws SQLException
    */
@@ -1638,7 +1638,7 @@ public class ResultSetArrowForceIT extends BaseJDBCTest
     int columnType = rs.getMetaData().getColumnType(1);
     assertEquals(Types.DECIMAL, columnType);
 
-    for (int i =0;i < cases.length;i++)
+    for (int i = 0; i < cases.length; i++)
     {
       rs.next();
       try
@@ -1754,6 +1754,7 @@ public class ResultSetArrowForceIT extends BaseJDBCTest
 
   /**
    * Arrow can make sure no precision loss for double values
+   *
    * @throws SQLException
    */
   @Test
@@ -1792,7 +1793,7 @@ public class ResultSetArrowForceIT extends BaseJDBCTest
     int i = 0;
     if (isJSON())
     {
-      while(rs.next())
+      while (rs.next())
       {
         assertEquals(json_results[i++], Double.toString(rs.getDouble(1)));
       }
@@ -1800,7 +1801,7 @@ public class ResultSetArrowForceIT extends BaseJDBCTest
     else
     {
       // Arrow results has no precision loss
-      while(rs.next())
+      while (rs.next())
       {
         assertEquals(cases[i++], Double.toString(rs.getDouble(1)));
       }

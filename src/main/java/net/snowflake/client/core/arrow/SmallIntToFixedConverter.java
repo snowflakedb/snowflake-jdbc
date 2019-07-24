@@ -64,7 +64,7 @@ public class SmallIntToFixedConverter extends AbstractArrowVectorConverter
       return byteVal;
     }
     throw new SFException(ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr,
-                            "byte", shortVal);
+                          "byte", shortVal);
   }
 
   @Override

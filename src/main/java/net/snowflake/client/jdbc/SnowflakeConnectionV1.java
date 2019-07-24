@@ -349,33 +349,48 @@ public class SnowflakeConnectionV1 implements Connection
   {
     logger.debug(
         " public CallableStatement prepareCall(String sql)");
+    raiseSQLExceptionIfConnectionIsClosed();
+    CallableStatement stmt = prepareCall(sql, false);
+    openStatements.add(stmt);
+    return stmt;
+  }
 
-    throw new SQLFeatureNotSupportedException();
+  public CallableStatement prepareCall(String sql, boolean skipParsing) throws SQLException
+  {
+    logger.debug(
+        " public CallableStatement prepareCall(String sql, boolean skipParsing)");
+    raiseSQLExceptionIfConnectionIsClosed();
+    CallableStatement stmt = new SnowflakeCallableStatementV1(
+        this, sql, skipParsing, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY,
+        ResultSet.CLOSE_CURSORS_AT_COMMIT);
+    openStatements.add(stmt);
+    return stmt;
   }
 
   @Override
   public CallableStatement prepareCall(String sql, int resultSetType,
-                                       int resultSetConcurrency)
-  throws SQLException
+                                       int resultSetConcurrency) throws SQLException
   {
     logger.debug(
         " public CallableStatement prepareCall(String sql," +
         " int resultSetType,int resultSetConcurrency");
-
-    throw new SQLFeatureNotSupportedException();
+    CallableStatement stmt = prepareCall(sql, resultSetType, resultSetConcurrency, ResultSet.CLOSE_CURSORS_AT_COMMIT);
+    openStatements.add(stmt);
+    return stmt;
   }
 
   @Override
   public CallableStatement prepareCall(String sql, int resultSetType,
                                        int resultSetConcurrency,
-                                       int resultSetHoldability)
-  throws SQLException
+                                       int resultSetHoldability) throws SQLException
   {
     logger.debug(
         " public CallableStatement prepareCall(String sql, int "
         + "resultSetType,");
-
-    throw new SQLFeatureNotSupportedException();
+    CallableStatement stmt = new SnowflakeCallableStatementV1(this, sql, false, resultSetType,
+                                                              resultSetConcurrency, resultSetHoldability);
+    openStatements.add(stmt);
+    return stmt;
   }
 
   @Override

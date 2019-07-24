@@ -19,6 +19,7 @@ import java.math.BigDecimal;
 public class DecimalToScaledFixedConverter extends AbstractArrowVectorConverter
 {
   protected DecimalVector decimalVector;
+
   public DecimalToScaledFixedConverter(ValueVector fieldVector, int vectorIndex, DataConversionContext context)
   {
     super(String.format("%s(%s,%s)", SnowflakeType.FIXED,

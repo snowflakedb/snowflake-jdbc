@@ -48,7 +48,7 @@ public class BitToBooleanConverterTest extends BaseConverterTest
                                         null, customFieldMeta);
 
     BitVector vector = new BitVector("col_one", fieldType,
-                                         allocator);
+                                     allocator);
     for (int i = 0; i < rowCount; i++)
     {
       boolean isNull = random.nextBoolean();

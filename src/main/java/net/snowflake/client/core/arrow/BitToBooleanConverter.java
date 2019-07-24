@@ -21,7 +21,8 @@ public class BitToBooleanConverter extends AbstractArrowVectorConverter
     this.bitVector = (BitVector) fieldVector;
   }
 
-  private int getBit(int index) {
+  private int getBit(int index)
+  {
     // read a bit from the bitVector
     // first find the byte value
     final int byteIndex = index >> 3;

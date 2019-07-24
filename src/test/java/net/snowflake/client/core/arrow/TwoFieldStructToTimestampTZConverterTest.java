@@ -71,34 +71,34 @@ public class TwoFieldStructToTimestampTZConverterTest extends BaseConverterTest
   {
     // test old and new dates
     long[] testEpochesInt64 =
-    {
-        1546391837,
-        1546391837,
-        0,
-        123,
-        -12345,
-        -12345678
-    };
+        {
+            1546391837,
+            1546391837,
+            0,
+            123,
+            -12345,
+            -12345678
+        };
 
     int[] testScales =
-    {
-        0,
-        3,
-        0,
-        0,
-        0,
-        6
-    };
+        {
+            0,
+            3,
+            0,
+            0,
+            0,
+            6
+        };
 
     int[] testTimeZoneIndices =
-    {
-        960,
-        1440,
-        960,
-        960,
-        1440,
-        1440
-    };
+        {
+            960,
+            1440,
+            960,
+            960,
+            1440,
+            1440
+        };
 
     String[] testTimesJson = {
         "1546391837.000000000 960",
@@ -117,8 +117,8 @@ public class TwoFieldStructToTimestampTZConverterTest extends BaseConverterTest
                                         Types.MinorType.BIGINT.getType(),
                                         null, customFieldMeta);
     FieldType fieldType2 = new FieldType(true,
-                                        Types.MinorType.INT.getType(),
-                                        null, customFieldMeta);
+                                         Types.MinorType.INT.getType(),
+                                         null, customFieldMeta);
 
     StructVector structVector = StructVector.empty("testVector", allocator);
     List<Field> fieldList = new LinkedList<Field>();
@@ -130,10 +130,11 @@ public class TwoFieldStructToTimestampTZConverterTest extends BaseConverterTest
     fieldList.add(smallIntField);
 
     structVector.initializeChildrenFromFields(fieldList);
-    BigIntVector epoch = structVector.getChild(TwoFieldStructToTimestampTZConverter.FIELD_NAME_EPOCH, BigIntVector.class);
+    BigIntVector epoch =
+        structVector.getChild(TwoFieldStructToTimestampTZConverter.FIELD_NAME_EPOCH, BigIntVector.class);
     IntVector timeZoneIdx =
         structVector.getChild(TwoFieldStructToTimestampTZConverter.FIELD_NAME_TIME_ZONE_INDEX,
-                                          IntVector.class);
+                              IntVector.class);
 
 
     int i = 0, j = 0;
@@ -153,7 +154,6 @@ public class TwoFieldStructToTimestampTZConverterTest extends BaseConverterTest
       }
       j++;
     }
-
 
 
     ArrowVectorConverter converter = new TwoFieldStructToTimestampTZConverter(structVector, 0, this);

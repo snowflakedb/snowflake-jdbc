@@ -193,11 +193,11 @@ public class ResultSetIT extends BaseJDBCTest
     Class<?> klass = Class.forName(SnowflakeType.BINARY_CLASS_NAME);
     Object ret0 = resultSet.getObject(1);
     assertEquals(ret0.getClass(), klass);
-    byte[] ret = (byte[])ret0;
+    byte[] ret = (byte[]) ret0;
     assertEquals(3, ret.length);
-    assertEquals(ret[0], (byte)0);
-    assertEquals(ret[1], (byte)-15);
-    assertEquals(ret[2], (byte)-14);
+    assertEquals(ret[0], (byte) 0);
+    assertEquals(ret[1], (byte) -15);
+    assertEquals(ret[2], (byte) -14);
     statement.execute("drop table if exists bintable");
     statement.close();
     connection.close();

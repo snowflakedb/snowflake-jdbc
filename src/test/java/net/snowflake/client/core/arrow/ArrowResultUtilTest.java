@@ -103,7 +103,7 @@ public class ArrowResultUtilTest
     long[] millsecs = {-1124, -124, 123, 123123, -123124};
     int[] nanos = {876543211, 876543211, 123456789, 123456789, 876543211};
     int scale = 9;
-    for (int i = 0; i< cases.length;i++)
+    for (int i = 0; i < cases.length; i++)
     {
       Timestamp ts = ArrowResultUtil.toJavaTimestamp(cases[i], scale);
       assertEquals(millsecs[i], ts.getTime());

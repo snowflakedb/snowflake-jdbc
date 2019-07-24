@@ -126,8 +126,8 @@ public class TwoFieldStructToTimestampLTZConverterTest extends BaseConverterTest
                                         Types.MinorType.BIGINT.getType(),
                                         null, customFieldMeta);
     FieldType fieldType2 = new FieldType(true,
-                                        Types.MinorType.INT.getType(),
-                                        null, customFieldMeta);
+                                         Types.MinorType.INT.getType(),
+                                         null, customFieldMeta);
 
     StructVector structVector = StructVector.empty("testListVector", allocator);
     List<Field> fieldList = new LinkedList<Field>();
@@ -162,7 +162,6 @@ public class TwoFieldStructToTimestampLTZConverterTest extends BaseConverterTest
       }
       j++;
     }
-
 
 
     ArrowVectorConverter converter = new TwoFieldStructToTimestampLTZConverter(structVector, 0, this);

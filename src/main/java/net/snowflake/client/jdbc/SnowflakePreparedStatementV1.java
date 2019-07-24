@@ -46,7 +46,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
 
-final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
+class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
     implements PreparedStatement, SnowflakePreparedStatement
 {
   static final SFLogger logger = SFLoggerFactory.getLogger(
@@ -77,6 +77,7 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
       ERROR_CODE_STATEMENT_CANNOT_BE_PREPARED,
       ERROR_CODE_OBJECT_BIND_NOT_SET,
       ERROR_CODE_FORMAT_ARGUMENT_NOT_STRING));
+
   private final String sql;
   /**
    * statement and result metadata from describe phase
@@ -123,7 +124,11 @@ final class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
   {
     super(connection, resultSetType, resultSetConcurrency, resultSetHoldability);
     this.sql = sql;
+    parseSql(skipParsing);
+  }
 
+  protected void parseSql(boolean skipParsing) throws SQLException
+  {
     if (!skipParsing)
     {
       try
