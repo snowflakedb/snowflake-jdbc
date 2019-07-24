@@ -153,18 +153,13 @@ public class ArrowResultUtil
   {
     long seconds = epoch / powerOfTen(scale);
     int fraction = (int) (epoch % powerOfTen(scale)) * powerOfTen(9 - scale);
-    return createTimestamp(seconds, fraction < 0 ? -fraction : fraction);
-  }
-
-  /**
-   * get nanoseconds from the epoch value
-   * @param epoch
-   * @param scale
-   * @return
-   */
-  private static int getNanos(long epoch, int scale)
-  {
-    return (int) (epoch % powerOfTen(scale));
+    if (fraction < 0)
+    {
+      // handle negative case here
+      seconds--;
+      fraction += 1000000000;
+    }
+    return createTimestamp(seconds, fraction);
   }
 
   /**
@@ -180,25 +175,15 @@ public class ArrowResultUtil
   /**
    * create Java timestamp using seconds since epoch and fraction in nanoseconds
    * For example, 1232.234 represents as epoch = 1232 and fraction = 234,000,000
-   * For example, -1232.234 represents as epoch = -1232 and fraction = 234,000,000
-   * For example, -0.13 represents as epoch = 0 and fraction = -130,000,000
-   * @param epoch
+   * For example, -1232.234 represents as epoch = -1233 and fraction = 766,000,000
+   * For example, -0.13 represents as epoch = -1 and fraction = 870,000,000
+   * @param seconds
    * @param fraction
    * @return java timestamp object
    */
-  public static Timestamp createTimestamp(long epoch, int fraction)
+  public static Timestamp createTimestamp(long seconds, int fraction)
   {
-    if (epoch == 0 && fraction < 0)
-    {
-      epoch--;
-      fraction = 1000000000 + fraction;
-    }
-    else if (epoch < 0 && fraction > 0)
-    {
-      epoch--;
-      fraction = 1000000000 - fraction;
-    }
-    Timestamp ts = new Timestamp(epoch * ArrowResultUtil.powerOfTen(3));
+    Timestamp ts = new Timestamp(seconds * ArrowResultUtil.powerOfTen(3));
     ts.setNanos(fraction);
     return ts;
   }

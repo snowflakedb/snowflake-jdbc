@@ -76,7 +76,7 @@ public class ThreeFieldStructToTimestampTZConverterTest extends BaseConverterTes
             1546391837,
             0,
             123,
-            -12345,
+            -12346,
             -12345
         };
 
@@ -86,7 +86,7 @@ public class ThreeFieldStructToTimestampTZConverterTest extends BaseConverterTes
             10,
             100,
             456,
-            123456789,
+            876543211,
             0
         };
 
