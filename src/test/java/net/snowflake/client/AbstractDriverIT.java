@@ -253,8 +253,6 @@ public class AbstractDriverIT
 
     properties.put("insecureMode", false); // use OCSP for all tests.
 
-    // properties.put("CLIENT_SFSQL", true);
-
     if (injectSocketTimeout > 0)
     {
       properties.put(
