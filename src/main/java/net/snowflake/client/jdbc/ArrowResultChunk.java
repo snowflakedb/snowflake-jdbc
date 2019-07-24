@@ -5,6 +5,7 @@ package net.snowflake.client.jdbc;
 
 import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.SFException;
+import net.snowflake.client.core.arrow.ArrowResultChunkIndexSorter;
 import net.snowflake.client.core.arrow.ArrowVectorConverter;
 import net.snowflake.client.core.arrow.BigIntToFixedConverter;
 import net.snowflake.client.core.arrow.BigIntToScaledFixedConverter;
@@ -12,9 +13,9 @@ import net.snowflake.client.core.arrow.BigIntToTimeConverter;
 import net.snowflake.client.core.arrow.BigIntToTimestampLTZConverter;
 import net.snowflake.client.core.arrow.BigIntToTimestampNTZConverter;
 import net.snowflake.client.core.arrow.BitToBooleanConverter;
+import net.snowflake.client.core.arrow.DateConverter;
 import net.snowflake.client.core.arrow.DecimalToScaledFixedConverter;
 import net.snowflake.client.core.arrow.DoubleToRealConverter;
-import net.snowflake.client.core.arrow.DateConverter;
 import net.snowflake.client.core.arrow.IntToFixedConverter;
 import net.snowflake.client.core.arrow.IntToScaledFixedConverter;
 import net.snowflake.client.core.arrow.SmallIntToFixedConverter;
@@ -32,6 +33,7 @@ import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SqlState;
 import org.apache.arrow.memory.RootAllocator;
 import org.apache.arrow.vector.FieldVector;
+import org.apache.arrow.vector.IntVector;
 import org.apache.arrow.vector.ValueVector;
 import org.apache.arrow.vector.VectorSchemaRoot;
 import org.apache.arrow.vector.ipc.ArrowStreamReader;
@@ -66,6 +68,8 @@ public class ArrowResultChunk extends SnowflakeResultChunk
    * arrow root allocator
    */
   private static RootAllocator rootAllocator = new RootAllocator(Integer.MAX_VALUE);
+  private boolean enableSortFirstResultChunk;
+  private IntVector firstResultChunkSortedIndices;
 
   public ArrowResultChunk(String url, int rowCount, int colCount,
                           int uncompressedSize)
@@ -134,6 +138,10 @@ public class ArrowResultChunk extends SnowflakeResultChunk
   public void freeData()
   {
     batchOfVectors.forEach(list -> list.forEach(ValueVector::clear));
+    if (firstResultChunkSortedIndices != null)
+    {
+      firstResultChunkSortedIndices.clear();
+    }
   }
 
   /**
@@ -358,6 +366,11 @@ public class ArrowResultChunk extends SnowflakeResultChunk
     return new ArrowChunkIterator(new EmptyArrowResultChunk());
   }
 
+  public void enableSortFirstResultChunk()
+  {
+    enableSortFirstResultChunk = true;
+  }
+
   /**
    * Iterator class used to go through the arrow chunk row by row
    */
@@ -444,7 +457,10 @@ public class ArrowResultChunk extends SnowflakeResultChunk
           currentConverters = initConverters(
               resultChunk.batchOfVectors.get(currentRecordBatchIndex),
               dataConversionContext);
-
+          if (currentRecordBatchIndex == 0 && resultChunk.sortFirstResultChunkEnabled())
+          {
+            resultChunk.sortFirstResultChunk(currentConverters);
+          }
           return true;
         }
       }
@@ -483,8 +499,37 @@ public class ArrowResultChunk extends SnowflakeResultChunk
      */
     public int getCurrentRowInRecordBatch()
     {
-      return currentRowInRecordBatch;
+      if (resultChunk.sortFirstResultChunkEnabled() && currentRecordBatchIndex == 0)
+      {
+        return resultChunk.firstResultChunkSortedIndices.get(currentRowInRecordBatch);
+      }
+      else
+      {
+        return currentRowInRecordBatch;
+      }
     }
+  }
+
+  private void sortFirstResultChunk(List<ArrowVectorConverter> converters) throws SnowflakeSQLException
+  {
+    try
+    {
+      List<ValueVector> firstResultChunk = this.batchOfVectors.get(0);
+      ArrowResultChunkIndexSorter sorter = new ArrowResultChunkIndexSorter(firstResultChunk, converters);
+      firstResultChunkSortedIndices = sorter.sort();
+    }
+    catch (SFException ex)
+    {
+      throw new SnowflakeSQLException(ex, SqlState.INTERNAL_ERROR,
+                                      ErrorCode.INTERNAL_ERROR.getMessageCode(),
+                                      "Failed to sort first result chunk: "
+                                      + ex.getLocalizedMessage());
+    }
+  }
+
+  private boolean sortFirstResultChunkEnabled()
+  {
+    return enableSortFirstResultChunk;
   }
 
   /**
