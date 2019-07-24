@@ -13,6 +13,7 @@ import java.nio.ByteBuffer;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.sql.Types;
 import java.util.Arrays;
 import java.util.List;
@@ -1805,5 +1806,26 @@ public class ResultSetArrowForceIT extends BaseJDBCTest
       }
     }
     finish(table, con);
+  }
+
+  @Test
+  public void testClientSideSorting() throws SQLException
+  {
+    String table = "test_arrow_sort_on";
+    String column = "( a int, b double, c string)";
+    String values = "(1,2.0,'test'),(0,2.0, 'test'),(1,2.0,'abc')";
+    Connection conn = init(table, column, values);
+    Statement statement = conn.createStatement();
+    // turn on sorting mode
+    statement.execute("set-sf-property sort on");
+
+    ResultSet rs = statement.executeQuery("select * from " + table);
+    rs.next();
+    assertEquals("0", rs.getString(1));
+    rs.next();
+    assertEquals("1", rs.getString(1));
+    rs.next();
+    assertEquals("test", rs.getString(3));
+    finish(table, conn);
   }
 }
