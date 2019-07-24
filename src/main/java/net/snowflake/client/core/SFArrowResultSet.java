@@ -347,10 +347,13 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
    *                     encoded
    * @return result chunk with arrow data already being loaded
    */
-  private ArrowResultChunk getSortedFirstResultChunk(String rowsetBase64)
+  private ArrowResultChunk getSortedFirstResultChunk(String rowsetBase64) throws SQLException
   {
-    //TODO
-    return null;
+    ArrowResultChunk resultChunk = buildFirstChunk(rowsetBase64);
+
+    // enable sorted chunk, the sorting happens when the result chunk is ready to consume
+    resultChunk.enableSortFirstResultChunk();
+    return resultChunk;
   }
 
 
