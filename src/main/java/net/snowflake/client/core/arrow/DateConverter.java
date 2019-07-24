@@ -9,6 +9,7 @@ import net.snowflake.client.core.ResultUtil;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeType;
+import org.apache.arrow.vector.DateDayVector;
 import org.apache.arrow.vector.IntVector;
 import org.apache.arrow.vector.ValueVector;
 
@@ -16,14 +17,17 @@ import java.sql.Date;
 import java.sql.Timestamp;
 import java.util.TimeZone;
 
-public class IntToDateConverter extends AbstractArrowVectorConverter
+/**
+ * Convert Arrow DateDayVector to Date
+ */
+public class DateConverter extends AbstractArrowVectorConverter
 {
-  private IntVector intVector;
+  private DateDayVector dateVector;
 
-  public IntToDateConverter(ValueVector fieldVector, int columnIndex, DataConversionContext context)
+  public DateConverter(ValueVector fieldVector, int columnIndex, DataConversionContext context)
   {
     super(SnowflakeType.DATE.name(), fieldVector, columnIndex, context);
-    this.intVector = (IntVector) fieldVector;
+    this.dateVector = (DateDayVector) fieldVector;
   }
 
   @Override
@@ -35,7 +39,7 @@ public class IntToDateConverter extends AbstractArrowVectorConverter
     }
     else
     {
-      int val = intVector.getDataBuffer().getInt(index * IntVector.TYPE_WIDTH);
+      int val = dateVector.getDataBuffer().getInt(index * IntVector.TYPE_WIDTH);
       // Note: use default time zone to match with current getDate() behavior
       return ArrowResultUtil.getDate(val, TimeZone.getDefault(), context.getSession());
     }
@@ -50,7 +54,7 @@ public class IntToDateConverter extends AbstractArrowVectorConverter
     }
     else
     {
-      int val = intVector.getDataBuffer().getInt(index * IntVector.TYPE_WIDTH);
+      int val = dateVector.getDataBuffer().getInt(index * IntVector.TYPE_WIDTH);
       return val;
     }
   }

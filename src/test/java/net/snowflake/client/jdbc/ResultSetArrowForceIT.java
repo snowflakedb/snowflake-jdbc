@@ -50,7 +50,7 @@ public class ResultSetArrowForceIT extends BaseJDBCTest
     }
   }
 
-  private static String queryResultFormat;
+  protected static String queryResultFormat;
 
   public ResultSetArrowForceIT(String queryResultFormat)
   {
