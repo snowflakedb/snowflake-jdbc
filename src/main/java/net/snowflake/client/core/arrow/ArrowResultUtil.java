@@ -30,11 +30,13 @@ public class ArrowResultUtil
 
   public static final int MAX_SCALE_POWERS_OF_10 = 9;
 
-  public static int powerOfTen(int pow) {
+  public static int powerOfTen(int pow)
+  {
     return POWERS_OF_10[pow];
   }
 
-  public static String getStringFormat(int scale){
+  public static String getStringFormat(int scale)
+  {
     StringBuilder sb = new StringBuilder();
     return sb.append("%.").append(scale).append('f').toString();
   }
@@ -56,7 +58,7 @@ public class ArrowResultUtil
       long milliSecsSinceEpoch = (long) day * ResultUtil.MILLIS_IN_ONE_DAY;
 
       long milliSecsSinceEpochNew = milliSecsSinceEpoch + moveToTimeZoneOffset(milliSecsSinceEpoch,
-                                                                              TimeZone.getTimeZone("UTC"), tz);
+                                                                               TimeZone.getTimeZone("UTC"), tz);
 
       Date preDate = new Date(milliSecsSinceEpochNew);
 
@@ -125,6 +127,7 @@ public class ArrowResultUtil
 
   /**
    * move the input timestamp form oldTZ to newTZ
+   *
    * @param ts
    * @param oldTZ
    * @param newTZ
@@ -145,6 +148,7 @@ public class ArrowResultUtil
 
   /**
    * generate Java Timestamp object
+   *
    * @param epoch the value since epoch time
    * @param scale the scale of the value
    * @return
@@ -164,6 +168,7 @@ public class ArrowResultUtil
 
   /**
    * check whether the input seconds out of the scope of Java timestamp
+   *
    * @param seconds
    * @return
    */
@@ -177,6 +182,7 @@ public class ArrowResultUtil
    * For example, 1232.234 represents as epoch = 1232 and fraction = 234,000,000
    * For example, -1232.234 represents as epoch = -1233 and fraction = 766,000,000
    * For example, -0.13 represents as epoch = -1 and fraction = 870,000,000
+   *
    * @param seconds
    * @param fraction
    * @return java timestamp object

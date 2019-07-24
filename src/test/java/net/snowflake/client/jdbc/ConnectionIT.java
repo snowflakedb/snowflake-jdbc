@@ -1076,7 +1076,7 @@ public class ConnectionIT extends BaseJDBCTest
   }
 
   @Test
-  @ConditionalIgnore (condition = RunningNotOnTestaccount.class)
+  @ConditionalIgnore(condition = RunningNotOnTestaccount.class)
   public void testOKTAConnection() throws Throwable
   {
     Map<String, String> params = getConnectionParameters();

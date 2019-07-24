@@ -457,7 +457,6 @@ public class ResultSetMultiTimeZoneIT extends BaseJDBCTest
   }
 
 
-
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
   public void testGetOldTimestamp() throws SQLException
