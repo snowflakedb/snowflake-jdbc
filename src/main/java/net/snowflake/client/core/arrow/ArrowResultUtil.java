@@ -179,14 +179,21 @@ public class ArrowResultUtil
 
   /**
    * create Java timestamp using seconds since epoch and fraction in nanoseconds
+   * For example, 1232.234 represents as epoch = 1232 and fraction = 234,000,000
    * For example, -1232.234 represents as epoch = -1232 and fraction = 234,000,000
+   * For example, -0.13 represents as epoch = 0 and fraction = -130,000,000
    * @param epoch
    * @param fraction
-   * @return
+   * @return java timestamp object
    */
   public static Timestamp createTimestamp(long epoch, int fraction)
   {
-    if (epoch < 0 && fraction > 0)
+    if (epoch == 0 && fraction < 0)
+    {
+      epoch--;
+      fraction = 1000000000 + fraction;
+    }
+    else if (epoch < 0 && fraction > 0)
     {
       epoch--;
       fraction = 1000000000 - fraction;
