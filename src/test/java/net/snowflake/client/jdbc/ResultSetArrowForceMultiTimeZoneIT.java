@@ -8,6 +8,7 @@ import org.junit.runners.Parameterized;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.TimeZone;
@@ -60,6 +61,24 @@ public class ResultSetArrowForceMultiTimeZoneIT extends BaseJDBCTest
 
   private static String queryResultFormat;
   private String tz;
+
+  public static Connection getConnection(int injectSocketTimeout)
+  throws SQLException
+  {
+    Connection connection = BaseJDBCTest.getConnection(injectSocketTimeout);
+
+    Statement statement = connection.createStatement();
+    statement.execute(
+        "alter session set " +
+        "TIMEZONE='America/Los_Angeles'," +
+        "TIMESTAMP_TYPE_MAPPING='TIMESTAMP_LTZ'," +
+        "TIMESTAMP_OUTPUT_FORMAT='DY, DD MON YYYY HH24:MI:SS TZHTZM'," +
+        "TIMESTAMP_TZ_OUTPUT_FORMAT='DY, DD MON YYYY HH24:MI:SS TZHTZM'," +
+        "TIMESTAMP_LTZ_OUTPUT_FORMAT='DY, DD MON YYYY HH24:MI:SS TZHTZM'," +
+        "TIMESTAMP_NTZ_OUTPUT_FORMAT='DY, DD MON YYYY HH24:MI:SS TZHTZM'");
+    statement.close();
+    return connection;
+  }
 
   public ResultSetArrowForceMultiTimeZoneIT(String queryResultFormat, String timeZone)
   {
