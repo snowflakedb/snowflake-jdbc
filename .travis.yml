@@ -4,12 +4,15 @@ install: "./scripts/install.sh"
 matrix:
   include:
   - os: linux
+    dist: trusty
     jdk: oraclejdk8
     env:
     - JACOCO_COVERAGE=true
   - os: linux
+    dist: trusty
     jdk: oraclejdk9
   - os: linux
+    dist: trusty
     jdk: oraclejdk9
     env:
     - SNOWFLAKE_AZURE=true
