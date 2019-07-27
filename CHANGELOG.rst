@@ -1,3 +1,11 @@
+**JDBC Driver 3.8.8**
+
+- \| SNOW-79383 | Implement CallableStatement
+- \| SNOW-87251 | Added result_query_format parameter for the private preview of new result set format
+- \| SNOW-87589  | Upgrade com.fasterxml.jackson.core:jackson-databind to version 2.9.9.1 or later to fix security vulnerability.
+- \
+- \
+
 **JDBC Driver 3.8.7**
 
 - \| SNOW-85251 | Increase the adjust steps in conservative memory usage mode to better utilize result cache
