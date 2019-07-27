@@ -4,7 +4,7 @@
 
   <groupId>net.snowflake</groupId>
   <artifactId>snowflake-jdbc</artifactId>
-  <version>3.8.7</version>
+  <version>3.8.8</version>
   <packaging>jar</packaging>
 
   <name>snowflake-jdbc</name>
@@ -142,7 +142,7 @@
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
-      <version>${jackson.version}</version>
+      <version>2.9.9.1</version>
       <type>jar</type>
     </dependency>
     <dependency>
@@ -215,6 +215,7 @@
       <groupId>javax.servlet</groupId>
       <artifactId>javax.servlet-api</artifactId>
       <version>3.1.0</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.tika</groupId>
@@ -262,7 +263,7 @@
       <groupId>com.sun.activation</groupId>
       <artifactId>javax.activation</artifactId>
       <version>1.2.0</version>
-      <scope>compile</scope>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>ch.qos.logback</groupId>
@@ -531,10 +532,6 @@
                        <shadedPattern>${shadeBase}.yammer</shadedPattern>
                      </relocation>
                      <relocation>
-                       <pattern>javax.servlet</pattern>
-                       <shadedPattern>${shadeBase}.javax.servlet</shadedPattern>
-                     </relocation>
-                     <relocation>
                        <pattern>org.jsoup</pattern>
                        <shadedPattern>${shadeBase}.org.jsoup</shadedPattern>
                      </relocation>
@@ -545,10 +542,6 @@
                      <relocation>
                        <pattern>com.nimbusds</pattern>
                        <shadedPattern>${shadeBase}.com.nimbusds</shadedPattern>
-                     </relocation>
-                     <relocation>
-                       <pattern>javax.activation</pattern>
-                       <shadedPattern>${shadeBase}.javax.activation</shadedPattern>
                      </relocation>
                      <relocation>
                        <pattern>javax.annotation</pattern>
