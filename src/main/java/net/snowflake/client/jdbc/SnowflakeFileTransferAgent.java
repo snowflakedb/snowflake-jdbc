@@ -10,6 +10,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Strings;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.CountingOutputStream;
 import net.snowflake.client.core.ObjectMapperFactory;
@@ -30,8 +31,6 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.filefilter.WildcardFileFilter;
 
-import javax.activation.MimeType;
-import javax.activation.MimeTypeParseException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -50,6 +49,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -409,7 +409,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
     ZSTD(".zst", "application",
          Arrays.asList("zstd"), true),
     BROTLI(".br", "application",
-           Arrays.asList("brotli"), true),
+           Arrays.asList("brotli", "x-brotli"), true),
     LZIP(".lz", "application",
          Arrays.asList("lzip", "x-lzip"), false),
     LZMA(".lzma", "application",
@@ -425,9 +425,9 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
     ORC(".orc", "snowflake",
         Collections.singletonList("orc"), true);
 
-    private FileCompressionType(String fileExtension, String mimeType,
-                                List<String> mimeSubTypes,
-                                boolean isSupported)
+    FileCompressionType(String fileExtension, String mimeType,
+                        List<String> mimeSubTypes,
+                        boolean isSupported)
     {
       this.fileExtension = fileExtension;
       this.mimeType = mimeType;
@@ -1706,7 +1706,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
    * @return a set of file names that is matched
    * @throws SnowflakeSQLException if cannot find the file
    */
-  static public Set<String> expandFileNames(String[] filePathList)
+  static Set<String> expandFileNames(String[] filePathList)
   throws SnowflakeSQLException
   {
     Set<String> result = new HashSet<String>();
@@ -2509,27 +2509,34 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
    * Derive compression type from mime type
    *
    * @param mimeTypeStr The mime type passed to us
-   * @return the compression type
-   * @throws MimeTypeParseException Will be thrown if we get an invalid mime
-   *                                type
+   * @return the compression type or null
    */
-  private FileCompressionType mimeTypeToCompressionType(String mimeTypeStr)
-  throws MimeTypeParseException
+  static FileCompressionType mimeTypeToCompressionType(String mimeTypeStr)
   {
-    MimeType mimeType = null;
-
-    if (mimeTypeStr != null)
+    if (mimeTypeStr == null)
     {
-      mimeType = new MimeType(mimeTypeStr);
+      return null;
     }
-
-    if (mimeType != null && mimeType.getSubType() != null)
+    int slashIndex = mimeTypeStr.indexOf('/');
+    if (slashIndex < 0)
     {
-      return FileCompressionType.lookupByMimeSubType(
-          mimeType.getSubType().toLowerCase());
+      return null; // unable to find sub type
     }
-
-    return null;
+    int semiColonIndex = mimeTypeStr.indexOf(';');
+    String subType;
+    if (semiColonIndex < 0)
+    {
+      subType = mimeTypeStr.substring(slashIndex + 1).trim().toLowerCase(Locale.ENGLISH);
+    }
+    else
+    {
+      subType = mimeTypeStr.substring(slashIndex + 1, semiColonIndex);
+    }
+    if (Strings.isNullOrEmpty(subType))
+    {
+      return null;
+    }
+    return FileCompressionType.lookupByMimeSubType(subType);
   }
 
   /**
@@ -2686,16 +2693,6 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
               fileMetadata.destCompressionType = null;
             }
           }
-        }
-        catch (MimeTypeParseException ex)
-        {
-          logger.error(
-              "Exception encountered when processing file compression types",
-              ex);
-
-          fileMetadata.resultStatus = ResultStatus.ERROR;
-          fileMetadata.errorDetails = "Failed to parse mime type: " +
-                                      mimeTypeStr;
         }
         catch (Exception ex)
         {

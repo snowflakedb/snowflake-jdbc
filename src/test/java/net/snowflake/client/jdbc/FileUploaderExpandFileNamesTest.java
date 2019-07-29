@@ -12,9 +12,9 @@ import org.junit.rules.TemporaryFolder;
 import static org.junit.Assert.*;
 
 /**
- * @author jhuang
+ * Tests for SnowflakeFileTransferAgent.expandFileNames
  */
-public class SnowflakeFileUploaderTest
+public class FileUploaderExpandFileNamesTest
 {
   @Rule
   public TemporaryFolder folder = new TemporaryFolder();
