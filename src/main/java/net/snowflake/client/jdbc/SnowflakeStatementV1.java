@@ -705,10 +705,21 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement
   public int getUpdateCount() throws SQLException
   {
     logger.debug("public int getUpdateCount()");
+    return (int) getUpdateCountIfDML();
+  }
+
+  @Override
+  public long getLargeUpdateCount() throws SQLException
+  {
+    logger.debug("public long getLargeUpdateCount()");
+    return getUpdateCountIfDML();
+  }
+
+  private long getUpdateCountIfDML() throws SQLException {
     raiseSQLExceptionIfStatementIsClosed();
     if (updateCount != -1 && sfStatement.getResultSet().getStatementType().isDML())
     {
-      return (int) updateCount;
+      return updateCount;
     }
     return -1;
   }
