@@ -16,6 +16,7 @@ import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.QueryResultFormat;
 import net.snowflake.client.jdbc.SnowflakeResultChunk.DownloadState;
+import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -133,6 +134,11 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
    */
   private QueryResultFormat queryResultFormat;
 
+  /**
+   * the current out-of-band telemetry service
+   */
+  private TelemetryService mainTelemetryService;
+
   static long getCurrentMemoryUsage()
   {
     synchronized (currentMemoryUsage)
@@ -222,6 +228,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
     this.useJsonParserV2 = useJsonParserV2;
     this.memoryLimit = memoryLimit;
     this.queryResultFormat = queryResultFormat;
+    this.mainTelemetryService = TelemetryService.getInstance();
     logger.debug("qrmk = {}", qrmk);
 
     if (chunkHeaders != null && !chunkHeaders.isMissingNode())
@@ -379,7 +386,8 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
                                                    nextChunk,
                                                    qrmk, nextChunkToDownload,
                                                    chunkHeadersMap,
-                                                   networkTimeoutInMilli));
+                                                   networkTimeoutInMilli,
+                                                   mainTelemetryService));
 
           // increment next chunk to download
           nextChunkToDownload++;
@@ -704,14 +712,15 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
   /**
    * Create a download callable that will be run in download thread
    *
-   * @param downloader            object to download the chunk
-   * @param resultChunk           object contains information about the chunk will
-   *                              be downloaded
-   * @param qrmk                  Query Result Master Key
-   * @param chunkIndex            the index of the chunk which will be downloaded in array
-   *                              chunks. This is mainly for logging purpose
-   * @param chunkHeadersMap       contains headers needed to be added when downloading from s3
-   * @param networkTimeoutInMilli network timeout
+   * @param downloader              object to download the chunk
+   * @param resultChunk             object contains information about the chunk will
+   *                                be downloaded
+   * @param qrmk                    Query Result Master Key
+   * @param chunkIndex              the index of the chunk which will be downloaded in array
+   *                                chunks. This is mainly for logging purpose
+   * @param chunkHeadersMap         contains headers needed to be added when downloading from s3
+   * @param networkTimeoutInMilli   network timeout
+   * @param mainTelemetryService    the main OOB telemetry service used by this session
    * @return A callable responsible for downloading chunk
    */
   private static Callable<Void> getDownloadChunkCallable(
@@ -719,7 +728,8 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
       final SnowflakeResultChunk resultChunk,
       final String qrmk, final int chunkIndex,
       final Map<String, String> chunkHeadersMap,
-      final int networkTimeoutInMilli)
+      final int networkTimeoutInMilli,
+      TelemetryService mainTelemetryService)
   {
     return new Callable<Void>()
     {
@@ -743,6 +753,8 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
 
           long startTime = System.currentTimeMillis();
 
+          // initialize the telemetry service for this downloader thread using the main telemetry service
+          TelemetryService.getInstance().updateContext(mainTelemetryService.getSnowflakeConnectionString());
           HttpResponse response = getResultChunk(resultChunk.getUrl());
 
           /*

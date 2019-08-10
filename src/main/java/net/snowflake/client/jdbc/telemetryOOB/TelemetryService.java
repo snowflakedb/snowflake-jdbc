@@ -68,6 +68,8 @@ public class TelemetryService
 
   // connection string for current connection
   private String connStr = "";
+  // current snowflake connection string
+  private SnowflakeConnectString sfConnStr;
 
   /**
    * @return return thread local instance
@@ -198,6 +200,7 @@ public class TelemetryService
 
   public void updateContext(SnowflakeConnectString conStr)
   {
+    sfConnStr = conStr;
     configureDeployment(conStr);
     context = new JSONObject();
 
@@ -276,6 +279,11 @@ public class TelemetryService
   public String getDriverConnectionString()
   {
     return this.connStr;
+  }
+
+  public SnowflakeConnectString getSnowflakeConnectionString()
+  {
+    return sfConnStr;
   }
 
   private enum TELEMETRY_API
