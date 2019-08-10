@@ -48,9 +48,11 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
@@ -780,6 +782,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
 
             case S3:
             case AZURE:
+            case GCS:
               pushFileToRemoteStore(stage,
                                     destFileName,
                                     uploadStream, fileBackedOutputStream, uploadSize,
@@ -900,6 +903,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
 
             case AZURE:
             case S3:
+            case GCS:
               pullFileFromRemoteStore(stage,
                                       srcFilePath,
                                       destFileName,
@@ -971,14 +975,14 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
   private void parseCommand() throws SnowflakeSQLException
   {
     JsonNode jsonNode = parseCommandInGS(statement, command);
-
+    
     // get command type
     if (!jsonNode.path("data").path("command").isMissingNode())
     {
       commandType = CommandType.valueOf(
           jsonNode.path("data").path("command").asText());
     }
-
+    
     // get source file locations as array (apply to both upload and download)
     JsonNode locationsNode = jsonNode.path("data").path("src_locations");
 
@@ -1103,19 +1107,34 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
       stageRegion = jsonNode.path("data").path("stageInfo")
           .path("region").asText();
     }
-
-    // endPoint is only available in Azure stages
+    
+    // endPoint and storageAccount are only available in Azure stages. Value 
+    // will be present but null in other platforms.
     String endPoint = null;
-    if (!jsonNode.path("data").path("stageInfo").path("endPoint").isMissingNode())
+    String stgAcct = null;
+    if ("AZURE".equalsIgnoreCase(stageLocationType))
     {
-      endPoint = jsonNode.path("data").path("stageInfo").path("endPoint").asText();
-    }
-
-    // storageAccount is only available in Azure stages
-    String storageAccount = null;
-    if (!jsonNode.path("data").path("stageInfo").path("endPoint").isMissingNode())
-    {
-      storageAccount = jsonNode.path("data").path("stageInfo").path("storageAccount").asText();
+      // Jackson is doing some very strange things trying to pull the value of
+      // the storageAccount node after adding the GCP library dependencies.
+      // If we try to pull the value by name, we get back null, but clearly the
+      // node is there. This code works around the issue by enumerating through
+      // all the nodes and getting the one that starts with "sto". The value
+      // then comes back with double quotes around it, so we're stripping them
+      // off. As long as our JSON doc doesn't add another node that starts with
+      // "sto", this should work fine.
+      endPoint = jsonNode.path("data").path("stageInfo").findValue("endPoint").asText();
+      Iterator<Entry<String, JsonNode>> fields = jsonNode.path("data").path("stageInfo").fields();
+      while (fields.hasNext()) 
+      {
+        Entry<String, JsonNode> jsonField = fields.next();
+        if (jsonField.getKey().startsWith("sto"))
+        {
+          stgAcct = jsonField.getValue()
+                             .toString()
+                             .trim()
+                             .substring(1,jsonField.getValue().toString().trim().lastIndexOf("\""));
+        }
+      }
     }
 
     if ("LOCAL_FS".equalsIgnoreCase(stageLocationType))
@@ -1171,13 +1190,13 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
 
       logger.debug("endPoint: {}", endPoint);
 
-      logger.debug("storageAccount: {}", storageAccount);
+      logger.debug("storageAccount: {}", stgAcct);
     }
 
     Map<?, ?> stageCredentials = extractStageCreds(jsonNode);
 
     stageInfo = StageInfo.createStageInfo(stageLocationType, stageLocation, stageCredentials,
-                                          stageRegion, endPoint, storageAccount);
+                                          stageRegion, endPoint, stgAcct);
   }
 
   /**
@@ -2074,7 +2093,8 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
 
     // use the greatest common prefix to list objects under stage location
     if (stageInfo.getStageType() == StageInfo.StageType.S3 ||
-        stageInfo.getStageType() == StageInfo.StageType.AZURE)
+        stageInfo.getStageType() == StageInfo.StageType.AZURE ||
+        stageInfo.getStageType() == StageInfo.StageType.GCS)
     {
       logger.debug("check existing files on remote storage for the common prefix");
 

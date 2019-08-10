@@ -12,14 +12,15 @@ public class StageInfo
   {
     S3,
     AZURE,
-    LOCAL_FS
+    LOCAL_FS,
+    GCS
   }
 
   ;
   private StageType stageType;        // The stage type
   private String location;            // The container or bucket
   private Map<?, ?> credentials;       // the credentials required for the  stage
-  private String region;              // AWS/S3 region (S3 only)
+  private String region;              // AWS/S3/GCS region (S3/GCS only)
   private String endPoint;            // The Azure Storage endpoint (Azure only)
   private String storageAccount;      // The Azure Storage account (Azure only)
 
@@ -61,6 +62,14 @@ public class StageInfo
         }
         break;
 
+      case "GCS":
+        stageType = StageType.GCS;
+        if (!isSpecified(location) || !isSpecified(region) || credentials == null)
+        {
+          throw new IllegalArgumentException("Incomplete parameters specified for GCS stage");
+        }
+        break;
+        
       case "LOCAL_FS":
         stageType = StageType.LOCAL_FS;
         if (!isSpecified(location))

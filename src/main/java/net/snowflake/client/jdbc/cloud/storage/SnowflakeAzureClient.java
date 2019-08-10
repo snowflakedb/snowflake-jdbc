@@ -68,7 +68,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient
   private RemoteStoreFileEncryptionMaterial encMat;
   private CloudBlobClient azStorageClient;
   private final static SFLogger logger =
-      SFLoggerFactory.getLogger(SnowflakeS3Client.class);
+      SFLoggerFactory.getLogger(SnowflakeAzureClient.class);
 
   private SnowflakeAzureClient()
   {
@@ -176,6 +176,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient
   /**
    * @return Returns true if encryption is enabled
    */
+  @Override
   public boolean isEncrypting()
   {
     return encryptionKeySize > 0;
@@ -254,7 +255,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient
   public StorageObjectMetadata getObjectMetadata(String remoteStorageLocation, String prefix)
   throws StorageProviderException
   {
-    AzureObjectMetadata azureObjectMetadata = null;
+    CommonObjectMetadata azureObjectMetadata = null;
     try
     {
       // Get a reference to the BLOB, to retrieve its metadata
@@ -271,7 +272,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient
       String contentEncoding = properties.getContentEncoding();
 
       // Construct an Azure metadata object
-      azureObjectMetadata = new AzureObjectMetadata(contentLength, contentEncoding, userDefinedMetadata);
+      azureObjectMetadata = new CommonObjectMetadata(contentLength, contentEncoding, userDefinedMetadata);
     }
     catch (StorageException ex)
     {
@@ -478,7 +479,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient
         srcFile, uploadFromStream, inputStream, meta, originalContentLength,
         fileBackedOutputStream, toClose);
 
-    if (!(meta instanceof AzureObjectMetadata))
+    if (!(meta instanceof CommonObjectMetadata))
     {
       throw new IllegalArgumentException("Unexpected metadata object type");
     }
@@ -671,17 +672,16 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient
       SnowflakeFileTransferAgent.throwJCEMissingError(operation, ex);
     }
 
-    if (((StorageException) ex).getHttpStatusCode() == 403)
-    {
-      // A 403 indicates that the SAS token has expired,
-      // we need to refresh the Azure client with the new token
-      SnowflakeFileTransferAgent.renewExpiredToken(connection, command, azClient);
-    }
-
     if (ex instanceof StorageException)
     {
       StorageException se = (StorageException) ex;
 
+      if (((StorageException) ex).getHttpStatusCode() == 403)
+      {
+        // A 403 indicates that the SAS token has expired,
+        // we need to refresh the Azure client with the new token
+        SnowflakeFileTransferAgent.renewExpiredToken(connection, command, azClient);
+      }
       // If we have exceeded the max number of retries, propagate the error
       if (retryCount > azClient.getMaxRetries())
       {
@@ -689,9 +689,9 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient
                                         ErrorCode.AZURE_SERVICE_ERROR.getMessageCode(),
                                         operation,
                                         se.getErrorCode(),
-                                        se.getExtendedErrorInformation(),
                                         se.getHttpStatusCode(),
-                                        se.getMessage());
+                                        se.getMessage(),
+                                        se.getExtendedErrorInformation());
       }
       else
       {

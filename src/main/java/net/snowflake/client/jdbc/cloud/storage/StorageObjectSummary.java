@@ -5,6 +5,7 @@ package net.snowflake.client.jdbc.cloud.storage;
 
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.amazonaws.util.Base64;
+import com.google.cloud.storage.Blob;
 import com.microsoft.azure.storage.StorageException;
 import com.microsoft.azure.storage.blob.BlobProperties;
 import com.microsoft.azure.storage.blob.CloudBlob;
@@ -102,6 +103,20 @@ public class StorageObjectSummary
     }
     return new StorageObjectSummary(location, key, md5, size);
 
+  }
+
+  /**
+   * createFromGcsBlob creates a StorageObjectSummary from a GCS blob object
+   * @param blob GCS blob object
+   * @return a new StorageObjectSummary
+   */
+  public static StorageObjectSummary createFromGcsBlob(Blob blob)
+  {
+    String bucketName = blob.getBucket();
+    String path = blob.getName();
+    String hexMD5 = blob.getMd5ToHexString();
+    long size = blob.getSize();
+    return new StorageObjectSummary(bucketName, path, hexMD5, size);    
   }
 
   private static String convertBase64ToHex(String base64String)
