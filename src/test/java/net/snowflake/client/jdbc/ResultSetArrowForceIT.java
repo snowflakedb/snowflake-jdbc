@@ -70,6 +70,45 @@ public class ResultSetArrowForceIT extends BaseJDBCTest
     return conn;
   }
 
+  @Test
+  public void testSNOW89737() throws SQLException
+  {
+    Connection con = getConnection();
+    Statement statement = con.createStatement();
+
+    statement.execute("create or replace table test_types(c1 number, c2 integer, c3 float, c4 varchar, c5 char, c6 " +
+                      "binary, c7 boolean, c8 date, c9 datetime, c10 time, c11 timestamp_ltz, c12 timestamp_tz, c13 " +
+                      "variant, c14 object, c15 array)");
+    statement.execute("insert into test_types values (null, null, null, null, null, null, null, null, null, null, " +
+                      "null, null, null, null, null)");
+    statement.execute("insert into test_types (c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12) values(5, 5, 5.0," +
+                      "'hello', 'h', '48454C4C4F', true, '1994-12-27', " +
+                      "'1994-12-27 05:05:05', '05:05:05', '1994-12-27 05:05:05 +00:05', '1994-12-27 05:05:05')");
+    statement.execute("insert into test_types(c13) select parse_json(' { \"key1\\x00\":\"value1\" } ')");
+    statement.execute("insert into test_types(c14) select parse_json(' { \"key1\\x00\":\"value1\" } ')");
+    statement.execute("insert into test_types(c15) select parse_json('{\"fruits\" : [\"apples\", \"pears\", " +
+                      "\"oranges\"]}')");
+    ResultSet resultSet = statement.executeQuery("select * from test_types");
+    // test first row of result set against all "get" methods
+    assertTrue(resultSet.next());
+    // test getString method against all other data types
+    assertEquals(null, resultSet.getString(1));
+    assertEquals(null, resultSet.getString(2));
+    assertEquals(null, resultSet.getString(3));
+    assertEquals(null, resultSet.getString(4));
+    assertEquals(null, resultSet.getString(5));
+    assertEquals(null, resultSet.getString(6));
+    assertEquals(null, resultSet.getString(7));
+    assertEquals(null, resultSet.getString(8));
+    assertEquals(null, resultSet.getString(9));
+    assertEquals(null, resultSet.getString(10));
+    assertEquals(null, resultSet.getString(11));
+    assertEquals(null, resultSet.getString(12));
+    assertEquals(null, resultSet.getString(13));
+    assertEquals(null, resultSet.getString(14));
+    assertEquals(null, resultSet.getString(15));
+  }
+
   /**
    * Note: Arrow format does not include space and \n in the string values
    *
