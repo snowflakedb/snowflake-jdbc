@@ -3,6 +3,7 @@
  */
 package net.snowflake.client.jdbc;
 
+import com.amazonaws.annotation.SdkTestInternalApi;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnTravisCI;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
@@ -30,7 +31,9 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Time;
 import java.sql.Types;
+import java.util.Date;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Properties;
@@ -44,6 +47,7 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -53,7 +57,7 @@ import static org.junit.Assert.fail;
 @RunWith(Parameterized.class)
 public class ResultSetIT extends BaseJDBCTest
 {
-  @Parameterized.Parameters
+  @Parameterized.Parameters(name = "format={0}")
   public static Object[][] data()
   {
     // all tests in this class need to run for both query result formats json and arrow
@@ -905,5 +909,26 @@ public class ResultSetIT extends BaseJDBCTest
     statement.execute("drop table if exists testcopy");
 
     con.close();
+  }
+
+  @Test
+  public void testGetTimeNullTimestamp() throws Throwable
+  {
+    try (Connection con = getConnection())
+    {
+      con.createStatement().execute("create or replace table testnullts(c1 timestamp)");
+      try
+      {
+        con.createStatement().execute("insert into testnullts(c1) values(null)");
+        ResultSet rs = con.createStatement().executeQuery("select * from testnullts");
+        assertTrue("should return result", rs.next());
+        assertNull("return value must be null", rs.getTime(1));
+        rs.close();
+      }
+      finally
+      {
+        con.createStatement().execute("drop table if exists testnullts");
+      }
+    }
   }
 }
