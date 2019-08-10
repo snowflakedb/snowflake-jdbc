@@ -1,3 +1,20 @@
+**JDBC Driver 3.9.0**
+
+- \| SNOW-86243 | Add Parameter to control Multi-Statement Support with Count
+- \| SNOW-75648 | Add validateDefaultParameters to validate the database, schema and warehouse at connection time. false by default.
+- \| SNOW-85191 | Fixed DatabaseMetaData.getColumns returns empty string on COLUMN_DEF for columns with no defaults
+- \| SNOW-86345 | Add PrivateKey based authentication with datasource
+- \| SNOW-88426 | Fix setObject and setNull in the PrepareStatement results into error using latest JDBC driver
+- \| SNOW-88467 | Remove javax.activation from jdbc
+- \| SNOW-88628 | Fix getTime() method returns NullPointerException error when reading nulls
+- \| SNOW-88756 | Fix the return format for VARIANT type with ARROW is some different to that with JSON.
+- \| SNOW-89066 | Fix failures to decode the value for datatype time(0) if the result format is ARROW.
+- \| SNOW-89110 | Upgrade com.fasterxml.jackson.core:jackson-databind to version 2.9.9.2 to fix security vulnerability.
+- \| SNOW-89737 | Fix ResultSet from Arrow_force format does not match resultSet from JSON format after calling executeQuery()
+- \| SNOW-90009 | Upgrade org.apache.tika:tika-core to version 1.22 to fix security vulnerability
+- \| SNOW-90431 | Fix OOB throwing NPE or provides wrong context in multithread scenarios
+- \      
+
 **JDBC Driver 3.8.8**
 
 - \| SNOW-79383 | Implement CallableStatement
