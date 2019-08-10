@@ -18,6 +18,7 @@ import net.snowflake.client.core.arrow.DecimalToScaledFixedConverter;
 import net.snowflake.client.core.arrow.DoubleToRealConverter;
 import net.snowflake.client.core.arrow.IntToFixedConverter;
 import net.snowflake.client.core.arrow.IntToScaledFixedConverter;
+import net.snowflake.client.core.arrow.IntToTimeConverter;
 import net.snowflake.client.core.arrow.SmallIntToFixedConverter;
 import net.snowflake.client.core.arrow.SmallIntToScaledFixedConverter;
 import net.snowflake.client.core.arrow.ThreeFieldStructToTimestampTZConverter;
@@ -265,7 +266,21 @@ public class ArrowResultChunk extends SnowflakeResultChunk
             break;
 
           case TIME:
-            converters.add(new BigIntToTimeConverter(vector, i, context));
+            switch (type)
+            {
+              case INT:
+                converters.add(new IntToTimeConverter(vector, i, context));
+                break;
+              case BIGINT:
+                converters.add(new BigIntToTimeConverter(vector, i, context));
+                break;
+              default:
+                throw new SnowflakeSQLException(
+                    SqlState.INTERNAL_ERROR,
+                    ErrorCode.INTERNAL_ERROR.getMessageCode(),
+                    "Unexpected Arrow Field for ",
+                    st.name());
+            }
             break;
 
           case TIMESTAMP_LTZ:
