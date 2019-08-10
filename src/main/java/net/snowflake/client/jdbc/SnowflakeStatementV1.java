@@ -821,9 +821,9 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement
    *
    * @param name  parameter name.
    * @param value parameter value.
-   * @throws Exception if any SQL error occurs.
+   * @throws SQLException if any SQL error occurs.
    */
-  void setParameter(String name, Object value) throws Exception
+  void setParameter(String name, Object value) throws SQLException
   {
     logger.debug("public void setParameter");
 

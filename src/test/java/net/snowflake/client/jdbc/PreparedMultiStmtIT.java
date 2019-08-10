@@ -65,6 +65,7 @@ public class PreparedMultiStmtIT extends BaseJDBCTest
     SnowflakeConnectionV1 connection = (SnowflakeConnectionV1) getConnection();
     Statement statement = connection.createStatement();
     statement.execute("alter session set ENABLE_MULTISTATEMENT=true");
+    statement.execute("alter session set MULTI_STATEMENT_COUNT=0");
     statement.execute("create or replace table test_multi_bind(c1 number)");
 
     PreparedStatement preparedStatement = connection.prepareStatement(
@@ -113,6 +114,7 @@ public class PreparedMultiStmtIT extends BaseJDBCTest
     SnowflakeConnectionV1 connection = (SnowflakeConnectionV1) getConnection();
     Statement statement = connection.createStatement();
     statement.execute("alter session set ENABLE_MULTISTATEMENT=true");
+    statement.execute("alter session set MULTI_STATEMENT_COUNT=0");
     statement.execute("create or replace table test_multi_bind(c1 number)");
 
     PreparedStatement preparedStatement = connection.prepareStatement(
@@ -149,6 +151,7 @@ public class PreparedMultiStmtIT extends BaseJDBCTest
     SnowflakeConnectionV1 connection = (SnowflakeConnectionV1) getConnection();
     Statement statement = connection.createStatement();
     statement.execute("alter session set ENABLE_MULTISTATEMENT=true");
+    statement.execute("alter session set MULTI_STATEMENT_COUNT=0");
     statement.execute("create or replace table test_multi_bind(c1 number)");
 
     PreparedStatement preparedStatement = connection.prepareStatement(
@@ -196,6 +199,7 @@ public class PreparedMultiStmtIT extends BaseJDBCTest
     SnowflakeConnectionV1 connection = (SnowflakeConnectionV1) getConnection();
     Statement statement = connection.createStatement();
     statement.execute("alter session set ENABLE_MULTISTATEMENT=true");
+    statement.execute("alter session set MULTI_STATEMENT_COUNT=0");
 
     PreparedStatement preparedStatement = connection.prepareStatement(
         "select ?; select ?, ?; select ?, ?, ?");
@@ -241,6 +245,7 @@ public class PreparedMultiStmtIT extends BaseJDBCTest
     SnowflakeConnectionV1 connection = (SnowflakeConnectionV1) getConnection();
     Statement statement = connection.createStatement();
     statement.execute("alter session set ENABLE_MULTISTATEMENT=true");
+    statement.execute("alter session set MULTI_STATEMENT_COUNT=0");
 
     PreparedStatement preparedStatement = connection.prepareStatement(
         "select 10; select 20, 30; select 40, 50, 60");
