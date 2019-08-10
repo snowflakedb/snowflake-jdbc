@@ -114,6 +114,45 @@ public class ResultSetArrowForceMultiTimeZoneIT extends BaseJDBCTest
   }
 
   @Test
+  public void testTime() throws SQLException
+  {
+    String[] times = {
+        "00:01:23",
+        "00:01:23.1",
+        "00:01:23.12",
+        "00:01:23.123",
+        "00:01:23.1234",
+        "00:01:23.12345",
+        "00:01:23.123456",
+        "00:01:23.1234567",
+        "00:01:23.12345678",
+        "00:01:23.123456789"
+    };
+    for (int scale = 0; scale <= 9; scale++)
+    {
+      testTimeWithScale(times, scale);
+    }
+  }
+
+  public void testTimeWithScale(String[] times, int scale) throws SQLException
+  {
+    String table = "test_arrow_time";
+    String column = "(a time(" + scale + "))";
+    String values = "('" + StringUtils.join(times, "'),('") + "'), (null)";
+
+    Connection con = init(table, column, values);
+    ResultSet rs = con.createStatement().executeQuery("select * from " + table);
+    for (int i = 0; i < times.length; i++)
+    {
+      rs.next();
+      // Java Time class does not have nanoseconds
+      assertEquals("00:01:23", rs.getString(1));
+    }
+    rs.next();
+    assertEquals(null, rs.getTime(1));
+  }
+
+  @Test
   public void testTimestampNTZ() throws SQLException
   {
     for (int scale = 0; scale <= 9; scale++)
