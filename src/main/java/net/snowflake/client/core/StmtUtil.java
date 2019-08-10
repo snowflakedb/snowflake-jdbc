@@ -27,7 +27,7 @@ import org.apache.http.entity.StringEntity;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -727,7 +727,7 @@ public class StmtUtil
       logger.debug("JSON for cancel request: {}",
                    (ArgSupplier) () -> SecretDetector.maskSecrets(json));
 
-      StringEntity input = new StringEntity(json, Charset.forName("UTF-8"));
+      StringEntity input = new StringEntity(json, StandardCharsets.UTF_8);
       input.setContentType("application/json");
       httpRequest.setEntity(input);
 

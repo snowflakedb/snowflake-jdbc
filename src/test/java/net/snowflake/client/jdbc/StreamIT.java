@@ -10,7 +10,7 @@ import org.junit.Test;
 
 import java.io.InputStream;
 import java.io.StringWriter;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
@@ -42,7 +42,7 @@ public class StreamIT extends BaseJDBCTest
       statement = connection.createStatement();
 
       FileBackedOutputStream outputStream = new FileBackedOutputStream(1000000);
-      outputStream.write("hello".getBytes(Charset.forName("UTF-8")));
+      outputStream.write("hello".getBytes(StandardCharsets.UTF_8));
       outputStream.flush();
 
       // upload the data to user stage under testUploadStream with name hello.txt
@@ -142,7 +142,7 @@ public class StreamIT extends BaseJDBCTest
       statement = connection.createStatement();
 
       FileBackedOutputStream outputStream = new FileBackedOutputStream(1000000);
-      outputStream.write("hello".getBytes(Charset.forName("UTF-8")));
+      outputStream.write("hello".getBytes(StandardCharsets.UTF_8));
       outputStream.flush();
 
 

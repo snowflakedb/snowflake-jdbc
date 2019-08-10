@@ -1822,7 +1822,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
           if (defaultValue.startsWith("\'") && defaultValue.endsWith("\'"))
           {
             // remove extra set of single quotes
-            defaultValue = defaultValue.substring(1, defaultValue.length() -1);
+            defaultValue = defaultValue.substring(1, defaultValue.length() - 1);
             // scan for 2 single quotes in a row and remove one of them
             defaultValue = defaultValue.replace("''", "'");
           }

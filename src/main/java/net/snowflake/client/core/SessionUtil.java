@@ -37,7 +37,7 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -100,6 +100,7 @@ public class SessionUtil
   public static final String CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY =
       "CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY";
   public static final String CLIENT_SFSQL = "CLIENT_SFSQL";
+  public static final String CLIENT_VALIDATE_DEFAULT_PARAMETERS = "CLIENT_VALIDATE_DEFAULT_PARAMETERS";
 
   static final String SF_HEADER_SERVICE_NAME = "X-Snowflake-Service";
 
@@ -153,7 +154,8 @@ public class SessionUtil
       "CLIENT_METADATA_REQUEST_USE_CONNECTION_CTX",
       "JDBC_TREAT_DECIMAL_AS_INT",
       "JDBC_ENABLE_COMBINED_DESCRIBE",
-      CLIENT_ENABLE_CONSERVATIVE_MEMORY_USAGE));
+      CLIENT_ENABLE_CONSERVATIVE_MEMORY_USAGE,
+      CLIENT_VALIDATE_DEFAULT_PARAMETERS));
 
   /**
    * Returns Authenticator type
@@ -499,6 +501,10 @@ public class SessionUtil
 
       // Initialize the session parameters
       Map<String, Object> sessionParameter = loginInput.getSessionParameters();
+      if (loginInput.isValidateDefaultParameters())
+      {
+        sessionParameter.put(CLIENT_VALIDATE_DEFAULT_PARAMETERS, true);
+      }
 
       if (sessionParameter != null)
       {
@@ -537,7 +543,7 @@ public class SessionUtil
       postRequest = new HttpPost(loginURI);
 
       // attach the login info json body to the post request
-      StringEntity input = new StringEntity(json, Charset.forName("UTF-8"));
+      StringEntity input = new StringEntity(json, StandardCharsets.UTF_8);
       input.setContentType("application/json");
       postRequest.setEntity(input);
 
@@ -865,7 +871,7 @@ public class SessionUtil
       String json = mapper.writeValueAsString(payload);
 
       // attach the login info json body to the post request
-      StringEntity input = new StringEntity(json, Charset.forName("UTF-8"));
+      StringEntity input = new StringEntity(json, StandardCharsets.UTF_8);
       input.setContentType("application/json");
       postRequest.setEntity(input);
 
@@ -1201,7 +1207,7 @@ public class SessionUtil
       String json = mapper.writeValueAsString(authnData);
 
       // attach the login info json body to the post request
-      StringEntity input = new StringEntity(json, Charset.forName("UTF-8"));
+      StringEntity input = new StringEntity(json, StandardCharsets.UTF_8);
       input.setContentType("application/json");
       HttpPost postRequest = new HttpPost(fedUrlUri);
       postRequest.setEntity(input);
@@ -1523,6 +1529,13 @@ public class SessionUtil
         else
         {
           TelemetryService.getInstance().disable();
+        }
+      }
+      else if (CLIENT_VALIDATE_DEFAULT_PARAMETERS.equalsIgnoreCase(entry.getKey()))
+      {
+        if (session != null)
+        {
+          session.setValidateDefaultParameters(SFLoginInput.getBooleanValue(entry.getValue()));
         }
       }
     }

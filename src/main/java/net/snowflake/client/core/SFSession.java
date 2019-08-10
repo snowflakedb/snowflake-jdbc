@@ -200,6 +200,9 @@ public class SFSession
   private int clientResultChunkSize;
   private int clientPrefetchThreads;
 
+  // validate the default parameters by GS?
+  private boolean validateDefaultParameters;
+
   public void addProperty(SFSessionProperty sfSessionProperty,
                           Object propertyValue)
   throws SFException
@@ -316,6 +319,13 @@ public class SFSession
           }
           break;
 
+        case VALIDATE_DEFAULT_PARAMETERS:
+          if (propertyValue != null)
+          {
+            validateDefaultParameters = SFLoginInput.getBooleanValue(propertyValue);
+          }
+          break;
+
         default:
           break;
       }
@@ -414,7 +424,7 @@ public class SFSession
 
     logger.debug(
         "input: server={}, account={}, user={}, password={}, role={}, " +
-        "database={}, schema={}, warehouse={}, authenticator={}, ocsp_mode={}, " +
+        "database={}, schema={}, warehouse={}, validate_default_parameters={}, authenticator={}, ocsp_mode={}, " +
         "passcode_in_passward={}, passcode={}, private_key={}, " +
         "use_proxy={}, proxy_host={}, proxy_port={}, proxy_user={}, proxy_password={}, disable_socks_proxy={}, " +
         "application={}, app_id={}, app_version={}, " +
@@ -427,6 +437,7 @@ public class SFSession
         connectionPropertiesMap.get(SFSessionProperty.DATABASE),
         connectionPropertiesMap.get(SFSessionProperty.SCHEMA),
         connectionPropertiesMap.get(SFSessionProperty.WAREHOUSE),
+        connectionPropertiesMap.get(SFSessionProperty.VALIDATE_DEFAULT_PARAMETERS),
         connectionPropertiesMap.get(SFSessionProperty.AUTHENTICATOR),
         getOCSPMode().name(),
         connectionPropertiesMap.get(SFSessionProperty.PASSCODE_IN_PASSWORD),
@@ -462,6 +473,8 @@ public class SFSession
         .setWarehouse(
             (String) connectionPropertiesMap.get(SFSessionProperty.WAREHOUSE))
         .setRole((String) connectionPropertiesMap.get(SFSessionProperty.ROLE))
+        .setValidateDefaultParameters(
+            connectionPropertiesMap.get(SFSessionProperty.VALIDATE_DEFAULT_PARAMETERS))
         .setAuthenticator(
             (String) connectionPropertiesMap.get(SFSessionProperty.AUTHENTICATOR))
         .setOKTAUserName(
@@ -1343,5 +1356,15 @@ public class SFSession
   public int getClientPrefetchThreads()
   {
     return clientPrefetchThreads;
+  }
+
+  public boolean isValidateDefaultParameters()
+  {
+    return validateDefaultParameters;
+  }
+
+  public void setValidateDefaultParameters(boolean v)
+  {
+    validateDefaultParameters = v;
   }
 }

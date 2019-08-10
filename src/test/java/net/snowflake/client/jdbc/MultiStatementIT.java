@@ -787,7 +787,7 @@ public class MultiStatementIT extends BaseJDBCTest
       statement.execute("select 1; select 2; select 3");
       fail();
     }
-    catch(SQLException e)
+    catch (SQLException e)
     {
       assertThat(e.getErrorCode(), is(8));
     }
@@ -799,7 +799,7 @@ public class MultiStatementIT extends BaseJDBCTest
       statement.execute("select 1");
       fail();
     }
-    catch(SQLException e)
+    catch (SQLException e)
     {
       assertThat(e.getErrorCode(), is(8));
     }
