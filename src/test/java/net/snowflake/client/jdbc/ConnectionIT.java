@@ -565,6 +565,17 @@ public class ConnectionIT extends BaseJDBCTest
     connection = DriverManager.getConnection(uri, properties);
     connection.close();
 
+    // test datasource connection using private key
+    SnowflakeBasicDataSource ds = new SnowflakeBasicDataSource();
+    ds.setUrl(uri);
+    ds.setAccount(parameters.get("account"));
+    ds.setUser(parameters.get("user"));
+    ds.setSsl("on".equals(parameters.get("ssl")));
+    ds.setPortNumber(Integer.valueOf(parameters.get("port")));
+    ds.setPrivateKey(privateKey);
+    Connection con = ds.getConnection();
+    con.close();
+
     // test wrong private key
     keyPair = keyPairGenerator.generateKeyPair();
     PublicKey publicKey2 = keyPair.getPublic();
