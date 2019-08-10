@@ -7,29 +7,29 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Implements  platform-independent interface Azure BLOB object metadata
+ * Implements  platform-independent interface Azure BLOB and GCS object metadata
  * <p>
  * Only the metadata accessors and mutators used by the JDBC client currently are supported,
  * additional methods should be added as needed
  *
- * @author lgiakoumakis
+ * @author lgiakoumakis, ppaulus (rename)
  **/
-public class AzureObjectMetadata implements StorageObjectMetadata
+public class CommonObjectMetadata implements StorageObjectMetadata
 {
   private long contentLength;
   private Map<String, String> userDefinedMetadata;
   private String contentEncoding;
 
-  AzureObjectMetadata()
+  CommonObjectMetadata()
   {
     userDefinedMetadata = new HashMap<>();
   }
 
   /*
-   * Constructs a Azure metadata object
+   * Constructs a common metadata object
    * from the set of parameters that the JDBC client is using
    */
-  AzureObjectMetadata(long contentLength, String contentEncoding, Map<String, String> userDefinedMetadata)
+  CommonObjectMetadata(long contentLength, String contentEncoding, Map<String, String> userDefinedMetadata)
   {
     this.contentEncoding = contentEncoding;
     this.contentLength = contentLength;

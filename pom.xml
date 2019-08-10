@@ -45,6 +45,7 @@
     <jacoco.version>0.8.4</jacoco.version>
     <jacoco.skip.instrument>true</jacoco.skip.instrument>
     <awssdk.version>1.11.364</awssdk.version>
+    <googleclient.version>1.30.1</googleclient.version>
     <!-- the following fields are for setting unique information in the RPM Release field
          Note: setting timestamp without hyphens for use in the RPM release field (hypens not allowed) -->
     <maven.build.timestamp.format>yyyyMMddHHmm</maven.build.timestamp.format>
@@ -269,6 +270,31 @@
       <groupId>org.apache.arrow</groupId>
       <artifactId>arrow-vector</artifactId>
       <version>0.13.0</version>
+    </dependency>
+    <dependency>
+      <groupId>com.google.auth</groupId>
+      <artifactId>google-auth-library-oauth2-http</artifactId>
+      <version>0.9.0</version>
+    </dependency>
+    <dependency>
+      <groupId>com.google.cloud</groupId>
+      <artifactId>google-cloud-storage</artifactId>
+      <version>1.82.0</version>
+    </dependency>
+    <dependency>
+      <groupId>com.google.auth</groupId>
+      <artifactId>google-auth-library-credentials</artifactId>
+      <version>0.9.0</version>
+    </dependency>
+    <dependency>
+      <groupId>com.google.api-client</groupId>
+      <artifactId>google-api-client</artifactId>
+      <version>${googleclient.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.google.http-client</groupId>
+      <artifactId>google-http-client</artifactId>
+      <version>${googleclient.version}</version>
     </dependency>
   </dependencies>
 
@@ -569,6 +595,62 @@
                        <pattern>com.carrotsearch</pattern>
                        <shadedPattern>${shadeBase}.com.carrotsearch</shadedPattern>
                      </relocation>
+                     <relocation>
+                       <pattern>google.type</pattern>
+                       <shadedPattern>${shadeBase}.google.type</shadedPattern>
+                     </relocation>
+                     <relocation>
+                       <pattern>google.rpc</pattern>
+                       <shadedPattern>${shadeBase}.google.rpc</shadedPattern>
+                     </relocation>
+                     <relocation>
+                       <pattern>google.iam</pattern>
+                       <shadedPattern>${shadeBase}.google.iam</shadedPattern>
+                     </relocation>
+                     <relocation>
+                       <pattern>storage</pattern>
+                       <shadedPattern>${shadeBase}.storage</shadedPattern>
+                     </relocation>
+                      <relocation>
+                       <pattern>io.opencensus</pattern>
+                       <shadedPattern>${shadeBase}.opencensus</shadedPattern>
+                     </relocation>
+                     <relocation>
+                       <pattern>org.threeten</pattern>
+                       <shadedPattern>${shadeBase}.threeten</shadedPattern>
+                     </relocation>
+                     <relocation>
+                       <pattern>google.protobuf</pattern>
+                       <shadedPattern>${shadeBase}.google.protobuf</shadedPattern>
+                     </relocation>
+                     <relocation>
+                       <pattern>google.api</pattern>
+                       <shadedPattern>${shadeBase}.google.api</shadedPattern>
+                     </relocation>
+                     <relocation>
+                       <pattern>io.grpc</pattern>
+                       <shadedPattern>${shadeBase}.grpc</shadedPattern>
+                     </relocation>
+                     <relocation>
+                       <pattern>google.longrunning</pattern>
+                       <shadedPattern>${shadeBase}.google.longrunning</shadedPattern>
+                     </relocation>
+                     <relocation>
+                       <pattern>google.cloud</pattern>
+                       <shadedPattern>${shadeBase}.google.cloud</shadedPattern>
+                     </relocation>
+                     <relocation>
+                       <pattern>google.logging</pattern>
+                       <shadedPattern>${shadeBase}.google.logging</shadedPattern>
+                     </relocation>
+                     <relocation>
+                       <pattern>org.checkerframework</pattern>
+                       <shadedPattern>${shadeBase}.org.checkerframework</shadedPattern>
+                     </relocation>
+                     <relocation>
+                       <pattern>org.codehaus</pattern>
+                       <shadedPattern>${shadeBase}.org.codehaus</shadedPattern>
+                     </relocation>                     
                    </relocations>
                    <filters>
                       <filter>
