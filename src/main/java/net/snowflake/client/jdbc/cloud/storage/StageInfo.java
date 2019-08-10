@@ -69,7 +69,7 @@ public class StageInfo
           throw new IllegalArgumentException("Incomplete parameters specified for GCS stage");
         }
         break;
-        
+
       case "LOCAL_FS":
         stageType = StageType.LOCAL_FS;
         if (!isSpecified(location))

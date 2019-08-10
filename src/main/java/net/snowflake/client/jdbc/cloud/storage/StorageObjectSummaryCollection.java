@@ -67,7 +67,7 @@ public class StorageObjectSummaryCollection implements Iterable<StorageObjectSum
         return new GcsObjectSummariesIterator(this.gcsIterablePage);
       default:
         throw new IllegalArgumentException("Unspecified storage provider");
-     }
+    }
   }
 }
 

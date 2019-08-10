@@ -975,14 +975,14 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
   private void parseCommand() throws SnowflakeSQLException
   {
     JsonNode jsonNode = parseCommandInGS(statement, command);
-    
+
     // get command type
     if (!jsonNode.path("data").path("command").isMissingNode())
     {
       commandType = CommandType.valueOf(
           jsonNode.path("data").path("command").asText());
     }
-    
+
     // get source file locations as array (apply to both upload and download)
     JsonNode locationsNode = jsonNode.path("data").path("src_locations");
 
@@ -1107,7 +1107,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
       stageRegion = jsonNode.path("data").path("stageInfo")
           .path("region").asText();
     }
-    
+
     // endPoint and storageAccount are only available in Azure stages. Value 
     // will be present but null in other platforms.
     String endPoint = null;
@@ -1124,15 +1124,15 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
       // "sto", this should work fine.
       endPoint = jsonNode.path("data").path("stageInfo").findValue("endPoint").asText();
       Iterator<Entry<String, JsonNode>> fields = jsonNode.path("data").path("stageInfo").fields();
-      while (fields.hasNext()) 
+      while (fields.hasNext())
       {
         Entry<String, JsonNode> jsonField = fields.next();
         if (jsonField.getKey().startsWith("sto"))
         {
           stgAcct = jsonField.getValue()
-                             .toString()
-                             .trim()
-                             .substring(1,jsonField.getValue().toString().trim().lastIndexOf("\""));
+              .toString()
+              .trim()
+              .substring(1, jsonField.getValue().toString().trim().lastIndexOf("\""));
         }
       }
     }
