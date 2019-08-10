@@ -129,40 +129,29 @@ public class ResultSetArrowForceIT extends BaseJDBCTest
         " 100::variant;");
     while (rs.next())
     {
-      if (isJSON())
-      {
-        assertEquals("[\n" +
-                     "  10,\n" +
-                     "  20,\n" +
-                     "  30\n" +
-                     "]", rs.getString(1));
-        assertEquals("[\n" +
-                     "  undefined,\n" +
-                     "  \"hello\",\n" +
-                     "  3.000000000000000e+00,\n" +
-                     "  4,\n" +
-                     "  5\n" +
-                     "]", rs.getString(2));
-        assertEquals("{\n" +
-                     "  \"a\": 1,\n" +
-                     "  \"b\": \"BBBB\"\n" +
-                     "}", rs.getString(4));
-        assertEquals("{\n" +
-                     "  \"Key_One\": null,\n" +
-                     "  \"Key_Three\": \"null\"\n" +
-                     "}", rs.getString(5));
-        assertEquals("{\n" +
-                     "  \"a\": null\n" +
-                     "}", rs.getString(7));
-      }
-      else
-      {
-        assertEquals("[10,20,30]", rs.getString(1));
-        assertEquals("[undefined,\"hello\",3.000000000000000e+00,4,5]", rs.getString(2));
-        assertEquals("{\"a\":1,\"b\":\"BBBB\"}", rs.getString(4));
-        assertEquals("{\"Key_One\":null,\"Key_Three\":\"null\"}", rs.getString(5));
-        assertEquals("{\"a\":null}", rs.getString(7));
-      }
+      assertEquals("[\n" +
+                   "  10,\n" +
+                   "  20,\n" +
+                   "  30\n" +
+                   "]", rs.getString(1));
+      assertEquals("[\n" +
+                   "  undefined,\n" +
+                   "  \"hello\",\n" +
+                   "  3.000000000000000e+00,\n" +
+                   "  4,\n" +
+                   "  5\n" +
+                   "]", rs.getString(2));
+      assertEquals("{\n" +
+                   "  \"a\": 1,\n" +
+                   "  \"b\": \"BBBB\"\n" +
+                   "}", rs.getString(4));
+      assertEquals("{\n" +
+                   "  \"Key_One\": null,\n" +
+                   "  \"Key_Three\": \"null\"\n" +
+                   "}", rs.getString(5));
+      assertEquals("{\n" +
+                   "  \"a\": null\n" +
+                   "}", rs.getString(7));
       assertEquals("[]", rs.getString(3));
       assertEquals("3.2", rs.getString(6));
       assertEquals("100", rs.getString(8));
