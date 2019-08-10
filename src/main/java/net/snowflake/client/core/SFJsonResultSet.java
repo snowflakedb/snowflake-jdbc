@@ -417,7 +417,12 @@ public abstract class SFJsonResultSet extends SFBaseResultSet
     }
     else if (Types.TIMESTAMP == columnType)
     {
-      return new Time(getTimestamp(columnIndex).getTime());
+      Timestamp ts = getTimestamp(columnIndex);
+      if (ts == null)
+      {
+        return null;
+      }
+      return new Time(ts.getTime());
     }
     else
     {
