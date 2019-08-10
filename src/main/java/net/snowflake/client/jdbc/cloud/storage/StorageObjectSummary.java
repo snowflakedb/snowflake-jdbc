@@ -107,6 +107,7 @@ public class StorageObjectSummary
 
   /**
    * createFromGcsBlob creates a StorageObjectSummary from a GCS blob object
+   *
    * @param blob GCS blob object
    * @return a new StorageObjectSummary
    */
@@ -116,7 +117,7 @@ public class StorageObjectSummary
     String path = blob.getName();
     String hexMD5 = blob.getMd5ToHexString();
     long size = blob.getSize();
-    return new StorageObjectSummary(bucketName, path, hexMD5, size);    
+    return new StorageObjectSummary(bucketName, path, hexMD5, size);
   }
 
   private static String convertBase64ToHex(String base64String)
