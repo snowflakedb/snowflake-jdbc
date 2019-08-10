@@ -13,6 +13,7 @@ import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SFBinary;
 import net.snowflake.common.core.SqlState;
+import net.snowflake.client.jdbc.SnowflakeType;
 
 import java.io.InputStream;
 import java.io.Reader;
@@ -176,14 +177,15 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
   @Override
   public void setNull(int parameterIndex, int sqlType) throws SQLException
   {
-    logger.debug(
-        "setNull(int parameterIndex, int sqlType)");
+    logger.debug("setNull(parameterIndex: {}, sqlType: {})",
+                 parameterIndex, SnowflakeType.JavaSQLType.find(sqlType));
     raiseSQLExceptionIfStatementIsClosed();
 
-    if (parameterIndex < 1 || parameterIndex > this.statementMetaData.getNumberOfBinds())
+    if (this.statementMetaData.isValidMetaData() &&
+        (parameterIndex < 1 || parameterIndex > this.statementMetaData.getNumberOfBinds()))
     {
-      throw new SnowflakeSQLException(SqlState.NUMERIC_VALUE_OUT_OF_RANGE,
-                                      ErrorCode.NUMERIC_VALUE_OUT_OF_RANGE.getMessageCode(), parameterIndex,
+      // Validate index range only if the statement metadata is valid.
+      throw new SnowflakeSQLException(ErrorCode.NUMERIC_VALUE_OUT_OF_RANGE, parameterIndex,
                                       this.statementMetaData.getNumberOfBinds());
     }
 
@@ -196,8 +198,7 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
   public void setBoolean(int parameterIndex, boolean x) throws SQLException
   {
     logger.debug(
-        "setBoolean(int parameterIndex, boolean x)");
-
+        "setBoolean(parameterIndex: {}, boolean x)", parameterIndex);
     ParameterBindingDTO binding = new ParameterBindingDTO(
         SnowflakeUtil.javaTypeToSFTypeString(Types.BOOLEAN), String.valueOf(x));
     parameterBindings.put(String.valueOf(parameterIndex), binding);
@@ -206,6 +207,7 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
   @Override
   public void setByte(int parameterIndex, byte x) throws SQLException
   {
+    logger.debug("setByte(parameterIndex: {}, byte x)", parameterIndex);
     ParameterBindingDTO binding = new ParameterBindingDTO(
         SnowflakeUtil.javaTypeToSFTypeString(Types.TINYINT), String.valueOf(x));
     parameterBindings.put(String.valueOf(parameterIndex), binding);
@@ -214,8 +216,7 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
   @Override
   public void setShort(int parameterIndex, short x) throws SQLException
   {
-    logger.debug(
-        "setShort(int parameterIndex, short x)");
+    logger.debug("setShort(parameterIndex: {}, short x)", parameterIndex);
 
     ParameterBindingDTO binding = new ParameterBindingDTO(SnowflakeUtil
                                                               .javaTypeToSFTypeString(Types.SMALLINT), String.valueOf(x));
@@ -225,8 +226,7 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
   @Override
   public void setInt(int parameterIndex, int x) throws SQLException
   {
-    logger.debug(
-        "setInt(int parameterIndex, int x)");
+    logger.debug("setInt(parameterIndex: {}, int x)", parameterIndex);
 
     ParameterBindingDTO binding = new ParameterBindingDTO(SnowflakeUtil
                                                               .javaTypeToSFTypeString(Types.INTEGER), String.valueOf(x));
@@ -236,8 +236,7 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
   @Override
   public void setLong(int parameterIndex, long x) throws SQLException
   {
-    logger.debug(
-        "setLong(int parameterIndex, long x)");
+    logger.debug("setLong(parameterIndex: {}, long x)", parameterIndex);
 
     ParameterBindingDTO binding = new ParameterBindingDTO(
         SnowflakeUtil.javaTypeToSFTypeString(Types.BIGINT), String.valueOf(x));
@@ -247,8 +246,7 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
   @Override
   public void setFloat(int parameterIndex, float x) throws SQLException
   {
-    logger.debug(
-        "setFloat(int parameterIndex, float x)");
+    logger.debug("setFloat(parameterIndex: {}, float x)", parameterIndex);
 
     ParameterBindingDTO binding = new ParameterBindingDTO(
         SnowflakeUtil.javaTypeToSFTypeString(Types.FLOAT), String.valueOf(x));
@@ -258,8 +256,7 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
   @Override
   public void setDouble(int parameterIndex, double x) throws SQLException
   {
-    logger.debug(
-        "setDouble(int parameterIndex, double x)");
+    logger.debug("setDouble(parameterIndex: {}, double x)", parameterIndex);
 
     ParameterBindingDTO binding = new ParameterBindingDTO(
         SnowflakeUtil.javaTypeToSFTypeString(Types.DOUBLE), String.valueOf(x));
@@ -269,8 +266,7 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
   @Override
   public void setBigDecimal(int parameterIndex, BigDecimal x) throws SQLException
   {
-    logger.debug(
-        "setBigDecimal(int parameterIndex, BigDecimal x)");
+    logger.debug("setBigDecimal(parameterIndex: {}, BigDecimal x)", parameterIndex);
 
     if (x == null)
     {
@@ -287,8 +283,7 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
   @Override
   public void setString(int parameterIndex, String x) throws SQLException
   {
-    logger.debug(
-        "setString(int parameterIndex, String x)");
+    logger.debug("setString(parameterIndex: {}, String x)", parameterIndex);
 
     ParameterBindingDTO binding = new ParameterBindingDTO(
         SnowflakeUtil.javaTypeToSFTypeString(Types.VARCHAR), x);
@@ -298,8 +293,7 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
   @Override
   public void setBytes(int parameterIndex, byte[] x) throws SQLException
   {
-    logger.debug(
-        "setBytes(int parameterIndex, byte[] x)");
+    logger.debug("setBytes(parameterIndex: {}, byte[] x)", parameterIndex);
 
     ParameterBindingDTO binding = new ParameterBindingDTO(SnowflakeUtil
                                                               .javaTypeToSFTypeString(Types.BINARY), new SFBinary(x).toHex());
@@ -309,8 +303,7 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
   @Override
   public void setDate(int parameterIndex, Date x) throws SQLException
   {
-    logger.debug(
-        "setDate(int parameterIndex, Date x)");
+    logger.debug("setDate(parameterIndex: {}, Date x)", parameterIndex);
 
     if (x == null)
     {
@@ -331,8 +324,7 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
   @Override
   public void setTime(int parameterIndex, Time x) throws SQLException
   {
-    logger.debug(
-        "setTime(int parameterIndex, Time x)");
+    logger.debug("setTime(parameterIndex: {}, Time x)", parameterIndex);
 
     if (x == null)
     {
@@ -360,8 +352,7 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
   @Override
   public void setTimestamp(int parameterIndex, Timestamp x) throws SQLException
   {
-    logger.debug(
-        "setTimestamp(int parameterIndex, Timestamp x)");
+    logger.debug("setTimestamp(parameterIndex: {}, Timestamp x)", parameterIndex);
 
     // convert the timestamp from being in local time zone to be in UTC timezone
     String value = x == null ? null :
@@ -415,9 +406,6 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
   @Override
   public void setObject(int parameterIndex, Object x, int targetSqlType) throws SQLException
   {
-    logger.debug(
-        "setObject(int parameterIndex, Object x, int targetSqlType)");
-
     if (x == null)
     {
       setNull(parameterIndex, targetSqlType);
@@ -436,6 +424,9 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
     }
     else
     {
+      logger.debug("setObject(parameterIndex: {}, Object x, sqlType: {})",
+                   parameterIndex, SnowflakeType.JavaSQLType.find(targetSqlType));
+
       ParameterBindingDTO binding = new ParameterBindingDTO(
           SnowflakeUtil.javaTypeToSFTypeString(targetSqlType),
           String.valueOf(x));

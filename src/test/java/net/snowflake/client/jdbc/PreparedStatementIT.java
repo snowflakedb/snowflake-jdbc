@@ -6,6 +6,7 @@ package net.snowflake.client.jdbc;
 import com.google.common.collect.Sets;
 import net.snowflake.client.ConditionalIgnoreRule.ConditionalIgnore;
 import net.snowflake.client.RunningOnTravisCI;
+import net.snowflake.client.jdbc.ErrorCode;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -49,7 +50,7 @@ import static org.junit.Assert.fail;
 @RunWith(Parameterized.class)
 public class PreparedStatementIT extends BaseJDBCTest
 {
-  @Parameterized.Parameters
+  @Parameterized.Parameters(name = "format={0}")
   public static Object[][] data()
   {
     // all tests in this class need to run for both query result formats json and arrow
@@ -1940,6 +1941,59 @@ public class PreparedStatementIT extends BaseJDBCTest
         assertEquals((int) ErrorCode.FEATURE_UNSUPPORTED.getMessageCode(), ex.getErrorCode());
       }
 
+    }
+  }
+
+  /**
+   * SNOW-88426: skip bind parameter index check if prepare fails and defer the error checks to execute
+   */
+  @Test
+  public void testSelectWithBinding() throws Throwable
+  {
+    try (Connection connection = getConnection())
+    {
+      connection.createStatement().execute("create or replace table TESTNULL(created_time timestamp_ntz, mid int)");
+      PreparedStatement ps;
+      ResultSet rs;
+      try
+      {
+        // skip bind parameter index check if prepare fails and defer the error checks to execute
+        ps = connection.prepareStatement(
+            "SELECT 1 FROM TESTNULL WHERE CREATED_TIME = TO_TIMESTAMP(?, 3) and MID = ?"
+        );
+        ps.setObject(1, 0);
+        ps.setObject(2, null);
+        ps.setObject(1000, null); // this won't raise an exception.
+        rs = ps.executeQuery();
+        assertFalse(rs.next());
+        rs.close();
+        ps.close();
+
+        // describe is success and do the index range check
+        ps = connection.prepareStatement(
+            "SELECT 1 FROM TESTNULL WHERE CREATED_TIME = TO_TIMESTAMP(?::NUMBER, 3) and MID = ?"
+        );
+        ps.setObject(1, 0);
+        ps.setObject(2, null);
+        try
+        {
+          ps.setObject(1000, null); // this won't raise an exception.
+          fail("should raise an exception");
+        }
+        catch (SQLException e)
+        {
+          assertEquals((int) NUMERIC_VALUE_OUT_OF_RANGE.getMessageCode(), e.getErrorCode());
+        }
+        rs = ps.executeQuery();
+        assertFalse(rs.next());
+        rs.close();
+        ps.close();
+
+      }
+      finally
+      {
+        connection.createStatement().execute("drop table if exists TESTNULL");
+      }
     }
   }
 

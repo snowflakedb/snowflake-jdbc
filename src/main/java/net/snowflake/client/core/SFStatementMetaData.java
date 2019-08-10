@@ -34,17 +34,21 @@ public class SFStatementMetaData
 
   private List<MetaDataOfBinds> metaDataOfBinds;
 
+  private final boolean isValidMetaData;
+
   SFStatementMetaData(SFResultSetMetaData resultSetMetaData,
                       SFStatementType statementType,
                       int numberOfBinds,
                       boolean arrayBindSupported,
-                      List<MetaDataOfBinds> metaDataOfBinds)
+                      List<MetaDataOfBinds> metaDataOfBinds,
+                      boolean isValidMetaData)
   {
     this.resultSetMetaData = resultSetMetaData;
     this.statementType = statementType;
     this.numberOfBinds = numberOfBinds;
     this.arrayBindSupported = arrayBindSupported;
     this.metaDataOfBinds = metaDataOfBinds;
+    this.isValidMetaData = isValidMetaData;
   }
 
   public SFResultSetMetaData getResultSetMetaData()
@@ -83,6 +87,19 @@ public class SFStatementMetaData
   }
 
   /**
+   * Is a valid metadata or not. If true, this object is a valid metadata from describe.
+   * If false, a dummy/empty metadata generated because prepare statement fails.
+   * <p>
+   * This is used to determine if the content is valid or not, e.g., number of bind parameters.
+   *
+   * @return true or false
+   */
+  public boolean isValidMetaData()
+  {
+    return isValidMetaData;
+  }
+
+  /**
    * According to StatementType, to decide whether array binds supported or not
    * <p>
    * Currently, only INSERT supports array bind
@@ -99,6 +116,11 @@ public class SFStatementMetaData
     return this.statementType;
   }
 
+  /**
+   * Generates an empty/invalid metadata for placeholder.
+   *
+   * @return statement metadata
+   */
   public static SFStatementMetaData emptyMetaData()
   {
     return new SFStatementMetaData(
@@ -110,6 +132,7 @@ public class SFStatementMetaData
         SFStatementType.UNKNOWN,
         0,
         false,
-        new ArrayList<>());
+        new ArrayList<>(),
+        false); // invalid metadata
   }
 }
