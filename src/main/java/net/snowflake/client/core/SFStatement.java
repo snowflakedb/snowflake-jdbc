@@ -210,7 +210,8 @@ public class SFStatement
                                    baseResultSet.getStatementType(),
                                    baseResultSet.getNumberOfBinds(),
                                    baseResultSet.isArrayBindSupported(),
-                                   baseResultSet.getMetaDataOfBinds());
+                                   baseResultSet.getMetaDataOfBinds(),
+                                   true); // valid metadata
   }
 
   /**
