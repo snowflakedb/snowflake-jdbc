@@ -464,27 +464,6 @@ public class ConnectionIT extends BaseJDBCTest
     fail();
   }
 
-  @Ignore("invalid db, schema or role no longer raises SQLWarnigs")
-  @Test
-  public void testInvalidDbOrSchemaOrRole() throws SQLException
-  {
-    Properties properties = new Properties();
-
-    properties.put("db", "invalid_db");
-    properties.put("schema", "invalid_schema");
-
-    Connection connection = getConnection(properties);
-
-    SQLWarning warning = connection.getWarnings();
-    assertEquals("01000", warning.getSQLState());
-    warning = warning.getNextWarning();
-    assertEquals("01000", warning.getSQLState());
-    assertEquals(null, warning.getNextWarning());
-
-    connection.clearWarnings();
-    assertEquals(null, connection.getWarnings());
-  }
-
   @Test
   public void testConnectViaDataSource() throws SQLException
   {
