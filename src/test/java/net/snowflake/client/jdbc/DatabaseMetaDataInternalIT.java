@@ -119,7 +119,7 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest
     assertEquals("2", resultSet.getString("DECIMAL_DIGITS"));
     assertEquals(DatabaseMetaData.columnNullable, resultSet.getInt("NULLABLE"));
     assertEquals("cmt colA", resultSet.getString("REMARKS"));
-    assertEquals("", resultSet.getString("COLUMN_DEF"));
+    assertEquals(null, resultSet.getString("COLUMN_DEF"));
     assertEquals("YES", resultSet.getString("IS_NULLABLE"));
     assertEquals("YES", resultSet.getString("IS_AUTOINCREMENT"));
     resultSet.close();
@@ -136,7 +136,7 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest
 
     resultSet = databaseMetaData.getColumns("JDBC_DB1", "JDBC_SCHEMA12", "JDBC_TBL122", "COLC");
     resultSet.next();
-    assertEquals("", resultSet.getString(13));
+    assertEquals(null, resultSet.getString(13));
     assertEquals("YES", resultSet.getString(23));
 
     // SNOW-24558 Metadata request with special characters in table name
