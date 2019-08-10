@@ -244,6 +244,135 @@ public class ResultSetArrowForceMultiTimeZoneIT extends BaseJDBCTest
     }
   }
 
+  @Test
+  public void testTimestampLTZOutputFormat() throws SQLException
+  {
+    String[] cases = {
+        "2017-01-01 12:00:00 Z",
+        "2014-01-02 16:00:00 Z",
+        "2014-01-02 12:34:56 Z"
+    };
+
+    long[] times =
+        {
+            1483272000000l,
+            1388678400000l,
+            1388666096000l
+        };
+
+    SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    dateFormat.setTimeZone(TimeZone.getDefault());
+
+    String table = "test_arrow_ts_ltz";
+
+    String column = "(a timestamp_ltz)";
+
+    String values = "('" + StringUtils.join(cases, "'),('") + "')";
+    Connection con = init(table, column, values);
+
+    Statement statement = con.createStatement();
+
+    // use initialized ltz output format
+    ResultSet rs = statement.executeQuery("select * from " + table);
+    for(int i = 0; i<cases.length; i++)
+    {
+      rs.next();
+      assertEquals(times[i], rs.getTimestamp(1).getTime());
+      String weekday = rs.getString(1).split(",")[0];
+      assertEquals(3, weekday.length());
+    }
+
+
+    // change ltz output format
+    statement.execute("alter session set TIMESTAMP_LTZ_OUTPUT_FORMAT='YYYY-MM-DD HH24:MI:SS TZH:TZM'");
+    rs = statement.executeQuery("select * from " + table);
+    for(int i = 0; i<cases.length; i++)
+    {
+      rs.next();
+      assertEquals(times[i], rs.getTimestamp(1).getTime());
+      String year = rs.getString(1).split("-")[0];
+      assertEquals(4, year.length());
+    }
+
+    // unset ltz output format, then it should use timestamp_output_format
+    statement.execute("alter session unset TIMESTAMP_LTZ_OUTPUT_FORMAT");
+    rs = statement.executeQuery("select * from " + table);
+    for(int i = 0; i<cases.length; i++)
+    {
+      rs.next();
+      assertEquals(times[i], rs.getTimestamp(1).getTime());
+      String weekday = rs.getString(1).split(",")[0];
+      assertEquals(3, weekday.length());
+    }
+
+    // set ltz output format back to init value
+    statement.execute("alter session set TIMESTAMP_LTZ_OUTPUT_FORMAT='DY, DD MON YYYY HH24:MI:SS TZHTZM'");
+    rs = statement.executeQuery("select * from " + table);
+    for(int i = 0; i<cases.length; i++)
+    {
+      rs.next();
+      assertEquals(times[i], rs.getTimestamp(1).getTime());
+      String weekday = rs.getString(1).split(",")[0];
+      assertEquals(3, weekday.length());
+    }
+
+    finish(table, con);
+  }
+
+  @Test
+  public void testTimestampLTZWithNulls() throws SQLException
+  {
+    String[] cases = {
+        "2017-01-01 12:00:00 Z",
+        "2014-01-02 16:00:00 Z",
+        "2014-01-02 12:34:56 Z",
+        "1970-01-01 00:00:00 Z",
+        "1970-01-01 00:00:01 Z",
+        "1969-12-31 11:59:59 Z",
+        "0000-01-01 00:00:01 Z",
+        "0001-12-31 11:59:59 Z"
+    };
+
+    long[] times =
+        {
+            1483272000000l,
+            1388678400000l,
+            1388666096000l,
+            0,
+            1000,
+            -43201000,
+            -62167391999000l,
+            -62104276801000l
+        };
+
+    SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    dateFormat.setTimeZone(TimeZone.getDefault());
+
+    String table = "test_arrow_ts_ltz";
+
+    String column = "(a timestamp_ltz)";
+
+    String values = "('" + StringUtils.join(cases, "'), (null),('") + "')";
+    Connection con = init(table, column, values);
+    ResultSet rs = con.createStatement().executeQuery("select * from " + table);
+    int i = 0;
+    while (i < 2*cases.length-1)
+    {
+      rs.next();
+      if (i % 2 != 0)
+      {
+        assertNull(rs.getTimestamp(1));
+      }
+      else
+      {
+        assertEquals(times[i/2], rs.getTimestamp(1).getTime());
+        assertEquals(0, rs.getTimestamp(1).getNanos());
+      }
+      i++;
+    }
+    finish(table, con);
+  }
+
   public void testTimestampLTZWithScale(int scale) throws SQLException, ParseException
   {
     String[] cases = {
@@ -442,8 +571,6 @@ public class ResultSetArrowForceMultiTimeZoneIT extends BaseJDBCTest
         790870987
     };
 
-    SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-
     String table = "test_arrow_ts_tz";
 
     String column = "(a timestamp_tz)";
@@ -459,6 +586,70 @@ public class ResultSetArrowForceMultiTimeZoneIT extends BaseJDBCTest
       {
         // TODO: Is this a JDBC bug which happens in both arrow and json cases?
         assertEquals("0001-01-01 00:00:01.790870987", rs.getTimestamp(1).toString());
+      }
+
+      assertEquals(times[i], rs.getTimestamp(1).getTime());
+      assertEquals(nanos[i++], rs.getTimestamp(1).getNanos());
+    }
+    rs.next();
+    assertNull(rs.getString(1));
+    finish(table, con);
+  }
+
+  @Test
+  public void testTimestampTZWithMicros() throws SQLException, ParseException
+  {
+    String[] cases = {
+        "2017-01-01 12:00:00.1",
+        "2014-01-02 16:00:00.123456",
+        "2014-01-02 12:34:56.999999",
+        "1969-12-31 23:59:59.000001",
+        "1970-01-01 00:00:00.000001",
+        "1970-01-01 00:00:01.00001",
+        "1969-12-31 11:59:59.134",
+        "0001-12-31 11:59:59.234141",
+        "0000-01-01 00:00:01.79087"
+    };
+
+    long[] times = {
+        1483272000100l,
+        1388678400123l,
+        1388666096999l,
+        -1000,
+        0,
+        1000,
+        -43200866,
+        -62104276800766l,
+        -62167391998210l
+    };
+
+    int[] nanos = {
+        100000000,
+        123456000,
+        999999000,
+        1000,
+        1000,
+        10000,
+        134000000,
+        234141000,
+        790870000
+    };
+
+    String table = "test_arrow_ts_tz";
+
+    String column = "(a timestamp_tz(6))";
+
+    String values = "('" + StringUtils.join(cases, " Z'),('") + " Z'), (null)";
+    Connection con = init(table, column, values);
+    ResultSet rs = con.createStatement().executeQuery("select * from " + table);
+    int i = 0;
+    while (i < cases.length)
+    {
+      rs.next();
+      if (i == cases.length - 1 && tz.equalsIgnoreCase("utc"))
+      {
+        // TODO: Is this a JDBC bug which happens in both arrow and json cases?
+        assertEquals("0001-01-01 00:00:01.79087", rs.getTimestamp(1).toString());
       }
 
       assertEquals(times[i], rs.getTimestamp(1).getTime());
