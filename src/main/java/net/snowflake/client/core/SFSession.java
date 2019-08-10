@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
 import net.snowflake.client.jdbc.ErrorCode;
+import net.snowflake.client.jdbc.SnowflakeConnectString;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.jdbc.SnowflakeType;
 import net.snowflake.client.jdbc.SnowflakeUtil;
@@ -1366,5 +1367,17 @@ public class SFSession
   public void setValidateDefaultParameters(boolean v)
   {
     validateDefaultParameters = v;
+  }
+
+  private SnowflakeConnectString sfConnStr;
+
+  public void setSnowflakeConnectionString(SnowflakeConnectString connStr)
+  {
+    sfConnStr = connStr;
+  }
+
+  public SnowflakeConnectString getSnowflakeConnectionString()
+  {
+    return sfConnStr;
   }
 }

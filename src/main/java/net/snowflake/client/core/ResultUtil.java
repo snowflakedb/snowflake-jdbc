@@ -419,7 +419,8 @@ public class ResultUtil
                                          resultData.networkTimeoutInMilli,
                                          useJsonParserV2,
                                          memoryLimit,
-                                         resultOutput.queryResultFormat);
+                                         resultOutput.queryResultFormat,
+                                         sfSession);
       }
     }
 

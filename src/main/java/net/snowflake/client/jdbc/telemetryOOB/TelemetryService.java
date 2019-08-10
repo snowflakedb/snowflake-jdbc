@@ -200,17 +200,20 @@ public class TelemetryService
 
   public void updateContext(SnowflakeConnectString conStr)
   {
-    sfConnStr = conStr;
-    configureDeployment(conStr);
-    context = new JSONObject();
-
-    for (Map.Entry<String, Object> entry : conStr.getParameters().entrySet())
+    if (conStr != null)
     {
-      String k = entry.getKey();
-      Object v = entry.getValue();
-      if (!"password".equalsIgnoreCase(k) && !"privateKey".equalsIgnoreCase(k) && !"passcode".equalsIgnoreCase(k))
+      sfConnStr = conStr;
+      configureDeployment(conStr);
+      context = new JSONObject();
+
+      for (Map.Entry<String, Object> entry : conStr.getParameters().entrySet())
       {
-        context.put(k, v);
+        String k = entry.getKey();
+        Object v = entry.getValue();
+        if (!SecretDetector.isSensitive(k))
+        {
+          context.put(k, v);
+        }
       }
     }
   }
