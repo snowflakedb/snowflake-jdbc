@@ -52,7 +52,8 @@ public enum SFSessionProperty
   PROXY_PORT("proxyPort", false, String.class),
   PROXY_USER("proxyUser", false, String.class),
   PROXY_PASSWORD("proxyPassword", false, String.class),
-  NON_PROXY_HOSTS("nonProxyHosts", false, String.class);
+  NON_PROXY_HOSTS("nonProxyHosts", false, String.class),
+  VALIDATE_DEFAULT_PARAMETERS("validateDefaultParameters", false, Boolean.class);
 
   // property key in string
   private String propertyKey;
@@ -158,16 +159,7 @@ public enum SFSessionProperty
       if (property.getValueType() == Boolean.class &&
           propertyValue instanceof String)
       {
-        if ("on".equalsIgnoreCase((String) propertyValue) ||
-            "true".equalsIgnoreCase((String) propertyValue))
-        {
-          return true;
-        }
-        else if ("off".equalsIgnoreCase((String) propertyValue) ||
-                 "false".equalsIgnoreCase((String) propertyValue))
-        {
-          return false;
-        }
+        return SFLoginInput.getBooleanValue(propertyValue);
       }
       else if (property.getValueType() == Integer.class &&
                propertyValue instanceof String)

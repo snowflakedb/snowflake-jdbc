@@ -20,6 +20,7 @@ public class SFLoginInput
   private String schemaName;
   private String warehouse;
   private String role;
+  private boolean validateDefaultParameters;
   private String authenticator;
   private String oktaUserName;
   private String accountName;
@@ -98,6 +99,17 @@ public class SFLoginInput
   public SFLoginInput setRole(String role)
   {
     this.role = role;
+    return this;
+  }
+
+  public boolean isValidateDefaultParameters()
+  {
+    return validateDefaultParameters;
+  }
+
+  public SFLoginInput setValidateDefaultParameters(Object v)
+  {
+    validateDefaultParameters = getBooleanValue(v);
     return this;
   }
 
@@ -330,5 +342,19 @@ public class SFLoginInput
   {
     this.ocspMode = ocspMode;
     return this;
+  }
+
+  static boolean getBooleanValue(Object v)
+  {
+    if (v instanceof Boolean)
+    {
+      return (Boolean) v;
+    }
+    else if (v instanceof String)
+    {
+      return !"false".equalsIgnoreCase((String) v) && !"off".equalsIgnoreCase((String) v) &&
+            ("true".equalsIgnoreCase((String) v) || "on".equalsIgnoreCase((String) v));
+    }
+    return false;
   }
 }

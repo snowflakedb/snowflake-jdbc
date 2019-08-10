@@ -29,6 +29,7 @@ import java.net.Socket;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -217,7 +218,7 @@ public class SessionUtilExternalBrowser
       String json = mapper.writeValueAsString(authnData);
 
       // attach the login info json body to the post request
-      StringEntity input = new StringEntity(json, Charset.forName("UTF-8"));
+      StringEntity input = new StringEntity(json, StandardCharsets.UTF_8);
       input.setContentType("application/json");
       postRequest.setEntity(input);
 

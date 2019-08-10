@@ -54,6 +54,8 @@ public class ConnectionIT extends BaseJDBCTest
 {
   // create a local constant for this code for testing purposes (already defined in GS)
   private static final int INVALID_CONNECTION_INFO_CODE = 390100;
+  private static final int SESSION_CREATION_OBJECT_DOES_NOT_EXIST_NOT_AUTHORIZED = 390201;
+  private static final int ROLE_IN_CONNECT_STRING_DOES_NOT_EXIST = 390189;
 
   private boolean defaultState;
 
@@ -1117,5 +1119,113 @@ public class ConnectionIT extends BaseJDBCTest
     DriverManager.getConnection(String.format(
         "jdbc:snowflake://%s.reg.snowflakecomputing.com:%s/",
         params.get("account"), params.get("port")), properties);
+  }
+
+  @Test
+  public void testValidateDefaultParameters() throws Throwable
+  {
+    Map<String, String> params = getConnectionParameters();
+    Properties props;
+
+    props = setCommonConnectionParameters(true);
+    props.put("db", "NOT_EXISTS");
+    try
+    {
+      DriverManager.getConnection(params.get("uri"), props);
+      fail("should fail");
+    }
+    catch (SQLException ex)
+    {
+      assertEquals("error code", ex.getErrorCode(), SESSION_CREATION_OBJECT_DOES_NOT_EXIST_NOT_AUTHORIZED);
+    }
+
+    // schema is invalid
+    props = setCommonConnectionParameters(true);
+    props.put("schema", "NOT_EXISTS");
+    try
+    {
+      DriverManager.getConnection(params.get("uri"), props);
+      fail("should fail");
+    }
+    catch (SQLException ex)
+    {
+      assertEquals("error code", ex.getErrorCode(), SESSION_CREATION_OBJECT_DOES_NOT_EXIST_NOT_AUTHORIZED);
+    }
+
+    // warehouse is invalid
+    props = setCommonConnectionParameters(true);
+    props.put("warehouse", "NOT_EXISTS");
+    try
+    {
+      DriverManager.getConnection(params.get("uri"), props);
+      fail("should fail");
+    }
+    catch (SQLException ex)
+    {
+      assertEquals("error code", ex.getErrorCode(), SESSION_CREATION_OBJECT_DOES_NOT_EXIST_NOT_AUTHORIZED);
+    }
+
+    // role is invalid
+    props = setCommonConnectionParameters(true);
+    props.put("role", "NOT_EXISTS");
+    try
+    {
+      DriverManager.getConnection(params.get("uri"), props);
+      fail("should fail");
+    }
+    catch (SQLException ex)
+    {
+      assertEquals("error code", ex.getErrorCode(), ROLE_IN_CONNECT_STRING_DOES_NOT_EXIST);
+    }
+  }
+
+  @Test
+  public void testNoValidateDefaultParameters() throws Throwable
+  {
+    Map<String, String> params = getConnectionParameters();
+    Properties props;
+
+    props = setCommonConnectionParameters(false);
+    props.put("db", "NOT_EXISTS");
+    DriverManager.getConnection(params.get("uri"), props);
+
+    // schema is invalid
+    props = setCommonConnectionParameters(false);
+    props.put("schema", "NOT_EXISTS");
+    DriverManager.getConnection(params.get("uri"), props);
+
+    // warehouse is invalid
+    props = setCommonConnectionParameters(false);
+    props.put("warehouse", "NOT_EXISTS");
+    DriverManager.getConnection(params.get("uri"), props);
+
+    // role is invalid
+    props = setCommonConnectionParameters(false);
+    props.put("role", "NOT_EXISTS");
+    try
+    {
+      DriverManager.getConnection(params.get("uri"), props);
+      fail("should fail");
+    }
+    catch (SQLException ex)
+    {
+      assertEquals("error code", ex.getErrorCode(), ROLE_IN_CONNECT_STRING_DOES_NOT_EXIST);
+    }
+  }
+
+  private Properties setCommonConnectionParameters(boolean validateDefaultParameters)
+  {
+    Map<String, String> params = getConnectionParameters();
+    Properties props = new Properties();
+    props.put("validateDefaultParameters", validateDefaultParameters);
+    props.put("account", params.get("account"));
+    props.put("ssl", params.get("ssl"));
+    props.put("role", params.get("role"));
+    props.put("user", params.get("user"));
+    props.put("password", params.get("password"));
+    props.put("db", params.get("database"));
+    props.put("schema", params.get("schema"));
+    props.put("warehouse", params.get("warehouse"));
+    return props;
   }
 }

@@ -18,6 +18,7 @@ import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.Writer;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -35,7 +36,7 @@ class FileCacheManager
   private static final ObjectMapper OBJECT_MAPPER =
       ObjectMapperFactory.getObjectMapper();
 
-  private static final Charset DEFAULT_FILE_ENCODING = Charset.forName("UTF-8");
+  private static final Charset DEFAULT_FILE_ENCODING = StandardCharsets.UTF_8;
 
   private String cacheDirectorySystemProperty;
   private String cacheDirectoryEnvironmentVariable;
