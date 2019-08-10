@@ -18,6 +18,7 @@ import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.Storage.BlobListOption;
 import com.google.cloud.storage.StorageException;
 import com.google.cloud.storage.StorageOptions;
+
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -30,6 +31,7 @@ import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
 import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.jdbc.ErrorCode;
@@ -62,11 +64,11 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient
 
   private final static SFLogger logger =
       SFLoggerFactory.getLogger(SnowflakeGCSClient.class);
-  
+
   private SnowflakeGCSClient()
   {
   }
- 
+
   /*
    * Factory method for a SnowflakeGCSClient object
    * @param stage   The stage information that the client will operate on
@@ -138,10 +140,11 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient
 
   /**
    * listObjects gets all the objects in a path
+   *
    * @param remoteStorageLocation bucket name
-   * @param prefix Path
+   * @param prefix                Path
    * @return
-   * @throws StorageProviderException 
+   * @throws StorageProviderException
    */
   @Override
   public StorageObjectSummaryCollection listObjects(String remoteStorageLocation,
@@ -161,14 +164,14 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient
 
   @Override
   public StorageObjectMetadata getObjectMetadata(String remoteStorageLocation,
-                                                 String prefix) 
-          throws StorageProviderException
+                                                 String prefix)
+  throws StorageProviderException
   {
     try
     {
       BlobId blobId = BlobId.of(remoteStorageLocation, prefix);
       Blob blob = gcsClient.get(blobId);
-      
+
       // GCS returns null if the blob was not found
       // By design, our storage platform expects to see a "blob not found" situation
       // as a RemoteStorageProviderException
@@ -179,12 +182,12 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient
             new StorageException(
                 404, // because blob not found
                 "Blob" + blobId.getName() + " not found in bucket "
-                    + blobId.getBucket())
+                + blobId.getBucket())
         );
       }
-      
-      return new CommonObjectMetadata(blob.getSize(), 
-                                      blob.getContentEncoding(), 
+
+      return new CommonObjectMetadata(blob.getSize(),
+                                      blob.getContentEncoding(),
                                       blob.getMetadata());
     }
     catch (StorageException ex)
@@ -194,13 +197,13 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient
   }
 
   @Override
-  public void download(SFSession connection, 
+  public void download(SFSession connection,
                        String command,
-                       String localLocation, 
+                       String localLocation,
                        String destFileName,
-                       int parallelism, 
+                       int parallelism,
                        String remoteStorageLocation,
-                       String stageFilePath, 
+                       String stageFilePath,
                        String stageRegion) throws SnowflakeSQLException
   {
     int retryCount = 0;
@@ -216,10 +219,10 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient
               new StorageException(
                   404, // because blob not found
                   "Blob" + blobId.getName() + " not found in bucket "
-                      + blobId.getBucket())
-              );
+                  + blobId.getBucket())
+          );
         }
-        
+
         String localFilePath = localLocation + localFileSep + destFileName;
         File localFile = new File(localFilePath);
         blob.downloadTo(localFile.toPath());
@@ -277,7 +280,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient
                                       int parallelism,
                                       String remoteStorageLocation,
                                       String stageFilePath, String stageRegion)
-          throws SnowflakeSQLException
+  throws SnowflakeSQLException
   {
     int retryCount = 0;
     do
@@ -292,12 +295,12 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient
               new StorageException(
                   404, // because blob not found
                   "Blob" + blobId.getName() + " not found in bucket "
-                      + blobId.getBucket())
-              );
+                  + blobId.getBucket())
+          );
         }
-        
+
         InputStream stream = new ByteArrayInputStream(blob.getContent());
-        
+
         // Get the user-defined BLOB metadata
         Map<String, String> userDefinedMetadata = blob.getMetadata();
         AbstractMap.SimpleEntry<String, String> encryptionData =
@@ -343,16 +346,16 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient
   }
 
   @Override
-  public void upload(SFSession connection, 
-                     String command, 
+  public void upload(SFSession connection,
+                     String command,
                      int parallelism,
-                     boolean uploadFromStream, 
+                     boolean uploadFromStream,
                      String remoteStorageLocation,
-                     File srcFile, 
-                     String destFileName, 
+                     File srcFile,
+                     String destFileName,
                      InputStream inputStream,
                      FileBackedOutputStream fileBackedOutputStream,
-                     StorageObjectMetadata meta, 
+                     StorageObjectMetadata meta,
                      String stageRegion) throws SnowflakeSQLException
   {
     final List<FileInputStream> toClose = new ArrayList<>();
@@ -374,13 +377,13 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient
       {
         logger.debug("Starting upload");
         InputStream fileInputStream = uploadStreamInfo.left;
-        
+
         BlobId blobId = BlobId.of(remoteStorageLocation, destFileName);
         BlobInfo blobInfo = BlobInfo
-          .newBuilder(blobId)
-          .setContentEncoding(meta.getContentEncoding())
-          .setMetadata(meta.getUserMetadata())
-          .build();
+            .newBuilder(blobId)
+            .setContentEncoding(meta.getContentEncoding())
+            .setMetadata(meta.getUserMetadata())
+            .build();
 
         gcsClient.create(blobInfo, fileInputStream);
 
@@ -418,7 +421,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient
                                     ErrorCode.INTERNAL_ERROR.getMessageCode(),
                                     "Unexpected: upload unsuccessful without exception!");
   }
-  
+
   private SFPair<InputStream, Boolean> createUploadStream(
       File srcFile,
       boolean uploadFromStream,
@@ -442,9 +445,9 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient
         try
         {
           final InputStream uploadStream = uploadFromStream ?
-                                            (fileBackedOutputStream != null ?
-                                             fileBackedOutputStream.asByteSource().openStream() :
-                                             inputStream) :
+                                           (fileBackedOutputStream != null ?
+                                            fileBackedOutputStream.asByteSource().openStream() :
+                                            inputStream) :
                                            (srcFileStream = new FileInputStream(srcFile));
           toClose.add(srcFileStream);
 
@@ -501,12 +504,12 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient
   }
 
   @Override
-  public void handleStorageException(Exception ex, 
+  public void handleStorageException(Exception ex,
                                      int retryCount,
-                                     String operation, 
+                                     String operation,
                                      SFSession connection,
-                                     String command) 
-          throws SnowflakeSQLException
+                                     String command)
+  throws SnowflakeSQLException
   {
     // no need to retry if it is invalid key exception
     if (ex.getCause() instanceof InvalidKeyException)
@@ -527,7 +530,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient
         // we need to refresh the GCS client with the new token
         SnowflakeFileTransferAgent.renewExpiredToken(connection, command, this);
       }
-      
+
       // If we have exceeded the max number of retries, propagate the error
       if (retryCount > getMaxRetries())
       {
@@ -599,7 +602,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient
       }
     }
   }
-  
+
   /**
    * Returns the material descriptor key
    */
@@ -643,14 +646,14 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient
                          + ",\"KeyWrappingMetadata\":{\"EncryptionLibrary\":"
                          + "\"Java 5.3.0\"}}", key64, iv64);
   }
-  
+
   /*
    * parseEncryptionData
    * Takes the json string in the encryptiondata metadata field of the encrypted
    * blob and parses out the key and iv. Returns the pair as key = key, iv = value.
    */
   private AbstractMap.SimpleEntry<String, String> parseEncryptionData(String jsonEncryptionData)
-    throws SnowflakeSQLException
+  throws SnowflakeSQLException
   {
     ObjectMapper mapper = ObjectMapperFactory.getObjectMapper();
     JsonFactory factory = mapper.getFactory();
@@ -671,8 +674,8 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient
                                       "Error parsing encryption data as json" + ": " +
                                       ex.getMessage());
     }
-  }  
-  
+  }
+
   /**
    * Adds digest metadata to the StorageObjectMetadata object
    */
@@ -693,7 +696,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient
   {
     return meta.getUserMetadata().get("sfc-digest");
   }
-  
+
   /*
    * Initializes the GCS client
    * This method is used during the object contruction, but also to
@@ -705,7 +708,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient
    * @throws IllegalArgumentException when invalid credentials are used
    */
   private void setupGCSClient(StageInfo stage, RemoteStoreFileEncryptionMaterial encMat)
-    throws IllegalArgumentException, SnowflakeSQLException
+  throws IllegalArgumentException, SnowflakeSQLException
   {
     // Save the client creation parameters so that we can reuse them,
     // to reset the GCS client.
@@ -721,19 +724,19 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient
       if (accessToken != null)
       {
         AccessToken googleAccessToken = new AccessToken(accessToken, null);
-        
+
         googleCreds = GoogleCredentials.create(googleAccessToken);
         // We are authenticated with an oauth access token.
         this.gcsClient = StorageOptions.newBuilder()
-                                       .setCredentials(googleCreds)
-                                       .build()
-                                       .getService();
+            .setCredentials(googleCreds)
+            .build()
+            .getService();
       }
       else
       {
         // Use anonymous authentication.
         this.gcsClient = StorageOptions.getUnauthenticatedInstance()
-                                       .getService();
+            .getService();
       }
 
       if (encMat != null)

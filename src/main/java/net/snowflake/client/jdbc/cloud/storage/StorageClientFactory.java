@@ -201,10 +201,10 @@ public class StorageClientFactory
    */
   private SnowflakeGCSClient createGCSClient(StageInfo stage,
                                              RemoteStoreFileEncryptionMaterial encMat)
-    throws SnowflakeSQLException
+  throws SnowflakeSQLException
   {
     logger.debug("createGCSClient encryption={}", (encMat == null ? "no" : "yes"));
- 
+
     SnowflakeGCSClient gcsClient;
 
     try
