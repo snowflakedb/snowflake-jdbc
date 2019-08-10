@@ -63,10 +63,16 @@ public class HttpUtil
   static final int DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT = 300000; // ms
 
   /**
-   * The unique httpClient shared by all connections, this will benefit long
+   * The unique httpClient shared by all connections. This will benefit long-
    * lived clients
    */
   private static CloseableHttpClient httpClient = null;
+
+  /**
+   * The unique httpClient shared by all connections that don't want 
+   * decompression. This will benefit long-lived clients
+   */
+  private static CloseableHttpClient httpClientWithoutDecompression = null;
 
   /**
    * Handle on the static connection manager, to gather statistics mainly
@@ -112,10 +118,16 @@ public class HttpUtil
    * @param ocspMode      INSECURE/FAILOPEN/FAILCLOSED.
    * @param ocspCacheFile OCSP response cache file. If null, the default
    *                      OCSP response file will be used.
+   * @param useOcspCacheServer Whether to use the OCSP cache
+   * @param downloadCompressed Whether the HTTP client should be built requesting
+   *                           no decompression
    * @return HttpClient object
    */
   static CloseableHttpClient buildHttpClient(
-      OCSPMode ocspMode, File ocspCacheFile, boolean useOcspCacheServer)
+      OCSPMode ocspMode, 
+      File ocspCacheFile, 
+      boolean useOcspCacheServer, 
+      boolean downloadCompressed)
   {
     // set timeout so that we don't wait forever.
     // Setup the default configuration for all requests on this client
@@ -185,8 +197,11 @@ public class HttpUtil
           httpClientBuilder = httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider);
         }
       }
-      httpClient = httpClientBuilder.build();
-      return httpClient;
+      if (downloadCompressed)
+      {
+        httpClientBuilder = httpClientBuilder.disableContentCompression();
+      }
+      return httpClientBuilder.build();
     }
     catch (NoSuchAlgorithmException | KeyManagementException ex)
     {
@@ -203,6 +218,44 @@ public class HttpUtil
   {
     return initHttpClient(OCSPMode.FAIL_OPEN, null);
   }
+  
+  /**
+   * Gets HttpClient with insecureMode false and disabling decompression
+   *
+   * @return HttpClient object shared across all connections
+   */
+  public static CloseableHttpClient getHttpClientWithoutDecompression()
+  {
+    return initHttpClientWithoutDecompression(OCSPMode.FAIL_OPEN, null);
+  }
+  
+  /**
+   * Accessor for the HTTP client singleton.
+   *
+   * @param ocspMode      OCSPMode
+   * @param ocspCacheFile OCSP response cache file name. if null, the default
+   *                      file will be used.
+   * @return HttpClient object shared across all connections
+   */
+  public static CloseableHttpClient initHttpClientWithoutDecompression(OCSPMode ocspMode, 
+                                                                       File ocspCacheFile)
+  {
+    if (httpClientWithoutDecompression == null)
+    {
+      synchronized (HttpUtil.class)
+      {
+        if (httpClientWithoutDecompression == null)
+        {
+          httpClientWithoutDecompression = buildHttpClient(
+              ocspMode,
+              ocspCacheFile,
+              enableOcspResponseCacheServer(),
+              true);
+        }
+      }
+    }
+    return httpClientWithoutDecompression;
+  }
 
   /**
    * Accessor for the HTTP client singleton.
@@ -212,7 +265,8 @@ public class HttpUtil
    *                      file will be used.
    * @return HttpClient object shared across all connections
    */
-  public static CloseableHttpClient initHttpClient(OCSPMode ocspMode, File ocspCacheFile)
+  public static CloseableHttpClient initHttpClient(OCSPMode ocspMode, 
+                                                   File ocspCacheFile)
   {
     if (httpClient == null)
     {
@@ -223,7 +277,8 @@ public class HttpUtil
           httpClient = buildHttpClient(
               ocspMode,
               ocspCacheFile,
-              enableOcspResponseCacheServer());
+              enableOcspResponseCacheServer(),
+              false);
         }
       }
     }

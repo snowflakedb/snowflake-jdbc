@@ -955,7 +955,7 @@ public class SFSession
     return this.injectFileUploadFailure;
   }
 
-  protected int getNetworkTimeoutInMilli()
+  public int getNetworkTimeoutInMilli()
   {
     return networkTimeoutInMilli;
   }

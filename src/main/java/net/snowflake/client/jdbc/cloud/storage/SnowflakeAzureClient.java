@@ -300,11 +300,13 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient
    * @param remoteStorageLocation remote storage location, i.e. bucket for S3
    * @param stageFilePath         stage file path
    * @param stageRegion           region name where the stage persists
+   * @param presignedUrl          Unused in Azure
    * @throws SnowflakeSQLException download failure
    **/
   @Override
   public void download(SFSession connection, String command, String localLocation, String destFileName,
-                       int parallelism, String remoteStorageLocation, String stageFilePath, String stageRegion)
+                       int parallelism, String remoteStorageLocation, String stageFilePath, String stageRegion,
+                       String presignedUrl)
   throws SnowflakeSQLException
   {
     int retryCount = 0;
@@ -379,13 +381,14 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient
    * @param remoteStorageLocation remote storage location, i.e. bucket for s3
    * @param stageFilePath         stage file path
    * @param stageRegion           region name where the stage persists
+   * @param presignedUrl          Unused in Azure
    * @return input file stream
    * @throws SnowflakeSQLException when download failure
    */
   @Override
   public InputStream downloadToStream(SFSession connection, String command, int parallelism,
                                       String remoteStorageLocation, String stageFilePath,
-                                      String stageRegion) throws SnowflakeSQLException
+                                      String stageRegion, String presignedUrl) throws SnowflakeSQLException
   {
     int retryCount = 0;
 
@@ -464,12 +467,14 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient
    * @param fileBackedOutputStream stream used for uploading if not null
    * @param meta                   object meta data
    * @param stageRegion            region name where the stage persists
+   * @param presignedUrl           Unused in Azure
    * @throws SnowflakeSQLException if upload failed even after retry
    */
   @Override
   public void upload(SFSession connection, String command, int parallelism, boolean uploadFromStream,
                      String remoteStorageLocation, File srcFile, String destFileName, InputStream inputStream,
-                     FileBackedOutputStream fileBackedOutputStream, StorageObjectMetadata meta, String stageRegion)
+                     FileBackedOutputStream fileBackedOutputStream, StorageObjectMetadata meta, String stageRegion,
+                     String presignedUrl)
   throws SnowflakeSQLException
   {
     final List<FileInputStream> toClose = new ArrayList<>();

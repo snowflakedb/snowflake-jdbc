@@ -1049,7 +1049,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest
       closeSQLObjects(resultSet, statement, connection);
     }
   }
-
+  
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
   public void testExplainPlan() throws Throwable
@@ -3326,13 +3326,13 @@ public class SnowflakeDriverIT extends BaseJDBCTest
       {
         statement.execute("CREATE OR REPLACE STAGE testPutGet_stage");
 
-        assertTrue("Failed to pu a file",
+        assertTrue("Failed to put a file",
                    statement.execute("PUT file://" + soureFilePath + " @testPutGet_stage"));
 
         findFile(statement, "ls @testPutGet_stage/");
 
         // download the file we just uploaded to stage
-        assertTrue("Failed to get  afile", statement.execute(
+        assertTrue("Failed to get a file", statement.execute(
             "GET @testPutGet_stage 'file://"
             + destFolderCanonicalPath + "' parallel=8"));
 
