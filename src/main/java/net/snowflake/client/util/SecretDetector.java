@@ -8,7 +8,10 @@ import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -62,6 +65,38 @@ public class SecretDetector
 
   private static final SFLogger LOGGER = SFLoggerFactory.getLogger(
       SecretDetector.class);
+
+  private static String[] SENSITIVE_NAMES = {
+      "access_key_id",
+      "accesstoken",
+      "aws_key_id",
+      "aws_secret_key",
+      "awsaccesskeyid",
+      "keysecret",
+      "passcode",
+      "password",
+      "privatekey",
+      "privatekeydata",
+      "secret_access_key",
+      "sig",
+      "signature",
+      "temptoken",
+  };
+
+  private static Set<String> SENSITIVE_NAME_SET = new HashSet<>(Arrays.asList(SENSITIVE_NAMES));
+
+  /**
+   * Check whether the name is sensitive
+   * @param name
+   */
+  public static boolean isSensitive(String name)
+  {
+    if (SENSITIVE_NAME_SET.contains(name.toLowerCase()))
+    {
+      return true;
+    }
+    return false;
+  }
 
   /**
    * Find all the positions of aws key id and aws secret key.

@@ -124,6 +124,7 @@ public class SnowflakeConnectionV1 implements Connection
     TelemetryService.getInstance().updateContext(conStr);
     // open connection to GS
     sfSession = new SFSession();
+    sfSession.setSnowflakeConnectionString(conStr);
 
     try
     {

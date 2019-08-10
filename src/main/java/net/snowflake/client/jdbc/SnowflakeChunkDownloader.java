@@ -15,6 +15,7 @@ import net.snowflake.client.core.DownloaderMetrics;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.QueryResultFormat;
+import net.snowflake.client.core.SFSession;
 import net.snowflake.client.jdbc.SnowflakeResultChunk.DownloadState;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.client.log.ArgSupplier;
@@ -85,6 +86,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
   private static final SFLogger logger =
       SFLoggerFactory.getLogger(SnowflakeChunkDownloader.class);
   private static final int STREAM_BUFFER_SIZE = 1 * 1024 * 1024;
+  private final SFSession session;
 
   private JsonResultChunk.ResultChunkDataCache chunkDataCache
       = new JsonResultChunk.ResultChunkDataCache();
@@ -133,11 +135,6 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
    * query result format
    */
   private QueryResultFormat queryResultFormat;
-
-  /**
-   * the current out-of-band telemetry service
-   */
-  private TelemetryService mainTelemetryService;
 
   static long getCurrentMemoryUsage()
   {
@@ -201,8 +198,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
 
   /**
    * Constructor to initialize downloader
-   *
-   * @param colCount              number of columns to expect
+   *  @param colCount              number of columns to expect
    * @param chunksData            JSON object contains all the chunk information
    * @param prefetchThreads       number of prefetch threads
    * @param qrmk                  Query Result Master Key
@@ -210,6 +206,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
    * @param networkTimeoutInMilli network timeout
    * @param useJsonParserV2       should JsonParserV2 be used instead of object
    * @param memoryLimit           memory limit for chunk buffer
+   * @param sfSession             current session
    */
   public SnowflakeChunkDownloader(int colCount,
                                   JsonNode chunksData,
@@ -219,16 +216,17 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
                                   int networkTimeoutInMilli,
                                   boolean useJsonParserV2,
                                   long memoryLimit,
-                                  QueryResultFormat queryResultFormat)
+                                  QueryResultFormat queryResultFormat,
+                                  SFSession sfSession)
   throws SnowflakeSQLException
   {
+    this.session = sfSession;
     this.qrmk = qrmk;
     this.networkTimeoutInMilli = networkTimeoutInMilli;
     this.prefetchSlots = prefetchThreads * 2;
     this.useJsonParserV2 = useJsonParserV2;
     this.memoryLimit = memoryLimit;
     this.queryResultFormat = queryResultFormat;
-    this.mainTelemetryService = TelemetryService.getInstance();
     logger.debug("qrmk = {}", qrmk);
 
     if (chunkHeaders != null && !chunkHeaders.isMissingNode())
@@ -387,7 +385,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
                                                    qrmk, nextChunkToDownload,
                                                    chunkHeadersMap,
                                                    networkTimeoutInMilli,
-                                                   mainTelemetryService));
+                                                   session));
 
           // increment next chunk to download
           nextChunkToDownload++;
@@ -720,7 +718,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
    *                                chunks. This is mainly for logging purpose
    * @param chunkHeadersMap         contains headers needed to be added when downloading from s3
    * @param networkTimeoutInMilli   network timeout
-   * @param mainTelemetryService    the main OOB telemetry service used by this session
+   * @param session                 current session
    * @return A callable responsible for downloading chunk
    */
   private static Callable<Void> getDownloadChunkCallable(
@@ -728,8 +726,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
       final SnowflakeResultChunk resultChunk,
       final String qrmk, final int chunkIndex,
       final Map<String, String> chunkHeadersMap,
-      final int networkTimeoutInMilli,
-      TelemetryService mainTelemetryService)
+      final int networkTimeoutInMilli, SFSession session)
   {
     return new Callable<Void>()
     {
@@ -754,7 +751,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
           long startTime = System.currentTimeMillis();
 
           // initialize the telemetry service for this downloader thread using the main telemetry service
-          TelemetryService.getInstance().updateContext(mainTelemetryService.getSnowflakeConnectionString());
+          TelemetryService.getInstance().updateContext(session.getSnowflakeConnectionString());
           HttpResponse response = getResultChunk(resultChunk.getUrl());
 
           /*
