@@ -315,6 +315,17 @@ public enum SnowflakeType
       return type;
     }
 
+    public static JavaSQLType find(int type)
+    {
+      for (JavaSQLType t : ALL_TYPES)
+      {
+        if (t.type == type)
+        {
+          return t;
+        }
+      }
+      return null;
+    }
   }
 
   /**
