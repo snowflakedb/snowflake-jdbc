@@ -69,6 +69,9 @@ public class StorageClientFactory
       case AZURE:
         return createAzureClient(stage, encMat);
 
+      case GCS:
+        return createGCSClient(stage, encMat);
+
       default:
         // We don't create a storage client for FS_LOCAL,
         // so we should only find ourselves here if an unsupported
@@ -142,7 +145,10 @@ public class StorageClientFactory
         return new S3ObjectMetadata();
 
       case AZURE:
-        return new AzureObjectMetadata();
+      case GCS:
+        // GCS's metadata object looks just like Azure's (Map<String, String>),
+        // so for now we'll use the same class.
+        return new CommonObjectMetadata();
 
       default:
         // An unsupported remote storage client type was specified
@@ -185,6 +191,34 @@ public class StorageClientFactory
     return azureClient;
   }
 
+  /**
+   * Creates a SnowflakeGCSClient object which encapsulates
+   * the GCS Storage client
+   *
+   * @param stage  Stage information
+   * @param encMat encryption material for the client
+   * @return the SnowflakeGCSClient  instance created
+   */
+  private SnowflakeGCSClient createGCSClient(StageInfo stage,
+                                             RemoteStoreFileEncryptionMaterial encMat)
+    throws SnowflakeSQLException
+  {
+    logger.debug("createGCSClient encryption={}", (encMat == null ? "no" : "yes"));
+ 
+    SnowflakeGCSClient gcsClient;
 
+    try
+    {
+      gcsClient = SnowflakeGCSClient.createSnowflakeGCSClient(stage, encMat);
+    }
+    catch (Exception ex)
+    {
+      logger.debug("Exception creating GCS Storage client", ex);
+      throw ex;
+    }
+    logger.debug("GCS Storage client created");
+
+    return gcsClient;
+  }
 }
 
