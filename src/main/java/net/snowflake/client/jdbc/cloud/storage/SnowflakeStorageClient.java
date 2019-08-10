@@ -47,7 +47,17 @@ public interface SnowflakeStorageClient
    * @return Returns the size of the encryption key
    */
   int getEncryptionKeySize();
-
+  
+  /**
+   * @return Whether this client requires the use of presigned URLs for upload
+   * and download instead of credentials that work for all files uploaded/
+   * downloaded to a stage path. True for GCS.
+   */
+  default boolean requirePresignedUrl()
+  {
+    return false;
+  }
+  
   /**
    * Re-creates the encapsulated storage client with a fresh access token
    *
@@ -95,10 +105,12 @@ public interface SnowflakeStorageClient
    * @param remoteStorageLocation remote storage location, i.e. bucket for S3
    * @param stageFilePath         stage file path
    * @param stageRegion           region name where the stage persists
+   * @param presignedUrl          presigned URL for download. Used by GCP.
    * @throws SnowflakeSQLException download failure
    **/
   void download(SFSession connection, String command, String localLocation, String destFileName,
-                int parallelism, String remoteStorageLocation, String stageFilePath, String stageRegion)
+                int parallelism, String remoteStorageLocation, String stageFilePath, String stageRegion,
+                String presignedUrl)
   throws SnowflakeSQLException;
 
   /**
@@ -110,12 +122,13 @@ public interface SnowflakeStorageClient
    * @param remoteStorageLocation remote storage location, i.e. bucket for s3
    * @param stageFilePath         stage file path
    * @param stageRegion           region name where the stage persists
+   * @param presignedUrl          presigned URL for download. Used by GCP.
    * @return input file stream
    * @throws SnowflakeSQLException when download failure
    */
   InputStream downloadToStream(SFSession connection, String command, int parallelism,
                                String remoteStorageLocation, String stageFilePath,
-                               String stageRegion) throws SnowflakeSQLException;
+                               String stageRegion, String presignedUrl) throws SnowflakeSQLException;
 
   /**
    * Upload a file (-stream) to remote storage
@@ -131,11 +144,13 @@ public interface SnowflakeStorageClient
    * @param fileBackedOutputStream stream used for uploading if not null
    * @param meta                   object meta data
    * @param stageRegion            region name where the stage persists
+   * @param presignedUrl           presigned URL for upload. Used by GCP.
    * @throws SnowflakeSQLException if upload failed even after retry
    */
   void upload(SFSession connection, String command, int parallelism, boolean uploadFromStream,
               String remoteStorageLocation, File srcFile, String destFileName, InputStream inputStream,
-              FileBackedOutputStream fileBackedOutputStream, StorageObjectMetadata meta, String stageRegion)
+              FileBackedOutputStream fileBackedOutputStream, StorageObjectMetadata meta, String stageRegion,
+              String presignedUrl)
   throws SnowflakeSQLException;
 
   /**

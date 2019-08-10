@@ -97,7 +97,8 @@ public class SFTrustManagerIT extends BaseJDBCTest
       HttpClient client = HttpUtil.buildHttpClient(
           OCSPMode.FAIL_CLOSED,
           null, // default OCSP response cache file
-          true // use OCSP response cache server
+          true, // use OCSP response cache server
+          false // enable decompression
       );
       accessHost(host, client);
     }
@@ -118,7 +119,8 @@ public class SFTrustManagerIT extends BaseJDBCTest
       HttpClient client = HttpUtil.buildHttpClient(
           OCSPMode.FAIL_CLOSED,
           ocspCacheFile, // a temp OCSP response cache file
-          false // NOT use OCSP response cache server
+          false, // NOT use OCSP response cache server
+          false // enable decompression
       );
       accessHost(host, client);
     }
@@ -137,7 +139,8 @@ public class SFTrustManagerIT extends BaseJDBCTest
       HttpClient client = HttpUtil.buildHttpClient(
           OCSPMode.FAIL_CLOSED,
           ocspCacheFile, // a temp OCSP response cache file
-          true // use OCSP response cache server
+          true, // use OCSP response cache server
+          false // enable decompression
       );
       accessHost(host, client);
     }
@@ -157,7 +160,8 @@ public class SFTrustManagerIT extends BaseJDBCTest
       HttpClient client = HttpUtil.buildHttpClient(
           OCSPMode.FAIL_OPEN,
           ocspCacheFile, // a temp OCSP response cache file
-          false // use OCSP response cache server
+          false, // use OCSP response cache server
+          false // enable decompression
       );
       accessHost(host, client);
     }
@@ -176,7 +180,8 @@ public class SFTrustManagerIT extends BaseJDBCTest
     HttpClient client = HttpUtil.buildHttpClient(
         OCSPMode.FAIL_CLOSED,
         ocspCacheFile, // a temp OCSP response cache file
-        true // use OCSP response cache server
+        true, // use OCSP response cache server
+        false // enable decompression
     );
     accessHost(host, client);
   }
