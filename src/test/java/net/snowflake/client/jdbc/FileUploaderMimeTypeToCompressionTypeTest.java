@@ -35,6 +35,7 @@ public class FileUploaderMimeTypeToCompressionTypeTest
     return Arrays.asList(new Object[][]{
         {"text/csv", null},
         {"snowflake/orc", SnowflakeFileTransferAgent.FileCompressionType.ORC},
+        {"snowflake/orc;p=1", SnowflakeFileTransferAgent.FileCompressionType.ORC},
         {"snowflake/parquet", SnowflakeFileTransferAgent.FileCompressionType.PARQUET},
         {"application/zlib", SnowflakeFileTransferAgent.FileCompressionType.DEFLATE},
         {"application/x-bzip2", SnowflakeFileTransferAgent.FileCompressionType.BZIP2},
