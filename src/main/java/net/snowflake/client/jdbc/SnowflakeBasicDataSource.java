@@ -6,6 +6,7 @@ import net.snowflake.client.log.SFLoggerFactory;
 
 import javax.sql.DataSource;
 import java.io.PrintWriter;
+import java.security.PrivateKey;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
@@ -26,6 +27,8 @@ public class SnowflakeBasicDataSource implements DataSource
   private String password;
 
   private int portNumber = 0;
+
+  private String authenticator;
 
   private Properties properties = new Properties();
 
@@ -58,7 +61,10 @@ public class SnowflakeBasicDataSource implements DataSource
   throws SQLException
   {
     properties.put("user", username);
-    properties.put("password", password);
+    if (!"SNOWFLAKE_JWT".equalsIgnoreCase(authenticator))
+    {
+      properties.put("password", password);
+    }
 
     try
     {
@@ -181,6 +187,7 @@ public class SnowflakeBasicDataSource implements DataSource
 
   public void setAuthenticator(String authenticator)
   {
+    this.authenticator = authenticator;
     this.properties.put("authenticator", authenticator);
   }
 
@@ -203,5 +210,12 @@ public class SnowflakeBasicDataSource implements DataSource
 
       return url.toString();
     }
+  }
+
+  public void setPrivateKey(PrivateKey privateKey)
+  {
+    this.authenticator = "SNOWFLAKE_JWT";
+    this.properties.put("authenticator", this.authenticator);
+    this.properties.put("privateKey", privateKey);
   }
 }
