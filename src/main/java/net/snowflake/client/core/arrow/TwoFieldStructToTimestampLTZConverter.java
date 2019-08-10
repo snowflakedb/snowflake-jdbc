@@ -56,7 +56,7 @@ public class TwoFieldStructToTimestampLTZConverter extends AbstractArrowVectorCo
     }
     Timestamp ts = toTimestamp(index, TimeZone.getDefault());
 
-    return ts == null ? null : context.getTimestampLTZFormatter().format(ts, TimeZone.getDefault(),
+    return ts == null ? null : context.getTimestampLTZFormatter().format(ts, context.getTimeZone(),
                                                                          context.getScale(columnIndex));
   }
 
