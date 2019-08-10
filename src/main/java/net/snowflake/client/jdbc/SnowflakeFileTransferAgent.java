@@ -59,6 +59,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.zip.GZIPOutputStream;
 
+import static net.snowflake.client.jdbc.SnowflakeFileTransferAgent.logger;
+
 /**
  * Class for uploading/downloading files
  *
@@ -130,8 +132,14 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
   // Encryption material
   private List<RemoteStoreFileEncryptionMaterial> encryptionMaterial;
 
+  // Presigned URLs
+  private List<String> presignedUrls;
+
   // Index: Source file to encryption material
   HashMap<String, RemoteStoreFileEncryptionMaterial> srcFileToEncMat;
+
+  // Index: Source file to presigned URL
+  HashMap<String, String> srcFileToPresignedUrl;
 
   public Map<?, ?> getStageCredentials()
   {
@@ -146,6 +154,11 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
   public Map<String, RemoteStoreFileEncryptionMaterial> getSrcToMaterialsMap()
   {
     return new HashMap<>(srcFileToEncMat);
+  }
+  
+  public Map<String, String> getSrcToPresignedUrlMap()
+  {
+    return new HashMap<>(srcFileToPresignedUrl);
   }
 
   public String getStageLocation()
@@ -182,6 +195,21 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
     }
   }
 
+  private void initPresignedUrls(CommandType commandType, JsonNode jsonNode)
+  throws SnowflakeSQLException, JsonProcessingException, IOException
+  {
+    presignedUrls = new ArrayList<>();
+    JsonNode rootNode = jsonNode.path("data").path("presignedUrls");
+    if (commandType == CommandType.DOWNLOAD)
+    {
+      logger.debug("initEncryptionMaterial: DOWNLOAD");
+
+      if (!rootNode.isMissingNode() && !rootNode.isNull())
+      {
+        presignedUrls = Arrays.asList(mapper.readValue(rootNode.toString(), String[].class));
+      }
+    }
+  }
 
   public enum CommandType
   {
@@ -856,6 +884,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
    * @param command         command string
    * @param encMat          remote store encryption material
    * @param parallel        number of parallel threads for downloading
+   * @param presignedUrl    Presigned URL for file download
    * @return a callable responsible for downloading files
    */
   public static Callable<Void> getDownloadFileCallable(
@@ -867,7 +896,8 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
       final SFSession connection,
       final String command,
       final int parallel,
-      final RemoteStoreFileEncryptionMaterial encMat)
+      final RemoteStoreFileEncryptionMaterial encMat,
+      final String presignedUrl)
   {
     return new Callable<Void>()
     {
@@ -912,7 +942,8 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
                                       connection,
                                       command,
                                       parallel,
-                                      encMat);
+                                      encMat,
+                                      presignedUrl);
               metadata.isEncrypted = encMat != null;
               break;
           }
@@ -974,6 +1005,14 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
    */
   private void parseCommand() throws SnowflakeSQLException
   {
+    // For AWS and Azure, this command returns enough info for us to get creds
+    // we can use for each of the GETs/PUTs. For GCS, we need to issue a separate
+    // call to GS to get creds (in the form of a presigned URL) for each file
+    // we're uploading or downloading. This call gets our src_location and 
+    // encryption material, which we'll use for all the subsequent calls to GS
+    // for creds for each file. Those calls are made from pushFileToRemoteStore
+    // and pullFileFromRemoteStore if the storage slient requires a presigned
+    // URL.
     JsonNode jsonNode = parseCommandInGS(statement, command);
 
     // get command type
@@ -994,6 +1033,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
     {
       src_locations = mapper.readValue(locationsNode.toString(), String[].class);
       initEncryptionMaterial(commandType, jsonNode);
+      initPresignedUrls(commandType, jsonNode);
     }
     catch (Exception ex)
     {
@@ -1040,6 +1080,17 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
         {
           srcFileToEncMat.put(src_locations[srcFileIdx],
                               encryptionMaterial.get(srcFileIdx));
+        }
+      }
+
+      // create mapping from source file to presigned URLs
+      srcFileToPresignedUrl = new HashMap<>();
+      if (src_locations.length == presignedUrls.size())
+      {
+        for (int srcFileIdx = 0; srcFileIdx < src_locations.length; srcFileIdx++)
+        {
+          srcFileToPresignedUrl.put(src_locations[srcFileIdx],
+                              presignedUrls.get(srcFileIdx));
         }
       }
 
@@ -1136,7 +1187,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
         }
       }
     }
-
+    
     if ("LOCAL_FS".equalsIgnoreCase(stageLocationType))
     {
       if (stageLocation.startsWith("~"))
@@ -1211,17 +1262,47 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
   private void verifyLocalFilePath(String localFilePathFromGS)
   throws SnowflakeSQLException
   {
+    String localFilePath = getLocalFilePathFromCommand(command);
+
+    if (!localFilePath.isEmpty() && !localFilePath.equals(localFilePathFromGS))
+    {
+      throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
+                                      ErrorCode.INTERNAL_ERROR.getMessageCode(),
+                                      "Unexpected local file path from GS. From GS: " +
+                                      localFilePathFromGS + ", expected: " + localFilePath);
+    }
+    else if (localFilePath.isEmpty())
+    {
+      logger.debug(
+          "fail to parse local file path from command: {}", command);
+    }
+    else
+    {
+      logger.trace(
+          "local file path from GS matches local parsing: {}", localFilePath);
+    }
+  }
+  
+  /**
+   * Parses out the local file path from the command. We need this to get the
+   * file paths to expand wildcards and make sure the paths GS returns are
+   * correct
+   * @param command The GET/PUT command we send to GS
+   * @return Path to the local file
+   */
+  private static String getLocalFilePathFromCommand(String command)
+  {
     if (command == null)
     {
       logger.error("null command");
-      return;
+      return null;
     }
 
     if (command.indexOf(FILE_PROTOCOL) < 0)
     {
       logger.error(
           "file:// prefix not found in command: {}", command);
-      return;
+      return null;
     }
 
     int localFilePathBeginIdx = command.indexOf(FILE_PROTOCOL) +
@@ -1273,23 +1354,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
       }
     }
 
-    if (!localFilePath.isEmpty() && !localFilePath.equals(localFilePathFromGS))
-    {
-      throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
-                                      ErrorCode.INTERNAL_ERROR.getMessageCode(),
-                                      "Unexpected local file path from GS. From GS: " +
-                                      localFilePathFromGS + ", expected: " + localFilePath);
-    }
-    else if (localFilePath.isEmpty())
-    {
-      logger.debug(
-          "fail to parse local file path from command: {}", command);
-    }
-    else
-    {
-      logger.trace(
-          "local file path from GS matches local parsing: {}", localFilePath);
-    }
+    return localFilePath;
   }
 
   /**
@@ -1374,8 +1439,10 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
         processFileCompressionTypes();
       }
 
-      // filter out files that are already existing in the destination
-      if (!overwrite)
+      // Filter out files that are already existing in the destination.
+      // GCS doesn't have permission to list in the presigned url, so we'll
+      // always overwrite.
+      if (!overwrite && stageInfo.getStageType() != StageInfo.StageType.GCS)
       {
         logger.debug("Start filtering");
 
@@ -1465,13 +1532,20 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
       RemoteStoreFileEncryptionMaterial encMat = encryptionMaterial.get(0);
       if (commandType == CommandType.UPLOAD)
       {
-        threadExecutor.submit(getUploadFileCallable(
-            stageInfo, SRC_FILE_NAME_FOR_STREAM,
-            fileMetadataMap.get(SRC_FILE_NAME_FOR_STREAM),
-            (stageInfo.getStageType() == StageInfo.StageType.LOCAL_FS) ?
-            null : storageFactory.createClient(stageInfo, parallel, encMat),
-            connection, command,
-            sourceStream, true, parallel, null, encMat));
+        threadExecutor.submit(
+                getUploadFileCallable(
+                  stageInfo, 
+                  SRC_FILE_NAME_FOR_STREAM,
+                  fileMetadataMap.get(SRC_FILE_NAME_FOR_STREAM),
+                  (stageInfo.getStageType() == StageInfo.StageType.LOCAL_FS) ?
+                    null : storageFactory.createClient(stageInfo, parallel, encMat),
+                  connection, 
+                  command,
+                  sourceStream, 
+                  true, 
+                  parallel, 
+                  null, 
+                  encMat));
       }
       else if (commandType == CommandType.DOWNLOAD)
       {
@@ -1529,10 +1603,11 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
     }
 
     RemoteStoreFileEncryptionMaterial encMat = srcFileToEncMat.get(fileName);
+    String presignedUrl = srcFileToPresignedUrl.get(fileName);
 
     return storageFactory.createClient(stageInfo, parallel, encMat)
         .downloadToStream(connection, command, parallel, remoteLocation.location,
-                          stageFilePath, stageInfo.getRegion());
+                          stageFilePath, stageInfo.getRegion(), presignedUrl);
   }
 
   /**
@@ -1559,6 +1634,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
         }
 
         RemoteStoreFileEncryptionMaterial encMat = srcFileToEncMat.get(srcFile);
+        String presignedUrl = srcFileToPresignedUrl.get(srcFile);
         threadExecutor.submit(getDownloadFileCallable(
             stageInfo,
             srcFile,
@@ -1569,7 +1645,8 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
             connection,
             command,
             parallel,
-            encMat));
+            encMat,
+            presignedUrl));
 
         logger.debug("submitted download job for: {}", srcFile);
       }
@@ -1914,6 +1991,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
   {
     remoteLocation remoteLocation = extractLocationAndPath(stage.getLocation());
 
+    String origDestFileName = destFileName;
     if (remoteLocation.path != null && !remoteLocation.path.isEmpty())
     {
       destFileName = remoteLocation.path +
@@ -1943,10 +2021,26 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
 
     try
     {
+      String presignedUrl = "";
+      if (initialClient.requirePresignedUrl())
+      {
+        // need to replace file://mypath/myfile?.csv with file://mypath/myfile1.csv.gz
+        String localFilePath = getLocalFilePathFromCommand(command);
+        String commandWithExactPath = command.replace(localFilePath, origDestFileName);
+        // then hand that to GS to get the actual presigned URL we'll use
+        SFStatement statement = new SFStatement(connection);
+        JsonNode jsonNode = parseCommandInGS(statement, commandWithExactPath);
+
+        if (!jsonNode.path("data").path("stageInfo").path("presignedUrl").isMissingNode())
+        {
+          presignedUrl = jsonNode.path("data").path("stageInfo").path("presignedUrl").asText();
+        }
+      }
       initialClient.upload(connection, command, parallel,
                            uploadFromStream,
                            remoteLocation.location, srcFile, destFileName,
-                           inputStream, fileBackedOutStr, meta, stage.getRegion());
+                           inputStream, fileBackedOutStr, meta, stage.getRegion(), 
+                           presignedUrl);
     }
     finally
     {
@@ -1989,7 +2083,8 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
                                               SFSession connection,
                                               String command,
                                               int parallel,
-                                              RemoteStoreFileEncryptionMaterial encMat)
+                                              RemoteStoreFileEncryptionMaterial encMat,
+                                              String presignedUrl)
   throws SQLException
   {
     remoteLocation remoteLocation = extractLocationAndPath(stage.getLocation());
@@ -2011,7 +2106,8 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
 
     initialClient.download(connection, command,
                            localLocation, destFileName, parallel,
-                           remoteLocation.location, stageFilePath, stage.getRegion());
+                           remoteLocation.location, stageFilePath, stage.getRegion(),
+                           presignedUrl);
   }
 
   /**

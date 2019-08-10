@@ -23,6 +23,7 @@ public class StageInfo
   private String region;              // AWS/S3/GCS region (S3/GCS only)
   private String endPoint;            // The Azure Storage endpoint (Azure only)
   private String storageAccount;      // The Azure Storage account (Azure only)
+  private String presignedUrl;        // GCS gives us back a presigned URL instead of a cred
 
   /*
    * Creates a StageInfo object
@@ -140,6 +141,16 @@ public class StageInfo
   public String getStorageAccount()
   {
     return storageAccount;
+  }
+  
+  public String getPresignedUrl()
+  {
+    return presignedUrl;
+  }
+
+  public void setPresignedUrl(String presignedUrl)
+  {
+    this.presignedUrl = presignedUrl;
   }
 
   private static boolean isSpecified(String arg)

@@ -274,6 +274,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient
    * @param remoteStorageLocation s3 bucket name
    * @param stageFilePath         stage file path
    * @param stageRegion           region name where the stage persists
+   * @param presignedUrl          Not used in S3
    * @throws SnowflakeSQLException if download failed without an exception
    * @throws SnowflakeSQLException if failed to decrypt downloaded file
    * @throws SnowflakeSQLException if file metadata is incomplete
@@ -286,7 +287,8 @@ public class SnowflakeS3Client implements SnowflakeStorageClient
                        int parallelism,
                        String remoteStorageLocation,
                        String stageFilePath,
-                       String stageRegion) throws SnowflakeSQLException
+                       String stageRegion,
+                       String presignedUrl) throws SnowflakeSQLException
   {
     TransferManager tx = null;
     int retryCount = 0;
@@ -380,13 +382,14 @@ public class SnowflakeS3Client implements SnowflakeStorageClient
    * @param remoteStorageLocation remote storage location, i.e. bucket for s3
    * @param stageFilePath         stage file path
    * @param stageRegion           region name where the stage persists
+   * @param presignedUrl          Not used in S3
    * @return input file stream
    * @throws SnowflakeSQLException when download failure
    */
   @Override
   public InputStream downloadToStream(SFSession connection, String command, int parallelism,
                                       String remoteStorageLocation, String stageFilePath,
-                                      String stageRegion) throws SnowflakeSQLException
+                                      String stageRegion, String presignedUrl) throws SnowflakeSQLException
   {
     int retryCount = 0;
     do
@@ -458,6 +461,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient
    * @param fileBackedOutputStream stream used for uploading if not null
    * @param meta                   object meta data
    * @param stageRegion            region name where the stage persists
+   * @param presignedUrl           Not used in S3
    * @throws SnowflakeSQLException if upload failed even after retry
    */
   @Override
@@ -472,7 +476,8 @@ public class SnowflakeS3Client implements SnowflakeStorageClient
       InputStream inputStream,
       FileBackedOutputStream fileBackedOutputStream,
       StorageObjectMetadata meta,
-      String stageRegion) throws SnowflakeSQLException
+      String stageRegion,
+      String presignedUrl) throws SnowflakeSQLException
   {
     final long originalContentLength = meta.getContentLength();
     final List<FileInputStream> toClose = new ArrayList<>();

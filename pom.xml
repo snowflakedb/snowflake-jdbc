@@ -159,8 +159,7 @@
     <dependency>
        <groupId>com.google.guava</groupId>
        <artifactId>guava</artifactId>
-       <version>18.0</version>
-       <type>jar</type>
+       <version>28.0-jre</version>
     </dependency>
     <dependency>
       <groupId>net.snowflake</groupId>
@@ -682,6 +681,9 @@
                           <include>com/google/common/io/**</include>
                           <include>com/google/common/base/**</include>
                           <include>com/google/common/hash/**</include>
+                          <include>com/google/common/collect/**</include>
+                          <include>com/google/common/graph/**</include>
+                          <include>com/google/common/math/**</include>
                         </includes>
                       </filter>
                       <filter>
