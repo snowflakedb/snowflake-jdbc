@@ -381,7 +381,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
 
       connection.createStatement().execute(
           "create or replace table " + targetTable +
-          "(C1 int, C2 varchar(100), C3 string, C4 number(18,4), C5 double, C6 boolean, " +
+          "(C1 int, C2 varchar(100), C3 string default '', C4 number(18,4), C5 double, C6 boolean, " +
           "C7 date not null, C8 time, C9 timestamp_ntz(7), C10 binary," +
           "C11 variant, C12 timestamp_ltz(8), C13 timestamp_tz(3))");
 
@@ -391,6 +391,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
       verifyResultSetMetaDataColumns(resultSet, DBMetadataResultSetMetadata.GET_COLUMNS);
 
       // C1 metadata
+
       assertTrue(resultSet.next());
       assertEquals(database, resultSet.getString("TABLE_CAT"));
       assertEquals(schema, resultSet.getString("TABLE_SCHEM"));
@@ -404,7 +405,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
       assertEquals(ResultSetMetaData.columnNullable,
                    resultSet.getInt("NULLABLE"));
       assertEquals("", resultSet.getString("REMARKS"));
-      assertEquals("", resultSet.getString("COLUMN_DEF"));
+      assertEquals(null, resultSet.getString("COLUMN_DEF"));
 
       assertEquals(0, resultSet.getInt("CHAR_OCTET_LENGTH"));
       assertEquals(1, resultSet.getInt("ORDINAL_POSITION"));
@@ -430,7 +431,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
       assertEquals(ResultSetMetaData.columnNullable,
                    resultSet.getInt("NULLABLE"));
       assertEquals("", resultSet.getString("REMARKS"));
-      assertEquals("", resultSet.getString("COLUMN_DEF"));
+      assertEquals(null, resultSet.getString("COLUMN_DEF"));
 
       assertEquals(100, resultSet.getInt("CHAR_OCTET_LENGTH"));
       assertEquals(2, resultSet.getInt("ORDINAL_POSITION"));
@@ -482,7 +483,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
       assertEquals(ResultSetMetaData.columnNullable,
                    resultSet.getInt("NULLABLE"));
       assertEquals("", resultSet.getString("REMARKS"));
-      assertEquals("", resultSet.getString("COLUMN_DEF"));
+      assertEquals(null, resultSet.getString("COLUMN_DEF"));
 
       assertEquals(0, resultSet.getInt("CHAR_OCTET_LENGTH"));
       assertEquals(4, resultSet.getInt("ORDINAL_POSITION"));
@@ -508,7 +509,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
       assertEquals(ResultSetMetaData.columnNullable,
                    resultSet.getInt("NULLABLE"));
       assertEquals("", resultSet.getString("REMARKS"));
-      assertEquals("", resultSet.getString("COLUMN_DEF"));
+      assertEquals(null, resultSet.getString("COLUMN_DEF"));
 
       assertEquals(0, resultSet.getInt("CHAR_OCTET_LENGTH"));
       assertEquals(5, resultSet.getInt("ORDINAL_POSITION"));
@@ -534,7 +535,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
       assertEquals(ResultSetMetaData.columnNullable,
                    resultSet.getInt("NULLABLE"));
       assertEquals("", resultSet.getString("REMARKS"));
-      assertEquals("", resultSet.getString("COLUMN_DEF"));
+      assertEquals(null, resultSet.getString("COLUMN_DEF"));
 
       assertEquals(0, resultSet.getInt("CHAR_OCTET_LENGTH"));
       assertEquals(6, resultSet.getInt("ORDINAL_POSITION"));
@@ -560,7 +561,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
       assertEquals(ResultSetMetaData.columnNoNulls,
                    resultSet.getInt("NULLABLE"));
       assertEquals("", resultSet.getString("REMARKS"));
-      assertEquals("", resultSet.getString("COLUMN_DEF"));
+      assertEquals(null, resultSet.getString("COLUMN_DEF"));
 
       assertEquals(0, resultSet.getInt("CHAR_OCTET_LENGTH"));
       assertEquals(7, resultSet.getInt("ORDINAL_POSITION"));
@@ -586,7 +587,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
       assertEquals(ResultSetMetaData.columnNullable,
                    resultSet.getInt("NULLABLE"));
       assertEquals("", resultSet.getString("REMARKS"));
-      assertEquals("", resultSet.getString("COLUMN_DEF"));
+      assertEquals(null, resultSet.getString("COLUMN_DEF"));
 
       assertEquals(0, resultSet.getInt("CHAR_OCTET_LENGTH"));
       assertEquals(8, resultSet.getInt("ORDINAL_POSITION"));
@@ -612,7 +613,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
       assertEquals(ResultSetMetaData.columnNullable,
                    resultSet.getInt("NULLABLE"));
       assertEquals("", resultSet.getString("REMARKS"));
-      assertEquals("", resultSet.getString("COLUMN_DEF"));
+      assertEquals(null, resultSet.getString("COLUMN_DEF"));
 
       assertEquals(0, resultSet.getInt("CHAR_OCTET_LENGTH"));
       assertEquals(9, resultSet.getInt("ORDINAL_POSITION"));
@@ -638,7 +639,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
       assertEquals(ResultSetMetaData.columnNullable,
                    resultSet.getInt("NULLABLE"));
       assertEquals("", resultSet.getString("REMARKS"));
-      assertEquals("", resultSet.getString("COLUMN_DEF"));
+      assertEquals(null, resultSet.getString("COLUMN_DEF"));
 
       assertEquals(0, resultSet.getInt("CHAR_OCTET_LENGTH"));
       assertEquals(10, resultSet.getInt("ORDINAL_POSITION"));
@@ -664,7 +665,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
       assertEquals(ResultSetMetaData.columnNullable,
                    resultSet.getInt("NULLABLE"));
       assertEquals("", resultSet.getString("REMARKS"));
-      assertEquals("", resultSet.getString("COLUMN_DEF"));
+      assertEquals(null, resultSet.getString("COLUMN_DEF"));
 
       assertEquals(0, resultSet.getInt("CHAR_OCTET_LENGTH"));
       assertEquals(11, resultSet.getInt("ORDINAL_POSITION"));
@@ -690,7 +691,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
       assertEquals(ResultSetMetaData.columnNullable,
                    resultSet.getInt("NULLABLE"));
       assertEquals("", resultSet.getString("REMARKS"));
-      assertEquals("", resultSet.getString("COLUMN_DEF"));
+      assertEquals(null, resultSet.getString("COLUMN_DEF"));
 
       assertEquals(0, resultSet.getInt("CHAR_OCTET_LENGTH"));
       assertEquals(12, resultSet.getInt("ORDINAL_POSITION"));
@@ -716,7 +717,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
       assertEquals(ResultSetMetaData.columnNullable,
                    resultSet.getInt("NULLABLE"));
       assertEquals("", resultSet.getString("REMARKS"));
-      assertEquals("", resultSet.getString("COLUMN_DEF"));
+      assertEquals(null, resultSet.getString("COLUMN_DEF"));
 
       assertEquals(0, resultSet.getInt("CHAR_OCTET_LENGTH"));
       assertEquals(13, resultSet.getInt("ORDINAL_POSITION"));
@@ -727,6 +728,33 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
       assertEquals((short) 0, resultSet.getShort("SOURCE_DATA_TYPE"));
       assertEquals("NO", resultSet.getString("IS_AUTOINCREMENT"));
       assertEquals("NO", resultSet.getString("IS_GENERATEDCOLUMN"));
+
+      connection.createStatement().execute(
+          "create or replace table " + targetTable +
+          "(C1 string, C2 string default '', C3 string default 'apples', C4 string default '\"apples\"', C5 int, C6 " +
+          "int default 5, C7 string default '''', C8 string default '''apples''''', C9  string default '%')");
+
+      metaData = connection.getMetaData();
+
+      resultSet = metaData.getColumns(database, schema, targetTable, "%");
+      assertTrue(resultSet.next());
+      assertEquals(null, resultSet.getString("COLUMN_DEF"));
+      assertTrue(resultSet.next());
+      assertEquals("", resultSet.getString("COLUMN_DEF"));
+      assertTrue(resultSet.next());
+      assertEquals("apples", resultSet.getString("COLUMN_DEF"));
+      assertTrue(resultSet.next());
+      assertEquals("\"apples\"", resultSet.getString("COLUMN_DEF"));
+      assertTrue(resultSet.next());
+      assertEquals(null, resultSet.getString("COLUMN_DEF"));
+      assertTrue(resultSet.next());
+      assertEquals("5", resultSet.getString("COLUMN_DEF"));
+      assertTrue(resultSet.next());
+      assertEquals("'", resultSet.getString("COLUMN_DEF"));
+      assertTrue(resultSet.next());
+      assertEquals("'apples''", resultSet.getString("COLUMN_DEF"));
+      assertTrue(resultSet.next());
+      assertEquals("%", resultSet.getString("COLUMN_DEF"));
 
       try
       {

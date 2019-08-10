@@ -1818,6 +1818,18 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
           String columnName = showObjectResultSet.getString(3);
           String dataTypeStr = showObjectResultSet.getString(4);
           String defaultValue = showObjectResultSet.getString(6);
+          defaultValue.trim();
+          if (defaultValue.startsWith("\'") && defaultValue.endsWith("\'"))
+          {
+            // remove extra set of single quotes
+            defaultValue = defaultValue.substring(1, defaultValue.length() -1);
+            // scan for 2 single quotes in a row and remove one of them
+            defaultValue = defaultValue.replace("''", "'");
+          }
+          else if (defaultValue.isEmpty())
+          {
+            defaultValue = null;
+          }
           String comment = showObjectResultSet.getString(9);
           String catalogName = showObjectResultSet.getString(10);
           String autoIncrement = showObjectResultSet.getString(11);
