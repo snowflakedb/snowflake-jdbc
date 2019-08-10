@@ -199,6 +199,7 @@ public class AbstractDriverIT
    * @param injectSocketTimeout number of seconds to inject in connection
    * @param paramProperties     connection properties
    * @param isAdmin             is Snowflake admin user?
+   * @param usesCom             uses com.snowflake instead of net.snowflake?
    * @return Connectiona database connection
    * @throws SQLException raised if any error occurs
    */

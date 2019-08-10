@@ -38,7 +38,7 @@ import static org.junit.Assert.fail;
 @RunWith(Parameterized.class)
 public class ResultSetMultiTimeZoneIT extends BaseJDBCTest
 {
-  @Parameterized.Parameters
+  @Parameterized.Parameters(name = "format={0}, tz={1}")
   public static Object[][] data()
   {
     // all tests in this class need to run for both query result formats json and arrow
