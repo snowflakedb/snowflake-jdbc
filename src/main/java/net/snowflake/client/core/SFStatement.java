@@ -14,6 +14,7 @@ import net.snowflake.client.jdbc.SnowflakeReauthenticationRequest;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.jdbc.telemetry.TelemetryData;
 import net.snowflake.client.jdbc.telemetry.TelemetryUtil;
+import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -772,6 +773,7 @@ public class SFStatement
                                  CallingMethod caller)
   throws SQLException, SFException
   {
+    TelemetryService.getInstance().updateContext(session.getSnowflakeConnectionString());
     sanityCheckQuery(sql);
 
     session.injectedDelay();
