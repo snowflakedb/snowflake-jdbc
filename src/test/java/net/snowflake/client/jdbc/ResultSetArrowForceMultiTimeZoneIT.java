@@ -22,7 +22,7 @@ import static org.junit.Assert.assertNull;
 @RunWith(Parameterized.class)
 public class ResultSetArrowForceMultiTimeZoneIT extends BaseJDBCTest
 {
-  @Parameterized.Parameters
+  @Parameterized.Parameters(name = "format={0}, tz={1}")
   public static Object[][] data()
   {
     // all tests in this class need to run for both query result formats json and arrow
@@ -31,18 +31,18 @@ public class ResultSetArrowForceMultiTimeZoneIT extends BaseJDBCTest
       return new Object[][]{
           {"json", "UTC"},
           {"json", "America/Los_Angeles"},
-          {"json", "America/New_York"},
-          {"json", "Pacific/Honolulu"},
+          // {"json", "America/New_York"},
+          // {"json", "Pacific/Honolulu"},
           {"json", "Asia/Singapore"},
           {"json", "MEZ"},
-          {"json", "MESZ"},
+          // {"json", "MESZ"},
           {"arrow_force", "UTC"},
           {"arrow_force", "America/Los_Angeles"},
-          {"arrow_force", "America/New_York"},
-          {"arrow_force", "Pacific/Honolulu"},
+          // {"arrow_force", "America/New_York"},
+          // {"arrow_force", "Pacific/Honolulu"},
           {"arrow_force", "Asia/Singapore"},
           {"arrow_force", "MEZ"},
-          {"arrow_force", "MESZ"}
+          // {"arrow_force", "MESZ"}
       };
     }
     else
