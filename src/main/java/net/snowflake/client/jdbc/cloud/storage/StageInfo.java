@@ -142,7 +142,7 @@ public class StageInfo
   {
     return storageAccount;
   }
-  
+
   public String getPresignedUrl()
   {
     return presignedUrl;

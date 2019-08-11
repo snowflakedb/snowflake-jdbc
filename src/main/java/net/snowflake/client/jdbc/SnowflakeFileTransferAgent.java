@@ -155,7 +155,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
   {
     return new HashMap<>(srcFileToEncMat);
   }
-  
+
   public Map<String, String> getSrcToPresignedUrlMap()
   {
     return new HashMap<>(srcFileToPresignedUrl);
@@ -1090,7 +1090,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
         for (int srcFileIdx = 0; srcFileIdx < src_locations.length; srcFileIdx++)
         {
           srcFileToPresignedUrl.put(src_locations[srcFileIdx],
-                              presignedUrls.get(srcFileIdx));
+                                    presignedUrls.get(srcFileIdx));
         }
       }
 
@@ -1187,7 +1187,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
         }
       }
     }
-    
+
     if ("LOCAL_FS".equalsIgnoreCase(stageLocationType))
     {
       if (stageLocation.startsWith("~"))
@@ -1282,11 +1282,12 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
           "local file path from GS matches local parsing: {}", localFilePath);
     }
   }
-  
+
   /**
    * Parses out the local file path from the command. We need this to get the
    * file paths to expand wildcards and make sure the paths GS returns are
    * correct
+   *
    * @param command The GET/PUT command we send to GS
    * @return Path to the local file
    */
@@ -1533,19 +1534,19 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
       if (commandType == CommandType.UPLOAD)
       {
         threadExecutor.submit(
-                getUploadFileCallable(
-                  stageInfo, 
-                  SRC_FILE_NAME_FOR_STREAM,
-                  fileMetadataMap.get(SRC_FILE_NAME_FOR_STREAM),
-                  (stageInfo.getStageType() == StageInfo.StageType.LOCAL_FS) ?
-                    null : storageFactory.createClient(stageInfo, parallel, encMat),
-                  connection, 
-                  command,
-                  sourceStream, 
-                  true, 
-                  parallel, 
-                  null, 
-                  encMat));
+            getUploadFileCallable(
+                stageInfo,
+                SRC_FILE_NAME_FOR_STREAM,
+                fileMetadataMap.get(SRC_FILE_NAME_FOR_STREAM),
+                (stageInfo.getStageType() == StageInfo.StageType.LOCAL_FS) ?
+                null : storageFactory.createClient(stageInfo, parallel, encMat),
+                connection,
+                command,
+                sourceStream,
+                true,
+                parallel,
+                null,
+                encMat));
       }
       else if (commandType == CommandType.DOWNLOAD)
       {
@@ -2039,7 +2040,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
       initialClient.upload(connection, command, parallel,
                            uploadFromStream,
                            remoteLocation.location, srcFile, destFileName,
-                           inputStream, fileBackedOutStr, meta, stage.getRegion(), 
+                           inputStream, fileBackedOutStr, meta, stage.getRegion(),
                            presignedUrl);
     }
     finally
