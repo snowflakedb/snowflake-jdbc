@@ -69,7 +69,7 @@ public class HttpUtil
   private static CloseableHttpClient httpClient = null;
 
   /**
-   * The unique httpClient shared by all connections that don't want 
+   * The unique httpClient shared by all connections that don't want
    * decompression. This will benefit long-lived clients
    */
   private static CloseableHttpClient httpClientWithoutDecompression = null;
@@ -115,18 +115,18 @@ public class HttpUtil
   /**
    * Build an Http client using our set of default.
    *
-   * @param ocspMode      INSECURE/FAILOPEN/FAILCLOSED.
-   * @param ocspCacheFile OCSP response cache file. If null, the default
-   *                      OCSP response file will be used.
+   * @param ocspMode           INSECURE/FAILOPEN/FAILCLOSED.
+   * @param ocspCacheFile      OCSP response cache file. If null, the default
+   *                           OCSP response file will be used.
    * @param useOcspCacheServer Whether to use the OCSP cache
    * @param downloadCompressed Whether the HTTP client should be built requesting
    *                           no decompression
    * @return HttpClient object
    */
   static CloseableHttpClient buildHttpClient(
-      OCSPMode ocspMode, 
-      File ocspCacheFile, 
-      boolean useOcspCacheServer, 
+      OCSPMode ocspMode,
+      File ocspCacheFile,
+      boolean useOcspCacheServer,
       boolean downloadCompressed)
   {
     // set timeout so that we don't wait forever.
@@ -218,7 +218,7 @@ public class HttpUtil
   {
     return initHttpClient(OCSPMode.FAIL_OPEN, null);
   }
-  
+
   /**
    * Gets HttpClient with insecureMode false and disabling decompression
    *
@@ -228,7 +228,7 @@ public class HttpUtil
   {
     return initHttpClientWithoutDecompression(OCSPMode.FAIL_OPEN, null);
   }
-  
+
   /**
    * Accessor for the HTTP client singleton.
    *
@@ -237,7 +237,7 @@ public class HttpUtil
    *                      file will be used.
    * @return HttpClient object shared across all connections
    */
-  public static CloseableHttpClient initHttpClientWithoutDecompression(OCSPMode ocspMode, 
+  public static CloseableHttpClient initHttpClientWithoutDecompression(OCSPMode ocspMode,
                                                                        File ocspCacheFile)
   {
     if (httpClientWithoutDecompression == null)
@@ -265,7 +265,7 @@ public class HttpUtil
    *                      file will be used.
    * @return HttpClient object shared across all connections
    */
-  public static CloseableHttpClient initHttpClient(OCSPMode ocspMode, 
+  public static CloseableHttpClient initHttpClient(OCSPMode ocspMode,
                                                    File ocspCacheFile)
   {
     if (httpClient == null)

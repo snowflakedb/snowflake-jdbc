@@ -1049,7 +1049,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest
       closeSQLObjects(resultSet, statement, connection);
     }
   }
-  
+
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
   public void testExplainPlan() throws Throwable

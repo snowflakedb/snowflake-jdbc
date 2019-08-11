@@ -353,7 +353,7 @@ public class SFLoginInput
     else if (v instanceof String)
     {
       return !"false".equalsIgnoreCase((String) v) && !"off".equalsIgnoreCase((String) v) &&
-            ("true".equalsIgnoreCase((String) v) || "on".equalsIgnoreCase((String) v));
+             ("true".equalsIgnoreCase((String) v) || "on".equalsIgnoreCase((String) v));
     }
     return false;
   }
