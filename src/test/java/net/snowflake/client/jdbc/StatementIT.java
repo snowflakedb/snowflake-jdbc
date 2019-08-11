@@ -44,7 +44,7 @@ import static org.junit.Assert.fail;
 @RunWith(Parameterized.class)
 public class StatementIT extends BaseJDBCTest
 {
-  @Parameterized.Parameters
+  @Parameterized.Parameters(name = "format={0}")
   public static Object[][] data()
   {
     // all tests in this class need to run for both query result formats json and arrow
@@ -192,6 +192,7 @@ public class StatementIT extends BaseJDBCTest
     ResultSet rs = statement.getResultSet();
     assertEquals(3, getSizeOfResultSet(rs));
     assertEquals(-1, statement.getUpdateCount());
+    assertEquals(-1L, statement.getLargeUpdateCount());
     String queryID2 = rs.unwrap(SnowflakeResultSet.class).getQueryID();
     assertEquals(queryID2, queryID1);
 
@@ -214,6 +215,7 @@ public class StatementIT extends BaseJDBCTest
     boolean success = statement.execute("create or replace table test_create(colA integer)");
     assertFalse(success);
     assertEquals(-1, statement.getUpdateCount());
+    assertEquals(-1L, statement.getLargeUpdateCount());
     assertNull(statement.getResultSet());
 
     int rowCount = statement.executeUpdate("create or replace table test_create_2(colA integer)");
@@ -223,11 +225,13 @@ public class StatementIT extends BaseJDBCTest
     success = statement.execute("drop table if exists TEST_CREATE");
     assertFalse(success);
     assertEquals(-1, statement.getUpdateCount());
+    assertEquals(-1L, statement.getLargeUpdateCount());
     assertNull(statement.getResultSet());
 
     rowCount = statement.executeUpdate("drop table if exists TEST_CREATE_2");
     assertEquals(0, rowCount);
     assertEquals(-1, statement.getUpdateCount());
+    assertEquals(-1L, statement.getLargeUpdateCount());
     assertNull(statement.getResultSet());
 
     statement.close();
@@ -250,6 +254,7 @@ public class StatementIT extends BaseJDBCTest
     success = statement.execute(insertSQL);
     assertFalse(success);
     assertEquals(2, statement.getUpdateCount());
+    assertEquals(2L, statement.getLargeUpdateCount());
     assertNull(statement.getResultSet());
 
     ResultSet rs = statement.executeQuery("select count(*) from test_insert");
@@ -287,6 +292,7 @@ public class StatementIT extends BaseJDBCTest
     success = statement.execute("update test_update set COLB = 'newStr' where COLA = 2");
     assertFalse(success);
     assertEquals(1, statement.getUpdateCount());
+    assertEquals(1L, statement.getLargeUpdateCount());
     assertNull(statement.getResultSet());
 
     updateCount = statement.executeUpdate("delete from test_update where colA = 1");
@@ -295,6 +301,7 @@ public class StatementIT extends BaseJDBCTest
     success = statement.execute("delete from test_update where colA = 2");
     assertFalse(success);
     assertEquals(1, statement.getUpdateCount());
+    assertEquals(1L, statement.getLargeUpdateCount());
     assertNull(statement.getResultSet());
 
     statement.execute("drop table if exists test_update");
@@ -401,6 +408,7 @@ public class StatementIT extends BaseJDBCTest
 
     statement.execute("create or replace table test_copy(c1 number, c2 number, c3 string)");
     assertEquals(-1, statement.getUpdateCount());
+    assertEquals(-1L, statement.getLargeUpdateCount());
 
     // put files
     ResultSet rset =
@@ -423,11 +431,13 @@ public class StatementIT extends BaseJDBCTest
       ++cnt;
     }
     assertEquals(-1, statement.getUpdateCount());
+    assertEquals(-1L, statement.getLargeUpdateCount());
     assertThat("number of files", cnt, equalTo(1));
     int numRows =
         statement.executeUpdate("copy into test_copy");
     assertEquals(2, numRows);
     assertEquals(2, statement.getUpdateCount());
+    assertEquals(2L, statement.getLargeUpdateCount());
 
     statement.execute("drop table if exists test_copy");
 
@@ -651,6 +661,7 @@ public class StatementIT extends BaseJDBCTest
     rs = statement.getResultSet();
     assertEquals(3, getSizeOfResultSet(rs));
     assertEquals(-1, statement.getUpdateCount());
+    assertEquals(-1L, statement.getLargeUpdateCount());
 
     rs = statement.executeQuery(sqlSelect);
     assertEquals(3, getSizeOfResultSet(rs));
@@ -712,6 +723,7 @@ public class StatementIT extends BaseJDBCTest
     assertFalse(rs.next());
     assertFalse(statement.getMoreResults());
     assertEquals(-1, statement.getUpdateCount());
+    assertEquals(-1L, statement.getLargeUpdateCount());
 
     statement.close();
     connection.close();

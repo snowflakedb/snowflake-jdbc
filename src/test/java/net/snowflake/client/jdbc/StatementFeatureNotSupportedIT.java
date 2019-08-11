@@ -20,6 +20,13 @@ public class StatementFeatureNotSupportedIT extends BaseJDBCTest
       {
         expectFeatureNotSupportedException(() -> statement.execute("select 1", new int[]{}));
         expectFeatureNotSupportedException(() -> statement.execute("select 1", new String[]{}));
+        expectFeatureNotSupportedException(() -> statement.executeUpdate("insert into a values(1)", Statement.RETURN_GENERATED_KEYS));
+        expectFeatureNotSupportedException(() -> statement.executeUpdate("insert into a values(1)", new int[]{}));
+        expectFeatureNotSupportedException(() -> statement.executeUpdate("insert into a values(1)", new String[]{}));
+        expectFeatureNotSupportedException(() -> statement.executeLargeUpdate("insert into a values(1)",
+                                                                              Statement.RETURN_GENERATED_KEYS));
+        expectFeatureNotSupportedException(() -> statement.executeLargeUpdate("insert into a values(1)", new int[]{}));
+        expectFeatureNotSupportedException(() -> statement.executeLargeUpdate("insert into a values(1)", new String[]{}));
         expectFeatureNotSupportedException(() -> statement.setCursorName("curname"));
         expectFeatureNotSupportedException(() -> statement.setFetchDirection(ResultSet.FETCH_REVERSE));
         expectFeatureNotSupportedException(() -> statement.setFetchDirection(ResultSet.FETCH_UNKNOWN));

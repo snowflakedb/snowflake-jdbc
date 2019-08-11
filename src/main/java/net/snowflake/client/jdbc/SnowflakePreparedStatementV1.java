@@ -167,11 +167,19 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
   }
 
   @Override
+  public long executeLargeUpdate() throws SQLException
+  {
+    logger.debug("executeLargeUpdate()");
+
+    return executeUpdateInternal(sql, parameterBindings, true);
+  }
+
+  @Override
   public int executeUpdate() throws SQLException
   {
     logger.debug("executeUpdate()");
 
-    return (int) executeUpdateInternal(sql, parameterBindings, true);
+    return (int) executeLargeUpdate();
   }
 
   @Override

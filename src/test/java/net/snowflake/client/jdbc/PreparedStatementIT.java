@@ -217,6 +217,7 @@ public class PreparedStatementIT extends BaseJDBCTest
     assertEquals(1, countResult[0]);
     assertEquals(1, countResult[1]);
     assertEquals(2, prepStatement.getUpdateCount());
+    assertEquals(2L, prepStatement.getLargeUpdateCount());
     resultSet = connection.createStatement().executeQuery(selectAllSQL);
     assertEquals(2, getSizeOfResultSet(resultSet));
     connection.close();
@@ -258,6 +259,7 @@ public class PreparedStatementIT extends BaseJDBCTest
     assertEquals(1, countResult.length);
     assertEquals(1, countResult[0]);
     assertEquals(1, prepStatement.getUpdateCount());
+    assertEquals(1L, prepStatement.getLargeUpdateCount());
 
     bindOneParamSet(prepStatement, 2, 2.22222, (float) 2.2, "test2", 1221221123131L, (short) 1);
     prepStatement.addBatch();
@@ -265,6 +267,7 @@ public class PreparedStatementIT extends BaseJDBCTest
     assertEquals(1, countResult.length);
     assertEquals(1, countResult[0]);
     assertEquals(1, prepStatement.getUpdateCount());
+    assertEquals(1L, prepStatement.getLargeUpdateCount());
 
     resultSet = connection.createStatement().executeQuery(selectAllSQL);
     assertEquals(2, getSizeOfResultSet(resultSet));
@@ -696,13 +699,11 @@ public class PreparedStatementIT extends BaseJDBCTest
   @Test
   public void testInsertOneRow() throws SQLException
   {
-    int count;
     connection = getConnection();
     connection.createStatement().execute("CREATE OR REPLACE TABLE test_prepst_date (id INTEGER, d DATE)");
     prepStatement = connection.prepareStatement(insertSQL);
     bindOneParamSet(prepStatement, 1, 1.22222, (float) 1.2, "test", 12121212121L, (short) 12);
-    count = prepStatement.executeUpdate();
-    assertEquals(1, count);
+    assertEquals(1, prepStatement.executeUpdate());
     prepStatement.close();
     resultSet = connection.createStatement().executeQuery(selectAllSQL);
     assertEquals(1, getSizeOfResultSet(resultSet));
@@ -710,8 +711,8 @@ public class PreparedStatementIT extends BaseJDBCTest
     prepStatement = connection.prepareStatement(insertSQL);
     bindOneParamSet(prepStatement, 2, 2.22222, (float) 2.2, "test2", 1221221123131L, (short) 1);
     assertFalse(prepStatement.execute());
-    count = prepStatement.getUpdateCount();
-    assertEquals(1, count);
+    assertEquals(1, prepStatement.getUpdateCount());
+    assertEquals(1L, prepStatement.getLargeUpdateCount());
 
     connection.close();
   }
@@ -742,6 +743,7 @@ public class PreparedStatementIT extends BaseJDBCTest
     prepStatement.setInt(1, 2);
     assertFalse(prepStatement.execute());
     assertEquals(1, prepStatement.getUpdateCount());
+    assertEquals(1L, prepStatement.getLargeUpdateCount());
     resultSet = connection.createStatement().executeQuery(selectAllSQL);
     resultSet.next();
     resultSet.next();
@@ -778,6 +780,7 @@ public class PreparedStatementIT extends BaseJDBCTest
     prepStatement.setInt(1, 2);
     assertFalse(prepStatement.execute());
     assertEquals(1, prepStatement.getUpdateCount());
+    assertEquals(1L, prepStatement.getLargeUpdateCount());
     resultSet = connection.createStatement().executeQuery(selectAllSQL);
     assertEquals(0, getSizeOfResultSet(resultSet));
     // evaluate query ids
@@ -839,6 +842,7 @@ public class PreparedStatementIT extends BaseJDBCTest
     assertThat(counts[2], is(0));
     resultSet = prepStatement.getResultSet();
     assertEquals(0, prepStatement.getUpdateCount());
+    assertEquals(0L, prepStatement.getLargeUpdateCount());
 
     resultSet = connection.createStatement().executeQuery(selectAllSQL);
     resultSet.next();
@@ -1994,47 +1998,6 @@ public class PreparedStatementIT extends BaseJDBCTest
       {
         connection.createStatement().execute("drop table if exists TESTNULL");
       }
-    }
-  }
-
-  @Test
-  public void testFeatureNotSupportedException() throws Throwable
-  {
-    try (Connection connection = getConnection())
-    {
-      PreparedStatement preparedStatement = connection.prepareStatement("select ?");
-      expectFeatureNotSupportedException(() -> preparedStatement.setArray(1, new FakeArray()));
-      expectFeatureNotSupportedException(() -> preparedStatement.setAsciiStream(1, new FakeInputStream()));
-      expectFeatureNotSupportedException(() -> preparedStatement.setAsciiStream(1, new FakeInputStream(), 1));
-      expectFeatureNotSupportedException(() -> preparedStatement.setBinaryStream(1, new FakeInputStream()));
-      expectFeatureNotSupportedException(() -> preparedStatement.setBinaryStream(1, new FakeInputStream(), 1));
-      expectFeatureNotSupportedException(() -> preparedStatement.setCharacterStream(1, new FakeReader()));
-      expectFeatureNotSupportedException(() -> preparedStatement.setCharacterStream(1, new FakeReader(), 1));
-      expectFeatureNotSupportedException(() -> preparedStatement.setRef(1, new FakeRef()));
-      expectFeatureNotSupportedException(() -> preparedStatement.setBlob(1, new FakeBlob()));
-
-      URL fakeURL = new URL("http://localhost:8888/");
-      expectFeatureNotSupportedException(() -> preparedStatement.setURL(1, fakeURL));
-
-      expectFeatureNotSupportedException(() -> preparedStatement.setRowId(1, new FakeRowId()));
-      expectFeatureNotSupportedException(() -> preparedStatement.setNString(1, "test"));
-      expectFeatureNotSupportedException(() -> preparedStatement.setNCharacterStream(1, new FakeReader()));
-      expectFeatureNotSupportedException(() -> preparedStatement.setNCharacterStream(1, new FakeReader(), 1));
-      expectFeatureNotSupportedException(() -> preparedStatement.setNClob(1, new FakeNClob()));
-      expectFeatureNotSupportedException(() -> preparedStatement.setNClob(1, new FakeReader(), 1));
-
-      expectFeatureNotSupportedException(() -> preparedStatement.setClob(1, new FakeReader()));
-      expectFeatureNotSupportedException(() -> preparedStatement.setClob(1, new FakeReader(), 1));
-      expectFeatureNotSupportedException(() -> preparedStatement.setBlob(1, new FakeInputStream()));
-      expectFeatureNotSupportedException(() -> preparedStatement.setBlob(1, new FakeInputStream(), 1));
-      expectFeatureNotSupportedException(() -> preparedStatement.setSQLXML(1, new FakeSQLXML()));
-
-      expectFeatureNotSupportedException(() -> preparedStatement.execute("select 1", 1));
-      expectFeatureNotSupportedException(() -> preparedStatement.execute("select 1", new int[]{}));
-      expectFeatureNotSupportedException(() -> preparedStatement.execute("select 1", new String[]{}));
-      expectFeatureNotSupportedException(() -> preparedStatement.executeUpdate("select 1", 1));
-      expectFeatureNotSupportedException(() -> preparedStatement.executeUpdate("select 1", new int[]{}));
-      expectFeatureNotSupportedException(() -> preparedStatement.executeUpdate("select 1", new String[]{}));
     }
   }
 }
