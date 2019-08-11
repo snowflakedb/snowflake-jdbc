@@ -31,18 +31,18 @@ public class ResultSetArrowForceMultiTimeZoneIT extends BaseJDBCTest
       return new Object[][]{
           {"json", "UTC"},
           {"json", "America/Los_Angeles"},
-          // {"json", "America/New_York"},
-          // {"json", "Pacific/Honolulu"},
+          {"json", "America/New_York"},
+          {"json", "Pacific/Honolulu"},
           {"json", "Asia/Singapore"},
           {"json", "MEZ"},
-          // {"json", "MESZ"},
+          {"json", "MESZ"},
           {"arrow_force", "UTC"},
           {"arrow_force", "America/Los_Angeles"},
-          // {"arrow_force", "America/New_York"},
-          // {"arrow_force", "Pacific/Honolulu"},
+          {"arrow_force", "America/New_York"},
+          {"arrow_force", "Pacific/Honolulu"},
           {"arrow_force", "Asia/Singapore"},
           {"arrow_force", "MEZ"},
-          // {"arrow_force", "MESZ"}
+          {"arrow_force", "MESZ"}
       };
     }
     else
@@ -274,7 +274,7 @@ public class ResultSetArrowForceMultiTimeZoneIT extends BaseJDBCTest
 
     // use initialized ltz output format
     ResultSet rs = statement.executeQuery("select * from " + table);
-    for(int i = 0; i<cases.length; i++)
+    for (int i = 0; i < cases.length; i++)
     {
       rs.next();
       assertEquals(times[i], rs.getTimestamp(1).getTime());
@@ -286,7 +286,7 @@ public class ResultSetArrowForceMultiTimeZoneIT extends BaseJDBCTest
     // change ltz output format
     statement.execute("alter session set TIMESTAMP_LTZ_OUTPUT_FORMAT='YYYY-MM-DD HH24:MI:SS TZH:TZM'");
     rs = statement.executeQuery("select * from " + table);
-    for(int i = 0; i<cases.length; i++)
+    for (int i = 0; i < cases.length; i++)
     {
       rs.next();
       assertEquals(times[i], rs.getTimestamp(1).getTime());
@@ -297,7 +297,7 @@ public class ResultSetArrowForceMultiTimeZoneIT extends BaseJDBCTest
     // unset ltz output format, then it should use timestamp_output_format
     statement.execute("alter session unset TIMESTAMP_LTZ_OUTPUT_FORMAT");
     rs = statement.executeQuery("select * from " + table);
-    for(int i = 0; i<cases.length; i++)
+    for (int i = 0; i < cases.length; i++)
     {
       rs.next();
       assertEquals(times[i], rs.getTimestamp(1).getTime());
@@ -308,7 +308,7 @@ public class ResultSetArrowForceMultiTimeZoneIT extends BaseJDBCTest
     // set ltz output format back to init value
     statement.execute("alter session set TIMESTAMP_LTZ_OUTPUT_FORMAT='DY, DD MON YYYY HH24:MI:SS TZHTZM'");
     rs = statement.executeQuery("select * from " + table);
-    for(int i = 0; i<cases.length; i++)
+    for (int i = 0; i < cases.length; i++)
     {
       rs.next();
       assertEquals(times[i], rs.getTimestamp(1).getTime());
@@ -356,7 +356,7 @@ public class ResultSetArrowForceMultiTimeZoneIT extends BaseJDBCTest
     Connection con = init(table, column, values);
     ResultSet rs = con.createStatement().executeQuery("select * from " + table);
     int i = 0;
-    while (i < 2*cases.length-1)
+    while (i < 2 * cases.length - 1)
     {
       rs.next();
       if (i % 2 != 0)
@@ -365,7 +365,7 @@ public class ResultSetArrowForceMultiTimeZoneIT extends BaseJDBCTest
       }
       else
       {
-        assertEquals(times[i/2], rs.getTimestamp(1).getTime());
+        assertEquals(times[i / 2], rs.getTimestamp(1).getTime());
         assertEquals(0, rs.getTimestamp(1).getNanos());
       }
       i++;

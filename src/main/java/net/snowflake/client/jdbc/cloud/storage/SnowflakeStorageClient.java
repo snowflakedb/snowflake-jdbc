@@ -47,7 +47,7 @@ public interface SnowflakeStorageClient
    * @return Returns the size of the encryption key
    */
   int getEncryptionKeySize();
-  
+
   /**
    * @return Whether this client requires the use of presigned URLs for upload
    * and download instead of credentials that work for all files uploaded/
@@ -57,7 +57,7 @@ public interface SnowflakeStorageClient
   {
     return false;
   }
-  
+
   /**
    * Re-creates the encapsulated storage client with a fresh access token
    *

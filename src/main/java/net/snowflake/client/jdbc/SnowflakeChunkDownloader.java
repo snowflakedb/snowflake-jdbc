@@ -198,7 +198,8 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
 
   /**
    * Constructor to initialize downloader
-   *  @param colCount              number of columns to expect
+   *
+   * @param colCount              number of columns to expect
    * @param chunksData            JSON object contains all the chunk information
    * @param prefetchThreads       number of prefetch threads
    * @param qrmk                  Query Result Master Key
@@ -710,15 +711,15 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
   /**
    * Create a download callable that will be run in download thread
    *
-   * @param downloader              object to download the chunk
-   * @param resultChunk             object contains information about the chunk will
-   *                                be downloaded
-   * @param qrmk                    Query Result Master Key
-   * @param chunkIndex              the index of the chunk which will be downloaded in array
-   *                                chunks. This is mainly for logging purpose
-   * @param chunkHeadersMap         contains headers needed to be added when downloading from s3
-   * @param networkTimeoutInMilli   network timeout
-   * @param session                 current session
+   * @param downloader            object to download the chunk
+   * @param resultChunk           object contains information about the chunk will
+   *                              be downloaded
+   * @param qrmk                  Query Result Master Key
+   * @param chunkIndex            the index of the chunk which will be downloaded in array
+   *                              chunks. This is mainly for logging purpose
+   * @param chunkHeadersMap       contains headers needed to be added when downloading from s3
+   * @param networkTimeoutInMilli network timeout
+   * @param session               current session
    * @return A callable responsible for downloading chunk
    */
   private static Callable<Void> getDownloadChunkCallable(

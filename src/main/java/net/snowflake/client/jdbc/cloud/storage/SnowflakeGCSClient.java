@@ -19,6 +19,7 @@ import com.google.cloud.storage.Storage.BlobListOption;
 import com.google.cloud.storage.StorageException;
 import com.google.cloud.storage.StorageOptions;
 import com.google.common.base.Strings;
+
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -35,6 +36,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.SFSession;
@@ -138,7 +140,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient
   {
     return encryptionKeySize;
   }
-  
+
   /**
    * @return Whether this client requires the use of presigned URLs for upload
    * and download instead of credentials that work for all files uploaded/
@@ -235,7 +237,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient
    * @param stageRegion           region name where the stage persists
    * @param presignedUrl          Credential to use for download
    * @throws SnowflakeSQLException download failure
-   **/  
+   **/
   @Override
   public void download(SFSession connection,
                        String command,
@@ -280,18 +282,18 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient
                                   false, // no retry
                                   false // no request_guid
               );
-          
+
           logger.debug("Call returned for URL: {}",
                        (ArgSupplier) () -> scrubPresignedUrl(this.stageInfo.getPresignedUrl()));
           if (response.getStatusLine().getStatusCode() == 200)
           {
-            try 
+            try
             {
               InputStream bodyStream = response.getEntity().getContent();
               byte[] buffer = new byte[8 * 1024];
               int bytesRead;
               OutputStream outStream = new FileOutputStream(localFile);
-              while((bytesRead = bodyStream.read(buffer)) != -1)
+              while ((bytesRead = bodyStream.read(buffer)) != -1)
               {
                 outStream.write(buffer, 0, bytesRead);
               }
@@ -303,7 +305,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient
                 if (header.getName().equalsIgnoreCase(GCS_METADATA_PREFIX + GCS_ENCRYPTIONDATAPROP))
                 {
                   AbstractMap.SimpleEntry<String, String> encryptionData =
-                    parseEncryptionData(header.getValue());
+                      parseEncryptionData(header.getValue());
 
                   key = encryptionData.getKey();
                   iv = encryptionData.getValue();
@@ -329,8 +331,8 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient
                 new StorageException(
                     404, // because blob not found
                     "Blob" + blobId.getName() + " not found in bucket "
-                        + blobId.getBucket())
-                );
+                    + blobId.getBucket())
+            );
           }
 
           logger.debug("Starting download without presigned URL");
@@ -399,7 +401,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient
    * @param presignedUrl          Signed credential for download
    * @return input file stream
    * @throws SnowflakeSQLException when download failure
-   */  
+   */
   @Override
   public InputStream downloadToStream(SFSession connection, String command,
                                       int parallelism,
@@ -416,7 +418,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient
       {
         String key = null;
         String iv = null;
-        
+
         if (!Strings.isNullOrEmpty(presignedUrl))
         {
           logger.debug("Starting download with presigned URL");
@@ -440,21 +442,21 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient
                                   false, // no retry
                                   false // no request_guid
               );
-          
+
           logger.debug("Call returned for URL: {}",
                        (ArgSupplier) () -> scrubPresignedUrl(this.stageInfo.getPresignedUrl()));
           if (response.getStatusLine().getStatusCode() == 200)
           {
-            try 
+            try
             {
               inputStream = response.getEntity().getContent();
-              
+
               for (Header header : response.getAllHeaders())
               {
                 if (header.getName().equalsIgnoreCase(GCS_METADATA_PREFIX + GCS_ENCRYPTIONDATAPROP))
                 {
                   AbstractMap.SimpleEntry<String, String> encryptionData =
-                    parseEncryptionData(header.getValue());
+                      parseEncryptionData(header.getValue());
 
                   key = encryptionData.getKey();
                   iv = encryptionData.getValue();
@@ -470,7 +472,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient
             }
           }
         }
-        else 
+        else
         {
           BlobId blobId = BlobId.of(remoteStorageLocation, stageFilePath);
           Blob blob = gcsClient.get(blobId);
@@ -480,8 +482,8 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient
                 new StorageException(
                     404, // because blob not found
                     "Blob" + blobId.getName() + " not found in bucket "
-                        + blobId.getBucket())
-                );
+                    + blobId.getBucket())
+            );
           }
 
           inputStream = new ByteArrayInputStream(blob.getContent());
@@ -550,7 +552,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient
    * @param stageRegion            region name where the stage persists
    * @param presignedUrl           Credential used for upload of a file
    * @throws SnowflakeSQLException if upload failed even after retry
-   */  
+   */
   @Override
   public void upload(SFSession connection,
                      String command,
@@ -567,7 +569,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient
   {
     final List<FileInputStream> toClose = new ArrayList<>();
     long originalContentLength = meta.getContentLength();
-    
+
     SFPair<InputStream, Boolean> uploadStreamInfo = createUploadStream(
         srcFile, uploadFromStream, inputStream, meta, originalContentLength,
         fileBackedOutputStream, toClose);
@@ -581,10 +583,10 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient
     {
       logger.debug("Starting upload");
       uploadWithPresignedUrl(connection.getNetworkTimeoutInMilli(),
-                                    meta.getContentEncoding(),
-                                    meta.getUserMetadata(),
-                                    uploadStreamInfo.left,
-                                    presignedUrl);
+                             meta.getContentEncoding(),
+                             meta.getUserMetadata(),
+                             uploadStreamInfo.left,
+                             presignedUrl);
       logger.debug("Upload successful");
 
       // close any open streams in the "toClose" list and return
@@ -649,19 +651,20 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient
 
   /**
    * Performs upload using a presigned URL
+   *
    * @param networkTimeoutInMilli Network timeout
-   * @param contentEncoding Object's content encoding. We do special things for "gzip"
-   * @param metadata Custom metadata to be uploaded with the object
-   * @param content File content
-   * @param presignedUrl Credential to upload the object
-   * @throws SnowflakeSQLException 
+   * @param contentEncoding       Object's content encoding. We do special things for "gzip"
+   * @param metadata              Custom metadata to be uploaded with the object
+   * @param content               File content
+   * @param presignedUrl          Credential to upload the object
+   * @throws SnowflakeSQLException
    */
   private void uploadWithPresignedUrl(int networkTimeoutInMilli,
                                       String contentEncoding,
                                       Map<String, String> metadata,
                                       InputStream content,
                                       String presignedUrl)
-          throws SnowflakeSQLException
+  throws SnowflakeSQLException
   {
     try
     {
@@ -670,7 +673,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient
       HttpPut httpRequest = new HttpPut(uriBuilder.build());
 
       logger.debug("Fetching result: {}", scrubPresignedUrl(presignedUrl));
-      
+
       // We set the contentEncoding to upper case because GCS interprets "GZIP" as
       // not being a gzip, while "gzip" is a gzip. We don't want GCS to think 
       // our gzip files are gzips because it makes them download uncompressed, and
@@ -683,12 +686,12 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient
         contentEncoding = "gzip".toUpperCase();
       }
       httpRequest.addHeader("content-encoding", contentEncoding);
-      
-      for(Entry<String, String> entry : metadata.entrySet())
+
+      for (Entry<String, String> entry : metadata.entrySet())
       {
         httpRequest.addHeader(GCS_METADATA_PREFIX + entry.getKey(), entry.getValue());
       }
-      
+
       InputStreamEntity contentEntity = new InputStreamEntity(content, -1);
       httpRequest.setEntity(contentEntity);
 
@@ -712,20 +715,21 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient
     catch (URISyntaxException e)
     {
       throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
-                                  ErrorCode.INTERNAL_ERROR.getMessageCode(),
-                                  "Unexpected: upload presigned URL invalid");
+                                      ErrorCode.INTERNAL_ERROR.getMessageCode(),
+                                      "Unexpected: upload presigned URL invalid");
     }
-    catch(Exception e)
+    catch (Exception e)
     {
       throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
-                                  ErrorCode.INTERNAL_ERROR.getMessageCode(),
-                                  "Unexpected: upload with presigned url failed");
-      
+                                      ErrorCode.INTERNAL_ERROR.getMessageCode(),
+                                      "Unexpected: upload with presigned url failed");
+
     }
   }
-  
+
   /**
    * When we log the URL, make sure we don't log the credential
+   *
    * @param presignedUrl Presigned URL with full signature
    * @return Just the object path
    */
@@ -736,12 +740,12 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient
       return "";
     }
     int indexOfQueryString = presignedUrl.lastIndexOf("?");
-    indexOfQueryString = indexOfQueryString > 0 ? 
-                             indexOfQueryString : 
-                             presignedUrl.length() - 1;
+    indexOfQueryString = indexOfQueryString > 0 ?
+                         indexOfQueryString :
+                         presignedUrl.length() - 1;
     return presignedUrl.substring(0, indexOfQueryString);
   }
-  
+
   private SFPair<InputStream, Boolean> createUploadStream(
       File srcFile,
       boolean uploadFromStream,

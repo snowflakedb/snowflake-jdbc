@@ -81,12 +81,13 @@ public class SecretDetector
       "sig",
       "signature",
       "temptoken",
-  };
+      };
 
   private static Set<String> SENSITIVE_NAME_SET = new HashSet<>(Arrays.asList(SENSITIVE_NAMES));
 
   /**
    * Check whether the name is sensitive
+   *
    * @param name
    */
   public static boolean isSensitive(String name)
