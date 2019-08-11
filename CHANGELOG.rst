@@ -1,5 +1,6 @@
 **JDBC Driver 3.9.0**
 
+- \| SNOW-90644 | Add Statement.getLargeCount and executeLargeUpdate
 - \| SNOW-86243 | Add Parameter to control Multi-Statement Support with Count
 - \| SNOW-75648 | Add validateDefaultParameters to validate the database, schema and warehouse at connection time. false by default.
 - \| SNOW-85191 | Fixed DatabaseMetaData.getColumns returns empty string on COLUMN_DEF for columns with no defaults
