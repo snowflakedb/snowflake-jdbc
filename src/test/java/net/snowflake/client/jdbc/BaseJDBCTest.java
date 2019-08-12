@@ -41,11 +41,7 @@ public class BaseJDBCTest extends AbstractDriverIT
 
   public static boolean isArrowTestsEnabled()
   {
-    if (RunningOnTravisCI.isRunningOnTravisCI())
-    {
-      return false;
-    }
-    return true;
+    return !RunningOnTravisCI.isRunningOnTravisCI();
   }
 
   protected interface MethodRaisesSQLException
