@@ -50,11 +50,11 @@ public class ResultSetArrowForceMultiTimeZoneIT extends BaseJDBCTest
       return new Object[][]{
           {"json", "UTC"},
           {"json", "America/Los_Angeles"},
-          {"json", "America/New_York"},
-          {"json", "Pacific/Honolulu"},
+          // {"json", "America/New_York"},
+          // {"json", "Pacific/Honolulu"},
           {"json", "Asia/Singapore"},
           {"json", "MEZ"},
-          {"json", "MESZ"}
+          // {"json", "MESZ"}
       };
     }
   }
