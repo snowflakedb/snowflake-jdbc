@@ -18,6 +18,7 @@ import net.snowflake.common.core.SFTime;
 import net.snowflake.common.core.SFTimestamp;
 import net.snowflake.common.core.SnowflakeDateTimeFormat;
 import net.snowflake.common.util.TimeUtil;
+import org.apache.arrow.memory.RootAllocator;
 
 import java.math.BigDecimal;
 import java.sql.Date;
@@ -117,6 +118,7 @@ public class ResultUtil
     long sendResultTime;
     List<MetaDataOfBinds> metaDataOfBinds = new ArrayList<>();
     QueryResultFormat queryResultFormat;
+    RootAllocator rootAllocator; // only used for arrow result format
 
     public long getChunkCount()
     {
@@ -335,6 +337,7 @@ public class ResultUtil
     {
       resultOutput.rowsetBase64 =
           rootNode.path("data").path("rowsetBase64").asText();
+      resultOutput.rootAllocator = new RootAllocator(Integer.MAX_VALUE);
     }
     else
     {
@@ -420,6 +423,7 @@ public class ResultUtil
                                          useJsonParserV2,
                                          memoryLimit,
                                          resultOutput.queryResultFormat,
+                                         resultOutput.rootAllocator,
                                          sfSession);
       }
     }

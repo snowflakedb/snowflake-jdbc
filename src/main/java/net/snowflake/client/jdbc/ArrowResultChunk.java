@@ -66,17 +66,18 @@ public class ArrowResultChunk extends SnowflakeResultChunk
 
 
   /**
-   * arrow root allocator
+   * arrow root allocator used by this resultSet
    */
-  private static RootAllocator rootAllocator = new RootAllocator(Integer.MAX_VALUE);
+  private RootAllocator rootAllocator;
   private boolean enableSortFirstResultChunk;
   private IntVector firstResultChunkSortedIndices;
 
   public ArrowResultChunk(String url, int rowCount, int colCount,
-                          int uncompressedSize)
+                          int uncompressedSize, RootAllocator rootAllocator)
   {
     super(url, rowCount, colCount, uncompressedSize);
     this.batchOfVectors = new ArrayList<>();
+    this.rootAllocator = rootAllocator;
   }
 
   private void addBatchData(List<ValueVector> batch)
@@ -93,20 +94,18 @@ public class ArrowResultChunk extends SnowflakeResultChunk
    * ArrowStreamReader is garbage collected, memory will not be cleared up
    *
    * @param is          inputStream which contain arrow data file in bytes
-   * @param resultChunk result chunk that holds the resulted arrow vector
+//   * @param resultChunk result chunk that holds the resulted arrow vector
    * @throws IOException if failed to read data as arrow file
    */
-  public static void readArrowStream(InputStream is,
-                                     ArrowResultChunk resultChunk)
+  public void readArrowStream(InputStream is)
   throws IOException
   {
     try (ArrowStreamReader reader = new ArrowStreamReader(is, rootAllocator))
     {
+      VectorSchemaRoot root = reader.getVectorSchemaRoot();
       while (reader.loadNextBatch())
       {
         List<ValueVector> valueVectors = new ArrayList<>();
-
-        VectorSchemaRoot root = reader.getVectorSchemaRoot();
 
         for (FieldVector f : root.getFieldVectors())
         {
@@ -117,7 +116,7 @@ public class ArrowResultChunk extends SnowflakeResultChunk
           valueVectors.add(t.getTo());
         }
 
-        resultChunk.addBatchData(valueVectors);
+        addBatchData(valueVectors);
       }
     }
     catch (ClosedByInterruptException cbie)
@@ -125,7 +124,7 @@ public class ArrowResultChunk extends SnowflakeResultChunk
       // happens when the statement is closed before finish parsing
       logger.debug("Interrupted when loading Arrow result", cbie);
       is.close();
-      resultChunk.freeData();
+      freeData();
     }
   }
 
@@ -138,10 +137,10 @@ public class ArrowResultChunk extends SnowflakeResultChunk
   @Override
   public void freeData()
   {
-    batchOfVectors.forEach(list -> list.forEach(ValueVector::clear));
+    batchOfVectors.forEach(list -> list.forEach(ValueVector::close));
     if (firstResultChunkSortedIndices != null)
     {
-      firstResultChunkSortedIndices.clear();
+      firstResultChunkSortedIndices.close();
     }
   }
 
@@ -554,7 +553,7 @@ public class ArrowResultChunk extends SnowflakeResultChunk
   {
     EmptyArrowResultChunk()
     {
-      super("", 0, 0, 0);
+      super("", 0, 0, 0, null);
     }
 
     @Override

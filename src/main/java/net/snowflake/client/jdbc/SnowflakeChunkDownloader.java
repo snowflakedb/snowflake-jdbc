@@ -15,6 +15,7 @@ import net.snowflake.client.core.DownloaderMetrics;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.QueryResultFormat;
+import net.snowflake.client.core.SFArrowResultSet;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.jdbc.SnowflakeResultChunk.DownloadState;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
@@ -23,6 +24,7 @@ import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.util.SecretDetector;
 import net.snowflake.common.core.SqlState;
+import org.apache.arrow.memory.RootAllocator;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -136,6 +138,11 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
    */
   private QueryResultFormat queryResultFormat;
 
+  /**
+   * Arrow memory allocator for the current resultSet
+   */
+  private RootAllocator rootAllocator;
+
   static long getCurrentMemoryUsage()
   {
     synchronized (currentMemoryUsage)
@@ -207,6 +214,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
    * @param networkTimeoutInMilli network timeout
    * @param useJsonParserV2       should JsonParserV2 be used instead of object
    * @param memoryLimit           memory limit for chunk buffer
+   * @param rootAllocator         Arrow root allocator for this resultSet
    * @param sfSession             current session
    */
   public SnowflakeChunkDownloader(int colCount,
@@ -218,6 +226,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
                                   boolean useJsonParserV2,
                                   long memoryLimit,
                                   QueryResultFormat queryResultFormat,
+                                  RootAllocator rootAllocator,
                                   SFSession sfSession)
   throws SnowflakeSQLException
   {
@@ -273,7 +282,8 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
       switch (this.queryResultFormat)
       {
         case ARROW:
-          chunk = new ArrowResultChunk(url, rowCount, colCount, uncompressedSize);
+          this.rootAllocator = rootAllocator;
+          chunk = new ArrowResultChunk(url, rowCount, colCount, uncompressedSize, this.rootAllocator);
           break;
 
         case JSON:
@@ -677,8 +687,22 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
         executor.shutdownNow();
         executor = null;
       }
+      for (SnowflakeResultChunk chunk: chunks)
+      {
+        // explicitly free each chunk since Arrow chunk may hold direct memory
+        chunk.freeData();
+      }
+
+      if (queryResultFormat == QueryResultFormat.ARROW)
+      {
+        SFArrowResultSet.closeRootAllocator(rootAllocator);
+      }
+      else
+      {
+        chunkDataCache.clear();
+      }
+
       chunks = null;
-      chunkDataCache.clear();
 
       terminated = true;
       return new DownloaderMetrics(numberMillisWaitingForChunks,
@@ -854,8 +878,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
           {
             if (downloader.queryResultFormat == QueryResultFormat.ARROW)
             {
-              ArrowResultChunk.readArrowStream(inputStream,
-                                               (ArrowResultChunk) resultChunk);
+              ((ArrowResultChunk) resultChunk).readArrowStream(inputStream);
             }
             else
             {
