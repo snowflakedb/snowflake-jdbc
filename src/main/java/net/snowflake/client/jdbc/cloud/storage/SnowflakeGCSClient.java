@@ -682,16 +682,13 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient
 
       logger.debug("Fetching result: {}", scrubPresignedUrl(presignedUrl));
 
-      // We set the contentEncoding to upper case because GCS interprets "GZIP" as
-      // not being a gzip, while "gzip" is a gzip. We don't want GCS to think 
+      // We set the contentEncoding to blank for GZIP files. We don't want GCS to think 
       // our gzip files are gzips because it makes them download uncompressed, and
       // none of the other providers do that. There's essentially no way for us
-      // to prevent that behavior. "GZIP" tricks GCS into thinking it's
-      // not gzipped, but our clients still see "GZIP" as needing to be 
-      // uncompressed on download. Bad Google.
+      // to prevent that behavior. Bad Google.
       if ("gzip".equals(contentEncoding))
       {
-        contentEncoding = "gzip".toUpperCase();
+        contentEncoding = "";
       }
       httpRequest.addHeader("content-encoding", contentEncoding);
 
