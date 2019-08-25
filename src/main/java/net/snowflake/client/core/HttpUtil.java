@@ -47,8 +47,8 @@ import java.net.Proxy;
 import java.net.Socket;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.apache.http.client.config.CookieSpecs.DEFAULT;
@@ -67,13 +67,13 @@ public class HttpUtil
    * The unique httpClient shared by all connections. This will benefit long-
    * lived clients
    */
-  private static Map<OCSPMode, CloseableHttpClient> httpClient = new HashMap<>();
+  private static Map<OCSPMode, CloseableHttpClient> httpClient = new ConcurrentHashMap<>();
 
   /**
    * The unique httpClient shared by all connections that don't want
    * decompression. This will benefit long-lived clients
    */
-  private static Map<OCSPMode, CloseableHttpClient> httpClientWithoutDecompression = new HashMap<>();
+  private static Map<OCSPMode, CloseableHttpClient> httpClientWithoutDecompression = new ConcurrentHashMap<>();
 
   /**
    * Handle on the static connection manager, to gather statistics mainly
@@ -216,7 +216,7 @@ public class HttpUtil
    */
   public static CloseableHttpClient getHttpClient(OCSPMode ocspMode)
   {
-    return initHttpClient(ocspMode, null);
+    return initHttpClient(ocspMode != null ? ocspMode : OCSPMode.FAIL_OPEN, null);
   }
 
   /**
@@ -240,20 +240,10 @@ public class HttpUtil
    */
   public static CloseableHttpClient initHttpClientWithoutDecompression(OCSPMode ocspMode, File ocspCacheFile)
   {
-    if (!httpClientWithoutDecompression.containsKey(ocspMode))
-    {
-      synchronized (HttpUtil.class)
-      {
-        if (!httpClientWithoutDecompression.containsKey(ocspMode))
-        {
-          httpClientWithoutDecompression.put(ocspMode, buildHttpClient(
-              ocspMode,
-              ocspCacheFile,
-              true));
-        }
-      }
-    }
-    return httpClientWithoutDecompression.get(ocspMode);
+    return httpClientWithoutDecompression.computeIfAbsent(ocspMode, k -> buildHttpClient(
+        ocspMode,
+        ocspCacheFile,
+        true));
   }
 
   /**
@@ -266,20 +256,10 @@ public class HttpUtil
    */
   public static CloseableHttpClient initHttpClient(OCSPMode ocspMode, File ocspCacheFile)
   {
-    if (!httpClient.containsKey(ocspMode))
-    {
-      synchronized (HttpUtil.class)
-      {
-        if (!httpClient.containsKey(ocspMode))
-        {
-          httpClient.put(ocspMode, buildHttpClient(
-              ocspMode,
-              ocspCacheFile,
-              false));
-        }
-      }
-    }
-    return httpClient.get(ocspMode);
+    return httpClient.computeIfAbsent(ocspMode, k -> buildHttpClient(
+        ocspMode,
+        ocspCacheFile,
+        false));
   }
 
   /**

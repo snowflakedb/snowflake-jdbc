@@ -231,7 +231,7 @@ public class RestRequest
 
         if (response == null || response.getStatusLine().getStatusCode() != 200)
         {
-          logger.debug("Error response not retryable, " + msg + ", request={}",
+          logger.debug("Error response not retryable, " + msg + ", request: {}",
                        requestInfoScrubbed);
           EventUtil.triggerBasicEvent(
               Event.EventType.NETWORK_ERROR, msg + ", Request: " + httpRequest.toString(),
@@ -245,13 +245,19 @@ public class RestRequest
         if (response != null)
         {
           logger.debug(
-              "HTTP response not ok: status code={}, request={}",
+              "HTTP response not ok: status code: {}, request: {}",
               response.getStatusLine().getStatusCode(),
               requestInfoScrubbed);
         }
+        else if (savedEx != null)
+        {
+          logger.debug("Null response for cause: {}, request: {}",
+                       getRootCause(savedEx).getMessage(),
+                       requestInfoScrubbed);
+        }
         else
         {
-          logger.debug("Null response for request={}", requestInfoScrubbed);
+          logger.debug("Null response for request: {}", requestInfoScrubbed);
         }
 
         // get the elapsed time for the last request
@@ -283,7 +289,7 @@ public class RestRequest
             logger.error(
                 "Stop retrying since elapsed time due to network " +
                 "issues has reached timeout. " +
-                "Elapsed={}(ms), timeout={}(ms)",
+                "Elapsed: {}(ms), timeout: {}(ms)",
                 elapsedMilliForTransientIssues, retryTimeoutInMilliseconds);
             breakRetryReason = "retry timeout";
             TelemetryService.getInstance().logHttpRequestTelemetryEvent(
@@ -364,6 +370,7 @@ public class RestRequest
               ErrorCode.NETWORK_ERROR.getMessageCode()
           );
         }
+        savedEx = null;
 
         // release connection before retry
         httpRequest.releaseConnection();
@@ -372,12 +379,20 @@ public class RestRequest
 
     if (response == null)
     {
-      logger.error("Returning null response for request: {}", requestInfoScrubbed);
+      if (savedEx != null)
+      {
+        logger.error("Returning null response: cause: {}, request: {}",
+                     getRootCause(savedEx), requestInfoScrubbed);
+      }
+      else
+      {
+        logger.error("Returning null response for request: {}", requestInfoScrubbed);
+      }
     }
     else if (response.getStatusLine().getStatusCode() != 200)
     {
       logger.error(
-          "Error response: HTTP Response code={}, request={}",
+          "Error response: HTTP Response code: {}, request: {}",
           response.getStatusLine().getStatusCode(), requestInfoScrubbed);
     }
     if ((response == null ||
