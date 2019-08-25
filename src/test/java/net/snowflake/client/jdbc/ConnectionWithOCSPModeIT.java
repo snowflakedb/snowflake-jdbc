@@ -30,7 +30,7 @@ import static org.junit.Assert.fail;
  * <p>
  * Ensure running hang_webserver.py in the backend to simulate connection hang.
  * <p>
- * cd scripts/hang_webserver.py 12345 &
+ * hang_webserver.py 12345
  */
 public class ConnectionWithOCSPModeIT extends BaseJDBCTest
 {
@@ -141,6 +141,51 @@ public class ConnectionWithOCSPModeIT extends BaseJDBCTest
       Throwable cause = getCause(ex);
       assertThat(cause, instanceOf(SFOCSPException.class));
       assertThat(((SFOCSPException) cause).getErrorCode(), equalTo(OCSPErrorCode.INVALID_OCSP_RESPONSE_VALIDITY));
+    }
+  }
+
+  /**
+   * Test no OCSP responder URL is attached. It should be ignored in FAIL_OPEN mode.
+   */
+  @Test
+  public void testNoOCSPResponderURLFailOpen()
+  {
+    System.setProperty(SFTrustManager.SF_OCSP_TEST_NO_OCSP_RESPONDER_URL, Boolean.TRUE.toString());
+    System.setProperty(SFTrustManager.SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED, Boolean.FALSE.toString());
+    try
+    {
+      DriverManager.getConnection(genTestConnectString(), OCSPFailOpenProperties());
+      fail("should fail");
+    }
+    catch (SQLException ex)
+    {
+      assertThat(ex, instanceOf(SnowflakeSQLException.class));
+      assertThat(ex.getErrorCode(), equalTo(NETWORK_ERROR.getMessageCode()));
+      assertThat(ex.getMessage(), containsString("HTTP status=403"));
+      assertNull(ex.getCause());
+    }
+  }
+
+  /**
+   * Test no OCSP responder URL is attached. NO_OCSP_URL_ATTACHED should be raised in FAIL_CLOSED mode.
+   */
+  @Test
+  public void testNoOCSPResponderURLFailClosed()
+  {
+    System.setProperty(SFTrustManager.SF_OCSP_TEST_NO_OCSP_RESPONDER_URL, Boolean.TRUE.toString());
+    System.setProperty(SFTrustManager.SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED, Boolean.FALSE.toString());
+    try
+    {
+      DriverManager.getConnection(genTestConnectString(), OCSPFailClosedProperties());
+      fail("should fail");
+    }
+    catch (SQLException ex)
+    {
+      assertThat(ex, instanceOf(SnowflakeSQLException.class));
+      assertThat(ex.getErrorCode(), equalTo(NETWORK_ERROR.getMessageCode()));
+      Throwable cause = getCause(ex);
+      assertThat(cause, instanceOf(SFOCSPException.class));
+      assertThat(((SFOCSPException) cause).getErrorCode(), equalTo(OCSPErrorCode.NO_OCSP_URL_ATTACHED));
     }
   }
 
