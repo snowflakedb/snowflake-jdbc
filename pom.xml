@@ -308,6 +308,58 @@
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-install-plugin</artifactId>
+        <version>3.0.0-M1</version>
+        <executions>
+          <execution>
+            <id>install-arrow-memory</id>
+            <phase>validate</phase>
+            <goals>
+              <goal>install-file</goal>
+            </goals>
+            <configuration>
+              <file>${project.basedir}/dependencies/arrow-memory-0.13.0.jar</file>
+              <groupId>org.apache.arrow</groupId>
+              <artifactId>arrow-memory</artifactId>
+              <version>0.13.0</version>
+              <packaging>jar</packaging>
+              <generatePom>true</generatePom>
+            </configuration>
+          </execution>
+          <execution>
+            <id>install-arrow-format</id>
+            <phase>validate</phase>
+            <goals>
+              <goal>install-file</goal>
+            </goals>
+            <configuration>
+              <file>${project.basedir}/dependencies/arrow-format-0.13.0.jar</file>
+              <groupId>org.apache.arrow</groupId>
+              <artifactId>arrow-format</artifactId>
+              <version>0.13.0</version>
+              <packaging>jar</packaging>
+              <generatePom>true</generatePom>
+            </configuration>
+          </execution>
+          <execution>
+            <id>install-arrow-vector</id>
+            <phase>validate</phase>
+            <goals>
+              <goal>install-file</goal>
+            </goals>
+            <configuration>
+              <file>${project.basedir}/dependencies/arrow-vector-0.13.0.jar</file>
+              <groupId>org.apache.arrow</groupId>
+              <artifactId>arrow-vector</artifactId>
+              <version>0.13.0</version>
+              <packaging>jar</packaging>
+              <generatePom>true</generatePom>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-clean-plugin</artifactId>
         <version>3.0.0</version>
         <configuration>
