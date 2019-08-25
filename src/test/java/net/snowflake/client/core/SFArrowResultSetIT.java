@@ -83,6 +83,7 @@ public class SFArrowResultSetIT
     is.read(dataBytes, 0, dataSize);
 
     ResultOutput resultOutput = new ResultOutput();
+    resultOutput.rootAllocator = new RootAllocator(Integer.MAX_VALUE);
     resultOutput.rowsetBase64 = Base64.getEncoder().encodeToString(dataBytes);
     resultOutput.chunkCount = 0;
 
@@ -226,7 +227,7 @@ public class SFArrowResultSetIT
     ResultOutput resultOutput = new ResultOutput();
     resultOutput.rowsetBase64 = Base64.getEncoder().encodeToString(dataBytes);
     resultOutput.chunkCount = chunkCount;
-
+    resultOutput.rootAllocator = new RootAllocator(Integer.MAX_VALUE);
     // build chunk downloader
     for (int i = 0; i < chunkCount; i++)
     {
@@ -270,6 +271,8 @@ public class SFArrowResultSetIT
 
     private int currentFileIndex;
 
+    private RootAllocator rootAllocator = new RootAllocator(Integer.MAX_VALUE);
+
     MockChunkDownloader(List<File> resultFileNames)
     {
       this.resultFileNames = resultFileNames;
@@ -282,12 +285,12 @@ public class SFArrowResultSetIT
     {
       if (currentFileIndex < resultFileNames.size())
       {
-        ArrowResultChunk resultChunk = new ArrowResultChunk("", 0, 0, 0);
+        ArrowResultChunk resultChunk = new ArrowResultChunk("", 0, 0, 0, rootAllocator);
         try
         {
           InputStream is = new FileInputStream(
               resultFileNames.get(currentFileIndex));
-          ArrowResultChunk.readArrowStream(is, resultChunk);
+          resultChunk.readArrowStream(is);
 
           currentFileIndex++;
           return resultChunk;
