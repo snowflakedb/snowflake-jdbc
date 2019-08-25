@@ -123,12 +123,12 @@ public class SnowflakeDriverTest
 
     // value including dash
     expectedParameters = new HashMap<>();
-    expectedParameters.put("CLIENT_SESSION_KEEP_ALIVE", "true");
+    expectedParameters.put("CLIENT_SESSION_KEEP_ALIVE", Boolean.TRUE.toString());
     expectedParameters.put("db", "TEST_DB");
     expectedParameters.put("proxyHost", "your-host.com");
     expectedParameters.put("proxyPort", "1234");
     expectedParameters.put("schema", "PUBLIC");
-    expectedParameters.put("useProxy", "true");
+    expectedParameters.put("useProxy", Boolean.TRUE.toString());
     expectedParameters.put("warehouse", "TEST_WH");
     expectedParameters.put("ACCOUNT", "testaccount");
     testCases.add(

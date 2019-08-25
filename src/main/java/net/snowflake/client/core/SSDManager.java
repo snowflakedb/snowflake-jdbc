@@ -65,7 +65,7 @@ class SSDManager
       }
     }
 
-    SSDManager.ACTIVATE_SSD = "true".equalsIgnoreCase(ssd_status);
+    SSDManager.ACTIVATE_SSD = Boolean.TRUE.toString().equalsIgnoreCase(ssd_status);
 
     if (SSDManager.ACTIVATE_SSD)
     {

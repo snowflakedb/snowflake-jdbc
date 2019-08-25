@@ -39,6 +39,7 @@ import static org.junit.Assert.assertNotNull;
 public class SFTrustManagerIT extends BaseJDBCTest
 {
   private static final String[] TARGET_HOSTS = {
+      "storage.googleapis.com",
       "ocspssd.us-east-1.snowflakecomputing.com/ocsp/fetch",
       "sfcsupport.snowflakecomputing.com",
       "sfcsupport.us-east-1.snowflakecomputing.com",
@@ -79,6 +80,8 @@ public class SFTrustManagerIT extends BaseJDBCTest
       service.disable();
     }
     service.enableRunFlushBeforeException();
+    System.clearProperty(SFTrustManager.SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED);
+    System.clearProperty(SFTrustManager.SF_OCSP_RESPONSE_CACHE_SERVER_URL);
   }
 
   @Rule
@@ -92,12 +95,12 @@ public class SFTrustManagerIT extends BaseJDBCTest
   @Test
   public void testOcsp() throws Throwable
   {
+    System.setProperty(SFTrustManager.SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED, Boolean.TRUE.toString());
     for (String host : TARGET_HOSTS)
     {
       HttpClient client = HttpUtil.buildHttpClient(
           OCSPMode.FAIL_CLOSED,
           null, // default OCSP response cache file
-          true, // use OCSP response cache server
           false // enable decompression
       );
       accessHost(host, client);
@@ -113,13 +116,13 @@ public class SFTrustManagerIT extends BaseJDBCTest
   @Test
   public void testOcspWithFileCache() throws Throwable
   {
+    System.setProperty(SFTrustManager.SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED, Boolean.FALSE.toString());
     File ocspCacheFile = tmpFolder.newFile();
     for (String host : TARGET_HOSTS)
     {
       HttpClient client = HttpUtil.buildHttpClient(
           OCSPMode.FAIL_CLOSED,
           ocspCacheFile, // a temp OCSP response cache file
-          false, // NOT use OCSP response cache server
           false // enable decompression
       );
       accessHost(host, client);
@@ -133,13 +136,13 @@ public class SFTrustManagerIT extends BaseJDBCTest
   @Test
   public void testOcspWithServerCache() throws Throwable
   {
+    System.setProperty(SFTrustManager.SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED, Boolean.TRUE.toString());
     File ocspCacheFile = tmpFolder.newFile();
     for (String host : TARGET_HOSTS)
     {
       HttpClient client = HttpUtil.buildHttpClient(
           OCSPMode.FAIL_CLOSED,
           ocspCacheFile, // a temp OCSP response cache file
-          true, // use OCSP response cache server
           false // enable decompression
       );
       accessHost(host, client);
@@ -154,13 +157,13 @@ public class SFTrustManagerIT extends BaseJDBCTest
   @Test
   public void testOcspWithoutServerCache() throws Throwable
   {
+    System.setProperty(SFTrustManager.SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED, Boolean.FALSE.toString());
     File ocspCacheFile = tmpFolder.newFile();
     for (String host : TARGET_HOSTS)
     {
       HttpClient client = HttpUtil.buildHttpClient(
           OCSPMode.FAIL_OPEN,
           ocspCacheFile, // a temp OCSP response cache file
-          false, // use OCSP response cache server
           false // enable decompression
       );
       accessHost(host, client);
@@ -174,13 +177,13 @@ public class SFTrustManagerIT extends BaseJDBCTest
   @Test
   public void testInvalidCacheFile() throws Throwable
   {
+    System.setProperty(SFTrustManager.SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED, Boolean.TRUE.toString());
     // a file under never exists.
     File ocspCacheFile = new File("NEVER_EXISTS", "NEVER_EXISTS");
     String host = TARGET_HOSTS[0];
     HttpClient client = HttpUtil.buildHttpClient(
         OCSPMode.FAIL_CLOSED,
         ocspCacheFile, // a temp OCSP response cache file
-        true, // use OCSP response cache server
         false // enable decompression
     );
     accessHost(host, client);
@@ -205,6 +208,7 @@ public class SFTrustManagerIT extends BaseJDBCTest
       }
       catch (InterruptedException ex)
       {
+        // nop
       }
     }
     assertThat(String.format("response code for %s", host),
@@ -218,13 +222,14 @@ public class SFTrustManagerIT extends BaseJDBCTest
   @Test
   public void testRevokedCertificate() throws Throwable
   {
+    System.setProperty(SFTrustManager.SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED, Boolean.TRUE.toString());
     File ocspCacheFile = tmpFolder.newFile();
     List<X509Certificate> certList = getX509CertificatesFromFile(
         "revoked_certs.pem");
     SFTrustManager sft = new SFTrustManager(
-        ocspCacheFile,  // a temp OCSP response cache file
-        true, // OCSP FailOpen Mode. Fails for revoked cert.
-        true);
+        OCSPMode.FAIL_OPEN,
+        ocspCacheFile  // a temp OCSP response cache file
+    );
     int queueSize = TelemetryService.getInstance().size();
     try
     {
@@ -277,6 +282,6 @@ public class SFTrustManagerIT extends BaseJDBCTest
   {
     ClassLoader classLoader = getClass().getClassLoader();
     URL url = classLoader.getResource(fileName);
-    return url.openStream();
+    return url != null ? url.openStream() : null;
   }
 }

@@ -422,8 +422,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
        * so.
        */
       if (totalRowCountTruncated ||
-          System.getProperty("snowflake.enable_incident_test2") != null &&
-          System.getProperty("snowflake.enable_incident_test2").equals("true"))
+          Boolean.TRUE.toString().equalsIgnoreCase(System.getProperty("snowflake.enable_incident_test2")))
       {
         throw (SFException) IncidentUtil.generateIncidentV2WithException(
             session,

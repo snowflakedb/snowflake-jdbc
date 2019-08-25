@@ -12,7 +12,7 @@ public class SFTrustManagerTest
    * Test building OCSP retry URL
    */
   @Test
-  public void testBuildRetryURL()
+  public void testBuildRetryURL() throws Exception
   {
     try
     {
@@ -70,10 +70,12 @@ public class SFTrustManagerTest
   {
     try
     {
-      System.setProperty("net.snowflake.jdbc.ocsp_activate_new_endpoint", "true");
-      SFTrustManager tManager = new SFTrustManager(null, // OCSP Cache file custom location
-                                                   false, // OCSP FailOpen Mode
-                                                   true); // Use OCSP Cache Server
+      System.setProperty("net.snowflake.jdbc.ocsp_activate_new_endpoint", Boolean.TRUE.toString());
+
+      SFTrustManager tManager = new SFTrustManager(
+          OCSPMode.FAIL_OPEN,
+          null // OCSP Cache file custom location
+      ); // Use OCSP Cache Server
       tManager.ocspCacheServer.resetOCSPResponseCacheServer("a1.snowflakecomputing.com");
       assertThat(
           tManager.ocspCacheServer.SF_OCSP_RESPONSE_CACHE_SERVER,

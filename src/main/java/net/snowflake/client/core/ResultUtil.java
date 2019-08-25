@@ -990,7 +990,7 @@ public class ResultUtil
    */
   public static boolean getBoolean(String str)
   {
-    return str.equalsIgnoreCase("true") ||
+    return str.equalsIgnoreCase(Boolean.TRUE.toString()) ||
            str.equals("1");
   }
 

@@ -102,6 +102,8 @@ public class StmtUtil
 
     String serviceName;
 
+    OCSPMode ocspMode;
+
     StmtInput()
     {
     }
@@ -226,6 +228,12 @@ public class StmtUtil
       this.serviceName = serviceName;
       return this;
     }
+
+    public StmtInput setOCSPMode(OCSPMode ocspMode)
+    {
+      this.ocspMode = ocspMode;
+      return this;
+    }
   }
 
   /**
@@ -300,7 +308,7 @@ public class StmtUtil
 
         if (stmtInput.combineDescribe)
         {
-          uriBuilder.addParameter(SF_QUERY_COMBINE_DESCRIBE_EXECUTE, "true");
+          uriBuilder.addParameter(SF_QUERY_COMBINE_DESCRIBE_EXECUTE, Boolean.TRUE.toString());
         }
 
         httpRequest = new HttpPost(uriBuilder.build());
@@ -355,7 +363,9 @@ public class StmtUtil
                                     stmtInput.networkTimeoutInMillis / 1000,
                                     stmtInput.injectSocketTimeout,
                                     stmtInput.canceling,
-                                    true // include retry parameters
+                                    true, // include retry parameters
+                                    false, // no retry on HTTP 403
+                                    stmtInput.ocspMode
             );
       }
 
@@ -605,8 +615,7 @@ public class StmtUtil
    * @throws SFException           exception raised from Snowflake components
    * @throws SnowflakeSQLException exception raised from Snowflake components
    */
-  static protected String getQueryResult(String getResultPath,
-                                         StmtInput stmtInput)
+  static protected String getQueryResult(String getResultPath, StmtInput stmtInput)
   throws SFException, SnowflakeSQLException
   {
     HttpGet httpRequest = null;
@@ -634,7 +643,11 @@ public class StmtUtil
       return HttpUtil.executeRequest(httpRequest,
                                      stmtInput.networkTimeoutInMillis / 1000,
                                      0,
-                                     stmtInput.canceling);
+                                     stmtInput.canceling,
+                                     false, // no retry parameter
+                                     false, // no retry on HTTP 403
+                                     stmtInput.ocspMode
+      );
     }
     catch (URISyntaxException | IOException ex)
     {
@@ -667,7 +680,8 @@ public class StmtUtil
         .setSessionToken(session.getSessionToken())
         .setNetworkTimeoutInMillis(session.getNetworkTimeoutInMilli())
         .setMediaType(SF_MEDIA_TYPE)
-        .setServiceName(session.getServiceName());
+        .setServiceName(session.getServiceName())
+        .setOCSPMode(session.getOCSPMode());
 
     String resultAsString = getQueryResult(getResultPath, stmtInput);
 
@@ -742,7 +756,12 @@ public class StmtUtil
       String jsonString =
           HttpUtil.executeRequest(httpRequest,
                                   SF_CANCELING_RETRY_TIMEOUT_IN_MILLIS,
-                                  0, null);
+                                  0,
+                                  null,
+                                  false, // no retry parameter
+                                  false, // no retry on HTTP 403
+                                  stmtInput.ocspMode
+          );
 
       // trace the response if requested
       logger.debug("Json response: {}", jsonString);

@@ -38,6 +38,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import net.snowflake.client.core.HttpUtil;
+import net.snowflake.client.core.OCSPMode;
 import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.jdbc.ErrorCode;
@@ -269,7 +270,8 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient
 
           logger.debug("Fetching result: {}", scrubPresignedUrl(presignedUrl));
 
-          CloseableHttpClient httpClient = HttpUtil.getHttpClientWithoutDecompression();
+          CloseableHttpClient httpClient = HttpUtil.getHttpClientWithoutDecompression(
+              connection.getOCSPMode());
 
           // Put the file on storage using the presigned url
           HttpResponse response =
@@ -280,7 +282,8 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient
                                   null, // no canceling
                                   false, // no cookie
                                   false, // no retry
-                                  false // no request_guid
+                                  false, // no request_guid
+                                  true // retry on HTTP 403
               );
 
           logger.debug("Call returned for URL: {}",
@@ -429,7 +432,8 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient
 
           logger.debug("Fetching result: {}", scrubPresignedUrl(presignedUrl));
 
-          CloseableHttpClient httpClient = HttpUtil.getHttpClientWithoutDecompression();
+          CloseableHttpClient httpClient = HttpUtil.getHttpClientWithoutDecompression(
+              connection.getOCSPMode());
 
           // Put the file on storage using the presigned url
           HttpResponse response =
@@ -440,7 +444,8 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient
                                   null, // no canceling
                                   false, // no cookie
                                   false, // no retry
-                                  false // no request_guid
+                                  false, // no request_guid
+                                  true // retry on HTTP 403
               );
 
           logger.debug("Call returned for URL: {}",
@@ -586,7 +591,8 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient
                              meta.getContentEncoding(),
                              meta.getUserMetadata(),
                              uploadStreamInfo.left,
-                             presignedUrl);
+                             presignedUrl,
+                             connection.getOCSPMode());
       logger.debug("Upload successful");
 
       // close any open streams in the "toClose" list and return
@@ -657,13 +663,15 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient
    * @param metadata              Custom metadata to be uploaded with the object
    * @param content               File content
    * @param presignedUrl          Credential to upload the object
+   * @param ocspMode              OCSP mode
    * @throws SnowflakeSQLException
    */
   private void uploadWithPresignedUrl(int networkTimeoutInMilli,
                                       String contentEncoding,
                                       Map<String, String> metadata,
                                       InputStream content,
-                                      String presignedUrl)
+                                      String presignedUrl,
+                                      OCSPMode ocspMode)
   throws SnowflakeSQLException
   {
     try
@@ -695,7 +703,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient
       InputStreamEntity contentEntity = new InputStreamEntity(content, -1);
       httpRequest.setEntity(contentEntity);
 
-      CloseableHttpClient httpClient = HttpUtil.getHttpClient();
+      CloseableHttpClient httpClient = HttpUtil.getHttpClient(ocspMode);
 
       // Put the file on storage using the presigned url
       HttpResponse response =
@@ -706,7 +714,8 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient
                               null, // no canceling
                               false, // no cookie
                               false, // no retry
-                              false // no request_guid
+                              false, // no request_guid
+                              true // retry on HTTP 403
           );
 
       logger.debug("Call returned for URL: {}",
