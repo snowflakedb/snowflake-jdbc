@@ -620,14 +620,34 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
   public static void closeRootAllocator(RootAllocator rootAllocator)
   {
     long rest = rootAllocator.getAllocatedMemory();
-    if (rest > 0)
+    int count = 3;
+    try
     {
-      // this case should only happen when the resultSet is closed before consuming all chunks
-      // otherwise, the memory usage for each chunk will be cleared right after it has been fully consumed
-      rootAllocator.releaseBytes(rest);
-      logger.warn(rest + " bytes of Arrow result chunk data has been cleared before consuming");
+      while (rest > 0 && count-- > 0)
+      {
+        // this case should only happen when the resultSet is closed before consuming all chunks
+        // otherwise, the memory usage for each chunk will be cleared right after it has been fully consumed
+
+        // The reason is that it is possible that one downloading thread is pending to close when the main thread
+        // reaches here. A retry is to wait for the downloading thread to finish closing incoming streams and arrow
+        // resources.
+
+        Thread.sleep(10);
+        rest = rootAllocator.getAllocatedMemory();
+      }
     }
-    rootAllocator.close();
+    catch (InterruptedException ie)
+    {
+      logger.debug("interrupted during closing root allocator");
+    }
+    finally
+    {
+      if (rest == 0)
+      {
+        rootAllocator.close();
+      }
+    }
+
   }
 
   @Override

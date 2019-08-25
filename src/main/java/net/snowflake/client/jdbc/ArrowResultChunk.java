@@ -110,12 +110,13 @@ public class ArrowResultChunk extends SnowflakeResultChunk
   public void readArrowStream(InputStream is)
   throws IOException
   {
+    ArrayList<ValueVector> valueVectors = null;
     try (ArrowStreamReader reader = new ArrowStreamReader(is, rootAllocator))
     {
       VectorSchemaRoot root = reader.getVectorSchemaRoot();
       while (reader.loadNextBatch())
       {
-        List<ValueVector> valueVectors = new ArrayList<>();
+        valueVectors = new ArrayList<>();
 
         for (FieldVector f : root.getFieldVectors())
         {
@@ -127,6 +128,7 @@ public class ArrowResultChunk extends SnowflakeResultChunk
         }
 
         addBatchData(valueVectors);
+        valueVectors = null;
       }
     }
     catch (ClosedByInterruptException cbie)
@@ -134,6 +136,10 @@ public class ArrowResultChunk extends SnowflakeResultChunk
       // happens when the statement is closed before finish parsing
       logger.debug("Interrupted when loading Arrow result", cbie);
       is.close();
+      if (valueVectors != null)
+      {
+        valueVectors.forEach(ValueVector::close);
+      }
       freeData();
     }
   }
