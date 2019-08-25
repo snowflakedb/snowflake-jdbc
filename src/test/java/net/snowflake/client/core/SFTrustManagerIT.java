@@ -60,6 +60,7 @@ public class SFTrustManagerIT extends BaseJDBCTest
     defaultState = service.isEnabled();
     service.setNumOfRetryToTriggerTelemetry(3);
     service.disableRunFlushBeforeException();
+    TelemetryService.FLUSH_OCSP_REVOKED_EVENT = false;
     service.enable();
   }
 
@@ -70,7 +71,7 @@ public class SFTrustManagerIT extends BaseJDBCTest
     service.flush();
     // wait 5 seconds while the service is flushing
     TimeUnit.SECONDS.sleep(5);
-
+    TelemetryService.FLUSH_OCSP_REVOKED_EVENT = true;
     if (defaultState)
     {
       service.enable();
@@ -245,7 +246,7 @@ public class SFTrustManagerIT extends BaseJDBCTest
         TelemetryEvent te = TelemetryService.getInstance().peek();
         JSONObject values = (JSONObject) te.get("Value");
         assertEquals("OCSPException", te.get("Name"));
-        assertEquals("RevokedCertificateError",
+        assertEquals(SFTrustManager.SF_OCSP_EVENT_TYPE_REVOKED_CERTIFICATE_ERROR,
                      values.get("eventType").toString());
         assertNotNull(values.get("sfcPeerHost"));
         assertNotNull(values.get("certId"));

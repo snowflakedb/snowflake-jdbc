@@ -2,6 +2,7 @@ package net.snowflake.client.jdbc.telemetryOOB;
 
 import net.minidev.json.JSONArray;
 import net.minidev.json.JSONObject;
+import net.snowflake.client.core.SFTrustManager;
 import net.snowflake.client.jdbc.SnowflakeConnectString;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -53,6 +54,9 @@ public class TelemetryService
 
   private static final String TELEMETRY_SERVER_URL_PATTERN
       = "https://(sfcdev\\.|sfctest\\.|)client-telemetry\\.snowflakecomputing\\.com/enqueue";
+
+  // always flush queue when receiving revoked OCSP exception
+  public static boolean FLUSH_OCSP_REVOKED_EVENT = true;
   /**
    * control which deployments are enabled:
    * the service skips all events for the disabled deployments
@@ -538,6 +542,11 @@ public class TelemetryService
           .withTag("eventType", eventType)
           .build();
       this.add(log);
+      if (FLUSH_OCSP_REVOKED_EVENT &&
+          eventType.equals(SFTrustManager.SF_OCSP_EVENT_TYPE_REVOKED_CERTIFICATE_ERROR))
+      {
+        this.flush();
+      }
     }
   }
 

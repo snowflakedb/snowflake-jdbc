@@ -256,6 +256,11 @@ public class SFTrustManager extends X509ExtendedTrustManager
    * OCSP HTTP client
    */
   private static Map<Integer, CloseableHttpClient> ocspCacheServerClient = new ConcurrentHashMap<>();
+  /**
+   * OCSP event types
+   */
+  public static String SF_OCSP_EVENT_TYPE_REVOKED_CERTIFICATE_ERROR = "RevokedCertificateError";
+  public static String SF_OCSP_EVENT_TYPE_VALIDATION_ERROR = "OCSPValidationError";
 
   static
   {
@@ -1170,7 +1175,7 @@ public class SFTrustManager extends X509ExtendedTrustManager
     {
       // Revoked Certificate
       error = new CertificateException(ex);
-      ocspLog = telemetryData.generateTelemetry("RevokedCertificateError", error);
+      ocspLog = telemetryData.generateTelemetry(SF_OCSP_EVENT_TYPE_REVOKED_CERTIFICATE_ERROR, error);
       LOGGER.error(ocspLog);
       throw error;
     }
@@ -1190,7 +1195,7 @@ public class SFTrustManager extends X509ExtendedTrustManager
         LOGGER.debug(error.getMessage());
       }
 
-      ocspLog = telemetryData.generateTelemetry("OCSPValidationError", error);
+      ocspLog = telemetryData.generateTelemetry(SF_OCSP_EVENT_TYPE_VALIDATION_ERROR, error);
       if (isOCSPFailOpen())
       {
         // Log includes fail-open warning.
