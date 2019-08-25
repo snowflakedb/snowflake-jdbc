@@ -8,7 +8,6 @@ import net.snowflake.client.core.SFTrustManager;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import sun.security.validator.ValidatorException;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import java.net.SocketTimeoutException;
@@ -510,38 +509,4 @@ public class ConnectionWithOCSPModeIT extends BaseJDBCTest
     }
   }
 
-  /**
-   * Test self signed certificate. Will fail in both FAIL_OPEN and FAIL_CLOSED.
-   */
-  @Test
-  public void testSelfSigned()
-  {
-    try
-    {
-      DriverManager.getConnection("jdbc:snowflake://self-signed.badssl.com/", OCSPFailClosedProperties());
-      fail("should fail");
-    }
-    catch (SQLException ex)
-    {
-      assertThat(ex, instanceOf(SnowflakeSQLException.class));
-      assertThat(getCause(ex), instanceOf(ValidatorException.class));
-    }
-  }
-
-  /**
-   * Test untrusted root certificate. Will fail in both FAIL_OPEN and FAIL_CLOSED.
-   */
-  @Test
-  public void testUntrustedRoot()
-  {
-    try
-    {
-      DriverManager.getConnection("jdbc:snowflake://untrusted-root.badssl.com/", OCSPFailClosedProperties());
-    }
-    catch (SQLException ex)
-    {
-      assertThat(ex, instanceOf(SnowflakeSQLException.class));
-      assertThat(getCause(ex), instanceOf(ValidatorException.class));
-    }
-  }
 }

@@ -120,7 +120,7 @@ public class HttpUtil
     if (useProxy)
     {
       // currently, only host and port are supported. Username and password are not supported.
-      Proxy azProxy =  new Proxy(Proxy.Type.HTTP, new InetSocketAddress(proxyHost, proxyPort));
+      Proxy azProxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(proxyHost, proxyPort));
       opContext.setProxy(azProxy);
     }
   }
