@@ -321,7 +321,7 @@ public class AbstractDriverIT
    * @param fileName a file name
    * @return a full path name of the file
    */
-  protected static String getFullPathFileInResource(String fileName)
+  public static String getFullPathFileInResource(String fileName)
   {
     ClassLoader classLoader = AbstractDriverIT.class.getClassLoader();
     URL url = classLoader.getResource(fileName);

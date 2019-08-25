@@ -7,6 +7,7 @@ package net.snowflake.client.core;
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.http.apache.SdkProxyRoutePlanner;
 import com.google.common.base.Strings;
+import com.microsoft.azure.storage.OperationContext;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.RestRequest;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
@@ -43,6 +44,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
+import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.Socket;
 import java.security.KeyManagementException;
@@ -110,6 +112,16 @@ public class HttpUtil
         clientConfig.setProxyUsername(proxyUser);
         clientConfig.setProxyPassword(proxyPassword);
       }
+    }
+  }
+
+  public static void setProxyForAzure(OperationContext opContext)
+  {
+    if (useProxy)
+    {
+      // currently, only host and port are supported. Username and password are not supported.
+      Proxy azProxy =  new Proxy(Proxy.Type.HTTP, new InetSocketAddress(proxyHost, proxyPort));
+      opContext.setProxy(azProxy);
     }
   }
 
