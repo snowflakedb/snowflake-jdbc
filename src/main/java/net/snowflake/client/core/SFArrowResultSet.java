@@ -17,6 +17,7 @@ import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SFBinaryFormat;
 import net.snowflake.common.core.SnowflakeDateTimeFormat;
 import net.snowflake.common.core.SqlState;
+import org.apache.arrow.memory.RootAllocator;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -102,6 +103,12 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
   private final Telemetry telemetryClient;
 
   /**
+   * memory allocator for Arrow. Each SFArrowResultSet contains one rootAllocator.
+   * This rootAllocactor will be cleared and closed when the resultSet is closed
+   */
+  private RootAllocator rootAllocator;
+
+  /**
    * Constructor takes a result from the API response that we get from
    * executing a SQL statement.
    * <p>
@@ -142,8 +149,6 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
                                         String.format(
                                             BasicEvent.QueryState.CONSUMING_RESULT
                                                 .getArgString(), queryId, 0));
-
-
   }
 
   /**
@@ -159,6 +164,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
                    boolean sortResult)
   throws SQLException
   {
+    this.rootAllocator = resultOutput.rootAllocator;
     this.sortResult = sortResult;
     this.queryId = resultOutput.getQueryId();
     this.statementType = resultOutput.getStatementType();
@@ -296,11 +302,16 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
                                           ErrorCode.INTERRUPTED.getMessageCode());
         }
       }
-      else if (chunkCount > 0)
+      else
       {
-        logger.debug("End of chunks");
-        DownloaderMetrics metrics = chunkDownloader.terminate();
-        logChunkDownloaderMetrics(metrics);
+        // always free current chunk
+        currentChunkIterator.getChunk().freeData();
+        if (chunkCount > 0)
+        {
+          logger.debug("End of chunks");
+          DownloaderMetrics metrics = chunkDownloader.terminate();
+          logChunkDownloaderMetrics(metrics);
+        }
       }
 
       return false;
@@ -322,12 +333,12 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     byte[] bytes = Base64.getDecoder().decode(rowsetBase64);
     ByteArrayInputStream inputStream = new ByteArrayInputStream(bytes);
 
-    // create a fake result chunk
-    ArrowResultChunk resultChunk = new ArrowResultChunk("", 0, 0, 0);
+    // create a result chunk
+    ArrowResultChunk resultChunk = new ArrowResultChunk("", 0, 0, 0, rootAllocator);
 
     try
     {
-      ArrowResultChunk.readArrowStream(inputStream, resultChunk);
+      resultChunk.readArrowStream(inputStream);
     }
     catch (IOException e)
     {
@@ -592,11 +603,32 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
   {
     super.close();
 
+    // always make sure to free this current chunk
+    currentChunkIterator.getChunk().freeData();
+
     if (chunkDownloader != null)
     {
       DownloaderMetrics metrics = chunkDownloader.terminate();
       logChunkDownloaderMetrics(metrics);
     }
+    else
+    {
+      // always close root allocator
+      closeRootAllocator(rootAllocator);
+    }
+  }
+
+  public static void closeRootAllocator(RootAllocator rootAllocator)
+  {
+    long rest = rootAllocator.getAllocatedMemory();
+    if (rest > 0)
+    {
+      // this case should only happen when the resultSet is closed before consuming all chunks
+      // otherwise, the memory usage for each chunk will be cleared right after it has been fully consumed
+      rootAllocator.releaseBytes(rest);
+      logger.warn(rest + " bytes of Arrow result chunk data has been cleared before consuming");
+    }
+    rootAllocator.close();
   }
 
   @Override

@@ -1857,4 +1857,22 @@ public class ResultSetArrowForceIT extends BaseJDBCTest
     assertEquals("test", rs.getString(3));
     finish(table, conn);
   }
+
+  @Test
+  public void testTimestampNTZAreAllNulls() throws SQLException
+  {
+    Connection con = getConnection();
+    Statement statement = con.createStatement();
+    statement.executeQuery(
+        "create or replace table test_null_ts_ntz (a timestampntz(9)) as select null from table(generator" +
+        "(rowcount => 1000000)) v " +
+        "order by 1;");
+    ResultSet rs = statement.executeQuery("select * from test_null_ts_ntz");
+    while (rs.next())
+    {
+      rs.getObject(1);
+    }
+    statement.executeQuery("drop table if exists test_null_ts_ntz");
+    statement.close();
+  }
 }
