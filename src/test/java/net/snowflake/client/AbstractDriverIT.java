@@ -280,7 +280,7 @@ public class AbstractDriverIT
    * @throws SQLException raised if any error occurs
    */
   protected void closeSQLObjects(ResultSet resultSet, Statement statement,
-                              Connection connection) throws SQLException
+                                 Connection connection) throws SQLException
   {
     if (resultSet != null)
     {
