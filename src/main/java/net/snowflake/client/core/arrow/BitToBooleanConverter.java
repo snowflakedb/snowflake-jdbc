@@ -54,6 +54,6 @@ public class BitToBooleanConverter extends AbstractArrowVectorConverter
   @Override
   public String toString(int index)
   {
-    return isNull(index) ? null : String.valueOf(toBoolean(index));
+    return isNull(index) ? null : toBoolean(index) ? "TRUE":"FALSE";
   }
 }

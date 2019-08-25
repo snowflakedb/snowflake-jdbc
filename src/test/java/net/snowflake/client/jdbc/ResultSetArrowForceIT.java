@@ -32,15 +32,15 @@ import static org.junit.Assert.fail;
 @RunWith(Parameterized.class)
 public class ResultSetArrowForceIT extends BaseJDBCTest
 {
-  @Parameterized.Parameters
+  @Parameterized.Parameters(name = "format={0}")
   public static Object[][] data()
   {
     // all tests in this class need to run for both query result formats json and arrow
     if (BaseJDBCTest.isArrowTestsEnabled())
     {
       return new Object[][]{
-          {"JSON"}
-          , {"Arrow_force"}
+          {"JSON"},
+           {"Arrow_force"}
       };
     }
     else
@@ -1838,6 +1838,27 @@ public class ResultSetArrowForceIT extends BaseJDBCTest
   }
 
   @Test
+  public void testBoolean() throws SQLException
+  {
+    String table = "test_arrow_boolean";
+    String column = "(a boolean)";
+    String values = "(true),(null),(false)";
+    Connection conn = init(table, column, values);
+    Statement statement = conn.createStatement();
+    ResultSet rs = statement.executeQuery("select * from " + table);
+    assertTrue(rs.next());
+    assertTrue(rs.getBoolean(1));
+    assertEquals("TRUE", rs.getString(1));
+    assertTrue(rs.next());
+    assertFalse(rs.getBoolean(1));
+    assertTrue(rs.next());
+    assertFalse(rs.getBoolean(1));
+    assertEquals("FALSE", rs.getString(1));
+    assertFalse(rs.next());
+    finish(table, conn);
+  }
+
+  @Test
   public void testClientSideSorting() throws SQLException
   {
     String table = "test_arrow_sort_on";
@@ -1856,6 +1877,46 @@ public class ResultSetArrowForceIT extends BaseJDBCTest
     rs.next();
     assertEquals("test", rs.getString(3));
     finish(table, conn);
+  }
+
+  @Test
+  public void testClientSideSortingOnBatchedChunk() throws SQLException
+  {
+    // in this test, the first chunk contains multiple batches when the format is Arrow
+    String[] queries = {
+        "set-sf-property sort on",
+        "alter session set populate_change_tracking_columns = true;",
+        "alter session set create_change_tracking_columns = true;",
+        "alter session set enable_stream = true;",
+        "alter session set qa_mode=true;  -- used for row_id",
+        "create or replace schema stream_get_table_timestamp;",
+        "create or replace  table T(id int);",
+        "create stream S on table T;",
+        "select system$stream_get_table_timestamp('S');",
+        "select system$last_change_commit_time('T');",
+        "insert into T values (1);",
+        "insert into T values (2);",
+        "insert into T values (3);",
+    };
+
+    Connection conn = getConnection();
+    Statement stat = conn.createStatement();
+    for (String q: queries)
+    {
+      stat.execute(q);
+    }
+
+    ResultSet rs = stat.executeQuery("select * from S");
+    assertTrue(rs.next());
+    assertEquals(1, rs.getInt(1));
+    assertTrue(rs.next());
+    assertEquals(2, rs.getInt(1));
+    assertTrue(rs.next());
+    assertEquals(3, rs.getInt(1));
+    assertFalse(rs.next());
+    stat.execute("drop stream S");
+    stat.execute("drop table T");
+    stat.close();
   }
 
   @Test
