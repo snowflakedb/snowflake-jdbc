@@ -25,7 +25,8 @@ public interface SnowflakeStatement
 
   /**
    * Set statement level parameter
-   * @param name parameter name
+   *
+   * @param name  parameter name
    * @param value parameter value
    */
   void setParameter(String name, Object value) throws SQLException;

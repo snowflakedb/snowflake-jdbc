@@ -259,6 +259,6 @@ public class SnowflakeConnectString
       return (Boolean) value;
     }
     String vs = value.toString();
-    return !"off".equalsIgnoreCase(vs) && !"false".equalsIgnoreCase(vs);
+    return !"off".equalsIgnoreCase(vs) && !Boolean.FALSE.toString().equalsIgnoreCase(vs);
   }
 }

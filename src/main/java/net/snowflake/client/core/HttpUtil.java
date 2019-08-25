@@ -47,6 +47,7 @@ import java.net.Proxy;
 import java.net.Socket;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -66,13 +67,13 @@ public class HttpUtil
    * The unique httpClient shared by all connections. This will benefit long-
    * lived clients
    */
-  private static CloseableHttpClient httpClient = null;
+  private static Map<OCSPMode, CloseableHttpClient> httpClient = new HashMap<>();
 
   /**
    * The unique httpClient shared by all connections that don't want
    * decompression. This will benefit long-lived clients
    */
-  private static CloseableHttpClient httpClientWithoutDecompression = null;
+  private static Map<OCSPMode, CloseableHttpClient> httpClientWithoutDecompression = new HashMap<>();
 
   /**
    * Handle on the static connection manager, to gather statistics mainly
@@ -90,12 +91,12 @@ public class HttpUtil
   /**
    * customized proxy properties
    */
-  private static boolean useProxy = false;
-  private static String proxyHost;
-  private static int proxyPort;
-  private static String proxyUser;
-  private static String proxyPassword;
-  private static String nonProxyHosts;
+  static boolean useProxy = false;
+  static String proxyHost;
+  static int proxyPort;
+  static String proxyUser;
+  static String proxyPassword;
+  static String nonProxyHosts;
 
   public static void setProxyForS3(ClientConfiguration clientConfig)
   {
@@ -115,10 +116,9 @@ public class HttpUtil
   /**
    * Build an Http client using our set of default.
    *
-   * @param ocspMode           INSECURE/FAILOPEN/FAILCLOSED.
+   * @param ocspMode           OCSP mode
    * @param ocspCacheFile      OCSP response cache file. If null, the default
    *                           OCSP response file will be used.
-   * @param useOcspCacheServer Whether to use the OCSP cache
    * @param downloadCompressed Whether the HTTP client should be built requesting
    *                           no decompression
    * @return HttpClient object
@@ -126,7 +126,6 @@ public class HttpUtil
   static CloseableHttpClient buildHttpClient(
       OCSPMode ocspMode,
       File ocspCacheFile,
-      boolean useOcspCacheServer,
       boolean downloadCompressed)
   {
     // set timeout so that we don't wait forever.
@@ -150,7 +149,7 @@ public class HttpUtil
       // care OCSP checks.
       // OCSP FailOpen is ON by default
       TrustManager[] tm = {
-          new SFTrustManager(ocspCacheFile, ocspMode == OCSPMode.FAIL_OPEN, useOcspCacheServer)};
+          new SFTrustManager(ocspMode, ocspCacheFile)};
       trustManagers = tm;
     }
     try
@@ -212,100 +211,75 @@ public class HttpUtil
   /**
    * Gets HttpClient with insecureMode false
    *
+   * @param ocspMode OCSP mode
    * @return HttpClient object shared across all connections
    */
-  public static CloseableHttpClient getHttpClient()
+  public static CloseableHttpClient getHttpClient(OCSPMode ocspMode)
   {
-    return initHttpClient(OCSPMode.FAIL_OPEN, null);
+    return initHttpClient(ocspMode, null);
   }
 
   /**
    * Gets HttpClient with insecureMode false and disabling decompression
    *
+   * @param ocspMode OCSP mode
    * @return HttpClient object shared across all connections
    */
-  public static CloseableHttpClient getHttpClientWithoutDecompression()
+  public static CloseableHttpClient getHttpClientWithoutDecompression(OCSPMode ocspMode)
   {
-    return initHttpClientWithoutDecompression(OCSPMode.FAIL_OPEN, null);
+    return initHttpClientWithoutDecompression(ocspMode, null);
   }
 
   /**
    * Accessor for the HTTP client singleton.
    *
-   * @param ocspMode      OCSPMode
+   * @param ocspMode      OCSP mode
    * @param ocspCacheFile OCSP response cache file name. if null, the default
    *                      file will be used.
    * @return HttpClient object shared across all connections
    */
-  public static CloseableHttpClient initHttpClientWithoutDecompression(OCSPMode ocspMode,
-                                                                       File ocspCacheFile)
+  public static CloseableHttpClient initHttpClientWithoutDecompression(OCSPMode ocspMode, File ocspCacheFile)
   {
-    if (httpClientWithoutDecompression == null)
+    if (!httpClientWithoutDecompression.containsKey(ocspMode))
     {
       synchronized (HttpUtil.class)
       {
-        if (httpClientWithoutDecompression == null)
+        if (!httpClientWithoutDecompression.containsKey(ocspMode))
         {
-          httpClientWithoutDecompression = buildHttpClient(
+          httpClientWithoutDecompression.put(ocspMode, buildHttpClient(
               ocspMode,
               ocspCacheFile,
-              enableOcspResponseCacheServer(),
-              true);
+              true));
         }
       }
     }
-    return httpClientWithoutDecompression;
+    return httpClientWithoutDecompression.get(ocspMode);
   }
 
   /**
    * Accessor for the HTTP client singleton.
    *
-   * @param ocspMode      OCSPMode
+   * @param ocspMode      OCSP mode
    * @param ocspCacheFile OCSP response cache file name. if null, the default
    *                      file will be used.
    * @return HttpClient object shared across all connections
    */
-  public static CloseableHttpClient initHttpClient(OCSPMode ocspMode,
-                                                   File ocspCacheFile)
+  public static CloseableHttpClient initHttpClient(OCSPMode ocspMode, File ocspCacheFile)
   {
-    if (httpClient == null)
+    if (!httpClient.containsKey(ocspMode))
     {
       synchronized (HttpUtil.class)
       {
-        if (httpClient == null)
+        if (!httpClient.containsKey(ocspMode))
         {
-          httpClient = buildHttpClient(
+          httpClient.put(ocspMode, buildHttpClient(
               ocspMode,
               ocspCacheFile,
-              enableOcspResponseCacheServer(),
-              false);
+              false));
         }
       }
     }
-    return httpClient;
-  }
-
-  private static boolean enableOcspResponseCacheServer()
-  {
-    String flag = null;
-    try
-    {
-      flag = System.getenv("SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED");
-    }
-    catch (Throwable ex)
-    {
-      // for boomi clound since they did not allowed System.getenv
-      // enable ocsp cache server by default
-      logger.debug("Failed to get environment variable " +
-                   "SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED. Skip");
-    }
-    if (flag == null)
-    {
-      flag = System.getProperty(
-          "net.snowflake.jdbc.ocsp_response_cache_server_enabled");
-    }
-
-    return !"false".equalsIgnoreCase(flag);
+    return httpClient.get(ocspMode);
   }
 
   /**
@@ -320,7 +294,6 @@ public class HttpUtil
   getDefaultRequestConfigWithSocketTimeout(int soTimeoutMs,
                                            boolean withoutCookies)
   {
-    getHttpClient();
     final String cookieSpec = withoutCookies ? IGNORE_COOKIES : DEFAULT;
     return RequestConfig.copy(DefaultRequestConfig)
         .setSocketTimeout(soTimeoutMs)
@@ -334,9 +307,8 @@ public class HttpUtil
    *
    * @return RequestConfig object
    */
-  public static RequestConfig getRequestConfigWithoutcookies()
+  public static RequestConfig getRequestConfigWithoutCookies()
   {
-    getHttpClient();
     return RequestConfig.copy(DefaultRequestConfig)
         .setCookieSpec(IGNORE_COOKIES)
         .build();
@@ -393,7 +365,8 @@ public class HttpUtil
   static String executeRequestWithoutCookies(HttpRequestBase httpRequest,
                                              int retryTimeout,
                                              int injectSocketTimeout,
-                                             AtomicBoolean canceling)
+                                             AtomicBoolean canceling,
+                                             OCSPMode ocspMode)
   throws SnowflakeSQLException, IOException
   {
     return executeRequestInternal(
@@ -401,34 +374,36 @@ public class HttpUtil
         retryTimeout,
         injectSocketTimeout,
         canceling,
-        true,
-        false,
-        true);
+        true, // no cookie
+        false, // no retry parameter
+        true, // guid? (do we need this?)
+        false, // no retry on HTTP 403
+        ocspMode);
   }
 
   /**
    * Executes a HTTP request for Snowflake.
    *
-   * @param httpRequest         HttpRequestBase
-   * @param retryTimeout        retry timeout
-   * @param injectSocketTimeout injecting socket timeout
-   * @param canceling           canceling?
+   * @param httpRequest  HttpRequestBase
+   * @param retryTimeout retry timeout
+   * @param ocspMode     OCSP mode
    * @return response
    * @throws SnowflakeSQLException if Snowflake error occurs
    * @throws IOException           raises if a general IO error occurs
    */
-  public static String executeRequest(HttpRequestBase httpRequest,
-                                      int retryTimeout,
-                                      int injectSocketTimeout,
-                                      AtomicBoolean canceling)
+  public static String executeGeneralRequest(HttpRequestBase httpRequest,
+                                             int retryTimeout, OCSPMode ocspMode)
   throws SnowflakeSQLException, IOException
   {
     return executeRequest(
         httpRequest,
         retryTimeout,
-        injectSocketTimeout,
-        canceling,
-        false);
+        0, // no inject socket timeout
+        null, // no canceling
+        false, // no retry parameter
+        false, // no retry on HTTP 403
+        ocspMode
+    );
   }
 
   /**
@@ -440,6 +415,8 @@ public class HttpUtil
    * @param canceling              canceling?
    * @param includeRetryParameters whether to include retry parameters in
    *                               retried requests
+   * @param retryOnHTTP403         whether to retry on HTTP 403 or not
+   * @param ocspMode               OCSP mode
    * @return response
    * @throws SnowflakeSQLException if Snowflake error occurs
    * @throws IOException           raises if a general IO error occurs
@@ -448,7 +425,9 @@ public class HttpUtil
                                       int retryTimeout,
                                       int injectSocketTimeout,
                                       AtomicBoolean canceling,
-                                      boolean includeRetryParameters)
+                                      boolean includeRetryParameters,
+                                      boolean retryOnHTTP403,
+                                      OCSPMode ocspMode)
   throws SnowflakeSQLException, IOException
   {
     return executeRequestInternal(
@@ -456,9 +435,11 @@ public class HttpUtil
         retryTimeout,
         injectSocketTimeout,
         canceling,
-        false,
+        false, // with cookie (do we need cookie?)
         includeRetryParameters,
-        true);
+        true, // include request GUID
+        retryOnHTTP403,
+        ocspMode);
   }
 
   /**
@@ -477,6 +458,8 @@ public class HttpUtil
    * @param includeRetryParameters whether to include retry parameters in
    *                               retried requests
    * @param includeRequestGuid     whether to include request_guid
+   * @param retryOnHTTP403         whether to retry on HTTP 403
+   * @param ocspMode               OCSPMode
    * @return response in String
    * @throws SnowflakeSQLException if Snowflake error occurs
    * @throws IOException           raises if a general IO error occurs
@@ -487,7 +470,9 @@ public class HttpUtil
                                                AtomicBoolean canceling,
                                                boolean withoutCookies,
                                                boolean includeRetryParameters,
-                                               boolean includeRequestGuid)
+                                               boolean includeRequestGuid,
+                                               boolean retryOnHTTP403,
+                                               OCSPMode ocspMode)
   throws SnowflakeSQLException, IOException
   {
     // HttpRequest.toString() contains request URI. Scrub any credentials, if
@@ -504,14 +489,15 @@ public class HttpUtil
     CloseableHttpResponse response = null;
     try
     {
-      response = RestRequest.execute(getHttpClient(),
+      response = RestRequest.execute(getHttpClient(ocspMode),
                                      httpRequest,
                                      retryTimeout,
                                      injectSocketTimeout,
                                      canceling,
                                      withoutCookies,
                                      includeRetryParameters,
-                                     includeRequestGuid);
+                                     includeRequestGuid,
+                                     retryOnHTTP403);
 
       if (response == null ||
           response.getStatusLine().getStatusCode() != 200)
@@ -525,12 +511,12 @@ public class HttpUtil
           EntityUtils.consume(response.getEntity());
         }
 
-        throw new SnowflakeSQLException(SqlState.IO_ERROR,
-                                        ErrorCode.NETWORK_ERROR.getMessageCode(),
-                                        "HTTP status="
-                                        + ((response != null) ?
-                                           response.getStatusLine().getStatusCode() :
-                                           "null response"));
+        throw new SnowflakeSQLException(
+            SqlState.IO_ERROR,
+            ErrorCode.NETWORK_ERROR.getMessageCode(),
+            "HTTP status=" + ((response != null) ?
+                              response.getStatusLine().getStatusCode() :
+                              "null response"));
       }
 
       writer = new StringWriter();
@@ -632,7 +618,7 @@ public class HttpUtil
     }
   }
 
-  private final static class SFConnectionSocketFactory
+  final static class SFConnectionSocketFactory
       extends PlainConnectionSocketFactory
   {
     @Override

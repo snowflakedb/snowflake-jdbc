@@ -86,7 +86,7 @@ public class SnowflakeConnectionV1Test
     prop = new Properties();
     prop.put("account", "s3testaccount");
     prop.put("user", "snowman");
-    prop.put("ssl", "false");
+    prop.put("ssl", Boolean.FALSE.toString());
     conStr = SnowflakeConnectString.parse("jdbc:snowflake://testaccount.localhost:8080/?prop1=value1", prop);
     result = SnowflakeConnectionV1.mergeProperties(conStr);
 
@@ -99,7 +99,7 @@ public class SnowflakeConnectionV1Test
     // testcase 7
     prop = new Properties();
     prop.put("user", "snowman");
-    prop.put("ssl", "false");
+    prop.put("ssl", Boolean.FALSE.toString());
     prop.put("prop1", "value2");
     conStr = SnowflakeConnectString.parse("jdbc:snowflake://testaccount.localhost:8080/?prop1=value1", prop);
     result = SnowflakeConnectionV1.mergeProperties(conStr);

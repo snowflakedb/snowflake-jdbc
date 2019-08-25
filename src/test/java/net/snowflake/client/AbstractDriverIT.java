@@ -250,7 +250,7 @@ public class AbstractDriverIT
     properties.put("warehouse", params.get("warehouse"));
     properties.put("ssl", params.get("ssl"));
 
-    properties.put("internal", "true"); // TODO: do we need this?
+    properties.put("internal", Boolean.TRUE.toString()); // TODO: do we need this?
 
     properties.put("insecureMode", false); // use OCSP for all tests.
 
@@ -279,7 +279,7 @@ public class AbstractDriverIT
    * @param connection a connection
    * @throws SQLException raised if any error occurs
    */
-  public void closeSQLObjects(ResultSet resultSet, Statement statement,
+  protected void closeSQLObjects(ResultSet resultSet, Statement statement,
                               Connection connection) throws SQLException
   {
     if (resultSet != null)
@@ -303,7 +303,7 @@ public class AbstractDriverIT
    * @param connection a connection
    * @throws SQLException raised if any error occurs
    */
-  public void closeSQLObjects(Statement statement, Connection connection) throws SQLException
+  protected void closeSQLObjects(Statement statement, Connection connection) throws SQLException
   {
     if (statement != null)
     {

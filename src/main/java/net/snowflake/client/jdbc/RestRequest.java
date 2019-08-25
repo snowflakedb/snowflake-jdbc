@@ -6,11 +6,12 @@ package net.snowflake.client.jdbc;
 
 import net.snowflake.client.core.Event;
 import net.snowflake.client.core.EventUtil;
+import net.snowflake.client.core.HttpUtil;
+import net.snowflake.client.core.SFOCSPException;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
-import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.util.DecorrelatedJitterBackoff;
 import net.snowflake.client.util.SecretDetector;
 import net.snowflake.common.core.SqlState;
@@ -35,20 +36,20 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class RestRequest
 {
-  static final SFLogger logger = SFLoggerFactory.getLogger(RestRequest.class);
+  private static final SFLogger logger = SFLoggerFactory.getLogger(RestRequest.class);
 
   // Request guid per HTTP request
   private static final String SF_REQUEST_GUID = "request_guid";
 
   // min backoff in milli before we retry due to transient issues
-  static private long minBackoffInMilli = 1000;
+  private static final long minBackoffInMilli = 1000;
 
   // max backoff in milli before we retry due to transient issues
   // we double the backoff after each retry till we reach the max backoff
-  static private long maxBackoffInMilli = 16000;
+  private static final long maxBackoffInMilli = 16000;
 
   // retry at least once even if timeout limit has been reached
-  static private int MIN_RETRY_COUNT = 1;
+  private static final int MIN_RETRY_COUNT = 1;
 
   /**
    * Execute an http request with retry logic.
@@ -63,6 +64,7 @@ public class RestRequest
    * @param includeRetryParameters whether to include retry parameters in retried
    *                               requests
    * @param includeRequestGuid     whether to include request_guid parameter
+   * @param retryHTTP403           whether to retry on HTTP 403 or not
    * @return HttpResponse Object get from server
    * @throws net.snowflake.client.jdbc.SnowflakeSQLException Request timeout Exception or Illegal State Exception i.e.
    *                                                         connection is already shutdown etc
@@ -75,7 +77,8 @@ public class RestRequest
       AtomicBoolean canceling,
       boolean withoutCookies,
       boolean includeRetryParameters,
-      boolean includeRequestGuid) throws SnowflakeSQLException
+      boolean includeRequestGuid,
+      boolean retryHTTP403) throws SnowflakeSQLException
   {
     CloseableHttpResponse response = null;
 
@@ -125,7 +128,7 @@ public class RestRequest
 
         if (withoutCookies)
         {
-          httpRequest.setConfig(HttpUtil.getRequestConfigWithoutcookies());
+          httpRequest.setConfig(HttpUtil.getRequestConfigWithoutCookies());
         }
 
         // for first call, simulate a socket timeout by setting socket timeout
@@ -176,12 +179,8 @@ public class RestRequest
         // because of closing of connection, stop retrying
         if (ex instanceof IllegalStateException)
         {
-          throw new SnowflakeSQLException(ex,
-                                          ErrorCode.INVALID_STATE.getSqlState(),
-                                          ErrorCode.INVALID_STATE.getMessageCode(),
-                                          ex.getMessage());
+          throw new SnowflakeSQLException(ex, ErrorCode.INVALID_STATE, ex.getMessage());
         }
-
         savedEx = ex;
 
         // if the request took more than 5 min (socket timeout) log an error
@@ -213,31 +212,30 @@ public class RestRequest
       /*
        * If we got a response and the status code is not one of those
        * transient failures, no more retry
-       *
-       * SNOW-16385: retry for any 5xx errors
        */
-      if (response != null &&
-          (response.getStatusLine().getStatusCode() < 500 || // service unavailable
-           response.getStatusLine().getStatusCode() >= 600) && // gateway timeout
-          response.getStatusLine().getStatusCode() != 408 && // request timeout
-          response.getStatusLine().getStatusCode() != 403) // intermittent AWS access issue
+      if (isCertificateRevoked(savedEx) || isRetryableHTTPCode(response, retryHTTP403))
       {
-        logger.debug("HTTP response code: {}",
-                     response.getStatusLine().getStatusCode());
-
-        if (response.getStatusLine().getStatusCode() != 200)
+        String msg = "Unknown cause";
+        if (response != null)
         {
-          logger.debug("Error response not retriable, " +
-                       "HTTP Response Code={}, request={}",
-                       response.getStatusLine().getStatusCode(),
+          logger.debug("HTTP response code: {}",
+                       response.getStatusLine().getStatusCode());
+          msg = "StatusCode: " + response.getStatusLine().getStatusCode() +
+                ", Reason: " + response.getStatusLine().getReasonPhrase();
+        }
+        else if (savedEx != null) // may be null.
+        {
+          Throwable rootCause = getRootCause(savedEx);
+          msg = rootCause.getMessage();
+        }
+
+        if (response == null || response.getStatusLine().getStatusCode() != 200)
+        {
+          logger.debug("Error response not retryable, " + msg + ", request={}",
                        requestInfoScrubbed);
           EventUtil.triggerBasicEvent(
-              Event.EventType.NETWORK_ERROR,
-              "StatusCode: " + response.getStatusLine().getStatusCode() +
-              ", Reason: " + response.getStatusLine().getReasonPhrase() +
-              ", Request: " + httpRequest.toString(),
+              Event.EventType.NETWORK_ERROR, msg + ", Request: " + httpRequest.toString(),
               false);
-
         }
         breakRetryReason = "status code does not need retry";
         break;
@@ -266,8 +264,7 @@ public class RestRequest
         // check canceling flag
         if (canceling != null && canceling.get())
         {
-          logger.debug(
-              "Stop retrying since canceling is requested");
+          logger.debug("Stop retrying since canceling is requested");
           breakRetryReason = "canceling is requested";
           break;
         }
@@ -317,8 +314,8 @@ public class RestRequest
             // rethrow the timeout exception
             if (response == null && savedEx != null)
             {
-              throw new SnowflakeSQLException(SqlState.IO_ERROR,
-                                              ErrorCode.NETWORK_ERROR.getMessageCode(),
+              throw new SnowflakeSQLException(savedEx,
+                                              ErrorCode.NETWORK_ERROR,
                                               "Exception encountered for HTTP request: " +
                                               savedEx.getMessage());
             }
@@ -375,8 +372,7 @@ public class RestRequest
 
     if (response == null)
     {
-      logger.error("Returning null response for request: {}",
-                   requestInfoScrubbed);
+      logger.error("Returning null response for request: {}", requestInfoScrubbed);
     }
     else if (response.getStatusLine().getStatusCode() != 200)
     {
@@ -418,7 +414,51 @@ public class RestRequest
           retryCount,
           null,
           0);
+
+      // rethrow the timeout exception
+      if (response == null && savedEx != null)
+      {
+        throw new SnowflakeSQLException(savedEx,
+                                        ErrorCode.NETWORK_ERROR,
+                                        "Exception encountered for HTTP request: " +
+                                        savedEx.getMessage());
+      }
     }
+
     return response;
+  }
+
+  private static boolean isRetryableHTTPCode(CloseableHttpResponse response, boolean retryHTTP403)
+  {
+    return response != null &&
+           (response.getStatusLine().getStatusCode() < 500 || // service unavailable
+            response.getStatusLine().getStatusCode() >= 600) && // gateway timeout
+           response.getStatusLine().getStatusCode() != 408 && // request timeout
+           (!retryHTTP403 || response.getStatusLine().getStatusCode() != 403);
+  }
+
+  private static boolean isCertificateRevoked(Exception ex)
+  {
+    if (ex == null)
+    {
+      return false;
+    }
+    Throwable ex0 = getRootCause(ex);
+    if (!(ex0 instanceof SFOCSPException))
+    {
+      return false;
+    }
+    SFOCSPException cause = (SFOCSPException) ex0;
+    return cause.getErrorCode() == OCSPErrorCode.CERTIFICATE_STATUS_REVOKED;
+  }
+
+  private static Throwable getRootCause(Throwable ex)
+  {
+    Throwable ex0 = ex;
+    while (ex0.getCause() != null)
+    {
+      ex0 = ex0.getCause();
+    }
+    return ex0;
   }
 }

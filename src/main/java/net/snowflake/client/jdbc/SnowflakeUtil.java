@@ -438,7 +438,7 @@ public class SnowflakeUtil
     {
       for (Header header : headers)
       {
-        logger.error("Header name: {}, value: {}",
+        logger.debug("Header name: {}, value: {}",
                      header.getName(), header.getValue());
       }
     }
