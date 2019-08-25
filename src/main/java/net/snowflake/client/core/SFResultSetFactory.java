@@ -5,6 +5,7 @@ package net.snowflake.client.core;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import net.snowflake.client.jdbc.ErrorCode;
+import net.snowflake.client.jdbc.SnowflakeResultSetSerializableV1;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 
 import java.sql.SQLException;
@@ -29,27 +30,20 @@ class SFResultSetFactory
                                       boolean sortResult)
   throws SQLException
   {
-    SFSession session = statement.getSession();
+    SnowflakeResultSetSerializableV1 resultSetSerializable =
+        SnowflakeResultSetSerializableV1.processResult(
+            result, statement.getSession(), statement);
 
-    ResultUtil.ResultInput resultInput = new ResultUtil.ResultInput();
-    resultInput.setResultJSON(result)
-        .setConnectionTimeout(session.getHttpClientConnectionTimeout())
-        .setSocketTimeout(session.getHttpClientSocketTimeout())
-        .setNetworkTimeoutInMilli(session.getNetworkTimeoutInMilli());
-
-    ResultUtil.ResultOutput resultOutput = ResultUtil
-        .processResult(resultInput, statement);
-
-    switch (resultOutput.queryResultFormat)
+    switch (resultSetSerializable.getQueryResultFormat())
     {
       case ARROW:
-        return new SFArrowResultSet(resultOutput, statement, sortResult);
+        return new SFArrowResultSet(resultSetSerializable, statement, sortResult);
       case JSON:
-        return new SFResultSet(resultOutput, statement, sortResult);
+        return new SFResultSet(resultSetSerializable, statement, sortResult);
       default:
         throw new SnowflakeSQLException(ErrorCode.INTERNAL_ERROR,
                                         "Unsupported query result format: " +
-                                        resultOutput.queryResultFormat.name());
+                                        resultSetSerializable.getQueryResultFormat().name());
     }
   }
 }

@@ -13,10 +13,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import net.snowflake.client.core.ChunkDownloader;
 import net.snowflake.client.core.DownloaderMetrics;
 import net.snowflake.client.core.HttpUtil;
+import net.snowflake.client.core.OCSPMode;
 import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.QueryResultFormat;
 import net.snowflake.client.core.SFArrowResultSet;
-import net.snowflake.client.core.SFSession;
 import net.snowflake.client.jdbc.SnowflakeResultChunk.DownloadState;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.client.log.ArgSupplier;
@@ -88,7 +88,8 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
   private static final SFLogger logger =
       SFLoggerFactory.getLogger(SnowflakeChunkDownloader.class);
   private static final int STREAM_BUFFER_SIZE = 1 * 1024 * 1024;
-  private final SFSession session;
+  private final SnowflakeConnectString snowflakeConnectionString;
+  private final OCSPMode ocspMode;
 
   private JsonResultChunk.ResultChunkDataCache chunkDataCache
       = new JsonResultChunk.ResultChunkDataCache();
@@ -164,9 +165,9 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
    */
   private final long downloadedConditionTimeoutInSeconds = 3600;
 
-  SFSession getSession()
+  public OCSPMode getOCSPMode()
   {
-    return session;
+    return ocspMode;
   }
 
   /**
@@ -211,89 +212,56 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
   /**
    * Constructor to initialize downloader
    *
-   * @param colCount              number of columns to expect
-   * @param chunksData            JSON object contains all the chunk information
-   * @param prefetchThreads       number of prefetch threads
-   * @param qrmk                  Query Result Master Key
-   * @param chunkHeaders          JSON object contains information about chunk headers
-   * @param networkTimeoutInMilli network timeout
-   * @param useJsonParserV2       should JsonParserV2 be used instead of object
-   * @param memoryLimit           memory limit for chunk buffer
-   * @param rootAllocator         Arrow root allocator for this resultSet
-   * @param sfSession             current session
+   * @param resultSetSerializable the result set serializable object which
+   *                              includes required metadata to start chunk downloader
    */
-  public SnowflakeChunkDownloader(int colCount,
-                                  JsonNode chunksData,
-                                  int prefetchThreads,
-                                  String qrmk,
-                                  JsonNode chunkHeaders,
-                                  int networkTimeoutInMilli,
-                                  boolean useJsonParserV2,
-                                  long memoryLimit,
-                                  QueryResultFormat queryResultFormat,
-                                  RootAllocator rootAllocator,
-                                  SFSession sfSession)
+  public SnowflakeChunkDownloader(SnowflakeResultSetSerializableV1 resultSetSerializable)
   throws SnowflakeSQLException
   {
-    this.session = sfSession;
-    this.qrmk = qrmk;
-    this.networkTimeoutInMilli = networkTimeoutInMilli;
-    this.prefetchSlots = prefetchThreads * 2;
-    this.useJsonParserV2 = useJsonParserV2;
-    this.memoryLimit = memoryLimit;
-    this.queryResultFormat = queryResultFormat;
-    logger.debug("qrmk = {}", qrmk);
+    this.snowflakeConnectionString =
+        resultSetSerializable.getSnowflakeConnectString();
+    this.ocspMode = resultSetSerializable.getOCSPMode();
+    this.qrmk = resultSetSerializable.getQrmk();
+    this.networkTimeoutInMilli = resultSetSerializable.getNetworkTimeoutInMilli();
+    this.prefetchSlots = resultSetSerializable.getResultPrefetchThreads() * 2;
+    this.useJsonParserV2 = resultSetSerializable.getUseJsonParserV2();
+    this.memoryLimit = resultSetSerializable.getMemoryLimit();
+    this.queryResultFormat = resultSetSerializable.getQueryResultFormat();
+    logger.debug("qrmk = {}", this.qrmk);
+    this.chunkHeadersMap = resultSetSerializable.getChunkHeadersMap();
 
-    if (chunkHeaders != null && !chunkHeaders.isMissingNode())
-    {
-      chunkHeadersMap = new HashMap<>(2);
-
-      Iterator<Map.Entry<String, JsonNode>> chunkHeadersIter =
-          chunkHeaders.fields();
-
-      while (chunkHeadersIter.hasNext())
-      {
-        Map.Entry<String, JsonNode> chunkHeader = chunkHeadersIter.next();
-
-        logger.debug("add header key={}, value={}",
-                     chunkHeader.getKey(),
-                     chunkHeader.getValue().asText());
-        chunkHeadersMap.put(chunkHeader.getKey(),
-                            chunkHeader.getValue().asText());
-      }
-    }
-
-    // no chunk data
-    if (chunksData == null)
-    {
-      logger.debug("no chunk data");
-      return;
-    }
-
-    // number of chunks
-    int numChunks = chunksData.size();
     // create the chunks array
-    chunks = new ArrayList<>(numChunks);
+    this.chunks = new ArrayList<>(resultSetSerializable.getChunkFileCount());
+
+    if (resultSetSerializable.getChunkFileCount() < 1)
+    {
+      throw new SnowflakeSQLException(ErrorCode.INTERNAL_ERROR,
+                                      "Incorrect chunk count: " +
+                                      resultSetSerializable.getChunkFileCount());
+    }
 
     // initialize chunks with url and row count
-    for (int idx = 0; idx < numChunks; idx++)
+    for (SnowflakeResultSetSerializableV1.ChunkFileEntry chunkFileEntry :
+        resultSetSerializable.getChunkFileEntries())
     {
-      JsonNode chunkNode = chunksData.get(idx);
-      String url = chunkNode.path("url").asText();
-      int rowCount = chunkNode.path("rowCount").asInt();
-      int uncompressedSize = chunkNode.path("uncompressedSize").asInt();
-
       SnowflakeResultChunk chunk;
       switch (this.queryResultFormat)
       {
         case ARROW:
-          this.rootAllocator = rootAllocator;
-          chunk = new ArrowResultChunk(url, rowCount, colCount, uncompressedSize, this.rootAllocator);
+          this.rootAllocator = resultSetSerializable.getRootAllocator();
+          chunk = new ArrowResultChunk(chunkFileEntry.getFileURL(),
+                                       chunkFileEntry.getRowCount(),
+                                       resultSetSerializable.getColumnCount(),
+                                       chunkFileEntry.getUncompressedByteSize(),
+                                       this.rootAllocator);
           break;
 
         case JSON:
-          chunk = new JsonResultChunk(url, rowCount, colCount,
-                                      uncompressedSize, useJsonParserV2);
+          chunk = new JsonResultChunk(chunkFileEntry.getFileURL(),
+                                      chunkFileEntry.getRowCount(),
+                                      resultSetSerializable.getColumnCount(),
+                                      chunkFileEntry.getUncompressedByteSize(),
+                                      this.useJsonParserV2);
           break;
 
         default:
@@ -311,11 +279,14 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
       chunks.add(chunk);
     }
     // prefetch threads and slots from parameter settings
-    int effectiveThreads = Math.min(prefetchThreads, numChunks);
+    int effectiveThreads = Math.min(resultSetSerializable.getResultPrefetchThreads(),
+                                    resultSetSerializable.getChunkFileCount());
 
     logger.debug(
         "#chunks: {} #threads:{} #slots:{} -> pool:{}",
-        numChunks, prefetchThreads, prefetchSlots, effectiveThreads);
+        resultSetSerializable.getChunkFileCount(),
+        resultSetSerializable.getResultPrefetchThreads(),
+        prefetchSlots, effectiveThreads);
 
     // create thread pool
     executor =
@@ -400,8 +371,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
                                                    nextChunk,
                                                    qrmk, nextChunkToDownload,
                                                    chunkHeadersMap,
-                                                   networkTimeoutInMilli,
-                                                   session));
+                                                   networkTimeoutInMilli));
 
           // increment next chunk to download
           nextChunkToDownload++;
@@ -749,7 +719,6 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
    *                              chunks. This is mainly for logging purpose
    * @param chunkHeadersMap       contains headers needed to be added when downloading from s3
    * @param networkTimeoutInMilli network timeout
-   * @param session               current session
    * @return A callable responsible for downloading chunk
    */
   private static Callable<Void> getDownloadChunkCallable(
@@ -757,7 +726,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
       final SnowflakeResultChunk resultChunk,
       final String qrmk, final int chunkIndex,
       final Map<String, String> chunkHeadersMap,
-      final int networkTimeoutInMilli, SFSession session)
+      final int networkTimeoutInMilli)
   {
     return new Callable<Void>()
     {
@@ -782,7 +751,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
           long startTime = System.currentTimeMillis();
 
           // initialize the telemetry service for this downloader thread using the main telemetry service
-          TelemetryService.getInstance().updateContext(session.getSnowflakeConnectionString());
+          TelemetryService.getInstance().updateContext(downloader.snowflakeConnectionString);
           HttpResponse response = getResultChunk(resultChunk.getUrl());
 
           /*
@@ -1083,7 +1052,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
         //TODO move this s3 request to HttpUtil class. In theory, upper layer
         //TODO does not need to know about http client
         CloseableHttpClient httpClient = HttpUtil.getHttpClient(
-            downloader.getSession().getOCSPMode());
+            downloader.getOCSPMode());
 
         // fetch the result chunk
         HttpResponse response =

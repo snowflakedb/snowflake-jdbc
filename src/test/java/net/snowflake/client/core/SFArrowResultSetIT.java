@@ -6,6 +6,7 @@ package net.snowflake.client.core;
 import net.snowflake.client.jdbc.ArrowResultChunk;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeResultChunk;
+import net.snowflake.client.jdbc.SnowflakeResultSetSerializableV1;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.jdbc.telemetry.NoopTelemetryClient;
 import org.apache.arrow.memory.BufferAllocator;
@@ -38,7 +39,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
-import static net.snowflake.client.core.ResultUtil.ResultOutput;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -82,13 +82,13 @@ public class SFArrowResultSetIT
     InputStream is = new FileInputStream(file);
     is.read(dataBytes, 0, dataSize);
 
-    ResultOutput resultOutput = new ResultOutput();
-    resultOutput.rootAllocator = new RootAllocator(Integer.MAX_VALUE);
-    resultOutput.rowsetBase64 = Base64.getEncoder().encodeToString(dataBytes);
-    resultOutput.chunkCount = 0;
+    SnowflakeResultSetSerializableV1 resultSetSerializable = new SnowflakeResultSetSerializableV1();
+    resultSetSerializable.setRootAllocator(new RootAllocator(Integer.MAX_VALUE));
+    resultSetSerializable.setFristChunkStringData(Base64.getEncoder().encodeToString(dataBytes));
+    resultSetSerializable.setChunkFileCount(0);
 
     SFArrowResultSet resultSet = new SFArrowResultSet(
-        resultOutput, new NoopTelemetryClient(), false);
+        resultSetSerializable, new NoopTelemetryClient(), false);
 
     int i = 0;
     while (resultSet.next())
@@ -105,20 +105,20 @@ public class SFArrowResultSetIT
   @Test
   public void testEmptyResultSet() throws Throwable
   {
-    ResultOutput resultOutput = new ResultOutput();
-    resultOutput.rowsetBase64 =
-        Base64.getEncoder().encodeToString("".getBytes(StandardCharsets.UTF_8));
-    resultOutput.chunkCount = 0;
+    SnowflakeResultSetSerializableV1 resultSetSerializable = new SnowflakeResultSetSerializableV1();
+    resultSetSerializable.setFristChunkStringData(
+        Base64.getEncoder().encodeToString("".getBytes(StandardCharsets.UTF_8)));
+    resultSetSerializable.setChunkFileCount(0);
 
     SFArrowResultSet resultSet = new SFArrowResultSet(
-        resultOutput, new NoopTelemetryClient(), false);
+        resultSetSerializable, new NoopTelemetryClient(), false);
     assertThat(resultSet.next(), is(false));
     assertThat(resultSet.isLast(), is(false));
     assertThat(resultSet.isAfterLast(), is(true));
 
-    resultOutput.rowsetBase64 = null;
+    resultSetSerializable.setFristChunkStringData(null);
     resultSet = new SFArrowResultSet(
-        resultOutput, new NoopTelemetryClient(), false);
+        resultSetSerializable, new NoopTelemetryClient(), false);
 
     assertThat(resultSet.next(), is(false));
     assertThat(resultSet.isLast(), is(false));
@@ -159,13 +159,13 @@ public class SFArrowResultSetIT
       dataLists.add(data);
       fileLists.add(file);
     }
-    ResultOutput resultOutput = new ResultOutput();
-    resultOutput.chunkDownloader = new MockChunkDownloader(fileLists);
-    resultOutput.chunkCount = chunkCount;
 
+    SnowflakeResultSetSerializableV1 resultSetSerializable = new SnowflakeResultSetSerializableV1();
+    resultSetSerializable.setChunkDownloader(new MockChunkDownloader(fileLists));
+    resultSetSerializable.setChunkFileCount(chunkCount);
 
     SFArrowResultSet resultSet = new SFArrowResultSet(
-        resultOutput, new NoopTelemetryClient(), false);
+        resultSetSerializable, new NoopTelemetryClient(), false);
 
     int index = 0;
     while (resultSet.next())
@@ -224,10 +224,10 @@ public class SFArrowResultSetIT
     InputStream is = new FileInputStream(arrowFile);
     is.read(dataBytes, 0, dataSize);
 
-    ResultOutput resultOutput = new ResultOutput();
-    resultOutput.rowsetBase64 = Base64.getEncoder().encodeToString(dataBytes);
-    resultOutput.chunkCount = chunkCount;
-    resultOutput.rootAllocator = new RootAllocator(Integer.MAX_VALUE);
+    SnowflakeResultSetSerializableV1 resultSetSerializable = new SnowflakeResultSetSerializableV1();
+    resultSetSerializable.setFristChunkStringData(Base64.getEncoder().encodeToString(dataBytes));
+    resultSetSerializable.setChunkFileCount(chunkCount);
+    resultSetSerializable.setRootAllocator(new RootAllocator(Integer.MAX_VALUE));
     // build chunk downloader
     for (int i = 0; i < chunkCount; i++)
     {
@@ -238,11 +238,10 @@ public class SFArrowResultSetIT
       dataLists.add(data);
       fileLists.add(file);
     }
-    resultOutput.chunkDownloader = new MockChunkDownloader(fileLists);
-
+    resultSetSerializable.setChunkDownloader(new MockChunkDownloader(fileLists));
 
     SFArrowResultSet resultSet = new SFArrowResultSet(
-        resultOutput, new NoopTelemetryClient(), false);
+        resultSetSerializable, new NoopTelemetryClient(), false);
 
     int index = 0;
     while (resultSet.next())

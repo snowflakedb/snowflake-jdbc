@@ -27,6 +27,7 @@ import java.sql.Statement;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.Calendar;
+import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
 
@@ -401,6 +402,18 @@ class SnowflakeResultSetV1 extends SnowflakeBaseResultSet implements SnowflakeRe
               .getName());
     }
     return (T) this;
+  }
+
+  /**
+   * Get a list of ResultSetSerializables for the ResultSet in order to parallel processing
+   *
+   * @return a list of ResultSetSerializables
+   */
+  @Override
+  public List<SnowflakeResultSetSerializable> getResultSetSerializables() throws SQLException
+  {
+    // TODO This function is implemented in next phase.
+    throw new SQLException("getResultSetSerializables() is not implemented yet");
   }
 
   /**

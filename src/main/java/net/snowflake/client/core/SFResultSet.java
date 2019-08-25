@@ -9,6 +9,7 @@ import net.snowflake.client.core.BasicEvent.QueryState;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.JsonResultChunk;
 import net.snowflake.client.jdbc.SnowflakeResultChunk;
+import net.snowflake.client.jdbc.SnowflakeResultSetSerializableV1;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
 import net.snowflake.client.jdbc.telemetry.TelemetryData;
@@ -18,7 +19,6 @@ import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SqlState;
 
-import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -76,12 +76,12 @@ public class SFResultSet extends SFJsonResultSet
    * <p>
    * The constructor will initialize the ResultSetMetaData.
    *
-   * @param resultOutput result data after parsing
-   * @param statement    statement object
-   * @param sortResult   true if sort results otherwise false
+   * @param resultSetSerializable result data after parsing
+   * @param statement             statement object
+   * @param sortResult            true if sort results otherwise false
    * @throws SQLException exception raised from general SQL layers
    */
-  SFResultSet(ResultUtil.ResultOutput resultOutput,
+  SFResultSet(SnowflakeResultSetSerializableV1 resultSetSerializable,
               SFStatement statement,
               boolean sortResult)
   throws SQLException
@@ -93,33 +93,33 @@ public class SFResultSet extends SFJsonResultSet
 
     SFSession session = this.statement.getSession();
     this.telemetryClient = session.getTelemetryClient();
-    this.queryId = resultOutput.getQueryId();
-    this.statementType = resultOutput.getStatementType();
-    this.totalRowCountTruncated = resultOutput.isTotalRowCountTruncated();
-    this.parameters = resultOutput.getParameters();
-    this.columnCount = resultOutput.getColumnCount();
-    this.firstChunkRowset = resultOutput.getAndClearCurrentChunkRowset();
-    this.currentChunkRowCount = resultOutput.getCurrentChunkRowCount();
-    this.chunkCount = resultOutput.getChunkCount();
-    this.chunkDownloader = resultOutput.getChunkDownloader();
-    this.timestampNTZFormatter = resultOutput.getTimestampNTZFormatter();
-    this.timestampLTZFormatter = resultOutput.getTimestampLTZFormatter();
-    this.timestampTZFormatter = resultOutput.getTimestampTZFormatter();
-    this.dateFormatter = resultOutput.getDateFormatter();
-    this.timeFormatter = resultOutput.getTimeFormatter();
-    this.timeZone = resultOutput.getTimeZone();
+    this.queryId = resultSetSerializable.getQueryId();
+    this.statementType = resultSetSerializable.getStatementType();
+    this.totalRowCountTruncated = resultSetSerializable.isTotalRowCountTruncated();
+    this.parameters = resultSetSerializable.getParameters();
+    this.columnCount = resultSetSerializable.getColumnCount();
+    this.firstChunkRowset = resultSetSerializable.getAndClearFirstChunkRowset();
+    this.currentChunkRowCount = resultSetSerializable.getFirstChunkRowCount();
+    this.chunkCount = resultSetSerializable.getChunkFileCount();
+    this.chunkDownloader = resultSetSerializable.getChunkDownloader();
+    this.timestampNTZFormatter = resultSetSerializable.getTimestampNTZFormatter();
+    this.timestampLTZFormatter = resultSetSerializable.getTimestampLTZFormatter();
+    this.timestampTZFormatter = resultSetSerializable.getTimestampTZFormatter();
+    this.dateFormatter = resultSetSerializable.getDateFormatter();
+    this.timeFormatter = resultSetSerializable.getTimeFormatter();
+    this.timeZone = resultSetSerializable.getTimeZone();
     this.honorClientTZForTimestampNTZ =
-        resultOutput.isHonorClientTZForTimestampNTZ();
-    this.binaryFormatter = resultOutput.getBinaryFormatter();
-    this.resultVersion = resultOutput.getResultVersion();
-    this.numberOfBinds = resultOutput.getNumberOfBinds();
-    this.arrayBindSupported = resultOutput.isArrayBindSupported();
-    this.metaDataOfBinds = resultOutput.getMetaDataOfBinds();
+        resultSetSerializable.isHonorClientTZForTimestampNTZ();
+    this.binaryFormatter = resultSetSerializable.getBinaryFormatter();
+    this.resultVersion = resultSetSerializable.getResultVersion();
+    this.numberOfBinds = resultSetSerializable.getNumberOfBinds();
+    this.arrayBindSupported = resultSetSerializable.isArrayBindSupported();
+    this.metaDataOfBinds = resultSetSerializable.getMetaDataOfBinds();
 
-    session.setDatabase(resultOutput.getFinalDatabaseName());
-    session.setSchema(resultOutput.getFinalSchemaName());
-    session.setRole(resultOutput.getFinalRoleName());
-    session.setWarehouse(resultOutput.getFinalWarehouseName());
+    session.setDatabase(resultSetSerializable.getFinalDatabaseName());
+    session.setSchema(resultSetSerializable.getFinalSchemaName());
+    session.setRole(resultSetSerializable.getFinalRoleName());
+    session.setWarehouse(resultSetSerializable.getFinalWarehouseName());
 
     // update the driver/session with common parameters from GS
     SessionUtil.updateSfDriverParamValues(this.parameters, statement.getSession());
@@ -138,16 +138,16 @@ public class SFResultSet extends SFJsonResultSet
     }
 
     // if server gives a send time, log time it took to arrive
-    if (resultOutput.getSendResultTime() != 0)
+    if (resultSetSerializable.getSendResultTime() != 0)
     {
-      long timeConsumeFirstResult = this.firstChunkTime - resultOutput.getSendResultTime();
+      long timeConsumeFirstResult = this.firstChunkTime - resultSetSerializable.getSendResultTime();
       logMetric(TelemetryField.TIME_CONSUME_FIRST_RESULT, timeConsumeFirstResult);
     }
 
     eventHandler.triggerStateTransition(BasicEvent.QueryState.CONSUMING_RESULT,
                                         String.format(QueryState.CONSUMING_RESULT.getArgString(), queryId, 0));
 
-    resultSetMetaData = new SFResultSetMetaData(resultOutput.getResultColumnMetadata(),
+    resultSetMetaData = new SFResultSetMetaData(resultSetSerializable.getResultColumnMetadata(),
                                                 queryId,
                                                 session,
                                                 this.timestampNTZFormatter,
