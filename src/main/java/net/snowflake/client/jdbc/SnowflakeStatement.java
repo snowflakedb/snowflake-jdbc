@@ -22,4 +22,11 @@ public interface SnowflakeStatement
    * @return the Snowflake query IDs of the latest executed batch queries
    */
   List<String> getBatchQueryIDs() throws SQLException;
+
+  /**
+   * Set statement level parameter
+   * @param name parameter name
+   * @param value parameter value
+   */
+  void setParameter(String name, Object value) throws SQLException;
 }
