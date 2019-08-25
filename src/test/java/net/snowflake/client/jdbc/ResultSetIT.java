@@ -912,17 +912,18 @@ public class ResultSetIT extends BaseJDBCTest
   }
 
   @Test
-  public void testGetTimeNullTimestamp() throws Throwable
+  public void testGetTimeNullTimestampAndTimestampNullTime() throws Throwable
   {
     try (Connection con = getConnection())
     {
-      con.createStatement().execute("create or replace table testnullts(c1 timestamp)");
+      con.createStatement().execute("create or replace table testnullts(c1 timestamp, c2 time)");
       try
       {
-        con.createStatement().execute("insert into testnullts(c1) values(null)");
+        con.createStatement().execute("insert into testnullts(c1, c2) values(null, null)");
         ResultSet rs = con.createStatement().executeQuery("select * from testnullts");
         assertTrue("should return result", rs.next());
         assertNull("return value must be null", rs.getTime(1));
+        assertNull("return value must be null", rs.getTimestamp(2));
         rs.close();
       }
       finally
