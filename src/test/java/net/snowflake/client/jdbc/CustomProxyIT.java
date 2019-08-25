@@ -12,6 +12,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Properties;
+
 import static net.snowflake.client.AbstractDriverIT.getFullPathFileInResource;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -197,10 +198,11 @@ public class CustomProxyIT
   throws ClassNotFoundException, SQLException
   {
     String connectionUrl =
-        "jdbc:snowflake://aztestaccount.east-us-2.azure.snowflakecomputing.com/?tracing=ALL"+
+        "jdbc:snowflake://aztestaccount.east-us-2.azure.snowflakecomputing.com/?tracing=ALL" +
         "&proxyHost=localhost&proxyPort=3128" +
         "&proxyUser=testuser1&proxyPassword=test" +
-        "&nonProxyHosts=*.foo.com%7Clocalhost&useProxy=true";;
+        "&nonProxyHosts=*.foo.com%7Clocalhost&useProxy=true";
+    ;
     runAzureProxyConnection(connectionUrl, false);
   }
 
@@ -210,11 +212,11 @@ public class CustomProxyIT
   throws ClassNotFoundException, SQLException
   {
     String connectionUrl =
-        "jdbc:snowflake://aztestaccount.east-us-2.azure.snowflakecomputing.com/?tracing=ALL"+
+        "jdbc:snowflake://aztestaccount.east-us-2.azure.snowflakecomputing.com/?tracing=ALL" +
         "&proxyHost=localhost&proxyPort=31281" +
         "&proxyUser=testuser1&proxyPassword=test" +
         "&nonProxyHosts=*.foo.com%7Clocalhost&useProxy=true";
-    
+
     try
     {
       runAzureProxyConnection(connectionUrl, false);
