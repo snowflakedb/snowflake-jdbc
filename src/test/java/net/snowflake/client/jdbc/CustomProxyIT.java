@@ -5,15 +5,17 @@ import org.junit.Test;
 
 import java.net.Authenticator;
 import java.net.PasswordAuthentication;
+import java.net.URL;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Properties;
-
+import static net.snowflake.client.AbstractDriverIT.getFullPathFileInResource;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 public class CustomProxyIT
 {
@@ -27,7 +29,7 @@ public class CustomProxyIT
         "jdbc:snowflake://s3testaccount.us-east-1.snowflakecomputing.com/?tracing=ALL" +
         "&proxyHost=localhost&proxyPort=3128" +
         "&proxyUser=testuser1&proxyPassword=test" +
-        "&nonProxyHosts=*.foo.com|localhost&useProxy=true";
+        "&nonProxyHosts=*.foo.com%7Clocalhost&useProxy=true";
     // should finish correctly
     runProxyConnection(connectionUrl);
 
@@ -130,6 +132,7 @@ public class CustomProxyIT
         "&proxyUser=testuser1&proxyPassword=test" +
         "&nonProxyHosts=*.foo.com|localhost&useProxy=true";
     // should fail to connect
+
     runProxyConnection(connectionUrl);
   }
 
@@ -176,6 +179,98 @@ public class CustomProxyIT
       counter++;
       break;
     }
+  }
+
+  @Test
+  @Ignore
+  public void testProxyConnectionWithAzure()
+  throws ClassNotFoundException, SQLException
+  {
+    String connectionUrl =
+        "jdbc:snowflake://aztestaccount.east-us-2.azure.snowflakecomputing.com/?tracing=ALL";
+    runAzureProxyConnection(connectionUrl, true);
+  }
+
+  @Test
+  @Ignore
+  public void testProxyConnectionWithAzureWithConnectionString()
+  throws ClassNotFoundException, SQLException
+  {
+    String connectionUrl =
+        "jdbc:snowflake://aztestaccount.east-us-2.azure.snowflakecomputing.com/?tracing=ALL"+
+        "&proxyHost=localhost&proxyPort=3128" +
+        "&proxyUser=testuser1&proxyPassword=test" +
+        "&nonProxyHosts=*.foo.com%7Clocalhost&useProxy=true";;
+    runAzureProxyConnection(connectionUrl, false);
+  }
+
+  @Test
+  @Ignore
+  public void testProxyConnectionWithAzureWithWrongConnectionString()
+  throws ClassNotFoundException, SQLException
+  {
+    String connectionUrl =
+        "jdbc:snowflake://aztestaccount.east-us-2.azure.snowflakecomputing.com/?tracing=ALL"+
+        "&proxyHost=localhost&proxyPort=31281" +
+        "&proxyUser=testuser1&proxyPassword=test" +
+        "&nonProxyHosts=*.foo.com%7Clocalhost&useProxy=true";
+    
+    try
+    {
+      runAzureProxyConnection(connectionUrl, false);
+    }
+    catch (SQLException e)
+    {
+      assertThat("JDBC driver encountered communication error", e.getErrorCode(),
+                 equalTo(ErrorCode.NETWORK_ERROR.getMessageCode()));
+
+    }
+  }
+
+  public void runAzureProxyConnection(String connectionUrl, boolean usesProperties)
+  throws ClassNotFoundException, SQLException
+  {
+    Authenticator.setDefault(
+        new Authenticator()
+        {
+          @Override
+          public PasswordAuthentication getPasswordAuthentication()
+          {
+            System.out.println("RequestorType: " + getRequestorType());
+            System.out.println("Protocol: " + getRequestingProtocol().toLowerCase());
+            return new PasswordAuthentication(
+                System.getProperty("http.proxyUser"),
+                System.getProperty("http.proxyPassword").toCharArray());
+          }
+        }
+    );
+
+    // SET USER AND PASSWORD FIRST
+    String user = "USER";
+    String passwd = "PASSWORD";
+    Properties _connectionProperties = new Properties();
+    _connectionProperties.put("user", user);
+    _connectionProperties.put("password", passwd);
+    if (usesProperties)
+    {
+      _connectionProperties.put("useProxy", true);
+      _connectionProperties.put("proxyHost", "localhost");
+      _connectionProperties.put("proxyPort", "3128");
+      _connectionProperties.put("proxyUser", "testuser1");
+      _connectionProperties.put("proxyPassword", "test");
+    }
+
+    Class.forName("net.snowflake.client.jdbc.SnowflakeDriver");
+
+    String fileName = "test_copy.csv";
+    URL resource = StatementIT.class.getResource(fileName);
+    Connection con = DriverManager.getConnection(connectionUrl, _connectionProperties);
+    Statement stmt = con.createStatement();
+    stmt.execute("create or replace warehouse MEG_TEST");
+    stmt.execute("use database MEG_TEST_DB");
+    stmt.execute("CREATE OR REPLACE STAGE testPutGet_stage");
+    assertTrue("Failed to put a file",
+               stmt.execute("PUT file://" + getFullPathFileInResource("orders_100.csv") + " @testPutGet_stage"));
   }
 
 }

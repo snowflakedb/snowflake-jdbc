@@ -8,9 +8,11 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.microsoft.azure.storage.OperationContext;
 import com.microsoft.azure.storage.blob.BlobProperties;
 import com.microsoft.azure.storage.blob.CloudBlob;
 import com.microsoft.azure.storage.blob.CloudBlockBlob;
+import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.jdbc.ErrorCode;
@@ -69,6 +71,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient
   private CloudBlobClient azStorageClient;
   private final static SFLogger logger =
       SFLoggerFactory.getLogger(SnowflakeAzureClient.class);
+  private OperationContext opContext = null;
 
   private SnowflakeAzureClient()
   {
@@ -111,6 +114,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient
     this.encMat = encMat;
 
     logger.debug("Setting up the Azure client ");
+    opContext = new OperationContext();
 
     try
     {
@@ -143,6 +147,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient
                                           "unsupported key size", encryptionKeySize);
         }
       }
+      HttpUtil.setProxyForAzure(opContext);
       this.azStorageClient = new CloudBlobClient(storageEndpoint, azCreds);
     }
     catch (URISyntaxException ex)
