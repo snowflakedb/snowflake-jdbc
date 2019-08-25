@@ -1353,7 +1353,7 @@ public class SessionUtil
    * @param paramsNode parameters in JSON form
    * @return map object including key and value pairs
    */
-  static Map<String, Object> getCommonParams(JsonNode paramsNode)
+  static public Map<String, Object> getCommonParams(JsonNode paramsNode)
   {
     Map<String, Object> parameters = new HashMap<>();
 
