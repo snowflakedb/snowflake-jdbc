@@ -473,7 +473,8 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
       return;
     }
 
-    for (int i = 0; i < chunks.size(); i++)
+    // only release the chunks has been downloading or downloaded
+    for (int i = 0; i < nextChunkToDownload; i++)
     {
       releaseCurrentMemoryUsage(i, chunks.get(i).computeNeededChunkMemory());
     }

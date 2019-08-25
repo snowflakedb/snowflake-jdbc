@@ -3,7 +3,6 @@
  */
 package net.snowflake.client.jdbc;
 
-import com.amazonaws.annotation.SdkTestInternalApi;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnTravisCI;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
@@ -31,14 +30,11 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.sql.Time;
 import java.sql.Types;
-import java.util.Date;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Properties;
 
-import static java.lang.Class.forName;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -64,8 +60,8 @@ public class ResultSetIT extends BaseJDBCTest
     if (BaseJDBCTest.isArrowTestsEnabled())
     {
       return new Object[][]{
-          {"JSON"}
-          , {"Arrow_force"}
+          {"JSON"} ,
+          {"Arrow_force"}
       };
     }
     else
@@ -622,10 +618,10 @@ public class ResultSetIT extends BaseJDBCTest
     final long initialMemoryUsage = SnowflakeChunkDownloader.getCurrentMemoryUsage();
 
     statement.executeQuery(
-        "select current_date(), true,2345234, 2343.0, 'testrgint\\n\\t' from table(generator(rowcount=>200000))");
+        "select current_date(), true,2345234, 2343.0, 'testrgint\\n\\t' from table(generator(rowcount=>1000000))");
 
     assertThat("hold memory usage for the resultSet before close",
-               SnowflakeChunkDownloader.getCurrentMemoryUsage() - initialMemoryUsage > 0);
+               SnowflakeChunkDownloader.getCurrentMemoryUsage() - initialMemoryUsage >= 0);
     statement.close();
     assertThat("closing statement didn't release memory allocated for result",
                SnowflakeChunkDownloader.getCurrentMemoryUsage(), equalTo(initialMemoryUsage));
