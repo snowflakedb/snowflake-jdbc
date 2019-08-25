@@ -233,9 +233,8 @@ public class Incident extends Event
 
     try
     {
-      String response = HttpUtil.executeRequest(postRequest,
-                                                1000, 0,
-                                                null);
+      String response = HttpUtil.executeGeneralRequest(
+          postRequest, 1000, OCSPMode.FAIL_OPEN);
       logger.debug("Incident registration was successful. Response: '{}'",
                    response);
     }

@@ -164,6 +164,11 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
    */
   private final long downloadedConditionTimeoutInSeconds = 3600;
 
+  SFSession getSession()
+  {
+    return session;
+  }
+
   /**
    * Create a pool of downloader threads.
    *
@@ -687,7 +692,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
         executor.shutdownNow();
         executor = null;
       }
-      for (SnowflakeResultChunk chunk: chunks)
+      for (SnowflakeResultChunk chunk : chunks)
       {
         // explicitly free each chunk since Arrow chunk may hold direct memory
         chunk.freeData();
@@ -1076,7 +1081,8 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
 
         //TODO move this s3 request to HttpUtil class. In theory, upper layer
         //TODO does not need to know about http client
-        CloseableHttpClient httpClient = HttpUtil.getHttpClient();
+        CloseableHttpClient httpClient = HttpUtil.getHttpClient(
+            downloader.getSession().getOCSPMode());
 
         // fetch the result chunk
         HttpResponse response =
@@ -1087,7 +1093,8 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
                                 null, // no canceling
                                 false, // no cookie
                                 false, // no retry
-                                false // no request_guid
+                                false, // no request_guid
+                                true // retry on HTTP403 for AWS S3
             );
 
         logger.debug("Call returned for URL: {}",

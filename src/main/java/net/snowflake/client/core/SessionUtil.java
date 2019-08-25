@@ -558,9 +558,10 @@ public class SessionUtil
 
       setServiceNameHeader(loginInput, postRequest);
 
-      String theString = HttpUtil.executeRequest(postRequest,
-                                                 loginInput.getLoginTimeout(),
-                                                 0, null);
+      String theString = HttpUtil.executeGeneralRequest(
+          postRequest,
+          loginInput.getLoginTimeout(),
+          loginInput.getOCSPMode());
 
       // general method, same as with data binding
       JsonNode jsonNode = mapper.readTree(theString);
@@ -664,7 +665,7 @@ public class SessionUtil
                                   (healthCheckIntervalFromGS * 1000);
 
         final RequestConfig requestConfig = RequestConfig
-            .copy(HttpUtil.getRequestConfigWithoutcookies())
+            .copy(HttpUtil.getRequestConfigWithoutCookies())
             .setConnectTimeout(loginInput.getConnectionTimeout())
             .setSocketTimeout(httpClientSocketTimeout)
             .build();
@@ -892,8 +893,10 @@ public class SessionUtil
           (ArgSupplier) () -> loginInput.getMasterToken() != null ? "******" : null,
           (ArgSupplier) () -> loginInput.getIdToken() != null ? "******" : null);
 
-      String theString = HttpUtil.executeRequest(postRequest,
-                                                 loginInput.getLoginTimeout(), 0, null);
+      String theString = HttpUtil.executeGeneralRequest(
+          postRequest,
+          loginInput.getLoginTimeout(),
+          loginInput.getOCSPMode());
 
       // general method, same as with data binding
       JsonNode jsonNode = mapper.readTree(theString);
@@ -969,7 +972,7 @@ public class SessionUtil
 
       uriBuilder = new URIBuilder(loginInput.getServerUrl());
 
-      uriBuilder.addParameter(SF_QUERY_SESSION_DELETE, "true");
+      uriBuilder.addParameter(SF_QUERY_SESSION_DELETE, Boolean.TRUE.toString());
       uriBuilder.addParameter(SFSession.SF_QUERY_REQUEST_ID,
                               UUID.randomUUID().toString());
 
@@ -984,9 +987,10 @@ public class SessionUtil
 
       setServiceNameHeader(loginInput, postRequest);
 
-      String theString = HttpUtil.executeRequest(postRequest,
-                                                 loginInput.getLoginTimeout(),
-                                                 0, null);
+      String theString = HttpUtil.executeGeneralRequest(
+          postRequest,
+          loginInput.getLoginTimeout(),
+          loginInput.getOCSPMode());
 
       JsonNode rootNode;
 
@@ -1061,8 +1065,10 @@ public class SessionUtil
       headers.addHeader(new BasicHeader(HttpHeaders.ACCEPT, "*/*"));
       httpGet.setHeaders(headers.getAllHeaders());
 
-      responseHtml = HttpUtil.executeRequest(httpGet,
-                                             loginInput.getLoginTimeout(), 0, null);
+      responseHtml = HttpUtil.executeGeneralRequest(
+          httpGet,
+          loginInput.getLoginTimeout(),
+          loginInput.getOCSPMode());
 
       // step 5
       String postBackUrl = getPostBackUrlFromHTML(responseHtml);
@@ -1121,8 +1127,12 @@ public class SessionUtil
       headers.addHeader(new BasicHeader(HttpHeaders.CONTENT_TYPE, "application/json"));
       postRequest.setHeaders(headers.getAllHeaders());
 
-      final String idpResponse = HttpUtil.executeRequestWithoutCookies(postRequest,
-                                                                       loginInput.getLoginTimeout(), 0, null);
+      final String idpResponse = HttpUtil.executeRequestWithoutCookies(
+          postRequest,
+          loginInput.getLoginTimeout(),
+          0,
+          null,
+          loginInput.getOCSPMode());
 
       logger.debug("user is authenticated against {}.",
                    loginInput.getAuthenticator());
@@ -1213,8 +1223,10 @@ public class SessionUtil
       postRequest.setEntity(input);
       postRequest.addHeader("accept", "application/json");
 
-      final String gsResponse = HttpUtil.executeRequest(postRequest,
-                                                        loginInput.getLoginTimeout(), 0, null);
+      final String gsResponse = HttpUtil.executeGeneralRequest(
+          postRequest,
+          loginInput.getLoginTimeout(),
+          loginInput.getOCSPMode());
       logger.debug("authenticator-request response: {}", gsResponse);
       JsonNode jsonNode = mapper.readTree(gsResponse);
 

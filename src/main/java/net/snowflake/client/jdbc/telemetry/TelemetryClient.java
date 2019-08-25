@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import net.snowflake.client.core.HttpUtil;
+import net.snowflake.client.core.OCSPMode;
 import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.jdbc.SnowflakeConnectionV1;
@@ -297,7 +298,7 @@ public class TelemetryClient implements Telemetry
 
       try
       {
-        response = HttpUtil.executeRequest(post, 1000, 0, null);
+        response = HttpUtil.executeGeneralRequest(post, 1000, OCSPMode.FAIL_OPEN);
       }
       catch (SnowflakeSQLException e)
       {

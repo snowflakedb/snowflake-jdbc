@@ -40,7 +40,7 @@ public class ResultSetArrowForceIT extends BaseJDBCTest
     {
       return new Object[][]{
           {"JSON"},
-           {"Arrow_force"}
+          {"Arrow_force"}
       };
     }
     else
@@ -1897,11 +1897,11 @@ public class ResultSetArrowForceIT extends BaseJDBCTest
         "insert into T values (1);",
         "insert into T values (2);",
         "insert into T values (3);",
-    };
+        };
 
     Connection conn = getConnection();
     Statement stat = conn.createStatement();
-    for (String q: queries)
+    for (String q : queries)
     {
       stat.execute(q);
     }

@@ -50,11 +50,12 @@ public class RestRequestIT
     RestRequest.execute(
         client,
         new HttpGet(uri),
-        0,
-        0,
-        new AtomicBoolean(false),
-        false,
+        0, // retry timeout
+        0, // inject socket timeout
+        new AtomicBoolean(false), // canceling
+        false, // without cookie
         includeRetryParameters,
+        true,
         true);
   }
 

@@ -463,7 +463,8 @@ public class SFStatement
           .setDescribedJobId(describeJobUUID)
           .setCombineDescribe(session.getEnableCombineDescribe())
           .setQuerySubmissionTime(System.currentTimeMillis())
-          .setServiceName(session.getServiceName());
+          .setServiceName(session.getServiceName())
+          .setOCSPMode(session.getOCSPMode());
 
       if (bindStagePath != null)
       {
@@ -541,8 +542,7 @@ public class SFStatement
       while (sessionRenewed && !canceling.get());
 
       // Debugging/Testing for incidents
-      if (System.getProperty("snowflake.enable_incident_test1") != null &&
-          System.getProperty("snowflake.enable_incident_test1").equals("true"))
+      if (Boolean.TRUE.toString().equalsIgnoreCase(System.getProperty("snowflake.enable_incident_test1")))
       {
         throw (SFException) IncidentUtil.generateIncidentV2WithException(
             session,
@@ -725,7 +725,8 @@ public class SFStatement
         .setMediaType(mediaType)
         .setRequestId(requestId)
         .setSessionToken(session.getSessionToken())
-        .setServiceName(session.getServiceName());
+        .setServiceName(session.getServiceName())
+        .setOCSPMode(session.getOCSPMode());
 
     StmtUtil.cancel(stmtInput);
 

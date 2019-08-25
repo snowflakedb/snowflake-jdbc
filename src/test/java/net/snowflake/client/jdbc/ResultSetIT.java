@@ -342,7 +342,7 @@ public class ResultSetIT extends BaseJDBCTest
   public void testGetBytes() throws SQLException
   {
     Properties props = new Properties();
-    props.setProperty("enable_binary_datatype", "true");
+    props.setProperty("enable_binary_datatype", Boolean.TRUE.toString());
     Connection connection = getConnection(props);
     Statement statement = connection.createStatement();
     statement.execute("create or replace table bin (b Binary)");

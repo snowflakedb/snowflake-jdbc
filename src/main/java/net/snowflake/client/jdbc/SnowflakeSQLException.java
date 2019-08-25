@@ -5,12 +5,11 @@
 package net.snowflake.client.jdbc;
 
 import net.snowflake.client.core.SFException;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.ResourceBundleManager;
 
 import java.sql.SQLException;
-
-import net.snowflake.client.log.SFLogger;
-import net.snowflake.client.log.SFLoggerFactory;
 
 /**
  * @author jhuang
@@ -84,6 +83,11 @@ public class SnowflakeSQLException extends SQLException
     logger.debug("Snowflake exception: {}" +
                  errorResourceBundleManager.getLocalizedMessage(
                      String.valueOf(vendorCode)), ex);
+  }
+
+  public SnowflakeSQLException(Throwable ex, ErrorCode errorCode, Object... params)
+  {
+    this(ex, errorCode.getSqlState(), errorCode.getMessageCode(), params);
   }
 
   public SnowflakeSQLException(Throwable ex,

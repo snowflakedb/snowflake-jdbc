@@ -421,8 +421,6 @@ public class SFSession
 
     HttpUtil.configureCustomProxyProperties(connectionPropertiesMap);
 
-    HttpUtil.initHttpClient(getOCSPMode(), null);
-
     logger.debug(
         "input: server={}, account={}, user={}, password={}, role={}, " +
         "database={}, schema={}, warehouse={}, validate_default_parameters={}, authenticator={}, ocsp_mode={}, " +
@@ -505,6 +503,9 @@ public class SFSession
             SFSessionProperty.APPLICATION))
         .setServiceName(this.getServiceName())
         .setOCSPMode(getOCSPMode());
+
+    // propagate OCSP mode to SFTrustManager. Note OCSP setting is global on JVM.
+    HttpUtil.initHttpClient(loginInput.getOCSPMode(), null);
 
     SFLoginOutput loginOutput = SessionUtil.openSession(loginInput);
     isClosed = false;
@@ -837,10 +838,10 @@ public class SFSession
                      postRequest.toString());
 
         // the following will retry transient network issues
-        String theResponse = HttpUtil.executeRequest(postRequest,
-                                                     SF_HEARTBEAT_TIMEOUT,
-                                                     0,
-                                                     null);
+        String theResponse = HttpUtil.executeGeneralRequest(
+            postRequest,
+            SF_HEARTBEAT_TIMEOUT,
+            getOCSPMode());
 
         JsonNode rootNode;
 

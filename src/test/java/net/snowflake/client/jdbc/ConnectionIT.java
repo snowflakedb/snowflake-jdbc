@@ -14,7 +14,6 @@ import org.apache.commons.codec.binary.Base64;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.security.KeyPair;
@@ -29,7 +28,6 @@ import java.sql.ResultSet;
 import java.sql.SQLClientInfoException;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
-import java.sql.SQLWarning;
 import java.sql.Statement;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -698,7 +696,7 @@ public class ConnectionIT extends BaseJDBCTest
     properties.put("user", "fakesuer");
     properties.put("password", "fakepwd");
     properties.put("account", "fakeaccount");
-    properties.put("insecureMode", false);
+    properties.put("insecureMode", true);
     try
     {
       DriverManager.getConnection(deploymentUrl, properties);
@@ -710,7 +708,7 @@ public class ConnectionIT extends BaseJDBCTest
     }
 
     deploymentUrl =
-        "jdbc:snowflake://sfcsupport.snowflakecomputing.com?insecureMode=false";
+        "jdbc:snowflake://sfcsupport.snowflakecomputing.com?insecureMode=true";
 
     properties = new Properties();
 

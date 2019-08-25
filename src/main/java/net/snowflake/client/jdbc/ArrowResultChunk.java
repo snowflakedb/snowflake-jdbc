@@ -103,8 +103,8 @@ public class ArrowResultChunk extends SnowflakeResultChunk
    * but those memory ownership is transfer into ArrowResultChunk class and once
    * ArrowStreamReader is garbage collected, memory will not be cleared up
    *
-   * @param is          inputStream which contain arrow data file in bytes
-//   * @param resultChunk result chunk that holds the resulted arrow vector
+   * @param is inputStream which contain arrow data file in bytes
+   *           //   * @param resultChunk result chunk that holds the resulted arrow vector
    * @throws IOException if failed to read data as arrow file
    */
   public void readArrowStream(InputStream is)
@@ -478,7 +478,7 @@ public class ArrowResultChunk extends SnowflakeResultChunk
           {
             // perform client-side sorting for the first chunk (only used in Snowflake internal regression tests)
             // if first chunk has multiple record batches, merge them into one and sort it
-            if (resultChunk.batchOfVectors.size()>1)
+            if (resultChunk.batchOfVectors.size() > 1)
             {
               resultChunk.mergeBatchesIntoOne();
               totalRecordBatch = 1;
@@ -578,12 +578,13 @@ public class ArrowResultChunk extends SnowflakeResultChunk
 
   /**
    * merge right batch into the left batch
+   *
    * @param left
    * @param right
    */
   private void mergeBatch(List<ValueVector> left, List<ValueVector> right) throws SFException
   {
-    for (int i = 0; i<left.size();i++)
+    for (int i = 0; i < left.size(); i++)
     {
       mergeVector(left.get(i), right.get(i));
     }
@@ -591,6 +592,7 @@ public class ArrowResultChunk extends SnowflakeResultChunk
 
   /**
    * todo append values from the right vector to the left
+   *
    * @param left
    * @param right
    */
@@ -598,7 +600,7 @@ public class ArrowResultChunk extends SnowflakeResultChunk
   {
     if (left instanceof StructVector)
     {
-      mergeStructVector((StructVector)left, (StructVector)right);
+      mergeStructVector((StructVector) left, (StructVector) right);
     }
     else
     {
@@ -608,6 +610,7 @@ public class ArrowResultChunk extends SnowflakeResultChunk
 
   /**
    * TODO merge StructVector used by Snowflake timestamp types
+   *
    * @param left
    * @param right
    */
@@ -620,18 +623,19 @@ public class ArrowResultChunk extends SnowflakeResultChunk
                            right.getChildrenFromFields().get(i));
     }
     int offset = left.getValueCount();
-    for (int i=0; i < right.getValueCount(); i++)
+    for (int i = 0; i < right.getValueCount(); i++)
     {
       if (right.isNull(i))
       {
-        left.setNull(offset+i);
+        left.setNull(offset + i);
       }
     }
-    left.setValueCount(offset+right.getValueCount());
+    left.setValueCount(offset + right.getValueCount());
   }
 
   /**
    * merge not struct vectors
+   *
    * @param left
    * @param right
    */
@@ -643,90 +647,90 @@ public class ArrowResultChunk extends SnowflakeResultChunk
       BigIntVector bigIntVectorLeft = (BigIntVector) left;
       BigIntVector bigIntVectorRight = (BigIntVector) right;
       int offset = bigIntVectorLeft.getValueCount();
-      for (int i = 0 ; i < bigIntVectorRight.getValueCount(); i++)
+      for (int i = 0; i < bigIntVectorRight.getValueCount(); i++)
       {
         if (bigIntVectorRight.isNull(i))
         {
-          bigIntVectorLeft.setNull(offset+i);
+          bigIntVectorLeft.setNull(offset + i);
         }
         else
         {
-          bigIntVectorLeft.setSafe(offset+i, bigIntVectorRight.get(i));
+          bigIntVectorLeft.setSafe(offset + i, bigIntVectorRight.get(i));
         }
       }
-      bigIntVectorLeft.setValueCount(offset+bigIntVectorRight.getValueCount());
+      bigIntVectorLeft.setValueCount(offset + bigIntVectorRight.getValueCount());
     }
     else if (left instanceof BitVector)
     {
       BitVector bitVectorLeft = (BitVector) left;
       BitVector bitVectorRight = (BitVector) right;
       int offset = bitVectorLeft.getValueCount();
-      for (int i=0;i<bitVectorRight.getValueCount();i++)
+      for (int i = 0; i < bitVectorRight.getValueCount(); i++)
       {
         if (bitVectorRight.isNull(i))
         {
-          bitVectorLeft.setNull(offset+i);
+          bitVectorLeft.setNull(offset + i);
         }
         else
         {
-          bitVectorLeft.setSafe(offset+i, bitVectorRight.get(i));
+          bitVectorLeft.setSafe(offset + i, bitVectorRight.get(i));
         }
       }
-      bitVectorLeft.setValueCount(offset+bitVectorRight.getValueCount());
+      bitVectorLeft.setValueCount(offset + bitVectorRight.getValueCount());
     }
     else if (left instanceof DateDayVector)
     {
       DateDayVector dateDayVectorLeft = (DateDayVector) left;
       DateDayVector dateDayVectorRight = (DateDayVector) right;
       int offset = dateDayVectorLeft.getValueCount();
-      for (int i = 0; i<dateDayVectorRight.getValueCount();i++)
+      for (int i = 0; i < dateDayVectorRight.getValueCount(); i++)
       {
         if (dateDayVectorRight.isNull(i))
         {
-          dateDayVectorLeft.setNull(offset+i);
+          dateDayVectorLeft.setNull(offset + i);
         }
         else
         {
-          dateDayVectorLeft.setSafe(offset+i, dateDayVectorRight.get(i));
+          dateDayVectorLeft.setSafe(offset + i, dateDayVectorRight.get(i));
         }
       }
-      dateDayVectorLeft.setValueCount(offset+dateDayVectorRight.getValueCount());
+      dateDayVectorLeft.setValueCount(offset + dateDayVectorRight.getValueCount());
     }
     else if (left instanceof DecimalVector)
     {
       DecimalVector decimalVectorLeft = (DecimalVector) left;
       DecimalVector decimalVectorRight = (DecimalVector) right;
       int offset = decimalVectorLeft.getValueCount();
-      for (int i = 0;i<decimalVectorRight.getValueCount();i++)
+      for (int i = 0; i < decimalVectorRight.getValueCount(); i++)
       {
         if (decimalVectorRight.isNull(i))
         {
-          decimalVectorLeft.setNull(offset+i);
+          decimalVectorLeft.setNull(offset + i);
         }
         else
         {
-          decimalVectorLeft.setSafe(offset+i, decimalVectorRight.get(i));
+          decimalVectorLeft.setSafe(offset + i, decimalVectorRight.get(i));
         }
       }
-      decimalVectorLeft.setValueCount(offset+decimalVectorRight.getValueCount());
+      decimalVectorLeft.setValueCount(offset + decimalVectorRight.getValueCount());
     }
     else if (left instanceof Float8Vector)
     {
       Float8Vector float8VectorLeft = (Float8Vector) left;
       Float8Vector float8VectorRight = (Float8Vector) right;
       int offset = float8VectorLeft.getValueCount();
-      for (int i =0;i<float8VectorRight.getValueCount();i++)
+      for (int i = 0; i < float8VectorRight.getValueCount(); i++)
       {
         if (float8VectorRight.isNull(i))
         {
-          float8VectorLeft.setNull(offset+i);
+          float8VectorLeft.setNull(offset + i);
         }
         else
         {
-          float8VectorLeft.setSafe(offset+i, float8VectorRight.get(i));
+          float8VectorLeft.setSafe(offset + i, float8VectorRight.get(i));
         }
       }
-      float8VectorLeft.setValueCount(offset+float8VectorRight.getValueCount());
+      float8VectorLeft.setValueCount(offset + float8VectorRight.getValueCount());
     }
     else if (left instanceof IntVector)
     {
@@ -737,14 +741,14 @@ public class ArrowResultChunk extends SnowflakeResultChunk
       {
         if (intVectorRight.isNull(i))
         {
-          intVectorLeft.setNull(offset+i);
+          intVectorLeft.setNull(offset + i);
         }
         else
         {
-          intVectorLeft.setSafe(offset+i, intVectorRight.get(i));
+          intVectorLeft.setSafe(offset + i, intVectorRight.get(i));
         }
       }
-      intVectorLeft.setValueCount(offset+intVectorRight.getValueCount());
+      intVectorLeft.setValueCount(offset + intVectorRight.getValueCount());
     }
     else if (left instanceof SmallIntVector)
     {
@@ -755,32 +759,32 @@ public class ArrowResultChunk extends SnowflakeResultChunk
       {
         if (smallIntVectorRight.isNull(i))
         {
-          smallIntVectorLeft.setNull(offset+i);
+          smallIntVectorLeft.setNull(offset + i);
         }
         else
         {
-          smallIntVectorLeft.setSafe(offset+i, smallIntVectorRight.get(i));
+          smallIntVectorLeft.setSafe(offset + i, smallIntVectorRight.get(i));
         }
       }
-      smallIntVectorLeft.setValueCount(offset+smallIntVectorRight.getValueCount());
+      smallIntVectorLeft.setValueCount(offset + smallIntVectorRight.getValueCount());
     }
     else if (left instanceof TinyIntVector)
     {
       TinyIntVector tinyIntVectorLeft = (TinyIntVector) left;
       TinyIntVector tinyIntVectorRight = (TinyIntVector) right;
       int offset = tinyIntVectorLeft.getValueCount();
-      for (int i=0;i < tinyIntVectorRight.getValueCount();i++)
+      for (int i = 0; i < tinyIntVectorRight.getValueCount(); i++)
       {
         if (tinyIntVectorRight.isNull(i))
         {
-          tinyIntVectorLeft.setNull(offset+i);
+          tinyIntVectorLeft.setNull(offset + i);
         }
         else
         {
-          tinyIntVectorLeft.setSafe(offset+i, tinyIntVectorRight.get(i));
+          tinyIntVectorLeft.setSafe(offset + i, tinyIntVectorRight.get(i));
         }
       }
-      tinyIntVectorLeft.setValueCount(offset+tinyIntVectorRight.getValueCount());
+      tinyIntVectorLeft.setValueCount(offset + tinyIntVectorRight.getValueCount());
     }
     else if (left instanceof VarBinaryVector)
     {
@@ -791,32 +795,32 @@ public class ArrowResultChunk extends SnowflakeResultChunk
       {
         if (varBinaryVectorRight.isNull(i))
         {
-          varBinaryVectorLeft.setNull(offset+i);
+          varBinaryVectorLeft.setNull(offset + i);
         }
         else
         {
-          varBinaryVectorLeft.setSafe(offset+i, varBinaryVectorRight.get(i));
+          varBinaryVectorLeft.setSafe(offset + i, varBinaryVectorRight.get(i));
         }
       }
-      varBinaryVectorLeft.setValueCount(offset+varBinaryVectorRight.getValueCount());
+      varBinaryVectorLeft.setValueCount(offset + varBinaryVectorRight.getValueCount());
     }
     else if (left instanceof VarCharVector)
     {
       VarCharVector varCharVectorLeft = (VarCharVector) left;
       VarCharVector varCharVectorRight = (VarCharVector) right;
       int offset = varCharVectorLeft.getValueCount();
-      for (int i=0;i < varCharVectorRight.getValueCount(); i++)
+      for (int i = 0; i < varCharVectorRight.getValueCount(); i++)
       {
         if (varCharVectorRight.isNull(i))
         {
-          varCharVectorLeft.setNull(offset+i);
+          varCharVectorLeft.setNull(offset + i);
         }
         else
         {
-          varCharVectorLeft.setSafe(offset+i, varCharVectorRight.get(i));
+          varCharVectorLeft.setSafe(offset + i, varCharVectorRight.get(i));
         }
       }
-      varCharVectorLeft.setValueCount(offset+varCharVectorRight.getValueCount());
+      varCharVectorLeft.setValueCount(offset + varCharVectorRight.getValueCount());
     }
     else
     {

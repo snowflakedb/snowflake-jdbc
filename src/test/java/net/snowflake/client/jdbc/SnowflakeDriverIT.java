@@ -3253,7 +3253,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest
     try
     {
       Properties paramProperties = new Properties();
-      paramProperties.put("TYPESYSTEM_WIDEN_CONSTANTS_EXACTLY", "true");
+      paramProperties.put("TYPESYSTEM_WIDEN_CONSTANTS_EXACTLY", Boolean.TRUE.toString());
       connection = getConnection(paramProperties);
 
       regularStatement = connection.createStatement();
