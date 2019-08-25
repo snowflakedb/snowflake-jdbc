@@ -466,11 +466,21 @@ public abstract class SFJsonResultSet extends SFBaseResultSet
     }
     else if (Types.DATE == columnType)
     {
-      return new Timestamp(getDate(columnIndex, tz).getTime());
+      Date d = getDate(columnIndex, tz);
+      if (d == null)
+      {
+        return null;
+      }
+      return new Timestamp(d.getTime());
     }
     else if (Types.TIME == columnType)
     {
-      return new Timestamp(getTime(columnIndex).getTime());
+      Time t = getTime(columnIndex);
+      if (t == null)
+      {
+        return null;
+      }
+      return new Timestamp(t.getTime());
     }
     else
     {
