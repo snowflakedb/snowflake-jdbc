@@ -20,6 +20,7 @@ public class SnowflakeConnectionV1Test
     Map<String, Object> result;
 
     // testcase 1
+
     Properties prop = new Properties();
     prop.put("account", "s3testaccount");
     prop.put("user", "snowman");
@@ -147,5 +148,14 @@ public class SnowflakeConnectionV1Test
     conStr = SnowflakeConnectString.parse("jdbc:snowflake://https://testaccount.localhost:8080/?prop1=value1", prop);
     result = SnowflakeConnectionV1.mergeProperties(conStr);
     assertThat(result.get("SERVERURL"), is("https://testaccount.localhost:8080/"));
+
+    // test case for escaped characters
+    prop = new Properties();
+    conStr = SnowflakeConnectString.parse("jdbc:snowflake://http://testaccount" +
+                                          ".localhost:8080/?prop1=value1%7Cvalue2&prop2=carrot%5E",
+                                          prop);
+    result = SnowflakeConnectionV1.mergeProperties(conStr);
+    assertThat(result.get("PROP1"), is("value1|value2"));
+    assertThat(result.get("PROP2"), is("carrot^"));
   }
 }
