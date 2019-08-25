@@ -870,13 +870,13 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement
   }
 
   /**
-   * Sets a parameter at the statement level. Used for internal testing.
+   * Sets a parameter at the statement level.
    *
    * @param name  parameter name.
    * @param value parameter value.
    * @throws SQLException if any SQL error occurs.
    */
-  void setParameter(String name, Object value) throws SQLException
+  public void setParameter(String name, Object value) throws SQLException
   {
     logger.debug("public void setParameter");
 
