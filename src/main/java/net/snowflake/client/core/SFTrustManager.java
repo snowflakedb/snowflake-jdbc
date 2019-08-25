@@ -105,13 +105,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.Enumeration;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 
 /**
@@ -218,17 +219,16 @@ public class SFTrustManager extends X509ExtendedTrustManager
   /**
    * Map from signature algorithm ASN1 object to the name.
    */
-  private static final Map<ASN1ObjectIdentifier, String> SIGNATURE_OID_TO_STRING = new HashMap<>();
+  private static final Map<ASN1ObjectIdentifier, String> SIGNATURE_OID_TO_STRING = new ConcurrentHashMap<>();
   /**
    * Map from OCSP response code to a string representation.
    */
-  private static final Map<Integer, String> OCSP_RESPONSE_CODE_TO_STRING = new HashMap<>();
+  private static final Map<Integer, String> OCSP_RESPONSE_CODE_TO_STRING = new ConcurrentHashMap<>();
   private final static Object ROOT_CA_LOCK = new Object();
   /**
    * OCSP Response cache
    */
-  private final static Map<OcspResponseCacheKey, SFPair<Long, String>> OCSP_RESPONSE_CACHE = new HashMap<>();
-  private final static Object OCSP_RESPONSE_CACHE_LOCK = new Object();
+  private final static Map<OcspResponseCacheKey, SFPair<Long, String>> OCSP_RESPONSE_CACHE = new ConcurrentHashMap<>();
   /**
    * Date and timestamp format
    */
@@ -249,17 +249,13 @@ public class SFTrustManager extends X509ExtendedTrustManager
   /**
    * RootCA cache
    */
-  private static Map<Integer, Certificate> ROOT_CA = new HashMap<>();
-  private static boolean WAS_CACHE_UPDATED = false;
-  private static boolean WAS_CACHE_READ = false;
+  private static Map<Integer, Certificate> ROOT_CA = new ConcurrentHashMap<>();
+  private final static AtomicBoolean WAS_CACHE_UPDATED = new AtomicBoolean();
+  private final static AtomicBoolean WAS_CACHE_READ = new AtomicBoolean();
   /**
-   * OCSP Cache server HTTP client
+   * OCSP HTTP client
    */
-  private static CloseableHttpClient ocspCacheServerClient;
-  /**
-   * OCSP Responder HTTP client
-   */
-  private static CloseableHttpClient ocspResponderClient;
+  private static Map<Integer, CloseableHttpClient> ocspCacheServerClient = new ConcurrentHashMap<>();
 
   static
   {
@@ -343,29 +339,15 @@ public class SFTrustManager extends X509ExtendedTrustManager
       readDirectives();
     }
 
-    synchronized (OCSP_RESPONSE_CACHE_LOCK)
+    if (cacheFile != null)
     {
-      if (cacheFile != null)
-      {
-        fileCacheManager.overrideCacheFile(cacheFile);
-      }
-      if (!WAS_CACHE_READ)
-      {
-        // read cache file once
-        JsonNode res = fileCacheManager.readCacheFile();
-        readJsonStoreCache(res);
-        WAS_CACHE_READ = true;
-      }
+      fileCacheManager.overrideCacheFile(cacheFile);
     }
-
-    // initialize HTTP clients
-    synchronized (SFTrustManager.class)
+    if (!WAS_CACHE_READ.getAndSet(true))
     {
-      if (ocspCacheServerClient == null || ocspResponderClient == null)
-      {
-        ocspCacheServerClient = getHttpClient(getOCSPCacheServerConnectionTimeout());
-        ocspResponderClient = getHttpClient(getOCSPResponderConnectionTimeout());
-      }
+      // read cache file once
+      JsonNode res = fileCacheManager.readCacheFile();
+      readJsonStoreCache(res);
     }
   }
 
@@ -452,6 +434,7 @@ public class SFTrustManager extends X509ExtendedTrustManager
     String ocspCacheServerEnabled = System.getProperty(SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED);
     if (Boolean.FALSE.toString().equalsIgnoreCase(ocspCacheServerEnabled))
     {
+      LOGGER.debug("No OCSP Response Cache Server is used.");
       return false;
     }
     try
@@ -459,6 +442,7 @@ public class SFTrustManager extends X509ExtendedTrustManager
       ocspCacheServerEnabled = System.getenv(SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED);
       if (Boolean.FALSE.toString().equalsIgnoreCase(ocspCacheServerEnabled))
       {
+        LOGGER.debug("No OCSP Response Cache Server is used.");
         return false;
       }
     }
@@ -591,7 +575,7 @@ public class SFTrustManager extends X509ExtendedTrustManager
     return null;
   }
 
-  private static void readJsonStoreCache(JsonNode m)
+  private synchronized static void readJsonStoreCache(JsonNode m)
   {
     if (m == null || !m.getNodeType().equals(JsonNodeType.OBJECT))
     {
@@ -608,12 +592,13 @@ public class SFTrustManager extends X509ExtendedTrustManager
         {
           // valid range. cache the result in memory
           OCSP_RESPONSE_CACHE.put(ky.left, ky.right);
+          WAS_CACHE_UPDATED.set(true);
         }
         else if (ky != null && OCSP_RESPONSE_CACHE.containsKey(ky.left))
         {
           // delete it from the cache if no OCSP response is back.
           OCSP_RESPONSE_CACHE.remove(ky.left);
-          WAS_CACHE_UPDATED = true;
+          WAS_CACHE_UPDATED.set(true);
         }
       }
     }
@@ -876,7 +861,7 @@ public class SFTrustManager extends X509ExtendedTrustManager
       synchronized (ROOT_CA_LOCK)
       {
         // cache root CA certificates for later use.
-        if (ROOT_CA.size() == 0)
+        if (ROOT_CA.isEmpty())
         {
           for (X509Certificate cert : ret.getAcceptedIssuers())
           {
@@ -966,45 +951,40 @@ public class SFTrustManager extends X509ExtendedTrustManager
       ocspCacheServer.resetOCSPResponseCacheServer(peerHost);
     }
 
-    synchronized (OCSP_RESPONSE_CACHE_LOCK)
+    setOCSPResponseCacheServerURL();
+    boolean isCached = isCached(pairIssuerSubjectList);
+    if (useOCSPResponseCacheServer() && !isCached)
     {
-      setOCSPResponseCacheServerURL();
-      boolean isCached = isCached(pairIssuerSubjectList);
-      if (useOCSPResponseCacheServer() && !isCached)
+      if (!ocspCacheServer.new_endpoint_enabled)
       {
-        if (!ocspCacheServer.new_endpoint_enabled)
-        {
-          LOGGER.debug(
-              "Downloading OCSP response cache from the server. URL: {}",
-              SF_OCSP_RESPONSE_CACHE_SERVER_URL_VALUE);
-        }
-        else
-        {
-          LOGGER.debug(
-              "Downloading OCSP response cache from the server. URL: {}",
-              ocspCacheServer.SF_OCSP_RESPONSE_CACHE_SERVER);
-        }
-        try
-        {
-          readOcspResponseCacheServer();
-        }
-        catch (SFOCSPException ex)
-        {
-          LOGGER.debug("Error downloading OCSP Response from cache server : {}." +
-                       "OCSP Responses will be fetched directly from the CA OCSP" +
-                       "Responder ", ex.getMessage());
-        }
-        // if the cache is downloaded from the server, it should be written
-        // to the file cache at all times.
-        WAS_CACHE_UPDATED = true;
+        LOGGER.debug(
+            "Downloading OCSP response cache from the server. URL: {}",
+            SF_OCSP_RESPONSE_CACHE_SERVER_URL_VALUE);
       }
-      executeRevocationStatusChecks(pairIssuerSubjectList, peerHost);
-      if (WAS_CACHE_UPDATED)
+      else
       {
-        JsonNode input = encodeCacheToJSON();
-        fileCacheManager.writeCacheFile(input);
-        WAS_CACHE_UPDATED = false;
+        LOGGER.debug(
+            "Downloading OCSP response cache from the server. URL: {}",
+            ocspCacheServer.SF_OCSP_RESPONSE_CACHE_SERVER);
       }
+      try
+      {
+        readOcspResponseCacheServer();
+      }
+      catch (SFOCSPException ex)
+      {
+        LOGGER.debug("Error downloading OCSP Response from cache server : {}." +
+                     "OCSP Responses will be fetched directly from the CA OCSP" +
+                     "Responder ", ex.getMessage());
+      }
+      // if the cache is downloaded from the server, it should be written
+      // to the file cache at all times.
+    }
+    executeRevocationStatusChecks(pairIssuerSubjectList, peerHost);
+    if (WAS_CACHE_UPDATED.getAndSet(false))
+    {
+      JsonNode input = encodeCacheToJSON();
+      fileCacheManager.writeCacheFile(input);
     }
   }
 
@@ -1097,7 +1077,6 @@ public class SFTrustManager extends X509ExtendedTrustManager
             {
               if (value0 == null)
               {
-                LOGGER.debug("not hit cache.");
                 telemetryData.setCacheHit(false);
                 ocspResp = fetchOcspResponse(pairIssuerSubject, req,
                                              encodeCacheKey(keyOcspResponse), peerHost,
@@ -1106,7 +1085,7 @@ public class SFTrustManager extends X509ExtendedTrustManager
                 OCSP_RESPONSE_CACHE.put(
                     keyOcspResponse, SFPair.of(currentTimeSecond,
                                                ocspResponseToB64(ocspResp)));
-                WAS_CACHE_UPDATED = true;
+                WAS_CACHE_UPDATED.set(true);
                 value0 = SFPair.of(currentTimeSecond,
                                    ocspResponseToB64(ocspResp));
               }
@@ -1117,7 +1096,7 @@ public class SFTrustManager extends X509ExtendedTrustManager
             }
             catch (Throwable ex)
             {
-              LOGGER.debug("Exception occurred while trying to fetch OCSP Response - %s", ex.getMessage());
+              LOGGER.debug("Exception occurred while trying to fetch OCSP Response - {}", ex.getMessage());
               throw new SFOCSPException(
                   OCSPErrorCode.OCSP_RESPONSE_FETCH_FAILURE,
                   "Exception occurred while trying to fetch OCSP Response", ex);
@@ -1164,12 +1143,12 @@ public class SFTrustManager extends X509ExtendedTrustManager
         }
         catch (CertificateException ex)
         {
-          if (OCSP_RESPONSE_CACHE.containsKey(keyOcspResponse))
+          WAS_CACHE_UPDATED.set(OCSP_RESPONSE_CACHE.remove(keyOcspResponse) != null);
+          if (WAS_CACHE_UPDATED.get())
           {
             LOGGER.debug("deleting the invalid OCSP cache.");
-            OCSP_RESPONSE_CACHE.remove(keyOcspResponse);
-            WAS_CACHE_UPDATED = true;
           }
+
           cause = ex;
           LOGGER.debug("Retrying {}/{} after sleeping {}(ms)",
                        retry + 1, maxRetryCounter, sleepTime);
@@ -1329,8 +1308,6 @@ public class SFTrustManager extends X509ExtendedTrustManager
 
   /**
    * Reads the OCSP response cache from the server.
-   * <p>
-   * Must be synchronized by OCSP_RESPONSE_CACHE_LOCK.
    */
   private void readOcspResponseCacheServer() throws SFOCSPException
   {
@@ -1346,11 +1323,14 @@ public class SFTrustManager extends X509ExtendedTrustManager
     }
 
     CloseableHttpResponse response = null;
+    CloseableHttpClient httpClient = ocspCacheServerClient.computeIfAbsent(
+        getOCSPCacheServerConnectionTimeout(),
+        k -> getHttpClient(getOCSPCacheServerConnectionTimeout()));
     try
     {
       URI uri = new URI(ocspCacheServerInUse);
       HttpGet get = new HttpGet(uri);
-      response = ocspCacheServerClient.execute(get);
+      response = httpClient.execute(get);
       if (response == null || response.getStatusLine().getStatusCode() != HttpStatus.SC_OK)
       {
         throw new IOException(
@@ -1460,6 +1440,10 @@ public class SFTrustManager extends X509ExtendedTrustManager
 
       final int maxRetryCounter = isOCSPFailOpen() ? 1 : 3;
       Exception savedEx = null;
+      CloseableHttpClient httpClient = ocspCacheServerClient.computeIfAbsent(
+          getOCSPResponderConnectionTimeout(),
+          k -> getHttpClient(getOCSPResponderConnectionTimeout()));
+
       for (int retry = 0; retry < maxRetryCounter; ++retry)
       {
         try
@@ -1467,7 +1451,7 @@ public class SFTrustManager extends X509ExtendedTrustManager
           if (!ocspCacheServer.new_endpoint_enabled)
           {
             HttpGet get = new HttpGet(url.toString());
-            response = ocspResponderClient.execute(get);
+            response = httpClient.execute(get);
           }
           else
           {
@@ -1480,18 +1464,17 @@ public class SFTrustManager extends X509ExtendedTrustManager
                                     hname);
             String json_payload = OBJECT_MAPPER.writeValueAsString(postReqData);
             post.setEntity(new StringEntity(json_payload, "utf-8"));
-            response = ocspResponderClient.execute(post);
+            response = httpClient.execute(post);
           }
           success = response != null && response.getStatusLine().getStatusCode() == HttpStatus.SC_OK;
           if (success)
           {
-            LOGGER.debug("Successfully downloaded OCSP response from CA server. URL: {}", url);
             break;
           }
         }
         catch (IOException ex)
         {
-          LOGGER.debug("Failed to reach out OCSP responder: {}", ex);
+          LOGGER.debug("Failed to reach out OCSP responder: {}", ex.getMessage());
           savedEx = ex;
         }
         IOUtils.closeQuietly(response);
@@ -1817,19 +1800,16 @@ public class SFTrustManager extends X509ExtendedTrustManager
       }
       else
       {
-        synchronized (ROOT_CA_LOCK)
+        // no root CA certificate is attached in the certificate chain, so
+        // getting one from the root CA from JVM.
+        Certificate issuer = ROOT_CA.get(bcCert.getIssuer().hashCode());
+        if (issuer == null)
         {
-          // no root CA certificate is attached in the certificate chain, so
-          // getting one from the root CA from JVM.
-          Certificate issuer = ROOT_CA.get(bcCert.getIssuer().hashCode());
-          if (issuer == null)
-          {
-            throw new CertificateException(
-                "Failed to find the root CA.",
-                new SFOCSPException(OCSPErrorCode.NO_ROOTCA_FOUND, "Failed to find the root CA."));
-          }
-          pairIssuerSubject.add(SFPair.of(issuer, bcChain.get(i)));
+          throw new CertificateException(
+              "Failed to find the root CA.",
+              new SFOCSPException(OCSPErrorCode.NO_ROOTCA_FOUND, "Failed to find the root CA."));
         }
+        pairIssuerSubject.add(SFPair.of(issuer, bcChain.get(i)));
       }
     }
     return pairIssuerSubject;

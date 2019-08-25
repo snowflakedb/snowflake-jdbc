@@ -686,13 +686,15 @@ public class SFStatement
 
   private void reauthenticate() throws SFException, SnowflakeSQLException
   {
-    SFLoginInput input = new SFLoginInput();
-    SFLoginOutput output = new SFLoginOutput();
-    output.setSessionToken(session.getSessionToken());
-    input.setRole(session.getRole());
-    input.setWarehouse(session.getWarehouse());
-    input.setDatabaseName(session.getDatabase());
-    input.setSchemaName(session.getSchema());
+    SFLoginInput input = new SFLoginInput()
+        .setRole(session.getRole())
+        .setWarehouse(session.getWarehouse())
+        .setDatabaseName(session.getDatabase())
+        .setSchemaName(session.getSchema())
+        .setOCSPMode(session.getOCSPMode());
+
+    SFLoginOutput output = new SFLoginOutput()
+        .setSessionToken(session.getSessionToken());
 
     session.open();
     session.setCurrentObjects(input, output);
