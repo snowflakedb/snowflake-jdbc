@@ -700,7 +700,8 @@ public class SFSession
         .setDatabaseName(this.getDatabase())
         .setSchemaName(this.getSchema())
         .setRole(this.getRole())
-        .setWarehouse(this.getWarehouse());
+        .setWarehouse(this.getWarehouse())
+        .setOCSPMode(getOCSPMode());
 
     SFLoginOutput loginOutput = SessionUtil.renewSession(loginInput);
 
@@ -744,7 +745,8 @@ public class SFSession
     loginInput.setServerUrl(
         (String) connectionPropertiesMap.get(SFSessionProperty.SERVER_URL))
         .setSessionToken(sessionToken)
-        .setLoginTimeout(loginTimeout);
+        .setLoginTimeout(loginTimeout)
+        .setOCSPMode(getOCSPMode());
 
     SessionUtil.closeSession(loginInput);
     closeTelemetryClient();

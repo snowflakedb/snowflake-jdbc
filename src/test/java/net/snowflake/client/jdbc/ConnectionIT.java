@@ -683,7 +683,7 @@ public class ConnectionIT extends BaseJDBCTest
   }
 
   /**
-   * Test production connectivity with insecure mode disabled.
+   * Test production connectivity with insecure mode enabled.
    */
   @Test
   public void testInsecureMode() throws SQLException
