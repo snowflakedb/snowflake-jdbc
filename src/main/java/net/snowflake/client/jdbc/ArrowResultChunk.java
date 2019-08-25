@@ -103,8 +103,7 @@ public class ArrowResultChunk extends SnowflakeResultChunk
    * but those memory ownership is transfer into ArrowResultChunk class and once
    * ArrowStreamReader is garbage collected, memory will not be cleared up
    *
-   * @param is inputStream which contain arrow data file in bytes
-   *           //   * @param resultChunk result chunk that holds the resulted arrow vector
+   * @param is inputStream which contains arrow data file in bytes
    * @throws IOException if failed to read data as arrow file
    */
   public void readArrowStream(InputStream is)
