@@ -1,3 +1,11 @@
+**JDBC Driver 3.9.1**
+
+- \| SNOW-90169 | Fix OCSP fail open
+- \| SNOW-84419 | Support proxy for Azure in JDBC (host and port only. No user and password is supported)
+- \| SNOW-90230 | Flush revoked OCSPExceptionTelemetryEvent immediately
+- \| SNOW-92525 | Make Arrow lib compatible with Java 8
+- \      
+
 **JDBC Driver 3.9.0**
 
 - \| SNOW-90644 | Add Statement.getLargeCount and executeLargeUpdate
