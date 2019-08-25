@@ -311,7 +311,7 @@ public class ConnectionIT extends BaseJDBCTest
     long connStart = 0, conEnd;
     Properties properties = new Properties();
     properties.put("account", "wrongaccount");
-    properties.put("loginTimeout", "20");
+    properties.put("loginTimeout", "5");
     properties.put("user", "fakeuser");
     properties.put("password", "fakepassword");
     // only when ssl is on can trigger the login timeout

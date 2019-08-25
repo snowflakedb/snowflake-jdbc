@@ -60,7 +60,7 @@ public class ResultSetIT extends BaseJDBCTest
     if (BaseJDBCTest.isArrowTestsEnabled())
     {
       return new Object[][]{
-          {"JSON"} ,
+          {"JSON"},
           {"Arrow_force"}
       };
     }
