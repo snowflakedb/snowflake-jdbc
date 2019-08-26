@@ -36,6 +36,7 @@ import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
 import static net.snowflake.client.core.SessionUtil.CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY;
+import static org.hamcrest.CoreMatchers.anyOf;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -345,8 +346,12 @@ public class ConnectionIT extends BaseJDBCTest
         TelemetryEvent te = TelemetryService.getInstance().peek();
         JSONObject values = (JSONObject) te.get("Value");
         assertThat("Communication error",
-                   values.get("errorCode").toString().compareTo(
-                       ErrorCode.NETWORK_ERROR.getMessageCode().toString()) == 0);
+                   values.get("errorCode").toString(),
+                   anyOf(
+                       // SSL connection returns HTTP 403
+                       equalTo("0"),
+                       // Non-SSL connection returns null response and returns NETWORK_ERROR
+                       equalTo(ErrorCode.NETWORK_ERROR.getMessageCode().toString())));
       }
       return;
     }
