@@ -245,16 +245,21 @@ public class SFTrustManagerIT extends BaseJDBCTest
         assertEquals(TelemetryService.getInstance().size(), queueSize + 1);
         TelemetryEvent te = TelemetryService.getInstance().peek();
         JSONObject values = (JSONObject) te.get("Value");
+        Object cacheHit = values.get("cacheHit");
+        assertNotNull(cacheHit);
         assertEquals("OCSPException", te.get("Name"));
         assertEquals(SFTrustManager.SF_OCSP_EVENT_TYPE_REVOKED_CERTIFICATE_ERROR,
                      values.get("eventType").toString());
         assertNotNull(values.get("sfcPeerHost"));
         assertNotNull(values.get("certId"));
-        assertNotNull(values.get("ocspResponderURL"));
-        assertNotNull(values.get("ocspReqBase64"));
+        if (cacheHit instanceof Boolean && !((Boolean) cacheHit))
+        {
+          // Only if the cache is not available, no OCSP Responder URL or OCSP request is valid,
+          assertNotNull(values.get("ocspResponderURL"));
+          assertNotNull(values.get("ocspReqBase64"));
+        }
         assertEquals(OCSPMode.FAIL_OPEN.name(), values.get("ocspMode"));
         assertNotNull(values.get("cacheEnabled"));
-        assertNotNull(values.get("cacheHit"));
         assertNotNull(values.get("exceptionStackTrace"));
         assertNotNull(values.get("exceptionMessage"));
       }
