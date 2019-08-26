@@ -1,5 +1,7 @@
 package net.snowflake.client.jdbc;
 
+import net.snowflake.client.ConditionalIgnoreRule;
+import net.snowflake.client.RunningOnTravisCI;
 import net.snowflake.common.core.SFBinary;
 import org.apache.arrow.vector.BigIntVector;
 import org.apache.commons.lang3.ArrayUtils;
@@ -1880,6 +1882,7 @@ public class ResultSetArrowForceIT extends BaseJDBCTest
   }
 
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
   public void testClientSideSortingOnBatchedChunk() throws SQLException
   {
     // in this test, the first chunk contains multiple batches when the format is Arrow
