@@ -49,13 +49,29 @@ public class AbstractDriverIT
 
   protected final int ERROR_CODE_DOMAIN_OBJECT_DOES_NOT_EXIST = 2003;
 
-  public static Map<String, String> getConnectionParameters()
+
+  public static Map<String, String> getConnectionParameters(String accountName)
   {
     Map<String, String> params = new HashMap<>();
-    String account = System.getenv("SNOWFLAKE_TEST_ACCOUNT");
-    assertThat("set SNOWFLAKE_TEST_ACCOUNT environment variable.",
+    String account;
+    String host;
+    if (accountName == null)
+    {
+      account = System.getenv("SNOWFLAKE_TEST_ACCOUNT");
+      host = System.getenv("SNOWFLAKE_TEST_HOST");
+    }
+    else
+    {
+      account = accountName;
+      host = accountName.trim() + ".reg.local";
+    }
+    assertThat("set account environment variable.",
                !Strings.isNullOrEmpty(account));
     params.put("account", account);
+
+    assertThat("set host environment variable.",
+               !Strings.isNullOrEmpty(host));
+    params.put("host", host);
 
     String user = System.getenv("SNOWFLAKE_TEST_USER");
     assertThat("set SNOWFLAKE_TEST_USER environment variable.",
@@ -66,11 +82,6 @@ public class AbstractDriverIT
     assertThat("set SNOWFLAKE_TEST_PASSWORD environment variable.",
                !Strings.isNullOrEmpty(password));
     params.put("password", password);
-
-    String host = System.getenv("SNOWFLAKE_TEST_HOST");
-    assertThat("set SNOWFLAKE_TEST_HOST environment variable.",
-               !Strings.isNullOrEmpty(host));
-    params.put("host", host);
 
     String port = System.getenv("SNOWFLAKE_TEST_PORT");
     assertThat("set SNOWFLAKE_TEST_PORT environment variable.",
@@ -126,6 +137,12 @@ public class AbstractDriverIT
     return params;
   }
 
+  public static Map<String, String> getConnectionParameters()
+  {
+    return getConnectionParameters(null);
+  }
+
+
   /**
    * Gets a connection with default session parameter settings,
    * but tunable query api version and socket timeout setting
@@ -139,6 +156,18 @@ public class AbstractDriverIT
   throws SQLException
   {
     return getConnection(DONT_INJECT_SOCKET_TIMEOUT, paramProperties, false, false);
+  }
+
+  /**
+   * Gets a connection with custom account name, but otherwise default settings
+   *
+   * @return Connection a database connection
+   * @throws SQLException raised if any error occurs
+   */
+  public static Connection getConnection(String accountName)
+  throws SQLException
+  {
+    return getConnection(DONT_INJECT_SOCKET_TIMEOUT, null, false, false, accountName);
   }
 
   /**
@@ -193,6 +222,23 @@ public class AbstractDriverIT
   }
 
   /**
+   * Gets a connection in same way as function below but with default account (gotten from environment variables)
+   *
+   * @param injectSocketTimeout
+   * @param paramProperties
+   * @param isAdmin
+   * @param usesCom
+   * @return
+   * @throws SQLException
+   */
+  public static Connection getConnection(
+      int injectSocketTimeout, Properties paramProperties, boolean isAdmin, boolean usesCom)
+  throws SQLException
+  {
+    return getConnection(injectSocketTimeout, paramProperties, isAdmin, usesCom, null);
+  }
+
+  /**
    * Gets a connection for the custom session parameter settings and
    * tunable query api version and socket timeout setting
    *
@@ -204,7 +250,7 @@ public class AbstractDriverIT
    * @throws SQLException raised if any error occurs
    */
   public static Connection getConnection(
-      int injectSocketTimeout, Properties paramProperties, boolean isAdmin, boolean usesCom)
+      int injectSocketTimeout, Properties paramProperties, boolean isAdmin, boolean usesCom, String accountName)
   throws SQLException
   {
     // Load Snowflake JDBC class
@@ -222,7 +268,7 @@ public class AbstractDriverIT
       logger.log(Level.SEVERE, "Cannot find Driver", e);
       throw new RuntimeException(e.getCause());
     }
-    Map<String, String> params = getConnectionParameters();
+    Map<String, String> params = getConnectionParameters(accountName);
 
     // build connection properties
     Properties properties = new Properties();
@@ -279,8 +325,8 @@ public class AbstractDriverIT
    * @param connection a connection
    * @throws SQLException raised if any error occurs
    */
-  protected void closeSQLObjects(ResultSet resultSet, Statement statement,
-                                 Connection connection) throws SQLException
+  public void closeSQLObjects(ResultSet resultSet, Statement statement,
+                              Connection connection) throws SQLException
   {
     if (resultSet != null)
     {
@@ -303,7 +349,7 @@ public class AbstractDriverIT
    * @param connection a connection
    * @throws SQLException raised if any error occurs
    */
-  protected void closeSQLObjects(Statement statement, Connection connection) throws SQLException
+  public void closeSQLObjects(Statement statement, Connection connection) throws SQLException
   {
     if (statement != null)
     {

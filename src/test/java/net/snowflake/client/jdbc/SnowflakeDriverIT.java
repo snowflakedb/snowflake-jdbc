@@ -30,6 +30,7 @@ import java.sql.Timestamp;
 import java.sql.Types;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Properties;
@@ -869,82 +870,87 @@ public class SnowflakeDriverIT extends BaseJDBCTest
     Statement statement = null;
     ResultSet resultSet = null;
 
-    try
+    List<String> accounts = Arrays.asList(null, "s3testaccount", "azureaccount", "gcpaccount");
+    for (int i = 0 ; i < accounts.size(); i++)
     {
-      connection = getConnection();
 
-      statement = connection.createStatement();
-
-      // load file test
-      // create a unique data file name by using current timestamp in millis
       try
       {
-        // test external table load
-        statement.execute("CREATE OR REPLACE TABLE testLoadToLocalFS(a number)");
+        connection = getConnection(accounts.get(i));
 
-        // put files
-        assertTrue("Failed to put a file",
-                   statement.execute(
-                       "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE)
-                       + " @%testLoadToLocalFS/orders parallel=10"));
+        statement = connection.createStatement();
 
-        resultSet = statement.getResultSet();
-
-        ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
-
-        // assert column count
-        assertTrue(resultSetMetaData.getColumnCount() > 0);
-
-        assertTrue(resultSet.next()); // one row
-        assertFalse(resultSet.next());
-
-        findFile(statement,
-                 "ls @%testLoadToLocalFS/ pattern='.*orders/" + TEST_DATA_FILE + ".g.*'");
-
-        // remove files
-        resultSet = statement.executeQuery(
-            "rm @%testLoadToLocalFS/ pattern='.*orders/" + TEST_DATA_FILE + ".g.*'");
-
-        resultSetMetaData = resultSet.getMetaData();
-
-        // assert column count
-        assertTrue(resultSetMetaData.getColumnCount() >= 1);
-
-        // assert we get 1 row for the file we copied
-        assertTrue(resultSet.next());
-        assertNotNull(resultSet.getString(1));
-        assertFalse(resultSet.next());
+        // load file test
+        // create a unique data file name by using current timestamp in millis
         try
         {
-          resultSet.getString(1); // no more row
-          fail("must fail");
+          // test external table load
+          statement.execute("CREATE OR REPLACE TABLE testLoadToLocalFS(a number)");
+
+          // put files
+          assertTrue("Failed to put a file",
+                     statement.execute(
+                         "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE)
+                         + " @%testLoadToLocalFS/orders parallel=10"));
+
+          resultSet = statement.getResultSet();
+
+          ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
+
+          // assert column count
+          assertTrue(resultSetMetaData.getColumnCount() > 0);
+
+          assertTrue(resultSet.next()); // one row
+          assertFalse(resultSet.next());
+
+          findFile(statement,
+                   "ls @%testLoadToLocalFS/ pattern='.*orders/" + TEST_DATA_FILE + ".g.*'");
+
+          // remove files
+          resultSet = statement.executeQuery(
+              "rm @%testLoadToLocalFS/ pattern='.*orders/" + TEST_DATA_FILE + ".g.*'");
+
+          resultSetMetaData = resultSet.getMetaData();
+
+          // assert column count
+          assertTrue(resultSetMetaData.getColumnCount() >= 1);
+
+          // assert we get 1 row for the file we copied
+          assertTrue(resultSet.next());
+          assertNotNull(resultSet.getString(1));
+          assertFalse(resultSet.next());
+          try
+          {
+            resultSet.getString(1); // no more row
+            fail("must fail");
+          }
+          catch (SQLException ex)
+          {
+            assertEquals((int) ErrorCode.COLUMN_DOES_NOT_EXIST.getMessageCode(),
+                         ex.getErrorCode());
+          }
+
+          Thread.sleep(100);
+
+          // show files again
+          resultSet = statement.executeQuery(
+              "ls @%testLoadToLocalFS/ pattern='.*orders/orders.*'");
+
+          // assert we get 0 row
+          assertFalse(resultSet.next());
+
         }
-        catch (SQLException ex)
+        finally
         {
-          assertEquals((int) ErrorCode.COLUMN_DOES_NOT_EXIST.getMessageCode(),
-                       ex.getErrorCode());
+          statement.execute("DROP TABLE IF EXISTS testLoadToLocalFS");
+          statement.close();
         }
-
-        Thread.sleep(100);
-
-        // show files again
-        resultSet = statement.executeQuery(
-            "ls @%testLoadToLocalFS/ pattern='.*orders/orders.*'");
-
-        // assert we get 0 row
-        assertFalse(resultSet.next());
 
       }
       finally
       {
-        statement.execute("DROP TABLE IF EXISTS testLoadToLocalFS");
-        statement.close();
+        closeSQLObjects(resultSet, statement, connection);
       }
-
-    }
-    finally
-    {
-      closeSQLObjects(resultSet, statement, connection);
     }
   }
 
@@ -3307,57 +3313,61 @@ public class SnowflakeDriverIT extends BaseJDBCTest
   @Test
   public void testPutGet() throws Throwable
   {
+
     Connection connection = null;
     Statement statement = null;
-
-    try
+    List<String> accounts = Arrays.asList(null, "s3testaccount", "azureaccount", "gcpaccount");
+    for (int i = 0 ; i < accounts.size(); i++)
     {
-      connection = getConnection();
-
-      statement = connection.createStatement();
-
-      String soureFilePath = getFullPathFileInResource(TEST_DATA_FILE);
-
-      File destFolder = tmpFolder.newFolder();
-      String destFolderCanonicalPath = destFolder.getCanonicalPath();
-      String destFolderCanonicalPathWithSeparator = destFolderCanonicalPath + File.separator;
-
       try
       {
-        statement.execute("CREATE OR REPLACE STAGE testPutGet_stage");
+        connection = getConnection(accounts.get(i));
 
-        assertTrue("Failed to put a file",
-                   statement.execute("PUT file://" + soureFilePath + " @testPutGet_stage"));
+        statement = connection.createStatement();
 
-        findFile(statement, "ls @testPutGet_stage/");
+        String sourceFilePath = getFullPathFileInResource(TEST_DATA_FILE);
 
-        // download the file we just uploaded to stage
-        assertTrue("Failed to get a file", statement.execute(
-            "GET @testPutGet_stage 'file://"
-            + destFolderCanonicalPath + "' parallel=8"));
+        File destFolder = tmpFolder.newFolder();
+        String destFolderCanonicalPath = destFolder.getCanonicalPath();
+        String destFolderCanonicalPathWithSeparator = destFolderCanonicalPath + File.separator;
 
-        // Make sure that the downloaded file exists, it should be gzip compressed
-        File downloaded = new File(destFolderCanonicalPathWithSeparator + TEST_DATA_FILE + ".gz");
-        assert (downloaded.exists());
+        try
+        {
+          statement.execute("CREATE OR REPLACE STAGE testPutGet_stage");
 
-        Process p = Runtime.getRuntime().exec(
-            "gzip -d " + destFolderCanonicalPathWithSeparator
-            + TEST_DATA_FILE + ".gz");
-        p.waitFor();
+          assertTrue("Failed to put a file",
+                     statement.execute("PUT file://" + sourceFilePath + " @testPutGet_stage"));
 
-        File original = new File(soureFilePath);
-        File unzipped = new File(destFolderCanonicalPathWithSeparator + TEST_DATA_FILE);
-        assert (original.length() == unzipped.length());
+          findFile(statement, "ls @testPutGet_stage/");
+
+          // download the file we just uploaded to stage
+          assertTrue("Failed to get a file", statement.execute(
+              "GET @testPutGet_stage 'file://"
+              + destFolderCanonicalPath + "' parallel=8"));
+
+          // Make sure that the downloaded file exists, it should be gzip compressed
+          File downloaded = new File(destFolderCanonicalPathWithSeparator + TEST_DATA_FILE + ".gz");
+          assert (downloaded.exists());
+
+          Process p = Runtime.getRuntime().exec(
+              "gzip -d " + destFolderCanonicalPathWithSeparator
+              + TEST_DATA_FILE + ".gz");
+          p.waitFor();
+
+          File original = new File(sourceFilePath);
+          File unzipped = new File(destFolderCanonicalPathWithSeparator + TEST_DATA_FILE);
+          assert (original.length() == unzipped.length());
+        }
+        finally
+        {
+          statement.execute("DROP STAGE IF EXISTS testGetPut_stage");
+          statement.close();
+        }
       }
       finally
       {
-        statement.execute("DROP STAGE IF EXISTS testGetPut_stage");
-        statement.close();
+        closeSQLObjects(null, statement, connection);
       }
-    }
-    finally
-    {
-      closeSQLObjects(null, statement, connection);
     }
   }
 
