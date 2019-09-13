@@ -42,6 +42,8 @@ abstract class SnowflakeBaseResultSet implements ResultSet
   private final int resultSetType;
   private final int resultSetConcurrency;
   private final int resultSetHoldability;
+  // Snowflake supports sessionless result set. For this case, there is no
+  // statement for this result set.
   protected final Statement statement;
   protected SnowflakeResultSetMetaData resultSetMetaData = null;
   protected Map<String, Object> parameters = new HashMap<>();
@@ -54,6 +56,24 @@ abstract class SnowflakeBaseResultSet implements ResultSet
     this.resultSetType = statement.getResultSetType();
     this.resultSetConcurrency = statement.getResultSetConcurrency();
     this.resultSetHoldability = statement.getResultSetHoldability();
+  }
+
+  /**
+   * Create an sessionless result set, there is no statement and session for
+   * the result set.
+   *
+   * @param resultSetSerializable The result set serializable object which
+   *                              includes all metadata to create the result
+   *                              set
+   */
+  public SnowflakeBaseResultSet(SnowflakeResultSetSerializableV1 resultSetSerializable)
+      throws SQLException
+  {
+    // This is a sessionless result set, so there is no actual statement for it.
+    this.statement = new SnowflakeStatementV1.NoOpSnowflakeStatementV1();
+    this.resultSetType = resultSetSerializable.getResultSetType();
+    this.resultSetConcurrency = resultSetSerializable.getResultSetConcurrency();
+    this.resultSetHoldability = resultSetSerializable.getResultSetHoldability();
   }
 
   @Override

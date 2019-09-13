@@ -31,7 +31,7 @@ class SFResultSetFactory
   throws SQLException
   {
     SnowflakeResultSetSerializableV1 resultSetSerializable =
-        SnowflakeResultSetSerializableV1.processResult(
+        SnowflakeResultSetSerializableV1.create(
             result, statement.getSession(), statement);
 
     switch (resultSetSerializable.getQueryResultFormat())

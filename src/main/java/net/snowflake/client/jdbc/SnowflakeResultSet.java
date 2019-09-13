@@ -20,7 +20,13 @@ public interface SnowflakeResultSet
   /**
    * Get a list of ResultSetSerializables for the ResultSet in order to parallel processing
    *
+   * @param maxSizeInBytes the expected max data size wrapped in the result
+   *                       ResultSetSerializables object.
+   *                       NOTE: if a result chunk's size is greater than this value,
+   *                       the ResultSetSerializable object will include the
+   *                       result chunk.
    * @return a list of ResultSetSerializables
+   * @throws SQLException if fails to get the ResultSetSerializable objects.
    */
-  List<SnowflakeResultSetSerializable> getResultSetSerializables() throws SQLException;
+  List<SnowflakeResultSetSerializable> getResultSetSerializables(long maxSizeInBytes)  throws SQLException;
 }

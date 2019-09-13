@@ -85,6 +85,8 @@ public class SFResultSetMetaData
 
   private int dateStringLength = 10;
 
+  private boolean isResultColumnCaseInsensitive = false;
+
   public SFResultSetMetaData(int columnCount,
                              List<String> columnNames,
                              List<String> columnTypeNames,
@@ -106,7 +108,9 @@ public class SFResultSetMetaData
                              SnowflakeDateTimeFormat dateFormatter,
                              SnowflakeDateTimeFormat timeFormatter)
   {
-    this(columnMetadata, "none", session, timestampNTZFormatter,
+    this(columnMetadata, "none", session,
+         (session != null) && session.isResultColumnCaseInsensitive(),
+         timestampNTZFormatter,
          timestampLTZFormatter,
          timestampTZFormatter,
          dateFormatter,
@@ -116,6 +120,7 @@ public class SFResultSetMetaData
   public SFResultSetMetaData(List<SnowflakeColumnMetadata> columnMetadata,
                              String queryId,
                              SFSession session,
+                             boolean isResultColumnCaseInsensitive,
                              SnowflakeDateTimeFormat timestampNTZFormatter,
                              SnowflakeDateTimeFormat timestampLTZFormatter,
                              SnowflakeDateTimeFormat timestampTZFormatter,
@@ -142,6 +147,7 @@ public class SFResultSetMetaData
     this.columnSrcSchemas = new ArrayList<>(this.columnCount);
     this.columnSrcTables = new ArrayList<>(this.columnCount);
     this.columnDisplaySizes = new ArrayList<>(this.columnCount);
+    this.isResultColumnCaseInsensitive = isResultColumnCaseInsensitive;
 
     for (int colIdx = 0; colIdx < columnCount; colIdx++)
     {
@@ -304,9 +310,8 @@ public class SFResultSetMetaData
    */
   public int getColumnIndex(String columnName)
   {
-    boolean caseInsensitive = session != null && session.isResultColumnCaseInsensitive();
-    columnName = caseInsensitive ? columnName.toUpperCase() : columnName;
-    Map<String, Integer> nameToIndexMap = caseInsensitive ?
+    columnName = isResultColumnCaseInsensitive ? columnName.toUpperCase() : columnName;
+    Map<String, Integer> nameToIndexMap = isResultColumnCaseInsensitive ?
                                           columnNameUpperCasePositionMap : columnNamePositionMap;
 
     if (nameToIndexMap.get(columnName) != null)
@@ -315,7 +320,7 @@ public class SFResultSetMetaData
     }
     else
     {
-      int columnIndex = caseInsensitive ?
+      int columnIndex = isResultColumnCaseInsensitive ?
                         ResultUtil.listSearchCaseInsensitive(columnNames, columnName) :
                         columnNames.indexOf(columnName);
       nameToIndexMap.put(columnName, columnIndex);

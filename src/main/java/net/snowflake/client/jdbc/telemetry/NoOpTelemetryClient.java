@@ -6,7 +6,7 @@ package net.snowflake.client.jdbc.telemetry;
 /**
  * Telemetry client that is doing nothing. Mainly used in testing code
  */
-public class NoopTelemetryClient implements Telemetry
+public class NoOpTelemetryClient implements Telemetry
 {
   @Override
   public void tryAddLogToBatch(TelemetryData log)

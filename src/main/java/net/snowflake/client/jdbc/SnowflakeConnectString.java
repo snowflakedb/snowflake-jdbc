@@ -7,6 +7,7 @@ import com.google.common.base.Strings;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 
+import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URLDecoder;
@@ -17,8 +18,9 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 
-public class SnowflakeConnectString
+public class SnowflakeConnectString implements Serializable
 {
+  private static final long serialVersionUID = 1L;
   static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeConnectString.class);
 
   private final String scheme;

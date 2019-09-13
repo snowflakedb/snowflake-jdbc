@@ -4,8 +4,10 @@
 
 package net.snowflake.client.jdbc;
 
+import net.snowflake.client.core.SFArrowResultSet;
 import net.snowflake.client.core.SFBaseResultSet;
 import net.snowflake.client.core.SFException;
+import net.snowflake.client.core.SFResultSet;
 
 import java.io.InputStream;
 import java.io.Reader;
@@ -57,6 +59,37 @@ class SnowflakeResultSetV1 extends SnowflakeBaseResultSet implements SnowflakeRe
   {
     super(statement);
     this.sfBaseResultSet = sfBaseResultSet;
+    try
+    {
+      this.resultSetMetaData =
+          new SnowflakeResultSetMetaDataV1(sfBaseResultSet.getMetaData());
+    }
+    catch (SFException ex)
+    {
+      throw new SnowflakeSQLException(ex.getCause(),
+                                      ex.getSqlState(), ex.getVendorCode(), ex.getParams());
+    }
+  }
+
+  /**
+   * Constructor takes a result set serializable object to create
+   * a sessionless result set.
+   *
+   * @param sfBaseResultSet snowflake core base result rest object
+   * @param resultSetSerializable The result set serializable object which
+   *                              includes all metadata to create the result
+   *                              set
+   * @throws SQLException if fails to create the result set object
+   */
+  public SnowflakeResultSetV1(
+      SFBaseResultSet sfBaseResultSet,
+      SnowflakeResultSetSerializableV1 resultSetSerializable)
+  throws SQLException
+  {
+    super(resultSetSerializable);
+
+    this.sfBaseResultSet = sfBaseResultSet;
+
     try
     {
       this.resultSetMetaData =
@@ -407,13 +440,20 @@ class SnowflakeResultSetV1 extends SnowflakeBaseResultSet implements SnowflakeRe
   /**
    * Get a list of ResultSetSerializables for the ResultSet in order to parallel processing
    *
+   * @param maxSizeInBytes the expected max data size wrapped in the
+   *                       ResultSetSerializables object.
+   *                       NOTE: if a result chunk size is greater than this value,
+   *                       the ResultSetSerializable object will include the
+   *                       result chunk.
    * @return a list of ResultSetSerializables
+   * @throws if fails to get the ResultSetSerializable objects.
    */
   @Override
-  public List<SnowflakeResultSetSerializable> getResultSetSerializables() throws SQLException
+  public List<SnowflakeResultSetSerializable> getResultSetSerializables(long maxSizeInBytes)
+      throws SQLException
   {
-    // TODO This function is implemented in next phase.
-    throw new SQLException("getResultSetSerializables() is not implemented yet");
+    raiseSQLExceptionIfResultSetIsClosed();
+    return sfBaseResultSet.getResultSetSerializables(maxSizeInBytes);
   }
 
   /**

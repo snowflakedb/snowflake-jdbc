@@ -5,18 +5,29 @@
 package net.snowflake.client.jdbc;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import net.snowflake.client.core.ChunkDownloader;
 import net.snowflake.client.core.MetaDataOfBinds;
 import net.snowflake.client.core.OCSPMode;
+import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.QueryResultFormat;
+import net.snowflake.client.core.SFArrowResultSet;
+import net.snowflake.client.core.SFBaseResultSet;
+import net.snowflake.client.core.SFResultSet;
+import net.snowflake.client.core.SFResultSetMetaData;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.core.SFStatementType;
 import net.snowflake.client.core.SessionUtil;
+import net.snowflake.client.jdbc.telemetry.NoOpTelemetryClient;
+import net.snowflake.client.jdbc.telemetry.Telemetry;
 import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.common.core.SFBinaryFormat;
 
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
+
+import java.io.Serializable;
+import java.io.IOException;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -46,33 +57,38 @@ import static net.snowflake.client.core.SessionUtil.DEFAULT_CLIENT_PREFETCH_THRE
  * ResultSet. Originally, it is created from result JSON. And it can
  * also be serializable. Logically, it stands for a part of ResultSet.
  * <p>
- * A typical result JSON data section is consist of the content of first chunk
+ * A typical result JSON data section consists of the content of the first chunk
  * file and file metadata for the rest of chunk files e.g. URL, chunk size, etc.
- * So this object consist of one chunk data and a list of chunk file entries.
+ * So this object consists of one chunk data and a list of chunk file entries.
+ * In actual cases, it may only include chunk data or chunk files entries.
  * <p>
  * This object is serializable, so it can be distributed to other threads or
- * workder nodes for distributed processing.
- * <p>
- * Created by mrui on Aug 20 2019
+ * worker nodes for distributed processing.
  */
-public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSerializable
+public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSerializable,
+                                                         Serializable
 {
+  private static final long serialVersionUID = 1L;
+
   static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeResultSetSerializableV1.class);
+
+  static final ObjectMapper mapper = ObjectMapperFactory.getObjectMapper();
 
   /**
    * An Entity class to represent a chunk file metadata.
    */
-  static public class ChunkFileEntry
+  static public class ChunkFileMetadata implements Serializable
   {
+    private static final long serialVersionUID = 1L;
     String fileURL;
     int rowCount;
     int compressedByteSize;
     int uncompressedByteSize;
 
-    public ChunkFileEntry(String fileURL,
-                          int rowCount,
-                          int compressedByteSize,
-                          int uncompressedByteSize)
+    public ChunkFileMetadata(String fileURL,
+                             int rowCount,
+                             int compressedByteSize,
+                             int uncompressedByteSize)
     {
       this.fileURL = fileURL;
       this.rowCount = rowCount;
@@ -102,25 +118,28 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
   }
 
   // Below fields are for the data fields that this object wraps
-  String firstChunkStringData;
-  int firstChunkRowCount;
+  String firstChunkStringData; // For ARROW, it's BASE64-encoded arrow file.
+                               // For JSON,  it's string data for the json.
+  int firstChunkRowCount; // It is only used for JSON format result.
   int chunkFileCount;
-  List<ChunkFileEntry> chunkFileEntries = new ArrayList<>();
+  List<ChunkFileMetadata> chunkFileMetadatas = new ArrayList<>();
 
   // below fields are used for building a ChunkDownloader which
   // uses http client to download chunk files
   boolean useJsonParserV2;
   int resultPrefetchThreads;
-  long memoryLimit;
   String qrmk;
   Map<String, String> chunkHeadersMap = new HashMap<>();
-  // Below fields are from session or statement, they are required to
-  // ChunkDownloader
+  // Below fields are from session or statement
   SnowflakeConnectString snowflakeConnectionString;
   OCSPMode ocspMode;
   int networkTimeoutInMilli;
+  boolean isResultColumnCaseInsensitive;
+  int resultSetType;
+  int resultSetConcurrency;
+  int resultSetHoldability;
 
-  // Below are some metadata fields parsed from the result JSON
+  // Below are some metadata fields parsed from the result JSON node
   String queryId;
   String finalDatabaseName;
   String finalSchemaName;
@@ -148,11 +167,87 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
   transient SnowflakeDateTimeFormat dateFormatter;
   transient SnowflakeDateTimeFormat timeFormatter;
   transient SFBinaryFormat binaryFormatter;
+  transient long memoryLimit;
 
   // Below fields are transient, they are generated on the fly.
   transient JsonNode firstChunkRowset = null; // only used for JSON result
   transient ChunkDownloader chunkDownloader = null;
   transient RootAllocator rootAllocator = null; // only used for ARROW result
+  transient SFResultSetMetaData resultSetMetaData = null;
+
+  /**
+   * Default constructor.
+   */
+  public SnowflakeResultSetSerializableV1()
+  {
+
+  }
+
+  /**
+   * This is copy constructor.
+   *
+   * NOTE: The copy is NOT deep copy.
+   *
+   * @param toCopy the source object to be copied.
+   */
+  private SnowflakeResultSetSerializableV1(SnowflakeResultSetSerializableV1 toCopy)
+  {
+    // Below fields are for the data fields that this object wraps
+    this.firstChunkStringData = toCopy.firstChunkStringData;
+    this.firstChunkRowCount = toCopy.firstChunkRowCount;
+    this.chunkFileCount = toCopy.chunkFileCount;
+    this.chunkFileMetadatas = toCopy.chunkFileMetadatas;
+
+    // below fields are used for building a ChunkDownloader
+    this.useJsonParserV2 = toCopy.useJsonParserV2;
+    this.resultPrefetchThreads = toCopy.resultPrefetchThreads;
+    this.qrmk = toCopy.qrmk;
+    this.chunkHeadersMap = toCopy.chunkHeadersMap;
+
+    // Below fields are from session or statement
+    this.snowflakeConnectionString = toCopy.snowflakeConnectionString;
+    this.ocspMode = toCopy.ocspMode;
+    this.networkTimeoutInMilli = toCopy.networkTimeoutInMilli;
+    this.isResultColumnCaseInsensitive = toCopy.isResultColumnCaseInsensitive;
+    this.resultSetType = toCopy.resultSetType;
+    this.resultSetConcurrency = toCopy.resultSetConcurrency;
+    this.resultSetHoldability = toCopy.resultSetHoldability;
+
+    // Below are some metadata fields parsed from the result JSON node
+    this.queryId = toCopy.queryId;
+    this.finalDatabaseName = toCopy.finalDatabaseName;
+    this.finalSchemaName = toCopy.finalSchemaName;
+    this.finalRoleName = toCopy.finalRoleName;
+    this.finalWarehouseName = toCopy.finalWarehouseName;
+    this.statementType = toCopy.statementType;
+    this.totalRowCountTruncated = toCopy.totalRowCountTruncated;
+    this.parameters = toCopy.parameters;
+    this.columnCount = toCopy.columnCount;
+    this.resultColumnMetadata = toCopy.resultColumnMetadata;
+    this.resultVersion = toCopy.resultVersion;
+    this.numberOfBinds = toCopy.numberOfBinds;
+    this.arrayBindSupported = toCopy.arrayBindSupported;
+    this.sendResultTime = toCopy.sendResultTime;
+    this.metaDataOfBinds = toCopy.metaDataOfBinds;
+    this.queryResultFormat = toCopy.queryResultFormat;
+
+    // Below fields are transient, they are generated from parameters
+    this.timeZone = toCopy.timeZone;
+    this.honorClientTZForTimestampNTZ = toCopy.honorClientTZForTimestampNTZ;
+    this.timestampNTZFormatter = toCopy.timestampNTZFormatter;
+    this.timestampLTZFormatter = toCopy.timestampLTZFormatter;
+    this.timestampTZFormatter = toCopy.timestampTZFormatter;
+    this.dateFormatter = toCopy.dateFormatter;
+    this.timeFormatter = toCopy.timeFormatter;
+    this.binaryFormatter = toCopy.binaryFormatter;
+    this.memoryLimit = toCopy.memoryLimit;
+
+    // Below fields are transient, they are generated on the fly.
+    this.firstChunkRowset = toCopy.firstChunkRowset;
+    this.chunkDownloader = toCopy.chunkDownloader;
+    this.rootAllocator = toCopy.rootAllocator;
+    this.resultSetMetaData = toCopy.resultSetMetaData;
+  }
 
   public void setRootAllocator(RootAllocator rootAllocator)
   {
@@ -177,6 +272,37 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
   public void setChunkDownloader(ChunkDownloader chunkDownloader)
   {
     this.chunkDownloader = chunkDownloader;
+  }
+
+  public long getUncompressedDataSize()
+  {
+    long totalSize = this.firstChunkStringData != null
+                          ?  this.firstChunkStringData.length() : 0;
+    for (ChunkFileMetadata entry : chunkFileMetadatas)
+    {
+      totalSize += entry.getUncompressedByteSize();
+    }
+    return totalSize;
+  }
+
+  public SFResultSetMetaData getSFResultSetMetaData()
+  {
+    return resultSetMetaData;
+  }
+
+  public int getResultSetType()
+  {
+    return resultSetType;
+  }
+
+  public int getResultSetConcurrency()
+  {
+    return resultSetConcurrency;
+  }
+
+  public int getResultSetHoldability()
+  {
+    return resultSetHoldability;
   }
 
   public SnowflakeConnectString getSnowflakeConnectString()
@@ -219,9 +345,9 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
     return chunkHeadersMap;
   }
 
-  public List<ChunkFileEntry> getChunkFileEntries()
+  public List<ChunkFileMetadata> getChunkFileMetadatas()
   {
-    return chunkFileEntries;
+    return chunkFileMetadatas;
   }
 
   public RootAllocator getRootAllocator()
@@ -377,15 +503,16 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
   }
 
   /**
-   * A factory function to process result JSON.
+   * A factory function to create SnowflakeResultSetSerializable object
+   * from result JSON node.
    *
-   * @param rootNode    wrapper object over simple json result
+   * @param rootNode    result JSON node received from GS
    * @param sfSession   the Snowflake session
    * @param sfStatement the Snowflake statement
    * @return processed ResultSetSerializable object
-   * @throws SnowflakeSQLException if failed to parse the json result
+   * @throws SnowflakeSQLException if failed to parse the result JSON node
    */
-  static public SnowflakeResultSetSerializableV1 processResult(
+  static public SnowflakeResultSetSerializableV1 create(
       JsonNode rootNode,
       SFSession sfSession,
       SFStatement sfStatement)
@@ -393,7 +520,7 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
   {
     SnowflakeResultSetSerializableV1 resultSetSerializable =
         new SnowflakeResultSetSerializableV1();
-    logger.debug("Entering processResult");
+    logger.debug("Entering create()");
 
     SnowflakeUtil.checkErrorAndThrowException(rootNode);
 
@@ -544,18 +671,30 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
         sfSession.getSnowflakeConnectionString();
     resultSetSerializable.networkTimeoutInMilli =
         sfSession.getNetworkTimeoutInMilli();
+    resultSetSerializable.isResultColumnCaseInsensitive =
+        sfSession.isResultColumnCaseInsensitive();
 
     // setup transient fields from parameter
     resultSetSerializable.setupFieldsFromParameters();
 
-    // Initialize the chunk downloader if necessary
-    if (resultSetSerializable.chunkFileCount > 0)
-    {
-      // The chunk downloader will start prefetching
-      // first few chunk files in background thread(s)
-      resultSetSerializable.chunkDownloader =
-          new SnowflakeChunkDownloader(resultSetSerializable);
-    }
+    // The chunk downloader will start prefetching
+    // first few chunk files in background thread(s)
+    resultSetSerializable.chunkDownloader =
+          (resultSetSerializable.chunkFileCount > 0)
+              ? new SnowflakeChunkDownloader(resultSetSerializable)
+              : new SnowflakeChunkDownloader.NoOpChunkDownloader();
+
+    // Setup ResultSet metadata
+    resultSetSerializable.resultSetMetaData =
+        new SFResultSetMetaData(resultSetSerializable.getResultColumnMetadata(),
+                                resultSetSerializable.queryId,
+                                sfSession,
+                                resultSetSerializable.isResultColumnCaseInsensitive,
+                                resultSetSerializable.timestampNTZFormatter,
+                                resultSetSerializable.timestampLTZFormatter,
+                                resultSetSerializable.timestampTZFormatter,
+                                resultSetSerializable.dateFormatter,
+                                resultSetSerializable.timeFormatter);
 
     return resultSetSerializable;
   }
@@ -629,9 +768,9 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
   }
 
   /**
-   * Parse the chunk file nodes from the json result.
+   * Parse the chunk file nodes from result JSON node
    *
-   * @param rootNode    wrapper object over simple json result
+   * @param rootNode    result JSON node received from GS
    * @param sfStatement the snowflake statement
    */
   private void parseChunkFiles(JsonNode rootNode,
@@ -712,9 +851,9 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
           int compressedSize = chunkNode.path("compressedSize").asInt();
           int uncompressedSize = chunkNode.path("uncompressedSize").asInt();
 
-          this.chunkFileEntries.add(
-              new ChunkFileEntry(url, rowCount, compressedSize,
-                                 uncompressedSize));
+          this.chunkFileMetadatas.add(
+              new ChunkFileMetadata(url, rowCount, compressedSize,
+                                    uncompressedSize));
 
           logger.debug("add chunk, url={} rowCount={} " +
                        "compressedSize={} uncompressedSize={}",
@@ -732,9 +871,9 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
   }
 
   /**
-   * initialize memory limit in bytes
+   * Calculate memory limit in bytes
    *
-   * @param parameters The parameters for json result
+   * @param parameters The parameters for result JSON node
    * @return memory limit in bytes
    */
   private static long initMemoryLimit(Map<String, Object> parameters)
@@ -765,13 +904,165 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
   }
 
   /**
-   * Generate a standard ResultSet from this object.
+   * Setup all transient fields based on serialized fields and System Runtime.
    *
-   * @return a standard ResultSet to access the data wrapped in this object.
+   * @throws SQLException if fails to setup any transient fields
+   */
+  private void setupTransientFields()
+      throws SQLException
+  {
+    // Setup transient fields from serialized fields
+    setupFieldsFromParameters();
+
+    // Setup memory limitation from parameters and System Runtime.
+    this.memoryLimit = initMemoryLimit(this.parameters);
+
+    // Create below transient fields on the fly.
+    if (QueryResultFormat.ARROW.equals(this.queryResultFormat))
+    {
+      this.rootAllocator = new RootAllocator(Integer.MAX_VALUE);
+      this.firstChunkRowset = null;
+    }
+    else
+    {
+      this.rootAllocator = null;
+      try
+      {
+        this.firstChunkRowset = (this.firstChunkStringData != null)
+                                ? mapper.readTree(this.firstChunkStringData)
+                                : null;
+      }
+      catch (IOException ex)
+      {
+        throw new SQLException("The JSON data is invalid. The error is: " +
+                                   ex.getMessage());
+      }
+    }
+
+    // Setup ResultSet metadata
+    this.resultSetMetaData =
+        new SFResultSetMetaData(this.getResultColumnMetadata(),
+                                this.queryId,
+                                null, // This is session less
+                                this.isResultColumnCaseInsensitive,
+                                this.timestampNTZFormatter,
+                                this.timestampLTZFormatter,
+                                this.timestampTZFormatter,
+                                this.dateFormatter,
+                                this.timeFormatter);
+
+    // Allocate chunk downloader if necessary
+    chunkDownloader = (this.chunkFileCount > 0)
+                      ? new SnowflakeChunkDownloader(this)
+                      : new SnowflakeChunkDownloader.NoOpChunkDownloader();
+  }
+
+  /**
+   * Split this object into small pieces based on the user specified data size.
+   *
+   * @param maxSizeInBytes the expected max data size wrapped in the result
+   *                       ResultSetSerializables object.
+   *                       NOTE: if a result chunk size is greater than this
+   *                       value, the ResultSetSerializable object will
+   *                       include one result chunk.
+   * @return a list of SnowflakeResultSetSerializable
+   * @throws SQLException if fails to split objects.
+   */
+  public List<SnowflakeResultSetSerializable> splitBySize(long maxSizeInBytes)
+      throws SQLException
+  {
+    List<SnowflakeResultSetSerializable> resultSetSerializables =
+        new ArrayList<>();
+
+    if (this.chunkFileMetadatas.isEmpty() && this.firstChunkStringData == null)
+    {
+      throw new SQLException("The Result Set serializable is invalid.");
+    }
+
+    // In the beginning, only the first data chunk is included in the result
+    // serializable, so the chunk files are removed from the copy.
+    // NOTE: make sure to handle the case that the first data chunk doesn't
+    // exist.
+    SnowflakeResultSetSerializableV1 curResultSetSerializable =
+        new SnowflakeResultSetSerializableV1(this);
+    curResultSetSerializable.chunkFileMetadatas = new ArrayList<>();
+    curResultSetSerializable.chunkFileCount = 0;
+
+    for (int idx = 0; idx < this.chunkFileCount; idx++)
+    {
+      ChunkFileMetadata curChunkFileMetadata =
+          this.getChunkFileMetadatas().get(idx);
+
+      // If the serializable object has reach the max size,
+      // save current one and create new one.
+      if ((curResultSetSerializable.getUncompressedDataSize() > 0) &&
+          ( maxSizeInBytes < (curResultSetSerializable.getUncompressedDataSize()
+                              + curChunkFileMetadata.getUncompressedByteSize())))
+      {
+        resultSetSerializables.add(curResultSetSerializable);
+
+        // Create new result serializable and reset it as empty
+        curResultSetSerializable =
+            new SnowflakeResultSetSerializableV1(this);
+        curResultSetSerializable.chunkFileMetadatas = new ArrayList<>();
+        curResultSetSerializable.chunkFileCount = 0;
+        curResultSetSerializable.firstChunkStringData = null;
+        curResultSetSerializable.firstChunkRowCount = 0;
+        curResultSetSerializable.firstChunkRowset = null;
+      }
+
+      // Append this chunk file to result serializable object
+      curResultSetSerializable.getChunkFileMetadatas().add(curChunkFileMetadata);
+      curResultSetSerializable.chunkFileCount++;
+    }
+
+    // Add the last result serializable object into result.
+    resultSetSerializables.add(curResultSetSerializable);
+
+    return resultSetSerializables;
+  }
+
+  /**
+   * Get ResultSet from the ResultSet Serializable object so that the user can
+   * access the data. The ResultSet is sessionless.
+   *
+   * @return a ResultSet which represents for the data wrapped in the object
    */
   public ResultSet getResultSet() throws SQLException
   {
-    throw new SQLException("SnowflakeResultSetSerializableV1.getResultSet() " +
-                           "is not implemented yet");
+    // Setup transient fields
+    setupTransientFields();
+
+    // This result set is sessionless, so it doesn't support telemetry.
+    Telemetry telemetryClient = new NoOpTelemetryClient();
+    // The use case is distributed processing, so sortResult is not necessary.
+    boolean sortResult = false;
+    // Setup base result set.
+    SFBaseResultSet sfBaseResultSet = null;
+    switch (getQueryResultFormat())
+    {
+      case ARROW:
+      {
+        sfBaseResultSet = new SFArrowResultSet(this, telemetryClient,
+                                                    sortResult);
+        break;
+      }
+      case JSON:
+      {
+        sfBaseResultSet = new SFResultSet(this, telemetryClient,
+                                               sortResult);
+        break;
+      }
+      default:
+        throw new SnowflakeSQLException(ErrorCode.INTERNAL_ERROR,
+                                        "Unsupported query result format: " +
+                                            getQueryResultFormat().name());
+    }
+
+    // Create result set
+    SnowflakeResultSetV1 resultSetV1 =
+        new SnowflakeResultSetV1(sfBaseResultSet, this);
+
+    return resultSetV1;
   }
 }

@@ -279,7 +279,11 @@ public class IncidentUtil
                                                           String jobId,
                                                           String requestId)
   {
-    new Incident(session, exc, jobId, requestId).trigger();
+    // Generate an incident only if the session exists.
+    if (session != null)
+    {
+      new Incident(session, exc, jobId, requestId).trigger();
+    }
     return exc;
   }
 
