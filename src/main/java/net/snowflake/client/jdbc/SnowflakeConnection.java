@@ -31,4 +31,17 @@ public interface SnowflakeConnection
                     InputStream inputStream,
                     String destFileName,
                     boolean compressData) throws SQLException;
+
+  /**
+   * Download file from the given stage and return an input stream
+   *
+   * @param stageName      stage name
+   * @param sourceFileName file path in stage
+   * @param decompress     true if file compressed
+   * @return an input stream
+   * @throws SnowflakeSQLException if any SQL error occurs.
+   */
+  InputStream downloadStream(String stageName,
+                             String sourceFileName,
+                             boolean decompress) throws SQLException;
 }
