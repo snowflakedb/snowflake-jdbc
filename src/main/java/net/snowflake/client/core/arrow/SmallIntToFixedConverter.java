@@ -132,4 +132,23 @@ public class SmallIntToFixedConverter extends AbstractArrowVectorConverter
   {
     return isNull(index) ? null : Short.toString(getShort(index));
   }
+
+  @Override
+  public boolean toBoolean(int index) throws SFException
+  {
+    short val = toShort(index);
+    if (val == 0)
+    {
+      return false;
+    }
+    else  if (val == 1)
+    {
+      return true;
+    }
+    else
+    {
+      throw new SFException(ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr,
+          "Boolean", val);
+    }
+  }
 }

@@ -3,6 +3,7 @@
  */
 package net.snowflake.client.core.arrow;
 
+import net.snowflake.client.TestUtil;
 import net.snowflake.client.core.SFException;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.memory.RootAllocator;
@@ -82,6 +83,7 @@ public class VarBinaryToBinaryConverterTest extends BaseConverterTest
         assertThat(stringVal, is(nullValue()));
         assertThat(objectVal, is(nullValue()));
         assertThat(bytesVal, is(nullValue()));
+        assertThat(false, is(converter.toBoolean(i)));
       }
       else
       {
@@ -90,6 +92,9 @@ public class VarBinaryToBinaryConverterTest extends BaseConverterTest
         assertThat(stringVal, is(base64Expected));
         assertThat(bytesVal, is(expectedValues.get(i)));
         assertThat(objectVal, is(expectedValues.get(i)));
+        final int x = i;
+        TestUtil.assertSFException(invalidConversionErrorCode,
+                                   () -> converter.toBoolean(x));
       }
     }
     vector.clear();

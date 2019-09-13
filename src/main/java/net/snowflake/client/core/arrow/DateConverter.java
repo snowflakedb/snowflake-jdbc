@@ -13,6 +13,7 @@ import org.apache.arrow.vector.DateDayVector;
 import org.apache.arrow.vector.IntVector;
 import org.apache.arrow.vector.ValueVector;
 
+import java.nio.ByteBuffer;
 import java.sql.Date;
 import java.sql.Timestamp;
 import java.util.TimeZone;
@@ -23,6 +24,7 @@ import java.util.TimeZone;
 public class DateConverter extends AbstractArrowVectorConverter
 {
   private DateDayVector dateVector;
+  private ByteBuffer byteBuf = ByteBuffer.allocate(IntVector.TYPE_WIDTH);
 
   public DateConverter(ValueVector fieldVector, int columnIndex, DataConversionContext context)
   {
@@ -42,6 +44,20 @@ public class DateConverter extends AbstractArrowVectorConverter
       int val = dateVector.getDataBuffer().getInt(index * IntVector.TYPE_WIDTH);
       // Note: use default time zone to match with current getDate() behavior
       return ArrowResultUtil.getDate(val, TimeZone.getDefault(), context.getSession());
+    }
+  }
+
+  @Override
+  public byte[] toBytes(int index) throws SFException
+  {
+    if (isNull(index))
+    {
+      return null;
+    }
+    else
+    {
+      byteBuf.putInt(0, toInt(index));
+      return byteBuf.array();
     }
   }
 
@@ -94,5 +110,17 @@ public class DateConverter extends AbstractArrowVectorConverter
   public Object toObject(int index) throws SFException
   {
     return toDate(index);
+  }
+
+  @Override
+  public boolean toBoolean(int index) throws SFException
+  {
+    if (isNull(index))
+    {
+      return false;
+    }
+    Date val = toDate(index);
+    throw new SFException(ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr,
+        "Boolean", val);
   }
 }

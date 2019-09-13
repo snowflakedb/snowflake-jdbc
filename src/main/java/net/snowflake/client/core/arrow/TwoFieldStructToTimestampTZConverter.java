@@ -108,4 +108,29 @@ public class TwoFieldStructToTimestampTZConverter extends AbstractArrowVectorCon
     Timestamp ts = toTimestamp(index, TimeZone.getDefault());
     return ts == null ? null : new Time(ts.getTime());
   }
+
+  @Override
+  public boolean toBoolean(int index) throws SFException
+  {
+    if (epochs.isNull(index))
+    {
+      return false;
+    }
+    Timestamp val = toTimestamp(index, TimeZone.getDefault());
+    throw new SFException(ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr,
+        "Boolean", val);
+  }
+
+  @Override
+  public byte[] toBytes(int index) throws SFException
+  {
+    if (epochs.isNull(index))
+    {
+      return null;
+    }
+    throw new SFException(ErrorCode.INVALID_VALUE_CONVERT,
+                          logicalTypeStr,
+                          "byteArray",
+                          toString(index));
+  }
 }

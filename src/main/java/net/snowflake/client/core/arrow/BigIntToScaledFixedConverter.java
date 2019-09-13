@@ -103,4 +103,41 @@ public class BigIntToScaledFixedConverter extends BigIntToFixedConverter
   {
     return isNull(index) ? null : BigDecimal.valueOf(getLong(index), sfScale).toPlainString();
   }
+
+  @Override
+  public boolean toBoolean(int index) throws SFException
+  {
+    if (isNull(index))
+    {
+      return false;
+    }
+    BigDecimal val = toBigDecimal(index);
+    if (val.compareTo(BigDecimal.ZERO) == 0)
+    {
+      return false;
+    }
+    else if (val.compareTo(BigDecimal.ONE) == 0)
+    {
+      return true;
+    }
+    else
+    {
+      throw new SFException(ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr,
+          "Boolean", val.toPlainString());
+    }
+  }
+
+  @Override
+  public byte[] toBytes(int index)
+  {
+    if (isNull(index))
+    {
+      return null;
+    }
+    else
+    {
+      byteBuf.putLong(0, getLong(index));
+      return byteBuf.array();
+    }
+  }
 }

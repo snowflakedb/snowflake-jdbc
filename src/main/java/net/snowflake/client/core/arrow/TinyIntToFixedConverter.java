@@ -5,6 +5,7 @@ package net.snowflake.client.core.arrow;
 
 import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.SFException;
+import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeType;
 import org.apache.arrow.vector.TinyIntVector;
 import org.apache.arrow.vector.ValueVector;
@@ -115,5 +116,24 @@ public class TinyIntToFixedConverter extends AbstractArrowVectorConverter
   public String toString(int index) throws SFException
   {
     return isNull(index) ? null : Short.toString(getByte(index));
+  }
+
+  @Override
+  public boolean toBoolean(int index) throws SFException
+  {
+    short val = toShort(index);
+    if (val == 0)
+    {
+      return false;
+    }
+    else  if (val == 1)
+    {
+      return true;
+    }
+    else
+    {
+      throw new SFException(ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr,
+          "Boolean", val);
+    }
   }
 }

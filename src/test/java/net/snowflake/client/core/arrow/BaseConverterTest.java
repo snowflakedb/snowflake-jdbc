@@ -2,6 +2,7 @@ package net.snowflake.client.core.arrow;
 
 import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.SFSession;
+import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.common.core.SFBinaryFormat;
 import net.snowflake.common.core.SnowflakeDateTimeFormat;
 import org.junit.After;
@@ -19,6 +20,8 @@ public class BaseConverterTest implements DataConversionContext
   private SFSession session = new SFSession();
   private int testScale = 9;
   private boolean honorClientTZForTimestampNTZ;
+  protected final int invalidConversionErrorCode =
+      ErrorCode.INVALID_VALUE_CONVERT.getMessageCode();
 
   @After
   public void clearTimeZone()

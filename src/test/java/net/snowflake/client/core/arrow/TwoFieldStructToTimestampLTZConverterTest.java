@@ -4,6 +4,7 @@
 
 package net.snowflake.client.core.arrow;
 
+import net.snowflake.client.TestUtil;
 import net.snowflake.client.core.ResultUtil;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.jdbc.SnowflakeUtil;
@@ -179,6 +180,8 @@ public class TwoFieldStructToTimestampLTZConverterTest extends BaseConverterTest
       {
         assertThat(ts, is(nullValue()));
         assertThat(date, is(nullValue()));
+        assertThat(false, is(converter.toBoolean(j)));
+        assertThat(converter.toBytes(j), is (nullValue()));
       }
       else
       {
@@ -212,6 +215,11 @@ public class TwoFieldStructToTimestampLTZConverterTest extends BaseConverterTest
         assertThat(oldTs, is(ts));
         assertThat(oldTime, is(time));
         assertThat(timestampStr, is(tsStr));
+        final int x = j;
+        TestUtil.assertSFException(invalidConversionErrorCode,
+                                   () -> converter.toBoolean(x));
+        TestUtil.assertSFException(invalidConversionErrorCode,
+                                   () -> converter.toBytes(x));
         i++;
       }
       j++;

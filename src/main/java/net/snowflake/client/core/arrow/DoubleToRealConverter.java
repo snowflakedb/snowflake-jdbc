@@ -4,13 +4,18 @@
 package net.snowflake.client.core.arrow;
 
 import net.snowflake.client.core.DataConversionContext;
+import net.snowflake.client.core.SFException;
+import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeType;
 import org.apache.arrow.vector.Float8Vector;
 import org.apache.arrow.vector.ValueVector;
 
+import java.nio.ByteBuffer;
+
 public class DoubleToRealConverter extends AbstractArrowVectorConverter
 {
   private Float8Vector float8Vector;
+  private ByteBuffer byteBuf = ByteBuffer.allocate(Float8Vector.TYPE_WIDTH);
 
   public DoubleToRealConverter(ValueVector fieldVector, int columnIndex, DataConversionContext context)
   {
@@ -32,6 +37,20 @@ public class DoubleToRealConverter extends AbstractArrowVectorConverter
   }
 
   @Override
+  public byte[] toBytes(int index)
+  {
+    if (isNull(index))
+    {
+      return null;
+    }
+    else
+    {
+      byteBuf.putDouble(0, toDouble(index));
+      return byteBuf.array();
+    }
+  }
+
+  @Override
   public float toFloat(int index)
   {
     return (float) toDouble(index);
@@ -47,5 +66,17 @@ public class DoubleToRealConverter extends AbstractArrowVectorConverter
   public String toString(int index)
   {
     return isNull(index) ? null : String.valueOf(toDouble(index));
+  }
+
+  @Override
+  public boolean toBoolean(int index) throws SFException
+  {
+    if (isNull(index))
+    {
+      return false;
+    }
+    double val = toDouble(index);
+    throw new SFException(ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr,
+        "Boolean", val);
   }
 }

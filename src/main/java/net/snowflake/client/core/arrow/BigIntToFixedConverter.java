@@ -57,6 +57,25 @@ public class BigIntToFixedConverter extends AbstractArrowVectorConverter
   }
 
   @Override
+  public boolean toBoolean(int index) throws SFException
+  {
+    long longVal = toLong(index);
+    if (longVal == 0)
+    {
+      return false;
+    }
+    else  if (longVal == 1)
+    {
+      return true;
+    }
+    else
+    {
+      throw new SFException(ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr,
+          "Boolean", longVal);
+    }
+  }
+
+  @Override
   public byte toByte(int index) throws SFException
   {
     long longVal = toLong(index);
