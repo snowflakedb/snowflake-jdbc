@@ -12,7 +12,6 @@ import org.apache.arrow.vector.VarCharVector;
 
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
-import java.sql.SQLException;
 
 /**
  * Convert Arrow VarCharVector to Java types
@@ -138,11 +137,11 @@ public class VarCharConverter extends AbstractArrowVectorConverter
     {
       return false;
     }
-    else if (str.equals("0"))
+    else if ("0".equals(str) || Boolean.FALSE.toString().equalsIgnoreCase(str))
     {
       return false;
     }
-    else  if (str.equals("1"))
+    else  if ("1".equals(str) || Boolean.TRUE.toString().equalsIgnoreCase(str))
     {
       return true;
     }
