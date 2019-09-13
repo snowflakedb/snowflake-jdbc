@@ -7,7 +7,7 @@ import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
-
+import java.io.File;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -15,6 +15,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -53,7 +54,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
   @Rule
   public TemporaryFolder tmpFolder = new TemporaryFolder();
 
-  private static boolean developPrint = true;
+  private static boolean developPrint = false;
 
   private static String queryResultFormat;
 
@@ -123,11 +124,14 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
    *
    * @param rs The result set to be accessed.
    * @param maxSizeInBytes The expected data size in one serializable object.
+   * @param fileNameAppendix The generated file's appendix to avoid duplicated
+   *                        file names
    * @return a list of file name.
    * @throws Throwable If any error happens.
    */
   private List<String> serializeResultSet(SnowflakeResultSet rs,
-                                          long maxSizeInBytes)
+                                          long maxSizeInBytes,
+                                          String fileNameAppendix)
       throws Throwable
   {
     List<String> result = new ArrayList<>();
@@ -141,7 +145,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
 
       // Write object to file
       String tmpFileName =
-          tmpFolder.getRoot().getPath() + "_result_" + i + ".txt";
+          tmpFolder.getRoot().getPath() + "_result_" + i + "." + fileNameAppendix;
       FileOutputStream fo = new FileOutputStream(tmpFileName);
       ObjectOutputStream so = new ObjectOutputStream(fo);
       so.writeObject(entry);
@@ -277,7 +281,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
       ResultSet rs = statement.executeQuery(sqlSelect);
 
       fileNameList = serializeResultSet((SnowflakeResultSet) rs,
-                                           maxSizeInBytes);
+                                           maxSizeInBytes, "txt");
 
       originalResultCSVString = generateCSVResult(rs);
       rs.close();
@@ -288,7 +292,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
   }
 
   @Test
-  public void testBasicTable_EmptyResult()  throws Throwable
+  public void testBasicTableWithEmptyResult()  throws Throwable
   {
     // Use complex WHERE clause in order to test both ARROW and JSON.
     // It looks GS only generates JSON format result.
@@ -296,7 +300,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
   }
 
   @Test
-  public void testBasicTable_OnlyFirstChunk()  throws Throwable
+  public void testBasicTableWithOnlyFirstChunk()  throws Throwable
   {
     // Result only includes first data chunk, test maxSize is small.
     testBasicTableHarness(1, 1, "", true);
@@ -305,7 +309,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
   }
 
   @Test
-  public void testBasicTable_OneFileChunk()  throws Throwable
+  public void testBasicTableWithOneFileChunk()  throws Throwable
   {
     // Result only includes first data chunk, test maxSize is small.
     testBasicTableHarness(300, 1, "", true);
@@ -314,7 +318,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
   }
 
   @Test
-  public void testBasicTable_SomeFileChunks()  throws Throwable
+  public void testBasicTableWithSomeFileChunks()  throws Throwable
   {
     // Result only includes first data chunk, test maxSize is small.
     testBasicTableHarness(90000, 1, "", true);
@@ -402,7 +406,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
       ResultSet rs = statement.executeQuery(sqlSelect);
 
       fileNameList = serializeResultSet((SnowflakeResultSet) rs,
-                                        maxSizeInBytes);
+                                        maxSizeInBytes, "txt");
 
       originalResultCSVString = generateCSVResult(rs);
       rs.close();
@@ -429,6 +433,262 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
       testTimestampHarness(10, 1, "",
                           dateFormats[i], timeFormats[i], timestampFormats[i],
                           timestampFormats[i], timestampFormats[i], timezongs[i]);
+    }
+  }
+
+  @Test
+  public void testBasicTableWithSerializeObjectsAfterReadResultSet() throws Throwable
+  {
+    List<String> fileNameList = null;
+    String originalResultCSVString = null;
+    try (Connection connection = getConnection())
+    {
+      Statement statement = connection.createStatement();
+
+      statement.execute(
+          "create or replace table table_basic " +
+              " (int_c int, string_c string(128))");
+
+      int rowCount = 30000;
+      statement.execute(
+          "insert into table_basic select " +
+              "seq4(), 'arrow_1234567890arrow_1234567890arrow_1234567890arrow_1234567890'" +
+              " from table(generator(rowcount=>" + rowCount + "))");
+
+
+      String sqlSelect = "select * from table_basic ";
+      ResultSet rs = statement.executeQuery(sqlSelect);
+
+      originalResultCSVString = generateCSVResult(rs);
+
+      // In previous test, the serializable objects are serialzied before
+      // reading the ResultSet. This test covers the case that serialzizes the
+      // object after reading the result set.
+      fileNameList = serializeResultSet((SnowflakeResultSet) rs,
+                                        1*1024*1024, "txt");
+
+      rs.close();
+    }
+
+    String chunkResultString = deserializeResultSet(fileNameList);
+    assertTrue(chunkResultString.equals(originalResultCSVString));
+  }
+
+  /**
+   * Split the ResultSetSerializable objects based on max size.
+   *
+   * @param files The files where SnowflakeResultSetSerializable objects are
+   *              serialized in.
+   * @param maxSizeInBytes The max data size wrapped in split serializable
+   *                       object
+   * @return a name file list where the new serializable objects resides.
+   * @throws Throwable if any error occurs.
+   */
+  private List<String> splitResultSetSerializables(List<String> files,
+                                                   long maxSizeInBytes)
+      throws Throwable
+  {
+    List<String> resultFileList = new ArrayList<>();
+
+    for (String filename : files)
+    {
+      // Read Object from file
+      FileInputStream fi = new FileInputStream(filename);
+      ObjectInputStream si = new ObjectInputStream(fi);
+      SnowflakeResultSetSerializableV1 resultSetChunk =
+          (SnowflakeResultSetSerializableV1) si.readObject();
+      fi.close();
+
+      // Get ResultSet from object
+      ResultSet rs = resultSetChunk.getResultSet();
+
+      String[] filePathParts = filename.split(File.separator);
+      String appendix = filePathParts[filePathParts.length - 1];
+
+      List<String> thisFileList = serializeResultSet((SnowflakeResultSet) rs,
+                                                     maxSizeInBytes,
+                                                     appendix);
+      for (int i = 0; i < thisFileList.size(); i++)
+      {
+        resultFileList.add(thisFileList.get(i));
+      }
+    }
+
+    if (developPrint)
+    {
+      System.out.println("Split from " + files.size() +
+                             " files to " + resultFileList.size() + " files");
+    }
+
+    return resultFileList;
+  }
+
+  @Test
+  public void testSplitResultSetSerializable()  throws Throwable
+  {
+    List<String> fileNameList = null;
+    String originalResultCSVString = null;
+    int rowCount = 90000;
+    try (Connection connection = getConnection())
+    {
+      Statement statement = connection.createStatement();
+
+      statement.execute(
+          "create or replace table table_basic " +
+              " (int_c int, string_c string(128))");
+
+      statement.execute(
+          "insert into table_basic select " +
+              "seq4(), " +
+              "'arrow_1234567890arrow_1234567890arrow_1234567890arrow_1234567890'" +
+              " from table(generator(rowcount=>" + rowCount + "))");
+
+
+      String sqlSelect = "select * from table_basic ";
+      ResultSet rs = statement.executeQuery(sqlSelect);
+
+      fileNameList = serializeResultSet((SnowflakeResultSet) rs,
+                                        100*1024*1024, "txt");
+
+      originalResultCSVString = generateCSVResult(rs);
+      rs.close();
+    }
+
+    // Split deserializedResultSet by 3M, the result should be the same
+    List<String> fileNameSplit3M = splitResultSetSerializables(
+        fileNameList,3*1024*1024);
+    String chunkResultString = deserializeResultSet(fileNameSplit3M);
+    assertTrue(chunkResultString.equals(originalResultCSVString));
+
+    // Split deserializedResultSet by 2M, the result should be the same
+    List<String> fileNameSplit2M = splitResultSetSerializables(
+        fileNameSplit3M,2*1024*1024);
+    chunkResultString = deserializeResultSet(fileNameSplit2M);
+    assertTrue(chunkResultString.equals(originalResultCSVString));
+
+    // Split deserializedResultSet by 1M, the result should be the same
+    List<String> fileNameSplit1M = splitResultSetSerializables(
+        fileNameSplit2M,1*1024*1024);
+    chunkResultString = deserializeResultSet(fileNameSplit1M);
+    assertTrue(chunkResultString.equals(originalResultCSVString));
+
+    // Split deserializedResultSet by smallest, the result should be the same
+    List<String> fileNameSplitSmallest = splitResultSetSerializables(
+        fileNameSplit1M,1);
+    chunkResultString = deserializeResultSet(fileNameSplitSmallest);
+    assertTrue(chunkResultString.equals(originalResultCSVString));
+  }
+
+  /**
+   * Setup wrong file URL for the result set serializable objects for
+   * negative test.
+   * @param resultSetSerializables a list of result set serializable object.
+   */
+  private void hackToSetupWrongURL(
+      List<SnowflakeResultSetSerializable> resultSetSerializables)
+  {
+    for (int i = 0; i < resultSetSerializables.size(); i++)
+    {
+      SnowflakeResultSetSerializableV1 serializableV1 =
+          (SnowflakeResultSetSerializableV1) resultSetSerializables.get(i);
+      for ( SnowflakeResultSetSerializableV1.ChunkFileMetadata chunkFileMetadata :
+          serializableV1.getChunkFileMetadatas())
+      {
+        chunkFileMetadata.setFileURL(chunkFileMetadata.getFileURL() +
+                                         "_hacked_wrong_file");
+      }
+    }
+  }
+
+  @Test
+  public void testNegativeWithChunkFileNotExist()  throws Throwable
+  {
+    try (Connection connection = getConnection())
+    {
+      Statement statement = connection.createStatement();
+
+      statement.execute(
+          "create or replace table table_basic " +
+              " (int_c int, string_c string(128))");
+
+      int rowCount = 300;
+      statement.execute(
+          "insert into table_basic select " +
+              "seq4(), " +
+              "'arrow_1234567890arrow_1234567890arrow_1234567890arrow_1234567890'" +
+              " from table(generator(rowcount=>" + rowCount + "))");
+
+
+      String sqlSelect = "select * from table_basic ";
+      ResultSet rs = statement.executeQuery(sqlSelect);
+
+      // Test case 1: Generate one Serializable object
+      List<SnowflakeResultSetSerializable> resultSetSerializables =
+          ((SnowflakeResultSet) rs)
+              .getResultSetSerializables(100 * 1024 * 1024);
+
+      hackToSetupWrongURL(resultSetSerializables);
+
+      // Expected to hit credential issue when access the result.
+      assertTrue(resultSetSerializables.size() == 1);
+      try
+      {
+        SnowflakeResultSetSerializable resultSetSerializable =
+            resultSetSerializables.get(0);
+
+        ResultSet resultSet = resultSetSerializable.getResultSet();
+        while(resultSet.next())
+        {
+          resultSet.getString(1);
+        }
+        fail("error should happen when accessing the data because the " +
+                 "file URL is corrupted.");
+      }
+      catch (SQLException ex)
+      {
+        System.out.println("Negative test hits expected error: " + ex.getMessage());
+      }
+
+      rs.close();
+    }
+  }
+
+  @Test
+  public void testNegativeWithClosedResultSet()  throws Throwable
+  {
+    try (Connection connection = getConnection())
+    {
+      Statement statement = connection.createStatement();
+
+      statement.execute(
+          "create or replace table table_basic " +
+              " (int_c int, string_c string(128))");
+
+      int rowCount = 300;
+      statement.execute(
+          "insert into table_basic select " +
+              "seq4(), " +
+              "'arrow_1234567890arrow_1234567890arrow_1234567890arrow_1234567890'" +
+              " from table(generator(rowcount=>" + rowCount + "))");
+
+
+      String sqlSelect = "select * from table_basic ";
+      ResultSet rs = statement.executeQuery(sqlSelect);
+      rs.close();
+
+      // The getResultSetSerializables() can only be called for unclosed
+      // result set.
+      try
+      {
+        List<SnowflakeResultSetSerializable> resultSetSerializables =
+            ((SnowflakeResultSet) rs)
+                .getResultSetSerializables(100 * 1024 * 1024);
+        fail("error should happen when accessing closed result set.");
+      }
+      catch (SQLException ex)
+      {
+        System.out.println("Negative test hits expected error: " + ex.getMessage());
+      }
     }
   }
 }

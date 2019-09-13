@@ -96,6 +96,11 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
       this.uncompressedByteSize = uncompressedByteSize;
     }
 
+    public void setFileURL(String fileURL)
+    {
+      this.fileURL = fileURL;
+    }
+
     public String getFileURL()
     {
       return fileURL;
