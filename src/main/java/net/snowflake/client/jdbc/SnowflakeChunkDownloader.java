@@ -7,7 +7,6 @@ package net.snowflake.client.jdbc;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.MappingJsonFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.snowflake.client.core.ChunkDownloader;
@@ -45,8 +44,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -241,26 +238,26 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
     }
 
     // initialize chunks with url and row count
-    for (SnowflakeResultSetSerializableV1.ChunkFileEntry chunkFileEntry :
-        resultSetSerializable.getChunkFileEntries())
+    for (SnowflakeResultSetSerializableV1.ChunkFileMetadata chunkFileMetadata :
+        resultSetSerializable.getChunkFileMetadatas())
     {
       SnowflakeResultChunk chunk;
       switch (this.queryResultFormat)
       {
         case ARROW:
           this.rootAllocator = resultSetSerializable.getRootAllocator();
-          chunk = new ArrowResultChunk(chunkFileEntry.getFileURL(),
-                                       chunkFileEntry.getRowCount(),
+          chunk = new ArrowResultChunk(chunkFileMetadata.getFileURL(),
+                                       chunkFileMetadata.getRowCount(),
                                        resultSetSerializable.getColumnCount(),
-                                       chunkFileEntry.getUncompressedByteSize(),
+                                       chunkFileMetadata.getUncompressedByteSize(),
                                        this.rootAllocator);
           break;
 
         case JSON:
-          chunk = new JsonResultChunk(chunkFileEntry.getFileURL(),
-                                      chunkFileEntry.getRowCount(),
+          chunk = new JsonResultChunk(chunkFileMetadata.getFileURL(),
+                                      chunkFileMetadata.getRowCount(),
                                       resultSetSerializable.getColumnCount(),
-                                      chunkFileEntry.getUncompressedByteSize(),
+                                      chunkFileMetadata.getUncompressedByteSize(),
                                       this.useJsonParserV2);
           break;
 
@@ -1072,5 +1069,24 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
         return response;
       }
     };
+  }
+
+  /**
+   * This is a No Operation chunk downloader to avoid potential null pointer exception
+   */
+  public static class NoOpChunkDownloader implements ChunkDownloader
+  {
+    @Override
+    public SnowflakeResultChunk getNextChunkToConsume()
+        throws SnowflakeSQLException
+    {
+      return null;
+    }
+
+    @Override
+    public DownloaderMetrics terminate()
+    {
+      return null;
+    }
   }
 }

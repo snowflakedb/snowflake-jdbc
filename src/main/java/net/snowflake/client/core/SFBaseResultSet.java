@@ -5,11 +5,9 @@
 package net.snowflake.client.core;
 
 import net.snowflake.client.jdbc.ErrorCode;
-import net.snowflake.client.jdbc.SnowflakeChunkDownloader;
+import net.snowflake.client.jdbc.SnowflakeResultSetSerializable;
+import net.snowflake.client.jdbc.SnowflakeResultSetSerializableV1;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
-import net.snowflake.client.jdbc.telemetry.TelemetryData;
-import net.snowflake.client.jdbc.telemetry.TelemetryField;
-import net.snowflake.client.jdbc.telemetry.TelemetryUtil;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SFBinaryFormat;
@@ -63,6 +61,10 @@ public abstract class SFBaseResultSet
 
   // indicate whether the result set has been closed or not.
   protected boolean isClosed;
+
+  // The serializable object which can serialize the metadata for this
+  // result set
+  protected SnowflakeResultSetSerializableV1 resultSetSerializable;
 
   abstract public boolean isLast();
 
@@ -193,5 +195,23 @@ public abstract class SFBaseResultSet
   public boolean isArrayBindSupported()
   {
     return false;
+  }
+
+  /**
+   * Split this whole SnowflakeResultSetSerializable into small pieces based
+   * on the user specified data size.
+   *
+   * @param maxSizeInBytes the expected max data size wrapped in the
+   *                       ResultSetSerializables object.
+   *                       NOTE: if a result chunk size is greater than this value,
+   *                       the ResultSetSerializable object will include one
+   *                       result chunk.
+   * @return a list of SnowflakeResultSetSerializable
+   * @throws SQLException if fails to split objects.
+   */
+  public List<SnowflakeResultSetSerializable> getResultSetSerializables(long maxSizeInBytes)
+      throws SQLException
+  {
+    return this.resultSetSerializable.splitBySize(maxSizeInBytes);
   }
 }

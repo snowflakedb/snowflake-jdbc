@@ -4,13 +4,17 @@
 
 package net.snowflake.client.core;
 
+import java.io.Serializable;
+
 /**
  * Class that creates constructor used for storing information about a binding parameter's metadata. Each
  * instantiation of a MetaDataOfBinds object corresponds to one binding parameter; an arraylist of MetaDataOfBinds
  * corresponds to a list of binding parameters in a prepared statement.
  */
-public class MetaDataOfBinds
+public class MetaDataOfBinds implements Serializable
 {
+  private static final long serialVersionUID = 1L;
+
   private int precision;
 
   private boolean nullable;

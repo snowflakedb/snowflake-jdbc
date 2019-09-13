@@ -82,18 +82,53 @@ public class SFResultSet extends SFJsonResultSet
    * @param sortResult            true if sort results otherwise false
    * @throws SQLException exception raised from general SQL layers
    */
-  SFResultSet(SnowflakeResultSetSerializableV1 resultSetSerializable,
+  public SFResultSet(SnowflakeResultSetSerializableV1 resultSetSerializable,
               SFStatement statement,
               boolean sortResult)
   throws SQLException
   {
+    this(resultSetSerializable, statement.getSession().getTelemetryClient(), sortResult);
+
     this.statement = statement;
+    SFSession session = this.statement.getSession();
+    session.setDatabase(resultSetSerializable.getFinalDatabaseName());
+    session.setSchema(resultSetSerializable.getFinalSchemaName());
+    session.setRole(resultSetSerializable.getFinalRoleName());
+    session.setWarehouse(resultSetSerializable.getFinalWarehouseName());
+
+    // update the driver/session with common parameters from GS
+    SessionUtil.updateSfDriverParamValues(this.parameters, statement.getSession());
+
+    // if server gives a send time, log time it took to arrive
+    if (resultSetSerializable.getSendResultTime() != 0)
+    {
+      long timeConsumeFirstResult = this.firstChunkTime - resultSetSerializable.getSendResultTime();
+      logMetric(TelemetryField.TIME_CONSUME_FIRST_RESULT, timeConsumeFirstResult);
+    }
+
+    eventHandler.triggerStateTransition(BasicEvent.QueryState.CONSUMING_RESULT,
+                                        String.format(QueryState.CONSUMING_RESULT.getArgString(), queryId, 0));
+  }
+
+  /**
+   * This is a minimum initialization for SFResultSet. Mainly used for testing
+   * purpose. However, real prod constructor will call this constructor as well
+   *
+   * @param resultSetSerializable data returned in query response
+   * @param telemetryClient       telemetryClient
+   * @throws SQLException
+   */
+  public SFResultSet(SnowflakeResultSetSerializableV1 resultSetSerializable,
+                     Telemetry telemetryClient,
+                     boolean sortResult)
+      throws SQLException
+  {
+    this.resultSetSerializable = resultSetSerializable;
     this.columnCount = 0;
     this.sortResult = sortResult;
     this.firstChunkTime = System.currentTimeMillis();
 
-    SFSession session = this.statement.getSession();
-    this.telemetryClient = session.getTelemetryClient();
+    this.telemetryClient = telemetryClient;
     this.queryId = resultSetSerializable.getQueryId();
     this.statementType = resultSetSerializable.getStatementType();
     this.totalRowCountTruncated = resultSetSerializable.isTotalRowCountTruncated();
@@ -116,14 +151,7 @@ public class SFResultSet extends SFJsonResultSet
     this.numberOfBinds = resultSetSerializable.getNumberOfBinds();
     this.arrayBindSupported = resultSetSerializable.isArrayBindSupported();
     this.metaDataOfBinds = resultSetSerializable.getMetaDataOfBinds();
-
-    session.setDatabase(resultSetSerializable.getFinalDatabaseName());
-    session.setSchema(resultSetSerializable.getFinalSchemaName());
-    session.setRole(resultSetSerializable.getFinalRoleName());
-    session.setWarehouse(resultSetSerializable.getFinalWarehouseName());
-
-    // update the driver/session with common parameters from GS
-    SessionUtil.updateSfDriverParamValues(this.parameters, statement.getSession());
+    this.resultSetMetaData = resultSetSerializable.getSFResultSetMetaData();
 
     // sort result set if needed
     if (sortResult)
@@ -137,25 +165,6 @@ public class SFResultSet extends SFJsonResultSet
 
       sortResultSet();
     }
-
-    // if server gives a send time, log time it took to arrive
-    if (resultSetSerializable.getSendResultTime() != 0)
-    {
-      long timeConsumeFirstResult = this.firstChunkTime - resultSetSerializable.getSendResultTime();
-      logMetric(TelemetryField.TIME_CONSUME_FIRST_RESULT, timeConsumeFirstResult);
-    }
-
-    eventHandler.triggerStateTransition(BasicEvent.QueryState.CONSUMING_RESULT,
-                                        String.format(QueryState.CONSUMING_RESULT.getArgString(), queryId, 0));
-
-    resultSetMetaData = new SFResultSetMetaData(resultSetSerializable.getResultColumnMetadata(),
-                                                queryId,
-                                                session,
-                                                this.timestampNTZFormatter,
-                                                this.timestampLTZFormatter,
-                                                this.timestampTZFormatter,
-                                                this.dateFormatter,
-                                                this.timeFormatter);
   }
 
   private boolean fetchNextRow() throws SFException, SnowflakeSQLException

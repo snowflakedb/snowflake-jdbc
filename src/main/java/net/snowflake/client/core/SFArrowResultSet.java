@@ -166,6 +166,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
                           boolean sortResult)
   throws SQLException
   {
+    this.resultSetSerializable = resultSetSerializable;
     this.rootAllocator = resultSetSerializable.getRootAllocator();
     this.sortResult = sortResult;
     this.queryId = resultSetSerializable.getQueryId();
@@ -192,6 +193,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     this.honorClientTZForTimestampNTZ =
         resultSetSerializable.isHonorClientTZForTimestampNTZ();
     this.binaryFormatter = resultSetSerializable.getBinaryFormatter();
+    this.resultSetMetaData = resultSetSerializable.getSFResultSetMetaData();
 
     // sort result set if needed
     String rowsetBase64 = resultSetSerializable.getFirstChunkStringData();
@@ -220,16 +222,6 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
             buildFirstChunk(resultSetSerializable.getFirstChunkStringData()).getIterator(this);
       }
     }
-
-    resultSetMetaData =
-        new SFResultSetMetaData(resultSetSerializable.getResultColumnMetadata(),
-                                queryId,
-                                session,
-                                this.timestampNTZFormatter,
-                                this.timestampLTZFormatter,
-                                this.timestampTZFormatter,
-                                this.dateFormatter,
-                                this.timeFormatter);
   }
 
   private boolean fetchNextRow() throws SnowflakeSQLException
