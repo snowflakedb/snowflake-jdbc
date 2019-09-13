@@ -77,6 +77,10 @@ abstract class AbstractArrowVectorConverter implements ArrowVectorConverter
   @Override
   public short toShort(int rowIndex) throws SFException
   {
+    if (isNull(rowIndex))
+    {
+      return 0;
+    }
     throw new SFException(ErrorCode.INVALID_VALUE_CONVERT,
                           logicalTypeStr,
                           "short",
@@ -86,6 +90,10 @@ abstract class AbstractArrowVectorConverter implements ArrowVectorConverter
   @Override
   public int toInt(int rowIndex) throws SFException
   {
+    if (isNull(rowIndex))
+    {
+      return 0;
+    }
     throw new SFException(ErrorCode.INVALID_VALUE_CONVERT,
                           logicalTypeStr,
                           "int");
@@ -94,6 +102,10 @@ abstract class AbstractArrowVectorConverter implements ArrowVectorConverter
   @Override
   public long toLong(int rowIndex) throws SFException
   {
+    if (isNull(rowIndex))
+    {
+      return 0;
+    }
     throw new SFException(ErrorCode.INVALID_VALUE_CONVERT,
                           logicalTypeStr,
                           "long",
@@ -103,6 +115,10 @@ abstract class AbstractArrowVectorConverter implements ArrowVectorConverter
   @Override
   public double toDouble(int rowIndex) throws SFException
   {
+    if (isNull(rowIndex))
+    {
+      return 0;
+    }
     throw new SFException(ErrorCode.INVALID_VALUE_CONVERT,
                           logicalTypeStr,
                           "double",
@@ -112,6 +128,10 @@ abstract class AbstractArrowVectorConverter implements ArrowVectorConverter
   @Override
   public float toFloat(int rowIndex) throws SFException
   {
+    if (isNull(rowIndex))
+    {
+      return 0;
+    }
     throw new SFException(ErrorCode.INVALID_VALUE_CONVERT,
                           logicalTypeStr,
                           "float",
@@ -157,6 +177,10 @@ abstract class AbstractArrowVectorConverter implements ArrowVectorConverter
   @Override
   public BigDecimal toBigDecimal(int index) throws SFException
   {
+    if (isNull(index))
+    {
+      return null;
+    }
     throw new SFException(ErrorCode.INVALID_VALUE_CONVERT,
                           logicalTypeStr,
                           "BigDecimal",

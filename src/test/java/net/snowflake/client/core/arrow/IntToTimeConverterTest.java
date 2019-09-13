@@ -124,6 +124,7 @@ public class IntToTimeConverterTest extends BaseConverterTest
         assertThat(strVal, is(nullValue()));
         assertThat(false, is(converter.toBoolean(j)));
         assertThat(converter.toBytes(j), is (nullValue()));
+        assertThat(0, is(converter.toInt(j)));
       }
       else
       {

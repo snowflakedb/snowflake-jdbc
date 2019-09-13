@@ -14,6 +14,7 @@ import org.apache.arrow.vector.IntVector;
 import org.apache.arrow.vector.ValueVector;
 import org.apache.arrow.vector.complex.StructVector;
 
+import java.math.BigDecimal;
 import java.sql.Date;
 import java.sql.Time;
 import java.sql.Timestamp;
@@ -134,5 +135,83 @@ public class TwoFieldStructToTimestampNTZConverter extends AbstractArrowVectorCo
     Timestamp val = toTimestamp(index, TimeZone.getDefault());
     throw new SFException(ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr,
         "Boolean", val);
+  }
+
+
+  @Override
+  public short toShort(int rowIndex) throws SFException
+  {
+    if (epochs.isNull(rowIndex))
+    {
+      return 0;
+    }
+    throw new SFException(ErrorCode.INVALID_VALUE_CONVERT,
+                          logicalTypeStr,
+                          "short",
+                          "");
+  }
+
+  @Override
+  public int toInt(int rowIndex) throws SFException
+  {
+    if (epochs.isNull(rowIndex))
+    {
+      return 0;
+    }
+    throw new SFException(ErrorCode.INVALID_VALUE_CONVERT,
+                          logicalTypeStr,
+                          "int");
+  }
+
+  @Override
+  public long toLong(int rowIndex) throws SFException
+  {
+    if (epochs.isNull(rowIndex))
+    {
+      return 0;
+    }
+    throw new SFException(ErrorCode.INVALID_VALUE_CONVERT,
+                          logicalTypeStr,
+                          "long",
+                          "");
+  }
+
+  @Override
+  public double toDouble(int rowIndex) throws SFException
+  {
+    if (epochs.isNull(rowIndex))
+    {
+      return 0;
+    }
+    throw new SFException(ErrorCode.INVALID_VALUE_CONVERT,
+                          logicalTypeStr,
+                          "double",
+                          "");
+  }
+
+  @Override
+  public float toFloat(int rowIndex) throws SFException
+  {
+    if (epochs.isNull(rowIndex))
+    {
+      return 0;
+    }
+    throw new SFException(ErrorCode.INVALID_VALUE_CONVERT,
+                          logicalTypeStr,
+                          "float",
+                          "");
+  }
+
+  @Override
+  public BigDecimal toBigDecimal(int index) throws SFException
+  {
+    if (epochs.isNull(index))
+    {
+      return null;
+    }
+    throw new SFException(ErrorCode.INVALID_VALUE_CONVERT,
+                          logicalTypeStr,
+                          "BigDecimal",
+                          "");
   }
 }

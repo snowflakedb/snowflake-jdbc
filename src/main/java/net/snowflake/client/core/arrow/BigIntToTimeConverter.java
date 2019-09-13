@@ -112,4 +112,58 @@ public class BigIntToTimeConverter extends AbstractArrowVectorConverter
     throw new SFException(ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr,
           "Boolean", val);
   }
+
+  @Override
+  public short toShort(int index) throws SFException
+  {
+    long longVal = toLong(index);
+    short shortVal = (short) longVal;
+
+    if (shortVal == longVal)
+    {
+      return shortVal;
+    }
+    else
+    {
+      throw new SFException(ErrorCode.INVALID_VALUE_CONVERT,
+                            logicalTypeStr,
+                            "short", longVal);
+    }
+  }
+
+  @Override
+  public int toInt(int index) throws SFException
+  {
+    long longVal = toLong(index);
+    int intVal = (int) longVal;
+
+    if (intVal == longVal)
+    {
+      return intVal;
+    }
+    else
+    {
+      throw new SFException(ErrorCode.INVALID_VALUE_CONVERT,
+                            logicalTypeStr,
+                            "int", longVal);
+    }
+  }
+
+  private long getLong(int index)
+  {
+    return bigIntVector.getDataBuffer().getLong(index * BigIntVector.TYPE_WIDTH);
+  }
+
+  @Override
+  public long toLong(int index) throws SFException
+  {
+    if (bigIntVector.isNull(index))
+    {
+      return 0;
+    }
+    else
+    {
+      return getLong(index);
+    }
+  }
 }
