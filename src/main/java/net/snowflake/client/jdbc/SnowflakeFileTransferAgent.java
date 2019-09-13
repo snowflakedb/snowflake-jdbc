@@ -18,7 +18,14 @@ import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SFFixedViewResultSet;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.core.SFStatement;
-import net.snowflake.client.jdbc.cloud.storage.*;
+import net.snowflake.client.jdbc.cloud.storage.SnowflakeStorageClient;
+import net.snowflake.client.jdbc.cloud.storage.StageInfo;
+import net.snowflake.client.jdbc.cloud.storage.StorageClientFactory;
+import net.snowflake.client.jdbc.cloud.storage.StorageObjectMetadata;
+import net.snowflake.client.jdbc.cloud.storage.StorageObjectSummary;
+import net.snowflake.client.jdbc.cloud.storage.StorageObjectSummaryCollection;
+import net.snowflake.client.jdbc.cloud.storage.StorageProviderException;
+import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -59,7 +66,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.zip.GZIPOutputStream;
 
-import static net.snowflake.client.jdbc.SnowflakeFileTransferAgent.logger;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
 /**
@@ -692,6 +698,9 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
 
         logger.debug("Entering getUploadFileCallable...");
 
+        // make sure initialize context for the telemetry service for this thread
+        TelemetryService.getInstance().updateContext(connection.getSnowflakeConnectionString());
+
         InputStream uploadStream = inputStream;
 
         File fileToUpload = null;
@@ -906,6 +915,9 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
       {
 
         logger.debug("Entering getDownloadFileCallable...");
+
+        // make sure initialize context for the telemetry service for this thread
+        TelemetryService.getInstance().updateContext(connection.getSnowflakeConnectionString());
 
         FileMetadata metadata = fileMetadataMap.get(srcFilePath);
 
