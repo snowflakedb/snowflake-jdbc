@@ -24,6 +24,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.sql.Statement;
+import java.util.Arrays;
 import java.util.List;
 
 import static net.snowflake.client.jdbc.ErrorCode.ROW_DOES_NOT_EXIST;
@@ -400,46 +401,83 @@ public class StatementIT extends BaseJDBCTest
   @Test
   public void testCopyAndUpload() throws Exception
   {
-    String fileName = "test_copy.csv";
-    URL resource = StatementIT.class.getResource(fileName);
 
-    Connection connection = getConnection();
-    Statement statement = connection.createStatement();
-
-    statement.execute("create or replace table test_copy(c1 number, c2 number, c3 string)");
-    assertEquals(-1, statement.getUpdateCount());
-    assertEquals(-1L, statement.getLargeUpdateCount());
-
-    // put files
-    ResultSet rset =
-        statement.executeQuery("PUT file://" + resource.getFile() + " @%test_copy");
-    try
+    Connection connection = null;
+    Statement statement = null;
+    File tempFolder = tmpFolder.newFolder("test_downloads_folder");
+    List<String> accounts = Arrays.asList(null, "s3testaccount", "azureaccount", "gcpaccount");
+    for (int i = 0 ; i < accounts.size(); i++)
     {
-      rset.getString(1);
-      fail("Should raise No row found exception, because no next() is called.");
-    }
-    catch (SQLException ex)
-    {
-      assertThat("No row found error", ex.getErrorCode(),
-                 equalTo(ROW_DOES_NOT_EXIST.getMessageCode()));
-    }
-    int cnt = 0;
-    while (rset.next())
-    {
-      assertThat("uploaded file name",
-                 rset.getString(1), equalTo(fileName));
-      ++cnt;
-    }
-    assertEquals(-1, statement.getUpdateCount());
-    assertEquals(-1L, statement.getLargeUpdateCount());
-    assertThat("number of files", cnt, equalTo(1));
-    int numRows =
-        statement.executeUpdate("copy into test_copy");
-    assertEquals(2, numRows);
-    assertEquals(2, statement.getUpdateCount());
-    assertEquals(2L, statement.getLargeUpdateCount());
+      String fileName = "test_copy.csv";
+      URL resource = StatementIT.class.getResource(fileName);
 
-    statement.execute("drop table if exists test_copy");
+      connection = getConnection(accounts.get(i));
+      statement = connection.createStatement();
+
+      statement.execute("create or replace table test_copy(c1 number, c2 number, c3 string)");
+      assertEquals(-1, statement.getUpdateCount());
+      assertEquals(-1L, statement.getLargeUpdateCount());
+
+      String path = resource.getFile();
+
+      // put files
+      ResultSet rset =
+          statement.executeQuery("PUT file://" + path + " @%test_copy");
+      try
+      {
+        rset.getString(1);
+        fail("Should raise No row found exception, because no next() is called.");
+      }
+      catch (SQLException ex)
+      {
+        assertThat("No row found error", ex.getErrorCode(),
+                   equalTo(ROW_DOES_NOT_EXIST.getMessageCode()));
+      }
+      int cnt = 0;
+      while (rset.next())
+      {
+        assertThat("uploaded file name",
+                   rset.getString(1), equalTo(fileName));
+        ++cnt;
+      }
+      assertEquals(-1, statement.getUpdateCount());
+      assertEquals(-1L, statement.getLargeUpdateCount());
+      assertThat("number of files", cnt, equalTo(1));
+      int numRows =
+          statement.executeUpdate("copy into test_copy");
+      assertEquals(2, numRows);
+      assertEquals(2, statement.getUpdateCount());
+      assertEquals(2L, statement.getLargeUpdateCount());
+
+      // get files
+      statement.executeQuery("get @%test_copy 'file://" + tempFolder.getCanonicalPath()+ "' parallel=8");
+
+      // Make sure that the downloaded file exists, it should be gzip compressed
+      File downloaded = new File( tempFolder.getCanonicalPath() + File.separator + fileName + ".gz");
+      assert (downloaded.exists());
+
+      // unzip the new file
+      Process p = Runtime.getRuntime().exec(
+          "gzip -d " + tempFolder.getCanonicalPath() + File.separator + fileName + ".gz");
+      p.waitFor();
+      File newCopy = new File(tempFolder.getCanonicalPath() + File.separator + fileName);
+
+      //check that the get worked by uploading new file again to a different table and comparing it to original table
+      statement.execute("create or replace table test_copy_2(c1 number, c2 number, c3 string)");
+
+      // put copy of file
+      rset =
+          statement.executeQuery("PUT file://" + newCopy.getPath()
+                                 + " @%test_copy_2");
+      // assert that the result set is empty when you subtract each table from the other
+      rset = statement.executeQuery("select * from @%test_copy minus select * from @%test_copy_2");
+      assertFalse(rset.next());
+      rset = statement.executeQuery("select * from @%test_copy_2 minus select * from @%test_copy");
+      assertFalse(rset.next());
+
+      statement.execute("drop table if exists test_copy");
+      statement.execute("drop table if exists test_copy_2");
+    }
 
     statement.close();
     connection.close();
