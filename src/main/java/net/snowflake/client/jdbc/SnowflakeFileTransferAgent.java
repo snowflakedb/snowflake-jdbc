@@ -60,6 +60,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.zip.GZIPOutputStream;
 
 import static net.snowflake.client.jdbc.SnowflakeFileTransferAgent.logger;
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
 /**
  * Class for uploading/downloading files
@@ -83,7 +84,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
 
   private static final String FILE_PROTOCOL = "file://";
 
-  static private String localFSFileSep = System.getProperty("file.separator");
+  static private String localFSFileSep = systemGetProperty("file.separator");
   static private int DEFAULT_PARALLEL = 10;
 
   private String command;
@@ -1103,7 +1104,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
       if (localLocation.startsWith("~"))
       {
         // replace ~ with user home
-        localLocation = System.getProperty("user.home") +
+        localLocation = systemGetProperty("user.home") +
                         localLocation.substring(1);
       }
 
@@ -1123,7 +1124,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
       // add the current path if that is the case
       if (!(new File(localLocation)).isAbsolute())
       {
-        String cwd = System.getProperty("user.dir");
+        String cwd = systemGetProperty("user.dir");
 
         logger.debug("Adding current working dir to relative file path.");
 
@@ -1193,13 +1194,13 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
       if (stageLocation.startsWith("~"))
       {
         // replace ~ with user home
-        stageLocation = System.getProperty("user.home") +
+        stageLocation = systemGetProperty("user.home") +
                         stageLocation.substring(1);
       }
 
       if (!(new File(stageLocation)).isAbsolute())
       {
-        String cwd = System.getProperty("user.dir");
+        String cwd = systemGetProperty("user.dir");
 
         logger.debug("Adding current working dir to stage file path.");
 
@@ -1814,12 +1815,12 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
 
     locationToFilePatterns = new HashMap<String, List<String>>();
 
-    String cwd = System.getProperty("user.dir");
+    String cwd = systemGetProperty("user.dir");
 
     for (String path : filePathList)
     {
       // replace ~ with user home
-      path = path.replace("~", System.getProperty("user.home"));
+      path = path.replace("~", systemGetProperty("user.home"));
 
       // user may also specify files relative to current directory
       // add the current path if that is the case
@@ -1917,7 +1918,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
 
     // replace ~ with user home
     stageLocation = stageLocation.replace("~",
-                                          System.getProperty("user.home"));
+                                          systemGetProperty("user.home"));
     try
     {
       logger.debug("Copy file. srcFile={}, destination={}, destFileName={}",
@@ -3088,7 +3089,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
     logger.error("JCE Unlimited Strength policy files missing: {}. {}.",
                  ex.getMessage(), ex.getCause().getMessage());
 
-    String bootLib = java.lang.System.getProperty("sun.boot.library.path");
+    String bootLib = systemGetProperty("sun.boot.library.path");
     if (bootLib != null)
     {
       msg += " The target directory on your system is: " +

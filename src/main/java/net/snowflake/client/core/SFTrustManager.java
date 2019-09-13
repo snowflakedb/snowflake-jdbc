@@ -114,6 +114,8 @@ import java.util.TimeZone;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
+
 
 /**
  * SFTrustManager is a composite of TrustManager of the default JVM
@@ -409,7 +411,7 @@ public class SFTrustManager extends X509ExtendedTrustManager
 
   private static void setOCSPResponseCacheServerURL()
   {
-    String ocspCacheUrl = System.getProperty(SF_OCSP_RESPONSE_CACHE_SERVER_URL);
+    String ocspCacheUrl = systemGetProperty(SF_OCSP_RESPONSE_CACHE_SERVER_URL);
     if (ocspCacheUrl != null)
     {
       SF_OCSP_RESPONSE_CACHE_SERVER_URL_VALUE = ocspCacheUrl;
@@ -436,7 +438,7 @@ public class SFTrustManager extends X509ExtendedTrustManager
 
   private static boolean useOCSPResponseCacheServer()
   {
-    String ocspCacheServerEnabled = System.getProperty(SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED);
+    String ocspCacheServerEnabled = systemGetProperty(SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED);
     if (Boolean.FALSE.toString().equalsIgnoreCase(ocspCacheServerEnabled))
     {
       LOGGER.debug("No OCSP Response Cache Server is used.");
@@ -773,7 +775,7 @@ public class SFTrustManager extends X509ExtendedTrustManager
 
   private static boolean checkOCSPResponseValidityErrorParameter()
   {
-    String injectValidityError = System.getProperty(SF_OCSP_TEST_INJECT_VALIDITY_ERROR);
+    String injectValidityError = systemGetProperty(SF_OCSP_TEST_INJECT_VALIDITY_ERROR);
     return Boolean.TRUE.toString().equalsIgnoreCase(injectValidityError);
   }
 
@@ -785,7 +787,7 @@ public class SFTrustManager extends X509ExtendedTrustManager
    */
   private boolean isEnabledSystemTestParameter(String key)
   {
-    return Boolean.TRUE.toString().equalsIgnoreCase(System.getProperty(key));
+    return Boolean.TRUE.toString().equalsIgnoreCase(systemGetProperty(key));
   }
 
   /**
@@ -829,7 +831,7 @@ public class SFTrustManager extends X509ExtendedTrustManager
     catch (Throwable ex)
     {
       LOGGER.debug("Could not get environment variable to check for New OCSP Endpoint Availability");
-      new_ocsp_ept = System.getProperty("net.snowflake.jdbc.ocsp_activate_new_endpoint");
+      new_ocsp_ept = systemGetProperty("net.snowflake.jdbc.ocsp_activate_new_endpoint");
     }
     ocspCacheServer.new_endpoint_enabled = new_ocsp_ept != null;
   }
@@ -1374,11 +1376,11 @@ public class SFTrustManager extends X509ExtendedTrustManager
   private int getOCSPCacheServerConnectionTimeout()
   {
     int timeout = DEFAULT_OCSP_CACHE_SERVER_CONNECTION_TIMEOUT;
-    if (System.getProperty(SF_OCSP_TEST_OCSP_RESPONSE_CACHE_SERVER_TIMEOUT) != null)
+    if (systemGetProperty(SF_OCSP_TEST_OCSP_RESPONSE_CACHE_SERVER_TIMEOUT) != null)
     {
       try
       {
-        timeout = Integer.parseInt(System.getProperty(SF_OCSP_TEST_OCSP_RESPONSE_CACHE_SERVER_TIMEOUT));
+        timeout = Integer.parseInt(systemGetProperty(SF_OCSP_TEST_OCSP_RESPONSE_CACHE_SERVER_TIMEOUT));
       }
       catch (Exception ex)
       {
@@ -1545,11 +1547,11 @@ public class SFTrustManager extends X509ExtendedTrustManager
   private int getOCSPResponderConnectionTimeout()
   {
     int timeout = DEFAULT_OCSP_RESPONDER_CONNECTION_TIMEOUT;
-    if (System.getProperty(SF_OCSP_TEST_OCSP_RESPONDER_TIMEOUT) != null)
+    if (systemGetProperty(SF_OCSP_TEST_OCSP_RESPONDER_TIMEOUT) != null)
     {
       try
       {
-        timeout = Integer.parseInt(System.getProperty(SF_OCSP_TEST_OCSP_RESPONDER_TIMEOUT));
+        timeout = Integer.parseInt(systemGetProperty(SF_OCSP_TEST_OCSP_RESPONDER_TIMEOUT));
       }
       catch (Exception ex)
       {
@@ -1561,7 +1563,7 @@ public class SFTrustManager extends X509ExtendedTrustManager
 
   private String overrideOCSPURL(String ocspURL)
   {
-    String ocspURLInput = System.getProperty(SF_OCSP_TEST_RESPONDER_URL);
+    String ocspURLInput = systemGetProperty(SF_OCSP_TEST_RESPONDER_URL);
     if (ocspURLInput != null)
     {
       return ocspURLInput;

@@ -35,6 +35,8 @@ import org.joda.time.DateTime;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
+
 /**
  * @author jrosen
  */
@@ -75,12 +77,12 @@ public class EventHandler extends Handler
   protected static final String DISABLE_DUMP_COMPR_PROP = "snowflake.disable_log_compression";
 
   private static final int THROTTLE_DURATION_HRS =
-      System.getProperty(THROTTLE_DURATION_PROP) == null ?
-      1 : Integer.valueOf(System.getProperty(THROTTLE_DURATION_PROP));
+      systemGetProperty(THROTTLE_DURATION_PROP) == null ?
+      1 : Integer.valueOf(systemGetProperty(THROTTLE_DURATION_PROP));
 
   private static final int INCIDENT_THROTTLE_LIMIT_PER_HR =
-      System.getProperty(THROTTLE_LIMIT_PROP) == null ?
-      1 : Integer.valueOf(System.getProperty(THROTTLE_LIMIT_PROP));
+      systemGetProperty(THROTTLE_LIMIT_PROP) == null ?
+      1 : Integer.valueOf(systemGetProperty(THROTTLE_LIMIT_PROP));
 
   // Default values
   private static final int DEFAULT_MAX_DUMP_FILES = 100;
@@ -106,7 +108,7 @@ public class EventHandler extends Handler
     // Push the incident event and flush the event buffer.
     pushEvent(incident, true);
 
-    if (System.getProperty(DISABLE_DUMPS_PROP) == null)
+    if (systemGetProperty(DISABLE_DUMPS_PROP) == null)
     {
       logger.debug("Dumping log buffer to local disk");
 
@@ -315,7 +317,7 @@ public class EventHandler extends Handler
 
     // Check if compression of dump file is enabled
     boolean disableCompression =
-        System.getProperty(DISABLE_DUMP_COMPR_PROP) != null;
+        systemGetProperty(DISABLE_DUMP_COMPR_PROP) != null;
 
     // If no identifying factor (eg, an incident id) was provided, get one
     if (identifier == null)
@@ -395,13 +397,13 @@ public class EventHandler extends Handler
     // Check what the maximum number of dumpfiles and the max allowable
     // aggregate dump file size is.
     int maxDumpFiles =
-        System.getProperty(MAX_NUM_DUMP_FILES_PROP) != null ?
-        Integer.valueOf(System.getProperty(MAX_NUM_DUMP_FILES_PROP)) :
+        systemGetProperty(MAX_NUM_DUMP_FILES_PROP) != null ?
+        Integer.valueOf(systemGetProperty(MAX_NUM_DUMP_FILES_PROP)) :
         DEFAULT_MAX_DUMP_FILES;
 
     int maxDumpDirSizeMB =
-        System.getProperty(MAX_SIZE_DUMPS_MB_PROP) != null ?
-        Integer.valueOf(System.getProperty(MAX_SIZE_DUMPS_MB_PROP)) :
+        systemGetProperty(MAX_SIZE_DUMPS_MB_PROP) != null ?
+        Integer.valueOf(systemGetProperty(MAX_SIZE_DUMPS_MB_PROP)) :
         DEFAULT_MAX_DUMPDIR_SIZE_MB;
 
     File dumpDir = new File(logDumpPathPrefix);

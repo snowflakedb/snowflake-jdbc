@@ -20,6 +20,8 @@ import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
+
 /**
  * Snowflake custom SSLConnectionSocketFactory
  */
@@ -71,7 +73,7 @@ public class SFSSLConnectionSocketFactory extends SSLConnectionSocketFactory
    */
   private static String[] decideCipherSuites()
   {
-    String sysCipherSuites = System.getProperty("https.cipherSuites");
+    String sysCipherSuites = systemGetProperty("https.cipherSuites");
 
     String[] cipherSuites = sysCipherSuites != null ? sysCipherSuites.split(",") :
                             // use jdk default cipher suites

@@ -52,6 +52,8 @@ import java.util.Map;
 
 import net.snowflake.client.jdbc.MatDesc;
 
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
+
 /**
  * Encapsulates the Azure Storage client
  * and all Azure Storage operations and logic
@@ -62,7 +64,7 @@ import net.snowflake.client.jdbc.MatDesc;
 public class SnowflakeAzureClient implements SnowflakeStorageClient
 {
 
-  private final static String localFileSep = System.getProperty("file.separator");
+  private final static String localFileSep = systemGetProperty("file.separator");
   private final static String AZ_ENCRYPTIONDATAPROP = "encryptiondata";
 
   private int encryptionKeySize = 0; // used for PUTs

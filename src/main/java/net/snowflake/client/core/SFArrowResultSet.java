@@ -32,6 +32,7 @@ import java.util.Base64;
 import java.util.TimeZone;
 
 import static net.snowflake.client.core.StmtUtil.eventHandler;
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
 /**
  * Arrow result set implementation
@@ -423,7 +424,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
        * so.
        */
       if (totalRowCountTruncated ||
-          Boolean.TRUE.toString().equalsIgnoreCase(System.getProperty("snowflake.enable_incident_test2")))
+          Boolean.TRUE.toString().equalsIgnoreCase(systemGetProperty("snowflake.enable_incident_test2")))
       {
         throw (SFException) IncidentUtil.generateIncidentV2WithException(
             session,

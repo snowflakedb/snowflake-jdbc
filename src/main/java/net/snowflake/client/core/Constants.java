@@ -4,6 +4,8 @@
 
 package net.snowflake.client.core;
 
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
+
 /*
  * Constants used in JDBC implementation
  */
@@ -29,7 +31,7 @@ public final class Constants
   {
     if (os == null)
     {
-      String operSys = System.getProperty("os.name").toLowerCase();
+      String operSys = systemGetProperty("os.name").toLowerCase();
       if (operSys.contains("win"))
       {
         os = OS.WINDOWS;

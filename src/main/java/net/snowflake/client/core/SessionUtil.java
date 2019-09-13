@@ -49,6 +49,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static net.snowflake.client.core.SFTrustManager.resetOCSPResponseCacherServerURL;
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
 /**
  * Low level session util
@@ -440,11 +441,11 @@ public class SessionUtil
       }
 
       Map<String, Object> clientEnv = new HashMap<>();
-      clientEnv.put("OS", System.getProperty("os.name"));
-      clientEnv.put("OS_VERSION", System.getProperty("os.version"));
-      clientEnv.put("JAVA_VERSION", System.getProperty("java.version"));
-      clientEnv.put("JAVA_RUNTIME", System.getProperty("java.runtime.name"));
-      clientEnv.put("JAVA_VM", System.getProperty("java.vm.name"));
+      clientEnv.put("OS", systemGetProperty("os.name"));
+      clientEnv.put("OS_VERSION", systemGetProperty("os.version"));
+      clientEnv.put("JAVA_VERSION", systemGetProperty("java.version"));
+      clientEnv.put("JAVA_RUNTIME", systemGetProperty("java.runtime.name"));
+      clientEnv.put("JAVA_VM", systemGetProperty("java.vm.name"));
       clientEnv.put("OCSP_MODE", loginInput.getOCSPMode().name());
 
       if (loginInput.getApplication() != null)
@@ -456,7 +457,7 @@ public class SessionUtil
         // When you add new client environment info, please add new keys to
         // messages_en_US.src.json so that they can be displayed properly in UI
         // detect app name
-        String appName = System.getProperty("sun.java.command");
+        String appName = systemGetProperty("sun.java.command");
         // remove the arguments
         if (appName != null)
         {
@@ -470,7 +471,7 @@ public class SessionUtil
       }
 
       // SNOW-20103: track additional client info in session
-      String clientInfoJSONStr = System.getProperty("snowflake.client.info");
+      String clientInfoJSONStr = systemGetProperty("snowflake.client.info");
       if (clientInfoJSONStr != null)
       {
         JsonNode clientInfoJSON = null;
