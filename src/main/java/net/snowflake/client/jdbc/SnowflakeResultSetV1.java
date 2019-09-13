@@ -440,11 +440,15 @@ class SnowflakeResultSetV1 extends SnowflakeBaseResultSet implements SnowflakeRe
   /**
    * Get a list of ResultSetSerializables for the ResultSet in order to parallel processing
    *
-   * @param maxSizeInBytes the expected max data size wrapped in the
+   * @param maxSizeInBytes The expected max data size wrapped in the
    *                       ResultSetSerializables object.
-   *                       NOTE: if a result chunk size is greater than this value,
-   *                       the ResultSetSerializable object will include the
-   *                       result chunk.
+   *                       NOTE: this parameter is intended to make the data
+   *                       size in each serializable object to be less than it.
+   *                       But if user specifies a small value which may be
+   *                       smaller than the data size of one result chunk.
+   *                       So the definition can't be guaranteed completely.
+   *                       For this special case, one serializable object is
+   *                       used to wrap the data chunk.
    * @return a list of ResultSetSerializables
    * @throws if fails to get the ResultSetSerializable objects.
    */
