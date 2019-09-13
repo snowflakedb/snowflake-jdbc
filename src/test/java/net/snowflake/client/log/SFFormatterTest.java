@@ -25,7 +25,7 @@ public class SFFormatterTest
   /**
    * The maximum time difference in millisecond allowed for timestamp and now
    */
-  private static final long TIME_DIFFERENCE_BOUNDARY = 100;
+  private static final long TIME_DIFFERENCE_BOUNDARY = 600000;  //10 minutes
   /**
    * Number of iterations for the stress test
    */
