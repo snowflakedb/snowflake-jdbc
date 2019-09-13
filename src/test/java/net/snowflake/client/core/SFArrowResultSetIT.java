@@ -8,7 +8,7 @@ import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeResultChunk;
 import net.snowflake.client.jdbc.SnowflakeResultSetSerializableV1;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
-import net.snowflake.client.jdbc.telemetry.NoopTelemetryClient;
+import net.snowflake.client.jdbc.telemetry.NoOpTelemetryClient;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.memory.RootAllocator;
 import org.apache.arrow.vector.FieldVector;
@@ -88,7 +88,7 @@ public class SFArrowResultSetIT
     resultSetSerializable.setChunkFileCount(0);
 
     SFArrowResultSet resultSet = new SFArrowResultSet(
-        resultSetSerializable, new NoopTelemetryClient(), false);
+        resultSetSerializable, new NoOpTelemetryClient(), false);
 
     int i = 0;
     while (resultSet.next())
@@ -111,14 +111,14 @@ public class SFArrowResultSetIT
     resultSetSerializable.setChunkFileCount(0);
 
     SFArrowResultSet resultSet = new SFArrowResultSet(
-        resultSetSerializable, new NoopTelemetryClient(), false);
+        resultSetSerializable, new NoOpTelemetryClient(), false);
     assertThat(resultSet.next(), is(false));
     assertThat(resultSet.isLast(), is(false));
     assertThat(resultSet.isAfterLast(), is(true));
 
     resultSetSerializable.setFristChunkStringData(null);
     resultSet = new SFArrowResultSet(
-        resultSetSerializable, new NoopTelemetryClient(), false);
+        resultSetSerializable, new NoOpTelemetryClient(), false);
 
     assertThat(resultSet.next(), is(false));
     assertThat(resultSet.isLast(), is(false));
@@ -165,7 +165,7 @@ public class SFArrowResultSetIT
     resultSetSerializable.setChunkFileCount(chunkCount);
 
     SFArrowResultSet resultSet = new SFArrowResultSet(
-        resultSetSerializable, new NoopTelemetryClient(), false);
+        resultSetSerializable, new NoOpTelemetryClient(), false);
 
     int index = 0;
     while (resultSet.next())
@@ -241,7 +241,7 @@ public class SFArrowResultSetIT
     resultSetSerializable.setChunkDownloader(new MockChunkDownloader(fileLists));
 
     SFArrowResultSet resultSet = new SFArrowResultSet(
-        resultSetSerializable, new NoopTelemetryClient(), false);
+        resultSetSerializable, new NoOpTelemetryClient(), false);
 
     int index = 0;
     while (resultSet.next())
