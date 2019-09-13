@@ -406,7 +406,7 @@ public class StatementIT extends BaseJDBCTest
     Statement statement = null;
     File tempFolder = tmpFolder.newFolder("test_downloads_folder");
     List<String> accounts = Arrays.asList(null, "s3testaccount", "azureaccount", "gcpaccount");
-    for (int i = 0 ; i < accounts.size(); i++)
+    for (int i = 0; i < accounts.size(); i++)
     {
       String fileName = "test_copy.csv";
       URL resource = StatementIT.class.getResource(fileName);
@@ -450,10 +450,10 @@ public class StatementIT extends BaseJDBCTest
       assertEquals(2L, statement.getLargeUpdateCount());
 
       // get files
-      statement.executeQuery("get @%test_copy 'file://" + tempFolder.getCanonicalPath()+ "' parallel=8");
+      statement.executeQuery("get @%test_copy 'file://" + tempFolder.getCanonicalPath() + "' parallel=8");
 
       // Make sure that the downloaded file exists, it should be gzip compressed
-      File downloaded = new File( tempFolder.getCanonicalPath() + File.separator + fileName + ".gz");
+      File downloaded = new File(tempFolder.getCanonicalPath() + File.separator + fileName + ".gz");
       assert (downloaded.exists());
 
       // unzip the new file
