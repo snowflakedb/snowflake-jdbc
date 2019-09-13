@@ -14,6 +14,7 @@ import org.apache.arrow.vector.types.pojo.FieldType;
 import org.junit.Test;
 
 import java.math.BigDecimal;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -24,6 +25,7 @@ import java.util.Set;
 import java.util.TimeZone;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
@@ -39,6 +41,7 @@ public class IntToFixedConverterTest extends BaseConverterTest
    * Random seed
    */
   private Random random = new Random();
+  private ByteBuffer bb;
 
   @Test
   public void testFixedNoScale() throws SFException
@@ -88,12 +91,15 @@ public class IntToFixedConverterTest extends BaseConverterTest
         assertThat(intVal, is(0));
         assertThat(longObj, is(nullValue()));
         assertThat(intString, is(nullValue()));
+        assertThat(converter.toBytes(i), is (nullValue()));
       }
       else
       {
         assertThat(intVal, is(expectedValues.get(i)));
         assertEquals(longObj, (long) expectedValues.get(i));
         assertThat(intString, is(expectedValues.get(i).toString()));
+        bb = ByteBuffer.wrap(converter.toBytes(i));
+        assertThat(intVal, is(bb.getInt()));
       }
     }
     vector.clear();
@@ -147,6 +153,7 @@ public class IntToFixedConverterTest extends BaseConverterTest
         assertThat(bigDecimalVal, nullValue());
         assertThat(objectVal, nullValue());
         assertThat(stringVal, nullValue());
+        assertThat(converter.toBytes(i), is (nullValue()));
       }
       else
       {
@@ -154,6 +161,7 @@ public class IntToFixedConverterTest extends BaseConverterTest
         assertThat(bigDecimalVal, is(expectedVal));
         assertThat(objectVal, is(expectedVal));
         assertThat(stringVal, is(expectedVal.toString()));
+        assertThat(converter.toBytes(i), is (notNullValue()));
       }
     }
 
@@ -251,5 +259,64 @@ public class IntToFixedConverterTest extends BaseConverterTest
     assertThat(converterBar.toLong(0), is(10L));
     assertThat(converterBar.toLong(1), is(-10L));
     vectorBar.clear();
+  }
+
+  @Test
+  public void testGetBooleanNoScale() throws SFException
+  {
+    Map<String, String> customFieldMeta = new HashMap<>();
+    customFieldMeta.put("logicalType", "FIXED");
+    customFieldMeta.put("precision", "10");
+    customFieldMeta.put("scale", "0");
+
+    FieldType fieldType = new FieldType(true,
+                                        Types.MinorType.INT.getType(),
+                                        null, customFieldMeta);
+
+    IntVector vector = new IntVector("col_one", fieldType, allocator);
+    vector.setSafe(0, 0);
+    vector.setSafe(1, 1);
+    vector.setNull(2);
+    vector.setSafe(3, 5);
+
+    ArrowVectorConverter converter = new IntToFixedConverter(vector, 0, this);
+
+    assertThat(false, is(converter.toBoolean(0)));
+    assertThat(true, is(converter.toBoolean(1)));
+    assertThat(false, is(converter.toBoolean(2)));
+    TestUtil.assertSFException(invalidConversionErrorCode,
+                               () -> converter.toBoolean(3));
+
+    vector.close();
+  }
+
+  @Test
+  public void testGetBooleanWithScale() throws SFException
+  {
+    Map<String, String> customFieldMeta = new HashMap<>();
+    customFieldMeta.put("logicalType", "FIXED");
+    customFieldMeta.put("precision", "10");
+    customFieldMeta.put("scale", "3");
+
+    FieldType fieldType = new FieldType(true,
+                                        Types.MinorType.INT.getType(),
+                                        null, customFieldMeta);
+
+    IntVector vector = new IntVector("col_one", fieldType, allocator);
+    vector.setSafe(0, 0);
+    vector.setSafe(1, 1);
+    vector.setNull(2);
+    vector.setSafe(3, 5);
+
+    final ArrowVectorConverter converter = new IntToScaledFixedConverter(vector, 0, this, 3);
+
+    assertThat(false, is(converter.toBoolean(0)));
+    TestUtil.assertSFException(invalidConversionErrorCode,
+                               () -> converter.toBoolean(3));
+    assertThat(false, is(converter.toBoolean(2)));
+    TestUtil.assertSFException(invalidConversionErrorCode,
+                               () -> converter.toBoolean(3));
+
+    vector.close();
   }
 }

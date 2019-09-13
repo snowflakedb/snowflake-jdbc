@@ -201,4 +201,27 @@ public class DecimalToScaledFixedConverter extends AbstractArrowVectorConverter
     BigDecimal bigDecimal = toBigDecimal(index);
     return bigDecimal == null ? null : bigDecimal.toPlainString();
   }
+
+  @Override
+  public boolean toBoolean(int index) throws SFException
+  {
+    if (isNull(index))
+    {
+      return false;
+    }
+    BigDecimal val = toBigDecimal(index);
+    if (val.compareTo(BigDecimal.ZERO) == 0)
+    {
+      return false;
+    }
+    else if (val.compareTo(BigDecimal.ONE) == 0)
+    {
+      return true;
+    }
+    else
+    {
+      throw new SFException(ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr,
+          "Boolean", val.toPlainString());
+    }
+  }
 }

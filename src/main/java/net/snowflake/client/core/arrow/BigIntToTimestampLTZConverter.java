@@ -12,6 +12,7 @@ import net.snowflake.client.jdbc.SnowflakeType;
 import org.apache.arrow.vector.BigIntVector;
 import org.apache.arrow.vector.ValueVector;
 
+import java.nio.ByteBuffer;
 import java.sql.Date;
 import java.sql.Time;
 import java.sql.Timestamp;
@@ -23,6 +24,7 @@ import java.util.TimeZone;
 public class BigIntToTimestampLTZConverter extends AbstractArrowVectorConverter
 {
   private BigIntVector bigIntVector;
+  private ByteBuffer byteBuf = ByteBuffer.allocate(BigIntVector.TYPE_WIDTH);
 
   public BigIntToTimestampLTZConverter(ValueVector fieldVector, int columnIndex, DataConversionContext context)
   {
@@ -46,6 +48,20 @@ public class BigIntToTimestampLTZConverter extends AbstractArrowVectorConverter
 
     return ts == null ? null : context.getTimestampLTZFormatter().format(ts, context.getTimeZone(),
                                                                          context.getScale(columnIndex));
+  }
+
+  @Override
+  public byte[] toBytes(int index)
+  {
+    if (isNull(index))
+    {
+      return null;
+    }
+    else
+    {
+      byteBuf.putLong(0, bigIntVector.getDataBuffer().getLong(index * BigIntVector.TYPE_WIDTH));
+      return byteBuf.array();
+    }
   }
 
   @Override
@@ -84,5 +100,17 @@ public class BigIntToTimestampLTZConverter extends AbstractArrowVectorConverter
   {
     Timestamp ts = toTimestamp(index, TimeZone.getDefault());
     return ts == null ? null : new Time(ts.getTime());
+  }
+
+  @Override
+  public boolean toBoolean(int index) throws SFException
+  {
+    if (isNull(index))
+    {
+      return false;
+    }
+    Timestamp val = toTimestamp(index, TimeZone.getDefault());
+    throw new SFException(ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr,
+        "Boolean", val);
   }
 }

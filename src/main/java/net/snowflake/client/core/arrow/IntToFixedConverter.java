@@ -143,4 +143,22 @@ public class IntToFixedConverter extends AbstractArrowVectorConverter
     return isNull(index) ? null : Integer.toString(getInt(index));
   }
 
+  @Override
+  public boolean toBoolean(int index) throws SFException
+  {
+    int val = toInt(index);
+    if (val == 0)
+    {
+      return false;
+    }
+    else  if (val == 1)
+    {
+      return true;
+    }
+    else
+    {
+      throw new SFException(ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr,
+          "Boolean", val);
+    }
+  }
 }

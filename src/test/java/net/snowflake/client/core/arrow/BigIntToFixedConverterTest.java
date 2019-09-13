@@ -5,7 +5,6 @@ package net.snowflake.client.core.arrow;
 
 import net.snowflake.client.TestUtil;
 import net.snowflake.client.core.SFException;
-import net.snowflake.client.jdbc.ErrorCode;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.memory.RootAllocator;
 import org.apache.arrow.vector.BigIntVector;
@@ -14,6 +13,7 @@ import org.apache.arrow.vector.types.pojo.FieldType;
 import org.junit.Test;
 
 import java.math.BigDecimal;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -24,6 +24,7 @@ import java.util.Set;
 import java.util.TimeZone;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -38,6 +39,8 @@ public class BigIntToFixedConverterTest extends BaseConverterTest
    * Random seed
    */
   private Random random = new Random();
+
+  private ByteBuffer bb;
 
   @Test
   public void testFixedNoScale() throws SFException
@@ -87,12 +90,15 @@ public class BigIntToFixedConverterTest extends BaseConverterTest
         assertThat(longVal, is(0L));
         assertThat(longObject, is(nullValue()));
         assertThat(longString, is(nullValue()));
+        assertThat(converter.toBytes(i), is (nullValue()));
       }
       else
       {
         assertThat(longVal, is(expectedValues.get(i)));
         assertThat(longObject, is(expectedValues.get(i)));
         assertThat(longString, is(expectedValues.get(i).toString()));
+        bb = ByteBuffer.wrap(converter.toBytes(i));
+        assertThat(longVal, is(bb.getLong()));
       }
     }
     vector.clear();
@@ -146,6 +152,7 @@ public class BigIntToFixedConverterTest extends BaseConverterTest
         assertThat(bigDecimalVal, nullValue());
         assertThat(objectVal, nullValue());
         assertThat(stringVal, nullValue());
+        assertThat(converter.toBytes(i), is (nullValue()));
       }
       else
       {
@@ -153,6 +160,7 @@ public class BigIntToFixedConverterTest extends BaseConverterTest
         assertThat(bigDecimalVal, is(expectedVal));
         assertThat(objectVal, is(expectedVal));
         assertThat(stringVal, is(expectedVal.toString()));
+        assertThat(converter.toBytes(i), is (notNullValue()));
       }
     }
 
@@ -176,8 +184,6 @@ public class BigIntToFixedConverterTest extends BaseConverterTest
     vector.setSafe(0, 123456789L);
 
     final ArrowVectorConverter converter = new BigIntToScaledFixedConverter(vector, 0, this, 3);
-    final int invalidConversionErrorCode =
-        ErrorCode.INVALID_VALUE_CONVERT.getMessageCode();
 
     TestUtil.assertSFException(invalidConversionErrorCode,
                                () -> converter.toBoolean(0));
@@ -219,9 +225,6 @@ public class BigIntToFixedConverterTest extends BaseConverterTest
     final ArrowVectorConverter converterFoo =
         new BigIntToFixedConverter(vectorFoo, 0, this);
 
-    final int invalidConversionErrorCode =
-        ErrorCode.INVALID_VALUE_CONVERT.getMessageCode();
-
     TestUtil.assertSFException(invalidConversionErrorCode,
                                () -> converterFoo.toInt(0));
     TestUtil.assertSFException(invalidConversionErrorCode,
@@ -252,5 +255,64 @@ public class BigIntToFixedConverterTest extends BaseConverterTest
     assertThat(converterBar.toInt(0), is(10));
     assertThat(converterBar.toInt(1), is(-10));
     vectorBar.clear();
+  }
+
+  @Test
+  public void testGetBooleanNoScale() throws SFException
+  {
+    Map<String, String> customFieldMeta = new HashMap<>();
+    customFieldMeta.put("logicalType", "FIXED");
+    customFieldMeta.put("precision", "10");
+    customFieldMeta.put("scale", "0");
+
+    FieldType fieldType = new FieldType(true,
+                                        Types.MinorType.BIGINT.getType(),
+                                        null, customFieldMeta);
+
+    BigIntVector vector = new BigIntVector("col_one", fieldType, allocator);
+    vector.setSafe(0, 0);
+    vector.setSafe(1, 1);
+    vector.setNull(2);
+    vector.setSafe(3, 5);
+
+    ArrowVectorConverter converter = new BigIntToFixedConverter(vector, 0, this);
+
+    assertThat(false, is(converter.toBoolean(0)));
+    assertThat(true, is(converter.toBoolean(1)));
+    assertThat(false, is(converter.toBoolean(2)));
+    TestUtil.assertSFException(invalidConversionErrorCode,
+                               () -> converter.toBoolean(3));
+
+    vector.close();
+  }
+
+  @Test
+  public void testGetBooleanWithScale() throws SFException
+  {
+    Map<String, String> customFieldMeta = new HashMap<>();
+    customFieldMeta.put("logicalType", "FIXED");
+    customFieldMeta.put("precision", "10");
+    customFieldMeta.put("scale", "3");
+
+    FieldType fieldType = new FieldType(true,
+                                        Types.MinorType.BIGINT.getType(),
+                                        null, customFieldMeta);
+
+    BigIntVector vector = new BigIntVector("col_one", fieldType, allocator);
+    vector.setSafe(0, 0);
+    vector.setSafe(1, 1);
+    vector.setNull(2);
+    vector.setSafe(3, 5);
+
+    final ArrowVectorConverter converter = new BigIntToScaledFixedConverter(vector, 0, this, 3);
+
+    assertThat(false, is(converter.toBoolean(0)));
+    TestUtil.assertSFException(invalidConversionErrorCode,
+                               () -> converter.toBoolean(3));
+    assertThat(false, is(converter.toBoolean(2)));
+    TestUtil.assertSFException(invalidConversionErrorCode,
+                               () -> converter.toBoolean(3));
+
+    vector.close();
   }
 }

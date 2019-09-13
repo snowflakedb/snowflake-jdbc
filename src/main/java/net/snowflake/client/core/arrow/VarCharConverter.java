@@ -4,12 +4,15 @@
 package net.snowflake.client.core.arrow;
 
 import net.snowflake.client.core.DataConversionContext;
+import net.snowflake.client.core.SFException;
+import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeType;
 import org.apache.arrow.vector.ValueVector;
 import org.apache.arrow.vector.VarCharVector;
 
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
+import java.sql.SQLException;
 
 /**
  * Convert Arrow VarCharVector to Java types
@@ -124,6 +127,29 @@ public class VarCharConverter extends AbstractArrowVectorConverter
     else
     {
       return new BigDecimal(str);
+    }
+  }
+
+  @Override
+  public boolean toBoolean(int index) throws SFException
+  {
+    String str = toString(index);
+    if (str == null)
+    {
+      return false;
+    }
+    else if (str.equals("0"))
+    {
+      return false;
+    }
+    else  if (str.equals("1"))
+    {
+      return true;
+    }
+    else
+    {
+      throw new SFException(ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr,
+          "Boolean", str);
     }
   }
 }

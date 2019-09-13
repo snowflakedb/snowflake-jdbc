@@ -1,5 +1,6 @@
 package net.snowflake.client.core.arrow;
 
+import net.snowflake.client.TestUtil;
 import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.ResultUtil;
 import net.snowflake.client.core.SFException;
@@ -13,6 +14,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import java.nio.ByteBuffer;
 import java.sql.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -81,6 +83,8 @@ public class DateConverterTest extends BaseConverterTest
       "2016-04-20"
   };
 
+  private ByteBuffer bb;
+
   @Test
   public void testDate() throws SFException
   {
@@ -124,6 +128,8 @@ public class DateConverterTest extends BaseConverterTest
         assertThat(intVal, is(0));
         assertThat(obj, is(nullValue()));
         assertThat(strVal, is(nullValue()));
+        assertThat(false, is(converter.toBoolean(j)));
+        assertThat(converter.toBytes(j), is (nullValue()));
       }
       else
       {
@@ -132,6 +138,11 @@ public class DateConverterTest extends BaseConverterTest
         assertThat(obj.toString(), is(expectedDates[i]));
         assertThat(((Date) obj).getTime(), is(((Date) oldObj).getTime()));
         assertThat(oldObj.toString(), is(expectedDates[i++]));
+        final int x = j;
+        TestUtil.assertSFException(invalidConversionErrorCode,
+                                   () -> converter.toBoolean(x));
+        bb = ByteBuffer.wrap(converter.toBytes(j));
+        assertThat(intVal, is(bb.getInt()));
       }
       j++;
     }

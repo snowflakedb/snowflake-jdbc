@@ -9,6 +9,8 @@ import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeType;
 import org.apache.arrow.vector.ValueVector;
 
+import java.math.BigDecimal;
+
 /**
  * A converter from scaled arrow tinyint to Snowflake Fixed type converter
  */
@@ -90,5 +92,28 @@ public class TinyIntToScaledFixedConverter extends TinyIntToFixedConverter
     }
     float f = ((float) getByte(index)) / ArrowResultUtil.powerOfTen(sfScale);
     return String.format(format, f);
+  }
+
+  @Override
+  public boolean toBoolean(int index) throws SFException
+  {
+    if (isNull(index))
+    {
+      return false;
+    }
+    BigDecimal val = toBigDecimal(index);
+    if (val.compareTo(BigDecimal.ZERO) == 0)
+    {
+      return false;
+    }
+    else if (val.compareTo(BigDecimal.ONE) == 0)
+    {
+      return true;
+    }
+    else
+    {
+      throw new SFException(ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr,
+          "Boolean", val.toPlainString());
+    }
   }
 }

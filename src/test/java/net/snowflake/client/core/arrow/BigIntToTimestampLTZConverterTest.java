@@ -4,6 +4,7 @@
 
 package net.snowflake.client.core.arrow;
 
+import net.snowflake.client.TestUtil;
 import net.snowflake.client.core.ResultUtil;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.jdbc.SnowflakeUtil;
@@ -27,6 +28,7 @@ import java.util.Random;
 import java.util.Set;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -125,6 +127,8 @@ public class BigIntToTimestampLTZConverterTest extends BaseConverterTest
       {
         assertThat(ts, is(nullValue()));
         assertThat(date, is(nullValue()));
+        assertThat(false, is(converter.toBoolean(j)));
+        assertThat(converter.toBytes(j), is (nullValue()));
       }
       else
       {
@@ -158,11 +162,15 @@ public class BigIntToTimestampLTZConverterTest extends BaseConverterTest
         assertThat(oldTs, is(ts));
         assertThat(oldTime, is(time));
         assertThat(timestampStr, is(tsStr));
+        assertThat(converter.toBytes(j), is (notNullValue()));
         i++;
         if (i < testScales.length)
         {
           this.setScale(testScales[i]);
         }
+        final int x = j;
+        TestUtil.assertSFException(invalidConversionErrorCode,
+                                   () -> converter.toBoolean(x));
       }
       j++;
     }
