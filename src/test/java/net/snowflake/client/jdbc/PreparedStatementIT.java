@@ -2000,5 +2000,21 @@ public class PreparedStatementIT extends BaseJDBCTest
       }
     }
   }
+
+  @Test
+  public void testPrepareStatementWithKeys() throws SQLException
+  {
+    connection = getConnection();
+    statement = connection.createStatement();
+    statement.execute(createTableSQL);
+    prepStatement = connection.prepareStatement(insertSQL, Statement.NO_GENERATED_KEYS);
+    bindOneParamSet(prepStatement, 1, 1.22222, (float) 1.2, "test", 12121212121L, (short) 12);
+    prepStatement.addBatch();
+    prepStatement.executeBatch();
+    resultSet = connection.createStatement().executeQuery(selectAllSQL);
+    assertEquals(1, getSizeOfResultSet(resultSet));
+    statement.close();
+    connection.close();
+  }
 }
 

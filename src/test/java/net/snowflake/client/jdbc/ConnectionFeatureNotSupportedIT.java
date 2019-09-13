@@ -21,7 +21,6 @@ public class ConnectionFeatureNotSupportedIT extends BaseJDBCTest
       expectFeatureNotSupportedException(() -> connection.rollback(new FakeSavepoint()));
       expectFeatureNotSupportedException(() -> connection.setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE));
       expectFeatureNotSupportedException(() -> connection.setTransactionIsolation(Connection.TRANSACTION_REPEATABLE_READ));
-      expectFeatureNotSupportedException(() -> connection.prepareStatement("select 1", 0));
       expectFeatureNotSupportedException(() -> connection.prepareStatement("select 1", new int[]{1, 2}));
       expectFeatureNotSupportedException(() -> connection.prepareStatement("select 1", new String[]{"c1", "c2"}));
       expectFeatureNotSupportedException(() -> connection.prepareStatement("select 1", ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_READ_ONLY));
