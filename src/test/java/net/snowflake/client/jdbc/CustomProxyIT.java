@@ -14,6 +14,7 @@ import java.sql.Statement;
 import java.util.Properties;
 
 import static net.snowflake.client.AbstractDriverIT.getFullPathFileInResource;
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertTrue;
@@ -149,8 +150,8 @@ public class CustomProxyIT
             System.out.println("RequestorType: " + getRequestorType());
             System.out.println("Protocol: " + getRequestingProtocol().toLowerCase());
             return new PasswordAuthentication(
-                System.getProperty("http.proxyUser"),
-                System.getProperty("http.proxyPassword").toCharArray());
+                systemGetProperty("http.proxyUser"),
+                systemGetProperty("http.proxyPassword").toCharArray());
           }
         }
     );
@@ -241,8 +242,8 @@ public class CustomProxyIT
             System.out.println("RequestorType: " + getRequestorType());
             System.out.println("Protocol: " + getRequestingProtocol().toLowerCase());
             return new PasswordAuthentication(
-                System.getProperty("http.proxyUser"),
-                System.getProperty("http.proxyPassword").toCharArray());
+                systemGetProperty("http.proxyUser"),
+                systemGetProperty("http.proxyPassword").toCharArray());
           }
         }
     );

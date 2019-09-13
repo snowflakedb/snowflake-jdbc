@@ -4,6 +4,8 @@
 
 package net.snowflake.client.core;
 
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
+
 /**
  * Base Event class for events that don't need to deviate from the default
  * flush behavior.
@@ -19,7 +21,7 @@ public class BasicEvent extends Event
   private static final String chunkIdx = "chunkIndex: %d";
 
   private static final String EVENT_DUMP_PROP = "snowflake.dump_events";
-  private static final Boolean doDump = System.getProperty(EVENT_DUMP_PROP) != null;
+  private static final Boolean doDump = systemGetProperty(EVENT_DUMP_PROP) != null;
 
   public enum QueryState
   {

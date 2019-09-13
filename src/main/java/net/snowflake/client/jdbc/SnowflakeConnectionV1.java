@@ -50,6 +50,7 @@ import static net.snowflake.client.core.SessionUtil.CLIENT_SFSQL;
 import static net.snowflake.client.core.SessionUtil.JVM_PARAMS_TO_PARAMS;
 import static net.snowflake.client.jdbc.ErrorCode.FEATURE_UNSUPPORTED;
 import static net.snowflake.client.jdbc.ErrorCode.INVALID_CONNECT_STRING;
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
 /**
  * Snowflake connection implementation
@@ -229,7 +230,7 @@ public class SnowflakeConnectionV1 implements Connection
     // Set the corresponding session parameters to the JVM properties
     for (Map.Entry<String, String> entry : JVM_PARAMS_TO_PARAMS.entrySet())
     {
-      String value = System.getProperty(entry.getKey());
+      String value = systemGetProperty(entry.getKey());
       if (value != null && !sfSession.containProperty(entry.getValue()))
       {
         sfSession.addProperty(entry.getValue(), value);

@@ -63,6 +63,8 @@ import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.InputStreamEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
+
 /**
  * Encapsulates the GCS Storage client and all GCS operations and logic
  *
@@ -71,7 +73,7 @@ import org.apache.http.impl.client.CloseableHttpClient;
 public class SnowflakeGCSClient implements SnowflakeStorageClient
 {
   private final static String GCS_ENCRYPTIONDATAPROP = "encryptiondata";
-  private final static String localFileSep = System.getProperty("file.separator");
+  private final static String localFileSep = systemGetProperty("file.separator");
   private final static String GCS_METADATA_PREFIX = "x-goog-meta-";
 
   private int encryptionKeySize = 0; // used for PUTs

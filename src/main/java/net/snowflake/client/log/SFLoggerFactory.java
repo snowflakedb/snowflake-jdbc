@@ -3,6 +3,8 @@
  */
 package net.snowflake.client.log;
 
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
+
 /**
  * Used to create SFLogger instance
  * <p>
@@ -55,7 +57,7 @@ public class SFLoggerFactory
     // only need to determine the logger implementation only once
     if (loggerImplementation == null)
     {
-      String logger = System.getProperty("net.snowflake.jdbc.loggerImpl");
+      String logger = systemGetProperty("net.snowflake.jdbc.loggerImpl");
 
       loggerImplementation = LoggerImpl.fromString(logger);
 

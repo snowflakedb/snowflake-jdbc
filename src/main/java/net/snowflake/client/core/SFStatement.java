@@ -40,6 +40,7 @@ import static net.snowflake.client.core.SessionUtil.DEFAULT_CLIENT_MEMORY_LIMIT;
 import static net.snowflake.client.core.SessionUtil.DEFAULT_CLIENT_PREFETCH_THREADS;
 import static net.snowflake.client.core.SessionUtil.MAX_CLIENT_CHUNK_SIZE;
 import static net.snowflake.client.core.SessionUtil.MIN_CLIENT_CHUNK_SIZE;
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
 /**
  * Snowflake statement
@@ -542,7 +543,7 @@ public class SFStatement
       while (sessionRenewed && !canceling.get());
 
       // Debugging/Testing for incidents
-      if (Boolean.TRUE.toString().equalsIgnoreCase(System.getProperty("snowflake.enable_incident_test1")))
+      if (Boolean.TRUE.toString().equalsIgnoreCase(systemGetProperty("snowflake.enable_incident_test1")))
       {
         throw (SFException) IncidentUtil.generateIncidentV2WithException(
             session,

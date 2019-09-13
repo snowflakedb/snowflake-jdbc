@@ -7,6 +7,8 @@ package net.snowflake.client.core;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
+
 /**
  * Utility class to encapsulate support information pertaining to the
  * EventHandler and events.
@@ -21,11 +23,11 @@ public class EventUtil
 
   private static final String DUMP_FILE_ID = UUID.randomUUID().toString();
   private static final String DUMP_PATH_PREFIX =
-      System.getProperty(DUMP_PATH_PROP) == null ?
-      "/tmp" : System.getProperty(DUMP_PATH_PROP);
+      systemGetProperty(DUMP_PATH_PROP) == null ?
+      "/tmp" : systemGetProperty(DUMP_PATH_PROP);
   private static final long MAX_DUMP_FILE_SIZE_BYTES =
-      System.getProperty(DUMP_SIZE_PROP) == null ?
-      (10 << 20) : Long.valueOf(System.getProperty(DUMP_SIZE_PROP));
+      systemGetProperty(DUMP_SIZE_PROP) == null ?
+      (10 << 20) : Long.valueOf(systemGetProperty(DUMP_SIZE_PROP));
 
   private static AtomicReference<EventHandler> eventHandler =
       new AtomicReference<>(null);

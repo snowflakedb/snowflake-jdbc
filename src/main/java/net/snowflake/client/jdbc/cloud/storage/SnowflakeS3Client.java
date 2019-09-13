@@ -66,6 +66,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
+
 /**
  * Wrapper around AmazonS3Client.
  *
@@ -76,7 +78,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient
   private final static SFLogger logger =
       SFLoggerFactory.getLogger(SnowflakeS3Client.class);
   private final static String localFileSep =
-      System.getProperty("file.separator");
+      systemGetProperty("file.separator");
   private final static String AES = "AES";
   private final static String AMZ_KEY = "x-amz-key";
   private final static String AMZ_IV = "x-amz-iv";
