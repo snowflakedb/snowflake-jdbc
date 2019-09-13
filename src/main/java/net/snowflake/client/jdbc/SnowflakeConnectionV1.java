@@ -55,7 +55,7 @@ import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 /**
  * Snowflake connection implementation
  */
-public class SnowflakeConnectionV1 implements Connection
+public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection
 {
 
   static private final
