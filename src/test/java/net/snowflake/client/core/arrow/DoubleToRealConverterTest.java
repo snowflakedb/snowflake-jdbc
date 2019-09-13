@@ -3,6 +3,7 @@
  */
 package net.snowflake.client.core.arrow;
 
+import net.snowflake.client.TestUtil;
 import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.SFException;
 import org.apache.arrow.memory.BufferAllocator;
@@ -12,6 +13,7 @@ import org.apache.arrow.vector.types.Types;
 import org.apache.arrow.vector.types.pojo.FieldType;
 import org.junit.Test;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -35,6 +37,7 @@ public class DoubleToRealConverterTest extends BaseConverterTest
    * Random seed
    */
   private Random random = new Random();
+  private ByteBuffer bb;
 
   @Test
   public void testConvertToDouble() throws SFException
@@ -84,6 +87,8 @@ public class DoubleToRealConverterTest extends BaseConverterTest
         assertThat(floatVal, is((float) 0));
         assertThat(doubleObject, is(nullValue()));
         assertThat(doubleString, is(nullValue()));
+        assertThat(false, is(converter.toBoolean(i)));
+        assertThat(converter.toBytes(i), is (nullValue()));
       }
       else
       {
@@ -91,6 +96,11 @@ public class DoubleToRealConverterTest extends BaseConverterTest
         assertThat(floatVal, is(expectedValues.get(i).floatValue()));
         assertThat(doubleObject, is(expectedValues.get(i)));
         assertThat(doubleString, is(expectedValues.get(i).toString()));
+        final int x = i;
+        TestUtil.assertSFException(invalidConversionErrorCode,
+                                   () -> converter.toBoolean(x));
+        bb = ByteBuffer.wrap(converter.toBytes(i));
+        assertThat(doubleVal, is(bb.getDouble()));
       }
     }
     vector.clear();

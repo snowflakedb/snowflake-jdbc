@@ -10,13 +10,14 @@ import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SFSession;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.memory.RootAllocator;
-import org.apache.arrow.vector.BigIntVector;
+import org.apache.arrow.vector.IntVector;
 import org.apache.arrow.vector.types.Types;
 import org.apache.arrow.vector.types.pojo.FieldType;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import java.nio.ByteBuffer;
 import java.sql.Time;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -30,7 +31,7 @@ import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @RunWith(Parameterized.class)
-public class BigIntToTimeConverterTest extends BaseConverterTest
+public class IntToTimeConverterTest extends BaseConverterTest
 {
   @Parameterized.Parameters
   public static Object[][] data()
@@ -46,9 +47,12 @@ public class BigIntToTimeConverterTest extends BaseConverterTest
     };
   }
 
-  public BigIntToTimeConverterTest(String tz)
+  private ByteBuffer bb;
+
+  public IntToTimeConverterTest(String tz)
   {
     System.setProperty("user.timezone", tz);
+    this.setScale(scale);
   }
 
   /**
@@ -58,18 +62,18 @@ public class BigIntToTimeConverterTest extends BaseConverterTest
 
   private Random random = new Random();
 
-  private int scale = 9;
+  private int scale = 3;
 
   @Test
   public void testTime() throws SFException
   {
     // test old and new dates
-    long[] testTimesInt64 = {
-        12345678000000L
+    int[] testTimesInt = {
+        12345678
     };
 
     String[] testTimesJson = {
-        "12345.678000000"
+        "12345.678"
     };
 
     Time[] expectedTimes = {
@@ -81,12 +85,12 @@ public class BigIntToTimeConverterTest extends BaseConverterTest
     Set<Integer> nullValIndex = new HashSet<>();
     // test normal date
     FieldType fieldType = new FieldType(true,
-                                        Types.MinorType.BIGINT.getType(),
+                                        Types.MinorType.INT.getType(),
                                         null, customFieldMeta);
 
-    BigIntVector vector = new BigIntVector("date", fieldType, allocator);
+    IntVector vector = new IntVector("date", fieldType, allocator);
     int i = 0, j = 0;
-    while (i < testTimesInt64.length)
+    while (i < testTimesInt.length)
     {
       boolean isNull = random.nextBoolean();
       if (isNull)
@@ -96,12 +100,12 @@ public class BigIntToTimeConverterTest extends BaseConverterTest
       }
       else
       {
-        vector.setSafe(j, testTimesInt64[i++]);
+        vector.setSafe(j, testTimesInt[i++]);
       }
       j++;
     }
 
-    ArrowVectorConverter converter = new BigIntToTimeConverter(vector, 0, this);
+    ArrowVectorConverter converter = new IntToTimeConverter(vector, 0, this);
     int rowCount = j;
     i = 0;
     j = 0;
@@ -127,10 +131,10 @@ public class BigIntToTimeConverterTest extends BaseConverterTest
         assertThat(expectedTimes[i], is((Time) obj));
         assertThat(oldTime, is(time));
         assertThat(oldTime, is((Time) obj));
-        assertThat(converter.toBytes(j), is (notNullValue()));
         final int x = j;
         TestUtil.assertSFException(invalidConversionErrorCode,
                                    () -> converter.toBoolean(x));
+        assertThat(converter.toBytes(j), is (notNullValue()));
       }
       j++;
     }

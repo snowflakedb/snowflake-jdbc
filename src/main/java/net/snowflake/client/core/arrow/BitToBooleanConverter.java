@@ -46,6 +46,24 @@ public class BitToBooleanConverter extends AbstractArrowVectorConverter
   }
 
   @Override
+  public byte[] toBytes(int index)
+  {
+    if (isNull(index))
+    {
+      return null;
+    }
+    else if(toBoolean(index))
+    {
+
+      return new byte[]{1};
+    }
+    else
+    {
+      return new byte[]{0};
+    }
+  }
+
+  @Override
   public Object toObject(int index)
   {
     return toBoolean(index);

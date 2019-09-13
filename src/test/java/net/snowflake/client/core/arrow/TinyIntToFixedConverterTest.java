@@ -228,4 +228,63 @@ public class TinyIntToFixedConverterTest extends BaseConverterTest
     assertThat(converterBar.toLong(1), is(-10L));
     vectorBar.clear();
   }
+
+  @Test
+  public void testGetBooleanNoScale() throws SFException
+  {
+    Map<String, String> customFieldMeta = new HashMap<>();
+    customFieldMeta.put("logicalType", "FIXED");
+    customFieldMeta.put("precision", "10");
+    customFieldMeta.put("scale", "0");
+
+    FieldType fieldType = new FieldType(true,
+                                        Types.MinorType.TINYINT.getType(),
+                                        null, customFieldMeta);
+
+    TinyIntVector vector = new TinyIntVector("col_one", fieldType, allocator);
+    vector.setSafe(0, 0);
+    vector.setSafe(1, 1);
+    vector.setNull(2);
+    vector.setSafe(3, 5);
+
+    ArrowVectorConverter converter = new TinyIntToFixedConverter(vector, 0, this);
+
+    assertThat(false, is(converter.toBoolean(0)));
+    assertThat(true, is(converter.toBoolean(1)));
+    assertThat(false, is(converter.toBoolean(2)));
+    TestUtil.assertSFException(invalidConversionErrorCode,
+                               () -> converter.toBoolean(3));
+
+    vector.close();
+  }
+
+  @Test
+  public void testGetBooleanWithScale() throws SFException
+  {
+    Map<String, String> customFieldMeta = new HashMap<>();
+    customFieldMeta.put("logicalType", "FIXED");
+    customFieldMeta.put("precision", "10");
+    customFieldMeta.put("scale", "3");
+
+    FieldType fieldType = new FieldType(true,
+                                        Types.MinorType.TINYINT.getType(),
+                                        null, customFieldMeta);
+
+    TinyIntVector vector = new TinyIntVector("col_one", fieldType, allocator);
+    vector.setSafe(0, 0);
+    vector.setSafe(1, 1);
+    vector.setNull(2);
+    vector.setSafe(3, 5);
+
+    final ArrowVectorConverter converter = new TinyIntToScaledFixedConverter(vector, 0, this, 3);
+
+    assertThat(false, is(converter.toBoolean(0)));
+    TestUtil.assertSFException(invalidConversionErrorCode,
+                               () -> converter.toBoolean(3));
+    assertThat(false, is(converter.toBoolean(2)));
+    TestUtil.assertSFException(invalidConversionErrorCode,
+                               () -> converter.toBoolean(3));
+
+    vector.close();
+  }
 }

@@ -60,6 +60,19 @@ public class ThreeFieldStructToTimestampTZConverter extends AbstractArrowVectorC
   }
 
   @Override
+  public byte[] toBytes(int index) throws SFException
+  {
+    if (epochs.isNull(index))
+    {
+      return null;
+    }
+    throw new SFException(ErrorCode.INVALID_VALUE_CONVERT,
+                          logicalTypeStr,
+                          "byteArray",
+                          toString(index));
+  }
+
+  @Override
   public Object toObject(int index) throws SFException
   {
     return toTimestamp(index, TimeZone.getDefault());
@@ -115,5 +128,17 @@ public class ThreeFieldStructToTimestampTZConverter extends AbstractArrowVectorC
   {
     Timestamp ts = toTimestamp(index, TimeZone.getDefault());
     return ts == null ? null : new Time(ts.getTime());
+  }
+
+  @Override
+  public boolean toBoolean(int index) throws SFException
+  {
+    if (epochs.isNull(index))
+    {
+      return false;
+    }
+    Timestamp val = toTimestamp(index, TimeZone.getDefault());
+    throw new SFException(ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr,
+        "Boolean", val);
   }
 }

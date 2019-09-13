@@ -3,6 +3,7 @@
  */
 package net.snowflake.client.core.arrow;
 
+import net.snowflake.client.TestUtil;
 import net.snowflake.client.core.SFException;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.memory.RootAllocator;
@@ -91,5 +92,32 @@ public class VarCharConverterTest extends BaseConverterTest
       }
     }
     vector.clear();
+  }
+
+  @Test
+  public void testGetBoolean() throws SFException
+  {
+    Map<String, String> customFieldMeta = new HashMap<>();
+    customFieldMeta.put("logicalType", "FIXED");
+
+    FieldType fieldType = new FieldType(true,
+                                        Types.MinorType.VARCHAR.getType(),
+                                        null, customFieldMeta);
+
+    VarCharVector vector = new VarCharVector("col_one", fieldType, allocator);
+    vector.setSafe(0, "0".getBytes(StandardCharsets.UTF_8));
+    vector.setSafe(1, "1".getBytes(StandardCharsets.UTF_8));
+    vector.setNull(2);
+    vector.setSafe(3, "5".getBytes(StandardCharsets.UTF_8));
+
+    ArrowVectorConverter converter = new VarCharConverter(vector, 0, this);
+
+    assertThat(false, is(converter.toBoolean(0)));
+    assertThat(true, is(converter.toBoolean(1)));
+    assertThat(false, is(converter.toBoolean(2)));
+    TestUtil.assertSFException(invalidConversionErrorCode,
+                               () -> converter.toBoolean(3));
+
+    vector.close();
   }
 }

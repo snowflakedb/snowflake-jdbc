@@ -9,6 +9,8 @@ import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeType;
 import org.apache.arrow.vector.ValueVector;
 
+import java.math.BigDecimal;
+
 /**
  * Data vector whose snowflake logical type is fixed while represented as a
  * int value vector with scale
@@ -94,5 +96,28 @@ public class IntToScaledFixedConverter extends IntToFixedConverter
   {
     return isNull(index) ? null :
            String.format(format, (double) getInt(index) / ArrowResultUtil.powerOfTen(sfScale));
+  }
+
+  @Override
+  public boolean toBoolean(int index) throws SFException
+  {
+    if (isNull(index))
+    {
+      return false;
+    }
+    BigDecimal val = toBigDecimal(index);
+    if (val.compareTo(BigDecimal.ZERO) == 0)
+    {
+      return false;
+    }
+    else if (val.compareTo(BigDecimal.ONE) == 0)
+    {
+      return true;
+    }
+    else
+    {
+      throw new SFException(ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr,
+          "Boolean", val.toPlainString());
+    }
   }
 }
