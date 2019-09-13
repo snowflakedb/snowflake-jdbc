@@ -18,6 +18,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
+
 class SSDManager
 {
   private static final
@@ -57,11 +59,11 @@ class SSDManager
 
     if (ssd_status == null)
     {
-      ssd_status = System.getProperty("net.snowflake.jdbc.ssd_support_enabled");
+      ssd_status = systemGetProperty("net.snowflake.jdbc.ssd_support_enabled");
       if (ssd_status != null)
       {
-        key_upd_ssd = System.getProperty("net.snowflake.jdbc.key_upd_ssd");
-        host_spec_ssd = System.getProperty("net.snowflake.jdbc.host_spec_ssd");
+        key_upd_ssd = systemGetProperty("net.snowflake.jdbc.key_upd_ssd");
+        host_spec_ssd = systemGetProperty("net.snowflake.jdbc.host_spec_ssd");
       }
     }
 

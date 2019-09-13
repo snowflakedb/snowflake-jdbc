@@ -25,6 +25,8 @@ import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Date;
 
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
+
 class FileCacheManager
 {
   private static final
@@ -105,7 +107,7 @@ class FileCacheManager
   {
     // try to get cacheDir from system property or environment variable
     String cacheDirPath = this.cacheDirectorySystemProperty != null ?
-                          System.getProperty(this.cacheDirectorySystemProperty)
+                          systemGetProperty(this.cacheDirectorySystemProperty)
                                                                     : null;
     if (cacheDirPath == null)
     {
@@ -132,11 +134,11 @@ class FileCacheManager
     else
     {
       // use user home directory to store the cache file
-      String homeDir = System.getProperty("user.home");
+      String homeDir = systemGetProperty("user.home");
       if (homeDir == null)
       {
         // use tmp dir if not exists.
-        homeDir = System.getProperty("java.io.tmpdir");
+        homeDir = systemGetProperty("java.io.tmpdir");
       }
       if (Constants.getOS() == Constants.OS.WINDOWS)
       {

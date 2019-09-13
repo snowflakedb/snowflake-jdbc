@@ -23,6 +23,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 import java.util.zip.GZIPOutputStream;
 
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 import static net.snowflake.client.util.SFTimestamp.getUTCNow;
 
 public class Incident extends Event
@@ -148,8 +149,8 @@ public class Incident extends Event
     this.errorMessage = errorMessage;
     this.errorStackTrace = errorStackTrace;
     // Generated fields
-    this.osName = System.getProperty("os.name");
-    this.osVersion = System.getProperty("os.version");
+    this.osName = systemGetProperty("os.name");
+    this.osVersion = systemGetProperty("os.version");
   }
 
 

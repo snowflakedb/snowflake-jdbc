@@ -16,6 +16,8 @@ import java.util.logging.Level;
 import java.util.logging.Handler;
 import java.util.logging.SimpleFormatter;
 
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
+
 /**
  * Use java.util.logging to implements SFLogger.
  * <p>
@@ -193,8 +195,8 @@ public class JDK14Logger implements SFLogger
   public static synchronized void honorTracingParameter(Level level)
   {
     if (!isLegacyLoggerInit &&
-        System.getProperty("java.util.logging.config.file") == null &&
-        System.getProperty("java.util.logging.config.class") == null)
+        systemGetProperty("java.util.logging.config.file") == null &&
+        systemGetProperty("java.util.logging.config.class") == null)
     {
       legacyLoggerInit(level);
 
@@ -276,8 +278,8 @@ public class JDK14Logger implements SFLogger
   private static void legacyLoggerInit(Level level)
   {
     // get log count and size
-    String defaultLogSizeVal = System.getProperty("snowflake.jdbc.log.size");
-    String defaultLogCountVal = System.getProperty("snowflake.jdbc.log.count");
+    String defaultLogSizeVal = systemGetProperty("snowflake.jdbc.log.size");
+    String defaultLogCountVal = systemGetProperty("snowflake.jdbc.log.count");
 
     // default log size to 1 GB
     int logSize = 1000000000;

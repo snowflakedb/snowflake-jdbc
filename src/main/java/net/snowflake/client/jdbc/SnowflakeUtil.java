@@ -530,4 +530,18 @@ public class SnowflakeUtil
     }
     return builder.toString();
   }
+
+  static public String systemGetProperty(String property)
+  {
+    try
+    {
+      return System.getProperty(property);
+    }
+    catch (SecurityException ex)
+    {
+      logger.debug("Security exception raised: {}", ex.getMessage());
+      return null;
+    }
+  }
+
 }

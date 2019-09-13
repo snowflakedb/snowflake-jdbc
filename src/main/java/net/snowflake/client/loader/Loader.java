@@ -6,6 +6,8 @@ package net.snowflake.client.loader;
 
 import java.io.File;
 
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
+
 /**
  * Bulk loader for Snowflake
  */
@@ -13,7 +15,7 @@ public interface Loader
 {
 
   // Temporary directory used for data cache
-  String tmpdir = System.getProperty("java.io.tmpdir");
+  String tmpdir = systemGetProperty("java.io.tmpdir");
 
   String BASE = tmpdir + (!(tmpdir.endsWith("/") || tmpdir.endsWith("\\")) ? File.separatorChar : "")
                 + "snowflake" + File.separatorChar + "stage";
