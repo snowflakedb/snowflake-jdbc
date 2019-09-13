@@ -110,6 +110,7 @@ public class BigIntToTimeConverterTest extends BaseConverterTest
       String strVal = converter.toString(j);
       Time time = converter.toTime(j);
       Object obj = converter.toObject(j);
+      long longVal = converter.toLong(j);
       Time oldTime =
           new Time(ResultUtil.getSFTime(
               testTimesJson[i], scale, new SFSession()).getFractionalSeconds(
@@ -120,6 +121,7 @@ public class BigIntToTimeConverterTest extends BaseConverterTest
         assertThat(strVal, is(nullValue()));
         assertThat(false, is(converter.toBoolean(j)));
         assertThat(converter.toBytes(j), is (nullValue()));
+        assertThat(0l, is(longVal));
       }
       else
       {
@@ -131,6 +133,7 @@ public class BigIntToTimeConverterTest extends BaseConverterTest
         final int x = j;
         TestUtil.assertSFException(invalidConversionErrorCode,
                                    () -> converter.toBoolean(x));
+        assertThat(testTimesInt64[i], is(longVal));
       }
       j++;
     }
