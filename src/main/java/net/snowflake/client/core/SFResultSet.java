@@ -296,7 +296,8 @@ public class SFResultSet extends SFJsonResultSet
        * Here we check if the result has been truncated and throw exception if
        * so.
        */
-      if (totalRowCountTruncated || Boolean.TRUE.toString().equalsIgnoreCase(systemGetProperty("snowflake.enable_incident_test2")))
+      if (totalRowCountTruncated ||
+          Boolean.TRUE.toString().equalsIgnoreCase(systemGetProperty("snowflake.enable_incident_test2")))
       {
         throw (SFException) IncidentUtil.generateIncidentV2WithException(
             session,
