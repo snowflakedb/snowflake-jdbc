@@ -864,6 +864,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest
   }
 
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
   public void testPut() throws Throwable
   {
     Connection connection = null;
@@ -873,7 +874,6 @@ public class SnowflakeDriverIT extends BaseJDBCTest
     List<String> accounts = Arrays.asList(null, "s3testaccount", "azureaccount", "gcpaccount");
     for (int i = 0; i < accounts.size(); i++)
     {
-
       try
       {
         connection = getConnection(accounts.get(i));
@@ -3311,6 +3311,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest
   }
 
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
   public void testPutGet() throws Throwable
   {
 

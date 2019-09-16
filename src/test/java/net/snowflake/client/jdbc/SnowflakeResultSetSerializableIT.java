@@ -1,6 +1,8 @@
 package net.snowflake.client.jdbc;
 
 
+import net.snowflake.client.ConditionalIgnoreRule;
+import net.snowflake.client.RunningOnTravisCI;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -292,6 +294,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
   }
 
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
   public void testBasicTableWithEmptyResult()  throws Throwable
   {
     // Use complex WHERE clause in order to test both ARROW and JSON.
@@ -300,6 +303,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
   }
 
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
   public void testBasicTableWithOnlyFirstChunk()  throws Throwable
   {
     // Result only includes first data chunk, test maxSize is small.
@@ -309,6 +313,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
   }
 
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
   public void testBasicTableWithOneFileChunk()  throws Throwable
   {
     // Result only includes first data chunk, test maxSize is small.
@@ -318,6 +323,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
   }
 
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
   public void testBasicTableWithSomeFileChunks()  throws Throwable
   {
     // Result only includes first data chunk, test maxSize is small.
@@ -417,6 +423,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
   }
 
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
   public void testTimestamp()  throws Throwable
   {
     String[] dateFormats = {"YYYY-MM-DD", "DD-MON-YYYY", "MM/DD/YYYY"};
@@ -437,6 +444,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
   }
 
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
   public void testBasicTableWithSerializeObjectsAfterReadResultSet() throws Throwable
   {
     List<String> fileNameList = null;
@@ -524,6 +532,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
   }
 
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
   public void testSplitResultSetSerializable()  throws Throwable
   {
     List<String> fileNameList = null;
@@ -601,6 +610,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
   }
 
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
   public void testNegativeWithChunkFileNotExist()  throws Throwable
   {
     try (Connection connection = getConnection())
@@ -654,6 +664,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
   }
 
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
   public void testNegativeWithClosedResultSet()  throws Throwable
   {
     try (Connection connection = getConnection())
