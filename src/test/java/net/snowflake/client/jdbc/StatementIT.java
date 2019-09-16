@@ -399,6 +399,7 @@ public class StatementIT extends BaseJDBCTest
   }
 
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
   public void testCopyAndUpload() throws Exception
   {
 
