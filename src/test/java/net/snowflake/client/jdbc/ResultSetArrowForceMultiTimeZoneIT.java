@@ -32,17 +32,12 @@ public class ResultSetArrowForceMultiTimeZoneIT extends BaseJDBCTest
           {"json", "UTC"},
           {"json", "America/Los_Angeles"},
           {"json", "America/New_York"},
-          {"json", "Pacific/Honolulu"},
           {"json", "Asia/Singapore"},
           {"json", "MEZ"},
-          {"json", "MESZ"},
           {"arrow_force", "UTC"},
           {"arrow_force", "America/Los_Angeles"},
-          {"arrow_force", "America/New_York"},
-          {"arrow_force", "Pacific/Honolulu"},
           {"arrow_force", "Asia/Singapore"},
           {"arrow_force", "MEZ"},
-          {"arrow_force", "MESZ"}
       };
     }
     else
@@ -50,11 +45,8 @@ public class ResultSetArrowForceMultiTimeZoneIT extends BaseJDBCTest
       return new Object[][]{
           {"json", "UTC"},
           {"json", "America/Los_Angeles"},
-          // {"json", "America/New_York"},
-          // {"json", "Pacific/Honolulu"},
           {"json", "Asia/Singapore"},
           {"json", "MEZ"},
-          // {"json", "MESZ"}
       };
     }
   }
@@ -132,6 +124,56 @@ public class ResultSetArrowForceMultiTimeZoneIT extends BaseJDBCTest
     {
       testTimeWithScale(times, scale);
     }
+  }
+
+  @Test
+  public void testDate() throws SQLException, ParseException
+  {
+    String[] cases = {
+        "2017-01-01",
+        "2014-01-02",
+        "2014-01-02",
+        "1970-01-01",
+        "1970-01-01",
+        "1969-12-31",
+        "0200-02-27",
+        "0200-02-28",
+        "0200-02-29",
+        "0000-01-01",
+        "0001-12-31"
+    };
+    String table = "test_arrow_date";
+
+    String column = "(a date)";
+
+    String values = "('" + StringUtils.join(cases, "'),('") + "'), (null)";
+    Connection con = init(table, column, values);
+    ResultSet rs = con.createStatement().executeQuery("select * from " + table);
+    int i = 0;
+    while (i < cases.length)
+    {
+      rs.next();
+      if (i == cases.length - 2)
+      {
+        assertEquals("0001-01-01", rs.getDate(1).toString());
+      }
+      else if (i == cases.length - 4)
+      {
+        assertEquals("0200-02-29", rs.getDate(1).toString());
+      }
+      else if (i == cases.length - 3)
+      {
+        assertEquals("0200-03-01", rs.getDate(1).toString());
+      }
+      else
+      {
+        assertEquals(cases[i], rs.getDate(1).toString());
+      }
+      i++;
+    }
+    rs.next();
+    assertNull(rs.getString(1));
+    finish(table, con);
   }
 
   public void testTimeWithScale(String[] times, int scale) throws SQLException

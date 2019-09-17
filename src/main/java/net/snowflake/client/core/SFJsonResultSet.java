@@ -4,6 +4,7 @@
 
 package net.snowflake.client.core;
 
+import net.snowflake.client.core.arrow.ArrowResultUtil;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeUtil;
 import net.snowflake.client.log.ArgSupplier;
@@ -614,7 +615,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet
     }
     else if (Types.DATE == columnType)
     {
-      return ResultUtil.getDate(obj.toString(), tz, session);
+      return ArrowResultUtil.getDate(Integer.parseInt((String)obj), tz, session);
     }
     // for Types.TIME and all other type, throw user error
     else

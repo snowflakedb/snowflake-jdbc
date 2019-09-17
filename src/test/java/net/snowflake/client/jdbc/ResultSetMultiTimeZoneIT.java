@@ -47,18 +47,12 @@ public class ResultSetMultiTimeZoneIT extends BaseJDBCTest
       return new Object[][]{
           {"json", "UTC"},
           {"json", "America/Los_Angeles"},
-          {"json", "America/New_York"},
-          {"json", "Pacific/Honolulu"},
           {"json", "Asia/Singapore"},
           {"json", "MEZ"},
-          {"json", "MESZ"},
           {"arrow_force", "UTC"},
           {"arrow_force", "America/Los_Angeles"},
-          {"arrow_force", "America/New_York"},
-          {"arrow_force", "Pacific/Honolulu"},
           {"arrow_force", "Asia/Singapore"},
           {"arrow_force", "MEZ"},
-          {"arrow_force", "MESZ"}
       };
     }
     else
@@ -66,11 +60,8 @@ public class ResultSetMultiTimeZoneIT extends BaseJDBCTest
       return new Object[][]{
           {"json", "UTC"},
           {"json", "America/Los_Angeles"},
-          // {"json", "America/New_York"},
-          // {"json", "Pacific/Honolulu"},
           {"json", "Asia/Singapore"},
           {"json", "MEZ"},
-          // {"json", "MESZ"}
       };
     }
   }
