@@ -4,9 +4,12 @@
 package net.snowflake.client.core.arrow;
 
 import net.snowflake.client.core.DataConversionContext;
+import net.snowflake.client.core.SFException;
 import net.snowflake.client.jdbc.SnowflakeType;
 import org.apache.arrow.vector.BitVector;
 import org.apache.arrow.vector.ValueVector;
+
+import java.math.BigDecimal;
 
 /**
  * Convert Arrow BitVector to Boolean
@@ -73,5 +76,41 @@ public class BitToBooleanConverter extends AbstractArrowVectorConverter
   public String toString(int index)
   {
     return isNull(index) ? null : toBoolean(index) ? "TRUE" : "FALSE";
+  }
+
+  @Override
+  public short toShort(int rowIndex) throws SFException
+  {
+    return (short) (toBoolean(rowIndex) ? 1 : 0);
+  }
+
+  @Override
+  public int toInt(int rowIndex) throws SFException
+  {
+    return toBoolean(rowIndex) ? 1 : 0;
+  }
+
+  @Override
+  public long toLong(int rowIndex) throws SFException
+  {
+    return toBoolean(rowIndex) ? 1 : 0;
+  }
+
+  @Override
+  public float toFloat(int rowIndex) throws SFException
+  {
+    return toBoolean(rowIndex) ? 1 : 0;
+  }
+
+  @Override
+  public double toDouble(int rowIndex) throws SFException
+  {
+    return toBoolean(rowIndex) ? 1 : 0;
+  }
+
+  @Override
+  public BigDecimal toBigDecimal(int rowIndex) throws SFException
+  {
+    return isNull(rowIndex) ? null : toBoolean(rowIndex) ? BigDecimal.ONE : BigDecimal.ZERO;
   }
 }

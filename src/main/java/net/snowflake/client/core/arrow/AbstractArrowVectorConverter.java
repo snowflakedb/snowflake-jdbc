@@ -6,6 +6,7 @@ package net.snowflake.client.core.arrow;
 import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.jdbc.ErrorCode;
+import net.snowflake.client.jdbc.SnowflakeUtil;
 import org.apache.arrow.vector.ValueVector;
 
 import java.math.BigDecimal;
@@ -61,7 +62,7 @@ abstract class AbstractArrowVectorConverter implements ArrowVectorConverter
   {
     throw new SFException(ErrorCode.INVALID_VALUE_CONVERT,
                           logicalTypeStr,
-                          "boolean",
+                          SnowflakeUtil.BOOLEAN_STR,
                           "");
   }
 
@@ -70,7 +71,7 @@ abstract class AbstractArrowVectorConverter implements ArrowVectorConverter
   {
     throw new SFException(ErrorCode.INVALID_VALUE_CONVERT,
                           logicalTypeStr,
-                          "byte",
+                          SnowflakeUtil.BYTE_STR,
                           "");
   }
 
@@ -83,7 +84,7 @@ abstract class AbstractArrowVectorConverter implements ArrowVectorConverter
     }
     throw new SFException(ErrorCode.INVALID_VALUE_CONVERT,
                           logicalTypeStr,
-                          "short",
+                          SnowflakeUtil.SHORT_STR,
                           "");
   }
 
@@ -96,7 +97,7 @@ abstract class AbstractArrowVectorConverter implements ArrowVectorConverter
     }
     throw new SFException(ErrorCode.INVALID_VALUE_CONVERT,
                           logicalTypeStr,
-                          "int");
+                          SnowflakeUtil.INT_STR);
   }
 
   @Override
@@ -108,7 +109,7 @@ abstract class AbstractArrowVectorConverter implements ArrowVectorConverter
     }
     throw new SFException(ErrorCode.INVALID_VALUE_CONVERT,
                           logicalTypeStr,
-                          "long",
+                          SnowflakeUtil.LONG_STR,
                           "");
   }
 
@@ -121,7 +122,7 @@ abstract class AbstractArrowVectorConverter implements ArrowVectorConverter
     }
     throw new SFException(ErrorCode.INVALID_VALUE_CONVERT,
                           logicalTypeStr,
-                          "double",
+                          SnowflakeUtil.DOUBLE_STR,
                           "");
   }
 
@@ -134,7 +135,7 @@ abstract class AbstractArrowVectorConverter implements ArrowVectorConverter
     }
     throw new SFException(ErrorCode.INVALID_VALUE_CONVERT,
                           logicalTypeStr,
-                          "float",
+                          SnowflakeUtil.FLOAT_STR,
                           "");
   }
 
@@ -152,7 +153,7 @@ abstract class AbstractArrowVectorConverter implements ArrowVectorConverter
   {
     throw new SFException(ErrorCode.INVALID_VALUE_CONVERT,
                           logicalTypeStr,
-                          "Date",
+                          SnowflakeUtil.DATE_STR,
                           "");
   }
 
@@ -161,7 +162,7 @@ abstract class AbstractArrowVectorConverter implements ArrowVectorConverter
   {
     throw new SFException(ErrorCode.INVALID_VALUE_CONVERT,
                           logicalTypeStr,
-                          "Time",
+                          SnowflakeUtil.TIME_STR,
                           "");
   }
 
@@ -170,7 +171,7 @@ abstract class AbstractArrowVectorConverter implements ArrowVectorConverter
   {
     throw new SFException(ErrorCode.INVALID_VALUE_CONVERT,
                           logicalTypeStr,
-                          "Timestamp",
+                          SnowflakeUtil.TIMESTAMP_STR,
                           "");
   }
 
@@ -183,7 +184,7 @@ abstract class AbstractArrowVectorConverter implements ArrowVectorConverter
     }
     throw new SFException(ErrorCode.INVALID_VALUE_CONVERT,
                           logicalTypeStr,
-                          "BigDecimal",
+                          SnowflakeUtil.BIG_DECIMAL_STR,
                           "");
   }
 

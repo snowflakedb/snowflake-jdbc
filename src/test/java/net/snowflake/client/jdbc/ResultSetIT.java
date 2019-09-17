@@ -81,6 +81,27 @@ public class ResultSetIT extends BaseJDBCTest
 
   private final String selectAllSQL = "select * from test_rs";
 
+  private static ResultSet numberCrossTesting() throws SQLException
+  {
+    Connection con = getConnection();
+    Statement statement = con.createStatement();
+
+    statement.execute("create or replace table test_types(c1 number, c2 integer, c3 float, c4 boolean," +
+                      "c5 char, c6 varchar, c7 date, c8 datetime, c9 time, c10 timestamp_ltz, " +
+                      "c11 timestamp_tz, c12 binary)");
+    statement.execute("insert into test_types values (null, null, null, null, null, null, null, null, null, null, " +
+                      "null, null)");
+    statement.execute(
+        "insert into test_types values(2, 5, 3.5, true," +
+        "'1','1', '1994-12-27', " +
+        "'1994-12-27 05:05:05', '05:05:05', '1994-12-27 05:05:05', '1994-12-27 05:05:05', '48454C4C4F')");
+    statement.execute(
+        "insert into test_types (c5, c6) values('h', 'hello')");
+    ResultSet resultSet = statement.executeQuery("select * from test_types");
+    return resultSet;
+
+  }
+
   public static Connection getConnection(int injectSocketTimeout)
   throws SQLException
   {
@@ -283,6 +304,243 @@ public class ResultSetIT extends BaseJDBCTest
   }
 
   @Test
+  public void testGetShort() throws SQLException
+  {
+    ResultSet resultSet = numberCrossTesting();
+    resultSet.next();
+    // assert that 0 is returned for null values for every type of value
+    for (int i = 1; i < 13; i++)
+    {
+      assertEquals(0, resultSet.getShort(i));
+    }
+
+    resultSet.next();
+    assertEquals(2, resultSet.getShort(1));
+    assertEquals(5, resultSet.getShort(2));
+    assertEquals(3, resultSet.getShort(3));
+    assertEquals(1, resultSet.getShort(4));
+    assertEquals(1, resultSet.getShort(5));
+    assertEquals(1, resultSet.getShort(6));
+    assertEquals(9126, resultSet.getShort(7));
+
+    for (int i = 8; i < 13; i++)
+    {
+      try {
+        resultSet.getShort(i);
+        fail("Failing on " + i);
+      }
+      catch (SQLException ex)
+      {
+        assertEquals(200038, ex.getErrorCode());
+      }
+    }
+    resultSet.next();
+    // certain column types can only have certain values when called by getShort() or else a SQLexception is thrown.
+    // These column types are varchar, char, and float.
+
+    for (int i = 5; i < 7; i++)
+    {
+      try
+      {
+        resultSet.getShort(i);
+        fail("Failing on " + i);
+      }
+      catch (SQLException ex)
+      {
+        assertEquals(200038, ex.getErrorCode());
+      }
+    }
+  }
+
+  @Test
+  public void testGetInt() throws SQLException
+  {
+    ResultSet resultSet = numberCrossTesting();
+    resultSet.next();
+    // assert that 0 is returned for null values for every type of value
+    for (int i = 1; i < 13; i++)
+    {
+      assertEquals(0, resultSet.getInt(i));
+    }
+
+    resultSet.next();
+    assertEquals(2, resultSet.getInt(1));
+    assertEquals(5, resultSet.getInt(2));
+    assertEquals(3, resultSet.getInt(3));
+    assertEquals(1, resultSet.getInt(4));
+    assertEquals(1, resultSet.getInt(5));
+    assertEquals(1, resultSet.getInt(6));
+    assertEquals(9126, resultSet.getInt(7));
+
+    for (int i = 8; i < 13; i++)
+    {
+      try {
+        resultSet.getInt(i);
+        fail("Failing on " + i);
+      }
+      catch (SQLException ex)
+      {
+        assertEquals(200038, ex.getErrorCode());
+      }
+    }
+    resultSet.next();
+    // certain column types can only have certain values when called by getInt() or else a SQLException is thrown.
+    // These column types are varchar, char, and float.
+    for (int i = 5; i < 7; i++)
+    {
+      try {
+        resultSet.getInt(i);
+        fail("Failing on " + i);
+      }
+      catch (SQLException ex)
+      {
+        assertEquals(200038, ex.getErrorCode());
+      }
+    }
+  }
+
+  @Test
+  public void testGetLong() throws SQLException
+  {
+    ResultSet resultSet = numberCrossTesting();
+    resultSet.next();
+    // assert that 0 is returned for null values for every type of value
+    for (int i = 1; i < 13; i++)
+    {
+      assertEquals(0, resultSet.getLong(i));
+    }
+
+    resultSet.next();
+    assertEquals(2, resultSet.getLong(1));
+    assertEquals(5, resultSet.getLong(2));
+    assertEquals(3, resultSet.getLong(3));
+    assertEquals(1, resultSet.getLong(4));
+    assertEquals(1, resultSet.getLong(5));
+    assertEquals(1, resultSet.getLong(6));
+    assertEquals(9126, resultSet.getLong(7));
+
+    for (int i = 8; i < 13; i++)
+    {
+      try {
+        resultSet.getLong(i);
+        fail("Failing on " + i);
+      }
+      catch (SQLException ex)
+      {
+        assertEquals(200038, ex.getErrorCode());
+      }
+    }
+    resultSet.next();
+    // certain column types can only have certain values when called by getLong() or else a SQLexception is thrown.
+    // These column types are varchar, char, and float.
+    for (int i = 5; i < 7; i++)
+    {
+      try {
+        resultSet.getLong(i);
+        fail("Failing on " + i);
+      }
+      catch (SQLException ex)
+      {
+        assertEquals(200038, ex.getErrorCode());
+      }
+    }
+  }
+
+  @Test
+  public void testGetFloat() throws SQLException
+  {
+    ResultSet resultSet = numberCrossTesting();
+    resultSet.next();
+    // assert that 0 is returned for null values for every type of value
+    for (int i = 1; i < 13; i++)
+    {
+      assertEquals(0, resultSet.getFloat(i), .1);
+    }
+
+    resultSet.next();
+    assertEquals(2, resultSet.getFloat(1), .1);
+    assertEquals(5, resultSet.getFloat(2), .1);
+    assertEquals(3.5, resultSet.getFloat(3), .1);
+    assertEquals(1, resultSet.getFloat(4), .1);
+    assertEquals(1, resultSet.getFloat(5), .1);
+    assertEquals(1, resultSet.getFloat(6), .1);
+    assertEquals(9126, resultSet.getFloat(7), .1);
+
+    for (int i = 8; i < 13; i++)
+    {
+      try {
+        resultSet.getFloat(i);
+        fail("Failing on " + i);
+      }
+      catch (SQLException ex)
+      {
+        assertEquals(200038, ex.getErrorCode());
+      }
+    }
+    resultSet.next();
+    // certain column types can only have certain values when called by getFloat() or else a SQLexception is thrown.
+    // These column types are varchar and char.
+    for (int i = 5; i < 7; i++)
+    {
+      try {
+        resultSet.getFloat(i);
+        fail("Failing on " + i);
+      }
+      catch (SQLException ex)
+      {
+        assertEquals(200038, ex.getErrorCode());
+      }
+    }
+  }
+
+  @Test
+  public void testGetDouble() throws SQLException
+  {
+    ResultSet resultSet = numberCrossTesting();
+    resultSet.next();
+    // assert that 0 is returned for null values for every type of value
+    for (int i = 1; i < 13; i++)
+    {
+      assertEquals(0, resultSet.getDouble(i), .1);
+    }
+
+    resultSet.next();
+    assertEquals(2, resultSet.getDouble(1), .1);
+    assertEquals(5, resultSet.getDouble(2), .1);
+    assertEquals(3.5, resultSet.getDouble(3), .1);
+    assertEquals(1, resultSet.getDouble(4), .1);
+    assertEquals(1, resultSet.getDouble(5), .1);
+    assertEquals(1, resultSet.getDouble(6), .1);
+    assertEquals(9126, resultSet.getDouble(7), .1);
+
+    for (int i = 8; i < 13; i++)
+    {
+      try {
+        resultSet.getDouble(i);
+        fail("Failing on " + i);
+      }
+      catch (SQLException ex)
+      {
+        assertEquals(200038, ex.getErrorCode());
+      }
+    }
+    resultSet.next();
+    // certain column types can only have certain values when called by getDouble() or else a SQLexception is thrown.
+    // These column types are varchar and char.
+    for (int i = 5; i < 7; i++)
+    {
+      try {
+        resultSet.getDouble(i);
+        fail("Failing on " + i);
+      }
+      catch (SQLException ex)
+      {
+        assertEquals(200038, ex.getErrorCode());
+      }
+    }
+  }
+
+  @Test
   public void testGetBigDecimal() throws SQLException
   {
     Connection connection = getConnection();
@@ -309,6 +567,44 @@ public class ResultSetIT extends BaseJDBCTest
     statement.close();
     resultSet.close();
     connection.close();
+
+    resultSet = numberCrossTesting();
+    resultSet.next();
+    for (int i = 1; i < 13; i++)
+    {
+      assertEquals(null, resultSet.getBigDecimal(i));
+    }
+    resultSet.next();
+    assertEquals(new BigDecimal(2), resultSet.getBigDecimal(1));
+    assertEquals(new BigDecimal(5), resultSet.getBigDecimal(2));
+    assertEquals(new BigDecimal(3.5), resultSet.getBigDecimal(3));
+    assertEquals(new BigDecimal(1), resultSet.getBigDecimal(4));
+    assertEquals(new BigDecimal(1), resultSet.getBigDecimal(5));
+    assertEquals(new BigDecimal(1), resultSet.getBigDecimal(6));
+    assertEquals(new BigDecimal(9126), resultSet.getBigDecimal(7));
+    for (int i = 8; i < 13; i++)
+    {
+      try {
+        resultSet.getBigDecimal(i);
+        fail("Failing on " + i);
+      }
+      catch (SQLException ex)
+      {
+        assertEquals(200038, ex.getErrorCode());
+      }
+    }
+    resultSet.next();
+    for (int i = 5; i < 7; i++)
+    {
+      try {
+        resultSet.getBigDecimal(i);
+        fail("Failing on " + i);
+      }
+      catch (SQLException ex)
+      {
+        assertEquals(200038, ex.getErrorCode());
+      }
+    }
   }
 
   @Test
@@ -552,6 +848,60 @@ public class ResultSetIT extends BaseJDBCTest
     resultSet.next();
     assertTrue(resultSet.getBoolean(1));
     statement.execute("drop table if exists testBoolean");
+
+    statement.execute("create or replace table test_types(c1 number, c2 integer,  c3 varchar, c4 char, " +
+                      "c5 boolean, c6 float, c7 binary, c8 date, c9 datetime, c10 time, c11 timestamp_ltz, " +
+                      "c12 timestamp_tz)");
+    statement.execute("insert into test_types values (null, null, null, null, null, null, null, null, null, null, " +
+                      "null, null)");
+    statement.execute(
+        "insert into test_types (c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12) values(1, 1, '1'," +
+        "'1', true, 1.0, '48454C4C4F', '1994-12-27', " +
+        "'1994-12-27 05:05:05', '05:05:05', '1994-12-27 05:05:05 +00:05', '1994-12-27 05:05:05')");
+    statement.execute(
+        "insert into test_types (c1, c2, c3, c4) values(2, 3, '4', '5')");
+    resultSet = statement.executeQuery("select * from test_types");
+
+    resultSet.next();
+    // assert that getBoolean returns false for null values
+    for (int i = 1; i < 13; i++)
+    {
+      assertFalse(resultSet.getBoolean(i));
+    }
+    // do the other columns that are out of order
+    // go to next row of result set column
+    resultSet.next();
+    // assert that getBoolean returns true for values that equal 1
+    assertTrue(resultSet.getBoolean(1));
+    assertTrue(resultSet.getBoolean(2));
+    assertTrue(resultSet.getBoolean(3));
+    assertTrue(resultSet.getBoolean(4));
+    assertTrue(resultSet.getBoolean(5));
+    for (int i = 6; i < 13; i++)
+    {
+      try {
+        resultSet.getBoolean(i);
+        fail("Failing on " + i);
+      }
+      catch (SQLException ex)
+      {
+        assertEquals(200038, ex.getErrorCode());
+      }
+    }
+
+    resultSet.next();
+    for (int i = 1; i < 5; i++)
+    {
+      try {
+        resultSet.getBoolean(i);
+        fail("Failing on " + i);
+      }
+      catch (SQLException ex)
+      {
+        assertEquals(200038, ex.getErrorCode());
+      }
+    }
+    
     statement.close();
     connection.close();
   }

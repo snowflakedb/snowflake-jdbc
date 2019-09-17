@@ -5,10 +5,14 @@
 package net.snowflake.client.jdbc;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SqlState;
 import net.snowflake.common.util.ClassUtil;
 import net.snowflake.common.util.FixedViewColumn;
+import org.apache.commons.io.IOUtils;
+import org.apache.http.Header;
+import org.apache.http.HttpResponse;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -25,16 +29,12 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 
-import net.snowflake.client.log.SFLogger;
-import org.apache.commons.io.IOUtils;
-import org.apache.http.Header;
-import org.apache.http.HttpResponse;
-
 /**
  * @author jhuang
  */
 public class SnowflakeUtil
 {
+
   static final SFLogger logger = SFLoggerFactory.getLogger(RestRequest.class);
 
   /**
@@ -50,6 +50,18 @@ public class SnowflakeUtil
   private static final int MASTER_TOKEN_NOTFOUND = 390113;
   private static final int MASTER_EXPIRED_GS_CODE = 390114;
   private static final int MASTER_TOKEN_INVALID_GS_CODE = 390115;
+
+  public static final String BIG_DECIMAL_STR = "big decimal";
+  public static final String FLOAT_STR = "float";
+  public static final String DOUBLE_STR = "double";
+  public static final String BOOLEAN_STR = "boolean";
+  public static final String SHORT_STR = "short";
+  public static final String INT_STR = "int";
+  public static final String LONG_STR = "long";
+  public static final String TIME_STR = "time";
+  public static final String TIMESTAMP_STR = "timestamp";
+  public static final String DATE_STR = "date";
+  public static final String BYTE_STR = "byte";
 
 
   static public void checkErrorAndThrowExceptionIncludingReauth(JsonNode rootNode)
