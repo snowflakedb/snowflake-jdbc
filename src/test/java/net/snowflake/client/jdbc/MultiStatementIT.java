@@ -7,6 +7,7 @@ import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnTravisCI;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.common.core.SqlState;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -808,6 +809,56 @@ public class MultiStatementIT extends BaseJDBCTest
     statement.unwrap(SnowflakeStatement.class).setParameter(
         "MULTI_STATEMENT_COUNT", 0);
     statement.execute("select 1; select 2; select 3");
+  }
+
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
+  public void testInvalidParameterCount() throws SQLException
+  {
+    Connection connection = getConnection();
+    Statement statement = connection.createStatement();
+
+    ResultSet rs = statement.executeQuery("select current_account()") ;
+    rs.next();
+    String accountName = rs.getString(1);
+
+    rs = statement.executeQuery("select current_user()") ;
+    rs.next();
+    String userName = rs.getString(1);
+
+    String[] testSuites = new String[5];
+    testSuites[0] = String.format("alter account %s set " +
+        "multi_statement_count = 20", accountName);
+    testSuites[1] = String.format("alter account %s set " +
+        "multi_statement_count = -1", accountName);
+    testSuites[2] = String.format("alter user %s set " +
+        "multi_statement_count = 20", userName);
+    testSuites[3] = String.format("alter user %s set " +
+        "multi_statement_count = -1", userName);
+    testSuites[4] = "alter session set " +
+        "multi_statement_count = -1";
+
+    int[] expectedErrorCodes = new int[5];
+    expectedErrorCodes[0] = 1008;
+    expectedErrorCodes[1] = 1008;
+    expectedErrorCodes[2] = 1006;
+    expectedErrorCodes[3] = 1006;
+    expectedErrorCodes[4] = 1008;
+
+    statement.execute("use role accountadmin");
+
+    for (int i=0; i<testSuites.length; i++)
+    {
+      try
+      {
+        statement.execute(testSuites[i]);
+        Assert.fail();
+      }
+      catch (SQLException e)
+      {
+        assertThat(e.getErrorCode(), is(expectedErrorCodes[i]));
+      }
+    }
   }
 
 }
