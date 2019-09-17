@@ -308,16 +308,9 @@ public class ResultSetArrowForceIT extends BaseJDBCTest
       }
       catch (Exception e)
       {
-        if (isJSON())
-        {
-          assertTrue(e.toString().contains("NumberFormatException"));
-        }
-        else
-        {
           SQLException se = (SQLException) e;
           assertEquals((int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
           assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
-        }
       }
       try
       {
@@ -326,17 +319,9 @@ public class ResultSetArrowForceIT extends BaseJDBCTest
       }
       catch (Exception e)
       {
-        if (isJSON())
-        {
-          // Note: not caught by SQLException!
-          assertTrue(e.toString().contains("NumberFormatException"));
-        }
-        else
-        {
           SQLException se = (SQLException) e;
           assertEquals((int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
           assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
-        }
       }
       try
       {
@@ -567,16 +552,9 @@ public class ResultSetArrowForceIT extends BaseJDBCTest
       }
       catch (Exception e)
       {
-        if (isJSON())
-        {
-          assertTrue(e.toString().contains("NumberFormatException"));
-        }
-        else
-        {
           SQLException se = (SQLException) e;
           assertEquals((int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
           assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
-        }
       }
       try
       {
@@ -585,17 +563,9 @@ public class ResultSetArrowForceIT extends BaseJDBCTest
       }
       catch (Exception e)
       {
-        if (isJSON())
-        {
-          // Note: not caught by SQLException!
-          assertTrue(e.toString().contains("NumberFormatException"));
-        }
-        else
-        {
           SQLException se = (SQLException) e;
           assertEquals((int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
           assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
-        }
       }
       try
       {
@@ -725,17 +695,9 @@ public class ResultSetArrowForceIT extends BaseJDBCTest
         catch (Exception e)
         {
           {
-            if (isJSON())
-            {
-              // Note: not caught by SQLException!
-              assertTrue(e.toString().contains("NumberFormatException"));
-            }
-            else
-            {
               SQLException se = (SQLException) e;
               assertEquals((int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
               assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
-            }
           }
         }
       }
@@ -863,16 +825,9 @@ public class ResultSetArrowForceIT extends BaseJDBCTest
       }
       catch (Exception e)
       {
-        if (isJSON())
-        {
-          assertTrue(e.toString().contains("NumberFormatException"));
-        }
-        else
-        {
           SQLException se = (SQLException) e;
           assertEquals((int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
           assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
-        }
       }
       try
       {
@@ -881,17 +836,9 @@ public class ResultSetArrowForceIT extends BaseJDBCTest
       }
       catch (Exception e)
       {
-        if (isJSON())
-        {
-          // Note: not caught by SQLException!
-          assertTrue(e.toString().contains("NumberFormatException"));
-        }
-        else
-        {
           SQLException se = (SQLException) e;
           assertEquals((int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
           assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
-        }
       }
       try
       {
@@ -1022,17 +969,9 @@ public class ResultSetArrowForceIT extends BaseJDBCTest
         catch (Exception e)
         {
           {
-            if (isJSON())
-            {
-              // Note: not caught by SQLException!
-              assertTrue(e.toString().contains("NumberFormatException"));
-            }
-            else
-            {
               SQLException se = (SQLException) e;
               assertEquals((int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
               assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
-            }
           }
         }
       }
@@ -1050,17 +989,9 @@ public class ResultSetArrowForceIT extends BaseJDBCTest
         catch (Exception e)
         {
           {
-            if (isJSON())
-            {
-              // Note: not caught by SQLException!
-              assertTrue(e.toString().contains("NumberFormatException"));
-            }
-            else
-            {
               SQLException se = (SQLException) e;
               assertEquals((int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
               assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
-            }
           }
         }
       }
@@ -1188,16 +1119,9 @@ public class ResultSetArrowForceIT extends BaseJDBCTest
       }
       catch (Exception e)
       {
-        if (isJSON())
-        {
-          assertTrue(e.toString().contains("NumberFormatException"));
-        }
-        else
-        {
           SQLException se = (SQLException) e;
           assertEquals((int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
           assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
-        }
       }
       try
       {
@@ -1206,17 +1130,9 @@ public class ResultSetArrowForceIT extends BaseJDBCTest
       }
       catch (Exception e)
       {
-        if (isJSON())
-        {
-          // Note: not caught by SQLException!
-          assertTrue(e.toString().contains("NumberFormatException"));
-        }
-        else
-        {
           SQLException se = (SQLException) e;
           assertEquals((int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
           assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
-        }
       }
       try
       {
@@ -1351,16 +1267,9 @@ public class ResultSetArrowForceIT extends BaseJDBCTest
       }
       catch (Exception e)
       {
-        if (isJSON())
-        {
-          assertTrue(e.toString().contains("NumberFormatException"));
-        }
-        else
-        {
           SQLException se = (SQLException) e;
           assertEquals((int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
           assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
-        }
       }
       try
       {
@@ -1369,17 +1278,9 @@ public class ResultSetArrowForceIT extends BaseJDBCTest
       }
       catch (Exception e)
       {
-        if (isJSON())
-        {
-          // Note: not caught by SQLException!
-          assertTrue(e.toString().contains("NumberFormatException"));
-        }
-        else
-        {
           SQLException se = (SQLException) e;
           assertEquals((int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
           assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
-        }
       }
       try
       {
@@ -1520,16 +1421,9 @@ public class ResultSetArrowForceIT extends BaseJDBCTest
       }
       catch (Exception e)
       {
-        if (isJSON())
-        {
-          assertTrue(e.toString().contains("NumberFormatException"));
-        }
-        else
-        {
           SQLException se = (SQLException) e;
           assertEquals((int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
           assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
-        }
       }
       try
       {
@@ -1538,17 +1432,9 @@ public class ResultSetArrowForceIT extends BaseJDBCTest
       }
       catch (Exception e)
       {
-        if (isJSON())
-        {
-          // Note: not caught by SQLException!
-          assertTrue(e.toString().contains("NumberFormatException"));
-        }
-        else
-        {
           SQLException se = (SQLException) e;
           assertEquals((int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
           assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
-        }
       }
       try
       {
@@ -1678,16 +1564,9 @@ public class ResultSetArrowForceIT extends BaseJDBCTest
       }
       catch (Exception e)
       {
-        if (isJSON())
-        {
-          assertTrue(e.toString().contains("NumberFormatException"));
-        }
-        else
-        {
           SQLException se = (SQLException) e;
           assertEquals((int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
           assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
-        }
       }
       try
       {
@@ -1696,17 +1575,9 @@ public class ResultSetArrowForceIT extends BaseJDBCTest
       }
       catch (Exception e)
       {
-        if (isJSON())
-        {
-          // Note: not caught by SQLException!
-          assertTrue(e.toString().contains("NumberFormatException"));
-        }
-        else
-        {
           SQLException se = (SQLException) e;
           assertEquals((int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
           assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
-        }
       }
       try
       {

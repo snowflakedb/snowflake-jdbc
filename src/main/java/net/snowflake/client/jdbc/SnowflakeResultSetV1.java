@@ -4,10 +4,8 @@
 
 package net.snowflake.client.jdbc;
 
-import net.snowflake.client.core.SFArrowResultSet;
 import net.snowflake.client.core.SFBaseResultSet;
 import net.snowflake.client.core.SFException;
-import net.snowflake.client.core.SFResultSet;
 
 import java.io.InputStream;
 import java.io.Reader;

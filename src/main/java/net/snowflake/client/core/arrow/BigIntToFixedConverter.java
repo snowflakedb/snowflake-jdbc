@@ -7,6 +7,7 @@ import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeType;
+import net.snowflake.client.jdbc.SnowflakeUtil;
 import org.apache.arrow.vector.BigIntVector;
 import org.apache.arrow.vector.ValueVector;
 
@@ -71,7 +72,7 @@ public class BigIntToFixedConverter extends AbstractArrowVectorConverter
     else
     {
       throw new SFException(ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr,
-          "Boolean", longVal);
+                            SnowflakeUtil.BOOLEAN_STR, longVal);
     }
   }
 
@@ -88,7 +89,7 @@ public class BigIntToFixedConverter extends AbstractArrowVectorConverter
     else
     {
       throw new SFException(ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr,
-                            "byte", longVal);
+                            SnowflakeUtil.BYTE_STR, longVal);
     }
   }
 
@@ -106,7 +107,7 @@ public class BigIntToFixedConverter extends AbstractArrowVectorConverter
     {
       throw new SFException(ErrorCode.INVALID_VALUE_CONVERT,
                             logicalTypeStr,
-                            "short", longVal);
+                            SnowflakeUtil.SHORT_STR, longVal);
     }
   }
 
@@ -124,7 +125,7 @@ public class BigIntToFixedConverter extends AbstractArrowVectorConverter
     {
       throw new SFException(ErrorCode.INVALID_VALUE_CONVERT,
                             logicalTypeStr,
-                            "int", longVal);
+                            SnowflakeUtil.INT_STR, longVal);
     }
   }
 

@@ -7,9 +7,11 @@ import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeType;
+import net.snowflake.client.jdbc.SnowflakeUtil;
 import org.apache.arrow.vector.Float8Vector;
 import org.apache.arrow.vector.ValueVector;
 
+import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 
 public class DoubleToRealConverter extends AbstractArrowVectorConverter
@@ -77,6 +79,85 @@ public class DoubleToRealConverter extends AbstractArrowVectorConverter
     }
     double val = toDouble(index);
     throw new SFException(ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr,
-        "Boolean", val);
+                          SnowflakeUtil.BOOLEAN_STR, val);
+  }
+
+  @Override
+  public short toShort(int rowIndex) throws SFException
+  {
+    try
+    {
+      if (isNull(rowIndex))
+      {
+        return 0;
+      }
+      else
+      {
+        return (short) toDouble(rowIndex);
+      }
+    }
+    catch (ClassCastException ex)
+    {
+      throw new SFException(ErrorCode.INVALID_VALUE_CONVERT,
+                            logicalTypeStr,
+                            SnowflakeUtil.SHORT_STR,
+                            toObject(rowIndex));
+    }
+  }
+
+  @Override
+  public int toInt(int rowIndex) throws SFException
+  {
+    try
+    {
+      if (isNull(rowIndex))
+      {
+        return 0;
+      }
+      else
+      {
+        return (int) toDouble(rowIndex);
+      }
+    }
+    catch (ClassCastException ex)
+    {
+      throw new SFException(ErrorCode.INVALID_VALUE_CONVERT,
+                            logicalTypeStr,
+                            SnowflakeUtil.INT_STR,
+                            toObject(rowIndex));
+    }
+  }
+
+  @Override
+  public long toLong(int rowIndex) throws SFException
+  {
+    try
+    {
+      if (isNull(rowIndex))
+      {
+        return 0;
+      }
+      else
+      {
+        return (long) toDouble(rowIndex);
+      }
+    }
+    catch (ClassCastException ex)
+    {
+      throw new SFException(ErrorCode.INVALID_VALUE_CONVERT,
+                            logicalTypeStr,
+                            SnowflakeUtil.LONG_STR,
+                            toObject(rowIndex));
+    }
+  }
+
+  @Override
+  public BigDecimal toBigDecimal(int rowIndex) throws SFException
+  {
+    if (isNull(rowIndex))
+    {
+      return null;
+    }
+    return BigDecimal.valueOf(toDouble(rowIndex));
   }
 }

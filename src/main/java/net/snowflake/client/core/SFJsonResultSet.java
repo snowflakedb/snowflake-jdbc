@@ -211,21 +211,33 @@ public abstract class SFJsonResultSet extends SFBaseResultSet
   {
     logger.debug(
         "public boolean getBoolean(int columnIndex)");
-
     Object obj = getObjectInternal(columnIndex);
     if (obj == null)
     {
       return false;
     }
-
     if (obj instanceof Boolean)
     {
       return (Boolean) obj;
     }
-    else
+    int columnType = resultSetMetaData.getColumnType(columnIndex);
+    // if type is an approved type that can be converted to Boolean, do this
+    if (columnType == Types.BOOLEAN || columnType == Types.INTEGER || columnType == Types.SMALLINT ||
+             columnType == Types.TINYINT || columnType == Types.BIGINT || columnType == Types.BIT ||
+             columnType == Types.VARCHAR || columnType == Types.CHAR)
     {
-      return ResultUtil.getBoolean(obj.toString());
+      String type = obj.toString();
+      if ("1".equals(type) || Boolean.TRUE.toString().equalsIgnoreCase(type))
+      {
+        return true;
+      }
+      if ("0".equals(type) || Boolean.FALSE.toString().equalsIgnoreCase(type))
+      {
+        return false;
+      }
     }
+    throw new SFException(ErrorCode.INVALID_VALUE_CONVERT,
+                          columnType, SnowflakeUtil.BOOLEAN_STR, obj);
   }
 
   @Override
@@ -263,14 +275,28 @@ public abstract class SFJsonResultSet extends SFBaseResultSet
     {
       return 0;
     }
+    int columnType = resultSetMetaData.getColumnType(columnIndex);
+    try
+    {
 
-    if (obj instanceof String)
-    {
-      return Short.parseShort((String) obj);
+      if (obj instanceof String)
+      {
+        String objString = (String) obj;
+        if (objString.contains(".") && (columnType == Types.FLOAT || columnType == Types.DOUBLE))
+        {
+          objString = objString.substring(0,objString.indexOf("."));
+        }
+        return Short.parseShort(objString);
+      }
+      else
+      {
+        return ((Number) obj).shortValue();
+      }
     }
-    else
+    catch (NumberFormatException ex)
     {
-      return ((Number) obj).shortValue();
+      throw new SFException(ErrorCode.INVALID_VALUE_CONVERT,
+                            columnType, SnowflakeUtil.SHORT_STR, obj);
     }
   }
 
@@ -286,15 +312,29 @@ public abstract class SFJsonResultSet extends SFBaseResultSet
     {
       return 0;
     }
+    int columnType = resultSetMetaData.getColumnType(columnIndex);
+    try
+    {
+      if (obj instanceof String)
+      {
+        String objString = (String) obj;
+        if (objString.contains(".") && (columnType == Types.FLOAT || columnType == Types.DOUBLE))
+        {
+          objString = objString.substring(0,objString.indexOf("."));
+        }
+        return Integer.parseInt(objString);
+      }
+      else
+      {
+        return ((Number) obj).intValue();
+      }
+    }
+    catch (NumberFormatException ex)
+    {
+      throw new SFException(ErrorCode.INVALID_VALUE_CONVERT,
+                            columnType, SnowflakeUtil.INT_STR, obj);
+    }
 
-    if (obj instanceof String)
-    {
-      return Integer.parseInt((String) obj);
-    }
-    else
-    {
-      return ((Number) obj).intValue();
-    }
   }
 
 
@@ -310,12 +350,17 @@ public abstract class SFJsonResultSet extends SFBaseResultSet
     {
       return 0;
     }
-
+    int columnType = resultSetMetaData.getColumnType(columnIndex);
     try
     {
       if (obj instanceof String)
       {
-        return Long.parseLong((String) obj);
+        String objString = (String) obj;
+        if (objString.contains(".") && (columnType == Types.FLOAT || columnType == Types.DOUBLE))
+        {
+          objString = objString.substring(0,objString.indexOf("."));
+        }
+        return Long.parseLong(objString);
       }
       else
       {
@@ -324,21 +369,21 @@ public abstract class SFJsonResultSet extends SFBaseResultSet
     }
     catch (NumberFormatException nfe)
     {
-      int columnType = resultSetMetaData.getColumnType(columnIndex);
+      
       if (Types.INTEGER == columnType
           || Types.SMALLINT == columnType)
       {
         throw (SFException) IncidentUtil.generateIncidentV2WithException(
             session,
             new SFException(ErrorCode.INTERNAL_ERROR,
-                            " long: " + obj.toString()),
+                            SnowflakeUtil.LONG_STR + ": " + obj.toString()),
             null,
             null);
       }
       else
       {
         throw new SFException(ErrorCode.INVALID_VALUE_CONVERT,
-                              columnType, "LONG", obj);
+                              columnType, SnowflakeUtil.LONG_STR, obj);
       }
     }
   }
@@ -357,8 +402,23 @@ public abstract class SFJsonResultSet extends SFBaseResultSet
     {
       return null;
     }
+    int columnType = resultSetMetaData.getColumnType(columnIndex);
+    try
+    {
+      if (columnType != Types.TIME && columnType != Types.TIMESTAMP)
+      {
+        return new BigDecimal(obj.toString());
+      }
+      throw new SFException(ErrorCode.INVALID_VALUE_CONVERT,
+                            columnType, SnowflakeUtil.BIG_DECIMAL_STR, obj);
 
-    return new BigDecimal(obj.toString());
+    }
+    catch (NumberFormatException ex)
+    {
+      throw new SFException(ErrorCode.INVALID_VALUE_CONVERT,
+                            columnType, SnowflakeUtil.BIG_DECIMAL_STR, obj);
+    }
+
   }
 
   @Override
@@ -427,7 +487,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet
     }
     else
     {
-      throw new SFException(ErrorCode.INVALID_VALUE_CONVERT, columnType, "Time",
+      throw new SFException(ErrorCode.INVALID_VALUE_CONVERT, columnType, SnowflakeUtil.TIME_STR,
                             getObjectInternal(columnIndex));
     }
   }
@@ -485,7 +545,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet
     }
     else
     {
-      throw new SFException(ErrorCode.INVALID_VALUE_CONVERT, columnType, "Timestamp",
+      throw new SFException(ErrorCode.INVALID_VALUE_CONVERT, columnType, SnowflakeUtil.TIMESTAMP_STR,
                             getObjectInternal(columnIndex));
     }
   }
@@ -503,24 +563,38 @@ public abstract class SFJsonResultSet extends SFBaseResultSet
       return 0;
     }
 
-    if (obj instanceof String)
+    int columnType = resultSetMetaData.getColumnType(columnIndex);
+    try
     {
-      if ("inf".equals(obj))
+      if (obj instanceof String)
       {
-        return Float.POSITIVE_INFINITY;
-      }
-      else if ("-inf".equals(obj))
-      {
-        return Float.NEGATIVE_INFINITY;
+        if (columnType != Types.TIME && columnType != Types.TIMESTAMP)
+        {
+          if ("inf".equals(obj))
+          {
+            return Float.POSITIVE_INFINITY;
+          }
+          else if ("-inf".equals(obj))
+          {
+            return Float.NEGATIVE_INFINITY;
+          }
+          else
+          {
+            return Float.parseFloat((String) obj);
+          }
+        }
+        throw new SFException(ErrorCode.INVALID_VALUE_CONVERT, columnType, SnowflakeUtil.FLOAT_STR,
+                              getObjectInternal(columnIndex));
       }
       else
       {
-        return Float.parseFloat((String) obj);
+        return ((Number) obj).floatValue();
       }
     }
-    else
+    catch (NumberFormatException ex)
     {
-      return ((Number) obj).floatValue();
+      throw new SFException(ErrorCode.INVALID_VALUE_CONVERT, columnType, SnowflakeUtil.FLOAT_STR,
+                            getObjectInternal(columnIndex));
     }
   }
 
@@ -537,25 +611,38 @@ public abstract class SFJsonResultSet extends SFBaseResultSet
     {
       return 0;
     }
-
-    if (obj instanceof String)
+    int columnType = resultSetMetaData.getColumnType(columnIndex);
+    try
     {
-      if ("inf".equals(obj))
+      if (obj instanceof String)
       {
-        return Double.POSITIVE_INFINITY;
-      }
-      else if ("-inf".equals(obj))
-      {
-        return Double.NEGATIVE_INFINITY;
+        if (columnType != Types.TIME && columnType != Types.TIMESTAMP)
+        {
+          if ("inf".equals(obj))
+          {
+            return Double.POSITIVE_INFINITY;
+          }
+          else if ("-inf".equals(obj))
+          {
+            return Double.NEGATIVE_INFINITY;
+          }
+          else
+          {
+            return Double.parseDouble((String) obj);
+          }
+        }
+        throw new SFException(ErrorCode.INVALID_VALUE_CONVERT, columnType, SnowflakeUtil.DOUBLE_STR,
+                              getObjectInternal(columnIndex));
       }
       else
       {
-        return Double.parseDouble((String) obj);
+        return ((Number) obj).doubleValue();
       }
     }
-    else
+    catch (NumberFormatException ex)
     {
-      return ((Number) obj).doubleValue();
+      throw new SFException(ErrorCode.INVALID_VALUE_CONVERT, columnType, SnowflakeUtil.DOUBLE_STR,
+                            getObjectInternal(columnIndex));
     }
   }
 
@@ -620,7 +707,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet
     // for Types.TIME and all other type, throw user error
     else
     {
-      throw new SFException(ErrorCode.INVALID_VALUE_CONVERT, columnType, "DATE", obj);
+      throw new SFException(ErrorCode.INVALID_VALUE_CONVERT, columnType, SnowflakeUtil.DATE_STR, obj);
     }
   }
 
