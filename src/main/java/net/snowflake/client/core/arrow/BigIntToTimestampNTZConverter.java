@@ -9,6 +9,7 @@ import net.snowflake.client.core.ResultUtil;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeType;
+import net.snowflake.client.jdbc.SnowflakeUtil;
 import org.apache.arrow.vector.BigIntVector;
 import org.apache.arrow.vector.ValueVector;
 
@@ -119,6 +120,6 @@ public class BigIntToTimestampNTZConverter extends AbstractArrowVectorConverter
     }
     Timestamp val = toTimestamp(index, TimeZone.getDefault());
     throw new SFException(ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr,
-        "Boolean", val);
+                          SnowflakeUtil.BOOLEAN_STR, val);
   }
 }

@@ -9,10 +9,12 @@ import net.snowflake.client.core.ResultUtil;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeType;
+import net.snowflake.client.jdbc.SnowflakeUtil;
 import org.apache.arrow.vector.DateDayVector;
 import org.apache.arrow.vector.IntVector;
 import org.apache.arrow.vector.ValueVector;
 
+import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.sql.Date;
 import java.sql.Timestamp;
@@ -76,6 +78,50 @@ public class DateConverter extends AbstractArrowVectorConverter
   }
 
   @Override
+  public short toShort(int index) throws SFException
+  {
+    try
+    {
+      return (short) toInt(index);
+    }
+    catch (ClassCastException ex)
+    {
+      throw new SFException(ErrorCode.INVALID_VALUE_CONVERT,
+                            logicalTypeStr,
+                            SnowflakeUtil.SHORT_STR,
+                            toInt(index));
+    }
+  }
+
+  @Override
+  public long toLong(int index)
+  {
+    return toInt(index);
+  }
+
+  @Override
+  public float toFloat(int index)
+  {
+    return toInt(index);
+  }
+
+  @Override
+  public double toDouble(int index)
+  {
+    return toInt(index);
+  }
+
+  @Override
+  public BigDecimal toBigDecimal(int index)
+  {
+    if (isNull(index))
+    {
+      return null;
+    }
+    return BigDecimal.valueOf(toInt(index));
+  }
+
+  @Override
   public Timestamp toTimestamp(int index, TimeZone tz) throws SFException
   {
     Date date = toDate(index);
@@ -121,6 +167,6 @@ public class DateConverter extends AbstractArrowVectorConverter
     }
     Date val = toDate(index);
     throw new SFException(ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr,
-        "Boolean", val);
+        SnowflakeUtil.BOOLEAN_STR, val);
   }
 }

@@ -215,8 +215,6 @@ public class ThreeFieldStructToTimestampTZConverterTest extends BaseConverterTes
         assertThat(date, is(nullValue()));
         assertThat(false, is(converter.toBoolean(j)));
         assertThat(converter.toBytes(j), is (nullValue()));
-        assertThat(0, is(converter.toInt(j)));
-        assertThat(converter.toBigDecimal(j), is(nullValue()));
       }
       else
       {
@@ -255,10 +253,6 @@ public class ThreeFieldStructToTimestampTZConverterTest extends BaseConverterTes
                                    () -> converter.toBoolean(x));
         TestUtil.assertSFException(invalidConversionErrorCode,
                                    () -> converter.toBytes(x));
-        TestUtil.assertSFException(invalidConversionErrorCode,
-                                   () -> converter.toInt(x));
-        TestUtil.assertSFException(invalidConversionErrorCode,
-                                   () -> converter.toBigDecimal(x));
         i++;
         if (i < testNanos.length)
         {

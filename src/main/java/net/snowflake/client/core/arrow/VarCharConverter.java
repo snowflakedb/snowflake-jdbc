@@ -7,6 +7,7 @@ import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeType;
+import net.snowflake.client.jdbc.SnowflakeUtil;
 import org.apache.arrow.vector.ValueVector;
 import org.apache.arrow.vector.VarCharVector;
 
@@ -46,86 +47,146 @@ public class VarCharConverter extends AbstractArrowVectorConverter
   }
 
   @Override
-  public short toShort(int index)
+  public short toShort(int index) throws SFException
   {
     String str = toString(index);
-    if (str == null)
+    try
     {
-      return 0;
+      if (str == null)
+      {
+        return 0;
+      }
+      else
+      {
+        return Short.parseShort(str);
+      }
     }
-    else
+    catch (NumberFormatException ex)
     {
-      return Short.parseShort(str);
+      throw new SFException(ErrorCode.INVALID_VALUE_CONVERT,
+                            logicalTypeStr,
+                            SnowflakeUtil.SHORT_STR,
+                            str);
     }
   }
 
   @Override
-  public int toInt(int index)
+  public int toInt(int index) throws SFException
   {
     String str = toString(index);
-    if (str == null)
+    try
     {
-      return 0;
+      if (str == null)
+      {
+        return 0;
+      }
+      else
+      {
+        return Integer.parseInt(str);
+      }
     }
-    else
+    catch (NumberFormatException ex)
     {
-      return Integer.parseInt(str);
+      throw new SFException(ErrorCode.INVALID_VALUE_CONVERT,
+                            logicalTypeStr,
+                            SnowflakeUtil.INT_STR,
+                            str);
     }
   }
 
   @Override
-  public long toLong(int index)
+  public long toLong(int index) throws SFException
   {
     String str = toString(index);
-    if (str == null)
+    try
     {
-      return 0;
+      if (str == null)
+      {
+        return 0;
+      }
+      else
+      {
+        return Long.parseLong(str);
+      }
     }
-    else
+    catch (NumberFormatException ex)
     {
-      return Long.parseLong(str);
+      throw new SFException(ErrorCode.INVALID_VALUE_CONVERT,
+                            logicalTypeStr,
+                            SnowflakeUtil.LONG_STR,
+                            str);
     }
   }
 
   @Override
-  public float toFloat(int index)
+  public float toFloat(int index) throws SFException
   {
     String str = toString(index);
-    if (str == null)
+    try
     {
-      return 0;
+      if (str == null)
+      {
+        return 0;
+      }
+      else
+      {
+        return Float.parseFloat(str);
+      }
     }
-    else
+    catch (NumberFormatException ex)
     {
-      return Float.parseFloat(str);
+      throw new SFException(ErrorCode.INVALID_VALUE_CONVERT,
+                            logicalTypeStr,
+                            SnowflakeUtil.FLOAT_STR,
+                            str);
     }
   }
 
   @Override
-  public double toDouble(int index)
+  public double toDouble(int index) throws SFException
   {
     String str = toString(index);
-    if (str == null)
+    try
     {
-      return 0;
+      if (str == null)
+      {
+        return 0;
+      }
+      else
+      {
+        return Double.parseDouble(str);
+      }
     }
-    else
+    catch (NumberFormatException ex)
     {
-      return Double.parseDouble(str);
+      throw new SFException(ErrorCode.INVALID_VALUE_CONVERT,
+                            logicalTypeStr,
+                            SnowflakeUtil.DOUBLE_STR,
+                            str);
     }
   }
 
   @Override
-  public BigDecimal toBigDecimal(int index)
+  public BigDecimal toBigDecimal(int index) throws SFException
   {
     String str = toString(index);
-    if (str == null)
+    try
     {
-      return null;
+      if (str == null)
+      {
+        return null;
+      }
+      else
+      {
+        return new BigDecimal(str);
+      }
     }
-    else
+    catch (Exception ex)
     {
-      return new BigDecimal(str);
+      throw new SFException(ErrorCode.INVALID_VALUE_CONVERT,
+                            logicalTypeStr,
+                            SnowflakeUtil.BIG_DECIMAL_STR,
+                            str);
     }
   }
 
@@ -148,7 +209,7 @@ public class VarCharConverter extends AbstractArrowVectorConverter
     else
     {
       throw new SFException(ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr,
-          "Boolean", str);
+          SnowflakeUtil.BOOLEAN_STR, str);
     }
   }
 }
