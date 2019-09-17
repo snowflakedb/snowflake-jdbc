@@ -122,7 +122,7 @@ public class DateConverterTest extends BaseConverterTest
       int intVal = converter.toInt(j);
       String strVal = converter.toString(j);
       Object obj = converter.toObject(j);
-      Object oldObj = ResultUtil.getDate(Integer.toString(intVal), TimeZone.getDefault(), new SFSession());
+      Object oldObj = ArrowResultUtil.getDate(intVal, TimeZone.getDefault(), new SFSession());
       if (nullValIndex.contains(j))
       {
         assertThat(intVal, is(0));
@@ -195,7 +195,7 @@ public class DateConverterTest extends BaseConverterTest
       }
       else
       {
-        Date oldObj = ResultUtil.getDate(Integer.toString(intVal), TimeZone.getDefault(), new SFSession());
+        Date oldObj = ArrowResultUtil.getDate(intVal, TimeZone.getDefault(), new SFSession());
         String oldStr = ResultUtil.getDateAsString(oldObj, ((DataConversionContext) this).getDateFormatter());
         assertThat(intVal, is(rawDates[i]));
         assertThat(obj.getTime(), is(oldObj.getTime()));
