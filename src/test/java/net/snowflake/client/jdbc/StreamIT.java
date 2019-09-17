@@ -46,7 +46,7 @@ public class StreamIT extends BaseJDBCTest
       outputStream.flush();
 
       // upload the data to user stage under testUploadStream with name hello.txt
-      connection.unwrap(SnowflakeConnectionV1.class).uploadStream(
+      connection.unwrap(SnowflakeConnection.class).uploadStream(
           "~",
           DEST_PREFIX,
           outputStream.asByteSource().openStream(),
@@ -102,7 +102,7 @@ public class StreamIT extends BaseJDBCTest
       assertTrue(rset.next());
       assertEquals("UPLOADED", rset.getString(7));
 
-      InputStream out = connection.unwrap(SnowflakeConnectionV1.class).downloadStream(
+      InputStream out = connection.unwrap(SnowflakeConnection.class).downloadStream(
           "~",
           DEST_PREFIX + "/" + TEST_DATA_FILE + ".gz",
           true);
