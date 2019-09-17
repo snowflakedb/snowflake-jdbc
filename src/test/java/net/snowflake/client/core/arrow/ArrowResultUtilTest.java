@@ -13,7 +13,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
-import java.sql.Date;
 import java.sql.Timestamp;
 import java.util.Random;
 import java.util.TimeZone;
@@ -31,10 +30,8 @@ public class ArrowResultUtilTest
         {"UTC"},
         {"America/Los_Angeles"},
         {"America/New_York"},
-        {"Pacific/Honolulu"},
         {"Asia/Singapore"},
         {"MEZ"},
-        {"MESZ"}
     };
   }
 
@@ -79,20 +76,6 @@ public class ArrowResultUtilTest
     }
     long duration2 = System.currentTimeMillis() - start;
     System.out.println(duration1 + " " + duration2);
-  }
-
-  /**
-   * Note: better to test it in different local time zone
-   *
-   * @throws SFException
-   */
-  @Test
-  public void testGetDate() throws SFException
-  {
-    int day = -8865;
-    Date newDate = ArrowResultUtil.getDate(day, TimeZone.getDefault(), new SFSession());
-    Date oldDate = ResultUtil.getDate(Integer.toString(day), TimeZone.getDefault(), new SFSession());
-    assertEquals(newDate, oldDate);
   }
 
   @Test
