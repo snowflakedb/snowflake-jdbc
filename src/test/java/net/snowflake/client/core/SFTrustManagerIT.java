@@ -219,7 +219,7 @@ public class SFTrustManagerIT extends BaseJDBCTest
 
   /**
    * Revoked certificate test.
-   */
+   *
   @Test
   public void testRevokedCertificate() throws Throwable
   {
@@ -264,7 +264,7 @@ public class SFTrustManagerIT extends BaseJDBCTest
         assertNotNull(values.get("exceptionMessage"));
       }
     }
-  }
+  }*/
 
   /**
    * Read certificates from a file.
