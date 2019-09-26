@@ -43,20 +43,6 @@ public class BigIntToTimeConverter extends AbstractArrowVectorConverter
   }
 
   @Override
-  public byte[] toBytes(int index)
-  {
-    if (isNull(index))
-    {
-      return null;
-    }
-    else
-    {
-      byteBuf.putLong(0, bigIntVector.getDataBuffer().getLong(index * BigIntVector.TYPE_WIDTH));
-      return byteBuf.array();
-    }
-  }
-
-  @Override
   public Time toTime(int index) throws SFException
   {
     if (isNull(index))

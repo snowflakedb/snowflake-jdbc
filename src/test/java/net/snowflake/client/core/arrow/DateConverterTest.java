@@ -141,8 +141,6 @@ public class DateConverterTest extends BaseConverterTest
         final int x = j;
         TestUtil.assertSFException(invalidConversionErrorCode,
                                    () -> converter.toBoolean(x));
-        bb = ByteBuffer.wrap(converter.toBytes(j));
-        assertThat(intVal, is(bb.getInt()));
       }
       j++;
     }

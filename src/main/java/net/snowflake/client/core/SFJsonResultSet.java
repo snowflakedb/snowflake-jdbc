@@ -14,9 +14,11 @@ import net.snowflake.common.core.SFBinary;
 import net.snowflake.common.core.SFBinaryFormat;
 import net.snowflake.common.core.SFTime;
 import net.snowflake.common.core.SFTimestamp;
+import org.apache.arrow.vector.Float8Vector;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.nio.ByteBuffer;
 import java.sql.Date;
 import java.sql.Time;
 import java.sql.Timestamp;
@@ -654,6 +656,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet
 
     // Column index starts from 1, not 0.
     Object obj = getObjectInternal(columnIndex);
+    int columnType = resultSetMetaData.getColumnType(columnIndex);
 
     if (obj == null)
     {
@@ -662,12 +665,38 @@ public abstract class SFJsonResultSet extends SFBaseResultSet
 
     try
     {
-      return SFBinary.fromHex(obj.toString()).getBytes();
+      // For all types except time/date/timestamp data, convert data into byte array. Different methods are needed
+      // for different types.
+      switch (columnType)
+      {
+        case Types.FLOAT:
+        case Types.DOUBLE:
+          return ByteBuffer.allocate(Float8Vector.TYPE_WIDTH).putDouble(0, getDouble(columnIndex)).array();
+        case Types.NUMERIC:
+        case Types.INTEGER:
+        case Types.SMALLINT:
+        case Types.TINYINT:
+        case Types.BIGINT:
+          return getBigDecimal(columnIndex).toBigInteger().toByteArray();
+        case Types.VARCHAR:
+        case Types.CHAR:
+          return getString(columnIndex).getBytes();
+        case Types.BOOLEAN:
+          return getBoolean(columnIndex) ? new byte[] {1} : new byte [] {0};
+        case Types.TIMESTAMP:
+        case Types.TIME:
+        case Types.DATE:
+        case Types.DECIMAL:
+          throw new SFException(ErrorCode.INVALID_VALUE_CONVERT, columnType, SnowflakeUtil.BYTES_STR,
+                                getObjectInternal(columnIndex));
+        default:
+          return SFBinary.fromHex(obj.toString()).getBytes();
+      }
     }
     catch (IllegalArgumentException ex)
     {
-      throw new SFException(ErrorCode.INTERNAL_ERROR,
-                            "Invalid binary value: " + obj.toString());
+      throw new SFException(ErrorCode.INVALID_VALUE_CONVERT, columnType, SnowflakeUtil.BYTES_STR,
+                            getObjectInternal(columnIndex));
     }
   }
 
