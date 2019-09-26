@@ -125,6 +125,16 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
     }
   }
 
+  // used to get convert string back to normal after its special characters have been escaped to send it through
+  // Wildcard regex
+  private String unescapeChars(String escapedString)
+  {
+    String unescapedString = escapedString.replace("\\\\", "\\");
+    unescapedString = unescapedString.replace("\\_", "_");
+    unescapedString = unescapedString.replace("\\%", "%");
+    return unescapedString;
+  }
+
   @Override
   public boolean allProceduresAreCallable() throws SQLException
   {
@@ -1437,7 +1447,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
       }
       else
       {
-        schemaPattern = schemaPattern.replace("\\", "");
+        schemaPattern = unescapeChars(schemaPattern);
         showProcedureCommand += " in schema \"" + catalog + "\".\"" +
                                 schemaPattern + "\"";
       }
@@ -1573,7 +1583,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
       }
       else
       {
-        schemaPattern = schemaPattern.replace("\\", "");
+        schemaPattern = unescapeChars(schemaPattern);
         showCommand += " in schema \"" + catalog + "\".\"" +
                        schemaPattern + "\"";
       }
@@ -1707,6 +1717,8 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
             }, statement);
   }
 
+
+
   @Override
   public ResultSet getColumns(String catalog, String schemaPattern,
                               String tableNamePattern,
@@ -1770,7 +1782,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
       }
       else
       {
-        schemaPattern = schemaPattern.replace("\\", "");
+        schemaPattern = unescapeChars(schemaPattern);
         if (tableNamePattern == null || Wildcard.isWildcardPatternStr(tableNamePattern))
         {
           showColumnCommand += " in schema \"" + catalog + "\".\"" +
@@ -1783,7 +1795,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
         }
         else
         {
-          tableNamePattern = tableNamePattern.replace("\\", "");
+          tableNamePattern = unescapeChars(tableNamePattern);
           showColumnCommand += " in table \"" + catalog + "\".\"" +
                                schemaPattern + "\".\"" + tableNamePattern + "\"";
         }

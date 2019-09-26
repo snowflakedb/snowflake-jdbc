@@ -755,7 +755,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection
       String name = (String) propList.nextElement();
       failedProps.put(name, ClientInfoStatus.REASON_UNKNOWN_PROPERTY);
     }
-    raiseSetClietnInfoException(failedProps);
+    raiseSetClientInfoException(failedProps);
   }
 
   @Override
@@ -764,10 +764,10 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection
   {
     Map<String, ClientInfoStatus> failedProps = new HashMap<>();
     failedProps.put(name, ClientInfoStatus.REASON_UNKNOWN_PROPERTY);
-    raiseSetClietnInfoException(failedProps);
+    raiseSetClientInfoException(failedProps);
   }
 
-  private void raiseSetClietnInfoException(Map<String, ClientInfoStatus> failedProps) throws SQLClientInfoException
+  private void raiseSetClientInfoException(Map<String, ClientInfoStatus> failedProps) throws SQLClientInfoException
   {
     if (isClosed)
     {
