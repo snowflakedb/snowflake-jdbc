@@ -50,20 +50,6 @@ public class DateConverter extends AbstractArrowVectorConverter
   }
 
   @Override
-  public byte[] toBytes(int index) throws SFException
-  {
-    if (isNull(index))
-    {
-      return null;
-    }
-    else
-    {
-      byteBuf.putInt(0, toInt(index));
-      return byteBuf.array();
-    }
-  }
-
-  @Override
   public int toInt(int index)
   {
     if (isNull(index))

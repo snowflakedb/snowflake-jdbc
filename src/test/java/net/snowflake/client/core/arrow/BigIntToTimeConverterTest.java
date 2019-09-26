@@ -25,7 +25,6 @@ import java.util.Random;
 import java.util.Set;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -127,7 +126,6 @@ public class BigIntToTimeConverterTest extends BaseConverterTest
         assertThat(expectedTimes[i], is((Time) obj));
         assertThat(oldTime, is(time));
         assertThat(oldTime, is((Time) obj));
-        assertThat(converter.toBytes(j), is (notNullValue()));
         final int x = j;
         TestUtil.assertSFException(invalidConversionErrorCode,
                                    () -> converter.toBoolean(x));

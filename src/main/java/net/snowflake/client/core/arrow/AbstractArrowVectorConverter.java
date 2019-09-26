@@ -142,6 +142,10 @@ abstract class AbstractArrowVectorConverter implements ArrowVectorConverter
   @Override
   public byte[] toBytes(int index) throws SFException
   {
+    if (isNull(index))
+    {
+      return null;
+    }
     throw new SFException(ErrorCode.INVALID_VALUE_CONVERT,
                           logicalTypeStr,
                           "byteArray",
