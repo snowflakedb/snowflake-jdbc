@@ -3,7 +3,7 @@
  */
 package net.snowflake.client.jdbc.telemetry;
 
-import java.io.IOException;
+import java.util.concurrent.Future;
 
 public interface Telemetry
 {
@@ -13,28 +13,17 @@ public interface Telemetry
    *
    * @param log entry to add
    */
-  void tryAddLogToBatch(TelemetryData log);
-
-  /**
-   * Attempt to add log to batch, and suppress exceptions thrown in case of
-   * failure
-   *
-   * @param log entry to add
-   */
-  void addLogToBatch(TelemetryData log) throws IOException;
+  void addLogToBatch(TelemetryData log);
 
   /**
    * Close telemetry connector and send any unsubmitted logs
-   *
-   * @throws IOException if closed or uploading batch fails
    */
-  void close() throws IOException;
+  void close();
 
   /**
    * Send all cached logs to server
    *
-   * @return whether the logs were sent successfully
-   * @throws IOException if closed or uploading batch fails
+   * @return future indicating whether the logs were sent successfully
    */
-  boolean sendBatch() throws IOException;
+  Future<Boolean> sendBatchAsync();
 }

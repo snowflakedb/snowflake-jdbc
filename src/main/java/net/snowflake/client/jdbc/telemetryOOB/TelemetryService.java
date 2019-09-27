@@ -118,8 +118,6 @@ public class TelemetryService
     }
   }
 
-  private ExecutorService uploader = Executors.newFixedThreadPool(3);
-
   public void resetNumOfRetryToTriggerTelemetry()
   {
     numOfRetryToTriggerTelemetry = DEFAULT_NUM_OF_RETRY_TO_TRIGGER_TELEMETRY;
@@ -377,7 +375,7 @@ public class TelemetryService
       // When the queue is full or the event is urgent,
       // then start a new thread to upload without blocking the current thread
       Runnable runUpload = new TelemetryUploader(this, exportQueueToString());
-      uploader.execute(runUpload);
+      TelemetryThreadPool.getInstance().execute(runUpload);
     }
   }
 
@@ -394,7 +392,7 @@ public class TelemetryService
     {
       // start a new thread to upload without blocking the current thread
       Runnable runUpload = new TelemetryUploader(this, exportQueueToString());
-      uploader.execute(runUpload);
+      TelemetryThreadPool.getInstance().execute(runUpload);
     }
   }
 

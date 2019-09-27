@@ -1277,7 +1277,7 @@ public class ResultSetIT extends BaseJDBCTest
     {
       assertThat(String.format("%s field not found in telemetry logs\n", expectedFields[i].field), succeeded[i]);
     }
-    telemetry.sendBatch();
+    telemetry.sendBatchAsync();
   }
 
   @Test

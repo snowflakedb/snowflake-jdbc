@@ -12,6 +12,7 @@ import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.jdbc.SnowflakeConnectionV1;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
+import net.snowflake.client.jdbc.telemetryOOB.TelemetryThreadPool;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import org.apache.http.client.methods.HttpPost;
@@ -22,6 +23,7 @@ import java.rmi.UnexpectedException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.LinkedList;
+import java.util.concurrent.Future;
 
 
 /**
@@ -159,15 +161,16 @@ public class TelemetryClient implements Telemetry
    * reached
    *
    * @param log entry to add
-   * @throws IOException if closed or uploading batch fails
    */
   @Override
-  public void addLogToBatch(TelemetryData log) throws IOException
+  public void addLogToBatch(TelemetryData log)
   {
     if (isClosed)
     {
-      throw new IOException("Telemetry connector is closed");
+      logger.debug("Telemetry already closed");
+      return;
     }
+
     if (!isTelemetryEnabled())
     {
       return; // if disable, do nothing
@@ -180,7 +183,7 @@ public class TelemetryClient implements Telemetry
 
     if (this.logBatch.size() >= this.forceFlushSize)
     {
-      this.sendBatch();
+      this.sendBatchAsync();
     }
   }
 
@@ -190,52 +193,33 @@ public class TelemetryClient implements Telemetry
    *
    * @param message   json node of log
    * @param timeStamp timestamp to use for log
-   * @throws IOException if closed or uploading batch fails
    */
-  public void addLogToBatch(ObjectNode message, long timeStamp) throws
-                                                                IOException
+  public void addLogToBatch(ObjectNode message, long timeStamp)
   {
     this.addLogToBatch(new TelemetryData(message, timeStamp));
   }
 
   /**
-   * Attempt to add log to batch, and suppress exceptions thrown in case of
-   * failure
-   *
-   * @param log entry to add
-   */
-  @Override
-  public void tryAddLogToBatch(TelemetryData log)
-  {
-    try
-    {
-      addLogToBatch(log);
-    }
-    catch (IOException ex)
-    {
-      logger.debug("Exception encountered while sending metrics to telemetry endpoint.", ex);
-    }
-  }
-
-  /**
    * Close telemetry connector and send any unsubmitted logs
-   *
-   * @throws IOException if closed or uploading batch fails
    */
   @Override
-  public void close() throws IOException
+  public void close()
   {
     if (isClosed)
     {
-      throw new IOException("Telemetry connector is closed");
+      logger.debug("Telemetry client already closed");
+      return;
     }
+
     try
     {
-      this.sendBatch();
+      // sendBatch when close is synchronous, otherwise client might be closed
+      // before data was sent.
+      sendBatchAsync().get();
     }
-    catch (IOException e)
+    catch(Throwable e)
     {
-      logger.error("Send logs failed on closing", e);
+      logger.debug("Error when sending batch data, {}", e);
     }
     finally
     {
@@ -253,14 +237,30 @@ public class TelemetryClient implements Telemetry
     return this.isClosed;
   }
 
+  @Override
+  public Future<Boolean> sendBatchAsync()
+  {
+    return TelemetryThreadPool.getInstance().submit(
+        ()->{
+          try
+          {
+            return this.sendBatch();
+          }
+          catch (Throwable e)
+          {
+            logger.debug("Failed to send telemetry data, {}", e);
+            return false;
+          }
+        });
+  }
+
   /**
    * Send all cached logs to server
    *
    * @return whether the logs were sent successfully
    * @throws IOException if closed or uploading batch fails
    */
-  @Override
-  public boolean sendBatch() throws IOException
+  private boolean sendBatch() throws IOException
   {
     if (isClosed)
     {
