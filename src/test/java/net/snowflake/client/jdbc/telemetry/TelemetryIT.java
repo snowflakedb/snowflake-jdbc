@@ -26,7 +26,7 @@ public class TelemetryIT extends AbstractDriverIT
   }
 
   @Test
-  public void test() throws IOException
+  public void test() throws Exception
   {
     TelemetryClient telemetry =
         (TelemetryClient) TelemetryClient.createTelemetry(connection, 100);
@@ -40,7 +40,7 @@ public class TelemetryIT extends AbstractDriverIT
     telemetry.addLogToBatch(new TelemetryData(node2, 22345678));
     assertEquals(telemetry.bufferSize(), 2);
 
-    assertTrue(telemetry.sendBatch());
+    assertTrue(telemetry.sendBatchAsync().get());
     assertEquals(telemetry.bufferSize(), 0);
 
     assertTrue(telemetry.sendLog(node1, 1234567));
@@ -56,20 +56,23 @@ public class TelemetryIT extends AbstractDriverIT
     }
     assertEquals(telemetry.bufferSize(), 99);
     telemetry.addLogToBatch(node1, 222);
+
+    // flush is async, sleep some time and then check buffer size
+    Thread.sleep(1000);
     assertEquals(telemetry.bufferSize(), 0);
 
     telemetry.addLogToBatch(node1, 111);
     assertEquals(telemetry.bufferSize(), 1);
 
-    assertTrue(!telemetry.isClosed());
+    assertFalse(telemetry.isClosed());
     telemetry.close();
     assertTrue(telemetry.isClosed());
     //close function sends the metrics to the server
     assertEquals(telemetry.bufferSize(), 0);
   }
 
-  @Test(expected = IOException.class)
-  public void close1() throws IOException
+  @Test
+  public void close1()
   {
     TelemetryClient telemetry =
         (TelemetryClient) TelemetryClient.createTelemetry(connection);
@@ -80,8 +83,8 @@ public class TelemetryIT extends AbstractDriverIT
     telemetry.addLogToBatch(node, 1234567);
   }
 
-  @Test(expected = IOException.class)
-  public void close2() throws IOException
+  @Test
+  public void close2()
   {
     TelemetryClient telemetry = (TelemetryClient) TelemetryClient.createTelemetry(connection);
     telemetry.close();
@@ -91,8 +94,8 @@ public class TelemetryIT extends AbstractDriverIT
     telemetry.addLogToBatch(new TelemetryData(node, 1234567));
   }
 
-  @Test(expected = IOException.class)
-  public void close3() throws IOException
+  @Test
+  public void close3()
   {
     TelemetryClient telemetry =
         (TelemetryClient) TelemetryClient.createTelemetry(connection);
@@ -101,7 +104,7 @@ public class TelemetryIT extends AbstractDriverIT
   }
 
   @Test
-  public void test4() throws IOException
+  public void test4() throws Exception
   {
     TelemetryClient telemetry =
         (TelemetryClient) TelemetryClient.createTelemetry(connection, 100);
@@ -121,7 +124,7 @@ public class TelemetryIT extends AbstractDriverIT
     telemetry.addLogToBatch(new TelemetryData(node2, 22345678));
     assertEquals(telemetry.bufferSize(), 1);
 
-    assertFalse(telemetry.sendBatch());
+    assertFalse(telemetry.sendBatchAsync().get());
     assertEquals(telemetry.bufferSize(), 1);
 
     assertFalse(telemetry.sendLog(node1, 1234567));

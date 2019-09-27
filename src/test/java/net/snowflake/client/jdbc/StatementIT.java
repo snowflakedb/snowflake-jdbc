@@ -713,7 +713,15 @@ public class StatementIT extends BaseJDBCTest
 
     statement.close();
 
-    // closing the statement should flush the buffer
+    // closing the statement should flush the buffer, however, flush is async,
+    // sleep some time before check buffer size
+    try
+    {
+      Thread.sleep(1000);
+    }
+    catch(Throwable e)
+    {
+    }
     assertEquals(((TelemetryClient) telemetryClient).bufferSize(), 0);
     connection.close();
   }
