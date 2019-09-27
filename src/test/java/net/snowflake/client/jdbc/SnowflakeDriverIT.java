@@ -2984,6 +2984,8 @@ public class SnowflakeDriverIT extends BaseJDBCTest
       {
         preparedStatement = connection.prepareStatement(
             "create or replace view v as select * from t where a=?");
+        preparedStatement.setInt(1, 1);
+        preparedStatement.execute();
 
         // we shouldn't reach here
         fail("Bind variable in view definition did not cause a user error");
