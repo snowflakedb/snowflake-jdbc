@@ -39,7 +39,6 @@ final class SnowflakeCallableStatementV1 extends SnowflakePreparedStatementV1
   SnowflakeCallableStatementV1(SnowflakeConnectionV1 connection, String sql, boolean skipParsing, int resultSetType, int resultSetConcurrency, int resultSetHoldability) throws SQLException
   {
     super(connection, sql, skipParsing, resultSetType, resultSetConcurrency, resultSetHoldability);
-    parseSql(skipParsing);
   }
 
   /*
