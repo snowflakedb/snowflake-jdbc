@@ -102,6 +102,8 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
    */
   private int batchSize = 0;
 
+  private boolean alreadyDescribed = false;
+
   /**
    * Construct SnowflakePreparedStatementV1
    *
@@ -125,12 +127,18 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
   {
     super(connection, resultSetType, resultSetConcurrency, resultSetHoldability);
     this.sql = sql;
-    parseSql(skipParsing);
+    this.statementMetaData = SFStatementMetaData.emptyMetaData();
   }
 
-  protected void parseSql(boolean skipParsing) throws SQLException
+  /**
+   * This method will check alreadyDescribed flag. And if it is false, it will
+   * try to issue a describe request to server. If true, it will skip
+   * describe request.
+   * @throws SQLException
+   */
+  private void describeSqlIfNotTried() throws SQLException
   {
-    if (!skipParsing)
+    if (!alreadyDescribed)
     {
       try
       {
@@ -151,10 +159,7 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
           statementMetaData = SFStatementMetaData.emptyMetaData();
         }
       }
-    }
-    else
-    {
-      statementMetaData = SFStatementMetaData.emptyMetaData();
+      alreadyDescribed = true;
     }
   }
 
@@ -188,14 +193,6 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
     logger.debug("setNull(parameterIndex: {}, sqlType: {})",
                  parameterIndex, SnowflakeType.JavaSQLType.find(sqlType));
     raiseSQLExceptionIfStatementIsClosed();
-
-    if (this.statementMetaData.isValidMetaData() &&
-        (parameterIndex < 1 || parameterIndex > this.statementMetaData.getNumberOfBinds()))
-    {
-      // Validate index range only if the statement metadata is valid.
-      throw new SnowflakeSQLException(ErrorCode.NUMERIC_VALUE_OUT_OF_RANGE, parameterIndex,
-                                      this.statementMetaData.getNumberOfBinds());
-    }
 
     ParameterBindingDTO binding = new ParameterBindingDTO(
         SnowflakeType.ANY.toString(), null);
@@ -516,6 +513,7 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
 
     raiseSQLExceptionIfStatementIsClosed();
 
+    describeSqlIfNotTried();
     if (statementMetaData.isArrayBindSupported())
     {
       for (Map.Entry<String, ParameterBindingDTO> binding :
@@ -649,6 +647,8 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
     logger.debug("getMetaData()");
 
     raiseSQLExceptionIfStatementIsClosed();
+
+    describeSqlIfNotTried();
     return new SnowflakeResultSetMetaDataV1(
         this.statementMetaData.getResultSetMetaData());
   }
@@ -735,6 +735,7 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
   @Override
   public ParameterMetaData getParameterMetaData() throws SQLException
   {
+    describeSqlIfNotTried();
     return new SnowflakeParameterMetadata(statementMetaData);
   }
 
@@ -935,6 +936,7 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
     logger.debug("executeBatch()");
     raiseSQLExceptionIfStatementIsClosed();
 
+    describeSqlIfNotTried();
     if (this.statementMetaData.getStatementType().isGenerateResultSet())
     {
       throw new SnowflakeSQLException(

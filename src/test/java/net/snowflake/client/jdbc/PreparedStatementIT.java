@@ -23,6 +23,7 @@ import java.sql.Date;
 import java.sql.ParameterMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Time;
@@ -1208,26 +1209,6 @@ public class PreparedStatementIT extends BaseJDBCTest
     }
   }
 
-  @Test
-  public void testCompilationErrorWhenPrepare() throws SQLException
-  {
-    connection = getConnection();
-
-    try
-    {
-      connection.prepareStatement("select * from table_not_exist");
-      Assert.fail();
-    }
-    catch (SQLException e)
-    {
-      assertThat(e.getErrorCode(), is(ERROR_CODE_DOMAIN_OBJECT_DOES_NOT_EXIST));
-    }
-    finally
-    {
-      connection.close();
-    }
-  }
-
   /**
    * Test case to make sure 2 non null bind refs was not constant folded into one
    */
@@ -1604,8 +1585,10 @@ public class PreparedStatementIT extends BaseJDBCTest
 
       try
       {
-        // resolve fail because second argument is valid
+        // second argument is invalid
         prepStatement = connection.prepareStatement("select * from table(employee_detail(?, 123))");
+        prepStatement.setInt(1, 1);
+        prepStatement.execute();
         Assert.fail();
       }
       catch (SQLException e)
@@ -1623,18 +1606,11 @@ public class PreparedStatementIT extends BaseJDBCTest
                         "select id\n" +
                         "from employee\n" +
                         "$$;");
-      try
-      {
-        // resolve fail because second argument is valid
-        prepStatement = connection.prepareStatement("select * from table(employee_detail(?, 'abc'))");
-        Assert.fail();
-      }
-      catch (SQLException e)
-      {
-        // failed because argument type did not match
-        Assert.assertThat(e.getErrorCode(), is(2237));
-      }
-    }
+
+      prepStatement = connection.prepareStatement("select * from table(employee_detail(?, 'abc'))");
+      prepStatement.setInt(1, 1);
+      prepStatement.execute();
+  }
     finally
     {
       statement.execute("drop function if exists employee_detail(number, text)");
@@ -1979,15 +1955,8 @@ public class PreparedStatementIT extends BaseJDBCTest
         );
         ps.setObject(1, 0);
         ps.setObject(2, null);
-        try
-        {
-          ps.setObject(1000, null); // this won't raise an exception.
-          fail("should raise an exception");
-        }
-        catch (SQLException e)
-        {
-          assertEquals((int) NUMERIC_VALUE_OUT_OF_RANGE.getMessageCode(), e.getErrorCode());
-        }
+        ps.setObject(1000, null); // this won't raise an exception.
+
         rs = ps.executeQuery();
         assertFalse(rs.next());
         rs.close();
@@ -2014,6 +1983,22 @@ public class PreparedStatementIT extends BaseJDBCTest
     resultSet = connection.createStatement().executeQuery(selectAllSQL);
     assertEquals(1, getSizeOfResultSet(resultSet));
     statement.close();
+    connection.close();
+  }
+
+  @Test
+  public void testPrepareAndGetMeta() throws SQLException
+  {
+    connection = getConnection();
+    prepStatement = connection.prepareStatement("select 1 where 1 > ?");
+    ResultSetMetaData meta = prepStatement.getMetaData();
+    assertThat(meta.getColumnCount(), is(1));
+    prepStatement.close();
+
+    prepStatement = connection.prepareStatement("select 1 where 1 > ?");
+    ParameterMetaData parameterMetaData = prepStatement.getParameterMetaData();
+    assertThat(parameterMetaData.getParameterCount(), is(1));
+    prepStatement.close();
     connection.close();
   }
 }
