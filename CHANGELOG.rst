@@ -1,3 +1,11 @@
+**JDBC Driver 3.10.0**
+
+- \SNOW-94386 | Fix getShort, getInt, getLong, getBigDecimal, getFloat, getDouble, getBytes to be consistent between JSON and ARROW result sets
+- \SNOW-97598 | Fix special Characters in Table Name causes getColumns() to not return values
+- \SNOW-97684 | Async submit in-band telemetry data
+- \SNOW-97215 | Change Prepare statement to defer SQL syntax and binding value check to Execute to improve the latency
+- \SNOW-99630 | Fix CVE-2019-16335, CVE-2019-14540: com.fasterxml.jackson.core:jackson-databind
+
 **JDBC Driver 3.9.2**
 
 - \| SNOW-91553 | Refactor for JDBC ResultSet distributed processing
