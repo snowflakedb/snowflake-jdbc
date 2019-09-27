@@ -1169,14 +1169,7 @@ public class SFSession
   {
     if (telemetryClient != null)
     {
-      try
-      {
-        telemetryClient.close();
-      }
-      catch (IOException ex)
-      {
-        logger.debug("Telemetry client failed to submit metrics on close.");
-      }
+      telemetryClient.close();
     }
   }
 

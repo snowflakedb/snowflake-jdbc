@@ -429,7 +429,7 @@ public class SFStatement
         {
           logger.debug("Exception encountered trying to upload binds to stage. Attaching binds in payload instead. ", ex);
           TelemetryData errorLog = TelemetryUtil.buildJobData(this.requestId, ex.type.field, 1);
-          this.session.getTelemetryClient().tryAddLogToBatch(errorLog);
+          this.session.getTelemetryClient().addLogToBatch(errorLog);
           IncidentUtil.generateIncidentV2WithException(
               session,
               new SFException(ErrorCode.NON_FATAL_ERROR,
@@ -853,14 +853,7 @@ public class SFStatement
       httpRequest = null;
     }
 
-    try
-    {
-      session.getTelemetryClient().sendBatch();
-    }
-    catch (IOException ex)
-    {
-      logger.debug("Telemetry client failed to send batch metrics.");
-    }
+    session.getTelemetryClient().sendBatchAsync();
 
     isFileTransfer = false;
     transferAgent = null;

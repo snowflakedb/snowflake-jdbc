@@ -3,16 +3,14 @@
  */
 package net.snowflake.client.jdbc.telemetry;
 
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Future;
+
 /**
  * Telemetry client that is doing nothing. Mainly used in testing code
  */
 public class NoOpTelemetryClient implements Telemetry
 {
-  @Override
-  public void tryAddLogToBatch(TelemetryData log)
-  {
-  }
-
   @Override
   public void addLogToBatch(TelemetryData log)
   {
@@ -24,8 +22,8 @@ public class NoOpTelemetryClient implements Telemetry
   }
 
   @Override
-  public boolean sendBatch()
+  public Future<Boolean> sendBatchAsync()
   {
-    return false;
+    return CompletableFuture.completedFuture(true);
   }
 }

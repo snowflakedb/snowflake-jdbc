@@ -671,7 +671,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
   private void logMetric(TelemetryField field, long value)
   {
     TelemetryData data = TelemetryUtil.buildJobData(this.queryId, field, value);
-    this.telemetryClient.tryAddLogToBatch(data);
+    this.telemetryClient.addLogToBatch(data);
   }
 
   private void logChunkDownloaderMetrics(DownloaderMetrics metrics)
