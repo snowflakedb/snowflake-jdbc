@@ -41,6 +41,8 @@ public class AbstractDriverIT
   protected static final String TEST_DATA_FILE = "orders_100.csv";
   protected static final String TEST_DATA_FILE_2 = "orders_101.csv";
 
+  protected static final String [] fileNames = {TEST_DATA_FILE, TEST_DATA_FILE_2};
+
   private static Logger logger =
       Logger.getLogger(AbstractDriverIT.class.getName());
 
