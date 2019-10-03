@@ -16,8 +16,13 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.math.BigDecimal;
+import java.nio.channels.FileChannel;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
@@ -860,6 +865,158 @@ public class SnowflakeDriverIT extends BaseJDBCTest
         statement.execute("DROP TABLE IF EXISTS \"testDBMetadata\"");
       }
       closeSQLObjects(statement, connection);
+    }
+  }
+
+  @Test
+  public void testPutWithWildcardGCP() throws Throwable
+  {
+    Connection connection = getConnection("gcpaccount");
+    Statement statement = connection.createStatement();
+
+    String sourceFilePath = getFullPathFileInResource(TEST_DATA_FILE);
+    // replace file name with wildcard character
+    sourceFilePath = sourceFilePath.replace("orders_100.csv", "orders_10*.csv");
+
+    File destFolder = tmpFolder.newFolder();
+    String destFolderCanonicalPath = destFolder.getCanonicalPath();
+    String destFolderCanonicalPathWithSeparator = destFolderCanonicalPath + File.separator;
+
+    try
+    {
+      statement.execute("CREATE OR REPLACE STAGE wildcard_stage");
+      assertTrue("Failed to put a file",
+                 statement.execute("PUT file://" + sourceFilePath + " @wildcard_stage"));
+
+      findFile(statement, "ls @wildcard_stage/");
+
+
+      assertTrue("Failed to get files", statement.execute(
+          "GET @wildcard_stage 'file://"
+          + destFolderCanonicalPath + "' parallel=8"));
+
+      File downloaded;
+      // download the files we just uploaded to stage
+      for (int i = 0; i < fileNames.length; i++)
+      {
+        // Make sure that the downloaded file exists, it should be gzip compressed
+        downloaded = new File(destFolderCanonicalPathWithSeparator + fileNames[i] + ".gz");
+        assert (downloaded.exists());
+
+        Process p = Runtime.getRuntime().exec(
+            "gzip -d " + destFolderCanonicalPathWithSeparator
+            + fileNames[i] + ".gz");
+        p.waitFor();
+
+        String individualFilePath = sourceFilePath.replace("orders_10*.csv", fileNames[i]);
+
+        File original = new File(individualFilePath);
+        File unzipped = new File(destFolderCanonicalPathWithSeparator + fileNames[i]);
+        assert (original.length() == unzipped.length());
+      }
+
+    }
+    finally
+    {
+      statement.execute("DROP STAGE IF EXISTS wildcard_stage");
+      statement.close();
+      connection.close();
+    }
+  }
+
+  /**
+   * helper function for creating large file in Java. Copies info from 1 file to another
+   * @param file1 file with info to be copied
+   * @param file2 file to be copied into
+   * @throws Exception
+   */
+  private void copyContentFrom(File file1, File file2) throws Exception
+  {
+    FileInputStream inputStream  = new FileInputStream(file1);
+    FileOutputStream outputStream = new FileOutputStream(file2);
+    FileChannel fIn = inputStream.getChannel();
+    FileChannel fOut = outputStream.getChannel();
+    fOut.transferFrom(fIn, 0, fIn.size());
+    fIn.position(0);
+    fOut.transferFrom(fIn, fIn.size(), fIn.size());
+    fOut.close();
+    fIn.close();
+  }
+
+
+  @Test
+  public void testPutGetLargeFileGCP() throws Throwable
+  {
+    Connection connection = getConnection("gcpaccount");
+    Statement statement = connection.createStatement();
+
+    File destFolder = tmpFolder.newFolder();
+    String destFolderCanonicalPath = destFolder.getCanonicalPath();
+    String destFolderCanonicalPathWithSeparator = destFolderCanonicalPath + File.separator;
+
+    File largeTempFile = tmpFolder.newFile("largeFile.csv");
+    BufferedWriter bw = new BufferedWriter(new FileWriter(largeTempFile));
+    bw.write("Creating large test file for GCP PUT/GET test");
+    bw.write(System.lineSeparator());
+    bw.write("Creating large test file for GCP PUT/GET test");
+    bw.write(System.lineSeparator());
+    bw.close();
+    File largeTempFile2 = tmpFolder.newFile("largeFile2.csv");
+
+    String sourceFilePath = largeTempFile.getCanonicalPath();
+
+    try
+    {
+      // copy info from 1 file to another and continue doubling file size until we reach ~300MB, which is a large file
+      for (int i = 0; i < 11; i++)
+      {
+        copyContentFrom(largeTempFile, largeTempFile2);
+        copyContentFrom(largeTempFile2, largeTempFile);
+      }
+
+      // create a stage to put the file in
+      statement.execute("CREATE OR REPLACE STAGE largefile_stage");
+      assertTrue("Failed to put a file",
+                 statement.execute("PUT file://" + sourceFilePath + " @largefile_stage"));
+
+      // check that file exists in stage after PUT
+      findFile(statement, "ls @largefile_stage/");
+
+      // create a new table with columns matching CSV file
+      statement.execute("create or replace table large_table (colA string)");
+      // copy rows from file into table
+      statement.execute("copy into large_table from @largefile_stage/largeFile.csv.gz");
+      // copy back from table into different stage
+      statement.execute("create or replace stage extra_stage");
+      statement.execute("copy into @extra_stage/bigFile.csv.gz from large_table single=true");
+
+      // get file from new stage
+      assertTrue("Failed to get files", statement.execute(
+          "GET @extra_stage 'file://"
+          + destFolderCanonicalPath + "' parallel=8"));
+
+      // Make sure that the downloaded file exists; it should be gzip compressed
+      File downloaded = new File(destFolderCanonicalPathWithSeparator + "bigFile.csv.gz");
+      assert (downloaded.exists());
+
+      //unzip the file
+      Process p = Runtime.getRuntime().exec(
+          "gzip -d " + destFolderCanonicalPathWithSeparator
+          + "bigFile.csv.gz");
+      p.waitFor();
+
+      // compare the original file with the file that's been uploaded, copied into a table, copied back into a stage,
+      // downloaded, and unzipped
+      File unzipped = new File(destFolderCanonicalPathWithSeparator + "bigFile.csv");
+      assert (largeTempFile.length() == unzipped.length());
+    }
+    finally
+    {
+      statement.execute("DROP STAGE IF EXISTS largefile_stage");
+      statement.execute("DROP STAGE IF EXISTS extra_stage");
+      statement.execute("DROP TABLE IF EXISTS large_table");
+      statement.close();
+      connection.close();
     }
   }
 
