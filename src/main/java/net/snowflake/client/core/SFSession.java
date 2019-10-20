@@ -22,7 +22,6 @@ import org.apache.http.HttpHeaders;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
 
-import java.io.IOException;
 import java.security.PrivateKey;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -62,6 +61,7 @@ public class SFSession
   private String sessionToken;
   private String masterToken;
   private long masterTokenValidityInSeconds;
+  private String sessionId;
 
   private String idToken;
 
@@ -527,6 +527,7 @@ public class SFSession
     schema = loginOutput.getSessionSchema();
     role = loginOutput.getSessionRole();
     warehouse = loginOutput.getSessionWarehouse();
+    sessionId = loginOutput.getSessionId();
 
     // Update common parameter values for this session
     SessionUtil.updateSfDriverParamValues(loginOutput.getCommonParams(), this);
@@ -672,6 +673,8 @@ public class SFSession
   {
     return databaseMinorVersion;
   }
+
+  public String getSessionId() { return sessionId; }
 
   /**
    * A helper function to call global service and renew session.
