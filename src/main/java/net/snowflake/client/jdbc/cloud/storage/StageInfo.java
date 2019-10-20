@@ -65,7 +65,7 @@ public class StageInfo
 
       case "GCS":
         stageType = StageType.GCS;
-        if (!isSpecified(location) || !isSpecified(region) || credentials == null)
+        if (!isSpecified(location) || credentials == null)
         {
           throw new IllegalArgumentException("Incomplete parameters specified for GCS stage");
         }
