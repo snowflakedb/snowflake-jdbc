@@ -224,6 +224,17 @@ public class SnowflakeDriverIT extends BaseJDBCTest
     }
   }
 
+  @Test
+  public void testGetSessionID() throws Throwable
+  {
+    Connection con = getConnection();
+    String sessionID = con.unwrap(SnowflakeConnection.class).getSessionID();
+    Statement statement = con.createStatement();
+    ResultSet rset = statement.executeQuery("select current_session()");
+    rset.next();
+    assertEquals(sessionID, rset.getString(1));
+  }
+
   /**
    * Test show columns
    */

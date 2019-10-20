@@ -72,6 +72,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection
   private String databaseVersion;
   private int databaseMajorVersion;
   private int databaseMinorVersion;
+  private String sessionID;
 
 
   /**
@@ -321,6 +322,21 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection
       throw new SnowflakeSQLException(
           ex.getCause(), ex.getSqlState(), ex.getVendorCode(), ex.getParams());
     }
+  }
+
+  public String getSessionID() throws SQLException
+  {
+    if (isClosed)
+    {
+      raiseSQLExceptionIfConnectionIsClosed();
+    }
+    if (sessionID == null)
+    {
+      ResultSet rset = createStatement().executeQuery("select current_session()");
+      rset.next();
+      sessionID = rset.getString(1);
+    }
+    return sessionID;
   }
 
   @Override
