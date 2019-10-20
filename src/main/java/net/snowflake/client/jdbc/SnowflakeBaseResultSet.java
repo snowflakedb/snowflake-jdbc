@@ -45,7 +45,7 @@ abstract class SnowflakeBaseResultSet implements ResultSet
   // Snowflake supports sessionless result set. For this case, there is no
   // statement for this result set.
   protected final Statement statement;
-  protected SnowflakeResultSetMetaData resultSetMetaData = null;
+  protected SnowflakeResultSetMetaDataV1 resultSetMetaData = null;
   protected Map<String, Object> parameters = new HashMap<>();
   private int fetchSize = 0;
 

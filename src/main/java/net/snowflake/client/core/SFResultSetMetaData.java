@@ -468,21 +468,37 @@ public class SFResultSetMetaData
 
   public String getCatalogName(int column)
   {
+    if (columnSrcDatabases == null)
+    {
+      return "";
+    }
     return columnSrcDatabases.get(column - 1);
   }
 
   public String getSchemaName(int column)
   {
+    if (columnSrcDatabases == null)
+    {
+      return "";
+    }
     return columnSrcSchemas.get(column - 1);
   }
 
   public String getTableName(int column)
   {
+    if (columnSrcDatabases == null)
+    {
+      return "T";
+    }
     return columnSrcTables.get(column - 1);
   }
 
   public Integer getColumnDisplaySize(int column)
   {
+    if (columnDisplaySizes == null)
+    {
+      return 25;
+    }
     return columnDisplaySizes.get(column - 1);
   }
 }

@@ -4,6 +4,7 @@
 
 package net.snowflake.client.jdbc;
 
+import net.snowflake.client.core.SFResultSetMetaData;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -58,12 +59,14 @@ class SnowflakeDatabaseMetaDataResultSet extends SnowflakeBaseResultSet
     SFSession session = statement.getConnection().unwrap(
         SnowflakeConnectionV1.class).getSfSession();
 
-    this.resultSetMetaData = new SnowflakeResultSetMetaData(
+    SFResultSetMetaData sfset = new SFResultSetMetaData(
         columnNames.size(),
         columnNames,
         columnTypeNames,
         columnTypes,
         session);
+
+    this.resultSetMetaData = new SnowflakeResultSetMetaDataV1(sfset);
 
     this.nextRow = new Object[columnNames.size()];
   }
@@ -92,12 +95,15 @@ class SnowflakeDatabaseMetaDataResultSet extends SnowflakeBaseResultSet
     SFSession session = statement.getConnection().unwrap(
         SnowflakeConnectionV1.class).getSfSession();
 
-    this.resultSetMetaData = new SnowflakeResultSetMetaData(
+    SFResultSetMetaData sfset = new SFResultSetMetaData(
         columnNames.size(),
         columnNames,
         columnTypeNames,
         columnTypes,
         session);
+
+    this.resultSetMetaData = new SnowflakeResultSetMetaDataV1(sfset);
+
     this.nextRow = new Object[columnNames.size()];
   }
 
