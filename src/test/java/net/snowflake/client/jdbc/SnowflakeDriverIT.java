@@ -9,6 +9,7 @@ import net.snowflake.client.AbstractDriverIT;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnTravisCI;
 import net.snowflake.common.core.SqlState;
+import org.apache.commons.io.FileUtils;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
@@ -913,6 +914,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest
         File original = new File(individualFilePath);
         File unzipped = new File(destFolderCanonicalPathWithSeparator + fileNames[i]);
         assert (original.length() == unzipped.length());
+        assert(FileUtils.contentEquals(original, unzipped));
       }
 
     }
@@ -942,7 +944,6 @@ public class SnowflakeDriverIT extends BaseJDBCTest
     fOut.close();
     fIn.close();
   }
-
 
   @Test
   public void testPutGetLargeFileGCP() throws Throwable
@@ -1009,6 +1010,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest
       // downloaded, and unzipped
       File unzipped = new File(destFolderCanonicalPathWithSeparator + "bigFile.csv");
       assert (largeTempFile.length() == unzipped.length());
+      assert(FileUtils.contentEquals(largeTempFile, unzipped));
     }
     finally
     {
