@@ -134,13 +134,28 @@ public class ArrowResultChunk extends SnowflakeResultChunk
     {
       // happens when the statement is closed before finish parsing
       logger.debug("Interrupted when loading Arrow result", cbie);
-      is.close();
       if (valueVectors != null)
       {
         valueVectors.forEach(ValueVector::close);
       }
       freeData();
     }
+    catch (IOException ioex)
+    {
+      if (valueVectors != null)
+      {
+        valueVectors.forEach(ValueVector::close);
+      }
+      freeData();
+      throw ioex;
+    }
+  }
+
+  @Override
+  public void reset()
+  {
+    freeData();
+    this.batchOfVectors = new ArrayList<>();
   }
 
   @Override
