@@ -36,8 +36,10 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.regex.Pattern;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
@@ -762,6 +764,15 @@ public class ResultSetIT extends BaseJDBCTest
     assertTrue(resultSetMetaData.isReadOnly(1));
     assertTrue(resultSetMetaData.isSearchable(1));
     assertTrue(resultSetMetaData.isSigned(1));
+
+    SnowflakeResultSetMetaData secretMetaData = resultSetMetaData.unwrap(SnowflakeResultSetMetaData.class);
+    assertTrue(Pattern.matches("[a-z0-9]{8}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{12}",
+                               secretMetaData.getQueryID()));
+    List<String> colNames = secretMetaData.getColumnNames();
+    assertEquals("COLA", colNames.get(0));
+    assertEquals("COLB", colNames.get(1));
+    assertEquals(Types.DECIMAL, secretMetaData.getInternalColumnType(1));
+    assertEquals(Types.VARCHAR, secretMetaData.getInternalColumnType(2));
 
     statement.execute("drop table if exists test_rsmd");
     statement.close();
