@@ -884,6 +884,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest
   }
 
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
   public void testPutWithWildcardGCP() throws Throwable
   {
     Connection connection = getConnection("gcpaccount");
@@ -960,6 +961,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest
   }
 
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
   public void testPutGetLargeFileGCP() throws Throwable
   {
     Connection connection = getConnection("gcpaccount");
@@ -1037,6 +1039,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest
   }
 
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
   public void testPutOverwrite() throws Throwable
   {
     Connection connection = null;
