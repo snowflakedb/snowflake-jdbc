@@ -51,6 +51,7 @@ import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.apache.http.client.config.CookieSpecs.DEFAULT;
@@ -64,6 +65,9 @@ public class HttpUtil
   static final int DEFAULT_MAX_CONNECTIONS_PER_ROUTE = 100;
   static final int DEFAULT_CONNECTION_TIMEOUT = 60000;
   static final int DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT = 300000; // ms
+  static final int DEFAULT_TTL = -1; // secs
+  static final int DEFAULT_IDLE_CONNECTION_TIMEOUT = 5; // secs
+  static final int DEFAULT_DOWNLOADED_CONDITION_TIMEOUT = 3600; // secs
 
   /**
    * The unique httpClient shared by all connections. This will benefit long-
@@ -99,6 +103,21 @@ public class HttpUtil
   static String proxyUser;
   static String proxyPassword;
   static String nonProxyHosts;
+
+  public static long getDownloadedConditionTimeoutInSeconds()
+  {
+    return DEFAULT_DOWNLOADED_CONDITION_TIMEOUT;
+  }
+
+  public static void closeExpiredAndIdleConnections()
+  {
+    synchronized (connectionManager)
+    {
+      logger.debug("connection pool stats: {}", connectionManager.getTotalStats());
+      connectionManager.closeExpiredConnections();
+      connectionManager.closeIdleConnections(DEFAULT_IDLE_CONNECTION_TIMEOUT, TimeUnit.SECONDS);
+    }
+  }
 
   public static void setProxyForS3(ClientConfiguration clientConfig)
   {
@@ -175,7 +194,8 @@ public class HttpUtil
               .build();
 
       // Build a connection manager with enough connections
-      connectionManager = new PoolingHttpClientConnectionManager(registry);
+      connectionManager = new PoolingHttpClientConnectionManager(registry, null, null, null, DEFAULT_TTL,
+                                                                 TimeUnit.SECONDS);
       connectionManager.setMaxTotal(DEFAULT_MAX_CONNECTIONS);
       connectionManager.setDefaultMaxPerRoute(DEFAULT_MAX_CONNECTIONS_PER_ROUTE);
 

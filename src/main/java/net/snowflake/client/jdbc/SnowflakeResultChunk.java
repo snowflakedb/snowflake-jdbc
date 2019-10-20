@@ -69,6 +69,11 @@ public abstract class SnowflakeResultChunk
    */
   abstract void freeData();
 
+  /**
+   * Reset all data structure used in this result chunk
+   */
+  abstract void reset();
+
   public SnowflakeResultChunk(String url, int rowCount, int colCount,
                               int uncompressedSize)
   {
