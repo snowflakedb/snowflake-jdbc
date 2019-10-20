@@ -7,6 +7,7 @@ package net.snowflake.client.jdbc;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.snowflake.client.core.ChunkDownloader;
+import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.MetaDataOfBinds;
 import net.snowflake.client.core.OCSPMode;
 import net.snowflake.client.core.ObjectMapperFactory;
@@ -16,6 +17,7 @@ import net.snowflake.client.core.SFBaseResultSet;
 import net.snowflake.client.core.SFResultSet;
 import net.snowflake.client.core.SFResultSetMetaData;
 import net.snowflake.client.core.SFSession;
+import net.snowflake.client.core.SFSessionProperty;
 import net.snowflake.client.core.SFStatementType;
 import net.snowflake.client.core.SessionUtil;
 import net.snowflake.client.jdbc.telemetry.NoOpTelemetryClient;
@@ -37,6 +39,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Properties;
 import java.util.TimeZone;
 
 import net.snowflake.client.core.ResultUtil;
@@ -119,6 +122,18 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
     public int getUncompressedByteSize()
     {
       return uncompressedByteSize;
+    }
+
+    public String toString()
+    {
+      StringBuilder builder = new StringBuilder(1024);
+
+      builder.append("RowCount: ").append(rowCount).append(", ");
+      builder.append("CompressedSize: ").append(compressedByteSize).append(", ");
+      builder.append("UnCompressedSize: ").append(uncompressedByteSize).append(", ");
+      builder.append("fileURL: ").append(fileURL);
+
+      return builder.toString();
     }
   }
 
@@ -1028,6 +1043,59 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
   }
 
   /**
+   * Setup JDBC proxy properties if necessary.
+   *
+   * @param info proxy server properties.
+   */
+  private void setupProxyPropertiesIfNecessary(Properties info)
+  {
+    // Setup proxy properties.
+    if (info != null && info.size() > 0 &&
+        info.getProperty(SFSessionProperty.USE_PROXY.getPropertyKey()) != null)
+    {
+      Map<SFSessionProperty, Object> connectionPropertiesMap =
+          new HashMap<>(info.size());
+      Boolean useProxy =
+          Boolean.valueOf(info.getProperty(SFSessionProperty.USE_PROXY.getPropertyKey()));
+      if (useProxy)
+      {
+        connectionPropertiesMap.put(SFSessionProperty.USE_PROXY, true);
+
+        // set up other proxy related values.
+        String propValue = null;
+        if ((propValue = info.getProperty(
+            SFSessionProperty.PROXY_HOST.getPropertyKey())) != null)
+        {
+          connectionPropertiesMap.put(SFSessionProperty.PROXY_HOST, propValue);
+        }
+        if ((propValue = info.getProperty(
+            SFSessionProperty.PROXY_PORT.getPropertyKey())) != null)
+        {
+          connectionPropertiesMap.put(SFSessionProperty.PROXY_PORT, propValue);
+        }
+        if ((propValue = info.getProperty(
+            SFSessionProperty.PROXY_USER.getPropertyKey())) != null)
+        {
+          connectionPropertiesMap.put(SFSessionProperty.PROXY_USER, propValue);
+        }
+        if ((propValue = info.getProperty(
+            SFSessionProperty.PROXY_PASSWORD.getPropertyKey())) != null)
+        {
+          connectionPropertiesMap.put(SFSessionProperty.PROXY_PASSWORD, propValue);
+        }
+        if ((propValue = info.getProperty(
+            SFSessionProperty.NON_PROXY_HOSTS.getPropertyKey())) != null)
+        {
+          connectionPropertiesMap.put(SFSessionProperty.NON_PROXY_HOSTS, propValue);
+        }
+
+        // Setup proxy properties into HttpUtil static cache
+        HttpUtil.configureCustomProxyProperties(connectionPropertiesMap);
+      }
+    }
+  }
+
+  /**
    * Get ResultSet from the ResultSet Serializable object so that the user can
    * access the data. The ResultSet is sessionless.
    *
@@ -1035,6 +1103,21 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
    */
   public ResultSet getResultSet() throws SQLException
   {
+    return getResultSet(null);
+  }
+
+  /**
+   * Get ResultSet from the ResultSet Serializable object so that the user can
+   * access the data.
+   *
+   * @param info  The proxy sever information if proxy is necessary.
+   * @return a ResultSet which represents for the data wrapped in the object
+   */
+  public ResultSet getResultSet(Properties info) throws SQLException
+  {
+    // Setup proxy info if necessary
+    setupProxyPropertiesIfNecessary(info);
+
     // Setup transient fields
     setupTransientFields();
 
@@ -1069,5 +1152,32 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
         new SnowflakeResultSetV1(sfBaseResultSet, this);
 
     return resultSetV1;
+  }
+
+  public String toString() {
+    StringBuilder builder = new StringBuilder(16 * 1024);
+
+    builder.append("hasFirstChunk: ")
+        .append(this.firstChunkStringData != null ? true : false)
+        .append("\n");
+
+    builder.append("RowCountInFirstChunk: ")
+        .append(this.firstChunkRowCount)
+        .append("\n");
+
+    builder.append("queryResultFormat: ")
+        .append(this.queryResultFormat)
+        .append("\n");
+
+    builder.append("chunkFileCount: ")
+        .append(this.chunkFileCount)
+        .append("\n");
+
+    for (ChunkFileMetadata chunkFileMetadata : chunkFileMetadatas)
+    {
+      builder.append("\t").append(chunkFileMetadata.toString()).append("\n");
+    }
+
+    return builder.toString();
   }
 }
