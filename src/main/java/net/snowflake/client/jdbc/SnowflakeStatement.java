@@ -6,7 +6,6 @@ package net.snowflake.client.jdbc;
 
 import java.sql.SQLException;
 import java.util.List;
-import java.sql.Statement;
 
 /**
  * This interface defines Snowflake specific APIs for Statement
