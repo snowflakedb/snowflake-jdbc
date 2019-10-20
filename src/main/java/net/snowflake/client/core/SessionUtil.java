@@ -298,6 +298,7 @@ public class SessionUtil
     String sessionSchema;
     String sessionRole;
     String sessionWarehouse;
+    String sessionId;
     long masterTokenValidityInSeconds;
     String idToken;
     String databaseVersion = null;
@@ -587,6 +588,7 @@ public class SessionUtil
           path("masterValidityInSeconds").asLong();
       String serverVersion =
           jsonNode.path("data").path("serverVersion").asText();
+      sessionId = jsonNode.path("data").path("sessionId").asText();
 
       JsonNode dbNode = jsonNode.path("data").path("sessionInfo").path("databaseName");
       sessionDatabase = dbNode.isNull() ? null : dbNode.asText();
@@ -718,6 +720,7 @@ public class SessionUtil
                                           sessionSchema,
                                           sessionRole,
                                           sessionWarehouse,
+                                          sessionId,
                                           commonParams);
     ret.setUpdatedByTokenRequest(false);
 
