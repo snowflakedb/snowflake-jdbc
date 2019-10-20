@@ -146,6 +146,13 @@ public class JsonResultChunk extends SnowflakeResultChunk
     }
   }
 
+  @Override
+  public void reset()
+  {
+    this.currentRow = 0;
+    this.data.reset();
+  }
+
   /**
    * Compute the memory necessary to store the data of this chunk
    *
@@ -217,7 +224,7 @@ public class JsonResultChunk extends SnowflakeResultChunk
    * This class abstracts the storage of the strings in one chunk.
    * To the user the class behaves similar to an ArrayList.
    */
-  private static interface ResultChunkData
+  private interface ResultChunkData
   {
     /**
      * Add the string to the data list
@@ -304,6 +311,8 @@ public class JsonResultChunk extends SnowflakeResultChunk
      * @throws SnowflakeSQLException
      */
     void addBytes(byte[] src, int src_offset, int pos, int length) throws SnowflakeSQLException;
+
+    void reset();
   }
 
   /**
@@ -319,6 +328,14 @@ public class JsonResultChunk extends SnowflakeResultChunk
     {
       this.blockCount = getBlock(totalLength - 1) + 1;
       this.metaBlockCount = getMetaBlock(count - 1) + 1;
+    }
+
+    @Override
+    public void reset()
+    {
+      this.currentDatOffset = 0;
+      this.nextIndex = 0;
+      this.freeData();
     }
 
     @Override
@@ -570,6 +587,14 @@ public class JsonResultChunk extends SnowflakeResultChunk
       this.rowCount = rowCount;
       this.colCount = colCount;
       this.metaBlockCount = getMetaBlock(this.rowCount * this.colCount - 1) + 1;
+    }
+
+    @Override
+    public void reset()
+    {
+      freeData();
+      this.lastLength = 0;
+      this.nextIndex = 0;
     }
 
     @Override

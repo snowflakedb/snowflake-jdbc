@@ -44,10 +44,13 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -90,7 +93,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
 
   private JsonResultChunk.ResultChunkDataCache chunkDataCache
       = new JsonResultChunk.ResultChunkDataCache();
-  private List<SnowflakeResultChunk> chunks = null;
+  private List<SnowflakeResultChunk> chunks;
 
   // index of next chunk to be consumed (it may not be ready yet)
   private int nextChunkToConsume = 0;
@@ -122,7 +125,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
   // The query result master key
   private final String qrmk;
 
-  private Map<String, String> chunkHeadersMap = null;
+  private Map<String, String> chunkHeadersMap;
 
   private final int networkTimeoutInMilli;
 
@@ -130,6 +133,9 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
 
   // the current memory usage across JVM
   private static Long currentMemoryUsage = 0L;
+
+  // used to track the downloading threads
+  private Map<Integer, Future> downloaderFutures = new HashMap<>();
 
   /**
    * query result format
@@ -158,9 +164,12 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
   // the default jitter ratio 10%
   private long WAITING_JITTER_RATIO = 10;
   /**
-   * Timeout that main thread wait for downloading
+   * Timeout that the main thread waits for downloading the current chunk
    */
-  private final long downloadedConditionTimeoutInSeconds = 3600;
+  private static final long downloadedConditionTimeoutInSeconds = HttpUtil.getDownloadedConditionTimeoutInSeconds();
+
+  private static final int MAX_NUM_OF_RETRY = 10;
+  private static final int MAX_RETRY_JITTER = 1000; // milliseconds
 
   public OCSPMode getOCSPMode()
   {
@@ -328,8 +337,8 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
         // make sure memoryLimit > neededChunkMemory; otherwise, the thread hangs
         if (neededChunkMemory > memoryLimit)
         {
-          logger.debug("{}: reset memoryLimit from {} MB to current chunk size {} MB",
-                       (ArgSupplier) () -> Thread.currentThread().getName(),
+          logger.debug("Thread {}: reset memoryLimit from {} MB to current chunk size {} MB",
+                       (ArgSupplier) () -> Thread.currentThread().getId(),
                        (ArgSupplier) () -> memoryLimit / 1024 / 1024,
                        (ArgSupplier) () -> neededChunkMemory / 1024 / 1024);
 
@@ -353,9 +362,9 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
 
           currentMemoryUsage += neededChunkMemory;
 
-          logger.debug("{}: currentMemoryUsage in MB: {}, nextChunkToDownload: {}, " +
+          logger.debug("Thread {}: currentMemoryUsage in MB: {}, nextChunkToDownload: {}, " +
                        "nextChunkToConsume: {}, newReservedMemory in B: {} ",
-                       (ArgSupplier) () -> Thread.currentThread().getName(),
+                       (ArgSupplier) () -> Thread.currentThread().getId(),
                        (ArgSupplier) () -> currentMemoryUsage / 1024 / 1024,
                        nextChunkToDownload,
                        nextChunkToConsume,
@@ -364,12 +373,12 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
           logger.debug("submit chunk #{} for downloading, url={}",
                        this.nextChunkToDownload, nextChunk.getScrubbedUrl());
 
-          executor.submit(getDownloadChunkCallable(this,
-                                                   nextChunk,
-                                                   qrmk, nextChunkToDownload,
-                                                   chunkHeadersMap,
-                                                   networkTimeoutInMilli));
-
+          Future downloaderFuture = executor.submit(getDownloadChunkCallable(this,
+                                                                             nextChunk,
+                                                                             qrmk, nextChunkToDownload,
+                                                                             chunkHeadersMap,
+                                                                             networkTimeoutInMilli));
+          downloaderFutures.put(nextChunkToDownload, downloaderFuture);
           // increment next chunk to download
           nextChunkToDownload++;
           // make sure reset waiting time
@@ -388,9 +397,9 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
         waitingTime += jitter;
         if (logger.isDebugEnabled())
         {
-          logger.debug("{} waiting for {}s: currentMemoryUsage in MB: {}, neededChunkMemory in MB: {}, " +
+          logger.debug("Thread {} waiting for {}s: currentMemoryUsage in MB: {}, neededChunkMemory in MB: {}, " +
                        "nextChunkToDownload: {}, nextChunkToConsume: {} ",
-                       Thread.currentThread().getName(),
+                       Thread.currentThread().getId(),
                        waitingTime / 1000.0,
                        currentMemoryUsage / 1024 / 1024,
                        neededChunkMemory / 1024 / 1024,
@@ -421,8 +430,8 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
       {
         // has to be before reusing the memory
         currentMemoryUsage -= releaseSize;
-        logger.debug("{}: currentMemoryUsage in MB: {}, released in MB: {}, chunk: {}",
-                     (ArgSupplier) () -> Thread.currentThread().getName(),
+        logger.debug("Thread {}: currentMemoryUsage in MB: {}, released in MB: {}, chunk: {}",
+                     (ArgSupplier) () -> Thread.currentThread().getId(),
                      (ArgSupplier) () -> currentMemoryUsage / 1024 / 1024,
                      releaseSize,
                      chunkId);
@@ -535,36 +544,14 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
     else
     {
       // the chunk we want to consume is not ready yet, wait for it
+      currentChunk.getLock().lock();
       try
       {
-        logger.debug("chunk #{} is not ready to consume",
+        logger.debug("#chunk{} is not ready to consume",
                      nextChunkToConsume);
-
-        currentChunk.getLock().lock();
         logger.debug("consumer get lock to check chunk state");
 
-        while (currentChunk.getDownloadState() != DownloadState.SUCCESS &&
-               currentChunk.getDownloadState() != DownloadState.FAILURE)
-        {
-          logger.debug("wait for chunk #{} to be ready, current"
-                       + "chunk state is: {}",
-                       nextChunkToConsume, currentChunk.getDownloadState());
-
-          long startTime = System.currentTimeMillis();
-          if (!currentChunk.getDownloadCondition().await(downloadedConditionTimeoutInSeconds, TimeUnit.SECONDS))
-          {
-            currentChunk.setDownloadState(DownloadState.FAILURE);
-            currentChunk.setDownloadError(String.format("Timeout waiting for the download of chunk #%d" +
-                                                        "(Total chunks: %d)", nextChunkToConsume, this.chunks.size()));
-          }
-          this.numberMillisWaitingForChunks +=
-              (System.currentTimeMillis() - startTime);
-
-          logger.debug(
-              "woken up from waiting for chunk #{} to be ready",
-              nextChunkToConsume);
-
-        }
+        waitForChunkReady(currentChunk);
 
         // downloader thread encountered an error
         if (currentChunk.getDownloadState() == DownloadState.FAILURE)
@@ -582,7 +569,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
                                           currentChunk.getDownloadError());
         }
 
-        logger.debug("chunk #{} is ready to consume",
+        logger.debug("#chunk{} is ready to consume",
                      nextChunkToConsume);
 
         nextChunkToConsume++;
@@ -610,6 +597,99 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
         }
       }
     }
+  }
+
+  /**
+   * wait for the current chunk to be ready to consume
+   * if the downloader fails then let it retry for at most 10 times
+   * if the downloader is in progress for at most one hour or the downloader has already retried more than 10 times,
+   * then throw an exception.
+   * @param currentChunk
+   * @throws InterruptedException
+   */
+  private void waitForChunkReady(SnowflakeResultChunk currentChunk) throws InterruptedException
+  {
+    int retry = 0;
+    long startTime = System.currentTimeMillis();
+    while (currentChunk.getDownloadState() != DownloadState.SUCCESS &&
+           retry < MAX_NUM_OF_RETRY)
+    {
+      logger.debug("Thread {} is waiting for #chunk{} to be ready, current"
+                   + "chunk state is: {}, retry={}",
+                   Thread.currentThread().getId(),
+                   nextChunkToConsume, currentChunk.getDownloadState(), retry);
+
+      if(currentChunk.getDownloadState() != DownloadState.FAILURE)
+      {
+        // if the state is not failure, we should keep waiting; otherwise, we skip waiting
+        if(!currentChunk.getDownloadCondition().await(downloadedConditionTimeoutInSeconds, TimeUnit.SECONDS))
+        {
+          // if the current chunk has not condition change over the timeout (which is rare)
+          logger.debug("Thread {} is timeout for waiting #chunk{} to be ready, current"
+                      + "chunk state is: {}, retry={}",
+                      Thread.currentThread().getId(),
+                      nextChunkToConsume, currentChunk.getDownloadState(), retry);
+
+          currentChunk.setDownloadState(DownloadState.FAILURE);
+          currentChunk.setDownloadError(String.format("Timeout waiting for the download of #chunk%d" +
+                                                      "(Total chunks: %d) retry=%d", nextChunkToConsume,
+                                                      this.chunks.size(), retry));
+          break;
+        }
+      }
+
+      if (currentChunk.getDownloadState() != DownloadState.SUCCESS)
+      {
+        // timeout or failed
+        retry++;
+        logger.debug("Since downloadState is {} Thread {} decides to retry {} time(s) for #chunk{}",
+                     currentChunk.getDownloadState(),
+                     Thread.currentThread().getId(),
+                     retry,
+                     nextChunkToConsume);
+        Future downloaderFuture = downloaderFutures.get(nextChunkToConsume);
+        if (downloaderFuture != null)
+        {
+          downloaderFuture.cancel(true);
+        }
+        HttpUtil.closeExpiredAndIdleConnections();
+
+        chunks.get(nextChunkToConsume).getLock().lock();
+        try
+        {
+          chunks.get(nextChunkToConsume).setDownloadState(DownloadState.IN_PROGRESS);
+          chunks.get(nextChunkToConsume).reset();
+        }
+        finally
+        {
+          chunks.get(nextChunkToConsume).getLock().unlock();
+        }
+
+        // random jitter before start next retry
+        Thread.sleep(new Random().nextInt(MAX_RETRY_JITTER));
+
+        downloaderFuture = executor.submit(getDownloadChunkCallable(this,
+                                                                    chunks.get(nextChunkToConsume),
+                                                                    qrmk, nextChunkToConsume,
+                                                                    chunkHeadersMap,
+                                                                    networkTimeoutInMilli));
+        downloaderFutures.put(nextChunkToDownload, downloaderFuture);
+      }
+    }
+    if (currentChunk.getDownloadState() == DownloadState.SUCCESS)
+    {
+      logger.debug("ready to consume #chunk{}, succeed retry={}", nextChunkToConsume, retry);
+    }
+    else if (retry >= MAX_NUM_OF_RETRY)
+    {
+      // stop retrying and report failure
+      currentChunk.setDownloadState(DownloadState.FAILURE);
+      currentChunk.setDownloadError(String.format("Max retry reached for the download of #chunk%d" +
+                                                  "(Total chunks: %d) retry=%d", nextChunkToConsume,
+                                                  this.chunks.size(), retry));
+    }
+    this.numberMillisWaitingForChunks +=
+        (System.currentTimeMillis() - startTime);
   }
 
   /**
@@ -727,164 +807,221 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
   {
     return new Callable<Void>()
     {
-      public Void call() throws Exception
+      /**
+       *  Step 1. use chunk url to get the input stream
+       * @return
+       * @throws SnowflakeSQLException
+       */
+      private InputStream getInputStream() throws SnowflakeSQLException
       {
+        HttpResponse response;
         try
         {
-          // set the chunk state to be in progress
-          try
+          response = getResultChunk(resultChunk.getUrl());
+        }
+        catch (URISyntaxException | IOException ex)
+        {
+          throw new SnowflakeSQLException(SqlState.IO_ERROR,
+                                          ErrorCode.NETWORK_ERROR
+                                              .getMessageCode(),
+                                          "Error encountered when request a result chunk URL: "
+                                          + resultChunk.getUrl()
+                                          + " " + ex.getLocalizedMessage());
+        }
+
+        /*
+         * return error if we don't get a response or the response code
+         * means failure.
+         */
+        if (response == null
+            || response.getStatusLine().getStatusCode() != 200)
+        {
+          logger.error("Error fetching chunk from: {}",
+                       resultChunk.getScrubbedUrl());
+
+          SnowflakeUtil.logResponseDetails(response, logger);
+
+          throw new SnowflakeSQLException(SqlState.IO_ERROR,
+                                          ErrorCode.NETWORK_ERROR
+                                              .getMessageCode(),
+                                          "Error encountered when downloading a result chunk: HTTP "
+                                          + "status="
+                                          + ((response != null)
+                                             ? response.getStatusLine().getStatusCode()
+                                             : "null response"));
+        }
+
+        InputStream inputStream;
+        final HttpEntity entity = response.getEntity();
+        try
+        {
+          // read the chunk data
+          InputStream is = entity.getContent();
+
+          // Determine the format of the response, if it is not
+          // either plain text or gzip, raise an error.
+          Header encoding = response.getFirstHeader("Content-Encoding");
+          if (encoding != null)
           {
-            resultChunk.getLock().lock();
-            resultChunk.setDownloadState(DownloadState.IN_PROGRESS);
-          }
-          finally
-          {
-            resultChunk.getLock().unlock();
-          }
-
-          logger.debug("Downloading chunk {}, url={}",
-                       chunkIndex, resultChunk.getScrubbedUrl());
-
-          long startTime = System.currentTimeMillis();
-
-          // initialize the telemetry service for this downloader thread using the main telemetry service
-          TelemetryService.getInstance().updateContext(downloader.snowflakeConnectionString);
-          HttpResponse response = getResultChunk(resultChunk.getUrl());
-
-          /*
-           * return error if we don't get a response or the response code
-           * means failure.
-           */
-          if (response == null
-              || response.getStatusLine().getStatusCode() != 200)
-          {
-            logger.error("Error fetching chunk from: {}",
-                         resultChunk.getScrubbedUrl());
-
-            SnowflakeUtil.logResponseDetails(response, logger);
-
-            throw new SnowflakeSQLException(SqlState.IO_ERROR,
-                                            ErrorCode.NETWORK_ERROR
-                                                .getMessageCode(),
-                                            "Error encountered when downloading a result chunk: HTTP "
-                                            + "status="
-                                            + ((response != null)
-                                               ? response.getStatusLine().getStatusCode()
-                                               : "null response"));
-          }
-
-          InputStream inputStream;
-          final HttpEntity entity = response.getEntity();
-          try
-          {
-            // read the chunk data
-            InputStream is =
-                new HttpUtil.HttpInputStream(entity.getContent());
-
-            // Determine the format of the response, if it is not
-            // either plain text or gzip, raise an error.
-            Header encoding = response.getFirstHeader("Content-Encoding");
-            if (encoding != null)
+            if (encoding.getValue().equalsIgnoreCase("gzip"))
             {
-              if (encoding.getValue().equalsIgnoreCase("gzip"))
-              {
-                /* specify buffer size for GZIPInputStream */
-                is = new GZIPInputStream(is, STREAM_BUFFER_SIZE);
-              }
-              else
-              {
-                throw
-                    new SnowflakeSQLException(
-                        SqlState.INTERNAL_ERROR,
-                        ErrorCode.INTERNAL_ERROR.getMessageCode(),
-                        "Exception: unexpected compression got " +
-                        encoding.getValue());
-              }
-            }
-
-            if (downloader.useJsonParserV2 ||
-                downloader.queryResultFormat == QueryResultFormat.ARROW)
-            {
-              inputStream = is;
+              /* specify buffer size for GZIPInputStream */
+              is = new GZIPInputStream(is, STREAM_BUFFER_SIZE);
             }
             else
             {
-              // Build a sequence of streams to wrap the input stream
-              // with '[' ... ']' to be able to plug this in the
-              // Jackson JSON parser.
-              // gzip stream uses 64KB
-              // no buffering as json parser does it internally
-              inputStream =
-                  new SequenceInputStream(
-                      Collections.enumeration(Arrays.asList(
-                          new ByteArrayInputStream("[".getBytes(
-                              StandardCharsets.UTF_8)),
-                          is,
-                          new ByteArrayInputStream("]".getBytes(
-                              StandardCharsets.UTF_8)))));
+              throw
+                  new SnowflakeSQLException(
+                      SqlState.INTERNAL_ERROR,
+                      ErrorCode.INTERNAL_ERROR.getMessageCode(),
+                      "Exception: unexpected compression got " +
+                      encoding.getValue());
             }
           }
-          catch (Exception ex)
-          {
-            logger.error(
-                "Failed to uncompress data: {}",
-                response);
 
-            throw ex;
+          if (downloader.useJsonParserV2 ||
+              downloader.queryResultFormat == QueryResultFormat.ARROW)
+          {
+            inputStream = is;
           }
-
-          // remember the download time
-          resultChunk.setDownloadTime(System.currentTimeMillis() - startTime);
-          downloader.addDownloadTime(resultChunk.getDownloadTime());
-
-          startTime = System.currentTimeMillis();
-
-          // trace the response if requested
-          if (downloader.queryResultFormat == QueryResultFormat.JSON)
+          else
           {
-            logger.debug("Json response: {}", response);
+            // Build a sequence of streams to wrap the input stream
+            // with '[' ... ']' to be able to plug this in the
+            // Jackson JSON parser.
+            // gzip stream uses 64KB
+            // no buffering as json parser does it internally
+            inputStream =
+                new SequenceInputStream(
+                    Collections.enumeration(Arrays.asList(
+                        new ByteArrayInputStream("[".getBytes(
+                            StandardCharsets.UTF_8)),
+                        is,
+                        new ByteArrayInputStream("]".getBytes(
+                            StandardCharsets.UTF_8)))));
           }
+        }
+        catch (Exception ex)
+        {
+          logger.error(
+              "Failed to decompress data: {}",
+              response);
 
-          // parse the result json
-          try
+          throw
+              new SnowflakeSQLException(
+                  SqlState.INTERNAL_ERROR,
+                  ErrorCode.INTERNAL_ERROR.getMessageCode(),
+                  "Failed to decompress data: " +
+                  response.toString());
+        }
+
+        // trace the response if requested
+        logger.debug("Json response: {}", response);
+
+        return inputStream;
+      }
+
+      /**
+       * Read the input stream and parse chunk data into memory
+       * @param inputStream
+       * @throws SnowflakeSQLException
+       */
+      private void downloadAndParseChunk(InputStream inputStream) throws SnowflakeSQLException
+      {
+        // remember the download time
+        resultChunk.setDownloadTime(System.currentTimeMillis() - startTime);
+        downloader.addDownloadTime(resultChunk.getDownloadTime());
+
+        startTime = System.currentTimeMillis();
+
+        // parse the result json
+        try
+        {
+          if (downloader.queryResultFormat == QueryResultFormat.ARROW)
           {
-            if (downloader.queryResultFormat == QueryResultFormat.ARROW)
+            ((ArrowResultChunk) resultChunk).readArrowStream(inputStream);
+          }
+          else
+          {
+            if (downloader.useJsonParserV2)
             {
-              ((ArrowResultChunk) resultChunk).readArrowStream(inputStream);
+              parseJsonToChunkV2(inputStream, resultChunk);
             }
             else
             {
-              if (downloader.useJsonParserV2)
-              {
-                parseJsonToChunkV2(inputStream, resultChunk);
-              }
-              else
-              {
-                parseJsonToChunk(inputStream, resultChunk);
-              }
+              parseJsonToChunk(inputStream, resultChunk);
             }
           }
-          catch (Exception ex)
-          {
-            logger.error("Exception when parsing result", ex);
+        }
+        catch (Exception ex)
+        {
+          logger.debug("Thread {} Exception when parsing result #chunk{}: {}",
+                      Thread.currentThread().getId(), chunkIndex, ex.getLocalizedMessage());
 
+          throw new SnowflakeSQLException(ex, SqlState.INTERNAL_ERROR,
+                                          ErrorCode.INTERNAL_ERROR
+                                              .getMessageCode(),
+                                          "Exception: " +
+                                          ex.getLocalizedMessage());
+        }
+        finally
+        {
+          // close the buffer reader will close underlying stream
+          logger.debug("Thread {} close input stream for #chunk{}",
+                      Thread.currentThread().getId(),
+                      chunkIndex);
+          try
+          {
+            inputStream.close();
+          }
+          catch (IOException ex)
+          {
             throw new SnowflakeSQLException(ex, SqlState.INTERNAL_ERROR,
                                             ErrorCode.INTERNAL_ERROR
                                                 .getMessageCode(),
                                             "Exception: " +
-                                            ex.getLocalizedMessage() +
-                                            "\nBad result json: " + response.toString());
+                                            ex.getLocalizedMessage());
           }
-          finally
-          {
-            // close the buffer reader will close underlying stream
-            inputStream.close();
-          }
+        }
 
-          // add parsing time
-          resultChunk.setParseTime(System.currentTimeMillis() - startTime);
-          downloader.addParsingTime(resultChunk.getParseTime());
+        // add parsing time
+        resultChunk.setParseTime(System.currentTimeMillis() - startTime);
+        downloader.addParsingTime(resultChunk.getParseTime());
+      }
 
+      private long startTime;
+
+      public Void call()
+      {
+        resultChunk.getLock().lock();
+        try
+        {
+          resultChunk.setDownloadState(DownloadState.IN_PROGRESS);
+        }
+        finally
+        {
+          resultChunk.getLock().unlock();
+        }
+
+        logger.debug("Downloading #chunk{}, url={}, Thread {}",
+                    chunkIndex, resultChunk.getUrl(), Thread.currentThread().getId());
+
+        startTime = System.currentTimeMillis();
+
+        // initialize the telemetry service for this downloader thread using the main telemetry service
+        TelemetryService.getInstance().updateContext(downloader.snowflakeConnectionString);
+
+        try
+        {
+          InputStream is = getInputStream();
+          logger.debug("Thread {} start downloading #chunk{}",
+                      Thread.currentThread().getId(),
+                      chunkIndex);
+          downloadAndParseChunk(is);
+          logger.debug("Thread {} finish downloading #chunk{}",
+                      Thread.currentThread().getId(),
+                      chunkIndex);
+          downloader.downloaderFutures.remove(chunkIndex);
           logger.debug(
               "Finished preparing chunk data for {}, " +
               "total download time={}ms, total parse time={}ms",
@@ -892,9 +1029,9 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
               resultChunk.getDownloadTime(),
               resultChunk.getParseTime());
 
+          resultChunk.getLock().lock();
           try
           {
-            resultChunk.getLock().lock();
             logger.debug(
                 "get lock to change the chunk to be ready to consume");
 
@@ -908,18 +1045,17 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
           finally
           {
             logger.debug(
-                "Downloaded chunk {}, free lock", chunkIndex);
+                "Downloaded #chunk{}, free lock", chunkIndex);
 
             resultChunk.getLock().unlock();
           }
         }
-        catch (Throwable ex)
+        catch (SnowflakeSQLException ex)
         {
+          resultChunk.getLock().lock();
           try
           {
             logger.debug("get lock to set chunk download error");
-            resultChunk.getLock().lock();
-
             resultChunk.setDownloadState(DownloadState.FAILURE);
             StringWriter errors = new StringWriter();
             ex.printStackTrace(new PrintWriter(errors));
@@ -932,18 +1068,19 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
           }
           finally
           {
-            logger.debug("Failed to download chunk {}, free lock",
+            logger.debug("Failed to download #chunk{}, free lock",
                          chunkIndex);
             resultChunk.getLock().unlock();
           }
 
-          logger.error(
-              "Exception encountered ({}:{}) fetching chunk from: {}",
+          logger.debug(
+              "Thread {} Exception encountered ({}:{}) fetching #chunk{} from: {}, Error {}",
+              Thread.currentThread().getId(),
               ex.getClass().getName(),
               ex.getLocalizedMessage(),
-              resultChunk.getScrubbedUrl());
-
-          logger.error("Exception: ", ex);
+              chunkIndex,
+              resultChunk.getScrubbedUrl(),
+              resultChunk.getDownloadError());
         }
 
         return null;
@@ -969,11 +1106,14 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
 
         byte[] buf = new byte[STREAM_BUFFER_SIZE];
         int len;
+        logger.debug("Thread {} start to read inputstream for #chunk{}",
+                     Thread.currentThread().getId(), chunkIndex);
         while ((len = jsonInputStream.read(buf)) != -1)
         {
           jp.continueParsing(ByteBuffer.wrap(buf, 0, len));
         }
-
+        logger.debug("Thread {} finish reading inputstream for #chunk{}",
+                     Thread.currentThread().getId(), chunkIndex);
         jp.endParsing();
       }
 
@@ -1021,7 +1161,8 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
         }
       }
 
-      private HttpResponse getResultChunk(String chunkUrl) throws URISyntaxException, IOException, SnowflakeSQLException
+      private HttpResponse getResultChunk(String chunkUrl)
+      throws URISyntaxException, IOException, SnowflakeSQLException
       {
         URIBuilder uriBuilder = new URIBuilder(chunkUrl);
 
@@ -1044,12 +1185,14 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
           logger.debug("Adding SSE-C headers");
         }
 
-        logger.debug("Fetching result: {}", resultChunk.getScrubbedUrl());
+        logger.debug("Thread {} Fetching result #chunk{}: {}",
+                     Thread.currentThread().getId(),
+                     chunkIndex,
+                     resultChunk.getScrubbedUrl());
 
         //TODO move this s3 request to HttpUtil class. In theory, upper layer
         //TODO does not need to know about http client
-        CloseableHttpClient httpClient = HttpUtil.getHttpClient(
-            downloader.getOCSPMode());
+        CloseableHttpClient httpClient = HttpUtil.getHttpClient(downloader.getOCSPMode());
 
         // fetch the result chunk
         HttpResponse response =
@@ -1064,8 +1207,11 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
                                 true // retry on HTTP403 for AWS S3
             );
 
-        logger.debug("Call returned for URL: {}",
-                     (ArgSupplier) () -> SecretDetector.maskSASToken(chunkUrl));
+        logger.debug("Thread {} Call #chunk{} returned for URL: {}, response={}",
+                     Thread.currentThread().getId(),
+                     chunkIndex,
+                     (ArgSupplier) () -> SecretDetector.maskSASToken(chunkUrl),
+                     response);
         return response;
       }
     };
