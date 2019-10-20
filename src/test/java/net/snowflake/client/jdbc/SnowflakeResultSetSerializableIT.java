@@ -3,6 +3,7 @@ package net.snowflake.client.jdbc;
 
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnTravisCI;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -26,6 +27,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.util.Properties;
 
 /**
  * SnowflakeResultSetSerializable tests
@@ -160,6 +162,10 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
     if (developPrint)
     {
       System.out.println("\nSplit ResultSet as " + result.size() + " parts.");
+      for (String filename : result)
+      {
+        System.out.println(filename);
+      }
     }
 
     return result;
@@ -175,6 +181,12 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
    * @throws Throwable If any error happens.
    */
   private String deserializeResultSet(List<String> files) throws Throwable
+  {
+    return deserializeResultSetWithProperties(files, null);
+  }
+
+  private String deserializeResultSetWithProperties(List<String> files,
+                                                    Properties props) throws Throwable
   {
     StringBuilder builder = new StringBuilder(1024 * 1024);
     builder.append("==== result start ===\n");
@@ -210,7 +222,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
       }
 
       // Read data from object
-      ResultSet rs = resultSetChunk.getResultSet();
+      ResultSet rs = resultSetChunk.getResultSet(props);
 
       // print result set meta data
       ResultSetMetaData metadata = rs.getMetaData();
@@ -700,6 +712,116 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
       {
         System.out.println("Negative test hits expected error: " + ex.getMessage());
       }
+    }
+  }
+
+  /**
+   * This test is related to proxy, it can only be tested manually since
+   * there is no testing proxy server setup. Below are the unit test to for
+   * the proxy.
+   * 1. Setup proxy on your testing box. The instruction can be found by search
+   *    "How to setup Proxy Server for Client tests" in engineering pages. OR
+   *    https://snowflakecomputing.atlassian.net/wiki/spaces/EN/pages/65438343/How+to+setup+Proxy+Server+for+Client+tests
+   * 2. There are two steps to run the test manually because the proxy info
+   *    cached in static variables in HttpUtil. So it needs the JVM to be
+   *    restarted between the 2 steps.
+   *    Step 1: Generate file list for SnowflakeResultSetSerializable objects.
+   *            Set variable 'generateFiles' as true. The file list will be
+   *            printed. For example,
+   *              Split ResultSet as 4 parts.
+   *              /tmp/junit16319222538342218700_result_0.txt
+   *              /tmp/junit16319222538342218700_result_1.txt
+   *              /tmp/junit16319222538342218700_result_2.txt
+   *              /tmp/junit16319222538342218700_result_3.txt
+   *    Step 2: Set variable 'generateFiles' as false. Replace the above
+   *            printed file names to 'fileNameList'. Run this test.
+   *            The step 2 can be run with 'correctProxy' = true or false.
+   *            Run it with wrong proxy is to make sure the proxy setting is
+   *            used.
+   *
+   * @throws Throwable
+   */
+  @Test
+  @Ignore
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
+  public void testCustomProxyWithFiles() throws Throwable
+  {
+    boolean generateFiles = false;
+    boolean correctProxy = false;
+
+    if (generateFiles)
+    {
+      generateTestFiles();
+      fail("This is generate test file.");
+    }
+
+    // Setup proxy information
+    Properties props = new Properties();
+    props.put("useProxy", "true");
+    props.put("proxyHost", "localhost");
+    props.put("proxyPort", "3128");
+    props.put("proxyUser", "testuser1");
+    if (correctProxy)
+    {
+      props.put("proxyPassword", "test");
+    }
+    else
+    {
+      props.put("proxyPassword", "wrongPasswd");
+    }
+    props.put("nonProxyHosts", "*.foo.com");
+
+    // Setup files to deserialize SnowflakeResultSetSerializable objects.
+    List<String> fileNameList = new ArrayList<>();
+    fileNameList.add("/tmp/junit16319222538342218700_result_0.txt");
+    fileNameList.add("/tmp/junit16319222538342218700_result_1.txt");
+    fileNameList.add("/tmp/junit16319222538342218700_result_2.txt");
+    fileNameList.add("/tmp/junit16319222538342218700_result_3.txt");
+
+    if (correctProxy)
+    {
+      String chunkResultString =
+          deserializeResultSetWithProperties(fileNameList, props);
+      System.out.println(chunkResultString.length());
+    }
+    else
+    {
+      try
+      {
+        deserializeResultSetWithProperties(fileNameList, props);
+        fail("This is negative test.");
+      }
+      catch (Exception ex)
+      {
+        // since the proxy is wrong, the connection should hit error.
+      }
+    }
+  }
+
+  private void generateTestFiles() throws Throwable
+  {
+    try(Connection connection = getConnection())
+    {
+      Statement statement = connection.createStatement();
+
+      statement.execute(
+          "create or replace table table_basic " +
+              " (int_c int, string_c string(128))");
+
+      int rowCount = 60000;
+      statement.execute(
+          "insert into table_basic select " +
+              "seq4(), " +
+              "'arrow_1234567890arrow_1234567890arrow_1234567890arrow_1234567890'" +
+              " from table(generator(rowcount=>" + rowCount + "))");
+
+
+      String sqlSelect = "select * from table_basic ";
+      ResultSet rs = statement.executeQuery(sqlSelect);
+      developPrint = true;
+      serializeResultSet((SnowflakeResultSet) rs,
+                         2*1024*1024, "txt");
+      System.exit(-1);
     }
   }
 }
