@@ -78,6 +78,9 @@ public class SnowflakeDriverIT extends BaseJDBCTest
   public TemporaryFolder tmpFolder = new TemporaryFolder();
   private ObjectMapper mapper = new ObjectMapper();
 
+  @Rule
+  public TemporaryFolder tmpFolder2 = new TemporaryFolder();
+
   @BeforeClass
   public static void setUp() throws Throwable
   {
@@ -1019,6 +1022,79 @@ public class SnowflakeDriverIT extends BaseJDBCTest
       statement.execute("DROP TABLE IF EXISTS large_table");
       statement.close();
       connection.close();
+    }
+  }
+
+  @Test
+  public void testPutOverwrite() throws Throwable
+  {
+    Connection connection = null;
+    Statement statement = null;
+
+    // create 2 files: an original, and one that will overwrite the original
+    File file1 = tmpFolder.newFile("testfile.csv");
+    BufferedWriter bw = new BufferedWriter(new FileWriter(file1));
+    bw.write("Writing original file content. This should get overwritten.");
+    bw.close();
+
+    File file2 = tmpFolder2.newFile("testfile.csv");
+    bw = new BufferedWriter(new FileWriter(file2));
+    bw.write("This is all new! This should be the result of the overwriting.");
+    bw.close();
+
+    String sourceFilePathOriginal = file1.getCanonicalPath();
+    String sourceFilePathOverwrite = file2.getCanonicalPath();
+
+    File destFolder = tmpFolder.newFolder();
+    String destFolderCanonicalPath = destFolder.getCanonicalPath();
+    String destFolderCanonicalPathWithSeparator = destFolderCanonicalPath + File.separator;
+
+    List<String> accounts = Arrays.asList(null, "s3testaccount", "azureaccount", "gcpaccount");
+    for (int i = 0; i < accounts.size(); i++)
+    {
+      try
+      {
+        connection = getConnection(accounts.get(i));
+
+        statement = connection.createStatement();
+
+        // create a stage to put the file in
+        statement.execute("CREATE OR REPLACE STAGE testing_stage");
+        assertTrue("Failed to put a file",
+                   statement.execute("PUT file://" + sourceFilePathOriginal + " @testing_stage"));
+        // check that file exists in stage after PUT
+        findFile(statement, "ls @testing_stage/");
+
+        // put another file in same stage with same filename with overwrite = true
+        assertTrue("Failed to put a file",
+                   statement.execute("PUT file://" + sourceFilePathOverwrite + " @testing_stage overwrite=true"));
+
+        // check that file exists in stage after PUT
+        findFile(statement, "ls @testing_stage/");
+
+        // get file from new stage
+        assertTrue("Failed to get files", statement.execute(
+            "GET @testing_stage 'file://"
+            + destFolderCanonicalPath + "' parallel=8"));
+
+        // Make sure that the downloaded file exists; it should be gzip compressed
+        File downloaded = new File(destFolderCanonicalPathWithSeparator + "testfile.csv.gz");
+        assert (downloaded.exists());
+
+        //unzip the file
+        Process p = Runtime.getRuntime().exec(
+            "gzip -d " + destFolderCanonicalPathWithSeparator
+            + "testfile.csv.gz");
+        p.waitFor();
+
+        File unzipped = new File(destFolderCanonicalPathWithSeparator + "testfile.csv");
+        assert(FileUtils.contentEqualsIgnoreEOL(file2, unzipped, null));
+      }
+      finally
+      {
+        statement.execute("DROP TABLE IF EXISTS testLoadToLocalFS");
+        statement.close();
+      }
     }
   }
 
