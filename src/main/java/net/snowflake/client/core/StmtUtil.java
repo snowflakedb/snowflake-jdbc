@@ -327,7 +327,7 @@ public class StmtUtil
             stmtInput.querySubmissionTime,
             stmtInput.describeOnly || stmtInput.internal);
 
-        if (stmtInput.combineDescribe && !stmtInput.describeOnly)
+        if (!stmtInput.describeOnly)
         {
           sqlJsonBody.setDescribedJobId(stmtInput.describedJobId);
         }
