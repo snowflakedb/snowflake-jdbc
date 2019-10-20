@@ -26,6 +26,7 @@ public class SFLoginOutput
   private Map<String, Object> commonParams;
   private boolean updatedByTokenRequest;
   private boolean updatedByTokenRequestIssue;
+  private String sessionId;
 
   SFLoginOutput()
   {
@@ -41,6 +42,7 @@ public class SFLoginOutput
                 String sessionSchema,
                 String sessionRole,
                 String sessionWarehouse,
+                String sessionId,
                 Map<String, Object> commonParams)
   {
     this.sessionToken = sessionToken;
@@ -56,6 +58,12 @@ public class SFLoginOutput
     this.sessionWarehouse = sessionWarehouse;
     this.commonParams = commonParams;
     this.masterTokenValidityInSeconds = masterTokenValidityInSeconds;
+    this.sessionId = sessionId;
+  }
+
+  public String getSessionId()
+  {
+    return sessionId;
   }
 
   public String getSessionToken()
