@@ -1,3 +1,14 @@
+**JDBC Driver 3.10.1**
+
+- \| SNOW-99312 | Implement better retry functionality for chunk downloader
+- \| SNOW-98272 | Enable OVERWRITE option for PUT command to overwrite the files
+- \| SNOW-23970 | Support wildcards in directory names in PUT commands
+- \| SNOW-99497 | Add session id to SnowflakeConnection
+- \| SNOW-99630 | Fix CVE-2019-16335, CVE-2019-14540
+- \| SNOW-99954 | Associate describe and execute jobs for the server
+- \
+- \      
+
 **JDBC Driver 3.10.0**
 
 - \SNOW-94386 | Fix getShort, getInt, getLong, getBigDecimal, getFloat, getDouble, getBytes to be consistent between JSON and ARROW result sets
