@@ -1,6 +1,5 @@
 package net.snowflake.client.jdbc;
 
-import net.snowflake.client.RunningOnTravisCI;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -16,7 +15,6 @@ import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.CoreMatchers.is;
 
-import static net.snowflake.client.ConditionalIgnoreRule.ConditionalIgnore;
 
 @RunWith(Parameterized.class)
 public class PreparedMultiStmtIT extends BaseJDBCTest
@@ -59,12 +57,10 @@ public class PreparedMultiStmtIT extends BaseJDBCTest
   }
 
   @Test
-  @ConditionalIgnore(condition = RunningOnTravisCI.class)
   public void testExecuteUpdateCount() throws Exception
   {
     SnowflakeConnectionV1 connection = (SnowflakeConnectionV1) getConnection();
     Statement statement = connection.createStatement();
-    statement.execute("alter session set ENABLE_MULTISTATEMENT=true");
     statement.execute("alter session set MULTI_STATEMENT_COUNT=0");
     statement.execute("create or replace table test_multi_bind(c1 number)");
 
@@ -108,12 +104,10 @@ public class PreparedMultiStmtIT extends BaseJDBCTest
    * Less bindings than expected in statement
    */
   @Test
-  @ConditionalIgnore(condition = RunningOnTravisCI.class)
   public void testExecuteLessBindings() throws Exception
   {
     SnowflakeConnectionV1 connection = (SnowflakeConnectionV1) getConnection();
     Statement statement = connection.createStatement();
-    statement.execute("alter session set ENABLE_MULTISTATEMENT=true");
     statement.execute("alter session set MULTI_STATEMENT_COUNT=0");
     statement.execute("create or replace table test_multi_bind(c1 number)");
 
@@ -145,12 +139,10 @@ public class PreparedMultiStmtIT extends BaseJDBCTest
   }
 
   @Test
-  @ConditionalIgnore(condition = RunningOnTravisCI.class)
   public void testExecuteMoreBindings() throws Exception
   {
     SnowflakeConnectionV1 connection = (SnowflakeConnectionV1) getConnection();
     Statement statement = connection.createStatement();
-    statement.execute("alter session set ENABLE_MULTISTATEMENT=true");
     statement.execute("alter session set MULTI_STATEMENT_COUNT=0");
     statement.execute("create or replace table test_multi_bind(c1 number)");
 
@@ -193,12 +185,10 @@ public class PreparedMultiStmtIT extends BaseJDBCTest
   }
 
   @Test
-  @ConditionalIgnore(condition = RunningOnTravisCI.class)
   public void testExecuteQueryBindings() throws Exception
   {
     SnowflakeConnectionV1 connection = (SnowflakeConnectionV1) getConnection();
     Statement statement = connection.createStatement();
-    statement.execute("alter session set ENABLE_MULTISTATEMENT=true");
     statement.execute("alter session set MULTI_STATEMENT_COUNT=0");
 
     PreparedStatement preparedStatement = connection.prepareStatement(
@@ -239,12 +229,10 @@ public class PreparedMultiStmtIT extends BaseJDBCTest
   }
 
   @Test
-  @ConditionalIgnore(condition = RunningOnTravisCI.class)
   public void testExecuteQueryNoBindings() throws Exception
   {
     SnowflakeConnectionV1 connection = (SnowflakeConnectionV1) getConnection();
     Statement statement = connection.createStatement();
-    statement.execute("alter session set ENABLE_MULTISTATEMENT=true");
     statement.execute("alter session set MULTI_STATEMENT_COUNT=0");
 
     PreparedStatement preparedStatement = connection.prepareStatement(
