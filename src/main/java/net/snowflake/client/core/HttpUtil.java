@@ -61,8 +61,8 @@ public class HttpUtil
 {
   static final SFLogger logger = SFLoggerFactory.getLogger(HttpUtil.class);
 
-  static final int DEFAULT_MAX_CONNECTIONS = 100;
-  static final int DEFAULT_MAX_CONNECTIONS_PER_ROUTE = 100;
+  static final int DEFAULT_MAX_CONNECTIONS = 300;
+  static final int DEFAULT_MAX_CONNECTIONS_PER_ROUTE = 300;
   static final int DEFAULT_CONNECTION_TIMEOUT = 60000;
   static final int DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT = 300000; // ms
   static final int DEFAULT_TTL = -1; // secs
