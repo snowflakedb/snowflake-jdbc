@@ -1131,39 +1131,6 @@ public class PreparedStatementIT extends BaseJDBCTest
     }
   }
 
-  @Test
-  @ConditionalIgnore(condition = RunningOnTravisCI.class)
-  public void testCombineDescribe() throws SQLException
-  {
-    Connection adminCon = getSnowflakeAdminConnection();
-    adminCon.createStatement().execute(
-        "alter system set enable_combined_describe=true");
-
-    try
-    {
-      connection = getConnection();
-
-      connection.createStatement().execute(
-          "alter session set jdbc_enable_combined_describe=true");
-
-      prepStatement = connection.prepareStatement(
-          "select c1 from orders order by c1");
-
-      ResultSet resultSet = prepStatement.executeQuery();
-
-      resultSet.next();
-
-      assertThat(resultSet.getString(1), is("1"));
-      connection.close();
-    }
-    finally
-    {
-      adminCon.createStatement().execute(
-          "alter system set enable_combined_describe=default");
-      adminCon.close();
-    }
-  }
-
   /**
    * This test simulates the prepare timeout. When combine
    * describe and execute, combine thread will wait max to
