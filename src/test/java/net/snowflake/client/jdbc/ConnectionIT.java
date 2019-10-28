@@ -15,6 +15,7 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.Ignore;
 
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -108,6 +109,7 @@ public class ConnectionIT extends BaseJDBCTest
   }
 
   @Test
+  @Ignore
   public void test300ConnectionsWithSingleClientInstance() throws SQLException
   {
     // concurrent testing
