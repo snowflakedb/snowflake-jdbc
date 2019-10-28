@@ -33,6 +33,8 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import static net.snowflake.client.core.SessionUtil.CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY;
@@ -55,6 +57,8 @@ public class ConnectionIT extends BaseJDBCTest
   private static final int INVALID_CONNECTION_INFO_CODE = 390100;
   private static final int SESSION_CREATION_OBJECT_DOES_NOT_EXIST_NOT_AUTHORIZED = 390201;
   private static final int ROLE_IN_CONNECT_STRING_DOES_NOT_EXIST = 390189;
+
+  String errorMessage = null;
 
   private boolean defaultState;
 
@@ -101,6 +105,27 @@ public class ConnectionIT extends BaseJDBCTest
     con.close();
     assertTrue(con.isClosed());
     con.close(); // ensure no exception
+  }
+
+  @Test
+  public void test300ConnectionsWithSingleClientInstance() throws SQLException
+  {
+    // concurrent testing
+    int size = 300;
+    Connection con = getConnection();
+    con.createStatement().execute("create or replace table bigTable(rowNum number, rando number) as (select seq4(), " +
+                                  "uniform(1, 10, random()) from table(generator(rowcount=>10000000)) v)");
+    con.createStatement().execute("create or replace table conTable(colA number)");
+
+
+    ExecutorService taskRunner = Executors.newFixedThreadPool(size);
+    for (int i = 0; i < size; i++)
+    {
+      ConcurrentConnections newTask = new ConcurrentConnections();
+      taskRunner.submit(newTask);
+    }
+    assertEquals(null, errorMessage);
+    taskRunner.shutdownNow();
   }
 
   /**
@@ -1210,4 +1235,29 @@ public class ConnectionIT extends BaseJDBCTest
     props.put("warehouse", params.get("warehouse"));
     return props;
   }
+
+
+  private class ConcurrentConnections implements Runnable
+  {
+
+    ConcurrentConnections()
+    {
+    }
+
+    @Override
+    public void run()
+    {
+      try
+      {
+         getConnection().createStatement().executeQuery(
+             "select * from bigTable");
+
+      }
+      catch (SQLException ex)
+      {
+        errorMessage = ex.getMessage();
+      }
+    }
+  }
+
 }
