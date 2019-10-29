@@ -115,10 +115,7 @@ public class ConnectionIT extends BaseJDBCTest
     // concurrent testing
     int size = 300;
     Connection con = getConnection();
-    String database = con.getCatalog();
-    String schema = con.getSchema();
-    con.createStatement().execute("create or replace table bigTable(rowNum number,rando " +
-                                  "number) as (select seq4()," +
+    con.createStatement().execute("create or replace table bigTable(rowNum number, rando number) as (select seq4(), " +
                                   "uniform(1, 10, random()) from table(generator(rowcount=>10000000)) v)");
     con.createStatement().execute("create or replace table conTable(colA number)");
 
@@ -1243,7 +1240,7 @@ public class ConnectionIT extends BaseJDBCTest
 
   private class ConcurrentConnections implements Runnable
   {
-    Connection con = null;
+
     ConcurrentConnections()
     {
     }
@@ -1253,23 +1250,13 @@ public class ConnectionIT extends BaseJDBCTest
     {
       try
       {
-        con = getConnection();
-        con.createStatement().executeQuery(
+         getConnection().createStatement().executeQuery(
              "select * from bigTable");
-        con.close();
 
       }
       catch (SQLException ex)
       {
-        try
-        {
-          con.close();
-        }
-        catch (SQLException e)
-        {
-          e.printStackTrace();
-        }
-        ex.printStackTrace();
+        errorMessage = ex.getMessage();
       }
     }
   }
