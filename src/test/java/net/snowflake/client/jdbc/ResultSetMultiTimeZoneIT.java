@@ -42,28 +42,13 @@ public class ResultSetMultiTimeZoneIT extends BaseJDBCTest
   public static Object[][] data()
   {
     // all tests in this class need to run for both query result formats json and arrow
-    if (BaseJDBCTest.isArrowTestsEnabled())
-    {
-      return new Object[][]{
-          {"json", "UTC"},
-          {"json", "America/Los_Angeles"},
-          {"json", "Asia/Singapore"},
-          {"json", "MEZ"},
-          {"arrow_force", "UTC"},
-          {"arrow_force", "America/Los_Angeles"},
-          {"arrow_force", "Asia/Singapore"},
-          {"arrow_force", "MEZ"},
-      };
-    }
-    else
-    {
-      return new Object[][]{
-          {"json", "UTC"},
-          {"json", "America/Los_Angeles"},
-          {"json", "Asia/Singapore"},
-          {"json", "MEZ"},
-      };
-    }
+    return new Object[][]{
+        {"json", "UTC"},
+        {"json", "MEZ"},
+        {"arrow", "UTC"},
+        {"arrow", "Asia/Singapore"},
+        {"arrow", "MEZ"},
+    };
   }
 
   private static String queryResultFormat;
@@ -96,21 +81,18 @@ public class ResultSetMultiTimeZoneIT extends BaseJDBCTest
   throws SQLException
   {
     Connection conn = getConnection(BaseJDBCTest.DONT_INJECT_SOCKET_TIMEOUT);
-    if (isArrowTestsEnabled())
-    {
-      conn.createStatement().execute("alter session set query_result_format = '" + queryResultFormat + "'");
-    }
+    conn.createStatement().execute(
+        "alter session set query_result_format = '" + queryResultFormat + "'");
     return conn;
   }
 
   public static Connection getConnection(Properties paramProperties)
   throws SQLException
   {
-    Connection conn = getConnection(DONT_INJECT_SOCKET_TIMEOUT, paramProperties, false, false);
-    if (isArrowTestsEnabled())
-    {
-      conn.createStatement().execute("alter session set query_result_format = '" + queryResultFormat + "'");
-    }
+    Connection conn = getConnection(
+        DONT_INJECT_SOCKET_TIMEOUT, paramProperties, false, false);
+    conn.createStatement().execute(
+        "alter session set query_result_format = '" + queryResultFormat + "'");
     return conn;
   }
 

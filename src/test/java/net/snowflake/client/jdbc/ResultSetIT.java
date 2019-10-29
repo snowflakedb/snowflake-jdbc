@@ -56,34 +56,9 @@ import static org.junit.Assert.fail;
 /**
  * Test ResultSet
  */
-@RunWith(Parameterized.class)
 public class ResultSetIT extends BaseJDBCTest
 {
-  @Parameterized.Parameters(name = "format={0}")
-  public static Object[][] data()
-  {
-    // all tests in this class need to run for both query result formats json and arrow
-    if (BaseJDBCTest.isArrowTestsEnabled())
-    {
-      return new Object[][]{
-          {"JSON"},
-          {"Arrow_force"}
-      };
-    }
-    else
-    {
-      return new Object[][]{
-          {"JSON"}
-      };
-    }
-  }
-
-  private static String queryResultFormat;
-
-  public ResultSetIT(String queryResultFormat)
-  {
-    this.queryResultFormat = queryResultFormat;
-  }
+  protected static String queryResultFormat = "json";
 
   private final String selectAllSQL = "select * from test_rs";
 
@@ -130,21 +105,18 @@ public class ResultSetIT extends BaseJDBCTest
   throws SQLException
   {
     Connection conn = getConnection(BaseJDBCTest.DONT_INJECT_SOCKET_TIMEOUT);
-    if (isArrowTestsEnabled())
-    {
-      conn.createStatement().execute("alter session set query_result_format = '" + queryResultFormat + "'");
-    }
+    conn.createStatement().execute(
+        "alter session set query_result_format = '" + queryResultFormat + "'");
     return conn;
   }
 
   public static Connection getConnection(Properties paramProperties)
   throws SQLException
   {
-    Connection conn = getConnection(DONT_INJECT_SOCKET_TIMEOUT, paramProperties, false, false);
-    if (isArrowTestsEnabled())
-    {
-      conn.createStatement().execute("alter session set query_result_format = '" + queryResultFormat + "'");
-    }
+    Connection conn = getConnection(
+        DONT_INJECT_SOCKET_TIMEOUT, paramProperties, false, false);
+    conn.createStatement().execute(
+        "alter session set query_result_format = '" + queryResultFormat + "'");
     return conn;
   }
 

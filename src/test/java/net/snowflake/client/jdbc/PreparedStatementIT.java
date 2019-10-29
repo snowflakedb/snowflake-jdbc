@@ -48,43 +48,16 @@ import static org.junit.Assert.fail;
 /**
  * Prepared statement integration tests
  */
-@RunWith(Parameterized.class)
 public class PreparedStatementIT extends BaseJDBCTest
 {
-  @Parameterized.Parameters(name = "format={0}")
-  public static Object[][] data()
-  {
-    // all tests in this class need to run for both query result formats json and arrow
-    if (BaseJDBCTest.isArrowTestsEnabled())
-    {
-      return new Object[][]{
-          {"JSON"}
-          , {"Arrow_force"}
-      };
-    }
-    else
-    {
-      return new Object[][]{
-          {"JSON"}
-      };
-    }
-  }
-
-  private static String queryResultFormat;
-
-  public PreparedStatementIT(String format)
-  {
-    queryResultFormat = format;
-  }
+  protected static String queryResultFormat = "json";
 
   public static Connection getConnection()
   throws SQLException
   {
     Connection conn = BaseJDBCTest.getConnection();
-    if (isArrowTestsEnabled())
-    {
-      conn.createStatement().execute("alter session set query_result_format = '" + queryResultFormat + "'");
-    }
+    conn.createStatement().execute(
+        "alter session set query_result_format = '" + queryResultFormat + "'");
     return conn;
   }
 
@@ -1128,39 +1101,6 @@ public class PreparedStatementIT extends BaseJDBCTest
     finally
     {
       connection.close();
-    }
-  }
-
-  @Test
-  @ConditionalIgnore(condition = RunningOnTravisCI.class)
-  public void testCombineDescribe() throws SQLException
-  {
-    Connection adminCon = getSnowflakeAdminConnection();
-    adminCon.createStatement().execute(
-        "alter system set enable_combined_describe=true");
-
-    try
-    {
-      connection = getConnection();
-
-      connection.createStatement().execute(
-          "alter session set jdbc_enable_combined_describe=true");
-
-      prepStatement = connection.prepareStatement(
-          "select c1 from orders order by c1");
-
-      ResultSet resultSet = prepStatement.executeQuery();
-
-      resultSet.next();
-
-      assertThat(resultSet.getString(1), is("1"));
-      connection.close();
-    }
-    finally
-    {
-      adminCon.createStatement().execute(
-          "alter system set enable_combined_describe=default");
-      adminCon.close();
     }
   }
 
