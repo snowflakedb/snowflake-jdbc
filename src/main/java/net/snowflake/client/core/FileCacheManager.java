@@ -139,6 +139,14 @@ class FileCacheManager
       {
         // use tmp dir if not exists.
         homeDir = systemGetProperty("java.io.tmpdir");
+      } else 
+      {
+        // Checking if home directory is writable.
+        File homeFile = new File(homeDir);
+        if (!homeFile.canWrite()) {
+          LOGGER.debug("Home directory not writeable, using tmpdir");
+          homeDir = systemGetProperty("java.io.tmpdir");
+        }
       }
       if (Constants.getOS() == Constants.OS.WINDOWS)
       {
