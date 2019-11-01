@@ -1690,6 +1690,27 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
   }
 
   /**
+   * This method is used in uploadFiles to delay the file upload for the given time, which is set as a session
+   * parameter called "inject_wait_in_put." Normally this value is 0, but it is used in testing.
+   *
+   * @param delayTime the amount of minutes to sleep before uploading the file
+   */
+  private void setUploadDelay(int delayTime)
+  {
+    if (delayTime > 0)
+    {
+      try
+      {
+        TimeUnit.MINUTES.sleep(delayTime);
+      }
+      catch (InterruptedException ie)
+      {
+        Thread.currentThread().interrupt();
+      }
+    }
+  }
+
+  /**
    * This method create a thread pool based on requested number of threads
    * and upload the files using the thread pool.
    *
@@ -1727,6 +1748,9 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
          * for the parallel value.
          */
         File srcFileObj = new File(srcFile);
+        // PUT delay goes here!!
+        int delay = connection.getInjectWaitInPut();
+        setUploadDelay(delay);
 
         threadExecutor.submit(getUploadFileCallable(
             stageInfo,
