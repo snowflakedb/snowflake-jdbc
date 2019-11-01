@@ -1693,7 +1693,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
    * This method is used in uploadFiles to delay the file upload for the given time, which is set as a session
    * parameter called "inject_wait_in_put." Normally this value is 0, but it is used in testing.
    *
-   * @param delayTime the amount of minutes to sleep before uploading the file
+   * @param delayTime the number of seconds to sleep before uploading the file
    */
   private void setUploadDelay(int delayTime)
   {
@@ -1701,7 +1701,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
     {
       try
       {
-        TimeUnit.MINUTES.sleep(delayTime);
+        TimeUnit.SECONDS.sleep(delayTime);
       }
       catch (InterruptedException ie)
       {
