@@ -74,7 +74,7 @@ public class BitToBooleanConverterTest extends BaseConverterTest
       if (nullValIndex.contains(i))
       {
         assertThat(boolVal, is(false));
-        assertThat(objectVal, is(false)); // current behavior
+        assertThat(objectVal, is(nullValue())); // current behavior
         assertThat(stringVal, is(nullValue())); // current behavior
         assertThat(converter.toBytes(i), is (nullValue()));
       }

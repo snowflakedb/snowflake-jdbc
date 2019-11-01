@@ -102,7 +102,24 @@ public class ArrowResultUtil
     Calendar calendar = CalendarCache.get(oldTZ);
     calendar.setTimeInMillis(milliSecsSinceEpoch);
 
-    int offsetMillisInNewTZ = newTZ.getOffset(calendar.getTime().getTime());
+    int millisecondWithinDay = ((calendar.get(Calendar.HOUR_OF_DAY) * 60 +
+        calendar.get(Calendar.MINUTE))*60 +
+        calendar.get(Calendar.SECOND))*1000+
+        calendar.get(Calendar.MILLISECOND);
+
+    int era = calendar.get(Calendar.ERA);
+    int year = calendar.get(Calendar.YEAR);
+    int month = calendar.get(Calendar.MONTH);
+    int dayOfMonth = calendar.get(Calendar.DAY_OF_MONTH);
+    int dayOfWeek = calendar.get(Calendar.DAY_OF_WEEK);
+
+    int offsetMillisInNewTZ = newTZ.getOffset(
+        era,
+        year,
+        month,
+        dayOfMonth,
+        dayOfWeek,
+        millisecondWithinDay);
 
     int offsetMillis = offsetMillisInOldTZ - offsetMillisInNewTZ;
     return offsetMillis;
