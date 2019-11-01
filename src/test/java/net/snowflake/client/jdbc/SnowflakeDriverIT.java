@@ -26,6 +26,7 @@ import java.math.BigDecimal;
 import java.nio.channels.FileChannel;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
+import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -152,6 +153,20 @@ public class SnowflakeDriverIT extends BaseJDBCTest
   throws SQLException
   {
     return getConnection(AbstractDriverIT.DONT_INJECT_SOCKET_TIMEOUT);
+  }
+
+  @Test
+  public void testDelay() throws SQLException
+  {
+    Properties _connectionProperties = new Properties();
+    _connectionProperties.put("user", "snowman");
+    _connectionProperties.put("password", "test");
+    _connectionProperties.put("ssl", "off");
+    _connectionProperties.put("account", "s3testaccount");
+    _connectionProperties.put("inject_wait_in_put", 5);
+    String connectionUrl = "jdbc:snowflake://snowflake.reg.local:8082";
+    Connection con = DriverManager.getConnection(connectionUrl, _connectionProperties);
+
   }
 
   @Ignore
@@ -887,7 +902,17 @@ public class SnowflakeDriverIT extends BaseJDBCTest
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
   public void testPutWithWildcardGCP() throws Throwable
   {
-    Connection connection = getConnection("gcpaccount");
+    Properties _connectionProperties = new Properties();
+    _connectionProperties.put("inject_wait_in_put", 5);
+    _connectionProperties.put("user", "snowman");
+    _connectionProperties.put("password", "test");
+    _connectionProperties.put("database", "testdb");
+    _connectionProperties.put("schema", "testschema");
+    _connectionProperties.put("ssl", "off");
+    _connectionProperties.put("account", "s3testaccount");
+    String connectionUrl = "jdbc:snowflake://snowflake.reg.local:8082";
+    Connection connection = DriverManager.getConnection(connectionUrl, _connectionProperties);
+    //Connection connection = getConnection("gcpaccount");
     Statement statement = connection.createStatement();
 
     String sourceFilePath = getFullPathFileInResource(TEST_DATA_FILE);
