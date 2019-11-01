@@ -32,30 +32,21 @@ import static org.junit.Assert.fail;
  * Completely compare json and arrow resultSet behaviors
  */
 @RunWith(Parameterized.class)
-public class ResultSetArrowForceIT extends BaseJDBCTest
+public class ResultSetJsonVsArrowIT extends BaseJDBCTest
 {
   @Parameterized.Parameters(name = "format={0}")
   public static Object[][] data()
   {
     // all tests in this class need to run for both query result formats json and arrow
-    if (BaseJDBCTest.isArrowTestsEnabled())
-    {
-      return new Object[][]{
-          {"JSON"},
-          {"Arrow_force"}
-      };
-    }
-    else
-    {
-      return new Object[][]{
-          {"JSON"}
-      };
-    }
+    return new Object[][]{
+        {"JSON"},
+        {"Arrow"}
+    };
   }
 
   protected static String queryResultFormat;
 
-  public ResultSetArrowForceIT(String queryResultFormat)
+  public ResultSetJsonVsArrowIT(String queryResultFormat)
   {
     this.queryResultFormat = queryResultFormat;
   }
@@ -65,10 +56,7 @@ public class ResultSetArrowForceIT extends BaseJDBCTest
   throws SQLException
   {
     Connection conn = getConnection(BaseJDBCTest.DONT_INJECT_SOCKET_TIMEOUT);
-    if (isArrowTestsEnabled())
-    {
-      conn.createStatement().execute("alter session set query_result_format = '" + queryResultFormat + "'");
-    }
+    conn.createStatement().execute("alter session set query_result_format = '" + queryResultFormat + "'");
     return conn;
   }
 

@@ -20,35 +20,20 @@ import static org.junit.Assert.assertNull;
  * Completely compare json and arrow resultSet behaviors
  */
 @RunWith(Parameterized.class)
-public class ResultSetArrowForceMultiTimeZoneIT extends BaseJDBCTest
+public class ResultSetJsonVsArrowMultiTZIT extends BaseJDBCTest
 {
   @Parameterized.Parameters(name = "format={0}, tz={1}")
   public static Object[][] data()
   {
     // all tests in this class need to run for both query result formats json and arrow
-    if (BaseJDBCTest.isArrowTestsEnabled())
-    {
-      return new Object[][]{
-          {"json", "UTC"},
-          {"json", "America/Los_Angeles"},
-          {"json", "America/New_York"},
-          {"json", "Asia/Singapore"},
-          {"json", "MEZ"},
-          {"arrow_force", "UTC"},
-          {"arrow_force", "America/Los_Angeles"},
-          {"arrow_force", "Asia/Singapore"},
-          {"arrow_force", "MEZ"},
-      };
-    }
-    else
-    {
-      return new Object[][]{
-          {"json", "UTC"},
-          {"json", "America/Los_Angeles"},
-          {"json", "Asia/Singapore"},
-          {"json", "MEZ"},
-      };
-    }
+    return new Object[][]{
+        {"json", "UTC"},
+        {"json", "America/New_York"},
+        {"json", "Asia/Singapore"},
+        {"arrow_force", "UTC"},
+        {"arrow_force", "America/New_York"},
+        {"arrow_force", "Asia/Singapore"},
+    };
   }
 
   private static String queryResultFormat;
@@ -72,7 +57,7 @@ public class ResultSetArrowForceMultiTimeZoneIT extends BaseJDBCTest
     return connection;
   }
 
-  public ResultSetArrowForceMultiTimeZoneIT(String queryResultFormat, String timeZone)
+  public ResultSetJsonVsArrowMultiTZIT(String queryResultFormat, String timeZone)
   {
     this.queryResultFormat = queryResultFormat;
     System.setProperty("user.timezone", timeZone);
@@ -98,10 +83,7 @@ public class ResultSetArrowForceMultiTimeZoneIT extends BaseJDBCTest
   throws SQLException
   {
     Connection conn = getConnection(BaseJDBCTest.DONT_INJECT_SOCKET_TIMEOUT);
-    if (isArrowTestsEnabled())
-    {
-      conn.createStatement().execute("alter session set query_result_format = '" + queryResultFormat + "'");
-    }
+    conn.createStatement().execute("alter session set query_result_format = '" + queryResultFormat + "'");
     return conn;
   }
 

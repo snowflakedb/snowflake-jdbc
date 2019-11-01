@@ -42,43 +42,15 @@ import static org.junit.Assert.fail;
 /**
  * Statement tests
  */
-@RunWith(Parameterized.class)
 public class StatementIT extends BaseJDBCTest
 {
-  @Parameterized.Parameters(name = "format={0}")
-  public static Object[][] data()
-  {
-    // all tests in this class need to run for both query result formats json and arrow
-    if (BaseJDBCTest.isArrowTestsEnabled())
-    {
-      return new Object[][]{
-          {"JSON"},
-          {"Arrow_force"}
-      };
-    }
-    else
-    {
-      return new Object[][]{
-          {"JSON"}
-      };
-    }
-  }
-
-  private static String queryResultFormat;
-
-  public StatementIT(String format)
-  {
-    queryResultFormat = format;
-  }
+  protected static String queryResultFormat = "json";
 
   public static Connection getConnection()
   throws SQLException
   {
     Connection conn = BaseJDBCTest.getConnection();
-    if (isArrowTestsEnabled())
-    {
-      conn.createStatement().execute("alter session set query_result_format = '" + queryResultFormat + "'");
-    }
+    conn.createStatement().execute("alter session set query_result_format = '" + queryResultFormat + "'");
     return conn;
   }
 
