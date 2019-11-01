@@ -39,11 +39,6 @@ public class BaseJDBCTest extends AbstractDriverIT
   // Test UUID unique per session
   static final String TEST_UUID = UUID.randomUUID().toString();
 
-  public static boolean isArrowTestsEnabled()
-  {
-    return !RunningOnTravisCI.isRunningOnTravisCI();
-  }
-
   protected interface MethodRaisesSQLException
   {
     void run() throws SQLException;
