@@ -40,19 +40,10 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
   {
     // all tests in this class need to run for both query result formats json
     // and arrow
-    if (BaseJDBCTest.isArrowTestsEnabled())
-    {
-      return new Object[][]{
-          {"JSON"}
-          , {"Arrow_force"}
-      };
-    }
-    else
-    {
-      return new Object[][]{
-          {"JSON"}
-      };
-    }
+    return new Object[][]{
+        {"JSON"}
+        , {"Arrow"}
+    };
   }
 
   @Rule
@@ -71,11 +62,8 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
       throws SQLException
   {
     Connection conn = BaseJDBCTest.getConnection();
-    if (isArrowTestsEnabled())
-    {
-      conn.createStatement().execute(
+    conn.createStatement().execute(
           "alter session set query_result_format = '" + queryResultFormat + "'");
-    }
 
     // Set up theses parameters as smaller values in order to generate
     // multiple file chunks with small data volumes.

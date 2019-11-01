@@ -34,19 +34,10 @@ public class CallableStatementIT extends BaseJDBCTest
   public static Object[][] data()
   {
     // all tests in this class need to run for both query result formats json and arrow
-    if (BaseJDBCTest.isArrowTestsEnabled())
-    {
-      return new Object[][]{
-          {"JSON"}
-          , {"Arrow_force"}
-      };
-    }
-    else
-    {
-      return new Object[][]{
-          {"JSON"}
-      };
-    }
+    return new Object[][]{
+      {"JSON"}
+      , {"Arrow_force"}
+    };
   }
 
   private static String queryResultFormat;
@@ -60,10 +51,7 @@ public class CallableStatementIT extends BaseJDBCTest
   throws SQLException
   {
     Connection conn = BaseJDBCTest.getConnection();
-    if (isArrowTestsEnabled())
-    {
-      conn.createStatement().execute("alter session set query_result_format = '" + queryResultFormat + "'");
-    }
+    conn.createStatement().execute("alter session set query_result_format = '" + queryResultFormat + "'");
     return conn;
   }
 
