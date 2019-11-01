@@ -34,9 +34,9 @@ public class TelemetryThreadPool
 
   private TelemetryThreadPool()
   {
-    uploader = new ThreadPoolExecutor(3, // core size
+    uploader = new ThreadPoolExecutor(0, // core size
                                       10, // max size
-                                      20, // keep alive time
+                                      1, // keep alive time
                                       TimeUnit.SECONDS,
                                       new LinkedBlockingQueue<>() // work queue
     );
