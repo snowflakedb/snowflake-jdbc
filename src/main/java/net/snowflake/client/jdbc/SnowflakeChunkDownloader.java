@@ -684,9 +684,11 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
     {
       // stop retrying and report failure
       currentChunk.setDownloadState(DownloadState.FAILURE);
-      currentChunk.setDownloadError(String.format("Max retry reached for the download of #chunk%d" +
-                                                  "(Total chunks: %d) retry=%d", nextChunkToConsume,
-                                                  this.chunks.size(), retry));
+      currentChunk.setDownloadError(
+          String.format("Max retry reached for the download of #chunk%d " +
+                            "(Total chunks: %d) retry=%d, error=%s",
+                        nextChunkToConsume, this.chunks.size(), retry,
+                        chunks.get(nextChunkToConsume).getDownloadError()));
     }
     this.numberMillisWaitingForChunks +=
         (System.currentTimeMillis() - startTime);
