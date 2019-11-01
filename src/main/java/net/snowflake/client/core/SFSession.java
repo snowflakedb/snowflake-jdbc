@@ -504,6 +504,7 @@ public class SFSession
         .setServiceName(this.getServiceName())
         .setOCSPMode(getOCSPMode());
 
+
     // propagate OCSP mode to SFTrustManager. Note OCSP setting is global on JVM.
     HttpUtil.initHttpClient(loginInput.getOCSPMode(), null);
 
@@ -1140,6 +1141,23 @@ public class SFSession
   public String getUrl()
   {
     return (String) this.connectionPropertiesMap.get(SFSessionProperty.SERVER_URL);
+  }
+
+  public int getInjectWaitInPut()
+  {
+    Object retVal = this.connectionPropertiesMap.get(SFSessionProperty.INJECT_WAIT_IN_PUT);
+    if (retVal != null)
+    {
+      try
+      {
+        return (int) retVal;
+      }
+      catch (Exception e)
+      {
+        return 0;
+      }
+    }
+    return 0;
   }
 
   public List<SFException> getSqlWarnings()
