@@ -108,6 +108,25 @@ public class ResultSetArrowForceIT extends BaseJDBCTest
     ResultSet rs = statement.executeQuery("select * from t;");
     rs.next();
     assertEquals(123.456, rs.getFloat(1), 0.001);
+    finish("t", con);
+  }
+
+  @Test
+  public void testGSResultScan() throws SQLException
+  {
+    Connection con = getConnection();
+    Statement statement = con.createStatement();
+    statement.execute("create or replace table t (a text)");
+    statement.execute("insert into t values ('test')");
+    ResultSet rs = statement.executeQuery("select count(*) from t;");
+    rs.next();
+    assertEquals(1, rs.getInt(1));
+    String queryId = rs.unwrap(SnowflakeResultSet.class).getQueryID();
+    rs = con.createStatement().executeQuery(
+        "select * from table(result_scan('" + queryId + "'))");
+    rs.next();
+    assertEquals(1, rs.getInt(1));
+    finish("t", con);
   }
 
   @Test
@@ -122,6 +141,7 @@ public class ResultSetArrowForceIT extends BaseJDBCTest
     rs = statement.executeQuery("select * from t;");
     rs.next();
     assertEquals(1, rs.getInt(1));
+    finish("t", con);
   }
 
   @Test
@@ -161,6 +181,7 @@ public class ResultSetArrowForceIT extends BaseJDBCTest
     assertEquals(null, resultSet.getString(13));
     assertEquals(null, resultSet.getString(14));
     assertEquals(null, resultSet.getString(15));
+    finish("test_types", con);
   }
 
   /**
