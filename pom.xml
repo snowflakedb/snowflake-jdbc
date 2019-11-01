@@ -40,6 +40,7 @@
     <jsoup.version>1.11.3</jsoup.version>
     <tika.version>1.22</tika.version>
     <jackson.version>2.9.10</jackson.version>
+    <jacksondatabind.version>2.9.10.1</jacksondatabind.version>
     <httpclient.version>4.5.5</httpclient.version>
     <powermock.version>1.7.4</powermock.version>
     <jacoco.version>0.8.4</jacoco.version>
@@ -71,7 +72,7 @@
     <dependency>
       <groupId>com.nimbusds</groupId>
       <artifactId>nimbus-jose-jwt</artifactId>
-      <version>5.4</version>
+      <version>8.0</version>
     </dependency>
     <dependency>
       <groupId>org.apache.maven.plugins</groupId>
@@ -143,7 +144,7 @@
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
-      <version>${jackson.version}</version>
+      <version>${jacksondatabind.version}</version>
       <type>jar</type>
     </dependency>
     <dependency>
