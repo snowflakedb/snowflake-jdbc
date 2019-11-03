@@ -65,7 +65,7 @@ public class BigIntToFixedConverter extends AbstractArrowVectorConverter
     {
       return false;
     }
-    else  if (longVal == 1)
+    else if (longVal == 1)
     {
       return true;
     }

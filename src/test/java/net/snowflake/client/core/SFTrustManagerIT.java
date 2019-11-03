@@ -220,51 +220,50 @@ public class SFTrustManagerIT extends BaseJDBCTest
   /**
    * Revoked certificate test.
    *
-  @Test
-  public void testRevokedCertificate() throws Throwable
-  {
-    System.setProperty(SFTrustManager.SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED, Boolean.TRUE.toString());
-    File ocspCacheFile = tmpFolder.newFile();
-    List<X509Certificate> certList = getX509CertificatesFromFile(
-        "revoked_certs.pem");
-    SFTrustManager sft = new SFTrustManager(
-        OCSPMode.FAIL_OPEN,
-        ocspCacheFile  // a temp OCSP response cache file
-    );
-    int queueSize = TelemetryService.getInstance().size();
-    try
-    {
-      sft.validateRevocationStatus(certList.toArray(new X509Certificate[0]), "test_host");
-      fail();
-    }
-    catch (CertificateException ex)
-    {
-      assertThat(ex.getMessage(), containsString("has been revoked"));
-      if (TelemetryService.getInstance().isDeploymentEnabled())
-      {
-        assertEquals(TelemetryService.getInstance().size(), queueSize + 1);
-        TelemetryEvent te = TelemetryService.getInstance().peek();
-        JSONObject values = (JSONObject) te.get("Value");
-        Object cacheHit = values.get("cacheHit");
-        assertNotNull(cacheHit);
-        assertEquals("OCSPException", te.get("Name"));
-        assertEquals(SFTrustManager.SF_OCSP_EVENT_TYPE_REVOKED_CERTIFICATE_ERROR,
-                     values.get("eventType").toString());
-        assertNotNull(values.get("sfcPeerHost"));
-        assertNotNull(values.get("certId"));
-        if (cacheHit instanceof Boolean && !((Boolean) cacheHit))
-        {
-          // Only if the cache is not available, no OCSP Responder URL or OCSP request is valid,
-          assertNotNull(values.get("ocspResponderURL"));
-          assertNotNull(values.get("ocspReqBase64"));
-        }
-        assertEquals(OCSPMode.FAIL_OPEN.name(), values.get("ocspMode"));
-        assertNotNull(values.get("cacheEnabled"));
-        assertNotNull(values.get("exceptionStackTrace"));
-        assertNotNull(values.get("exceptionMessage"));
-      }
-    }
-  }*/
+   @Test public void testRevokedCertificate() throws Throwable
+   {
+   System.setProperty(SFTrustManager.SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED, Boolean.TRUE.toString());
+   File ocspCacheFile = tmpFolder.newFile();
+   List<X509Certificate> certList = getX509CertificatesFromFile(
+   "revoked_certs.pem");
+   SFTrustManager sft = new SFTrustManager(
+   OCSPMode.FAIL_OPEN,
+   ocspCacheFile  // a temp OCSP response cache file
+   );
+   int queueSize = TelemetryService.getInstance().size();
+   try
+   {
+   sft.validateRevocationStatus(certList.toArray(new X509Certificate[0]), "test_host");
+   fail();
+   }
+   catch (CertificateException ex)
+   {
+   assertThat(ex.getMessage(), containsString("has been revoked"));
+   if (TelemetryService.getInstance().isDeploymentEnabled())
+   {
+   assertEquals(TelemetryService.getInstance().size(), queueSize + 1);
+   TelemetryEvent te = TelemetryService.getInstance().peek();
+   JSONObject values = (JSONObject) te.get("Value");
+   Object cacheHit = values.get("cacheHit");
+   assertNotNull(cacheHit);
+   assertEquals("OCSPException", te.get("Name"));
+   assertEquals(SFTrustManager.SF_OCSP_EVENT_TYPE_REVOKED_CERTIFICATE_ERROR,
+   values.get("eventType").toString());
+   assertNotNull(values.get("sfcPeerHost"));
+   assertNotNull(values.get("certId"));
+   if (cacheHit instanceof Boolean && !((Boolean) cacheHit))
+   {
+   // Only if the cache is not available, no OCSP Responder URL or OCSP request is valid,
+   assertNotNull(values.get("ocspResponderURL"));
+   assertNotNull(values.get("ocspReqBase64"));
+   }
+   assertEquals(OCSPMode.FAIL_OPEN.name(), values.get("ocspMode"));
+   assertNotNull(values.get("cacheEnabled"));
+   assertNotNull(values.get("exceptionStackTrace"));
+   assertNotNull(values.get("exceptionMessage"));
+   }
+   }
+   }*/
 
   /**
    * Read certificates from a file.

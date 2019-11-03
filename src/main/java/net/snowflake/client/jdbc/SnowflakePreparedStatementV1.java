@@ -13,7 +13,6 @@ import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SFBinary;
 import net.snowflake.common.core.SqlState;
-import net.snowflake.client.jdbc.SnowflakeType;
 
 import java.io.InputStream;
 import java.io.Reader;
@@ -134,6 +133,7 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
    * This method will check alreadyDescribed flag. And if it is false, it will
    * try to issue a describe request to server. If true, it will skip
    * describe request.
+   *
    * @throws SQLException
    */
   private void describeSqlIfNotTried() throws SQLException
@@ -573,11 +573,7 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
             String row = "Unknown";
             if (bindingValueAndType.getValue() instanceof Collection)
             {
-              final List<String> typeCheckedList = new ArrayList<>();
-              for (Object e : (List<?>) bindingValueAndType.getValue())
-              {
-                typeCheckedList.add((String) e);
-              }
+              final List<String> typeCheckedList = (List<String>) bindingValueAndType.getValue();
               values = typeCheckedList;
               row = Integer.toString(values.size() + 1);
             }
@@ -589,11 +585,7 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
           }
 
           // found the existing map so just get the value list
-          final List<String> typeCheckedList = new ArrayList<>();
-          for (Object e : (List<?>) bindingValueAndType.getValue())
-          {
-            typeCheckedList.add((String) e);
-          }
+          final List<String> typeCheckedList = (List<String>) bindingValueAndType.getValue();
           values = typeCheckedList;
         }
 

@@ -33,7 +33,7 @@ public class ResultSetJsonVsArrowMultiTZIT extends BaseJDBCTest
         {"arrow_force", "UTC"},
         {"arrow_force", "America/New_York"},
         {"arrow_force", "Asia/Singapore"},
-    };
+        };
   }
 
   private static String queryResultFormat;

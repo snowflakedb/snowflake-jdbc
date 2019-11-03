@@ -110,6 +110,6 @@ public class IntToTimeConverter extends AbstractArrowVectorConverter
     }
     Time val = toTime(index);
     throw new SFException(ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr,
-        "Boolean", val);
+                          "Boolean", val);
   }
 }

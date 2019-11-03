@@ -225,8 +225,8 @@ public abstract class SFJsonResultSet extends SFBaseResultSet
     int columnType = resultSetMetaData.getColumnType(columnIndex);
     // if type is an approved type that can be converted to Boolean, do this
     if (columnType == Types.BOOLEAN || columnType == Types.INTEGER || columnType == Types.SMALLINT ||
-             columnType == Types.TINYINT || columnType == Types.BIGINT || columnType == Types.BIT ||
-             columnType == Types.VARCHAR || columnType == Types.CHAR)
+        columnType == Types.TINYINT || columnType == Types.BIGINT || columnType == Types.BIT ||
+        columnType == Types.VARCHAR || columnType == Types.CHAR)
     {
       String type = obj.toString();
       if ("1".equals(type) || Boolean.TRUE.toString().equalsIgnoreCase(type))
@@ -286,7 +286,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet
         String objString = (String) obj;
         if (objString.contains(".") && (columnType == Types.FLOAT || columnType == Types.DOUBLE))
         {
-          objString = objString.substring(0,objString.indexOf("."));
+          objString = objString.substring(0, objString.indexOf("."));
         }
         return Short.parseShort(objString);
       }
@@ -322,7 +322,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet
         String objString = (String) obj;
         if (objString.contains(".") && (columnType == Types.FLOAT || columnType == Types.DOUBLE))
         {
-          objString = objString.substring(0,objString.indexOf("."));
+          objString = objString.substring(0, objString.indexOf("."));
         }
         return Integer.parseInt(objString);
       }
@@ -360,7 +360,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet
         String objString = (String) obj;
         if (objString.contains(".") && (columnType == Types.FLOAT || columnType == Types.DOUBLE))
         {
-          objString = objString.substring(0,objString.indexOf("."));
+          objString = objString.substring(0, objString.indexOf("."));
         }
         return Long.parseLong(objString);
       }
@@ -371,7 +371,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet
     }
     catch (NumberFormatException nfe)
     {
-      
+
       if (Types.INTEGER == columnType
           || Types.SMALLINT == columnType)
       {
@@ -682,7 +682,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet
         case Types.CHAR:
           return getString(columnIndex).getBytes();
         case Types.BOOLEAN:
-          return getBoolean(columnIndex) ? new byte[] {1} : new byte [] {0};
+          return getBoolean(columnIndex) ? new byte[]{1} : new byte[]{0};
         case Types.TIMESTAMP:
         case Types.TIME:
         case Types.DATE:
@@ -731,7 +731,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet
     }
     else if (Types.DATE == columnType)
     {
-      return ArrowResultUtil.getDate(Integer.parseInt((String)obj), tz, session);
+      return ArrowResultUtil.getDate(Integer.parseInt((String) obj), tz, session);
     }
     // for Types.TIME and all other type, throw user error
     else

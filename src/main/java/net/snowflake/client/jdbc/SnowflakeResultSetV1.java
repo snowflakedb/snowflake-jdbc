@@ -73,7 +73,7 @@ class SnowflakeResultSetV1 extends SnowflakeBaseResultSet implements SnowflakeRe
    * Constructor takes a result set serializable object to create
    * a sessionless result set.
    *
-   * @param sfBaseResultSet snowflake core base result rest object
+   * @param sfBaseResultSet       snowflake core base result rest object
    * @param resultSetSerializable The result set serializable object which
    *                              includes all metadata to create the result
    *                              set
@@ -452,7 +452,7 @@ class SnowflakeResultSetV1 extends SnowflakeBaseResultSet implements SnowflakeRe
    */
   @Override
   public List<SnowflakeResultSetSerializable> getResultSetSerializables(long maxSizeInBytes)
-      throws SQLException
+  throws SQLException
   {
     raiseSQLExceptionIfResultSetIsClosed();
     return sfBaseResultSet.getResultSetSerializables(maxSizeInBytes);

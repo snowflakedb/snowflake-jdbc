@@ -221,7 +221,7 @@ public class DecimalToScaledFixedConverter extends AbstractArrowVectorConverter
     else
     {
       throw new SFException(ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr,
-          "Boolean", val.toPlainString());
+                            "Boolean", val.toPlainString());
     }
   }
 }

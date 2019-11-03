@@ -59,11 +59,11 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
   }
 
   public static Connection getConnection()
-      throws SQLException
+  throws SQLException
   {
     Connection conn = BaseJDBCTest.getConnection();
     conn.createStatement().execute(
-          "alter session set query_result_format = '" + queryResultFormat + "'");
+        "alter session set query_result_format = '" + queryResultFormat + "'");
 
     // Set up theses parameters as smaller values in order to generate
     // multiple file chunks with small data volumes.
@@ -114,17 +114,17 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
    * the INPUT max size and serialize the objects into files. One object is
    * serialized into one separate file.
    *
-   * @param rs The result set to be accessed.
-   * @param maxSizeInBytes The expected data size in one serializable object.
+   * @param rs               The result set to be accessed.
+   * @param maxSizeInBytes   The expected data size in one serializable object.
    * @param fileNameAppendix The generated file's appendix to avoid duplicated
-   *                        file names
+   *                         file names
    * @return a list of file name.
    * @throws Throwable If any error happens.
    */
   private List<String> serializeResultSet(SnowflakeResultSet rs,
                                           long maxSizeInBytes,
                                           String fileNameAppendix)
-      throws Throwable
+  throws Throwable
   {
     List<String> result = new ArrayList<>();
 
@@ -192,20 +192,20 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
       {
         System.out.println(
             "\nFormat: " + resultSetChunk.getQueryResultFormat() +
-                " UncompChunksize: " +
-                resultSetChunk.getUncompressedDataSize() +
-                " firstChunkContent: " +
-                (resultSetChunk.getFirstChunkStringData() == null
-                    ? " null " : " not null "));
+            " UncompChunksize: " +
+            resultSetChunk.getUncompressedDataSize() +
+            " firstChunkContent: " +
+            (resultSetChunk.getFirstChunkStringData() == null
+             ? " null " : " not null "));
         for (SnowflakeResultSetSerializableV1.ChunkFileMetadata chunkFileMetadata :
             resultSetChunk.chunkFileMetadatas)
         {
           System.out.println(
               "RowCount=" + chunkFileMetadata.getRowCount()
-                  + ", cpsize=" + chunkFileMetadata.getCompressedByteSize()
-                  + ", uncpsize=" +
-                  chunkFileMetadata.getUncompressedByteSize()
-                  + ", URL= " + chunkFileMetadata.getFileURL());
+              + ", cpsize=" + chunkFileMetadata.getCompressedByteSize()
+              + ", uncpsize=" +
+              chunkFileMetadata.getUncompressedByteSize()
+              + ", URL= " + chunkFileMetadata.getFileURL());
         }
       }
 
@@ -247,11 +247,10 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
   /**
    * The is the test harness function for basic table.
    *
-   *
-   * @param rowCount inserted row count
+   * @param rowCount       inserted row count
    * @param maxSizeInBytes expected data size in one
    *                       SnowflakeResultSetSerializableV1 object.
-   * @param whereClause where clause when executing query.
+   * @param whereClause    where clause when executing query.
    * @throws Throwable If any error happens.
    */
   private void testBasicTableHarness(int rowCount, long maxSizeInBytes,
@@ -268,14 +267,14 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
       {
         statement.execute(
             "create or replace table table_basic " +
-                " (int_c int, string_c string(128))");
+            " (int_c int, string_c string(128))");
 
         if (rowCount > 0)
         {
           statement.execute(
               "insert into table_basic select " +
-                  "seq4(), 'arrow_1234567890arrow_1234567890arrow_1234567890arrow_1234567890'" +
-                  " from table(generator(rowcount=>" + rowCount + "))");
+              "seq4(), 'arrow_1234567890arrow_1234567890arrow_1234567890arrow_1234567890'" +
+              " from table(generator(rowcount=>" + rowCount + "))");
         }
       }
 
@@ -283,7 +282,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
       ResultSet rs = statement.executeQuery(sqlSelect);
 
       fileNameList = serializeResultSet((SnowflakeResultSet) rs,
-                                           maxSizeInBytes, "txt");
+                                        maxSizeInBytes, "txt");
 
       originalResultCSVString = generateCSVResult(rs);
       rs.close();
@@ -295,7 +294,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
 
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
-  public void testBasicTableWithEmptyResult()  throws Throwable
+  public void testBasicTableWithEmptyResult() throws Throwable
   {
     // Use complex WHERE clause in order to test both ARROW and JSON.
     // It looks GS only generates JSON format result.
@@ -304,49 +303,49 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
 
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
-  public void testBasicTableWithOnlyFirstChunk()  throws Throwable
+  public void testBasicTableWithOnlyFirstChunk() throws Throwable
   {
     // Result only includes first data chunk, test maxSize is small.
     testBasicTableHarness(1, 1, "", true);
     // Result only includes first data chunk, test maxSize is big.
-    testBasicTableHarness(1, 1024*1024, "", false);
+    testBasicTableHarness(1, 1024 * 1024, "", false);
   }
 
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
-  public void testBasicTableWithOneFileChunk()  throws Throwable
+  public void testBasicTableWithOneFileChunk() throws Throwable
   {
     // Result only includes first data chunk, test maxSize is small.
     testBasicTableHarness(300, 1, "", true);
     // Result only includes first data chunk, test maxSize is big.
-    testBasicTableHarness(300, 1024*1024, "", false);
+    testBasicTableHarness(300, 1024 * 1024, "", false);
   }
 
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
-  public void testBasicTableWithSomeFileChunks()  throws Throwable
+  public void testBasicTableWithSomeFileChunks() throws Throwable
   {
     // Result only includes first data chunk, test maxSize is small.
     testBasicTableHarness(90000, 1, "", true);
     // Result only includes first data chunk, test maxSize is median.
-    testBasicTableHarness(90000, 3*1024*1024, "",false);
+    testBasicTableHarness(90000, 3 * 1024 * 1024, "", false);
     // Result only includes first data chunk, test maxSize is big.
-    testBasicTableHarness(90000, 100*1024*1024, "",false);
+    testBasicTableHarness(90000, 100 * 1024 * 1024, "", false);
   }
 
   /**
    * Test harness function to test timestamp_*, date, time types.
    *
-   * @param rowCount inserted row count
+   * @param rowCount       inserted row count
    * @param maxSizeInBytes expected data size in one
    *                       SnowflakeResultSetSerializableV1 object.
-   * @param whereClause where clause when executing query.
-   * @param format_date configuration value for DATE_OUTPUT_FORMAT
-   * @param format_time configuration value for TIME_OUTPUT_FORMAT
-   * @param format_ntz configuration value for TIMESTAMP_NTZ_OUTPUT_FORMAT
-   * @param format_ltz configuration value for TIMESTAMP_LTZ_OUTPUT_FORMAT
-   * @param format_tz configuration value for TIMESTAMP_TZ_OUTPUT_FORMAT
-   * @param timezone configuration value for TIMEZONE
+   * @param whereClause    where clause when executing query.
+   * @param format_date    configuration value for DATE_OUTPUT_FORMAT
+   * @param format_time    configuration value for TIME_OUTPUT_FORMAT
+   * @param format_ntz     configuration value for TIMESTAMP_NTZ_OUTPUT_FORMAT
+   * @param format_ltz     configuration value for TIMESTAMP_LTZ_OUTPUT_FORMAT
+   * @param format_tz      configuration value for TIMESTAMP_TZ_OUTPUT_FORMAT
+   * @param timezone       configuration value for TIMEZONE
    * @throws Throwable If any error happens.
    */
   private void testTimestampHarness(int rowCount,
@@ -358,7 +357,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
                                     String format_ltz,
                                     String format_tz,
                                     String timezone)
-      throws Throwable
+  throws Throwable
   {
     List<String> fileNameList = null;
     String originalResultCSVString = null;
@@ -381,31 +380,31 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
 
       statement.execute(
           "Create or replace table all_timestamps (" +
-              "int_c int, date_c date, " +
-              "time_c time, time_c0 time(0), time_c3 time(3), time_c6 time(6), " +
-              "ts_ltz_c timestamp_ltz, ts_ltz_c0 timestamp_ltz(0), " +
-              "ts_ltz_c3 timestamp_ltz(3), ts_ltz_c6 timestamp_ltz(6), " +
-              "ts_ntz_c timestamp_ntz, ts_ntz_c0 timestamp_ntz(0), " +
-              "ts_ntz_c3 timestamp_ntz(3), ts_ntz_c6 timestamp_ntz(6) " +
-              ", ts_tz_c timestamp_tz, ts_tz_c0 timestamp_tz(0), " +
-              "ts_tz_c3 timestamp_tz(3), ts_tz_c6 timestamp_tz(6) " +
-              ")");
+          "int_c int, date_c date, " +
+          "time_c time, time_c0 time(0), time_c3 time(3), time_c6 time(6), " +
+          "ts_ltz_c timestamp_ltz, ts_ltz_c0 timestamp_ltz(0), " +
+          "ts_ltz_c3 timestamp_ltz(3), ts_ltz_c6 timestamp_ltz(6), " +
+          "ts_ntz_c timestamp_ntz, ts_ntz_c0 timestamp_ntz(0), " +
+          "ts_ntz_c3 timestamp_ntz(3), ts_ntz_c6 timestamp_ntz(6) " +
+          ", ts_tz_c timestamp_tz, ts_tz_c0 timestamp_tz(0), " +
+          "ts_tz_c3 timestamp_tz(3), ts_tz_c6 timestamp_tz(6) " +
+          ")");
 
       if (rowCount > 0)
       {
         connection.createStatement().execute(
             "insert into all_timestamps " +
-                "select seq4(), '2015-10-25' , " +
-                "'23:59:59.123456789', '23:59:59', '23:59:59.123', '23:59:59.123456', " +
-                "   '2014-01-11 06:12:13.123456789', '2014-01-11 06:12:13'," +
-                "   '2014-01-11 06:12:13.123', '2014-01-11 06:12:13.123456'," +
+            "select seq4(), '2015-10-25' , " +
+            "'23:59:59.123456789', '23:59:59', '23:59:59.123', '23:59:59.123456', " +
+            "   '2014-01-11 06:12:13.123456789', '2014-01-11 06:12:13'," +
+            "   '2014-01-11 06:12:13.123', '2014-01-11 06:12:13.123456'," +
 
-                "   '2014-01-11 06:12:13.123456789', '2014-01-11 06:12:13'," +
-                "   '2014-01-11 06:12:13.123', '2014-01-11 06:12:13.123456'," +
+            "   '2014-01-11 06:12:13.123456789', '2014-01-11 06:12:13'," +
+            "   '2014-01-11 06:12:13.123', '2014-01-11 06:12:13.123456'," +
 
-                "   '2014-01-11 06:12:13.123456789', '2014-01-11 06:12:13'," +
-                "   '2014-01-11 06:12:13.123', '2014-01-11 06:12:13.123456'" +
-                " from table(generator(rowcount=>" + rowCount + "))");
+            "   '2014-01-11 06:12:13.123456789', '2014-01-11 06:12:13'," +
+            "   '2014-01-11 06:12:13.123', '2014-01-11 06:12:13.123456'" +
+            " from table(generator(rowcount=>" + rowCount + "))");
       }
 
       String sqlSelect = "select * from all_timestamps " + whereClause;
@@ -424,7 +423,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
 
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
-  public void testTimestamp()  throws Throwable
+  public void testTimestamp() throws Throwable
   {
     String[] dateFormats = {"YYYY-MM-DD", "DD-MON-YYYY", "MM/DD/YYYY"};
     String[] timeFormats = {"HH24:MI:SS.FFTZH:TZM",
@@ -438,8 +437,8 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
     for (int i = 0; i < dateFormats.length; i++)
     {
       testTimestampHarness(10, 1, "",
-                          dateFormats[i], timeFormats[i], timestampFormats[i],
-                          timestampFormats[i], timestampFormats[i], timezongs[i]);
+                           dateFormats[i], timeFormats[i], timestampFormats[i],
+                           timestampFormats[i], timestampFormats[i], timezongs[i]);
     }
   }
 
@@ -455,13 +454,13 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
 
       statement.execute(
           "create or replace table table_basic " +
-              " (int_c int, string_c string(128))");
+          " (int_c int, string_c string(128))");
 
       int rowCount = 30000;
       statement.execute(
           "insert into table_basic select " +
-              "seq4(), 'arrow_1234567890arrow_1234567890arrow_1234567890arrow_1234567890'" +
-              " from table(generator(rowcount=>" + rowCount + "))");
+          "seq4(), 'arrow_1234567890arrow_1234567890arrow_1234567890arrow_1234567890'" +
+          " from table(generator(rowcount=>" + rowCount + "))");
 
 
       String sqlSelect = "select * from table_basic ";
@@ -473,7 +472,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
       // reading the ResultSet. This test covers the case that serialzizes the
       // object after reading the result set.
       fileNameList = serializeResultSet((SnowflakeResultSet) rs,
-                                        1*1024*1024, "txt");
+                                        1 * 1024 * 1024, "txt");
 
       rs.close();
     }
@@ -485,8 +484,8 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
   /**
    * Split the ResultSetSerializable objects based on max size.
    *
-   * @param files The files where SnowflakeResultSetSerializable objects are
-   *              serialized in.
+   * @param files          The files where SnowflakeResultSetSerializable objects are
+   *                       serialized in.
    * @param maxSizeInBytes The max data size wrapped in split serializable
    *                       object
    * @return a name file list where the new serializable objects resides.
@@ -494,7 +493,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
    */
   private List<String> splitResultSetSerializables(List<String> files,
                                                    long maxSizeInBytes)
-      throws Throwable
+  throws Throwable
   {
     List<String> resultFileList = new ArrayList<>();
 
@@ -525,7 +524,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
     if (developPrint)
     {
       System.out.println("Split from " + files.size() +
-                             " files to " + resultFileList.size() + " files");
+                         " files to " + resultFileList.size() + " files");
     }
 
     return resultFileList;
@@ -533,7 +532,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
 
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
-  public void testSplitResultSetSerializable()  throws Throwable
+  public void testSplitResultSetSerializable() throws Throwable
   {
     List<String> fileNameList = null;
     String originalResultCSVString = null;
@@ -544,20 +543,20 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
 
       statement.execute(
           "create or replace table table_basic " +
-              " (int_c int, string_c string(128))");
+          " (int_c int, string_c string(128))");
 
       statement.execute(
           "insert into table_basic select " +
-              "seq4(), " +
-              "'arrow_1234567890arrow_1234567890arrow_1234567890arrow_1234567890'" +
-              " from table(generator(rowcount=>" + rowCount + "))");
+          "seq4(), " +
+          "'arrow_1234567890arrow_1234567890arrow_1234567890arrow_1234567890'" +
+          " from table(generator(rowcount=>" + rowCount + "))");
 
 
       String sqlSelect = "select * from table_basic ";
       ResultSet rs = statement.executeQuery(sqlSelect);
 
       fileNameList = serializeResultSet((SnowflakeResultSet) rs,
-                                        100*1024*1024, "txt");
+                                        100 * 1024 * 1024, "txt");
 
       originalResultCSVString = generateCSVResult(rs);
       rs.close();
@@ -565,25 +564,25 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
 
     // Split deserializedResultSet by 3M, the result should be the same
     List<String> fileNameSplit3M = splitResultSetSerializables(
-        fileNameList,3*1024*1024);
+        fileNameList, 3 * 1024 * 1024);
     String chunkResultString = deserializeResultSet(fileNameSplit3M);
     assertTrue(chunkResultString.equals(originalResultCSVString));
 
     // Split deserializedResultSet by 2M, the result should be the same
     List<String> fileNameSplit2M = splitResultSetSerializables(
-        fileNameSplit3M,2*1024*1024);
+        fileNameSplit3M, 2 * 1024 * 1024);
     chunkResultString = deserializeResultSet(fileNameSplit2M);
     assertTrue(chunkResultString.equals(originalResultCSVString));
 
     // Split deserializedResultSet by 1M, the result should be the same
     List<String> fileNameSplit1M = splitResultSetSerializables(
-        fileNameSplit2M,1*1024*1024);
+        fileNameSplit2M, 1 * 1024 * 1024);
     chunkResultString = deserializeResultSet(fileNameSplit1M);
     assertTrue(chunkResultString.equals(originalResultCSVString));
 
     // Split deserializedResultSet by smallest, the result should be the same
     List<String> fileNameSplitSmallest = splitResultSetSerializables(
-        fileNameSplit1M,1);
+        fileNameSplit1M, 1);
     chunkResultString = deserializeResultSet(fileNameSplitSmallest);
     assertTrue(chunkResultString.equals(originalResultCSVString));
   }
@@ -591,6 +590,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
   /**
    * Setup wrong file URL for the result set serializable objects for
    * negative test.
+   *
    * @param resultSetSerializables a list of result set serializable object.
    */
   private void hackToSetupWrongURL(
@@ -600,18 +600,18 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
     {
       SnowflakeResultSetSerializableV1 serializableV1 =
           (SnowflakeResultSetSerializableV1) resultSetSerializables.get(i);
-      for ( SnowflakeResultSetSerializableV1.ChunkFileMetadata chunkFileMetadata :
+      for (SnowflakeResultSetSerializableV1.ChunkFileMetadata chunkFileMetadata :
           serializableV1.getChunkFileMetadatas())
       {
         chunkFileMetadata.setFileURL(chunkFileMetadata.getFileURL() +
-                                         "_hacked_wrong_file");
+                                     "_hacked_wrong_file");
       }
     }
   }
 
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
-  public void testNegativeWithChunkFileNotExist()  throws Throwable
+  public void testNegativeWithChunkFileNotExist() throws Throwable
   {
     try (Connection connection = getConnection())
     {
@@ -619,14 +619,14 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
 
       statement.execute(
           "create or replace table table_basic " +
-              " (int_c int, string_c string(128))");
+          " (int_c int, string_c string(128))");
 
       int rowCount = 300;
       statement.execute(
           "insert into table_basic select " +
-              "seq4(), " +
-              "'arrow_1234567890arrow_1234567890arrow_1234567890arrow_1234567890'" +
-              " from table(generator(rowcount=>" + rowCount + "))");
+          "seq4(), " +
+          "'arrow_1234567890arrow_1234567890arrow_1234567890arrow_1234567890'" +
+          " from table(generator(rowcount=>" + rowCount + "))");
 
 
       String sqlSelect = "select * from table_basic ";
@@ -647,12 +647,12 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
             resultSetSerializables.get(0);
 
         ResultSet resultSet = resultSetSerializable.getResultSet();
-        while(resultSet.next())
+        while (resultSet.next())
         {
           resultSet.getString(1);
         }
         fail("error should happen when accessing the data because the " +
-                 "file URL is corrupted.");
+             "file URL is corrupted.");
       }
       catch (SQLException ex)
       {
@@ -665,7 +665,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
 
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
-  public void testNegativeWithClosedResultSet()  throws Throwable
+  public void testNegativeWithClosedResultSet() throws Throwable
   {
     try (Connection connection = getConnection())
     {
@@ -673,14 +673,14 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
 
       statement.execute(
           "create or replace table table_basic " +
-              " (int_c int, string_c string(128))");
+          " (int_c int, string_c string(128))");
 
       int rowCount = 300;
       statement.execute(
           "insert into table_basic select " +
-              "seq4(), " +
-              "'arrow_1234567890arrow_1234567890arrow_1234567890arrow_1234567890'" +
-              " from table(generator(rowcount=>" + rowCount + "))");
+          "seq4(), " +
+          "'arrow_1234567890arrow_1234567890arrow_1234567890arrow_1234567890'" +
+          " from table(generator(rowcount=>" + rowCount + "))");
 
 
       String sqlSelect = "select * from table_basic ";
@@ -708,24 +708,24 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
    * there is no testing proxy server setup. Below are the unit test to for
    * the proxy.
    * 1. Setup proxy on your testing box. The instruction can be found by search
-   *    "How to setup Proxy Server for Client tests" in engineering pages. OR
-   *    https://snowflakecomputing.atlassian.net/wiki/spaces/EN/pages/65438343/How+to+setup+Proxy+Server+for+Client+tests
+   * "How to setup Proxy Server for Client tests" in engineering pages. OR
+   * https://snowflakecomputing.atlassian.net/wiki/spaces/EN/pages/65438343/How+to+setup+Proxy+Server+for+Client+tests
    * 2. There are two steps to run the test manually because the proxy info
-   *    cached in static variables in HttpUtil. So it needs the JVM to be
-   *    restarted between the 2 steps.
-   *    Step 1: Generate file list for SnowflakeResultSetSerializable objects.
-   *            Set variable 'generateFiles' as true. The file list will be
-   *            printed. For example,
-   *              Split ResultSet as 4 parts.
-   *              /tmp/junit16319222538342218700_result_0.txt
-   *              /tmp/junit16319222538342218700_result_1.txt
-   *              /tmp/junit16319222538342218700_result_2.txt
-   *              /tmp/junit16319222538342218700_result_3.txt
-   *    Step 2: Set variable 'generateFiles' as false. Replace the above
-   *            printed file names to 'fileNameList'. Run this test.
-   *            The step 2 can be run with 'correctProxy' = true or false.
-   *            Run it with wrong proxy is to make sure the proxy setting is
-   *            used.
+   * cached in static variables in HttpUtil. So it needs the JVM to be
+   * restarted between the 2 steps.
+   * Step 1: Generate file list for SnowflakeResultSetSerializable objects.
+   * Set variable 'generateFiles' as true. The file list will be
+   * printed. For example,
+   * Split ResultSet as 4 parts.
+   * /tmp/junit16319222538342218700_result_0.txt
+   * /tmp/junit16319222538342218700_result_1.txt
+   * /tmp/junit16319222538342218700_result_2.txt
+   * /tmp/junit16319222538342218700_result_3.txt
+   * Step 2: Set variable 'generateFiles' as false. Replace the above
+   * printed file names to 'fileNameList'. Run this test.
+   * The step 2 can be run with 'correctProxy' = true or false.
+   * Run it with wrong proxy is to make sure the proxy setting is
+   * used.
    *
    * @throws Throwable
    */
@@ -788,27 +788,27 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
 
   private void generateTestFiles() throws Throwable
   {
-    try(Connection connection = getConnection())
+    try (Connection connection = getConnection())
     {
       Statement statement = connection.createStatement();
 
       statement.execute(
           "create or replace table table_basic " +
-              " (int_c int, string_c string(128))");
+          " (int_c int, string_c string(128))");
 
       int rowCount = 60000;
       statement.execute(
           "insert into table_basic select " +
-              "seq4(), " +
-              "'arrow_1234567890arrow_1234567890arrow_1234567890arrow_1234567890'" +
-              " from table(generator(rowcount=>" + rowCount + "))");
+          "seq4(), " +
+          "'arrow_1234567890arrow_1234567890arrow_1234567890arrow_1234567890'" +
+          " from table(generator(rowcount=>" + rowCount + "))");
 
 
       String sqlSelect = "select * from table_basic ";
       ResultSet rs = statement.executeQuery(sqlSelect);
       developPrint = true;
       serializeResultSet((SnowflakeResultSet) rs,
-                         2*1024*1024, "txt");
+                         2 * 1024 * 1024, "txt");
       System.exit(-1);
     }
   }

@@ -117,7 +117,7 @@ public class IntToScaledFixedConverter extends IntToFixedConverter
     else
     {
       throw new SFException(ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr,
-          "Boolean", val.toPlainString());
+                            "Boolean", val.toPlainString());
     }
   }
 }

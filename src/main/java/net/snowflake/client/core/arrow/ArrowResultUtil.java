@@ -103,9 +103,9 @@ public class ArrowResultUtil
     calendar.setTimeInMillis(milliSecsSinceEpoch);
 
     int millisecondWithinDay = ((calendar.get(Calendar.HOUR_OF_DAY) * 60 +
-        calendar.get(Calendar.MINUTE))*60 +
-        calendar.get(Calendar.SECOND))*1000+
-        calendar.get(Calendar.MILLISECOND);
+                                 calendar.get(Calendar.MINUTE)) * 60 +
+                                calendar.get(Calendar.SECOND)) * 1000 +
+                               calendar.get(Calendar.MILLISECOND);
 
     int era = calendar.get(Calendar.ERA);
     int year = calendar.get(Calendar.YEAR);

@@ -32,5 +32,5 @@ public interface SnowflakeResultSet
    * @return a list of ResultSetSerializables
    * @throws SQLException if fails to get the ResultSetSerializable objects.
    */
-  List<SnowflakeResultSetSerializable> getResultSetSerializables(long maxSizeInBytes)  throws SQLException;
+  List<SnowflakeResultSetSerializable> getResultSetSerializables(long maxSizeInBytes) throws SQLException;
 }

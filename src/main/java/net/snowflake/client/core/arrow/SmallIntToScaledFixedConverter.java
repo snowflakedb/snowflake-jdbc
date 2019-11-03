@@ -110,7 +110,7 @@ public class SmallIntToScaledFixedConverter extends SmallIntToFixedConverter
     else
     {
       throw new SFException(ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr,
-          "Boolean", val.toPlainString());
+                            "Boolean", val.toPlainString());
     }
   }
 }

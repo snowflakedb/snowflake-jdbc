@@ -26,7 +26,7 @@ public interface SnowflakeResultSetSerializable
    * Get ResultSet from the ResultSet Serializable object so that the user can
    * access the data.
    *
-   * @param info  The proxy server information if proxy is necessary.
+   * @param info The proxy server information if proxy is necessary.
    * @return a ResultSet which represents for the data wrapped in the object
    */
   ResultSet getResultSet(Properties info) throws SQLException;

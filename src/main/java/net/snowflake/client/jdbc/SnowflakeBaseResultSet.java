@@ -67,7 +67,7 @@ abstract class SnowflakeBaseResultSet implements ResultSet
    *                              set
    */
   public SnowflakeBaseResultSet(SnowflakeResultSetSerializableV1 resultSetSerializable)
-      throws SQLException
+  throws SQLException
   {
     // This is a sessionless result set, so there is no actual statement for it.
     this.statement = new SnowflakeStatementV1.NoOpSnowflakeStatementV1();
