@@ -303,7 +303,8 @@ public class ResultSetIT extends BaseJDBCTest
 
     for (int i = 8; i < 13; i++)
     {
-      try {
+      try
+      {
         resultSet.getShort(i);
         fail("Failing on " + i);
       }
@@ -352,7 +353,8 @@ public class ResultSetIT extends BaseJDBCTest
 
     for (int i = 8; i < 13; i++)
     {
-      try {
+      try
+      {
         resultSet.getInt(i);
         fail("Failing on " + i);
       }
@@ -366,7 +368,8 @@ public class ResultSetIT extends BaseJDBCTest
     // These column types are varchar, char, and float.
     for (int i = 5; i < 7; i++)
     {
-      try {
+      try
+      {
         resultSet.getInt(i);
         fail("Failing on " + i);
       }
@@ -399,7 +402,8 @@ public class ResultSetIT extends BaseJDBCTest
 
     for (int i = 8; i < 13; i++)
     {
-      try {
+      try
+      {
         resultSet.getLong(i);
         fail("Failing on " + i);
       }
@@ -413,7 +417,8 @@ public class ResultSetIT extends BaseJDBCTest
     // These column types are varchar, char, and float.
     for (int i = 5; i < 7; i++)
     {
-      try {
+      try
+      {
         resultSet.getLong(i);
         fail("Failing on " + i);
       }
@@ -446,7 +451,8 @@ public class ResultSetIT extends BaseJDBCTest
 
     for (int i = 8; i < 13; i++)
     {
-      try {
+      try
+      {
         resultSet.getFloat(i);
         fail("Failing on " + i);
       }
@@ -460,7 +466,8 @@ public class ResultSetIT extends BaseJDBCTest
     // These column types are varchar and char.
     for (int i = 5; i < 7; i++)
     {
-      try {
+      try
+      {
         resultSet.getFloat(i);
         fail("Failing on " + i);
       }
@@ -493,7 +500,8 @@ public class ResultSetIT extends BaseJDBCTest
 
     for (int i = 8; i < 13; i++)
     {
-      try {
+      try
+      {
         resultSet.getDouble(i);
         fail("Failing on " + i);
       }
@@ -507,7 +515,8 @@ public class ResultSetIT extends BaseJDBCTest
     // These column types are varchar and char.
     for (int i = 5; i < 7; i++)
     {
-      try {
+      try
+      {
         resultSet.getDouble(i);
         fail("Failing on " + i);
       }
@@ -562,7 +571,8 @@ public class ResultSetIT extends BaseJDBCTest
     assertEquals(new BigDecimal(9126), resultSet.getBigDecimal(7));
     for (int i = 8; i < 13; i++)
     {
-      try {
+      try
+      {
         resultSet.getBigDecimal(i);
         fail("Failing on " + i);
       }
@@ -574,7 +584,8 @@ public class ResultSetIT extends BaseJDBCTest
     resultSet.next();
     for (int i = 5; i < 7; i++)
     {
-      try {
+      try
+      {
         resultSet.getBigDecimal(i);
         fail("Failing on " + i);
       }
@@ -608,12 +619,12 @@ public class ResultSetIT extends BaseJDBCTest
     connection.close();
   }
 
-  private byte[] intToByteArray( int i )
+  private byte[] intToByteArray(int i)
   {
     return BigInteger.valueOf(i).toByteArray();
   }
 
-  private byte[] floatToByteArray (float i)
+  private byte[] floatToByteArray(float i)
   {
     return ByteBuffer.allocate(Float8Vector.TYPE_WIDTH).putDouble(0, i).array();
   }
@@ -679,13 +690,14 @@ public class ResultSetIT extends BaseJDBCTest
     assertArrayEquals(intToByteArray(2), resultSet.getBytes(1));
     assertArrayEquals(intToByteArray(5), resultSet.getBytes(2));
     assertArrayEquals(floatToByteArray(3.5f), resultSet.getBytes(3));
-    assertArrayEquals(new byte[] {1}, resultSet.getBytes(4));
-    assertArrayEquals(new byte [] {(byte) '1'}, resultSet.getBytes(5));
+    assertArrayEquals(new byte[]{1}, resultSet.getBytes(4));
+    assertArrayEquals(new byte[]{(byte) '1'}, resultSet.getBytes(5));
     assertArrayEquals("1".getBytes(), resultSet.getBytes(6));
 
     for (int i = 7; i < 12; i++)
     {
-      try {
+      try
+      {
         resultSet.getBytes(i);
         fail("Failing on " + i);
       }
@@ -695,7 +707,7 @@ public class ResultSetIT extends BaseJDBCTest
       }
     }
 
-    byte [] decoded = SFBinary.fromHex("48454C4C4F").getBytes();
+    byte[] decoded = SFBinary.fromHex("48454C4C4F").getBytes();
 
     assertArrayEquals(decoded, resultSet.getBytes(12));
 
@@ -908,7 +920,8 @@ public class ResultSetIT extends BaseJDBCTest
     assertTrue(resultSet.getBoolean(5));
     for (int i = 6; i < 13; i++)
     {
-      try {
+      try
+      {
         resultSet.getBoolean(i);
         fail("Failing on " + i);
       }
@@ -921,7 +934,8 @@ public class ResultSetIT extends BaseJDBCTest
     resultSet.next();
     for (int i = 1; i < 5; i++)
     {
-      try {
+      try
+      {
         resultSet.getBoolean(i);
         fail("Failing on " + i);
       }
@@ -930,7 +944,7 @@ public class ResultSetIT extends BaseJDBCTest
         assertEquals(200038, ex.getErrorCode());
       }
     }
-    
+
     statement.close();
     connection.close();
   }

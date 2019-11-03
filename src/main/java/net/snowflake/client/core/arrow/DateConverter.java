@@ -153,6 +153,6 @@ public class DateConverter extends AbstractArrowVectorConverter
     }
     Date val = toDate(index);
     throw new SFException(ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr,
-        SnowflakeUtil.BOOLEAN_STR, val);
+                          SnowflakeUtil.BOOLEAN_STR, val);
   }
 }

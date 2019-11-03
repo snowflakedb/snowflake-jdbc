@@ -141,7 +141,7 @@ public class BigIntToTimestampNTZConverterTest extends BaseConverterTest
         assertThat(ts, is(nullValue()));
         assertThat(date, is(nullValue()));
         assertThat(false, is(converter.toBoolean(j)));
-        assertThat(converter.toBytes(j), is (nullValue()));
+        assertThat(converter.toBytes(j), is(nullValue()));
       }
       else
       {
@@ -180,7 +180,7 @@ public class BigIntToTimestampNTZConverterTest extends BaseConverterTest
         assertThat(oldDate, is(date));
         assertThat(timestampStr, is(tsStr));
         assertThat(oldTime, is(time));
-        assertThat(converter.toBytes(j), is (notNullValue()));
+        assertThat(converter.toBytes(j), is(notNullValue()));
         i++;
         if (i < testScales.length)
         {

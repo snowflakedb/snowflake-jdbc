@@ -40,7 +40,6 @@ public class ResultUtil
   private static TimeZone timeZoneUTC = TimeZone.getTimeZone("UTC");
 
 
-
   // Map of default parameter values, used by effectiveParamValue().
   private static final Map<String, Object> defaultParameters;
 

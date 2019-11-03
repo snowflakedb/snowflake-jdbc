@@ -691,7 +691,7 @@ public class StatementIT extends BaseJDBCTest
     {
       Thread.sleep(1000);
     }
-    catch(Throwable e)
+    catch (Throwable e)
     {
     }
     assertEquals(((TelemetryClient) telemetryClient).bufferSize(), 0);

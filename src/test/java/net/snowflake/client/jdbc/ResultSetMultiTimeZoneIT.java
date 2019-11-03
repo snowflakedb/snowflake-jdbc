@@ -48,7 +48,7 @@ public class ResultSetMultiTimeZoneIT extends BaseJDBCTest
         {"arrow", "UTC"},
         {"arrow", "Asia/Singapore"},
         {"arrow", "MEZ"},
-    };
+        };
   }
 
   private static String queryResultFormat;

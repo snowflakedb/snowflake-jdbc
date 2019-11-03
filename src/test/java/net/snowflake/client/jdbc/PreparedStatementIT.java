@@ -1550,7 +1550,7 @@ public class PreparedStatementIT extends BaseJDBCTest
       prepStatement = connection.prepareStatement("select * from table(employee_detail(?, 'abc'))");
       prepStatement.setInt(1, 1);
       prepStatement.execute();
-  }
+    }
     finally
     {
       statement.execute("drop function if exists employee_detail(number, text)");

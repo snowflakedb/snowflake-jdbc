@@ -1718,7 +1718,6 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   }
 
 
-
   @Override
   public ResultSet getColumns(String catalog, String schemaPattern,
                               String tableNamePattern,

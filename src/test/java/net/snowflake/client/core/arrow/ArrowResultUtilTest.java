@@ -32,7 +32,7 @@ public class ArrowResultUtilTest
         {"America/New_York"},
         {"Asia/Singapore"},
         {"MEZ"},
-    };
+        };
   }
 
   @After

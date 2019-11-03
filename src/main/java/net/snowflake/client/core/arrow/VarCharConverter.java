@@ -202,14 +202,14 @@ public class VarCharConverter extends AbstractArrowVectorConverter
     {
       return false;
     }
-    else  if ("1".equals(str) || Boolean.TRUE.toString().equalsIgnoreCase(str))
+    else if ("1".equals(str) || Boolean.TRUE.toString().equalsIgnoreCase(str))
     {
       return true;
     }
     else
     {
       throw new SFException(ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr,
-          SnowflakeUtil.BOOLEAN_STR, str);
+                            SnowflakeUtil.BOOLEAN_STR, str);
     }
   }
 }

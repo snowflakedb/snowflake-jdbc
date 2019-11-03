@@ -214,7 +214,7 @@ public abstract class SFBaseResultSet
    * @throws SQLException if fails to split objects.
    */
   public List<SnowflakeResultSetSerializable> getResultSetSerializables(long maxSizeInBytes)
-      throws SQLException
+  throws SQLException
   {
     return this.resultSetSerializable.splitBySize(maxSizeInBytes);
   }

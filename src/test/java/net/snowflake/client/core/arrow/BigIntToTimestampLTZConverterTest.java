@@ -128,7 +128,7 @@ public class BigIntToTimestampLTZConverterTest extends BaseConverterTest
         assertThat(ts, is(nullValue()));
         assertThat(date, is(nullValue()));
         assertThat(false, is(converter.toBoolean(j)));
-        assertThat(converter.toBytes(j), is (nullValue()));
+        assertThat(converter.toBytes(j), is(nullValue()));
       }
       else
       {
@@ -162,7 +162,7 @@ public class BigIntToTimestampLTZConverterTest extends BaseConverterTest
         assertThat(oldTs, is(ts));
         assertThat(oldTime, is(time));
         assertThat(timestampStr, is(tsStr));
-        assertThat(converter.toBytes(j), is (notNullValue()));
+        assertThat(converter.toBytes(j), is(notNullValue()));
         i++;
         if (i < testScales.length)
         {

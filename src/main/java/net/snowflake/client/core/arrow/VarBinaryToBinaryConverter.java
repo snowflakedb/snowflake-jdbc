@@ -52,7 +52,7 @@ public class VarBinaryToBinaryConverter extends AbstractArrowVectorConverter
     else
     {
       throw new SFException(ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr,
-          "Boolean", str);
+                            "Boolean", str);
     }
   }
 }

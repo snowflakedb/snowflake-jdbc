@@ -123,7 +123,7 @@ public class IntToTimeConverterTest extends BaseConverterTest
         assertThat(obj, is(nullValue()));
         assertThat(strVal, is(nullValue()));
         assertThat(false, is(converter.toBoolean(j)));
-        assertThat(converter.toBytes(j), is (nullValue()));
+        assertThat(converter.toBytes(j), is(nullValue()));
         assertThat(0, is(converter.toInt(j)));
       }
       else
@@ -135,7 +135,7 @@ public class IntToTimeConverterTest extends BaseConverterTest
         final int x = j;
         TestUtil.assertSFException(invalidConversionErrorCode,
                                    () -> converter.toBoolean(x));
-        assertThat(converter.toBytes(j), is (notNullValue()));
+        assertThat(converter.toBytes(j), is(notNullValue()));
       }
       j++;
     }

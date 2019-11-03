@@ -90,7 +90,7 @@ public class BigIntToFixedConverterTest extends BaseConverterTest
         assertThat(longVal, is(0L));
         assertThat(longObject, is(nullValue()));
         assertThat(longString, is(nullValue()));
-        assertThat(converter.toBytes(i), is (nullValue()));
+        assertThat(converter.toBytes(i), is(nullValue()));
       }
       else
       {
@@ -152,7 +152,7 @@ public class BigIntToFixedConverterTest extends BaseConverterTest
         assertThat(bigDecimalVal, nullValue());
         assertThat(objectVal, nullValue());
         assertThat(stringVal, nullValue());
-        assertThat(converter.toBytes(i), is (nullValue()));
+        assertThat(converter.toBytes(i), is(nullValue()));
       }
       else
       {
@@ -160,7 +160,7 @@ public class BigIntToFixedConverterTest extends BaseConverterTest
         assertThat(bigDecimalVal, is(expectedVal));
         assertThat(objectVal, is(expectedVal));
         assertThat(stringVal, is(expectedVal.toString()));
-        assertThat(converter.toBytes(i), is (notNullValue()));
+        assertThat(converter.toBytes(i), is(notNullValue()));
       }
     }
 

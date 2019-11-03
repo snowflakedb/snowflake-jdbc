@@ -129,7 +129,7 @@ public class DateConverterTest extends BaseConverterTest
         assertThat(obj, is(nullValue()));
         assertThat(strVal, is(nullValue()));
         assertThat(false, is(converter.toBoolean(j)));
-        assertThat(converter.toBytes(j), is (nullValue()));
+        assertThat(converter.toBytes(j), is(nullValue()));
       }
       else
       {

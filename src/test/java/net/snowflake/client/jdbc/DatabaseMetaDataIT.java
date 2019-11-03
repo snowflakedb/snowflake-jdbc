@@ -1642,7 +1642,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
     String schema = connection.getSchema();
     DatabaseMetaData metaData = connection.getMetaData();
     Statement statement = connection.createStatement();
-    String escapeChar=metaData.getSearchStringEscape();
+    String escapeChar = metaData.getSearchStringEscape();
     // test getColumns with escaped special characters in table name
     statement.execute("create or replace table \"TEST\\1\\_1\" (\"C%1\" integer,\"C\\1\\\\11\" integer)");
     statement.execute("INSERT INTO \"TEST\\1\\_1\" (\"C%1\",\"C\\1\\\\11\") VALUES (0,0)");
@@ -1652,17 +1652,17 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
                       "\"C21\" integer," +
                       "\"C11\" integer,\"C%1\" integer,\"C\\1\\\\11\" integer , primary key (\"RNUM\"))");
     statement.execute("INSERT INTO \"TEST_1_1\" (RNUM,C21,C11,\"C%1\",\"C\\1\\\\11\") VALUES (0,0,0,0,0)");
-    String escapedTable1="TEST"+escapeChar+"\\1"+escapeChar+"\\"+escapeChar+"_1";
-    ResultSet resultSet = metaData.getColumns(database,schema, escapedTable1,null);
+    String escapedTable1 = "TEST" + escapeChar + "\\1" + escapeChar + "\\" + escapeChar + "_1";
+    ResultSet resultSet = metaData.getColumns(database, schema, escapedTable1, null);
     assertTrue(resultSet.next());
     assertEquals("C%1", resultSet.getString("COLUMN_NAME"));
     assertTrue(resultSet.next());
     assertEquals("C\\1\\\\11", resultSet.getString("COLUMN_NAME"));
     assertFalse(resultSet.next());
 
-    String escapedTable2="TEST"+escapeChar+"_1"+escapeChar+"_1";
-    String escapedSchema = "SPECIAL%"+escapeChar+"_"+escapeChar+"\\SCHEMA";
-    resultSet = metaData.getColumns(database ,escapedSchema, escapedTable2,null);
+    String escapedTable2 = "TEST" + escapeChar + "_1" + escapeChar + "_1";
+    String escapedSchema = "SPECIAL%" + escapeChar + "_" + escapeChar + "\\SCHEMA";
+    resultSet = metaData.getColumns(database, escapedSchema, escapedTable2, null);
     assertTrue(resultSet.next());
     assertEquals("RNUM", resultSet.getString("COLUMN_NAME"));
     assertTrue(resultSet.next());
@@ -1677,9 +1677,9 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
 
     // test getTables with real special characters and escaped special characters. Unescaped _ should allow both
     // tables to be returned, while escaped _ should match up to the _ in both table names.
-    statement.execute("create or replace table "+schema + ".\"TABLE_A\" (colA string)");
-    statement.execute("create or replace table "+schema + ".\"TABLE_B\" (colB number)");
-    String escapedTable = "TABLE"+escapeChar+"__";
+    statement.execute("create or replace table " + schema + ".\"TABLE_A\" (colA string)");
+    statement.execute("create or replace table " + schema + ".\"TABLE_B\" (colB number)");
+    String escapedTable = "TABLE" + escapeChar + "__";
     resultSet = metaData.getColumns(database, schema, escapedTable, null);
     assertTrue(resultSet.next());
     assertEquals("COLA", resultSet.getString("COLUMN_NAME"));
@@ -1692,8 +1692,8 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
     assertEquals("COLB", resultSet.getString("COLUMN_NAME"));
     assertFalse(resultSet.next());
 
-    statement.execute("create or replace table "+ schema + ".\"special%table\" (colA string)");
-    resultSet = metaData.getColumns(database, schema, "special"+escapeChar+"%table", null);
+    statement.execute("create or replace table " + schema + ".\"special%table\" (colA string)");
+    resultSet = metaData.getColumns(database, schema, "special" + escapeChar + "%table", null);
     assertTrue(resultSet.next());
     assertEquals("COLA", resultSet.getString("COLUMN_NAME"));
   }

@@ -55,7 +55,7 @@ public class BitToBooleanConverter extends AbstractArrowVectorConverter
     {
       return null;
     }
-    else if(toBoolean(index))
+    else if (toBoolean(index))
     {
 
       return new byte[]{1};

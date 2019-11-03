@@ -83,8 +83,8 @@ public class SFResultSet extends SFJsonResultSet
    * @throws SQLException exception raised from general SQL layers
    */
   public SFResultSet(SnowflakeResultSetSerializableV1 resultSetSerializable,
-              SFStatement statement,
-              boolean sortResult)
+                     SFStatement statement,
+                     boolean sortResult)
   throws SQLException
   {
     this(resultSetSerializable, statement.getSession().getTelemetryClient(), sortResult);
@@ -121,7 +121,7 @@ public class SFResultSet extends SFJsonResultSet
   public SFResultSet(SnowflakeResultSetSerializableV1 resultSetSerializable,
                      Telemetry telemetryClient,
                      boolean sortResult)
-      throws SQLException
+  throws SQLException
   {
     this.resultSetSerializable = resultSetSerializable;
     this.columnCount = 0;

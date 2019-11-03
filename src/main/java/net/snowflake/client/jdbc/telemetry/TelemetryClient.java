@@ -217,7 +217,7 @@ public class TelemetryClient implements Telemetry
       // before data was sent.
       sendBatchAsync().get();
     }
-    catch(Throwable e)
+    catch (Throwable e)
     {
       logger.debug("Error when sending batch data, {}", e);
     }
@@ -241,7 +241,8 @@ public class TelemetryClient implements Telemetry
   public Future<Boolean> sendBatchAsync()
   {
     return TelemetryThreadPool.getInstance().submit(
-        ()->{
+        () ->
+        {
           try
           {
             return this.sendBatch();
