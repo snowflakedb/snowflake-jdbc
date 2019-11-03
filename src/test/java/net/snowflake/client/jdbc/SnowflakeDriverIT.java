@@ -954,7 +954,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest
         File original = new File(individualFilePath);
         File unzipped = new File(destFolderCanonicalPathWithSeparator + fileNames[i]);
         assert (original.length() == unzipped.length());
-        assert(FileUtils.contentEquals(original, unzipped));
+        assert (FileUtils.contentEquals(original, unzipped));
       }
 
     }
@@ -968,13 +968,14 @@ public class SnowflakeDriverIT extends BaseJDBCTest
 
   /**
    * helper function for creating large file in Java. Copies info from 1 file to another
+   *
    * @param file1 file with info to be copied
    * @param file2 file to be copied into
    * @throws Exception
    */
   private void copyContentFrom(File file1, File file2) throws Exception
   {
-    FileInputStream inputStream  = new FileInputStream(file1);
+    FileInputStream inputStream = new FileInputStream(file1);
     FileOutputStream outputStream = new FileOutputStream(file2);
     FileChannel fIn = inputStream.getChannel();
     FileChannel fOut = outputStream.getChannel();
@@ -1051,7 +1052,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest
       // downloaded, and unzipped
       File unzipped = new File(destFolderCanonicalPathWithSeparator + "bigFile.csv");
       assert (largeTempFile.length() == unzipped.length());
-      assert(FileUtils.contentEquals(largeTempFile, unzipped));
+      assert (FileUtils.contentEquals(largeTempFile, unzipped));
     }
     finally
     {
@@ -1127,7 +1128,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest
         p.waitFor();
 
         File unzipped = new File(destFolderCanonicalPathWithSeparator + "testfile.csv");
-        assert(FileUtils.contentEqualsIgnoreEOL(file2, unzipped, null));
+        assert (FileUtils.contentEqualsIgnoreEOL(file2, unzipped, null));
       }
       finally
       {

@@ -88,7 +88,7 @@ public class DoubleToRealConverterTest extends BaseConverterTest
         assertThat(doubleObject, is(nullValue()));
         assertThat(doubleString, is(nullValue()));
         assertThat(false, is(converter.toBoolean(i)));
-        assertThat(converter.toBytes(i), is (nullValue()));
+        assertThat(converter.toBytes(i), is(nullValue()));
       }
       else
       {

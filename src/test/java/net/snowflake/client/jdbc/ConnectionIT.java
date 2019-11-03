@@ -1244,6 +1244,7 @@ public class ConnectionIT extends BaseJDBCTest
   private class ConcurrentConnections implements Runnable
   {
     Connection con = null;
+
     ConcurrentConnections()
     {
     }
@@ -1255,7 +1256,7 @@ public class ConnectionIT extends BaseJDBCTest
       {
         con = getConnection();
         con.createStatement().executeQuery(
-             "select * from bigTable");
+            "select * from bigTable");
         con.close();
 
       }

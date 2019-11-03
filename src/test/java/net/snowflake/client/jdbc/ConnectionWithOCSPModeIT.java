@@ -300,44 +300,42 @@ public class ConnectionWithOCSPModeIT extends BaseJDBCTest
   /**
    * Test REVOKED certificate. CERTIFICATE_STATUS_REVOKED should be raised even in FAIL_OPEN mode.
    *
-  @Test
-  public void testRevokedCertFailOpen()
-  {
-    try
-    {
-      DriverManager.getConnection(testRevokedCertConnectString, OCSPFailOpenProperties());
-      fail("should fail");
-    }
-    catch (SQLException ex)
-    {
-      assertThat(ex, instanceOf(SnowflakeSQLException.class));
-      assertThat(ex.getErrorCode(), equalTo(NETWORK_ERROR.getMessageCode()));
-      Throwable cause = getCause(ex);
-      assertThat((cause, instanceOf(SFOCSPException.class)) || (cause, instanceOf(CertificateExpiredException.class)));
-      assertThat(((SFOCSPException) cause).getErrorCode(), equalTo(OCSPErrorCode.CERTIFICATE_STATUS_REVOKED));
-    }
-  }*/
+   @Test public void testRevokedCertFailOpen()
+   {
+   try
+   {
+   DriverManager.getConnection(testRevokedCertConnectString, OCSPFailOpenProperties());
+   fail("should fail");
+   }
+   catch (SQLException ex)
+   {
+   assertThat(ex, instanceOf(SnowflakeSQLException.class));
+   assertThat(ex.getErrorCode(), equalTo(NETWORK_ERROR.getMessageCode()));
+   Throwable cause = getCause(ex);
+   assertThat((cause, instanceOf(SFOCSPException.class)) || (cause, instanceOf(CertificateExpiredException.class)));
+   assertThat(((SFOCSPException) cause).getErrorCode(), equalTo(OCSPErrorCode.CERTIFICATE_STATUS_REVOKED));
+   }
+   }*/
 
   /**
    * Test REVOKED certificate. CERTIFICATE_STATUS_REVOKED should be raised.
    *
-  @Test
-  public void testRevokedCertFailClosed()
-  {
-    try
-    {
-      DriverManager.getConnection(testRevokedCertConnectString, OCSPFailClosedProperties());
-      fail("should fail");
-    }
-    catch (SQLException ex)
-    {
-      assertThat(ex, instanceOf(SnowflakeSQLException.class));
-      assertThat(ex.getErrorCode(), equalTo(NETWORK_ERROR.getMessageCode()));
-      Throwable cause = getCause(ex);
-      assertThat(cause, instanceOf(SFOCSPException.class));
-      assertThat(((SFOCSPException) cause).getErrorCode(), equalTo(OCSPErrorCode.CERTIFICATE_STATUS_REVOKED));
-    }
-  }*/
+   @Test public void testRevokedCertFailClosed()
+   {
+   try
+   {
+   DriverManager.getConnection(testRevokedCertConnectString, OCSPFailClosedProperties());
+   fail("should fail");
+   }
+   catch (SQLException ex)
+   {
+   assertThat(ex, instanceOf(SnowflakeSQLException.class));
+   assertThat(ex.getErrorCode(), equalTo(NETWORK_ERROR.getMessageCode()));
+   Throwable cause = getCause(ex);
+   assertThat(cause, instanceOf(SFOCSPException.class));
+   assertThat(((SFOCSPException) cause).getErrorCode(), equalTo(OCSPErrorCode.CERTIFICATE_STATUS_REVOKED));
+   }
+   }*/
 
   /**
    * Test OCSP Cache server hang and timeout. Should fall back to OCSP responder.

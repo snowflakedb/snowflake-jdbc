@@ -141,14 +141,14 @@ public class SmallIntToFixedConverter extends AbstractArrowVectorConverter
     {
       return false;
     }
-    else  if (val == 1)
+    else if (val == 1)
     {
       return true;
     }
     else
     {
       throw new SFException(ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr,
-          "Boolean", val);
+                            "Boolean", val);
     }
   }
 }

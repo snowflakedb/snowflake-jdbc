@@ -750,25 +750,25 @@ public class MultiStatementIT extends BaseJDBCTest
     Connection connection = getConnection();
     Statement statement = connection.createStatement();
 
-    ResultSet rs = statement.executeQuery("select current_account()") ;
+    ResultSet rs = statement.executeQuery("select current_account()");
     rs.next();
     String accountName = rs.getString(1);
 
-    rs = statement.executeQuery("select current_user()") ;
+    rs = statement.executeQuery("select current_user()");
     rs.next();
     String userName = rs.getString(1);
 
     String[] testSuites = new String[5];
     testSuites[0] = String.format("alter account %s set " +
-        "multi_statement_count = 20", accountName);
+                                  "multi_statement_count = 20", accountName);
     testSuites[1] = String.format("alter account %s set " +
-        "multi_statement_count = -1", accountName);
+                                  "multi_statement_count = -1", accountName);
     testSuites[2] = String.format("alter user %s set " +
-        "multi_statement_count = 20", userName);
+                                  "multi_statement_count = 20", userName);
     testSuites[3] = String.format("alter user %s set " +
-        "multi_statement_count = -1", userName);
+                                  "multi_statement_count = -1", userName);
     testSuites[4] = "alter session set " +
-        "multi_statement_count = -1";
+                    "multi_statement_count = -1";
 
     int[] expectedErrorCodes = new int[5];
     expectedErrorCodes[0] = 1008;
@@ -779,7 +779,7 @@ public class MultiStatementIT extends BaseJDBCTest
 
     statement.execute("use role accountadmin");
 
-    for (int i=0; i<testSuites.length; i++)
+    for (int i = 0; i < testSuites.length; i++)
     {
       try
       {

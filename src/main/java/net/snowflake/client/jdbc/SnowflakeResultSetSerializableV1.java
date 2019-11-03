@@ -139,7 +139,7 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
 
   // Below fields are for the data fields that this object wraps
   String firstChunkStringData; // For ARROW, it's BASE64-encoded arrow file.
-                               // For JSON,  it's string data for the json.
+  // For JSON,  it's string data for the json.
   int firstChunkRowCount; // It is only used for JSON format result.
   int chunkFileCount;
   List<ChunkFileMetadata> chunkFileMetadatas = new ArrayList<>();
@@ -205,7 +205,7 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
 
   /**
    * This is copy constructor.
-   *
+   * <p>
    * NOTE: The copy is NOT deep copy.
    *
    * @param toCopy the source object to be copied.
@@ -297,7 +297,7 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
   public long getUncompressedDataSize()
   {
     long totalSize = this.firstChunkStringData != null
-                          ?  this.firstChunkStringData.length() : 0;
+                     ? this.firstChunkStringData.length() : 0;
     for (ChunkFileMetadata entry : chunkFileMetadatas)
     {
       totalSize += entry.getUncompressedByteSize();
@@ -700,9 +700,9 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
     // The chunk downloader will start prefetching
     // first few chunk files in background thread(s)
     resultSetSerializable.chunkDownloader =
-          (resultSetSerializable.chunkFileCount > 0)
-              ? new SnowflakeChunkDownloader(resultSetSerializable)
-              : new SnowflakeChunkDownloader.NoOpChunkDownloader();
+        (resultSetSerializable.chunkFileCount > 0)
+        ? new SnowflakeChunkDownloader(resultSetSerializable)
+        : new SnowflakeChunkDownloader.NoOpChunkDownloader();
 
     // Setup ResultSet metadata
     resultSetSerializable.resultSetMetaData =
@@ -929,7 +929,7 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
    * @throws SQLException if fails to setup any transient fields
    */
   private void setupTransientFields()
-      throws SQLException
+  throws SQLException
   {
     // Setup transient fields from serialized fields
     setupFieldsFromParameters();
@@ -955,7 +955,7 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
       catch (IOException ex)
       {
         throw new SQLException("The JSON data is invalid. The error is: " +
-                                   ex.getMessage());
+                               ex.getMessage());
       }
     }
 
@@ -989,7 +989,7 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
    * @throws SQLException if fails to split objects.
    */
   public List<SnowflakeResultSetSerializable> splitBySize(long maxSizeInBytes)
-      throws SQLException
+  throws SQLException
   {
     List<SnowflakeResultSetSerializable> resultSetSerializables =
         new ArrayList<>();
@@ -1016,8 +1016,8 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
       // If the serializable object has reach the max size,
       // save current one and create new one.
       if ((curResultSetSerializable.getUncompressedDataSize() > 0) &&
-          ( maxSizeInBytes < (curResultSetSerializable.getUncompressedDataSize()
-                              + curChunkFileMetadata.getUncompressedByteSize())))
+          (maxSizeInBytes < (curResultSetSerializable.getUncompressedDataSize()
+                             + curChunkFileMetadata.getUncompressedByteSize())))
       {
         resultSetSerializables.add(curResultSetSerializable);
 
@@ -1110,7 +1110,7 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
    * Get ResultSet from the ResultSet Serializable object so that the user can
    * access the data.
    *
-   * @param info  The proxy sever information if proxy is necessary.
+   * @param info The proxy sever information if proxy is necessary.
    * @return a ResultSet which represents for the data wrapped in the object
    */
   public ResultSet getResultSet(Properties info) throws SQLException
@@ -1132,19 +1132,19 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
       case ARROW:
       {
         sfBaseResultSet = new SFArrowResultSet(this, telemetryClient,
-                                                    sortResult);
+                                               sortResult);
         break;
       }
       case JSON:
       {
         sfBaseResultSet = new SFResultSet(this, telemetryClient,
-                                               sortResult);
+                                          sortResult);
         break;
       }
       default:
         throw new SnowflakeSQLException(ErrorCode.INTERNAL_ERROR,
                                         "Unsupported query result format: " +
-                                            getQueryResultFormat().name());
+                                        getQueryResultFormat().name());
     }
 
     // Create result set
@@ -1154,7 +1154,8 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
     return resultSetV1;
   }
 
-  public String toString() {
+  public String toString()
+  {
     StringBuilder builder = new StringBuilder(16 * 1024);
 
     builder.append("hasFirstChunk: ")

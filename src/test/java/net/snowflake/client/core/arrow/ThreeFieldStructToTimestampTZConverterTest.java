@@ -214,7 +214,7 @@ public class ThreeFieldStructToTimestampTZConverterTest extends BaseConverterTes
         assertThat(ts, is(nullValue()));
         assertThat(date, is(nullValue()));
         assertThat(false, is(converter.toBoolean(j)));
-        assertThat(converter.toBytes(j), is (nullValue()));
+        assertThat(converter.toBytes(j), is(nullValue()));
       }
       else
       {

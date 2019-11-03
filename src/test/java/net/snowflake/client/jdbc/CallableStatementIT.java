@@ -35,8 +35,8 @@ public class CallableStatementIT extends BaseJDBCTest
   {
     // all tests in this class need to run for both query result formats json and arrow
     return new Object[][]{
-      {"JSON"}
-      , {"Arrow_force"}
+        {"JSON"}
+        , {"Arrow_force"}
     };
   }
 

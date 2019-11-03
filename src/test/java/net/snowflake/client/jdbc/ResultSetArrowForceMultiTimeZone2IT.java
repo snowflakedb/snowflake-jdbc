@@ -33,7 +33,7 @@ public class ResultSetArrowForceMultiTimeZone2IT extends BaseJDBCTest
         {"arrow_force", "UTC"},
         {"arrow_force", "America/Los_Angeles"},
         {"arrow_force", "MEZ"},
-    };
+        };
   }
 
   private static String queryResultFormat;
@@ -84,7 +84,7 @@ public class ResultSetArrowForceMultiTimeZone2IT extends BaseJDBCTest
   {
     Connection conn = getConnection(BaseJDBCTest.DONT_INJECT_SOCKET_TIMEOUT);
     conn.createStatement().execute("alter session set query_result_format = '"
-                                       + queryResultFormat + "'");
+                                   + queryResultFormat + "'");
     return conn;
   }
 

@@ -675,7 +675,10 @@ public class SFSession
     return databaseMinorVersion;
   }
 
-  public String getSessionId() { return sessionId; }
+  public String getSessionId()
+  {
+    return sessionId;
+  }
 
   /**
    * A helper function to call global service and renew session.
