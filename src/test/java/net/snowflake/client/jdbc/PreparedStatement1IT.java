@@ -5,7 +5,11 @@ package net.snowflake.client.jdbc;
 
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnTravisCI;
+import net.snowflake.client.category.TestCategoryOthers;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import java.sql.Connection;
 import java.sql.ParameterMetaData;
@@ -27,8 +31,21 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+@Category(TestCategoryOthers.class)
 public class PreparedStatement1IT extends PreparedStatement0IT
 {
+  @Before
+  public void setUp() throws SQLException
+  {
+    super.setUp();
+  }
+
+  @After
+  public void tearDown() throws SQLException
+  {
+    super.tearDown();
+  }
+
   public PreparedStatement1IT()
   {
     super("json");

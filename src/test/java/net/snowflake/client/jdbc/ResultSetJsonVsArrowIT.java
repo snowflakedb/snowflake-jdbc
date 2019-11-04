@@ -2,10 +2,12 @@ package net.snowflake.client.jdbc;
 
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnTravisCI;
+import net.snowflake.client.category.TestCategoryArrow;
 import org.apache.arrow.vector.BigIntVector;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
@@ -32,6 +34,7 @@ import static org.junit.Assert.fail;
  * Completely compare json and arrow resultSet behaviors
  */
 @RunWith(Parameterized.class)
+@Category(TestCategoryArrow.class)
 public class ResultSetJsonVsArrowIT extends BaseJDBCTest
 {
   @Parameterized.Parameters(name = "format={0}")
@@ -1509,6 +1512,7 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest
    * @throws SQLException
    */
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
   public void testDecimal() throws SQLException
   {
     int scale = 37;

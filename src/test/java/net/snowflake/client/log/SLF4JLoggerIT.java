@@ -8,10 +8,12 @@ import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.Appender;
 import ch.qos.logback.core.AppenderBase;
+import net.snowflake.client.category.TestCategoryOthers;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.experimental.categories.Category;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
@@ -21,6 +23,7 @@ import java.util.List;
 /**
  * A class for testing {@link SLF4JLogger}
  */
+@Category(TestCategoryOthers.class)
 public class SLF4JLoggerIT extends AbstractLoggerIT
 {
   /**

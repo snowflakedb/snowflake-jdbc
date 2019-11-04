@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import net.snowflake.client.AbstractDriverIT;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnTravisCI;
+import net.snowflake.client.category.TestCategoryOthers;
 import net.snowflake.common.core.SqlState;
 import org.apache.commons.io.FileUtils;
 import org.junit.AfterClass;
@@ -15,6 +16,7 @@ import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.BufferedWriter;
@@ -65,6 +67,7 @@ import static org.junit.Assert.fail;
 /**
  * General integration tests
  */
+@Category(TestCategoryOthers.class)
 public class SnowflakeDriverIT extends BaseJDBCTest
 {
   private static final int MAX_CONCURRENT_QUERIES_PER_USER = 50;

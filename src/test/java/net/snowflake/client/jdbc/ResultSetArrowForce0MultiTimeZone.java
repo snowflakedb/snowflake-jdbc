@@ -7,7 +7,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-class ResultSetArrowForce0MultiTimeZone extends BaseJDBCTest
+abstract class ResultSetArrowForce0MultiTimeZone extends BaseJDBCTest
 {
   static Object[][] testData()
   {

@@ -5,8 +5,10 @@ package net.snowflake.client.jdbc;
 
 import java.util.Set;
 
+import net.snowflake.client.category.TestCategoryOthers;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.rules.TemporaryFolder;
 
 import static org.junit.Assert.*;
@@ -14,6 +16,7 @@ import static org.junit.Assert.*;
 /**
  * Tests for SnowflakeFileTransferAgent.expandFileNames
  */
+@Category(TestCategoryOthers.class)
 public class FileUploaderExpandFileNamesTest
 {
   @Rule

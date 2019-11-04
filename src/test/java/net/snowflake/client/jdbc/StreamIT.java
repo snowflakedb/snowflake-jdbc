@@ -5,8 +5,10 @@ package net.snowflake.client.jdbc;
 
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnTestaccount;
+import net.snowflake.client.category.TestCategoryOthers;
 import org.apache.commons.io.IOUtils;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import java.io.InputStream;
 import java.io.StringWriter;
@@ -21,6 +23,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * Stream interface tests. Snowflake JDBC specific API
  */
+@Category(TestCategoryOthers.class)
 public class StreamIT extends BaseJDBCTest
 {
   /**

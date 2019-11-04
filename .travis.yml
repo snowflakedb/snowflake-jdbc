@@ -8,14 +8,69 @@ matrix:
     jdk: oraclejdk8
     env:
     - JACOCO_COVERAGE=true
+    - TEST_CATEGORY=TestCategoryArrow
   - os: linux
     dist: trusty
     jdk: oraclejdk9
+    env:
+    - TEST_CATEGORY=TestCategoryArrow
   - os: linux
     dist: trusty
     jdk: oraclejdk9
     env:
     - SNOWFLAKE_AZURE=true
+    - TEST_CATEGORY=TestCategoryArrow
+  - os: linux
+    dist: trusty
+    jdk: oraclejdk8
+    env:
+    - JACOCO_COVERAGE=true
+    - TEST_CATEGORY=TestCategoryOthers
+  - os: linux
+    dist: trusty
+    jdk: oraclejdk9
+    env:
+    - TEST_CATEGORY=TestCategoryOthers
+  - os: linux
+    dist: trusty
+    jdk: oraclejdk9
+    env:
+    - SNOWFLAKE_AZURE=true
+    - TEST_CATEGORY=TestCategoryOthers
+  - os: linux
+    dist: trusty
+    jdk: oraclejdk8
+    env:
+    - JACOCO_COVERAGE=true
+    - TEST_CATEGORY=TestCategoryCore
+  - os: linux
+    dist: trusty
+    jdk: oraclejdk9
+    env:
+    - TEST_CATEGORY=TestCategoryCore
+  - os: linux
+    dist: trusty
+    jdk: oraclejdk9
+    env:
+    - SNOWFLAKE_AZURE=true
+    - TEST_CATEGORY=TestCategoryCore
+  - os: linux
+    dist: trusty
+    jdk: oraclejdk8
+    env:
+    - JACOCO_COVERAGE=true
+    - TEST_CATEGORY=r.TestCategoryLoader
+  - os: linux
+    dist: trusty
+    jdk: oraclejdk9
+    env:
+    - TEST_CATEGORY=r.TestCategoryLoader
+  - os: linux
+    dist: trusty
+    jdk: oraclejdk9
+    env:
+    - SNOWFLAKE_AZURE=true
+    - TEST_CATEGORY=r.TestCategoryLoader
 script:
 - "./scripts/run_travis.sh"
 after_success:

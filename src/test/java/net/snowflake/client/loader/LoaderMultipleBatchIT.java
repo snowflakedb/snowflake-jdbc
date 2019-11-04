@@ -3,7 +3,9 @@
  */
 package net.snowflake.client.loader;
 
+import net.snowflake.client.category.TestCategoryLoader;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import java.sql.ResultSet;
 import java.util.List;
@@ -11,6 +13,7 @@ import java.util.List;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+@Category(TestCategoryLoader.class)
 public class LoaderMultipleBatchIT extends LoaderBase
 {
   @Test

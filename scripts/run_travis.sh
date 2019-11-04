@@ -35,24 +35,22 @@ travis_fold_end
 trap finish EXIT
 
 source $DIR/env.sh
+set MAVEN_OPTS="-Xmx1536m -XX:MaxPermSize=128m"
 
 travis_fold_start create_schema "Create test schema"
 python $DIR/create_schema.py
 travis_fold_end
 
-travis_fold_start build "Build JDBC driver"
-mvn install -DskipTests=true --batch-mode --show-version
-travis_fold_end
-
-travis_fold_start build "Test JDBC driver"
+travis_fold_start build "Build and Test JDBC driver"
 PARAMS=()
 PARAMS+=("-DtravisIT")
 # code coverage plugin jacoco did not work when running with self-contained-jar
 PARAMS+=("-Dnot-self-contained-jar")
+PARAMS+=("-DtravisTestCategory=net.snowflake.client.category.${TEST_CATEGORY}")
 echo "JDK Version: $TRAVIS_JDK_VERSION"
 [[ -n "$JACOCO_COVERAGE" ]] && PARAMS+=("-Djacoco.skip.instrument=false")
 # verify phase is after test/integration-test phase, which means both unit test 
 # and integration test will be run
-mvn "${PARAMS[@]}" verify --batch-mode
+mvn "${PARAMS[@]}" verify --batch-mode --show-version
 
 travis_fold_end
