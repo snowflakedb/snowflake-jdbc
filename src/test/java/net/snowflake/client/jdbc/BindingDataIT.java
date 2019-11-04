@@ -4,7 +4,9 @@
 package net.snowflake.client.jdbc;
 
 import net.snowflake.client.AbstractDriverIT;
+import net.snowflake.client.category.TestCategoryOthers;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.experimental.theories.DataPoints;
 import org.junit.experimental.theories.Theories;
 import org.junit.experimental.theories.Theory;
@@ -31,6 +33,7 @@ import static org.junit.Assert.assertNull;
  * Integration tests for binding variable
  */
 @RunWith(Theories.class)
+@Category(TestCategoryOthers.class)
 public class BindingDataIT extends AbstractDriverIT
 {
   @DataPoints

@@ -1,11 +1,16 @@
+/*
+ * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
+ */
 package net.snowflake.client.jdbc;
 
+import net.snowflake.client.category.TestCategoryOthers;
 import org.apache.http.StatusLine;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
@@ -15,6 +20,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static org.mockito.Mockito.*;
 import static org.junit.Assert.*;
 
+@Category(TestCategoryOthers.class)
 public class RestRequestIT
 {
   private CloseableHttpResponse retryResponse()

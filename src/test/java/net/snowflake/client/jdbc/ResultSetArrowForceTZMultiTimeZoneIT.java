@@ -3,8 +3,10 @@
  */
 package net.snowflake.client.jdbc;
 
+import net.snowflake.client.category.TestCategoryOthers;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
@@ -19,6 +21,7 @@ import static org.junit.Assert.assertNull;
  * Compare json and arrow resultSet behaviors 2/2
  */
 @RunWith(Parameterized.class)
+@Category(TestCategoryOthers.class)
 public class ResultSetArrowForceTZMultiTimeZoneIT extends ResultSetArrowForce0MultiTimeZone
 {
   @Parameterized.Parameters(name = "format={0}, tz={1}")

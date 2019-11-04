@@ -3,12 +3,15 @@
  */
 package net.snowflake.client.jdbc;
 
+import net.snowflake.client.category.TestCategoryOthers;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
 
+@Category(TestCategoryOthers.class)
 public class StatementFeatureNotSupportedIT extends BaseJDBCTest
 {
   @Test

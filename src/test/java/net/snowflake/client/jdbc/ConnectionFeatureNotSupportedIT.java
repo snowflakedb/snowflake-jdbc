@@ -3,7 +3,9 @@
  */
 package net.snowflake.client.jdbc;
 
+import net.snowflake.client.category.TestCategoryOthers;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -11,6 +13,7 @@ import java.sql.SQLException;
 import java.sql.Savepoint;
 import java.util.HashMap;
 
+@Category(TestCategoryOthers.class)
 public class ConnectionFeatureNotSupportedIT extends BaseJDBCTest
 {
   @Test

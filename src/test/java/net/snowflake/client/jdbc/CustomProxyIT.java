@@ -1,7 +1,9 @@
 package net.snowflake.client.jdbc;
 
+import net.snowflake.client.category.TestCategoryOthers;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import java.net.Authenticator;
 import java.net.PasswordAuthentication;
@@ -19,6 +21,7 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertTrue;
 
+@Category(TestCategoryOthers.class)
 public class CustomProxyIT
 {
   @Test

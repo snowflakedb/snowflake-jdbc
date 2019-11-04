@@ -3,7 +3,9 @@
  */
 package net.snowflake.client.jdbc;
 
+import net.snowflake.client.category.TestCategoryOthers;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -15,6 +17,7 @@ import java.util.Calendar;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+@Category(TestCategoryOthers.class)
 public class ResultSetAlreadyClosedIT extends BaseJDBCTest
 {
   @Test

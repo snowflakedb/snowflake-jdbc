@@ -3,8 +3,10 @@
  */
 package net.snowflake.client.loader;
 
+import net.snowflake.client.category.TestCategoryLoader;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -29,6 +31,7 @@ import static org.junit.Assert.fail;
 /**
  * Loader IT
  */
+@Category(TestCategoryLoader.class)
 public class LoaderIT extends LoaderBase
 {
   @Test

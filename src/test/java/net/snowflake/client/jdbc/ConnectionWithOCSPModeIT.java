@@ -5,11 +5,13 @@ package net.snowflake.client.jdbc;
 
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnTravisCI;
+import net.snowflake.client.category.TestCategoryOthers;
 import net.snowflake.client.core.SFOCSPException;
 import net.snowflake.client.core.SFTrustManager;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import java.net.SocketTimeoutException;
@@ -33,6 +35,7 @@ import static org.junit.Assert.fail;
  * <p>
  * hang_webserver.py 12345
  */
+@Category(TestCategoryOthers.class)
 public class ConnectionWithOCSPModeIT extends BaseJDBCTest
 {
   private final String testUser = "fakeuser";

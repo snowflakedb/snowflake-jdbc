@@ -1,6 +1,8 @@
 package net.snowflake.client.jdbc;
 
+import net.snowflake.client.category.TestCategoryOthers;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import java.math.BigDecimal;
 import java.sql.Connection;
@@ -13,6 +15,7 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.Collections;
 
+@Category(TestCategoryOthers.class)
 public class ResultSetFeatureNotSupportedIT extends BaseJDBCTest
 {
   @Test

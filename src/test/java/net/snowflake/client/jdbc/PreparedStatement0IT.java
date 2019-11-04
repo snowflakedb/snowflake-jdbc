@@ -14,12 +14,11 @@ import java.sql.SQLException;
 /**
  * Prepared statement integration tests
  */
-public class PreparedStatement0IT extends BaseJDBCTest
+abstract class PreparedStatement0IT extends BaseJDBCTest
 {
   private final String queryResultFormat;
 
-  Connection init()
-  throws SQLException
+  Connection init() throws SQLException
   {
     Connection conn = BaseJDBCTest.getConnection();
     conn.createStatement().execute(
@@ -39,12 +38,8 @@ public class PreparedStatement0IT extends BaseJDBCTest
   final String enableCacheReuse = "alter session set USE_CACHED_RESULT=true";
   final String tableFuncSQL = "select 1 from table(generator(rowCount => ?))";
 
-  @Rule
-  public final ExpectedException exception = ExpectedException.none();
-
-
   @Before
-  public void setUp() throws SQLException
+  void setUp() throws SQLException
   {
     try (Connection con = init())
     {
@@ -53,7 +48,7 @@ public class PreparedStatement0IT extends BaseJDBCTest
   }
 
   @After
-  public void tearDown() throws SQLException
+  void tearDown() throws SQLException
   {
     try (Connection con = init())
     {

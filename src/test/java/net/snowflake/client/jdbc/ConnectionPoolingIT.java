@@ -6,12 +6,14 @@ package net.snowflake.client.jdbc;
 import com.mchange.v2.c3p0.ComboPooledDataSource;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+import net.snowflake.client.category.TestCategoryOthers;
 import org.apache.commons.dbcp.BasicDataSource;
 import org.apache.commons.dbcp.PoolingDataSource;
 import org.apache.commons.pool.impl.GenericObjectPool;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import java.beans.PropertyVetoException;
 import java.sql.Connection;
@@ -24,8 +26,9 @@ import java.util.Properties;
 import static org.junit.Assert.assertEquals;
 
 /**
- * @author hyu
+ * Connection pool interface test
  */
+@Category(TestCategoryOthers.class)
 public class ConnectionPoolingIT
 {
   private BasicDataSource bds = null;
