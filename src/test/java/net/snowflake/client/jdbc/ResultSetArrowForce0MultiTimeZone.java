@@ -1,10 +1,13 @@
+/*
+ * Copyright (c) 2012-2019 Snowflake Computing Inc. All right reserved.
+ */
 package net.snowflake.client.jdbc;
 
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-class ResultSetArrowForceMultiTimeZoneCommon extends BaseJDBCTest
+class ResultSetArrowForce0MultiTimeZone extends BaseJDBCTest
 {
   static Object[][] testData()
   {
@@ -22,7 +25,7 @@ class ResultSetArrowForceMultiTimeZoneCommon extends BaseJDBCTest
   protected String queryResultFormat;
   protected String tz;
 
-  ResultSetArrowForceMultiTimeZoneCommon(String queryResultFormat, String timeZone)
+  ResultSetArrowForce0MultiTimeZone(String queryResultFormat, String timeZone)
   {
     this.queryResultFormat = queryResultFormat;
     System.setProperty("user.timezone", timeZone);
