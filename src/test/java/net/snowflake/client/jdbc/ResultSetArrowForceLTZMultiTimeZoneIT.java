@@ -1,3 +1,6 @@
+/*
+ * Copyright (c) 2012-2019 Snowflake Computing Inc. All right reserved.
+ */
 package net.snowflake.client.jdbc;
 
 import org.apache.commons.lang3.StringUtils;
@@ -19,15 +22,15 @@ import static org.junit.Assert.assertNull;
  * Compare json and arrow resultSet behaviors 1/2
  */
 @RunWith(Parameterized.class)
-public class ResultSetArrowForceMultiTimeZone1IT extends ResultSetArrowForceMultiTimeZoneCommon
+public class ResultSetArrowForceLTZMultiTimeZoneIT extends ResultSetArrowForce0MultiTimeZone
 {
   @Parameterized.Parameters(name = "format={0}, tz={1}")
   public static Object[][] data()
   {
-    return ResultSetArrowForceMultiTimeZoneCommon.testData();
+    return ResultSetArrowForce0MultiTimeZone.testData();
   }
 
-  public ResultSetArrowForceMultiTimeZone1IT(String queryResultFormat, String timeZone)
+  public ResultSetArrowForceLTZMultiTimeZoneIT(String queryResultFormat, String timeZone)
   {
     super(queryResultFormat, timeZone);
   }
