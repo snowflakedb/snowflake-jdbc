@@ -5,9 +5,11 @@ package net.snowflake.client.jdbc;
 
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnTravisCI;
+import net.snowflake.client.category.TestCategoryOthers;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
@@ -36,6 +38,7 @@ import static org.junit.Assert.fail;
  * Test ResultSet
  */
 @RunWith(Parameterized.class)
+@Category(TestCategoryOthers.class)
 public class ResultSetMultiTimeZoneIT extends BaseJDBCTest
 {
   @Parameterized.Parameters(name = "format={0}, tz={1}")

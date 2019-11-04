@@ -4,10 +4,12 @@
 package net.snowflake.client.log;
 
 
+import net.snowflake.client.category.TestCategoryOthers;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.experimental.categories.Category;
 
 import java.util.logging.Formatter;
 import java.util.logging.Handler;
@@ -18,6 +20,7 @@ import java.util.logging.Logger;
 /**
  * A class for testing {@link JDK14Logger}
  */
+@Category(TestCategoryOthers.class)
 public class JDK14LoggerIT extends AbstractLoggerIT
 {
   /**

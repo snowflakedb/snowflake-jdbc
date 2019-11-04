@@ -1,6 +1,8 @@
 package net.snowflake.client.jdbc;
 
+import net.snowflake.client.category.TestCategoryOthers;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import java.sql.Connection;
 import java.sql.Statement;
@@ -10,6 +12,7 @@ import static org.junit.Assert.assertEquals;
 /**
  * Large update test. No JSON/ARROW specific test case is required.
  */
+@Category(TestCategoryOthers.class)
 public class StatementLargeUpdateIT extends BaseJDBCTest
 {
   @Test

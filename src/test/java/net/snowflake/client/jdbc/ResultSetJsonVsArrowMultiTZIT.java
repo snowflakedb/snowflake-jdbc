@@ -1,7 +1,9 @@
 package net.snowflake.client.jdbc;
 
+import net.snowflake.client.category.TestCategoryArrow;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
@@ -10,8 +12,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.TimeZone;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -20,6 +20,7 @@ import static org.junit.Assert.assertNull;
  * Completely compare json and arrow resultSet behaviors
  */
 @RunWith(Parameterized.class)
+@Category(TestCategoryArrow.class)
 public class ResultSetJsonVsArrowMultiTZIT extends BaseJDBCTest
 {
   @Parameterized.Parameters(name = "format={0}, tz={1}")

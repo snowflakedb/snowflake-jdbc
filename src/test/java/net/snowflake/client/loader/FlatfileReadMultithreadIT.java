@@ -1,9 +1,11 @@
 package net.snowflake.client.loader;
 
 import net.snowflake.client.AbstractDriverIT;
+import net.snowflake.client.category.TestCategoryLoader;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -20,6 +22,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+@Category(TestCategoryLoader.class)
 public class FlatfileReadMultithreadIT
 {
   private final int NUM_RECORDS = 100000;

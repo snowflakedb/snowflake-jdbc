@@ -4,6 +4,7 @@
 package net.snowflake.client.jdbc;
 
 import net.snowflake.client.AbstractDriverIT;
+import net.snowflake.client.category.TestCategoryOthers;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -20,11 +21,13 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import org.apache.commons.io.FileUtils;
+import org.junit.experimental.categories.Category;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.CoreMatchers.*;
 
 
+@Category(TestCategoryOthers.class)
 public class PutUnescapeBackslashIT extends AbstractDriverIT
 {
   @BeforeClass

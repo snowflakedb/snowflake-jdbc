@@ -6,15 +6,15 @@ package net.snowflake.client.jdbc;
 import net.snowflake.client.AbstractDriverIT;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnTravisCI;
+import net.snowflake.client.category.TestCategoryOthers;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
 import net.snowflake.client.jdbc.telemetry.TelemetryClient;
 import net.snowflake.common.core.SqlState;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.rules.TemporaryFolder;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
 
 import java.io.File;
 import java.net.URL;
@@ -42,6 +42,7 @@ import static org.junit.Assert.fail;
 /**
  * Statement tests
  */
+@Category(TestCategoryOthers.class)
 public class StatementIT extends BaseJDBCTest
 {
   protected static String queryResultFormat = "json";

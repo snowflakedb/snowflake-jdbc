@@ -3,7 +3,9 @@
  */
 package net.snowflake.client.jdbc;
 
+import net.snowflake.client.category.TestCategoryOthers;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import java.sql.Connection;
 import java.sql.SQLClientInfoException;
@@ -11,6 +13,7 @@ import java.util.Properties;
 
 import static org.junit.Assert.fail;
 
+@Category(TestCategoryOthers.class)
 public class ConnectionAlreadyClosedIT extends BaseJDBCTest
 {
   private interface MethodRaisesSQLClientInfoException

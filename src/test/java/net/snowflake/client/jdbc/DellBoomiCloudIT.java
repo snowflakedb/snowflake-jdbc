@@ -1,8 +1,10 @@
 package net.snowflake.client.jdbc;
 
 import net.snowflake.client.AbstractDriverIT;
+import net.snowflake.client.category.TestCategoryOthers;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import java.io.File;
 import java.security.Policy;
@@ -14,6 +16,7 @@ import java.sql.Statement;
 /**
  * A simple run on fetch result under boomi cloud environment's policy file
  */
+@Category(TestCategoryOthers.class)
 public class DellBoomiCloudIT extends AbstractDriverIT
 {
   @Before

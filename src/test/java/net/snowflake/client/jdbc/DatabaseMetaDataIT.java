@@ -6,7 +6,9 @@ package net.snowflake.client.jdbc;
 import com.google.common.base.Strings;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnTravisCI;
+import net.snowflake.client.category.TestCategoryOthers;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -37,6 +39,7 @@ import static org.junit.Assert.fail;
 /**
  * Database Metadata IT
  */
+@Category(TestCategoryOthers.class)
 public class DatabaseMetaDataIT extends BaseJDBCTest
 {
   private static Pattern VERSION_PATTERN = Pattern.compile("^(\\d+)\\.(\\d+)(?:\\.\\d+)+\\s*.*");

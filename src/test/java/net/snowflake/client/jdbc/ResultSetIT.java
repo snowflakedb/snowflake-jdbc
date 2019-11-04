@@ -5,6 +5,7 @@ package net.snowflake.client.jdbc;
 
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnTravisCI;
+import net.snowflake.client.category.TestCategoryOthers;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
 import net.snowflake.client.jdbc.telemetry.TelemetryClient;
 import net.snowflake.client.jdbc.telemetry.TelemetryData;
@@ -15,6 +16,7 @@ import org.apache.arrow.vector.Float8Vector;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -54,6 +56,7 @@ import static org.junit.Assert.fail;
 /**
  * Test ResultSet
  */
+@Category(TestCategoryOthers.class)
 public class ResultSetIT extends BaseJDBCTest
 {
   protected static String queryResultFormat = "json";

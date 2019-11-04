@@ -5,10 +5,12 @@ package net.snowflake.client.jdbc;
 
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnTravisCI;
+import net.snowflake.client.category.TestCategoryOthers;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -24,6 +26,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * Database Metadata IT
  */
+@Category(TestCategoryOthers.class)
 public class DatabaseMetaDataInternalIT extends BaseJDBCTest
 {
   private Connection connection;

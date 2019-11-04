@@ -4,7 +4,9 @@
 package net.snowflake.client.loader;
 
 
+import net.snowflake.client.category.TestCategoryLoader;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import java.sql.ResultSet;
 import java.sql.Timestamp;
@@ -16,6 +18,7 @@ import java.util.TimeZone;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+@Category(TestCategoryLoader.class)
 public class LoaderTimestampIT extends LoaderBase
 {
   @Test

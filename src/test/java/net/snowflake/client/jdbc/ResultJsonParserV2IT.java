@@ -1,7 +1,12 @@
+/*
+ * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
+ */
 package net.snowflake.client.jdbc;
 
+import net.snowflake.client.category.TestCategoryOthers;
 import org.apache.commons.text.StringEscapeUtils;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -10,10 +15,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
 /**
- * Copyright (c) 2018-2019 Snowflake Computing Inc. All rights reserved.
- * <p>
  * This is the unit tests for ResultJsonParserV2
  */
+@Category(TestCategoryOthers.class)
 public class ResultJsonParserV2IT
 {
   @Test
