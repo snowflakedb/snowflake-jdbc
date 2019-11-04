@@ -155,20 +155,6 @@ public class SnowflakeDriverIT extends BaseJDBCTest
     return getConnection(AbstractDriverIT.DONT_INJECT_SOCKET_TIMEOUT);
   }
 
-  @Test
-  public void testDelay() throws SQLException
-  {
-    Properties _connectionProperties = new Properties();
-    _connectionProperties.put("user", "snowman");
-    _connectionProperties.put("password", "test");
-    _connectionProperties.put("ssl", "off");
-    _connectionProperties.put("account", "s3testaccount");
-    _connectionProperties.put("inject_wait_in_put", 5);
-    String connectionUrl = "jdbc:snowflake://snowflake.reg.local:8082";
-    Connection con = DriverManager.getConnection(connectionUrl, _connectionProperties);
-
-  }
-
   @Ignore
   @Test
   public void testConnections() throws Throwable
