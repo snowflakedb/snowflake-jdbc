@@ -203,4 +203,33 @@ abstract class AbstractArrowVectorConverter implements ArrowVectorConverter
 
   @Override
   abstract public String toString(int index) throws SFException;
+
+
+  /**
+   * Thrown when a Snowflake timestamp cannot be manipulated in Java due to
+   * size limitations. Snowflake can use up to a full SB16 to represent a
+   * timestamp. Java, on the other hand, requires that the number of millis
+   * since epoch fit into a long. For timestamps whose millis since epoch
+   * don't fit into a long, certain operations, such as conversion to java
+   * .sql.Timestamp, are not available.
+   *
+   */
+  public static class TimestampOperationNotAvailableException
+      extends RuntimeException
+  {
+    private BigDecimal secsSinceEpoch;
+    TimestampOperationNotAvailableException(long secsSinceEpoch, int fraction)
+    {
+      super("seconds=" + secsSinceEpoch + " nanos=" + fraction);
+      this.secsSinceEpoch =
+          new BigDecimal(secsSinceEpoch).add(
+              new BigDecimal(fraction).scaleByPowerOfTen(-9));
+    }
+
+    public BigDecimal getSecsSinceEpoch()
+    {
+      return secsSinceEpoch;
+    }
+  }
+
 }

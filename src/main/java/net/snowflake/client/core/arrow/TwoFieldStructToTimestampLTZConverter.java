@@ -55,10 +55,21 @@ public class TwoFieldStructToTimestampLTZConverter extends AbstractArrowVectorCo
           null,
           null);
     }
-    Timestamp ts = toTimestamp(index, TimeZone.getDefault());
 
-    return ts == null ? null : context.getTimestampLTZFormatter().format(ts, context.getTimeZone(),
-                                                                         context.getScale(columnIndex));
+    try
+    {
+      Timestamp ts = epochs.isNull(index)
+          ? null
+          : getTimestamp(index, TimeZone.getDefault(), true);
+
+      return ts == null ? null :
+          context.getTimestampLTZFormatter().format(
+              ts, context.getTimeZone(), context.getScale(columnIndex));
+    }
+    catch (TimestampOperationNotAvailableException e)
+    {
+      return e.getSecsSinceEpoch().toPlainString();
+    }
   }
 
   @Override
@@ -70,17 +81,24 @@ public class TwoFieldStructToTimestampLTZConverter extends AbstractArrowVectorCo
   @Override
   public Timestamp toTimestamp(int index, TimeZone tz) throws SFException
   {
-    return isNull(index) ? null : getTimestamp(index, tz);
+    return isNull(index) ? null : getTimestamp(index, tz, false);
   }
 
-  private Timestamp getTimestamp(int index, TimeZone tz) throws SFException
+  private Timestamp getTimestamp(int index, TimeZone tz, boolean fromToString) throws SFException
   {
     long epoch = epochs.getDataBuffer().getLong(index * BigIntVector.TYPE_WIDTH);
     int fraction = fractions.getDataBuffer().getInt(index * IntVector.TYPE_WIDTH);
 
     if (ArrowResultUtil.isTimestampOverflow(epoch))
     {
-      return null;
+      if (fromToString)
+      {
+        throw new TimestampOperationNotAvailableException(epoch, fraction);
+      }
+      else
+      {
+        return null;
+      }
     }
 
     Timestamp ts = ArrowResultUtil.createTimestamp(epoch, fraction);
@@ -110,7 +128,7 @@ public class TwoFieldStructToTimestampLTZConverter extends AbstractArrowVectorCo
     {
       return null;
     }
-    Timestamp ts = getTimestamp(index, TimeZone.getDefault());
+    Timestamp ts = getTimestamp(index, TimeZone.getDefault(), false);
     // ts can be null when Java's timestamp is overflow.
     return ts == null ? null : new Date(ts.getTime());
   }
