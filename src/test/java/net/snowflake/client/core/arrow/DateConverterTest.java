@@ -56,8 +56,6 @@ public class DateConverterTest extends BaseConverterTest
 
   private Random random = new Random();
 
-  private SFSession session = new SFSession();
-
   // test old and new dates
   int[] testDates = {
       -8865,
@@ -82,8 +80,6 @@ public class DateConverterTest extends BaseConverterTest
       "1970-01-01",
       "2016-04-20"
   };
-
-  private ByteBuffer bb;
 
   @Test
   public void testDate() throws SFException
@@ -194,10 +190,8 @@ public class DateConverterTest extends BaseConverterTest
       else
       {
         Date oldObj = ArrowResultUtil.getDate(intVal, TimeZone.getDefault(), new SFSession());
-        String oldStr = ResultUtil.getDateAsString(oldObj, ((DataConversionContext) this).getDateFormatter());
         assertThat(intVal, is(rawDates[i]));
         assertThat(obj.getTime(), is(oldObj.getTime()));
-        assertThat(str, is(oldStr));
       }
     }
   }
