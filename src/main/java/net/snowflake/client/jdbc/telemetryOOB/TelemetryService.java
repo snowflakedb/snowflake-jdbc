@@ -139,21 +139,33 @@ public class TelemetryService
    * control enable/disable the whole service:
    * disabled service will skip added events and uploading to the server
    */
-  private boolean enabled = true;
+  private static boolean enabled = true;
 
-  public void enable()
+  private static final Object enableLock = new Object();
+
+  public static void enable()
   {
-    enabled = true;
+    synchronized (enableLock)
+    {
+      enabled = true;
+    }
+
   }
 
-  public void disable()
+  public static void disable()
   {
-    enabled = false;
+    synchronized (enableLock)
+    {
+      enabled = false;
+    }
   }
 
   public boolean isEnabled()
   {
-    return enabled;
+    synchronized (enableLock)
+    {
+      return enabled;
+    }
   }
 
   /**
