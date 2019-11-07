@@ -26,7 +26,8 @@ import java.util.TimeZone;
 public class DateConverter extends AbstractArrowVectorConverter
 {
   private DateDayVector dateVector;
-  private ByteBuffer byteBuf = ByteBuffer.allocate(IntVector.TYPE_WIDTH);
+  private static TimeZone timeZoneUTC = TimeZone.getTimeZone("UTC");
+
 
   public DateConverter(ValueVector fieldVector, int columnIndex, DataConversionContext context)
   {
@@ -34,8 +35,7 @@ public class DateConverter extends AbstractArrowVectorConverter
     this.dateVector = (DateDayVector) fieldVector;
   }
 
-  @Override
-  public Date toDate(int index) throws SFException
+  private Date getDate(int index, TimeZone tz) throws SFException
   {
     if (isNull(index))
     {
@@ -45,8 +45,14 @@ public class DateConverter extends AbstractArrowVectorConverter
     {
       int val = dateVector.getDataBuffer().getInt(index * IntVector.TYPE_WIDTH);
       // Note: use default time zone to match with current getDate() behavior
-      return ArrowResultUtil.getDate(val, TimeZone.getDefault(), context.getSession());
+      return ArrowResultUtil.getDate(val, tz, context.getSession());
     }
+  }
+
+  @Override
+  public Date toDate(int index) throws SFException
+  {
+    return getDate(index, TimeZone.getDefault());
   }
 
   @Override
@@ -133,7 +139,7 @@ public class DateConverter extends AbstractArrowVectorConverter
           null,
           null);
     }
-    Date date = toDate(index);
+    Date date = getDate(index, timeZoneUTC);
     return date == null ? null :
            ResultUtil.getDateAsString(date, context.getDateFormatter());
   }
