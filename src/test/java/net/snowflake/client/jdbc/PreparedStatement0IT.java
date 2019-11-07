@@ -10,6 +10,7 @@ import org.junit.rules.ExpectedException;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.sql.Statement;
 
 /**
  * Prepared statement integration tests
@@ -21,8 +22,10 @@ abstract class PreparedStatement0IT extends BaseJDBCTest
   Connection init() throws SQLException
   {
     Connection conn = BaseJDBCTest.getConnection();
-    conn.createStatement().execute(
-        "alter session set query_result_format = '" + queryResultFormat + "'");
+    Statement stmt = conn.createStatement();
+    stmt.execute("alter session set query_result_format = '" + queryResultFormat + "'");
+    stmt.execute("alter session set jdbc_query_result_format = '" + queryResultFormat + "'");
+    stmt.close();
     return conn;
   }
 

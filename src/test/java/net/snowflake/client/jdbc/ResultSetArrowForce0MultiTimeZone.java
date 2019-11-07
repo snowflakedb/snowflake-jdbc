@@ -50,6 +50,8 @@ abstract class ResultSetArrowForce0MultiTimeZone extends BaseJDBCTest
 
     con.createStatement().execute("alter session set query_result_format = '"
                                   + queryResultFormat + "'");
+    con.createStatement().execute("alter session set jdbc_query_result_format" +
+                                  " = '" + queryResultFormat + "'");
     con.createStatement().execute("create or replace table " + table + " " + column);
     con.createStatement().execute("insert into " + table + " values " + values);
     return con;
