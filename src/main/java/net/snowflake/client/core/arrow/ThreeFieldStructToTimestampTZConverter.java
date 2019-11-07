@@ -53,11 +53,20 @@ public class ThreeFieldStructToTimestampTZConverter extends AbstractArrowVectorC
           null,
           null);
     }
-    Timestamp ts = toTimestamp(index, TimeZone.getDefault());
+    try
+    {
+      Timestamp ts = epochs.isNull(index)
+          ? null
+          : getTimestamp(index, TimeZone.getDefault(), true);
 
-    return ts == null ? null : context.getTimestampTZFormatter().format(ts,
-                                                                        timeZone,
-                                                                        context.getScale(columnIndex));
+      return ts == null ? null :
+          context.getTimestampTZFormatter().format(
+              ts, timeZone, context.getScale(columnIndex));
+    }
+    catch (TimestampOperationNotAvailableException e)
+    {
+      return e.getSecsSinceEpoch().toPlainString();
+    }
   }
 
   @Override
@@ -82,10 +91,10 @@ public class ThreeFieldStructToTimestampTZConverter extends AbstractArrowVectorC
   @Override
   public Timestamp toTimestamp(int index, TimeZone tz) throws SFException
   {
-    return epochs.isNull(index) ? null : getTimestamp(index, tz);
+    return epochs.isNull(index) ? null : getTimestamp(index, tz, false);
   }
 
-  private Timestamp getTimestamp(int index, TimeZone tz) throws SFException
+  private Timestamp getTimestamp(int index, TimeZone tz, boolean fromToString) throws SFException
   {
     long epoch = epochs.getDataBuffer().getLong(index * BigIntVector.TYPE_WIDTH);
     int fraction = fractions.getDataBuffer().getInt(index * IntVector.TYPE_WIDTH);
@@ -93,8 +102,14 @@ public class ThreeFieldStructToTimestampTZConverter extends AbstractArrowVectorC
 
     if (ArrowResultUtil.isTimestampOverflow(epoch))
     {
-      // Note: this is current behavior for overflowed timestamp
-      return null;
+      if (fromToString)
+      {
+        throw new TimestampOperationNotAvailableException(epoch, fraction);
+      }
+      else
+      {
+        return null;
+      }
     }
     Timestamp ts = ArrowResultUtil.createTimestamp(epoch, fraction);
 
@@ -119,7 +134,7 @@ public class ThreeFieldStructToTimestampTZConverter extends AbstractArrowVectorC
     {
       return null;
     }
-    Timestamp ts = getTimestamp(index, TimeZone.getDefault());
+    Timestamp ts = getTimestamp(index, TimeZone.getDefault(), false);
     // ts can be null when Java's timestamp is overflow.
     return ts == null ? null : new Date(ts.getTime());
   }

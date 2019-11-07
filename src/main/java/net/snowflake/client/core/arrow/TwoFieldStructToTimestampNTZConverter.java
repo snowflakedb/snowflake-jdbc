@@ -10,11 +10,13 @@ import net.snowflake.client.core.SFException;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeType;
 import net.snowflake.client.jdbc.SnowflakeUtil;
+import net.snowflake.common.core.SFTimestamp;
 import org.apache.arrow.vector.BigIntVector;
 import org.apache.arrow.vector.IntVector;
 import org.apache.arrow.vector.ValueVector;
 import org.apache.arrow.vector.complex.StructVector;
 
+import java.math.BigDecimal;
 import java.sql.Date;
 import java.sql.Time;
 import java.sql.Timestamp;
@@ -57,11 +59,20 @@ public class TwoFieldStructToTimestampNTZConverter extends AbstractArrowVectorCo
           null,
           null);
     }
-    Timestamp ts = isNull(index) ? null : getTimestamp(index, TimeZone.getDefault(), true);
+    try
+    {
+      Timestamp ts = epochs.isNull(index)
+          ? null
+          : getTimestamp(index, TimeZone.getDefault(), true);
 
-    return ts == null ? null : context.getTimestampNTZFormatter().format(ts,
-                                                                         TimeZone.getTimeZone("UTC"),
-                                                                         context.getScale(columnIndex));
+      return ts == null ? null :
+          context.getTimestampNTZFormatter().format(
+              ts, TimeZone.getTimeZone("UTC"), context.getScale(columnIndex));
+    }
+    catch (TimestampOperationNotAvailableException e)
+    {
+      return e.getSecsSinceEpoch().toPlainString();
+    }
   }
 
   @Override
@@ -83,7 +94,14 @@ public class TwoFieldStructToTimestampNTZConverter extends AbstractArrowVectorCo
 
     if (ArrowResultUtil.isTimestampOverflow(epoch))
     {
-      return null;
+      if (fromToString)
+      {
+        throw new TimestampOperationNotAvailableException(epoch, fraction);
+      }
+      else
+      {
+        return null;
+      }
     }
 
     Timestamp ts = ArrowResultUtil.createTimestamp(epoch, fraction);
