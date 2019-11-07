@@ -1540,11 +1540,11 @@ public class SessionUtil
       {
         if ((boolean) entry.getValue())
         {
-          TelemetryService.getInstance().enable();
+          TelemetryService.enable();
         }
         else
         {
-          TelemetryService.getInstance().disable();
+          TelemetryService.disable();
         }
       }
       else if (CLIENT_VALIDATE_DEFAULT_PARAMETERS.equalsIgnoreCase(entry.getKey()))
