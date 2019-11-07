@@ -39,8 +39,10 @@ public class MultiStatementIT extends BaseJDBCTest
   throws SQLException
   {
     Connection conn = BaseJDBCTest.getConnection();
-    conn.createStatement().execute(
-        "alter session set query_result_format = '" + queryResultFormat + "'");
+    Statement stmt = conn.createStatement();
+    stmt.execute("alter session set query_result_format = '" + queryResultFormat + "'");
+    stmt.execute("alter session set jdbc_query_result_format = '" + queryResultFormat + "'");
+    stmt.close();
     return conn;
   }
 

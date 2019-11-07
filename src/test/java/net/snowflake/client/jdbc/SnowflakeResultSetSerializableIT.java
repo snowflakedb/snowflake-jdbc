@@ -65,19 +65,21 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
   throws SQLException
   {
     Connection conn = BaseJDBCTest.getConnection();
-    conn.createStatement().execute(
-        "alter session set query_result_format = '" + queryResultFormat + "'");
+    Statement stmt = conn.createStatement();
+    stmt.execute("alter session set query_result_format = '" + queryResultFormat + "'");
+    stmt.execute("alter session set jdbc_query_result_format = '" + queryResultFormat + "'");
 
     // Set up theses parameters as smaller values in order to generate
     // multiple file chunks with small data volumes.
-    conn.createStatement().execute(
+    stmt.execute(
         "alter session set result_first_chunk_max_size = 512");
-    conn.createStatement().execute(
+    stmt.execute(
         "alter session set result_min_chunk_size = 512");
-    conn.createStatement().execute(
+    stmt.execute(
         "alter session set arrow_result_rb_flush_size = 512");
-    conn.createStatement().execute(
+    stmt.execute(
         "alter session set result_chunk_size_multiplier = 1.2");
+    stmt.close();
 
     return conn;
   }
