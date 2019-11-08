@@ -751,7 +751,7 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
         this.parameters,
         "DATE_OUTPUT_FORMAT");
 
-    this.dateFormatter = new SnowflakeDateTimeFormat(sqlDateFormat);
+    this.dateFormatter = SnowflakeDateTimeFormat.fromSqlFormat(sqlDateFormat);
 
     logger.debug("sql date format: {}, java date format: {}",
                  sqlDateFormat,
@@ -762,7 +762,7 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
         this.parameters,
         "TIME_OUTPUT_FORMAT");
 
-    this.timeFormatter = new SnowflakeDateTimeFormat(sqlTimeFormat);
+    this.timeFormatter = SnowflakeDateTimeFormat.fromSqlFormat(sqlTimeFormat);
 
     logger.debug("sql time format: {}, java time format: {}",
                  sqlTimeFormat,

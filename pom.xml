@@ -160,7 +160,7 @@
     <dependency>
       <groupId>net.snowflake</groupId>
       <artifactId>snowflake-common</artifactId>
-      <version>3.1.38</version>
+      <version>3.1.40</version>
       <type>jar</type>
       <scope>compile</scope>
     </dependency>
