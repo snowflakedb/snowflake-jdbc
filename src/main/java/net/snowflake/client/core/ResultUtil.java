@@ -106,7 +106,8 @@ public class ResultUtil
         SnowflakeDateTimeFormat.effectiveSpecializedTimestampFormat(
             (String) effectiveParamValue(parameters, param),
             defaultFormat);
-    SnowflakeDateTimeFormat formatter = new SnowflakeDateTimeFormat(sqlFormat);
+    SnowflakeDateTimeFormat formatter =
+        SnowflakeDateTimeFormat.fromSqlFormat(sqlFormat);
     logger.debug("sql {} format: {}, java {} format: {}",
                  id, sqlFormat,
                  id, (ArgSupplier) formatter::toSimpleDateTimePattern);
