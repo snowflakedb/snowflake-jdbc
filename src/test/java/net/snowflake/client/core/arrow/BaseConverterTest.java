@@ -11,11 +11,11 @@ import java.util.TimeZone;
 
 public class BaseConverterTest implements DataConversionContext
 {
-  private SnowflakeDateTimeFormat dateTimeFormat = new SnowflakeDateTimeFormat("YYYY-MM-DD");
-  private SnowflakeDateTimeFormat timeFormat = new SnowflakeDateTimeFormat("HH24:MI:SS");
-  private SnowflakeDateTimeFormat timestampLTZFormat = new SnowflakeDateTimeFormat("DY, DD MON YYYY HH24:MI:SS TZHTZM");
-  private SnowflakeDateTimeFormat timestampNTZFormat = new SnowflakeDateTimeFormat("DY, DD MON YYYY HH24:MI:SS TZHTZM");
-  private SnowflakeDateTimeFormat timestampTZFormat = new SnowflakeDateTimeFormat("DY, DD MON YYYY HH24:MI:SS TZHTZM");
+  private SnowflakeDateTimeFormat dateTimeFormat = SnowflakeDateTimeFormat.fromSqlFormat("YYYY-MM-DD");
+  private SnowflakeDateTimeFormat timeFormat = SnowflakeDateTimeFormat.fromSqlFormat("HH24:MI:SS");
+  private SnowflakeDateTimeFormat timestampLTZFormat = SnowflakeDateTimeFormat.fromSqlFormat("DY, DD MON YYYY HH24:MI:SS TZHTZM");
+  private SnowflakeDateTimeFormat timestampNTZFormat = SnowflakeDateTimeFormat.fromSqlFormat("DY, DD MON YYYY HH24:MI:SS TZHTZM");
+  private SnowflakeDateTimeFormat timestampTZFormat = SnowflakeDateTimeFormat.fromSqlFormat("DY, DD MON YYYY HH24:MI:SS TZHTZM");
 
   private SFSession session = new SFSession();
   private int testScale = 9;

@@ -78,7 +78,7 @@ public abstract class SnowflakeResultChunk
                               int uncompressedSize)
   {
     this.url = url;
-    this.scrubbedUrl = SecretDetector.maskSASToken(this.url);
+    this.scrubbedUrl = this.url;
     this.rowCount = rowCount;
     this.colCount = colCount;
     this.uncompressedSize = uncompressedSize;
