@@ -441,7 +441,7 @@ public class LoaderIT extends LoaderBase
     long l = rs.getTimestamp("C4").getTime();
     assertThat("C4 is not correct", l, equalTo(d.getTime()));
     assertThat("C3 is not correct", Double.toHexString((rs.getDouble("C3"))),
-               equalTo("0x1.044cc0000225cp4"));
+               equalTo("0x1.044ccp4"));
 
     rs = testConnection.createStatement().executeQuery(
         String.format("SELECT C1 AS N"
@@ -597,7 +597,7 @@ public class LoaderIT extends LoaderBase
     rs.next();
     assertThat("C3. No commit should happen",
                Double.toHexString((rs.getDouble("C3"))),
-               equalTo("0x1.044cc0000225cp4"));
+               equalTo("0x1.044ccp4"));
   }
 
   @Test
