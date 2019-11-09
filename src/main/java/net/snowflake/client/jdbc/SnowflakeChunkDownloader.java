@@ -88,6 +88,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
   private static final SFLogger logger =
       SFLoggerFactory.getLogger(SnowflakeChunkDownloader.class);
   private static final int STREAM_BUFFER_SIZE = 1 * 1024 * 1024;
+  private static final long SHUTDOWN_TIME = 3;
   private final SnowflakeConnectString snowflakeConnectionString;
   private final OCSPMode ocspMode;
 
@@ -108,7 +109,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
   private boolean useJsonParserV2;
 
   // thread pool
-  private ThreadPoolExecutor executor;
+  private final ThreadPoolExecutor executor;
 
   // number of millis main thread waiting for chunks from downloader
   private long numberMillisWaitingForChunks = 0;
@@ -725,7 +726,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
    * @return chunk downloader metrics collected over instance lifetime
    */
   @Override
-  public DownloaderMetrics terminate()
+  public DownloaderMetrics terminate() throws InterruptedException
   {
     if (!terminated)
     {
@@ -740,8 +741,22 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
 
       if (executor != null)
       {
-        executor.shutdownNow();
-        executor = null;
+        if (!executor.isShutdown())
+        {
+          // cancel running downloaders
+          downloaderFutures.forEach((k, v) -> v.cancel(true));
+          // shutdown executor
+          executor.shutdown();
+          if (!executor.awaitTermination(SHUTDOWN_TIME, TimeUnit.SECONDS))
+          {
+            logger.debug("Executor did not terminate in the specified time.");
+
+            List<Runnable> droppedTasks = executor.shutdownNow(); //optional **
+            logger.debug(
+                "Executor was abruptly shut down. " + droppedTasks.size() +
+                    " tasks will not be executed."); //optional **
+          }
+        }
       }
       for (SnowflakeResultChunk chunk : chunks)
       {
