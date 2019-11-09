@@ -1,3 +1,10 @@
+**JDBC Driver 3.10.3**
+
+- \| SNOW-110357 | Fix CVE-2019-16942
+- \| SNOW-110744 | Fix array batch is not usable if number of records*fields in a batch is large #186
+- \| SNOW-86551 | Fix bugs related to GS generated Arrow results and queries with subqueries
+- \| SNOW-97749 | Enable JDBC ResultSet distributed process to support proxy
+
 **JDBC Driver 3.10.2**
 
 - \| SNOW-102750 | Increasing the max limit connection to 300 for JDBC driver.
