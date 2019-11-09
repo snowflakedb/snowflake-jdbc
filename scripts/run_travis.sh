@@ -47,6 +47,8 @@ PARAMS+=("-DtravisIT")
 # code coverage plugin jacoco did not work when running with self-contained-jar
 PARAMS+=("-Dnot-self-contained-jar")
 PARAMS+=("-DtravisTestCategory=net.snowflake.client.category.${TEST_CATEGORY}")
+# suppress Download ... messages
+PARAMS+=("-Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn")
 echo "JDK Version: $TRAVIS_JDK_VERSION"
 [[ -n "$JACOCO_COVERAGE" ]] && PARAMS+=("-Djacoco.skip.instrument=false")
 # verify phase is after test/integration-test phase, which means both unit test 
