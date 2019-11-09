@@ -69,7 +69,7 @@ public class ArrowResultChunk extends SnowflakeResultChunk
    * So the outer list is list of record batches, inner list represents list of
    * columns
    */
-  private List<List<ValueVector>> batchOfVectors;
+  private final ArrayList<List<ValueVector>> batchOfVectors;
 
   private static final SFLogger logger =
       SFLoggerFactory.getLogger(ArrowResultChunk.class);
@@ -78,7 +78,7 @@ public class ArrowResultChunk extends SnowflakeResultChunk
   /**
    * arrow root allocator used by this resultSet
    */
-  private RootAllocator rootAllocator;
+  private final RootAllocator rootAllocator;
   private boolean enableSortFirstResultChunk;
   private IntVector firstResultChunkSortedIndices;
 
@@ -109,7 +109,7 @@ public class ArrowResultChunk extends SnowflakeResultChunk
   public void readArrowStream(InputStream is)
   throws IOException
   {
-    ArrayList<ValueVector> valueVectors = null;
+    ArrayList<ValueVector> valueVectors = new ArrayList<>();
     try (ArrowStreamReader reader = new ArrowStreamReader(is, rootAllocator))
     {
       VectorSchemaRoot root = reader.getVectorSchemaRoot();
@@ -127,25 +127,18 @@ public class ArrowResultChunk extends SnowflakeResultChunk
         }
 
         addBatchData(valueVectors);
-        valueVectors = null;
       }
     }
     catch (ClosedByInterruptException cbie)
     {
       // happens when the statement is closed before finish parsing
       logger.debug("Interrupted when loading Arrow result", cbie);
-      if (valueVectors != null)
-      {
-        valueVectors.forEach(ValueVector::close);
-      }
+      valueVectors.forEach(ValueVector::close);
       freeData();
     }
     catch (IOException ioex)
     {
-      if (valueVectors != null)
-      {
-        valueVectors.forEach(ValueVector::close);
-      }
+      valueVectors.forEach(ValueVector::close);
       freeData();
       throw ioex;
     }
@@ -155,7 +148,7 @@ public class ArrowResultChunk extends SnowflakeResultChunk
   public void reset()
   {
     freeData();
-    this.batchOfVectors = new ArrayList<>();
+    this.batchOfVectors.clear();
   }
 
   @Override
@@ -584,7 +577,7 @@ public class ArrowResultChunk extends SnowflakeResultChunk
         mergeBatch(first, batch);
         batch.forEach(ValueVector::close);
       }
-      batchOfVectors = new ArrayList<>();
+      batchOfVectors.clear();
       batchOfVectors.add(first);
     }
     catch (SFException ex)

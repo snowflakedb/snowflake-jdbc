@@ -124,7 +124,7 @@ public class SFFixedViewResultSet extends SFJsonResultSet
   }
 
   @Override
-  public void close()
+  public void close() throws SnowflakeSQLException
   {
     super.close();
     // free the object so that they can be Garbage collected

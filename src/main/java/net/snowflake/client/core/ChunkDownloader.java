@@ -28,5 +28,5 @@ public interface ChunkDownloader
    *
    * @return metrics measuring downloader performance
    */
-  DownloaderMetrics terminate();
+  DownloaderMetrics terminate() throws InterruptedException;
 }

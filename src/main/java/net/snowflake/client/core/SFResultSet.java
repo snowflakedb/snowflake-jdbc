@@ -246,9 +246,17 @@ public class SFResultSet extends SFJsonResultSet
     }
     else if (chunkCount > 0)
     {
-      logger.debug("End of chunks");
-      DownloaderMetrics metrics = chunkDownloader.terminate();
-      logChunkDownloaderMetrics(metrics);
+      try
+      {
+        logger.debug("End of chunks");
+        DownloaderMetrics metrics = chunkDownloader.terminate();
+        logChunkDownloaderMetrics(metrics);
+      }
+      catch (InterruptedException ex)
+      {
+        throw new SnowflakeSQLException(SqlState.QUERY_CANCELED,
+                                        ErrorCode.INTERRUPTED.getMessageCode());
+      }
     }
 
     return false;
@@ -427,17 +435,25 @@ public class SFResultSet extends SFJsonResultSet
   }
 
   @Override
-  public void close()
+  public void close() throws SnowflakeSQLException
   {
     super.close();
 
-    if (chunkDownloader != null)
+    try
     {
-      DownloaderMetrics metrics = chunkDownloader.terminate();
-      logChunkDownloaderMetrics(metrics);
-      firstChunkSortedRowSet = null;
-      firstChunkRowset = null;
-      currentChunk = null;
+      if (chunkDownloader != null)
+      {
+        DownloaderMetrics metrics = chunkDownloader.terminate();
+        logChunkDownloaderMetrics(metrics);
+        firstChunkSortedRowSet = null;
+        firstChunkRowset = null;
+        currentChunk = null;
+      }
+    }
+    catch (InterruptedException ex)
+    {
+      throw new SnowflakeSQLException(SqlState.QUERY_CANCELED,
+                                      ErrorCode.INTERRUPTED.getMessageCode());
     }
   }
 

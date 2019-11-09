@@ -242,7 +242,8 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
    *
    * @return true if still have rows otherwise false
    */
-  private boolean fetchNextRowUnsorted() throws SnowflakeSQLException
+  private boolean fetchNextRowUnsorted()
+      throws SnowflakeSQLException
   {
     boolean hasNext = currentChunkIterator.next();
 
@@ -299,12 +300,20 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
       else
       {
         // always free current chunk
-        currentChunkIterator.getChunk().freeData();
-        if (chunkCount > 0)
+        try
         {
-          logger.debug("End of chunks");
-          DownloaderMetrics metrics = chunkDownloader.terminate();
-          logChunkDownloaderMetrics(metrics);
+          currentChunkIterator.getChunk().freeData();
+          if (chunkCount > 0)
+          {
+            logger.debug("End of chunks");
+            DownloaderMetrics metrics = chunkDownloader.terminate();
+            logChunkDownloaderMetrics(metrics);
+          }
+        }
+        catch (InterruptedException e)
+        {
+          throw new SnowflakeSQLException(SqlState.QUERY_CANCELED,
+                                          ErrorCode.INTERRUPTED.getMessageCode());
         }
       }
 
@@ -592,22 +601,30 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
   }
 
   @Override
-  public void close()
+  public void close() throws SnowflakeSQLException
   {
     super.close();
 
     // always make sure to free this current chunk
     currentChunkIterator.getChunk().freeData();
 
-    if (chunkDownloader != null)
+    try
     {
-      DownloaderMetrics metrics = chunkDownloader.terminate();
-      logChunkDownloaderMetrics(metrics);
+      if (chunkDownloader != null)
+      {
+        DownloaderMetrics metrics = chunkDownloader.terminate();
+        logChunkDownloaderMetrics(metrics);
+      }
+      else
+      {
+        // always close root allocator
+        closeRootAllocator(rootAllocator);
+      }
     }
-    else
+    catch (InterruptedException ex)
     {
-      // always close root allocator
-      closeRootAllocator(rootAllocator);
+      throw new SnowflakeSQLException(SqlState.QUERY_CANCELED,
+                                      ErrorCode.INTERRUPTED.getMessageCode());
     }
   }
 
