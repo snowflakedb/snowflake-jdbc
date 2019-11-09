@@ -173,7 +173,7 @@ public class SFTrustManager extends X509ExtendedTrustManager
   /**
    * OCSP response cache entry expiration time (s)
    */
-  private static final long CACHE_EXPIRATION_IN_SECONDS = 86400L;
+  private static final long CACHE_EXPIRATION_IN_SECONDS = 432000L;
   /**
    * OCSP response cache lock file expiration time (s)
    */
