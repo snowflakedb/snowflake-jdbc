@@ -1275,7 +1275,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
   private void verifyLocalFilePath(String localFilePathFromGS)
   throws SnowflakeSQLException
   {
-    String localFilePath = getLocalFilePathFromCommand(command);
+    String localFilePath = getLocalFilePathFromCommand(command, true);
 
     if (!localFilePath.isEmpty() && !localFilePath.equals(localFilePathFromGS))
     {
@@ -1302,9 +1302,10 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
    * correct
    *
    * @param command The GET/PUT command we send to GS
+   * @param unescape True to unescape backslashes coming from GS
    * @return Path to the local file
    */
-  private static String getLocalFilePathFromCommand(String command)
+  private static String getLocalFilePathFromCommand(String command, boolean unescape)
   {
     if (command == null)
     {
@@ -1339,7 +1340,10 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
                                           localFilePathEndIdx);
       }
       // unescape backslashes to match the file name from GS
-      localFilePath = localFilePath.replaceAll("\\\\\\\\", "\\\\");
+      if (unescape)
+      {
+        localFilePath = localFilePath.replaceAll("\\\\\\\\", "\\\\");
+      }
     }
     else
     {
@@ -2063,7 +2067,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
       if (initialClient.requirePresignedUrl())
       {
         // need to replace file://mypath/myfile?.csv with file://mypath/myfile1.csv.gz
-        String localFilePath = getLocalFilePathFromCommand(command);
+        String localFilePath = getLocalFilePathFromCommand(command, false);
         String commandWithExactPath = command.replace(localFilePath, origDestFileName);
         // then hand that to GS to get the actual presigned URL we'll use
         SFStatement statement = new SFStatement(connection);
