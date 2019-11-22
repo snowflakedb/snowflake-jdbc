@@ -28,7 +28,9 @@ import java.math.BigDecimal;
 import java.nio.channels.FileChannel;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
+import java.sql.Driver;
 import java.sql.DriverManager;
+import java.sql.DriverPropertyInfo;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -225,6 +227,54 @@ public class SnowflakeDriverIT extends BaseJDBCTest
     for (int idx = 0; idx < MAX_CONCURRENT_QUERIES_PER_USER; idx++)
     {
       futures.get(idx).get();
+    }
+  }
+
+  @Test
+  public void testGetPropertyInfo() throws SQLException
+  {
+
+    // Test with blank URL and no properties. ServerURL is needed.
+    String url = "";
+    Properties props = new Properties();
+    Driver driver = DriverManager.getDriver("jdbc:snowflake://snowflake.reg.local:8082");
+    DriverPropertyInfo[] info = driver.getPropertyInfo(url, props);
+    assertEquals(1, info.length);
+    assertEquals("serverURL", info[0].name);
+
+    // Test with URL that requires username and password.
+    url = "jdbc:snowflake://snowflake.reg.local:8082";
+    info = driver.getPropertyInfo(url, props);
+    assertEquals(2, info.length);
+    assertEquals("user", info[0].name);
+    assertEquals("password", info[1].name);
+
+    // Add username and try again; get password requirement back
+    props.put("user", "snowman");
+    props.put("password", "test");
+    info = driver.getPropertyInfo(url, props);
+    assertEquals(0, info.length);
+
+    props.put("useProxy", "true");
+    info = driver.getPropertyInfo(url, props);
+    assertEquals(2, info.length);
+    assertEquals("proxyHost", info[0].name);
+    assertEquals("proxyPort", info[1].name);
+
+    props.put("proxyHost", "dummyHost");
+    props.put("proxyPort", "dummyPort");
+    info = driver.getPropertyInfo(url, props);
+    assertEquals(0, info.length);
+
+    // invalid URL still throws SQLException
+    try
+    {
+      url = "snowflake.reg.local:8082";
+      driver.getPropertyInfo(url, props);
+    }
+    catch (SQLException e)
+    {
+      assertEquals((int) ErrorCode.INVALID_CONNECT_STRING.getMessageCode(), e.getErrorCode());
     }
   }
 
