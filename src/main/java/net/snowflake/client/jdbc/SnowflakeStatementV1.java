@@ -1424,8 +1424,9 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement
     @Override
     public boolean isWrapperFor(Class<?> iface) throws SQLException
     {
-      throwExceptionAnyway();
-      return false;
+      logger.debug("isWrapperFor(Class<?> iface)");
+
+      return iface.isInstance(this);
     }
 
     @SuppressWarnings("unchecked")
