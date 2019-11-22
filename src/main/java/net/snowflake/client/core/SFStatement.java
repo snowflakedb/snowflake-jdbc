@@ -21,8 +21,6 @@ import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.util.SecretDetector;
 import net.snowflake.common.core.SqlState;
 import org.apache.http.client.methods.HttpRequestBase;
-
-import java.io.IOException;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Collections;

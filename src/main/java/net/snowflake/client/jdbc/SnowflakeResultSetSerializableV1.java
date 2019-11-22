@@ -843,6 +843,15 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
           this.memoryLimit = initMemoryLimit(this.parameters);
         }
 
+        if (queryResultFormat == QueryResultFormat.ARROW
+            && memoryLimit * 2 > Runtime.getRuntime().maxMemory())
+        {
+          memoryLimit = Runtime.getRuntime().maxMemory()/2;
+          logger.debug("To avoid OOM for arrow buffer allocation, " +
+                           "memoryLimit should be equal to half of maxMemory {}",
+                       memoryLimit);
+        }
+
         // Parse chunk header
         JsonNode chunkHeaders = rootNode.path("data").path("chunkHeaders");
         if (chunkHeaders != null && !chunkHeaders.isMissingNode())
