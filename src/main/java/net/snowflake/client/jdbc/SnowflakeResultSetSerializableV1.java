@@ -47,8 +47,8 @@ import net.snowflake.client.core.SFStatement;
 import net.snowflake.common.core.SnowflakeDateTimeFormat;
 import org.apache.arrow.memory.RootAllocator;
 
-import static com.microsoft.azure.storage.Constants.GB;
-import static com.microsoft.azure.storage.Constants.MB;
+import static net.snowflake.client.core.Constants.GB;
+import static net.snowflake.client.core.Constants.MB;
 import static net.snowflake.client.core.SessionUtil.CLIENT_ENABLE_CONSERVATIVE_MEMORY_USAGE;
 import static net.snowflake.client.core.SessionUtil.CLIENT_MEMORY_LIMIT;
 import static net.snowflake.client.core.SessionUtil.CLIENT_PREFETCH_THREADS;
