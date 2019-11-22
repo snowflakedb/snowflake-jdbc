@@ -61,6 +61,11 @@ public class SFLoginOutput
     this.sessionId = sessionId;
   }
 
+  public boolean getAutoCommit()
+  {
+    return (Boolean) this.commonParams.get("AUTOCOMMIT");
+  }
+
   public String getSessionId()
   {
     return sessionId;
