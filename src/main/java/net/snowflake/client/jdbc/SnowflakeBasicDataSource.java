@@ -60,9 +60,11 @@ public class SnowflakeBasicDataSource implements DataSource
   public Connection getConnection(String username, String password)
   throws SQLException
   {
-    if(!"OAUTH".equalsIgnoreCase(authenticator)) { // For OAuth, no username is required
+    if (!"OAUTH".equalsIgnoreCase(authenticator))
+    { // For OAuth, no username is required
       properties.put("user", username);
-      if (!"SNOWFLAKE_JWT".equalsIgnoreCase(authenticator)) {
+      if (!"SNOWFLAKE_JWT".equalsIgnoreCase(authenticator))
+      {
         properties.put("password", password);
       }
     }
@@ -192,7 +194,8 @@ public class SnowflakeBasicDataSource implements DataSource
     this.properties.put("authenticator", authenticator);
   }
 
-  public void setOauthToken(String oauthToken){
+  public void setOauthToken(String oauthToken)
+  {
     this.setAuthenticator("oauth");
     this.properties.put("token", oauthToken);
   }
