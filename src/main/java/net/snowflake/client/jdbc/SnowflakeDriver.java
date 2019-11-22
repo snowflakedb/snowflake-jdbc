@@ -15,6 +15,7 @@ import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.util.List;
 import java.util.Properties;
+import java.util.logging.Logger;
 
 /**
  * JDBC Driver implementation of Snowflake for production.
@@ -37,6 +38,9 @@ public class SnowflakeDriver implements Driver
 
   protected static boolean disableIncidents = false;
 
+  private static boolean disableArrowResultFormat = false;
+  private static String disableArrowResultFormatMessage;
+
   private static final ResourceBundleManager versionResourceBundleManager
       = ResourceBundleManager.getSingleton("net.snowflake.client.jdbc.version");
 
@@ -52,10 +56,30 @@ public class SnowflakeDriver implements Driver
                                       + SnowflakeDriver.class.getName(), ex);
     }
 
+    initializeArrowSupport();
     /*
      * Get the manifest properties here.
      */
     initializeClientVersionFromManifest();
+  }
+
+  /**
+   * try to initialize Arrow support
+   * if fails, JDBC is going to use the legacy format
+   */
+  private static void initializeArrowSupport()
+  {
+    try
+    {
+      // this is required to enable direct memory usage for Arrow buffers in Java
+      System.setProperty("io.netty.tryReflectionSetAccessible", "true");
+    }
+    catch (Throwable t)
+    {
+      // fail to enable required feature for Arrow
+      disableArrowResultFormat = true;
+      disableArrowResultFormatMessage = t.getLocalizedMessage();
+    }
   }
 
   static private void initializeClientVersionFromManifest()
@@ -96,6 +120,16 @@ public class SnowflakeDriver implements Driver
     catch (Throwable ex)
     {
     }
+  }
+
+  public static boolean isDisableArrowResultFormat()
+  {
+    return disableArrowResultFormat;
+  }
+
+  public static String getDisableArrowResultFormatMessage()
+  {
+    return disableArrowResultFormatMessage;
   }
 
   /**
