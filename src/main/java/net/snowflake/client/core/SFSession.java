@@ -65,6 +65,9 @@ public class SFSession
   private String sessionId;
 
   private String idToken;
+  private String privateKeyFileLocation;
+  private String privateKeyPassword;
+  private PrivateKey privateKey;
 
   // Injected delay for the purpose of connection timeout testing
   // Any statement execution will sleep for the specified number of milliseconds
@@ -330,6 +333,20 @@ public class SFSession
           }
           break;
 
+        case PRIVATE_KEY_FILE:
+          if (propertyValue != null)
+          {
+            privateKeyFileLocation = (String) propertyValue;
+          }
+          break;
+
+        case PRIVATE_KEY_FILE_PWD:
+          if (propertyValue != null)
+          {
+            privateKeyPassword = (String) propertyValue;
+          }
+          break;
+
         default:
           break;
       }
@@ -383,7 +400,7 @@ public class SFSession
         SFSessionProperty.AUTHENTICATOR);
 
     PrivateKey privateKey = (PrivateKey) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY);
-    return (authenticator == null && privateKey == null) ||
+    return (authenticator == null && privateKey == null && privateKeyFileLocation == null) ||
            ClientAuthnDTO.AuthenticatorType.SNOWFLAKE.name()
                .equalsIgnoreCase(authenticator);
   }
@@ -502,6 +519,8 @@ public class SFSession
             (String) connectionPropertiesMap.get(SFSessionProperty.APP_VERSION))
         .setSessionParameters(sessionParametersMap)
         .setPrivateKey((PrivateKey) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY))
+        .setPrivateKeyFile((String) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_FILE))
+        .setPrivateKeyFilePwd((String) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_FILE_PWD))
         .setApplication((String) connectionPropertiesMap.get(
             SFSessionProperty.APPLICATION))
         .setServiceName(this.getServiceName())

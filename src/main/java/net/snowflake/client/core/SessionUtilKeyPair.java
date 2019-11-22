@@ -13,6 +13,13 @@ import com.nimbusds.jwt.SignedJWT;
 import net.snowflake.client.jdbc.ErrorCode;
 import org.apache.commons.codec.binary.Base64;
 
+import javax.crypto.EncryptedPrivateKeyInfo;
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.PBEKeySpec;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -20,8 +27,11 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.interfaces.RSAPrivateCrtKey;
 import java.security.spec.InvalidKeySpecException;
+import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.RSAPublicKeySpec;
 import java.util.Date;
+
+import static java.util.Base64.getMimeDecoder;
 
 /**
  * Class used to compute jwt token for key pair authentication
@@ -37,24 +47,84 @@ class SessionUtilKeyPair
 
   final private PrivateKey privateKey;
 
-  final private PublicKey publicKey;
+  private PublicKey publicKey = null;
 
   static private final String ISSUER_FMT = "%s.%s.%s";
 
   static private final String SUBJECT_FMT = "%s.%s";
 
-  SessionUtilKeyPair(PrivateKey privateKey,
+
+  SessionUtilKeyPair(PrivateKey privateKey, String privateKeyFile, String privateKeyFilePwd,
                      String accountName,
                      String userName) throws SFException
   {
     this.userName = userName.toUpperCase();
     this.accountName = accountName.toUpperCase();
-    this.privateKey = privateKey;
 
-    // construct public key from raw bytes
-    if (privateKey instanceof RSAPrivateCrtKey)
+    // if there is both a file and a private key, there is a problem
+    if (privateKeyFile != null && !privateKeyFile.isEmpty() && privateKey != null)
     {
-      RSAPrivateCrtKey rsaPrivateCrtKey = (RSAPrivateCrtKey) privateKey;
+      throw new SFException(ErrorCode.INVALID_OR_UNSUPPORTED_PRIVATE_KEY,
+                            "Cannot have both private key value and private key file.");
+    }
+    // if privateKeyFile has a value and privateKey is null
+    else if (privateKeyFile != null && !privateKeyFile.isEmpty() && privateKey == null)
+    {
+      // private key file is unencrypted
+      if (privateKeyFilePwd == null || privateKeyFilePwd.isEmpty())
+      {
+        try
+        {
+          String unencrypted = new String(Files.readAllBytes(Paths.get(privateKeyFile)));
+          unencrypted = unencrypted.replace("-----BEGIN RSA PRIVATE KEY-----", "");
+          unencrypted = unencrypted.replace("-----END RSA PRIVATE KEY-----", "");
+          byte[] decoded = getMimeDecoder().decode(unencrypted);
+          PKCS8EncodedKeySpec encodedKeySpec = new PKCS8EncodedKeySpec(decoded);
+          KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+          this.privateKey = keyFactory.generatePrivate(encodedKeySpec);
+        }
+        catch (NoSuchAlgorithmException | InvalidKeySpecException | IOException e)
+        {
+          throw new SFException(e, ErrorCode.INTERNAL_ERROR, "Error retrieving public key");
+        }
+      }
+      // private key file is encrypted
+      else
+      {
+        try
+        {
+          String encrypted = new String(Files.readAllBytes(Paths.get(privateKeyFile)));
+          encrypted = encrypted.replace("-----BEGIN ENCRYPTED PRIVATE KEY-----", "");
+          encrypted = encrypted.replace("-----END ENCRYPTED PRIVATE KEY-----", "");
+          EncryptedPrivateKeyInfo pkInfo = new EncryptedPrivateKeyInfo(getMimeDecoder().decode(encrypted));
+          PBEKeySpec keySpec = new PBEKeySpec(privateKeyFilePwd.toCharArray());
+          SecretKeyFactory pbeKeyFactory = SecretKeyFactory.getInstance(pkInfo.getAlgName());
+          PKCS8EncodedKeySpec encodedKeySpec = pkInfo.getKeySpec(pbeKeyFactory.generateSecret(keySpec));
+          KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+          this.privateKey = keyFactory.generatePrivate(encodedKeySpec);
+        }
+        catch (NoSuchAlgorithmException | InvalidKeySpecException  | IOException | InvalidKeyException e)
+        {
+          throw new SFException(e, ErrorCode.INTERNAL_ERROR,
+                                "Error retrieving public key");
+        }
+      }
+    }
+    // privateKey is set without file
+    else if (privateKey != null)
+    {
+      this.privateKey = privateKey;
+    }
+    // everything is null
+    else
+    {
+      throw new SFException(ErrorCode.INVALID_OR_UNSUPPORTED_PRIVATE_KEY,
+                            "Private key is null");
+    }
+    // construct public key from raw bytes
+    if (this.privateKey instanceof RSAPrivateCrtKey)
+    {
+      RSAPrivateCrtKey rsaPrivateCrtKey = (RSAPrivateCrtKey) this.privateKey;
       RSAPublicKeySpec rsaPublicKeySpec = new RSAPublicKeySpec(
           rsaPrivateCrtKey.getModulus(), rsaPrivateCrtKey.getPublicExponent());
 
