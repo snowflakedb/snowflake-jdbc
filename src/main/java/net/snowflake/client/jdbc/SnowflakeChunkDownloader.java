@@ -60,6 +60,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.zip.GZIPInputStream;
 
+import static net.snowflake.client.core.Constants.MB;
+
 /**
  * Class for managing async download of offline result chunks
  * <p>
@@ -88,7 +90,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
 
   private static final SFLogger logger =
       SFLoggerFactory.getLogger(SnowflakeChunkDownloader.class);
-  private static final int STREAM_BUFFER_SIZE = 1 * 1024 * 1024;
+  private static final int STREAM_BUFFER_SIZE = MB;
   private static final long SHUTDOWN_TIME = 3;
   private final SnowflakeConnectString snowflakeConnectionString;
   private final OCSPMode ocspMode;
@@ -134,7 +136,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
   private long memoryLimit;
 
   // the current memory usage across JVM
-  private static Long currentMemoryUsage = 0L;
+  private static final AtomicLong currentMemoryUsage = new AtomicLong();
 
   // used to track the downloading threads
   private Map<Integer, Future> downloaderFutures = new HashMap<>();
@@ -333,61 +335,64 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
       final SnowflakeResultChunk nextChunk = chunks.get(nextChunkToDownload);
       final long neededChunkMemory = nextChunk.computeNeededChunkMemory();
 
-      // each time only one thread can enter this block
-      synchronized (currentMemoryUsage)
+      // make sure memoryLimit > neededChunkMemory; otherwise, the thread hangs
+      if (neededChunkMemory > memoryLimit)
       {
-        // make sure memoryLimit > neededChunkMemory; otherwise, the thread hangs
-        if (neededChunkMemory > memoryLimit)
-        {
-          logger.debug("Thread {}: reset memoryLimit from {} MB to current chunk size {} MB",
-                       (ArgSupplier) () -> Thread.currentThread().getId(),
-                       (ArgSupplier) () -> memoryLimit / 1024 / 1024,
-                       (ArgSupplier) () -> neededChunkMemory / 1024 / 1024);
+        logger.debug("Thread {}: reset memoryLimit from {} MB to current chunk size {} MB",
+                     (ArgSupplier) () -> Thread.currentThread().getId(),
+                     (ArgSupplier) () -> memoryLimit / 1024 / 1024,
+                     (ArgSupplier) () -> neededChunkMemory / 1024 / 1024);
 
-          memoryLimit = neededChunkMemory;
+        memoryLimit = neededChunkMemory;
+      }
+
+      // try to reserve the needed memory
+      long curMem = currentMemoryUsage.addAndGet(neededChunkMemory);
+      // no memory allocate when memory is not enough for prefetch
+      if (curMem > memoryLimit &&
+          nextChunkToDownload - nextChunkToConsume > 0)
+      {
+        // cancel the reserved memory and this downloader too
+        currentMemoryUsage.addAndGet(-neededChunkMemory);
+        break;
+      }
+
+      // only allocate memory when the future usage is less than the limit
+      if (curMem <= memoryLimit)
+      {
+        if (queryResultFormat == QueryResultFormat.JSON)
+        {
+          ((JsonResultChunk) nextChunk).tryReuse(chunkDataCache);
         }
 
-        // no memory allocate when memory is not enough for prefetch
-        if (currentMemoryUsage + neededChunkMemory > memoryLimit &&
-            nextChunkToDownload - nextChunkToConsume > 0)
-        {
-          break;
-        }
+        logger.debug("Thread {}: currentMemoryUsage in MB: {}, nextChunkToDownload: {}, " +
+                     "nextChunkToConsume: {}, newReservedMemory in B: {} ",
+                     (ArgSupplier) () -> Thread.currentThread().getId(),
+                     curMem / MB,
+                     nextChunkToDownload,
+                     nextChunkToConsume,
+                     neededChunkMemory);
 
-        // only allocate memory when the future usage is less than the limit
-        if (currentMemoryUsage + neededChunkMemory <= memoryLimit)
-        {
-          if (queryResultFormat == QueryResultFormat.JSON)
-          {
-            ((JsonResultChunk) nextChunk).tryReuse(chunkDataCache);
-          }
+        logger.debug("submit chunk #{} for downloading, url={}",
+                     this.nextChunkToDownload, nextChunk.getScrubbedUrl());
 
-          currentMemoryUsage += neededChunkMemory;
-
-          logger.debug("Thread {}: currentMemoryUsage in MB: {}, nextChunkToDownload: {}, " +
-                       "nextChunkToConsume: {}, newReservedMemory in B: {} ",
-                       (ArgSupplier) () -> Thread.currentThread().getId(),
-                       (ArgSupplier) () -> currentMemoryUsage / 1024 / 1024,
-                       nextChunkToDownload,
-                       nextChunkToConsume,
-                       neededChunkMemory);
-
-          logger.debug("submit chunk #{} for downloading, url={}",
-                       this.nextChunkToDownload, nextChunk.getScrubbedUrl());
-
-          Future downloaderFuture = executor.submit(getDownloadChunkCallable(this,
-                                                                             nextChunk,
-                                                                             qrmk, nextChunkToDownload,
-                                                                             chunkHeadersMap,
-                                                                             networkTimeoutInMilli));
-          downloaderFutures.put(nextChunkToDownload, downloaderFuture);
-          // increment next chunk to download
-          nextChunkToDownload++;
-          // make sure reset waiting time
-          waitingTime = BASE_WAITING_MS;
-          // go to next chunk
-          continue;
-        }
+        Future downloaderFuture = executor.submit(getDownloadChunkCallable(this,
+                                                                           nextChunk,
+                                                                           qrmk, nextChunkToDownload,
+                                                                           chunkHeadersMap,
+                                                                           networkTimeoutInMilli));
+        downloaderFutures.put(nextChunkToDownload, downloaderFuture);
+        // increment next chunk to download
+        nextChunkToDownload++;
+        // make sure reset waiting time
+        waitingTime = BASE_WAITING_MS;
+        // go to next chunk
+        continue;
+      }
+      else
+      {
+        // cancel the reserved memory
+        curMem = currentMemoryUsage.addAndGet(-neededChunkMemory);
       }
 
       // waiting when nextChunkToDownload is equal to nextChunkToConsume but reach memory limit
@@ -401,10 +406,10 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
         {
           logger.debug("Thread {} waiting for {}s: currentMemoryUsage in MB: {}, neededChunkMemory in MB: {}, " +
                        "nextChunkToDownload: {}, nextChunkToConsume: {} ",
-                       Thread.currentThread().getId(),
+                       (ArgSupplier) () -> Thread.currentThread().getId(),
                        waitingTime / 1000.0,
-                       currentMemoryUsage / 1024 / 1024,
-                       neededChunkMemory / 1024 / 1024,
+                       curMem / MB,
+                       neededChunkMemory / MB,
                        nextChunkToDownload,
                        nextChunkToConsume);
         }
@@ -437,20 +442,18 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
         && !chunks.get(chunkId).isReleased()
     )
     {
-      synchronized (currentMemoryUsage)
-      {
-        // has to be before reusing the memory
-        currentMemoryUsage -= releaseSize;
-        logger.debug(
-            "Thread {}: currentMemoryUsage in MB: {}, released in MB: {}, " +
-                "chunk: {}, optionalReleaseSize: {}",
-            (ArgSupplier) () -> Thread.currentThread().getId(),
-            (ArgSupplier) () -> currentMemoryUsage / 1024 / 1024,
-            releaseSize,
-            chunkId,
-            optionalReleaseSize.isPresent());
-        chunks.get(chunkId).setReleased();
-      }
+      // has to be before reusing the memory
+      long curMem = currentMemoryUsage.addAndGet(-releaseSize);
+      logger.debug(
+          "Thread {}: currentMemoryUsage in MB: {}, released in MB: {}, " +
+              "chunk: {}, optionalReleaseSize: {}, JVMFreeMem: {}",
+          (ArgSupplier) () -> Thread.currentThread().getId(),
+          (ArgSupplier) () -> curMem / MB,
+          releaseSize,
+          chunkId,
+          optionalReleaseSize.isPresent(),
+          Runtime.getRuntime().freeMemory());
+      chunks.get(chunkId).setReleased();
     }
   }
 
