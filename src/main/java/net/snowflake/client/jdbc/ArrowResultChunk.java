@@ -81,6 +81,7 @@ public class ArrowResultChunk extends SnowflakeResultChunk
   private final RootAllocator rootAllocator;
   private boolean enableSortFirstResultChunk;
   private IntVector firstResultChunkSortedIndices;
+  private VectorSchemaRoot root;
 
   public ArrowResultChunk(String url, int rowCount, int colCount,
                           int uncompressedSize, RootAllocator rootAllocator)
@@ -112,7 +113,7 @@ public class ArrowResultChunk extends SnowflakeResultChunk
     ArrayList<ValueVector> valueVectors = new ArrayList<>();
     try (ArrowStreamReader reader = new ArrowStreamReader(is, rootAllocator))
     {
-      VectorSchemaRoot root = reader.getVectorSchemaRoot();
+      root = reader.getVectorSchemaRoot();
       while (reader.loadNextBatch())
       {
         valueVectors = new ArrayList<>();
@@ -127,6 +128,7 @@ public class ArrowResultChunk extends SnowflakeResultChunk
         }
 
         addBatchData(valueVectors);
+        root.clear();
       }
     }
     catch (ClosedByInterruptException cbie)
@@ -136,11 +138,11 @@ public class ArrowResultChunk extends SnowflakeResultChunk
       valueVectors.forEach(ValueVector::close);
       freeData();
     }
-    catch (IOException ioex)
+    catch (Exception ex)
     {
       valueVectors.forEach(ValueVector::close);
       freeData();
-      throw ioex;
+      throw ex;
     }
   }
 
@@ -164,6 +166,11 @@ public class ArrowResultChunk extends SnowflakeResultChunk
     if (firstResultChunkSortedIndices != null)
     {
       firstResultChunkSortedIndices.close();
+    }
+    if (root !=null)
+    {
+      root.clear();
+      root = null;
     }
   }
 

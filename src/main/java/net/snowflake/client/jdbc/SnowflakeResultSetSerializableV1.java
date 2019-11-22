@@ -47,6 +47,8 @@ import net.snowflake.client.core.SFStatement;
 import net.snowflake.common.core.SnowflakeDateTimeFormat;
 import org.apache.arrow.memory.RootAllocator;
 
+import static com.microsoft.azure.storage.Constants.GB;
+import static com.microsoft.azure.storage.Constants.MB;
 import static net.snowflake.client.core.SessionUtil.CLIENT_ENABLE_CONSERVATIVE_MEMORY_USAGE;
 import static net.snowflake.client.core.SessionUtil.CLIENT_MEMORY_LIMIT;
 import static net.snowflake.client.core.SessionUtil.CLIENT_PREFETCH_THREADS;
@@ -76,6 +78,7 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
   static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeResultSetSerializableV1.class);
 
   static final ObjectMapper mapper = ObjectMapperFactory.getObjectMapper();
+  private static final long LOW_MAX_MEMORY = GB;
 
   /**
    * An Entity class to represent a chunk file metadata.
@@ -813,44 +816,7 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
         logger.debug("#chunks={}, initialize chunk downloader",
                      this.chunkFileCount);
 
-        this.resultPrefetchThreads = DEFAULT_CLIENT_PREFETCH_THREADS;
-        if (this.statementType.isSelect()
-            && this.parameters
-                .containsKey(CLIENT_ENABLE_CONSERVATIVE_MEMORY_USAGE)
-            && (boolean) this.parameters
-            .get(CLIENT_ENABLE_CONSERVATIVE_MEMORY_USAGE))
-        {
-          // use conservative memory settings
-          this.resultPrefetchThreads =
-              sfStatement.getConservativePrefetchThreads();
-          this.memoryLimit = sfStatement.getConservativeMemoryLimit();
-          int chunkSize =
-              (int) this.parameters.get(CLIENT_RESULT_CHUNK_SIZE);
-          logger.debug(
-              "enable conservative memory usage with prefetchThreads = {} and memoryLimit = {} and " +
-              "resultChunkSize = {}",
-              this.resultPrefetchThreads, this.memoryLimit,
-              chunkSize);
-        }
-        else
-        {
-          // prefetch threads
-          if (this.parameters.get(CLIENT_PREFETCH_THREADS) != null)
-          {
-            this.resultPrefetchThreads =
-                (int) this.parameters.get(CLIENT_PREFETCH_THREADS);
-          }
-          this.memoryLimit = initMemoryLimit(this.parameters);
-        }
-
-        if (queryResultFormat == QueryResultFormat.ARROW
-            && memoryLimit * 2 > Runtime.getRuntime().maxMemory())
-        {
-          memoryLimit = Runtime.getRuntime().maxMemory()/2;
-          logger.debug("To avoid OOM for arrow buffer allocation, " +
-                           "memoryLimit should be equal to half of maxMemory {}",
-                       memoryLimit);
-        }
+        adjustMemorySettings(sfStatement);
 
         // Parse chunk header
         JsonNode chunkHeaders = rootNode.path("data").path("chunkHeaders");
@@ -896,6 +862,52 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
             this.parameters.get("JDBC_USE_JSON_PARSER") != null &&
             (boolean) this.parameters.get("JDBC_USE_JSON_PARSER");
       }
+    }
+  }
+
+  private void adjustMemorySettings(
+      SFStatement sfStatement)
+  {
+    this.resultPrefetchThreads = DEFAULT_CLIENT_PREFETCH_THREADS;
+    if (this.statementType.isSelect()
+        && this.parameters
+        .containsKey(CLIENT_ENABLE_CONSERVATIVE_MEMORY_USAGE)
+        && (boolean) this.parameters
+        .get(CLIENT_ENABLE_CONSERVATIVE_MEMORY_USAGE))
+    {
+      // use conservative memory settings
+      this.resultPrefetchThreads =
+          sfStatement.getConservativePrefetchThreads();
+      this.memoryLimit = sfStatement.getConservativeMemoryLimit();
+      int chunkSize =
+          (int) this.parameters.get(CLIENT_RESULT_CHUNK_SIZE);
+      logger.debug(
+          "enable conservative memory usage with prefetchThreads = {} and memoryLimit = {} and " +
+              "resultChunkSize = {}",
+          this.resultPrefetchThreads, this.memoryLimit,
+          chunkSize);
+    }
+    else
+    {
+      // prefetch threads
+      if (this.parameters.get(CLIENT_PREFETCH_THREADS) != null)
+      {
+        this.resultPrefetchThreads =
+            (int) this.parameters.get(CLIENT_PREFETCH_THREADS);
+      }
+      this.memoryLimit = initMemoryLimit(this.parameters);
+    }
+
+    long maxChunkSize = (int) this.parameters.get(CLIENT_RESULT_CHUNK_SIZE) * MB;
+    if (queryResultFormat == QueryResultFormat.ARROW
+        && Runtime.getRuntime().maxMemory() < LOW_MAX_MEMORY
+        && memoryLimit * 2 + maxChunkSize > Runtime.getRuntime().maxMemory())
+    {
+      memoryLimit = Runtime.getRuntime().maxMemory()/2 - maxChunkSize;
+      logger.debug("To avoid OOM for arrow buffer allocation, " +
+                      "memoryLimit {} should be less than half of the " +
+                      "maxMemory {} + maxChunkSize {}",
+                   memoryLimit, Runtime.getRuntime().maxMemory(), maxChunkSize);
     }
   }
 
