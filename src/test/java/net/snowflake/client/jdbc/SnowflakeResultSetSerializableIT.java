@@ -524,6 +524,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
       {
         resultFileList.add(thisFileList.get(i));
       }
+      rs.close();
     }
 
     if (developPrint)
@@ -536,7 +537,6 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
   }
 
   @Test
-  @Ignore
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
   public void testSplitResultSetSerializable() throws Throwable
   {
