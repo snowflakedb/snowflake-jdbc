@@ -30,9 +30,15 @@ public class ArrowResultUtil
 
   public static final int MAX_SCALE_POWERS_OF_10 = 9;
 
-  public static int powerOfTen(int pow)
+  public static long powerOfTen(int pow)
   {
-    return POWERS_OF_10[pow];
+    long val = 1;
+    while (pow > MAX_SCALE_POWERS_OF_10)
+    {
+      val *= POWERS_OF_10[MAX_SCALE_POWERS_OF_10];
+      pow -= MAX_SCALE_POWERS_OF_10;
+    }
+    return val * POWERS_OF_10[pow];
   }
 
   public static String getStringFormat(int scale)
@@ -156,7 +162,8 @@ public class ArrowResultUtil
   public static Timestamp toJavaTimestamp(long epoch, int scale)
   {
     long seconds = epoch / powerOfTen(scale);
-    int fraction = (int) (epoch % powerOfTen(scale)) * powerOfTen(9 - scale);
+    int fraction =
+        (int) ((epoch % powerOfTen(scale)) * powerOfTen(9 - scale));
     if (fraction < 0)
     {
       // handle negative case here
