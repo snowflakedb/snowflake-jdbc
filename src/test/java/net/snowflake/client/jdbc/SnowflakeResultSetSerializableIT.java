@@ -536,6 +536,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
   }
 
   @Test
+  @Ignore
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
   public void testSplitResultSetSerializable() throws Throwable
   {

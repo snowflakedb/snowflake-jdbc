@@ -16,6 +16,16 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public abstract class SnowflakeResultChunk
 {
+  public boolean isReleased()
+  {
+    return released;
+  }
+
+  public void setReleased()
+  {
+    released = true;
+  }
+
   public enum DownloadState
   {
     NOT_STARTED,
@@ -56,6 +66,8 @@ public abstract class SnowflakeResultChunk
 
   // download error if any for the chunk
   private String downloadError;
+
+  private boolean released = false;
 
   /**
    * Compute the memory necessary to store the data of this chunk

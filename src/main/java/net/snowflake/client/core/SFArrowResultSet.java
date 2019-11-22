@@ -646,19 +646,20 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
         Thread.sleep(10);
         rest = rootAllocator.getAllocatedMemory();
       }
-    }
-    catch (InterruptedException ie)
-    {
-      logger.debug("interrupted during closing root allocator");
-    }
-    finally
-    {
       if (rest == 0)
       {
         rootAllocator.close();
       }
     }
-
+    catch (InterruptedException ie)
+    {
+      logger.debug("interrupted during closing root allocator");
+    }
+    catch (Exception e)
+    {
+      logger.debug("Exception happened when closing rootAllocator: ",
+                   e.getLocalizedMessage());
+    }
   }
 
   @Override

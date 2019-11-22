@@ -48,6 +48,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
@@ -423,19 +424,32 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
     chunkDataCache.clear();
   }
 
-  private void releaseCurrentMemoryUsage(int chunkId, long releaseSize)
+  /**
+   * release the memory usage from currentMemoryUsage
+   * @param chunkId chunk ID
+   * @param optionalReleaseSize if present, then release the specified size
+   */
+  private void releaseCurrentMemoryUsage(int chunkId, Optional<Long> optionalReleaseSize)
   {
-    if (releaseSize > 0)
+    long releaseSize = optionalReleaseSize.isPresent() ?
+        optionalReleaseSize.get() : chunks.get(chunkId).computeNeededChunkMemory();
+    if (releaseSize > 0
+        && !chunks.get(chunkId).isReleased()
+    )
     {
       synchronized (currentMemoryUsage)
       {
         // has to be before reusing the memory
         currentMemoryUsage -= releaseSize;
-        logger.debug("Thread {}: currentMemoryUsage in MB: {}, released in MB: {}, chunk: {}",
-                     (ArgSupplier) () -> Thread.currentThread().getId(),
-                     (ArgSupplier) () -> currentMemoryUsage / 1024 / 1024,
-                     releaseSize,
-                     chunkId);
+        logger.debug(
+            "Thread {}: currentMemoryUsage in MB: {}, released in MB: {}, " +
+                "chunk: {}, optionalReleaseSize: {}",
+            (ArgSupplier) () -> Thread.currentThread().getId(),
+            (ArgSupplier) () -> currentMemoryUsage / 1024 / 1024,
+            releaseSize,
+            chunkId,
+            optionalReleaseSize.isPresent());
+        chunks.get(chunkId).setReleased();
       }
     }
   }
@@ -453,7 +467,8 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
     // only release the chunks has been downloading or downloaded
     for (int i = 0; i < nextChunkToDownload; i++)
     {
-      releaseCurrentMemoryUsage(i, chunks.get(i).computeNeededChunkMemory());
+      chunks.get(i).freeData();
+      releaseCurrentMemoryUsage(i, Optional.empty());
     }
   }
 
@@ -502,7 +517,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
       // Free any memory the previous chunk might hang on
       this.chunks.get(prevChunk).freeData();
 
-      releaseCurrentMemoryUsage(prevChunk, chunkMemUsage);
+      releaseCurrentMemoryUsage(prevChunk, Optional.of(chunkMemUsage));
 
     }
 
@@ -537,8 +552,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
       if (nextChunkToConsume == this.chunks.size())
       {
         // make sure to release the last chunk
-        releaseCurrentMemoryUsage(
-            nextChunkToConsume - 1, chunks.get(nextChunkToConsume - 1).computeNeededChunkMemory());
+        releaseCurrentMemoryUsage(nextChunkToConsume - 1, Optional.empty());
       }
       return currentChunk;
     }
@@ -557,6 +571,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
         // downloader thread encountered an error
         if (currentChunk.getDownloadState() == DownloadState.FAILURE)
         {
+          releaseAllChunkMemoryUsage();
           logger.error("downloader encountered error: {}",
                        currentChunk.getDownloadError());
 
@@ -588,8 +603,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
         if (nextChunkToConsume == this.chunks.size())
         {
           // make sure to release the last chunk
-          releaseCurrentMemoryUsage(
-              nextChunkToConsume - 1, chunks.get(nextChunkToConsume - 1).computeNeededChunkMemory());
+          releaseCurrentMemoryUsage(nextChunkToConsume - 1, Optional.empty());
         }
         if (terminateDownloader)
         {
