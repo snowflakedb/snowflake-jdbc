@@ -189,7 +189,7 @@ public class DateConverterTest extends BaseConverterTest
       }
       else
       {
-        Date oldObj = ArrowResultUtil.getDate(intVal, TimeZone.getDefault(), new SFSession());
+        Date oldObj = ArrowResultUtil.getDate(intVal);
         assertThat(intVal, is(rawDates[i]));
         assertThat(obj.getTime(), is(oldObj.getTime()));
       }
