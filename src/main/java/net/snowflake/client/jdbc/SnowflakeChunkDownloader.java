@@ -36,6 +36,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.io.PushbackInputStream;
 import java.io.SequenceInputStream;
 import java.io.StringWriter;
 import java.net.URISyntaxException;
@@ -79,7 +80,6 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
   // object mapper for deserialize JSON
   private static final ObjectMapper mapper =
       ObjectMapperFactory.getObjectMapper();
-
   /**
    * a shared JSON parser factory.
    */
@@ -874,56 +874,11 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
         try
         {
           // read the chunk data
-          InputStream is = entity.getContent();
-
-          // Determine the format of the response, if it is not
-          // either plain text or gzip, raise an error.
-          Header encoding = response.getFirstHeader("Content-Encoding");
-          if (encoding != null)
-          {
-            if (encoding.getValue().equalsIgnoreCase("gzip"))
-            {
-              /* specify buffer size for GZIPInputStream */
-              is = new GZIPInputStream(is, STREAM_BUFFER_SIZE);
-            }
-            else
-            {
-              throw
-                  new SnowflakeSQLException(
-                      SqlState.INTERNAL_ERROR,
-                      ErrorCode.INTERNAL_ERROR.getMessageCode(),
-                      "Exception: unexpected compression got " +
-                      encoding.getValue());
-            }
-          }
-
-          if (downloader.useJsonParserV2 ||
-              downloader.queryResultFormat == QueryResultFormat.ARROW)
-          {
-            inputStream = is;
-          }
-          else
-          {
-            // Build a sequence of streams to wrap the input stream
-            // with '[' ... ']' to be able to plug this in the
-            // Jackson JSON parser.
-            // gzip stream uses 64KB
-            // no buffering as json parser does it internally
-            inputStream =
-                new SequenceInputStream(
-                    Collections.enumeration(Arrays.asList(
-                        new ByteArrayInputStream("[".getBytes(
-                            StandardCharsets.UTF_8)),
-                        is,
-                        new ByteArrayInputStream("]".getBytes(
-                            StandardCharsets.UTF_8)))));
-          }
+          inputStream = detectContentEncodingAndGetInputStream(response, entity.getContent());
         }
         catch (Exception ex)
         {
-          logger.error(
-              "Failed to decompress data: {}",
-              response);
+          logger.error("Failed to decompress data: {}", response);
 
           throw
               new SnowflakeSQLException(
@@ -937,6 +892,71 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
         logger.debug("Json response: {}", response);
 
         return inputStream;
+      }
+
+      private InputStream detectContentEncodingAndGetInputStream(HttpResponse response, InputStream is)
+      throws IOException, SnowflakeSQLException
+      {
+        InputStream inputStream = is;// Determine the format of the response, if it is not
+        // either plain text or gzip, raise an error.
+        Header encoding = response.getFirstHeader("Content-Encoding");
+        if (encoding != null)
+        {
+          if ("gzip".equalsIgnoreCase(encoding.getValue()))
+          {
+            /* specify buffer size for GZIPInputStream */
+            inputStream = new GZIPInputStream(is, STREAM_BUFFER_SIZE);
+          }
+          else
+          {
+            throw
+                new SnowflakeSQLException(
+                    SqlState.INTERNAL_ERROR,
+                    ErrorCode.INTERNAL_ERROR.getMessageCode(),
+                    "Exception: unexpected compression got " +
+                    encoding.getValue());
+          }
+        }
+        else
+        {
+          inputStream = detectGzipAndGetStream(is);
+        }
+
+        if (!downloader.useJsonParserV2 &&
+             downloader.queryResultFormat != QueryResultFormat.ARROW)
+        {
+          // Build a sequence of streams to wrap the input stream
+          // with '[' ... ']' to be able to plug this in the
+          // Jackson JSON parser.
+          // gzip stream uses 64KB
+          // no buffering as json parser does it internally
+          inputStream =
+              new SequenceInputStream(
+                  Collections.enumeration(Arrays.asList(
+                      new ByteArrayInputStream("[".getBytes(
+                          StandardCharsets.UTF_8)),
+                      inputStream,
+                      new ByteArrayInputStream("]".getBytes(
+                          StandardCharsets.UTF_8)))));
+        }
+        return inputStream;
+      }
+
+      private InputStream detectGzipAndGetStream(InputStream is) throws IOException
+      {
+        PushbackInputStream pb = new PushbackInputStream(is, 2);
+        byte [] signature = new byte[2];
+        int len = pb.read( signature );
+        pb.unread( signature, 0, len );
+        // https://tools.ietf.org/html/rfc1952
+        if( signature[ 0 ] == (byte) 0x1f && signature[ 1 ] == (byte) 0x8b )
+        {
+          return new GZIPInputStream(pb);
+        }
+        else
+        {
+          return pb;
+        }
       }
 
       /**
