@@ -192,10 +192,11 @@ public class ResultJsonParserV2
               break;
             default:
             {
-              throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
-                                              ErrorCode.INTERNAL_ERROR.getMessageCode(),
-                                              "SFResultJsonParser2Failed: encountered unexpected character 0x%x " +
-                                              "between rows", in.get(((Buffer) in).position() - 1));
+              throw new SnowflakeSQLException(
+                  SqlState.INTERNAL_ERROR,
+                  ErrorCode.INTERNAL_ERROR.getMessageCode(),
+                  String.format("encountered unexpected character 0x%x between rows",
+                                in.get(((Buffer) in).position() - 1)));
             }
           }
           break;
@@ -213,10 +214,11 @@ public class ResultJsonParserV2
               break;
             default:
             {
-              throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
-                                              ErrorCode.INTERNAL_ERROR.getMessageCode(),
-                                              "SFResultJsonParser2Failed: encountered unexpected character 0x%x after" +
-                                              " array", in.get(((Buffer) in).position() - 1));
+              throw new SnowflakeSQLException(
+                  SqlState.INTERNAL_ERROR,
+                  ErrorCode.INTERNAL_ERROR.getMessageCode(),
+                  String.format("encountered unexpected character 0x%x after array",
+                  in.get(((Buffer) in).position() - 1)));
             }
           }
           break;
@@ -436,10 +438,11 @@ public class ResultJsonParserV2
               break;
             default:
             {
-              throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
-                                              ErrorCode.INTERNAL_ERROR.getMessageCode(),
-                                              "SFResultJsonParser2Failed: encountered unexpected character 0x%x " +
-                                              "between columns", in.get(((Buffer) in).position() - 1));
+              throw new SnowflakeSQLException(
+                  SqlState.INTERNAL_ERROR,
+                  ErrorCode.INTERNAL_ERROR.getMessageCode(),
+                  String.format("encountered unexpected character 0x%x between columns",
+                  in.get(((Buffer) in).position() - 1)));
 
             }
           }
