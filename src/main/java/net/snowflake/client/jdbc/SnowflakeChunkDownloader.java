@@ -57,6 +57,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.zip.GZIPInputStream;
 
@@ -118,7 +119,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
   private long numberMillisWaitingForChunks = 0;
 
   // is the downloader terminated
-  private boolean terminated = false;
+  private final AtomicBoolean terminated = new AtomicBoolean(false);
 
   // number of millis spent on downloading result chunks
   private final AtomicLong totalMillisDownloadingChunks = new AtomicLong(0);
@@ -470,7 +471,6 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
     // only release the chunks has been downloading or downloaded
     for (int i = 0; i < nextChunkToDownload; i++)
     {
-      chunks.get(i).freeData();
       releaseCurrentMemoryUsage(i, Optional.empty());
     }
   }
@@ -745,17 +745,8 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
   @Override
   public DownloaderMetrics terminate() throws InterruptedException
   {
-    if (!terminated)
+    if (!terminated.getAndSet(true))
     {
-      releaseAllChunkMemoryUsage();
-
-      logger.debug("Total milliseconds waiting for chunks: {}, " +
-                   "Total memory used: {}, total download time: {} millisec, " +
-                   "total parsing time: {} milliseconds, total chunks: {}",
-                   numberMillisWaitingForChunks,
-                   Runtime.getRuntime().totalMemory(), totalMillisDownloadingChunks.get(),
-                   totalMillisParsingChunks.get(), chunks.size());
-
       if (executor != null)
       {
         if (!executor.isShutdown())
@@ -790,9 +781,17 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
         chunkDataCache.clear();
       }
 
+      releaseAllChunkMemoryUsage();
+
+      logger.debug("Total milliseconds waiting for chunks: {}, " +
+                       "Total memory used: {}, total download time: {} millisec, " +
+                       "total parsing time: {} milliseconds, total chunks: {}",
+                   numberMillisWaitingForChunks,
+                   Runtime.getRuntime().totalMemory(), totalMillisDownloadingChunks.get(),
+                   totalMillisParsingChunks.get(), chunks.size());
+
       chunks = null;
 
-      terminated = true;
       return new DownloaderMetrics(numberMillisWaitingForChunks,
                                    totalMillisDownloadingChunks.get(),
                                    totalMillisParsingChunks.get());

@@ -616,6 +616,36 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
 
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
+  public void testCloseUnconsumedResultSet() throws Throwable
+  {
+    try (Connection connection = getConnection())
+    {
+      Statement statement = connection.createStatement();
+
+      statement.execute(
+          "create or replace table table_basic " +
+              " (int_c int, string_c string(128))");
+
+      int rowCount = 100000;
+      statement.execute(
+          "insert into table_basic select " +
+              "seq4(), " +
+              "'arrow_1234567890arrow_1234567890arrow_1234567890arrow_1234567890'" +
+              " from table(generator(rowcount=>" + rowCount + "))");
+
+      int testCount = 5;
+      while (testCount-- > 0)
+      {
+        String sqlSelect = "select * from table_basic ";
+        ResultSet rs = statement.executeQuery(sqlSelect);
+        rs.close();
+      }
+      statement.execute("drop table if exists table_basic");
+    }
+  }
+
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
   public void testNegativeWithChunkFileNotExist() throws Throwable
   {
     try (Connection connection = getConnection())
