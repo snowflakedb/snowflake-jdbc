@@ -48,8 +48,6 @@ abstract class ResultSetArrowForce0MultiTimeZone extends BaseJDBCTest
           "TIMESTAMP_NTZ_OUTPUT_FORMAT='DY, DD MON YYYY HH24:MI:SS TZHTZM'");
     }
 
-    con.createStatement().execute("alter session set query_result_format = '"
-                                  + queryResultFormat + "'");
     con.createStatement().execute("alter session set jdbc_query_result_format" +
                                   " = '" + queryResultFormat + "'");
     con.createStatement().execute("create or replace table " + table + " " + column);
