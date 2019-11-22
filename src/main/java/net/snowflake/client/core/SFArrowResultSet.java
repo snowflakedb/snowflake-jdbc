@@ -243,7 +243,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
    * @return true if still have rows otherwise false
    */
   private boolean fetchNextRowUnsorted()
-      throws SnowflakeSQLException
+  throws SnowflakeSQLException
   {
     boolean hasNext = currentChunkIterator.next();
 

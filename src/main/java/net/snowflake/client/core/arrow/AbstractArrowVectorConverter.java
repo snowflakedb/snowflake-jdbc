@@ -212,12 +212,12 @@ abstract class AbstractArrowVectorConverter implements ArrowVectorConverter
    * since epoch fit into a long. For timestamps whose millis since epoch
    * don't fit into a long, certain operations, such as conversion to java
    * .sql.Timestamp, are not available.
-   *
    */
   public static class TimestampOperationNotAvailableException
       extends RuntimeException
   {
     private BigDecimal secsSinceEpoch;
+
     TimestampOperationNotAvailableException(long secsSinceEpoch, int fraction)
     {
       super("seconds=" + secsSinceEpoch + " nanos=" + fraction);

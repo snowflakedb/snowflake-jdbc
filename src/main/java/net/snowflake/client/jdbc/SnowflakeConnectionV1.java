@@ -120,7 +120,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection
   }
 
   public SnowflakeConnectionV1(String url, Properties info, boolean fakeConnection)
-      throws SQLException
+  throws SQLException
   {
     SnowflakeConnectString conStr = SnowflakeConnectString.parse(url, info);
     if (!conStr.isValid())

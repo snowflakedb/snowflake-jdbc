@@ -432,13 +432,14 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
 
   /**
    * release the memory usage from currentMemoryUsage
-   * @param chunkId chunk ID
+   *
+   * @param chunkId             chunk ID
    * @param optionalReleaseSize if present, then release the specified size
    */
   private void releaseCurrentMemoryUsage(int chunkId, Optional<Long> optionalReleaseSize)
   {
     long releaseSize = optionalReleaseSize.isPresent() ?
-        optionalReleaseSize.get() : chunks.get(chunkId).computeNeededChunkMemory();
+                       optionalReleaseSize.get() : chunks.get(chunkId).computeNeededChunkMemory();
     if (releaseSize > 0
         && !chunks.get(chunkId).isReleased()
     )
@@ -447,7 +448,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
       long curMem = currentMemoryUsage.addAndGet(-releaseSize);
       logger.debug(
           "Thread {}: currentMemoryUsage in MB: {}, released in MB: {}, " +
-              "chunk: {}, optionalReleaseSize: {}, JVMFreeMem: {}",
+          "chunk: {}, optionalReleaseSize: {}, JVMFreeMem: {}",
           (ArgSupplier) () -> Thread.currentThread().getId(),
           (ArgSupplier) () -> curMem / MB,
           releaseSize,
@@ -762,7 +763,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
             List<Runnable> droppedTasks = executor.shutdownNow(); //optional **
             logger.debug(
                 "Executor was abruptly shut down. " + droppedTasks.size() +
-                    " tasks will not be executed."); //optional **
+                " tasks will not be executed."); //optional **
           }
         }
       }
@@ -784,8 +785,8 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
       releaseAllChunkMemoryUsage();
 
       logger.debug("Total milliseconds waiting for chunks: {}, " +
-                       "Total memory used: {}, total download time: {} millisec, " +
-                       "total parsing time: {} milliseconds, total chunks: {}",
+                   "Total memory used: {}, total download time: {} millisec, " +
+                   "total parsing time: {} milliseconds, total chunks: {}",
                    numberMillisWaitingForChunks,
                    Runtime.getRuntime().totalMemory(), totalMillisDownloadingChunks.get(),
                    totalMillisParsingChunks.get(), chunks.size());
@@ -939,7 +940,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
         }
 
         if (!downloader.useJsonParserV2 &&
-             downloader.queryResultFormat != QueryResultFormat.ARROW)
+            downloader.queryResultFormat != QueryResultFormat.ARROW)
         {
           // Build a sequence of streams to wrap the input stream
           // with '[' ... ']' to be able to plug this in the
@@ -961,11 +962,11 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
       private InputStream detectGzipAndGetStream(InputStream is) throws IOException
       {
         PushbackInputStream pb = new PushbackInputStream(is, 2);
-        byte [] signature = new byte[2];
-        int len = pb.read( signature );
-        pb.unread( signature, 0, len );
+        byte[] signature = new byte[2];
+        int len = pb.read(signature);
+        pb.unread(signature, 0, len);
         // https://tools.ietf.org/html/rfc1952
-        if( signature[ 0 ] == (byte) 0x1f && signature[ 1 ] == (byte) 0x8b )
+        if (signature[0] == (byte) 0x1f && signature[1] == (byte) 0x8b)
         {
           return new GZIPInputStream(pb);
         }
