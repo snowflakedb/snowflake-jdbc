@@ -44,15 +44,7 @@ public class BigIntToScaledFixedConverter extends BigIntToFixedConverter
     }
     int scale = sfScale;
     double res = getLong(index);
-    while (scale > ArrowResultUtil.MAX_SCALE_POWERS_OF_10)
-    {
-      res = res / ArrowResultUtil.powerOfTen(ArrowResultUtil.MAX_SCALE_POWERS_OF_10);
-      scale -= ArrowResultUtil.MAX_SCALE_POWERS_OF_10;
-    }
-    if (scale > 0)
-    {
-      res = res / ArrowResultUtil.powerOfTen(scale);
-    }
+    res = res / ArrowResultUtil.powerOfTen(scale);
     return res;
   }
 
