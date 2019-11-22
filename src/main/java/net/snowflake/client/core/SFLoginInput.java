@@ -42,6 +42,8 @@ public class SFLoginInput
   private String idToken;
   private String serviceName;
   private OCSPMode ocspMode;
+  private String privateKeyFile;
+  private String privateKeyFilePwd;
 
   SFLoginInput()
   {
@@ -310,6 +312,29 @@ public class SFLoginInput
     this.privateKey = privateKey;
     return this;
   }
+
+  SFLoginInput setPrivateKeyFile(String privateKeyFile)
+  {
+    this.privateKeyFile = privateKeyFile;
+    return this;
+  }
+
+  SFLoginInput setPrivateKeyFilePwd(String privateKeyFilePwd)
+  {
+    this.privateKeyFilePwd = privateKeyFilePwd;
+    return this;
+  }
+
+  String getPrivateKeyFile()
+  {
+    return privateKeyFile;
+  }
+
+  String getPrivateKeyFilePwd()
+  {
+    return privateKeyFilePwd;
+  }
+
 
   public String getApplication()
   {

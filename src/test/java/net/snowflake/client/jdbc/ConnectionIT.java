@@ -15,10 +15,13 @@ import org.apache.commons.codec.binary.Base64;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Test;
 import org.junit.Ignore;
+import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.PrivateKey;
@@ -625,6 +628,113 @@ public class ConnectionIT extends BaseJDBCTest
     statement.execute("use role accountadmin");
     statement.execute(String.format("alter user %s unset rsa_public_key", testUser));
     statement.execute(String.format("alter user %s unset rsa_public_key_2", testUser));
+    connection.close();
+  }
+
+  @Test
+  @ConditionalIgnore(condition = RunningOnTravisCI.class)
+  public void testPrivateKeyInConnectionString() throws SQLException, IOException
+  {
+    Map<String, String> parameters = getConnectionParameters();
+    String testUser = parameters.get("user");
+
+    // Test with non-password-protected private key file (.pem)
+    Connection connection = getConnection();
+    Statement statement = connection.createStatement();
+    statement.execute("use role accountadmin");
+    String pathfile = getFullPathFileInResource("rsa_key.pub");
+    String pubKey = new String(Files.readAllBytes(Paths.get(pathfile)));
+    pubKey = pubKey.replace("-----BEGIN PUBLIC KEY-----", "");
+    pubKey = pubKey.replace("-----END PUBLIC KEY-----", "");
+    statement.execute(String.format(
+        "alter user %s set rsa_public_key='%s'", testUser, pubKey));
+    connection.close();
+
+    String privateKeyLocation = getFullPathFileInResource("rsa_key.pem");
+    String uri = parameters.get("uri") + "/?private_key_file="+privateKeyLocation;
+    Properties properties = new Properties();
+    properties.put("account", parameters.get("account"));
+    properties.put("user", testUser);
+    properties.put("ssl", parameters.get("ssl"));
+    properties.put("port", parameters.get("port"));
+    connection = DriverManager.getConnection(uri, properties);
+    connection.close();
+
+    // test with password-protected private key file (.p8)
+    connection = getConnection();
+    statement = connection.createStatement();
+    statement.execute("use role accountadmin");
+    pathfile = getFullPathFileInResource("encrypted_rsa_key.pub");
+    pubKey = new String(Files.readAllBytes(Paths.get(pathfile)));
+    pubKey = pubKey.replace("-----BEGIN PUBLIC KEY-----", "");
+    pubKey = pubKey.replace("-----END PUBLIC KEY-----", "");
+    statement.execute(String.format(
+        "alter user %s set rsa_public_key='%s'", testUser, pubKey));
+    connection.close();
+
+    privateKeyLocation = getFullPathFileInResource("encrypted_rsa_key.p8");
+    uri = parameters.get("uri") + "/?private_key_file_pwd=test&private_key_file=" + privateKeyLocation;
+
+    connection = DriverManager.getConnection(uri, properties);
+    connection.close();
+
+    // test with incorrect password for private key
+    uri = parameters.get("uri") + "/?private_key_file_pwd=wrong_password&private_key_file=" + privateKeyLocation;
+    try
+    {
+      connection = DriverManager.getConnection(uri, properties);
+      fail();
+    }
+    catch (SQLException e)
+    {
+      assertEquals((int) ErrorCode.INTERNAL_ERROR.getMessageCode(), e.getErrorCode());
+    }
+    connection.close();
+
+    // test with invalid public/private key combo (using 1st public key with 2nd private key)
+    connection = getConnection();
+    statement = connection.createStatement();
+    statement.execute("use role accountadmin");
+    pathfile = getFullPathFileInResource("rsa_key.pub");
+    pubKey = new String(Files.readAllBytes(Paths.get(pathfile)));
+    pubKey = pubKey.replace("-----BEGIN PUBLIC KEY-----", "");
+    pubKey = pubKey.replace("-----END PUBLIC KEY-----", "");
+    statement.execute(String.format(
+        "alter user %s set rsa_public_key='%s'", testUser, pubKey));
+    connection.close();
+
+    privateKeyLocation = getFullPathFileInResource("encrypted_rsa_key.p8");
+    uri = parameters.get("uri") + "/?private_key_file_pwd=test&private_key_file=" + privateKeyLocation;
+    try
+    {
+      connection = DriverManager.getConnection(uri, properties);
+      fail();
+    }
+    catch (SQLException e)
+    {
+      assertEquals(390144, e.getErrorCode());
+    }
+    connection.close();
+
+    // test with invalid private key
+    privateKeyLocation = getFullPathFileInResource("invalid_private_key.pem");
+    uri = parameters.get("uri") + "/?private_key_file=" + privateKeyLocation;
+    try
+    {
+      connection = DriverManager.getConnection(uri, properties);
+      fail();
+    }
+    catch (SQLException e)
+    {
+      assertEquals((int) ErrorCode.INTERNAL_ERROR.getMessageCode(), e.getErrorCode());
+    }
+    connection.close();
+
+    //clean up
+    connection = getConnection();
+    statement = connection.createStatement();
+    statement.execute("use role accountadmin");
+    statement.execute(String.format("alter user %s unset rsa_public_key", testUser));
     connection.close();
   }
 
