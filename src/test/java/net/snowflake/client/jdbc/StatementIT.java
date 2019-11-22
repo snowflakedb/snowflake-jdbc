@@ -52,7 +52,6 @@ public class StatementIT extends BaseJDBCTest
   {
     Connection conn = BaseJDBCTest.getConnection();
     Statement stmt = conn.createStatement();
-    stmt.execute("alter session set query_result_format = '" + queryResultFormat + "'");
     stmt.execute("alter session set jdbc_query_result_format = '" + queryResultFormat + "'");
     stmt.close();
     return conn;

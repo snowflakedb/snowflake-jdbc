@@ -66,7 +66,6 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
   {
     Connection conn = BaseJDBCTest.getConnection();
     Statement stmt = conn.createStatement();
-    stmt.execute("alter session set query_result_format = '" + queryResultFormat + "'");
     stmt.execute("alter session set jdbc_query_result_format = '" + queryResultFormat + "'");
 
     // Set up theses parameters as smaller values in order to generate

@@ -60,7 +60,6 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest
   {
     Connection conn = getConnection(BaseJDBCTest.DONT_INJECT_SOCKET_TIMEOUT);
     Statement stmt = conn.createStatement();
-    stmt.execute("alter session set query_result_format = '" + queryResultFormat + "'");
     stmt.execute("alter session set jdbc_query_result_format = '" + queryResultFormat + "'");
     stmt.close();
     return conn;
