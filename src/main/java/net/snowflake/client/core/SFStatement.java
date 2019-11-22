@@ -9,6 +9,7 @@ import net.snowflake.client.core.BasicEvent.QueryState;
 import net.snowflake.client.core.bind.BindException;
 import net.snowflake.client.core.bind.BindUploader;
 import net.snowflake.client.jdbc.ErrorCode;
+import net.snowflake.client.jdbc.SnowflakeDriver;
 import net.snowflake.client.jdbc.SnowflakeFileTransferAgent;
 import net.snowflake.client.jdbc.SnowflakeReauthenticationRequest;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
@@ -135,6 +136,17 @@ public class SFStatement
     this.session = session;
     Integer queryTimeout = session == null ? null : session.getQueryTimeout();
     this.queryTimeout = queryTimeout != null ? queryTimeout : this.queryTimeout;
+    verifyArrowSupport();
+  }
+
+  private void verifyArrowSupport()
+  {
+    if (SnowflakeDriver.isDisableArrowResultFormat())
+    {
+      logger.debug("disable arrow support: {}",
+                   SnowflakeDriver.getDisableArrowResultFormatMessage());
+      statementParametersMap.put("JDBC_QUERY_RESULT_FORMAT", "JSON");
+    }
   }
 
   /**

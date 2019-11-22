@@ -37,6 +37,7 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+    <arrow.version>0.15.1</arrow.version>
     <slf4j.version>1.7.25</slf4j.version>
     <jsoup.version>1.11.3</jsoup.version>
     <tika.version>1.22</tika.version>
@@ -264,7 +265,7 @@
     <dependency>
       <groupId>org.apache.arrow</groupId>
       <artifactId>arrow-vector</artifactId>
-      <version>0.13.0</version>
+      <version>${arrow.version}</version>
     </dependency>
     <dependency>
       <groupId>com.google.auth</groupId>
@@ -314,10 +315,10 @@
               <goal>install-file</goal>
             </goals>
             <configuration>
-              <file>${project.basedir}/dependencies/arrow-memory-0.13.0.jar</file>
+              <file>${project.basedir}/dependencies/arrow-memory-${arrow.version}.jar</file>
               <groupId>org.apache.arrow</groupId>
               <artifactId>arrow-memory</artifactId>
-              <version>0.13.0</version>
+              <version>${arrow.version}</version>
               <packaging>jar</packaging>
               <generatePom>true</generatePom>
             </configuration>
@@ -329,10 +330,10 @@
               <goal>install-file</goal>
             </goals>
             <configuration>
-              <file>${project.basedir}/dependencies/arrow-format-0.13.0.jar</file>
+              <file>${project.basedir}/dependencies/arrow-format-${arrow.version}.jar</file>
               <groupId>org.apache.arrow</groupId>
               <artifactId>arrow-format</artifactId>
-              <version>0.13.0</version>
+              <version>${arrow.version}</version>
               <packaging>jar</packaging>
               <generatePom>true</generatePom>
             </configuration>
@@ -344,10 +345,10 @@
               <goal>install-file</goal>
             </goals>
             <configuration>
-              <file>${project.basedir}/dependencies/arrow-vector-0.13.0.jar</file>
+              <file>${project.basedir}/dependencies/arrow-vector-${arrow.version}.jar</file>
               <groupId>org.apache.arrow</groupId>
               <artifactId>arrow-vector</artifactId>
-              <version>0.13.0</version>
+              <version>${arrow.version}</version>
               <packaging>jar</packaging>
               <generatePom>true</generatePom>
             </configuration>
