@@ -611,7 +611,7 @@ public class SFStatement
     }
     else
     {
-      memoryLimitInBytes = clientMemoryLimit * 1024 * 1024;
+      memoryLimitInBytes = (long) clientMemoryLimit * 1024 * 1024;
     }
     conservativeMemoryLimit = memoryLimitInBytes;
     reducePrefetchThreadsAndChunkSizeToFitMemoryLimit(conservativeMemoryLimit, clientPrefetchThread, clientChunkSize);
