@@ -16,6 +16,7 @@ import net.snowflake.common.core.CalendarCache;
 
 import java.sql.Date;
 import java.sql.Timestamp;
+import java.time.LocalDate;
 import java.util.Calendar;
 import java.util.TimeZone;
 
@@ -51,11 +52,24 @@ public class ArrowResultUtil
    * new method to get Date from integer
    *
    * @param day
+   * @return Date
+   */
+  public static Date getDate(int day)
+  {
+    LocalDate localDate = LocalDate.ofEpochDay(day);
+    return Date.valueOf(localDate);
+  }
+
+  /**
+   * deprecated method to get Date from integer
+   *
+   * @param day
    * @param tz
    * @param session
    * @return
    * @throws SFException
    */
+  @Deprecated
   public static Date getDate(int day, TimeZone tz, SFSession session) throws SFException
   {
     try

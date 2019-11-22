@@ -15,9 +15,9 @@ import org.apache.arrow.vector.IntVector;
 import org.apache.arrow.vector.ValueVector;
 
 import java.math.BigDecimal;
-import java.nio.ByteBuffer;
 import java.sql.Date;
 import java.sql.Timestamp;
+import java.time.LocalDate;
 import java.util.TimeZone;
 
 /**
@@ -45,7 +45,7 @@ public class DateConverter extends AbstractArrowVectorConverter
     {
       int val = dateVector.getDataBuffer().getInt(index * IntVector.TYPE_WIDTH);
       // Note: use default time zone to match with current getDate() behavior
-      return ArrowResultUtil.getDate(val, tz, context.getSession());
+      return ArrowResultUtil.getDate(val);
     }
   }
 
