@@ -62,12 +62,12 @@ public class TwoFieldStructToTimestampNTZConverter extends AbstractArrowVectorCo
     try
     {
       Timestamp ts = epochs.isNull(index)
-          ? null
-          : getTimestamp(index, TimeZone.getDefault(), true);
+                     ? null
+                     : getTimestamp(index, TimeZone.getDefault(), true);
 
       return ts == null ? null :
-          context.getTimestampNTZFormatter().format(
-              ts, TimeZone.getTimeZone("UTC"), context.getScale(columnIndex));
+             context.getTimestampNTZFormatter().format(
+                 ts, TimeZone.getTimeZone("UTC"), context.getScale(columnIndex));
     }
     catch (TimestampOperationNotAvailableException e)
     {

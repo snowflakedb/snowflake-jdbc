@@ -103,7 +103,7 @@ class SessionUtilKeyPair
           KeyFactory keyFactory = KeyFactory.getInstance("RSA");
           this.privateKey = keyFactory.generatePrivate(encodedKeySpec);
         }
-        catch (NoSuchAlgorithmException | InvalidKeySpecException  | IOException | InvalidKeyException e)
+        catch (NoSuchAlgorithmException | InvalidKeySpecException | IOException | InvalidKeyException e)
         {
           throw new SFException(e, ErrorCode.INTERNAL_ERROR,
                                 "Error retrieving public key");

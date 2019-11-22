@@ -56,12 +56,12 @@ public class ThreeFieldStructToTimestampTZConverter extends AbstractArrowVectorC
     try
     {
       Timestamp ts = epochs.isNull(index)
-          ? null
-          : getTimestamp(index, TimeZone.getDefault(), true);
+                     ? null
+                     : getTimestamp(index, TimeZone.getDefault(), true);
 
       return ts == null ? null :
-          context.getTimestampTZFormatter().format(
-              ts, timeZone, context.getScale(columnIndex));
+             context.getTimestampTZFormatter().format(
+                 ts, timeZone, context.getScale(columnIndex));
     }
     catch (TimestampOperationNotAvailableException e)
     {

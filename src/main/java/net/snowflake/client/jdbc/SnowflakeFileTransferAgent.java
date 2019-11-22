@@ -1301,7 +1301,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
    * file paths to expand wildcards and make sure the paths GS returns are
    * correct
    *
-   * @param command The GET/PUT command we send to GS
+   * @param command  The GET/PUT command we send to GS
    * @param unescape True to unescape backslashes coming from GS
    * @return Path to the local file
    */

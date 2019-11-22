@@ -871,7 +871,7 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
     this.resultPrefetchThreads = DEFAULT_CLIENT_PREFETCH_THREADS;
     if (this.statementType.isSelect()
         && this.parameters
-        .containsKey(CLIENT_ENABLE_CONSERVATIVE_MEMORY_USAGE)
+            .containsKey(CLIENT_ENABLE_CONSERVATIVE_MEMORY_USAGE)
         && (boolean) this.parameters
         .get(CLIENT_ENABLE_CONSERVATIVE_MEMORY_USAGE))
     {
@@ -883,7 +883,7 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
           (int) this.parameters.get(CLIENT_RESULT_CHUNK_SIZE);
       logger.debug(
           "enable conservative memory usage with prefetchThreads = {} and memoryLimit = {} and " +
-              "resultChunkSize = {}",
+          "resultChunkSize = {}",
           this.resultPrefetchThreads, this.memoryLimit,
           chunkSize);
     }
@@ -903,10 +903,10 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
         && Runtime.getRuntime().maxMemory() < LOW_MAX_MEMORY
         && memoryLimit * 2 + maxChunkSize > Runtime.getRuntime().maxMemory())
     {
-      memoryLimit = Runtime.getRuntime().maxMemory()/2 - maxChunkSize;
+      memoryLimit = Runtime.getRuntime().maxMemory() / 2 - maxChunkSize;
       logger.debug("To avoid OOM for arrow buffer allocation, " +
-                      "memoryLimit {} should be less than half of the " +
-                      "maxMemory {} + maxChunkSize {}",
+                   "memoryLimit {} should be less than half of the " +
+                   "maxMemory {} + maxChunkSize {}",
                    memoryLimit, Runtime.getRuntime().maxMemory(), maxChunkSize);
     }
   }
