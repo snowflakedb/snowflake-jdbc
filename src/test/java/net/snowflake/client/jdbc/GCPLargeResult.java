@@ -37,7 +37,7 @@ public class GCPLargeResult extends BaseJDBCTest
   Connection init() throws SQLException
   {
     Connection conn = BaseJDBCTest.getConnection("gcpaccount");
-    try(Statement stmt = conn.createStatement())
+    try (Statement stmt = conn.createStatement())
     {
       stmt.execute("alter session set jdbc_query_result_format = '" + queryResultFormat + "'");
     }

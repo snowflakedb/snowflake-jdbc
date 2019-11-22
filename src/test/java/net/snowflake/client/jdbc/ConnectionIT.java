@@ -651,7 +651,7 @@ public class ConnectionIT extends BaseJDBCTest
     connection.close();
 
     String privateKeyLocation = getFullPathFileInResource("rsa_key.pem");
-    String uri = parameters.get("uri") + "/?private_key_file="+privateKeyLocation;
+    String uri = parameters.get("uri") + "/?private_key_file=" + privateKeyLocation;
     Properties properties = new Properties();
     properties.put("account", parameters.get("account"));
     properties.put("user", testUser);

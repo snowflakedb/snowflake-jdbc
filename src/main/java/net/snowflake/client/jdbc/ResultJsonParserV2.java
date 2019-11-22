@@ -218,7 +218,7 @@ public class ResultJsonParserV2
                   SqlState.INTERNAL_ERROR,
                   ErrorCode.INTERNAL_ERROR.getMessageCode(),
                   String.format("encountered unexpected character 0x%x after array",
-                  in.get(((Buffer) in).position() - 1)));
+                                in.get(((Buffer) in).position() - 1)));
             }
           }
           break;
@@ -442,7 +442,7 @@ public class ResultJsonParserV2
                   SqlState.INTERNAL_ERROR,
                   ErrorCode.INTERNAL_ERROR.getMessageCode(),
                   String.format("encountered unexpected character 0x%x between columns",
-                  in.get(((Buffer) in).position() - 1)));
+                                in.get(((Buffer) in).position() - 1)));
 
             }
           }

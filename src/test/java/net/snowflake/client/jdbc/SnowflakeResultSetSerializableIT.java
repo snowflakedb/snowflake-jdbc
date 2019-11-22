@@ -624,14 +624,14 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
 
       statement.execute(
           "create or replace table table_basic " +
-              " (int_c int, string_c string(128))");
+          " (int_c int, string_c string(128))");
 
       int rowCount = 100000;
       statement.execute(
           "insert into table_basic select " +
-              "seq4(), " +
-              "'arrow_1234567890arrow_1234567890arrow_1234567890arrow_1234567890'" +
-              " from table(generator(rowcount=>" + rowCount + "))");
+          "seq4(), " +
+          "'arrow_1234567890arrow_1234567890arrow_1234567890arrow_1234567890'" +
+          " from table(generator(rowcount=>" + rowCount + "))");
 
       int testCount = 5;
       while (testCount-- > 0)
