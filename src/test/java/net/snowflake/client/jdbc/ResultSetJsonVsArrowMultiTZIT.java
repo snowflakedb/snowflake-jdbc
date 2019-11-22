@@ -142,11 +142,6 @@ public class ResultSetJsonVsArrowMultiTZIT extends BaseJDBCTest
       {
         assertEquals("0001-01-01", rs.getDate(1).toString());
       }
-      else if (i == cases.length - 3)
-      {
-        // TODO (SNOW-116121): This should be "0200-02-28"
-        assertEquals("0200-02-29", rs.getDate(1).toString());
-      }
       else
       {
         assertEquals(cases[i], rs.getDate(1).toString());

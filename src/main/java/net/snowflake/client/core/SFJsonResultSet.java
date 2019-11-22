@@ -23,6 +23,7 @@ import java.sql.Date;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
+import java.time.LocalDate;
 import java.util.TimeZone;
 
 /**
@@ -731,7 +732,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet
     }
     else if (Types.DATE == columnType)
     {
-      return ArrowResultUtil.getDate(Integer.parseInt((String) obj), tz, session);
+      return ArrowResultUtil.getDate(Integer.parseInt((String) obj));
     }
     // for Types.TIME and all other type, throw user error
     else

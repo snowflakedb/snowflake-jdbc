@@ -56,14 +56,19 @@ public class ArrowResultUtilTest
   {
     Random random = new Random();
     int dateBound = 50000;
-    int times = 10000;
+    int times = 100000;
     SFSession session = new SFSession();
     long start = System.currentTimeMillis();
     TimeZone tz = TimeZone.getDefault();
+    int[] days = new int[times];
     for (int i = 0; i < times; i++)
     {
-      int day = random.nextInt(dateBound) - dateBound / 2;
-      ResultUtil.getDate(Integer.toString(day), tz, session);
+      days[i] = random.nextInt(dateBound) - dateBound / 2;
+    }
+
+    for (int i = 0; i < times; i++)
+    {
+      ResultUtil.getDate(Integer.toString(days[i]), tz, session);
     }
     long duration1 = System.currentTimeMillis() - start;
 
@@ -71,11 +76,17 @@ public class ArrowResultUtilTest
     start = System.currentTimeMillis();
     for (int i = 0; i < times; i++)
     {
-      int day = random.nextInt(dateBound) - dateBound / 2;
-      ArrowResultUtil.getDate(day, tz, session);
+      ArrowResultUtil.getDate(days[i], tz, session);
     }
     long duration2 = System.currentTimeMillis() - start;
-    System.out.println(duration1 + " " + duration2);
+
+    start = System.currentTimeMillis();
+    for (int i = 0; i < times; i++)
+    {
+      ArrowResultUtil.getDate(days[i]);
+    }
+    long duration3 = System.currentTimeMillis() - start;
+    System.out.println(duration1 + " " + duration2 + " " + duration3);
   }
 
   @Test
