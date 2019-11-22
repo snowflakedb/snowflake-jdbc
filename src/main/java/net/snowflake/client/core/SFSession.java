@@ -529,6 +529,7 @@ public class SFSession
     role = loginOutput.getSessionRole();
     warehouse = loginOutput.getSessionWarehouse();
     sessionId = loginOutput.getSessionId();
+    autoCommit.set(loginOutput.getAutoCommit());
 
     // Update common parameter values for this session
     SessionUtil.updateSfDriverParamValues(loginOutput.getCommonParams(), this);

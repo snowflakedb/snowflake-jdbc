@@ -416,9 +416,14 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection
   public void setAutoCommit(boolean isAutoCommit) throws SQLException
   {
     logger.debug("void setAutoCommit(boolean isAutoCommit)");
-    this.executeImmediate(
-        "alter session /* JDBC:SnowflakeConnectionV1.setAutoCommit*/ set autocommit=" +
-        isAutoCommit);
+    boolean currentAutoCommit = this.getAutoCommit();
+    if (isAutoCommit != currentAutoCommit)
+    {
+      sfSession.setAutoCommit(isAutoCommit);
+      this.executeImmediate(
+          "alter session /* JDBC:SnowflakeConnectionV1.setAutoCommit*/ set autocommit=" +
+          isAutoCommit);
+    }
   }
 
   @Override
