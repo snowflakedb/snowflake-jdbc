@@ -23,6 +23,7 @@ import java.sql.ClientInfoStatus;
 import java.sql.Clob;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
+import java.sql.DriverPropertyInfo;
 import java.sql.NClob;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -72,6 +73,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection
   private String databaseVersion;
   private int databaseMajorVersion;
   private int databaseMinorVersion;
+  private List<DriverPropertyInfo> missingProperties = null;
 
 
   /**
@@ -115,6 +117,35 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection
       throw new SnowflakeSQLException(INVALID_CONNECT_STRING, url);
     }
     initialize(conStr);
+  }
+
+  public SnowflakeConnectionV1(String url, Properties info, boolean fakeConnection)
+      throws SQLException
+  {
+    SnowflakeConnectString conStr = SnowflakeConnectString.parse(url, info);
+    if (!conStr.isValid())
+    {
+      throw new SnowflakeSQLException(SqlState.CONNECTION_EXCEPTION, INVALID_CONNECT_STRING.getMessageCode(), url);
+    }
+    sfSession = new SFSession();
+    sfSession.setSnowflakeConnectionString(conStr);
+    try
+    {
+      initSessionProperties(conStr);
+      missingProperties = sfSession.checkProperties();
+    }
+    catch (SFException ex)
+    {
+      throw new SnowflakeSQLException(ex.getCause(), ex.getSqlState(),
+                                      ex.getVendorCode(), ex.getParams());
+    }
+
+    isClosed = false;
+  }
+
+  public List<DriverPropertyInfo> returnMissingProperties()
+  {
+    return missingProperties;
   }
 
   private void initialize(SnowflakeConnectString conStr)

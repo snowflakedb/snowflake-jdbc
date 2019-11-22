@@ -13,6 +13,7 @@ import java.sql.DriverManager;
 import java.sql.DriverPropertyInfo;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
+import java.util.List;
 import java.util.Properties;
 
 /**
@@ -29,8 +30,6 @@ public class SnowflakeDriver implements Driver
 
   public final static Properties EMPTY_PROPERTIES = new Properties();
   public static String implementVersion = null;
-
-  private static final DriverPropertyInfo[] EMPTY_INFO = new DriverPropertyInfo[0];
 
   static int majorVersion = 0;
   static int minorVersion = 0;
@@ -149,11 +148,26 @@ public class SnowflakeDriver implements Driver
     return minorVersion;
   }
 
+
   @Override
   public DriverPropertyInfo[] getPropertyInfo(String url, Properties info)
   throws SQLException
   {
-    return EMPTY_INFO;
+    DriverPropertyInfo[] retVal;
+    if (url == null || url.isEmpty())
+    {
+      retVal = new DriverPropertyInfo[1];
+      retVal[0] = new DriverPropertyInfo("serverURL", null);
+      return retVal;
+    }
+
+    Connection con = new SnowflakeConnectionV1(url, info, true);
+    List<DriverPropertyInfo> missingProperties = ((SnowflakeConnectionV1) con).returnMissingProperties();
+    con.close();
+
+    retVal = new DriverPropertyInfo[missingProperties.size()];
+    retVal = missingProperties.toArray(retVal);
+    return retVal;
   }
 
   @Override

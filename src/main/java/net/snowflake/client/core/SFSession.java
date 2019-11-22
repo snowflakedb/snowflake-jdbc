@@ -23,6 +23,7 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
 
 import java.security.PrivateKey;
+import java.sql.DriverPropertyInfo;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -74,6 +75,8 @@ public class SFSession
   private int databaseMinorVersion = 0;
 
   private AtomicInteger sequenceId = new AtomicInteger(0);
+
+  private List<DriverPropertyInfo> missingProperties = new ArrayList<>();
 
   /**
    * Amount of seconds a user is willing to tolerate for establishing the
@@ -659,6 +662,48 @@ public class SFSession
         throw new SFException(ErrorCode.INVALID_PROXY_PROPERTIES);
       }
     }
+  }
+
+  public List<DriverPropertyInfo> checkProperties()
+  {
+    for (SFSessionProperty property : SFSessionProperty.values())
+    {
+      if (property.isRequired() &&
+          !connectionPropertiesMap.containsKey(property))
+      {
+        missingProperties.add(new DriverPropertyInfo(property.getPropertyKey(), null));
+      }
+    }
+    if (isSnowflakeAuthenticator() || isOKTAAuthenticator())
+    {
+      // userName and password are expected for both Snowflake and Okta.
+      String userName = (String) connectionPropertiesMap.get(SFSessionProperty.USER);
+      if (Strings.isNullOrEmpty(userName))
+      {
+        missingProperties.add(new DriverPropertyInfo(SFSessionProperty.USER.getPropertyKey(), null));
+      }
+
+      String password = (String) connectionPropertiesMap.get(SFSessionProperty.PASSWORD);
+      if (Strings.isNullOrEmpty(password))
+      {
+        missingProperties.add(new DriverPropertyInfo(SFSessionProperty.PASSWORD.getPropertyKey(), null));
+      }
+    }
+
+    boolean useProxy = (boolean) connectionPropertiesMap.getOrDefault(
+        SFSessionProperty.USE_PROXY, false);
+    if (useProxy)
+    {
+      if (!connectionPropertiesMap.containsKey(SFSessionProperty.PROXY_HOST))
+      {
+        missingProperties.add(new DriverPropertyInfo(SFSessionProperty.PROXY_HOST.getPropertyKey(), null));
+      }
+      if (!connectionPropertiesMap.containsKey(SFSessionProperty.PROXY_PORT))
+      {
+        missingProperties.add(new DriverPropertyInfo(SFSessionProperty.PROXY_PORT.getPropertyKey(), null));
+      }
+    }
+    return missingProperties;
   }
 
   public String getDatabaseVersion()
@@ -1401,4 +1446,6 @@ public class SFSession
   {
     return sfConnStr;
   }
+
+
 }
