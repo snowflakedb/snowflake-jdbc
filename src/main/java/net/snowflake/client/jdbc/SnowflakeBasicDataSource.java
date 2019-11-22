@@ -60,10 +60,11 @@ public class SnowflakeBasicDataSource implements DataSource
   public Connection getConnection(String username, String password)
   throws SQLException
   {
-    properties.put("user", username);
-    if (!"SNOWFLAKE_JWT".equalsIgnoreCase(authenticator))
-    {
-      properties.put("password", password);
+    if(!"OAUTH".equalsIgnoreCase(authenticator)) { // For OAuth, no username is required
+      properties.put("user", username);
+      if (!"SNOWFLAKE_JWT".equalsIgnoreCase(authenticator)) {
+        properties.put("password", password);
+      }
     }
 
     try
@@ -191,6 +192,11 @@ public class SnowflakeBasicDataSource implements DataSource
     this.properties.put("authenticator", authenticator);
   }
 
+  public void setOauthToken(String oauthToken){
+    this.setAuthenticator("oauth");
+    this.properties.put("token", oauthToken);
+  }
+
   public String getUrl()
   {
     if (url != null)
@@ -214,8 +220,7 @@ public class SnowflakeBasicDataSource implements DataSource
 
   public void setPrivateKey(PrivateKey privateKey)
   {
-    this.authenticator = "SNOWFLAKE_JWT";
-    this.properties.put("authenticator", this.authenticator);
+    this.setAuthenticator("SNOWFLAKE_JWT");
     this.properties.put("privateKey", privateKey);
   }
 }
