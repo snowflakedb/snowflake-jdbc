@@ -605,7 +605,7 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
       resultSetSerializable.firstChunkStringData =
           rootNode.path("data").path("rowsetBase64").asText();
       resultSetSerializable.rootAllocator =
-          new RootAllocator(Integer.MAX_VALUE);
+          new RootAllocator(Long.MAX_VALUE);
     }
     else
     {
@@ -949,7 +949,7 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
     // Create below transient fields on the fly.
     if (QueryResultFormat.ARROW.equals(this.queryResultFormat))
     {
-      this.rootAllocator = new RootAllocator(Integer.MAX_VALUE);
+      this.rootAllocator = new RootAllocator(Long.MAX_VALUE);
       this.firstChunkRowset = null;
     }
     else

@@ -57,7 +57,7 @@ public class BigIntToTimestampLTZConverterTest extends BaseConverterTest
   /**
    * allocator for arrow
    */
-  private BufferAllocator allocator = new RootAllocator(Integer.MAX_VALUE);
+  private BufferAllocator allocator = new RootAllocator(Long.MAX_VALUE);
 
   private Random random = new Random();
 

@@ -53,7 +53,7 @@ public class SFArrowResultSetIT
   /**
    * allocator for arrow
    */
-  private BufferAllocator allocator = new RootAllocator(Integer.MAX_VALUE);
+  private BufferAllocator allocator = new RootAllocator(Long.MAX_VALUE);
 
   /**
    * temporary folder to store result files
@@ -86,7 +86,7 @@ public class SFArrowResultSetIT
     is.read(dataBytes, 0, dataSize);
 
     SnowflakeResultSetSerializableV1 resultSetSerializable = new SnowflakeResultSetSerializableV1();
-    resultSetSerializable.setRootAllocator(new RootAllocator(Integer.MAX_VALUE));
+    resultSetSerializable.setRootAllocator(new RootAllocator(Long.MAX_VALUE));
     resultSetSerializable.setFristChunkStringData(Base64.getEncoder().encodeToString(dataBytes));
     resultSetSerializable.setChunkFileCount(0);
 
@@ -230,7 +230,7 @@ public class SFArrowResultSetIT
     SnowflakeResultSetSerializableV1 resultSetSerializable = new SnowflakeResultSetSerializableV1();
     resultSetSerializable.setFristChunkStringData(Base64.getEncoder().encodeToString(dataBytes));
     resultSetSerializable.setChunkFileCount(chunkCount);
-    resultSetSerializable.setRootAllocator(new RootAllocator(Integer.MAX_VALUE));
+    resultSetSerializable.setRootAllocator(new RootAllocator(Long.MAX_VALUE));
     // build chunk downloader
     for (int i = 0; i < chunkCount; i++)
     {
@@ -273,7 +273,7 @@ public class SFArrowResultSetIT
 
     private int currentFileIndex;
 
-    private RootAllocator rootAllocator = new RootAllocator(Integer.MAX_VALUE);
+    private RootAllocator rootAllocator = new RootAllocator(Long.MAX_VALUE);
 
     MockChunkDownloader(List<File> resultFileNames)
     {
