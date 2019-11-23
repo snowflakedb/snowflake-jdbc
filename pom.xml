@@ -1060,6 +1060,9 @@
                     <logback.configurationFile>
                       ${basedir}/src/test/resources/logback-test.xml
                     </logback.configurationFile>
+                    <io.netty.tryReflectionSetAccessible>
+                      true
+                    </io.netty.tryReflectionSetAccessible>
                   </systemPropertyVariables>
                 </configuration>
               </execution>
