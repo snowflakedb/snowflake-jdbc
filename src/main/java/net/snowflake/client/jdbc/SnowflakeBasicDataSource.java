@@ -3,6 +3,7 @@ package net.snowflake.client.jdbc;
 import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
+import org.apache.http.auth.AUTH;
 
 import javax.sql.DataSource;
 import java.io.PrintWriter;
@@ -18,6 +19,8 @@ import java.util.logging.Logger;
  */
 public class SnowflakeBasicDataSource implements DataSource
 {
+  private final static String AUTHENTICATOR_SNOWFLAKE_JWT = "SNOWFLAKE_JWT";
+  private final static String AUTHENTICATOR_OAUTH = "OAUTH";
   private String url;
 
   private String serverName;
@@ -60,10 +63,10 @@ public class SnowflakeBasicDataSource implements DataSource
   public Connection getConnection(String username, String password)
   throws SQLException
   {
-    if (!"OAUTH".equalsIgnoreCase(authenticator))
+    if (!AUTHENTICATOR_OAUTH.equalsIgnoreCase(authenticator))
     { // For OAuth, no username is required
       properties.put("user", username);
-      if (!"SNOWFLAKE_JWT".equalsIgnoreCase(authenticator))
+      if (!AUTHENTICATOR_SNOWFLAKE_JWT.equalsIgnoreCase(authenticator))
       {
         properties.put("password", password);
       }
@@ -196,7 +199,7 @@ public class SnowflakeBasicDataSource implements DataSource
 
   public void setOauthToken(String oauthToken)
   {
-    this.setAuthenticator("oauth");
+    this.setAuthenticator(AUTHENTICATOR_OAUTH);
     this.properties.put("token", oauthToken);
   }
 
@@ -223,7 +226,7 @@ public class SnowflakeBasicDataSource implements DataSource
 
   public void setPrivateKey(PrivateKey privateKey)
   {
-    this.setAuthenticator("SNOWFLAKE_JWT");
+    this.setAuthenticator(AUTHENTICATOR_SNOWFLAKE_JWT);
     this.properties.put("privateKey", privateKey);
   }
 }
