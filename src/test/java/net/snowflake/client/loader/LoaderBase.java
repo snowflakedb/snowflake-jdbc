@@ -34,6 +34,9 @@ public class LoaderBase
         + "C4 timestamp, "
         + "C5 variant)",
         LoaderIT.TARGET_TABLE_NAME));
+
+    testConnection.createStatement().execute(
+        "alter session set JDBC_QUERY_RESULT_FORMAT='ARROW', QUERY_RESULT_FORMAT='ARROW'");
   }
 
   @AfterClass
