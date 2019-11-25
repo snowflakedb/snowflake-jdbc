@@ -3,6 +3,8 @@ set -o pipefail
 
 if [[ -n "$SNOWFLAKE_AZURE" ]]; then
 	openssl aes-256-cbc -k "$super_azure_secret_password" -in parameters_az.json.enc -out parameters.json -d
+elif [[ -n "$SNOWFLAKE_GCP" ]]; then
+	openssl aes-256-cbc -k "$super_gcp_secret_password" -in parameters_gcp.json.enc -out parameters.json -d
 else
 	openssl aes-256-cbc -k "$super_secret_password" -in parameters.json.enc -out parameters.json -d
 fi

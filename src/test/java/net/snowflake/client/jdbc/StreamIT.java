@@ -4,7 +4,7 @@
 package net.snowflake.client.jdbc;
 
 import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningOnTestaccount;
+import net.snowflake.client.RunningOnGCPOrTestaccount;
 import net.snowflake.client.category.TestCategoryOthers;
 import org.apache.commons.io.IOUtils;
 import org.junit.Test;
@@ -89,7 +89,7 @@ public class StreamIT extends BaseJDBCTest
    * @throws Throwable if any error occurs.
    */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTestaccount.class)
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGCPOrTestaccount.class)
   public void testDownloadStream() throws Throwable
   {
     final String DEST_PREFIX = TEST_UUID + "/testUploadStream";
