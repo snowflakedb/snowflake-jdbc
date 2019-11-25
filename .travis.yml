@@ -22,6 +22,12 @@ matrix:
     - TEST_CATEGORY=TestCategoryArrow
   - os: linux
     dist: trusty
+    jdk: oraclejdk9
+    env:
+    - SNOWFLAKE_GCP=true
+    - TEST_CATEGORY=TestCategoryArrow
+  - os: linux
+    dist: trusty
     jdk: oraclejdk8
     env:
     - JACOCO_COVERAGE=true
@@ -39,6 +45,12 @@ matrix:
     - TEST_CATEGORY=TestCategoryOthers
   - os: linux
     dist: trusty
+    jdk: oraclejdk9
+    env:
+    - SNOWFLAKE_GCP=true
+    - TEST_CATEGORY=TestCategoryOthers
+  - os: linux
+    dist: trusty
     jdk: oraclejdk8
     env:
     - JACOCO_COVERAGE=true
@@ -53,6 +65,12 @@ matrix:
     jdk: oraclejdk9
     env:
     - SNOWFLAKE_AZURE=true
+    - TEST_CATEGORY=TestCategoryCore
+  - os: linux
+    dist: trusty
+    jdk: oraclejdk9
+    env:
+    - SNOWFLAKE_GCP=true
     - TEST_CATEGORY=TestCategoryCore
   - os: linux
     dist: trusty
@@ -70,6 +88,12 @@ matrix:
     jdk: oraclejdk9
     env:
     - SNOWFLAKE_AZURE=true
+    - TEST_CATEGORY=TestCategoryLoader
+  - os: linux
+    dist: trusty
+    jdk: oraclejdk9
+    env:
+    - SNOWFLAKE_GCP=true
     - TEST_CATEGORY=TestCategoryLoader
 script:
 - "./scripts/run_travis.sh"
@@ -79,3 +103,4 @@ env:
   global:
   - secure: iGHmFKV/SMG/4iDl8pA61125d57yW8pIdU+UuR0X3wSF/fQi4X8SVEDPKAnKVcxrua05noF4zHMXBNCKaCD1Yqw87AlluhJWJ+1ZPZRk8amU7+vn4iCPpZrxE5t1ImxkTb49ATnH+YGzxVTnP7dW4GF+fQ0vJ5BPSTHFEUiBNZoybzNCqGY8pug4ArX4Mg0+d0d+JrQwH+x084OVgLefvAfG1/3hF0wO5Oc3enACmlnbPKVphoEyFLZZfetv/1eVi+svD9lpUiOLlTFC56ft5gfrDaOAiZQu3Xon6rEr7B+C3bQDVdU9+nV7s0fq5pq24qoyYfroVW0aExvlGi6cMcY59tWcPAL3RJ/WmFTB5C8EHx9CitEcr0tfyyS73DDNM53u8me9DL78bMTx+g/SZfrxbBDKjCoSgSiiFsYMeGua6e3jyX/xFNn8C3HLbM6xLQvVwn96ENFZxZN+89cUbu3DYB/e6Qa8yC9Kgxkplk/kRqII1t9AG+VRSIAyPJQsLWaGY6sx+xFgYX+CRQZyV7X0AF1FDY5M/eSFC2adTYchLdIKhyblJggTQKVFN3XQtiT+1Oz6U1HafXkEcKhW8VrYQDwSM9LAD0QDCxeHVuP/vDo7re5fHJ0rZiaW6fINvsX0xs7tWZxvWZmz2L5Tw4fGroczxwdnzegbWmxwHtw=
   - secure: JZgTiQ/3GOvwyy9bghKFZJrgfElRmLIK9rvjfkOCrQRY6qmYUt/6MgPKxky2+pYy8s9blYLpdKWLQ80XgcE57z34LFx1/cLRGc2dDJ8J0upEiS+FEll+Ezv60WaBnvtwZDEHh12EhAltTV65/Il1Dt4PoKK8/kLFOi7LFzEeQEdiLhf07BaRTDlKggQteAqSzW1QhOZehrp6dIliNX6u2KfqDsia1gp4/o4+fEfzOFuIOFoug2wIR0ppJfBS5Hb9vSTTX0FDFeuyc/rfRl/DotTNIsTMoiLIwiU7peX0EPEysCYvqktpMZ87ERhYrIk/4qZGkMI+2af1SIfGIflZFmwkYaD9tP4o45LVnEi4ywtoT2/Gv2MEdTapXOZv+I4KGAxOIbicoz5JQ5tm72ETYYY+PSl6ohsAuNteCZHoUtk15WPihwWNWa2dvYOu5wiuFlJodm+cdGlsXQgKK8l+QovAiO2MSH8K9/1uDuIbOgmqCApXamEGzYijfHGuXVoRqvKDM0eplmbGdwPclzB19mtSwEKxllf6n4zbeIMzfLuvtgcKrmObbRkLMk6Tly2xxS4v982/+H4dl0YexXx/sxSR9qT5zOljk2quAWfM5pAe1zupuRThUev14zPofB676RhLau9oGd7UiBD4wmpA814Y2Nwlv/POsycXqHmaQlo=
+  - secure: xrNQNvQXkWNDTXSy4DaUQ9MuhvD3awmH1AwZR71Jt05DaZ6Mc7d2Wz/iiY/2Dub7+MXoSonnnIR7a+ZDWbu5sKm0VN3GNP/ULfJhH56g5oZTiCUPHDkfwzGez20c14ufsGQYJj6U+C8MQivzDJGMTsRDJ5WgUQ3ymIowoTtaDAOSNbvP080RihVFTXInmdJOEy5qBaYDyW9tPPw24fiLzm0wI5yUKX9cJGYdBu7tXfkk5eZSc0bBq6mjlND9XQz/PVQAKlrFqeMohlzVx3UXEH/1flqRmVIDOAdrtelpuLZz44BL1KuLZCUg6+ZDOK5PqVHKcleDv1HERp+uSo0fi5wDJe9fZHXLk1zR/JFvPj9cvQG5TLbWyk0A3myAtXU9s3w+Y7VS5GK0sJqcktXiBktMNtdeQmNcfBzUQHpHneuFLyCK4Tp8q2eSGJ4F0IdUPy5LKIv4ipQoES8rFBz5cxH3jxCZrhw7HuHobV04VOwe7oof079NrX+MIuWxQgy09tI/9WuorWqrfthYsL6WlJ19TUid30LpHoeko0uuhYvv/D1V5qLAOAhIBFuatCv9zHzT2ywMftBQ+7oBU+U/he5xJlqgg5DWAyqJf+7klRYNQZ9FUFND8Uq0XSj2ASra2asiTD+wCcGswKCFq7VIOqiiNXXENBaAAqK/CyeThQ8=
