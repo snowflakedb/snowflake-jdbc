@@ -1049,8 +1049,8 @@ public class SnowflakeDriverIT extends BaseJDBCTest
 
     try
     {
-      // copy info from 1 file to another and continue doubling file size until we reach ~300MB, which is a large file
-      for (int i = 0; i < 11; i++)
+      // copy info from 1 file to another and continue doubling file size until we reach ~1.5GB, which is a large file
+      for (int i = 0; i < 12; i++)
       {
         copyContentFrom(largeTempFile, largeTempFile2);
         copyContentFrom(largeTempFile2, largeTempFile);
