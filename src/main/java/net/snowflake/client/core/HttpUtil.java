@@ -648,7 +648,7 @@ public class HttpUtil
    * configure custom proxy properties from connectionPropertiesMap
    */
   public static void configureCustomProxyProperties(
-      Map<SFSessionProperty, Object> connectionPropertiesMap)
+      Map<SFSessionProperty, Object> connectionPropertiesMap) throws SnowflakeSQLException
   {
     if (connectionPropertiesMap.containsKey(SFSessionProperty.USE_PROXY))
     {
@@ -660,9 +660,17 @@ public class HttpUtil
     {
       proxyHost =
           (String) connectionPropertiesMap.get(SFSessionProperty.PROXY_HOST);
-      proxyPort =
-          Integer.parseInt(
-              connectionPropertiesMap.get(SFSessionProperty.PROXY_PORT).toString());
+      try
+      {
+        proxyPort =
+            Integer.parseInt(
+                connectionPropertiesMap.get(SFSessionProperty.PROXY_PORT).toString());
+      }
+      catch (NumberFormatException | NullPointerException e)
+      {
+        throw new SnowflakeSQLException(ErrorCode.INVALID_PROXY_PROPERTIES, "Could not parse port number");
+      }
+
       proxyUser =
           (String) connectionPropertiesMap.get(SFSessionProperty.PROXY_USER);
       proxyPassword =
