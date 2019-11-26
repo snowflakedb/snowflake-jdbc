@@ -1,6 +1,7 @@
 package net.snowflake.client.jdbc;
 
 import net.snowflake.client.category.TestCategoryOthers;
+import net.snowflake.common.core.SqlState;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -15,11 +16,13 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Properties;
 
+import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertTrue;
+import static junit.framework.TestCase.fail;
 import static net.snowflake.client.AbstractDriverIT.getFullPathFileInResource;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertTrue;
 
 @Category(TestCategoryOthers.class)
 public class CustomProxyIT
@@ -208,6 +211,74 @@ public class CustomProxyIT
         "&nonProxyHosts=*.foo.com%7Clocalhost&useProxy=true";
     ;
     runAzureProxyConnection(connectionUrl, false);
+  }
+
+  @Test
+  @Ignore
+  public void testProxyConnectionWithoutProxyPortOrHost()
+  throws ClassNotFoundException, SQLException
+  {
+    // proxyPort is empty
+    String connectionUrl =
+        "jdbc:snowflake://aztestaccount.east-us-2.azure.snowflakecomputing.com/?tracing=ALL" +
+        "&proxyHost=localhost&proxyPort=" +
+        "&proxyUser=testuser1&proxyPassword=test" +
+        "&useProxy=true";
+    try
+    {
+      runAzureProxyConnection(connectionUrl, false);
+      fail();
+    }
+    catch (SQLException e)
+    {
+      assertEquals(SqlState.CONNECTION_EXCEPTION, e.getSQLState());
+    }
+    // proxyPort is non-integer value
+    connectionUrl =
+        "jdbc:snowflake://aztestaccount.east-us-2.azure.snowflakecomputing.com/?tracing=ALL" +
+        "&proxyHost=localhost&proxyPort=cheese" +
+        "&proxyUser=testuser1&proxyPassword=test" +
+        "&useProxy=true";
+    try
+    {
+      runAzureProxyConnection(connectionUrl, false);
+      fail();
+    }
+    catch (SQLException e)
+    {
+      assertEquals(SqlState.CONNECTION_EXCEPTION, e.getSQLState());
+    }
+
+    // proxyHost is empty, proxyPort is valid
+    connectionUrl =
+        "jdbc:snowflake://aztestaccount.east-us-2.azure.snowflakecomputing.com/?tracing=ALL" +
+        "&proxyHost=&proxyPort=3128" +
+        "&proxyUser=testuser1&proxyPassword=test" +
+        "&useProxy=true";
+    try
+    {
+      runAzureProxyConnection(connectionUrl, false);
+      fail();
+    }
+    catch (SQLException e)
+    {
+      assertEquals(SqlState.CONNECTION_EXCEPTION, e.getSQLState());
+    }
+
+    // proxyPort and proxyHost are empty, but username and password are specified
+    connectionUrl =
+        "jdbc:snowflake://aztestaccount.east-us-2.azure.snowflakecomputing.com/?tracing=ALL" +
+        "&proxyUser=testuser1&proxyPassword=test" +
+        "&useProxy=true";
+    try
+    {
+      runAzureProxyConnection(connectionUrl, false);
+      fail();
+    }
+    catch (SQLException e)
+    {
+      assertEquals(SqlState.CONNECTION_EXCEPTION, e.getSQLState());
+    }
   }
 
   @Test

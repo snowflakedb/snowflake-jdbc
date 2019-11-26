@@ -12,25 +12,27 @@ import net.snowflake.client.core.MetaDataOfBinds;
 import net.snowflake.client.core.OCSPMode;
 import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.QueryResultFormat;
+import net.snowflake.client.core.ResultUtil;
 import net.snowflake.client.core.SFArrowResultSet;
 import net.snowflake.client.core.SFBaseResultSet;
 import net.snowflake.client.core.SFResultSet;
 import net.snowflake.client.core.SFResultSetMetaData;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.core.SFSessionProperty;
+import net.snowflake.client.core.SFStatement;
 import net.snowflake.client.core.SFStatementType;
 import net.snowflake.client.core.SessionUtil;
 import net.snowflake.client.jdbc.telemetry.NoOpTelemetryClient;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
 import net.snowflake.client.log.ArgSupplier;
-import net.snowflake.common.core.SFBinaryFormat;
-
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
+import net.snowflake.common.core.SFBinaryFormat;
+import net.snowflake.common.core.SnowflakeDateTimeFormat;
+import org.apache.arrow.memory.RootAllocator;
 
-import java.io.Serializable;
 import java.io.IOException;
-
+import java.io.Serializable;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -41,11 +43,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.TimeZone;
-
-import net.snowflake.client.core.ResultUtil;
-import net.snowflake.client.core.SFStatement;
-import net.snowflake.common.core.SnowflakeDateTimeFormat;
-import org.apache.arrow.memory.RootAllocator;
 
 import static net.snowflake.client.core.Constants.GB;
 import static net.snowflake.client.core.Constants.MB;
@@ -1068,7 +1065,7 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
    *
    * @param info proxy server properties.
    */
-  private void setupProxyPropertiesIfNecessary(Properties info)
+  private void setupProxyPropertiesIfNecessary(Properties info) throws SnowflakeSQLException
   {
     // Setup proxy properties.
     if (info != null && info.size() > 0 &&

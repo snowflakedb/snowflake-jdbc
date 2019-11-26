@@ -675,10 +675,13 @@ public class SFSession
         SFSessionProperty.USE_PROXY, false);
     if (useProxy)
     {
-      if (!connectionPropertiesMap.containsKey(SFSessionProperty.PROXY_HOST)
-          || !connectionPropertiesMap.containsKey(SFSessionProperty.PROXY_PORT))
+      if (!connectionPropertiesMap.containsKey(SFSessionProperty.PROXY_HOST) ||
+          connectionPropertiesMap.get(SFSessionProperty.PROXY_HOST) == null ||
+          ((String) connectionPropertiesMap.get(SFSessionProperty.PROXY_HOST)).isEmpty() ||
+          !connectionPropertiesMap.containsKey(SFSessionProperty.PROXY_PORT) ||
+          connectionPropertiesMap.get(SFSessionProperty.PROXY_HOST) == null)
       {
-        throw new SFException(ErrorCode.INVALID_PROXY_PROPERTIES);
+        throw new SFException(ErrorCode.INVALID_PROXY_PROPERTIES, "Both proxy host and port values are needed.");
       }
     }
   }
