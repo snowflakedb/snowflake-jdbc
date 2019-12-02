@@ -1,3 +1,19 @@
+**JDBC Driver 3.11.0**
+
+- \| SNOW-84438 | GA: ARROW format support, to be enabled in the next few weeks
+- \| SNOW-105117 | Fix JDBC Failures retrieving results on GCP
+- \| SNOW-119801 | Upgrade JDBC's arrow lib to 0.15.1
+- \| SNOW-115434 | Added in writeable check on file cache and change to the home directory if not writable.
+- \| SNOW-116121 | Fix JDBC result set produces wrong result for date 0200-02-28
+- \| SNOW-98693 | Implement DriverPropertyInfo
+- \| SNOW-70240 | Add connection parameter helps to the JDBC command line
+- \| SNOW-65944 | Connection.supportsTransactionIsolationLevel() returned not supported
+- \| SNOW-115735 | Reduce alter session set autocommit
+- \| SNOW-75486 | Add support of keypair parameters in JDBC connection string
+- \| SNOW-119059 | Improve error message when required proxy parameter is missing
+- \| SNOW-120495 | Add support for OAuth token to SnowflakeBasicDataSource #194
+- \| SNOW-70240  | Add connection parameter helps to the JDBC command line
+
 **JDBC Driver 3.10.3**
 
 - \| SNOW-110357 | Fix CVE-2019-16942
