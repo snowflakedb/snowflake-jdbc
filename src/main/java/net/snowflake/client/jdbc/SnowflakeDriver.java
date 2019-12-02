@@ -15,7 +15,6 @@ import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.util.List;
 import java.util.Properties;
-import java.util.logging.Logger;
 
 /**
  * JDBC Driver implementation of Snowflake for production.
@@ -192,6 +191,7 @@ public class SnowflakeDriver implements Driver
     {
       retVal = new DriverPropertyInfo[1];
       retVal[0] = new DriverPropertyInfo("serverURL", null);
+      retVal[0].description = "server URL in form of <protocol>://<host or domain>:<port number>/<path of resource>";
       return retVal;
     }
 

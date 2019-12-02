@@ -233,7 +233,6 @@ public class SnowflakeDriverIT extends BaseJDBCTest
   @Test
   public void testGetPropertyInfo() throws SQLException
   {
-
     // Test with blank URL and no properties. ServerURL is needed.
     String url = "";
     Properties props = new Properties();
@@ -241,13 +240,18 @@ public class SnowflakeDriverIT extends BaseJDBCTest
     DriverPropertyInfo[] info = driver.getPropertyInfo(url, props);
     assertEquals(1, info.length);
     assertEquals("serverURL", info[0].name);
+    assertEquals("server URL in form of <protocol>://<host or domain>:<port number>/<path of resource>",
+                 info[0].description);
 
     // Test with URL that requires username and password.
     url = "jdbc:snowflake://snowflake.reg.local:8082";
     info = driver.getPropertyInfo(url, props);
     assertEquals(2, info.length);
     assertEquals("user", info[0].name);
+    assertEquals("username for account",
+                 info[0].description);
     assertEquals("password", info[1].name);
+    assertEquals("password for account", info[1].description);
 
     // Add username and try again; get password requirement back
     props.put("user", "snowman");
@@ -259,7 +263,9 @@ public class SnowflakeDriverIT extends BaseJDBCTest
     info = driver.getPropertyInfo(url, props);
     assertEquals(2, info.length);
     assertEquals("proxyHost", info[0].name);
+    assertEquals("proxy host name", info[0].description);
     assertEquals("proxyPort", info[1].name);
+    assertEquals("proxy port; should be an integer", info[1].description);
 
     props.put("proxyHost", "dummyHost");
     props.put("proxyPort", "dummyPort");
