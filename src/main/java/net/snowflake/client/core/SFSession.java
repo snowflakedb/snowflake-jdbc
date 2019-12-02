@@ -686,6 +686,13 @@ public class SFSession
     }
   }
 
+  private DriverPropertyInfo addNewDriverProperty(String name, String description)
+  {
+    DriverPropertyInfo info = new DriverPropertyInfo(name, null);
+    info.description = description;
+    return info;
+  }
+
   public List<DriverPropertyInfo> checkProperties()
   {
     for (SFSessionProperty property : SFSessionProperty.values())
@@ -693,7 +700,7 @@ public class SFSession
       if (property.isRequired() &&
           !connectionPropertiesMap.containsKey(property))
       {
-        missingProperties.add(new DriverPropertyInfo(property.getPropertyKey(), null));
+        missingProperties.add(addNewDriverProperty(property.getPropertyKey(), null));
       }
     }
     if (isSnowflakeAuthenticator() || isOKTAAuthenticator())
@@ -702,13 +709,14 @@ public class SFSession
       String userName = (String) connectionPropertiesMap.get(SFSessionProperty.USER);
       if (Strings.isNullOrEmpty(userName))
       {
-        missingProperties.add(new DriverPropertyInfo(SFSessionProperty.USER.getPropertyKey(), null));
+        missingProperties.add(addNewDriverProperty(SFSessionProperty.USER.getPropertyKey(), "username for account"));
       }
 
       String password = (String) connectionPropertiesMap.get(SFSessionProperty.PASSWORD);
       if (Strings.isNullOrEmpty(password))
       {
-        missingProperties.add(new DriverPropertyInfo(SFSessionProperty.PASSWORD.getPropertyKey(), null));
+        missingProperties.add(addNewDriverProperty(SFSessionProperty.PASSWORD.getPropertyKey(), "password for " +
+                                                                                                "account"));
       }
     }
 
@@ -718,11 +726,12 @@ public class SFSession
     {
       if (!connectionPropertiesMap.containsKey(SFSessionProperty.PROXY_HOST))
       {
-        missingProperties.add(new DriverPropertyInfo(SFSessionProperty.PROXY_HOST.getPropertyKey(), null));
+        missingProperties.add(addNewDriverProperty(SFSessionProperty.PROXY_HOST.getPropertyKey(), "proxy host name"));
       }
       if (!connectionPropertiesMap.containsKey(SFSessionProperty.PROXY_PORT))
       {
-        missingProperties.add(new DriverPropertyInfo(SFSessionProperty.PROXY_PORT.getPropertyKey(), null));
+        missingProperties.add(addNewDriverProperty(SFSessionProperty.PROXY_PORT.getPropertyKey(), "proxy port; " +
+                                                    "should be an integer"));
       }
     }
     return missingProperties;
