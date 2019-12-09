@@ -1663,6 +1663,15 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
     assertEquals("C\\1\\\\11", resultSet.getString("COLUMN_NAME"));
     assertFalse(resultSet.next());
 
+    // Underscore can match to any character, so check that table comes back when underscore is not escaped.
+    String partiallyEscapedTable1 = "TEST" + escapeChar + "\\1" + escapeChar + "\\_1";
+    resultSet = metaData.getColumns(database, schema, partiallyEscapedTable1, null);
+    assertTrue(resultSet.next());
+    assertEquals("C%1", resultSet.getString("COLUMN_NAME"));
+    assertTrue(resultSet.next());
+    assertEquals("C\\1\\\\11", resultSet.getString("COLUMN_NAME"));
+    assertFalse(resultSet.next());
+
     String escapedTable2 = "TEST" + escapeChar + "_1" + escapeChar + "_1";
     String escapedSchema = "SPECIAL%" + escapeChar + "_" + escapeChar + "\\SCHEMA";
     resultSet = metaData.getColumns(database, escapedSchema, escapedTable2, null);
