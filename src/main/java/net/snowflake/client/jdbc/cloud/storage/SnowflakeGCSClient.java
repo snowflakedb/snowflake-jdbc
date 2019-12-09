@@ -518,7 +518,8 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient
           {
             if (inputStream != null)
             {
-              EncryptionProvider.decryptStream(inputStream, key, iv, this.encMat);
+              inputStream = EncryptionProvider.decryptStream(inputStream, key, iv, this.encMat);
+              return inputStream;
             }
           }
           catch (Exception ex)
