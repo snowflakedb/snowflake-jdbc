@@ -150,6 +150,8 @@ public class SFSession
 
   private boolean resultColumnCaseInsensitive = false;
 
+  private boolean preparedStatementLogging = false;
+
   // database that current session is on
   private String database;
 
@@ -1121,6 +1123,16 @@ public class SFSession
     this.autoCommit.set(autoCommit);
   }
 
+  public boolean getPreparedStatementLogging()
+  {
+    return this.preparedStatementLogging;
+  }
+
+  public void setPreparedStatementLogging(boolean value)
+  {
+    this.preparedStatementLogging = value;
+  }
+
   public void setResultColumnCaseInsensitive(boolean resultColumnCaseInsensitive)
   {
     this.resultColumnCaseInsensitive = resultColumnCaseInsensitive;
@@ -1480,6 +1492,4 @@ public class SFSession
   {
     return sfConnStr;
   }
-
-
 }

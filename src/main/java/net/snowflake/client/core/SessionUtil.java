@@ -102,6 +102,7 @@ public class SessionUtil
       "CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY";
   public static final String CLIENT_SFSQL = "CLIENT_SFSQL";
   public static final String CLIENT_VALIDATE_DEFAULT_PARAMETERS = "CLIENT_VALIDATE_DEFAULT_PARAMETERS";
+  public static final String CLIENT_ENABLE_LOG_INFO_STATEMENT_PARAMETERS = "CLIENT_ENABLE_LOG_INFO_STATEMENT_PARAMETERS";
 
   static final String SF_HEADER_SERVICE_NAME = "X-Snowflake-Service";
 
@@ -144,6 +145,7 @@ public class SessionUtil
       "CLIENT_HONOR_CLIENT_TZ_FOR_TIMESTAMP_NTZ",
       "CLIENT_DISABLE_INCIDENTS",
       "CLIENT_SESSION_KEEP_ALIVE",
+      CLIENT_ENABLE_LOG_INFO_STATEMENT_PARAMETERS,
       CLIENT_IN_BAND_TELEMETRY_ENABLED,
       CLIENT_OUT_OF_BAND_TELEMETRY_ENABLED,
       CLIENT_STORE_TEMPORARY_CREDENTIAL,
@@ -1427,6 +1429,16 @@ public class SessionUtil
           session.setEnableHeartbeat((Boolean) entry.getValue());
         }
       }
+      else if (
+          "CLIENT_ENABLE_LOG_INFO_STATEMENT_PARAMETERS".equalsIgnoreCase(entry.getKey()))
+      {
+        boolean enableLogging = (Boolean) entry.getValue();
+        if (session != null && session.getPreparedStatementLogging() != enableLogging)
+        {
+          session.setPreparedStatementLogging(enableLogging);
+        }
+      }
+
       else if (
           "AUTOCOMMIT".equalsIgnoreCase(entry.getKey()))
       {

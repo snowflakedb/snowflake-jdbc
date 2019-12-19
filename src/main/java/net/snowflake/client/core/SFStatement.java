@@ -5,6 +5,8 @@
 package net.snowflake.client.core;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.google.api.LabelDescriptor;
+import com.nimbusds.jose.jwk.KeyType;
 import net.snowflake.client.core.BasicEvent.QueryState;
 import net.snowflake.client.core.bind.BindException;
 import net.snowflake.client.core.bind.BindUploader;
@@ -83,6 +85,8 @@ public class SFStatement
   private final Map<String, Object> statementParametersMap = new HashMap<>();
 
   final private static int MAX_STATEMENT_PARAMETERS = 1000;
+
+  final private static int MAX_BINDING_PARAMS_FOR_LOGGING = 1000;
 
   /**
    * id used in combine describe and execute
@@ -490,6 +494,48 @@ public class SFStatement
         stmtInput.setBindValues(bindValues)
             .setBindStage(null);
       }
+      if (numBinds > 0 && session.getPreparedStatementLogging())
+      {
+        if (numBinds > MAX_BINDING_PARAMS_FOR_LOGGING)
+        {
+          logger.info("Number of binds exceeds logging limit. Printing off {} binding parameters.", MAX_BINDING_PARAMS_FOR_LOGGING);
+        }
+        else
+        {
+          logger.info("Printing off {} binding parameters.", numBinds);
+        }
+        int counter = 0;
+        // if it's an array bind, print off the first few rows from each column.
+        if (BindUploader.isArrayBind(bindValues))
+        {
+          int numRowsPrinted = MAX_BINDING_PARAMS_FOR_LOGGING/bindValues.size();
+          if (numRowsPrinted <= 0) { numRowsPrinted = 1; }
+          for (Map.Entry<String, ParameterBindingDTO> entry: bindValues.entrySet())
+          {
+            List<String> bindRows = (List<String>) entry.getValue().getValue();
+            if (numRowsPrinted >= bindRows.size()) {numRowsPrinted = bindRows.size(); }
+            String rows = "[";
+            for (int i = 0; i < numRowsPrinted; i++)
+            {
+              rows += bindRows.get(i) + ", ";
+            }
+            rows += "]";
+            logger.info("Column {}: {}", entry.getKey(), rows);
+            counter += numRowsPrinted;
+            if (counter >= MAX_BINDING_PARAMS_FOR_LOGGING) { break; }
+          }
+        }
+        // not an array, just a bunch of columns
+        else
+        {
+          for (Map.Entry<String, ParameterBindingDTO> entry: bindValues.entrySet())
+          {
+            if (counter >= MAX_BINDING_PARAMS_FOR_LOGGING) { break; }
+            counter++;
+            logger.info("Column {}: {}", entry.getKey(), entry.getValue().getValue());
+          }
+        }
+      }
 
       if (canceling.get())
       {
@@ -793,8 +839,16 @@ public class SFStatement
 
     session.injectedDelay();
 
-    logger.debug("execute: {}",
-                 (ArgSupplier) () -> SecretDetector.maskSecrets(sql));
+    if (session.getPreparedStatementLogging())
+    {
+      logger.info("execute: {}",
+                  (ArgSupplier) () -> SecretDetector.maskSecrets(sql));
+    }
+    else
+    {
+      logger.debug("execute: {}",
+                  (ArgSupplier) () -> SecretDetector.maskSecrets(sql));
+    }
 
     String trimmedSql = sql.trim();
 

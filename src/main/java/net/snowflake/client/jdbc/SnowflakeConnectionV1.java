@@ -74,7 +74,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection
   private int databaseMajorVersion;
   private int databaseMinorVersion;
   private List<DriverPropertyInfo> missingProperties = null;
-
+  private boolean showStatementParameters;
 
   /**
    * Amount of milliseconds a user is willing to tolerate for network related
@@ -117,6 +117,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection
       throw new SnowflakeSQLException(INVALID_CONNECT_STRING, url);
     }
     initialize(conStr);
+
   }
 
   public SnowflakeConnectionV1(String url, Properties info, boolean fakeConnection)
@@ -169,6 +170,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection
       databaseVersion = sfSession.getDatabaseVersion();
       databaseMajorVersion = sfSession.getDatabaseMajorVersion();
       databaseMinorVersion = sfSession.getDatabaseMinorVersion();
+      showStatementParameters = sfSession.getPreparedStatementLogging();
     }
     catch (SFException ex)
     {
@@ -1275,6 +1277,11 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection
                                    e.getSqlState(),
                                    e.getVendorCode()));
     }
+  }
+
+  public boolean getShowStatementParameters()
+  {
+    return showStatementParameters;
   }
 
   void removeClosedStatement(Statement stmt)
