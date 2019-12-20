@@ -944,6 +944,7 @@ public class PreparedStatement1IT extends PreparedStatement0IT
   /**
    * Manual test to ensure proper log file is produced when CLIENT_ENABLE_LOG_INFO_STATEMENT_PARAMETERS is enabled.
    * Look in /tmp folder for snowflake_jdbc0.log.0 and check that it lists binding params.
+   *
    * @throws SQLException
    */
   @Test

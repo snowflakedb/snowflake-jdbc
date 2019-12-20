@@ -736,7 +736,7 @@ public class SFSession
       if (!connectionPropertiesMap.containsKey(SFSessionProperty.PROXY_PORT))
       {
         missingProperties.add(addNewDriverProperty(SFSessionProperty.PROXY_PORT.getPropertyKey(), "proxy port; " +
-                                                    "should be an integer"));
+                                                                                                  "should be an integer"));
       }
     }
     return missingProperties;

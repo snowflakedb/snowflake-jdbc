@@ -508,12 +508,18 @@ public class SFStatement
         // if it's an array bind, print off the first few rows from each column.
         if (BindUploader.isArrayBind(bindValues))
         {
-          int numRowsPrinted = MAX_BINDING_PARAMS_FOR_LOGGING/bindValues.size();
-          if (numRowsPrinted <= 0) { numRowsPrinted = 1; }
-          for (Map.Entry<String, ParameterBindingDTO> entry: bindValues.entrySet())
+          int numRowsPrinted = MAX_BINDING_PARAMS_FOR_LOGGING / bindValues.size();
+          if (numRowsPrinted <= 0)
+          {
+            numRowsPrinted = 1;
+          }
+          for (Map.Entry<String, ParameterBindingDTO> entry : bindValues.entrySet())
           {
             List<String> bindRows = (List<String>) entry.getValue().getValue();
-            if (numRowsPrinted >= bindRows.size()) {numRowsPrinted = bindRows.size(); }
+            if (numRowsPrinted >= bindRows.size())
+            {
+              numRowsPrinted = bindRows.size();
+            }
             String rows = "[";
             for (int i = 0; i < numRowsPrinted; i++)
             {
@@ -522,15 +528,21 @@ public class SFStatement
             rows += "]";
             logger.info("Column {}: {}", entry.getKey(), rows);
             counter += numRowsPrinted;
-            if (counter >= MAX_BINDING_PARAMS_FOR_LOGGING) { break; }
+            if (counter >= MAX_BINDING_PARAMS_FOR_LOGGING)
+            {
+              break;
+            }
           }
         }
         // not an array, just a bunch of columns
         else
         {
-          for (Map.Entry<String, ParameterBindingDTO> entry: bindValues.entrySet())
+          for (Map.Entry<String, ParameterBindingDTO> entry : bindValues.entrySet())
           {
-            if (counter >= MAX_BINDING_PARAMS_FOR_LOGGING) { break; }
+            if (counter >= MAX_BINDING_PARAMS_FOR_LOGGING)
+            {
+              break;
+            }
             counter++;
             logger.info("Column {}: {}", entry.getKey(), entry.getValue().getValue());
           }
@@ -847,7 +859,7 @@ public class SFStatement
     else
     {
       logger.debug("execute: {}",
-                  (ArgSupplier) () -> SecretDetector.maskSecrets(sql));
+                   (ArgSupplier) () -> SecretDetector.maskSecrets(sql));
     }
 
     String trimmedSql = sql.trim();

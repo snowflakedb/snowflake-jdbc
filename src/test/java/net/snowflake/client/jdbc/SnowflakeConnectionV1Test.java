@@ -142,7 +142,7 @@ public class SnowflakeConnectionV1Test
     prop = new Properties();
     prop.put("user", "snowman");
     conStr = SnowflakeConnectString.parse("jdbc:snowflake://test-account-1234567890qwertyupalsjhfg" +
-                                              ".global.snowflakecomputing.com:8080/?prop1=value", prop);
+                                          ".global.snowflakecomputing.com:8080/?prop1=value", prop);
     result = SnowflakeConnectionV1.mergeProperties(conStr);
 
     assertThat(result.size(), is(4));
