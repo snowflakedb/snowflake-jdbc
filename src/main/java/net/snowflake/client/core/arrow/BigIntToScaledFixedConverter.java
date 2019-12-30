@@ -42,6 +42,10 @@ public class BigIntToScaledFixedConverter extends BigIntToFixedConverter
     {
       return 0;
     }
+    if (sfScale > 9)
+    {
+      return toBigDecimal(index).doubleValue();
+    }
     int scale = sfScale;
     double res = getLong(index);
     res = res / ArrowResultUtil.powerOfTen(scale);
