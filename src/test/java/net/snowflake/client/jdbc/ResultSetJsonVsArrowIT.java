@@ -12,6 +12,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -1495,6 +1496,7 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest
 
   /**
    * compare behaviors (json vs arrow)
+   * decimal values stored in bigInt
    * <p>
    * VALUE_IS_NULL      Yes                                                 No
    * -----------------------------------------------------------------------------
@@ -1535,6 +1537,7 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest
     ResultSet rs = con.createStatement().executeQuery("select * from " + table);
 
     double delta = 0.00000000000000000000000000000000000001;
+    ByteBuffer byteBuf = ByteBuffer.allocate(BigIntVector.TYPE_WIDTH);
     int columnType = rs.getMetaData().getColumnType(1);
     assertEquals(Types.DECIMAL, columnType);
 
@@ -1602,7 +1605,7 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest
       }
       try
       {
-        assertArrayEquals(cases[i].toBigInteger().toByteArray(), rs.getBytes(1));
+        assertArrayEquals(byteBuf.putLong(0, longCompacts[i]).array(), rs.getBytes(1));
       }
       catch (Exception e)
       {
