@@ -687,7 +687,7 @@ public class ConnectionIT extends BaseJDBCTest
     }
     catch (SQLException e)
     {
-      assertEquals((int) ErrorCode.INTERNAL_ERROR.getMessageCode(), e.getErrorCode());
+      assertEquals((int) ErrorCode.INVALID_OR_UNSUPPORTED_PRIVATE_KEY.getMessageCode(), e.getErrorCode());
     }
     connection.close();
 
@@ -726,7 +726,7 @@ public class ConnectionIT extends BaseJDBCTest
     }
     catch (SQLException e)
     {
-      assertEquals((int) ErrorCode.INTERNAL_ERROR.getMessageCode(), e.getErrorCode());
+      assertEquals((int) ErrorCode.INVALID_OR_UNSUPPORTED_PRIVATE_KEY.getMessageCode(), e.getErrorCode());
     }
     connection.close();
 
