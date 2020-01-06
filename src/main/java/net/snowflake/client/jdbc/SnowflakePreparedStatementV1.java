@@ -79,6 +79,9 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
       ERROR_CODE_FORMAT_ARGUMENT_NOT_STRING));
 
   private final String sql;
+
+  private boolean showStatementParameters;
+
   /**
    * statement and result metadata from describe phase
    */
@@ -127,6 +130,7 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
     super(connection, resultSetType, resultSetConcurrency, resultSetHoldability);
     this.sql = sql;
     this.statementMetaData = SFStatementMetaData.emptyMetaData();
+    showStatementParameters = connection.getShowStatementParameters();
   }
 
   /**
@@ -166,8 +170,14 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
   @Override
   public ResultSet executeQuery() throws SQLException
   {
-    logger.debug("executeQuery()");
-
+    if (showStatementParameters)
+    {
+      logger.info("executeQuery()");
+    }
+    else
+    {
+      logger.debug("executeQuery()");
+    }
     return executeQueryInternal(sql, parameterBindings);
   }
 

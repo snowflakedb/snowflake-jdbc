@@ -129,9 +129,9 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   // Wildcard regex
   private String unescapeChars(String escapedString)
   {
-    String unescapedString = escapedString.replace("\\\\", "\\");
-    unescapedString = unescapedString.replace("\\_", "_");
+    String unescapedString = escapedString.replace("\\_", "_");
     unescapedString = unescapedString.replace("\\%", "%");
+    unescapedString = unescapedString.replace("\\\\", "\\");
     return unescapedString;
   }
 
