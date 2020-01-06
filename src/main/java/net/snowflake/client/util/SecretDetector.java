@@ -92,11 +92,7 @@ public class SecretDetector
    */
   public static boolean isSensitive(String name)
   {
-    if (SENSITIVE_NAME_SET.contains(name.toLowerCase()))
-    {
-      return true;
-    }
-    return false;
+    return SENSITIVE_NAME_SET.contains(name.toLowerCase());
   }
 
   /**
@@ -109,9 +105,6 @@ public class SecretDetector
    */
   private static List<SecretRange> getAWSSecretPos(String text)
   {
-    // log before and after in case this is causing StackOverflowError
-    LOGGER.debug("pre-regex getAWSSecretPos");
-
     Matcher matcher = AWS_KEY_PATTERN.matcher(text);
 
     ArrayList<SecretRange> awsSecretRanges = new ArrayList<>();
@@ -139,9 +132,6 @@ public class SecretDetector
         awsSecretRanges.add(new SecretRange(beginPos + 1, endPos));
       }
     }
-
-    LOGGER.debug("post-regex getAWSSecretPos");
-
     return awsSecretRanges;
   }
 
