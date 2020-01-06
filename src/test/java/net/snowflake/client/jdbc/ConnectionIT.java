@@ -16,10 +16,17 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.TemporaryFolder;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.KeyPair;
@@ -68,6 +75,9 @@ public class ConnectionIT extends BaseJDBCTest
   String errorMessage = null;
 
   private boolean defaultState;
+
+  @Rule
+  public TemporaryFolder tmpFolder = new TemporaryFolder();
 
   @Before
   public void setUp()
@@ -543,6 +553,156 @@ public class ConnectionIT extends BaseJDBCTest
     assertThat("select 1", resultSet.getInt(1), equalTo(1));
 
     connection.close();
+  }
+
+  @Test
+  @ConditionalIgnore(condition = RunningOnTravisCI.class)
+  public void testBasicDataSourceSerialization() throws Exception
+  {
+    // test with username/password authentication
+    // set up DataSource object and ensure connection works
+    Map<String, String> params = getConnectionParameters();
+    SnowflakeBasicDataSource ds = new SnowflakeBasicDataSource();
+    ds.setServerName(params.get("host"));
+    ds.setSsl("on".equals(params.get("ssl")));
+    ds.setAccount(params.get("account"));
+    ds.setPortNumber(Integer.parseInt(params.get("port")));
+    ds.setUser(params.get("user"));
+    ds.setPassword(params.get("password"));
+    Connection con = ds.getConnection();
+    ResultSet resultSet = con.createStatement()
+        .executeQuery("select 1");
+    resultSet.next();
+    assertThat("select 1", resultSet.getInt(1), equalTo(1));
+    con.close();
+    File serializedFile = tmpFolder.newFile("serializedStuff.ser");
+    // serialize datasource object into a file
+    FileOutputStream outputFile = new FileOutputStream(serializedFile);
+    ObjectOutputStream out = new ObjectOutputStream(outputFile);
+    out.writeObject(ds);
+    out.close();
+    outputFile.close();
+    // deserialize into datasource object again
+    FileInputStream inputFile = new FileInputStream(serializedFile);
+    ObjectInputStream in = new ObjectInputStream(inputFile);
+    SnowflakeBasicDataSource ds2 = (SnowflakeBasicDataSource) in.readObject();
+    in.close();
+    inputFile.close();
+    // test connection a second time
+    con = ds2.getConnection();
+    resultSet = con.createStatement()
+        .executeQuery("select 1");
+    resultSet.next();
+    assertThat("select 1", resultSet.getInt(1), equalTo(1));
+    con.close();
+  }
+
+  @Test
+  @ConditionalIgnore(condition = RunningOnTravisCI.class)
+  public void testKeyPairFileDataSourceSerialization() throws Exception
+  {
+    // test with key/pair authentication where key is in file
+    // set up DataSource object and ensure connection works
+    Map<String, String> params = getConnectionParameters();
+    SnowflakeBasicDataSource ds = new SnowflakeBasicDataSource();
+    ds.setServerName(params.get("host"));
+    ds.setSsl("on".equals(params.get("ssl")));
+    ds.setAccount(params.get("account"));
+    ds.setPortNumber(Integer.parseInt(params.get("port")));
+    ds.setUser(params.get("user"));
+    String privateKeyLocation = getFullPathFileInResource("encrypted_rsa_key.p8");
+    ds.setPrivateKeyFile(privateKeyLocation, "test");
+
+    // set up public key
+    try (Connection con = getConnection())
+    {
+      Statement statement = con.createStatement();
+      statement.execute("use role accountadmin");
+      String pathfile = getFullPathFileInResource("encrypted_rsa_key.pub");
+      String pubKey = new String(Files.readAllBytes(Paths.get(pathfile)));
+      pubKey = pubKey.replace("-----BEGIN PUBLIC KEY-----", "");
+      pubKey = pubKey.replace("-----END PUBLIC KEY-----", "");
+      statement.execute(String.format(
+          "alter user %s set rsa_public_key='%s'", params.get("user"), pubKey));
+    }
+
+    Connection con = ds.getConnection();
+    ResultSet resultSet = con.createStatement()
+        .executeQuery("select 1");
+    resultSet.next();
+    assertThat("select 1", resultSet.getInt(1), equalTo(1));
+    con.close();
+    File serializedFile = tmpFolder.newFile("serializedStuff.ser");
+    // serialize datasource object into a file
+    FileOutputStream outputFile = new FileOutputStream(serializedFile);
+    ObjectOutputStream out = new ObjectOutputStream(outputFile);
+    out.writeObject(ds);
+    out.close();
+    outputFile.close();
+    // deserialize into datasource object again
+    FileInputStream inputFile = new FileInputStream(serializedFile);
+    ObjectInputStream in = new ObjectInputStream(inputFile);
+    SnowflakeBasicDataSource ds2 = (SnowflakeBasicDataSource) in.readObject();
+    in.close();
+    inputFile.close();
+    // test connection a second time
+    con = ds2.getConnection();
+    resultSet = con.createStatement()
+        .executeQuery("select 1");
+    resultSet.next();
+    assertThat("select 1", resultSet.getInt(1), equalTo(1));
+    con.close();
+
+    // clean up
+    try (Connection connection = getConnection())
+    {
+      Statement statement = connection.createStatement();
+      statement.execute("use role accountadmin");
+      statement.execute(String.format("alter user %s unset rsa_public_key",
+                                      params.get("user")));
+    }
+  }
+
+  @Test
+  @Ignore
+  public void testDataSourceOktaSerialization() throws Exception
+  {
+    // test with username/password authentication
+    // set up DataSource object and ensure connection works
+    Map<String, String> params = getConnectionParameters();
+    SnowflakeBasicDataSource ds = new SnowflakeBasicDataSource();
+    ds.setServerName(params.get("host"));
+    ds.setSsl("on".equals(params.get("ssl")));
+    ds.setAccount(params.get("account"));
+    ds.setPortNumber(Integer.parseInt(params.get("port")));
+    ds.setUser(params.get("ssoUser"));
+    ds.setPassword(params.get("ssoPassword"));
+    ds.setAuthenticator("https://snowflakecomputing.okta.com/");
+    Connection con = ds.getConnection();
+    ResultSet resultSet = con.createStatement()
+        .executeQuery("select 1");
+    resultSet.next();
+    assertThat("select 1", resultSet.getInt(1), equalTo(1));
+    File serializedFile = tmpFolder.newFile("serializedStuff.ser");
+    // serialize datasource object into a file
+    FileOutputStream outputFile = new FileOutputStream(serializedFile);
+    ObjectOutputStream out = new ObjectOutputStream(outputFile);
+    out.writeObject(ds);
+    out.close();
+    outputFile.close();
+    // deserialize into datasource object again
+    FileInputStream inputFile = new FileInputStream(serializedFile);
+    ObjectInputStream in = new ObjectInputStream(inputFile);
+    SnowflakeBasicDataSource ds2 = (SnowflakeBasicDataSource) in.readObject();
+    in.close();
+    inputFile.close();
+    // test connection a second time
+    con = ds2.getConnection();
+    resultSet = con.createStatement()
+        .executeQuery("select 1");
+    resultSet.next();
+    assertThat("select 1", resultSet.getInt(1), equalTo(1));
+    con.close();
   }
 
   @Test
