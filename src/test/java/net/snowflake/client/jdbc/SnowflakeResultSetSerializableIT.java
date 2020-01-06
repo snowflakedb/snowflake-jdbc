@@ -197,7 +197,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
         System.out.println(
             "\nFormat: " + resultSetChunk.getQueryResultFormat() +
             " UncompChunksize: " +
-            resultSetChunk.getUncompressedDataSize() +
+            resultSetChunk.getUncompressedDataSizeInBytes() +
             " firstChunkContent: " +
             (resultSetChunk.getFirstChunkStringData() == null
              ? " null " : " not null "));
@@ -846,5 +846,163 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
                          2 * 1024 * 1024, "txt");
       System.exit(-1);
     }
+  }
+
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
+  public void testRetrieveMetadata() throws Throwable
+  {
+    List<String> fileNameList;
+    int rowCount = 90000;
+    long expectedTotalRowCount = 0;
+    long expectedTotalCompressedSize = 0;
+    long expectedTotalUncompressedSize = 0;
+    try (Connection connection = getConnection())
+    {
+      Statement statement = connection.createStatement();
+
+      statement.execute(
+              "create or replace table table_basic " +
+                      " (int_c int, string_c string(128))");
+
+      statement.execute(
+              "insert into table_basic select " +
+                      "seq4(), " +
+                      "'arrow_1234567890arrow_1234567890arrow_1234567890arrow_1234567890'" +
+                      " from table(generator(rowcount=>" + rowCount + "))");
+
+
+      String sqlSelect = "select * from table_basic ";
+      ResultSet rs = statement.executeQuery(sqlSelect);
+
+      // Split deserializedResultSet by 3M
+      fileNameList = serializeResultSet((SnowflakeResultSet) rs,
+              100 * 1024 * 1024, "txt");
+
+      // Only one serializable object is generated with 100M data.
+      assertTrue(fileNameList.size() == 1);
+
+      FileInputStream fi = new FileInputStream(fileNameList.get(0));
+      ObjectInputStream si = new ObjectInputStream(fi);
+      SnowflakeResultSetSerializableV1 wholeResultSetChunk =
+              (SnowflakeResultSetSerializableV1) si.readObject();
+      fi.close();
+      expectedTotalRowCount = wholeResultSetChunk.getRowCount();
+      expectedTotalCompressedSize = wholeResultSetChunk.getCompressedDataSizeInBytes();
+      expectedTotalUncompressedSize = wholeResultSetChunk.getUncompressedDataSizeInBytes();
+
+      if (developPrint)
+      {
+        System.out.println("Total statistic: RowCount=" + expectedTotalRowCount + " CompSize=" +
+                expectedTotalCompressedSize + " UncompSize=" + expectedTotalUncompressedSize);
+      }
+
+      rs.close();
+    }
+    assertTrue(expectedTotalRowCount == rowCount);
+    assertTrue(expectedTotalCompressedSize > 0);
+    assertTrue(expectedTotalUncompressedSize > 0);
+
+    // Split deserializedResultSet by 3M
+    List<String> fileNameSplit3M = splitResultSetSerializables(
+            fileNameList, 3 * 1024 * 1024);
+    // Verify the metadata is correct.
+    assertTrue(isMetadataConsistent(expectedTotalRowCount,
+            expectedTotalCompressedSize,
+            expectedTotalUncompressedSize,
+            fileNameSplit3M,
+            null));
+
+    // Split deserializedResultSet by 2M
+    List<String> fileNameSplit2M = splitResultSetSerializables(
+            fileNameSplit3M, 2 * 1024 * 1024);
+    // Verify the metadata is correct.
+    assertTrue(isMetadataConsistent(expectedTotalRowCount,
+            expectedTotalCompressedSize,
+            expectedTotalUncompressedSize,
+            fileNameSplit2M,
+            null));
+
+    // Split deserializedResultSet by 3M
+    List<String> fileNameSplit1M = splitResultSetSerializables(
+            fileNameSplit2M, 1 * 1024 * 1024);
+    // Verify the metadata is correct.
+    assertTrue(isMetadataConsistent(expectedTotalRowCount,
+            expectedTotalCompressedSize,
+            expectedTotalUncompressedSize,
+            fileNameSplit1M,
+            null));
+
+    // Split deserializedResultSet by smallest
+    List<String> fileNameSplitSmallest = splitResultSetSerializables(
+            fileNameSplit1M, 1);
+    // Verify the metadata is correct.
+    assertTrue(isMetadataConsistent(expectedTotalRowCount,
+            expectedTotalCompressedSize,
+            expectedTotalUncompressedSize,
+            fileNameSplitSmallest,
+            null));
+  }
+
+  /**
+   * Give a file list, deserialize SnowflakeResultSetSerializableV1 object from
+   * each file, verify the metadata on rowcount and data size to be corrected.
+   *
+   * @param files The file names where the serializable objects are serialized.
+   * @param props additional properties for JDBC.
+   * @return Return true if the metadata is consistent with the content
+   * @throws Throwable If any error happens.
+   */
+  private boolean isMetadataConsistent(long expectedTotalRowCount,
+                                       long expectedTotalCompressedSize,
+                                       long expectedTotalUncompressedSize,
+                                       List<String> files,
+                                       Properties props) throws Throwable
+  {
+    long actualRowCountFromMetadata = 0;
+    long actualTotalCompressedSize = 0;
+    long actualTotalUncompressedSize = 0;
+    long actualRowCount = 0;
+    long chunkFileCount = 0;
+
+    for (String filename : files)
+    {
+      // Read Object from file
+      FileInputStream fi = new FileInputStream(filename);
+      ObjectInputStream si = new ObjectInputStream(fi);
+      SnowflakeResultSetSerializableV1 resultSetChunk =
+              (SnowflakeResultSetSerializableV1) si.readObject();
+      fi.close();
+
+      // Accumulate statistic from metadata
+      actualRowCountFromMetadata += resultSetChunk.getRowCount();
+      actualTotalCompressedSize += resultSetChunk.getCompressedDataSizeInBytes();
+      actualTotalUncompressedSize += resultSetChunk.getUncompressedDataSizeInBytes();
+      chunkFileCount += resultSetChunk.chunkFileCount;
+
+      // Get actual row count from result set.
+      ResultSet rs = resultSetChunk.getResultSet(props);
+
+      // Accumulate the actual row count from result set.
+      while (rs.next())
+      {
+        actualRowCount++;
+      }
+    }
+
+    if (developPrint)
+    {
+      System.out.println("isMetadataConsistent: FileCount=" + files.size() +
+              " RowCounts=" + expectedTotalRowCount + " " + actualRowCountFromMetadata
+              + " (" + actualRowCount + ") CompSize=" + expectedTotalCompressedSize +
+              " " + actualTotalCompressedSize + " UncompSize=" +
+              expectedTotalUncompressedSize + " " + actualTotalUncompressedSize +
+              " chunkFileCount=" + chunkFileCount);
+    }
+
+    return actualRowCount == expectedTotalRowCount &&
+            actualRowCountFromMetadata == expectedTotalRowCount &&
+            actualTotalCompressedSize == expectedTotalCompressedSize &&
+            expectedTotalUncompressedSize == actualTotalUncompressedSize;
   }
 }
