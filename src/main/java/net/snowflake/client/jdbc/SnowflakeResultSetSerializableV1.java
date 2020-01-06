@@ -30,19 +30,15 @@ import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SFBinaryFormat;
 import net.snowflake.common.core.SnowflakeDateTimeFormat;
 import org.apache.arrow.memory.RootAllocator;
+import org.apache.arrow.vector.VectorSchemaRoot;
+import org.apache.arrow.vector.ipc.ArrowStreamReader;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.Serializable;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Properties;
-import java.util.TimeZone;
+import java.util.*;
 
 import static net.snowflake.client.core.Constants.GB;
 import static net.snowflake.client.core.Constants.MB;
@@ -130,17 +126,17 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
 
       builder.append("RowCount: ").append(rowCount).append(", ");
       builder.append("CompressedSize: ").append(compressedByteSize).append(", ");
-      builder.append("UnCompressedSize: ").append(uncompressedByteSize).append(", ");
-      builder.append("fileURL: ").append(fileURL);
+      builder.append("UnCompressedSize: ").append(uncompressedByteSize);
 
       return builder.toString();
     }
   }
 
   // Below fields are for the data fields that this object wraps
-  String firstChunkStringData; // For ARROW, it's BASE64-encoded arrow file.
+  // For ARROW, firstChunkStringData is BASE64-encoded arrow file.
   // For JSON,  it's string data for the json.
-  int firstChunkRowCount; // It is only used for JSON format result.
+  String firstChunkStringData;
+  int firstChunkRowCount;
   int chunkFileCount;
   List<ChunkFileMetadata> chunkFileMetadatas = new ArrayList<>();
 
@@ -292,17 +288,6 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
   public void setChunkDownloader(ChunkDownloader chunkDownloader)
   {
     this.chunkDownloader = chunkDownloader;
-  }
-
-  public long getUncompressedDataSize()
-  {
-    long totalSize = this.firstChunkStringData != null
-                     ? this.firstChunkStringData.length() : 0;
-    for (ChunkFileMetadata entry : chunkFileMetadatas)
-    {
-      totalSize += entry.getUncompressedByteSize();
-    }
-    return totalSize;
   }
 
   public SFResultSetMetaData getSFResultSetMetaData()
@@ -606,6 +591,8 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
           rootNode.path("data").path("rowsetBase64").asText();
       resultSetSerializable.rootAllocator =
           new RootAllocator(Long.MAX_VALUE);
+      // Set first chunk row count from firstChunkStringData
+      resultSetSerializable.setFirstChunkRowCountForArrow();
     }
     else
     {
@@ -625,10 +612,9 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
         resultSetSerializable.firstChunkStringData =
             resultSetSerializable.firstChunkRowset.toString();
       }
-
-      logger.debug("First chunk row count: {}",
-                   resultSetSerializable.firstChunkRowCount);
     }
+    logger.debug("First chunk row count: {}",
+        resultSetSerializable.firstChunkRowCount);
 
     // parse file chunks
     resultSetSerializable.parseChunkFiles(rootNode, sfStatement);
@@ -1033,9 +1019,10 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
 
       // If the serializable object has reach the max size,
       // save current one and create new one.
-      if ((curResultSetSerializable.getUncompressedDataSize() > 0) &&
-          (maxSizeInBytes < (curResultSetSerializable.getUncompressedDataSize()
-                             + curChunkFileMetadata.getUncompressedByteSize())))
+      if ((curResultSetSerializable.getUncompressedDataSizeInBytes() > 0) &&
+          (maxSizeInBytes <
+              (curResultSetSerializable.getUncompressedDataSizeInBytes()
+                  + curChunkFileMetadata.getUncompressedByteSize())))
       {
         resultSetSerializables.add(curResultSetSerializable);
 
@@ -1172,12 +1159,140 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
     return resultSetV1;
   }
 
+  // Set the row count for first result chunk by parsing the chunk data.
+  private void setFirstChunkRowCountForArrow() throws SnowflakeSQLException
+  {
+    firstChunkRowCount = 0;
+
+    // If the first chunk doesn't exist or empty, set it as 0
+    if (firstChunkStringData == null || firstChunkStringData.isEmpty())
+    {
+      firstChunkRowCount = 0;
+    }
+    // Parse the Arrow result chunk
+    else if (getQueryResultFormat().equals(QueryResultFormat.ARROW))
+    {
+      // Below code is developed based on SFArrowResultSet.buildFirstChunk
+      // and ArrowResultChunk.readArrowStream()
+      byte[] bytes = Base64.getDecoder().decode(firstChunkStringData);
+      VectorSchemaRoot root = null;
+      RootAllocator localRootAllocator =
+              (rootAllocator != null) ? rootAllocator
+                                      : new RootAllocator(Long.MAX_VALUE);
+      try (ByteArrayInputStream is = new ByteArrayInputStream(bytes);
+           ArrowStreamReader reader = new ArrowStreamReader(is, localRootAllocator))
+      {
+        root = reader.getVectorSchemaRoot();
+        while (reader.loadNextBatch())
+        {
+          firstChunkRowCount += root.getRowCount();
+          root.clear();
+        }
+      }
+      catch (Exception ex)
+      {
+        throw new SnowflakeSQLException(ErrorCode.INTERNAL_ERROR,
+                "Fail to retrieve row count for first arrow chunk: " +
+                        ex.getCause());
+      }
+      finally
+      {
+        if (root != null)
+        {
+          root.clear();
+        }
+      }
+    }
+    else
+    {
+      // This shouldn't happen
+      throw new SnowflakeSQLException(ErrorCode.INTERNAL_ERROR,
+              "setFirstChunkRowCountForArrow() should only be called for Arrow.");
+    }
+  }
+
+  /**
+   * Retrieve total row count included in the the ResultSet Serializable object.
+   *
+   * GS sends the data of first chunk and metadata of the other chunk if exist
+   * to client, so this function calculates the row count for all of them.
+   *
+   * @return the total row count from metadata
+   */
+  public long getRowCount() throws SQLException
+  {
+    // Get row count for first chunk if it exists.
+    long totalRowCount = firstChunkRowCount;
+
+    // Get row count from chunk file metadata
+    for (ChunkFileMetadata chunkFileMetadata : chunkFileMetadatas)
+    {
+      totalRowCount += chunkFileMetadata.rowCount;
+    }
+
+    return totalRowCount;
+  }
+
+  /**
+   * Retrieve compressed data size in the the ResultSet Serializable object.
+   *
+   * GS sends the data of first chunk and metadata of the other chunks if exist
+   * to client, so this function calculates the data size for all of them.
+   * NOTE: if first chunk exists, this function uses its uncompressed data size
+   * as its compressed data size in this calculation though it is not compressed.
+   *
+   * @return the total compressed data size in bytes from metadata
+   */
+  public long getCompressedDataSizeInBytes() throws SQLException
+  {
+    long totalCompressedDataSize = 0;
+
+    // Count the data size for the first chunk if it exists.
+    if (firstChunkStringData != null)
+    {
+      totalCompressedDataSize += firstChunkStringData.length();
+    }
+
+    for (ChunkFileMetadata chunkFileMetadata : chunkFileMetadatas)
+    {
+      totalCompressedDataSize += chunkFileMetadata.compressedByteSize;
+    }
+
+    return totalCompressedDataSize;
+  }
+
+  /**
+   * Retrieve Uncompressed data size in the the ResultSet Serializable object.
+   *
+   * GS sends the data of first chunk and metadata of the other chunk if exist
+   * to client, so this function calculates the data size for all of them.
+   *
+   * @return the total uncompressed data size in bytes from metadata
+   */
+  public long getUncompressedDataSizeInBytes() throws SQLException
+  {
+    long totalUncompressedDataSize = 0;
+
+    // Count the data size for the first chunk if it exists.
+    if (firstChunkStringData != null)
+    {
+      totalUncompressedDataSize += firstChunkStringData.length();
+    }
+
+    for (ChunkFileMetadata chunkFileMetadata : chunkFileMetadatas)
+    {
+      totalUncompressedDataSize += chunkFileMetadata.uncompressedByteSize;
+    }
+
+    return totalUncompressedDataSize;
+  }
+
   public String toString()
   {
     StringBuilder builder = new StringBuilder(16 * 1024);
 
     builder.append("hasFirstChunk: ")
-        .append(this.firstChunkStringData != null ? true : false)
+        .append(this.firstChunkStringData != null)
         .append("\n");
 
     builder.append("RowCountInFirstChunk: ")

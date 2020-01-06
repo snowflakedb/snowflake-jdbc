@@ -1,3 +1,11 @@
+**JDBC Driver 3.11.1**
+
+- \| SNOW-126957 | Add CLIENT_ENABLE_LOG_INFO_STATEMENT_PARAMETERS for logging statements and binding data in INO log level.
+- \| SNOW-122023  | Fix the order of escapeChars for getTables and getColumns.
+- \| SNOW-123702 | Update BouncyCastle to 1.60 to fix two high severity issues
+- \| SNOW-124928 | Fix precision loss while using getFloat/getDouble for Decimal values having large scale
+- \| SNOW-121276 | Add ability to serialize SnowflakeDataSource objects
+
 **JDBC Driver 3.11.0**
 
 - \| SNOW-84438 | GA: ARROW format support, to be enabled in the next few weeks

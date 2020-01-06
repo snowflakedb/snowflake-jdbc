@@ -1,12 +1,15 @@
 package net.snowflake.client.jdbc;
 
+import com.google.common.base.Strings;
 import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
-import org.apache.http.auth.AUTH;
-
 import javax.sql.DataSource;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
+import java.io.Serializable;
 import java.security.PrivateKey;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -17,8 +20,9 @@ import java.util.logging.Logger;
 /**
  * Created by hyu on 5/11/17.
  */
-public class SnowflakeBasicDataSource implements DataSource
+public class SnowflakeBasicDataSource implements DataSource, Serializable
 {
+  private static final long serialversionUID = 1L;
   private final static String AUTHENTICATOR_SNOWFLAKE_JWT = "SNOWFLAKE_JWT";
   private final static String AUTHENTICATOR_OAUTH = "OAUTH";
   private String url;
@@ -51,6 +55,40 @@ public class SnowflakeBasicDataSource implements DataSource
                                       "Please check if you have proper Snowflake JDBC " +
                                       "Driver jar on the classpath", e);
     }
+  }
+
+  private void writeObjectHelper(ObjectOutputStream out) throws IOException
+  {
+    out.writeObject(url);
+    out.writeObject(serverName);
+    out.writeObject(user);
+    out.writeObject(password);
+    out.writeObject(portNumber);
+    out.writeObject(authenticator);
+    out.writeObject(properties);
+  }
+
+  private void readObjectHelper(ObjectInputStream in) throws IOException,
+                                                            ClassNotFoundException
+  {
+    url = (String) in.readObject();
+    serverName = (String) in.readObject();
+    user = (String) in.readObject();
+    password = (String) in.readObject();
+    portNumber = (int) in.readObject();
+    authenticator = (String) in.readObject();
+    properties = (Properties) in.readObject();
+  }
+
+  private void writeObject(ObjectOutputStream out) throws IOException
+  {
+    writeObjectHelper(out);
+  }
+
+  private void readObject(ObjectInputStream in) throws IOException,
+                                                       ClassNotFoundException
+  {
+    readObjectHelper(in);
   }
 
   @Override
@@ -228,5 +266,15 @@ public class SnowflakeBasicDataSource implements DataSource
   {
     this.setAuthenticator(AUTHENTICATOR_SNOWFLAKE_JWT);
     this.properties.put("privateKey", privateKey);
+  }
+
+  public void setPrivateKeyFile(String location, String password)
+  {
+    this.setAuthenticator(AUTHENTICATOR_SNOWFLAKE_JWT);
+    this.properties.put("private_key_file", location);
+    if (!Strings.isNullOrEmpty(password))
+    {
+      this.properties.put("private_key_file_pwd", password);
+    }
   }
 }

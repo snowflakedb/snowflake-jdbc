@@ -3,6 +3,7 @@
  */
 package net.snowflake.client.core;
 
+import com.google.common.base.Strings;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.JWSHeader;
@@ -62,64 +63,17 @@ class SessionUtilKeyPair
     this.accountName = accountName.toUpperCase();
 
     // if there is both a file and a private key, there is a problem
-    if (privateKeyFile != null && !privateKeyFile.isEmpty() && privateKey != null)
+    if (!Strings.isNullOrEmpty(privateKeyFile) && privateKey != null)
     {
       throw new SFException(ErrorCode.INVALID_OR_UNSUPPORTED_PRIVATE_KEY,
                             "Cannot have both private key value and private key file.");
     }
-    // if privateKeyFile has a value and privateKey is null
-    else if (privateKeyFile != null && !privateKeyFile.isEmpty() && privateKey == null)
-    {
-      // private key file is unencrypted
-      if (privateKeyFilePwd == null || privateKeyFilePwd.isEmpty())
-      {
-        try
-        {
-          String unencrypted = new String(Files.readAllBytes(Paths.get(privateKeyFile)));
-          unencrypted = unencrypted.replace("-----BEGIN RSA PRIVATE KEY-----", "");
-          unencrypted = unencrypted.replace("-----END RSA PRIVATE KEY-----", "");
-          byte[] decoded = getMimeDecoder().decode(unencrypted);
-          PKCS8EncodedKeySpec encodedKeySpec = new PKCS8EncodedKeySpec(decoded);
-          KeyFactory keyFactory = KeyFactory.getInstance("RSA");
-          this.privateKey = keyFactory.generatePrivate(encodedKeySpec);
-        }
-        catch (NoSuchAlgorithmException | InvalidKeySpecException | IOException e)
-        {
-          throw new SFException(e, ErrorCode.INTERNAL_ERROR, "Error retrieving public key");
-        }
-      }
-      // private key file is encrypted
-      else
-      {
-        try
-        {
-          String encrypted = new String(Files.readAllBytes(Paths.get(privateKeyFile)));
-          encrypted = encrypted.replace("-----BEGIN ENCRYPTED PRIVATE KEY-----", "");
-          encrypted = encrypted.replace("-----END ENCRYPTED PRIVATE KEY-----", "");
-          EncryptedPrivateKeyInfo pkInfo = new EncryptedPrivateKeyInfo(getMimeDecoder().decode(encrypted));
-          PBEKeySpec keySpec = new PBEKeySpec(privateKeyFilePwd.toCharArray());
-          SecretKeyFactory pbeKeyFactory = SecretKeyFactory.getInstance(pkInfo.getAlgName());
-          PKCS8EncodedKeySpec encodedKeySpec = pkInfo.getKeySpec(pbeKeyFactory.generateSecret(keySpec));
-          KeyFactory keyFactory = KeyFactory.getInstance("RSA");
-          this.privateKey = keyFactory.generatePrivate(encodedKeySpec);
-        }
-        catch (NoSuchAlgorithmException | InvalidKeySpecException | IOException | InvalidKeyException e)
-        {
-          throw new SFException(e, ErrorCode.INTERNAL_ERROR,
-                                "Error retrieving public key");
-        }
-      }
-    }
-    // privateKey is set without file
-    else if (privateKey != null)
-    {
-      this.privateKey = privateKey;
-    }
-    // everything is null
     else
     {
-      throw new SFException(ErrorCode.INVALID_OR_UNSUPPORTED_PRIVATE_KEY,
-                            "Private key is null");
+      // if privateKeyFile has a value and privateKey is null
+      this.privateKey = Strings.isNullOrEmpty(privateKeyFile) ?
+                        privateKey :
+                        extractPrivateKeyFromFile(privateKeyFile, privateKeyFilePwd);
     }
     // construct public key from raw bytes
     if (this.privateKey instanceof RSAPrivateCrtKey)
@@ -142,7 +96,42 @@ class SessionUtilKeyPair
     else
     {
       throw new SFException(ErrorCode.INVALID_OR_UNSUPPORTED_PRIVATE_KEY,
-                            "Please use java.security.interfaces.RSAPrivateCrtKey.class");
+                            "Use java.security.interfaces.RSAPrivateCrtKey.class for the private key");
+    }
+  }
+
+  private PrivateKey extractPrivateKeyFromFile(String privateKeyFile, String privateKeyFilePwd) throws SFException
+  {
+    try
+    {
+      String privateKeyContent = new String(Files.readAllBytes(Paths.get(privateKeyFile)));
+      if (Strings.isNullOrEmpty(privateKeyFilePwd))
+      {
+        // private key file is unencrypted
+        privateKeyContent = privateKeyContent.replace("-----BEGIN RSA PRIVATE KEY-----", "");
+        privateKeyContent = privateKeyContent.replace("-----END RSA PRIVATE KEY-----", "");
+        byte[] decoded = getMimeDecoder().decode(privateKeyContent);
+        PKCS8EncodedKeySpec encodedKeySpec = new PKCS8EncodedKeySpec(decoded);
+        KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+        return keyFactory.generatePrivate(encodedKeySpec);
+      }
+      else
+      {
+        // private key file is encrypted
+        privateKeyContent = privateKeyContent.replace("-----BEGIN ENCRYPTED PRIVATE KEY-----", "");
+        privateKeyContent = privateKeyContent.replace("-----END ENCRYPTED PRIVATE KEY-----", "");
+        EncryptedPrivateKeyInfo pkInfo = new EncryptedPrivateKeyInfo(getMimeDecoder().decode(privateKeyContent));
+        PBEKeySpec keySpec = new PBEKeySpec(privateKeyFilePwd.toCharArray());
+        SecretKeyFactory pbeKeyFactory = SecretKeyFactory.getInstance(pkInfo.getAlgName());
+        PKCS8EncodedKeySpec encodedKeySpec = pkInfo.getKeySpec(pbeKeyFactory.generateSecret(keySpec));
+        KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+        return keyFactory.generatePrivate(encodedKeySpec);
+      }
+    }
+    catch (NoSuchAlgorithmException | InvalidKeySpecException | IOException | IllegalArgumentException | InvalidKeyException e)
+    {
+      throw new SFException(
+          e, ErrorCode.INVALID_OR_UNSUPPORTED_PRIVATE_KEY, privateKeyFile);
     }
   }
 

@@ -8,10 +8,12 @@ import net.snowflake.client.RunningOnTravisCI;
 import net.snowflake.client.category.TestCategoryOthers;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 import java.sql.Connection;
+import java.sql.DriverManager;
 import java.sql.ParameterMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -20,6 +22,8 @@ import java.sql.Statement;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
+import java.util.Map;
+import java.util.Properties;
 
 import static net.snowflake.client.jdbc.ErrorCode.NUMERIC_VALUE_OUT_OF_RANGE;
 import static org.hamcrest.CoreMatchers.is;
@@ -935,5 +939,37 @@ public class PreparedStatement1IT extends PreparedStatement0IT
         }
       }
     }
+  }
+
+  /**
+   * Manual test to ensure proper log file is produced when CLIENT_ENABLE_LOG_INFO_STATEMENT_PARAMETERS is enabled.
+   * Look in /tmp folder for snowflake_jdbc0.log.0 and check that it lists binding params.
+   *
+   * @throws SQLException
+   */
+  @Test
+  @Ignore
+  public void manualTestForPreparedStatementLogging() throws SQLException
+  {
+    Map<String, String> params = getConnectionParameters();
+    Properties props = new Properties();
+    String uri = params.get("uri");
+    props.put("account", params.get("account"));
+    props.put("ssl", params.get("ssl"));
+    props.put("database", params.get("database"));
+    props.put("schema", params.get("schema"));
+    props.put("user", params.get("user"));
+    props.put("password", params.get("password"));
+    props.put("tracing", "info");
+    Connection con = DriverManager.getConnection(uri, props);
+    con.createStatement().executeUpdate("alter session set CLIENT_ENABLE_LOG_INFO_STATEMENT_PARAMETERS=true");
+    con.createStatement().execute(createTableSQL);
+    PreparedStatement prepStatement = con.prepareStatement(insertSQL, Statement.NO_GENERATED_KEYS);
+    bindOneParamSet(prepStatement, 1, 1.22222, (float) 1.2, "test",
+                    12121212121L, (short) 12);
+    prepStatement.addBatch();
+    prepStatement.executeBatch();
+    con.createStatement().executeUpdate("alter session set CLIENT_ENABLE_LOG_INFO_STATEMENT_PARAMETERS=false");
+    con.close();
   }
 }

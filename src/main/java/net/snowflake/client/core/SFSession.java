@@ -150,6 +150,8 @@ public class SFSession
 
   private boolean resultColumnCaseInsensitive = false;
 
+  private boolean preparedStatementLogging = false;
+
   // database that current session is on
   private String database;
 
@@ -447,7 +449,7 @@ public class SFSession
         "passcode_in_passward={}, passcode={}, private_key={}, " +
         "use_proxy={}, proxy_host={}, proxy_port={}, proxy_user={}, proxy_password={}, disable_socks_proxy={}, " +
         "application={}, app_id={}, app_version={}, " +
-        "login_timeout={}, network_timeout={}, query_timeout={}, tracing={}",
+        "login_timeout={}, network_timeout={}, query_timeout={}, tracing={}, private_key_file={}, private_key_file_pwd={}",
         connectionPropertiesMap.get(SFSessionProperty.SERVER_URL),
         connectionPropertiesMap.get(SFSessionProperty.ACCOUNT),
         connectionPropertiesMap.get(SFSessionProperty.USER),
@@ -479,7 +481,10 @@ public class SFSession
         connectionPropertiesMap.get(SFSessionProperty.LOGIN_TIMEOUT),
         connectionPropertiesMap.get(SFSessionProperty.NETWORK_TIMEOUT),
         connectionPropertiesMap.get(SFSessionProperty.QUERY_TIMEOUT),
-        connectionPropertiesMap.get(SFSessionProperty.TRACING)
+        connectionPropertiesMap.get(SFSessionProperty.TRACING),
+        connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_FILE),
+        !Strings.isNullOrEmpty((String) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_FILE_PWD)) ? "***" :
+        "(empty)"
     );
     SFLoginInput loginInput = new SFLoginInput();
 
@@ -731,7 +736,7 @@ public class SFSession
       if (!connectionPropertiesMap.containsKey(SFSessionProperty.PROXY_PORT))
       {
         missingProperties.add(addNewDriverProperty(SFSessionProperty.PROXY_PORT.getPropertyKey(), "proxy port; " +
-                                                    "should be an integer"));
+                                                                                                  "should be an integer"));
       }
     }
     return missingProperties;
@@ -1118,6 +1123,16 @@ public class SFSession
     this.autoCommit.set(autoCommit);
   }
 
+  public boolean getPreparedStatementLogging()
+  {
+    return this.preparedStatementLogging;
+  }
+
+  public void setPreparedStatementLogging(boolean value)
+  {
+    this.preparedStatementLogging = value;
+  }
+
   public void setResultColumnCaseInsensitive(boolean resultColumnCaseInsensitive)
   {
     this.resultColumnCaseInsensitive = resultColumnCaseInsensitive;
@@ -1477,6 +1492,4 @@ public class SFSession
   {
     return sfConnStr;
   }
-
-
 }
