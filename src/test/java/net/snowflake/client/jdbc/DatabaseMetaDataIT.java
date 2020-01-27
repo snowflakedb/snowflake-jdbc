@@ -319,6 +319,139 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
 
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
+  public void testSessionDatabaseParameter() throws Throwable
+  {
+    String altdb = "ALTERNATEDB";
+    String altschema1 = "ALTERNATESCHEMA1";
+    String altschema2 = "ALTERNATESCHEMA2";
+    try (Connection connection = getConnection())
+    {
+      Statement statement = connection.createStatement();
+      String catalog = connection.getCatalog();
+      String schema = connection.getSchema();
+      statement.execute("create or replace database " + altdb);
+      statement.execute("create or replace schema " + altschema1);
+      statement.execute("create or replace schema " + altschema2);
+      statement.execute("create or replace table "+altdb+"."+altschema1+".testtable1 (colA string, colB number)");
+      statement.execute("create or replace table "+altdb+"."+altschema2+".testtable2 (colA string, colB number)");
+      statement.execute("create or replace table "+catalog+"."+schema+".testtable3 (colA string, colB number)");
+      statement.execute("use database "+altdb);
+      statement.execute("use schema "+altschema1);
+
+      statement.execute("ALTER SESSION set CLIENT_METADATA_REQUEST_USE_CONNECTION_CTX=true");
+      statement.execute("ALTER SESSION set CLIENT_METADATA_USE_SESSION_DATABASE=true");
+
+      DatabaseMetaData metadata = connection.getMetaData();
+      ResultSet resultSet = metadata.getColumns(null, null, "%","COLA");
+      assertTrue(resultSet.next());
+      assertEquals(altschema1, resultSet.getString("TABLE_SCHEM"));
+      assertFalse(resultSet.next());
+
+      resultSet = metadata.getColumns(null, altschema2, "%", "COLA");
+      assertTrue(resultSet.next());
+      assertEquals(altschema2, resultSet.getString("TABLE_SCHEM"));
+      assertFalse(resultSet.next());
+
+      resultSet = metadata.getColumns(altdb, null, "%", "COLA");
+      assertTrue(resultSet.next());
+      assertEquals(altschema1, resultSet.getString("TABLE_SCHEM"));
+      assertFalse(resultSet.next());
+
+      resultSet = metadata.getColumns(altdb, altschema2, "%", "COLA");
+      assertTrue(resultSet.next());
+      assertEquals(altschema2, resultSet.getString("TABLE_SCHEM"));
+      assertFalse(resultSet.next());
+
+      statement.execute("ALTER SESSION set CLIENT_METADATA_REQUEST_USE_CONNECTION_CTX=false");
+
+      metadata = connection.getMetaData();
+      resultSet = metadata.getColumns(null, null, "%","COLA");
+      assertTrue(resultSet.next());
+      assertEquals(altschema1, resultSet.getString("TABLE_SCHEM"));
+      assertTrue(resultSet.next());
+      assertEquals(altschema2, resultSet.getString("TABLE_SCHEM"));
+      assertFalse(resultSet.next());
+
+      resultSet = metadata.getColumns(null, altschema2, "%", "COLA");
+      assertTrue(resultSet.next());
+      assertEquals(altschema2, resultSet.getString("TABLE_SCHEM"));
+      assertFalse(resultSet.next());
+
+      resultSet = metadata.getColumns(altdb, null, "%", "COLA");
+      assertTrue(resultSet.next());
+      assertEquals(altschema1, resultSet.getString("TABLE_SCHEM"));
+      assertTrue(resultSet.next());
+      assertEquals(altschema2, resultSet.getString("TABLE_SCHEM"));
+      assertFalse(resultSet.next());
+
+      resultSet = metadata.getColumns(altdb, altschema2, "%", "COLA");
+      assertTrue(resultSet.next());
+      assertEquals(altschema2, resultSet.getString("TABLE_SCHEM"));
+      assertFalse(resultSet.next());
+
+      statement.execute("ALTER SESSION set CLIENT_METADATA_USE_SESSION_DATABASE=false");
+
+      metadata = connection.getMetaData();
+      resultSet = metadata.getColumns(null, null, "TESTTABLE_","COLA");
+      assertTrue(resultSet.next());
+      assertEquals(altschema1, resultSet.getString("TABLE_SCHEM"));
+      assertTrue(resultSet.next());
+      assertEquals(altschema2, resultSet.getString("TABLE_SCHEM"));
+      assertTrue(resultSet.next());
+      assertEquals(schema, resultSet.getString("TABLE_SCHEM"));
+      assertFalse(resultSet.next());
+
+      resultSet = metadata.getColumns(null, altschema2, "%", "COLA");
+      assertTrue(resultSet.next());
+      assertEquals(altschema2, resultSet.getString("TABLE_SCHEM"));
+      assertFalse(resultSet.next());
+
+      resultSet = metadata.getColumns(altdb, null, "%", "COLA");
+      assertTrue(resultSet.next());
+      assertEquals(altschema1, resultSet.getString("TABLE_SCHEM"));
+      assertTrue(resultSet.next());
+      assertEquals(altschema2, resultSet.getString("TABLE_SCHEM"));
+      assertFalse(resultSet.next());
+
+      resultSet = metadata.getColumns(altdb, altschema2, "%", "COLA");
+      assertTrue(resultSet.next());
+      assertEquals(altschema2, resultSet.getString("TABLE_SCHEM"));
+      assertFalse(resultSet.next());
+
+      statement.execute("ALTER SESSION set CLIENT_METADATA_REQUEST_USE_CONNECTION_CTX=true");
+
+      metadata = connection.getMetaData();
+      resultSet = metadata.getColumns(null, null, "%","COLA");
+      assertTrue(resultSet.next());
+      assertEquals(altschema1, resultSet.getString("TABLE_SCHEM"));
+      assertFalse(resultSet.next());
+
+      resultSet = metadata.getColumns(null, altschema2, "%", "COLA");
+      assertTrue(resultSet.next());
+      assertEquals(altschema2, resultSet.getString("TABLE_SCHEM"));
+      assertFalse(resultSet.next());
+
+      resultSet = metadata.getColumns(altdb, null, "%", "COLA");
+      assertTrue(resultSet.next());
+      assertEquals(altschema1, resultSet.getString("TABLE_SCHEM"));
+      assertFalse(resultSet.next());
+
+      resultSet = metadata.getColumns(altdb, altschema2, "%", "COLA");
+      assertTrue(resultSet.next());
+      assertEquals(altschema2, resultSet.getString("TABLE_SCHEM"));
+      assertFalse(resultSet.next());
+
+      // clean up after creating extra database and schema
+      statement.execute("use database " +catalog);
+      statement.execute("drop schema " + altdb+"."+altschema1);
+      statement.execute("drop schema " +altdb+ "." +altschema2);
+      statement.execute("drop database " +altdb);
+
+    }
+  }
+
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
   public void testGetTables() throws Throwable
   {
     try (Connection connection = getConnection())
