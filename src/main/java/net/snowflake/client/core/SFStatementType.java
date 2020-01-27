@@ -25,12 +25,6 @@ public enum SFStatementType
    */
   UNKNOWN(0x0000, true),
 
-  // Server does not have stage related command type
-  PUT(0x0001, true),
-  GET(0x0002, true),
-  LIST(0x0003, true),
-  REMOVE(0x0004, true),
-
   SELECT(0x1000, true),
 
   /**
@@ -57,6 +51,7 @@ public enum SFStatementType
   USE_WAREHOUSE(0x4000 + 0x300 + 0x03, false),
   SHOW(0x4000 + 0x400, true),
   DESCRIBE(0x4000 + 0x500, true),
+  LIST(0x4000 + 0x700 + 0x01, true),
 
   /**
    * Transaction Command Language (COMMIT, ROLLBACK)
@@ -66,7 +61,16 @@ public enum SFStatementType
   /**
    * Data Definition Language
    */
-  DDL(0x6000, false);
+  DDL(0x6000, false),
+
+  /**
+   * Stage-related commands (other than LIST)
+   */
+  GET(0x7000 + 0x100 + 0x01, true),
+  PUT(0x7000 + 0x100 + 0x02, true),
+  REMOVE(0x7000 + 0x100 + 0x03, true),
+
+  ;
 
   private final long statementTypeId;
 
