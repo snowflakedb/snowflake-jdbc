@@ -120,6 +120,8 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
 
   private final boolean metadataRequestUseConnectionCtx;
 
+  private final boolean metadataRequestUseSessionDatabase;
+
   SnowflakeDatabaseMetaData(Connection connection) throws SQLException
   {
     logger.debug("public SnowflakeDatabaseMetaData(SnowflakeConnection connection)");
@@ -127,6 +129,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
     this.connection = connection;
     this.session = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
     this.metadataRequestUseConnectionCtx = session.getMetadataRequestUseConnectionCtx();
+    this.metadataRequestUseSessionDatabase = session.getMetadataRequestUseSessionDatabase();
   }
 
   private void raiseSQLExceptionIfConnectionIsClosed() throws SQLException
@@ -1408,13 +1411,26 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   private SFPair<String, String> applySessionContext(String catalog,
                                                      String schemaPattern)
   {
-    if (catalog == null && metadataRequestUseConnectionCtx)
+    if (metadataRequestUseConnectionCtx)
     {
-      catalog = session.getDatabase();
-
+      // CLIENT_METADATA_USE_SESSION_DATABASE = TRUE
+      if (catalog == null)
+      {
+        catalog = session.getDatabase();
+      }
       if (schemaPattern == null)
       {
         schemaPattern = session.getSchema();
+      }
+    }
+    else
+    {
+      if (metadataRequestUseSessionDatabase)
+      {
+        if (catalog == null)
+        {
+          catalog = session.getDatabase();
+        }
       }
     }
     return SFPair.of(catalog, schemaPattern);
