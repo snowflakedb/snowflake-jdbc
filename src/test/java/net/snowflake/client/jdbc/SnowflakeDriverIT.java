@@ -1185,6 +1185,81 @@ public class SnowflakeDriverIT extends BaseJDBCTest
 
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
+  public void testPutOverwriteFalseNoDigest() throws Throwable
+  {
+    Connection connection = null;
+    Statement statement = null;
+
+    // create 2 files: an original, and one that will overwrite the original
+    File file1 = tmpFolder.newFile("testfile.csv");
+    BufferedWriter bw = new BufferedWriter(new FileWriter(file1));
+    bw.write("Writing original file content. This should get overwritten.");
+    bw.close();
+
+    File file2 = tmpFolder2.newFile("testfile.csv");
+    bw = new BufferedWriter(new FileWriter(file2));
+    bw.write("This is all new! This should be the result of the overwriting.");
+    bw.close();
+
+    String sourceFilePathOriginal = file1.getCanonicalPath();
+    String sourceFilePathOverwrite = file2.getCanonicalPath();
+
+    File destFolder = tmpFolder.newFolder();
+    String destFolderCanonicalPath = destFolder.getCanonicalPath();
+    String destFolderCanonicalPathWithSeparator = destFolderCanonicalPath + File.separator;
+
+    List<String> accounts = Arrays.asList(null, "s3testaccount", "azureaccount", "gcpaccount");
+    for (int i = 0; i < accounts.size(); i++)
+    {
+      try
+      {
+        connection = getConnection(accounts.get(i));
+
+        statement = connection.createStatement();
+
+        // create a stage to put the file in
+        statement.execute("CREATE OR REPLACE STAGE testing_stage");
+        assertTrue("Failed to put a file",
+                   statement.execute("PUT file://" + sourceFilePathOriginal + " @testing_stage"));
+        // check that file exists in stage after PUT
+        findFile(statement, "ls @testing_stage/");
+
+        // put another file in same stage with same filename with overwrite = true
+        assertTrue("Failed to put a file",
+                   statement.execute("PUT file://" + sourceFilePathOverwrite + " @testing_stage overwrite=false"));
+
+        // check that file exists in stage after PUT
+        findFile(statement, "ls @testing_stage/");
+
+        // get file from new stage
+        assertTrue("Failed to get files", statement.execute(
+            "GET @testing_stage 'file://"
+                + destFolderCanonicalPath + "' parallel=8"));
+
+        // Make sure that the downloaded file exists; it should be gzip compressed
+        File downloaded = new File(destFolderCanonicalPathWithSeparator + "testfile.csv.gz");
+        assertTrue(downloaded.exists());
+
+        //unzip the file
+        Process p = Runtime.getRuntime().exec(
+            "gzip -d " + destFolderCanonicalPathWithSeparator
+                + "testfile.csv.gz");
+        p.waitFor();
+
+        // 2nd file should never be uploaded
+        File unzipped = new File(destFolderCanonicalPathWithSeparator + "testfile.csv");
+        assertTrue(FileUtils.contentEqualsIgnoreEOL(file1, unzipped, null));
+      }
+      finally
+      {
+        statement.execute("DROP TABLE IF EXISTS testLoadToLocalFS");
+        statement.close();
+      }
+    }
+  }
+
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
   public void testPut() throws Throwable
   {
     Connection connection = null;
