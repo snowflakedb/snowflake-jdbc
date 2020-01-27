@@ -26,6 +26,9 @@ import java.util.regex.Pattern;
 
 import static java.sql.DatabaseMetaData.procedureReturnsResult;
 import static java.sql.ResultSetMetaData.columnNullableUnknown;
+import static net.snowflake.client.jdbc.SnowflakeDatabaseMetaData.NumericFunctionsSupported;
+import static net.snowflake.client.jdbc.SnowflakeDatabaseMetaData.StringFunctionsSupported;
+import static net.snowflake.client.jdbc.SnowflakeDatabaseMetaData.SystemFunctionsSupported;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.junit.Assert.assertEquals;
@@ -1750,6 +1753,23 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
       expectFeatureNotSupportedException(metaData::generatedKeyAlwaysReturned);
       expectFeatureNotSupportedException(() -> metaData.unwrap(SnowflakeDatabaseMetaData.class));
       expectFeatureNotSupportedException(() -> metaData.isWrapperFor(SnowflakeDatabaseMetaData.class));
+    }
+  }
+
+  @Test
+  public void testGetFunctions() throws SQLException
+  {
+    try (Connection connection = getConnection())
+    {
+      DatabaseMetaData metadata = connection.getMetaData();
+      String supportedStringFuncs = metadata.getStringFunctions();
+      assertEquals(StringFunctionsSupported, supportedStringFuncs);
+
+      String supportedNumberFuncs = metadata.getNumericFunctions();
+      assertEquals(NumericFunctionsSupported, supportedNumberFuncs);
+
+      String supportedSystemFuncs = metadata.getSystemFunctions();
+      assertEquals(SystemFunctionsSupported, supportedSystemFuncs);
     }
   }
 }
