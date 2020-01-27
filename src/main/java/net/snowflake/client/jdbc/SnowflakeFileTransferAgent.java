@@ -13,18 +13,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.CountingOutputStream;
-import net.snowflake.client.core.ObjectMapperFactory;
-import net.snowflake.client.core.SFException;
-import net.snowflake.client.core.SFFixedViewResultSet;
-import net.snowflake.client.core.SFSession;
-import net.snowflake.client.core.SFStatement;
-import net.snowflake.client.jdbc.cloud.storage.SnowflakeStorageClient;
-import net.snowflake.client.jdbc.cloud.storage.StageInfo;
-import net.snowflake.client.jdbc.cloud.storage.StorageClientFactory;
-import net.snowflake.client.jdbc.cloud.storage.StorageObjectMetadata;
-import net.snowflake.client.jdbc.cloud.storage.StorageObjectSummary;
-import net.snowflake.client.jdbc.cloud.storage.StorageObjectSummaryCollection;
-import net.snowflake.client.jdbc.cloud.storage.StorageProviderException;
+import net.snowflake.client.core.*;
+import net.snowflake.client.jdbc.cloud.storage.*;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
@@ -38,29 +28,15 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.filefilter.WildcardFileFilter;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.DigestOutputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -2300,6 +2276,13 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
             continue;
           }
 
+          // if it's an upload and there's already a file existing remotely with the same name, skip uploading it
+          if (commandType == CommandType.UPLOAD && objFileName.equals(fileMetadataMap.get(mappedSrcFile).destFileName))
+          {
+            skipFile(mappedSrcFile, objFileName);
+            continue;
+          }
+
           // Check file size first, if their difference is bigger than the block
           // size, we don't need to compare digests
           if (!fileMetadataMap.get(mappedSrcFile).requireCompress &&
@@ -2461,6 +2444,12 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
                            mappedSrcFile :
                            (localLocation +
                             fileMetadataMap.get(mappedSrcFile).destFileName);
+
+        if (commandType == CommandType.UPLOAD && stageFileName.equals(fileMetadataMap.get(mappedSrcFile).destFileName))
+        {
+          skipFile(mappedSrcFile, stageFileName);
+          continue;
+        }
 
         // Check file size first, if they are different, we don't need
         // to check digest
