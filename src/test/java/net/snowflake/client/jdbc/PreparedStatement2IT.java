@@ -405,7 +405,6 @@ public class PreparedStatement2IT extends PreparedStatement0IT
   {
     try (Connection connection = init())
     {
-      connection.createStatement().execute("alter session set enable_false_filter_rule=false");
       connection.createStatement().execute("alter session set "
                                            + "optimizer_eliminate_scans_for_constant_select=false");
       connection.createStatement().execute("create or replace table inc(a int, b int)");
