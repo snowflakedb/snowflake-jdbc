@@ -36,7 +36,6 @@ ehthumbs.db
 Thumbs.db
 
 target/*
-fat/target/*
 
 # IDE Specific files #
 ######################
