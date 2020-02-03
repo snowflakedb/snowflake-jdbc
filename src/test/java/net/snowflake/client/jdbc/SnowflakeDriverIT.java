@@ -3770,6 +3770,95 @@ public class SnowflakeDriverIT extends BaseJDBCTest
   }
 
   /**
+   * Tests that result columns of type GEOGRAPHY appear as
+   * VARCHAR / VARIANT / BINARY to the client, depending on the value of
+   * GEOGRAPHY_OUTPUT_FORMAT
+   *
+   * @throws Throwable
+   */
+  @Test
+  public void testGeoOutputTypes() throws Throwable
+  {
+    Connection connection = null;
+    Statement regularStatement = null;
+    ResultSet resultSet = null;
+
+    try
+    {
+      Properties paramProperties = new Properties();
+
+      paramProperties.put("ENABLE_USER_DEFINED_TYPE_EXPANSION", true);
+      paramProperties.put("ENABLE_GEOGRAPHY_TYPE", true);
+
+      connection = getConnection(paramProperties);
+
+      regularStatement = connection.createStatement();
+
+      regularStatement.execute("create or replace table t_geo(geo geography);");
+
+      regularStatement.execute(
+          "insert into t_geo values ('POINT(0 0)'), ('LINESTRING(1 1, 2 2)')");
+
+      regularStatement.execute(
+          "alter session set GEOGRAPHY_OUTPUT_FORMAT='geojson'");
+
+      resultSet = regularStatement.executeQuery("select * from t_geo");
+
+      ResultSetMetaData metadata = resultSet.getMetaData();
+
+      assertEquals(1, metadata.getColumnCount());
+
+      // GeoJSON: SQL type OBJECT, Java type String
+      assertEquals(metadata.getColumnTypeName(1), "OBJECT");
+      assertEquals(metadata.getColumnClassName(1), "java.lang.String");
+
+      resultSet.close();
+
+
+      regularStatement.execute(
+          "alter session set GEOGRAPHY_OUTPUT_FORMAT='wkt'");
+
+      resultSet = regularStatement.executeQuery("select * from t_geo");
+
+      metadata = resultSet.getMetaData();
+
+      assertEquals(1, metadata.getColumnCount());
+
+      // WKT: SQL type VARCHAR, Java type String
+      assertEquals("VARCHAR", metadata.getColumnTypeName(1));
+      assertEquals("java.lang.String", metadata.getColumnClassName(1));
+
+      resultSet.close();
+
+
+      regularStatement.execute(
+          "alter session set GEOGRAPHY_OUTPUT_FORMAT='wkb'");
+
+      resultSet = regularStatement.executeQuery("select * from t_geo");
+
+      metadata = resultSet.getMetaData();
+
+      assertEquals(1, metadata.getColumnCount());
+
+      // WKB: SQL type BINARY, Java type byte[]
+      assertEquals("BINARY", metadata.getColumnTypeName(1));
+      assertEquals("[B", metadata.getColumnClassName(1));
+
+      resultSet.close();
+    }
+    finally
+    {
+      if (regularStatement != null)
+      {
+        regularStatement.execute("drop table t_geo");
+        regularStatement.close();
+      }
+
+      closeSQLObjects(resultSet, null, connection);
+    }
+  }
+
+  /**
    * Prepare statement will fail if the connection is already closed.
    */
   @Test(expected = SQLException.class)
