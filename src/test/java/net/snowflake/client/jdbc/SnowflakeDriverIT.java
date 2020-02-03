@@ -3777,6 +3777,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest
    * @throws Throwable
    */
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
   public void testGeoOutputTypes() throws Throwable
   {
     Connection connection = null;
