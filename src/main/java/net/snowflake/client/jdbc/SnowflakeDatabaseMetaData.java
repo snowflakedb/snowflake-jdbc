@@ -62,20 +62,32 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   static final private String JDBCVersion = "1.0";
   // Open Group CLI Functions
   // LOG10 is not supported
-  static final private String NumericFunctionsSupported =
-      "ABS,ACOS,ASIN,"
-      + "CEILING,COS,COT,DEGREES,EXP,FLOOR,LOG,MOD,PI,POWER,RADIANS,RAND,"
-      + "ROUND,SIGN,SQRT,TAN,TRUNCATE";
+  static final public String NumericFunctionsSupported =
+      "ABS,ACOS,ASIN,ATAN,ATAN2,CBRT,CEILING,COS,COT,DEGREES,EXP,FACTORIAL," +
+          "FLOOR,HAVERSINE,LN,LOG,MOD,PI,POWER,RADIANS,RAND," +
+          "ROUND,SIGN,SIN,SQRT,SQUARE,TAN,TRUNCATE";
   // DIFFERENCE and SOUNDEX are not supported
-  static final private String StringFunctionsSupported =
-      "ASCII,CHAR,"
-      + "CONCAT,INSERT,LCASE,LEFT,LENGTH,LOCATE,LTRIM,REPEAT,REPLACE,"
-      + "RIGHT,RTRIM,SPACE,SUBSTRING,UCASE";
+  static final public String StringFunctionsSupported =
+      "ASCII,BIT_LENGTH,CHAR,CONCAT,INSERT,LCASE,LEFT,LENGTH,LPAD," +
+          "LOCATE,LTRIM,OCTET_LENGTH,PARSE_IP,PARSE_URL,REPEAT,REVERSE," +
+          "REPLACE,RPAD,RTRIMMED_LENGTH,SPACE,SPLIT,SPLIT_PART," +
+          "SPLIT_TO_TABLE,STRTOK,STRTOK_TO_ARRAY,STRTOK_SPLIT_TO_TABLE," +
+          "TRANSLATE,TRIM,UNICODE,UUID_STRING,INITCAP,LOWER,UPPER,REGEXP," +
+          "REGEXP_COUNT,REGEXP_INSTR,REGEXP_LIKE,REGEXP_REPLACE," +
+          "REGEXP_SUBSTR,RLIKE,CHARINDEX,CONTAINS,EDITDISTANCE,ENDSWITH," +
+          "ILIKE,ILIKE ANY,LIKE,LIKE ALL,LIKE ANY,POSITION,REPLACE,RIGHT," +
+          "STARTSWITH,SUBSTRING,COMPRESS,DECOMPRESS_BINARY,DECOMPRESS_STRING," +
+          "BASE64_DECODE_BINARY,BASE64_DECODE_STRING,BASE64_ENCODE," +
+          "HEX_DECODE_BINARY,HEX_DECODE_STRING,HEX_ENCODE," +
+          "TRY_BASE64_DECODE_BINARY,TRY_BASE64_DECODE_STRING," +
+          "TRY_HEX_DECODE_BINARY,TRY_HEX_DECODE_STRING,MD_5,MD5_HEX," +
+          "MD5_BINARY,SHA1,SHA1_HEX,SHA2,SHA1_BINARY,SHA2_HEX,SHA2_BINARY," +
+          " HASH,HASH_AGG,COLLATE,COLLATION";
   static final private String DateAndTimeFunctionsSupported =
       "CURDATE," +
       "CURTIME,DAYNAME,DAYOFMONTH,DAYOFWEEK,DAYOFYEAR,HOUR,MINUTE,MONTH," +
       "MONTHNAME,NOW,QUARTER,SECOND,TIMESTAMPADD,TIMESTAMPDIFF,WEEK,YEAR";
-  static final private String SystemFunctionsSupported =
+  static final public String SystemFunctionsSupported =
       "DATABASE,IFNULL,USER";
 
   // These are keywords not in SQL2003 standard
@@ -108,6 +120,8 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
 
   private final boolean metadataRequestUseConnectionCtx;
 
+  private final boolean metadataRequestUseSessionDatabase;
+
   SnowflakeDatabaseMetaData(Connection connection) throws SQLException
   {
     logger.debug("public SnowflakeDatabaseMetaData(SnowflakeConnection connection)");
@@ -115,6 +129,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
     this.connection = connection;
     this.session = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
     this.metadataRequestUseConnectionCtx = session.getMetadataRequestUseConnectionCtx();
+    this.metadataRequestUseSessionDatabase = session.getMetadataRequestUseSessionDatabase();
   }
 
   private void raiseSQLExceptionIfConnectionIsClosed() throws SQLException
@@ -1396,13 +1411,26 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   private SFPair<String, String> applySessionContext(String catalog,
                                                      String schemaPattern)
   {
-    if (catalog == null && metadataRequestUseConnectionCtx)
+    if (metadataRequestUseConnectionCtx)
     {
-      catalog = session.getDatabase();
-
+      // CLIENT_METADATA_USE_SESSION_DATABASE = TRUE
+      if (catalog == null)
+      {
+        catalog = session.getDatabase();
+      }
       if (schemaPattern == null)
       {
         schemaPattern = session.getSchema();
+      }
+    }
+    else
+    {
+      if (metadataRequestUseSessionDatabase)
+      {
+        if (catalog == null)
+        {
+          catalog = session.getDatabase();
+        }
       }
     }
     return SFPair.of(catalog, schemaPattern);

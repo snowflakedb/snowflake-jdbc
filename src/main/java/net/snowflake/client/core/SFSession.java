@@ -169,6 +169,11 @@ public class SFSession
   // improve the request time
   private boolean metadataRequestUseConnectionCtx = false;
 
+  // For Metadata request(i.e. DatabaseMetadata.getTables or
+  // DatabaseMetadata.getSchemas), whether to search using multiple schemas with
+  // session database
+  private boolean metadataRequestUseSessionDatabase = false;
+
   private SnowflakeType timestampMappedType =
       SnowflakeType.TIMESTAMP_LTZ;
 
@@ -1188,9 +1193,19 @@ public class SFSession
     this.metadataRequestUseConnectionCtx = enabled;
   }
 
+  public void setMetadataRequestUseSessionDatabase(boolean enabled)
+  {
+    this.metadataRequestUseSessionDatabase = enabled;
+  }
+
   public boolean getMetadataRequestUseConnectionCtx()
   {
     return this.metadataRequestUseConnectionCtx;
+  }
+
+  public boolean getMetadataRequestUseSessionDatabase()
+  {
+    return this.metadataRequestUseSessionDatabase;
   }
 
   public SnowflakeType getTimestampMappedType()

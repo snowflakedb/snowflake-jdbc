@@ -64,7 +64,7 @@ public class StorageClientFactory
     switch (stage.getStageType())
     {
       case S3:
-        return createS3Client(stage.getCredentials(), parallel, encMat, stage.getRegion());
+        return createS3Client(stage.getCredentials(), parallel, encMat, stage.getRegion(), stage.getEndPoint());
 
       case AZURE:
         return createAzureClient(stage, encMat);
@@ -89,13 +89,15 @@ public class StorageClientFactory
    * @param parallel         degree of parallelism
    * @param encMat           encryption material for the client
    * @param stageRegion      the region where the stage is located
+   * @param stageEndPoint    the FIPS endpoint for the stage, if needed
    * @return the SnowflakeS3Client  instance created
    * @throws SnowflakeSQLException failure to create the S3 client
    */
   private SnowflakeS3Client createS3Client(Map<?, ?> stageCredentials,
                                            int parallel,
                                            RemoteStoreFileEncryptionMaterial encMat,
-                                           String stageRegion)
+                                           String stageRegion,
+                                           String stageEndPoint)
   throws SnowflakeSQLException
   {
     final int S3_TRANSFER_MAX_RETRIES = 3;
@@ -118,7 +120,7 @@ public class StorageClientFactory
 
     try
     {
-      s3Client = new SnowflakeS3Client(stageCredentials, clientConfig, encMat, stageRegion);
+      s3Client = new SnowflakeS3Client(stageCredentials, clientConfig, encMat, stageRegion, stageEndPoint);
     }
     catch (Exception ex)
     {
