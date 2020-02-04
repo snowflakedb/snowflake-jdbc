@@ -104,6 +104,8 @@ public class SessionUtil
   public static final String CLIENT_VALIDATE_DEFAULT_PARAMETERS = "CLIENT_VALIDATE_DEFAULT_PARAMETERS";
   public static final String CLIENT_ENABLE_LOG_INFO_STATEMENT_PARAMETERS =
       "CLIENT_ENABLE_LOG_INFO_STATEMENT_PARAMETERS";
+  public static final String CLIENT_METADATA_REQUEST_USE_CONNECTION_CTX = "CLIENT_METADATA_REQUEST_USE_CONNECTION_CTX";
+  public static final String CLIENT_METADATA_USE_SESSION_DATABASE = "CLIENT_METADATA_USE_SESSION_DATABASE";
 
   static final String SF_HEADER_SERVICE_NAME = "X-Snowflake-Service";
 
@@ -155,7 +157,8 @@ public class SessionUtil
       "JDBC_EFFICIENT_CHUNK_STORAGE",
       JDBC_RS_COLUMN_CASE_INSENSITIVE,
       CLIENT_RESULT_COLUMN_CASE_INSENSITIVE,
-      "CLIENT_METADATA_REQUEST_USE_CONNECTION_CTX",
+      CLIENT_METADATA_REQUEST_USE_CONNECTION_CTX,
+      CLIENT_METADATA_USE_SESSION_DATABASE,
       "JDBC_TREAT_DECIMAL_AS_INT",
       "JDBC_ENABLE_COMBINED_DESCRIBE",
       CLIENT_ENABLE_CONSERVATIVE_MEMORY_USAGE,
@@ -1458,11 +1461,18 @@ public class SessionUtil
           session.setResultColumnCaseInsensitive((boolean) entry.getValue());
         }
       }
-      else if ("CLIENT_METADATA_REQUEST_USE_CONNECTION_CTX".equalsIgnoreCase(entry.getKey()))
+      else if (CLIENT_METADATA_REQUEST_USE_CONNECTION_CTX.equalsIgnoreCase(entry.getKey()))
       {
         if (session != null)
         {
           session.setMetadataRequestUseConnectionCtx((boolean) entry.getValue());
+        }
+      }
+      else if (CLIENT_METADATA_USE_SESSION_DATABASE.equalsIgnoreCase(entry.getKey()))
+      {
+        if (session != null)
+        {
+           session.setMetadataRequestUseSessionDatabase((boolean) entry.getValue());
         }
       }
       else if ("CLIENT_TIMESTAMP_TYPE_MAPPING".equalsIgnoreCase(entry.getKey()))

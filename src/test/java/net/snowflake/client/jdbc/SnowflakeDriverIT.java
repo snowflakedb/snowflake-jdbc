@@ -1185,6 +1185,81 @@ public class SnowflakeDriverIT extends BaseJDBCTest
 
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
+  public void testPutOverwriteFalseNoDigest() throws Throwable
+  {
+    Connection connection = null;
+    Statement statement = null;
+
+    // create 2 files: an original, and one that will overwrite the original
+    File file1 = tmpFolder.newFile("testfile.csv");
+    BufferedWriter bw = new BufferedWriter(new FileWriter(file1));
+    bw.write("Writing original file content. This should get overwritten.");
+    bw.close();
+
+    File file2 = tmpFolder2.newFile("testfile.csv");
+    bw = new BufferedWriter(new FileWriter(file2));
+    bw.write("This is all new! This should be the result of the overwriting.");
+    bw.close();
+
+    String sourceFilePathOriginal = file1.getCanonicalPath();
+    String sourceFilePathOverwrite = file2.getCanonicalPath();
+
+    File destFolder = tmpFolder.newFolder();
+    String destFolderCanonicalPath = destFolder.getCanonicalPath();
+    String destFolderCanonicalPathWithSeparator = destFolderCanonicalPath + File.separator;
+
+    List<String> accounts = Arrays.asList(null, "s3testaccount", "azureaccount", "gcpaccount");
+    for (int i = 0; i < accounts.size(); i++)
+    {
+      try
+      {
+        connection = getConnection(accounts.get(i));
+
+        statement = connection.createStatement();
+
+        // create a stage to put the file in
+        statement.execute("CREATE OR REPLACE STAGE testing_stage");
+        assertTrue("Failed to put a file",
+                   statement.execute("PUT file://" + sourceFilePathOriginal + " @testing_stage"));
+        // check that file exists in stage after PUT
+        findFile(statement, "ls @testing_stage/");
+
+        // put another file in same stage with same filename with overwrite = true
+        assertTrue("Failed to put a file",
+                   statement.execute("PUT file://" + sourceFilePathOverwrite + " @testing_stage overwrite=false"));
+
+        // check that file exists in stage after PUT
+        findFile(statement, "ls @testing_stage/");
+
+        // get file from new stage
+        assertTrue("Failed to get files", statement.execute(
+            "GET @testing_stage 'file://"
+                + destFolderCanonicalPath + "' parallel=8"));
+
+        // Make sure that the downloaded file exists; it should be gzip compressed
+        File downloaded = new File(destFolderCanonicalPathWithSeparator + "testfile.csv.gz");
+        assertTrue(downloaded.exists());
+
+        //unzip the file
+        Process p = Runtime.getRuntime().exec(
+            "gzip -d " + destFolderCanonicalPathWithSeparator
+                + "testfile.csv.gz");
+        p.waitFor();
+
+        // 2nd file should never be uploaded
+        File unzipped = new File(destFolderCanonicalPathWithSeparator + "testfile.csv");
+        assertTrue(FileUtils.contentEqualsIgnoreEOL(file1, unzipped, null));
+      }
+      finally
+      {
+        statement.execute("DROP TABLE IF EXISTS testLoadToLocalFS");
+        statement.close();
+      }
+    }
+  }
+
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
   public void testPut() throws Throwable
   {
     Connection connection = null;
@@ -3691,6 +3766,96 @@ public class SnowflakeDriverIT extends BaseJDBCTest
       {
         closeSQLObjects(null, statement, connection);
       }
+    }
+  }
+
+  /**
+   * Tests that result columns of type GEOGRAPHY appear as
+   * VARCHAR / VARIANT / BINARY to the client, depending on the value of
+   * GEOGRAPHY_OUTPUT_FORMAT
+   *
+   * @throws Throwable
+   */
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
+  public void testGeoOutputTypes() throws Throwable
+  {
+    Connection connection = null;
+    Statement regularStatement = null;
+    ResultSet resultSet = null;
+
+    try
+    {
+      Properties paramProperties = new Properties();
+
+      paramProperties.put("ENABLE_USER_DEFINED_TYPE_EXPANSION", true);
+      paramProperties.put("ENABLE_GEOGRAPHY_TYPE", true);
+
+      connection = getConnection(paramProperties);
+
+      regularStatement = connection.createStatement();
+
+      regularStatement.execute("create or replace table t_geo(geo geography);");
+
+      regularStatement.execute(
+          "insert into t_geo values ('POINT(0 0)'), ('LINESTRING(1 1, 2 2)')");
+
+      regularStatement.execute(
+          "alter session set GEOGRAPHY_OUTPUT_FORMAT='geojson'");
+
+      resultSet = regularStatement.executeQuery("select * from t_geo");
+
+      ResultSetMetaData metadata = resultSet.getMetaData();
+
+      assertEquals(1, metadata.getColumnCount());
+
+      // GeoJSON: SQL type OBJECT, Java type String
+      assertEquals(metadata.getColumnTypeName(1), "OBJECT");
+      assertEquals(metadata.getColumnClassName(1), "java.lang.String");
+
+      resultSet.close();
+
+
+      regularStatement.execute(
+          "alter session set GEOGRAPHY_OUTPUT_FORMAT='wkt'");
+
+      resultSet = regularStatement.executeQuery("select * from t_geo");
+
+      metadata = resultSet.getMetaData();
+
+      assertEquals(1, metadata.getColumnCount());
+
+      // WKT: SQL type VARCHAR, Java type String
+      assertEquals("VARCHAR", metadata.getColumnTypeName(1));
+      assertEquals("java.lang.String", metadata.getColumnClassName(1));
+
+      resultSet.close();
+
+
+      regularStatement.execute(
+          "alter session set GEOGRAPHY_OUTPUT_FORMAT='wkb'");
+
+      resultSet = regularStatement.executeQuery("select * from t_geo");
+
+      metadata = resultSet.getMetaData();
+
+      assertEquals(1, metadata.getColumnCount());
+
+      // WKB: SQL type BINARY, Java type byte[]
+      assertEquals("BINARY", metadata.getColumnTypeName(1));
+      assertEquals("[B", metadata.getColumnClassName(1));
+
+      resultSet.close();
+    }
+    finally
+    {
+      if (regularStatement != null)
+      {
+        regularStatement.execute("drop table t_geo");
+        regularStatement.close();
+      }
+
+      closeSQLObjects(resultSet, null, connection);
     }
   }
 

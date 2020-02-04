@@ -91,6 +91,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient
   private RemoteStoreFileEncryptionMaterial encMat = null;
   private ClientConfiguration clientConfig = null;
   private String stageRegion = null;
+  private String stageEndPoint = null; // FIPS endpoint, if needed
 
   // socket factory used by s3 client's http client.
   private static SSLConnectionSocketFactory s3ConnectionSocketFactory = null;
@@ -98,17 +99,19 @@ public class SnowflakeS3Client implements SnowflakeStorageClient
   public SnowflakeS3Client(Map<?, ?> stageCredentials,
                            ClientConfiguration clientConfig,
                            RemoteStoreFileEncryptionMaterial encMat,
-                           String stageRegion)
+                           String stageRegion,
+                           String stageEndPoint)
   throws SnowflakeSQLException
   {
     setupSnowflakeS3Client(stageCredentials, clientConfig,
-                           encMat, stageRegion);
+                           encMat, stageRegion, stageEndPoint);
   }
 
   private void setupSnowflakeS3Client(Map<?, ?> stageCredentials,
                                       ClientConfiguration clientConfig,
                                       RemoteStoreFileEncryptionMaterial encMat,
-                                      String stageRegion)
+                                      String stageRegion,
+                                      String stageEndPoint)
   throws SnowflakeSQLException
   {
     // Save the client creation parameters so that we can reuse them,
@@ -117,6 +120,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient
     this.clientConfig = clientConfig;
     this.stageRegion = stageRegion;
     this.encMat = encMat;
+    this.stageEndPoint = stageEndPoint; // FIPS endpoint, if needed
 
     logger.debug("Setting up AWS client ");
 
@@ -193,6 +197,12 @@ public class SnowflakeS3Client implements SnowflakeStorageClient
     amazonS3Builder.withPathStyleAccessEnabled(false);
 
     amazonClient = (AmazonS3) amazonS3Builder.build();
+    if (this.stageEndPoint != null && this.stageEndPoint != "")
+    {
+      // Set the FIPS endpoint if we need it. GS will tell us if we do by
+      // giving us an endpoint to use if required and supported by the region.
+      amazonClient.setEndpoint(this.stageEndPoint);
+    }
   }
 
   // Returns the Max number of retry attempts
@@ -240,7 +250,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient
   throws SnowflakeSQLException
   {
     // We renew the client with fresh credentials and with its original parameters
-    setupSnowflakeS3Client(stageCredentials, this.clientConfig, this.encMat, this.stageRegion);
+    setupSnowflakeS3Client(stageCredentials, this.clientConfig, this.encMat, this.stageRegion, this.stageEndPoint);
   }
 
   @Override

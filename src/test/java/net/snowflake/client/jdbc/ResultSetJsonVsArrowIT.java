@@ -1792,4 +1792,57 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest
     statement.executeQuery("drop table if exists test_null_ts_ntz");
     statement.close();
   }
+
+  @Test
+  public void TestArrowStringRoundTrip() throws SQLException {
+    String big_number = "11111111112222222222333333333344444444";
+    Connection con = getConnection();
+    Statement st = con.createStatement();
+    try {
+      for (int i = 0; i < 38; i++) {
+        StringBuilder to_insert = new StringBuilder(big_number);
+        if (i != 0) {
+          int insert_to = 38 - i;
+          to_insert.insert(insert_to, ".");
+        }
+        st.execute("create or replace table test_arrow_string (a NUMBER(38, " + i + ") )");
+        st.execute("begin");
+        st.execute("insert into test_arrow_string values (" + to_insert + ")");
+        ResultSet rs = st.executeQuery("select * from test_arrow_string");
+        assertTrue(rs.next());
+        assertEquals(to_insert.toString(), rs.getString(1));
+        st.execute("rollback");
+        st.execute("drop table if exists test_arrow_string");
+      }
+    } finally {
+      st.close();
+      con.close();
+    }
+  }
+
+  @Test
+  public void TestArrowFloatRoundTrip() throws SQLException {
+    Connection con = getConnection();
+    Statement st = con.createStatement();
+    float[] cases = {Float.MAX_VALUE, Float.MIN_VALUE};
+    try
+    {
+      for (float f : cases)
+      {
+        st.executeQuery("create or replace table test_arrow_float (a FLOAT)");
+        st.executeQuery("begin");
+        st.executeQuery("insert into test_arrow_float values (" + f + ")");
+        ResultSet rs = st.executeQuery("select * from test_arrow_float");
+        assertTrue(rs.next());
+        assertEquals(f, rs.getFloat(1), Float.MIN_VALUE);
+        st.executeQuery("rollback");
+        st.executeQuery("drop table if exists test_arrow_float");
+      }
+    }
+    finally
+    {
+      st.close();
+      con.close();
+    }
+  }
 }

@@ -1,3 +1,14 @@
+**JDBC Driver 3.12.0**
+
+- \| SNOW-68471  | Introduce CLIENT_METADATA_USE_SESSION_DATABASE to scope the database for metadata access. false by default.
+- \| SNOW-125221 | Fix getStringFunctions() that does not return all support string functions
+- \| SNOW-122286 | AWS: When OVERWRITE is false, which is set by default, the file is uploaded if no same file name exists in the stage. This used to check the content signature but it will no longer check. Azure and GCP already work this way.
+- \| SNOW-124868 | Add new statement types for LIST, GET, PUT, RM
+- \| SNOW-103629 | Use the FIPS S3 endpoints for regions in FIPS mode
+- \| SNOW-128360 | Fix slf4j compatibility issue with Matlab
+- \
+- \      
+
 **JDBC Driver 3.11.1**
 
 - \| SNOW-126957 | Add CLIENT_ENABLE_LOG_INFO_STATEMENT_PARAMETERS for logging statements and binding data in INO log level.
