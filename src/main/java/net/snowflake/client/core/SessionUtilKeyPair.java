@@ -18,21 +18,18 @@ import javax.crypto.EncryptedPrivateKeyInfo;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 import java.io.IOException;
+import java.io.StringReader;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.security.InvalidKeyException;
-import java.security.KeyFactory;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
+import java.security.*;
 import java.security.interfaces.RSAPrivateCrtKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.RSAPublicKeySpec;
 import java.util.Date;
 
-import static java.util.Base64.getMimeDecoder;
+import org.bouncycastle.util.io.pem.PemObject;
+import org.bouncycastle.util.io.pem.PemReader;
 
 /**
  * Class used to compute jwt token for key pair authentication
@@ -50,9 +47,16 @@ class SessionUtilKeyPair
 
   private PublicKey publicKey = null;
 
+  private boolean isFipsMode = false;
+
+  private Provider SecurityProvider = null;
+
+  private SecretKeyFactory secretKeyFactory = null;
+
   static private final String ISSUER_FMT = "%s.%s.%s";
 
   static private final String SUBJECT_FMT = "%s.%s";
+
 
 
   SessionUtilKeyPair(PrivateKey privateKey, String privateKeyFile, String privateKeyFilePwd,
@@ -61,6 +65,17 @@ class SessionUtilKeyPair
   {
     this.userName = userName.toUpperCase();
     this.accountName = accountName.toUpperCase();
+
+    // check if in FIPS mode
+    for (Provider p: Security.getProviders())
+    {
+      if ("BCFIPS".equals(p.getName()))
+      {
+        this.isFipsMode = true;
+        this.SecurityProvider = p;
+        break;
+      }
+    }
 
     // if there is both a file and a private key, there is a problem
     if (!Strings.isNullOrEmpty(privateKeyFile) && privateKey != null)
@@ -84,8 +99,7 @@ class SessionUtilKeyPair
 
       try
       {
-        this.publicKey = KeyFactory.getInstance("RSA")
-            .generatePublic(rsaPublicKeySpec);
+        this.publicKey = getKeyFactoryInstance().generatePublic(rsaPublicKeySpec);
       }
       catch (NoSuchAlgorithmException | InvalidKeySpecException e)
       {
@@ -100,6 +114,30 @@ class SessionUtilKeyPair
     }
   }
 
+  private KeyFactory getKeyFactoryInstance() throws NoSuchAlgorithmException
+  {
+    if (isFipsMode)
+    {
+      return KeyFactory.getInstance("RSA", this.SecurityProvider);
+    }
+    else
+    {
+      return KeyFactory.getInstance("RSA");
+    }
+  }
+
+  private SecretKeyFactory getSecretKeyFactory(String algorithm) throws NoSuchAlgorithmException
+  {
+    if (isFipsMode)
+    {
+      return SecretKeyFactory.getInstance(algorithm, this.SecurityProvider);
+    }
+    else
+    {
+      return SecretKeyFactory.getInstance(algorithm);
+    }
+  }
+
   private PrivateKey extractPrivateKeyFromFile(String privateKeyFile, String privateKeyFilePwd) throws SFException
   {
     try
@@ -107,31 +145,33 @@ class SessionUtilKeyPair
       String privateKeyContent = new String(Files.readAllBytes(Paths.get(privateKeyFile)));
       if (Strings.isNullOrEmpty(privateKeyFilePwd))
       {
-        // private key file is unencrypted
-        privateKeyContent = privateKeyContent.replace("-----BEGIN RSA PRIVATE KEY-----", "");
-        privateKeyContent = privateKeyContent.replace("-----END RSA PRIVATE KEY-----", "");
-        byte[] decoded = getMimeDecoder().decode(privateKeyContent);
+        // unencrypted private key file
+        PemReader pr = new PemReader(new StringReader(privateKeyContent));
+        byte[] decoded = pr.readPemObject().getContent();
+        pr.close();
         PKCS8EncodedKeySpec encodedKeySpec = new PKCS8EncodedKeySpec(decoded);
-        KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+        KeyFactory keyFactory = getKeyFactoryInstance();
         return keyFactory.generatePrivate(encodedKeySpec);
       }
       else
       {
-        // private key file is encrypted
-        privateKeyContent = privateKeyContent.replace("-----BEGIN ENCRYPTED PRIVATE KEY-----", "");
-        privateKeyContent = privateKeyContent.replace("-----END ENCRYPTED PRIVATE KEY-----", "");
-        EncryptedPrivateKeyInfo pkInfo = new EncryptedPrivateKeyInfo(getMimeDecoder().decode(privateKeyContent));
+        // encrypted private key file
+        PemReader pr = new PemReader(new StringReader(privateKeyContent));
+        byte[] decoded = pr.readPemObject().getContent();
+        pr.close();
+        EncryptedPrivateKeyInfo pkInfo = new EncryptedPrivateKeyInfo(decoded);
         PBEKeySpec keySpec = new PBEKeySpec(privateKeyFilePwd.toCharArray());
-        SecretKeyFactory pbeKeyFactory = SecretKeyFactory.getInstance(pkInfo.getAlgName());
+        SecretKeyFactory pbeKeyFactory = this.getSecretKeyFactory(pkInfo.getAlgName());
         PKCS8EncodedKeySpec encodedKeySpec = pkInfo.getKeySpec(pbeKeyFactory.generateSecret(keySpec));
-        KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+        KeyFactory keyFactory = getKeyFactoryInstance();
         return keyFactory.generatePrivate(encodedKeySpec);
       }
     }
-    catch (NoSuchAlgorithmException | InvalidKeySpecException | IOException | IllegalArgumentException | InvalidKeyException e)
+    catch (NoSuchAlgorithmException | InvalidKeySpecException |
+            IOException | IllegalArgumentException | NullPointerException | InvalidKeyException e)
     {
       throw new SFException(
-          e, ErrorCode.INVALID_OR_UNSUPPORTED_PRIVATE_KEY, privateKeyFile);
+          e, ErrorCode.INVALID_OR_UNSUPPORTED_PRIVATE_KEY, privateKeyFile + ": " + e.getMessage());
     }
   }
 
