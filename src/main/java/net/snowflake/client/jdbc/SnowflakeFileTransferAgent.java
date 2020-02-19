@@ -79,11 +79,11 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
   // since TransferManager will parallelize upload
   private Set<String> bigSourceFiles;
 
-  // big source files < 16MB, for which we will upload them in paralle mode
+  // big source files < 16MB, for which we will upload them in parallel mode
   // with 4 threads by default
   private Set<String> smallSourceFiles;
 
-  static final private int BIG_FILE_THRESHOLD = 16 * 1024 * 1024;
+  static final private int BIG_FILE_THRESHOLD = 64 * 1024 * 1024;
 
   private Map<String, FileMetadata> fileMetadataMap;
 
