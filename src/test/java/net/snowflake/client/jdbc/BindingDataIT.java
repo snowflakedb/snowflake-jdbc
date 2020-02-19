@@ -19,10 +19,12 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Time;
+import java.sql.Timestamp;
 import java.sql.Types;
 import java.util.Calendar;
 import java.util.TimeZone;
 
+import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -461,4 +463,29 @@ public class BindingDataIT extends AbstractDriverIT
       }
     }
   }
+
+  @Test
+  public void testBindTimestampTZ() throws SQLException {
+    Connection connection = getConnection();
+    Statement statement = connection.createStatement();
+    statement.execute(
+        "create or replace table testBindTimestampTZ(" +
+            "cola int, colb timestamp_tz)");
+    statement.execute("alter session set CLIENT_TIMESTAMP_TYPE_MAPPING=TIMESTAMP_TZ");
+
+    long millSeconds = System.currentTimeMillis();
+    Timestamp ts = new Timestamp(millSeconds);
+    PreparedStatement prepStatement = connection.prepareStatement(
+        "insert into testBindTimestampTZ values (?, ?)");
+    prepStatement.setInt(1, 123);
+    prepStatement.setTimestamp(2, ts, Calendar.getInstance(TimeZone.getTimeZone("EST")));
+    prepStatement.execute();
+
+    ResultSet resultSet = statement.executeQuery(
+        "select cola, colb from testBindTimestampTz");
+    resultSet.next();
+    assertThat("integer", resultSet.getInt(1), equalTo(123));
+    assertThat("timestamp_tz", resultSet.getTimestamp(2), equalTo(ts));
+  }
+
 }
