@@ -1,3 +1,11 @@
+**JDBC Driver 3.12.1**
+
+- \| SNOW-29974  | Add binding support for TIMESTAMP_TZ including Timezone
+- \| SNOW-128360  | Fix NoSuchMethodError: org.slf4j.helpers.MessageFormatter.arrayFormat for Matlab
+- \| SNOW-134689 | Increase multi part upload threshold to 64MB for PUT command
+- \
+- \      
+
 **JDBC Driver 3.12.0**
 
 - \| SNOW-68471  | Introduce CLIENT_METADATA_USE_SESSION_DATABASE to scope the database for metadata access. false by default.
