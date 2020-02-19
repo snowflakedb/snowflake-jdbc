@@ -1,0 +1,4 @@
+lib/
+target/
+dependency-reduced-pom.xml
+generated_public_pom.xml
