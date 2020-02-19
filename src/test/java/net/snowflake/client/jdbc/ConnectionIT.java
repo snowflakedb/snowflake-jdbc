@@ -713,7 +713,7 @@ public class ConnectionIT extends BaseJDBCTest
     String testUser = parameters.get("user");
 
     KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
-    SecureRandom random = SecureRandom.getInstance("SHA1PRNG", "SUN");
+    SecureRandom random = SecureRandom.getInstance("SHA1PRNG");
     keyPairGenerator.initialize(2048, random);
 
     KeyPair keyPair = keyPairGenerator.generateKeyPair();
@@ -810,9 +810,21 @@ public class ConnectionIT extends BaseJDBCTest
         "alter user %s set rsa_public_key='%s'", testUser, pubKey));
     connection.close();
 
-    String privateKeyLocation = getFullPathFileInResource("rsa_key.pem");
+    // PKCS #8
+    String privateKeyLocation = getFullPathFileInResource("rsa_key.p8");
     String uri = parameters.get("uri") + "/?private_key_file=" + privateKeyLocation;
     Properties properties = new Properties();
+    properties.put("account", parameters.get("account"));
+    properties.put("user", testUser);
+    properties.put("ssl", parameters.get("ssl"));
+    properties.put("port", parameters.get("port"));
+    connection = DriverManager.getConnection(uri, properties);
+    connection.close();
+
+    // PKCS #1
+    privateKeyLocation = getFullPathFileInResource("rsa_key.pem");
+    uri = parameters.get("uri") + "/?private_key_file=" + privateKeyLocation;
+    properties = new Properties();
     properties.put("account", parameters.get("account"));
     properties.put("user", testUser);
     properties.put("ssl", parameters.get("ssl"));
@@ -949,7 +961,7 @@ public class ConnectionIT extends BaseJDBCTest
     Integer[] testCases = {2048, 4096, 8192};
 
     KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
-    SecureRandom random = SecureRandom.getInstance("SHA1PRNG", "SUN");
+    SecureRandom random = SecureRandom.getInstance("SHA1PRNG");
 
     for (Integer keyLength : testCases)
     {

@@ -3,11 +3,11 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>net.snowflake</groupId>
-  <artifactId>snowflake-jdbc</artifactId>
+  <artifactId>snowflake-jdbc-fips</artifactId>
   <version>3.12.0</version>
   <packaging>jar</packaging>
 
-  <name>snowflake-jdbc</name>
+  <name>snowflake-jdbc-fips</name>
   <url>http://maven.apache.org</url>
 
   <repositories>
@@ -50,7 +50,6 @@
     <awssdk.version>1.11.364</awssdk.version>
     <google.api.client.version>1.30.5</google.api.client.version>
     <google.http.client.version>1.33.0</google.http.client.version>
-    <bouncycastle.version>1.64</bouncycastle.version>
     <shadeBase>net.snowflake.client.jdbc.internal</shadeBase>
     <travisTestCategory>net.snowflake.client.category.AllTestCategory</travisTestCategory>
   </properties>
@@ -245,13 +244,15 @@
     </dependency>
     <dependency>
       <groupId>org.bouncycastle</groupId>
-      <artifactId>bcprov-jdk15on</artifactId>
-      <version>${bouncycastle.version}</version>
+      <artifactId>bc-fips</artifactId>
+      <version>1.0.1</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.bouncycastle</groupId>
-      <artifactId>bcpkix-jdk15on</artifactId>
-      <version>${bouncycastle.version}</version>
+      <artifactId>bcpkix-fips</artifactId>
+      <version>1.0.3</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>com.amazonaws</groupId>
@@ -298,12 +299,19 @@
 
   <build>
     <finalName>${project.artifactId}</finalName>
+    <sourceDirectory>${basedir}/../src/main/java</sourceDirectory>
+    <testSourceDirectory>${basedir}/src/test/java</testSourceDirectory>
     <resources>
       <resource>
-        <directory>src/main/resources</directory>
+        <directory>${basedir}/../src/main/resources</directory>
         <filtering>true</filtering>
       </resource>
     </resources>
+    <testResources>
+      <testResource>
+        <directory>${basedir}/../src/test/resources</directory>
+      </testResource>
+    </testResources>
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -317,7 +325,7 @@
               <goal>install-file</goal>
             </goals>
             <configuration>
-              <file>${project.basedir}/dependencies/arrow-memory-${arrow.version}.jar</file>
+              <file>${basedir}/../dependencies/arrow-memory-${arrow.version}.jar</file>
               <groupId>org.apache.arrow</groupId>
               <artifactId>arrow-memory</artifactId>
               <version>${arrow.version}</version>
@@ -332,7 +340,7 @@
               <goal>install-file</goal>
             </goals>
             <configuration>
-              <file>${project.basedir}/dependencies/arrow-format-${arrow.version}.jar</file>
+              <file>${basedir}/../dependencies/arrow-format-${arrow.version}.jar</file>
               <groupId>org.apache.arrow</groupId>
               <artifactId>arrow-format</artifactId>
               <version>${arrow.version}</version>
@@ -347,7 +355,7 @@
               <goal>install-file</goal>
             </goals>
             <configuration>
-              <file>${project.basedir}/dependencies/arrow-vector-${arrow.version}.jar</file>
+              <file>${basedir}/../dependencies/arrow-vector-${arrow.version}.jar</file>
               <groupId>org.apache.arrow</groupId>
               <artifactId>arrow-vector</artifactId>
               <version>${arrow.version}</version>
@@ -388,20 +396,15 @@
             <arg>-Xlint:all,-path</arg>
           </compilerArgs>
         </configuration>
-        <executions>
-          <execution>
-            <id>default-testCompile</id>
-            <phase>test-compile</phase>
-            <configuration>
-              <testExcludes>
-                <exclude>**/ConnectionFipsIT.java</exclude>
-              </testExcludes>
-            </configuration> 
-            <goals>
-              <goal>testCompile</goal>
-            </goals>
-          </execution>                  
-        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <excludes>
+            <exclude>**/*SFTrustManagerTest.java</exclude>
+          </excludes>
+        </configuration>
       </plugin>
       <plugin>
         <groupId>org.jacoco</groupId>
@@ -624,10 +627,6 @@
                        <shadedPattern>${shadeBase}.org.jsoup</shadedPattern>
                      </relocation>
                      <relocation>
-                       <pattern>org.bouncycastle</pattern>
-                       <shadedPattern>${shadeBase}.org.bouncycastle</shadedPattern>
-                     </relocation>
-                     <relocation>
                        <pattern>com.nimbusds</pattern>
                        <shadedPattern>${shadeBase}.com.nimbusds</shadedPattern>
                      </relocation>
@@ -772,79 +771,6 @@
       </build>
     </profile>
     <profile>
-      <id>ingest-testing</id>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.apache.avro</groupId>
-            <artifactId>avro-maven-plugin</artifactId>
-            <version>1.8.1</version>
-            <executions>
-              <execution>
-                <phase>generate-test-sources</phase>
-                <goals>
-                  <goal>schema</goal>
-                </goals>
-                <configuration>
-                  <sourceDirectory>${project.basedir}/src/test/java/net/snowflake/client/ingest/avro</sourceDirectory>
-                  <outputDirectory>${project.basedir}/src/test/java/</outputDirectory>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-    <profile>
-      <id>java-9</id>
-      <activation>
-        <jdk>9</jdk>
-      </activation>
-      <build>
-        <plugins>
-          <plugin>
-            <artifactId>maven-surefire-plugin</artifactId>
-            <configuration>
-              <argLine>
-                --illegal-access=warn
-              </argLine>
-            </configuration>
-          </plugin>
-          <plugin>
-            <artifactId>maven-failsafe-plugin</artifactId>
-            <configuration>
-              <argLine>
-                --illegal-access=warn
-              </argLine>
-            </configuration>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-    <profile>
-      <id>reformat</id>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.codehaus.mojo</groupId>
-            <artifactId>exec-maven-plugin</artifactId>
-            <executions>
-              <execution>
-                <id>reformat-code</id>
-                <phase>process-sources</phase>
-                <goals>
-                  <goal>exec</goal>
-                </goals>
-                <configuration>
-                  <executable>${basedir}/scripts/format_code.sh</executable>
-                </configuration>
-              </execution>
-             </executions>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-    <profile>
       <id>jenkinsIT</id>
       <activation>
         <property>
@@ -858,111 +784,17 @@
             <artifactId>maven-failsafe-plugin</artifactId>
             <executions>
               <execution>
-                <id>Incident2IT</id>
-                <goals>
-                  <goal>integration-test</goal>
-                </goals>
-                <configuration>
-                  <argLine>
-                    @{argLine}
-                    -Dsnowflake.throttle_duration=0
-                    -Dsnowflake.throttle_limit=10
-                  </argLine>
-                  <systemPropertyVariables>
-                    <logback.configurationFile>
-                      ${basedir}/src/test/resources/logback-test.xml
-                    </logback.configurationFile>
-                  </systemPropertyVariables>
-                  <test>Incident2IT.java</test>
-                </configuration>
-              </execution>
-              <execution>
                 <id>DefaultIT</id>
                 <goals>
                   <goal>integration-test</goal>
                 </goals>
                 <configuration>
-                  <excludes>
-                    <exclude>**/ingest/*.java</exclude>
-                    <exclude>**/Incident2IT.java</exclude>
-                    <exclude>**/DellBoomiCloudIT.java</exclude>
-                    <exclude>**/ConnectionFipsIT.java</exclude>
-                  </excludes>
-                  <systemPropertyVariables>
-                    <logback.configurationFile>
-                      ${basedir}/src/test/resources/logback-test.xml
-                    </logback.configurationFile>
-                  </systemPropertyVariables>
-                </configuration>
-              </execution>
-              <execution>
-                <goals>
-                  <goal>verify</goal>
-                </goals>
-              </execution>
-            </executions>
-          </plugin>
-          <!-- collect code coverage -->
-          <plugin>
-            <groupId>org.jacoco</groupId>
-            <artifactId>jacoco-maven-plugin</artifactId>
-            <version>${jacoco.version}</version>
-            <executions>
-              <execution>
-                <id>pre-integration-test</id>
-                <phase>pre-integration-test</phase>
-                <goals>
-                  <goal>prepare-agent</goal>
-                </goals>
-                <configuration>
-                  <destFile>target/jacoco-it.exec</destFile>
-                </configuration>
-              </execution>
-              <execution>
-                <id>post-integration-test</id>
-                <phase>post-integration-test</phase>
-                <goals>
-                  <goal>report</goal>
-                </goals>
-                <configuration>
-                  <dataFile>target/jacoco-it.exec</dataFile>
-                  <outputDirectory>target/jacoco-it</outputDirectory>
-                </configuration>
-              </execution>
-            </executions>
-            <configuration>
-              <skip>${jacoco.skip.instrument}</skip>
-            </configuration>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-    <profile>
-      <id>qa1IT</id>
-      <activation>
-        <property>
-          <name>qa1IT</name>
-        </property>
-      </activation>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-failsafe-plugin</artifactId>
-            <executions>
-              <execution>
-                <id>ClientTelemetryIT</id>
-                <goals>
-                  <goal>integration-test</goal>
-                </goals>
-                <configuration>
                   <includes>
-                    <include>**/ConnectionIT.java</include>
-                    <include>**/SFTrustManagerIT.java</include>
+                    <include>**/ConnectionFipsIT.java</include>
                   </includes>
                   <systemPropertyVariables>
                     <logback.configurationFile>
-                      ${basedir}/src/test/resources/logback-test.xml
+                      ${basedir}/../src/test/resources/logback-test.xml
                     </logback.configurationFile>
                   </systemPropertyVariables>
                 </configuration>
@@ -973,157 +805,6 @@
                 </goals>
               </execution>
             </executions>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-    <profile>
-      <id>DellBoomi</id>
-      <activation>
-        <property>
-          <name>dellBoomiIT</name>
-        </property>
-      </activation>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-failsafe-plugin</artifactId>
-            <executions>
-              <execution>
-                <id>DellBoomiIT</id>
-                <goals>
-                  <goal>integration-test</goal>
-                </goals>
-                <configuration>
-                  <test>DellBoomiCloudIT.java</test>
-                </configuration>
-              </execution>
-              <execution>
-                <goals>
-                  <goal>verify</goal>
-                </goals>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-    <profile>
-      <id>preprod2IT</id>
-      <activation>
-        <property>
-          <name>preprod2IT</name>
-        </property>
-      </activation>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-failsafe-plugin</artifactId>
-            <executions>
-              <execution>
-                <id>ClientTelemetryIT</id>
-                <goals>
-                  <goal>integration-test</goal>
-                </goals>
-                <configuration>
-                  <includes>
-                    <include>**/ConnectionIT.java</include>
-                    <include>**/SFTrustManagerIT.java</include>
-                  </includes>
-                  <systemPropertyVariables>
-                    <logback.configurationFile>
-                      ${basedir}/src/test/resources/logback-test.xml
-                    </logback.configurationFile>
-                  </systemPropertyVariables>
-                </configuration>
-              </execution>
-              <execution>
-                <goals>
-                  <goal>verify</goal>
-                </goals>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-    <profile>
-      <id>travisIT</id>
-      <activation>
-        <property>
-          <name>travisIT</name>
-        </property>
-      </activation>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-failsafe-plugin</artifactId>
-            <configuration>
-                <groups>${travisTestCategory}</groups>
-            </configuration>
-            <executions>
-              <execution>
-                <goals>
-                  <goal>integration-test</goal>
-                </goals>
-                <configuration>
-                  <excludes>
-                    <exclude>**/ingest/*.java</exclude>
-                    <exclude>**/DellBoomiCloudIT.java</exclude>
-                    <exclude>**/ConnectionFipsIT.java</exclude>
-                  </excludes>
-                  <systemPropertyVariables>
-                    <logback.configurationFile>
-                      ${basedir}/src/test/resources/logback-test.xml
-                    </logback.configurationFile>
-                    <io.netty.tryReflectionSetAccessible>
-                      true
-                    </io.netty.tryReflectionSetAccessible>
-                  </systemPropertyVariables>
-                </configuration>
-              </execution>
-              <execution>
-                <id>verify_travis_it</id>
-                <phase>verify</phase>
-                <goals>
-                  <goal>verify</goal>
-                </goals>
-              </execution>
-            </executions>
-          </plugin>
-          <plugin>
-            <groupId>org.jacoco</groupId>
-            <artifactId>jacoco-maven-plugin</artifactId>
-            <version>${jacoco.version}</version>
-            <executions>
-              <execution>
-                <id>pre-integration-test</id>
-                <phase>pre-integration-test</phase>
-                <goals>
-                  <goal>prepare-agent</goal>
-                </goals>
-                <configuration>
-                  <destFile>target/jacoco-it.exec</destFile>
-                </configuration>
-              </execution>
-              <execution>
-                <id>post-integration-test</id>
-                <phase>post-integration-test</phase>
-                <goals>
-                  <goal>report</goal>
-                </goals>
-                <configuration>
-                  <dataFile>target/jacoco-it.exec</dataFile>
-                  <outputDirectory>target/jacoco-it</outputDirectory>
-                </configuration>
-              </execution>
-            </executions>
-            <configuration>
-              <skip>${jacoco.skip.instrument}</skip>
-            </configuration>
           </plugin>
         </plugins>
       </build>
