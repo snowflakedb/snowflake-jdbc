@@ -690,29 +690,43 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
 
   @Override
   public void setTimestamp(int parameterIndex, Timestamp x, Calendar cal)
-  throws SQLException
+      throws SQLException
   {
     logger.debug("setTimestamp(int parameterIndex, Timestamp x, Calendar cal)");
     raiseSQLExceptionIfStatementIsClosed();
 
     // convert the time from being in UTC to be in local time zone
     String value = null;
+    SnowflakeType sfType = SnowflakeUtil.javaTypeToSFType(Types.TIMESTAMP);
     if (x != null)
     {
       long milliSecSinceEpoch = x.getTime();
-      milliSecSinceEpoch = milliSecSinceEpoch +
-                           cal.getTimeZone().getOffset(milliSecSinceEpoch);
 
-      value = String.valueOf(
-          BigDecimal.valueOf(milliSecSinceEpoch / 1000).
-              scaleByPowerOfTen(9).add(BigDecimal.valueOf(x.getNanos())));
-    }
+      if (sfType == SnowflakeType.TIMESTAMP)
+      {
+        sfType = connection.getSfSession().getTimestampMappedType();
+      }
+      // if type is timestamp_tz, keep the offset and the time value separate.
+      // store the offset, in minutes, as amount it's off from UTC
+      if (sfType == SnowflakeType.TIMESTAMP_TZ)
+      {
+        value = String.valueOf(
+            BigDecimal.valueOf(milliSecSinceEpoch / 1000).
+                scaleByPowerOfTen(9).add(BigDecimal.valueOf(x.getNanos())));
 
-    SnowflakeType sfType = SnowflakeUtil.javaTypeToSFType(Types.TIMESTAMP);
+        int offset = cal.getTimeZone().getOffset(milliSecSinceEpoch)/ 60000 + 1440;
+        value += " " + offset;
+      }
+      else
+      {
+        milliSecSinceEpoch = milliSecSinceEpoch +
+            cal.getTimeZone().getOffset(milliSecSinceEpoch);
 
-    if (sfType == SnowflakeType.TIMESTAMP)
-    {
-      sfType = connection.getSfSession().getTimestampMappedType();
+        value = String.valueOf(
+            BigDecimal.valueOf(milliSecSinceEpoch / 1000).
+                scaleByPowerOfTen(9).add(BigDecimal.valueOf(x.getNanos())));
+      }
+
     }
 
     ParameterBindingDTO binding = new ParameterBindingDTO(sfType.name(), value);
