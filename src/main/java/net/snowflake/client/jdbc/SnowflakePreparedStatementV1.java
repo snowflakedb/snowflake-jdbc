@@ -690,7 +690,7 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
 
   @Override
   public void setTimestamp(int parameterIndex, Timestamp x, Calendar cal)
-      throws SQLException
+  throws SQLException
   {
     logger.debug("setTimestamp(int parameterIndex, Timestamp x, Calendar cal)");
     raiseSQLExceptionIfStatementIsClosed();
@@ -714,13 +714,13 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
             BigDecimal.valueOf(milliSecSinceEpoch / 1000).
                 scaleByPowerOfTen(9).add(BigDecimal.valueOf(x.getNanos())));
 
-        int offset = cal.getTimeZone().getOffset(milliSecSinceEpoch)/ 60000 + 1440;
+        int offset = cal.getTimeZone().getOffset(milliSecSinceEpoch) / 60000 + 1440;
         value += " " + offset;
       }
       else
       {
         milliSecSinceEpoch = milliSecSinceEpoch +
-            cal.getTimeZone().getOffset(milliSecSinceEpoch);
+                             cal.getTimeZone().getOffset(milliSecSinceEpoch);
 
         value = String.valueOf(
             BigDecimal.valueOf(milliSecSinceEpoch / 1000).

@@ -1,4 +1,5 @@
 package net.snowflake.client.category;
 
-public interface TestCategoryFips {
+public interface TestCategoryFips
+{
 }
