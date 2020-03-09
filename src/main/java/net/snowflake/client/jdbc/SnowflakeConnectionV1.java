@@ -1099,7 +1099,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection
     putCommand.append("put file:///tmp/placeholder ");
 
     // add stage name
-    if (!stageName.startsWith("@"))
+    if (!(stageName.startsWith("@") || stageName.startsWith("'@") || stageName.startsWith("$$@")))
     {
       putCommand.append("@");
     }
