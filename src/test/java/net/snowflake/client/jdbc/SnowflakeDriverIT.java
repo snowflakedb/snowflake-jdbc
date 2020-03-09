@@ -4111,4 +4111,42 @@ public class SnowflakeDriverIT extends BaseJDBCTest
     }
     assertEquals(expectExceptionCount, actualExceptionCount);
   }
+
+  @Test
+  public void testToTimestampNullBind() throws Throwable
+  {
+    Connection connection = null;
+    PreparedStatement preparedStatement = null;
+
+    try
+    {
+      connection = getConnection();
+
+      preparedStatement = connection.prepareStatement(
+          "select 3 where to_timestamp_ltz(?, 3) = '1970-01-01 00:00:12.345 +000'::timestamp_ltz");
+
+      // First test, normal usage.
+      preparedStatement.setInt(1, 12345);
+
+      ResultSet resultSet = preparedStatement.executeQuery();
+      ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
+      // Assert column count.
+      assertEquals(1, resultSetMetaData.getColumnCount());
+      // Assert this returned a 3.
+      assertTrue(resultSet.next());
+      assertEquals(3, resultSet.getInt(1));
+      assertFalse(resultSet.next());
+
+      // Second test, input is null.
+      preparedStatement.setNull(1, Types.INTEGER);
+
+      resultSet = preparedStatement.executeQuery();
+      // Assert no rows returned.
+      assertFalse(resultSet.next());
+    }
+    finally
+    {
+      closeSQLObjects(preparedStatement, connection);
+    }
+  }
 }
