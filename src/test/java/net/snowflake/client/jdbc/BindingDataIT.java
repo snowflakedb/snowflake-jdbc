@@ -465,12 +465,13 @@ public class BindingDataIT extends AbstractDriverIT
   }
 
   @Test
-  public void testBindTimestampTZ() throws SQLException {
+  public void testBindTimestampTZ() throws SQLException
+  {
     Connection connection = getConnection();
     Statement statement = connection.createStatement();
     statement.execute(
         "create or replace table testBindTimestampTZ(" +
-            "cola int, colb timestamp_tz)");
+        "cola int, colb timestamp_tz)");
     statement.execute("alter session set CLIENT_TIMESTAMP_TYPE_MAPPING=TIMESTAMP_TZ");
 
     long millSeconds = System.currentTimeMillis();

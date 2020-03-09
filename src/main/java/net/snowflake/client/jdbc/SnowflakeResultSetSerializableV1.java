@@ -614,7 +614,7 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
       }
     }
     logger.debug("First chunk row count: {}",
-        resultSetSerializable.firstChunkRowCount);
+                 resultSetSerializable.firstChunkRowCount);
 
     // parse file chunks
     resultSetSerializable.parseChunkFiles(rootNode, sfStatement);
@@ -1021,8 +1021,8 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
       // save current one and create new one.
       if ((curResultSetSerializable.getUncompressedDataSizeInBytes() > 0) &&
           (maxSizeInBytes <
-              (curResultSetSerializable.getUncompressedDataSizeInBytes()
-                  + curChunkFileMetadata.getUncompressedByteSize())))
+           (curResultSetSerializable.getUncompressedDataSizeInBytes()
+            + curChunkFileMetadata.getUncompressedByteSize())))
       {
         resultSetSerializables.add(curResultSetSerializable);
 
@@ -1177,8 +1177,8 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
       byte[] bytes = Base64.getDecoder().decode(firstChunkStringData);
       VectorSchemaRoot root = null;
       RootAllocator localRootAllocator =
-              (rootAllocator != null) ? rootAllocator
-                                      : new RootAllocator(Long.MAX_VALUE);
+          (rootAllocator != null) ? rootAllocator
+                                  : new RootAllocator(Long.MAX_VALUE);
       try (ByteArrayInputStream is = new ByteArrayInputStream(bytes);
            ArrowStreamReader reader = new ArrowStreamReader(is, localRootAllocator))
       {
@@ -1192,8 +1192,8 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
       catch (Exception ex)
       {
         throw new SnowflakeSQLException(ErrorCode.INTERNAL_ERROR,
-                "Fail to retrieve row count for first arrow chunk: " +
-                        ex.getCause());
+                                        "Fail to retrieve row count for first arrow chunk: " +
+                                        ex.getCause());
       }
       finally
       {
@@ -1207,13 +1207,13 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
     {
       // This shouldn't happen
       throw new SnowflakeSQLException(ErrorCode.INTERNAL_ERROR,
-              "setFirstChunkRowCountForArrow() should only be called for Arrow.");
+                                      "setFirstChunkRowCountForArrow() should only be called for Arrow.");
     }
   }
 
   /**
    * Retrieve total row count included in the the ResultSet Serializable object.
-   *
+   * <p>
    * GS sends the data of first chunk and metadata of the other chunk if exist
    * to client, so this function calculates the row count for all of them.
    *
@@ -1235,7 +1235,7 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
 
   /**
    * Retrieve compressed data size in the the ResultSet Serializable object.
-   *
+   * <p>
    * GS sends the data of first chunk and metadata of the other chunks if exist
    * to client, so this function calculates the data size for all of them.
    * NOTE: if first chunk exists, this function uses its uncompressed data size
@@ -1263,7 +1263,7 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
 
   /**
    * Retrieve Uncompressed data size in the the ResultSet Serializable object.
-   *
+   * <p>
    * GS sends the data of first chunk and metadata of the other chunk if exist
    * to client, so this function calculates the data size for all of them.
    *

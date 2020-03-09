@@ -1472,7 +1472,7 @@ public class SessionUtil
       {
         if (session != null)
         {
-           session.setMetadataRequestUseSessionDatabase((boolean) entry.getValue());
+          session.setMetadataRequestUseSessionDatabase((boolean) entry.getValue());
         }
       }
       else if ("CLIENT_TIMESTAMP_TYPE_MAPPING".equalsIgnoreCase(entry.getKey()))

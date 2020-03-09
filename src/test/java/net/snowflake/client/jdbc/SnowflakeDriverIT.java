@@ -1238,7 +1238,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest
         // get file from new stage
         assertTrue("Failed to get files", statement.execute(
             "GET @testing_stage 'file://"
-                + destFolderCanonicalPath + "' parallel=8"));
+            + destFolderCanonicalPath + "' parallel=8"));
 
         // Make sure that the downloaded file exists; it should be gzip compressed
         File downloaded = new File(destFolderCanonicalPathWithSeparator + "testfile.csv.gz");
@@ -1247,7 +1247,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest
         //unzip the file
         Process p = Runtime.getRuntime().exec(
             "gzip -d " + destFolderCanonicalPathWithSeparator
-                + "testfile.csv.gz");
+            + "testfile.csv.gz");
         p.waitFor();
 
         // 2nd file should never be uploaded

@@ -4,6 +4,7 @@ import com.google.common.base.Strings;
 import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
+
 import javax.sql.DataSource;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -69,7 +70,7 @@ public class SnowflakeBasicDataSource implements DataSource, Serializable
   }
 
   private void readObjectHelper(ObjectInputStream in) throws IOException,
-                                                            ClassNotFoundException
+                                                             ClassNotFoundException
   {
     url = (String) in.readObject();
     serverName = (String) in.readObject();
