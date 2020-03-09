@@ -3,9 +3,13 @@
  */
 package net.snowflake.client.jdbc;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Properties;
 import java.util.Set;
 
 import net.snowflake.client.category.TestCategoryOthers;
+import net.snowflake.client.core.OCSPMode;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -46,4 +50,82 @@ public class FileUploaderExpandFileNamesTest
     assertTrue(files.contains(folderName + "/TestFileC"));
     assertTrue(files.contains(folderName + "/TestFileD"));
   }
+
+  @Test
+  public void testSnowflakeFileTransferConfig() throws Exception
+  {
+    SnowflakeFileTransferMetadataV1 metadata =
+        new SnowflakeFileTransferMetadataV1(
+            "dummy_presigned_url", null, null, null, null, null, null);
+
+    SnowflakeFileTransferConfig.Builder builder =
+        SnowflakeFileTransferConfig.Builder.newInstance();
+
+    int throwCount = 0;
+    int expectedThrowCount = 3;
+
+    // metadata field is needed.
+    try
+    {
+      builder.build();
+    }
+    catch (IllegalArgumentException ex)
+    {
+      throwCount++;
+    }
+    builder.setSnowflakeFileTransferMetadata(metadata);
+
+    // upload stream is needed.
+    try
+    {
+      builder.build();
+    }
+    catch (IllegalArgumentException ex)
+    {
+      throwCount++;
+    }
+    InputStream input = new InputStream()
+    {
+      @Override
+      public int read() throws IOException
+      {
+        return 0;
+      }
+    };
+    builder.setUploadStream(input);
+
+    // OCSP mode is needed.
+    try
+    {
+      builder.build();
+    }
+    catch (IllegalArgumentException ex)
+    {
+      throwCount++;
+    }
+    builder.setOcspMode(OCSPMode.FAIL_CLOSED);
+
+    // Set the other optional fields
+    builder.setRequireCompress(false);
+    builder.setNetworkTimeoutInMilli(12345);
+    builder.setPrefix("dummy_prefix");
+    Properties props = new Properties();
+    builder.setProxyProperties(props);
+    builder.setDestFileName("dummy_dest_file_name");
+
+    SnowflakeFileTransferConfig config = builder.build();
+
+    // Assert setting fields are in config
+    assert (config.getSnowflakeFileTransferMetadata() == metadata);
+    assert (config.getUploadStream() == input);
+    assert (config.getOcspMode() == OCSPMode.FAIL_CLOSED);
+    assert (!config.getRequireCompress());
+    assert (config.getNetworkTimeoutInMilli() == 12345);
+    assert (config.getProxyProperties() == props);
+    assert (config.getPrefix().equals("dummy_prefix"));
+    assert (config.getDestFileName().equals("dummy_dest_file_name"));
+
+    assertEquals(expectedThrowCount, throwCount);
+  }
+
 }

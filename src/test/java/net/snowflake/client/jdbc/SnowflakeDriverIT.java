@@ -3937,8 +3937,13 @@ public class SnowflakeDriverIT extends BaseJDBCTest
 
         assert (oneMetadata.isForOneFile());
         SnowflakeFileTransferAgent.uploadWithoutConnection(
-            oneMetadata, inputStream, true, 0,
-            OCSPMode.FAIL_OPEN, null, null, null);
+            SnowflakeFileTransferConfig.Builder.newInstance()
+                .setSnowflakeFileTransferMetadata(oneMetadata)
+                .setUploadStream(inputStream)
+                .setRequireCompress(true)
+                .setNetworkTimeoutInMilli(0)
+                .setOcspMode(OCSPMode.FAIL_OPEN)
+                .build());
       }
 
       // Test Put file with external compression
@@ -3963,8 +3968,13 @@ public class SnowflakeDriverIT extends BaseJDBCTest
         InputStream gzInputStream = new FileInputStream(gzfilePath);
         assert (oneMetadata.isForOneFile());
         SnowflakeFileTransferAgent.uploadWithoutConnection(
-            oneMetadata, gzInputStream, false, 0, OCSPMode.FAIL_OPEN,
-            null, null, null);
+            SnowflakeFileTransferConfig.Builder.newInstance()
+                .setSnowflakeFileTransferMetadata(oneMetadata)
+                .setUploadStream(gzInputStream)
+                .setRequireCompress(false)
+                .setNetworkTimeoutInMilli(0)
+                .setOcspMode(OCSPMode.FAIL_OPEN)
+                .build());
       }
 
       // Download two files and verify their content.

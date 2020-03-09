@@ -2064,40 +2064,28 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
    * <p>
    * NOTE: This function is developed based on getUploadFileCallable().
    *
-   * @param metadata              The file transfer metatadata
-   * @param uploadStream          The inputstream for the to-be-upload data
-   * @param requireCompress       Whether to compress the data with GZIP
-   * @param networkTimeoutInMilli Network timeout for upload
-   * @param ocspMode              OCSP mode for upload
-   * @param prefix                Optional prefix for the storage. It is not used for
-   *                              GCS because it has been included in metadata.
-   * @param destFileName          Optional dest file name. It is not used for GCS
-   *                              because it has been included in metadata.
+   * @param config Configuration to upload a file to cloud storage
    * @throws Exception if error occurs while data upload.
    */
-  static public void uploadWithoutConnection(SnowflakeFileTransferMetadata metadata,
-                                             InputStream uploadStream,
-                                             boolean requireCompress,
-                                             int networkTimeoutInMilli,
-                                             OCSPMode ocspMode,
-                                             Properties jdbcProperties,
-                                             String prefix,
-                                             String destFileName)
+  static public void uploadWithoutConnection(SnowflakeFileTransferConfig config)
   throws Exception
   {
     logger.debug("Entering uploadWithoutConnection...");
 
+    SnowflakeFileTransferMetadataV1 metadata =
+        (SnowflakeFileTransferMetadataV1) config.getSnowflakeFileTransferMetadata();
+    InputStream uploadStream = config.getUploadStream();
+    boolean requireCompress = config.getRequireCompress();
+    int networkTimeoutInMilli = config.getNetworkTimeoutInMilli();
+    OCSPMode ocspMode = config.getOcspMode();
+    Properties proxyProperties = config.getProxyProperties();
+
     // Setup proxy info if necessary
-    SnowflakeUtil.setupProxyPropertiesIfNecessary(jdbcProperties);
+    SnowflakeUtil.setupProxyPropertiesIfNecessary(proxyProperties);
 
-    SnowflakeFileTransferMetadataV1 metadatav1 =
-        (SnowflakeFileTransferMetadataV1) metadata;
+    StageInfo stageInfo = metadata.getStageInfo();
+    String destFileName = metadata.getPresignedUrlFileName();
 
-    StageInfo stageInfo = metadatav1.getStageInfo();
-    if (Strings.isNullOrEmpty(metadatav1.getPresignedUrlFileName()))
-    {
-      destFileName = metadatav1.getPresignedUrlFileName();
-    }
     logger.debug("Begin upload data for " + destFileName);
 
     long uploadSize;
@@ -2108,7 +2096,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
     FileBackedOutputStream fileBackedOutputStream = null;
 
     RemoteStoreFileEncryptionMaterial encMat =
-        metadatav1.getEncryptionMaterial();
+        metadata.getEncryptionMaterial();
     // SNOW-16082: we should capture exception if we fail to compress or
     // calculate digest.
     try
@@ -2158,12 +2146,12 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
       SnowflakeStorageClient initialClient =
           storageFactory.createClient(stageInfo, 1, encMat);
       pushFileToRemoteStoreWithPresignedUrl(
-          metadatav1.getStageInfo(),
-          metadatav1.getPresignedUrlFileName(),
+          metadata.getStageInfo(),
+          metadata.getPresignedUrlFileName(),
           uploadStream, fileBackedOutputStream, uploadSize,
           digest, (requireCompress ? FileCompressionType.GZIP : null),
           initialClient, networkTimeoutInMilli, ocspMode, 1,
-          null, true, encMat, metadatav1.getPresignedUrl());
+          null, true, encMat, metadata.getPresignedUrl());
     }
     catch (Exception ex)
     {
