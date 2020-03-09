@@ -5,6 +5,8 @@
 package net.snowflake.client.jdbc;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import net.snowflake.client.core.HttpUtil;
+import net.snowflake.client.core.SFSessionProperty;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SqlState;
@@ -21,10 +23,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.Field;
 import java.sql.Types;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -554,6 +553,60 @@ public class SnowflakeUtil
     {
       logger.debug("Security exception raised: {}", ex.getMessage());
       return null;
+    }
+  }
+
+  /**
+   * Setup JDBC proxy properties if necessary.
+   *
+   * @param info proxy server properties.
+   */
+  static public void setupProxyPropertiesIfNecessary(Properties info)
+  throws SnowflakeSQLException
+  {
+    // Setup proxy properties.
+    if (info != null && info.size() > 0 &&
+        info.getProperty(SFSessionProperty.USE_PROXY.getPropertyKey()) != null)
+    {
+      Map<SFSessionProperty, Object> connectionPropertiesMap =
+          new HashMap<>(info.size());
+      Boolean useProxy = Boolean.valueOf(
+          info.getProperty(SFSessionProperty.USE_PROXY.getPropertyKey()));
+      if (useProxy)
+      {
+        connectionPropertiesMap.put(SFSessionProperty.USE_PROXY, true);
+
+        // set up other proxy related values.
+        String propValue = null;
+        if ((propValue = info.getProperty(
+            SFSessionProperty.PROXY_HOST.getPropertyKey())) != null)
+        {
+          connectionPropertiesMap.put(SFSessionProperty.PROXY_HOST, propValue);
+        }
+        if ((propValue = info.getProperty(
+            SFSessionProperty.PROXY_PORT.getPropertyKey())) != null)
+        {
+          connectionPropertiesMap.put(SFSessionProperty.PROXY_PORT, propValue);
+        }
+        if ((propValue = info.getProperty(
+            SFSessionProperty.PROXY_USER.getPropertyKey())) != null)
+        {
+          connectionPropertiesMap.put(SFSessionProperty.PROXY_USER, propValue);
+        }
+        if ((propValue = info.getProperty(
+            SFSessionProperty.PROXY_PASSWORD.getPropertyKey())) != null)
+        {
+          connectionPropertiesMap.put(SFSessionProperty.PROXY_PASSWORD, propValue);
+        }
+        if ((propValue = info.getProperty(
+            SFSessionProperty.NON_PROXY_HOSTS.getPropertyKey())) != null)
+        {
+          connectionPropertiesMap.put(SFSessionProperty.NON_PROXY_HOSTS, propValue);
+        }
+
+        // Setup proxy properties into HttpUtil static cache
+        HttpUtil.configureCustomProxyProperties(connectionPropertiesMap);
+      }
     }
   }
 

@@ -561,26 +561,25 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient
    * @param meta                   object meta data
    * @param stageRegion            region name where the stage persists
    * @param presignedUrl           presigned URL for upload. Used by GCP.
-   *
    * @throws SnowflakeSQLException if upload failed
    */
   @Override
   public void uploadWithPresignedUrlWithoutConnection(
-          int networkTimeoutInMilli, OCSPMode ocspMode,
-          int parallelism, boolean uploadFromStream,
-          String remoteStorageLocation, File srcFile,
-          String destFileName, InputStream inputStream,
-          FileBackedOutputStream fileBackedOutputStream,
-          StorageObjectMetadata meta, String stageRegion,
-          String presignedUrl)
+      int networkTimeoutInMilli, OCSPMode ocspMode,
+      int parallelism, boolean uploadFromStream,
+      String remoteStorageLocation, File srcFile,
+      String destFileName, InputStream inputStream,
+      FileBackedOutputStream fileBackedOutputStream,
+      StorageObjectMetadata meta, String stageRegion,
+      String presignedUrl)
   throws SnowflakeSQLException
   {
     final List<FileInputStream> toClose = new ArrayList<>();
     long originalContentLength = meta.getContentLength();
 
     SFPair<InputStream, Boolean> uploadStreamInfo = createUploadStream(
-            srcFile, uploadFromStream, inputStream, meta,
-            originalContentLength, fileBackedOutputStream, toClose);
+        srcFile, uploadFromStream, inputStream, meta,
+        originalContentLength, fileBackedOutputStream, toClose);
 
     if (!(meta instanceof CommonObjectMetadata))
     {
@@ -594,15 +593,16 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient
 
     logger.debug("Starting upload");
     uploadWithPresignedUrl(networkTimeoutInMilli,
-            meta.getContentEncoding(),
-            meta.getUserMetadata(),
-            uploadStreamInfo.left,
-            presignedUrl,
-            ocspMode);
+                           meta.getContentEncoding(),
+                           meta.getUserMetadata(),
+                           uploadStreamInfo.left,
+                           presignedUrl,
+                           ocspMode);
     logger.debug("Upload successful");
 
     // close any open streams in the "toClose" list and return
-    for (FileInputStream is : toClose) {
+    for (FileInputStream is : toClose)
+    {
       IOUtils.closeQuietly(is);
     }
   }
