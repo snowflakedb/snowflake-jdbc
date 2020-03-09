@@ -65,7 +65,14 @@ public class AbstractDriverIT
     else
     {
       account = accountName;
-      host = accountName.trim() + ".reg.local";
+      // By default, the test will run against reg deployment.
+      // If developer needs to run in Intellij, you can set this env as ".dev.local"
+      String deployment = System.getenv("SNOWFLAKE_TEST_DEPLOYMENT");
+      if (Strings.isNullOrEmpty(deployment))
+      {
+        deployment = ".reg.local";
+      }
+      host = accountName.trim() + deployment;
     }
     assertThat("set account environment variable.",
                !Strings.isNullOrEmpty(account));
@@ -107,7 +114,7 @@ public class AbstractDriverIT
 
     String warehouse = System.getenv("SNOWFLAKE_TEST_WAREHOUSE");
     assertThat("set SNOWFLAKE_TEST_WAREHOUSE environment variable.",
-               !Strings.isNullOrEmpty(role));
+               !Strings.isNullOrEmpty(warehouse));
     params.put("warehouse", warehouse);
 
     String protocol = System.getenv("SNOWFLAKE_TEST_PROTOCOL");
