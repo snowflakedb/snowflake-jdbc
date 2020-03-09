@@ -3,7 +3,9 @@
  */
 package net.snowflake.client.jdbc.cloud.storage;
 
+import net.snowflake.client.core.OCSPMode;
 import net.snowflake.client.core.SFSession;
+import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.FileBackedOutputStream;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 
@@ -12,6 +14,7 @@ import java.io.InputStream;
 import java.util.Map;
 
 import net.snowflake.client.jdbc.MatDesc;
+import net.snowflake.common.core.SqlState;
 
 /**
  * Interface for storage client provider implementations
@@ -152,6 +155,46 @@ public interface SnowflakeStorageClient
               FileBackedOutputStream fileBackedOutputStream, StorageObjectMetadata meta, String stageRegion,
               String presignedUrl)
   throws SnowflakeSQLException;
+
+  /**
+   * Upload a file (-stream) to remote storage with Pre-signed URL without
+   * JDBC connection.
+   *
+   * NOTE: This function is only supported when pre-signed URL is used.
+   *
+   * @param networkTimeoutInMilli  Network timeout for the upload
+   * @param ocspMode               OCSP mode for the upload.
+   * @param parallelism            number of threads do parallel uploading
+   * @param uploadFromStream       true if upload source is stream
+   * @param remoteStorageLocation  s3 bucket name
+   * @param srcFile                source file if not uploading from a stream
+   * @param destFileName           file name on remote storage after upload
+   * @param inputStream            stream used for uploading if
+   *                               fileBackedOutputStream is null
+   * @param fileBackedOutputStream stream used for uploading if not null
+   * @param meta                   object meta data
+   * @param stageRegion            region name where the stage persists
+   * @param presignedUrl           presigned URL for upload. Used by GCP.
+   * @throws SnowflakeSQLException if upload failed even after retry
+   */
+  default void uploadWithPresignedUrlWithoutConnection(
+          int networkTimeoutInMilli, OCSPMode ocspMode,
+          int parallelism, boolean uploadFromStream,
+          String remoteStorageLocation, File srcFile,
+          String destFileName, InputStream inputStream,
+          FileBackedOutputStream fileBackedOutputStream,
+          StorageObjectMetadata meta, String stageRegion,
+          String presignedUrl)
+  throws SnowflakeSQLException
+  {
+    if (!requirePresignedUrl())
+    {
+      throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
+              ErrorCode.INTERNAL_ERROR.getMessageCode(),
+              "uploadWithPresignedUrlWithoutConnection only works for" +
+                      "pre-signed URL.");
+    }
+  }
 
   /**
    * Handles exceptions thrown by the remote storage provider

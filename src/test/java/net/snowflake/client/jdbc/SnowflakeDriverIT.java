@@ -9,8 +9,12 @@ import net.snowflake.client.AbstractDriverIT;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnTravisCI;
 import net.snowflake.client.category.TestCategoryOthers;
+import net.snowflake.client.core.OCSPMode;
+import net.snowflake.client.core.SFSession;
+import net.snowflake.client.core.SFStatement;
 import net.snowflake.common.core.SqlState;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
@@ -19,11 +23,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.TemporaryFolder;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.FileWriter;
+import java.io.*;
 import java.math.BigDecimal;
 import java.nio.channels.FileChannel;
 import java.sql.Connection;
@@ -54,6 +54,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.zip.GZIPInputStream;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -86,6 +87,10 @@ public class SnowflakeDriverIT extends BaseJDBCTest
 
   @Rule
   public TemporaryFolder tmpFolder2 = new TemporaryFolder();
+
+  public String testStageName =
+          String.format("test_stage_%s", UUID.randomUUID().toString()).
+                  replaceAll("-", "_");
 
   @BeforeClass
   public static void setUp() throws Throwable
@@ -3867,5 +3872,219 @@ public class SnowflakeDriverIT extends BaseJDBCTest
     Connection connection = getConnection();
     connection.close();
     connection.prepareStatement("select 1");
+  }
+
+  // Check whether the two file's content are logically identical
+  private boolean isFileContentEqual(
+          String fileFullPath1, boolean compressedFile1,
+          String fileFullPath2, boolean compressedFile2)
+          throws Throwable
+  {
+    InputStream inputStream1 = new FileInputStream(fileFullPath1);
+    InputStream inputStream2 = new FileInputStream(fileFullPath2);
+
+    try
+    {
+      if (compressedFile1)
+      {
+        inputStream1 = new GZIPInputStream(inputStream1);
+      }
+      if (compressedFile2) {
+        inputStream2 = new GZIPInputStream(inputStream2);
+      }
+      return Arrays.equals(IOUtils.toByteArray(inputStream1), IOUtils.toByteArray(inputStream2));
+    } finally {
+      inputStream1.close();
+      inputStream2.close();
+    }
+  }
+
+  /**
+   * Test API for Spark connector for FileTransferMetadata
+   */
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
+  public void testGCPFileTransferMetadataWithOneFile() throws Throwable
+  {
+    Connection connection = null;
+    File destFolder = tmpFolder.newFolder();
+    String destFolderCanonicalPath = destFolder.getCanonicalPath();
+    try
+    {
+      connection = getConnection("gcpaccount");
+      Statement statement = connection.createStatement();
+
+      // create a stage to put the file in
+      statement.execute("CREATE OR REPLACE STAGE " + testStageName);
+
+      SFSession sfSession = connection.unwrap(
+              SnowflakeConnectionV1.class).getSfSession();
+
+      // Test put file with internal compression
+      String putCommand1 = "put file:///dummy/path/file1.gz @" + testStageName;
+      SnowflakeFileTransferAgent sfAgent1 = new SnowflakeFileTransferAgent(
+              putCommand1, sfSession, new SFStatement(sfSession));
+      List<SnowflakeFileTransferMetadata> metadatas1 =
+              sfAgent1.getFileTransferMetadatas();
+
+      String srcPath1 = getFullPathFileInResource(TEST_DATA_FILE);
+      for (SnowflakeFileTransferMetadata oneMetadata : metadatas1) {
+        InputStream inputStream = new FileInputStream(srcPath1);
+
+        assert(oneMetadata.isForOneFile());
+        SnowflakeFileTransferAgent.uploadWithoutConnection(
+                oneMetadata, inputStream, true, 0,
+                OCSPMode.FAIL_OPEN, null, null);
+      }
+
+      // Test Put file with external compression
+      String putCommand2 = "put file:///dummy/path/file2.gz @" + testStageName;
+      SnowflakeFileTransferAgent sfAgent2 = new SnowflakeFileTransferAgent(
+              putCommand2, sfSession, new SFStatement(sfSession));
+      List<SnowflakeFileTransferMetadata> metadatas2 =
+              sfAgent2.getFileTransferMetadatas();
+
+      String srcPath2 = getFullPathFileInResource(TEST_DATA_FILE_2);
+      for (SnowflakeFileTransferMetadata oneMetadata : metadatas2) {
+        String gzfilePath = destFolderCanonicalPath + "/tmp_compress.gz";
+        Process p = Runtime.getRuntime().exec(
+                "cp -fr " + srcPath2 + " " + destFolderCanonicalPath +
+                        "/tmp_compress");
+        p.waitFor();
+        p = Runtime.getRuntime().exec(
+                "gzip " + destFolderCanonicalPath + "/tmp_compress");
+        p.waitFor();
+
+        InputStream gzInputStream = new FileInputStream(gzfilePath);
+        assert(oneMetadata.isForOneFile());
+        SnowflakeFileTransferAgent.uploadWithoutConnection(
+                oneMetadata, gzInputStream, false, 0, OCSPMode.FAIL_OPEN,
+                null, null);
+      }
+
+      // Download two files and verify their content.
+      assertTrue("Failed to get files",
+              statement.execute("GET @" + testStageName + " 'file://" +
+                      destFolderCanonicalPath + "/' parallel=8"));
+
+      // Make sure that the downloaded files are EQUAL,
+      // they should be gzip compressed
+      assert(isFileContentEqual(srcPath1, false,
+              destFolderCanonicalPath + "/file1.gz", true));
+      assert(isFileContentEqual(srcPath2, false,
+              destFolderCanonicalPath + "/file2.gz", true));
+    } finally {
+      if (connection != null)
+      {
+        connection.createStatement().execute(
+                "DROP STAGE if exists " + testStageName );
+        connection.close();
+      }
+    }
+  }
+
+  /**
+   * Negative test for FileTransferMetadata. It is only supported for GCP.
+   */
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
+  public void testGCPFileTransferMetadataNegativeOnlySupportGCP() throws Throwable
+  {
+    Connection connection = null;
+    List<String> unsupportedAaccounts = Arrays.asList(null, "s3testaccount", "azureaccount");
+    int expectExceptionCount = unsupportedAaccounts.size();
+    int actualExceptionCount = 0;
+    for (String accountName : unsupportedAaccounts) {
+      try {
+        connection = getConnection(accountName);
+        Statement statement = connection.createStatement();
+
+        // create a stage to put the file in
+        statement.execute("CREATE OR REPLACE STAGE " + testStageName);
+
+        SFSession sfSession = connection.unwrap(
+                SnowflakeConnectionV1.class).getSfSession();
+
+        String putCommand = "put 'file://file.gz' @" + testStageName;
+
+        SnowflakeFileTransferAgent sfAgent = new SnowflakeFileTransferAgent(
+                  putCommand, sfSession, new SFStatement(sfSession));
+
+        // Start negative test
+        sfAgent.getFileTransferMetadatas();
+        fail("Above function should raise exception for non-GCP storage");
+      } catch (Exception ex) {
+        System.out.println("Negative test to hit expected exception: " + ex.getMessage());
+        actualExceptionCount++;
+      } finally {
+        if (connection != null) {
+          connection.createStatement().execute(
+                  "DROP STAGE if exists " + testStageName);
+          connection.close();
+        }
+        connection = null;
+      }
+    }
+    assertEquals(expectExceptionCount, actualExceptionCount);
+  }
+
+  /**
+   * Negative test for FileTransferMetadata. It is only supported for PUT.
+   */
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
+  public void testGCPFileTransferMetadataNetativeOnlySupportPut() throws Throwable
+  {
+    Connection connection = null;
+    int expectExceptionCount = 1;
+    int actualExceptionCount = -1;
+    try
+    {
+      connection = getConnection("gcpaccount");
+      Statement statement = connection.createStatement();
+
+      // create a stage to put the file in
+      statement.execute("CREATE OR REPLACE STAGE " + testStageName);
+
+      // Put one file to the stage
+      String srcPath = getFullPathFileInResource(TEST_DATA_FILE);
+      statement.execute("put file://" + srcPath + " @" + testStageName);
+
+      SFSession sfSession = connection.unwrap(
+              SnowflakeConnectionV1.class).getSfSession();
+
+      File destFolder = tmpFolder.newFolder();
+      String destFolderCanonicalPath = destFolder.getCanonicalPath();
+
+      String getCommand = "get @" + testStageName + " file://" +
+              destFolderCanonicalPath;
+
+      // The GET can be executed in normal way.
+      statement.execute(getCommand);
+
+      // Start negative test for GET.
+      SnowflakeFileTransferAgent sfAgent = new SnowflakeFileTransferAgent(
+              getCommand, sfSession, new SFStatement(sfSession));
+
+      // Below function call should fail.
+      actualExceptionCount = 0;
+      sfAgent.getFileTransferMetadatas();
+      fail("Above function should raise exception for GET");
+    }
+    catch(Exception ex)
+    {
+      System.out.println("Negative test to hit expected exception: " + ex.getMessage());
+      actualExceptionCount++;
+    }
+    finally
+    {
+      if (connection != null)
+      {
+        connection.createStatement().execute(
+                "DROP STAGE if exists " + testStageName);
+        connection.close();
+      }
+    }
+    assertEquals(expectExceptionCount, actualExceptionCount);
   }
 }

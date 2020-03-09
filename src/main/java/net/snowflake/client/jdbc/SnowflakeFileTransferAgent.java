@@ -1167,8 +1167,23 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
 
     Map<?, ?> stageCredentials = extractStageCreds(jsonNode);
 
-    stageInfo = StageInfo.createStageInfo(stageLocationType, stageLocation, stageCredentials,
-                                          stageRegion, endPoint, stgAcct);
+    stageInfo = StageInfo.createStageInfo(stageLocationType, stageLocation,
+            stageCredentials, stageRegion, endPoint, stgAcct);
+
+    // Setup pre-signed URL into stage info if pre-signed URL is returned.
+    if (stageInfo.getStageType() == StageInfo.StageType.GCS)
+    {
+      JsonNode presignedUrlNode =
+              jsonNode.path("data").path("stageInfo").path("presignedUrl");
+      if (!presignedUrlNode.isMissingNode())
+      {
+        String presignedUrl = presignedUrlNode.asText();
+        if (!Strings.isNullOrEmpty(presignedUrl))
+        {
+          stageInfo.setPresignedUrl(presignedUrl);
+        }
+      }
+    }
   }
 
   /**
@@ -1346,6 +1361,50 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
     }
 
     return stageCredentials;
+  }
+
+  /**
+   * This is API function to retrieve the File Transfer Metadatas.
+   *
+   * NOTE: It only supports PUT on GCP when it is created.
+   *
+   * @return The file transfer metadatas for to-be-transferred files.
+   *
+   * @throws SnowflakeSQLException if any error occurs
+   */
+  public List<SnowflakeFileTransferMetadata> getFileTransferMetadatas()
+  throws SnowflakeSQLException
+  {
+    List<SnowflakeFileTransferMetadata> result = new ArrayList<>();
+    if (stageInfo.getStageType() != StageInfo.StageType.GCS)
+    {
+      throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
+              ErrorCode.INTERNAL_ERROR.getMessageCode(),
+              "This API only supports GCS");
+    }
+
+    if (commandType != CommandType.UPLOAD)
+    {
+      throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
+              ErrorCode.INTERNAL_ERROR.getMessageCode(),
+              "This API only supports PUT command");
+    }
+
+    for (String sourceFilePath : sourceFiles)
+    {
+      String sourceFileName =
+              sourceFilePath.substring(sourceFilePath.lastIndexOf("/") + 1);
+      result.add(new SnowflakeFileTransferMetadataV1(
+              stageInfo.getPresignedUrl(),
+              sourceFileName,
+              encryptionMaterial.get(0).getQueryStageMasterKey(),
+              encryptionMaterial.get(0).getQueryId(),
+              encryptionMaterial.get(0).getSmkId(),
+              commandType,
+              stageInfo));
+    }
+
+    return result;
   }
 
   public boolean execute() throws SQLException
@@ -2001,6 +2060,203 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
     }
   }
 
+  /**
+   * Static API function to upload data without JDBC connection.
+   *
+   * NOTE: This function is developed based on getUploadFileCallable().
+   *
+   * @param metadata The file transfer metatadata
+   * @param uploadStream The inputstream for the to-be-upload data
+   * @param requireCompress Whether to compress the data with GZIP
+   * @param networkTimeoutInMilli Network timeout for upload
+   * @param ocspMode OCSP mode for upload
+   * @param prefix Optional prefix for the storage. It is not used for
+   *               GCS because it has been included in metadata.
+   * @param destFileName Optional dest file name. It is not used for GCS
+   *                     because it has been included in metadata.
+   *
+   * @throws Exception if error occurs while data upload.
+   */
+  static public void uploadWithoutConnection(SnowflakeFileTransferMetadata metadata,
+                                             InputStream uploadStream,
+                                             boolean requireCompress,
+                                             int networkTimeoutInMilli,
+                                             OCSPMode ocspMode,
+                                             String prefix,
+                                             String destFileName)
+  throws Exception
+  {
+    logger.debug("Entering uploadWithoutConnection...");
+
+    SnowflakeFileTransferMetadataV1 metadatav1 =
+            (SnowflakeFileTransferMetadataV1) metadata;
+
+    StageInfo stageInfo = metadatav1.getStageInfo();
+    if (Strings.isNullOrEmpty(metadatav1.getPresignedUrlFileName()))
+    {
+      destFileName = metadatav1.getPresignedUrlFileName();
+    }
+    logger.debug("Begin upload data for " + destFileName);
+
+    long uploadSize;
+    File fileToUpload = null;
+    String digest = null;
+
+    // Temp file that needs to be cleaned up when upload was successful
+    FileBackedOutputStream fileBackedOutputStream = null;
+
+    RemoteStoreFileEncryptionMaterial encMat =
+            metadatav1.getEncryptionMaterial();
+    // SNOW-16082: we should capture exception if we fail to compress or
+    // calculate digest.
+    try
+    {
+      if (requireCompress)
+      {
+        InputStreamWithMetadata compressedSizeAndStream = (encMat == null ?
+                compressStreamWithGZIPNoDigest(uploadStream) :
+                compressStreamWithGZIP(uploadStream));
+
+        fileBackedOutputStream =
+                compressedSizeAndStream.fileBackedOutputStream;
+
+        // update the size
+        uploadSize = compressedSizeAndStream.size;
+        digest = compressedSizeAndStream.digest;
+
+        if (compressedSizeAndStream.fileBackedOutputStream.getFile() != null)
+        {
+          fileToUpload =
+                  compressedSizeAndStream.fileBackedOutputStream.getFile();
+        }
+
+        logger.debug("New size after compression: {}", uploadSize);
+      }
+      else
+      {
+        // If it's not local_fs, we store our digest in the metadata
+        // In local_fs, we don't need digest, and if we turn it on,
+        // we will consume whole uploadStream, which local_fs uses.
+        InputStreamWithMetadata result = computeDigest(uploadStream,true);
+        digest = result.digest;
+        fileBackedOutputStream = result.fileBackedOutputStream;
+        uploadSize = result.size;
+
+        if (result.fileBackedOutputStream.getFile() != null)
+        {
+          fileToUpload = result.fileBackedOutputStream.getFile();
+        }
+      }
+
+      logger.debug(
+        "Started copying file to {}:{} destName: {} compressed ? {} size={}",
+              stageInfo.getStageType().name(), stageInfo.getLocation(),
+              destFileName, (requireCompress ? "yes" : "no"), uploadSize);
+
+      SnowflakeStorageClient initialClient =
+              storageFactory.createClient(stageInfo, 1, encMat);
+      pushFileToRemoteStoreWithPresignedUrl(metadatav1.getStageInfo(),
+          metadatav1.getPresignedUrlFileName(),
+          uploadStream, fileBackedOutputStream, uploadSize, digest,
+          (requireCompress ? FileCompressionType.GZIP : null),
+          initialClient,
+          networkTimeoutInMilli, ocspMode,
+          1, null, true, encMat, metadatav1.getPresignedUrl());
+    }
+    catch (Exception ex)
+    {
+      logger.error(
+              "Exception encountered during file upload: ", ex.getMessage());
+      throw ex;
+    }
+    finally
+    {
+      if (fileBackedOutputStream != null)
+      {
+        try
+        {
+          fileBackedOutputStream.reset();
+        }
+        catch (IOException ex)
+        {
+          logger.debug("failed to clean up temp file: {}", ex);
+        }
+      }
+    }
+  }
+
+  /**
+   * Push a file (or stream) to remote store with pre-signed URL
+   * without JDBC connection.
+   *
+   * NOTE: This function is developed based on pushFileToRemoteStore().
+   *       The main difference is that the caller needs to provide
+   *       pre-signed URL and the upload doesn't need JDBC connection.
+   */
+  static private void pushFileToRemoteStoreWithPresignedUrl(StageInfo stage,
+                                            String destFileName,
+                                            InputStream inputStream,
+                                            FileBackedOutputStream fileBackedOutStr,
+                                            long uploadSize,
+                                            String digest,
+                                            FileCompressionType compressionType,
+                                            SnowflakeStorageClient initialClient,
+                                            int networkTimeoutInMilli,
+                                            OCSPMode ocspMode,
+                                            int parallel,
+                                            File srcFile,
+                                            boolean uploadFromStream,
+                                            RemoteStoreFileEncryptionMaterial encMat,
+                                            String presignedUrl)
+  throws SQLException, IOException
+  {
+    remoteLocation remoteLocation = extractLocationAndPath(stage.getLocation());
+
+    String origDestFileName = destFileName;
+    if (remoteLocation.path != null && !remoteLocation.path.isEmpty())
+    {
+      destFileName = remoteLocation.path +
+              (!remoteLocation.path.endsWith("/") ? "/" : "")
+              + destFileName;
+    }
+
+    logger.debug("upload object. location={}, key={}, srcFile={}, encryption={}",
+            remoteLocation.location, destFileName, srcFile,
+            (ArgSupplier) () -> (
+                    encMat == null
+                            ? "NULL"
+                            : encMat.getSmkId() + "|" + encMat.getQueryId()));
+
+    StorageObjectMetadata meta =
+            storageFactory.createStorageMetadataObj(stage.getStageType());
+    meta.setContentLength(uploadSize);
+    if (digest != null)
+    {
+      initialClient.addDigestMetadata(meta, digest);
+    }
+
+    if (compressionType != null && compressionType.isSupported())
+    {
+      meta.setContentEncoding(compressionType.name().toLowerCase());
+    }
+
+    try
+    {
+      initialClient.uploadWithPresignedUrlWithoutConnection(
+              networkTimeoutInMilli, ocspMode, parallel,
+              uploadFromStream,
+              remoteLocation.location, srcFile, destFileName,
+              inputStream, fileBackedOutStr, meta, stage.getRegion(),
+              presignedUrl);
+    }
+    finally
+    {
+      if (uploadFromStream && inputStream != null)
+      {
+        inputStream.close();
+      }
+    }
+  }
 
   /**
    * This static method is called when we are handling an expired token exception
