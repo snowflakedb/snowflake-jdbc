@@ -159,7 +159,7 @@ public interface SnowflakeStorageClient
   /**
    * Upload a file (-stream) to remote storage with Pre-signed URL without
    * JDBC connection.
-   *
+   * <p>
    * NOTE: This function is only supported when pre-signed URL is used.
    *
    * @param networkTimeoutInMilli  Network timeout for the upload
@@ -178,21 +178,22 @@ public interface SnowflakeStorageClient
    * @throws SnowflakeSQLException if upload failed even after retry
    */
   default void uploadWithPresignedUrlWithoutConnection(
-          int networkTimeoutInMilli, OCSPMode ocspMode,
-          int parallelism, boolean uploadFromStream,
-          String remoteStorageLocation, File srcFile,
-          String destFileName, InputStream inputStream,
-          FileBackedOutputStream fileBackedOutputStream,
-          StorageObjectMetadata meta, String stageRegion,
-          String presignedUrl)
+      int networkTimeoutInMilli, OCSPMode ocspMode,
+      int parallelism, boolean uploadFromStream,
+      String remoteStorageLocation, File srcFile,
+      String destFileName, InputStream inputStream,
+      FileBackedOutputStream fileBackedOutputStream,
+      StorageObjectMetadata meta, String stageRegion,
+      String presignedUrl)
   throws SnowflakeSQLException
   {
     if (!requirePresignedUrl())
     {
-      throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
-              ErrorCode.INTERNAL_ERROR.getMessageCode(),
-              "uploadWithPresignedUrlWithoutConnection only works for" +
-                      "pre-signed URL.");
+      throw new SnowflakeSQLException(
+          SqlState.INTERNAL_ERROR,
+          ErrorCode.INTERNAL_ERROR.getMessageCode(),
+          "uploadWithPresignedUrlWithoutConnection" +
+          " only works for pre-signed URL.");
     }
   }
 
