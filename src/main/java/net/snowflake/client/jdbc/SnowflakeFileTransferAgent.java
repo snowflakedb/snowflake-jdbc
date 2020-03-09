@@ -20,6 +20,7 @@ import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.RemoteStoreFileEncryptionMaterial;
+import net.snowflake.common.core.FileCompressionType;
 import net.snowflake.common.core.SqlState;
 import net.snowflake.common.util.ClassUtil;
 import net.snowflake.common.util.FixedViewColumn;
@@ -407,75 +408,6 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
     public FileCompressionType srcCompressionType;
     public FileCompressionType destCompressionType;
     public boolean isEncrypted = false;
-  }
-
-  public enum FileCompressionType
-  {
-    GZIP(".gz", "application",
-         Arrays.asList("gzip", "x-gzip"), true),
-    DEFLATE(".deflate", "application",
-            Arrays.asList("zlib", "deflate"), true),
-    RAW_DEFLATE(".raw_deflate", "application",
-                Arrays.asList("raw_deflate"), true),
-    BZIP2(".bz2", "application",
-          Arrays.asList("bzip2", "x-bzip2", "x-bz2", "x-bzip", "bz2"), true),
-    ZSTD(".zst", "application",
-         Arrays.asList("zstd"), true),
-    BROTLI(".br", "application",
-           Arrays.asList("brotli", "x-brotli"), true),
-    LZIP(".lz", "application",
-         Arrays.asList("lzip", "x-lzip"), false),
-    LZMA(".lzma", "application",
-         Arrays.asList("lzma", "x-lzma"), false),
-    LZO(".lzo", "application",
-        Arrays.asList("lzop", "x-lzop"), false),
-    XZ(".xz", "application",
-       Arrays.asList("xz", "x-xz"), false),
-    COMPRESS(".Z", "application",
-             Arrays.asList("compress", "x-compress"), false),
-    PARQUET(".parquet", "snowflake",
-            Collections.singletonList("parquet"), true),
-    ORC(".orc", "snowflake",
-        Collections.singletonList("orc"), true);
-
-    FileCompressionType(String fileExtension, String mimeType,
-                        List<String> mimeSubTypes,
-                        boolean isSupported)
-    {
-      this.fileExtension = fileExtension;
-      this.mimeType = mimeType;
-      this.mimeSubTypes = mimeSubTypes;
-      this.supported = isSupported;
-    }
-
-    private String fileExtension;
-    private String mimeType;
-    private List<String> mimeSubTypes;
-    private boolean supported;
-
-    static final Map<String, FileCompressionType> mimeSubTypeToCompressionMap =
-        new HashMap<String, FileCompressionType>();
-
-    static
-    {
-      for (FileCompressionType compression : FileCompressionType.values())
-      {
-        for (String mimeSubType : compression.mimeSubTypes)
-        {
-          mimeSubTypeToCompressionMap.put(mimeSubType, compression);
-        }
-      }
-    }
-
-    static public FileCompressionType lookupByMimeSubType(String mimeSubType)
-    {
-      return mimeSubTypeToCompressionMap.get(mimeSubType);
-    }
-
-    public boolean isSupported()
-    {
-      return supported;
-    }
   }
 
   static class InputStreamWithMetadata
@@ -2656,18 +2588,18 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
    * Derive compression type from mime type
    *
    * @param mimeTypeStr The mime type passed to us
-   * @return the compression type or null
+   * @return the Optional for the compression type or Optional.empty()
    */
-  static FileCompressionType mimeTypeToCompressionType(String mimeTypeStr)
+  static Optional<FileCompressionType> mimeTypeToCompressionType(String mimeTypeStr)
   {
     if (mimeTypeStr == null)
     {
-      return null;
+      return Optional.empty();
     }
     int slashIndex = mimeTypeStr.indexOf('/');
     if (slashIndex < 0)
     {
-      return null; // unable to find sub type
+      return Optional.empty(); // unable to find sub type
     }
     int semiColonIndex = mimeTypeStr.indexOf(';');
     String subType;
@@ -2681,7 +2613,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
     }
     if (Strings.isNullOrEmpty(subType))
     {
-      return null;
+      return Optional.empty();
     }
     return FileCompressionType.lookupByMimeSubType(subType);
   }
@@ -2708,16 +2640,17 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
     }
     else
     {
-      userSpecifiedSourceCompression =
+      Optional<FileCompressionType> foundCompType =
           FileCompressionType.lookupByMimeSubType(sourceCompression.toLowerCase());
-
-      if (userSpecifiedSourceCompression == null)
+      if (!foundCompType.isPresent())
       {
         throw new SnowflakeSQLException(SqlState.FEATURE_NOT_SUPPORTED,
                                         ErrorCode.COMPRESSION_TYPE_NOT_KNOWN.getMessageCode(),
                                         sourceCompression);
       }
-      else if (!userSpecifiedSourceCompression.isSupported())
+      userSpecifiedSourceCompression = foundCompType.get();
+
+      if (!userSpecifiedSourceCompression.isSupported())
       {
         throw new SnowflakeSQLException(SqlState.FEATURE_NOT_SUPPORTED,
                                         ErrorCode.COMPRESSION_TYPE_NOT_SUPPORTED.getMessageCode(),
@@ -2776,7 +2709,12 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
             {
               logger.debug("Mime type for {} is: {}", srcFile, mimeTypeStr);
 
-              currentFileCompressionType = mimeTypeToCompressionType(mimeTypeStr);
+              Optional<FileCompressionType> foundCompType =
+                  mimeTypeToCompressionType(mimeTypeStr);
+              if (foundCompType.isPresent())
+              {
+                currentFileCompressionType = foundCompType.get();
+              }
             }
 
             // fallback: use file extension
@@ -2787,7 +2725,12 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
               if (mimeTypeStr != null)
               {
                 logger.debug("Mime type for {} is: {}", srcFile, mimeTypeStr);
-                currentFileCompressionType = mimeTypeToCompressionType(mimeTypeStr);
+                Optional<FileCompressionType> foundCompType =
+                    mimeTypeToCompressionType(mimeTypeStr);
+                if (foundCompType.isPresent())
+                {
+                  currentFileCompressionType = foundCompType.get();
+                }
               }
             }
           }
@@ -2831,7 +2774,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
             {
               // We only support gzip auto compression
               fileMetadata.destFileName = srcFileName +
-                                          FileCompressionType.GZIP.fileExtension;
+                                          FileCompressionType.GZIP.getFileExtension();
               fileMetadata.destCompressionType = FileCompressionType.GZIP;
             }
             else
@@ -2883,10 +2826,10 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
       // add gz extension if file name doesn't have it
       if (compressSourceFromStream &&
           !destFileNameForStreamSource.endsWith(
-              FileCompressionType.GZIP.fileExtension))
+              FileCompressionType.GZIP.getFileExtension()))
       {
         fileMetadata.destFileName = destFileNameForStreamSource +
-                                    FileCompressionType.GZIP.fileExtension;
+                                    FileCompressionType.GZIP.getFileExtension();
       }
       else
       {
@@ -2907,10 +2850,10 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
 
     for (FileCompressionType compressionType : FileCompressionType.values())
     {
-      if (srcFileLowCase.endsWith(compressionType.fileExtension))
+      if (srcFileLowCase.endsWith(compressionType.getFileExtension()))
       {
-        return compressionType.mimeType + "/" +
-               compressionType.mimeSubTypes.get(0);
+        return compressionType.getMimeType() + "/" +
+               compressionType.getMimeSubTypes().get(0);
       }
     }
 
