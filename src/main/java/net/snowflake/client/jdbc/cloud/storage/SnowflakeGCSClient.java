@@ -545,6 +545,69 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient
   }
 
   /**
+   * Upload a file (-stream) to remote storage with Pre-signed URL without
+   * JDBC connection.
+   *
+   * @param networkTimeoutInMilli  Network timeout for the upload
+   * @param ocspMode               OCSP mode for the upload.
+   * @param parallelism            number of threads do parallel uploading
+   * @param uploadFromStream       true if upload source is stream
+   * @param remoteStorageLocation  s3 bucket name
+   * @param srcFile                source file if not uploading from a stream
+   * @param destFileName           file name on remote storage after upload
+   * @param inputStream            stream used for uploading if
+   *                               fileBackedOutputStream is null
+   * @param fileBackedOutputStream stream used for uploading if not null
+   * @param meta                   object meta data
+   * @param stageRegion            region name where the stage persists
+   * @param presignedUrl           presigned URL for upload. Used by GCP.
+   * @throws SnowflakeSQLException if upload failed
+   */
+  @Override
+  public void uploadWithPresignedUrlWithoutConnection(
+      int networkTimeoutInMilli, OCSPMode ocspMode,
+      int parallelism, boolean uploadFromStream,
+      String remoteStorageLocation, File srcFile,
+      String destFileName, InputStream inputStream,
+      FileBackedOutputStream fileBackedOutputStream,
+      StorageObjectMetadata meta, String stageRegion,
+      String presignedUrl)
+  throws SnowflakeSQLException
+  {
+    final List<FileInputStream> toClose = new ArrayList<>();
+    long originalContentLength = meta.getContentLength();
+
+    SFPair<InputStream, Boolean> uploadStreamInfo = createUploadStream(
+        srcFile, uploadFromStream, inputStream, meta,
+        originalContentLength, fileBackedOutputStream, toClose);
+
+    if (!(meta instanceof CommonObjectMetadata))
+    {
+      throw new IllegalArgumentException("Unexpected metadata object type");
+    }
+
+    if (Strings.isNullOrEmpty(presignedUrl))
+    {
+      throw new IllegalArgumentException("pre-signed URL has to be specified");
+    }
+
+    logger.debug("Starting upload");
+    uploadWithPresignedUrl(networkTimeoutInMilli,
+                           meta.getContentEncoding(),
+                           meta.getUserMetadata(),
+                           uploadStreamInfo.left,
+                           presignedUrl,
+                           ocspMode);
+    logger.debug("Upload successful");
+
+    // close any open streams in the "toClose" list and return
+    for (FileInputStream is : toClose)
+    {
+      IOUtils.closeQuietly(is);
+    }
+  }
+
+  /**
    * Upload a file/stream to remote storage
    *
    * @param connection             connection object

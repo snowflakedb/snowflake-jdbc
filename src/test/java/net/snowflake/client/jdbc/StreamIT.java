@@ -5,6 +5,7 @@ package net.snowflake.client.jdbc;
 
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnTestaccount;
+import net.snowflake.client.RunningOnTravisCI;
 import net.snowflake.client.category.TestCategoryOthers;
 import org.apache.commons.io.IOUtils;
 import org.junit.Test;
@@ -78,6 +79,80 @@ public class StreamIT extends BaseJDBCTest
         statement.close();
       }
       closeSQLObjects(statement, connection);
+    }
+  }
+
+  /**
+   * Test Upload Stream with atypical stage names
+   *
+   * @throws Throwable if any error occurs.
+   */
+  @Test
+  public void testUnusualStageName() throws Throwable
+  {
+    Connection connection = getConnection();
+    Statement statement = connection.createStatement();
+
+    try
+    {
+      statement.execute("CREATE or replace TABLE \"ice cream (nice)\" (types STRING)");
+
+      FileBackedOutputStream outputStream = new FileBackedOutputStream(1000000);
+      outputStream.write("hello".getBytes(StandardCharsets.UTF_8));
+      outputStream.flush();
+
+      // upload the data to user stage under testUploadStream with name hello.txt
+      connection.unwrap(SnowflakeConnection.class).uploadStream(
+          "'@%\"ice cream (nice)\"'",
+          null,
+          outputStream.asByteSource().openStream(),
+          "hello.txt",
+          false);
+
+      // select from the file to make sure the data is uploaded
+      ResultSet rset = statement.executeQuery(
+          "SELECT $1 FROM '@%\"ice cream (nice)\"/'");
+
+      String ret = null;
+
+      while (rset.next())
+      {
+        ret = rset.getString(1);
+      }
+      rset.close();
+      assertEquals("Unexpected string value: " + ret + " expect: hello",
+                   "hello", ret);
+
+      statement.execute("CREATE or replace TABLE \"ice cream (nice)\" (types STRING)");
+
+      // upload the data to user stage under testUploadStream with name hello.txt
+      connection.unwrap(SnowflakeConnection.class).uploadStream(
+          "$$@%\"ice cream (nice)\"$$",
+          null,
+          outputStream.asByteSource().openStream(),
+          "hello.txt",
+          false);
+
+      // select from the file to make sure the data is uploaded
+      rset = statement.executeQuery(
+          "SELECT $1 FROM $$@%\"ice cream (nice)\"/$$");
+
+      ret = null;
+
+      while (rset.next())
+      {
+        ret = rset.getString(1);
+      }
+      rset.close();
+      assertEquals("Unexpected string value: " + ret + " expect: hello",
+                   "hello", ret);
+
+    }
+    finally
+    {
+      statement.execute("DROP TABLE IF EXISTS \"ice cream (nice)\"");
+      statement.close();
+      connection.close();
     }
   }
 

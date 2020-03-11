@@ -66,7 +66,7 @@ public class TelemetryService
       TELEMETRY_SERVER_DEPLOYMENT.DEV.name,
       TELEMETRY_SERVER_DEPLOYMENT.REG.name,
       TELEMETRY_SERVER_DEPLOYMENT.QA1.name,
-      TELEMETRY_SERVER_DEPLOYMENT.PREPROD2.name,
+      TELEMETRY_SERVER_DEPLOYMENT.PREPROD3.name,
       TELEMETRY_SERVER_DEPLOYMENT.PROD.name
   ));
 
@@ -262,9 +262,9 @@ public class TelemetryService
     {
       deployment = TELEMETRY_SERVER_DEPLOYMENT.QA1;
     }
-    else if (conStr.getHost().contains("preprod2"))
+    else if (conStr.getHost().contains("preprod3"))
     {
-      deployment = TELEMETRY_SERVER_DEPLOYMENT.PREPROD2;
+      deployment = TELEMETRY_SERVER_DEPLOYMENT.PREPROD3;
     }
 
     this.setDeployment(deployment);
@@ -329,7 +329,7 @@ public class TelemetryService
     DEV("dev", TELEMETRY_API.SFCTEST),
     REG("reg", TELEMETRY_API.SFCTEST),
     QA1("qa1", TELEMETRY_API.SFCDEV),
-    PREPROD2("preprod2", TELEMETRY_API.SFCDEV),
+    PREPROD3("preprod3", TELEMETRY_API.SFCDEV),
     PROD("prod", TELEMETRY_API.PROD);
 
     private String name;

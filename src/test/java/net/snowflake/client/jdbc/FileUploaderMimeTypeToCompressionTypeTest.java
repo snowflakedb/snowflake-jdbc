@@ -3,12 +3,14 @@
  */
 package net.snowflake.client.jdbc;
 
+import net.snowflake.common.core.FileCompressionType;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
 
@@ -21,9 +23,9 @@ import static org.junit.Assert.assertEquals;
 public class FileUploaderMimeTypeToCompressionTypeTest
 {
   private final String mimeType;
-  private final SnowflakeFileTransferAgent.FileCompressionType mimeSubType;
+  private final FileCompressionType mimeSubType;
 
-  public FileUploaderMimeTypeToCompressionTypeTest(String mimeType, SnowflakeFileTransferAgent.FileCompressionType mimeSubType)
+  public FileUploaderMimeTypeToCompressionTypeTest(String mimeType, FileCompressionType mimeSubType)
   {
     this.mimeType = mimeType;
     this.mimeSubType = mimeSubType;
@@ -34,24 +36,33 @@ public class FileUploaderMimeTypeToCompressionTypeTest
   {
     return Arrays.asList(new Object[][]{
         {"text/csv", null},
-        {"snowflake/orc", SnowflakeFileTransferAgent.FileCompressionType.ORC},
-        {"snowflake/orc;p=1", SnowflakeFileTransferAgent.FileCompressionType.ORC},
-        {"snowflake/parquet", SnowflakeFileTransferAgent.FileCompressionType.PARQUET},
-        {"application/zlib", SnowflakeFileTransferAgent.FileCompressionType.DEFLATE},
-        {"application/x-bzip2", SnowflakeFileTransferAgent.FileCompressionType.BZIP2},
-        {"application/zstd", SnowflakeFileTransferAgent.FileCompressionType.ZSTD},
-        {"application/x-brotli", SnowflakeFileTransferAgent.FileCompressionType.BROTLI},
-        {"application/x-lzip", SnowflakeFileTransferAgent.FileCompressionType.LZIP},
-        {"application/x-lzma", SnowflakeFileTransferAgent.FileCompressionType.LZMA},
-        {"application/x-xz", SnowflakeFileTransferAgent.FileCompressionType.XZ},
-        {"application/x-compress", SnowflakeFileTransferAgent.FileCompressionType.COMPRESS},
-        {"application/x-gzip", SnowflakeFileTransferAgent.FileCompressionType.GZIP}
+        {"snowflake/orc", FileCompressionType.ORC},
+        {"snowflake/orc;p=1", FileCompressionType.ORC},
+        {"snowflake/parquet", FileCompressionType.PARQUET},
+        {"application/zlib", FileCompressionType.DEFLATE},
+        {"application/x-bzip2", FileCompressionType.BZIP2},
+        {"application/zstd", FileCompressionType.ZSTD},
+        {"application/x-brotli", FileCompressionType.BROTLI},
+        {"application/x-lzip", FileCompressionType.LZIP},
+        {"application/x-lzma", FileCompressionType.LZMA},
+        {"application/x-xz", FileCompressionType.XZ},
+        {"application/x-compress", FileCompressionType.COMPRESS},
+        {"application/x-gzip", FileCompressionType.GZIP}
     });
   }
 
   @Test
   public void testMimeTypeToCompressionType() throws Throwable
   {
-    assertEquals(mimeSubType, SnowflakeFileTransferAgent.mimeTypeToCompressionType(mimeType));
+    Optional<FileCompressionType> foundCompType =
+        SnowflakeFileTransferAgent.mimeTypeToCompressionType(mimeType);
+    if (foundCompType.isPresent())
+    {
+      assertEquals(mimeSubType, foundCompType.get());
+    }
+    else
+    {
+      assertEquals(mimeSubType, null);
+    }
   }
 }
