@@ -332,17 +332,19 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
       statement.execute("create or replace database " + altdb);
       statement.execute("create or replace schema " + altschema1);
       statement.execute("create or replace schema " + altschema2);
-      statement.execute("create or replace table "+altdb+"."+altschema1+".testtable1 (colA string, colB number)");
-      statement.execute("create or replace table "+altdb+"."+altschema2+".testtable2 (colA string, colB number)");
-      statement.execute("create or replace table "+catalog+"."+schema+".testtable3 (colA string, colB number)");
-      statement.execute("use database "+altdb);
-      statement.execute("use schema "+altschema1);
+      statement.execute(
+          "create or replace table " + altdb + "." + altschema1 + ".testtable1 (colA string, colB number)");
+      statement.execute(
+          "create or replace table " + altdb + "." + altschema2 + ".testtable2 (colA string, colB number)");
+      statement.execute("create or replace table " + catalog + "." + schema + ".testtable3 (colA string, colB number)");
+      statement.execute("use database " + altdb);
+      statement.execute("use schema " + altschema1);
 
       statement.execute("ALTER SESSION set CLIENT_METADATA_REQUEST_USE_CONNECTION_CTX=true");
       statement.execute("ALTER SESSION set CLIENT_METADATA_USE_SESSION_DATABASE=true");
 
       DatabaseMetaData metadata = connection.getMetaData();
-      ResultSet resultSet = metadata.getColumns(null, null, "%","COLA");
+      ResultSet resultSet = metadata.getColumns(null, null, "%", "COLA");
       assertTrue(resultSet.next());
       assertEquals(altschema1, resultSet.getString("TABLE_SCHEM"));
       assertFalse(resultSet.next());
@@ -365,7 +367,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
       statement.execute("ALTER SESSION set CLIENT_METADATA_REQUEST_USE_CONNECTION_CTX=false");
 
       metadata = connection.getMetaData();
-      resultSet = metadata.getColumns(null, null, "%","COLA");
+      resultSet = metadata.getColumns(null, null, "%", "COLA");
       assertTrue(resultSet.next());
       assertEquals(altschema1, resultSet.getString("TABLE_SCHEM"));
       assertTrue(resultSet.next());
@@ -392,7 +394,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
       statement.execute("ALTER SESSION set CLIENT_METADATA_USE_SESSION_DATABASE=false");
 
       metadata = connection.getMetaData();
-      resultSet = metadata.getColumns(null, null, "TESTTABLE_","COLA");
+      resultSet = metadata.getColumns(null, null, "TESTTABLE_", "COLA");
       assertTrue(resultSet.next());
       assertEquals(altschema1, resultSet.getString("TABLE_SCHEM"));
       assertTrue(resultSet.next());
@@ -421,7 +423,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
       statement.execute("ALTER SESSION set CLIENT_METADATA_REQUEST_USE_CONNECTION_CTX=true");
 
       metadata = connection.getMetaData();
-      resultSet = metadata.getColumns(null, null, "%","COLA");
+      resultSet = metadata.getColumns(null, null, "%", "COLA");
       assertTrue(resultSet.next());
       assertEquals(altschema1, resultSet.getString("TABLE_SCHEM"));
       assertFalse(resultSet.next());
@@ -442,10 +444,10 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
       assertFalse(resultSet.next());
 
       // clean up after creating extra database and schema
-      statement.execute("use database " +catalog);
-      statement.execute("drop schema " + altdb+"."+altschema1);
-      statement.execute("drop schema " +altdb+ "." +altschema2);
-      statement.execute("drop database " +altdb);
+      statement.execute("use database " + catalog);
+      statement.execute("drop schema " + altdb + "." + altschema1);
+      statement.execute("drop schema " + altdb + "." + altschema2);
+      statement.execute("drop database " + altdb);
 
     }
   }

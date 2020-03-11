@@ -862,14 +862,14 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
       Statement statement = connection.createStatement();
 
       statement.execute(
-              "create or replace table table_basic " +
-                      " (int_c int, string_c string(128))");
+          "create or replace table table_basic " +
+          " (int_c int, string_c string(128))");
 
       statement.execute(
-              "insert into table_basic select " +
-                      "seq4(), " +
-                      "'arrow_1234567890arrow_1234567890arrow_1234567890arrow_1234567890'" +
-                      " from table(generator(rowcount=>" + rowCount + "))");
+          "insert into table_basic select " +
+          "seq4(), " +
+          "'arrow_1234567890arrow_1234567890arrow_1234567890arrow_1234567890'" +
+          " from table(generator(rowcount=>" + rowCount + "))");
 
 
       String sqlSelect = "select * from table_basic ";
@@ -877,7 +877,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
 
       // Split deserializedResultSet by 3M
       fileNameList = serializeResultSet((SnowflakeResultSet) rs,
-              100 * 1024 * 1024, "txt");
+                                        100 * 1024 * 1024, "txt");
 
       // Only one serializable object is generated with 100M data.
       assertTrue(fileNameList.size() == 1);
@@ -885,7 +885,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
       FileInputStream fi = new FileInputStream(fileNameList.get(0));
       ObjectInputStream si = new ObjectInputStream(fi);
       SnowflakeResultSetSerializableV1 wholeResultSetChunk =
-              (SnowflakeResultSetSerializableV1) si.readObject();
+          (SnowflakeResultSetSerializableV1) si.readObject();
       fi.close();
       expectedTotalRowCount = wholeResultSetChunk.getRowCount();
       expectedTotalCompressedSize = wholeResultSetChunk.getCompressedDataSizeInBytes();
@@ -894,7 +894,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
       if (developPrint)
       {
         System.out.println("Total statistic: RowCount=" + expectedTotalRowCount + " CompSize=" +
-                expectedTotalCompressedSize + " UncompSize=" + expectedTotalUncompressedSize);
+                           expectedTotalCompressedSize + " UncompSize=" + expectedTotalUncompressedSize);
       }
 
       rs.close();
@@ -905,43 +905,43 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
 
     // Split deserializedResultSet by 3M
     List<String> fileNameSplit3M = splitResultSetSerializables(
-            fileNameList, 3 * 1024 * 1024);
+        fileNameList, 3 * 1024 * 1024);
     // Verify the metadata is correct.
     assertTrue(isMetadataConsistent(expectedTotalRowCount,
-            expectedTotalCompressedSize,
-            expectedTotalUncompressedSize,
-            fileNameSplit3M,
-            null));
+                                    expectedTotalCompressedSize,
+                                    expectedTotalUncompressedSize,
+                                    fileNameSplit3M,
+                                    null));
 
     // Split deserializedResultSet by 2M
     List<String> fileNameSplit2M = splitResultSetSerializables(
-            fileNameSplit3M, 2 * 1024 * 1024);
+        fileNameSplit3M, 2 * 1024 * 1024);
     // Verify the metadata is correct.
     assertTrue(isMetadataConsistent(expectedTotalRowCount,
-            expectedTotalCompressedSize,
-            expectedTotalUncompressedSize,
-            fileNameSplit2M,
-            null));
+                                    expectedTotalCompressedSize,
+                                    expectedTotalUncompressedSize,
+                                    fileNameSplit2M,
+                                    null));
 
     // Split deserializedResultSet by 3M
     List<String> fileNameSplit1M = splitResultSetSerializables(
-            fileNameSplit2M, 1 * 1024 * 1024);
+        fileNameSplit2M, 1 * 1024 * 1024);
     // Verify the metadata is correct.
     assertTrue(isMetadataConsistent(expectedTotalRowCount,
-            expectedTotalCompressedSize,
-            expectedTotalUncompressedSize,
-            fileNameSplit1M,
-            null));
+                                    expectedTotalCompressedSize,
+                                    expectedTotalUncompressedSize,
+                                    fileNameSplit1M,
+                                    null));
 
     // Split deserializedResultSet by smallest
     List<String> fileNameSplitSmallest = splitResultSetSerializables(
-            fileNameSplit1M, 1);
+        fileNameSplit1M, 1);
     // Verify the metadata is correct.
     assertTrue(isMetadataConsistent(expectedTotalRowCount,
-            expectedTotalCompressedSize,
-            expectedTotalUncompressedSize,
-            fileNameSplitSmallest,
-            null));
+                                    expectedTotalCompressedSize,
+                                    expectedTotalUncompressedSize,
+                                    fileNameSplitSmallest,
+                                    null));
   }
 
   /**
@@ -971,7 +971,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
       FileInputStream fi = new FileInputStream(filename);
       ObjectInputStream si = new ObjectInputStream(fi);
       SnowflakeResultSetSerializableV1 resultSetChunk =
-              (SnowflakeResultSetSerializableV1) si.readObject();
+          (SnowflakeResultSetSerializableV1) si.readObject();
       fi.close();
 
       // Accumulate statistic from metadata
@@ -993,16 +993,16 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
     if (developPrint)
     {
       System.out.println("isMetadataConsistent: FileCount=" + files.size() +
-              " RowCounts=" + expectedTotalRowCount + " " + actualRowCountFromMetadata
-              + " (" + actualRowCount + ") CompSize=" + expectedTotalCompressedSize +
-              " " + actualTotalCompressedSize + " UncompSize=" +
-              expectedTotalUncompressedSize + " " + actualTotalUncompressedSize +
-              " chunkFileCount=" + chunkFileCount);
+                         " RowCounts=" + expectedTotalRowCount + " " + actualRowCountFromMetadata
+                         + " (" + actualRowCount + ") CompSize=" + expectedTotalCompressedSize +
+                         " " + actualTotalCompressedSize + " UncompSize=" +
+                         expectedTotalUncompressedSize + " " + actualTotalUncompressedSize +
+                         " chunkFileCount=" + chunkFileCount);
     }
 
     return actualRowCount == expectedTotalRowCount &&
-            actualRowCountFromMetadata == expectedTotalRowCount &&
-            actualTotalCompressedSize == expectedTotalCompressedSize &&
-            expectedTotalUncompressedSize == actualTotalUncompressedSize;
+           actualRowCountFromMetadata == expectedTotalRowCount &&
+           actualTotalCompressedSize == expectedTotalCompressedSize &&
+           expectedTotalUncompressedSize == actualTotalUncompressedSize;
   }
 }

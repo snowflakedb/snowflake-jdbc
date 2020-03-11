@@ -7,7 +7,6 @@ package net.snowflake.client.jdbc;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.snowflake.client.core.ChunkDownloader;
-import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.MetaDataOfBinds;
 import net.snowflake.client.core.OCSPMode;
 import net.snowflake.client.core.ObjectMapperFactory;
@@ -18,7 +17,6 @@ import net.snowflake.client.core.SFBaseResultSet;
 import net.snowflake.client.core.SFResultSet;
 import net.snowflake.client.core.SFResultSetMetaData;
 import net.snowflake.client.core.SFSession;
-import net.snowflake.client.core.SFSessionProperty;
 import net.snowflake.client.core.SFStatement;
 import net.snowflake.client.core.SFStatementType;
 import net.snowflake.client.core.SessionUtil;
@@ -614,7 +612,7 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
       }
     }
     logger.debug("First chunk row count: {}",
-        resultSetSerializable.firstChunkRowCount);
+                 resultSetSerializable.firstChunkRowCount);
 
     // parse file chunks
     resultSetSerializable.parseChunkFiles(rootNode, sfStatement);
@@ -1021,8 +1019,8 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
       // save current one and create new one.
       if ((curResultSetSerializable.getUncompressedDataSizeInBytes() > 0) &&
           (maxSizeInBytes <
-              (curResultSetSerializable.getUncompressedDataSizeInBytes()
-                  + curChunkFileMetadata.getUncompressedByteSize())))
+           (curResultSetSerializable.getUncompressedDataSizeInBytes()
+            + curChunkFileMetadata.getUncompressedByteSize())))
       {
         resultSetSerializables.add(curResultSetSerializable);
 
@@ -1048,59 +1046,6 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
   }
 
   /**
-   * Setup JDBC proxy properties if necessary.
-   *
-   * @param info proxy server properties.
-   */
-  private void setupProxyPropertiesIfNecessary(Properties info) throws SnowflakeSQLException
-  {
-    // Setup proxy properties.
-    if (info != null && info.size() > 0 &&
-        info.getProperty(SFSessionProperty.USE_PROXY.getPropertyKey()) != null)
-    {
-      Map<SFSessionProperty, Object> connectionPropertiesMap =
-          new HashMap<>(info.size());
-      Boolean useProxy =
-          Boolean.valueOf(info.getProperty(SFSessionProperty.USE_PROXY.getPropertyKey()));
-      if (useProxy)
-      {
-        connectionPropertiesMap.put(SFSessionProperty.USE_PROXY, true);
-
-        // set up other proxy related values.
-        String propValue = null;
-        if ((propValue = info.getProperty(
-            SFSessionProperty.PROXY_HOST.getPropertyKey())) != null)
-        {
-          connectionPropertiesMap.put(SFSessionProperty.PROXY_HOST, propValue);
-        }
-        if ((propValue = info.getProperty(
-            SFSessionProperty.PROXY_PORT.getPropertyKey())) != null)
-        {
-          connectionPropertiesMap.put(SFSessionProperty.PROXY_PORT, propValue);
-        }
-        if ((propValue = info.getProperty(
-            SFSessionProperty.PROXY_USER.getPropertyKey())) != null)
-        {
-          connectionPropertiesMap.put(SFSessionProperty.PROXY_USER, propValue);
-        }
-        if ((propValue = info.getProperty(
-            SFSessionProperty.PROXY_PASSWORD.getPropertyKey())) != null)
-        {
-          connectionPropertiesMap.put(SFSessionProperty.PROXY_PASSWORD, propValue);
-        }
-        if ((propValue = info.getProperty(
-            SFSessionProperty.NON_PROXY_HOSTS.getPropertyKey())) != null)
-        {
-          connectionPropertiesMap.put(SFSessionProperty.NON_PROXY_HOSTS, propValue);
-        }
-
-        // Setup proxy properties into HttpUtil static cache
-        HttpUtil.configureCustomProxyProperties(connectionPropertiesMap);
-      }
-    }
-  }
-
-  /**
    * Get ResultSet from the ResultSet Serializable object so that the user can
    * access the data. The ResultSet is sessionless.
    *
@@ -1121,7 +1066,7 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
   public ResultSet getResultSet(Properties info) throws SQLException
   {
     // Setup proxy info if necessary
-    setupProxyPropertiesIfNecessary(info);
+    SnowflakeUtil.setupProxyPropertiesIfNecessary(info);
 
     // Setup transient fields
     setupTransientFields();
@@ -1177,8 +1122,8 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
       byte[] bytes = Base64.getDecoder().decode(firstChunkStringData);
       VectorSchemaRoot root = null;
       RootAllocator localRootAllocator =
-              (rootAllocator != null) ? rootAllocator
-                                      : new RootAllocator(Long.MAX_VALUE);
+          (rootAllocator != null) ? rootAllocator
+                                  : new RootAllocator(Long.MAX_VALUE);
       try (ByteArrayInputStream is = new ByteArrayInputStream(bytes);
            ArrowStreamReader reader = new ArrowStreamReader(is, localRootAllocator))
       {
@@ -1192,8 +1137,8 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
       catch (Exception ex)
       {
         throw new SnowflakeSQLException(ErrorCode.INTERNAL_ERROR,
-                "Fail to retrieve row count for first arrow chunk: " +
-                        ex.getCause());
+                                        "Fail to retrieve row count for first arrow chunk: " +
+                                        ex.getCause());
       }
       finally
       {
@@ -1207,13 +1152,13 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
     {
       // This shouldn't happen
       throw new SnowflakeSQLException(ErrorCode.INTERNAL_ERROR,
-              "setFirstChunkRowCountForArrow() should only be called for Arrow.");
+                                      "setFirstChunkRowCountForArrow() should only be called for Arrow.");
     }
   }
 
   /**
    * Retrieve total row count included in the the ResultSet Serializable object.
-   *
+   * <p>
    * GS sends the data of first chunk and metadata of the other chunk if exist
    * to client, so this function calculates the row count for all of them.
    *
@@ -1235,7 +1180,7 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
 
   /**
    * Retrieve compressed data size in the the ResultSet Serializable object.
-   *
+   * <p>
    * GS sends the data of first chunk and metadata of the other chunks if exist
    * to client, so this function calculates the data size for all of them.
    * NOTE: if first chunk exists, this function uses its uncompressed data size
@@ -1263,7 +1208,7 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
 
   /**
    * Retrieve Uncompressed data size in the the ResultSet Serializable object.
-   *
+   * <p>
    * GS sends the data of first chunk and metadata of the other chunk if exist
    * to client, so this function calculates the data size for all of them.
    *

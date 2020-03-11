@@ -296,7 +296,8 @@ public class SFTrustManager extends X509ExtendedTrustManager
   {
     // Add Bouncy Castle to the security provider. This is required to
     // verify the signature on OCSP response and attached certificates.
-    if (Security.getProvider(BOUNCY_CASTLE_PROVIDER) == null && Security.getProvider(BOUNCY_CASTLE_FIPS_PROVIDER) == null)
+    if (Security.getProvider(BOUNCY_CASTLE_PROVIDER) == null &&
+        Security.getProvider(BOUNCY_CASTLE_FIPS_PROVIDER) == null)
     {
       Security.addProvider(instantiateSecurityProvider());
     }
@@ -307,16 +308,16 @@ public class SFTrustManager extends X509ExtendedTrustManager
     try
     {
       Class klass = Class.forName(DEFAULT_SECURITY_PROVIDER_NAME);
-      return (Provider)klass.getDeclaredConstructor().newInstance();
+      return (Provider) klass.getDeclaredConstructor().newInstance();
     }
-    catch(ExceptionInInitializerError | ClassNotFoundException | NoSuchMethodException |
-            InstantiationException | IllegalAccessException |
-            IllegalArgumentException | InvocationTargetException | SecurityException ex)
+    catch (ExceptionInInitializerError | ClassNotFoundException | NoSuchMethodException |
+        InstantiationException | IllegalAccessException |
+        IllegalArgumentException | InvocationTargetException | SecurityException ex)
     {
       String errMsg = String.format(
-              "Failed to load %s, err=%s. If you use Snowflake JDBC for FIPS jar, " +
-                      "import BouncyCastleFipsProvider in the application.",
-              DEFAULT_SECURITY_PROVIDER_NAME, ex.getMessage());
+          "Failed to load %s, err=%s. If you use Snowflake JDBC for FIPS jar, " +
+          "import BouncyCastleFipsProvider in the application.",
+          DEFAULT_SECURITY_PROVIDER_NAME, ex.getMessage());
       LOGGER.error(errMsg);
       throw new RuntimeException(errMsg);
     }
@@ -2224,10 +2225,10 @@ public class SFTrustManager extends X509ExtendedTrustManager
         MessageDigest messageDigest = MessageDigest.getInstance(ALGORITHM_SHA1_NAME);
         return messageDigest.digest(bytes);
       }
-      catch(NoSuchAlgorithmException ex)
+      catch (NoSuchAlgorithmException ex)
       {
         String errMsg = String.format(
-                "Failed to instantiate the algorithm: %s. err=%s", ALGORITHM_SHA1_NAME, ex.getMessage());
+            "Failed to instantiate the algorithm: %s. err=%s", ALGORITHM_SHA1_NAME, ex.getMessage());
         LOGGER.error(errMsg);
         throw new RuntimeException(errMsg);
       }

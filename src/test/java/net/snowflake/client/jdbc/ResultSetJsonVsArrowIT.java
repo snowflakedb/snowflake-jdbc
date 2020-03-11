@@ -1794,14 +1794,18 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest
   }
 
   @Test
-  public void TestArrowStringRoundTrip() throws SQLException {
+  public void TestArrowStringRoundTrip() throws SQLException
+  {
     String big_number = "11111111112222222222333333333344444444";
     Connection con = getConnection();
     Statement st = con.createStatement();
-    try {
-      for (int i = 0; i < 38; i++) {
+    try
+    {
+      for (int i = 0; i < 38; i++)
+      {
         StringBuilder to_insert = new StringBuilder(big_number);
-        if (i != 0) {
+        if (i != 0)
+        {
           int insert_to = 38 - i;
           to_insert.insert(insert_to, ".");
         }
@@ -1814,14 +1818,17 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest
         st.execute("rollback");
         st.execute("drop table if exists test_arrow_string");
       }
-    } finally {
+    }
+    finally
+    {
       st.close();
       con.close();
     }
   }
 
   @Test
-  public void TestArrowFloatRoundTrip() throws SQLException {
+  public void TestArrowFloatRoundTrip() throws SQLException
+  {
     Connection con = getConnection();
     Statement st = con.createStatement();
     float[] cases = {Float.MAX_VALUE, Float.MIN_VALUE};

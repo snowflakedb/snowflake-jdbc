@@ -1,12 +1,13 @@
 package net.snowflake.client.jdbc.cloud.storage;
 
+import java.io.Serializable;
 import java.util.Map;
 
 /**
  * Encapsulates all the required stage properties used by GET/PUT
  * for Azure and S3 stages
  */
-public class StageInfo
+public class StageInfo implements Serializable
 {
   public enum StageType
   {
@@ -16,7 +17,7 @@ public class StageInfo
     GCS
   }
 
-  ;
+  private static final long serialVersionUID = 1L;
   private StageType stageType;        // The stage type
   private String location;            // The container or bucket
   private Map<?, ?> credentials;       // the credentials required for the  stage

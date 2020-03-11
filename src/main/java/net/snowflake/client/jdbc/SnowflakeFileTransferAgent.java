@@ -20,6 +20,7 @@ import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.RemoteStoreFileEncryptionMaterial;
+import net.snowflake.common.core.FileCompressionType;
 import net.snowflake.common.core.SqlState;
 import net.snowflake.common.util.ClassUtil;
 import net.snowflake.common.util.FixedViewColumn;
@@ -407,75 +408,6 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
     public FileCompressionType srcCompressionType;
     public FileCompressionType destCompressionType;
     public boolean isEncrypted = false;
-  }
-
-  public enum FileCompressionType
-  {
-    GZIP(".gz", "application",
-         Arrays.asList("gzip", "x-gzip"), true),
-    DEFLATE(".deflate", "application",
-            Arrays.asList("zlib", "deflate"), true),
-    RAW_DEFLATE(".raw_deflate", "application",
-                Arrays.asList("raw_deflate"), true),
-    BZIP2(".bz2", "application",
-          Arrays.asList("bzip2", "x-bzip2", "x-bz2", "x-bzip", "bz2"), true),
-    ZSTD(".zst", "application",
-         Arrays.asList("zstd"), true),
-    BROTLI(".br", "application",
-           Arrays.asList("brotli", "x-brotli"), true),
-    LZIP(".lz", "application",
-         Arrays.asList("lzip", "x-lzip"), false),
-    LZMA(".lzma", "application",
-         Arrays.asList("lzma", "x-lzma"), false),
-    LZO(".lzo", "application",
-        Arrays.asList("lzop", "x-lzop"), false),
-    XZ(".xz", "application",
-       Arrays.asList("xz", "x-xz"), false),
-    COMPRESS(".Z", "application",
-             Arrays.asList("compress", "x-compress"), false),
-    PARQUET(".parquet", "snowflake",
-            Collections.singletonList("parquet"), true),
-    ORC(".orc", "snowflake",
-        Collections.singletonList("orc"), true);
-
-    FileCompressionType(String fileExtension, String mimeType,
-                        List<String> mimeSubTypes,
-                        boolean isSupported)
-    {
-      this.fileExtension = fileExtension;
-      this.mimeType = mimeType;
-      this.mimeSubTypes = mimeSubTypes;
-      this.supported = isSupported;
-    }
-
-    private String fileExtension;
-    private String mimeType;
-    private List<String> mimeSubTypes;
-    private boolean supported;
-
-    static final Map<String, FileCompressionType> mimeSubTypeToCompressionMap =
-        new HashMap<String, FileCompressionType>();
-
-    static
-    {
-      for (FileCompressionType compression : FileCompressionType.values())
-      {
-        for (String mimeSubType : compression.mimeSubTypes)
-        {
-          mimeSubTypeToCompressionMap.put(mimeSubType, compression);
-        }
-      }
-    }
-
-    static public FileCompressionType lookupByMimeSubType(String mimeSubType)
-    {
-      return mimeSubTypeToCompressionMap.get(mimeSubType);
-    }
-
-    public boolean isSupported()
-    {
-      return supported;
-    }
   }
 
   static class InputStreamWithMetadata
@@ -1235,8 +1167,23 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
 
     Map<?, ?> stageCredentials = extractStageCreds(jsonNode);
 
-    stageInfo = StageInfo.createStageInfo(stageLocationType, stageLocation, stageCredentials,
-                                          stageRegion, endPoint, stgAcct);
+    stageInfo = StageInfo.createStageInfo(stageLocationType, stageLocation,
+                                          stageCredentials, stageRegion, endPoint, stgAcct);
+
+    // Setup pre-signed URL into stage info if pre-signed URL is returned.
+    if (stageInfo.getStageType() == StageInfo.StageType.GCS)
+    {
+      JsonNode presignedUrlNode =
+          jsonNode.path("data").path("stageInfo").path("presignedUrl");
+      if (!presignedUrlNode.isMissingNode())
+      {
+        String presignedUrl = presignedUrlNode.asText();
+        if (!Strings.isNullOrEmpty(presignedUrl))
+        {
+          stageInfo.setPresignedUrl(presignedUrl);
+        }
+      }
+    }
   }
 
   /**
@@ -1414,6 +1361,49 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
     }
 
     return stageCredentials;
+  }
+
+  /**
+   * This is API function to retrieve the File Transfer Metadatas.
+   * <p>
+   * NOTE: It only supports PUT on GCP when it is created.
+   *
+   * @return The file transfer metadatas for to-be-transferred files.
+   * @throws SnowflakeSQLException if any error occurs
+   */
+  public List<SnowflakeFileTransferMetadata> getFileTransferMetadatas()
+  throws SnowflakeSQLException
+  {
+    List<SnowflakeFileTransferMetadata> result = new ArrayList<>();
+    if (stageInfo.getStageType() != StageInfo.StageType.GCS)
+    {
+      throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
+                                      ErrorCode.INTERNAL_ERROR.getMessageCode(),
+                                      "This API only supports GCS");
+    }
+
+    if (commandType != CommandType.UPLOAD)
+    {
+      throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
+                                      ErrorCode.INTERNAL_ERROR.getMessageCode(),
+                                      "This API only supports PUT command");
+    }
+
+    for (String sourceFilePath : sourceFiles)
+    {
+      String sourceFileName =
+          sourceFilePath.substring(sourceFilePath.lastIndexOf("/") + 1);
+      result.add(new SnowflakeFileTransferMetadataV1(
+          stageInfo.getPresignedUrl(),
+          sourceFileName,
+          encryptionMaterial.get(0).getQueryStageMasterKey(),
+          encryptionMaterial.get(0).getQueryId(),
+          encryptionMaterial.get(0).getSmkId(),
+          commandType,
+          stageInfo));
+    }
+
+    return result;
   }
 
   public boolean execute() throws SQLException
@@ -2069,6 +2059,195 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
     }
   }
 
+  /**
+   * Static API function to upload data without JDBC connection.
+   * <p>
+   * NOTE: This function is developed based on getUploadFileCallable().
+   *
+   * @param config Configuration to upload a file to cloud storage
+   * @throws Exception if error occurs while data upload.
+   */
+  static public void uploadWithoutConnection(SnowflakeFileTransferConfig config)
+  throws Exception
+  {
+    logger.debug("Entering uploadWithoutConnection...");
+
+    SnowflakeFileTransferMetadataV1 metadata =
+        (SnowflakeFileTransferMetadataV1) config.getSnowflakeFileTransferMetadata();
+    InputStream uploadStream = config.getUploadStream();
+    boolean requireCompress = config.getRequireCompress();
+    int networkTimeoutInMilli = config.getNetworkTimeoutInMilli();
+    OCSPMode ocspMode = config.getOcspMode();
+    Properties proxyProperties = config.getProxyProperties();
+
+    // Setup proxy info if necessary
+    SnowflakeUtil.setupProxyPropertiesIfNecessary(proxyProperties);
+
+    StageInfo stageInfo = metadata.getStageInfo();
+    String destFileName = metadata.getPresignedUrlFileName();
+
+    logger.debug("Begin upload data for " + destFileName);
+
+    long uploadSize;
+    File fileToUpload = null;
+    String digest = null;
+
+    // Temp file that needs to be cleaned up when upload was successful
+    FileBackedOutputStream fileBackedOutputStream = null;
+
+    RemoteStoreFileEncryptionMaterial encMat =
+        metadata.getEncryptionMaterial();
+    // SNOW-16082: we should capture exception if we fail to compress or
+    // calculate digest.
+    try
+    {
+      if (requireCompress)
+      {
+        InputStreamWithMetadata compressedSizeAndStream =
+            (encMat == null ? compressStreamWithGZIPNoDigest(uploadStream)
+                            : compressStreamWithGZIP(uploadStream));
+
+        fileBackedOutputStream =
+            compressedSizeAndStream.fileBackedOutputStream;
+
+        // update the size
+        uploadSize = compressedSizeAndStream.size;
+        digest = compressedSizeAndStream.digest;
+
+        if (compressedSizeAndStream.fileBackedOutputStream.getFile() != null)
+        {
+          fileToUpload =
+              compressedSizeAndStream.fileBackedOutputStream.getFile();
+        }
+
+        logger.debug("New size after compression: {}", uploadSize);
+      }
+      else
+      {
+        // If it's not local_fs, we store our digest in the metadata
+        // In local_fs, we don't need digest, and if we turn it on,
+        // we will consume whole uploadStream, which local_fs uses.
+        InputStreamWithMetadata result = computeDigest(uploadStream, true);
+        digest = result.digest;
+        fileBackedOutputStream = result.fileBackedOutputStream;
+        uploadSize = result.size;
+
+        if (result.fileBackedOutputStream.getFile() != null)
+        {
+          fileToUpload = result.fileBackedOutputStream.getFile();
+        }
+      }
+
+      logger.debug(
+          "Started copying file to {}:{} destName: {} compressed ? {} size={}",
+          stageInfo.getStageType().name(), stageInfo.getLocation(),
+          destFileName, (requireCompress ? "yes" : "no"), uploadSize);
+
+      SnowflakeStorageClient initialClient =
+          storageFactory.createClient(stageInfo, 1, encMat);
+      pushFileToRemoteStoreWithPresignedUrl(
+          metadata.getStageInfo(),
+          metadata.getPresignedUrlFileName(),
+          uploadStream, fileBackedOutputStream, uploadSize,
+          digest, (requireCompress ? FileCompressionType.GZIP : null),
+          initialClient, networkTimeoutInMilli, ocspMode, 1,
+          null, true, encMat, metadata.getPresignedUrl());
+    }
+    catch (Exception ex)
+    {
+      logger.error(
+          "Exception encountered during file upload: ", ex.getMessage());
+      throw ex;
+    }
+    finally
+    {
+      if (fileBackedOutputStream != null)
+      {
+        try
+        {
+          fileBackedOutputStream.reset();
+        }
+        catch (IOException ex)
+        {
+          logger.debug("failed to clean up temp file: {}", ex);
+        }
+      }
+    }
+  }
+
+  /**
+   * Push a file (or stream) to remote store with pre-signed URL
+   * without JDBC connection.
+   * <p>
+   * NOTE: This function is developed based on pushFileToRemoteStore().
+   * The main difference is that the caller needs to provide
+   * pre-signed URL and the upload doesn't need JDBC connection.
+   */
+  static private void pushFileToRemoteStoreWithPresignedUrl(
+      StageInfo stage,
+      String destFileName,
+      InputStream inputStream,
+      FileBackedOutputStream fileBackedOutStr,
+      long uploadSize,
+      String digest,
+      FileCompressionType compressionType,
+      SnowflakeStorageClient initialClient,
+      int networkTimeoutInMilli,
+      OCSPMode ocspMode,
+      int parallel,
+      File srcFile,
+      boolean uploadFromStream,
+      RemoteStoreFileEncryptionMaterial encMat,
+      String presignedUrl)
+  throws SQLException, IOException
+  {
+    remoteLocation remoteLocation = extractLocationAndPath(stage.getLocation());
+
+    String origDestFileName = destFileName;
+    if (remoteLocation.path != null && !remoteLocation.path.isEmpty())
+    {
+      destFileName = remoteLocation.path +
+                     (!remoteLocation.path.endsWith("/") ? "/" : "") +
+                     destFileName;
+    }
+
+    logger.debug("upload object. location={}, key={}, srcFile={}, encryption={}",
+                 remoteLocation.location, destFileName, srcFile,
+                 (ArgSupplier) () -> (
+                     encMat == null
+                     ? "NULL"
+                     : encMat.getSmkId() + "|" + encMat.getQueryId()));
+
+    StorageObjectMetadata meta =
+        storageFactory.createStorageMetadataObj(stage.getStageType());
+    meta.setContentLength(uploadSize);
+    if (digest != null)
+    {
+      initialClient.addDigestMetadata(meta, digest);
+    }
+
+    if (compressionType != null && compressionType.isSupported())
+    {
+      meta.setContentEncoding(compressionType.name().toLowerCase());
+    }
+
+    try
+    {
+      initialClient.uploadWithPresignedUrlWithoutConnection(
+          networkTimeoutInMilli, ocspMode, parallel,
+          uploadFromStream,
+          remoteLocation.location, srcFile, destFileName,
+          inputStream, fileBackedOutStr, meta, stage.getRegion(),
+          presignedUrl);
+    }
+    finally
+    {
+      if (uploadFromStream && inputStream != null)
+      {
+        inputStream.close();
+      }
+    }
+  }
 
   /**
    * This static method is called when we are handling an expired token exception
@@ -2656,18 +2835,18 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
    * Derive compression type from mime type
    *
    * @param mimeTypeStr The mime type passed to us
-   * @return the compression type or null
+   * @return the Optional for the compression type or Optional.empty()
    */
-  static FileCompressionType mimeTypeToCompressionType(String mimeTypeStr)
+  static Optional<FileCompressionType> mimeTypeToCompressionType(String mimeTypeStr)
   {
     if (mimeTypeStr == null)
     {
-      return null;
+      return Optional.empty();
     }
     int slashIndex = mimeTypeStr.indexOf('/');
     if (slashIndex < 0)
     {
-      return null; // unable to find sub type
+      return Optional.empty(); // unable to find sub type
     }
     int semiColonIndex = mimeTypeStr.indexOf(';');
     String subType;
@@ -2681,7 +2860,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
     }
     if (Strings.isNullOrEmpty(subType))
     {
-      return null;
+      return Optional.empty();
     }
     return FileCompressionType.lookupByMimeSubType(subType);
   }
@@ -2708,16 +2887,17 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
     }
     else
     {
-      userSpecifiedSourceCompression =
+      Optional<FileCompressionType> foundCompType =
           FileCompressionType.lookupByMimeSubType(sourceCompression.toLowerCase());
-
-      if (userSpecifiedSourceCompression == null)
+      if (!foundCompType.isPresent())
       {
         throw new SnowflakeSQLException(SqlState.FEATURE_NOT_SUPPORTED,
                                         ErrorCode.COMPRESSION_TYPE_NOT_KNOWN.getMessageCode(),
                                         sourceCompression);
       }
-      else if (!userSpecifiedSourceCompression.isSupported())
+      userSpecifiedSourceCompression = foundCompType.get();
+
+      if (!userSpecifiedSourceCompression.isSupported())
       {
         throw new SnowflakeSQLException(SqlState.FEATURE_NOT_SUPPORTED,
                                         ErrorCode.COMPRESSION_TYPE_NOT_SUPPORTED.getMessageCode(),
@@ -2776,7 +2956,12 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
             {
               logger.debug("Mime type for {} is: {}", srcFile, mimeTypeStr);
 
-              currentFileCompressionType = mimeTypeToCompressionType(mimeTypeStr);
+              Optional<FileCompressionType> foundCompType =
+                  mimeTypeToCompressionType(mimeTypeStr);
+              if (foundCompType.isPresent())
+              {
+                currentFileCompressionType = foundCompType.get();
+              }
             }
 
             // fallback: use file extension
@@ -2787,7 +2972,12 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
               if (mimeTypeStr != null)
               {
                 logger.debug("Mime type for {} is: {}", srcFile, mimeTypeStr);
-                currentFileCompressionType = mimeTypeToCompressionType(mimeTypeStr);
+                Optional<FileCompressionType> foundCompType =
+                    mimeTypeToCompressionType(mimeTypeStr);
+                if (foundCompType.isPresent())
+                {
+                  currentFileCompressionType = foundCompType.get();
+                }
               }
             }
           }
@@ -2831,7 +3021,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
             {
               // We only support gzip auto compression
               fileMetadata.destFileName = srcFileName +
-                                          FileCompressionType.GZIP.fileExtension;
+                                          FileCompressionType.GZIP.getFileExtension();
               fileMetadata.destCompressionType = FileCompressionType.GZIP;
             }
             else
@@ -2883,10 +3073,10 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
       // add gz extension if file name doesn't have it
       if (compressSourceFromStream &&
           !destFileNameForStreamSource.endsWith(
-              FileCompressionType.GZIP.fileExtension))
+              FileCompressionType.GZIP.getFileExtension()))
       {
         fileMetadata.destFileName = destFileNameForStreamSource +
-                                    FileCompressionType.GZIP.fileExtension;
+                                    FileCompressionType.GZIP.getFileExtension();
       }
       else
       {
@@ -2907,10 +3097,10 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
 
     for (FileCompressionType compressionType : FileCompressionType.values())
     {
-      if (srcFileLowCase.endsWith(compressionType.fileExtension))
+      if (srcFileLowCase.endsWith(compressionType.getFileExtension()))
       {
-        return compressionType.mimeType + "/" +
-               compressionType.mimeSubTypes.get(0);
+        return compressionType.getMimeType() + "/" +
+               compressionType.getMimeSubTypes().get(0);
       }
     }
 

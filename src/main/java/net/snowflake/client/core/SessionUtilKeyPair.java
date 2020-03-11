@@ -58,7 +58,6 @@ class SessionUtilKeyPair
   static private final String SUBJECT_FMT = "%s.%s";
 
 
-
   SessionUtilKeyPair(PrivateKey privateKey, String privateKeyFile, String privateKeyFilePwd,
                      String accountName,
                      String userName) throws SFException
@@ -67,7 +66,7 @@ class SessionUtilKeyPair
     this.accountName = accountName.toUpperCase();
 
     // check if in FIPS mode
-    for (Provider p: Security.getProviders())
+    for (Provider p : Security.getProviders())
     {
       if ("BCFIPS".equals(p.getName()))
       {
@@ -168,7 +167,7 @@ class SessionUtilKeyPair
       }
     }
     catch (NoSuchAlgorithmException | InvalidKeySpecException |
-            IOException | IllegalArgumentException | NullPointerException | InvalidKeyException e)
+        IOException | IllegalArgumentException | NullPointerException | InvalidKeyException e)
     {
       throw new SFException(
           e, ErrorCode.INVALID_OR_UNSUPPORTED_PRIVATE_KEY, privateKeyFile + ": " + e.getMessage());

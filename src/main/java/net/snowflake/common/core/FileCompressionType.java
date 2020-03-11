@@ -74,8 +74,8 @@ public enum FileCompressionType
    * for example, the MimeSubType for .gz file is "application/x-gzip".
    *
    * @param mimeSubType File type's MimeSubType
-   * @return if found, return the Optional of FileCompressionType object,
-   *         otherwise, return Optional.empty
+   * @return if found, return the Optional object of FileCompressionType,
+   *         otherwise, return Empty Optional object
    */
   static public Optional<FileCompressionType> lookupByMimeSubType(
       String mimeSubType)
@@ -91,8 +91,8 @@ public enum FileCompressionType
    * The file extension includes DOT for example ".gz"
    *
    * @param fileExtension File name extension
-   * @return if found, return the Optional of FileCompressionType object,
-   *         otherwise, return Optional.empty
+   * @return if found, return the Optional object of FileCompressionType,
+   *         otherwise, return Empty Optional object
    */
   static public Optional<FileCompressionType> lookupByFileExtension(
       String fileExtension)
@@ -127,3 +127,4 @@ public enum FileCompressionType
     return mimeSubTypes;
   }
 }
+

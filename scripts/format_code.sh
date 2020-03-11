@@ -38,7 +38,7 @@ popd
 
 #if ps -ewo args | grep -v 'grep' | grep -q 'com.intellij.idea.Main'; then
 #    echo "[ERROR] Exit IntelliJ and run the script again"
-#    exit 1 
+#    exit 1
 #fi
 
 SOURCE_DIR=$THIS_DIR/../src
@@ -53,7 +53,9 @@ $DIR_TARGET_NAME/bin/format.sh \
 new_hash=$(find $SOURCE_DIR -name "*.java" -exec md5sum {} \; | cut -d " " -f1 | sort -k 1 | md5sum | cut -d " " -f1)
 echo "Code hash after  format: $new_hash"
 if [[ "$old_hash" != "$new_hash" ]]; then
-    (>&2 echo "[ERROR] Must run $THIS_DIR/format_code.sh before commiting, pre-commiting or running tests")
-    # exit 1 #temporally turn off error message to release the block on BPTP
+    if [[ -n "$SF_ENFORCE_CLIENT_FORMAT" ]] && [[ $SF_ENFORCE_CLIENT_FORMAT -eq 1 ]]; then
+      (>&2 echo "[ERROR] Must run $THIS_DIR/format_code.sh before commiting, pre-commiting or running tests")
+      exit 1 
+    fi
 fi
 exit 0

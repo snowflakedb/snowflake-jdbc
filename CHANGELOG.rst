@@ -1,3 +1,9 @@
+**JDBC Driver 3.12.2**
+
+- \| SNOW-121867 | SnowflakeConnectionV1.uploadStream() - automatically appends '@' even to correct stage names - unable to upload using escaped internal table stage #199
+- \| SNOW-142833 | CVE-2019-20330 CVE-2020-8840 Upgrade com.fasterxml.jackson.core:jackson-databind to version 2.9.10.3 or later.
+- \      
+
 **JDBC Driver 3.12.1**
 
 - \| SNOW-29974  | Add binding support for TIMESTAMP_TZ including Timezone
