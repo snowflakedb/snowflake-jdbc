@@ -278,4 +278,9 @@ public class SnowflakeBasicDataSource implements DataSource, Serializable
       this.properties.put("private_key_file_pwd", password);
     }
   }
+
+  public void setTracing(String tracing)
+  {
+    this.properties.put("tracing", tracing);
+  }
 }
