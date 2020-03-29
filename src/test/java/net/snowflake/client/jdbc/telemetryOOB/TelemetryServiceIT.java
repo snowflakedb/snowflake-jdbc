@@ -66,19 +66,18 @@ public class TelemetryServiceIT extends BaseJDBCTest
           .withException(ex)
           .build();
       System.out.println(log);
-      service.add(log);
+      service.report(log);
 
       // example for an exception metric
       // this metric will be delivered to snowflake and wavefront
-      TelemetryEvent.MetricBuilder mBuilder = new TelemetryEvent.MetricBuilder();
+      TelemetryEvent.MetricBuilder mBuilder =
+          new TelemetryEvent.MetricBuilder();
       TelemetryEvent metric = mBuilder
           .withException(ex)
           .withTag("domain", "test")
           .build();
       System.out.println(metric);
-      service.add(metric);
-
-      service.flush();
+      service.report(metric);
     }
   }
 
@@ -95,19 +94,19 @@ public class TelemetryServiceIT extends BaseJDBCTest
         .withName("ExampleLog")
         .withValue("This is an example log")
         .build();
-    service.add(log);
-    service.flush();
-    // wait for at most 30 seconds until the queue is cleaned
+    int count = service.getEventCount();
+    service.report(log);
+    // wait for at most 30 seconds
     int i = 6;
     while (i-- > 0)
     {
       TimeUnit.SECONDS.sleep(5);
-      if (service.size() == 0)
+      if (service.getEventCount() > count)
       {
         break;
       }
     }
-    assertThat("WrongServerURL do not block.", service.size() == 0);
+    assertThat("WrongServerURL do not block.", service.getEventCount() > count);
   }
 
   @Ignore
@@ -121,9 +120,9 @@ public class TelemetryServiceIT extends BaseJDBCTest
         .withName("ExampleLog")
         .withValue("This is an example log")
         .build();
-    assertThat("check log value", log.get("Value").equals("This is an example log"));
-    service.add(log);
-    service.flush();
+    assertThat("check log value",
+               log.get("Value").equals("This is an example log"));
+    service.report(log);
   }
 
   @Ignore
@@ -139,12 +138,12 @@ public class TelemetryServiceIT extends BaseJDBCTest
                    "  aws_key_id='xxdsdfsafds'\n" +
                    "  aws_secret_key='safas+asfsad+safasf')\n")
         .build();
-    service.add(log);
-    String marked = service.exportQueueToString();
+    String marked = service.exportQueueToString(log);
 
     assertThat("marked aws_key_id", !marked.contains("xxdsdfsafds"));
-    assertThat("marked aws_secret_key", !marked.contains("safas+asfsad+safasf"));
-    service.flush();
+    assertThat("marked aws_secret_key",
+               !marked.contains("safas+asfsad+safasf"));
+    service.report(log);
   }
 
   @Ignore
@@ -154,7 +153,6 @@ public class TelemetryServiceIT extends BaseJDBCTest
     // this log will be delivered to snowflake
     TelemetryService service = TelemetryService.getInstance();
     // send one http request for each event
-    service.setBatchSize(1);
     StopWatch sw = new StopWatch();
     sw.start();
     int rate = 50;
@@ -170,11 +168,9 @@ public class TelemetryServiceIT extends BaseJDBCTest
             .withValue("This is an example log for stress test " + sent)
             .build();
         System.out.println("stress test: " + sent++ + " sent.");
-        service.add(log);
+        service.report(log);
       }
     }
-    service.resetBatchSize();
-    service.flush();
     sw.stop();
   }
 
@@ -189,8 +185,7 @@ public class TelemetryServiceIT extends BaseJDBCTest
         .withName("unknown")
         .withValue("This is a log in blacklist")
         .build();
-    service.add(log);
-    service.flush();
+    service.report(log);
   }
 
   @Ignore
@@ -203,10 +198,10 @@ public class TelemetryServiceIT extends BaseJDBCTest
     TelemetryEvent log = logBuilder
         .withName("UrgentLog")
         .withValue("This is an example urgent log")
-        .withUrgent(true)
         .build();
-    assertThat("check log value", log.get("Value").equals("This is an example urgent log"));
-    service.add(log);
+    assertThat("check log value",
+               log.get("Value").equals("This is an example urgent log"));
+    service.report(log);
   }
 
   @Ignore
@@ -228,14 +223,12 @@ public class TelemetryServiceIT extends BaseJDBCTest
       {
         TelemetryEvent log = new TelemetryEvent.LogBuilder()
             .withName("StressUrgentTestLog")
-            .withUrgent(true)
             .withValue("This is an example urgent log for stress test " + sent)
             .build();
         System.out.println("stress test: " + sent++ + " sent.");
-        service.add(log);
+        service.report(log);
       }
     }
-    service.flush();
     sw.stop();
   }
 }

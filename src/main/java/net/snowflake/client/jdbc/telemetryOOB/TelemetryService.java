@@ -14,6 +14,7 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
 
@@ -28,6 +29,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Copyright (c) 2018-2019 Snowflake Computing Inc. All rights reserved.
@@ -51,12 +53,11 @@ public class TelemetryService
       };
 
   // Global parameters:
-
   private static final String TELEMETRY_SERVER_URL_PATTERN
-      = "https://(sfcdev\\.|sfctest\\.|)client-telemetry\\.snowflakecomputing\\.com/enqueue";
+      =
+      "https://(sfcdev\\.|sfctest\\.|)client-telemetry\\.snowflakecomputing\\" +
+      ".com/enqueue";
 
-  // always flush queue when receiving revoked OCSP exception
-  public static boolean FLUSH_OCSP_REVOKED_EVENT = true;
   /**
    * control which deployments are enabled:
    * the service skips all events for the disabled deployments
@@ -84,39 +85,18 @@ public class TelemetryService
   }
 
   private static final int DEFAULT_NUM_OF_RETRY_TO_TRIGGER_TELEMETRY = 10;
-  private static final int DEFAULT_BATCH_SIZE = 100;
+
   /**
    * the number of retry to trigger the HTTP timeout telemetry event
    */
-  private int numOfRetryToTriggerTelemetry = DEFAULT_NUM_OF_RETRY_TO_TRIGGER_TELEMETRY;
+  private int numOfRetryToTriggerTelemetry =
+      DEFAULT_NUM_OF_RETRY_TO_TRIGGER_TELEMETRY;
   // local parameters
-  private ConcurrentLinkedQueue<TelemetryEvent> queue
-      = new ConcurrentLinkedQueue<>();
-  private int batchSize = DEFAULT_BATCH_SIZE;
   /**
    * the context (e.g., connection properties) to be included
    * in the telemetry events
    */
   private JSONObject context;
-
-  private TelemetryService()
-  {
-    try
-    {
-      SecurityManager sm = System.getSecurityManager();
-      if (sm != null)
-      {
-        sm.checkPermission(new RuntimePermission("shutdownHooks"));
-      }
-
-      Runtime.getRuntime().addShutdownHook(new Thread(
-          new TelemetryUploader(this, exportQueueToString())));
-    }
-    catch (SecurityException e)
-    {
-      logger.debug("Failed to add shutdown hook for telemetry service");
-    }
-  }
 
   public void resetNumOfRetryToTriggerTelemetry()
   {
@@ -168,27 +148,6 @@ public class TelemetryService
     }
   }
 
-  /**
-   * Try to flush events in the queue before throwing exceptions
-   * It's true by default and only set to false for testing
-   */
-  private boolean runFlushBeforeException = true;
-
-  public boolean runFlushBeforeException()
-  {
-    return runFlushBeforeException;
-  }
-
-  public void enableRunFlushBeforeException()
-  {
-    runFlushBeforeException = true;
-  }
-
-  public void disableRunFlushBeforeException()
-  {
-    runFlushBeforeException = false;
-  }
-
   public JSONObject getContext()
   {
     return context;
@@ -208,7 +167,8 @@ public class TelemetryService
         info.put(key, val);
       }
     }
-    SnowflakeConnectString conStr = SnowflakeConnectString.parse(params.get("uri"), info);
+    SnowflakeConnectString conStr =
+        SnowflakeConnectString.parse(params.get("uri"), info);
     this.updateContext(conStr);
   }
 
@@ -278,21 +238,6 @@ public class TelemetryService
     return ENABLED_DEPLOYMENT.contains(this.serverDeployment.name);
   }
 
-  public TelemetryEvent peek()
-  {
-    return queue.peek();
-  }
-
-  public void setBatchSize(int size)
-  {
-    this.batchSize = size;
-  }
-
-  public void resetBatchSize()
-  {
-    this.batchSize = DEFAULT_BATCH_SIZE;
-  }
-
   public String getDriverConnectionString()
   {
     return this.connStr;
@@ -314,7 +259,8 @@ public class TelemetryService
 
     private final String url;
 
-    // Note that this key is public available and only used as usage plan for throttling
+    // Note that this key is public available and only used as usage plan for
+    // throttling
     private final String apiKey;
 
     TELEMETRY_API(String host, String key)
@@ -374,71 +320,65 @@ public class TelemetryService
     return serverDeployment.name;
   }
 
-  public void add(TelemetryEvent event)
+  private AtomicInteger eventCnt = new AtomicInteger();
+
+  /**
+   * @return the number of events successfully reported by this service
+   */
+  public int getEventCount()
   {
-    if (!enabled)
-    {
-      return;
-    }
-    queue.offer(event);
-    if (queue.size() >= batchSize ||
-        (event.containsKey("Urgent") && (boolean) event.get("Urgent")))
-    {
-      // When the queue is full or the event is urgent,
-      // then start a new thread to upload without blocking the current thread
-      Runnable runUpload = new TelemetryUploader(this, exportQueueToString());
-      TelemetryThreadPool.getInstance().execute(runUpload);
-    }
+    return eventCnt.get();
   }
 
   /**
-   * force to flush events in the queue
+   * Count one more successfully reported events
    */
-  public void flush()
+  public void count()
   {
-    if (!enabled)
-    {
-      return;
-    }
-    if (!queue.isEmpty())
-    {
-      // start a new thread to upload without blocking the current thread
-      Runnable runUpload = new TelemetryUploader(this, exportQueueToString());
-      TelemetryThreadPool.getInstance().execute(runUpload);
-    }
+    eventCnt.incrementAndGet();
   }
 
   /**
-   * convert a list of json objects to a string
-   *
-   * @return the result json string
+   * Report the event to the telemetry server in a new thread
    */
-  public String exportQueueToString()
+  public void report(TelemetryEvent event)
+  {
+    if (!enabled || event == null || event.isEmpty())
+    {
+      return;
+    }
+
+    // Start a new thread to upload without blocking the current thread
+    Runnable runUpload =
+        new TelemetryUploader(this, exportQueueToString(event));
+    TelemetryThreadPool.getInstance().execute(runUpload);
+  }
+
+  /**
+   * Convert an event to a payload in string
+   */
+  public String exportQueueToString(TelemetryEvent event)
   {
     JSONArray logs = new JSONArray();
-    while (!queue.isEmpty())
-    {
-      logs.add(queue.poll());
-    }
+    logs.add(event);
     return SecretDetector.maskSecrets(logs.toString());
   }
 
   static class TelemetryUploader implements Runnable
   {
-    TelemetryService instance;
-    String payload;
-    RequestConfig config;
-    static final int TIMEOUT = 3000; // 3 second timeout limit
+    private TelemetryService instance;
+    private String payload;
+    private static final int TIMEOUT = 3000; // 3 second timeout limit
+    private static final RequestConfig config = RequestConfig.custom()
+        .setConnectionRequestTimeout(TIMEOUT)
+        .setConnectionRequestTimeout(TIMEOUT)
+        .setSocketTimeout(TIMEOUT)
+        .build();
 
     public TelemetryUploader(TelemetryService _instance, String _payload)
     {
       instance = _instance;
       payload = _payload;
-      config = RequestConfig.custom()
-          .setConnectionRequestTimeout(TIMEOUT)
-          .setConnectionRequestTimeout(TIMEOUT)
-          .setSocketTimeout(TIMEOUT)
-          .build();
     }
 
     public void run()
@@ -447,60 +387,60 @@ public class TelemetryService
       {
         return;
       }
-      if (payload == null || payload.equals("[]") || payload.isEmpty())
+
+      if (!instance.isDeploymentEnabled())
       {
-        logger.debug("skip to run telemetry uploader for empty payload");
+        // skip the disabled deployment
+        logger.debug("skip the disabled deployment: ",
+                     instance.serverDeployment.name);
+        return;
       }
-      else
+
+      if (!instance.serverDeployment.url
+          .matches(TELEMETRY_SERVER_URL_PATTERN))
       {
-        // flush the queue
-        uploadPayload();
-        logger.debug("run telemetry uploader");
+        // skip the disabled deployment
+        logger.debug("ignore invalid url: ", instance.serverDeployment.url);
+        return;
       }
+
+      uploadPayload();
     }
 
     private void uploadPayload()
     {
-      HttpResponse response = null;
+      logger.debug("running telemetry uploader");
+      CloseableHttpResponse response = null;
       boolean success = true;
+
       try
       {
-        if (!instance.isDeploymentEnabled())
-        {
-          // skip the disabled deployment
-          logger.debug("skip the disabled deployment: ", instance.serverDeployment.name);
-          return;
-        }
-
-        if (!instance.serverDeployment.url.matches(TELEMETRY_SERVER_URL_PATTERN))
-        {
-          // skip the disabled deployment
-          logger.debug("ignore invalid url: ", instance.serverDeployment.url);
-          return;
-        }
-
         HttpPost post = new HttpPost(instance.serverDeployment.url);
         post.setEntity(new StringEntity(payload));
         post.setHeader("Content-type", "application/json");
         post.setHeader("x-api-key", instance.serverDeployment.getApiKey());
-        // start a request with retry timeout = 3 secs
-        HttpClient httpClient = HttpClientBuilder.create()
-            .setDefaultRequestConfig(config)
-            .build();
-        response = httpClient.execute(post);
-        int statusCode = response.getStatusLine().getStatusCode();
 
-        if (statusCode == 200)
+        try (CloseableHttpClient httpClient =
+                 HttpClientBuilder.create()
+                     .setDefaultRequestConfig(config)
+                     .build())
         {
-          logger.debug("telemetry server request success: " + response);
-        }
-        else
-        {
-          logger.debug("telemetry server request error: " + response);
-          success = false;
-        }
+          response = httpClient.execute(post);
+          int statusCode = response.getStatusLine().getStatusCode();
 
-        logger.debug(EntityUtils.toString(response.getEntity(), "UTF-8"));
+          if (statusCode == 200)
+          {
+            logger.debug("telemetry server request success: " + response);
+            instance.count();
+          }
+          else
+          {
+            logger.debug("telemetry server request error: " + response);
+            success = false;
+          }
+          logger.debug(EntityUtils.toString(response.getEntity(), "UTF-8"));
+          response.close();
+        }
       }
       catch (Exception e)
       {
@@ -514,15 +454,8 @@ public class TelemetryService
       {
         logger.debug("Telemetry request success={} " +
                      "and clean the current queue", success);
-        // clean the current queue
-        instance.queue.clear();
       }
     }
-  }
-
-  public int size()
-  {
-    return queue.size();
   }
 
   /**
@@ -551,12 +484,7 @@ public class TelemetryService
           .withValue(telemetryData)
           .withTag("eventType", eventType)
           .build();
-      this.add(log);
-      if (FLUSH_OCSP_REVOKED_EVENT &&
-          eventType.equals(SFTrustManager.SF_OCSP_EVENT_TYPE_REVOKED_CERTIFICATE_ERROR))
-      {
-        this.flush();
-      }
+      this.report(log);
     }
   }
 
@@ -623,7 +551,7 @@ public class TelemetryService
           .withTag("errorCode", errorCode)
           .withTag("responseStatusCode", responseStatusCode)
           .build();
-      this.add(log);
+      this.report(log);
     }
   }
 }

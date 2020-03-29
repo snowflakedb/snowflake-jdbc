@@ -308,15 +308,6 @@ public class RestRequest
                 SqlState.IO_ERROR,
                 ErrorCode.NETWORK_ERROR.getMessageCode()
             );
-            if (savedEx != null)
-            {
-              // try to upload events in the queue
-              // before throwing the exception
-              if (TelemetryService.getInstance().runFlushBeforeException())
-              {
-                TelemetryService.getInstance().flush();
-              }
-            }
             // rethrow the timeout exception
             if (response == null && savedEx != null)
             {
