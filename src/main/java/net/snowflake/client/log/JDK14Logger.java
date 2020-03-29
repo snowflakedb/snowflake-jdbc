@@ -5,15 +5,17 @@ package net.snowflake.client.log;
 
 import net.snowflake.client.core.EventHandler;
 import net.snowflake.client.core.EventUtil;
+import net.snowflake.client.util.SecretDetector;
 
 import java.io.IOException;
+import java.text.MessageFormat;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.logging.FileHandler;
-import java.util.logging.Logger;
-import java.util.logging.Level;
 import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
@@ -149,7 +151,7 @@ public class JDK14Logger implements SFLogger
     if (jdkLogger.isLoggable(level))
     {
       String[] source = findSourceInStack();
-      jdkLogger.logp(level, source[0], source[1], msg);
+      jdkLogger.logp(level, source[0], source[1], SecretDetector.maskSecrets(msg));
     }
   }
 
@@ -158,21 +160,18 @@ public class JDK14Logger implements SFLogger
     if (jdkLogger.isLoggable(level))
     {
       String[] source = findSourceInStack();
-      jdkLogger.logp(
-          level,
-          source[0],
-          source[1],
-          refactorString(msg),
-          evaluateLambdaArgs(arguments));
+      String message = MessageFormat.format(refactorString(msg), evaluateLambdaArgs(arguments));
+      jdkLogger.logp(level, source[0], source[1], message);
     }
   }
 
   private void logInternal(Level level, String msg, Throwable t)
   {
+    // add logger message here
     if (jdkLogger.isLoggable(level))
     {
       String[] source = findSourceInStack();
-      jdkLogger.logp(level, source[0], source[1], msg, t);
+      jdkLogger.logp(level, source[0], source[1], SecretDetector.maskSecrets(msg), t);
     }
   }
 
