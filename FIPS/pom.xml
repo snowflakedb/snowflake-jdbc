@@ -4,7 +4,7 @@
 
   <groupId>net.snowflake</groupId>
   <artifactId>snowflake-jdbc-fips</artifactId>
-  <version>3.12.0</version>
+  <version>3.12.3</version>
   <packaging>jar</packaging>
 
   <name>snowflake-jdbc-fips</name>
@@ -42,7 +42,7 @@
     <jsoup.version>1.11.3</jsoup.version>
     <tika.version>1.22</tika.version>
     <jackson.version>2.9.10</jackson.version>
-    <jacksondatabind.version>2.9.10.1</jacksondatabind.version>
+    <jacksondatabind.version>2.9.10.3</jacksondatabind.version>
     <httpclient.version>4.5.5</httpclient.version>
     <powermock.version>1.7.4</powermock.version>
     <jacoco.version>0.8.4</jacoco.version>
@@ -162,7 +162,7 @@
     <dependency>
       <groupId>net.snowflake</groupId>
       <artifactId>snowflake-common</artifactId>
-      <version>3.1.41</version>
+      <version>3.1.44</version>
       <type>jar</type>
       <scope>compile</scope>
     </dependency>

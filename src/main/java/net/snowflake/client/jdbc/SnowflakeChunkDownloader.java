@@ -109,9 +109,6 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
   // number of prefetch slots
   private final int prefetchSlots;
 
-  // TRUE if JsonParserV2 should be used FALSE otherwise.
-  private boolean useJsonParserV2;
-
   // thread pool
   private final ThreadPoolExecutor executor;
 
@@ -235,7 +232,6 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
     this.qrmk = resultSetSerializable.getQrmk();
     this.networkTimeoutInMilli = resultSetSerializable.getNetworkTimeoutInMilli();
     this.prefetchSlots = resultSetSerializable.getResultPrefetchThreads() * 2;
-    this.useJsonParserV2 = resultSetSerializable.getUseJsonParserV2();
     this.memoryLimit = resultSetSerializable.getMemoryLimit();
     this.queryResultFormat = resultSetSerializable.getQueryResultFormat();
     logger.debug("qrmk = {}", this.qrmk);
@@ -271,8 +267,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
           chunk = new JsonResultChunk(chunkFileMetadata.getFileURL(),
                                       chunkFileMetadata.getRowCount(),
                                       resultSetSerializable.getColumnCount(),
-                                      chunkFileMetadata.getUncompressedByteSize(),
-                                      this.useJsonParserV2);
+                                      chunkFileMetadata.getUncompressedByteSize());
           break;
 
         default:
@@ -939,23 +934,6 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
           inputStream = detectGzipAndGetStream(is);
         }
 
-        if (!downloader.useJsonParserV2 &&
-            downloader.queryResultFormat != QueryResultFormat.ARROW)
-        {
-          // Build a sequence of streams to wrap the input stream
-          // with '[' ... ']' to be able to plug this in the
-          // Jackson JSON parser.
-          // gzip stream uses 64KB
-          // no buffering as json parser does it internally
-          inputStream =
-              new SequenceInputStream(
-                  Collections.enumeration(Arrays.asList(
-                      new ByteArrayInputStream("[".getBytes(
-                          StandardCharsets.UTF_8)),
-                      inputStream,
-                      new ByteArrayInputStream("]".getBytes(
-                          StandardCharsets.UTF_8)))));
-        }
         return inputStream;
       }
 
@@ -998,14 +976,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
           }
           else
           {
-            if (downloader.useJsonParserV2)
-            {
-              parseJsonToChunkV2(inputStream, resultChunk);
-            }
-            else
-            {
-              parseJsonToChunk(inputStream, resultChunk);
-            }
+            parseJsonToChunkV2(inputStream, resultChunk);
           }
         }
         catch (Exception ex)
@@ -1170,50 +1141,6 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
         logger.debug("Thread {} finish reading inputstream for #chunk{}",
                      Thread.currentThread().getId(), chunkIndex);
         jp.endParsing();
-      }
-
-      private void parseJsonToChunk(InputStream jsonInputStream,
-                                    SnowflakeResultChunk resultChunk)
-      throws IOException, SnowflakeSQLException
-      {
-        /*
-         * This is a hand-written customized parser that
-         * handle.
-         * [
-         *   [ "c1", "c2", null, ... ],
-         *   [ null, "c2", "c3", ... ],
-         *   ...
-         *   [ "c1", "c2", "c3", ... ],
-         * ]
-         * The number of rows is known and the number of expected columns
-         * is also known.
-         */
-        try (JsonParser jp = jsonFactory.createParser(new InputStreamReader(jsonInputStream, "UTF-8")))
-        {
-          JsonToken currentToken;
-
-          // Get the first token and make sure it is the start of an array
-          currentToken = jp.nextToken();
-          if (currentToken != JsonToken.START_ARRAY)
-          {
-            throw
-                new SnowflakeSQLException(
-                    SqlState.INTERNAL_ERROR,
-                    ErrorCode.INTERNAL_ERROR.getMessageCode(),
-                    "Exception1: expected '[' " +
-                    "got " +
-                    currentToken.asString());
-          }
-
-          // For all the rows...
-          while (jp.nextToken() != JsonToken.END_ARRAY)
-          {
-            // Position to the current row in the result
-            ((JsonResultChunk) resultChunk).addRow(
-                mapper.readValue(jp, Object[].class));
-          }
-          ((JsonResultChunk) resultChunk).ensureRowsComplete();
-        }
       }
 
       private HttpResponse getResultChunk(String chunkUrl)

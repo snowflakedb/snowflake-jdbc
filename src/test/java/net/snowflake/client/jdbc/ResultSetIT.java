@@ -830,6 +830,7 @@ public class ResultSetIT extends BaseJDBCTest
   }
 
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
   public void testGetColumnDisplaySizeAndPrecision() throws SQLException
   {
     Connection connection = getConnection();
@@ -852,13 +853,13 @@ public class ResultSetIT extends BaseJDBCTest
 
     resultSet = statement.executeQuery("select cast(1 as string)");
     resultSetMetaData = resultSet.getMetaData();
-    assertEquals(16777216, resultSetMetaData.getColumnDisplaySize(1));
-    assertEquals(16777216, resultSetMetaData.getPrecision(1));
+    assertEquals(1, resultSetMetaData.getColumnDisplaySize(1));
+    assertEquals(1, resultSetMetaData.getPrecision(1));
 
     resultSet = statement.executeQuery("select cast(1 as string(30))");
     resultSetMetaData = resultSet.getMetaData();
-    assertEquals(30, resultSetMetaData.getColumnDisplaySize(1));
-    assertEquals(30, resultSetMetaData.getPrecision(1));
+    assertEquals(1, resultSetMetaData.getColumnDisplaySize(1));
+    assertEquals(1, resultSetMetaData.getPrecision(1));
 
     resultSet = statement.executeQuery("select to_date('2016-12-13', 'YYYY-MM-DD')");
     resultSetMetaData = resultSet.getMetaData();

@@ -3,6 +3,7 @@
  */
 package net.snowflake.client.log;
 
+import net.snowflake.client.util.SecretDetector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.helpers.FormattingTuple;
@@ -53,6 +54,7 @@ public class SLF4JLogger implements SFLogger
 
   public void debug(String msg)
   {
+    msg = SecretDetector.maskSecrets(msg);
     if (isLocationAwareLogger)
     {
       ((LocationAwareLogger) slf4jLogger).log(null, FQCN, LocationAwareLogger.DEBUG_INT, msg, null, null);
@@ -65,16 +67,18 @@ public class SLF4JLogger implements SFLogger
 
   public void debug(String msg, Object... arguments)
   {
+    // use this as format example for JDK14Logger.
     if (isDebugEnabled())
     {
       FormattingTuple ft = MessageFormatter.arrayFormat(
           msg, evaluateLambdaArgs(arguments));
-      this.debug(ft.getMessage());
+      this.debug(SecretDetector.maskSecrets(ft.getMessage()));
     }
   }
 
   public void debug(String msg, Throwable t)
   {
+    msg = SecretDetector.maskSecrets(msg);
     if (isLocationAwareLogger)
     {
       ((LocationAwareLogger) slf4jLogger).log(null, FQCN, LocationAwareLogger.DEBUG_INT, msg, null, t);
@@ -87,6 +91,7 @@ public class SLF4JLogger implements SFLogger
 
   public void error(String msg)
   {
+    msg = SecretDetector.maskSecrets(msg);
     if (isLocationAwareLogger)
     {
       ((LocationAwareLogger) slf4jLogger).log(null, FQCN, LocationAwareLogger.ERROR_INT, msg, null, null);
@@ -103,12 +108,13 @@ public class SLF4JLogger implements SFLogger
     {
       FormattingTuple ft = MessageFormatter.arrayFormat(
           msg, evaluateLambdaArgs(arguments));
-      this.error(ft.getMessage());
+      this.error(SecretDetector.maskSecrets(ft.getMessage()));
     }
   }
 
   public void error(String msg, Throwable t)
   {
+    msg = SecretDetector.maskSecrets(msg);
     if (isLocationAwareLogger)
     {
       ((LocationAwareLogger) slf4jLogger).log(null, FQCN, LocationAwareLogger.ERROR_INT, msg, null, t);
@@ -121,6 +127,7 @@ public class SLF4JLogger implements SFLogger
 
   public void info(String msg)
   {
+    msg = SecretDetector.maskSecrets(msg);
     if (isLocationAwareLogger)
     {
       ((LocationAwareLogger) slf4jLogger).log(null, FQCN, LocationAwareLogger.INFO_INT, msg, null, null);
@@ -137,12 +144,13 @@ public class SLF4JLogger implements SFLogger
     {
       FormattingTuple ft = MessageFormatter.arrayFormat(
           msg, evaluateLambdaArgs(arguments));
-      this.info(ft.getMessage());
+      this.info(SecretDetector.maskSecrets(ft.getMessage()));
     }
   }
 
   public void info(String msg, Throwable t)
   {
+    msg = SecretDetector.maskSecrets(msg);
     if (isLocationAwareLogger)
     {
       ((LocationAwareLogger) slf4jLogger).log(null, FQCN, LocationAwareLogger.INFO_INT, msg, null, t);
@@ -155,6 +163,7 @@ public class SLF4JLogger implements SFLogger
 
   public void trace(String msg)
   {
+    msg = SecretDetector.maskSecrets(msg);
     if (isLocationAwareLogger)
     {
       ((LocationAwareLogger) slf4jLogger).log(null, FQCN, LocationAwareLogger.TRACE_INT, msg, null, null);
@@ -171,12 +180,13 @@ public class SLF4JLogger implements SFLogger
     {
       FormattingTuple ft = MessageFormatter.arrayFormat(
           msg, evaluateLambdaArgs(arguments));
-      this.trace(ft.getMessage());
+      this.trace(SecretDetector.maskSecrets(ft.getMessage()));
     }
   }
 
   public void trace(String msg, Throwable t)
   {
+    msg = SecretDetector.maskSecrets(msg);
     if (isLocationAwareLogger)
     {
       ((LocationAwareLogger) slf4jLogger).log(null, FQCN, LocationAwareLogger.TRACE_INT, msg, null, t);
@@ -189,6 +199,7 @@ public class SLF4JLogger implements SFLogger
 
   public void warn(String msg)
   {
+    msg = SecretDetector.maskSecrets(msg);
     if (isLocationAwareLogger)
     {
       ((LocationAwareLogger) slf4jLogger).log(null, FQCN, LocationAwareLogger.WARN_INT, msg, null, null);
@@ -205,12 +216,13 @@ public class SLF4JLogger implements SFLogger
     {
       FormattingTuple ft = MessageFormatter.arrayFormat(
           msg, evaluateLambdaArgs(arguments));
-      this.warn(ft.getMessage());
+      this.warn(SecretDetector.maskSecrets(ft.getMessage()));
     }
   }
 
   public void warn(String msg, Throwable t)
   {
+    msg = SecretDetector.maskSecrets(msg);
     if (isLocationAwareLogger)
     {
       ((LocationAwareLogger) slf4jLogger).log(null, FQCN, LocationAwareLogger.WARN_INT, msg, null, t);

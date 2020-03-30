@@ -188,12 +188,6 @@ public class TelemetryEvent extends JSONObject
       return builderClass.cast(this);
     }
 
-    public T withUrgent(boolean urgent)
-    {
-      body.put("Urgent", urgent);
-      return builderClass.cast(this);
-    }
-
     protected TelemetryEvent build()
     {
       body.put("UUID", UUID.randomUUID().toString());

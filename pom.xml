@@ -4,7 +4,7 @@
 
   <groupId>net.snowflake</groupId>
   <artifactId>snowflake-jdbc</artifactId>
-  <version>3.12.2</version>
+  <version>3.12.3</version>
   <packaging>jar</packaging>
 
   <name>snowflake-jdbc</name>
@@ -163,7 +163,7 @@
     <dependency>
       <groupId>net.snowflake</groupId>
       <artifactId>snowflake-common</artifactId>
-      <version>3.1.43</version>
+      <version>3.1.44</version>
       <type>jar</type>
       <scope>compile</scope>
     </dependency>

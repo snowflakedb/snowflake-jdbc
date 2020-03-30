@@ -4113,6 +4113,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest
   }
 
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
   public void testToTimestampNullBind() throws Throwable
   {
     Connection connection = null;

@@ -140,7 +140,6 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
 
   // below fields are used for building a ChunkDownloader which
   // uses http client to download chunk files
-  boolean useJsonParserV2;
   int resultPrefetchThreads;
   String qrmk;
   Map<String, String> chunkHeadersMap = new HashMap<>();
@@ -213,7 +212,6 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
     this.chunkFileMetadatas = toCopy.chunkFileMetadatas;
 
     // below fields are used for building a ChunkDownloader
-    this.useJsonParserV2 = toCopy.useJsonParserV2;
     this.resultPrefetchThreads = toCopy.resultPrefetchThreads;
     this.qrmk = toCopy.qrmk;
     this.chunkHeadersMap = toCopy.chunkHeadersMap;
@@ -331,11 +329,6 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
   public int getResultPrefetchThreads()
   {
     return resultPrefetchThreads;
-  }
-
-  public boolean getUseJsonParserV2()
-  {
-    return useJsonParserV2;
   }
 
   public long getMemoryLimit()
@@ -835,13 +828,6 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
                        "compressedSize={} uncompressedSize={}",
                        url, rowCount, compressedSize, uncompressedSize);
         }
-
-        /*
-         * Should JsonParser be used instead of the original Json deserializer.
-         */
-        this.useJsonParserV2 =
-            this.parameters.get("JDBC_USE_JSON_PARSER") != null &&
-            (boolean) this.parameters.get("JDBC_USE_JSON_PARSER");
       }
     }
   }
