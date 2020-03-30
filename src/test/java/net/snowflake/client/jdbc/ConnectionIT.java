@@ -72,6 +72,8 @@ public class ConnectionIT extends BaseJDBCTest
   private static final int SESSION_CREATION_OBJECT_DOES_NOT_EXIST_NOT_AUTHORIZED = 390201;
   private static final int ROLE_IN_CONNECT_STRING_DOES_NOT_EXIST = 390189;
 
+  private static final int WAIT_FOR_TELEMETRY_REPORT_IN_MILLISECS = 5000;
+
   String errorMessage = null;
 
   private boolean defaultState;
@@ -86,7 +88,6 @@ public class ConnectionIT extends BaseJDBCTest
     service.updateContextForIT(getConnectionParameters());
     defaultState = service.isEnabled();
     service.setNumOfRetryToTriggerTelemetry(3);
-    service.disableRunFlushBeforeException();
     service.enable();
   }
 
@@ -94,7 +95,6 @@ public class ConnectionIT extends BaseJDBCTest
   public void tearDown() throws InterruptedException
   {
     TelemetryService service = TelemetryService.getInstance();
-    service.flush();
     // wait 5 seconds while the service is flushing
     TimeUnit.SECONDS.sleep(5);
 
@@ -107,7 +107,6 @@ public class ConnectionIT extends BaseJDBCTest
       service.disable();
     }
     service.resetNumOfRetryToTriggerTelemetry();
-    service.enableRunFlushBeforeException();
   }
 
   @Test
@@ -352,7 +351,7 @@ public class ConnectionIT extends BaseJDBCTest
   }
 
   @Test
-  public void testHttpsLoginTimeoutWithSSL() throws SQLException
+  public void testHttpsLoginTimeoutWithSSL() throws InterruptedException
   {
     long connStart = 0, conEnd;
     Properties properties = new Properties();
@@ -363,6 +362,7 @@ public class ConnectionIT extends BaseJDBCTest
     // only when ssl is on can trigger the login timeout
     // ssl is off will trigger 404
     properties.put("ssl", "on");
+    int count = TelemetryService.getInstance().getEventCount();
     try
     {
       connStart = System.currentTimeMillis();
@@ -370,8 +370,8 @@ public class ConnectionIT extends BaseJDBCTest
       // use wrongaccount in url
       String host = params.get("host");
       String[] hostItems = host.split("\\.");
-      String wrongUri = params.get("uri").replace("://" + hostItems[0], "://wrongaccount");
-
+      String wrongUri =
+          params.get("uri").replace("://" + hostItems[0], "://wrongaccount");
       DriverManager.getConnection(wrongUri, properties);
     }
     catch (SQLException e)
@@ -382,21 +382,11 @@ public class ConnectionIT extends BaseJDBCTest
       conEnd = System.currentTimeMillis();
       assertThat("Login time out not taking effective",
                  conEnd - connStart < 60000);
-
+      Thread.sleep(WAIT_FOR_TELEMETRY_REPORT_IN_MILLISECS);
       if (TelemetryService.getInstance().isDeploymentEnabled())
       {
-        assertThat(
-            "Telemetry Service queue size",
-            TelemetryService.getInstance().size(), greaterThanOrEqualTo(1));
-        TelemetryEvent te = TelemetryService.getInstance().peek();
-        JSONObject values = (JSONObject) te.get("Value");
-        assertThat("Communication error",
-                   values.get("errorCode").toString(),
-                   anyOf(
-                       // SSL connection returns HTTP 403
-                       equalTo("0"),
-                       // Non-SSL connection returns null response and returns NETWORK_ERROR
-                       equalTo(ErrorCode.NETWORK_ERROR.getMessageCode().toString())));
+        assertThat("Telemetry event has not been reported successfully",
+                   TelemetryService.getInstance().getEventCount() > count);
       }
       return;
     }
@@ -404,7 +394,7 @@ public class ConnectionIT extends BaseJDBCTest
   }
 
   @Test
-  public void testHttpsLoginTimeoutWithOutSSL() throws SQLException
+  public void testHttpsLoginTimeoutWithOutSSL() throws InterruptedException
   {
     Properties properties = new Properties();
     properties.put("account", "wrongaccount");
@@ -412,14 +402,15 @@ public class ConnectionIT extends BaseJDBCTest
     properties.put("user", "fakeuser");
     properties.put("password", "fakepassword");
     properties.put("ssl", "off");
-    int queueSize = TelemetryService.getInstance().size();
+    int count = TelemetryService.getInstance().getEventCount();
     try
     {
       Map<String, String> params = getConnectionParameters();
       // use wrongaccount in url
       String host = params.get("host");
       String[] hostItems = host.split("\\.");
-      String wrongUri = params.get("uri").replace("://" + hostItems[0], "://wrongaccount");
+      String wrongUri =
+          params.get("uri").replace("://" + hostItems[0], "://wrongaccount");
 
       DriverManager.getConnection(wrongUri, properties);
     }
@@ -437,9 +428,11 @@ public class ConnectionIT extends BaseJDBCTest
 
         // since it returns normal response,
         // the telemetry does not create new event
+        Thread.sleep(WAIT_FOR_TELEMETRY_REPORT_IN_MILLISECS);
         if (TelemetryService.getInstance().isDeploymentEnabled())
         {
-          assertEquals(0, TelemetryService.getInstance().size() - queueSize);
+          assertThat("Telemetry should not create new event",
+                     TelemetryService.getInstance().getEventCount() == count);
         }
       }
       else
@@ -448,19 +441,11 @@ public class ConnectionIT extends BaseJDBCTest
         assertThat("Communication error", e.getErrorCode(),
                    equalTo(ErrorCode.NETWORK_ERROR.getMessageCode()));
 
-        /*
         if (TelemetryService.getInstance().isDeploymentEnabled())
         {
-          assertThat(
-              "Telemetry Service queue size",
-              TelemetryService.getInstance().size(), greaterThanOrEqualTo(1));
-          TelemetryEvent te = TelemetryService.getInstance().peek();
-          String name = (String) te.get("Name");
-          int statusCode = (int) ((JSONObject) te.get("Value")).get("responseStatusCode");
-          assertEquals(name, "HttpError404");
-          assertEquals(statusCode, 404);
+          assertThat("Telemetry event has not been reported successfully",
+                     TelemetryService.getInstance().getEventCount() > count);
         }
-        */
       }
       return;
     }
@@ -468,7 +453,7 @@ public class ConnectionIT extends BaseJDBCTest
   }
 
   @Test
-  public void testWrongHostNameTimeout() throws SQLException
+  public void testWrongHostNameTimeout() throws InterruptedException
   {
     long connStart = 0, conEnd;
     Properties properties = new Properties();
@@ -476,7 +461,7 @@ public class ConnectionIT extends BaseJDBCTest
     properties.put("loginTimeout", "20");
     properties.put("user", "fakeuser");
     properties.put("password", "fakepassword");
-    int queueSize = TelemetryService.getInstance().size();
+    int count = TelemetryService.getInstance().getEventCount();
     try
     {
       connStart = System.currentTimeMillis();
@@ -498,14 +483,11 @@ public class ConnectionIT extends BaseJDBCTest
       assertThat("Login time out not taking effective",
                  conEnd - connStart < 60000);
 
+      Thread.sleep(WAIT_FOR_TELEMETRY_REPORT_IN_MILLISECS);
       if (TelemetryService.getInstance().isDeploymentEnabled())
       {
-        assertEquals(TelemetryService.getInstance().size(), queueSize + 2);
-        TelemetryEvent te = TelemetryService.getInstance().peek();
-        JSONObject values = (JSONObject) te.get("Value");
-        assertThat("Communication error",
-                   values.get("errorCode").toString().compareTo(
-                       ErrorCode.NETWORK_ERROR.getMessageCode().toString()) == 0);
+        assertThat("Telemetry event has not been reported successfully",
+                   TelemetryService.getInstance().getEventCount() > count);
       }
       return;
     }

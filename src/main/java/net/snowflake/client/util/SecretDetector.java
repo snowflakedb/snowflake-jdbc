@@ -172,8 +172,6 @@ public class SecretDetector
    */
   private static List<SecretRange> getSASTokenPos(String text)
   {
-    // log before and after in case this is causing StackOverflowError
-    LOGGER.debug("pre-regex getSASTokenPos");
 
     Matcher matcher = SAS_TOKEN_PATTERN.matcher(
         text.length() <= MAX_LENGTH ? text : text.substring(0, MAX_LENGTH));
@@ -188,8 +186,6 @@ public class SecretDetector
               matcher.start("secret"), matcher.end("secret")));
     }
 
-    LOGGER.debug("post-regex getSASTokenPos");
-
     return secretRanges;
   }
 
@@ -202,9 +198,6 @@ public class SecretDetector
    */
   private static List<SecretRange> getPasswordPos(String text)
   {
-    // log before and after in case this is causing StackOverflowError
-    LOGGER.debug("pre-regex getPasswordPos");
-
     Matcher matcher = PASSWORD_KEY_PATTERN.matcher(
         text.length() <= MAX_LENGTH ? text : text.substring(0, MAX_LENGTH));
 
@@ -226,9 +219,6 @@ public class SecretDetector
 
       secretRanges.add(new SecretRange(begin, end));
     }
-
-
-    LOGGER.debug("post-regex getPasswordPos");
 
     return secretRanges;
   }

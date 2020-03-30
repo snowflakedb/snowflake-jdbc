@@ -55,8 +55,6 @@ public class SFTrustManagerIT extends BaseJDBCTest
     service.updateContextForIT(getConnectionParameters());
     defaultState = service.isEnabled();
     service.setNumOfRetryToTriggerTelemetry(3);
-    service.disableRunFlushBeforeException();
-    TelemetryService.FLUSH_OCSP_REVOKED_EVENT = false;
     service.enable();
   }
 
@@ -64,10 +62,8 @@ public class SFTrustManagerIT extends BaseJDBCTest
   public void tearDown() throws InterruptedException
   {
     TelemetryService service = TelemetryService.getInstance();
-    service.flush();
     // wait 5 seconds while the service is flushing
     TimeUnit.SECONDS.sleep(5);
-    TelemetryService.FLUSH_OCSP_REVOKED_EVENT = true;
     if (defaultState)
     {
       service.enable();
@@ -76,7 +72,6 @@ public class SFTrustManagerIT extends BaseJDBCTest
     {
       service.disable();
     }
-    service.enableRunFlushBeforeException();
     System.clearProperty(SFTrustManager.SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED);
     System.clearProperty(SFTrustManager.SF_OCSP_RESPONSE_CACHE_SERVER_URL);
   }
@@ -214,6 +209,8 @@ public class SFTrustManagerIT extends BaseJDBCTest
   }
 
   /**
+   * TODO: we should re-enable this
+   * https://snowflakecomputing.atlassian.net/browse/SNOW-146911
    * Revoked certificate test.
    *
    @Test public void testRevokedCertificate() throws Throwable

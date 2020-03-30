@@ -32,8 +32,7 @@ public class ResultJsonParserV2IT
                     "[\"\\ud841\\udf0e\", \"\\ud841\\udf31\\ud841\\udf79\"]," +
                     "[\"{\\\"date\\\" : \\\"2017-04-28\\\",\\\"dealership\\\" : \\\"Tindel Toyota\\\"}\", \"[1,2,3,4,5]\"]";
     byte[] data = simple.getBytes(StandardCharsets.UTF_8);
-    JsonResultChunk chunk = new JsonResultChunk("", 8, 2, data.length,
-                                                true);
+    JsonResultChunk chunk = new JsonResultChunk("", 8, 2, data.length);
     ResultJsonParserV2 jp = new ResultJsonParserV2();
     jp.startParsing(chunk);
     jp.continueParsing(ByteBuffer.wrap(data));
@@ -68,8 +67,7 @@ public class ResultJsonParserV2IT
                     "[\"\\ud841\\udf0e\", \"\\ud841\\udf31\\ud841\\udf79\"]," +
                     "[\"{\\\"date\\\" : \\\"2017-04-28\\\",\\\"dealership\\\" : \\\"Tindel Toyota\\\"}\", \"[1,2,3,4,5]\"]";
     byte[] data = simple.getBytes(StandardCharsets.UTF_8);
-    JsonResultChunk chunk = new JsonResultChunk("", 8, 2, data.length,
-                                                true);
+    JsonResultChunk chunk = new JsonResultChunk("", 8, 2, data.length);
     ResultJsonParserV2 jp = new ResultJsonParserV2();
     jp.startParsing(chunk);
     int len = 2;
@@ -138,8 +136,7 @@ public class ResultJsonParserV2IT
 
 
     byte[] data = sb.toString().getBytes(StandardCharsets.UTF_8);
-    JsonResultChunk chunk = new JsonResultChunk("", 2, 2, data.length,
-                                                true);
+    JsonResultChunk chunk = new JsonResultChunk("", 2, 2, data.length);
     ResultJsonParserV2 jp = new ResultJsonParserV2();
     jp.startParsing(chunk);
     jp.continueParsing(ByteBuffer.wrap(data));
