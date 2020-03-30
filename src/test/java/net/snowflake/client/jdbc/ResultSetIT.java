@@ -830,6 +830,7 @@ public class ResultSetIT extends BaseJDBCTest
   }
 
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
   public void testGetColumnDisplaySizeAndPrecision() throws SQLException
   {
     Connection connection = getConnection();
