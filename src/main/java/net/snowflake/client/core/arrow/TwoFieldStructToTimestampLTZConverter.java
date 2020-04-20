@@ -101,7 +101,7 @@ public class TwoFieldStructToTimestampLTZConverter extends AbstractArrowVectorCo
       }
     }
 
-    Timestamp ts = ArrowResultUtil.createTimestamp(epoch, fraction);
+    Timestamp ts = ArrowResultUtil.createTimestamp(epoch, fraction, false);
 
     Timestamp adjustedTimestamp = ResultUtil.adjustTimestamp(ts);
 

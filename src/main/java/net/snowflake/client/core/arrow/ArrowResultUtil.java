@@ -184,7 +184,7 @@ public class ArrowResultUtil
       seconds--;
       fraction += 1000000000;
     }
-    return createTimestamp(seconds, fraction);
+    return createTimestamp(seconds, fraction, false);
   }
 
   /**
@@ -206,10 +206,19 @@ public class ArrowResultUtil
    *
    * @param seconds
    * @param fraction
+   * @param timeZoneUTC - whether or not timezone should be changed to UTC before
+   *                    creating Timestamp object. Necessary for NTZ types
    * @return java timestamp object
    */
-  public static Timestamp createTimestamp(long seconds, int fraction)
+  public static Timestamp createTimestamp(long seconds, int fraction, boolean timeZoneUTC)
   {
+    // If JDBC_TREAT_TIMESTAMP_NTZ_AS_UTC=true, set timezone to UTC to get
+    // timestamp object. This will avoid moving the timezone and creating
+    // daylight savings offset errors.
+    if (timeZoneUTC)
+    {
+      TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
+    }
     Timestamp ts = new Timestamp(seconds * ArrowResultUtil.powerOfTen(3));
     ts.setNanos(fraction);
     return ts;
