@@ -76,6 +76,19 @@ abstract class SnowflakeBaseResultSet implements ResultSet
     this.resultSetHoldability = resultSetSerializable.getResultSetHoldability();
   }
 
+  /**
+   * This should never be used. Simply needed this for SFAsynchronousResult subclass
+   *
+   * @throws SQLException
+   */
+  protected SnowflakeBaseResultSet() throws SQLException
+  {
+    this.resultSetType = 0;
+    this.resultSetConcurrency = 0;
+    this.resultSetHoldability = 0;
+    this.statement = new SnowflakeStatementV1.NoOpSnowflakeStatementV1();
+  }
+
   @Override
   abstract public boolean next() throws SQLException;
 

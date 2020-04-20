@@ -18,7 +18,9 @@ import net.snowflake.client.log.JDK14Logger;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.ClientAuthnDTO;
+import net.snowflake.common.core.SqlState;
 import org.apache.http.HttpHeaders;
+import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
 
@@ -30,7 +32,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
@@ -40,10 +44,14 @@ import java.util.logging.Level;
  */
 public class SFSession
 {
+  private static final ObjectMapper OBJECT_MAPPER =
+      ObjectMapperFactory.getObjectMapper();
 
   static final SFLogger logger = SFLoggerFactory.getLogger(SFSession.class);
 
   private static final String SF_PATH_SESSION_HEARTBEAT = "/session/heartbeat";
+
+  private static final String SF_PATH_QUERY_MONITOR = "/monitoring/queries/";
 
   public static final String SF_QUERY_REQUEST_ID = "requestId";
 
@@ -220,6 +228,103 @@ public class SFSession
 
   // validate the default parameters by GS?
   private boolean validateDefaultParameters;
+
+  // list of active asynchronous queries. Used to see if session should be closed when connection closes
+  protected Set<String> activeAsyncQueries = ConcurrentHashMap.newKeySet();
+
+  /**
+   * Function that checks if the active session can be closed when the
+   * connection is closed. If there are active asynchronous queries running,
+   * the session should stay open even if the connection closes so that the
+   * queries can finish running.
+   *
+   * @return true if it is safe to close this session, false if not
+   */
+  public boolean isSafeToClose()
+  {
+    boolean canClose = true;
+    // if the set of asynchronous queries is empty, return true
+    if (this.activeAsyncQueries.isEmpty())
+    {
+      return canClose;
+    }
+    // if the set is not empty, iterate through each query and check its status
+    for (String query : this.activeAsyncQueries)
+    {
+      try
+      {
+        QueryStatus qStatus = getQueryStatus(query);
+        //  if any query is still running, it is not safe to close.
+        if (QueryStatus.isStillRunning(qStatus))
+        {
+          canClose = false;
+        }
+      }
+      catch (SQLException e)
+      {
+        logger.error(e.getMessage());
+      }
+    }
+    return canClose;
+  }
+
+  /**
+   * @param queryID query ID of the query whose status is being investigated
+   * @return enum of type QueryStatus indicating the query's status
+   * @throws SQLException
+   */
+  public QueryStatus getQueryStatus(String queryID)
+  throws SQLException
+  {
+    // create the URL to check the query monitoring endpoint
+    String statusUrl = "";
+    String sessionUrl = getUrl();
+    if (sessionUrl.endsWith("/"))
+    {
+      statusUrl =
+          sessionUrl.substring(0, sessionUrl.length() - 1) + SF_PATH_QUERY_MONITOR + queryID;
+    }
+    else
+    {
+      statusUrl = sessionUrl + SF_PATH_QUERY_MONITOR + queryID;
+    }
+    // Create a new HTTP GET object and set appropriate headers
+    HttpGet get = new HttpGet(statusUrl);
+    get.setHeader("Content-type", "application/json");
+    get.setHeader("Authorization", "Snowflake Token=\"" + this.sessionToken + "\"");
+    String response = null;
+    JsonNode jsonNode = null;
+    try
+    {
+      response = HttpUtil.executeGeneralRequest(get, loginTimeout, getOCSPMode());
+      jsonNode = OBJECT_MAPPER.readTree(response);
+    }
+    catch (Exception e)
+    {
+      throw new SQLException("No response or invalid response from GET request. Error: {}", e.getMessage());
+    }
+    // Get response as JSON and parse it to get the query status
+    // check the success field first
+    if (!jsonNode.path("success").asBoolean())
+    {
+      logger.debug("response = {}", response);
+
+      int errorCode = jsonNode.path("code").asInt();
+      throw new SnowflakeSQLException(
+          queryID, jsonNode.path("message").asText(),
+          SqlState.SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION, errorCode);
+    }
+    JsonNode queryNode = jsonNode.path("data").path("queries");
+    String queryStatus = "";
+    if (queryNode.size() > 0)
+    {
+      queryStatus = queryNode.get(0).path("status").asText();
+    }
+    logger.debug("Query status: {}", queryNode.asText());
+    // Turn string with query response into QueryStatus enum and return it
+    return QueryStatus.getStatusFromString(queryStatus);
+  }
+
 
   public void addProperty(SFSessionProperty sfSessionProperty,
                           Object propertyValue)
@@ -1439,6 +1544,7 @@ public class SFSession
           bindValues,
           false, // not describe only
           true, // internal
+          false, // asyncExec
           null // caller isn't a JDBC interface method
       );
     }
