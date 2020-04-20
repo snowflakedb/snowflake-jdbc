@@ -5,6 +5,7 @@
 package net.snowflake.client.jdbc;
 
 import java.io.InputStream;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 
 /**
@@ -52,4 +53,16 @@ public interface SnowflakeConnection
    * @throws SQLException
    */
   String getSessionID() throws SQLException;
+
+  /**
+   * Create a new instance of a ResultSet object based off query ID.
+   * ResultSet will contain results of corresponding query.
+   * Used when original ResultSet object is no longer available, such as when
+   * original connection has been closed.
+   *
+   * @param queryID
+   * @return
+   * @throws SQLException
+   */
+  ResultSet createResultSet(String queryID) throws SQLException;
 }

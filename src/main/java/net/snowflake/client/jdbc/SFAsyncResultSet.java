@@ -7,6 +7,7 @@ package net.snowflake.client.jdbc;
 import net.snowflake.client.core.QueryStatus;
 import net.snowflake.client.core.SFBaseResultSet;
 import net.snowflake.client.core.SFException;
+import net.snowflake.client.core.SFSession;
 
 import java.io.InputStream;
 import java.io.Reader;
@@ -22,7 +23,6 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.RowId;
 import java.sql.SQLException;
-import java.sql.SQLFeatureNotSupportedException;
 import java.sql.SQLWarning;
 import java.sql.SQLXML;
 import java.sql.Statement;
@@ -34,11 +34,15 @@ import java.util.Map;
 import java.util.TimeZone;
 
 /**
- * Snowflake ResultSet implementation
+ * SFAsyncResultSet implementation
  */
-class SnowflakeResultSetV1 extends SnowflakeBaseResultSet implements SnowflakeResultSet, ResultSet
+class SFAsyncResultSet extends SnowflakeBaseResultSet implements SnowflakeResultSet, ResultSet
 {
   private final SFBaseResultSet sfBaseResultSet;
+  private ResultSet resultSetForNext = null;
+  private String queryID;
+  private SFSession session;
+  private Statement extraStatement;
 
   /**
    * Constructor takes an inputstream from the API response that we get from
@@ -52,13 +56,16 @@ class SnowflakeResultSetV1 extends SnowflakeBaseResultSet implements SnowflakeRe
    * @param statement       query statement that generates this result set
    * @throws SQLException if failed to construct snowflake result set metadata
    */
-  SnowflakeResultSetV1(
+  SFAsyncResultSet(
       SFBaseResultSet sfBaseResultSet,
       Statement statement)
   throws SQLException
   {
     super(statement);
     this.sfBaseResultSet = sfBaseResultSet;
+    this.queryID = sfBaseResultSet.getQueryId();
+    this.session = sfBaseResultSet.getSession();
+    this.extraStatement = statement;
     try
     {
       this.resultSetMetaData =
@@ -69,17 +76,6 @@ class SnowflakeResultSetV1 extends SnowflakeBaseResultSet implements SnowflakeRe
       throw new SnowflakeSQLException(ex.getCause(),
                                       ex.getSqlState(), ex.getVendorCode(), ex.getParams());
     }
-  }
-
-  /**
-   * This function is not supported for synchronous queries
-   *
-   * @return no return value; exception is always thrown
-   * @throws SQLFeatureNotSupportedException
-   */
-  public QueryStatus getStatus() throws SQLException
-  {
-    throw new SQLFeatureNotSupportedException();
   }
 
   /**
@@ -92,13 +88,13 @@ class SnowflakeResultSetV1 extends SnowflakeBaseResultSet implements SnowflakeRe
    *                              set
    * @throws SQLException if fails to create the result set object
    */
-  public SnowflakeResultSetV1(
+  public SFAsyncResultSet(
       SFBaseResultSet sfBaseResultSet,
       SnowflakeResultSetSerializableV1 resultSetSerializable)
   throws SQLException
   {
     super(resultSetSerializable);
-
+    this.queryID = sfBaseResultSet.getQueryId();
     this.sfBaseResultSet = sfBaseResultSet;
 
     try
@@ -113,6 +109,35 @@ class SnowflakeResultSetV1 extends SnowflakeBaseResultSet implements SnowflakeRe
     }
   }
 
+  public SFAsyncResultSet(String queryID) throws SQLException
+  {
+    this.sfBaseResultSet = null;
+    this.queryID = queryID;
+  }
+
+  @Override
+  protected void raiseSQLExceptionIfResultSetIsClosed() throws SQLException
+  {
+    if (isClosed() || (resultSetForNext != null && resultSetForNext.isClosed()))
+    {
+      throw new SnowflakeSQLException(ErrorCode.RESULTSET_ALREADY_CLOSED);
+    }
+  }
+
+  @Override
+  public QueryStatus getStatus() throws SQLException
+  {
+    if (session == null)
+    {
+      throw new SQLException("Session not set");
+    }
+    if (this.queryID == null)
+    {
+      throw new SQLException("QueryID unknown");
+    }
+    return session.getQueryStatus(this.queryID);
+  }
+
   /**
    * Advance to next row
    *
@@ -122,16 +147,44 @@ class SnowflakeResultSetV1 extends SnowflakeBaseResultSet implements SnowflakeRe
   @Override
   public boolean next() throws SQLException
   {
-    // exception
-    try
+    if (resultSetForNext == null)
     {
-      return sfBaseResultSet.next();
+      QueryStatus qs = QueryStatus.NO_DATA;
+      int noDataRetry = 0;
+      final int noDataMaxRetries = 24;
+      while (qs != QueryStatus.SUCCESS)
+      {
+        qs = this.getStatus();
+
+        // if query is not running due to a failure (Aborted, failed with error, etc), generate exception
+        if (!QueryStatus.isStillRunning(qs) && qs.getValue() != QueryStatus.SUCCESS.getValue())
+        {
+          throw new SQLException(
+              "Status of query associated with resultSet is " + qs.getDescription() + ". Results not generated.");
+        }
+        // if no data about the query is returned after about 2 minutes, give up
+        if (qs.getValue() == QueryStatus.NO_DATA.getValue())
+        {
+          noDataRetry++;
+          if (noDataRetry >= noDataMaxRetries)
+          {
+            throw new SQLException("Cannot retrieve data on the status of this query. No information returned from server for queryID={}.", this.queryID);
+          }
+        }
+        try
+        {
+          // sleep for 5 seconds before polling again. Arbitrary number
+          Thread.sleep(5000);
+        }
+        catch (InterruptedException e)
+        {
+          e.printStackTrace();
+        }
+      }
+      resultSetForNext = extraStatement.executeQuery("select * from table(result_scan('" + this.queryID + "'))");
+
     }
-    catch (SFException ex)
-    {
-      throw new SnowflakeSQLException(
-          ex.getCause(), ex.getSqlState(), ex.getVendorCode(), ex.getParams());
-    }
+    return resultSetForNext.next();
   }
 
   @Override
@@ -143,7 +196,14 @@ class SnowflakeResultSetV1 extends SnowflakeBaseResultSet implements SnowflakeRe
   public void close(boolean removeClosedResultSetFromStatement) throws SQLException
   {
     // no SQLException is raised.
-    sfBaseResultSet.close();
+    if (resultSetForNext != null)
+    {
+      resultSetForNext.close();
+    }
+    if (sfBaseResultSet != null)
+    {
+      sfBaseResultSet.close();
+    }
     if (removeClosedResultSetFromStatement && statement.isWrapperFor(SnowflakeStatementV1.class))
     {
       statement.unwrap(SnowflakeStatementV1.class).removeClosedResultSet(this);
@@ -152,128 +212,73 @@ class SnowflakeResultSetV1 extends SnowflakeBaseResultSet implements SnowflakeRe
 
   public String getQueryID()
   {
-    return sfBaseResultSet.getQueryId();
+    return this.queryID;
   }
-
 
   public boolean wasNull() throws SQLException
   {
     raiseSQLExceptionIfResultSetIsClosed();
-    return sfBaseResultSet.wasNull();
+    return resultSetForNext.wasNull();
   }
 
   public String getString(int columnIndex) throws SQLException
   {
     raiseSQLExceptionIfResultSetIsClosed();
-    try
-    {
-      return sfBaseResultSet.getString(columnIndex);
-    }
-    catch (SFException ex)
-    {
-      throw new SnowflakeSQLException(ex.getCause(),
-                                      ex.getSqlState(), ex.getVendorCode(), ex.getParams());
-    }
+    return resultSetForNext.getString(columnIndex);
+  }
+
+  public void setSession(SFSession session)
+  {
+    this.session = session;
+  }
+
+  public void setStatement(Statement statement)
+  {
+    this.extraStatement = statement;
   }
 
   public boolean getBoolean(int columnIndex) throws SQLException
   {
     raiseSQLExceptionIfResultSetIsClosed();
-    try
-    {
-      return sfBaseResultSet.getBoolean(columnIndex);
-    }
-    catch (SFException ex)
-    {
-      throw new SnowflakeSQLException(ex.getCause(),
-                                      ex.getSqlState(), ex.getVendorCode(), ex.getParams());
-    }
+    return resultSetForNext.getBoolean(columnIndex);
   }
 
   @Override
   public byte getByte(int columnIndex) throws SQLException
   {
     raiseSQLExceptionIfResultSetIsClosed();
-    try
-    {
-      return sfBaseResultSet.getByte(columnIndex);
-    }
-    catch (SFException ex)
-    {
-      throw new SnowflakeSQLException(ex.getCause(),
-                                      ex.getSqlState(), ex.getVendorCode(), ex.getParams());
-    }
+    return resultSetForNext.getByte(columnIndex);
   }
 
   public short getShort(int columnIndex) throws SQLException
   {
     raiseSQLExceptionIfResultSetIsClosed();
-    try
-    {
-      return sfBaseResultSet.getShort(columnIndex);
-    }
-    catch (SFException ex)
-    {
-      throw new SnowflakeSQLException(ex.getCause(),
-                                      ex.getSqlState(), ex.getVendorCode(), ex.getParams());
-    }
+    return resultSetForNext.getShort(columnIndex);
   }
 
   public int getInt(int columnIndex) throws SQLException
   {
     raiseSQLExceptionIfResultSetIsClosed();
-    try
-    {
-      return sfBaseResultSet.getInt(columnIndex);
-    }
-    catch (SFException ex)
-    {
-      throw new SnowflakeSQLException(ex.getCause(),
-                                      ex.getSqlState(), ex.getVendorCode(), ex.getParams());
-    }
+    return resultSetForNext.getInt(columnIndex);
   }
 
   public long getLong(int columnIndex) throws SQLException
   {
     raiseSQLExceptionIfResultSetIsClosed();
-    try
-    {
-      return sfBaseResultSet.getLong(columnIndex);
-    }
-    catch (SFException ex)
-    {
-      throw new SnowflakeSQLException(ex.getCause(),
-                                      ex.getSqlState(), ex.getVendorCode(), ex.getParams());
-    }
+    return resultSetForNext.getLong(columnIndex);
   }
 
   public float getFloat(int columnIndex) throws SQLException
   {
     raiseSQLExceptionIfResultSetIsClosed();
-    try
-    {
-      return sfBaseResultSet.getFloat(columnIndex);
-    }
-    catch (SFException ex)
-    {
-      throw new SnowflakeSQLException(ex.getCause(),
-                                      ex.getSqlState(), ex.getVendorCode(), ex.getParams());
-    }
+    return resultSetForNext.getFloat(columnIndex);
 
   }
 
   public double getDouble(int columnIndex) throws SQLException
   {
     raiseSQLExceptionIfResultSetIsClosed();
-    try
-    {
-      return sfBaseResultSet.getDouble(columnIndex);
-    }
-    catch (SFException ex)
-    {
-      throw new SnowflakeSQLException(ex.getCause(),
-                                      ex.getSqlState(), ex.getVendorCode(), ex.getParams());
-    }
+    return resultSetForNext.getDouble(columnIndex);
   }
 
   public Date getDate(int columnIndex, TimeZone tz) throws SQLException
@@ -281,44 +286,20 @@ class SnowflakeResultSetV1 extends SnowflakeBaseResultSet implements SnowflakeRe
     // Note: currently we provide this API but it does not use TimeZone tz.
     // TODO: use the time zone passed from the arguments
     raiseSQLExceptionIfResultSetIsClosed();
-    try
-    {
-      return sfBaseResultSet.getDate(columnIndex);
-    }
-    catch (SFException ex)
-    {
-      throw new SnowflakeSQLException(ex.getCause(),
-                                      ex.getSqlState(), ex.getVendorCode(), ex.getParams());
-    }
+    return resultSetForNext.getDate(columnIndex);
   }
 
   public Time getTime(int columnIndex) throws SQLException
   {
     raiseSQLExceptionIfResultSetIsClosed();
-    try
-    {
-      return sfBaseResultSet.getTime(columnIndex);
-    }
-    catch (SFException ex)
-    {
-      throw new SnowflakeSQLException(ex.getCause(),
-                                      ex.getSqlState(), ex.getVendorCode(), ex.getParams());
-    }
+    return resultSetForNext.getTime(columnIndex);
   }
 
   public Timestamp getTimestamp(int columnIndex, TimeZone tz)
   throws SQLException
   {
     raiseSQLExceptionIfResultSetIsClosed();
-    try
-    {
-      return sfBaseResultSet.getTimestamp(columnIndex, tz);
-    }
-    catch (SFException ex)
-    {
-      throw new SnowflakeSQLException(ex.getCause(),
-                                      ex.getSqlState(), ex.getVendorCode(), ex.getParams());
-    }
+    return resultSetForNext.unwrap(SnowflakeResultSetV1.class).getTimestamp(columnIndex, tz);
   }
 
   public ResultSetMetaData getMetaData() throws SQLException
@@ -331,98 +312,66 @@ class SnowflakeResultSetV1 extends SnowflakeBaseResultSet implements SnowflakeRe
   public Object getObject(int columnIndex) throws SQLException
   {
     raiseSQLExceptionIfResultSetIsClosed();
-    try
-    {
-      return sfBaseResultSet.getObject(columnIndex);
-    }
-    catch (SFException ex)
-    {
-      throw new SnowflakeSQLException(ex.getCause(),
-                                      ex.getSqlState(), ex.getVendorCode(), ex.getParams());
-    }
+    return resultSetForNext.getObject(columnIndex);
   }
 
   public BigDecimal getBigDecimal(int columnIndex) throws SQLException
   {
     raiseSQLExceptionIfResultSetIsClosed();
-    try
-    {
-      return sfBaseResultSet.getBigDecimal(columnIndex);
-    }
-    catch (SFException ex)
-    {
-      throw new SnowflakeSQLException(ex.getCause(),
-                                      ex.getSqlState(), ex.getVendorCode(), ex.getParams());
-    }
+    return resultSetForNext.getBigDecimal(columnIndex);
   }
 
   @Deprecated
   public BigDecimal getBigDecimal(int columnIndex, int scale) throws SQLException
   {
     raiseSQLExceptionIfResultSetIsClosed();
-    try
-    {
-      return sfBaseResultSet.getBigDecimal(columnIndex, scale);
-    }
-    catch (SFException ex)
-    {
-      throw new SnowflakeSQLException(ex.getCause(),
-                                      ex.getSqlState(), ex.getVendorCode(), ex.getParams());
-    }
+    return resultSetForNext.getBigDecimal(columnIndex, scale);
   }
 
   public byte[] getBytes(int columnIndex) throws SQLException
   {
     raiseSQLExceptionIfResultSetIsClosed();
-    try
-    {
-      return sfBaseResultSet.getBytes(columnIndex);
-    }
-    catch (SFException ex)
-    {
-      throw new SnowflakeSQLException(ex.getCause(),
-                                      ex.getSqlState(), ex.getVendorCode(), ex.getParams());
-    }
+    return resultSetForNext.getBytes(columnIndex);
   }
 
   public int getRow() throws SQLException
   {
     raiseSQLExceptionIfResultSetIsClosed();
 
-    return sfBaseResultSet.getRow();
+    return resultSetForNext.getRow();
   }
 
   public boolean isFirst() throws SQLException
   {
     raiseSQLExceptionIfResultSetIsClosed();
-    return sfBaseResultSet.isFirst();
+    return resultSetForNext.isFirst();
   }
 
   public boolean isClosed() throws SQLException
   {
     // no exception is raised.
-    return sfBaseResultSet.isClosed();
+    return (resultSetForNext.isClosed() && sfBaseResultSet.isClosed());
   }
 
   @Override
   public boolean isLast() throws SQLException
   {
     raiseSQLExceptionIfResultSetIsClosed();
-    return sfBaseResultSet.isLast();
+    return resultSetForNext.isLast();
   }
 
   @Override
   public boolean isAfterLast() throws SQLException
   {
     raiseSQLExceptionIfResultSetIsClosed();
-    return sfBaseResultSet.isAfterLast();
+    return resultSetForNext.isAfterLast();
   }
 
   @Override
   public boolean isBeforeFirst() throws SQLException
   {
     raiseSQLExceptionIfResultSetIsClosed();
-    return sfBaseResultSet.isBeforeFirst();
+    return resultSetForNext.isBeforeFirst();
   }
 
   @Override

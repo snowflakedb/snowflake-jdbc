@@ -178,7 +178,26 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
     {
       logger.debug("executeQuery()");
     }
-    return executeQueryInternal(sql, parameterBindings);
+    return executeQueryInternal(sql, false, parameterBindings);
+  }
+
+  /**
+   * Execute a query asynchronously
+   *
+   * @return ResultSet containing results
+   * @throws SQLException
+   */
+  public ResultSet executeAsyncQuery() throws SQLException
+  {
+    if (showStatementParameters)
+    {
+      logger.info("executeAsyncQuery()");
+    }
+    else
+    {
+      logger.debug("executeAsyncQuery()");
+    }
+    return executeQueryInternal(sql, true, parameterBindings);
   }
 
   @Override
@@ -899,15 +918,6 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
   public void setNClob(int parameterIndex, Reader reader) throws SQLException
   {
     throw new SQLFeatureNotSupportedException();
-  }
-
-  @Override
-  public ResultSet executeQuery(String sql) throws SQLException
-  {
-    logger.debug("executeQuery(String sql)");
-
-    throw new SnowflakeSQLException(
-        ErrorCode.UNSUPPORTED_STATEMENT_TYPE_IN_EXECUTION_API, StmtUtil.truncateSQL(sql));
   }
 
   @Override

@@ -749,12 +749,6 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
   }
 
   @Override
-  public SFSession getSession()
-  {
-    return session;
-  }
-
-  @Override
   public TimeZone getTimeZone()
   {
     return timeZone;

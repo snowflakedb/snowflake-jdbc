@@ -1315,7 +1315,8 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
                                        "application/json",
                                        null, // bindValues
                                        false, // describeOnly
-                                       false // internal
+                                       false, // internal
+                                       false // async
       );
     }
     catch (SFException ex)
