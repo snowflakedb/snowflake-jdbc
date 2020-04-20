@@ -83,6 +83,7 @@ public class StmtUtil
     String requestId;
     int sequenceId = -1;
     boolean internal = false;
+    boolean asyncExec = false;
 
     Map<String, Object> parametersMap;
     String sessionToken;
@@ -234,6 +235,12 @@ public class StmtUtil
       this.ocspMode = ocspMode;
       return this;
     }
+
+    public StmtInput setAsync(boolean async)
+    {
+      this.asyncExec = async;
+      return this;
+    }
   }
 
   /**
@@ -325,7 +332,8 @@ public class StmtUtil
             stmtInput.bindStage,
             stmtInput.parametersMap,
             stmtInput.querySubmissionTime,
-            stmtInput.describeOnly || stmtInput.internal);
+            stmtInput.describeOnly || stmtInput.internal,
+            stmtInput.asyncExec);
 
         if (!stmtInput.describeOnly)
         {
@@ -500,6 +508,12 @@ public class StmtUtil
           !QueryInProgressResponse.QUERY_IN_PROGRESS_CODE.equals(
               pingPongResponseJson.path("code").asText())
           && !QueryInProgressResponse.QUERY_IN_PROGRESS_ASYNC_CODE.equals(
+          pingPongResponseJson.path("code").asText()))
+      {
+        queryInProgress = false;
+      }
+      // for the purposes of this function, return false instead of true
+      else if (stmtInput.asyncExec && QueryInProgressResponse.QUERY_IN_PROGRESS_ASYNC_CODE.equals(
           pingPongResponseJson.path("code").asText()))
       {
         queryInProgress = false;

@@ -1013,15 +1013,6 @@ public class PreparedStatement2IT extends PreparedStatement0IT
       @Override
       public void run() throws SQLException
       {
-        preparedStatement.executeQuery("select 1");
-      }
-    }, expectedCode);
-
-    assertException(new RunnableWithSQLException()
-    {
-      @Override
-      public void run() throws SQLException
-      {
         preparedStatement.execute("select 1");
       }
     }, expectedCode);

@@ -32,6 +32,9 @@ public class QueryExecDTO
 
   private boolean isInternal;
 
+  // Boolean value that, if true, indicates query should be asynchronous
+  private boolean asyncExec;
+
   public QueryExecDTO(String sqlText,
                       boolean describeOnly,
                       Integer sequenceId,
@@ -39,7 +42,8 @@ public class QueryExecDTO
                       String bindStage,
                       Map<String, Object> parameters,
                       long querySubmissionTime,
-                      boolean internal)
+                      boolean internal,
+                      boolean asyncExec)
   {
     this.sqlText = sqlText;
     this.describeOnly = describeOnly;
@@ -49,6 +53,7 @@ public class QueryExecDTO
     this.parameters = parameters;
     this.querySubmissionTime = querySubmissionTime;
     this.isInternal = internal;
+    this.asyncExec = asyncExec; // indicates whether query should be asynchronous
   }
 
   public String getSqlText()
@@ -141,5 +146,15 @@ public class QueryExecDTO
   public boolean getIsInternal()
   {
     return this.isInternal;
+  }
+
+  public void setAsyncExec(boolean asyncExec)
+  {
+    this.asyncExec = asyncExec;
+  }
+
+  public boolean getAsyncExec()
+  {
+    return this.asyncExec;
   }
 }

@@ -4,6 +4,7 @@
 
 package net.snowflake.client.jdbc;
 
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 
@@ -29,4 +30,13 @@ public interface SnowflakeStatement
    * @param value parameter value
    */
   void setParameter(String name, Object value) throws SQLException;
+
+  /**
+   * Execute SQL query asynchronously
+   *
+   * @param sql sql statement
+   * @return ResultSet
+   * @throws SQLException if @link{#executeQueryInternal(String, Map)} throws an exception
+   */
+  ResultSet executeAsyncQuery(String sql) throws SQLException;
 }

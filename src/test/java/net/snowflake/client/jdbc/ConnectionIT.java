@@ -3,12 +3,11 @@
  */
 package net.snowflake.client.jdbc;
 
-import net.minidev.json.JSONObject;
 import net.snowflake.client.ConditionalIgnoreRule.ConditionalIgnore;
 import net.snowflake.client.RunningNotOnTestaccount;
 import net.snowflake.client.RunningOnTravisCI;
 import net.snowflake.client.category.TestCategoryOthers;
-import net.snowflake.client.jdbc.telemetryOOB.TelemetryEvent;
+import net.snowflake.client.core.QueryStatus;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.common.core.SqlState;
 import org.apache.commons.codec.binary.Base64;
@@ -50,12 +49,11 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import static net.snowflake.client.core.QueryStatus.RUNNING;
 import static net.snowflake.client.core.SessionUtil.CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY;
-import static org.hamcrest.CoreMatchers.anyOf;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -1542,4 +1540,160 @@ public class ConnectionIT extends BaseJDBCTest
     }
   }
 
+  @Test
+  public void testAsyncQueryOpenAndCloseConnection() throws SQLException, IOException, InterruptedException
+  {
+    // open connection and run asynchronous query
+    Connection con = getConnection();
+    Statement statement = con.createStatement();
+    ResultSet rs1 =
+        statement.unwrap(SnowflakeStatement.class).executeAsyncQuery("select count(*) from table(generator(timeLimit => 60))");
+    // Retrieve query ID for part 2 of test, check status of query
+    String queryID = rs1.unwrap(SnowflakeResultSet.class).getQueryID();
+    Thread.sleep(100);
+    QueryStatus status = rs1.unwrap(SnowflakeResultSet.class).getStatus();
+    // Query should take 60 seconds so should be running
+    assertEquals(RUNNING, status);
+    // close connection and wait for 1 minute while query finishes running
+    statement.close();
+    con.close();
+    Thread.sleep(1000 * 70);
+    //Create a new connection and new instance of a resultSet using query ID
+    con = getConnection();
+    ResultSet rs = con.unwrap(SnowflakeConnection.class).createResultSet(queryID);
+    status = rs.unwrap(SnowflakeResultSet.class).getStatus();
+    // Assert status of query is a success
+    assertEquals(QueryStatus.SUCCESS, status);
+    assertEquals(1, getSizeOfResultSet(rs));
+    statement = con.createStatement();
+    // Create another query that will not be successful (querying table that does not exist)
+    rs1 = statement.unwrap(SnowflakeStatement.class).executeAsyncQuery("select * from nonexistentTable");
+    Thread.sleep(100);
+    status = rs1.unwrap(SnowflakeResultSet.class).getStatus();
+    assertEquals(QueryStatus.FAILED_WITH_ERROR, status);
+    statement.close();
+    con.close();
+  }
+
+  @Test
+  public void testAsyncAndSynchronousQueries() throws SQLException
+  {
+    Connection con = getConnection();
+    Statement statement = con.createStatement();
+    // execute some statements that you want to be synchronous
+    statement.execute("alter session set CLIENT_TIMESTAMP_TYPE_MAPPING=TIMESTAMP_TZ");
+    statement.execute("create or replace table smallTable (colA string, colB int)");
+    statement.execute("create or replace table uselessTable (colA string, colB int)");
+    statement.execute("insert into smallTable values ('row1', 1), ('row2', 2), ('row3', 3)");
+    statement.execute("insert into uselessTable values ('row1', 1), ('row2', 2), ('row3', 3)");
+    // Select from uselessTable asynchronously; drop it synchronously afterwards
+    ResultSet rs = statement.unwrap(SnowflakeStatement.class).executeAsyncQuery("select * from smallTable");
+    // execute a query that you don't want to wait for
+    ResultSet rs1 = statement.unwrap(SnowflakeStatement.class).executeAsyncQuery("select * from uselessTable");
+    // Drop the table that was queried asynchronously. Should not drop until after async query finishes, because this
+    // query IS synchronous
+    ResultSet rs2 =
+        statement.executeQuery("drop table uselessTable");
+    while (rs2.next())
+    {
+      assertEquals("USELESSTABLE successfully dropped.", rs2.getString(1));
+    }
+    // able to successfully fetch results in spite of table being dropped
+    assertEquals(3, getSizeOfResultSet(rs1));
+    statement.execute("alter session set CLIENT_TIMESTAMP_TYPE_MAPPING=TIMESTAMP_LTZ");
+
+    // come back to the asynchronously executed result set after finishing other things
+    rs.next();
+    assertEquals(rs.getString(1), "row1");
+    assertEquals(rs.getInt(2), 1);
+    rs.next();
+    assertEquals(rs.getString(1), "row2");
+    assertEquals(rs.getInt(2), 2);
+    rs.next();
+    assertEquals(rs.getString(1), "row3");
+    assertEquals(rs.getInt(2), 3);
+    statement.execute("drop table smallTable");
+    statement.close();
+    con.close();
+  }
+
+  @Test
+  public void testPreparedStatementAsyncQuery() throws SQLException
+  {
+    Connection con = getConnection();
+    con.createStatement().execute("create or replace table testTable(colA string, colB boolean)");
+    PreparedStatement prepStatement = con.prepareStatement("insert into testTable values (?,?)");
+    prepStatement.setInt(1, 33);
+    prepStatement.setBoolean(2, true);
+    // call executeAsyncQuery
+    ResultSet rs = prepStatement.unwrap(SnowflakePreparedStatement.class).executeAsyncQuery();
+    // Get access to results by calling next() function
+    // next () will block until results are ready
+    assertTrue(rs.next());
+    // the resultSet consists of a single row, single column containing the number of rows that have been updated by the insert
+    // the number of updated rows in testTable is 1 so 1 is returned
+    assertEquals(rs.getString(1), "1");
+    con.createStatement().execute("drop table testTable");
+    prepStatement.close();
+    con.close();
+  }
+
+  @Test
+  public void testIsStillRunning()
+  {
+    QueryStatus[] runningStatuses = {QueryStatus.RUNNING, QueryStatus.RESUMING_WAREHOUSE, QueryStatus.QUEUED,
+                                     QueryStatus.QUEUED_REPAIRING_WAREHOUSE, QueryStatus.NO_DATA};
+
+    QueryStatus[] otherStatuses = {QueryStatus.ABORTED, QueryStatus.ABORTING, QueryStatus.SUCCESS,
+                                   QueryStatus.FAILED_WITH_ERROR, QueryStatus.FAILED_WITH_INCIDENT,
+                                   QueryStatus.DISCONNECTED, QueryStatus.RESTARTED};
+
+    for (QueryStatus qs : runningStatuses)
+    {
+      assertEquals(true, QueryStatus.isStillRunning(qs));
+    }
+
+    for (QueryStatus qs : otherStatuses)
+    {
+      assertEquals(false, QueryStatus.isStillRunning(qs));
+    }
+  }
+
+
+  /**
+   * MANUAL TESTING OF ASYNCHRONOUS QUERYING
+   * <p>
+   * This test does not provide reliable results because the status of the queries
+   * often depends on the GS server's behavior. We can often replicate
+   * QUEUED and RESUMING_WAREHOUSE statuses, however.
+   */
+  //@Test
+  public void testQueryStatuses()
+  throws SQLException, IOException, InterruptedException
+  {
+    // Before running test, close warehouse and re-open it!
+    Connection con = getConnection();
+    Statement statement = con.createStatement();
+    ResultSet rs =
+        statement.unwrap(SnowflakeStatement.class).executeAsyncQuery("select count(*) from table(generator(timeLimit => 5))");
+    Thread.sleep(100);
+    QueryStatus status = rs.unwrap(SnowflakeResultSet.class).getStatus();
+    // Since warehouse has just been restarted, warehouse should still be booting
+    assertEquals(QueryStatus.RESUMING_WAREHOUSE, status);
+
+    // now try to get QUEUED status
+    ResultSet rs1 =
+        statement.unwrap(SnowflakeStatement.class).executeAsyncQuery("select count(*) from table(generator(timeLimit => 60))");
+    ResultSet rs2 =
+        statement.unwrap(SnowflakeStatement.class).executeAsyncQuery("select count(*) from table(generator(timeLimit => 60))");
+    ResultSet rs3 =
+        statement.unwrap(SnowflakeStatement.class).executeAsyncQuery("select count(*) from table(generator(timeLimit => 60))");
+    ResultSet rs4 =
+        statement.unwrap(SnowflakeStatement.class).executeAsyncQuery("select count(*) from table(generator(timeLimit => 60))");
+    // Retrieve query ID for part 2 of test, check status of query
+    Thread.sleep(100);
+    status = rs4.unwrap(SnowflakeResultSet.class).getStatus();
+    // Since 4 queries were started at once, status is most likely QUEUED
+    assertEquals(QueryStatus.QUEUED, status);
+  }
 }
