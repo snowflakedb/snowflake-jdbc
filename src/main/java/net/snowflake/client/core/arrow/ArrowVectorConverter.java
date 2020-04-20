@@ -150,4 +150,9 @@ public interface ArrowVectorConverter
    * @throws SFException invalid data conversion
    */
   Object toObject(int index) throws SFException;
+
+  /**
+   * @param isUTC true or false value of whether NTZ timestamp should be set to UTC
+   */
+  void setTreatNTZAsUTC(boolean isUTC);
 }

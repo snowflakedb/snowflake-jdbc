@@ -38,6 +38,8 @@ abstract class AbstractArrowVectorConverter implements ArrowVectorConverter
 
   protected int columnIndex;
 
+  protected boolean treatNTZasUTC;
+
   /**
    * Field names of the struct vectors used by timestamp
    */
@@ -190,6 +192,12 @@ abstract class AbstractArrowVectorConverter implements ArrowVectorConverter
                           logicalTypeStr,
                           SnowflakeUtil.BIG_DECIMAL_STR,
                           "");
+  }
+
+  @Override
+  public void setTreatNTZAsUTC(boolean isUTC)
+  {
+    this.treatNTZasUTC = isUTC;
   }
 
   @Override
