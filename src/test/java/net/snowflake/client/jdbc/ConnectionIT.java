@@ -360,7 +360,6 @@ public class ConnectionIT extends BaseJDBCTest
     // only when ssl is on can trigger the login timeout
     // ssl is off will trigger 404
     properties.put("ssl", "on");
-    int count = TelemetryService.getInstance().getEventCount();
     try
     {
       connStart = System.currentTimeMillis();
@@ -383,8 +382,9 @@ public class ConnectionIT extends BaseJDBCTest
       Thread.sleep(WAIT_FOR_TELEMETRY_REPORT_IN_MILLISECS);
       if (TelemetryService.getInstance().isDeploymentEnabled())
       {
-        assertThat("Telemetry event has not been reported successfully",
-                   TelemetryService.getInstance().getEventCount() > count);
+        assertThat("Telemetry event has not been reported successfully. Error: " +
+                   TelemetryService.getInstance().getLastError(),
+                   TelemetryService.getInstance().getFailureCount() == 0);
       }
       return;
     }
@@ -459,7 +459,6 @@ public class ConnectionIT extends BaseJDBCTest
     properties.put("loginTimeout", "20");
     properties.put("user", "fakeuser");
     properties.put("password", "fakepassword");
-    int count = TelemetryService.getInstance().getEventCount();
     try
     {
       connStart = System.currentTimeMillis();
@@ -484,8 +483,9 @@ public class ConnectionIT extends BaseJDBCTest
       Thread.sleep(WAIT_FOR_TELEMETRY_REPORT_IN_MILLISECS);
       if (TelemetryService.getInstance().isDeploymentEnabled())
       {
-        assertThat("Telemetry event has not been reported successfully",
-                   TelemetryService.getInstance().getEventCount() > count);
+        assertThat("Telemetry event has not been reported successfully. Error: " +
+                   TelemetryService.getInstance().getLastError(),
+                   TelemetryService.getInstance().getFailureCount() == 0);
       }
       return;
     }
