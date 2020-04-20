@@ -12,15 +12,17 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Timestamp;
 import java.sql.Types;
 import java.util.Arrays;
 import java.util.List;
+import java.util.TimeZone;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertArrayEquals;
@@ -1851,5 +1853,78 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest
       st.close();
       con.close();
     }
+  }
+
+  @Test
+  public void TestTimestampNTZWithDLS() throws SQLException
+  {
+    Connection con = getConnection();
+    Statement st = con.createStatement();
+    TimeZone.setDefault(TimeZone.getTimeZone("PST"));
+    st.execute("alter session set JDBC_TREAT_TIMESTAMP_NTZ_AS_UTC=true");
+    st.execute("create or replace table src_ts(col1 TIMESTAMP_NTZ)");
+    List<String> testTimeValues = Arrays.asList(
+        // DLS start in 2018
+        "2018-03-11 01:10:34.0",
+        "2018-03-11 02:10:34.0",
+        "2018-03-11 03:10:34.0",
+        // DLS end in 2018
+        "2018-11-04 01:10:34.0",
+        "2018-11-04 02:10:34.0",
+        "2018-11-04 03:10:34.0",
+        // DLS start in 2020
+        "2020-03-11 01:10:34.0",
+        "2020-03-11 02:10:34.0",
+        "2020-03-11 03:10:34.0",
+        // DLS end in 2020
+        "2020-11-01 01:10:34.0",
+        "2020-11-01 02:10:34.0",
+        "2020-11-01 03:10:34.0");
+
+    for (int i = 0; i < testTimeValues.size(); i++)
+    {
+      st.execute("insert into src_ts values('" + testTimeValues.get(i) + "')");
+    }
+
+    ResultSet resultSet = st.executeQuery("SELECT COL1 FROM SRC_TS");
+    Object data = null;
+    int i = 1;
+    int j = 0;
+    while (resultSet.next())
+    {
+      data = resultSet.getObject(i);
+      assertEquals(data.toString(), testTimeValues.get(j));
+      j++;
+    }
+    resultSet.close();
+    st.close();
+  }
+
+  @Test
+  public void TestTimestampNTZBinding() throws SQLException
+  {
+    Connection con = getConnection();
+    Statement st = con.createStatement();
+    TimeZone.setDefault(TimeZone.getTimeZone("PST"));
+    st.execute("alter session set CLIENT_TIMESTAMP_TYPE_MAPPING=TIMESTAMP_NTZ");
+    st.execute("alter session set JDBC_TREAT_TIMESTAMP_NTZ_AS_UTC=true");
+    st.execute("create or replace table src_ts(col1 TIMESTAMP_NTZ)");
+    PreparedStatement prepst = con.prepareStatement("insert into src_ts values(?)");
+    Timestamp tz = Timestamp.valueOf("2018-03-11 01:10:34.0");
+    prepst.setTimestamp(1, tz);
+    prepst.execute();
+
+    ResultSet resultSet = st.executeQuery("SELECT COL1 FROM SRC_TS");
+    Object data = null;
+    int i = 1;
+    int j = 0;
+    while (resultSet.next())
+    {
+      data = resultSet.getObject(i);
+      System.out.println(data.toString());
+    }
+    //System.out.println(data);
+    resultSet.close();
+    st.close();
   }
 }

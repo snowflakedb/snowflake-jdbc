@@ -567,6 +567,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
         currentChunkIterator.getCurrentConverter(columnIndex - 1);
     int index = currentChunkIterator.getCurrentRowInRecordBatch();
     wasNull = converter.isNull(index);
+    converter.setTreatNTZAsUTC(session.getTreatNTZAsUTC());
     return converter.toObject(index);
   }
 

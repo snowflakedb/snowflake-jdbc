@@ -111,7 +111,7 @@ public class ThreeFieldStructToTimestampTZConverter extends AbstractArrowVectorC
         return null;
       }
     }
-    Timestamp ts = ArrowResultUtil.createTimestamp(epoch, fraction);
+    Timestamp ts = ArrowResultUtil.createTimestamp(epoch, fraction, false);
 
     if (context.getResultVersion() > 0)
     {

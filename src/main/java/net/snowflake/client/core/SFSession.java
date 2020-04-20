@@ -174,6 +174,10 @@ public class SFSession
   // session database
   private boolean metadataRequestUseSessionDatabase = false;
 
+  // If customer wants Timestamp_NTZ values to be stored in UTC time
+  // instead of a local/session timezone, set to true
+  private boolean treatNTZAsUTC = false;
+
   private SnowflakeType timestampMappedType =
       SnowflakeType.TIMESTAMP_LTZ;
 
@@ -1201,6 +1205,16 @@ public class SFSession
   public boolean getMetadataRequestUseConnectionCtx()
   {
     return this.metadataRequestUseConnectionCtx;
+  }
+
+  public void setTreatNTZAsUTC(boolean enabled)
+  {
+    this.treatNTZAsUTC = enabled;
+  }
+
+  public boolean getTreatNTZAsUTC()
+  {
+    return this.treatNTZAsUTC;
   }
 
   public boolean getMetadataRequestUseSessionDatabase()
