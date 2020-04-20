@@ -10,13 +10,11 @@ import net.snowflake.client.core.SFException;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeType;
 import net.snowflake.client.jdbc.SnowflakeUtil;
-import net.snowflake.common.core.SFTimestamp;
 import org.apache.arrow.vector.BigIntVector;
 import org.apache.arrow.vector.IntVector;
 import org.apache.arrow.vector.ValueVector;
 import org.apache.arrow.vector.complex.StructVector;
 
-import java.math.BigDecimal;
 import java.sql.Date;
 import java.sql.Time;
 import java.sql.Timestamp;
@@ -103,17 +101,17 @@ public class TwoFieldStructToTimestampNTZConverter extends AbstractArrowVectorCo
         return null;
       }
     }
-
-    Timestamp ts = ArrowResultUtil.createTimestamp(epoch, fraction);
+    Timestamp ts = ArrowResultUtil.createTimestamp(epoch, fraction, this.treatNTZasUTC);
 
     // Note: honorClientTZForTimestampNTZ is not enabled for toString method
-    if (!fromToString && context.getHonorClientTZForTimestampNTZ())
+    // If JDBC_TREAT_TIMESTAMP_NTZ_AS_UTC=false, default behavior is to honor
+    // client timezone for NTZ time. Move NTZ timestamp offset to correspond to
+    // client's timezone
+    if (!this.treatNTZasUTC && !fromToString && context.getHonorClientTZForTimestampNTZ())
     {
       ts = ArrowResultUtil.moveToTimeZone(ts, NTZ, tz);
     }
-
     Timestamp adjustedTimestamp = ResultUtil.adjustTimestamp(ts);
-
     return adjustedTimestamp;
   }
 

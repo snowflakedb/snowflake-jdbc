@@ -115,6 +115,11 @@ public abstract class SFBaseResultSet
     this.session = session;
   }
 
+  public SFSession getSession()
+  {
+    return this.session;
+  }
+
   // default implementation
   public boolean next() throws SFException, SnowflakeSQLException
   {

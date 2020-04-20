@@ -2,13 +2,10 @@ package net.snowflake.client.jdbc.telemetryOOB;
 
 import net.minidev.json.JSONArray;
 import net.minidev.json.JSONObject;
-import net.snowflake.client.core.SFTrustManager;
 import net.snowflake.client.jdbc.SnowflakeConnectString;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.util.SecretDetector;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
@@ -25,9 +22,6 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Properties;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -322,12 +316,32 @@ public class TelemetryService
 
   private AtomicInteger eventCnt = new AtomicInteger();
 
+  private AtomicInteger failureCnt = new AtomicInteger();
+
+  private String lastError = "";
+
   /**
    * @return the number of events successfully reported by this service
    */
   public int getEventCount()
   {
     return eventCnt.get();
+  }
+
+  /**
+   * @return the number of times an event was attempted to be reported but failed
+   */
+  public int getFailureCount()
+  {
+    return failureCnt.get();
+  }
+
+  /**
+   * @return the string containing the most recent failed response
+   */
+  public String getLastError()
+  {
+    return this.lastError;
   }
 
   /**
@@ -436,6 +450,8 @@ public class TelemetryService
           else
           {
             logger.debug("telemetry server request error: " + response);
+            instance.lastError = response.toString();
+            instance.failureCnt.incrementAndGet();
             success = false;
           }
           logger.debug(EntityUtils.toString(response.getEntity(), "UTF-8"));
@@ -448,6 +464,13 @@ public class TelemetryService
         logger.debug(
             "Telemetry request failed, Exception" +
             "response: {}, exception: {}", response, e.getMessage());
+        String res = "null";
+        if (response != null)
+        {
+          res = response.toString();
+        }
+        instance.lastError = "Response: " + res + "; Error: " + e.getMessage();
+        instance.failureCnt.incrementAndGet();
         success = false;
       }
       finally

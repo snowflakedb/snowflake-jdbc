@@ -181,6 +181,7 @@ public class SFStatement
       String sql,
       Map<String, ParameterBindingDTO> parametersBinding,
       boolean describeOnly,
+      boolean asyncExec,
       CallingMethod caller)
   throws SQLException, SFException
   {
@@ -203,6 +204,7 @@ public class SFStatement
         parametersBinding,
         describeOnly,
         describeOnly, // internal query if describeOnly is true
+        asyncExec,
         caller
     );
   }
@@ -217,7 +219,7 @@ public class SFStatement
    */
   public SFStatementMetaData describe(String sql) throws SFException, SQLException
   {
-    SFBaseResultSet baseResultSet = executeQuery(sql, null, true, null);
+    SFBaseResultSet baseResultSet = executeQuery(sql, null, true, false, null);
 
     describeJobUUID = baseResultSet.getQueryId();
 
@@ -247,6 +249,7 @@ public class SFStatement
       Map<String, ParameterBindingDTO> parameterBindings,
       boolean describeOnly,
       boolean internal,
+      boolean asyncExec,
       CallingMethod caller)
   throws SQLException, SFException
   {
@@ -264,7 +267,7 @@ public class SFStatement
                                   StmtUtil.SF_MEDIA_TYPE,
                                   parameterBindings,
                                   describeOnly,
-                                  internal);
+                                  internal, asyncExec);
 
     if (result == null)
     {
@@ -331,6 +334,10 @@ public class SFStatement
     }
     logger.debug("Done creating result set");
 
+    if (asyncExec)
+    {
+      session.activeAsyncQueries.add(resultSet.getQueryId());
+    }
     return resultSet;
   }
 
@@ -387,7 +394,8 @@ public class SFStatement
                               String mediaType,
                               Map<String, ParameterBindingDTO> bindValues,
                               boolean describeOnly,
-                              boolean internal)
+                              boolean internal,
+                              boolean asyncExec)
   throws SnowflakeSQLException, SFException
   {
     ScheduledExecutorService executor = null;
@@ -464,6 +472,7 @@ public class SFStatement
           .setMediaType(mediaType)
           .setInternal(internal)
           .setDescribeOnly(describeOnly)
+          .setAsync(asyncExec)
           .setServerUrl(session.getServerUrl())
           .setRequestId(requestId)
           .setSequenceId(sequenceId)
@@ -839,6 +848,7 @@ public class SFStatement
    * @throws SQLException if SQL error occurs
    */
   public SFBaseResultSet execute(String sql,
+                                 boolean asyncExec,
                                  Map<String, ParameterBindingDTO>
                                      parametersBinding,
                                  CallingMethod caller)
@@ -869,7 +879,7 @@ public class SFStatement
       executeSetProperty(sql);
       return null;
     }
-    return executeQuery(sql, parametersBinding, false, caller);
+    return executeQuery(sql, parametersBinding, false, asyncExec, caller);
   }
 
   private SFBaseResultSet executeFileTransfer(String sql) throws SQLException,

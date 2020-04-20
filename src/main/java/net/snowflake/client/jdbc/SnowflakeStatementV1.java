@@ -26,11 +26,11 @@ import java.sql.SQLWarning;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static net.snowflake.client.jdbc.ErrorCode.FEATURE_UNSUPPORTED;
 
@@ -55,7 +55,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement
   private int maxRows = 0;
 
   // Refer to all open resultSets from this statement
-  private final Set<ResultSet> openResultSets = Collections.synchronizedSet(new HashSet<>());
+  private final Set<ResultSet> openResultSets = ConcurrentHashMap.newKeySet();
 
   // result set currently in use
   private ResultSet resultSet = null;
@@ -164,7 +164,20 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement
   public ResultSet executeQuery(String sql) throws SQLException
   {
     raiseSQLExceptionIfStatementIsClosed();
-    return executeQueryInternal(sql, null);
+    return executeQueryInternal(sql, false, null);
+  }
+
+  /**
+   * Execute SQL query asynchronously
+   *
+   * @param sql sql statement
+   * @return ResultSet
+   * @throws SQLException if @link{#executeQueryInternal(String, Map)} throws an exception
+   */
+  public ResultSet executeAsyncQuery(String sql) throws SQLException
+  {
+    raiseSQLExceptionIfStatementIsClosed();
+    return executeQueryInternal(sql, true, null);
   }
 
   /**
@@ -211,7 +224,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement
     SFBaseResultSet sfResultSet;
     try
     {
-      sfResultSet = sfStatement.execute(sql, parameterBindings,
+      sfResultSet = sfStatement.execute(sql, false, parameterBindings,
                                         SFStatement.CallingMethod.EXECUTE_UPDATE);
       sfResultSet.setSession(this.connection.getSfSession());
       updateCount = ResultUtil.calculateUpdateCount(sfResultSet);
@@ -244,19 +257,20 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement
    * Internal method for executing a query with bindings accepted.
    *
    * @param sql               sql statement
+   * @param asyncExec         execute query asychronously
    * @param parameterBindings parameters bindings
    * @return query result set
    * @throws SQLException if @link{SFStatement.execute(String)} throws exception
    */
   ResultSet executeQueryInternal(
-      String sql,
+      String sql, boolean asyncExec,
       Map<String, ParameterBindingDTO> parameterBindings)
   throws SQLException
   {
     SFBaseResultSet sfResultSet;
     try
     {
-      sfResultSet = sfStatement.execute(sql, parameterBindings,
+      sfResultSet = sfStatement.execute(sql, asyncExec, parameterBindings,
                                         SFStatement.CallingMethod.EXECUTE_QUERY);
       sfResultSet.setSession(this.connection.getSfSession());
     }
@@ -270,7 +284,15 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement
     {
       openResultSets.add(resultSet);
     }
-    resultSet = new SnowflakeResultSetV1(sfResultSet, this);
+
+    if (asyncExec)
+    {
+      resultSet = new SFAsyncResultSet(sfResultSet, this);
+    }
+    else
+    {
+      resultSet = new SnowflakeResultSetV1(sfResultSet, this);
+    }
 
     return getResultSet();
   }
@@ -306,7 +328,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement
     SFBaseResultSet sfResultSet;
     try
     {
-      sfResultSet = sfStatement.execute(sql, parameterBindings,
+      sfResultSet = sfStatement.execute(sql, false, parameterBindings,
                                         SFStatement.CallingMethod.EXECUTE);
       sfResultSet.setSession(this.connection.getSfSession());
       if (resultSet != null)

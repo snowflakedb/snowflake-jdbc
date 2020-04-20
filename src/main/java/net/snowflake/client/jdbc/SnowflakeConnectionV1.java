@@ -38,11 +38,11 @@ import java.sql.Struct;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.GZIPInputStream;
@@ -98,7 +98,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection
   /**
    * Refer to all created and open statements from this connection
    */
-  private final Set<Statement> openStatements = Collections.synchronizedSet(new HashSet<>());
+  private final Set<Statement> openStatements = ConcurrentHashMap.newKeySet();
 
   /**
    * A connection will establish a session token from snowflake
@@ -117,7 +117,6 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection
       throw new SnowflakeSQLException(INVALID_CONNECT_STRING, url);
     }
     initialize(conStr);
-
   }
 
   public SnowflakeConnectionV1(String url, Properties info, boolean fakeConnection)
@@ -143,6 +142,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection
 
     isClosed = false;
   }
+
 
   public List<DriverPropertyInfo> returnMissingProperties()
   {
@@ -305,6 +305,23 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection
   }
 
   /**
+   * Get an instance of a ResultSet object
+   *
+   * @param queryID
+   * @return
+   * @throws SQLException
+   */
+  public ResultSet createResultSet(String queryID) throws SQLException
+  {
+    raiseSQLExceptionIfConnectionIsClosed();
+    SFAsyncResultSet rs = new SFAsyncResultSet(queryID);
+    rs.setSession(sfSession);
+    rs.setStatement(createStatement());
+    return rs;
+  }
+
+
+  /**
    * Close the connection
    *
    * @throws SQLException failed to close the connection
@@ -323,12 +340,11 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection
     isClosed = true;
     try
     {
-      if (sfSession != null)
+      if (sfSession != null && sfSession.isSafeToClose())
       {
         sfSession.close();
         sfSession = null;
       }
-
       // make sure to close all created statements
       synchronized (openStatements)
       {
@@ -348,6 +364,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection
         }
         openStatements.clear();
       }
+
     }
     catch (SFException ex)
     {
