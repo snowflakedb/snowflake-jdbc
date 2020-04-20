@@ -1,3 +1,12 @@
+**JDBC Driver 3.12.4**
+
+- \| SNOW-146005 | Spring JDBC bug for Snowflake
+- \| SNOW-136193 | JDBC is adjusting DLS for some values that are towards the DLS switch, resulting in a wrong result
+- \| SNOW-153256 | Add more verbose error handling to telemetry services
+- \| SNOW-86734 | Add client information to USER-AGENT HTTP header
+- \| SNOW-153485 | Implemented asynchronous querying in JDBC driver
+- \      
+
 **JDBC Driver 3.12.3**
 
 - \| SNOW-75286 | Hide Sensitive data from logs and exceptions for JDBC
