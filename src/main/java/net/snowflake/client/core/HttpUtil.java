@@ -8,6 +8,7 @@ import com.amazonaws.ClientConfiguration;
 import com.amazonaws.http.apache.SdkProxyRoutePlanner;
 import com.google.common.base.Strings;
 import com.microsoft.azure.storage.OperationContext;
+import com.snowflake.client.jdbc.SnowflakeDriver;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.RestRequest;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
@@ -145,6 +146,39 @@ public class HttpUtil
   }
 
   /**
+   * Constructs a user-agent header with the following pattern:
+   * connector_name/connector_version (os-platform_info) language_implementation/language_version
+   *
+   * @return string for user-agent header
+   */
+  static private String buildUserAgent()
+  {
+    // Start with connector name
+    StringBuilder builder = new StringBuilder("JDBC/");
+    // Append connector version and parenthesis start
+    builder.append(SnowflakeDriver.implementVersion);
+    builder.append(" (");
+    // Generate OS platform and version from system properties
+    String osPlatform =
+        (SnowflakeUtil.systemGetProperty("os.name") != null) ? SnowflakeUtil.systemGetProperty("os.name") : "";
+    String osVersion =
+        (SnowflakeUtil.systemGetProperty("os.version") != null) ? SnowflakeUtil.systemGetProperty("os.version") : "";
+    // Append OS platform and version separated by a space
+    builder.append(osPlatform);
+    builder.append(" ");
+    builder.append(osVersion);
+    // Append language name
+    builder.append(") JAVA/");
+    // Generate string for language version from system properties and append it
+    String languageVersion =
+        (SnowflakeUtil.systemGetProperty("java.version") != null) ? SnowflakeUtil.systemGetProperty("java.version") :
+        "";
+    builder.append(languageVersion);
+    String userAgent = builder.toString();
+    return userAgent;
+  }
+
+  /**
    * Build an Http client using our set of default.
    *
    * @param ocspMode           OCSP mode
@@ -205,7 +239,7 @@ public class HttpUtil
           // Support JVM proxy settings
           .useSystemProperties()
           .setRedirectStrategy(new DefaultRedirectStrategy())
-          .setUserAgent("-")     // needed for Okta
+          .setUserAgent(buildUserAgent())     // needed for Okta
           .disableCookieManagement(); // SNOW-39748
 
       if (useProxy)
