@@ -42,7 +42,7 @@
     <jsoup.version>1.11.3</jsoup.version>
     <tika.version>1.22</tika.version>
     <jackson.version>2.9.10</jackson.version>
-    <jacksondatabind.version>2.9.10.3</jacksondatabind.version>
+    <jacksondatabind.version>2.9.10.4</jacksondatabind.version>
     <httpclient.version>4.5.5</httpclient.version>
     <powermock.version>1.7.4</powermock.version>
     <jacoco.version>0.8.4</jacoco.version>
