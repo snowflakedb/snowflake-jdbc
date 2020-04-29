@@ -45,12 +45,12 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadFactory;
@@ -137,7 +137,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
   private static final AtomicLong currentMemoryUsage = new AtomicLong();
 
   // used to track the downloading threads
-  private Map<Integer, Future> downloaderFutures = new HashMap<>();
+  private Map<Integer, Future> downloaderFutures = new ConcurrentHashMap<Integer, Future>();
 
   /**
    * query result format
