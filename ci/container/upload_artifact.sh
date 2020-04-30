@@ -20,7 +20,7 @@ cat > $COMMIT_FILE <<COMMIT_FILE_CONTENTS
 ${GIT_COMMIT}
 COMMIT_FILE_CONTENTS
 
-latest_commit_file=$target_stage/latest_commit
+latest_commit_file=$(dirname $target_stage)/latest_commit
 echo "[INFO] updating ${latest_commit_file}"
 aws s3 cp --only-show-errors $COMMIT_FILE $latest_commit_file
 rm -f $COMMIT_FILE

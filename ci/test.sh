@@ -8,9 +8,10 @@ JDBC_ROOT="$(cd "${THIS_DIR}/.." && pwd)"
 
 source ${THIS_DIR}/_init.sh
 source ${THIS_DIR}/scripts/login_internal_docker.sh
+source $THIS_DIR/scripts/set_git_info.sh
 
 WORKSPACE=${WORKSPACE:-/tmp/jdbc_test_output}
-[[ ! -d ${WORKSPACE} ]] && mkdir -p ${WORKSPACE}
+mkdir -p ${WORKSPACE}
 
 if [[ -z "$GITHUB_ACTIONS" ]]; then
     export GIT_BRANCH=${client_git_branch:-origin/$(git rev-parse --abbrev-ref HEAD)}
@@ -47,8 +48,8 @@ fi
 nslookup ${SF_REGRESS_GLOBAL_SERVICES_IP}
 
 for name in "${!TARGET_TEST_IMAGES[@]}"; do
-    echo "[INFO] Building $DRIVER_NAME on $name"
-    docker pull "${TEST_IMAGE_NAMES[$name]}"
+    echo "[INFO] Testing $DRIVER_NAME on $name"
+    # docker pull "${TEST_IMAGE_NAMES[$name]}"
     docker container run \
         --rm \
         -v ${JDBC_ROOT}:/mnt/host \
