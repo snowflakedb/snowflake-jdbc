@@ -10,6 +10,8 @@ if [[ -z "$GITHUB_ACTIONS" ]]; then
     export client_git_branch=${client_git_branch:-origin/$(git rev-parse --abbrev-ref HEAD)}
     export client_git_commit=${client_git_commit:-$(git log --pretty=oneline | head -1 | awk '{print $1}')}
 else
+    #
+    # GITHUB Actions
     if [[ "$CLOUD_PROVIDER" == "AZURE" ]]; then
         gpg --quiet --batch --yes --decrypt --passphrase="$PARAMETERS_SECRET" --output $THIS_DIR/../parameters.json $THIS_DIR/../.github/workflows/parameters_azure.json.gpg
     elif [[ "$CLOUD_PROVIDER" == "GCP" ]]; then

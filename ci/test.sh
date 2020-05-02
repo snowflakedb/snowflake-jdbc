@@ -6,25 +6,13 @@ set -o pipefail
 THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 JDBC_ROOT="$(cd "${THIS_DIR}/.." && pwd)"
 
-source ${THIS_DIR}/_init.sh
-source ${THIS_DIR}/scripts/login_internal_docker.sh
+source $THIS_DIR/_init.sh
+source $THIS_DIR/scripts/login_internal_docker.sh
 source $THIS_DIR/scripts/set_git_info.sh
 
 WORKSPACE=${WORKSPACE:-/tmp/jdbc_test_output}
 mkdir -p ${WORKSPACE}
 
-if [[ -z "$GITHUB_ACTIONS" ]]; then
-    export GIT_BRANCH=${client_git_branch:-origin/$(git rev-parse --abbrev-ref HEAD)}
-    export GIT_COMMIT=${client_git_commit:-$(git rev-parse HEAD)}
-else
-    export GIT_BRANCH=origin/$(basename ${GITHUB_REF})
-    export GIT_COMMIT=${GITHUB_SHA}
-fi
-
-# This is based on the assumption that the regression is running on the same
-# host as the container's host
-SF_REGRESS_GLOBAL_SERVICES_IP=${SF_REGRESS_GLOBAL_SERVICES_IP:-"snowflake.reg.local"}
-SF_REGRESS_GLOBAL_SERVICES_PORT=${SF_REGRESS_GLOBAL_SERVICES_PORT:-8082}
 echo "Use /sbin/ip"
 IP_ADDR=$(/sbin/ip -4 addr show scope global dev eth0 | grep inet | awk '{print $2}' | cut -d / -f 1)
 
@@ -45,7 +33,11 @@ else
     exit 2
 fi
 
-nslookup ${SF_REGRESS_GLOBAL_SERVICES_IP}
+if [[ -z "$JDBC_TEST_CATEGORY" ]]; then
+    echo "[ERROR] Set JDBC_TEST_CATEGORY to the JDBC test category."
+    find $THIS_DIR/../src/test/java -type f -exec grep -E "^import net.snowflake.client.category" {} \; | sort | uniq | awk -F. '{print $NF}' | awk -F\; '{print $1}'
+    exit 2
+fi
 
 for name in "${!TARGET_TEST_IMAGES[@]}"; do
     echo "[INFO] Testing $DRIVER_NAME on $name"
@@ -61,9 +53,11 @@ for name in "${!TARGET_TEST_IMAGES[@]}"; do
         -e BUILD_NUMBER \
         -e GIT_BRANCH \
         -e GIT_COMMIT \
-        -e SF_REGRESS_GLOBAL_SERVICES_IP \
-        -e SF_REGRESS_GLOBAL_SERVICES_PORT \
-        --add-host=${SF_REGRESS_GLOBAL_SERVICES_IP}:${IP_ADDR} \
+        -e JDBC_TEST_CATEGORY \
+        --add-host=snowflake.reg.local:${IP_ADDR} \
+        --add-host=s3testaccount.reg.local:${IP_ADDR} \
+        --add-host=azureaccount.reg.local:${IP_ADDR} \
+        --add-host=gcpaccount.reg.local:${IP_ADDR} \
         ${TEST_IMAGE_NAMES[$name]} \
         /mnt/host/ci/container/test_component.sh
 done

@@ -50,9 +50,18 @@ RUN curl -o - https://downloads.apache.org/maven/maven-3/3.6.3/binaries/apache-m
     ln -s /opt/apache-maven-3.6.3/bin/mvn /usr/local/bin/mvn
 
 # workspace
-
 RUN mkdir -p /home/user && \
     chmod 777 /home/user
 WORKDIR /home/user
+
+COPY pom.xml /root
+COPY dependencies /root/dependencies
+
+RUN cd /root && \
+    mvn -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn \
+        -Dnot-self-contained-jar \
+        --batch-mode --fail-never compile && \
+    mv $HOME/.m2 /home/user && \
+    chmod -R 777 /home/user/.m2
 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

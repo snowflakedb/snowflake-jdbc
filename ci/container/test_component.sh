@@ -25,8 +25,8 @@ export TARGET_SCHEMA_NAME=${RUNNER_TRACKING_ID//-/_}_${GITHUB_SHA}
 env | grep SNOWFLAKE_ | grep -v PASS
 
 cd $SOURCE_ROOT
-mvn -DtravisIT \
-    -DtravisTestCategory=net.snowflake.client.category.TestCategoryOthers \
+mvn -DjenkinsIT \
+    -DtestCategory=net.snowflake.client.category.$JDBC_TEST_CATEGORY \
     -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn \
     -Dnot-self-contained-jar \
     verify \

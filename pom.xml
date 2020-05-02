@@ -53,7 +53,7 @@
     <bouncycastle.version>1.64</bouncycastle.version>
     <jna.version>5.5.0</jna.version>
     <shadeBase>net.snowflake.client.jdbc.internal</shadeBase>
-    <travisTestCategory>net.snowflake.client.category.AllTestCategory</travisTestCategory>
+    <testCategory>net.snowflake.client.category.AllTestCategory</testCategory>
   </properties>
 
   <dependencyManagement>
@@ -875,6 +875,9 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-failsafe-plugin</artifactId>
+            <configuration>
+                <groups>${testCategory}</groups>
+            </configuration>
             <executions>
               <execution>
                 <id>Incident2IT</id>
@@ -1081,7 +1084,7 @@
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-failsafe-plugin</artifactId>
             <configuration>
-                <groups>${travisTestCategory}</groups>
+                <groups>${testCategory}</groups>
             </configuration>
             <executions>
               <execution>

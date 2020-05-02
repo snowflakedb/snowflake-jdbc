@@ -349,10 +349,11 @@ public class PreparedStatement2IT extends PreparedStatement0IT
       {
         try (Connection connection = init())
         {
+          connection.createStatement().execute("create or replace table t(c1 string) as select 1");
           connection.createStatement().execute(
               "alter session set jdbc_enable_combined_describe=true");
           try (PreparedStatement prepStatement = connection.prepareStatement(
-              "select c1 from orders order by c1 limit 1"))
+              "select c1 from t order by c1 limit 1"))
           {
             Thread.sleep(5000);
             try (ResultSet resultSet = prepStatement.executeQuery())
@@ -361,6 +362,7 @@ public class PreparedStatement2IT extends PreparedStatement0IT
               assertThat(resultSet.getInt(1), is(1));
             }
           }
+          connection.createStatement().execute("drop table if exists t");
         }
       }
       finally

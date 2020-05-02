@@ -86,8 +86,6 @@ public class FlatfileReadMultithreadIT
       testConnection.createStatement().execute(String.format(
           "DROP TABLE IF EXISTS %s.%s.%s", TARGET_DB, TARGET_SCHEMA, targetTable));
     }
-    System.out.println("Finished!");
-
   }
 
 }
@@ -167,7 +165,6 @@ class FlatfileRead implements Runnable
     underTest.close();
     assertThat("must be no error", _resultListener.getErrorCount(), equalTo(0));
     assertThat("total number of rows", _resultListener.getSubmittedRowCount(), equalTo(this.totalRows));
-    System.out.println(Thread.currentThread().getName() + " END " + new Date(System.currentTimeMillis()));
   }
 }
 

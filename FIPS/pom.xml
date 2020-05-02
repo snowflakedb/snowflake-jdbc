@@ -52,7 +52,7 @@
     <google.http.client.version>1.33.0</google.http.client.version>
     <jna.version>5.5.0</jna.version>
     <shadeBase>net.snowflake.client.jdbc.internal</shadeBase>
-    <travisTestCategory>net.snowflake.client.category.AllTestCategory</travisTestCategory>
+    <testCategory>net.snowflake.client.category.AllTestCategory</testCategory>
   </properties>
 
   <dependencyManagement>
