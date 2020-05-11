@@ -1,3 +1,16 @@
+**JDBC Driver 3.12.5**
+
+- \| SNOW-115446 | JDBC: Wrong File Name When Using compressAndUploadStream Method on GCP Deployment
+- \| SNOW-152637 | Investigate/add metrics to see when asynchronous querying is used
+- \| SNOW-150593 | Snowflake throws ConcurrentModificationException when attempting to close resultSets #212
+- \| SNOW-153278 | Confirm IDToken presence in JDBC Debug Logs
+- \| SNOW-154633 | Create javadoc of JDBC and add all JDBC licenses in it
+- \| SNOW-154927 | CVE-2020-10969 CVE-2020-9546 CVE-2020-11620 CVE-2020-10672: Vulnerable versions: >= 2.9.0, <= 2.9.10.3 Patched version: 2.9.10.4
+- \| SNOW-156092 | Fix Spark/JDBC nullpointer error in getObject()
+- \| SNOW-158363 | Snowflake Authentication Token sneaking through secret detector in logs
+- \| SNOW-155630 | Fix some async query PrPr issues and add metadata retrieval
+- \      
+
 **JDBC Driver 3.12.4**
 
 - \| SNOW-146005 | Spring JDBC bug for Snowflake
