@@ -351,24 +351,21 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection
         sfSession = null;
       }
       // make sure to close all created statements
-      synchronized (openStatements)
+      for (Statement stmt : openStatements)
       {
-        for (Statement stmt : openStatements)
+        if (stmt != null && !stmt.isClosed())
         {
-          if (stmt != null && !stmt.isClosed())
+          if (stmt.isWrapperFor(SnowflakeStatementV1.class))
           {
-            if (stmt.isWrapperFor(SnowflakeStatementV1.class))
-            {
-              stmt.unwrap(SnowflakeStatementV1.class).close(false);
-            }
-            else
-            {
-              stmt.close();
-            }
+            stmt.unwrap(SnowflakeStatementV1.class).close(false);
+          }
+          else
+          {
+            stmt.close();
           }
         }
-        openStatements.clear();
       }
+      openStatements.clear();
 
     }
     catch (SFException ex)
