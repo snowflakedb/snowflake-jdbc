@@ -258,6 +258,12 @@ public class SnowflakeUtil
                                         "Unknown column type: " + internalColTypeName);
     }
 
+    JsonNode extColTypeNameNode = colNode.path("extTypeName");
+    if (!extColTypeNameNode.isMissingNode())
+    {
+      extColTypeName = extColTypeNameNode.asText();
+    }
+
     String colSrcDatabase = colNode.path("database").asText();
     String colSrcSchema = colNode.path("schema").asText();
     String colSrcTable = colNode.path("table").asText();
