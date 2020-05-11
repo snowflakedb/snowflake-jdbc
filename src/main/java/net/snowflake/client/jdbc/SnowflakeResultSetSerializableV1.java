@@ -170,6 +170,7 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
   long sendResultTime;
   List<MetaDataOfBinds> metaDataOfBinds = new ArrayList<>();
   QueryResultFormat queryResultFormat;
+  boolean treatNTZAsUTC;
 
   // Below fields are transient, they are generated from parameters
   transient TimeZone timeZone;
@@ -224,6 +225,7 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
     this.resultSetType = toCopy.resultSetType;
     this.resultSetConcurrency = toCopy.resultSetConcurrency;
     this.resultSetHoldability = toCopy.resultSetHoldability;
+    this.treatNTZAsUTC = toCopy.treatNTZAsUTC;
 
     // Below are some metadata fields parsed from the result JSON node
     this.queryId = toCopy.queryId;
@@ -498,6 +500,11 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
     return firstChunkStringData;
   }
 
+  public boolean getTreatNTZAsUTC()
+  {
+    return treatNTZAsUTC;
+  }
+
   /**
    * A factory function to create SnowflakeResultSetSerializable object
    * from result JSON node.
@@ -670,6 +677,8 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
         sfSession.getNetworkTimeoutInMilli();
     resultSetSerializable.isResultColumnCaseInsensitive =
         sfSession.isResultColumnCaseInsensitive();
+    resultSetSerializable.treatNTZAsUTC =
+        sfSession.getTreatNTZAsUTC();
 
     // setup transient fields from parameter
     resultSetSerializable.setupFieldsFromParameters();

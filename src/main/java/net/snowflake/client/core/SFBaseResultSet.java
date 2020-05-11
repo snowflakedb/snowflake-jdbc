@@ -48,6 +48,7 @@ public abstract class SFBaseResultSet
   SnowflakeDateTimeFormat dateFormatter;
   SnowflakeDateTimeFormat timeFormatter;
   boolean honorClientTZForTimestampNTZ = true;
+
   SFBinaryFormat binaryFormatter;
 
   protected long resultVersion = 0;
@@ -61,6 +62,7 @@ public abstract class SFBaseResultSet
 
   // indicate whether the result set has been closed or not.
   protected boolean isClosed;
+
 
   // The serializable object which can serialize the metadata for this
   // result set
