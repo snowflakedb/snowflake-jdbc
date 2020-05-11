@@ -693,7 +693,17 @@ public class ArrowResultChunk extends SnowflakeResultChunk
         }
         else
         {
-          bitVectorLeft.setSafe(offset + i, bitVectorRight.get(i));
+          try
+          {
+            bitVectorLeft.setSafe(offset + i, bitVectorRight.get(i));
+          }
+          catch (IndexOutOfBoundsException e)
+          {
+            // this can be a bug in arrow that doesn't safely set value for
+            // BitVector so we have to reAlloc manually
+            bitVectorLeft.reAlloc();
+            bitVectorLeft.setSafe(offset + i, bitVectorRight.get(i));
+          }
         }
       }
       bitVectorLeft.setValueCount(offset + bitVectorRight.getValueCount());
