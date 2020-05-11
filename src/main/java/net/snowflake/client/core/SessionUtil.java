@@ -38,6 +38,9 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -45,10 +48,13 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static net.snowflake.client.core.SFTrustManager.resetOCSPResponseCacherServerURL;
+import static net.snowflake.client.jdbc.ErrorCode.INVALID_APP_NAME;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
 /**
@@ -290,6 +296,36 @@ public class SessionUtil
     return false;
   }
 
+  protected static String getApplication(String currentApp) throws SQLException
+  {
+    String appName = currentApp;
+    if (Strings.isNullOrEmpty(currentApp))
+    {
+      appName = systemGetProperty("sun.java.command");
+      // remove the arguments
+      if (appName != null)
+      {
+        int spaceIndex = appName.indexOf(" ");
+        if (spaceIndex > 0)
+        {
+          appName = appName.substring(0, spaceIndex);
+        }
+        // trim off path so that character count will be under 50
+        Path path = Paths.get(appName);
+        appName = path.getFileName().toString();
+      }
+    }
+    Pattern p = Pattern.compile("^[\\w.-]+$");
+    Matcher matcher = p.matcher(appName);
+    if (!matcher.matches() || appName.length() > 50)
+    {
+      throw new SQLException(
+          "Invalid application name " + appName +
+          ". Must be <=50 chars and comply with regex \"^[\\\\w.-]+$\"", SqlState.INVALID_PARAMETER_VALUE, INVALID_APP_NAME.getMessageCode());
+    }
+    return appName;
+  }
+
   static private SFLoginOutput newSession(SFLoginInput loginInput)
   throws SFException, SnowflakeSQLException
   {
@@ -458,26 +494,13 @@ public class SessionUtil
       clientEnv.put("JAVA_VM", systemGetProperty("java.vm.name"));
       clientEnv.put("OCSP_MODE", loginInput.getOCSPMode().name());
 
-      if (loginInput.getApplication() != null)
+      // When you add new client environment info, please add new keys to
+      // messages_en_US.src.json so that they can be displayed properly in UI
+      // detect app name
+      String appName = getApplication(loginInput.getApplication());
+      if (appName != null)
       {
-        clientEnv.put("APPLICATION", loginInput.getApplication());
-      }
-      else
-      {
-        // When you add new client environment info, please add new keys to
-        // messages_en_US.src.json so that they can be displayed properly in UI
-        // detect app name
-        String appName = systemGetProperty("sun.java.command");
-        // remove the arguments
-        if (appName != null)
-        {
-          if (appName.indexOf(" ") > 0)
-          {
-            appName = appName.substring(0, appName.indexOf(" "));
-          }
-
-          clientEnv.put("APPLICATION", appName);
-        }
+        clientEnv.put("APPLICATION", appName);
       }
 
       // SNOW-20103: track additional client info in session
