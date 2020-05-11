@@ -111,6 +111,12 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
   private RootAllocator rootAllocator;
 
   /**
+   * If customer wants Timestamp_NTZ values to be stored in UTC time
+   * instead of a local/session timezone, set to true
+   */
+  private boolean treatNTZAsUTC;
+
+  /**
    * Constructor takes a result from the API response that we get from
    * executing a SQL statement.
    * <p>
@@ -135,6 +141,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     session.setSchema(resultSetSerializable.getFinalSchemaName());
     session.setRole(resultSetSerializable.getFinalRoleName());
     session.setWarehouse(resultSetSerializable.getFinalWarehouseName());
+    treatNTZAsUTC = resultSetSerializable.getTreatNTZAsUTC();
 
     // update the driver/session with common parameters from GS
     SessionUtil
@@ -194,6 +201,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
         resultSetSerializable.isHonorClientTZForTimestampNTZ();
     this.binaryFormatter = resultSetSerializable.getBinaryFormatter();
     this.resultSetMetaData = resultSetSerializable.getSFResultSetMetaData();
+    this.treatNTZAsUTC = resultSetSerializable.getTreatNTZAsUTC();
 
     // sort result set if needed
     String rowsetBase64 = resultSetSerializable.getFirstChunkStringData();
@@ -567,7 +575,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
         currentChunkIterator.getCurrentConverter(columnIndex - 1);
     int index = currentChunkIterator.getCurrentRowInRecordBatch();
     wasNull = converter.isNull(index);
-    converter.setTreatNTZAsUTC(session.getTreatNTZAsUTC());
+    converter.setTreatNTZAsUTC(treatNTZAsUTC);
     return converter.toObject(index);
   }
 

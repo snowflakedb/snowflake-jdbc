@@ -508,7 +508,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet
       }
       // If timestamp type is NTZ and JDBC_TREAT_TIMESTAMP_NTZ_AS_UTC=true, keep
       // timezone in UTC to avoid daylight savings errors
-      if (session.getTreatNTZAsUTC() &&
+      if (resultSetSerializable.getTreatNTZAsUTC() &&
           resultSetMetaData.getInternalColumnType(columnIndex) == Types.TIMESTAMP &&
           columnType != SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_LTZ &&
           columnType != SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_TZ)
@@ -524,7 +524,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet
       // If JDBC_TREAT_TIMESTAMP_NTZ_AS_UTC=false, default behavior is to honor
       // client timezone for NTZ time. Move NTZ timestamp offset to correspond to
       // client's timezone
-      if (!session.getTreatNTZAsUTC() && honorClientTZForTimestampNTZ &&
+      if (!resultSetSerializable.getTreatNTZAsUTC() && honorClientTZForTimestampNTZ &&
           resultSetMetaData.getInternalColumnType(columnIndex) == Types.TIMESTAMP)
       {
         res = sfTS.moveToTimeZone(tz).getTimestamp();
