@@ -3786,7 +3786,6 @@ public class SnowflakeDriverIT extends BaseJDBCTest
   {
     Connection connection = null;
     Statement regularStatement = null;
-    ResultSet resultSet = null;
 
     try
     {
@@ -3804,52 +3803,53 @@ public class SnowflakeDriverIT extends BaseJDBCTest
       regularStatement.execute(
           "insert into t_geo values ('POINT(0 0)'), ('LINESTRING(1 1, 2 2)')");
 
-      regularStatement.execute(
-          "alter session set GEOGRAPHY_OUTPUT_FORMAT='geojson'");
+      testGeoOutputTypeSingle(
+          regularStatement,
+          false,
+          "geoJson",
+          "OBJECT",
+          "java.lang.String",
+          Types.VARCHAR);
 
-      resultSet = regularStatement.executeQuery("select * from t_geo");
+      testGeoOutputTypeSingle(
+          regularStatement,
+          true,
+          "geoJson",
+          "GEOGRAPHY",
+          "java.lang.String",
+          Types.VARCHAR);
 
-      ResultSetMetaData metadata = resultSet.getMetaData();
+      testGeoOutputTypeSingle(
+          regularStatement,
+          false,
+          "wkt",
+          "VARCHAR",
+          "java.lang.String",
+          Types.VARCHAR);
 
-      assertEquals(1, metadata.getColumnCount());
+      testGeoOutputTypeSingle(
+          regularStatement,
+          true,
+          "wkt",
+          "GEOGRAPHY",
+          "java.lang.String",
+          Types.VARCHAR);
 
-      // GeoJSON: SQL type OBJECT, Java type String
-      assertEquals(metadata.getColumnTypeName(1), "OBJECT");
-      assertEquals(metadata.getColumnClassName(1), "java.lang.String");
+      testGeoOutputTypeSingle(
+          regularStatement,
+          false,
+          "wkb",
+          "BINARY",
+          "[B",
+          Types.BINARY);
 
-      resultSet.close();
-
-
-      regularStatement.execute(
-          "alter session set GEOGRAPHY_OUTPUT_FORMAT='wkt'");
-
-      resultSet = regularStatement.executeQuery("select * from t_geo");
-
-      metadata = resultSet.getMetaData();
-
-      assertEquals(1, metadata.getColumnCount());
-
-      // WKT: SQL type VARCHAR, Java type String
-      assertEquals("VARCHAR", metadata.getColumnTypeName(1));
-      assertEquals("java.lang.String", metadata.getColumnClassName(1));
-
-      resultSet.close();
-
-
-      regularStatement.execute(
-          "alter session set GEOGRAPHY_OUTPUT_FORMAT='wkb'");
-
-      resultSet = regularStatement.executeQuery("select * from t_geo");
-
-      metadata = resultSet.getMetaData();
-
-      assertEquals(1, metadata.getColumnCount());
-
-      // WKB: SQL type BINARY, Java type byte[]
-      assertEquals("BINARY", metadata.getColumnTypeName(1));
-      assertEquals("[B", metadata.getColumnClassName(1));
-
-      resultSet.close();
+      testGeoOutputTypeSingle(
+          regularStatement,
+          true,
+          "wkb",
+          "GEOGRAPHY",
+          "[B",
+          Types.BINARY);
     }
     finally
     {
@@ -3859,7 +3859,51 @@ public class SnowflakeDriverIT extends BaseJDBCTest
         regularStatement.close();
       }
 
-      closeSQLObjects(resultSet, null, connection);
+      if (connection != null)
+      {
+        connection.close();
+      }
+    }
+  }
+
+  private void testGeoOutputTypeSingle(
+      Statement regularStatement,
+      boolean enableExternalTypeNames,
+      String outputFormat,
+      String expectedColumnTypeName,
+      String expectedColumnClassName,
+      int expectedColumnType)
+      throws Throwable
+  {
+    ResultSet resultSet = null;
+
+    try
+    {
+      regularStatement.execute(
+          "alter session set GEOGRAPHY_OUTPUT_FORMAT='" + outputFormat + "'");
+
+      regularStatement.execute(
+          "alter session set ENABLE_UDT_EXTERNAL_TYPE_NAMES=" +
+              enableExternalTypeNames);
+
+      resultSet = regularStatement.executeQuery("select * from t_geo");
+
+      ResultSetMetaData metadata = resultSet.getMetaData();
+
+      assertEquals(1, metadata.getColumnCount());
+
+      // GeoJSON: SQL type OBJECT, Java type String
+      assertEquals(expectedColumnTypeName, metadata.getColumnTypeName(1));
+      assertEquals(expectedColumnClassName, metadata.getColumnClassName(1));
+      assertEquals(expectedColumnType, metadata.getColumnType(1));
+
+    }
+    finally
+    {
+      if (resultSet != null)
+      {
+        resultSet.close();
+      }
     }
   }
 
