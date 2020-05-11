@@ -18,7 +18,7 @@
 - \| SNOW-153256 | Add more verbose error handling to telemetry services
 - \| SNOW-86734 | Add client information to USER-AGENT HTTP header
 - \| SNOW-153485 | Implemented asynchronous querying in JDBC driver
-- \      
+- \| SNOW-143877 | Support for a custom type name in ResultSetMetadata.getColumnTypeName(); to be used for new types.      
 
 **JDBC Driver 3.12.3**
 
