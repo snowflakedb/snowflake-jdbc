@@ -44,8 +44,8 @@ for name in "${!TARGET_TEST_IMAGES[@]}"; do
     # docker pull "${TEST_IMAGE_NAMES[$name]}"
     docker container run \
         --rm \
-        -v ${JDBC_ROOT}:/mnt/host \
-        -v ${WORKSPACE}:/mnt/workspace \
+        -v $JDBC_ROOT:/mnt/host \
+        -v $WORKSPACE:/mnt/workspace \
         -e LOCAL_USER_ID=$(id -u ${USER}) \
         -e AWS_ACCESS_KEY_ID \
         -e AWS_SECRET_ACCESS_KEY \
