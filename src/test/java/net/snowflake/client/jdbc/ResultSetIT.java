@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All right reserved.
+ * Copyright (c) 2012-2020 Snowflake Computing Inc. All right reserved.
  */
 package net.snowflake.client.jdbc;
 
@@ -725,16 +725,15 @@ public class ResultSetIT extends BaseJDBCTest
 
     statement.execute("create or replace table test_rsmd(colA number(20, 5), colB string)");
     statement.execute("insert into test_rsmd values(1.00, 'str'),(2.00, 'str2')");
-
     ResultSet resultSet = statement.executeQuery("select * from test_rsmd");
     ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
-
     assertEquals(params.get("database").toUpperCase(),
                  resultSetMetaData.getCatalogName(1).toUpperCase());
     assertEquals(params.get("schema").toUpperCase(),
                  resultSetMetaData.getSchemaName(1).toUpperCase());
     assertEquals("TEST_RSMD", resultSetMetaData.getTableName(1));
-    assertEquals(String.class.getName(), resultSetMetaData.getColumnClassName(2));
+    assertEquals(String.class.getName(),
+                 resultSetMetaData.getColumnClassName(2));
     assertEquals(2, resultSetMetaData.getColumnCount());
     assertEquals(22, resultSetMetaData.getColumnDisplaySize(1));
     assertEquals("COLA", resultSetMetaData.getColumnLabel(1));
@@ -747,19 +746,21 @@ public class ResultSetIT extends BaseJDBCTest
     assertFalse(resultSetMetaData.isCaseSensitive(1));
     assertFalse(resultSetMetaData.isCurrency(1));
     assertFalse(resultSetMetaData.isDefinitelyWritable(1));
-    assertEquals(ResultSetMetaData.columnNullable, resultSetMetaData.isNullable(1));
+    assertEquals(ResultSetMetaData.columnNullable,
+                 resultSetMetaData.isNullable(1));
     assertTrue(resultSetMetaData.isReadOnly(1));
     assertTrue(resultSetMetaData.isSearchable(1));
     assertTrue(resultSetMetaData.isSigned(1));
-
-    SnowflakeResultSetMetaData secretMetaData = resultSetMetaData.unwrap(SnowflakeResultSetMetaData.class);
-    assertTrue(Pattern.matches("[a-z0-9]{8}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{12}",
-                               secretMetaData.getQueryID()));
+    SnowflakeResultSetMetaData secretMetaData =
+        resultSetMetaData.unwrap(SnowflakeResultSetMetaData.class);
     List<String> colNames = secretMetaData.getColumnNames();
     assertEquals("COLA", colNames.get(0));
     assertEquals("COLB", colNames.get(1));
     assertEquals(Types.DECIMAL, secretMetaData.getInternalColumnType(1));
     assertEquals(Types.VARCHAR, secretMetaData.getInternalColumnType(2));
+    assertTrue(Pattern
+                   .matches("[a-z0-9]{8}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{12}",
+                            secretMetaData.getQueryID()));
 
     statement.execute("drop table if exists test_rsmd");
     statement.close();

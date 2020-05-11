@@ -18,15 +18,31 @@ import java.util.List;
  */
 class SnowflakeResultSetMetaDataV1 implements ResultSetMetaData, SnowflakeResultSetMetaData
 {
+
+  public enum QueryType
+  {
+    ASYNC,
+    SYNC
+  }
+
+  ;
   static final
   SFLogger logger = SFLoggerFactory.getLogger(SnowflakeResultSetMetaDataV1.class);
 
   private SFResultSetMetaData resultSetMetaData;
+  private String queryId;
+  private QueryType queryType = QueryType.SYNC;
 
   SnowflakeResultSetMetaDataV1(SFResultSetMetaData resultSetMetaData)
   throws SnowflakeSQLException
   {
     this.resultSetMetaData = resultSetMetaData;
+    this.queryId = resultSetMetaData.getQueryId();
+  }
+
+  public void setQueryType(QueryType type)
+  {
+    this.queryType = type;
   }
 
   /**
@@ -34,7 +50,18 @@ class SnowflakeResultSetMetaDataV1 implements ResultSetMetaData, SnowflakeResult
    */
   public String getQueryID() throws SQLException
   {
-    return resultSetMetaData.getQueryId();
+    return this.queryId;
+  }
+
+  /**
+   * Override the original query ID to provide the accurate query ID for metadata
+   * produced from an SFAsyncResultSet. The original query ID is from the
+   * result_scan query. The user expects to retrieve the query ID from the
+   * original query instead.
+   */
+  public void setQueryIdForAsyncResults(String queryId)
+  {
+    this.queryId = queryId;
   }
 
   /**
@@ -218,19 +245,31 @@ class SnowflakeResultSetMetaDataV1 implements ResultSetMetaData, SnowflakeResult
   @Override
   public String getCatalogName(int column) throws SQLException
   {
-    return resultSetMetaData.getCatalogName(column);
+    if (this.queryType == QueryType.SYNC)
+    {
+      return resultSetMetaData.getCatalogName(column);
+    }
+    return "";
   }
 
   @Override
   public String getSchemaName(int column) throws SQLException
   {
-    return resultSetMetaData.getSchemaName(column);
+    if (this.queryType == QueryType.SYNC)
+    {
+      return resultSetMetaData.getSchemaName(column);
+    }
+    return "";
   }
 
   @Override
   public String getTableName(int column) throws SQLException
   {
-    return resultSetMetaData.getTableName(column);
+    if (this.queryType == QueryType.SYNC)
+    {
+      return resultSetMetaData.getTableName(column);
+    }
+    return "";
   }
 
   @Override
@@ -238,4 +277,5 @@ class SnowflakeResultSetMetaDataV1 implements ResultSetMetaData, SnowflakeResult
   {
     return resultSetMetaData.getColumnDisplaySize(column);
   }
+
 }

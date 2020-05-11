@@ -39,6 +39,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
+import static net.snowflake.client.core.QueryStatus.getStatusFromString;
+import static net.snowflake.client.core.QueryStatus.isAnError;
+
 /**
  * Snowflake session implementation
  */
@@ -320,13 +323,37 @@ public class SFSession
     }
     JsonNode queryNode = jsonNode.path("data").path("queries");
     String queryStatus = "";
+    String errorMessage = "";
+    int errorCode = 0;
     if (queryNode.size() > 0)
     {
       queryStatus = queryNode.get(0).path("status").asText();
+      errorMessage = queryNode.get(0).path("errorMessage").asText();
+      errorCode = queryNode.get(0).path("errorCode").asInt();
     }
     logger.debug("Query status: {}", queryNode.asText());
     // Turn string with query response into QueryStatus enum and return it
-    return QueryStatus.getStatusFromString(queryStatus);
+    QueryStatus result = getStatusFromString(queryStatus);
+    // if an error code has been provided, set appropriate error code
+    if (errorCode != 0)
+    {
+      result.setErrorCode(errorCode);
+    }
+    // if no code was provided but query status indicates an error, set
+    // code to be an internal error and set error message
+    else if (isAnError(result))
+    {
+      result.setErrorCode(ErrorCode.INTERNAL_ERROR.getMessageCode());
+      result.setErrorMessage("no_error_code_from_server");
+    }
+    // if an error message has been provided, set appropriate error message.
+    // This should override the default error message displayed when there is
+    // an error with no code.
+    if (!Strings.isNullOrEmpty(errorMessage) && !errorMessage.equalsIgnoreCase("null"))
+    {
+      result.setErrorMessage(errorMessage);
+    }
+    return result;
   }
 
 
