@@ -494,6 +494,9 @@
         <version>3.1.0</version>
         <configuration>
           <source>8</source>
+          <overview>${project.basedir}/src/main/javadoc/overview.html</overview>
+          <stylesheet>java</stylesheet>
+          <helpfile>${project.basedir}/src/main/javadoc/licenses.html</helpfile>
         </configuration>
         <executions>
           <execution>
