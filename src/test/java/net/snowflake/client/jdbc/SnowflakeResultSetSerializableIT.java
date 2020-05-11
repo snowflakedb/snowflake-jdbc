@@ -13,23 +13,21 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Properties;
 
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-
-import java.util.ArrayList;
-import java.util.List;
-
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.util.Properties;
 
 /**
  * SnowflakeResultSetSerializable tests
@@ -103,7 +101,15 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
     {
       for (int i = 1; i <= colCount; i++)
       {
-        builder.append("\"").append(rs.getString(i)).append("\",");
+        rs.getObject(i);
+        if (rs.wasNull())
+        {
+          builder.append("\"").append("null").append("\",");
+        }
+        else
+        {
+          builder.append("\"").append(rs.getString(i)).append("\",");
+        }
       }
       builder.append("\n");
     }
@@ -237,7 +243,15 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
       {
         for (int i = 1; i <= colCount; i++)
         {
-          builder.append("\"").append(rs.getString(i)).append("\",");
+          rs.getObject(i);
+          if (rs.wasNull())
+          {
+            builder.append("\"").append("null").append("\",");
+          }
+          else
+          {
+            builder.append("\"").append(rs.getString(i)).append("\",");
+          }
         }
         builder.append("\n");
       }
