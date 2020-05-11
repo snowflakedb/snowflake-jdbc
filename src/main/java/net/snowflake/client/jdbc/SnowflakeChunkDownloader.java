@@ -5,8 +5,6 @@
 package net.snowflake.client.jdbc;
 
 import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.MappingJsonFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.snowflake.client.core.ChunkDownloader;
@@ -31,26 +29,20 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.PushbackInputStream;
-import java.io.SequenceInputStream;
 import java.io.StringWriter;
 import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadFactory;
@@ -137,7 +129,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
   private static final AtomicLong currentMemoryUsage = new AtomicLong();
 
   // used to track the downloading threads
-  private Map<Integer, Future> downloaderFutures = new HashMap<>();
+  private Map<Integer, Future> downloaderFutures = new ConcurrentHashMap<>();
 
   /**
    * query result format
