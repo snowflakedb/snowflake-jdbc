@@ -61,6 +61,10 @@ public class SFSession
 
   public static final String SF_HEADER_TOKEN_TAG = "Token";
 
+  // temporarily have this variable to avoid hardcode.
+  // Need to be removed when a better way to organize session parameter is introduced.
+  private static final String CLIENT_STORE_TEMPORARY_CREDENTIAL = "CLIENT_STORE_TEMPORARY_CREDENTIAL";
+
   // increase heartbeat timeout from 60 sec to 300 sec
   // per https://support-snowflake.zendesk.com/agent/tickets/6629
   private static int SF_HEARTBEAT_TIMEOUT = 300;
@@ -563,7 +567,8 @@ public class SFSession
         "passcode_in_passward={}, passcode={}, private_key={}, " +
         "use_proxy={}, proxy_host={}, proxy_port={}, proxy_user={}, proxy_password={}, disable_socks_proxy={}, " +
         "application={}, app_id={}, app_version={}, " +
-        "login_timeout={}, network_timeout={}, query_timeout={}, tracing={}, private_key_file={}, private_key_file_pwd={}",
+        "login_timeout={}, network_timeout={}, query_timeout={}, tracing={}, private_key_file={}, private_key_file_pwd={}. " +
+        "session_parameters: client_store_temporary_credential={}",
         connectionPropertiesMap.get(SFSessionProperty.SERVER_URL),
         connectionPropertiesMap.get(SFSessionProperty.ACCOUNT),
         connectionPropertiesMap.get(SFSessionProperty.USER),
@@ -598,8 +603,11 @@ public class SFSession
         connectionPropertiesMap.get(SFSessionProperty.TRACING),
         connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_FILE),
         !Strings.isNullOrEmpty((String) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_FILE_PWD)) ? "***" :
-        "(empty)"
+        "(empty)",
+        sessionParametersMap.get(CLIENT_STORE_TEMPORARY_CREDENTIAL)
     );
+    // TODO: temporarily hardcode sessionParameter debug info. will be changed in the future
+
     SFLoginInput loginInput = new SFLoginInput();
 
     loginInput.setServerUrl(

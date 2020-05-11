@@ -50,6 +50,7 @@
     <awssdk.version>1.11.364</awssdk.version>
     <google.api.client.version>1.30.5</google.api.client.version>
     <google.http.client.version>1.33.0</google.http.client.version>
+    <jna.version>5.5.0</jna.version>
     <shadeBase>net.snowflake.client.jdbc.internal</shadeBase>
     <travisTestCategory>net.snowflake.client.category.AllTestCategory</travisTestCategory>
   </properties>
@@ -294,6 +295,16 @@
       <groupId>com.google.http-client</groupId>
       <artifactId>google-http-client</artifactId>
       <version>${google.http.client.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>net.java.dev.jna</groupId>
+      <artifactId>jna</artifactId>
+      <version>${jna.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>net.java.dev.jna</groupId>
+      <artifactId>jna-platform</artifactId>
+      <version>${jna.version}</version>
     </dependency>
   </dependencies>
 
@@ -649,6 +660,9 @@
                      <relocation>
                        <pattern>com.sun</pattern>
                        <shadedPattern>${shadeBase}.com.sun</shadedPattern>
+                       <excludes>
+                         <exclude>com.sun.jna.**</exclude>
+                       </excludes>
                      </relocation>
                      <relocation>
                        <pattern>io.netty</pattern>
