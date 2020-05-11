@@ -57,6 +57,9 @@ public class SecretDetector
       "\"privateKeyData\": \"([a-z0-9/+=\\\\n]{10,})\"",
       Pattern.MULTILINE | Pattern.CASE_INSENSITIVE);
 
+  private static final Pattern ID_TOKEN_PATTERN = Pattern.compile(
+      "(token\":\"|token=\")", Pattern.CASE_INSENSITIVE);
+
 
   private static final int LOOK_AHEAD = 10;
 
@@ -223,6 +226,39 @@ public class SecretDetector
     return secretRanges;
   }
 
+  /**
+   * Finds positions of occurrences of idToken in the
+   * given text.
+   *
+   * @param text text which may contain idTokens
+   * @return A list of begin/end positions of password fields
+   */
+  private static List<SecretRange> getIDTokenPos(String text)
+  {
+    Matcher matcher = ID_TOKEN_PATTERN.matcher(
+        text.length() <= MAX_LENGTH ? text : text.substring(0, MAX_LENGTH));
+
+    List<SecretRange> secretRanges = new ArrayList<>();
+
+    while (matcher.find())
+    {
+      int begin = matcher.end();
+      int end = begin + 1;
+      while (end < text.length())
+      {
+        if (text.charAt(end) == '"')
+        {
+          break;
+        }
+        end++;
+      }
+
+      secretRanges.add(new SecretRange(begin, end));
+    }
+
+    return secretRanges;
+  }
+
   private static boolean isBase64(char ch)
   {
     return ('A' <= ch && ch <= 'Z')
@@ -273,6 +309,7 @@ public class SecretDetector
     secretRanges.addAll(SecretDetector.getAWSSecretPos(text));
     secretRanges.addAll(SecretDetector.getSASTokenPos(text));
     secretRanges.addAll(SecretDetector.getPasswordPos(text));
+    secretRanges.addAll(SecretDetector.getIDTokenPos(text));
     text = maskText(text, secretRanges);
     text = filterAccessTokens(text);
     return text;
