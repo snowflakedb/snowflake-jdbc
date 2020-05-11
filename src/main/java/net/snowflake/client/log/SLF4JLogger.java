@@ -27,6 +27,12 @@ public class SLF4JLogger implements SFLogger
     isLocationAwareLogger = slf4jLogger instanceof LocationAwareLogger;
   }
 
+  public SLF4JLogger(String name)
+  {
+    slf4jLogger = LoggerFactory.getLogger(name);
+    isLocationAwareLogger = slf4jLogger instanceof LocationAwareLogger;
+  }
+
   public boolean isDebugEnabled()
   {
     return this.slf4jLogger.isDebugEnabled();

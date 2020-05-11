@@ -11,6 +11,7 @@ import net.snowflake.client.core.SFSessionProperty;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
+import net.snowflake.client.log.SFLoggerUtil;
 import net.snowflake.common.core.LoginInfoDTO;
 import net.snowflake.common.core.SqlState;
 
@@ -58,6 +59,10 @@ import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
  */
 public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection
 {
+  static
+  {
+    SFLoggerUtil.initializeSnowflakeLogger();
+  }
 
   static private final
   SFLogger logger = SFLoggerFactory.getLogger(SnowflakeConnectionV1.class);
