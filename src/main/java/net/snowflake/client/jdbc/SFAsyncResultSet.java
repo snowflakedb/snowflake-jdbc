@@ -39,7 +39,8 @@ import java.util.TimeZone;
 class SFAsyncResultSet extends SnowflakeBaseResultSet implements SnowflakeResultSet, ResultSet
 {
   private final SFBaseResultSet sfBaseResultSet;
-  private ResultSet resultSetForNext = null;
+  private ResultSet resultSetForNext = new EmptyResultSet();
+  private boolean resultSetForNextInitialized = false;
   private String queryID;
   private SFSession session;
   private Statement extraStatement;
@@ -70,6 +71,9 @@ class SFAsyncResultSet extends SnowflakeBaseResultSet implements SnowflakeResult
     {
       this.resultSetMetaData =
           new SnowflakeResultSetMetaDataV1(sfBaseResultSet.getMetaData());
+      this.resultSetMetaData.setQueryIdForAsyncResults(this.queryID);
+      this.resultSetMetaData.setQueryType(
+          SnowflakeResultSetMetaDataV1.QueryType.ASYNC);
     }
     catch (SFException ex)
     {
@@ -101,6 +105,9 @@ class SFAsyncResultSet extends SnowflakeBaseResultSet implements SnowflakeResult
     {
       this.resultSetMetaData =
           new SnowflakeResultSetMetaDataV1(sfBaseResultSet.getMetaData());
+      this.resultSetMetaData.setQueryIdForAsyncResults(this.queryID);
+      this.resultSetMetaData.setQueryType(
+          SnowflakeResultSetMetaDataV1.QueryType.ASYNC);
     }
     catch (SFException ex)
     {
@@ -118,7 +125,7 @@ class SFAsyncResultSet extends SnowflakeBaseResultSet implements SnowflakeResult
   @Override
   protected void raiseSQLExceptionIfResultSetIsClosed() throws SQLException
   {
-    if (isClosed() || (resultSetForNext != null && resultSetForNext.isClosed()))
+    if (isClosed())
     {
       throw new SnowflakeSQLException(ErrorCode.RESULTSET_ALREADY_CLOSED);
     }
@@ -139,15 +146,14 @@ class SFAsyncResultSet extends SnowflakeBaseResultSet implements SnowflakeResult
   }
 
   /**
-   * Advance to next row
+   * helper function for next() and getMetaData(). Calls result_scan
+   * to get resultSet after asynchronous query call
    *
-   * @return true if next row exists, false otherwise
-   * @throws SQLException if failed to move to the next row
+   * @throws SQLException
    */
-  @Override
-  public boolean next() throws SQLException
+  private void getRealResults() throws SQLException
   {
-    if (resultSetForNext == null)
+    if (!resultSetForNextInitialized)
     {
       QueryStatus qs = QueryStatus.NO_DATA;
       int noDataRetry = 0;
@@ -182,8 +188,20 @@ class SFAsyncResultSet extends SnowflakeBaseResultSet implements SnowflakeResult
         }
       }
       resultSetForNext = extraStatement.executeQuery("select * from table(result_scan('" + this.queryID + "'))");
-
+      resultSetForNextInitialized = true;
     }
+  }
+
+  /**
+   * Advance to next row
+   *
+   * @return true if next row exists, false otherwise
+   * @throws SQLException if failed to move to the next row
+   */
+  @Override
+  public boolean next() throws SQLException
+  {
+    getRealResults();
     return resultSetForNext.next();
   }
 
@@ -196,10 +214,7 @@ class SFAsyncResultSet extends SnowflakeBaseResultSet implements SnowflakeResult
   public void close(boolean removeClosedResultSetFromStatement) throws SQLException
   {
     // no SQLException is raised.
-    if (resultSetForNext != null)
-    {
-      resultSetForNext.close();
-    }
+    resultSetForNext.close();
     if (sfBaseResultSet != null)
     {
       sfBaseResultSet.close();
@@ -305,7 +320,12 @@ class SFAsyncResultSet extends SnowflakeBaseResultSet implements SnowflakeResult
   public ResultSetMetaData getMetaData() throws SQLException
   {
     raiseSQLExceptionIfResultSetIsClosed();
-
+    getRealResults();
+    this.resultSetMetaData =
+        (SnowflakeResultSetMetaDataV1) resultSetForNext.unwrap(SnowflakeResultSetV1.class).getMetaData();
+    this.resultSetMetaData.setQueryIdForAsyncResults(this.queryID);
+    this.resultSetMetaData.setQueryType(
+        SnowflakeResultSetMetaDataV1.QueryType.ASYNC);
     return resultSetMetaData;
   }
 
@@ -350,7 +370,11 @@ class SFAsyncResultSet extends SnowflakeBaseResultSet implements SnowflakeResult
   public boolean isClosed() throws SQLException
   {
     // no exception is raised.
-    return (resultSetForNext.isClosed() && sfBaseResultSet.isClosed());
+    if (sfBaseResultSet != null)
+    {
+      return (resultSetForNext.isClosed() && sfBaseResultSet.isClosed());
+    }
+    return resultSetForNext.isClosed();
   }
 
   @Override

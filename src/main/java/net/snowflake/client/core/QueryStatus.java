@@ -26,6 +26,8 @@ public enum QueryStatus
 
   private final int value;
   private final String description;
+  private String errorMessage = "No error reported";
+  private int errorCode = 0;
 
   QueryStatus(int value, String description)
   {
@@ -43,6 +45,26 @@ public enum QueryStatus
     return this.description;
   }
 
+  public String getErrorMessage()
+  {
+    return this.errorMessage;
+  }
+
+  public int getErrorCode()
+  {
+    return this.errorCode;
+  }
+
+  public void setErrorMessage(String message)
+  {
+    this.errorMessage = message;
+  }
+
+  public void setErrorCode(int errorCode)
+  {
+    this.errorCode = errorCode;
+  }
+
   public static boolean isStillRunning(QueryStatus status)
   {
     switch (status.getValue())
@@ -52,6 +74,22 @@ public enum QueryStatus
       case 5: //"QUEUED"
       case 9: //"QUEUED_REPAIRING_WAREHOUSE"
       case 12: //"NO_DATA"
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  public static boolean isAnError(QueryStatus status)
+  {
+    switch (status.getValue())
+    {
+      case 1: // Aborting
+      case 3: // Failed with error
+      case 4: // Aborted
+      case 6: // Failed with incident
+      case 7: // disconnected
+      case 11: // blocked
         return true;
       default:
         return false;
