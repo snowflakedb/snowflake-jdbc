@@ -240,8 +240,19 @@ public class SessionUtil
     }
     if (authenticator.equals(ClientAuthnDTO.AuthenticatorType.EXTERNALBROWSER))
     {
-      // force to set the flag.
-      loginInput.getSessionParameters().put(CLIENT_STORE_TEMPORARY_CREDENTIAL, true);
+      if (Constants.getOS() == Constants.OS.MAC || Constants.getOS() == Constants.OS.WINDOWS)
+      {
+        // force to set the flag for Mac/Windows users
+        loginInput.getSessionParameters().put(CLIENT_STORE_TEMPORARY_CREDENTIAL, true);
+      }
+      else
+      {
+        // Linux should read from JDBC configuration. For other unsupported OS, we set it to false as default value
+        if (!loginInput.getSessionParameters().containsKey(CLIENT_STORE_TEMPORARY_CREDENTIAL))
+        {
+          loginInput.getSessionParameters().put(CLIENT_STORE_TEMPORARY_CREDENTIAL, false);
+        }
+      }
     }
     else
     {
@@ -762,9 +773,9 @@ public class SessionUtil
   /**
    * Delete the id token cache
    */
-  static public void deleteIdTokenCache()
+  static public void deleteIdTokenCache(String host, String user)
   {
-    CredentialManager.getInstance().deleteIdTokenCache();
+    CredentialManager.getInstance().deleteIdTokenCache(host, user);
   }
 
   /**
