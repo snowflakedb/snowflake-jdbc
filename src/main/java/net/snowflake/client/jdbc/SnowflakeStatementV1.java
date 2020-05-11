@@ -994,24 +994,21 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement
     batch.clear();
 
     // also make sure to close all created resultSets from this statement
-    synchronized (openResultSets)
+    for (ResultSet rs : openResultSets)
     {
-      for (ResultSet rs : openResultSets)
+      if (rs != null && !rs.isClosed())
       {
-        if (rs != null && !rs.isClosed())
+        if (rs.isWrapperFor(SnowflakeResultSetV1.class))
         {
-          if (rs.isWrapperFor(SnowflakeResultSetV1.class))
-          {
-            rs.unwrap(SnowflakeResultSetV1.class).close(false);
-          }
-          else
-          {
-            rs.close();
-          }
+          rs.unwrap(SnowflakeResultSetV1.class).close(false);
+        }
+        else
+        {
+          rs.close();
         }
       }
-      openResultSets.clear();
     }
+    openResultSets.clear();
     sfStatement.close();
     if (removeClosedStatementFromConnection)
     {
