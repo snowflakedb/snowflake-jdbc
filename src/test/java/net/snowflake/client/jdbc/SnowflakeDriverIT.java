@@ -3873,7 +3873,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest
       String expectedColumnTypeName,
       String expectedColumnClassName,
       int expectedColumnType)
-      throws Throwable
+  throws Throwable
   {
     ResultSet resultSet = null;
 
@@ -3884,7 +3884,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest
 
       regularStatement.execute(
           "alter session set ENABLE_UDT_EXTERNAL_TYPE_NAMES=" +
-              enableExternalTypeNames);
+          enableExternalTypeNames);
 
       resultSet = regularStatement.executeQuery("select * from t_geo");
 

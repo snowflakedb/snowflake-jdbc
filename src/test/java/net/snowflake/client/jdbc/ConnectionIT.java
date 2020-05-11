@@ -1547,7 +1547,7 @@ public class ConnectionIT extends BaseJDBCTest
     Connection con = getConnection();
     Statement statement = con.createStatement();
     ResultSet rs1 =
-        statement.unwrap(SnowflakeStatement.class).executeAsyncQuery("select count(*) from table(generator(timeLimit => 60))");
+        statement.unwrap(SnowflakeStatement.class).executeAsyncQuery("select count(*) from table(generator(timeLimit => 40))");
     // Retrieve query ID for part 2 of test, check status of query
     String queryID = rs1.unwrap(SnowflakeResultSet.class).getQueryID();
     Thread.sleep(100);
@@ -1564,6 +1564,8 @@ public class ConnectionIT extends BaseJDBCTest
     status = rs.unwrap(SnowflakeResultSet.class).getStatus();
     // Assert status of query is a success
     assertEquals(QueryStatus.SUCCESS, status);
+    assertEquals("No error reported", status.getErrorMessage());
+    assertEquals(0, status.getErrorCode());
     assertEquals(1, getSizeOfResultSet(rs));
     statement = con.createStatement();
     // Create another query that will not be successful (querying table that does not exist)
@@ -1571,6 +1573,10 @@ public class ConnectionIT extends BaseJDBCTest
     Thread.sleep(100);
     status = rs1.unwrap(SnowflakeResultSet.class).getStatus();
     assertEquals(QueryStatus.FAILED_WITH_ERROR, status);
+    assertEquals(2003, status.getErrorCode());
+    assertEquals("SQL compilation error:\n" +
+                 "Object 'NONEXISTENTTABLE' does not exist or not " +
+                 "authorized.", status.getErrorMessage());
     statement.close();
     con.close();
   }
@@ -1646,7 +1652,7 @@ public class ConnectionIT extends BaseJDBCTest
 
     QueryStatus[] otherStatuses = {QueryStatus.ABORTED, QueryStatus.ABORTING, QueryStatus.SUCCESS,
                                    QueryStatus.FAILED_WITH_ERROR, QueryStatus.FAILED_WITH_INCIDENT,
-                                   QueryStatus.DISCONNECTED, QueryStatus.RESTARTED};
+                                   QueryStatus.DISCONNECTED, QueryStatus.RESTARTED, QueryStatus.BLOCKED};
 
     for (QueryStatus qs : runningStatuses)
     {
@@ -1656,6 +1662,28 @@ public class ConnectionIT extends BaseJDBCTest
     for (QueryStatus qs : otherStatuses)
     {
       assertEquals(false, QueryStatus.isStillRunning(qs));
+    }
+  }
+
+  @Test
+  public void testIsAnError()
+  {
+    QueryStatus[] otherStatuses = {QueryStatus.RUNNING, QueryStatus.RESUMING_WAREHOUSE, QueryStatus.QUEUED,
+                                   QueryStatus.QUEUED_REPAIRING_WAREHOUSE, QueryStatus.SUCCESS, QueryStatus.RESTARTED,
+                                   QueryStatus.NO_DATA};
+
+    QueryStatus[] errorStatuses = {QueryStatus.ABORTED, QueryStatus.ABORTING,
+                                   QueryStatus.FAILED_WITH_ERROR, QueryStatus.FAILED_WITH_INCIDENT,
+                                   QueryStatus.DISCONNECTED, QueryStatus.BLOCKED};
+
+    for (QueryStatus qs : errorStatuses)
+    {
+      assertEquals(true, QueryStatus.isAnError(qs));
+    }
+
+    for (QueryStatus qs : otherStatuses)
+    {
+      assertEquals(false, QueryStatus.isAnError(qs));
     }
   }
 
