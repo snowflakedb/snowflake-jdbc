@@ -3,7 +3,7 @@
  */
 package net.snowflake.client.jdbc;
 
-import net.snowflake.client.category.TestCategoryOthers;
+import net.snowflake.client.category.TestCategoryStatement;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -30,7 +30,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(Parameterized.class)
-@Category(TestCategoryOthers.class)
+@Category(TestCategoryStatement.class)
 public class CallableStatementIT extends BaseJDBCTest
 {
   @Parameterized.Parameters

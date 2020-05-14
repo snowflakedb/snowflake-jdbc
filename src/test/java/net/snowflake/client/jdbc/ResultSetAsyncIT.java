@@ -4,7 +4,7 @@
 
 package net.snowflake.client.jdbc;
 
-import net.snowflake.client.category.TestCategoryOthers;
+import net.snowflake.client.category.TestCategoryResultSet;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -25,7 +25,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * Test AsyncResultSet
  */
-@Category(TestCategoryOthers.class)
+@Category(TestCategoryResultSet.class)
 public class ResultSetAsyncIT extends BaseJDBCTest
 {
   @Test

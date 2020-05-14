@@ -3,7 +3,7 @@
  */
 package net.snowflake.client.jdbc;
 
-import net.snowflake.client.category.TestCategoryOthers;
+import net.snowflake.client.category.TestCategoryStatement;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -11,7 +11,7 @@ import java.net.URL;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 
-@Category(TestCategoryOthers.class)
+@Category(TestCategoryStatement.class)
 public class PreparedStatementFeatureNotSupportedIT extends BaseJDBCTest
 {
   @Test

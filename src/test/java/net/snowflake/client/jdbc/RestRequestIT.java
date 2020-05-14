@@ -3,7 +3,7 @@
  */
 package net.snowflake.client.jdbc;
 
-import net.snowflake.client.category.TestCategoryOthers;
+import net.snowflake.client.category.TestCategoryCore;
 import org.apache.http.StatusLine;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -20,7 +20,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static org.mockito.Mockito.*;
 import static org.junit.Assert.*;
 
-@Category(TestCategoryOthers.class)
+@Category(TestCategoryCore.class)
 public class RestRequestIT
 {
   private CloseableHttpResponse retryResponse()

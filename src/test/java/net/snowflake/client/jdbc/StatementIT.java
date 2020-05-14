@@ -6,7 +6,7 @@ package net.snowflake.client.jdbc;
 import net.snowflake.client.AbstractDriverIT;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnTravisCI;
-import net.snowflake.client.category.TestCategoryOthers;
+import net.snowflake.client.category.TestCategoryStatement;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
 import net.snowflake.client.jdbc.telemetry.TelemetryClient;
 import net.snowflake.common.core.SqlState;
@@ -42,7 +42,7 @@ import static org.junit.Assert.fail;
 /**
  * Statement tests
  */
-@Category(TestCategoryOthers.class)
+@Category(TestCategoryStatement.class)
 public class StatementIT extends BaseJDBCTest
 {
   protected static String queryResultFormat = "json";

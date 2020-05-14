@@ -5,7 +5,7 @@ package net.snowflake.client.jdbc;
 
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnTravisCI;
-import net.snowflake.client.category.TestCategoryOthers;
+import net.snowflake.client.category.TestCategoryStatement;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -35,7 +35,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-@Category(TestCategoryOthers.class)
+@Category(TestCategoryStatement.class)
 public class PreparedStatement1IT extends PreparedStatement0IT
 {
   @Before

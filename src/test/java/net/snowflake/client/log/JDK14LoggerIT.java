@@ -4,7 +4,7 @@
 package net.snowflake.client.log;
 
 
-import net.snowflake.client.category.TestCategoryOthers;
+import net.snowflake.client.category.TestCategoryCore;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -20,7 +20,7 @@ import java.util.logging.Logger;
 /**
  * A class for testing {@link JDK14Logger}
  */
-@Category(TestCategoryOthers.class)
+@Category(TestCategoryCore.class)
 public class JDK14LoggerIT extends AbstractLoggerIT
 {
   /**

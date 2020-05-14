@@ -47,6 +47,7 @@ for name in "${!TARGET_TEST_IMAGES[@]}"; do
         -v $JDBC_ROOT:/mnt/host \
         -v $WORKSPACE:/mnt/workspace \
         -e LOCAL_USER_ID=$(id -u ${USER}) \
+        -e TERM=xterm \
         -e AWS_ACCESS_KEY_ID \
         -e AWS_SECRET_ACCESS_KEY \
         -e JOB_NAME \
@@ -58,6 +59,7 @@ for name in "${!TARGET_TEST_IMAGES[@]}"; do
         --add-host=s3testaccount.reg.local:${IP_ADDR} \
         --add-host=azureaccount.reg.local:${IP_ADDR} \
         --add-host=gcpaccount.reg.local:${IP_ADDR} \
+        --add-host=wrongaccount.reg.local:${IP_ADDR} \
         ${TEST_IMAGE_NAMES[$name]} \
         /mnt/host/ci/container/test_component.sh
 done

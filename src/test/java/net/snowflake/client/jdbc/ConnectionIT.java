@@ -6,7 +6,7 @@ package net.snowflake.client.jdbc;
 import net.snowflake.client.ConditionalIgnoreRule.ConditionalIgnore;
 import net.snowflake.client.RunningNotOnTestaccount;
 import net.snowflake.client.RunningOnTravisCI;
-import net.snowflake.client.category.TestCategoryOthers;
+import net.snowflake.client.category.TestCategoryConnection;
 import net.snowflake.client.core.QueryStatus;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.common.core.SqlState;
@@ -62,7 +62,7 @@ import static org.junit.Assert.fail;
 /**
  * Connection integration tests
  */
-@Category(TestCategoryOthers.class)
+@Category(TestCategoryConnection.class)
 public class ConnectionIT extends BaseJDBCTest
 {
   // create a local constant for this code for testing purposes (already defined in GS)

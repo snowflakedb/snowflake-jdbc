@@ -3,7 +3,7 @@ package net.snowflake.client.jdbc.telemetry;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import net.snowflake.client.AbstractDriverIT;
-import net.snowflake.client.category.TestCategoryOthers;
+import net.snowflake.client.category.TestCategoryCore;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -15,7 +15,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-@Category(TestCategoryOthers.class)
+@Category(TestCategoryCore.class)
 public class TelemetryIT extends AbstractDriverIT
 {
   private Connection connection = null;

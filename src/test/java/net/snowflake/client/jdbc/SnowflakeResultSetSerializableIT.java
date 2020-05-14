@@ -3,7 +3,7 @@ package net.snowflake.client.jdbc;
 
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnTravisCI;
-import net.snowflake.client.category.TestCategoryOthers;
+import net.snowflake.client.category.TestCategoryResultSet;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
@@ -33,7 +33,7 @@ import static org.junit.Assert.fail;
  * SnowflakeResultSetSerializable tests
  */
 @RunWith(Parameterized.class)
-@Category(TestCategoryOthers.class)
+@Category(TestCategoryResultSet.class)
 public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
 {
   @Parameterized.Parameters(name = "format={0}")
