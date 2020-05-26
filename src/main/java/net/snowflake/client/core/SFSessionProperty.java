@@ -43,6 +43,7 @@ public enum SFSessionProperty
   OCSP_FAIL_OPEN("ocspFailOpen", false, Boolean.class),
   INSECURE_MODE("insecureMode", false, Boolean.class),
   QUERY_TIMEOUT("queryTimeout", false, Integer.class),
+  STRINGS_QUOTED("stringsQuotedForColumnDef", false, Boolean.class),
   APPLICATION("application", false, String.class),
   TRACING("tracing", false, String.class),
   DISABLE_SOCKS_PROXY("disableSocksProxy", false, Boolean.class),
