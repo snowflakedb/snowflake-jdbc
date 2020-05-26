@@ -299,7 +299,7 @@ public class TelemetryClient implements Telemetry
 
       try
       {
-        response = HttpUtil.executeGeneralRequest(post, 1000, OCSPMode.FAIL_OPEN);
+        response = HttpUtil.executeGeneralRequest(post, 1000, this.session.getOCSPMode());
       }
       catch (SnowflakeSQLException e)
       {
