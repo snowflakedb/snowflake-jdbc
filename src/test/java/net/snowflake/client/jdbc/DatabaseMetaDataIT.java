@@ -12,6 +12,7 @@ import org.junit.experimental.categories.Category;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
+import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
@@ -20,6 +21,8 @@ import java.sql.Statement;
 import java.sql.Types;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -512,6 +515,54 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
   }
 
   @Test
+  public void testGetStringValueFromColumnDef() throws SQLException
+  {
+    Map<String, String> params = getConnectionParameters();
+    Properties properties = new Properties();
+    for (Map.Entry<?, ?> entry : params.entrySet())
+    {
+      if (entry.getValue() != null)
+      {
+        properties.put(entry.getKey(), entry.getValue());
+      }
+    }
+    // test out connection parameter stringsQuoted to remove strings from quotes
+    properties.put("stringsQuotedForColumnDef", "false");
+    Connection connection = DriverManager.getConnection(params.get("uri"), properties);
+    String database = connection.getCatalog();
+    String schema = connection.getSchema();
+    final String targetTable = "T0";
+
+    connection.createStatement().execute(
+        "create or replace table " + targetTable +
+        "(C1 string, C2 string default '', C3 string default 'apples', C4 string default '\"apples\"', C5 int, C6 " +
+        "int default 5, C7 string default '''', C8 string default '''apples''''', C9  string default '%')");
+
+    DatabaseMetaData metaData = connection.getMetaData();
+
+    ResultSet resultSet = metaData.getColumns(database, schema, targetTable, "%");
+    assertTrue(resultSet.next());
+    assertEquals(null, resultSet.getString("COLUMN_DEF"));
+    assertTrue(resultSet.next());
+    assertEquals("", resultSet.getString("COLUMN_DEF"));
+    assertTrue(resultSet.next());
+    assertEquals("apples", resultSet.getString("COLUMN_DEF"));
+    assertTrue(resultSet.next());
+    assertEquals("\"apples\"", resultSet.getString("COLUMN_DEF"));
+    assertTrue(resultSet.next());
+    assertEquals(null, resultSet.getString("COLUMN_DEF"));
+    assertTrue(resultSet.next());
+    assertEquals("5", resultSet.getString("COLUMN_DEF"));
+    assertTrue(resultSet.next());
+    assertEquals("'", resultSet.getString("COLUMN_DEF"));
+    assertTrue(resultSet.next());
+    assertEquals("'apples''", resultSet.getString("COLUMN_DEF"));
+    assertTrue(resultSet.next());
+    assertEquals("%", resultSet.getString("COLUMN_DEF"));
+
+  }
+
+  @Test
   public void testGetColumns() throws Throwable
   {
     try (Connection connection = getConnection())
@@ -600,7 +651,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
       assertEquals(ResultSetMetaData.columnNullable,
                    resultSet.getInt("NULLABLE"));
       assertEquals("", resultSet.getString("REMARKS"));
-      assertEquals("", resultSet.getString("COLUMN_DEF"));
+      assertEquals("''", resultSet.getString("COLUMN_DEF"));
 
       assertEquals(16777216, resultSet.getInt("CHAR_OCTET_LENGTH"));
       assertEquals(3, resultSet.getInt("ORDINAL_POSITION"));
@@ -885,21 +936,21 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
       assertTrue(resultSet.next());
       assertEquals(null, resultSet.getString("COLUMN_DEF"));
       assertTrue(resultSet.next());
-      assertEquals("", resultSet.getString("COLUMN_DEF"));
+      assertEquals("''", resultSet.getString("COLUMN_DEF"));
       assertTrue(resultSet.next());
-      assertEquals("apples", resultSet.getString("COLUMN_DEF"));
+      assertEquals("'apples'", resultSet.getString("COLUMN_DEF"));
       assertTrue(resultSet.next());
-      assertEquals("\"apples\"", resultSet.getString("COLUMN_DEF"));
+      assertEquals("'\"apples\"'", resultSet.getString("COLUMN_DEF"));
       assertTrue(resultSet.next());
       assertEquals(null, resultSet.getString("COLUMN_DEF"));
       assertTrue(resultSet.next());
       assertEquals("5", resultSet.getString("COLUMN_DEF"));
       assertTrue(resultSet.next());
-      assertEquals("'", resultSet.getString("COLUMN_DEF"));
+      assertEquals("''''", resultSet.getString("COLUMN_DEF"));
       assertTrue(resultSet.next());
-      assertEquals("'apples''", resultSet.getString("COLUMN_DEF"));
+      assertEquals("'''apples'''''", resultSet.getString("COLUMN_DEF"));
       assertTrue(resultSet.next());
-      assertEquals("%", resultSet.getString("COLUMN_DEF"));
+      assertEquals("'%'", resultSet.getString("COLUMN_DEF"));
 
       try
       {

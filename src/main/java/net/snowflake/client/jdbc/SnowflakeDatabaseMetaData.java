@@ -122,6 +122,8 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
 
   private final boolean metadataRequestUseSessionDatabase;
 
+  private boolean stringsQuoted = true;
+
   SnowflakeDatabaseMetaData(Connection connection) throws SQLException
   {
     logger.debug("public SnowflakeDatabaseMetaData(SnowflakeConnection connection)");
@@ -130,6 +132,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
     this.session = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
     this.metadataRequestUseConnectionCtx = session.getMetadataRequestUseConnectionCtx();
     this.metadataRequestUseSessionDatabase = session.getMetadataRequestUseSessionDatabase();
+    this.stringsQuoted = session.isStringQuoted();
   }
 
   private void raiseSQLExceptionIfConnectionIsClosed() throws SQLException
@@ -1858,16 +1861,19 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
           String dataTypeStr = showObjectResultSet.getString(4);
           String defaultValue = showObjectResultSet.getString(6);
           defaultValue.trim();
-          if (defaultValue.startsWith("\'") && defaultValue.endsWith("\'"))
-          {
-            // remove extra set of single quotes
-            defaultValue = defaultValue.substring(1, defaultValue.length() - 1);
-            // scan for 2 single quotes in a row and remove one of them
-            defaultValue = defaultValue.replace("''", "'");
-          }
-          else if (defaultValue.isEmpty())
+          if (defaultValue.isEmpty())
           {
             defaultValue = null;
+          }
+          else if (!stringsQuoted)
+          {
+            if (defaultValue.startsWith("\'") && defaultValue.endsWith("\'"))
+            {
+              // remove extra set of single quotes
+              defaultValue = defaultValue.substring(1, defaultValue.length() - 1);
+              // scan for 2 single quotes in a row and remove one of them
+              defaultValue = defaultValue.replace("''", "'");
+            }
           }
           String comment = showObjectResultSet.getString(9);
           String catalogName = showObjectResultSet.getString(10);

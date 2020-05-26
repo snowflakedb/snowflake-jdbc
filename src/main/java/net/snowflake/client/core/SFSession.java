@@ -535,6 +535,15 @@ public class SFSession
     return null;
   }
 
+  public boolean isStringQuoted()
+  {
+    if (connectionPropertiesMap.containsKey(SFSessionProperty.STRINGS_QUOTED))
+    {
+      return (Boolean) connectionPropertiesMap.get(SFSessionProperty.STRINGS_QUOTED);
+    }
+    return true;
+  }
+
   /**
    * If authenticator is null and private key is specified, jdbc will assume
    * key pair authentication
