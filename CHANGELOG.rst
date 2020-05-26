@@ -1,3 +1,9 @@
+**JDBC Driver 3.12.6**
+
+- \| SNOW-NNN1 | Will be added later
+- \
+- \      
+
 **JDBC Driver 3.12.5**
 
 - \| SNOW-115446 | JDBC: Wrong File Name When Using compressAndUploadStream Method on GCP Deployment
