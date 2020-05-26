@@ -545,6 +545,8 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
       assertEquals(0, resultSet.getInt("NUM_PREC_RADIX"));
       assertEquals(ResultSetMetaData.columnNullable,
                    resultSet.getInt("NULLABLE"));
+      assertEquals(true,
+                   resultSet.getBoolean("NULLABLE"));
       assertEquals("", resultSet.getString("REMARKS"));
       assertEquals(null, resultSet.getString("COLUMN_DEF"));
 
@@ -699,6 +701,8 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
       assertEquals(0, resultSet.getInt("COLUMN_SIZE"));
       assertEquals(0, resultSet.getInt("DECIMAL_DIGITS"));
       assertEquals(0, resultSet.getInt("NUM_PREC_RADIX"));
+      assertEquals(false,
+                   resultSet.getBoolean("NULLABLE"));
       assertEquals(ResultSetMetaData.columnNoNulls,
                    resultSet.getInt("NULLABLE"));
       assertEquals("", resultSet.getString("REMARKS"));

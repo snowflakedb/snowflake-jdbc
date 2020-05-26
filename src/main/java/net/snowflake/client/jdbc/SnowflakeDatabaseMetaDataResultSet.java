@@ -340,6 +340,15 @@ class SnowflakeDatabaseMetaDataResultSet extends SnowflakeBaseResultSet
       }
       return Boolean.FALSE;
     }
+    else if (obj instanceof Integer)
+    {
+      int i = (Integer) obj;
+      if (i > 0)
+      {
+        return Boolean.TRUE;
+      }
+      return Boolean.FALSE;
+    }
     else
     {
       return ((Boolean) obj).booleanValue();
