@@ -434,13 +434,13 @@ public class RestRequest
     return response;
   }
 
-  private static boolean isRetryableHTTPCode(CloseableHttpResponse response, boolean retryHTTP403)
+  static boolean isRetryableHTTPCode(CloseableHttpResponse response, boolean retryHTTP403)
   {
     return response != null &&
            (response.getStatusLine().getStatusCode() < 500 || // service unavailable
             response.getStatusLine().getStatusCode() >= 600) && // gateway timeout
-           response.getStatusLine().getStatusCode() != 408 && // request timeout
-           (!retryHTTP403 || response.getStatusLine().getStatusCode() != 403);
+            response.getStatusLine().getStatusCode() != 408 && // request timeout
+            (retryHTTP403 || response.getStatusLine().getStatusCode() != 403);
   }
 
   private static boolean isCertificateRevoked(Exception ex)

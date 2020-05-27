@@ -51,8 +51,6 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
   @Rule
   public TemporaryFolder tmpFolder = new TemporaryFolder();
 
-  private static int ERR_RESULT_SET_CLOSED = 200037;
-
   private static boolean developPrint = false;
 
   private static String queryResultFormat;
@@ -708,8 +706,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
       }
       catch (SQLException ex)
       {
-        assertEquals(ex.getErrorCode(),ERR_RESULT_SET_CLOSED);
-        // System.out.println("Negative test hits expected error: " + ex.getMessage());
+        assertEquals((long)ErrorCode.INTERNAL_ERROR.getMessageCode(), ex.getErrorCode());
       }
 
       rs.close();
