@@ -8,6 +8,7 @@ import net.snowflake.client.core.QueryStatus;
 import net.snowflake.client.core.SFBaseResultSet;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SFSession;
+import net.snowflake.common.core.SqlState;
 
 import java.io.InputStream;
 import java.io.Reader;
@@ -32,6 +33,7 @@ import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
+import java.util.regex.Pattern;
 
 /**
  * SFAsyncResultSet implementation
@@ -119,6 +121,13 @@ class SFAsyncResultSet extends SnowflakeBaseResultSet implements SnowflakeResult
   public SFAsyncResultSet(String queryID) throws SQLException
   {
     this.sfBaseResultSet = null;
+    queryID.trim();
+    if (!Pattern
+        .matches("[a-z0-9]{8}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{12}", queryID))
+    {
+      throw new SQLException("The provided query ID " +queryID + " is invalid.",
+                             SqlState.INVALID_PARAMETER_VALUE);
+    }
     this.queryID = queryID;
   }
 

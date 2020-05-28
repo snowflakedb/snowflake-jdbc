@@ -1560,6 +1560,15 @@ public class ConnectionIT extends BaseJDBCTest
     Thread.sleep(1000 * 70);
     //Create a new connection and new instance of a resultSet using query ID
     con = getConnection();
+    try
+    {
+      ResultSet rs = con.unwrap(SnowflakeConnection.class).createResultSet("Totally invalid query ID");
+      fail("Query ID should be rejected");
+    }
+    catch (SQLException e)
+    {
+      assertEquals(SqlState.INVALID_PARAMETER_VALUE, e.getSQLState());
+    }
     ResultSet rs = con.unwrap(SnowflakeConnection.class).createResultSet(queryID);
     status = rs.unwrap(SnowflakeResultSet.class).getStatus();
     // Assert status of query is a success
