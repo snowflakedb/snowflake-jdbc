@@ -49,7 +49,6 @@ nbactions.xml
 dependency-reduced-pom.xml
 henplus/*
 login.defaults
-make_client_package.sh
 rt_build.sh
 sfsql
 sfsql.cmd
@@ -65,3 +64,8 @@ snowflake-whitelist
 Golang
 ClientTelemetryFramework
 lib/*
+
+# WhiteSource Scan
+wss*.config
+wss-unified-agent.jar
+whitesource/
