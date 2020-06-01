@@ -142,4 +142,3 @@ if java -jar wss-unified-agent.jar -apiKey ${WHITESOURCE_API_KEY} \
         -requestFiles whitesource/update-request.txt \
         -wss.url https://saas.whitesourcesoftware.com/agent
 fi
-[[ -n "$IS_IN_CUSTOM_VENV" ]] && deactivate || true
