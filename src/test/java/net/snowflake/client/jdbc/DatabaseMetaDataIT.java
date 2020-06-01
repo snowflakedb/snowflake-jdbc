@@ -527,7 +527,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
       }
     }
     // test out connection parameter stringsQuoted to remove strings from quotes
-    properties.put("stringsQuotedForColumnDef", "false");
+    properties.put("stringsQuotedForColumnDef", "true");
     Connection connection = DriverManager.getConnection(params.get("uri"), properties);
     String database = connection.getCatalog();
     String schema = connection.getSchema();
@@ -544,21 +544,22 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
     assertTrue(resultSet.next());
     assertEquals(null, resultSet.getString("COLUMN_DEF"));
     assertTrue(resultSet.next());
-    assertEquals("", resultSet.getString("COLUMN_DEF"));
+    assertEquals("''", resultSet.getString("COLUMN_DEF"));
     assertTrue(resultSet.next());
-    assertEquals("apples", resultSet.getString("COLUMN_DEF"));
+    assertEquals("'apples'", resultSet.getString("COLUMN_DEF"));
     assertTrue(resultSet.next());
-    assertEquals("\"apples\"", resultSet.getString("COLUMN_DEF"));
+    assertEquals("'\"apples\"'", resultSet.getString("COLUMN_DEF"));
     assertTrue(resultSet.next());
     assertEquals(null, resultSet.getString("COLUMN_DEF"));
     assertTrue(resultSet.next());
     assertEquals("5", resultSet.getString("COLUMN_DEF"));
     assertTrue(resultSet.next());
-    assertEquals("'", resultSet.getString("COLUMN_DEF"));
+    assertEquals("''''", resultSet.getString("COLUMN_DEF"));
     assertTrue(resultSet.next());
-    assertEquals("'apples''", resultSet.getString("COLUMN_DEF"));
+    assertEquals("'''apples'''''", resultSet.getString("COLUMN_DEF"));
     assertTrue(resultSet.next());
-    assertEquals("%", resultSet.getString("COLUMN_DEF"));
+    assertEquals("'%'", resultSet.getString("COLUMN_DEF"));
+
 
   }
 
@@ -651,7 +652,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
       assertEquals(ResultSetMetaData.columnNullable,
                    resultSet.getInt("NULLABLE"));
       assertEquals("", resultSet.getString("REMARKS"));
-      assertEquals("''", resultSet.getString("COLUMN_DEF"));
+      assertEquals("", resultSet.getString("COLUMN_DEF"));
 
       assertEquals(16777216, resultSet.getInt("CHAR_OCTET_LENGTH"));
       assertEquals(3, resultSet.getInt("ORDINAL_POSITION"));
@@ -936,21 +937,22 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
       assertTrue(resultSet.next());
       assertEquals(null, resultSet.getString("COLUMN_DEF"));
       assertTrue(resultSet.next());
-      assertEquals("''", resultSet.getString("COLUMN_DEF"));
+      assertEquals("", resultSet.getString("COLUMN_DEF"));
       assertTrue(resultSet.next());
-      assertEquals("'apples'", resultSet.getString("COLUMN_DEF"));
+      assertEquals("apples", resultSet.getString("COLUMN_DEF"));
       assertTrue(resultSet.next());
-      assertEquals("'\"apples\"'", resultSet.getString("COLUMN_DEF"));
+      assertEquals("\"apples\"", resultSet.getString("COLUMN_DEF"));
       assertTrue(resultSet.next());
       assertEquals(null, resultSet.getString("COLUMN_DEF"));
       assertTrue(resultSet.next());
       assertEquals("5", resultSet.getString("COLUMN_DEF"));
       assertTrue(resultSet.next());
-      assertEquals("''''", resultSet.getString("COLUMN_DEF"));
+      assertEquals("'", resultSet.getString("COLUMN_DEF"));
       assertTrue(resultSet.next());
-      assertEquals("'''apples'''''", resultSet.getString("COLUMN_DEF"));
+      assertEquals("'apples''", resultSet.getString("COLUMN_DEF"));
       assertTrue(resultSet.next());
-      assertEquals("'%'", resultSet.getString("COLUMN_DEF"));
+      assertEquals("%", resultSet.getString("COLUMN_DEF"));
+
 
       try
       {

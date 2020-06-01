@@ -541,7 +541,7 @@ public class SFSession
     {
       return (Boolean) connectionPropertiesMap.get(SFSessionProperty.STRINGS_QUOTED);
     }
-    return true;
+    return false;
   }
 
   /**
