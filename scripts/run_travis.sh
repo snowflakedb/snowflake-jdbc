@@ -37,6 +37,10 @@ trap finish EXIT
 source $DIR/env.sh
 set MAVEN_OPTS="-Xmx1536m -XX:MaxPermSize=128m"
 
+travis_fold_start create_schema "Run WhiteSource"
+$DIR/wss.sh
+travis_fold_end
+
 travis_fold_start create_schema "Create test schema"
 python $DIR/create_schema.py
 travis_fold_end
