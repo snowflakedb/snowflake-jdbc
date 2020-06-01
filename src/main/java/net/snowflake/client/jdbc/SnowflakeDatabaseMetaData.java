@@ -122,7 +122,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
 
   private final boolean metadataRequestUseSessionDatabase;
 
-  private boolean stringsQuoted = true;
+  private boolean stringsQuoted = false;
 
   SnowflakeDatabaseMetaData(Connection connection) throws SQLException
   {
