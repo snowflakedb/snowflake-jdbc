@@ -141,31 +141,32 @@ public class SecretDetectorTest
   @Test
   public void testMaskPasswordFromConnectionString()
   {
+    // Because password pattern regex includes '&', secretDetector will mask 'role' part as well.
     String connectionStr = "\"jdbc:snowflake://xxx.snowflakecomputing" +
                            ".com/?user=xxx&password=xxxxxx&role=xxx\"";
     String maskedConnectionStr = "\"jdbc:snowflake://xxx.snowflakecomputing" +
-                                 ".com/?user=xxx&password=☺☺☺☺☺☺&role=xxx\"";
+                                 ".com/?user=xxx&password=☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺";
     assertThat("Text with password is not masked",
                maskedConnectionStr.equals(SecretDetector.maskSecrets(connectionStr)));
 
     connectionStr = "\"jdbc:snowflake://xxx.snowflakecomputing" +
                     ".com/?user=xxx&password=xxxxxx\"";
     maskedConnectionStr = "\"jdbc:snowflake://xxx.snowflakecomputing" +
-                          ".com/?user=xxx&password=☺☺☺☺☺☺\"";
+                          ".com/?user=xxx&password=☺☺☺☺☺☺☺";
     assertThat("Text with password is not masked",
                maskedConnectionStr.equals(SecretDetector.maskSecrets(connectionStr)));
 
     connectionStr = "\"jdbc:snowflake://xxx.snowflakecomputing" +
                     ".com/?user=xxx&passcode=xxxxxx\"";
     maskedConnectionStr = "\"jdbc:snowflake://xxx.snowflakecomputing" +
-                          ".com/?user=xxx&passcode=☺☺☺☺☺☺\"";
+                          ".com/?user=xxx&passcode=☺☺☺☺☺☺☺";
     assertThat("Text with password is not masked",
                maskedConnectionStr.equals(SecretDetector.maskSecrets(connectionStr)));
 
     connectionStr = "\"jdbc:snowflake://xxx.snowflakecomputing" +
                     ".com/?user=xxx&passWord=xxxxxx\"";
     maskedConnectionStr = "\"jdbc:snowflake://xxx.snowflakecomputing" +
-                          ".com/?user=xxx&passWord=☺☺☺☺☺☺\"";
+                          ".com/?user=xxx&passWord=☺☺☺☺☺☺☺";
     assertThat("Text with password is not masked",
                maskedConnectionStr.equals(SecretDetector.maskSecrets(connectionStr)));
   }
@@ -180,5 +181,23 @@ public class SecretDetectorTest
     String result = SecretDetector.maskSecrets(messageText);
 
     Assert.assertEquals(filteredMessageText, result);
+  }
+
+  @Test
+  public void connectionToken()
+  {
+    String connectionToken = "\"Authorization: Snowflake Token=\"XXXXXXXXXX\"";
+
+    String maskedConnectionToken = "\"Authorization: Snowflake Token=\"☺☺☺☺☺☺☺☺☺☺\"";
+
+    assertThat("Text with connection token is not masked",
+               maskedConnectionToken.equals(SecretDetector.maskSecrets(connectionToken)));
+
+    connectionToken = "\"{\"requestType\":\"ISSUE\",\"idToken\":\"XXXXXXXX\"}\"";
+
+    maskedConnectionToken = "\"{\"requestType\":\"ISSUE\",\"idToken\":\"☺☺☺☺☺☺☺☺\"}\"";
+
+    assertThat("Text with connection token is not masked",
+               maskedConnectionToken.equals(SecretDetector.maskSecrets(connectionToken)));
   }
 }
