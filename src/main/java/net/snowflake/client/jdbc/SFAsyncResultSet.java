@@ -164,13 +164,14 @@ class SFAsyncResultSet extends SnowflakeBaseResultSet implements SnowflakeResult
   {
     if (!resultSetForNextInitialized)
     {
-      QueryStatus qs = QueryStatus.NO_DATA;
+      QueryStatus qs = this.getStatus();
       int noDataRetry = 0;
-      final int noDataMaxRetries = 24;
+      final int noDataMaxRetries = 30;
+      final int[] retryPattern = {1, 1, 2, 3, 4, 8, 10};
+      final int maxIndex = retryPattern.length - 1;
+      int retry = 0;
       while (qs != QueryStatus.SUCCESS)
       {
-        qs = this.getStatus();
-
         // if query is not running due to a failure (Aborted, failed with error, etc), generate exception
         if (!QueryStatus.isStillRunning(qs) && qs.getValue() != QueryStatus.SUCCESS.getValue())
         {
@@ -178,7 +179,7 @@ class SFAsyncResultSet extends SnowflakeBaseResultSet implements SnowflakeResult
               "Status of query associated with resultSet is " + qs.getDescription() + ". Results not generated.");
         }
         // if no data about the query is returned after about 2 minutes, give up
-        if (qs.getValue() == QueryStatus.NO_DATA.getValue())
+        if (qs == QueryStatus.NO_DATA)
         {
           noDataRetry++;
           if (noDataRetry >= noDataMaxRetries)
@@ -188,13 +189,18 @@ class SFAsyncResultSet extends SnowflakeBaseResultSet implements SnowflakeResult
         }
         try
         {
-          // sleep for 5 seconds before polling again. Arbitrary number
-          Thread.sleep(5000);
+          // Sleep for an amount before trying again. Exponential backoff up to 5 seconds implemented.
+          Thread.sleep(500 * retryPattern[retry]);
         }
         catch (InterruptedException e)
         {
           e.printStackTrace();
         }
+        if (retry < maxIndex)
+        {
+          retry++;
+        }
+        qs = this.getStatus();
       }
       resultSetForNext = extraStatement.executeQuery("select * from table(result_scan('" + this.queryID + "'))");
       resultSetForNextInitialized = true;
