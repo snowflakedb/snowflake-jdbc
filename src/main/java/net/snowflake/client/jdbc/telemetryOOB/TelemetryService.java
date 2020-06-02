@@ -316,9 +316,11 @@ public class TelemetryService
 
   private AtomicInteger eventCnt = new AtomicInteger();
 
-  private AtomicInteger failureCnt = new AtomicInteger();
+  private AtomicInteger clientFailureCnt = new AtomicInteger();
 
-  private String lastError = "";
+  private AtomicInteger serverFailureCnt = new AtomicInteger();
+
+  private String lastClientError = "";
 
   /**
    * @return the number of events successfully reported by this service
@@ -330,18 +332,28 @@ public class TelemetryService
 
   /**
    * @return the number of times an event was attempted to be reported but failed
+   * due to a client-side error
    */
-  public int getFailureCount()
+  public int getClientFailureCount()
   {
-    return failureCnt.get();
+    return clientFailureCnt.get();
+  }
+
+  /**
+   * @return the number of times an event was attempted to be reported but failed
+   * due to a server-side error
+   */
+  public int getServerFailureCount()
+  {
+    return serverFailureCnt.get();
   }
 
   /**
    * @return the string containing the most recent failed response
    */
-  public String getLastError()
+  public String getLastClientError()
   {
-    return this.lastError;
+    return this.lastClientError;
   }
 
   /**
@@ -447,11 +459,16 @@ public class TelemetryService
             logger.debug("telemetry server request success: " + response);
             instance.count();
           }
+          else if (statusCode == 429)
+          {
+            logger.debug("telemetry server request hit server cap on response: " + response);
+            instance.serverFailureCnt.incrementAndGet();
+          }
           else
           {
             logger.debug("telemetry server request error: " + response);
-            instance.lastError = response.toString();
-            instance.failureCnt.incrementAndGet();
+            instance.lastClientError = response.toString();
+            instance.clientFailureCnt.incrementAndGet();
             success = false;
           }
           logger.debug(EntityUtils.toString(response.getEntity(), "UTF-8"));
@@ -469,8 +486,8 @@ public class TelemetryService
         {
           res = response.toString();
         }
-        instance.lastError = "Response: " + res + "; Error: " + e.getMessage();
-        instance.failureCnt.incrementAndGet();
+        instance.lastClientError = "Response: " + res + "; Error: " + e.getMessage();
+        instance.clientFailureCnt.incrementAndGet();
         success = false;
       }
       finally
