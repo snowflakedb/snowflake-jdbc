@@ -1,3 +1,9 @@
+**JDBC Driver 3.12.7**
+
+- \| SNOW-164084 |  Revert a bug which break telemetry for JDBC driver
+- \
+- \      
+
 **JDBC Driver 3.12.6**
 
 - \| SNOW-NNN1 | Will be added later
