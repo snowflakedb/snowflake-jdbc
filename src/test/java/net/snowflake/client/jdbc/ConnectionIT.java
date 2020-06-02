@@ -384,7 +384,7 @@ public class ConnectionIT extends BaseJDBCTest
       {
         assertThat("Telemetry event has not been reported successfully. Error: " +
                    TelemetryService.getInstance().getLastClientError(),
-                   TelemetryService.getInstance().getClientFailureCount() == 0);
+                   TelemetryService.getInstance().getClientFailureCount(), equalTo(0));
       }
       return;
     }
@@ -430,7 +430,7 @@ public class ConnectionIT extends BaseJDBCTest
         if (TelemetryService.getInstance().isDeploymentEnabled())
         {
           assertThat("Telemetry should not create new event",
-                     TelemetryService.getInstance().getEventCount() == count);
+                     TelemetryService.getInstance().getEventCount(), equalTo(count));
         }
       }
       else
@@ -443,7 +443,7 @@ public class ConnectionIT extends BaseJDBCTest
         {
           assertThat("Telemetry event has not been reported successfully. Error: " +
                           TelemetryService.getInstance().getLastClientError(),
-                  TelemetryService.getInstance().getClientFailureCount() == 0);
+                  TelemetryService.getInstance().getClientFailureCount(), equalTo(0));
         }
       }
       return;
@@ -486,7 +486,7 @@ public class ConnectionIT extends BaseJDBCTest
       {
         assertThat("Telemetry event has not been reported successfully. Error: " +
                    TelemetryService.getInstance().getLastClientError(),
-                   TelemetryService.getInstance().getClientFailureCount() == 0);
+                   TelemetryService.getInstance().getClientFailureCount(), equalTo(0));
       }
       return;
     }
