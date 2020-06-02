@@ -441,8 +441,9 @@ public class ConnectionIT extends BaseJDBCTest
 
         if (TelemetryService.getInstance().isDeploymentEnabled())
         {
-          assertThat("Telemetry event has not been reported successfully",
-                     TelemetryService.getInstance().getEventCount() > count);
+          assertThat("Telemetry event has not been reported successfully. Error: " +
+                          TelemetryService.getInstance().getLastError(),
+                  TelemetryService.getInstance().getFailureCount() == 0);
         }
       }
       return;
