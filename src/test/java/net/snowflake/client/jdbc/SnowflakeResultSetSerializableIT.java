@@ -9,8 +9,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.TemporaryFolder;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
 import static org.junit.Assert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
 
@@ -33,35 +31,27 @@ import static org.junit.Assert.*;
 /**
  * SnowflakeResultSetSerializable tests
  */
-@RunWith(Parameterized.class)
 @Category(TestCategoryResultSet.class)
 public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
 {
-  @Parameterized.Parameters(name = "format={0}")
-  public static Object[][] data()
-  {
-    // all tests in this class need to run for both query result formats json
-    // and arrow
-    return new Object[][]{
-        {"JSON"}
-        , {"Arrow"}
-    };
-  }
-
   @Rule
   public TemporaryFolder tmpFolder = new TemporaryFolder();
 
   private static boolean developPrint = false;
 
-  private static String queryResultFormat;
+  private String queryResultFormat;
 
-  public SnowflakeResultSetSerializableIT(String format)
+  public SnowflakeResultSetSerializableIT()
+  {
+    this("json");
+  }
+
+  SnowflakeResultSetSerializableIT(String format)
   {
     queryResultFormat = format;
   }
 
-  public static Connection getConnection()
-  throws SQLException
+  public Connection init() throws SQLException
   {
     Connection conn = BaseJDBCTest.getConnection();
     Statement stmt = conn.createStatement();
@@ -69,14 +59,10 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
 
     // Set up theses parameters as smaller values in order to generate
     // multiple file chunks with small data volumes.
-    stmt.execute(
-        "alter session set result_first_chunk_max_size = 512");
-    stmt.execute(
-        "alter session set result_min_chunk_size = 512");
-    stmt.execute(
-        "alter session set arrow_result_rb_flush_size = 512");
-    stmt.execute(
-        "alter session set result_chunk_size_multiplier = 1.2");
+    stmt.execute("alter session set result_first_chunk_max_size = 512");
+    stmt.execute("alter session set result_min_chunk_size = 512");
+    stmt.execute("alter session set arrow_result_rb_flush_size = 512");
+    stmt.execute("alter session set result_chunk_size_multiplier = 1.2");
     stmt.close();
 
     return conn;
@@ -278,7 +264,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
   {
     List<String> fileNameList = null;
     String originalResultCSVString = null;
-    try (Connection connection = getConnection())
+    try (Connection connection = init())
     {
       Statement statement = connection.createStatement();
 
@@ -380,7 +366,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
   {
     List<String> fileNameList = null;
     String originalResultCSVString = null;
-    try (Connection connection = getConnection())
+    try (Connection connection = init())
     {
       connection.createStatement().execute(
           "alter session set DATE_OUTPUT_FORMAT = '" + format_date + "'");
@@ -467,7 +453,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
   {
     List<String> fileNameList = null;
     String originalResultCSVString = null;
-    try (Connection connection = getConnection())
+    try (Connection connection = init())
     {
       Statement statement = connection.createStatement();
 
@@ -557,7 +543,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
     List<String> fileNameList = null;
     String originalResultCSVString = null;
     int rowCount = 90000;
-    try (Connection connection = getConnection())
+    try (Connection connection = init())
     {
       Statement statement = connection.createStatement();
 
@@ -633,7 +619,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
   public void testCloseUnconsumedResultSet() throws Throwable
   {
-    try (Connection connection = getConnection())
+    try (Connection connection = init())
     {
       Statement statement = connection.createStatement();
 
@@ -663,7 +649,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
   public void testNegativeWithChunkFileNotExist() throws Throwable
   {
-    try (Connection connection = getConnection())
+    try (Connection connection = init())
     {
       Statement statement = connection.createStatement();
 
@@ -717,7 +703,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
   public void testNegativeWithClosedResultSet() throws Throwable
   {
-    try (Connection connection = getConnection())
+    try (Connection connection = init())
     {
       Statement statement = connection.createStatement();
 
@@ -838,7 +824,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
 
   private void generateTestFiles() throws Throwable
   {
-    try (Connection connection = getConnection())
+    try (Connection connection = init())
     {
       Statement statement = connection.createStatement();
 
@@ -872,7 +858,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
     long expectedTotalRowCount = 0;
     long expectedTotalCompressedSize = 0;
     long expectedTotalUncompressedSize = 0;
-    try (Connection connection = getConnection())
+    try (Connection connection = init())
     {
       Statement statement = connection.createStatement();
 
