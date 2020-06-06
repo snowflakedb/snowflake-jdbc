@@ -27,3 +27,24 @@ jobs:
                 name: artifacts
                 path: artifacts
 
+    test-linux:
+        needs: build
+        name: Tests on Linux
+        runs-on: ubuntu-latest
+        strategy:
+            matrix:
+                image: [ 'jdbc-centos6-default' ]
+                cloud: [ 'AWS' ]
+        steps:
+            - uses: actions/checkout@v1
+            - name: Download Build Artifacts
+              uses: actions/download-artifact@v1
+              with:
+                name: artifacts
+            - name: Tests
+              shell: bash
+              env:
+                PARAMETERS_SECRET: ${{ secrets.PARAMETERS_SECRET }}
+                CLOUD_PROVIDER: ${{ matrix.cloud }}
+                TARGET_DOCKER_TEST_IMAGE: ${{ matrix.image }}
+              run: ./ci/test.sh
