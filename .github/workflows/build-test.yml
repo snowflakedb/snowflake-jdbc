@@ -21,11 +21,6 @@ jobs:
               env:
                 WHITESOURCE_API_KEY: ${{ secrets.WHITESOURCE_API_KEY }}
               run: ./ci/build.sh
-            - name: Upload Build Artifact
-              uses: actions/upload-artifact@v1
-              with:
-                name: artifacts
-                path: artifacts
 
     test-linux:
         needs: build
@@ -37,10 +32,6 @@ jobs:
                 cloud: [ 'AWS' ]
         steps:
             - uses: actions/checkout@v1
-            - name: Download Build Artifacts
-              uses: actions/download-artifact@v1
-              with:
-                name: artifacts
             - name: Tests
               shell: bash
               env:
