@@ -48,12 +48,16 @@ for name in "${!TARGET_TEST_IMAGES[@]}"; do
         -v $WORKSPACE:/mnt/workspace \
         -e LOCAL_USER_ID=$(id -u ${USER}) \
         -e TERM=xterm \
+        -e GIT_COMMIT \
+        -e GIT_BRANCH \
+        -e GIT_URL \
         -e AWS_ACCESS_KEY_ID \
         -e AWS_SECRET_ACCESS_KEY \
+        -e GITHUB_ACTIONS \
+        -e GITHUB_SHA \
+        -e RUNNER_TRACKING_ID \
         -e JOB_NAME \
         -e BUILD_NUMBER \
-        -e GIT_BRANCH \
-        -e GIT_COMMIT \
         -e JDBC_TEST_CATEGORY \
         --add-host=snowflake.reg.local:${IP_ADDR} \
         --add-host=s3testaccount.reg.local:${IP_ADDR} \

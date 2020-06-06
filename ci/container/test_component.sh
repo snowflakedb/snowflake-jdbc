@@ -22,6 +22,23 @@ eval $(jq -r '.testconnection | to_entries | map("export \(.key)=\(.value|tostri
 
 export TARGET_SCHEMA_NAME=${RUNNER_TRACKING_ID//-/_}_${GITHUB_SHA}
 
+function finish() {
+    pushd $SOURCE_ROOT/ci/container >& /dev/null
+        echo "[INFO] Drop schema $TARGET_SCHEMA_NAME"
+        python3 drop_schema.py
+    popd >& /dev/null
+}
+trap finish EXIT
+
+pushd $SOURCE_ROOT/ci/container >& /dev/null
+    echo "[INFO] Create schema $TARGET_SCHEMA_NAME"
+    if python3 create_schema.py; then
+        export SNOWFLAKE_TEST_SCHEMA=$TARGET_SCHEMA_NAME
+    else
+        echo "[WARN] SNOWFLAKE_TEST_SCHEMA: $SNOWFLAKE_TEST_SCHEMA"
+    fi
+popd >& /dev/null
+
 echo "[INFO] Running Hang Web Server"
 kill -9 $(ps -ewf | grep hang_webserver | grep -v grep | awk '{print $2}') || true
 python3 $THIS_DIR/hang_webserver.py 12345&

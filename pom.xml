@@ -532,7 +532,7 @@
               <goal>exec</goal>
             </goals>
             <configuration>
-              <executable>${basedir}/scripts/check_content.sh</executable>
+                <executable>${basedir}/ci/scripts/check_content.sh</executable>
             </configuration>
           </execution>
         </executions>
