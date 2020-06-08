@@ -87,7 +87,7 @@ public class AbstractDriverIT
 
     String protocol = System.getenv("SNOWFLAKE_TEST_PROTOCOL");
     String ssl;
-    if (Strings.isNullOrEmpty(protocol) || "http".equals(protocol))
+    if ("http".equals(protocol))
     {
       ssl = "off";
     }
