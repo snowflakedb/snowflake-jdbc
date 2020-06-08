@@ -30,7 +30,7 @@ jobs:
             matrix:
                 image: [ 'jdbc-centos6-default' ]
                 cloud: [ 'AWS' ]
-                category: ['TestCategoryResultSet', 'TestCategoryConnection,TestCategoryStatement,TestCategoryOthers', 'TestCategoryArrow,TestCategoryCore,TestCategoryLoader', 'TestCategoryFips']
+                category: ['TestCategoryResultSet,TestCategoryOthers,TestCategoryLoader', 'TestCategoryConnection,TestCategoryStatement', 'TestCategoryArrow,TestCategoryCore', 'TestCategoryFips']
         steps:
             - uses: actions/checkout@v1
             - name: Tests
