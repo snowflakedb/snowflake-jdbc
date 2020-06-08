@@ -55,6 +55,7 @@ for name in "${!TARGET_TEST_IMAGES[@]}"; do
         -e AWS_SECRET_ACCESS_KEY \
         -e GITHUB_ACTIONS \
         -e GITHUB_SHA \
+        -e GITHUB_REF \
         -e RUNNER_TRACKING_ID \
         -e JOB_NAME \
         -e BUILD_NUMBER \
