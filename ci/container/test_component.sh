@@ -25,7 +25,7 @@ if [[ -n "$GITHUB_SHA" ]]; then
     export TARGET_SCHEMA_NAME=${RUNNER_TRACKING_ID//-/_}_${GITHUB_SHA}
 elif [[ -n "$BUILD_NUMBER" ]]; then
     # Jenkins
-    export TARGET_SCHEMA_NAME=JENKINS_${JOB_NAME}_${BUILD_NUMBER}
+    export TARGET_SCHEMA_NAME=JENKINS_${JOB_NAME//-/_}_${BUILD_NUMBER}
 else
     export TARGET_SCHEMA_NAME=LOCAL_reg_1
 fi
