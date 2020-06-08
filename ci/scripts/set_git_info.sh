@@ -13,12 +13,13 @@ else
     #
     # GITHUB Actions
     if [[ "$CLOUD_PROVIDER" == "AZURE" ]]; then
-        gpg --quiet --batch --yes --decrypt --passphrase="$PARAMETERS_SECRET" --output $THIS_DIR/../parameters.json $THIS_DIR/../.github/workflows/parameters_azure.json.gpg
+        SOURCE_PARAMETER_FILE=parameters_azure.json.gpg
     elif [[ "$CLOUD_PROVIDER" == "GCP" ]]; then
-        gpg --quiet --batch --yes --decrypt --passphrase="$PARAMETERS_SECRET" --output $THIS_DIR/../parameters.json $THIS_DIR/../.github/workflows/parameters_gcp.json.gpg
+        SOURCE_PARAMETER_FILE=parameters_gcp.json.gpg
     else
-        gpg --quiet --batch --yes --decrypt --passphrase="$PARAMETERS_SECRET" --output $THIS_DIR/../parameters.json $THIS_DIR/../.github/workflows/parameters_aws.json.gpg
+        SOURCE_PARAMETER_FILE=parameters_aws.json.gpg
     fi
+    gpg --quiet --batch --yes --decrypt --passphrase="$PARAMETERS_SECRET" --output $WORKSPACE/parameters.json $THIS_DIR/../.github/workflows/$SOURCE_PARAMETER_FILE
     export client_git_url=https://github.com/${GITHUB_REPOSITORY}.git
     export client_git_branch=origin/$(basename ${GITHUB_REF})
     export client_git_commit=${GITHUB_SHA}

@@ -11,6 +11,7 @@ else
     export DOCKER_REGISTRY_NAME=snowflakedb
     export WORKSPACE=$GITHUB_WORKSPACE
 fi
+mkdir -p $WORKSPACE
 
 export DRIVER_NAME=jdbc
 

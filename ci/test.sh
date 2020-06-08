@@ -10,9 +10,6 @@ source $THIS_DIR/_init.sh
 source $THIS_DIR/scripts/login_internal_docker.sh
 source $THIS_DIR/scripts/set_git_info.sh
 
-WORKSPACE=${WORKSPACE:-/tmp/jdbc_test_output}
-mkdir -p ${WORKSPACE}
-
 echo "Use /sbin/ip"
 IP_ADDR=$(/sbin/ip -4 addr show scope global dev eth0 | grep inet | awk '{print $2}' | cut -d / -f 1)
 

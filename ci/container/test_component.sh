@@ -19,6 +19,7 @@ else
     PARAMETER_FILE=$SOURCE_ROOT/src/test/resources/parameters.json
 fi
 eval $(jq -r '.testconnection | to_entries | map("export \(.key)=\(.value|tostring)")|.[]' $PARAMETER_FILE)
+env | grep SNOWFLAKE_ | grep -v PASS | sort
 
 if [[ -n "$GITHUB_SHA" ]]; then
     # Github Action
@@ -50,8 +51,6 @@ popd >& /dev/null
 echo "[INFO] Running Hang Web Server"
 kill -9 $(ps -ewf | grep hang_webserver | grep -v grep | awk '{print $2}') || true
 python3 $THIS_DIR/hang_webserver.py 12345&
-
-env | grep SNOWFLAKE_ | grep -v PASS | sort
 
 IFS=','
 read -ra CATEGORY <<< "$JDBC_TEST_CATEGORY" 
