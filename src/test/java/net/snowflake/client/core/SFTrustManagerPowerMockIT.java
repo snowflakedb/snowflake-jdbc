@@ -4,7 +4,7 @@
 package net.snowflake.client.core;
 
 import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningOnTravisCI;
+import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryCore;
 import org.junit.Ignore;
 import org.junit.Rule;
@@ -33,7 +33,7 @@ public class SFTrustManagerPowerMockIT
   public TemporaryFolder tmpFolder = new TemporaryFolder();
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   @PrepareForTest({
                       net.snowflake.client.core.SFTrustManager.class,
                       net.snowflake.client.core.FileCacheManager.class,

@@ -5,7 +5,7 @@ package net.snowflake.client.jdbc;
 
 import net.snowflake.client.AbstractDriverIT;
 import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningOnTravisCI;
+import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryStatement;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
 import net.snowflake.client.jdbc.telemetry.TelemetryClient;
@@ -374,7 +374,7 @@ public class StatementIT extends BaseJDBCTest
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testCopyAndUpload() throws Exception
   {
 
@@ -581,7 +581,7 @@ public class StatementIT extends BaseJDBCTest
    * @throws SQLException if any error occurs
    */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testExecuteUpdateZeroCount() throws SQLException
   {
     try (Connection connection = getConnection())

@@ -3,7 +3,7 @@
  */
 package net.snowflake.client.jdbc;
 
-import net.snowflake.client.RunningOnTravisCI;
+import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryStatement;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.common.core.SqlState;
@@ -745,7 +745,7 @@ public class MultiStatementIT extends BaseJDBCTest
   }
 
   @Test
-  @ConditionalIgnore(condition = RunningOnTravisCI.class)
+  @ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testInvalidParameterCount() throws SQLException
   {
     Connection connection = getConnection();

@@ -4,7 +4,7 @@
 package net.snowflake.client.jdbc;
 
 import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningOnTravisCI;
+import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryOthers;
 import org.junit.After;
 import org.junit.Before;
@@ -75,7 +75,7 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testGetColumn() throws SQLException
   {
     String getAllColumsCount = "select count(*) from db.information_schema.columns";
@@ -153,7 +153,7 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testGetFunctions() throws SQLException
   {
     connection = getConnection();
@@ -227,7 +227,7 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testGetFunctionColumns() throws SQLException
   {
     connection = getConnection();
@@ -329,7 +329,7 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testGetSchema() throws SQLException
   {
     String getSchemaCount = "select count(*) from db.information_schema.schemata";
@@ -375,7 +375,7 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest
   @Test
   @Ignore // SNOW-85084 detected this is a flaky test, so ignore it here.
   // We have other regression tests to cover it
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testGetTablesReusingCachedResults() throws SQLException
   {
     Connection snowflakeConnection = getSnowflakeAdminConnection();
@@ -537,7 +537,7 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testGetTables() throws SQLException
   {
     String getAllTable = "select count(*) from db.information_schema.tables";
@@ -624,7 +624,7 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testGetMetaDataUseConnectionCtx() throws SQLException
   {
     Connection connection = getConnection();

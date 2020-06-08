@@ -7,7 +7,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.snowflake.client.AbstractDriverIT;
 import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningOnTravisCI;
+import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryOthers;
 import net.snowflake.client.core.OCSPMode;
 import net.snowflake.client.core.SFSession;
@@ -949,7 +949,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testPutWithWildcardGCP() throws Throwable
   {
     Properties _connectionProperties = new Properties();
@@ -1036,7 +1036,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testPutGetLargeFileGCP() throws Throwable
   {
     Connection connection = getConnection("gcpaccount");
@@ -1114,7 +1114,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testPutOverwrite() throws Throwable
   {
     Connection connection = null;
@@ -1188,7 +1188,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testPutOverwriteFalseNoDigest() throws Throwable
   {
     Connection connection = null;
@@ -1263,7 +1263,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testPut() throws Throwable
   {
     Connection connection = null;
@@ -1379,7 +1379,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testSQLErrorsDisableFix63095() throws SQLException
   {
     Connection connection = null;
@@ -1418,7 +1418,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testSQLErrorsEnableFix63095() throws SQLException
   {
     Connection connection = null;
@@ -1456,7 +1456,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testExplainPlan() throws Throwable
   {
     Connection connection = null;
@@ -1796,7 +1796,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void test31448() throws Throwable
   {
     Connection connection = getConnection();
@@ -3271,7 +3271,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest
 
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testSnow26503() throws Throwable
   {
     Connection connection = null;
@@ -3712,7 +3712,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testPutGet() throws Throwable
   {
 
@@ -3781,7 +3781,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest
    * @throws Throwable
    */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testGeoOutputTypes() throws Throwable
   {
     Connection connection = null;
@@ -3950,7 +3950,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest
    * Test API for Spark connector for FileTransferMetadata
    */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testGCPFileTransferMetadataWithOneFile() throws Throwable
   {
     Connection connection = null;
@@ -4048,7 +4048,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest
    * Negative test for FileTransferMetadata. It is only supported for GCP.
    */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testGCPFileTransferMetadataNegativeOnlySupportGCP() throws Throwable
   {
     Connection connection = null;
@@ -4100,7 +4100,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest
    * Negative test for FileTransferMetadata. It is only supported for PUT.
    */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testGCPFileTransferMetadataNetativeOnlySupportPut() throws Throwable
   {
     Connection connection = null;
@@ -4157,7 +4157,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testToTimestampNullBind() throws Throwable
   {
     Connection connection = null;

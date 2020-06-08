@@ -4,7 +4,7 @@
 package net.snowflake.client.jdbc;
 
 import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningOnTravisCI;
+import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryConnection;
 import net.snowflake.client.core.SFOCSPException;
 import net.snowflake.client.core.SFTrustManager;
@@ -412,7 +412,7 @@ public class ConnectionWithOCSPModeIT extends BaseJDBCTest
    * Test OCSP Responder hang and timeout. SocketTimeoutException exception should be raised.
    */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testOCSPResponderTimeoutFailClosed()
   {
     System.setProperty(SFTrustManager.SF_OCSP_TEST_OCSP_RESPONDER_TIMEOUT, "1000");
@@ -460,7 +460,7 @@ public class ConnectionWithOCSPModeIT extends BaseJDBCTest
    * the test endpoint is invalid.
    */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testOCSPResponder403FailClosed()
   {
     System.setProperty(SFTrustManager.SF_OCSP_TEST_RESPONDER_URL, "http://localhost:12345/403");

@@ -5,7 +5,6 @@ package net.snowflake.client.jdbc;
 
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnTestaccount;
-import net.snowflake.client.RunningOnTravisCI;
 import net.snowflake.client.category.TestCategoryOthers;
 import org.apache.commons.io.IOUtils;
 import org.junit.Test;

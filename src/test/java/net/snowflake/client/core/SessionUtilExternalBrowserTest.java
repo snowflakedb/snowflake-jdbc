@@ -4,7 +4,7 @@
 package net.snowflake.client.core;
 
 import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningOnTravisCI;
+import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.common.core.ClientAuthnDTO;
 import org.apache.http.client.methods.HttpPost;
@@ -24,7 +24,6 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertThat;
@@ -161,7 +160,7 @@ public class SessionUtilExternalBrowserTest
    * @throws Throwable if any error occurs
    */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   @PrepareForTest({
                       net.snowflake.client.core.HttpUtil.class,
                       java.net.ServerSocket.class,
@@ -197,7 +196,7 @@ public class SessionUtilExternalBrowserTest
    * @throws Throwable if any error occurs
    */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   @PrepareForTest({
                       net.snowflake.client.core.HttpUtil.class,
                       java.net.ServerSocket.class,

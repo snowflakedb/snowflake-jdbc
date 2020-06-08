@@ -6,14 +6,14 @@ package net.snowflake.client;
 /**
  * Run tests on CI
  */
-public class RunningOnTravisCI implements ConditionalIgnoreRule.IgnoreCondition
+public class RunningOnGithubAction implements ConditionalIgnoreRule.IgnoreCondition
 {
   public boolean isSatisfied()
   {
     return System.getenv("GITHUB_ACTIONS") != null;
   }
 
-  public static boolean isRunningOnTravisCI()
+  public static boolean isRunningOnGithubAction()
   {
     return System.getenv("GITHUB_ACTIONS") != null;
   }
