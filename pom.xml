@@ -405,11 +405,6 @@
           <execution>
             <id>default-testCompile</id>
             <phase>test-compile</phase>
-            <configuration>
-              <testExcludes>
-                <exclude>**/ConnectionFipsIT.java</exclude>
-              </testExcludes>
-            </configuration> 
             <goals>
               <goal>testCompile</goal>
             </goals>
@@ -888,7 +883,6 @@
                   <excludes>
                     <exclude>**/ingest/*.java</exclude>
                     <exclude>**/DellBoomiCloudIT.java</exclude>
-                    <exclude>**/ConnectionFipsIT.java</exclude>
                   </excludes>
                   <systemPropertyVariables>
                     <logback.configurationFile>
@@ -1075,7 +1069,6 @@
                   <excludes>
                     <exclude>**/ingest/*.java</exclude>
                     <exclude>**/DellBoomiCloudIT.java</exclude>
-                    <exclude>**/ConnectionFipsIT.java</exclude>
                   </excludes>
                   <systemPropertyVariables>
                     <logback.configurationFile>
