@@ -18,34 +18,29 @@ else
     PARAMETER_FILE=$SOURCE_ROOT/src/test/resources/parameters.json
 fi
 eval $(jq -r '.testconnection | to_entries | map("export \(.key)=\(.value|tostring)")|.[]' $PARAMETER_FILE)
-env | grep SNOWFLAKE_ | grep -v PASS | sort
 
 if [[ -n "$GITHUB_SHA" ]]; then
     # Github Action
     export TARGET_SCHEMA_NAME=${RUNNER_TRACKING_ID//-/_}_${GITHUB_SHA}
-elif [[ -n "$BUILD_NUMBER" ]]; then
-    # Jenkins
-    export TARGET_SCHEMA_NAME=JENKINS_${JOB_NAME//-/_}_${BUILD_NUMBER}
-else
-    export TARGET_SCHEMA_NAME=LOCAL_reg_1
-fi
 
-function finish() {
+    function finish() {
+        pushd $SOURCE_ROOT/ci/container >& /dev/null
+            echo "[INFO] Drop schema $TARGET_SCHEMA_NAME"
+            python3 drop_schema.py
+        popd >& /dev/null
+    }
+    trap finish EXIT
+
     pushd $SOURCE_ROOT/ci/container >& /dev/null
-        echo "[INFO] Drop schema $TARGET_SCHEMA_NAME"
-        python3 drop_schema.py
+        echo "[INFO] Create schema $TARGET_SCHEMA_NAME"
+        if python3 create_schema.py; then
+            export SNOWFLAKE_TEST_SCHEMA=$TARGET_SCHEMA_NAME
+        else
+            echo "[WARN] SNOWFLAKE_TEST_SCHEMA: $SNOWFLAKE_TEST_SCHEMA"
+        fi
     popd >& /dev/null
-}
-trap finish EXIT
-
-pushd $SOURCE_ROOT/ci/container >& /dev/null
-    echo "[INFO] Create schema $TARGET_SCHEMA_NAME"
-    if python3 create_schema.py; then
-        export SNOWFLAKE_TEST_SCHEMA=$TARGET_SCHEMA_NAME
-    else
-        echo "[WARN] SNOWFLAKE_TEST_SCHEMA: $SNOWFLAKE_TEST_SCHEMA"
-    fi
-popd >& /dev/null
+fi
+env | grep SNOWFLAKE_ | grep -v PASS | sort
 
 echo "[INFO] Running Hang Web Server"
 kill -9 $(ps -ewf | grep hang_webserver | grep -v grep | awk '{print $2}') || true
