@@ -26,5 +26,4 @@ if [[ -z "$GITHUB_ACTIONS" ]] ;then
 else
     export GIT_BRANCH=origin/$(basename ${GITHUB_REF})
     export GIT_COMMIT=${GITHUB_SHA}
-    export WORKSPACE=$GITHUB_WORKSPACE
 fi

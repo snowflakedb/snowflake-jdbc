@@ -7,14 +7,8 @@ THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 export WORKSPACE=${WORKSPACE:-/mnt/workspace}
 export SOURCE_ROOT=${SOURCE_ROOT:-/mnt/host}
 
-    echo "[DEBUG] WORKSPACE $WORKSPACE"
-    ls -l $WORKSPACE
-
 echo "[INFO] Download JDBC Integration test cases and libraries"
 source $THIS_DIR/download_artifact.sh
-
-    echo "[DEBUG] WORKSPACE $WORKSPACE"
-    ls -l $WORKSPACE
 
 if [[ -f "$WORKSPACE/parameters.json" ]]; then
     echo "[INFO] Found parameter file in $WORKSPACE"
