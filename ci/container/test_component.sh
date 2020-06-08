@@ -20,7 +20,15 @@ else
 fi
 eval $(jq -r '.testconnection | to_entries | map("export \(.key)=\(.value|tostring)")|.[]' $PARAMETER_FILE)
 
-export TARGET_SCHEMA_NAME=${RUNNER_TRACKING_ID//-/_}_${GITHUB_SHA}
+if [[ -n "$GITHUB_SHA" ]]; then
+    # Github Action
+    export TARGET_SCHEMA_NAME=${RUNNER_TRACKING_ID//-/_}_${GITHUB_SHA}
+elif [[ -n "$BUILD_NUMBER" ]]; then
+    # Jenkins
+    export TARGET_SCHEMA_NAME=JENKINS_${JOB_NAME}_${BUILD_NUMBER}
+else
+    export TARGET_SCHEMA_NAME=LOCAL_reg_1
+fi
 
 function finish() {
     pushd $SOURCE_ROOT/ci/container >& /dev/null
@@ -43,7 +51,7 @@ echo "[INFO] Running Hang Web Server"
 kill -9 $(ps -ewf | grep hang_webserver | grep -v grep | awk '{print $2}') || true
 python3 $THIS_DIR/hang_webserver.py 12345&
 
-env | grep SNOWFLAKE_ | grep -v PASS
+env | grep SNOWFLAKE_ | grep -v PASS | sort
 
 IFS=','
 read -ra CATEGORY <<< "$JDBC_TEST_CATEGORY" 
