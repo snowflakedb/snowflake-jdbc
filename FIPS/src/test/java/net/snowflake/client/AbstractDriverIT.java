@@ -65,50 +65,25 @@ public class AbstractDriverIT
     else
     {
       account = accountName;
-      host = accountName.trim() + ".reg.local";
+      // By default, the test will run against reg deployment.
+      // If developer needs to run in Intellij, you can set this env as ".dev.local"
+      String deployment = System.getenv("SNOWFLAKE_TEST_DEPLOYMENT");
+      if (Strings.isNullOrEmpty(deployment))
+      {
+        deployment = ".reg.local";
+      }
+      host = accountName.trim() + deployment;
     }
-    assertThat("set account environment variable.",
-               !Strings.isNullOrEmpty(account));
+    assertThat("set SNOWFLAKE_TEST_ACCOUNT environment variable to the account name.", !Strings.isNullOrEmpty(account));
     params.put("account", account);
 
-    assertThat("set host environment variable.",
-               !Strings.isNullOrEmpty(host));
+    if (Strings.isNullOrEmpty(host))
+    {
+      host = accountName + ".snowflakecomputing.com";
+    }
+
+    assertThat("set SNOWFLAKE_TEST_HOST environment variable to the host name.", !Strings.isNullOrEmpty(host));
     params.put("host", host);
-
-    String user = System.getenv("SNOWFLAKE_TEST_USER");
-    assertThat("set SNOWFLAKE_TEST_USER environment variable.",
-               !Strings.isNullOrEmpty(user));
-    params.put("user", user);
-
-    String password = System.getenv("SNOWFLAKE_TEST_PASSWORD");
-    assertThat("set SNOWFLAKE_TEST_PASSWORD environment variable.",
-               !Strings.isNullOrEmpty(password));
-    params.put("password", password);
-
-    String port = System.getenv("SNOWFLAKE_TEST_PORT");
-    assertThat("set SNOWFLAKE_TEST_PORT environment variable.",
-               !Strings.isNullOrEmpty(port));
-    params.put("port", port);
-
-    String database = System.getenv("SNOWFLAKE_TEST_DATABASE");
-    assertThat("set SNOWFLAKE_TEST_DATABASE environment variable.",
-               !Strings.isNullOrEmpty(database));
-    params.put("database", database);
-
-    String schema = System.getenv("SNOWFLAKE_TEST_SCHEMA");
-    assertThat("set SNOWFLAKE_TEST_SCHEMA environment variable.",
-               !Strings.isNullOrEmpty(schema));
-    params.put("schema", schema);
-
-    String role = System.getenv("SNOWFLAKE_TEST_ROLE");
-    assertThat("set SNOWFLAKE_TEST_ROLE environment variable.",
-               !Strings.isNullOrEmpty(role));
-    params.put("role", role);
-
-    String warehouse = System.getenv("SNOWFLAKE_TEST_WAREHOUSE");
-    assertThat("set SNOWFLAKE_TEST_WAREHOUSE environment variable.",
-               !Strings.isNullOrEmpty(role));
-    params.put("warehouse", warehouse);
 
     String protocol = System.getenv("SNOWFLAKE_TEST_PROTOCOL");
     String ssl;
@@ -121,6 +96,45 @@ public class AbstractDriverIT
       ssl = "on";
     }
     params.put("ssl", ssl);
+
+    String user = System.getenv("SNOWFLAKE_TEST_USER");
+    assertThat("set SNOWFLAKE_TEST_USER environment variable.", !Strings.isNullOrEmpty(user));
+    params.put("user", user);
+
+    String password = System.getenv("SNOWFLAKE_TEST_PASSWORD");
+    assertThat("set SNOWFLAKE_TEST_PASSWORD environment variable.", !Strings.isNullOrEmpty(password));
+    params.put("password", password);
+
+    String port = System.getenv("SNOWFLAKE_TEST_PORT");
+    if (Strings.isNullOrEmpty(port))
+    {
+      if ("on".equals(ssl))
+      {
+        port = "443";
+      }
+      else
+      {
+        port = "80";
+      }
+    }
+    assertThat("set SNOWFLAKE_TEST_PORT environment variable.", !Strings.isNullOrEmpty(port));
+    params.put("port", port);
+
+    String database = System.getenv("SNOWFLAKE_TEST_DATABASE");
+    assertThat("set SNOWFLAKE_TEST_DATABASE environment variable.", !Strings.isNullOrEmpty(database));
+    params.put("database", database);
+
+    String schema = System.getenv("SNOWFLAKE_TEST_SCHEMA");
+    assertThat("set SNOWFLAKE_TEST_SCHEMA environment variable.", !Strings.isNullOrEmpty(schema));
+    params.put("schema", schema);
+
+    String role = System.getenv("SNOWFLAKE_TEST_ROLE");
+    assertThat("set SNOWFLAKE_TEST_ROLE environment variable.", !Strings.isNullOrEmpty(role));
+    params.put("role", role);
+
+    String warehouse = System.getenv("SNOWFLAKE_TEST_WAREHOUSE");
+    assertThat("set SNOWFLAKE_TEST_WAREHOUSE environment variable.", !Strings.isNullOrEmpty(warehouse));
+    params.put("warehouse", warehouse);
 
     params.put("uri", String.format("jdbc:snowflake://%s:%s", host, port));
 

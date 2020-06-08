@@ -520,23 +520,6 @@
           </execution>
         </executions>
       </plugin>
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>exec-maven-plugin</artifactId>
-        <version>1.6.0</version>
-        <executions>
-          <execution>
-            <id>check-shaded-content</id>
-            <phase>verify</phase>
-            <goals>
-              <goal>exec</goal>
-            </goals>
-            <configuration>
-                <executable>${basedir}/ci/scripts/check_content.sh</executable>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
     </plugins>
   </build>
   <reporting>
@@ -783,6 +766,23 @@
                     <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                     </transformer>
                   </transformers>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>exec-maven-plugin</artifactId>
+            <version>1.6.0</version>
+            <executions>
+              <execution>
+                <id>check-shaded-content</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>exec</goal>
+                </goals>
+                <configuration>
+                    <executable>${basedir}/ci/scripts/check_content.sh</executable>
                 </configuration>
               </execution>
             </executions>
