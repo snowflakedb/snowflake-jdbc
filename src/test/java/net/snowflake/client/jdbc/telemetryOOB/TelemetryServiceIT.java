@@ -2,7 +2,7 @@ package net.snowflake.client.jdbc.telemetryOOB;
 
 
 import net.snowflake.client.jdbc.BaseJDBCTest;
-import net.snowflake.client.category.TestCategoryOthers;
+import net.snowflake.client.category.TestCategoryCore;
 import org.apache.commons.lang3.time.StopWatch;
 import org.junit.After;
 import org.junit.Before;
@@ -17,7 +17,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 /**
  * Standalone test cases for the out of band telemetry service
  */
-@Category(TestCategoryOthers.class)
+@Category(TestCategoryCore.class)
 public class TelemetryServiceIT extends BaseJDBCTest
 {
   private boolean defaultState;

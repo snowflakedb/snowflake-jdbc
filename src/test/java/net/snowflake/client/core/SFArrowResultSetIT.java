@@ -3,7 +3,7 @@
  */
 package net.snowflake.client.core;
 
-import net.snowflake.client.category.TestCategoryCore;
+import net.snowflake.client.category.TestCategoryArrow;
 import net.snowflake.client.jdbc.ArrowResultChunk;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeResultChunk;
@@ -45,7 +45,7 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-@Category(TestCategoryCore.class)
+@Category(TestCategoryArrow.class)
 public class SFArrowResultSetIT
 {
   private Random random = new Random();

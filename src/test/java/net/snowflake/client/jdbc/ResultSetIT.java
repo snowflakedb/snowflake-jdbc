@@ -4,8 +4,8 @@
 package net.snowflake.client.jdbc;
 
 import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningOnTravisCI;
-import net.snowflake.client.category.TestCategoryOthers;
+import net.snowflake.client.RunningOnGithubAction;
+import net.snowflake.client.category.TestCategoryResultSet;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
 import net.snowflake.client.jdbc.telemetry.TelemetryClient;
 import net.snowflake.client.jdbc.telemetry.TelemetryData;
@@ -56,7 +56,7 @@ import static org.junit.Assert.fail;
 /**
  * Test ResultSet
  */
-@Category(TestCategoryOthers.class)
+@Category(TestCategoryResultSet.class)
 public class ResultSetIT extends BaseJDBCTest
 {
   protected static String queryResultFormat = "json";
@@ -831,7 +831,7 @@ public class ResultSetIT extends BaseJDBCTest
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testGetColumnDisplaySizeAndPrecision() throws SQLException
   {
     Connection connection = getConnection();
@@ -1027,7 +1027,7 @@ public class ResultSetIT extends BaseJDBCTest
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testResultColumnSearchCaseSensitiveOld() throws Exception
   {
     subTestResultColumnSearchCaseSensitive("JDBC_RS_COLUMN_CASE_INSENSITIVE");

@@ -4,7 +4,7 @@
 package net.snowflake.client.pooling;
 
 import net.snowflake.client.AbstractDriverIT;
-import net.snowflake.client.category.TestCategoryOthers;
+import net.snowflake.client.category.TestCategoryConnection;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -24,7 +24,7 @@ import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.fail;
 
-@Category(TestCategoryOthers.class)
+@Category(TestCategoryConnection.class)
 public class ConnectionPoolingDataSourceIT extends AbstractDriverIT
 {
   @Test

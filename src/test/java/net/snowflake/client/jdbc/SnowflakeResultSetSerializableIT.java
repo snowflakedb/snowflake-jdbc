@@ -2,15 +2,15 @@ package net.snowflake.client.jdbc;
 
 
 import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningOnTravisCI;
-import net.snowflake.client.category.TestCategoryOthers;
+import net.snowflake.client.RunningOnGithubAction;
+import net.snowflake.client.category.TestCategoryResultSet;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.TemporaryFolder;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import static org.junit.Assert.assertThat;
+import static org.hamcrest.Matchers.greaterThan;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -26,41 +26,32 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 /**
  * SnowflakeResultSetSerializable tests
  */
-@RunWith(Parameterized.class)
-@Category(TestCategoryOthers.class)
+@Category(TestCategoryResultSet.class)
 public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
 {
-  @Parameterized.Parameters(name = "format={0}")
-  public static Object[][] data()
-  {
-    // all tests in this class need to run for both query result formats json
-    // and arrow
-    return new Object[][]{
-        {"JSON"}
-        , {"Arrow"}
-    };
-  }
-
   @Rule
   public TemporaryFolder tmpFolder = new TemporaryFolder();
 
   private static boolean developPrint = false;
 
-  private static String queryResultFormat;
+  private String queryResultFormat;
 
-  public SnowflakeResultSetSerializableIT(String format)
+  public SnowflakeResultSetSerializableIT()
+  {
+    this("json");
+  }
+
+  SnowflakeResultSetSerializableIT(String format)
   {
     queryResultFormat = format;
   }
 
-  public static Connection getConnection()
-  throws SQLException
+  public Connection init() throws SQLException
   {
     Connection conn = BaseJDBCTest.getConnection();
     Statement stmt = conn.createStatement();
@@ -68,14 +59,10 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
 
     // Set up theses parameters as smaller values in order to generate
     // multiple file chunks with small data volumes.
-    stmt.execute(
-        "alter session set result_first_chunk_max_size = 512");
-    stmt.execute(
-        "alter session set result_min_chunk_size = 512");
-    stmt.execute(
-        "alter session set arrow_result_rb_flush_size = 512");
-    stmt.execute(
-        "alter session set result_chunk_size_multiplier = 1.2");
+    stmt.execute("alter session set result_first_chunk_max_size = 512");
+    stmt.execute("alter session set result_min_chunk_size = 512");
+    stmt.execute("alter session set arrow_result_rb_flush_size = 512");
+    stmt.execute("alter session set result_chunk_size_multiplier = 1.2");
     stmt.close();
 
     return conn;
@@ -277,7 +264,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
   {
     List<String> fileNameList = null;
     String originalResultCSVString = null;
-    try (Connection connection = getConnection())
+    try (Connection connection = init())
     {
       Statement statement = connection.createStatement();
 
@@ -307,11 +294,11 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
     }
 
     String chunkResultString = deserializeResultSet(fileNameList);
-    assertTrue(chunkResultString.equals(originalResultCSVString));
+    assertEquals(chunkResultString, originalResultCSVString);
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testBasicTableWithEmptyResult() throws Throwable
   {
     // Use complex WHERE clause in order to test both ARROW and JSON.
@@ -320,7 +307,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testBasicTableWithOnlyFirstChunk() throws Throwable
   {
     // Result only includes first data chunk, test maxSize is small.
@@ -330,7 +317,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testBasicTableWithOneFileChunk() throws Throwable
   {
     // Result only includes first data chunk, test maxSize is small.
@@ -340,7 +327,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testBasicTableWithSomeFileChunks() throws Throwable
   {
     // Result only includes first data chunk, test maxSize is small.
@@ -379,7 +366,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
   {
     List<String> fileNameList = null;
     String originalResultCSVString = null;
-    try (Connection connection = getConnection())
+    try (Connection connection = init())
     {
       connection.createStatement().execute(
           "alter session set DATE_OUTPUT_FORMAT = '" + format_date + "'");
@@ -436,11 +423,11 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
     }
 
     String chunkResultString = deserializeResultSet(fileNameList);
-    assertTrue(chunkResultString.equals(originalResultCSVString));
+    assertEquals(chunkResultString, originalResultCSVString);
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testTimestamp() throws Throwable
   {
     String[] dateFormats = {"YYYY-MM-DD", "DD-MON-YYYY", "MM/DD/YYYY"};
@@ -461,12 +448,12 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testBasicTableWithSerializeObjectsAfterReadResultSet() throws Throwable
   {
     List<String> fileNameList = null;
     String originalResultCSVString = null;
-    try (Connection connection = getConnection())
+    try (Connection connection = init())
     {
       Statement statement = connection.createStatement();
 
@@ -496,7 +483,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
     }
 
     String chunkResultString = deserializeResultSet(fileNameList);
-    assertTrue(chunkResultString.equals(originalResultCSVString));
+    assertEquals(chunkResultString, originalResultCSVString);
   }
 
   /**
@@ -550,13 +537,13 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testSplitResultSetSerializable() throws Throwable
   {
     List<String> fileNameList = null;
     String originalResultCSVString = null;
     int rowCount = 90000;
-    try (Connection connection = getConnection())
+    try (Connection connection = init())
     {
       Statement statement = connection.createStatement();
 
@@ -585,25 +572,25 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
     List<String> fileNameSplit3M = splitResultSetSerializables(
         fileNameList, 3 * 1024 * 1024);
     String chunkResultString = deserializeResultSet(fileNameSplit3M);
-    assertTrue(chunkResultString.equals(originalResultCSVString));
+    assertEquals(chunkResultString, originalResultCSVString);
 
     // Split deserializedResultSet by 2M, the result should be the same
     List<String> fileNameSplit2M = splitResultSetSerializables(
         fileNameSplit3M, 2 * 1024 * 1024);
     chunkResultString = deserializeResultSet(fileNameSplit2M);
-    assertTrue(chunkResultString.equals(originalResultCSVString));
+    assertEquals(chunkResultString, originalResultCSVString);
 
     // Split deserializedResultSet by 1M, the result should be the same
     List<String> fileNameSplit1M = splitResultSetSerializables(
         fileNameSplit2M, 1 * 1024 * 1024);
     chunkResultString = deserializeResultSet(fileNameSplit1M);
-    assertTrue(chunkResultString.equals(originalResultCSVString));
+    assertEquals(chunkResultString, originalResultCSVString);
 
     // Split deserializedResultSet by smallest, the result should be the same
     List<String> fileNameSplitSmallest = splitResultSetSerializables(
         fileNameSplit1M, 1);
     chunkResultString = deserializeResultSet(fileNameSplitSmallest);
-    assertTrue(chunkResultString.equals(originalResultCSVString));
+    assertEquals(chunkResultString, originalResultCSVString);
   }
 
   /**
@@ -629,10 +616,10 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testCloseUnconsumedResultSet() throws Throwable
   {
-    try (Connection connection = getConnection())
+    try (Connection connection = init())
     {
       Statement statement = connection.createStatement();
 
@@ -659,10 +646,10 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testNegativeWithChunkFileNotExist() throws Throwable
   {
-    try (Connection connection = getConnection())
+    try (Connection connection = init())
     {
       Statement statement = connection.createStatement();
 
@@ -689,7 +676,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
       hackToSetupWrongURL(resultSetSerializables);
 
       // Expected to hit credential issue when access the result.
-      assertTrue(resultSetSerializables.size() == 1);
+      assertEquals(resultSetSerializables.size(), 1);
       try
       {
         SnowflakeResultSetSerializable resultSetSerializable =
@@ -705,7 +692,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
       }
       catch (SQLException ex)
       {
-        System.out.println("Negative test hits expected error: " + ex.getMessage());
+        assertEquals((long)ErrorCode.INTERNAL_ERROR.getMessageCode(), ex.getErrorCode());
       }
 
       rs.close();
@@ -713,10 +700,10 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testNegativeWithClosedResultSet() throws Throwable
   {
-    try (Connection connection = getConnection())
+    try (Connection connection = init())
     {
       Statement statement = connection.createStatement();
 
@@ -780,7 +767,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
    */
   @Test
   @Ignore
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testCustomProxyWithFiles() throws Throwable
   {
     boolean generateFiles = false;
@@ -837,7 +824,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
 
   private void generateTestFiles() throws Throwable
   {
-    try (Connection connection = getConnection())
+    try (Connection connection = init())
     {
       Statement statement = connection.createStatement();
 
@@ -863,7 +850,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testRetrieveMetadata() throws Throwable
   {
     List<String> fileNameList;
@@ -871,7 +858,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
     long expectedTotalRowCount = 0;
     long expectedTotalCompressedSize = 0;
     long expectedTotalUncompressedSize = 0;
-    try (Connection connection = getConnection())
+    try (Connection connection = init())
     {
       Statement statement = connection.createStatement();
 
@@ -894,7 +881,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
                                         100 * 1024 * 1024, "txt");
 
       // Only one serializable object is generated with 100M data.
-      assertTrue(fileNameList.size() == 1);
+      assertEquals(fileNameList.size(), 1);
 
       FileInputStream fi = new FileInputStream(fileNameList.get(0));
       ObjectInputStream si = new ObjectInputStream(fi);
@@ -913,9 +900,9 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
 
       rs.close();
     }
-    assertTrue(expectedTotalRowCount == rowCount);
-    assertTrue(expectedTotalCompressedSize > 0);
-    assertTrue(expectedTotalUncompressedSize > 0);
+    assertEquals(expectedTotalRowCount, rowCount);
+    assertThat(expectedTotalCompressedSize, greaterThan((long)0));
+    assertThat(expectedTotalUncompressedSize, greaterThan((long)0));
 
     // Split deserializedResultSet by 3M
     List<String> fileNameSplit3M = splitResultSetSerializables(

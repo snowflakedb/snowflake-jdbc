@@ -5,6 +5,7 @@ package net.snowflake.client.jdbc;
 
 import net.snowflake.client.AbstractDriverIT;
 import net.snowflake.client.ConditionalIgnoreRule;
+import net.snowflake.client.RunningOnGithubActions;
 import net.snowflake.client.category.TestCategoryFips;
 import org.apache.commons.codec.binary.Base64;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
@@ -220,6 +221,7 @@ public class ConnectionFipsIT extends AbstractDriverIT {
     }
 
     @Test
+    @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubActions.class)
     public void connectWithFipsKeyPair() throws Exception {
         Map<String, String> parameters = getConnectionParameters();
         String testUser = parameters.get("user");
@@ -249,6 +251,7 @@ public class ConnectionFipsIT extends AbstractDriverIT {
     }
 
     @Test
+    @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubActions.class)
     public void testConnectUsingKeyPair() throws Exception
     {
         Map<String, String> parameters = getConnectionParameters();

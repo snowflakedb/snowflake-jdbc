@@ -53,7 +53,7 @@
     <bouncycastle.version>1.64</bouncycastle.version>
     <jna.version>5.5.0</jna.version>
     <shadeBase>net.snowflake.client.jdbc.internal</shadeBase>
-    <travisTestCategory>net.snowflake.client.category.AllTestCategory</travisTestCategory>
+    <testCategory>net.snowflake.client.category.AllTestCategory</testCategory>
   </properties>
 
   <dependencyManagement>
@@ -405,11 +405,6 @@
           <execution>
             <id>default-testCompile</id>
             <phase>test-compile</phase>
-            <configuration>
-              <testExcludes>
-                <exclude>**/ConnectionFipsIT.java</exclude>
-              </testExcludes>
-            </configuration> 
             <goals>
               <goal>testCompile</goal>
             </goals>
@@ -517,23 +512,6 @@
             <goals>
               <goal>jar</goal>
             </goals>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>exec-maven-plugin</artifactId>
-        <version>1.6.0</version>
-        <executions>
-          <execution>
-            <id>check-shaded-content</id>
-            <phase>verify</phase>
-            <goals>
-              <goal>exec</goal>
-            </goals>
-            <configuration>
-              <executable>${basedir}/scripts/check_content.sh</executable>
-            </configuration>
           </execution>
         </executions>
       </plugin>
@@ -787,6 +765,23 @@
               </execution>
             </executions>
           </plugin>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>exec-maven-plugin</artifactId>
+            <version>1.6.0</version>
+            <executions>
+              <execution>
+                <id>check-shaded-content</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>exec</goal>
+                </goals>
+                <configuration>
+                    <executable>${basedir}/ci/scripts/check_content.sh</executable>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
         </plugins>
       </build>
     </profile>
@@ -875,26 +870,10 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-failsafe-plugin</artifactId>
+            <configuration>
+                <groups>${testCategory}</groups>
+            </configuration>
             <executions>
-              <execution>
-                <id>Incident2IT</id>
-                <goals>
-                  <goal>integration-test</goal>
-                </goals>
-                <configuration>
-                  <argLine>
-                    @{argLine}
-                    -Dsnowflake.throttle_duration=0
-                    -Dsnowflake.throttle_limit=10
-                  </argLine>
-                  <systemPropertyVariables>
-                    <logback.configurationFile>
-                      ${basedir}/src/test/resources/logback-test.xml
-                    </logback.configurationFile>
-                  </systemPropertyVariables>
-                  <test>Incident2IT.java</test>
-                </configuration>
-              </execution>
               <execution>
                 <id>DefaultIT</id>
                 <goals>
@@ -903,9 +882,7 @@
                 <configuration>
                   <excludes>
                     <exclude>**/ingest/*.java</exclude>
-                    <exclude>**/Incident2IT.java</exclude>
                     <exclude>**/DellBoomiCloudIT.java</exclude>
-                    <exclude>**/ConnectionFipsIT.java</exclude>
                   </excludes>
                   <systemPropertyVariables>
                     <logback.configurationFile>
@@ -1081,7 +1058,7 @@
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-failsafe-plugin</artifactId>
             <configuration>
-                <groups>${travisTestCategory}</groups>
+                <groups>${testCategory}</groups>
             </configuration>
             <executions>
               <execution>
@@ -1092,7 +1069,6 @@
                   <excludes>
                     <exclude>**/ingest/*.java</exclude>
                     <exclude>**/DellBoomiCloudIT.java</exclude>
-                    <exclude>**/ConnectionFipsIT.java</exclude>
                   </excludes>
                   <systemPropertyVariables>
                     <logback.configurationFile>

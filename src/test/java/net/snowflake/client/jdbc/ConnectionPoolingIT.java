@@ -6,7 +6,7 @@ package net.snowflake.client.jdbc;
 import com.mchange.v2.c3p0.ComboPooledDataSource;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
-import net.snowflake.client.category.TestCategoryOthers;
+import net.snowflake.client.category.TestCategoryConnection;
 import org.apache.commons.dbcp.BasicDataSource;
 import org.apache.commons.dbcp.PoolingDataSource;
 import org.apache.commons.pool.impl.GenericObjectPool;
@@ -28,7 +28,7 @@ import static org.junit.Assert.assertEquals;
 /**
  * Connection pool interface test
  */
-@Category(TestCategoryOthers.class)
+@Category(TestCategoryConnection.class)
 public class ConnectionPoolingIT
 {
   private BasicDataSource bds = null;
