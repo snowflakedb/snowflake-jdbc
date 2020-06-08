@@ -79,7 +79,7 @@ public class AbstractDriverIT
 
     if (Strings.isNullOrEmpty(host))
     {
-      host = accountName + ".snowflakecomputing.com";
+      host = account + ".snowflakecomputing.com";
     }
 
     assertThat("set SNOWFLAKE_TEST_HOST environment variable to the host name.", !Strings.isNullOrEmpty(host));
