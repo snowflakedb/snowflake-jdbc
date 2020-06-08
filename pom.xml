@@ -880,25 +880,6 @@
             </configuration>
             <executions>
               <execution>
-                <id>Incident2IT</id>
-                <goals>
-                  <goal>integration-test</goal>
-                </goals>
-                <configuration>
-                  <argLine>
-                    @{argLine}
-                    -Dsnowflake.throttle_duration=0
-                    -Dsnowflake.throttle_limit=10
-                  </argLine>
-                  <systemPropertyVariables>
-                    <logback.configurationFile>
-                      ${basedir}/src/test/resources/logback-test.xml
-                    </logback.configurationFile>
-                  </systemPropertyVariables>
-                  <test>Incident2IT.java</test>
-                </configuration>
-              </execution>
-              <execution>
                 <id>DefaultIT</id>
                 <goals>
                   <goal>integration-test</goal>
@@ -906,7 +887,6 @@
                 <configuration>
                   <excludes>
                     <exclude>**/ingest/*.java</exclude>
-                    <exclude>**/Incident2IT.java</exclude>
                     <exclude>**/DellBoomiCloudIT.java</exclude>
                     <exclude>**/ConnectionFipsIT.java</exclude>
                   </excludes>
