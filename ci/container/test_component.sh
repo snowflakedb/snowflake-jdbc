@@ -13,7 +13,9 @@ export SOURCE_ROOT=${SOURCE_ROOT:-/mnt/host}
 echo "[INFO] Download JDBC Integration test cases and libraries"
 source $THIS_DIR/download_artifact.sh
 
-echo "[INFO] Setting test parameters"
+    echo "[DEBUG] WORKSPACE $WORKSPACE"
+    ls -l $WORKSPACE
+
 if [[ -f "$WORKSPACE/parameters.json" ]]; then
     echo "[INFO] Found parameter file in $WORKSPACE"
     PARAMETER_FILE=$WORKSPACE/parameters.json

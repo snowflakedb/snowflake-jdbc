@@ -36,9 +36,6 @@ if [[ -z "$JDBC_TEST_CATEGORY" ]]; then
     exit 2
 fi
 
-    echo "[DEBUG] WORKSPACE $WORKSPACE"
-    ls -l $WORKSPACE
-
 for name in "${!TARGET_TEST_IMAGES[@]}"; do
     echo "[INFO] Testing $DRIVER_NAME on $name"
     # docker pull "${TEST_IMAGE_NAMES[$name]}"
