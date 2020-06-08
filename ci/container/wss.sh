@@ -13,7 +13,7 @@ export PROJECT_NAME=snowflake-jdbc
 
 DATE=$(date +'%m-%d-%Y')
 
-SCAN_DIRECTORIES=$(cd $THIS_DIR/.. && pwd)
+SCAN_DIRECTORIES=$(cd $THIS_DIR/../.. && pwd)
 
 rm -f wss-unified-agent.jar
 curl -LO https://github.com/whitesource/unified-agent-distribution/releases/latest/download/wss-unified-agent.jar

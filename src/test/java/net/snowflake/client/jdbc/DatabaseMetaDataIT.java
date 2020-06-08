@@ -5,7 +5,7 @@ package net.snowflake.client.jdbc;
 
 import com.google.common.base.Strings;
 import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningOnTravisCI;
+import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryOthers;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -321,7 +321,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testSessionDatabaseParameter() throws Throwable
   {
     String altdb = "ALTERNATEDB";
@@ -456,7 +456,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testGetTables() throws Throwable
   {
     try (Connection connection = getConnection())
@@ -1295,7 +1295,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
    * per input parameter.
    */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testGetFunctionColumns() throws Exception
   {
     try (Connection connection = getConnection())
@@ -1467,7 +1467,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testGetTablePrivileges() throws Exception
   {
     try (Connection connection = getConnection())
@@ -1541,7 +1541,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testGetProcedureColumns() throws Exception
   {
     try (Connection connection = getConnection())

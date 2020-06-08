@@ -5,8 +5,8 @@ package net.snowflake.client.jdbc;
 
 import com.google.common.collect.Sets;
 import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningOnTravisCI;
-import net.snowflake.client.category.TestCategoryOthers;
+import net.snowflake.client.RunningOnGithubAction;
+import net.snowflake.client.category.TestCategoryStatement;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -38,7 +38,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-@Category(TestCategoryOthers.class)
+@Category(TestCategoryStatement.class)
 public class PreparedStatement2IT extends PreparedStatement0IT
 {
   @Before
@@ -64,7 +64,7 @@ public class PreparedStatement2IT extends PreparedStatement0IT
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testStageBatchDates() throws SQLException
   {
     try (Connection connection = init())
@@ -338,7 +338,7 @@ public class PreparedStatement2IT extends PreparedStatement0IT
    * @throws InterruptedException Will be thrown if the sleep is interrupted
    */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testPrepareTimeout() throws SQLException, InterruptedException
   {
     try (Connection adminCon = getSnowflakeAdminConnection())
@@ -349,10 +349,11 @@ public class PreparedStatement2IT extends PreparedStatement0IT
       {
         try (Connection connection = init())
         {
+          connection.createStatement().execute("create or replace table t(c1 string) as select 1");
           connection.createStatement().execute(
               "alter session set jdbc_enable_combined_describe=true");
           try (PreparedStatement prepStatement = connection.prepareStatement(
-              "select c1 from orders order by c1 limit 1"))
+              "select c1 from t order by c1 limit 1"))
           {
             Thread.sleep(5000);
             try (ResultSet resultSet = prepStatement.executeQuery())
@@ -361,6 +362,7 @@ public class PreparedStatement2IT extends PreparedStatement0IT
               assertThat(resultSet.getInt(1), is(1));
             }
           }
+          connection.createStatement().execute("drop table if exists t");
         }
       }
       finally
@@ -400,7 +402,7 @@ public class PreparedStatement2IT extends PreparedStatement0IT
    * Test for coalesce with bind and null arguments in a prepared statement
    */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testSnow35923() throws Exception
   {
     try (Connection connection = init())
@@ -423,7 +425,7 @@ public class PreparedStatement2IT extends PreparedStatement0IT
    * well as binding with object IDs
    */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testBindObjectLiteral() throws Exception
   {
     try (Connection conn = init())
@@ -592,7 +594,7 @@ public class PreparedStatement2IT extends PreparedStatement0IT
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testTableFuncBindInput() throws SQLException
   {
     try (Connection connection = init())
@@ -614,7 +616,7 @@ public class PreparedStatement2IT extends PreparedStatement0IT
    * YYYY-MM-DD HH24:MI:SS.FF9 TZH:TZM
    */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testBindTimestampTZViaStringBatch() throws SQLException
   {
     try (Connection connection = init())
@@ -904,7 +906,7 @@ public class PreparedStatement2IT extends PreparedStatement0IT
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testAddBatchNumericNullFloatMixed() throws Exception
   {
     try (Connection connection = init())

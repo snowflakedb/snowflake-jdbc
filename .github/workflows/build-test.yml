@@ -1,0 +1,43 @@
+name: Build and Test
+
+on:
+    push:
+        branches:
+            - master
+        tags:
+            - v*
+    pull_request:
+        branches:
+            - master
+            - prep-**
+jobs:
+    build:
+        name: Build
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v1
+            - name: Build
+              shell: bash
+              env:
+                WHITESOURCE_API_KEY: ${{ secrets.WHITESOURCE_API_KEY }}
+              run: ./ci/build.sh
+
+    test-linux:
+        needs: build
+        name: ${{ matrix.cloud }} JDBC ${{ matrix.category }} on ${{ matrix.image }}
+        runs-on: ubuntu-latest
+        strategy:
+            matrix:
+                image: [ 'jdbc-centos6-default' ]
+                cloud: [ 'AWS' ]
+                category: ['TestCategoryResultSet,TestCategoryOthers,TestCategoryLoader', 'TestCategoryConnection,TestCategoryStatement', 'TestCategoryArrow,TestCategoryCore', 'TestCategoryFips']
+        steps:
+            - uses: actions/checkout@v1
+            - name: Tests
+              shell: bash
+              env:
+                PARAMETERS_SECRET: ${{ secrets.PARAMETERS_SECRET }}
+                CLOUD_PROVIDER: ${{ matrix.cloud }}
+                TARGET_DOCKER_TEST_IMAGE: ${{ matrix.image }}
+                JDBC_TEST_CATEGORY: ${{ matrix.category }}
+              run: ./ci/test.sh

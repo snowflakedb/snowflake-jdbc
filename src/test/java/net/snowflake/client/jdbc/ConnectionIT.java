@@ -5,8 +5,8 @@ package net.snowflake.client.jdbc;
 
 import net.snowflake.client.ConditionalIgnoreRule.ConditionalIgnore;
 import net.snowflake.client.RunningNotOnTestaccount;
-import net.snowflake.client.RunningOnTravisCI;
-import net.snowflake.client.category.TestCategoryOthers;
+import net.snowflake.client.RunningOnGithubAction;
+import net.snowflake.client.category.TestCategoryConnection;
 import net.snowflake.client.core.QueryStatus;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.common.core.SqlState;
@@ -62,7 +62,7 @@ import static org.junit.Assert.fail;
 /**
  * Connection integration tests
  */
-@Category(TestCategoryOthers.class)
+@Category(TestCategoryConnection.class)
 public class ConnectionIT extends BaseJDBCTest
 {
   // create a local constant for this code for testing purposes (already defined in GS)
@@ -235,7 +235,7 @@ public class ConnectionIT extends BaseJDBCTest
   }
 
   @Test
-  @ConditionalIgnore(condition = RunningOnTravisCI.class)
+  @ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testConnectionGetAndSetDBAndSchema() throws SQLException
   {
     Connection con = getConnection();
@@ -537,7 +537,7 @@ public class ConnectionIT extends BaseJDBCTest
   }
 
   @Test
-  @ConditionalIgnore(condition = RunningOnTravisCI.class)
+  @ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testBasicDataSourceSerialization() throws Exception
   {
     // test with username/password authentication
@@ -579,7 +579,7 @@ public class ConnectionIT extends BaseJDBCTest
   }
 
   @Test
-  @ConditionalIgnore(condition = RunningOnTravisCI.class)
+  @ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testKeyPairFileDataSourceSerialization() throws Exception
   {
     // test with key/pair authentication where key is in file
@@ -687,7 +687,7 @@ public class ConnectionIT extends BaseJDBCTest
   }
 
   @Test
-  @ConditionalIgnore(condition = RunningOnTravisCI.class)
+  @ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testConnectUsingKeyPair() throws Exception
   {
     Map<String, String> parameters = getConnectionParameters();
@@ -773,7 +773,7 @@ public class ConnectionIT extends BaseJDBCTest
   }
 
   @Test
-  @ConditionalIgnore(condition = RunningOnTravisCI.class)
+  @ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testPrivateKeyInConnectionString() throws SQLException, IOException
   {
     Map<String, String> parameters = getConnectionParameters();
@@ -933,7 +933,7 @@ public class ConnectionIT extends BaseJDBCTest
   }
 
   @Test
-  @ConditionalIgnore(condition = RunningOnTravisCI.class)
+  @ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testDifferentKeyLength() throws Exception
   {
     Map<String, String> parameters = getConnectionParameters();

@@ -1,6 +1,6 @@
 package net.snowflake.client.jdbc;
 
-import net.snowflake.client.category.TestCategoryOthers;
+import net.snowflake.client.category.TestCategoryStatement;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -16,7 +16,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.CoreMatchers.is;
 
 
-@Category(TestCategoryOthers.class)
+@Category(TestCategoryStatement.class)
 public class PreparedMultiStmtIT extends BaseJDBCTest
 {
 

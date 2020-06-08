@@ -4,8 +4,8 @@
 package net.snowflake.client.jdbc;
 
 import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningOnTravisCI;
-import net.snowflake.client.category.TestCategoryOthers;
+import net.snowflake.client.RunningOnGithubAction;
+import net.snowflake.client.category.TestCategoryResultSet;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -38,7 +38,7 @@ import static org.junit.Assert.fail;
  * Test ResultSet
  */
 @RunWith(Parameterized.class)
-@Category(TestCategoryOthers.class)
+@Category(TestCategoryResultSet.class)
 public class ResultSetMultiTimeZoneIT extends BaseJDBCTest
 {
   @Parameterized.Parameters(name = "format={0}, tz={1}")
@@ -150,7 +150,7 @@ public class ResultSetMultiTimeZoneIT extends BaseJDBCTest
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testGetDateAndTime() throws SQLException
   {
     Connection connection = getConnection();
@@ -210,7 +210,7 @@ public class ResultSetMultiTimeZoneIT extends BaseJDBCTest
 
   // SNOW-25029: The driver should reduce Time milliseconds mod 24h.
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testTimeRange() throws SQLException
   {
     final String insertTime = "insert into timeTest values (?), (?), (?), (?)";
@@ -261,7 +261,7 @@ public class ResultSetMultiTimeZoneIT extends BaseJDBCTest
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testCurrentTime() throws SQLException
   {
     final String insertTime = "insert into datetime values (?, ?, ?)";
@@ -299,7 +299,7 @@ public class ResultSetMultiTimeZoneIT extends BaseJDBCTest
 
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testBindTimestampTZ() throws SQLException
   {
     Connection connection = getConnection();
@@ -327,7 +327,7 @@ public class ResultSetMultiTimeZoneIT extends BaseJDBCTest
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testGetOldDate() throws SQLException
   {
     Connection connection = getConnection();
@@ -365,7 +365,7 @@ public class ResultSetMultiTimeZoneIT extends BaseJDBCTest
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testDateTimeRelatedTypeConversion() throws SQLException
   {
     Connection connection = getConnection();
@@ -436,7 +436,7 @@ public class ResultSetMultiTimeZoneIT extends BaseJDBCTest
 
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testGetOldTimestamp() throws SQLException
   {
     Connection con = getConnection();
@@ -463,7 +463,7 @@ public class ResultSetMultiTimeZoneIT extends BaseJDBCTest
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testPrepareOldTimestamp() throws SQLException
   {
     Connection con = getConnection();

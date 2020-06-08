@@ -1,7 +1,7 @@
 package net.snowflake.client.jdbc;
 
 import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningOnTravisCI;
+import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryArrow;
 import org.apache.arrow.vector.BigIntVector;
 import org.apache.commons.lang3.ArrayUtils;
@@ -1518,7 +1518,7 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest
    * @throws SQLException
    */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testDecimal() throws SQLException
   {
     int scale = 37;
@@ -1737,7 +1737,7 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testClientSideSortingOnBatchedChunk() throws SQLException
   {
     // in this test, the first chunk contains multiple batches when the format is Arrow

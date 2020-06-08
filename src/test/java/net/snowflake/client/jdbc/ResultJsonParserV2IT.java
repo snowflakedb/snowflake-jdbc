@@ -3,7 +3,7 @@
  */
 package net.snowflake.client.jdbc;
 
-import net.snowflake.client.category.TestCategoryOthers;
+import net.snowflake.client.category.TestCategoryResultSet;
 import org.apache.commons.text.StringEscapeUtils;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -17,7 +17,7 @@ import static org.junit.Assert.assertNull;
 /**
  * This is the unit tests for ResultJsonParserV2
  */
-@Category(TestCategoryOthers.class)
+@Category(TestCategoryResultSet.class)
 public class ResultJsonParserV2IT
 {
   @Test

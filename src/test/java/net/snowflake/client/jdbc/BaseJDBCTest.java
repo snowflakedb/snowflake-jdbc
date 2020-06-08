@@ -1,10 +1,9 @@
 /*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All right reserved.
+ * Copyright (c) 2012-2020 Snowflake Computing Inc. All right reserved.
  */
 package net.snowflake.client.jdbc;
 
 import net.snowflake.client.AbstractDriverIT;
-import net.snowflake.client.RunningOnTravisCI;
 
 import javax.xml.transform.Result;
 import javax.xml.transform.Source;

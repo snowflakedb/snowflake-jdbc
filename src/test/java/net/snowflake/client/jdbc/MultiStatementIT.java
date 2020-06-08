@@ -3,8 +3,8 @@
  */
 package net.snowflake.client.jdbc;
 
-import net.snowflake.client.RunningOnTravisCI;
-import net.snowflake.client.category.TestCategoryOthers;
+import net.snowflake.client.RunningOnGithubAction;
+import net.snowflake.client.category.TestCategoryStatement;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.common.core.SqlState;
 import org.junit.Assert;
@@ -30,7 +30,7 @@ import static net.snowflake.client.ConditionalIgnoreRule.ConditionalIgnore;
 /**
  * Multi Statement tests
  */
-@Category(TestCategoryOthers.class)
+@Category(TestCategoryStatement.class)
 public class MultiStatementIT extends BaseJDBCTest
 {
   protected static String queryResultFormat = "json";
@@ -745,7 +745,7 @@ public class MultiStatementIT extends BaseJDBCTest
   }
 
   @Test
-  @ConditionalIgnore(condition = RunningOnTravisCI.class)
+  @ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testInvalidParameterCount() throws SQLException
   {
     Connection connection = getConnection();

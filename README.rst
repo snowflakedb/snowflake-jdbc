@@ -1,17 +1,14 @@
 Snowflake JDBC Driver
 *********************
 
-.. image:: https://travis-ci.org/snowflakedb/snowflake-jdbc.svg?branch=master
-    :target: https://travis-ci.org/snowflakedb/snowflake-jdbc
+.. image:: https://github.com/snowflakedb/snowflake-jdbc/workflows/Build%20and%20Test/badge.svg?branch=master
+      :target: https://github.com/snowflakedb/snowflake-jdbc/actions?query=workflow%3A%22Build+and+Test%22+branch%3Amaster
 
 .. image:: http://img.shields.io/:license-Apache%202-brightgreen.svg
     :target: http://www.apache.org/licenses/LICENSE-2.0.txt
     
 .. image:: https://maven-badges.herokuapp.com/maven-central/net.snowflake/snowflake-jdbc/badge.svg?style=plastic
     :target: http://repo2.maven.org/maven2/net/snowflake/snowflake-jdbc/
-
-.. image:: https://codecov.io/gh/snowflakedb/snowflake-jdbc/branch/master/graph/badge.svg
-    :target: https://codecov.io/gh/snowflakedb/snowflake-jdbc
     
 Snowflake provides a JDBC type 4 driver that supports core functionality, allowing Java program to connect to Snowflake.
 
