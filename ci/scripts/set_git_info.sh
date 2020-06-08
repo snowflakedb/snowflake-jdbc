@@ -23,6 +23,8 @@ else
     export client_git_url=https://github.com/${GITHUB_REPOSITORY}.git
     export client_git_branch=origin/$(basename ${GITHUB_REF})
     export client_git_commit=${GITHUB_SHA}
+    echo "[DEBUG] WORKSPACE $WORKSPACE"
+    ls -l $WORKSPACE
 fi
 
 #
