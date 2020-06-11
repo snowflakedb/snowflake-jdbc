@@ -770,12 +770,7 @@ public class SFStatement
         .setSchemaName(session.getSchema())
         .setOCSPMode(session.getOCSPMode());
 
-    SFLoginOutput output = new SFLoginOutput()
-        .setSessionToken(session.getSessionToken());
-
     session.open();
-    session.setCurrentObjects(input, output);
-    // output is not used here.
   }
 
   /**

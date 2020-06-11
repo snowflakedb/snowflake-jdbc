@@ -17,6 +17,9 @@ public final class Constants
   // Session gone error code as returned from Snowflake
   public static final int SESSION_GONE = 390111;
 
+  // Error code for all invalid id token cases during login request
+  public static final int ID_TOKEN_INVALID_LOGIN_REQUEST_GS_CODE = 390195;
+
   public enum OS
   {
     WINDOWS,
