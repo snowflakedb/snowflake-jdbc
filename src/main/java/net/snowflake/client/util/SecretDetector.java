@@ -4,6 +4,8 @@
 
 package net.snowflake.client.util;
 
+import net.minidev.json.JSONArray;
+import net.minidev.json.JSONObject;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 
@@ -11,6 +13,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -28,8 +31,9 @@ public class SecretDetector
   private static final Pattern GENERIC_CREDS_PATTERN = Pattern.compile(
       "([a-z0-9+/%]{18,})", Pattern.CASE_INSENSITIVE);
 
+  // "\\s*" refers to >= 0 spaces, "[^']" refers to chars other than `'`
   private static final Pattern AWS_KEY_PATTERN = Pattern.compile(
-      "(aws_key_id)|(aws_secret_key)|(access_key_id)|(secret_access_key)",
+      "(aws_key_id|aws_secret_key|access_key_id|secret_access_key)\\s*=\\s*'(?<secret>[^']+)'",
       Pattern.CASE_INSENSITIVE);
 
   // Used for detecting tokens in serialized JSON
@@ -43,8 +47,10 @@ public class SecretDetector
       "(sig|signature|AWSAccessKeyId|password|passcode)=(?<secret>[a-z0-9%/+]{16,})",
       Pattern.CASE_INSENSITIVE);
 
-  private static final Pattern PASSWORD_KEY_PATTERN = Pattern.compile(
-      "(password|passcode)=",
+  private static final Pattern PASSWORD_PATTERN = Pattern.compile(
+      "(password|passcode|pwd)" +
+      "([\'\"\\s:=]+)" +
+      "(?<secret>[a-z0-9!\"#$%&'\\()*+,-./:;<=>?@\\[\\]^_`\\{|\\}~]{6,})",
       Pattern.CASE_INSENSITIVE);
 
   // "-----BEGIN PRIVATE KEY-----\n[PRIVATE-KEY]\n-----END PRIVATE KEY-----"
@@ -57,9 +63,11 @@ public class SecretDetector
       "\"privateKeyData\": \"([a-z0-9/+=\\\\n]{10,})\"",
       Pattern.MULTILINE | Pattern.CASE_INSENSITIVE);
 
-  private static final Pattern ID_TOKEN_PATTERN = Pattern.compile(
-      "(token\":\"|token=\")", Pattern.CASE_INSENSITIVE);
-
+  private static final Pattern CONNECTION_TOKEN_PATTERN = Pattern.compile(
+      "(token|assertion content)" +
+      "(['\"\\s:=]+)" +
+      "(?<secret>[a-z0-9=/_\\-+]{8,})",
+      Pattern.CASE_INSENSITIVE);
 
   private static final int LOOK_AHEAD = 10;
 
@@ -108,33 +116,16 @@ public class SecretDetector
    */
   private static List<SecretRange> getAWSSecretPos(String text)
   {
-    Matcher matcher = AWS_KEY_PATTERN.matcher(text);
+    Matcher matcher = AWS_KEY_PATTERN.matcher(
+        text.length() <= MAX_LENGTH ? text : text.substring(0, MAX_LENGTH));
 
     ArrayList<SecretRange> awsSecretRanges = new ArrayList<>();
 
     while (matcher.find())
     {
-      int beginPos = Math.min(matcher.end() + LOOK_AHEAD, text.length());
-
-      while (beginPos > 0 && beginPos < text.length() &&
-             isBase64(text.charAt(beginPos)))
-      {
-        beginPos--;
-      }
-
-      int endPos = Math.min(matcher.end() + LOOK_AHEAD, text.length());
-
-      while (endPos < text.length() && isBase64(text.charAt(endPos)))
-      {
-        endPos++;
-      }
-
-      if (beginPos < text.length() && endPos <= text.length()
-          && beginPos >= 0 && endPos >= 0)
-      {
-        awsSecretRanges.add(new SecretRange(beginPos + 1, endPos));
-      }
+      awsSecretRanges.add(new SecretRange(matcher.start("secret"), matcher.end("secret")));
     }
+
     return awsSecretRanges;
   }
 
@@ -201,59 +192,36 @@ public class SecretDetector
    */
   private static List<SecretRange> getPasswordPos(String text)
   {
-    Matcher matcher = PASSWORD_KEY_PATTERN.matcher(
+    Matcher matcher = PASSWORD_PATTERN.matcher(
         text.length() <= MAX_LENGTH ? text : text.substring(0, MAX_LENGTH));
 
     List<SecretRange> secretRanges = new ArrayList<>();
 
     while (matcher.find())
     {
-      // Gets begin/end position of only 'secret' group in the matched regex
-      int begin = matcher.end();
-      int end = begin + 1;
-      while (end < text.length())
-      {
-        if (text.charAt(end) == '&' || text.charAt(end) == '"')
-        {
-          break;
-        }
-        end++;
-      }
-
-      secretRanges.add(new SecretRange(begin, end));
+      secretRanges.add(new SecretRange(matcher.start("secret"), matcher.end("secret")));
     }
 
     return secretRanges;
   }
 
   /**
-   * Finds positions of occurrences of idToken in the
+   * Finds positions of occurrences of all connection token fields in the
    * given text.
    *
-   * @param text text which may contain idTokens
-   * @return A list of begin/end positions of password fields
+   * @param text text which may contain connection token
+   * @return A list of begin/end positions of connection token fields
    */
-  private static List<SecretRange> getIDTokenPos(String text)
+  private static List<SecretRange> getConnectionTokenPos(String text)
   {
-    Matcher matcher = ID_TOKEN_PATTERN.matcher(
+    Matcher matcher = CONNECTION_TOKEN_PATTERN.matcher(
         text.length() <= MAX_LENGTH ? text : text.substring(0, MAX_LENGTH));
 
     List<SecretRange> secretRanges = new ArrayList<>();
 
     while (matcher.find())
     {
-      int begin = matcher.end();
-      int end = begin + 1;
-      while (end < text.length())
-      {
-        if (text.charAt(end) == '"')
-        {
-          break;
-        }
-        end++;
-      }
-
-      secretRanges.add(new SecretRange(begin, end));
+      secretRanges.add(new SecretRange(matcher.start("secret"), matcher.end("secret")));
     }
 
     return secretRanges;
@@ -309,7 +277,7 @@ public class SecretDetector
     secretRanges.addAll(SecretDetector.getAWSSecretPos(text));
     secretRanges.addAll(SecretDetector.getSASTokenPos(text));
     secretRanges.addAll(SecretDetector.getPasswordPos(text));
-    secretRanges.addAll(SecretDetector.getIDTokenPos(text));
+    secretRanges.addAll(SecretDetector.getConnectionTokenPos(text));
     text = maskText(text, secretRanges);
     text = filterAccessTokens(text);
     return text;
@@ -381,7 +349,7 @@ public class SecretDetector
 
     if (azureMatcher.find())
     {
-      message = azureMatcher.replaceAll("sig=XXXX");
+      message = azureMatcher.replaceAll("$1=XXXX");
     }
 
     // GCS
@@ -398,5 +366,48 @@ public class SecretDetector
     }
 
     return message;
+  }
+
+  public static JSONObject maskJsonObject(JSONObject json)
+  {
+    for (Map.Entry<String, Object> entry : json.entrySet())
+    {
+      if (entry.getValue() instanceof String)
+      {
+        entry.setValue(maskSecrets((String) entry.getValue()));
+      }
+      else if (entry.getValue() instanceof JSONArray)
+      {
+        maskJsonArray((JSONArray) entry.getValue());
+      }
+      else if (entry.getValue() instanceof JSONObject)
+      {
+        maskJsonObject((JSONObject) entry.getValue());
+      }
+    }
+    return json;
+  }
+
+  public static JSONArray maskJsonArray(JSONArray array)
+  {
+    for (int i = 0; i < array.size(); i++)
+    {
+      Object node = array.get(i);
+      if (node instanceof JSONObject)
+      {
+        maskJsonObject((JSONObject) node);
+      }
+      else if (node instanceof JSONArray)
+      {
+        maskJsonArray((JSONArray) node);
+      }
+      else if (node instanceof String)
+      {
+        array.set(i, SecretDetector.maskSecrets((String) node));
+      }
+      // for other types, we can just leave it untouched
+    }
+
+    return array;
   }
 }

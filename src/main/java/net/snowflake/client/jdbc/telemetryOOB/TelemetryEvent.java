@@ -4,6 +4,7 @@ import net.minidev.json.JSONArray;
 import net.minidev.json.JSONObject;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.util.SFTimestamp;
+import net.snowflake.client.util.SecretDetector;
 import net.snowflake.common.core.ResourceBundleManager;
 
 import java.io.PrintWriter;
@@ -107,19 +108,19 @@ public class TelemetryEvent extends JSONObject
 
     public LogBuilder withValue(String value)
     {
-      body.put("Value", value);
+      body.put("Value", SecretDetector.maskSecrets(value));
       return this;
     }
 
     public LogBuilder withValue(JSONObject value)
     {
-      body.put("Value", value);
+      body.put("Value", SecretDetector.maskJsonObject(value));
       return this;
     }
 
     public LogBuilder withValue(JSONArray value)
     {
-      body.put("Value", value);
+      body.put("Value", SecretDetector.maskJsonArray(value));
       return this;
     }
 
@@ -136,8 +137,8 @@ public class TelemetryEvent extends JSONObject
   private static class Builder<T>
   {
     protected final Class<T> builderClass;
-    protected TelemetryEvent body;
-    protected HashMap<String, String> tags;
+    protected TelemetryEvent body = new TelemetryEvent();
+    protected HashMap<String, String> tags = new HashMap<>();
     private static final String version =
         ResourceBundleManager.getSingleton("net.snowflake.client.jdbc.version")
             .getLocalizedMessage("version");
@@ -146,14 +147,12 @@ public class TelemetryEvent extends JSONObject
 
     public Builder(Class<T> builderClass)
     {
-      body = new TelemetryEvent();
       this.builderClass = builderClass;
-      tags = new HashMap<>();
-      tags.put("driver", driver);
-      tags.put("version", version);
+      withTag("driver", driver);
+      withTag("version", version);
       TelemetryService instance = TelemetryService.getInstance();
-      tags.put("telemetryServerDeployment", instance.getServerDeploymentName());
-      tags.put("connectionString", instance.getDriverConnectionString());
+      withTag("telemetryServerDeployment", instance.getServerDeploymentName());
+      withTag("connectionString", instance.getDriverConnectionString());
       JSONObject context = instance.getContext();
       if (context != null)
       {
@@ -162,7 +161,7 @@ public class TelemetryEvent extends JSONObject
           Object val = context.get(key);
           if (val != null)
           {
-            tags.put("ctx_" + key.toLowerCase(), val.toString());
+            withTag("ctx_" + key.toLowerCase(), val.toString());
           }
         }
       }
@@ -170,7 +169,7 @@ public class TelemetryEvent extends JSONObject
 
     public T withName(String name)
     {
-      body.put("Name", name);
+      body.put("Name", SecretDetector.maskSecrets(name));
       return builderClass.cast(this);
     }
 
@@ -183,7 +182,7 @@ public class TelemetryEvent extends JSONObject
     {
       if (value != null && value.length() > 0)
       {
-        tags.put(name, value);
+        tags.put(name, SecretDetector.maskSecrets(value));
       }
       return builderClass.cast(this);
     }
