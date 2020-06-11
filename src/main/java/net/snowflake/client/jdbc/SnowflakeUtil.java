@@ -49,6 +49,7 @@ public class SnowflakeUtil
   private static final int MASTER_TOKEN_NOTFOUND = 390113;
   private static final int MASTER_EXPIRED_GS_CODE = 390114;
   private static final int MASTER_TOKEN_INVALID_GS_CODE = 390115;
+  private static final int ID_TOKEN_INVALID_LOGIN_REQUEST_GS_CODE = 390195;
 
   public static final String BIG_DECIMAL_STR = "big decimal";
   public static final String FLOAT_STR = "float";
@@ -144,6 +145,7 @@ public class SnowflakeUtil
         case MASTER_TOKEN_NOTFOUND:
         case MASTER_EXPIRED_GS_CODE:
         case MASTER_TOKEN_INVALID_GS_CODE:
+        case ID_TOKEN_INVALID_LOGIN_REQUEST_GS_CODE:
           throw new SnowflakeReauthenticationRequest(
               queryId, errorMessage, sqlState, errorCode);
       }

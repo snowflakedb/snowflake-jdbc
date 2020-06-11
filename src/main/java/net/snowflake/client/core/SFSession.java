@@ -696,11 +696,6 @@ public class SFSession
     SFLoginOutput loginOutput = SessionUtil.openSession(loginInput);
     isClosed = false;
 
-    if (loginOutput.isUpdatedByTokenRequest())
-    {
-      setCurrentObjects(loginInput, loginOutput);
-    }
-
     sessionToken = loginOutput.getSessionToken();
     masterToken = loginOutput.getMasterToken();
     idToken = loginOutput.getIdToken();
@@ -952,10 +947,6 @@ public class SFSession
 
     SFLoginOutput loginOutput = SessionUtil.renewSession(loginInput);
 
-    if (loginOutput.isUpdatedByTokenRequestIssue())
-    {
-      setCurrentObjects(loginInput, loginOutput);
-    }
     sessionToken = loginOutput.getSessionToken();
     masterToken = loginOutput.getMasterToken();
   }
