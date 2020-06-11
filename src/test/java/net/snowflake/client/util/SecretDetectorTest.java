@@ -1,5 +1,7 @@
 package net.snowflake.client.util;
 
+import net.minidev.json.JSONArray;
+import net.minidev.json.JSONObject;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.Assert;
 import org.junit.Test;
@@ -141,31 +143,32 @@ public class SecretDetectorTest
   @Test
   public void testMaskPasswordFromConnectionString()
   {
+    // Since we have `&` in password regex pattern, we will have false positive masking here
     String connectionStr = "\"jdbc:snowflake://xxx.snowflakecomputing" +
                            ".com/?user=xxx&password=xxxxxx&role=xxx\"";
     String maskedConnectionStr = "\"jdbc:snowflake://xxx.snowflakecomputing" +
-                                 ".com/?user=xxx&password=☺☺☺☺☺☺&role=xxx\"";
+                                 ".com/?user=xxx&password=☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺";
     assertThat("Text with password is not masked",
                maskedConnectionStr.equals(SecretDetector.maskSecrets(connectionStr)));
 
-    connectionStr = "\"jdbc:snowflake://xxx.snowflakecomputing" +
-                    ".com/?user=xxx&password=xxxxxx\"";
-    maskedConnectionStr = "\"jdbc:snowflake://xxx.snowflakecomputing" +
-                          ".com/?user=xxx&password=☺☺☺☺☺☺\"";
+    connectionStr = "jdbc:snowflake://xxx.snowflakecomputing" +
+                    ".com/?user=xxx&password=xxxxxx";
+    maskedConnectionStr = "jdbc:snowflake://xxx.snowflakecomputing" +
+                          ".com/?user=xxx&password=☺☺☺☺☺☺";
     assertThat("Text with password is not masked",
                maskedConnectionStr.equals(SecretDetector.maskSecrets(connectionStr)));
 
-    connectionStr = "\"jdbc:snowflake://xxx.snowflakecomputing" +
-                    ".com/?user=xxx&passcode=xxxxxx\"";
-    maskedConnectionStr = "\"jdbc:snowflake://xxx.snowflakecomputing" +
-                          ".com/?user=xxx&passcode=☺☺☺☺☺☺\"";
+    connectionStr = "jdbc:snowflake://xxx.snowflakecomputing" +
+                    ".com/?user=xxx&passcode=xxxxxx";
+    maskedConnectionStr = "jdbc:snowflake://xxx.snowflakecomputing" +
+                          ".com/?user=xxx&passcode=☺☺☺☺☺☺";
     assertThat("Text with password is not masked",
                maskedConnectionStr.equals(SecretDetector.maskSecrets(connectionStr)));
 
-    connectionStr = "\"jdbc:snowflake://xxx.snowflakecomputing" +
-                    ".com/?user=xxx&passWord=xxxxxx\"";
-    maskedConnectionStr = "\"jdbc:snowflake://xxx.snowflakecomputing" +
-                          ".com/?user=xxx&passWord=☺☺☺☺☺☺\"";
+    connectionStr = "jdbc:snowflake://xxx.snowflakecomputing" +
+                    ".com/?user=xxx&passWord=xxxxxx";
+    maskedConnectionStr = "jdbc:snowflake://xxx.snowflakecomputing" +
+                          ".com/?user=xxx&passWord=☺☺☺☺☺☺";
     assertThat("Text with password is not masked",
                maskedConnectionStr.equals(SecretDetector.maskSecrets(connectionStr)));
   }
@@ -180,5 +183,107 @@ public class SecretDetectorTest
     String result = SecretDetector.maskSecrets(messageText);
 
     Assert.assertEquals(filteredMessageText, result);
+  }
+
+  @Test
+  public void testMaskconnectionToken()
+  {
+    String connectionToken = "\"Authorization: Snowflake Token=\"XXXXXXXXXX\"\"";
+
+    String maskedConnectionToken = "\"Authorization: Snowflake Token=\"☺☺☺☺☺☺☺☺☺☺\"\"";
+
+    assertThat("Text with connection token is not masked",
+               maskedConnectionToken.equals(SecretDetector.maskSecrets(connectionToken)));
+
+    connectionToken = "\"{\"requestType\":\"ISSUE\",\"idToken\":\"XXXXXXXX\"}\"";
+
+    maskedConnectionToken = "\"{\"requestType\":\"ISSUE\",\"idToken\":\"☺☺☺☺☺☺☺☺\"}\"";
+
+    assertThat("Text with connection token is not masked",
+               maskedConnectionToken.equals(SecretDetector.maskSecrets(connectionToken)));
+  }
+
+  private JSONObject generateJsonObject()
+  {
+    // a base json object
+    JSONObject obj = new JSONObject();
+    obj.put("hello", "world");
+    obj.put("number", 256);
+    obj.put("boolean", true);
+    return obj;
+  }
+
+  @Test
+  public void testMaskJsonObject()
+  {
+    final String connStr =
+        "https://snowflake.fakehostname.local:fakeport?LOGINTIMEOUT=20&ACCOUNT=fakeaccount&PASSWORD=fakepassword&USER=fakeuser";
+    final String maskedConnStr =
+        "https://snowflake.fakehostname.local:fakeport?LOGINTIMEOUT=20&ACCOUNT=fakeaccount&PASSWORD=☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺";
+
+    JSONObject obj = generateJsonObject();
+    obj.put("connStr", connStr);
+    JSONObject maskedObj = generateJsonObject();
+    maskedObj.put("connStr", maskedConnStr);
+
+    assertThat("JSONObject is not masked successfully",
+               maskedObj.equals(SecretDetector.maskJsonObject(obj)));
+
+    obj.put("connStr", connStr);
+    JSONObject nestedObj = generateJsonObject();
+    nestedObj.put("subJson", obj);
+    JSONObject maskedNestedObj = generateJsonObject();
+    maskedNestedObj.put("subJson", maskedObj);
+
+    assertThat("nested JSONObject is not masked successfully",
+               maskedNestedObj.equals(SecretDetector.maskJsonObject(nestedObj)));
+  }
+
+  @Test
+  public void testMaskJsonArray()
+  {
+    final String connStr =
+        "https://snowflake.fakehostname.local:fakeport?LOGINTIMEOUT=20&ACCOUNT=fakeaccount&PASSWORD=fakepassword&USER=fakeuser";
+    final String maskedConnStr =
+        "https://snowflake.fakehostname.local:fakeport?LOGINTIMEOUT=20&ACCOUNT=fakeaccount&PASSWORD=☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺";
+    final String pwdStr = "password=ThisShouldBeMasked";
+    final String maskedPwdStr = "password=☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺";
+
+    JSONObject obj = generateJsonObject();
+    obj.put("connStr", connStr);
+
+    JSONObject maskedObj = generateJsonObject();
+    maskedObj.put("connStr", maskedConnStr);
+
+    JSONArray array = new JSONArray();
+    array.add(obj);
+    array.add(pwdStr);
+    JSONArray maskedArray = new JSONArray();
+    maskedArray.add(maskedObj);
+    maskedArray.add(maskedPwdStr);
+
+    assertThat("jsonArray is not masked successfully",
+               maskedArray.equals(SecretDetector.maskJsonArray(array)));
+
+    JSONObject obj1 = generateJsonObject();
+    obj1.put("connStr", connStr);
+
+    JSONObject maskedObj1 = generateJsonObject();
+    maskedObj1.put("connStr", maskedConnStr);
+
+    JSONArray array1 = new JSONArray();
+    array1.add(obj1);
+    array1.add(pwdStr);
+    JSONArray maskedArray1 = new JSONArray();
+    maskedArray1.add(maskedObj1);
+    maskedArray1.add(maskedPwdStr);
+
+    JSONObject nestedObjArray = generateJsonObject();
+    nestedObjArray.put("array", array1);
+    JSONObject maskedNestedObjArray = generateJsonObject();
+    maskedNestedObjArray.put("array", maskedArray1);
+
+    assertThat("JSONArray within JSONObject is not masked successfully",
+               maskedNestedObjArray.equals(SecretDetector.maskJsonObject(nestedObjArray)));
   }
 }

@@ -387,7 +387,7 @@ public class TelemetryService
   {
     JSONArray logs = new JSONArray();
     logs.add(event);
-    return SecretDetector.maskSecrets(logs.toString());
+    return logs.toString();
   }
 
   static class TelemetryUploader implements Runnable
