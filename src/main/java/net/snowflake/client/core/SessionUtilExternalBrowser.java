@@ -241,7 +241,7 @@ public class SessionUtilExternalBrowser
         String errorCode = jsonNode.path("code").asText();
         throw new SnowflakeSQLException(
             SqlState.SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION,
-            new Integer(errorCode),
+            Integer.valueOf(errorCode),
             jsonNode.path("message").asText());
       }
 

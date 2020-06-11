@@ -299,7 +299,7 @@ public class StreamLoader implements Loader, Runnable
     long ret;
     if (value instanceof String)
     {
-      ret = new Long((String) value);
+      ret = Long.valueOf((String) value);
     }
     else if (value instanceof Long)
     {
