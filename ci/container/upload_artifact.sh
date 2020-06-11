@@ -19,7 +19,7 @@ if [[ -z "$GITHUB_ACTIONS" ]] ;then
 
     COMMIT_FILE=$(mktemp)
     cat > $COMMIT_FILE <<COMMIT_FILE_CONTENTS
-    ${GIT_COMMIT}
+${GIT_COMMIT}
 COMMIT_FILE_CONTENTS
 
     latest_commit_file=$(dirname $target_stage)/latest_commit
