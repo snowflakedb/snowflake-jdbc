@@ -25,7 +25,6 @@ public class SFLoginOutput
   private String sessionWarehouse;
   private Map<String, Object> commonParams;
   private boolean updatedByTokenRequest;
-  private boolean updatedByTokenRequestIssue;
   private String sessionId;
 
   SFLoginOutput()
@@ -178,27 +177,5 @@ public class SFLoginOutput
   long getMasterTokenValidityInSeconds()
   {
     return masterTokenValidityInSeconds;
-  }
-
-  boolean isUpdatedByTokenRequest()
-  {
-    return updatedByTokenRequest;
-  }
-
-  SFLoginOutput setUpdatedByTokenRequest(boolean updatedByTokenRequest)
-  {
-    this.updatedByTokenRequest = updatedByTokenRequest;
-    return this;
-  }
-
-  boolean isUpdatedByTokenRequestIssue()
-  {
-    return updatedByTokenRequestIssue;
-  }
-
-  SFLoginOutput setUpdatedByTokenRequestIssue(boolean updatedByTokenRequestIssue)
-  {
-    this.updatedByTokenRequestIssue = updatedByTokenRequestIssue;
-    return this;
   }
 }

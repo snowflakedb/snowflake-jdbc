@@ -110,6 +110,8 @@ public class SessionUtil
 
   static final String SF_HEADER_SERVICE_NAME = "X-Snowflake-Service";
 
+  private static final String ID_TOKEN_AUTHENTICATOR = "ID_TOKEN";
+
   private static final String NO_QUERY_ID = "";
   private static final String SF_PATH_SESSION = "/session";
   public static long DEFAULT_CLIENT_MEMORY_LIMIT = 1536; // MB
@@ -270,19 +272,21 @@ public class SessionUtil
 
     boolean isClientStoreTemporaryCredential = asBoolean(
         loginInput.getSessionParameters().get(CLIENT_STORE_TEMPORARY_CREDENTIAL));
-    if (isClientStoreTemporaryCredential && CredentialManager.getInstance().fillCachedIdToken(loginInput))
+    if (isClientStoreTemporaryCredential)
     {
-      try
-      {
-        return issueSession(loginInput);
-      }
-      catch (SnowflakeReauthenticationRequest ex)
-      {
-        logger.debug("The token expired. errorCode. Reauthenticating...");
-      }
+      CredentialManager.getInstance().fillCachedIdToken(loginInput);
     }
 
-    return newSession(loginInput);
+    try
+    {
+      return newSession(loginInput);
+    }
+    catch (SnowflakeReauthenticationRequest ex)
+    {
+      // Id Token expired. We run newSession again with id_token cache cleared
+      logger.debug("ID Token being used has expired. Reauthenticating with ID Token cleared...");
+      return newSession(loginInput);
+    }
   }
 
   static private boolean asBoolean(Object value)
@@ -356,13 +360,17 @@ public class SessionUtil
 
       if (authenticatorType == ClientAuthnDTO.AuthenticatorType.EXTERNALBROWSER)
       {
-        // SAML 2.0 compliant service/application
-        SessionUtilExternalBrowser s =
-            SessionUtilExternalBrowser.createInstance(loginInput);
-        s.authenticate();
-        tokenOrSamlResponse = s.getToken();
-        samlProofKey = s.getProofKey();
-        consentCacheIdToken = s.isConsentCacheIdToken();
+        // try to reuse id_token if exists
+        if (loginInput.getIdToken() == null)
+        {
+          // SAML 2.0 compliant service/application
+          SessionUtilExternalBrowser s =
+              SessionUtilExternalBrowser.createInstance(loginInput);
+          s.authenticate();
+          tokenOrSamlResponse = s.getToken();
+          samlProofKey = s.getProofKey();
+          consentCacheIdToken = s.isConsentCacheIdToken();
+        }
       }
       else if (authenticatorType == ClientAuthnDTO.AuthenticatorType.OKTA)
       {
@@ -445,10 +453,18 @@ public class SessionUtil
       }
       else if (authenticatorType == ClientAuthnDTO.AuthenticatorType.EXTERNALBROWSER)
       {
-        data.put(ClientAuthnParameter.AUTHENTICATOR.name(),
-                 ClientAuthnDTO.AuthenticatorType.EXTERNALBROWSER.name());
-        data.put(ClientAuthnParameter.PROOF_KEY.name(), samlProofKey);
-        data.put(ClientAuthnParameter.TOKEN.name(), tokenOrSamlResponse);
+        if (loginInput.getIdToken() != null)
+        {
+          data.put(ClientAuthnParameter.AUTHENTICATOR.name(), ID_TOKEN_AUTHENTICATOR);
+          data.put(ClientAuthnParameter.TOKEN.name(), loginInput.getIdToken());
+        }
+        else
+        {
+          data.put(ClientAuthnParameter.AUTHENTICATOR.name(),
+                   ClientAuthnDTO.AuthenticatorType.EXTERNALBROWSER.name());
+          data.put(ClientAuthnParameter.PROOF_KEY.name(), samlProofKey);
+          data.put(ClientAuthnParameter.TOKEN.name(), tokenOrSamlResponse);
+        }
       }
       else if (authenticatorType == ClientAuthnDTO.AuthenticatorType.OKTA)
       {
@@ -594,6 +610,27 @@ public class SessionUtil
         logger.debug("response = {}", theString);
 
         int errorCode = jsonNode.path("code").asInt();
+        if (errorCode == Constants.ID_TOKEN_INVALID_LOGIN_REQUEST_GS_CODE)
+        {
+          // clean id_token first
+          loginInput.setIdToken(null);
+          try
+          {
+            URL url = new URL(loginInput.getServerUrl());
+            String host = url.getHost();
+            logger.debug("HOST: {}", host);
+            deleteIdTokenCache(host, loginInput.getUserName());
+          }
+          catch (IOException ex)
+          {
+            throw new SFException(ex, ErrorCode.INTERNAL_ERROR,
+                                  "unexpected URL syntax exception");
+          }
+
+          logger.debug("ID Token Expired / Not Applicable. Reauthenticating without ID Token...: {}", errorCode);
+          SnowflakeUtil.checkErrorAndThrowExceptionIncludingReauth(jsonNode);
+        }
+
         throw new SnowflakeSQLException(
             NO_QUERY_ID, jsonNode.path("message").asText(),
             SqlState.SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION, errorCode);
@@ -742,7 +779,6 @@ public class SessionUtil
                                           sessionWarehouse,
                                           sessionId,
                                           commonParams);
-    ret.setUpdatedByTokenRequest(false);
 
     if (consentCacheIdToken)
     {
@@ -801,32 +837,7 @@ public class SessionUtil
   static SFLoginOutput renewSession(SFLoginInput loginInput)
   throws SFException, SnowflakeSQLException
   {
-    try
-    {
-      return tokenRequest(loginInput, TokenRequestType.RENEW);
-    }
-    catch (SnowflakeReauthenticationRequest ex)
-    {
-      if (Strings.isNullOrEmpty(loginInput.getIdToken()))
-      {
-        throw ex;
-      }
-      return tokenRequest(loginInput, TokenRequestType.ISSUE);
-    }
-  }
-
-  /**
-   * Issue a session
-   *
-   * @param loginInput login information
-   * @return login output
-   * @throws SFException           if unexpected uri information
-   * @throws SnowflakeSQLException if failed to renew the session
-   */
-  static private SFLoginOutput issueSession(SFLoginInput loginInput)
-  throws SFException, SnowflakeSQLException
-  {
-    return tokenRequest(loginInput, TokenRequestType.ISSUE);
+    return tokenRequest(loginInput, TokenRequestType.RENEW);
   }
 
   static private SFLoginOutput tokenRequest(
@@ -836,19 +847,10 @@ public class SessionUtil
     AssertUtil.assertTrue(loginInput.getServerUrl() != null,
                           "missing server URL for tokenRequest");
 
-    if (requestType == TokenRequestType.RENEW)
-    {
-      AssertUtil.assertTrue(loginInput.getMasterToken() != null,
-                            "missing master token for tokenRequest");
-      AssertUtil.assertTrue(loginInput.getSessionToken() != null,
-                            "missing session token for tokenRequest");
-    }
-    else if (requestType == TokenRequestType.ISSUE)
-    {
-      AssertUtil.assertTrue(loginInput.getIdToken() != null,
-                            "missing id token for tokenRequest");
-    }
-
+    AssertUtil.assertTrue(loginInput.getMasterToken() != null,
+                          "missing master token for tokenRequest");
+    AssertUtil.assertTrue(loginInput.getSessionToken() != null,
+                          "missing session token for tokenRequest");
     AssertUtil.assertTrue(loginInput.getLoginTimeout() >= 0,
                           "negative login timeout for tokenRequest");
 
@@ -881,17 +883,8 @@ public class SessionUtil
       // input json with old session token and request type, notice the
       // session token needs to be quoted.
       Map<String, String> payload = new HashMap<>();
-      String headerToken;
-      if (requestType == TokenRequestType.RENEW)
-      {
-        headerToken = loginInput.getMasterToken();
-        payload.put("oldSessionToken", loginInput.getSessionToken());
-      }
-      else
-      {
-        headerToken = loginInput.getIdToken();
-        payload.put("idToken", loginInput.getIdToken());
-      }
+      String headerToken = loginInput.getMasterToken();
+      payload.put("oldSessionToken", loginInput.getSessionToken());
       payload.put("requestType", requestType.value);
       String json = mapper.writeValueAsString(payload);
 
@@ -959,9 +952,7 @@ public class SessionUtil
     SFLoginOutput loginOutput = new SFLoginOutput();
     loginOutput
         .setSessionToken(sessionToken)
-        .setMasterToken(masterToken)
-        .setUpdatedByTokenRequest(true)
-        .setUpdatedByTokenRequestIssue(requestType == TokenRequestType.ISSUE);
+        .setMasterToken(masterToken);
 
     return loginOutput;
   }

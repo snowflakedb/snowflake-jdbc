@@ -61,9 +61,8 @@ public class CredentialManager
    * Reuse the cached id token stored locally
    *
    * @param loginInput login input to attach id token
-   * @return true if the id token is found and attached
    */
-  synchronized boolean fillCachedIdToken(SFLoginInput loginInput) throws SFException
+  synchronized void fillCachedIdToken(SFLoginInput loginInput) throws SFException
   {
     String idToken =
         secureStorageManager.getCredential(extractHostFromServerUrl(loginInput.getServerUrl()), loginInput.getUserName());
@@ -71,10 +70,9 @@ public class CredentialManager
     if (idToken == null)
     {
       logger.debug("retrieved idToken is null");
-      return false;
     }
-    loginInput.setIdToken(idToken);
-    return true;
+    loginInput.setIdToken(idToken); // idToken can be null
+    return;
   }
 
   /**
