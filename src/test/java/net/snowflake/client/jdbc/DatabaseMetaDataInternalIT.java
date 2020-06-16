@@ -323,9 +323,12 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest
     assertEquals("FUNC112() RETURN TABLE (COLA VARCHAR, COLB NUMBER, BIN2 BINARY, SHAREDCOL NUMBER)",
                  resultSet.getString("SPECIFIC_NAME"));
     assertFalse(resultSet.next());
+    resultSet = databaseMetaData.getFunctionColumns(null, "%", "%", "%");
+    // we have 81 columns returned
+    assertEquals(81, getSizeOfResultSet(resultSet));
     resultSet = databaseMetaData.getFunctionColumns("%", "%", "%", "%");
-    assertFalse(resultSet.next());
-
+    // we have 81 columns returned
+    assertEquals(0, getSizeOfResultSet(resultSet));
   }
 
   @Test

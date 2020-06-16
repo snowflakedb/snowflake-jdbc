@@ -6,6 +6,7 @@ package net.snowflake.client.jdbc;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Strings;
 import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.log.ArgSupplier;
@@ -1493,13 +1494,19 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   procedures or functions */
   private String getSecondResultSetCommand(String catalog, String schemaPattern, String name, String type)
   {
-    String procedureName = name.substring(0, name.indexOf(" RETURN"));
+    if (Strings.isNullOrEmpty(name))
+    {
+      return "";
+    }
+    String procedureCols = name.substring(name.indexOf("("), name.indexOf(" RETURN"));
+    String quotedName = "\"" + name.substring(0, name.indexOf("(")) + "\"";
+    String procedureName = quotedName + procedureCols;
     String showProcedureColCommand;
-    if (catalog != null && schemaPattern != null)
+    if (!Strings.isNullOrEmpty(catalog) && !Strings.isNullOrEmpty(schemaPattern))
     {
       showProcedureColCommand = "desc " + type + " " + catalog + "." + schemaPattern + "." + procedureName;
     }
-    else if (schemaPattern != null)
+    else if (!Strings.isNullOrEmpty(schemaPattern))
     {
       showProcedureColCommand = "desc " + type + " " + schemaPattern + "." + procedureName;
     }
@@ -3149,12 +3156,16 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
     {
       String functionNameUnparsed = resultSetStepOne.getString("arguments").trim();
       String functionNameNoArgs = resultSetStepOne.getString("name");
-      String showFunctionColCommand = getSecondResultSetCommand(catalog, schemaPattern, functionNameUnparsed,
+      String realSchema = resultSetStepOne.getString("schema_name");
+      String realDatabase = resultSetStepOne.getString("catalog_name");
+      String showFunctionColCommand = getSecondResultSetCommand(realDatabase, realSchema, functionNameUnparsed,
                                                                 "function");
-
       ResultSet resultSetStepTwo = executeAndReturnEmptyResultIfNotFound(statement, showFunctionColCommand,
                                                                          GET_FUNCTION_COLUMNS);
-      resultSetStepTwo.next();
+      if (resultSetStepTwo.next() == false)
+      {
+        continue;
+      }
       String[] params = parseParams(resultSetStepTwo.getString("value"));
       resultSetStepTwo.next();
       String res = resultSetStepTwo.getString("value");
@@ -3328,6 +3339,10 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   throws SQLException
   {
     ResultSet resultSet;
+    if (Strings.isNullOrEmpty(sql))
+    {
+      return SnowflakeDatabaseMetaDataResultSet.getEmptyResultSet(metadataType, statement);
+    }
     try
     {
       resultSet = statement.executeQuery(sql);
@@ -3336,6 +3351,14 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
     {
       if (e.getSQLState().equals(SqlState.NO_DATA) ||
           e.getSQLState().equals(SqlState.BASE_TABLE_OR_VIEW_NOT_FOUND))
+      {
+        return SnowflakeDatabaseMetaDataResultSet.getEmptyResultSet(metadataType, statement);
+      }
+      // When using this helper function for "desc function" calls, there are some built-in
+      // functions with unusual argument syntax that throw an error when attempting to call
+      // desc function on them. For example, AS_TIMESTAMP_LTZ([,VARIANT]) throws an exception.
+      // Skip these built-in functions.
+      else if (sql.contains("desc function") && e.getSQLState().equals(SqlState.SYNTAX_ERROR_OR_ACCESS_RULE_VIOLATION))
       {
         return SnowflakeDatabaseMetaDataResultSet.getEmptyResultSet(metadataType, statement);
       }
