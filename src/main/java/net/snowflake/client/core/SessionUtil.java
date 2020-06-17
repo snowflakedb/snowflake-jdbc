@@ -17,6 +17,7 @@ import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
+import net.snowflake.client.util.SecretDetector;
 import net.snowflake.common.core.ClientAuthnDTO;
 import net.snowflake.common.core.ClientAuthnParameter;
 import net.snowflake.common.core.SqlState;
@@ -220,7 +221,7 @@ public class SessionUtil
    * @throws SFException           if unexpected uri syntax
    * @throws SnowflakeSQLException if failed to establish connection with snowflake
    */
-  static SFLoginOutput openSession(SFLoginInput loginInput)
+  static SFLoginOutput openSession(SFLoginInput loginInput, Map<SFSessionProperty, Object> connectionPropertiesMap, String tracingLevel)
   throws SFException, SnowflakeSQLException
   {
     AssertUtil.assertTrue(loginInput.getServerUrl() != null,
@@ -279,13 +280,13 @@ public class SessionUtil
 
     try
     {
-      return newSession(loginInput);
+      return newSession(loginInput, connectionPropertiesMap, tracingLevel);
     }
     catch (SnowflakeReauthenticationRequest ex)
     {
       // Id Token expired. We run newSession again with id_token cache cleared
       logger.debug("ID Token being used has expired. Reauthenticating with ID Token cleared...");
-      return newSession(loginInput);
+      return newSession(loginInput, connectionPropertiesMap, tracingLevel);
     }
   }
 
@@ -305,7 +306,7 @@ public class SessionUtil
     return false;
   }
 
-  static private SFLoginOutput newSession(SFLoginInput loginInput)
+  static private SFLoginOutput newSession(SFLoginInput loginInput, Map<SFSessionProperty, Object> connectionPropertiesMap, String tracingLevel)
   throws SFException, SnowflakeSQLException
   {
     // build URL for login request
@@ -477,7 +478,10 @@ public class SessionUtil
         data.put(ClientAuthnParameter.TOKEN.name(), loginInput.getToken());
       }
 
+      // map of client environment parameters, including connection parameters
+      // and environment properties like OS version, etc.
       Map<String, Object> clientEnv = new HashMap<>();
+
       clientEnv.put("OS", systemGetProperty("os.name"));
       clientEnv.put("OS_VERSION", systemGetProperty("os.version"));
       clientEnv.put("JAVA_VERSION", systemGetProperty("java.version"));
@@ -533,6 +537,24 @@ public class SessionUtil
             clientEnv.put(field.getKey(), field.getValue().asText());
           }
         }
+      }
+      /*
+        Add all connection parameters and their values that have been set for this
+        * current session into clientEnv. These are the params set via the Properties map or in the
+        * connection string. Includes username, password, serverUrl, timeout values, etc
+       */
+      for (Map.Entry<SFSessionProperty, Object> entry : connectionPropertiesMap.entrySet())
+      {
+        String propKey = entry.getKey().getPropertyKey();
+        // mask sensitive values like passwords, tokens, etc
+        String propVal = SecretDetector.maskParameterValue(propKey, entry.getValue().toString());
+        clientEnv.put(propKey, propVal);
+      }
+      // if map does not contain the tracing property, the default is set. Add
+      // this default value to the map.
+      if (!connectionPropertiesMap.containsKey(SFSessionProperty.TRACING))
+      {
+        clientEnv.put(SFSessionProperty.TRACING.getPropertyKey(), tracingLevel);
       }
 
       data.put(ClientAuthnParameter.CLIENT_ENVIRONMENT.name(), clientEnv);

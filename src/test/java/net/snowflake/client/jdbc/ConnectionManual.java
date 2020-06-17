@@ -134,7 +134,7 @@ public class ConnectionManual
 
     // ALLOW_UNPROTECTED_ID_TOKEN will be deprecated in the future
     //con.createStatement().execute("alter account testaccount set " +
-      //                                "ALLOW_UNPROTECTED_ID_TOKEN=true;");
+    //                                "ALLOW_UNPROTECTED_ID_TOKEN=true;");
     con.createStatement().execute("alter account testaccount set ID_TOKEN_FEATURE_ENABLED=true;");
     con.createStatement().execute("alter account testaccount set ALLOW_ID_TOKEN=true;");
   }
@@ -208,8 +208,8 @@ public class ConnectionManual
 
     System.out.println(
         "[INFO] 4th connection reads the cache file and tries to use the id token. " +
-            "However we manually banned IdToken by set some parameters. " +
-            "So a web browser pop up is expected to show up here.");
+        "However we manually banned IdToken by set some parameters. " +
+        "So a web browser pop up is expected to show up here.");
     Connection conAdmin = getAdminConnection();
     // ALLOW_UNPROTECTED_ID_TOKEN will be deprecated in the future
     //conAdmin.createStatement().execute("alter account testaccount set " +
