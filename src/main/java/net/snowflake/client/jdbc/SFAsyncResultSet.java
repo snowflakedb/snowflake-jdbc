@@ -125,7 +125,7 @@ class SFAsyncResultSet extends SnowflakeBaseResultSet implements SnowflakeResult
     if (!Pattern
         .matches("[a-z0-9]{8}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{12}", queryID))
     {
-      throw new SQLException("The provided query ID " +queryID + " is invalid.",
+      throw new SQLException("The provided query ID " + queryID + " is invalid.",
                              SqlState.INVALID_PARAMETER_VALUE);
     }
     this.queryID = queryID;
