@@ -3,13 +3,15 @@
 # Run whitesource for components which need versioning
 set -e
 set -o pipefail
-
 THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 [[ -z "$WHITESOURCE_API_KEY" ]] && echo "[WARNING] No WHITESOURCE_API_KEY is set. No WhiteSource scan will occur." && exit 0
 
 export PRODUCT_NAME=snowflake-jdbc
 
+env | grep GITHUB | sort
+
 export PROD_BRANCH=master
+export PROD_GIT_REF=refs/heads/$PROD_BRANCH
 export PROJECT_VERSION=$GITHUB_SHA
 
 if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
@@ -18,11 +20,12 @@ if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
     read -ra GITHUB_REF_ELEMS <<<"$GITHUB_REF"
     IFS=" "
     export PROJECT_NAME=PR-${GITHUB_REF_ELEMS[2]}
-elif [[ "$GITHUB_HEAD_REF" == "$PROD_BRANCH" ]]; then
+elif [[ "$GITHUB_REF" == "$PROD_GIT_REF" ]]; then
     echo "[INFO] Production branch"
-    export PROJECT_NAME=$GITHUB_HEAD_REF
+    export PROJECT_NAME=$PROD_BRANCH
 else
     echo "[INFO] Non Production branch. Skipping wss..."
+    env | grep GITHUB | sort
     export PROJECT_NAME=
 fi
 
@@ -126,22 +129,9 @@ followSymbolicLinks=true
 CONFIG
 
 set +e
-echo "[INFO] Running wss.sh for ${PRODUCT_NAME}-${PROJECT_NAME} under ${SCAN_DIRECTORIES}"
-if [[ -n "$PROJECT_NAME" ]] && [[ "$PROJECT_NAME" != "$PROD_BRANCH" ]]; then
-    # PR
-    java -jar wss-unified-agent.jar -apiKey ${WHITESOURCE_API_KEY} \
-        -c ${SCAN_CONFIG} \
-        -d ${SCAN_DIRECTORIES} \
-        -product ${PRODUCT_NAME} \
-        -project ${PROJECT_NAME} \
-        -projectVersion ${PROJECT_VERSION}
-    ERR=$?
-    if [[ "$ERR" != "254" && "$ERR" != "0" ]]; then
-        echo "failed to run wss for $PRODUCT_VERSION_${PROJECT_VERSION} in ${PROJECT_VERSION}..."
-        exit 1
-    fi
-elif [[ -n "$PROJECT_NAME" ]]; then
+if [[ "$PROJECT_NAME" == "$PROD_BRANCH" ]]; then
     # Prod branch
+    echo "[INFO] Running wss.sh for ${PRODUCT_NAME}-${PROJECT_NAME}-${PROJECT_VERSION} under ${SCAN_DIRECTORIES}"
     java -jar wss-unified-agent.jar -apiKey ${WHITESOURCE_API_KEY} \
         -c ${SCAN_CONFIG} \
         -d ${SCAN_DIRECTORIES} \
@@ -154,7 +144,6 @@ elif [[ -n "$PROJECT_NAME" ]]; then
         echo "failed to run wss for $PRODUCT_VERSION_${PROJECT_VERSION} in ${PROJECT_VERSION}..."
         exit 1
     fi
-
     java -jar wss-unified-agent.jar -apiKey ${WHITESOURCE_API_KEY} \
        -c ${SCAN_CONFIG} \
        -product ${PRODUCT_NAME} \
@@ -175,6 +164,20 @@ elif [[ -n "$PROJECT_NAME" ]]; then
     ERR=$?
     if [[ "$ERR" != "254" && "$ERR" != "0" ]]; then
         echo "failed to run wss for $PRODUCT_VERSION_${PROJECT_VERSION} in ${PROJECT_VERSION}"
+        exit 1
+    fi
+elif [[ -n "$PROJECT_NAME" ]]; then
+    # PR
+    echo "[INFO] Running wss.sh for ${PRODUCT_NAME}-${PROJECT_NAME}-${PROJECT_VERSION} under ${SCAN_DIRECTORIES}"
+    java -jar wss-unified-agent.jar -apiKey ${WHITESOURCE_API_KEY} \
+        -c ${SCAN_CONFIG} \
+        -d ${SCAN_DIRECTORIES} \
+        -product ${PRODUCT_NAME} \
+        -project ${PROJECT_NAME} \
+        -projectVersion ${PROJECT_VERSION}
+    ERR=$?
+    if [[ "$ERR" != "254" && "$ERR" != "0" ]]; then
+        echo "failed to run wss for $PRODUCT_VERSION_${PROJECT_VERSION} in ${PROJECT_VERSION}..."
         exit 1
     fi
 fi
