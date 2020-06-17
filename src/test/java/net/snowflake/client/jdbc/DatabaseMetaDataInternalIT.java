@@ -326,8 +326,8 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest
     resultSet = databaseMetaData.getFunctionColumns(null, "%", "%", "%");
     // we have 81 columns returned
     assertEquals(81, getSizeOfResultSet(resultSet));
+    // setting catalog to % will result in 0 columns. % does not apply for catalog, only for other params
     resultSet = databaseMetaData.getFunctionColumns("%", "%", "%", "%");
-    // we have 81 columns returned
     assertEquals(0, getSizeOfResultSet(resultSet));
   }
 
