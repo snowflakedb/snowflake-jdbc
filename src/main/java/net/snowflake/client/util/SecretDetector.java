@@ -107,6 +107,39 @@ public class SecretDetector
   }
 
   /**
+   * Determine whether a connection parameter should be masked if parameter values
+   * are being printed. Sensitive parameters include passwords and token values.
+   * Helper function for maskParameterValue().
+   *
+   * @param name of the parameter
+   * @return true if the parameter should be masked
+   */
+  private static boolean isSensitiveParameter(String name)
+  {
+    Pattern PASSWORD_IN_NAME = Pattern.compile(".*?(password|pwd|token|proxyuser).*?", Pattern.CASE_INSENSITIVE);
+    Matcher matcher = PASSWORD_IN_NAME.matcher(name);
+    return isSensitive(name) || matcher.matches();
+  }
+
+  /**
+   * Mask sensitive parameter values. Used currently for connection parameters
+   * whose values are to be recorded for each session.
+   *
+   * @param key   parameter key
+   * @param value parameter value, which is sometimes masked
+   * @return the original value if the parameter key does not mark it as sensitive,
+   * or return a masked text if the key is determined to be sensitive.
+   */
+  public static String maskParameterValue(String key, String value)
+  {
+    if (isSensitiveParameter(key))
+    {
+      return "☺☺☺☺☺";
+    }
+    return value;
+  }
+
+  /**
    * Find all the positions of aws key id and aws secret key.
    * The time complexity is O(n)
    *

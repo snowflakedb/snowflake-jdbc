@@ -3,10 +3,13 @@ package net.snowflake.client.util;
 import net.minidev.json.JSONArray;
 import net.minidev.json.JSONObject;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertEquals;
 
 public class SecretDetectorTest
 {
@@ -182,7 +185,35 @@ public class SecretDetectorTest
 
     String result = SecretDetector.maskSecrets(messageText);
 
-    Assert.assertEquals(filteredMessageText, result);
+    assertEquals(filteredMessageText, result);
+  }
+
+  @Test
+  public void testMaskParameterValue()
+  {
+    Map<String, String> testParametersMasked = new HashMap<>();
+    testParametersMasked.put("passcodeInPassword", "test");
+    testParametersMasked.put("passcode", "test");
+    testParametersMasked.put("id_token", "test");
+    testParametersMasked.put("private_key_file_pwd", "test");
+    testParametersMasked.put("proxyPassword", "test");
+    testParametersMasked.put("proxyUser", "test");
+
+    Map<String, String> testParametersUnmasked = new HashMap<>();
+    testParametersUnmasked.put("oktausername", "test");
+    testParametersUnmasked.put("authenticator", "test");
+    testParametersUnmasked.put("proxyHost", "test");
+    testParametersUnmasked.put("user", "test");
+    testParametersUnmasked.put("private_key_file", "test");
+
+    for (Map.Entry<String, String> entry : testParametersMasked.entrySet())
+    {
+      assertEquals("☺☺☺☺☺", SecretDetector.maskParameterValue(entry.getKey(), entry.getValue()));
+    }
+    for (Map.Entry<String, String> entry : testParametersUnmasked.entrySet())
+    {
+      assertEquals("test", SecretDetector.maskParameterValue(entry.getKey(), entry.getValue()));
+    }
   }
 
   @Test

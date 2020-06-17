@@ -643,7 +643,6 @@ public class SFSession
         sessionParametersMap.get(CLIENT_STORE_TEMPORARY_CREDENTIAL)
     );
     // TODO: temporarily hardcode sessionParameter debug info. will be changed in the future
-
     SFLoginInput loginInput = new SFLoginInput();
 
     loginInput.setServerUrl(
@@ -692,8 +691,7 @@ public class SFSession
 
     // propagate OCSP mode to SFTrustManager. Note OCSP setting is global on JVM.
     HttpUtil.initHttpClient(loginInput.getOCSPMode(), null);
-
-    SFLoginOutput loginOutput = SessionUtil.openSession(loginInput);
+    SFLoginOutput loginOutput = SessionUtil.openSession(loginInput, connectionPropertiesMap, tracingLevel.toString());
     isClosed = false;
 
     sessionToken = loginOutput.getSessionToken();
