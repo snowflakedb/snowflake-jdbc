@@ -8,6 +8,8 @@ THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 export PRODUCT_NAME=snowflake-jdbc
 
+env | grep GITHUB | sort
+
 export PROD_BRANCH=master
 export PROD_GIT_REF=refs/heads/$PROD_BRANCH
 export PROJECT_VERSION=$GITHUB_SHA
