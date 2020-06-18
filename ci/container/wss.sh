@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 #
 # Run whitesource for components which need versioning
+
 set -e
 set -o pipefail
 THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
