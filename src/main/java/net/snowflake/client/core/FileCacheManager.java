@@ -166,12 +166,27 @@ class FileCacheManager
         this.cacheDir = new File(new File(homeDir, ".cache"), "snowflake");
       }
     }
-    if (!this.cacheDir.exists() && !this.cacheDir.mkdirs())
+    final int sleep = 10;
+    // attempt to create the directory up to 10 times
+    for (int cnt = 0; !this.cacheDir.exists() && cnt < 10; ++cnt)
     {
-      throw new RuntimeException(
-          String.format(
-              "Failed to locate or create the cache directory: %s", this.cacheDir)
-      );
+      LOGGER.info("Not exists directory. Creating: {}", this.cacheDir.getAbsolutePath());
+      if (this.cacheDir.mkdirs())
+      {
+        LOGGER.info("Successfully created: {}", this.cacheDir.getAbsolutePath());
+        break;
+      }
+      LOGGER.info("Failed to create, maybe already created by other process/thread? Checking again, cnt: {}, {}", cnt,
+                  this.cacheDir.getAbsolutePath());
+      try
+      {
+        LOGGER.info("Sleeping {}ms", sleep);
+        Thread.sleep(sleep);
+      }
+      catch (InterruptedException e)
+      {
+        LOGGER.info("Sleep interrupted. Ignored.");
+      }
     }
 
     File cacheFileTmp = new File(
