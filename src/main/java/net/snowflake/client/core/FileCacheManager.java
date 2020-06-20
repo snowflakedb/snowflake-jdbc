@@ -35,8 +35,7 @@ class FileCacheManager
   /**
    * Object mapper for JSON encoding and decoding
    */
-  private static final ObjectMapper OBJECT_MAPPER =
-      ObjectMapperFactory.getObjectMapper();
+  private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.getObjectMapper();
 
   private static final Charset DEFAULT_FILE_ENCODING = StandardCharsets.UTF_8;
 
@@ -168,14 +167,15 @@ class FileCacheManager
     // attempt to create the directory up to 10 times
     for (int cnt = 0; !this.cacheDir.exists() && cnt < 10; ++cnt)
     {
-      LOGGER.debug(("Not exists directory. Creating: {}", this.cacheDir.getAbsolutePath());
+      LOGGER.debug("Not exists directory. Creating: {}", this.cacheDir.getAbsolutePath());
       if (this.cacheDir.mkdirs())
       {
-        LOGGER.debug(("Successfully created: {}", this.cacheDir.getAbsolutePath());
+        LOGGER.debug("Successfully created: {}", this.cacheDir.getAbsolutePath());
         break;
       }
-      LOGGER.debug(("Failed to create, maybe already created by other process/thread? Checking again, cnt: {}, {}", cnt,
-                  this.cacheDir.getAbsolutePath());
+      LOGGER.debug(
+          "Failed to create, maybe already created by other process/thread? Checking again, cnt: {}, {}", cnt,
+          this.cacheDir.getAbsolutePath());
       try
       {
         LOGGER.debug("Sleeping {}ms", sleep);
@@ -183,41 +183,38 @@ class FileCacheManager
       }
       catch (InterruptedException e)
       {
-        LOGGER.debug(("Sleep interrupted. Ignored.");
+        LOGGER.debug("Sleep interrupted. Ignored.");
       }
     }
 
     if (!this.cacheDir.exists())
     {
-      LOGGER.debug(("Still Not exists %s. Giving up.");
-      // still the directory doesn't exists
-      throw new RuntimeException(
-          String.format(
-              "Failed to locate or create the cache directory: %s", this.cacheDir)
-      );
+      LOGGER.debug("Still Not exists %s. Giving up.");
+      return this;
     }
-    LOGGER.debug(("Verified Directory {}", this.cacheDir.getAbsolutePath());
+    LOGGER.debug("Verified Directory {}", this.cacheDir.getAbsolutePath());
 
-    File cacheFileTmp = new File(
-        this.cacheDir, this.baseCacheFileName).getAbsoluteFile();
+    File cacheFileTmp = new File(this.cacheDir, this.baseCacheFileName).getAbsoluteFile();
     try
     {
       // create an empty file if not exists and return true.
       // If exists. the method returns false.
       // In this particular case, it doesn't matter as long as the file is
       // writable.
-      cacheFileTmp.createNewFile();
+      if (cacheFileTmp.createNewFile())
+      {
+        LOGGER.debug("Successfully created a cache file {}", cacheFileTmp);
+      }
+      else
+      {
+        LOGGER.debug("Cache file already exists {}", cacheFileTmp);
+      }
       this.cacheFile = cacheFileTmp.getCanonicalFile();
-      this.cacheLockFile = new File(
-          this.cacheFile.getParentFile(), this.baseCacheFileName + ".lck");
+      this.cacheLockFile = new File(this.cacheFile.getParentFile(), this.baseCacheFileName + ".lck");
     }
     catch (IOException | SecurityException ex)
     {
-      throw new RuntimeException(
-          String.format(
-              "Failed to touch the cache file: %s",
-              cacheFileTmp.getAbsoluteFile())
-      );
+      LOGGER.info("Failed to touch the cache file. Ignored. {}", cacheFileTmp.getAbsoluteFile());
     }
     return this;
   }
@@ -249,9 +246,7 @@ class FileCacheManager
     }
     catch (IOException ex)
     {
-      LOGGER.debug(
-          "Failed to read the cache file. No worry. File: {}, Err: {}",
-          cacheFile, ex);
+      LOGGER.debug("Failed to read the cache file. No worry. File: {}, Err: {}", cacheFile, ex);
     }
     return null;
   }
