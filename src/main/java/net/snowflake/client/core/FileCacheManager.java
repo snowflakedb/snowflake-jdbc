@@ -153,13 +153,11 @@ class FileCacheManager
       if (Constants.getOS() == Constants.OS.WINDOWS)
       {
         this.cacheDir = new File(
-            new File(new File(new File(homeDir,
-                                       "AppData"), "Local"), "Snowflake"), "Caches");
+            new File(new File(new File(homeDir, "AppData"), "Local"), "Snowflake"), "Caches");
       }
       else if (Constants.getOS() == Constants.OS.MAC)
       {
-        this.cacheDir = new File(new File(new File(homeDir,
-                                                   "Library"), "Caches"), "Snowflake");
+        this.cacheDir = new File(new File(new File(homeDir, "Library"), "Caches"), "Snowflake");
       }
       else
       {
@@ -170,24 +168,35 @@ class FileCacheManager
     // attempt to create the directory up to 10 times
     for (int cnt = 0; !this.cacheDir.exists() && cnt < 10; ++cnt)
     {
-      LOGGER.info("Not exists directory. Creating: {}", this.cacheDir.getAbsolutePath());
+      LOGGER.debug(("Not exists directory. Creating: {}", this.cacheDir.getAbsolutePath());
       if (this.cacheDir.mkdirs())
       {
-        LOGGER.info("Successfully created: {}", this.cacheDir.getAbsolutePath());
+        LOGGER.debug(("Successfully created: {}", this.cacheDir.getAbsolutePath());
         break;
       }
-      LOGGER.info("Failed to create, maybe already created by other process/thread? Checking again, cnt: {}, {}", cnt,
+      LOGGER.debug(("Failed to create, maybe already created by other process/thread? Checking again, cnt: {}, {}", cnt,
                   this.cacheDir.getAbsolutePath());
       try
       {
-        LOGGER.info("Sleeping {}ms", sleep);
+        LOGGER.debug("Sleeping {}ms", sleep);
         Thread.sleep(sleep);
       }
       catch (InterruptedException e)
       {
-        LOGGER.info("Sleep interrupted. Ignored.");
+        LOGGER.debug(("Sleep interrupted. Ignored.");
       }
     }
+
+    if (!this.cacheDir.exists())
+    {
+      LOGGER.debug(("Still Not exists %s. Giving up.");
+      // still the directory doesn't exists
+      throw new RuntimeException(
+          String.format(
+              "Failed to locate or create the cache directory: %s", this.cacheDir)
+      );
+    }
+    LOGGER.debug(("Verified Directory {}", this.cacheDir.getAbsolutePath());
 
     File cacheFileTmp = new File(
         this.cacheDir, this.baseCacheFileName).getAbsoluteFile();
