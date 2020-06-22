@@ -35,8 +35,7 @@ class FileCacheManager
   /**
    * Object mapper for JSON encoding and decoding
    */
-  private static final ObjectMapper OBJECT_MAPPER =
-      ObjectMapperFactory.getObjectMapper();
+  private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.getObjectMapper();
 
   private static final Charset DEFAULT_FILE_ENCODING = StandardCharsets.UTF_8;
 
@@ -153,47 +152,46 @@ class FileCacheManager
       if (Constants.getOS() == Constants.OS.WINDOWS)
       {
         this.cacheDir = new File(
-            new File(new File(new File(homeDir,
-                                       "AppData"), "Local"), "Snowflake"), "Caches");
+            new File(new File(new File(homeDir, "AppData"), "Local"), "Snowflake"), "Caches");
       }
       else if (Constants.getOS() == Constants.OS.MAC)
       {
-        this.cacheDir = new File(new File(new File(homeDir,
-                                                   "Library"), "Caches"), "Snowflake");
+        this.cacheDir = new File(new File(new File(homeDir, "Library"), "Caches"), "Snowflake");
       }
       else
       {
         this.cacheDir = new File(new File(homeDir, ".cache"), "snowflake");
       }
     }
-    if (!this.cacheDir.exists() && !this.cacheDir.mkdirs())
-    {
-      throw new RuntimeException(
-          String.format(
-              "Failed to locate or create the cache directory: %s", this.cacheDir)
-      );
-    }
 
-    File cacheFileTmp = new File(
-        this.cacheDir, this.baseCacheFileName).getAbsoluteFile();
+    if (!this.cacheDir.mkdirs() && !this.cacheDir.exists())
+    {
+      LOGGER.debug("Cannot create the cache directory {}. Giving up.", this.cacheDir.getAbsolutePath());
+      return this;
+    }
+    LOGGER.debug("Verified Directory {}", this.cacheDir.getAbsolutePath());
+
+    File cacheFileTmp = new File(this.cacheDir, this.baseCacheFileName).getAbsoluteFile();
     try
     {
       // create an empty file if not exists and return true.
       // If exists. the method returns false.
       // In this particular case, it doesn't matter as long as the file is
       // writable.
-      cacheFileTmp.createNewFile();
+      if (cacheFileTmp.createNewFile())
+      {
+        LOGGER.debug("Successfully created a cache file {}", cacheFileTmp);
+      }
+      else
+      {
+        LOGGER.debug("Cache file already exists {}", cacheFileTmp);
+      }
       this.cacheFile = cacheFileTmp.getCanonicalFile();
-      this.cacheLockFile = new File(
-          this.cacheFile.getParentFile(), this.baseCacheFileName + ".lck");
+      this.cacheLockFile = new File(this.cacheFile.getParentFile(), this.baseCacheFileName + ".lck");
     }
     catch (IOException | SecurityException ex)
     {
-      throw new RuntimeException(
-          String.format(
-              "Failed to touch the cache file: %s",
-              cacheFileTmp.getAbsoluteFile())
-      );
+      LOGGER.info("Failed to touch the cache file. Ignored. {}", cacheFileTmp.getAbsoluteFile());
     }
     return this;
   }
@@ -225,9 +223,7 @@ class FileCacheManager
     }
     catch (IOException ex)
     {
-      LOGGER.debug(
-          "Failed to read the cache file. No worry. File: {}, Err: {}",
-          cacheFile, ex);
+      LOGGER.debug("Failed to read the cache file. No worry. File: {}, Err: {}", cacheFile, ex);
     }
     return null;
   }
@@ -238,6 +234,7 @@ class FileCacheManager
     if (cacheFile == null || !tryLockCacheFile())
     {
       // no cache file or it failed to lock file
+      LOGGER.debug("No cache file exists or failed to lock the file. Skipping writing the cache");
       return;
     }
     // NOTE: must unlock cache file

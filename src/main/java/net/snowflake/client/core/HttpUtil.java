@@ -44,6 +44,7 @@ import javax.net.ssl.TrustManager;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
@@ -213,9 +214,20 @@ public class HttpUtil
       // 1) OCSP service is down for reasons, 2) PowerMock test tht doesn't
       // care OCSP checks.
       // OCSP FailOpen is ON by default
-      TrustManager[] tm = {
-          new SFTrustManager(ocspMode, ocspCacheFile)};
-      trustManagers = tm;
+      try
+      {
+        TrustManager[] tm = {
+            new SFTrustManager(ocspMode, ocspCacheFile)};
+        trustManagers = tm;
+      }
+      catch(Exception | Error err)
+      {
+        // dump error stack
+        StringWriter errors = new StringWriter();
+        err.printStackTrace(new PrintWriter(errors));
+        logger.error(errors.toString());
+        throw new RuntimeException(err); // rethrow the exception
+      }
     }
     try
     {
