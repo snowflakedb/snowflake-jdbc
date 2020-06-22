@@ -153,7 +153,22 @@ class FileCacheManager
         this.cacheDir = new File(new File(homeDir, ".cache"), "snowflake");
       }
     }
-    if (!this.cacheDir.exists() && !this.cacheDir.mkdirs())
+    for (int cnt=0; !this.cacheDir.exists() && cnt < 10; ++cnt)
+    {
+      if (this.cacheDir.mkdirs())
+      {
+        break;
+      }
+      try
+      {
+        Thread.sleep(10);
+      }
+      catch (InterruptedException e)
+      {
+        LOGGER.debug("sleep was interrupted");
+      }
+    }
+    if (!this.cacheDir.mkdirs() && !this.cacheDir.exists())
     {
       throw new RuntimeException(
           String.format(
