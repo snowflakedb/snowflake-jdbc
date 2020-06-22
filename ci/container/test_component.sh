@@ -40,6 +40,26 @@ if [[ -n "$GITHUB_SHA" ]]; then
         fi
     popd >& /dev/null
 fi
+
+# we change password, create SSM_KNOWN_FILE
+source $THIS_DIR/../log_analyze_setup.sh
+if [[ "${ENABLE_CLIENT_LOG_ANALYZE}" == "true" ]]; then
+    echo "[INFO] Log Analyze is enabled."
+
+    setup_log_env
+
+    if [[ "$SNOWFLAKE_TEST_HOST" == *"snowflake.reg"*".local"* && "$SNOWFLAKE_TEST_ACCOUNT" == "s3testaccount" && "$SNOWFLAKE_TEST_USER" == "snowman" && "$SNOWFLAKE_TEST_PASSWORD" == "test" ]]; then
+        echo "[INFO] Run test with local instance. Will set a more complex password"
+
+        python3 $SCRIPT_PATH/change_snowflake_test_pwd.py
+        export SNOWFLAKE_TEST_PASSWORD=$SNOWFLAKE_TEST_PASSWORD_NEW
+
+        echo $SNOWFLAKE_TEST_PASSWORD >> $CLIENT_KNOWN_SSM_FILE_PATH
+    else
+        echo "[INFO] Not running test with local instance. Won't set a new password"
+    fi
+fi
+
 env | grep SNOWFLAKE_ | grep -v PASS | sort
 
 echo "[INFO] Running Hang Web Server"

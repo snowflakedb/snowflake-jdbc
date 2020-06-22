@@ -161,7 +161,7 @@ public class JDK14Logger implements SFLogger
     {
       String[] source = findSourceInStack();
       String message = MessageFormat.format(refactorString(msg), evaluateLambdaArgs(arguments));
-      jdkLogger.logp(level, source[0], source[1], message);
+      jdkLogger.logp(level, source[0], source[1], SecretDetector.maskSecrets(message));
     }
   }
 

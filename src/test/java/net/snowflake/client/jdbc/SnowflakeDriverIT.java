@@ -960,8 +960,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest
     _connectionProperties.put("schema", "testschema");
     _connectionProperties.put("ssl", "off");
     _connectionProperties.put("account", "s3testaccount");
-    String connectionUrl = "jdbc:snowflake://snowflake.reg.local:8082";
-    Connection connection = DriverManager.getConnection(connectionUrl, _connectionProperties);
+    Connection connection = getConnection(DONT_INJECT_SOCKET_TIMEOUT, _connectionProperties, false, false, "gcpaccount");
     Statement statement = connection.createStatement();
 
     String sourceFilePath = getFullPathFileInResource(TEST_DATA_FILE);
