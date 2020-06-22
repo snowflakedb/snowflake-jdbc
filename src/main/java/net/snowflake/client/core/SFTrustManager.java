@@ -544,7 +544,7 @@ public class SFTrustManager extends X509ExtendedTrustManager
     JsonNode ocspRespBase64 = elem.getValue();
     if (!ocspRespBase64.isArray() || ocspRespBase64.size() != 2)
     {
-      LOGGER.debug("Invalid cache file format.");
+      LOGGER.debug("Invalid cache file format. Ignored");
       return null;
     }
     long producedAt = ocspRespBase64.get(0).asLong();
