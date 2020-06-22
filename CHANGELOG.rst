@@ -1,3 +1,12 @@
+**JDBC Driver 3.12.8**
+
+- \| SNOW-159743 | Unable to return query results on AIX using JDBC driver
+- \| SNOW-163938 | Resolve telemetry response failures in JDBC driver
+- \| SNOW-163587 | DatabaseMetaData getFunctionColumns(null, "%", "%", "%") throws SQL compilation error
+- \| SNOW-165718 | Add log of client parameter settings to be accessed in Snowhouse
+- \| SNOW-169174 | CVE-2020-14061, CVE-2020-14062, CVE-2020-14060, CVE-2020-14195 com.fasterxml.jackson.core:jackson-databind to version 2.9.10.5 or later
+- \      
+
 **JDBC Driver 3.12.7**
 
 - \| SNOW-164084 |  Revert a bug which break telemetry for JDBC driver
