@@ -234,6 +234,7 @@ class FileCacheManager
     if (cacheFile == null || !tryLockCacheFile())
     {
       // no cache file or it failed to lock file
+      LOGGER.debug("No cache file exists or failed to lock the file. Skipping writing the cache");
       return;
     }
     // NOTE: must unlock cache file
