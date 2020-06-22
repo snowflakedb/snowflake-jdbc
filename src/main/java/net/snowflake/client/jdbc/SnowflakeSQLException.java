@@ -52,6 +52,14 @@ public class SnowflakeSQLException extends SQLException
 
   }
 
+  public SnowflakeSQLException(String reason, String SQLState)
+  {
+    super(reason, SQLState);
+    // log user error from GS at fine level
+    logger.debug("Snowflake exception: {}, sqlState:{}",
+            reason, SQLState);
+  }
+
   public SnowflakeSQLException(String sqlState, int vendorCode)
   {
     super(errorResourceBundleManager.getLocalizedMessage(
