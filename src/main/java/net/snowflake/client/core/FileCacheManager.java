@@ -163,33 +163,10 @@ class FileCacheManager
         this.cacheDir = new File(new File(homeDir, ".cache"), "snowflake");
       }
     }
-    final int sleep = 10;
-    // attempt to create the directory up to 10 times
-    for (int cnt = 0; !this.cacheDir.exists() && cnt < 10; ++cnt)
-    {
-      LOGGER.debug("Not exists directory. Creating: {}", this.cacheDir.getAbsolutePath());
-      if (this.cacheDir.mkdirs())
-      {
-        LOGGER.debug("Successfully created: {}", this.cacheDir.getAbsolutePath());
-        break;
-      }
-      LOGGER.debug(
-          "Failed to create, maybe already created by other process/thread? Checking again, cnt: {}, {}", cnt,
-          this.cacheDir.getAbsolutePath());
-      try
-      {
-        LOGGER.debug("Sleeping {}ms", sleep);
-        Thread.sleep(sleep);
-      }
-      catch (InterruptedException e)
-      {
-        LOGGER.debug("Sleep interrupted. Ignored.");
-      }
-    }
 
-    if (!this.cacheDir.exists())
+    if (!this.cacheDir.mkdirs() && !this.cacheDir.exists())
     {
-      LOGGER.debug("Still Not exists %s. Giving up.");
+      LOGGER.debug("Cannot create the cache directory {}. Giving up.", this.cacheDir.getAbsolutePath());
       return this;
     }
     LOGGER.debug("Verified Directory {}", this.cacheDir.getAbsolutePath());
