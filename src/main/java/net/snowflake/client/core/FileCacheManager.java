@@ -155,7 +155,7 @@ class FileCacheManager
     }
     final int sleep = 10;
     // attempt to create the directory up to 10 times
-    for (int cnt = 0; !this.cacheDir.exists() && cnt < 10; ++cnt)
+    for (int cnt = 0; !this.cacheDir.exists() && cnt < 5; ++cnt)
     {
       LOGGER.debug("Not exists directory. Creating: {}", this.cacheDir.getAbsolutePath());
       if (this.cacheDir.mkdirs())
@@ -192,11 +192,11 @@ class FileCacheManager
       // writable.
       if (cacheFileTmp.createNewFile())
       {
-        LOGGER.debug("Empty OCSP response cache file is successfully created.");
+        LOGGER.debug("Empty cache file is successfully created. {}", cacheFileTmp.getAbsolutePath());
       }
       else
       {
-        LOGGER.debug("OCSP response cache file already exists.");
+        LOGGER.debug("Cache file already exists. {}", cacheFileTmp.getAbsolutePath());
       }
       this.cacheFile = cacheFileTmp.getCanonicalFile();
       this.cacheLockFile = new File(
@@ -204,7 +204,7 @@ class FileCacheManager
     }
     catch (IOException | SecurityException ex)
     {
-      LOGGER.debug("no OCSP cache file is created. Ignored");
+      LOGGER.debug("no cache file is created. Ignored.");
     }
     return this;
   }
