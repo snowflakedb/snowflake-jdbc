@@ -18,7 +18,7 @@ params = {
 }
 
 for account in ["testaccount", "s3testaccount", "azureaccount", "gcpaccount"]:
-   params['account'] = account 
+   params['account'] = account
    conn = snowflake.connector.connect(**params)
    conn.cursor().execute("use role accountadmin")
    cmd = "alter user set password = '{}'".format(os.getenv("SNOWFLAKE_TEST_PASSWORD_NEW"))
