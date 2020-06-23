@@ -7,6 +7,7 @@ package net.snowflake.client.core;
 import com.fasterxml.jackson.databind.JsonNode;
 import net.snowflake.client.core.BasicEvent.QueryState;
 import net.snowflake.client.jdbc.ErrorCode;
+import net.snowflake.client.jdbc.JsonResultChunk;
 import net.snowflake.client.jdbc.SnowflakeChunkDownloader;
 import net.snowflake.client.jdbc.SnowflakeResultChunk;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
@@ -30,7 +31,7 @@ import static net.snowflake.client.core.StmtUtil.eventHandler;
  *
  * @author jhuang
  */
-public class SFResultSet extends SFBaseResultSet
+public class SFResultSet extends SFJsonResultSet
 {
   static final SFLogger logger = SFLoggerFactory.getLogger(SFResultSet.class);
 
@@ -42,7 +43,7 @@ public class SFResultSet extends SFBaseResultSet
 
   private JsonNode firstChunkRowset = null;
 
-  private SnowflakeResultChunk currentChunk = null;
+  private JsonResultChunk currentChunk = null;
 
   private String queryId;
 
@@ -232,7 +233,7 @@ public class SFResultSet extends SFBaseResultSet
 
         currentChunkRowIndex = 0;
         currentChunkRowCount = nextChunk.getRowCount();
-        currentChunk = nextChunk;
+        currentChunk = (JsonResultChunk) nextChunk;
 
         logger.debug("Moving to chunk index {}, row count={}",
                      nextChunkIndex, currentChunkRowCount);
@@ -249,9 +250,17 @@ public class SFResultSet extends SFBaseResultSet
     }
     else if (chunkCount > 0)
     {
-      logger.debug("End of chunks");
-      SnowflakeChunkDownloader.Metrics metrics = chunkDownloader.terminate();
-      logChunkDownloaderMetrics(metrics);
+      try
+      {
+        logger.debug("End of chunks");
+        SnowflakeChunkDownloader.Metrics metrics = chunkDownloader.terminate();
+        logChunkDownloaderMetrics(metrics);
+      }
+      catch (InterruptedException ex)
+      {
+        throw new SnowflakeSQLException(SqlState.QUERY_CANCELED,
+                                        ErrorCode.INTERRUPTED.getMessageCode());
+      }
     }
 
     return false;
@@ -309,9 +318,7 @@ public class SFResultSet extends SFBaseResultSet
           System.getProperty("snowflake.enable_incident_test2") != null &&
           System.getProperty("snowflake.enable_incident_test2").equals("true"))
       {
-        throw IncidentUtil.
-            generateIncidentWithException(session, null, queryId,
-                                          ErrorCode.MAX_RESULT_LIMIT_EXCEEDED);
+        throw new SFException(ErrorCode.MAX_RESULT_LIMIT_EXCEEDED);
       }
 
       // mark end of result
@@ -322,7 +329,6 @@ public class SFResultSet extends SFBaseResultSet
   @Override
   protected Object getObjectInternal(int columnIndex) throws SFException
   {
-    logger.debug("getObjectInternal: {}", columnIndex);
     if (columnIndex <= 0 || columnIndex > resultSetMetaData.getColumnCount())
     {
       throw new SFException(ErrorCode.COLUMN_DOES_NOT_EXIST, columnIndex);
@@ -337,9 +343,9 @@ public class SFResultSet extends SFBaseResultSet
     }
     else if (firstChunkRowset != null)
     {
-      retValue = SnowflakeResultChunk.extractCell(firstChunkRowset,
-                                                  currentChunkRowIndex,
-                                                  internalColumnIndex);
+      retValue = JsonResultChunk.extractCell(firstChunkRowset,
+                                             currentChunkRowIndex,
+                                             internalColumnIndex);
     }
     else if (currentChunk != null)
     {
@@ -364,8 +370,7 @@ public class SFResultSet extends SFBaseResultSet
       for (int colIdx = 0; colIdx < columnCount; colIdx++)
       {
         firstChunkSortedRowSet[rowIdx][colIdx] =
-            SnowflakeResultChunk.extractCell(firstChunkRowset,
-                                             rowIdx, colIdx);
+            JsonResultChunk.extractCell(firstChunkRowset, rowIdx, colIdx);
       }
     }
 
@@ -428,18 +433,25 @@ public class SFResultSet extends SFBaseResultSet
   }
 
   @Override
-  public void close()
+  public void close() throws SnowflakeSQLException
   {
     super.close();
 
-    if (chunkDownloader != null)
+    try
     {
-      chunkDownloader.releaseAllChunkMemoryUsage();
-      SnowflakeChunkDownloader.Metrics metrics = chunkDownloader.terminate();
-      logChunkDownloaderMetrics(metrics);
-      firstChunkSortedRowSet = null;
-      firstChunkRowset = null;
-      currentChunk = null;
+      if (chunkDownloader != null)
+      {
+        SnowflakeChunkDownloader.Metrics metrics = chunkDownloader.terminate();
+        logChunkDownloaderMetrics(metrics);
+        firstChunkSortedRowSet = null;
+        firstChunkRowset = null;
+        currentChunk = null;
+      }
+    }
+    catch (InterruptedException ex)
+    {
+      throw new SnowflakeSQLException(SqlState.QUERY_CANCELED,
+                                      ErrorCode.INTERRUPTED.getMessageCode());
     }
   }
 
