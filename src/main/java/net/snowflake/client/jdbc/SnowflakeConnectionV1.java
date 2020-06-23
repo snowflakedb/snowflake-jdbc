@@ -1179,7 +1179,7 @@ public class SnowflakeConnectionV1 implements Connection
    * @param sourceFileName file path in stage
    * @param decompress     true if file compressed
    * @return an input stream
-   * @throws SnowflakeSQLException
+   * @throws SnowflakeSQLException raises if any error occurs
    */
   public InputStream downloadStream(String stageName, String sourceFileName,
                                     boolean decompress) throws SnowflakeSQLException

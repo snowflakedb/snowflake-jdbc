@@ -189,6 +189,7 @@ public class TelemetryService
 
   /**
    * whether the telemetry service is enabled for current deployment
+   * @return true if this deployment is enabled
    */
   public boolean isDeploymentEnabled()
   {
@@ -391,6 +392,20 @@ public class TelemetryService
 
   /**
    * log error http response to telemetry
+   * @param eventName event name
+   * @param request HTTP request
+   * @param injectSocketTimeout timeout for test
+   * @param canceling is canceling?
+   * @param withoutCookies true if no cookie is preserved
+   * @param includeRetryParameters true if this includes retry parameter
+   * @param includeRequestGuid true if this includes request_guid parameter
+   * @param response HTTP response
+   * @param savedEx saved exception if any
+   * @param breakRetryReason break retry reason
+   * @param retryTimeout retry timeout
+   * @param retryCount retry counter
+   * @param sqlState SQL State
+   * @param errorCode error code
    */
   public void logHttpRequestTelemetryEvent(
       String eventName,

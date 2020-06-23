@@ -48,6 +48,17 @@ public class EncryptionProvider
 
   /**
    * Decrypt a InputStream
+   * @param inputStream input stream
+   * @param keyBase64 key
+   * @param ivBase64 iv
+   * @param encMat encryption material
+   * @return wrapped input stream
+   * @throws NoSuchPaddingException raises if no padding to the base64
+   * @throws NoSuchAlgorithmException raises if the algorithm is invalid
+   * @throws InvalidKeyException raises if the key is invalid
+   * @throws BadPaddingException raises if padding is invalid
+   * @throws IllegalBlockSizeException raises if the block size is invalid
+   * @throws InvalidAlgorithmParameterException raises if algorthm parameter is invalid
    */
   public static InputStream decryptStream(InputStream inputStream,
                                           String keyBase64,

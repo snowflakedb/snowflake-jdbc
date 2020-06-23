@@ -130,7 +130,7 @@ public class SecretDetector
   /**
    * mask AWS secret in the input string
    *
-   * @param sql
+   * @param sql input text
    * @return masked string
    */
   public static String maskAWSSecret(String sql)

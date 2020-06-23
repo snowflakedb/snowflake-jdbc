@@ -2984,6 +2984,7 @@ public class SnowflakeDriverIT extends AbstractDriverIT
     }
   }
 
+  @Ignore
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTravisCI.class)
   public void testLargeResultPerformance() throws Throwable

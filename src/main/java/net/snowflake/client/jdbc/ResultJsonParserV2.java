@@ -69,6 +69,7 @@ public class ResultJsonParserV2
   /**
    * Check if the chunk has been parsed correctly.
    * After calling this it is safe to acquire the output data
+   * @throws SnowflakeSQLException raises if any error occurs
    */
   public void endParsing() throws SnowflakeSQLException
   {
@@ -92,7 +93,8 @@ public class ResultJsonParserV2
   /**
    * Continue parsing with the given data
    *
-   * @param in readOnly byteBuffer backed by an array (the data to be reed is from position to limit)
+   * @param in readOnly byteBuffer backed by an array (the data to be reed is from position to limit).
+   * @throws SnowflakeSQLException raises if any error occurs
    */
   public void continueParsing(ByteBuffer in) throws SnowflakeSQLException
   {

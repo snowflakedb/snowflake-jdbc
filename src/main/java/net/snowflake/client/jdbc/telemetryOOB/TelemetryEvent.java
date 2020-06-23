@@ -83,8 +83,8 @@ public class TelemetryEvent extends JSONObject
     /**
      * build a log event for an exception including the full stack trace
      *
-     * @param ex
-     * @return
+     * @param ex excpeiont
+     * @return log this object itself
      */
     public LogBuilder withException(Exception ex)
     {

@@ -39,9 +39,9 @@ public abstract class SFJsonResultSet extends SFBaseResultSet
   /**
    * Given a column index, get current row's value as an object
    *
-   * @param columnIndex
-   * @return
-   * @throws SFException
+   * @param columnIndex one based index
+   * @return internal object
+   * @throws SFException raises if any error occurs
    */
   protected abstract Object getObjectInternal(int columnIndex) throws SFException;
 
