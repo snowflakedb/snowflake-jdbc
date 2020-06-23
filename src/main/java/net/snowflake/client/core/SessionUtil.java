@@ -2170,6 +2170,7 @@ public class SessionUtil
           session.setEnableCombineDescribe((boolean) entry.getValue());
         }
       }
+      /* DISABLED telemetry service for this private build to avoid issues fixed in the future version.
       else if ("CLIENT_TELEMETRY_ENABLED".equalsIgnoreCase(entry.getKey()))
       {
         if (session != null)
@@ -2177,6 +2178,7 @@ public class SessionUtil
           session.setClientTelemetryEnabled((boolean) entry.getValue());
         }
       }
+      */
       else if ("CLIENT_STAGE_ARRAY_BINDING_THRESHOLD".equalsIgnoreCase(entry.getKey()))
       {
         if (session != null)
