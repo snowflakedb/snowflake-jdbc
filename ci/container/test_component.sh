@@ -51,7 +51,7 @@ if [[ "${ENABLE_CLIENT_LOG_ANALYZE}" == "true" ]]; then
     if [[ "$SNOWFLAKE_TEST_HOST" == *"snowflake.reg"*".local"* && "$SNOWFLAKE_TEST_ACCOUNT" == "s3testaccount" && "$SNOWFLAKE_TEST_USER" == "snowman" && "$SNOWFLAKE_TEST_PASSWORD" == "test" ]]; then
         echo "[INFO] Run test with local instance. Will set a more complex password"
 
-        python3 $SCRIPT_PATH/change_snowflake_test_pwd.py
+        python3 $THIS_DIR/change_snowflake_test_pwd.py
         export SNOWFLAKE_TEST_PASSWORD=$SNOWFLAKE_TEST_PASSWORD_NEW
 
         echo $SNOWFLAKE_TEST_PASSWORD >> $CLIENT_KNOWN_SSM_FILE_PATH
