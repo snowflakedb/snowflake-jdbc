@@ -608,6 +608,7 @@ public class HttpUtil
 
   /**
    * configure custom proxy properties from connectionPropertiesMap
+   * @param connectionPropertiesMap connection propery map
    */
   public static void configureCustomProxyProperties(
       Map<SFSessionProperty, Object> connectionPropertiesMap)

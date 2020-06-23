@@ -215,6 +215,7 @@ public class SnowflakeChunkDownloader
    * @param networkTimeoutInMilli network timeout
    * @param useJsonParser         should JsonParser be used instead of object
    * @param memoryLimit           memory limit for chunk buffer
+   * @throws SnowflakeSQLException raises if any error occurs
    */
   public SnowflakeChunkDownloader(int colCount,
                                   JsonNode chunksData,
@@ -730,6 +731,7 @@ public class SnowflakeChunkDownloader
    * terminate the downloader
    *
    * @return chunk downloader metrics collected over instance lifetime
+   * @throws InterruptedException raises if terminate process is interrupted
    */
   public Metrics terminate() throws InterruptedException
   {
