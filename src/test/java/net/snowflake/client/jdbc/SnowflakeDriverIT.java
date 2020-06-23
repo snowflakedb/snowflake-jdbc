@@ -3273,6 +3273,25 @@ public class SnowflakeDriverIT extends AbstractDriverIT
   }
 
   @Test
+  public void testLargeResultSet() throws Throwable
+  {
+    Connection connection = getConnection();
+    Statement statement = connection.createStatement();
+    final int rowCount = 100000;
+    ResultSet rs = statement.executeQuery("select seq8(), randstr(1000, random())" +
+                                          " from table(generator(rowcount=>"+ rowCount +"))");
+    long cnt = 0;
+    while (rs.next())
+    {
+      int c1 = rs.getInt(1);
+      String c2 = rs.getString(2);
+      System.out.println(String.format("%d, %s\n", c1, c2));
+      cnt++;
+    }
+    assertEquals(rowCount, cnt);
+
+  }
+  @Test
   public void testPutGet() throws Throwable
   {
     Connection connection = null;

@@ -50,4 +50,5 @@ public final class Constants
     }
     return os;
   }
+  public static final int MB = 1024 * 1024;
 }

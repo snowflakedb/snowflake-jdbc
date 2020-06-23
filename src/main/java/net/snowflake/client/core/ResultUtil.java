@@ -43,6 +43,7 @@ public class ResultUtil
 {
   static final SFLogger logger = SFLoggerFactory.getLogger(ResultUtil.class);
 
+  public static final int DEFAULT_SCALE_OF_SFTIME_FRACTION_SECONDS = 3; // default scale for sftime fraction seconds
   // Construct a default UTC zone for TIMESTAMPNTZ
   private static TimeZone timeZoneUTC = TimeZone.getTimeZone("UTC");
 
@@ -393,8 +394,7 @@ public class ResultUtil
                                          chunkHeaders,
                                          resultData.networkTimeoutInMilli,
                                          useJsonParser,
-                                         initMemoryLimit(resultOutput),
-                                         efficientChunkStorage);
+                                         initMemoryLimit(resultOutput));
       }
     }
 

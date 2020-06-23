@@ -85,7 +85,7 @@ public abstract class SFBaseResultSet
     return false;
   }
 
-  public void close()
+  public void close() throws SnowflakeSQLException
   {
     logger.debug("public void close()");
 
