@@ -954,12 +954,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest
   {
     Properties _connectionProperties = new Properties();
     _connectionProperties.put("inject_wait_in_put", 5);
-    _connectionProperties.put("user", "snowman");
-    _connectionProperties.put("password", "test");
-    _connectionProperties.put("database", "testdb");
-    _connectionProperties.put("schema", "testschema");
     _connectionProperties.put("ssl", "off");
-    _connectionProperties.put("account", "s3testaccount");
     Connection connection = getConnection(DONT_INJECT_SOCKET_TIMEOUT, _connectionProperties, false, false, "gcpaccount");
     Statement statement = connection.createStatement();
 
