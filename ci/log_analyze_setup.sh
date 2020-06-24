@@ -31,7 +31,6 @@ echo "[INFO] CLIENT_KNOWN_SSM_FILE_PATH_DOCKER=$CLIENT_KNOWN_SSM_FILE_PATH_DOCKE
 export ENABLE_CLIENT_LOG_ANALYZE="true"
 # export ENABLE_ODBC_LOG_ANALYZE="false"
 
-
 # the new complex password we use for jenkins test
 export SNOWFLAKE_TEST_PASSWORD_NEW="ThisIsRandomPassword123!"
 
