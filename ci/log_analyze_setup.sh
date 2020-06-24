@@ -3,8 +3,7 @@
 # preparation for log analyze
 #
 
-# Note, this need to be consistent with $TEST_ROOT in `test_component.sh`. Might need to come up with a better solution
-# to control them together
+# Note, this need to be consistent with docker bind parameter. Might need to come up with a better sync up solution
 LOCAL_CLIENT_LOG_DIR_PATH_DOCKER=/mnt/workspace/jenkins_rt_logs
 LOCAL_CLIENT_LOG_DIR_PATH=$WORKSPACE/jenkins_rt_logs
 echo "[INFO] LOCAL_CLIENT_LOG_DIR_PATH=$LOCAL_CLIENT_LOG_DIR_PATH"
