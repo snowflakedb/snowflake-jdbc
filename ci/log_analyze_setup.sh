@@ -34,8 +34,7 @@ export SNOWFLAKE_TEST_PASSWORD_NEW="ThisIsRandomPassword123!"
 
 LOG_PROPERTY_FILE_DOCKER=$(cd "$(dirname "${BASH_SOURCE[0]}")/.."; pwd)/src/test/resources/logging.properties
 
-# white list will be added after we get first passed precommit
-#export CLIENT_SSM_WHITE_LIST_FILE_PATH=$(cd "$(dirname "${BASH_SOURCE[0]}")/.."; pwd)/src/test/resources/white_list.placeholder
+export CLIENT_DRIVER_NAME=JDBC
 
 function setup_log_env() {
     sed -i "s|^java.util.logging.FileHandler.pattern.*|java.util.logging.FileHandler.pattern = $CLIENT_LOG_FILE_PATH_DOCKER|" ${LOG_PROPERTY_FILE_DOCKER}
