@@ -57,11 +57,13 @@ public class HttpUtil
 
   static final int DEFAULT_MAX_CONNECTIONS = 300;
   static final int DEFAULT_MAX_CONNECTIONS_PER_ROUTE = 300;
-  static final int DEFAULT_CONNECTION_TIMEOUT = 60000;
-  static final int DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT = 30000; // ms
+  public static final int DEFAULT_CONNECTION_TIMEOUT = 60000;
+  public static final int DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT = 60000; // ms
   static final int DEFAULT_TTL = -1; // secs
   static final int DEFAULT_IDLE_CONNECTION_TIMEOUT = 5; // secs
   static final int DEFAULT_DOWNLOADED_CONDITION_TIMEOUT = 3600; // secs
+
+  public static final String JDBC_SOCKET_TIMEOUT_JVM = "net.snowflake.jdbc.socketTimeout";
 
   /**
    * The unique httpClient shared by all connections. This will benefit long-
@@ -118,13 +120,29 @@ public class HttpUtil
   static CloseableHttpClient buildHttpClient(
       boolean insecureMode, File ocspCacheFile, boolean useOcspCacheServer)
   {
+    String socketTimeoutSystemProperty = System.getProperty(JDBC_SOCKET_TIMEOUT_JVM);
+    int socketTimeout = DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT;
+    if (socketTimeoutSystemProperty != null)
+    {
+      try
+      {
+        socketTimeout = Integer.parseInt(socketTimeoutSystemProperty);
+      }
+      catch(NumberFormatException ex)
+      {
+        logger.info("Failed to parse the system parameter {}",
+                    JDBC_SOCKET_TIMEOUT_JVM, socketTimeoutSystemProperty);
+      }
+    }
+    logger.debug("socket timeout: {}", socketTimeout);
+
     // set timeout so that we don't wait forever.
     // Setup the default configuration for all requests on this client
     DefaultRequestConfig =
         RequestConfig.custom()
             .setConnectTimeout(DEFAULT_CONNECTION_TIMEOUT)
             .setConnectionRequestTimeout(DEFAULT_CONNECTION_TIMEOUT)
-            .setSocketTimeout(DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT)
+            .setSocketTimeout(socketTimeout)
             .build();
 
     TrustManager[] trustManagers = null;

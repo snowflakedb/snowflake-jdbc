@@ -92,9 +92,9 @@ public class SessionUtil
 
   static final String SF_HEADER_SERVICE_NAME = "X-Snowflake-Service";
 
-  private static int DEFAULT_HTTP_CLIENT_CONNECTION_TIMEOUT = 60000; // millisec
+  private static int DEFAULT_HTTP_CLIENT_CONNECTION_TIMEOUT = HttpUtil.DEFAULT_CONNECTION_TIMEOUT; // millisec
 
-  private static int DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT = 300000; // millisec
+  private static int DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT = HttpUtil.DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT; // millisec
 
   private static int DEFAULT_HEALTH_CHECK_INTERVAL = 45; // sec
 
