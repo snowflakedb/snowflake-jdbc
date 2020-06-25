@@ -111,9 +111,9 @@ public class SFSession
   // login request to GS
   private int healthCheckInterval = 45; // seconds
 
-  private int httpClientConnectionTimeout = 60000; // milliseconds
+  private int httpClientConnectionTimeout = HttpUtil.DEFAULT_CONNECTION_TIMEOUT; // milliseconds
 
-  private static int DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT = 300000; // millisec
+  private static int DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT = HttpUtil.DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT; // millisec
 
   private int httpClientSocketTimeout =
       DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT; // milliseconds
