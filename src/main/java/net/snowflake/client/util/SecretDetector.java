@@ -9,10 +9,8 @@ import net.minidev.json.JSONObject;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -33,7 +31,7 @@ public class SecretDetector
 
   // "\\s*" refers to >= 0 spaces, "[^']" refers to chars other than `'`
   private static final Pattern AWS_KEY_PATTERN = Pattern.compile(
-      "(aws_key_id|aws_secret_key|access_key_id|secret_access_key)\\s*=\\s*'(?<secret>[^']+)'",
+      "(aws_key_id|aws_secret_key|access_key_id|secret_access_key)(\\s*=\\s*)'([^']+)'",
       Pattern.CASE_INSENSITIVE);
 
   // Used for detecting tokens in serialized JSON
@@ -44,13 +42,13 @@ public class SecretDetector
   // Signature added in the query string of a URL in SAS based authentication
   // for S3 or Azure Storage requests
   private static final Pattern SAS_TOKEN_PATTERN = Pattern.compile(
-      "(sig|signature|AWSAccessKeyId|password|passcode)=(?<secret>[a-z0-9%/+]{16,})",
+      "(sig|signature|AWSAccessKeyId|password|passcode)=([a-z0-9%/+]{16,})",
       Pattern.CASE_INSENSITIVE);
 
   private static final Pattern PASSWORD_PATTERN = Pattern.compile(
       "(password|passcode|pwd)" +
       "([\'\"\\s:=]+)" +
-      "(?<secret>[a-z0-9!\"#$%&'\\()*+,-./:;<=>?@\\[\\]^_`\\{|\\}~]{6,})",
+      "([a-z0-9!\"#$%&'\\()*+,-./:;<=>?@\\[\\]^_`\\{|\\}~]{6,})",
       Pattern.CASE_INSENSITIVE);
 
   // "-----BEGIN PRIVATE KEY-----\n[PRIVATE-KEY]\n-----END PRIVATE KEY-----"
@@ -66,7 +64,7 @@ public class SecretDetector
   private static final Pattern CONNECTION_TOKEN_PATTERN = Pattern.compile(
       "(token|assertion content)" +
       "(['\"\\s:=]+)" +
-      "(?<secret>[a-z0-9=/_\\-+]{8,})",
+      "([a-z0-9=/_\\-+]{8,})",
       Pattern.CASE_INSENSITIVE);
 
   private static final int LOOK_AHEAD = 10;
@@ -134,140 +132,74 @@ public class SecretDetector
   {
     if (isSensitiveParameter(key))
     {
-      return "☺☺☺☺☺";
+      return "****";
     }
     return value;
   }
 
-  /**
-   * Find all the positions of aws key id and aws secret key.
-   * The time complexity is O(n)
-   *
-   * @param text the sql text which may contain aws key
-   * @return Return a list of begin/end positions of aws key id and
-   * aws secret key.
-   */
-  private static List<SecretRange> getAWSSecretPos(String text)
+
+  private static String filterAWSKeys(String text)
   {
     Matcher matcher = AWS_KEY_PATTERN.matcher(
         text.length() <= MAX_LENGTH ? text : text.substring(0, MAX_LENGTH));
 
-    ArrayList<SecretRange> awsSecretRanges = new ArrayList<>();
-
-    while (matcher.find())
+    if (matcher.find())
     {
-      awsSecretRanges.add(new SecretRange(matcher.start("secret"), matcher.end("secret")));
+      return matcher.replaceAll("$1$2'****'");
     }
-
-    return awsSecretRanges;
+    return text;
   }
 
-  /**
-   * Find all the positions of long base64 encoded strings that are typically
-   * indicative of secrets or other keys.
-   * The time complexity is O(n)
-   *
-   * @param text the sql text which may contain secrets
-   * @return Return a list of begin/end positions of keys in the string
-   */
-  private static List<SecretRange> getGenericSecretPos(String text)
-  {
-    // log before and after in case this is causing StackOverflowError
-    LOGGER.debug("pre-regex getGenericSecretPos");
 
+  private static String filterGenericSecret(String text)
+  {
     Matcher matcher = GENERIC_CREDS_PATTERN.matcher(
         text.length() <= MAX_LENGTH ? text : text.substring(0, MAX_LENGTH));
 
-    ArrayList<SecretRange> awsSecretRanges = new ArrayList<>();
-
-    while (matcher.find())
+    if (matcher.find())
     {
-      awsSecretRanges.add(new SecretRange(matcher.start(), matcher.end()));
+      return matcher.replaceAll("****");
     }
-
-    LOGGER.debug("post-regex getGenericSecretPos");
-
-    return awsSecretRanges;
+    return text; 
   }
 
-  /**
-   * Finds positions of occurrences of all sensitive fields of SAS tokens in the
-   * given text.
-   *
-   * @param text text which may contain SAS tokens
-   * @return A list of begin/end positions of sensitive fields of SAS tokens
-   */
-  private static List<SecretRange> getSASTokenPos(String text)
-  {
 
+  private static String filterSASTokens(String text)
+  {
     Matcher matcher = SAS_TOKEN_PATTERN.matcher(
         text.length() <= MAX_LENGTH ? text : text.substring(0, MAX_LENGTH));
 
-    List<SecretRange> secretRanges = new ArrayList<>();
-
-    while (matcher.find())
+    if (matcher.find())
     {
-      // Gets begin/end position of only 'secret' group in the matched regex
-      secretRanges.add(
-          new SecretRange(
-              matcher.start("secret"), matcher.end("secret")));
+      return matcher.replaceAll("$1=****");
     }
-
-    return secretRanges;
+    return text; 
   }
 
-  /**
-   * Finds positions of occurrences of all password fields in the
-   * given text.
-   *
-   * @param text text which may contain passwords
-   * @return A list of begin/end positions of password fields
-   */
-  private static List<SecretRange> getPasswordPos(String text)
+
+  private static String filterPassword(String text)
   {
     Matcher matcher = PASSWORD_PATTERN.matcher(
         text.length() <= MAX_LENGTH ? text : text.substring(0, MAX_LENGTH));
 
-    List<SecretRange> secretRanges = new ArrayList<>();
-
-    while (matcher.find())
+    if (matcher.find())
     {
-      secretRanges.add(new SecretRange(matcher.start("secret"), matcher.end("secret")));
+      return matcher.replaceAll("$1$2****");
     }
-
-    return secretRanges;
+    return text; 
   }
 
-  /**
-   * Finds positions of occurrences of all connection token fields in the
-   * given text.
-   *
-   * @param text text which may contain connection token
-   * @return A list of begin/end positions of connection token fields
-   */
-  private static List<SecretRange> getConnectionTokenPos(String text)
+
+  private static String filterConnectionTokens(String text)
   {
     Matcher matcher = CONNECTION_TOKEN_PATTERN.matcher(
         text.length() <= MAX_LENGTH ? text : text.substring(0, MAX_LENGTH));
 
-    List<SecretRange> secretRanges = new ArrayList<>();
-
-    while (matcher.find())
+    if (matcher.find())
     {
-      secretRanges.add(new SecretRange(matcher.start("secret"), matcher.end("secret")));
+      return matcher.replaceAll("$1$2****");
     }
-
-    return secretRanges;
-  }
-
-  private static boolean isBase64(char ch)
-  {
-    return ('A' <= ch && ch <= 'Z')
-           || ('a' <= ch && ch <= 'z')
-           || ('0' <= ch && ch <= '9')
-           || ch == '+'
-           || ch == '/'
-           || ch == '=';
+    return text; 
   }
 
   /**
@@ -278,9 +210,7 @@ public class SecretDetector
    */
   public static String maskAWSSecret(String sql)
   {
-    List<SecretRange> secretRanges = SecretDetector.getAWSSecretPos(sql);
-
-    return maskText(sql, secretRanges);
+    return filterAWSKeys(sql);
   }
 
   /**
@@ -291,9 +221,7 @@ public class SecretDetector
    */
   public static String maskSASToken(String text)
   {
-    List<SecretRange> secretRanges = SecretDetector.getSASTokenPos(text);
-
-    return maskText(text, secretRanges);
+    return filterSASTokens(text);
   }
 
   /**
@@ -306,59 +234,19 @@ public class SecretDetector
    */
   public static String maskSecrets(String text)
   {
-    List<SecretRange> secretRanges = SecretDetector.getAWSSecretPos(text);
-    secretRanges.addAll(SecretDetector.getAWSSecretPos(text));
-    secretRanges.addAll(SecretDetector.getSASTokenPos(text));
-    secretRanges.addAll(SecretDetector.getPasswordPos(text));
-    secretRanges.addAll(SecretDetector.getConnectionTokenPos(text));
-    text = maskText(text, secretRanges);
-    text = filterAccessTokens(text);
-    return text;
+    return filterAccessTokens(
+      filterConnectionTokens(
+        filterPassword(
+          filterSASTokens(
+            filterAWSKeys(
+              text
+            )
+          )
+        )
+      )
+    );
   }
 
-  /**
-   * Masks given text between given list of begin/end positions.
-   *
-   * @param text   text to mask
-   * @param ranges List of begin/end positions of text that need to be masked
-   * @return masked text
-   */
-  private static String maskText(String text, List<SecretRange> ranges)
-  {
-    if (ranges.isEmpty())
-    {
-      return text;
-    }
-
-    // Convert the text to a char array to be able to modify it.
-    char[] chars = text.toCharArray();
-
-    for (SecretRange range : ranges)
-    {
-      int beginPos = range.beginPos;
-      int endPos = range.endPos;
-
-      for (int curPos = beginPos; curPos < endPos; curPos++)
-      {
-        chars[curPos] = '☺';
-      }
-    }
-
-    // Convert it back to a string
-    return String.valueOf(chars);
-  }
-
-  static class SecretRange
-  {
-    final int beginPos;
-    final int endPos;
-
-    SecretRange(int beginPos, int endPos)
-    {
-      this.beginPos = beginPos;
-      this.endPos = endPos;
-    }
-  }
 
   /**
    * Filter access tokens that might be buried in JSON. Currently only used
