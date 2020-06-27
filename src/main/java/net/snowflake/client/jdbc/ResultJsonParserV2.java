@@ -45,7 +45,7 @@ public class ResultJsonParserV2
     this.resultChunk = resultChunk;
     if (state != State.UNINITIALIZED)
     {
-      throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
+      throw new SnowflakeSQLLoggedException(SqlState.INTERNAL_ERROR,
                                       ErrorCode.INTERNAL_ERROR.getMessageCode(),
                                       "Json parser is already used!");
     }
@@ -81,7 +81,7 @@ public class ResultJsonParserV2
 
     if (state != State.ROW_FINISHED)
     {
-      throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
+      throw new SnowflakeSQLLoggedException(SqlState.INTERNAL_ERROR,
                                       ErrorCode.INTERNAL_ERROR.getMessageCode(),
                                       "SFResultJsonParser2Failed: Chunk is truncated!");
     }

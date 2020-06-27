@@ -4,6 +4,8 @@
 package net.snowflake.client;
 
 import com.google.common.base.Strings;
+import net.snowflake.client.jdbc.SnowflakeConnectString;
+import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 import org.junit.Rule;
 
 import java.net.URL;
@@ -323,7 +325,10 @@ public class AbstractDriverIT
         properties.put(entry.getKey(), entry.getValue());
       }
     }
-    return DriverManager.getConnection(params.get("uri"), properties);
+    String uri = params.get("uri");
+    SnowflakeConnectString conStr = SnowflakeConnectString.parse(uri, properties);
+    TelemetryService.getInstance().updateContext(conStr);
+    return DriverManager.getConnection(uri, properties);
   }
 
   /**

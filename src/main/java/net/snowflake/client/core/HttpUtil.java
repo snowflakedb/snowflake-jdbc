@@ -9,10 +9,7 @@ import com.amazonaws.http.apache.SdkProxyRoutePlanner;
 import com.google.common.base.Strings;
 import com.microsoft.azure.storage.OperationContext;
 import com.snowflake.client.jdbc.SnowflakeDriver;
-import net.snowflake.client.jdbc.ErrorCode;
-import net.snowflake.client.jdbc.RestRequest;
-import net.snowflake.client.jdbc.SnowflakeSQLException;
-import net.snowflake.client.jdbc.SnowflakeUtil;
+import net.snowflake.client.jdbc.*;
 import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -557,7 +554,7 @@ public class HttpUtil
           EntityUtils.consume(response.getEntity());
         }
 
-        throw new SnowflakeSQLException(
+        throw new SnowflakeSQLLoggedException(
             SqlState.IO_ERROR,
             ErrorCode.NETWORK_ERROR.getMessageCode(),
             "HTTP status=" + ((response != null) ?

@@ -316,6 +316,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection
    * @return
    * @throws SQLException
    */
+
   public ResultSet createResultSet(String queryID) throws SQLException
   {
     raiseSQLExceptionIfConnectionIsClosed();
