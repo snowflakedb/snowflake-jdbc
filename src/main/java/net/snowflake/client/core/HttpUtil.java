@@ -220,7 +220,7 @@ public class HttpUtil
             new SFTrustManager(ocspMode, ocspCacheFile)};
         trustManagers = tm;
       }
-      catch(Exception | Error err)
+      catch (Exception | Error err)
       {
         // dump error stack
         StringWriter errors = new StringWriter();

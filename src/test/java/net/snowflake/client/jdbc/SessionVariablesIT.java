@@ -80,7 +80,7 @@ public final class SessionVariablesIT extends AbstractDriverIT
     con.close();
 
     con = getSnowflakeAdminConnection(properties);
-    sql(con,"alter system unset enable_assignment_scalar, enable_assignment_statement");
+    sql(con, "alter system unset enable_assignment_scalar, enable_assignment_statement");
     con.close();
 
   }
