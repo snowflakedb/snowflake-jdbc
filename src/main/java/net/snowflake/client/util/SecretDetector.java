@@ -160,7 +160,7 @@ public class SecretDetector
     {
       return matcher.replaceAll("****");
     }
-    return text; 
+    return text;
   }
 
 
@@ -173,7 +173,7 @@ public class SecretDetector
     {
       return matcher.replaceAll("$1=****");
     }
-    return text; 
+    return text;
   }
 
 
@@ -186,7 +186,7 @@ public class SecretDetector
     {
       return matcher.replaceAll("$1$2****");
     }
-    return text; 
+    return text;
   }
 
 
@@ -199,7 +199,7 @@ public class SecretDetector
     {
       return matcher.replaceAll("$1$2****");
     }
-    return text; 
+    return text;
   }
 
   /**
@@ -235,15 +235,15 @@ public class SecretDetector
   public static String maskSecrets(String text)
   {
     return filterAccessTokens(
-      filterConnectionTokens(
-        filterPassword(
-          filterSASTokens(
-            filterAWSKeys(
-              text
+        filterConnectionTokens(
+            filterPassword(
+                filterSASTokens(
+                    filterAWSKeys(
+                        text
+                    )
+                )
             )
-          )
         )
-      )
     );
   }
 
