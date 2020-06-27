@@ -1534,7 +1534,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
       }
       else if (commandType == CommandType.DOWNLOAD)
       {
-        throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
+        throw new SnowflakeSQLLoggedException(SqlState.INTERNAL_ERROR,
                                         ErrorCode.INTERNAL_ERROR.getMessageCode());
       }
 
@@ -1547,7 +1547,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
       }
       catch (InterruptedException ex)
       {
-        throw new SnowflakeSQLException(SqlState.QUERY_CANCELED,
+        throw new SnowflakeSQLLoggedException(SqlState.QUERY_CANCELED,
                                         ErrorCode.INTERRUPTED.getMessageCode());
       }
       logger.debug("Done with uploading from a stream");
@@ -1645,7 +1645,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
       }
       catch (InterruptedException ex)
       {
-        throw new SnowflakeSQLException(SqlState.QUERY_CANCELED,
+        throw new SnowflakeSQLLoggedException(SqlState.QUERY_CANCELED,
                                         ErrorCode.INTERRUPTED.getMessageCode());
       }
       logger.debug("Done with downloading");
@@ -1746,7 +1746,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
       }
       catch (InterruptedException ex)
       {
-        throw new SnowflakeSQLException(SqlState.QUERY_CANCELED,
+        throw new SnowflakeSQLLoggedException(SqlState.QUERY_CANCELED,
                                         ErrorCode.INTERRUPTED.getMessageCode());
       }
       logger.debug("Done with uploading");

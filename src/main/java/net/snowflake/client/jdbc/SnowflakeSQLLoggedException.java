@@ -9,7 +9,6 @@ public class SnowflakeSQLLoggedException extends SnowflakeSQLException {
 
     public TelemetryService telemetryInstance = TelemetryService.getInstance();
 
-    String eventName = "SQLException";
 
     public SnowflakeSQLLoggedException(String queryId, String reason, String sqlState, int vendorCode)
     {
@@ -20,18 +19,24 @@ public class SnowflakeSQLLoggedException extends SnowflakeSQLException {
         value.put("reason", SecretDetector.maskSecrets(reason));
         value.put("SQLState", sqlState);
         value.put("vendorCode", vendorCode);
-        TelemetryEvent log = logBuilder.withName(eventName)
+        TelemetryEvent log = logBuilder
+                .withException(this)
+                .withValue(value)
                 .build();
         telemetryInstance.report(log);
-        //telemetry
     }
 
     public SnowflakeSQLLoggedException(String sqlState, int vendorCode)
     {
         super(sqlState, vendorCode);
-        //telemetry
         TelemetryEvent.LogBuilder logBuilder = new TelemetryEvent.LogBuilder();
-        TelemetryEvent log = logBuilder.build();
+        JSONObject value = new JSONObject();
+        value.put("SQLState", sqlState);
+        value.put("vendorCode", vendorCode);
+        TelemetryEvent log = logBuilder
+                .withException(this)
+                .withValue(value)
+                .build();
         telemetryInstance.report(log);
     }
 
@@ -40,7 +45,30 @@ public class SnowflakeSQLLoggedException extends SnowflakeSQLException {
         super(reason, SQLState);
         //telemetry
         TelemetryEvent.LogBuilder logBuilder = new TelemetryEvent.LogBuilder();
-        TelemetryEvent log = logBuilder.build();
+        JSONObject value = new JSONObject();
+        value.put("reason", SecretDetector.maskSecrets(reason));
+        value.put("SQLState", SQLState);
+        TelemetryEvent log = logBuilder
+                .withException(this)
+                .withValue(value)
+                .withTag("Meg", 25)
+                .build();
+        telemetryInstance.report(log);
+    }
+
+    public SnowflakeSQLLoggedException(String sqlState, int vendorCode, Object... params)
+    {
+        super(sqlState, vendorCode, params);
+        //telemetry
+        TelemetryEvent.LogBuilder logBuilder = new TelemetryEvent.LogBuilder();
+        JSONObject value = new JSONObject();
+        value.put("SQLState", sqlState);
+        value.put("vendorCode", vendorCode);
+        TelemetryEvent log = logBuilder
+                .withException(this)
+                .withValue(value)
+                .withTag("Meg", 25)
+                .build();
         telemetryInstance.report(log);
     }
 

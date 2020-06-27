@@ -3718,7 +3718,8 @@ public class SnowflakeDriverIT extends BaseJDBCTest
 
     Connection connection = null;
     Statement statement = null;
-    List<String> accounts = Arrays.asList(null, "s3testaccount", "azureaccount", "gcpaccount");
+    List<String> accounts = Arrays.asList( //null, "s3testaccount", "azureaccount",
+            "gcpaccount");
     for (int i = 0; i < accounts.size(); i++)
     {
       try
@@ -3727,7 +3728,8 @@ public class SnowflakeDriverIT extends BaseJDBCTest
 
         statement = connection.createStatement();
 
-        String sourceFilePath = getFullPathFileInResource(TEST_DATA_FILE);
+        //String sourceFilePath = getFullPathFileInResource(TEST_DATA_FILE);
+        String sourceFilePath = "/home/mknister/Snowflake/snowflake-jdbc/target/test-classes/orders with spaces.csv";
 
         File destFolder = tmpFolder.newFolder();
         String destFolderCanonicalPath = destFolder.getCanonicalPath();
@@ -3738,7 +3740,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest
           statement.execute("CREATE OR REPLACE STAGE testPutGet_stage");
 
           assertTrue("Failed to put a file",
-                     statement.execute("PUT file://" + sourceFilePath + " @testPutGet_stage"));
+                     statement.execute("PUT 'file://" + sourceFilePath + "' @testPutGet_stage"));
 
           findFile(statement, "ls @testPutGet_stage/");
 

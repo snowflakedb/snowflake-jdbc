@@ -6,7 +6,7 @@ package net.snowflake.client.jdbc;
 /**
  * SnowflakeReauthenticationRequest signals the reauthentication used for SSO
  */
-public class SnowflakeReauthenticationRequest extends SnowflakeSQLException
+public class SnowflakeReauthenticationRequest extends SnowflakeSQLLoggedException
 {
   private static final long serialVersionUID = 1L;
 

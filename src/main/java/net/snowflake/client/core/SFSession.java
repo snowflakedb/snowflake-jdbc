@@ -7,11 +7,7 @@ package net.snowflake.client.core;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
-import net.snowflake.client.jdbc.ErrorCode;
-import net.snowflake.client.jdbc.SnowflakeConnectString;
-import net.snowflake.client.jdbc.SnowflakeSQLException;
-import net.snowflake.client.jdbc.SnowflakeType;
-import net.snowflake.client.jdbc.SnowflakeUtil;
+import net.snowflake.client.jdbc.*;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
 import net.snowflake.client.jdbc.telemetry.TelemetryClient;
 import net.snowflake.client.log.JDK14Logger;
@@ -317,7 +313,7 @@ public class SFSession
       logger.debug("response = {}", response);
 
       int errorCode = jsonNode.path("code").asInt();
-      throw new SnowflakeSQLException(
+      throw new SnowflakeSQLLoggedException(
           queryID, jsonNode.path("message").asText(),
           SqlState.SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION, errorCode);
     }
