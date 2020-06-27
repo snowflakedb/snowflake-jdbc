@@ -150,7 +150,7 @@ public class SnowflakeUtil
               queryId, errorMessage, sqlState, errorCode);
       }
     }
-    throw new SnowflakeSQLException(queryId, errorMessage, sqlState,
+    throw new SnowflakeSQLLoggedException(queryId, errorMessage, sqlState,
                                     errorCode);
   }
 

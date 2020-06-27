@@ -8,11 +8,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import net.snowflake.client.core.BasicEvent.QueryState;
 import net.snowflake.client.core.bind.BindException;
 import net.snowflake.client.core.bind.BindUploader;
-import net.snowflake.client.jdbc.ErrorCode;
-import net.snowflake.client.jdbc.SnowflakeDriver;
-import net.snowflake.client.jdbc.SnowflakeFileTransferAgent;
-import net.snowflake.client.jdbc.SnowflakeReauthenticationRequest;
-import net.snowflake.client.jdbc.SnowflakeSQLException;
+import net.snowflake.client.jdbc.*;
 import net.snowflake.client.jdbc.telemetry.TelemetryData;
 import net.snowflake.client.jdbc.telemetry.TelemetryUtil;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
@@ -25,21 +21,14 @@ import org.apache.http.client.methods.HttpRequestBase;
 
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static net.snowflake.client.core.SessionUtil.DEFAULT_CLIENT_MEMORY_LIMIT;
-import static net.snowflake.client.core.SessionUtil.DEFAULT_CLIENT_PREFETCH_THREADS;
-import static net.snowflake.client.core.SessionUtil.MAX_CLIENT_CHUNK_SIZE;
-import static net.snowflake.client.core.SessionUtil.MIN_CLIENT_CHUNK_SIZE;
+import static net.snowflake.client.core.SessionUtil.*;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
 /**
@@ -271,7 +260,7 @@ public class SFStatement
 
     if (result == null)
     {
-      throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
+      throw new SnowflakeSQLLoggedException(SqlState.INTERNAL_ERROR,
                                       ErrorCode.INTERNAL_ERROR.getMessageCode(),
                                       "got null result");
     }
