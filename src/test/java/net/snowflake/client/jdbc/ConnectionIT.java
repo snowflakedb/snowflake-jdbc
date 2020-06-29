@@ -108,30 +108,6 @@ public class ConnectionIT extends BaseJDBCTest
   }
 
   @Test
-  public void testConnection() throws SQLException
-  {
-    /*Properties props = new Properties();
-    props.put("user", "USER");
-    props.put("password", "PASSWORD");
-    String uri = "jdbc:snowflake://sfctest0.us-central1.gcp.snowflakecomputing.com";*/
-    Connection con = getConnection();
-    //SnowflakeConnectString conStr = SnowflakeConnectString.parse(uri, props);
-    //TelemetryService.getInstance().updateContext(conStr);
-    Statement statement = con.createStatement();
-    try {
-      ResultSet rs = con.unwrap(SnowflakeConnection.class).createResultSet("Totally invalid query ID");
-    }
-    catch (SnowflakeSQLLoggedException e)
-    {
-      e.printStackTrace();
-    }
-    statement.close();
-    con.close();
-    assertTrue(con.isClosed());
-    con.close(); // ensure no exception
-  }
-
-  @Test
   public void testSimpleConnection() throws SQLException
   {
     Connection con = getConnection();
@@ -144,7 +120,6 @@ public class ConnectionIT extends BaseJDBCTest
     assertTrue(con.isClosed());
     con.close(); // ensure no exception
   }
-
 
   @Test
   @Ignore
