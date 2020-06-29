@@ -89,4 +89,12 @@ public class SnowflakeSQLLoggedException extends SnowflakeSQLException {
 
     }
 
+    public SnowflakeSQLLoggedException(ErrorCode errorCode, Object... params)
+    {
+        super (errorCode, params);
+        // telemetry
+    }
+
+
+
 }

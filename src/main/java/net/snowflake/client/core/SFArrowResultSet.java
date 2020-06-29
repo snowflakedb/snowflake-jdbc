@@ -350,7 +350,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     }
     catch (IOException e)
     {
-      throw new SnowflakeSQLException(ErrorCode.INTERNAL_ERROR, "Failed to " +
+      throw new SnowflakeSQLLoggedException(ErrorCode.INTERNAL_ERROR, "Failed to " +
                                                                 "load data in first chunk into arrow vector ex: " +
                                                                 e.getMessage());
     }

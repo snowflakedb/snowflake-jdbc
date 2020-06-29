@@ -1281,14 +1281,14 @@ public class SessionUtil
     {
       logger.error("IOException when authenticating with " +
                    loginInput.getAuthenticator(), ex);
-      throw new SnowflakeSQLException(ex, SqlState.IO_ERROR,
+      throw new SnowflakeSQLLoggedException(ex, SqlState.IO_ERROR,
                                       ErrorCode.NETWORK_ERROR.getMessageCode(),
                                       "Exception encountered when opening connection: " +
                                       ex.getMessage());
     }
     logger.error("Exception when authenticating with " +
                  loginInput.getAuthenticator(), ex);
-    throw new SnowflakeSQLException(ex,
+    throw new SnowflakeSQLLoggedException(ex,
                                     SqlState.SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION,
                                     ErrorCode.CONNECTION_ERROR.getMessageCode(),
                                     ErrorCode.CONNECTION_ERROR.getMessageCode(), ex.getMessage());
