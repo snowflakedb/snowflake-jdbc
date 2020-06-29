@@ -72,4 +72,21 @@ public class SnowflakeSQLLoggedException extends SnowflakeSQLException {
         telemetryInstance.report(log);
     }
 
+    public SnowflakeSQLLoggedException(Throwable ex, ErrorCode errorCode, Object... params)
+    {
+        super(ex, errorCode, params);
+        //telemetry
+
+    }
+
+    public SnowflakeSQLLoggedException(Throwable ex,
+                                 String sqlState,
+                                 int vendorCode,
+                                 Object... params)
+    {
+        super(ex, sqlState, vendorCode, params);
+        // telemetry
+
+    }
+
 }

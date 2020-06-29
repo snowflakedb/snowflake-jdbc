@@ -1918,7 +1918,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
               logger.error("Exeception when parsing column"
                            + " result", ex);
 
-              throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
+              throw new SnowflakeSQLLoggedException(SqlState.INTERNAL_ERROR,
                                               ErrorCode.INTERNAL_ERROR
                                                   .getMessageCode(),
                                               "error parsing data type: "

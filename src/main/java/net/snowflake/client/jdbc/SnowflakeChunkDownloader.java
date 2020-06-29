@@ -300,7 +300,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
       logOutOfMemoryError();
       StringWriter errors = new StringWriter();
       outOfMemoryError.printStackTrace(new PrintWriter(errors));
-      throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
+      throw new SnowflakeSQLLoggedException(SqlState.INTERNAL_ERROR,
                                       ErrorCode.INTERNAL_ERROR.getMessageCode(),
                                       errors);
     }
@@ -405,7 +405,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
       }
       catch (InterruptedException ie)
       {
-        throw new SnowflakeSQLException(
+        throw new SnowflakeSQLLoggedException(
             SqlState.INTERNAL_ERROR,
             ErrorCode.INTERNAL_ERROR.getMessageCode(),
             "Waiting SnowflakeChunkDownloader has been interrupted.");
@@ -529,7 +529,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
       logOutOfMemoryError();
       StringWriter errors = new StringWriter();
       outOfMemoryError.printStackTrace(new PrintWriter(errors));
-      throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
+      throw new SnowflakeSQLLoggedException(SqlState.INTERNAL_ERROR,
                                       ErrorCode.INTERNAL_ERROR.getMessageCode(),
                                       errors);
     }
@@ -571,7 +571,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
             logOutOfMemoryError();
           }
 
-          throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
+          throw new SnowflakeSQLLoggedException(SqlState.INTERNAL_ERROR,
                                           ErrorCode.INTERNAL_ERROR.getMessageCode(),
                                           currentChunk.getDownloadError());
         }
@@ -843,7 +843,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
         }
         catch (URISyntaxException | IOException ex)
         {
-          throw new SnowflakeSQLException(SqlState.IO_ERROR,
+          throw new SnowflakeSQLLoggedException(SqlState.IO_ERROR,
                                           ErrorCode.NETWORK_ERROR
                                               .getMessageCode(),
                                           "Error encountered when request a result chunk URL: "
@@ -863,7 +863,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
 
           SnowflakeUtil.logResponseDetails(response, logger);
 
-          throw new SnowflakeSQLException(SqlState.IO_ERROR,
+          throw new SnowflakeSQLLoggedException(SqlState.IO_ERROR,
                                           ErrorCode.NETWORK_ERROR
                                               .getMessageCode(),
                                           "Error encountered when downloading a result chunk: HTTP "
@@ -885,7 +885,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
           logger.error("Failed to decompress data: {}", response);
 
           throw
-              new SnowflakeSQLException(
+              new SnowflakeSQLLoggedException(
                   SqlState.INTERNAL_ERROR,
                   ErrorCode.INTERNAL_ERROR.getMessageCode(),
                   "Failed to decompress data: " +
@@ -914,7 +914,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
           else
           {
             throw
-                new SnowflakeSQLException(
+                new SnowflakeSQLLoggedException(
                     SqlState.INTERNAL_ERROR,
                     ErrorCode.INTERNAL_ERROR.getMessageCode(),
                     "Exception: unexpected compression got " +

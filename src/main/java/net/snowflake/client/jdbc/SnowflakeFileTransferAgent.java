@@ -630,7 +630,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
         // this shouldn't happen
         if (metadata == null)
         {
-          throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
+          throw new SnowflakeSQLLoggedException(SqlState.INTERNAL_ERROR,
                                           ErrorCode.INTERNAL_ERROR.getMessageCode(),
                                           "missing file metadata for: " + srcFilePath);
         }
@@ -832,7 +832,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
         // this shouldn't happen
         if (metadata == null)
         {
-          throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
+          throw new SnowflakeSQLLoggedException(SqlState.INTERNAL_ERROR,
                                           ErrorCode.INTERNAL_ERROR.getMessageCode(),
                                           "missing file metadata for: " + srcFilePath);
         }
@@ -1202,7 +1202,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
 
     if (!localFilePath.isEmpty() && !localFilePath.equals(localFilePathFromGS))
     {
-      throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
+      throw new SnowflakeSQLLoggedException(SqlState.INTERNAL_ERROR,
                                       ErrorCode.INTERNAL_ERROR.getMessageCode(),
                                       "Unexpected local file path from GS. From GS: " +
                                       localFilePathFromGS + ", expected: " + localFilePath);

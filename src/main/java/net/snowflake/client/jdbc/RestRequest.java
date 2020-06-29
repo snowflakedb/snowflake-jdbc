@@ -179,7 +179,7 @@ public class RestRequest
         // because of closing of connection, stop retrying
         if (ex instanceof IllegalStateException)
         {
-          throw new SnowflakeSQLException(ex, ErrorCode.INVALID_STATE, ex.getMessage());
+          throw new SnowflakeSQLLoggedException(ex, ErrorCode.INVALID_STATE, ex.getMessage());
         }
         savedEx = ex;
 
@@ -311,7 +311,7 @@ public class RestRequest
             // rethrow the timeout exception
             if (response == null && savedEx != null)
             {
-              throw new SnowflakeSQLException(savedEx,
+              throw new SnowflakeSQLLoggedException(savedEx,
                                               ErrorCode.NETWORK_ERROR,
                                               "Exception encountered for HTTP request: " +
                                               savedEx.getMessage());
@@ -424,7 +424,7 @@ public class RestRequest
       // rethrow the timeout exception
       if (response == null && savedEx != null)
       {
-        throw new SnowflakeSQLException(savedEx,
+        throw new SnowflakeSQLLoggedException(savedEx,
                                         ErrorCode.NETWORK_ERROR,
                                         "Exception encountered for HTTP request: " +
                                         savedEx.getMessage());
