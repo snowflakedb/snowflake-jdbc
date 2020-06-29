@@ -681,7 +681,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient
 
         if (uploadFromStream && fileBackedOutputStream == null)
         {
-          throw new SnowflakeSQLException(ex, SqlState.SYSTEM_ERROR,
+          throw new SnowflakeSQLLoggedException(ex, SqlState.SYSTEM_ERROR,
                                           ErrorCode.IO_ERROR.getMessageCode(),
                                           "Encountered exception during upload: " +
                                           ex.getMessage() + "\nCannot retry upload from stream.");
@@ -836,7 +836,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient
         catch (Exception ex)
         {
           logger.error("Failed to encrypt input", ex);
-          throw new SnowflakeSQLException(ex, SqlState.INTERNAL_ERROR,
+          throw new SnowflakeSQLLoggedException(ex, SqlState.INTERNAL_ERROR,
                                           ErrorCode.INTERNAL_ERROR.getMessageCode(),
                                           "Failed to encrypt input", ex.getMessage());
         }
@@ -872,7 +872,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient
     catch (IOException ex)
     {
       logger.error("Failed to open input stream", ex);
-      throw new SnowflakeSQLException(ex, SqlState.INTERNAL_ERROR,
+      throw new SnowflakeSQLLoggedException(ex, SqlState.INTERNAL_ERROR,
                                       ErrorCode.INTERNAL_ERROR.getMessageCode(),
                                       "Failed to open input stream", ex.getMessage());
     }
@@ -911,7 +911,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient
       // If we have exceeded the max number of retries, propagate the error
       if (retryCount > getMaxRetries())
       {
-        throw new SnowflakeSQLException(se, SqlState.SYSTEM_ERROR,
+        throw new SnowflakeSQLLoggedException(se, SqlState.SYSTEM_ERROR,
                                         ErrorCode.GCP_SERVICE_ERROR.getMessageCode(),
                                         operation,
                                         se.getCode(),
@@ -959,7 +959,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient
       {
         if (retryCount > getMaxRetries())
         {
-          throw new SnowflakeSQLException(ex, SqlState.SYSTEM_ERROR,
+          throw new SnowflakeSQLLoggedException(ex, SqlState.SYSTEM_ERROR,
                                           ErrorCode.IO_ERROR.getMessageCode(),
                                           "Encountered exception during " + operation + ": " +
                                           ex.getMessage());
@@ -972,7 +972,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient
       }
       else
       {
-        throw new SnowflakeSQLException(ex, SqlState.SYSTEM_ERROR,
+        throw new SnowflakeSQLLoggedException(ex, SqlState.SYSTEM_ERROR,
                                         ErrorCode.IO_ERROR.getMessageCode(),
                                         "Encountered exception during " + operation + ": " +
                                         ex.getMessage());
@@ -1046,7 +1046,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient
     }
     catch (Exception ex)
     {
-      throw new SnowflakeSQLException(ex, SqlState.SYSTEM_ERROR,
+      throw new SnowflakeSQLLoggedException(ex, SqlState.SYSTEM_ERROR,
                                       ErrorCode.IO_ERROR.getMessageCode(),
                                       "Error parsing encryption data as json" + ": " +
                                       ex.getMessage());

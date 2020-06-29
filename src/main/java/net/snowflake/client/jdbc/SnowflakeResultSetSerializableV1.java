@@ -1087,7 +1087,7 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
         break;
       }
       default:
-        throw new SnowflakeSQLException(ErrorCode.INTERNAL_ERROR,
+        throw new SnowflakeSQLLoggedException(ErrorCode.INTERNAL_ERROR,
                                         "Unsupported query result format: " +
                                         getQueryResultFormat().name());
     }
@@ -1131,7 +1131,7 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
       }
       catch (Exception ex)
       {
-        throw new SnowflakeSQLException(ErrorCode.INTERNAL_ERROR,
+        throw new SnowflakeSQLLoggedException(ErrorCode.INTERNAL_ERROR,
                                         "Fail to retrieve row count for first arrow chunk: " +
                                         ex.getCause());
       }
@@ -1146,7 +1146,7 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
     else
     {
       // This shouldn't happen
-      throw new SnowflakeSQLException(ErrorCode.INTERNAL_ERROR,
+      throw new SnowflakeSQLLoggedException(ErrorCode.INTERNAL_ERROR,
                                       "setFirstChunkRowCountForArrow() should only be called for Arrow.");
     }
   }

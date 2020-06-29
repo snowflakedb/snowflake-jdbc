@@ -474,7 +474,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
     {
       logger.error("Exception compressing input stream", ex);
 
-      throw new SnowflakeSQLException(ex, SqlState.INTERNAL_ERROR,
+      throw new SnowflakeSQLLoggedException(ex, SqlState.INTERNAL_ERROR,
                                       ErrorCode.INTERNAL_ERROR.getMessageCode(),
                                       "error encountered for compression");
     }
@@ -525,7 +525,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
     {
       logger.error("Exception compressing input stream", ex);
 
-      throw new SnowflakeSQLException(ex, SqlState.INTERNAL_ERROR,
+      throw new SnowflakeSQLLoggedException(ex, SqlState.INTERNAL_ERROR,
                                       ErrorCode.INTERNAL_ERROR.getMessageCode(),
                                       "error encountered for compression");
     }
@@ -958,7 +958,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
     }
     catch (Exception ex)
     {
-      throw new SnowflakeSQLException(ex, SqlState.INTERNAL_ERROR,
+      throw new SnowflakeSQLLoggedException(ex, SqlState.INTERNAL_ERROR,
                                       ErrorCode.INTERNAL_ERROR.getMessageCode(),
                                       "Failed to parse the locations due to: " + ex.getMessage());
     }
@@ -1321,7 +1321,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
     }
     catch (SFException ex)
     {
-      throw new SnowflakeSQLException(ex, ex.getSqlState(),
+      throw new SnowflakeSQLLoggedException(ex, ex.getSqlState(),
                                       ex.getVendorCode(), ex.getParams());
     }
 
@@ -1354,7 +1354,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
     }
     catch (Exception ex)
     {
-      throw new SnowflakeSQLException(ex, SqlState.INTERNAL_ERROR,
+      throw new SnowflakeSQLLoggedException(ex, SqlState.INTERNAL_ERROR,
                                       ErrorCode.INTERNAL_ERROR.getMessageCode(),
                                       "Failed to parse the credentials (" +
                                       (credsNode != null ? credsNode.toString() : "null") +
@@ -1896,7 +1896,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
       }
       catch (Exception ex)
       {
-        throw new SnowflakeSQLException(ex, SqlState.DATA_EXCEPTION,
+        throw new SnowflakeSQLLoggedException(ex, SqlState.DATA_EXCEPTION,
                                         ErrorCode.FAIL_LIST_FILES.getMessageCode(),
                                         "Exception: " + ex.getMessage() + ", Dir=" +
                                         entry.getKey() + ", Patterns=" +
@@ -1945,7 +1945,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
     }
     catch (Exception ex)
     {
-      throw new SnowflakeSQLException(ex, SqlState.INTERNAL_ERROR,
+      throw new SnowflakeSQLLoggedException(ex, SqlState.INTERNAL_ERROR,
                                       ErrorCode.INTERNAL_ERROR.getMessageCode(),
                                       ex.getMessage());
     }
@@ -1974,7 +1974,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
     }
     catch (Exception ex)
     {
-      throw new SnowflakeSQLException(ex, SqlState.INTERNAL_ERROR,
+      throw new SnowflakeSQLLoggedException(ex, SqlState.INTERNAL_ERROR,
                                       ErrorCode.INTERNAL_ERROR.getMessageCode(),
                                       ex.getMessage());
     }
@@ -2587,7 +2587,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
         }
         catch (IOException | NoSuchAlgorithmException ex)
         {
-          throw new SnowflakeSQLException(ex, SqlState.INTERNAL_ERROR,
+          throw new SnowflakeSQLLoggedException(ex, SqlState.INTERNAL_ERROR,
                                           ErrorCode.INTERNAL_ERROR.getMessageCode(),
                                           "Error reading: " + localFile);
         }
@@ -2672,7 +2672,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
         }
         catch (IOException | NoSuchAlgorithmException ex)
         {
-          throw new SnowflakeSQLException(ex, SqlState.INTERNAL_ERROR,
+          throw new SnowflakeSQLLoggedException(ex, SqlState.INTERNAL_ERROR,
                                           ErrorCode.INTERNAL_ERROR.getMessageCode(),
                                           "Error reading local file: " + localFile);
         }
@@ -2709,7 +2709,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
         }
         catch (IOException | NoSuchAlgorithmException ex)
         {
-          throw new SnowflakeSQLException(ex, SqlState.INTERNAL_ERROR,
+          throw new SnowflakeSQLLoggedException(ex, SqlState.INTERNAL_ERROR,
                                           ErrorCode.INTERNAL_ERROR.getMessageCode(),
                                           "Error reading stage file: " + stageFilePath);
         }
@@ -3316,7 +3316,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
              Paths.get(bootLib, "security").toString();
       logger.error(msg);
     }
-    throw new SnowflakeSQLException(ex, SqlState.SYSTEM_ERROR,
+    throw new SnowflakeSQLLoggedException(ex, SqlState.SYSTEM_ERROR,
                                     ErrorCode.AWS_CLIENT_ERROR.getMessageCode(), operation, msg);
   }
 
