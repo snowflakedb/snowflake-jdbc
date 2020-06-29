@@ -234,7 +234,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
 
     if (resultSetSerializable.getChunkFileCount() < 1)
     {
-      throw new SnowflakeSQLException(ErrorCode.INTERNAL_ERROR,
+      throw new SnowflakeSQLLoggedException(ErrorCode.INTERNAL_ERROR,
                                       "Incorrect chunk count: " +
                                       resultSetSerializable.getChunkFileCount());
     }
@@ -263,7 +263,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
           break;
 
         default:
-          throw new SnowflakeSQLException(ErrorCode.INTERNAL_ERROR,
+          throw new SnowflakeSQLLoggedException(ErrorCode.INTERNAL_ERROR,
                                           "Invalid result format: " + queryResultFormat.name());
       }
 
@@ -976,7 +976,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
           logger.debug("Thread {} Exception when parsing result #chunk{}: {}",
                        Thread.currentThread().getId(), chunkIndex, ex.getLocalizedMessage());
 
-          throw new SnowflakeSQLException(ex, SqlState.INTERNAL_ERROR,
+          throw new SnowflakeSQLLoggedException(ex, SqlState.INTERNAL_ERROR,
                                           ErrorCode.INTERNAL_ERROR
                                               .getMessageCode(),
                                           "Exception: " +
@@ -994,7 +994,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
           }
           catch (IOException ex)
           {
-            throw new SnowflakeSQLException(ex, SqlState.INTERNAL_ERROR,
+            throw new SnowflakeSQLLoggedException(ex, SqlState.INTERNAL_ERROR,
                                             ErrorCode.INTERNAL_ERROR
                                                 .getMessageCode(),
                                             "Exception: " +

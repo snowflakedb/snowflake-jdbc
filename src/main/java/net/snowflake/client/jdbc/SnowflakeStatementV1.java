@@ -232,7 +232,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement
     }
     catch (SFException ex)
     {
-      throw new SnowflakeSQLException(ex.getCause(),
+      throw new SnowflakeSQLLoggedException(ex.getCause(),
                                       ex.getSqlState(), ex.getVendorCode(), ex.getParams());
     }
     finally
@@ -276,7 +276,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement
     }
     catch (SFException ex)
     {
-      throw new SnowflakeSQLException(ex.getCause(),
+      throw new SnowflakeSQLLoggedException(ex.getCause(),
                                       ex.getSqlState(), ex.getVendorCode(), ex.getParams());
     }
 
@@ -360,7 +360,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement
     }
     catch (SFException ex)
     {
-      throw new SnowflakeSQLException(
+      throw new SnowflakeSQLLoggedException(
           ex.getCause(), ex.getSqlState(), ex.getVendorCode(), ex.getParams());
     }
   }
@@ -1028,7 +1028,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement
     }
     catch (SFException ex)
     {
-      throw new SnowflakeSQLException(ex, ex.getSqlState(),
+      throw new SnowflakeSQLLoggedException(ex, ex.getSqlState(),
                                       ex.getVendorCode(), ex.getParams());
     }
   }

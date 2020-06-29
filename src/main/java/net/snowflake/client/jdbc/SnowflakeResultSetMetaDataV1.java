@@ -88,7 +88,7 @@ class SnowflakeResultSetMetaDataV1 implements ResultSetMetaData, SnowflakeResult
     }
     catch (SFException ex)
     {
-      throw new SnowflakeSQLException(ex.getCause(),
+      throw new SnowflakeSQLLoggedException(ex.getCause(),
                                       ex.getSqlState(), ex.getVendorCode(), ex.getParams());
     }
   }
@@ -217,7 +217,7 @@ class SnowflakeResultSetMetaDataV1 implements ResultSetMetaData, SnowflakeResult
     }
     catch (SFException ex)
     {
-      throw new SnowflakeSQLException(ex.getCause(),
+      throw new SnowflakeSQLLoggedException(ex.getCause(),
                                       ex.getSqlState(), ex.getVendorCode(), ex.getParams());
     }
   }

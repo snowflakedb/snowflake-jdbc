@@ -356,7 +356,7 @@ public class SFStatement
         }
         catch (SFException ex)
         {
-          throw new SnowflakeSQLException(ex, ex.getSqlState(),
+          throw new SnowflakeSQLLoggedException(ex, ex.getSqlState(),
                                           ex.getVendorCode(), ex.getParams());
         }
         return null;

@@ -589,7 +589,7 @@ public class ArrowResultChunk extends SnowflakeResultChunk
     }
     catch (SFException ex)
     {
-      throw new SnowflakeSQLException(ex, SqlState.INTERNAL_ERROR,
+      throw new SnowflakeSQLLoggedException(ex, SqlState.INTERNAL_ERROR,
                                       ErrorCode.INTERNAL_ERROR.getMessageCode(),
                                       "Failed to merge first result chunk: "
                                       + ex.getLocalizedMessage());
@@ -868,7 +868,7 @@ public class ArrowResultChunk extends SnowflakeResultChunk
     }
     catch (SFException ex)
     {
-      throw new SnowflakeSQLException(ex, SqlState.INTERNAL_ERROR,
+      throw new SnowflakeSQLLoggedException(ex, SqlState.INTERNAL_ERROR,
                                       ErrorCode.INTERNAL_ERROR.getMessageCode(),
                                       "Failed to sort first result chunk: "
                                       + ex.getLocalizedMessage());

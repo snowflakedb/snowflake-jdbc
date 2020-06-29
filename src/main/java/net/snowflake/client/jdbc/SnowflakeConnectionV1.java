@@ -141,7 +141,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection
     }
     catch (SFException ex)
     {
-      throw new SnowflakeSQLException(ex.getCause(), ex.getSqlState(),
+      throw new SnowflakeSQLLoggedException(ex.getCause(), ex.getSqlState(),
                                       ex.getVendorCode(), ex.getParams());
     }
 
@@ -179,7 +179,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection
     }
     catch (SFException ex)
     {
-      throw new SnowflakeSQLException(ex.getCause(), ex.getSqlState(),
+      throw new SnowflakeSQLLoggedException(ex.getCause(), ex.getSqlState(),
                                       ex.getVendorCode(), ex.getParams());
     }
 
@@ -371,7 +371,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection
     }
     catch (SFException ex)
     {
-      throw new SnowflakeSQLException(
+      throw new SnowflakeSQLLoggedException(
           ex.getCause(), ex.getSqlState(), ex.getVendorCode(), ex.getParams());
     }
   }
