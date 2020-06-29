@@ -951,7 +951,7 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
       }
       catch (IOException ex)
       {
-        throw new SQLException("The JSON data is invalid. The error is: " +
+        throw new SnowflakeSQLLoggedException("The JSON data is invalid. The error is: " +
                                ex.getMessage());
       }
     }

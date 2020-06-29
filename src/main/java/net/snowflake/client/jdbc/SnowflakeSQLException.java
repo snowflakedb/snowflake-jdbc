@@ -124,6 +124,13 @@ public class SnowflakeSQLException extends SQLException
     this(e.getQueryId(), e.getMessage(), e.getSqlState(), e.getVendorCode());
   }
 
+  public SnowflakeSQLException(String reason)
+  {
+    super(reason);
+  }
+
+
+
   public String getQueryId()
   {
     return queryId;

@@ -99,5 +99,11 @@ public class SnowflakeSQLLoggedException extends SnowflakeSQLException {
     public SnowflakeSQLLoggedException(SFException e)
     {
         super (e);
+        // add telemetry
+    }
+
+    public SnowflakeSQLLoggedException(String reason) {
+        super(reason);
+        // add telemetry
     }
 }
