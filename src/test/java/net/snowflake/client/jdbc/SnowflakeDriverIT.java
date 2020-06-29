@@ -3718,8 +3718,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest
 
     Connection connection = null;
     Statement statement = null;
-    List<String> accounts = Arrays.asList(null, "s3testaccount", "azureaccount",
-            "gcpaccount");
+    List<String> accounts = Arrays.asList(null, "s3testaccount", "azureaccount", "gcpaccount");
     for (int i = 0; i < accounts.size(); i++)
     {
       try
