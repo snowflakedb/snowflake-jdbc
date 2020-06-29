@@ -1590,7 +1590,7 @@ public class SessionUtil
         }
         else
         {
-          TelemetryService.enable();
+          TelemetryService.disable();
         }
       }
       else if (CLIENT_VALIDATE_DEFAULT_PARAMETERS.equalsIgnoreCase(entry.getKey()))
