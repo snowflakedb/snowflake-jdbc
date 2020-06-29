@@ -714,7 +714,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement
       }
       catch (SFException ex)
       {
-        throw new SnowflakeSQLException(ex);
+        throw new SnowflakeSQLLoggedException(ex);
       }
       return false;
     }
