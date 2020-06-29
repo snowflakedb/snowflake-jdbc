@@ -18,15 +18,7 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Builder;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.AmazonS3EncryptionClient;
-import com.amazonaws.services.s3.model.AmazonS3Exception;
-import com.amazonaws.services.s3.model.CryptoConfiguration;
-import com.amazonaws.services.s3.model.CryptoMode;
-import com.amazonaws.services.s3.model.EncryptionMaterials;
-import com.amazonaws.services.s3.model.ObjectListing;
-import com.amazonaws.services.s3.model.ObjectMetadata;
-import com.amazonaws.services.s3.model.PutObjectRequest;
-import com.amazonaws.services.s3.model.S3Object;
-import com.amazonaws.services.s3.model.StaticEncryptionMaterialsProvider;
+import com.amazonaws.services.s3.model.*;
 import com.amazonaws.services.s3.transfer.Download;
 import com.amazonaws.services.s3.transfer.TransferManager;
 import com.amazonaws.services.s3.transfer.TransferManagerBuilder;
@@ -35,12 +27,7 @@ import com.amazonaws.util.Base64;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.SFSSLConnectionSocketFactory;
 import net.snowflake.client.core.SFSession;
-import net.snowflake.client.jdbc.ErrorCode;
-import net.snowflake.client.jdbc.FileBackedOutputStream;
-import net.snowflake.client.jdbc.MatDesc;
-import net.snowflake.client.jdbc.SnowflakeFileTransferAgent;
-import net.snowflake.client.jdbc.SnowflakeSQLException;
-import net.snowflake.client.jdbc.SnowflakeUtil;
+import net.snowflake.client.jdbc.*;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.util.SFPair;
@@ -52,11 +39,7 @@ import org.apache.http.conn.ssl.SSLInitializationException;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.net.SocketTimeoutException;
 import java.security.InvalidKeyException;
 import java.security.KeyManagementException;
@@ -173,7 +156,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient
       }
       else
       {
-        throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
+        throw new SnowflakeSQLLoggedException(SqlState.INTERNAL_ERROR,
                                         ErrorCode.INTERNAL_ERROR.getMessageCode(),
                                         "unsupported key size", encryptionKeySize);
       }
@@ -344,7 +327,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient
         {
           if (key == null || iv == null)
           {
-            throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
+            throw new SnowflakeSQLLoggedException(SqlState.INTERNAL_ERROR,
                                             ErrorCode.INTERNAL_ERROR.getMessageCode(),
                                             "File metadata incomplete");
           }
@@ -380,7 +363,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient
     }
     while (retryCount <= getMaxRetries());
 
-    throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
+    throw new SnowflakeSQLLoggedException(SqlState.INTERNAL_ERROR,
                                     ErrorCode.INTERNAL_ERROR.getMessageCode(),
                                     "Unexpected: download unsuccessful without exception!");
   }
@@ -425,7 +408,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient
         {
           if (key == null || iv == null)
           {
-            throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
+            throw new SnowflakeSQLLoggedException(SqlState.INTERNAL_ERROR,
                                             ErrorCode.INTERNAL_ERROR.getMessageCode(),
                                             "File metadata incomplete");
           }
@@ -454,7 +437,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient
       }
     } while (retryCount <= getMaxRetries());
 
-    throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
+    throw new SnowflakeSQLLoggedException(SqlState.INTERNAL_ERROR,
                                     ErrorCode.INTERNAL_ERROR.getMessageCode(),
                                     "Unexpected: download unsuccessful without exception!");
   }
@@ -585,7 +568,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient
     for (FileInputStream is : toClose)
       IOUtils.closeQuietly(is);
 
-    throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
+    throw new SnowflakeSQLLoggedException(SqlState.INTERNAL_ERROR,
                                     ErrorCode.INTERNAL_ERROR.getMessageCode(),
                                     "Unexpected: upload unsuccessful without exception!");
   }

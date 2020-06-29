@@ -1227,7 +1227,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection
       }
       catch (IOException ex)
       {
-        throw new SnowflakeSQLException(
+        throw new SnowflakeSQLLoggedException(
             SqlState.INTERNAL_ERROR,
             ErrorCode.INTERNAL_ERROR.getMessageCode(),
             ex.getMessage());
