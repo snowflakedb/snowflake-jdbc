@@ -4,23 +4,12 @@
 package net.snowflake.client;
 
 import com.google.common.base.Strings;
-import net.snowflake.client.jdbc.SnowflakeConnectString;
-import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 import org.junit.Rule;
 
 import java.net.URL;
-import java.sql.Connection;
 import java.sql.Date;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.sql.Timestamp;
-import java.util.Calendar;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Properties;
-import java.util.TimeZone;
+import java.sql.*;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -332,10 +321,7 @@ public class AbstractDriverIT
         properties.put(entry.getKey(), entry.getValue());
       }
     }
-    String uri = params.get("uri");
-    SnowflakeConnectString conStr = SnowflakeConnectString.parse(uri, properties);
-    TelemetryService.getInstance().updateContext(conStr);
-    return DriverManager.getConnection(uri, properties);
+    return DriverManager.getConnection(params.get("uri"), properties);
   }
 
   /**
