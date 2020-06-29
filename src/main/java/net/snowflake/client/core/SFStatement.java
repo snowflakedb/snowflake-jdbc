@@ -1082,7 +1082,7 @@ public class SFStatement
     }
     catch (SFException ex)
     {
-      throw new SnowflakeSQLException(ex);
+      throw new SnowflakeSQLLoggedException(ex);
     }
   }
 

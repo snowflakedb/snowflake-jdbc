@@ -1,6 +1,7 @@
 package net.snowflake.client.jdbc;
 
 import net.minidev.json.JSONObject;
+import net.snowflake.client.core.SFException;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryEvent;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.client.util.SecretDetector;
@@ -95,6 +96,8 @@ public class SnowflakeSQLLoggedException extends SnowflakeSQLException {
         // telemetry
     }
 
-
-
+    public SnowflakeSQLLoggedException(SFException e)
+    {
+        super (e);
+    }
 }
