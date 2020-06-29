@@ -512,7 +512,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement
         }
         else
         {
-          throw new SnowflakeSQLException(SqlState.NUMERIC_VALUE_OUT_OF_RANGE,
+          throw new SnowflakeSQLLoggedException(SqlState.NUMERIC_VALUE_OUT_OF_RANGE,
                                           ErrorCode.EXECUTE_BATCH_INTEGER_OVERFLOW.getMessageCode(), i);
         }
         batchQueryIDs.add(queryID);
