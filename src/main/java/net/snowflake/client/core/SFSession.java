@@ -304,7 +304,7 @@ public class SFSession
     }
     catch (Exception e)
     {
-      throw new SQLException("No response or invalid response from GET request. Error: {}", e.getMessage());
+      throw new SnowflakeSQLLoggedException("No response or invalid response from GET request. Error: {}", e.getMessage());
     }
     // Get response as JSON and parse it to get the query status
     // check the success field first
