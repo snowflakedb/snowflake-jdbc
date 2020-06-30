@@ -9,6 +9,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.TemporaryFolder;
+
 import static org.junit.Assert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
 
@@ -692,7 +693,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
       }
       catch (SQLException ex)
       {
-        assertEquals((long)ErrorCode.INTERNAL_ERROR.getMessageCode(), ex.getErrorCode());
+        assertEquals((long) ErrorCode.INTERNAL_ERROR.getMessageCode(), ex.getErrorCode());
       }
 
       rs.close();
@@ -901,8 +902,8 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest
       rs.close();
     }
     assertEquals(expectedTotalRowCount, rowCount);
-    assertThat(expectedTotalCompressedSize, greaterThan((long)0));
-    assertThat(expectedTotalUncompressedSize, greaterThan((long)0));
+    assertThat(expectedTotalCompressedSize, greaterThan((long) 0));
+    assertThat(expectedTotalUncompressedSize, greaterThan((long) 0));
 
     // Split deserializedResultSet by 3M
     List<String> fileNameSplit3M = splitResultSetSerializables(
