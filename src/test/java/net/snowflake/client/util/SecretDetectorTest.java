@@ -38,8 +38,8 @@ public class SecretDetectorTest
                      ", random() , random(), random(), random()\n" +
                      "\tfrom table(generator(rowcount => 10000)))\n" +
                      "credentials=(\n" +
-                     "  aws_key_id='☺☺☺☺☺☺☺☺☺☺☺'\n" +
-                     "  aws_secret_key='☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺'\n" +
+                     "  aws_key_id='****'\n" +
+                     "  aws_secret_key='****'\n" +
                      "  )\n" +
                      "OVERWRITE = TRUE \n" +
                      "MAX_FILE_SIZE = 500000000 \n" +
@@ -64,7 +64,7 @@ public class SecretDetectorTest
     final String maskedAzureSasToken =
         "https://someaccounts.blob.core.windows.net/results/018b90ab-0033-" +
         "5f8e-0000-14f1000bd376_0/main/data_0_0_1?sv=2015-07-08&amp;" +
-        "sig=☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺&amp;" +
+        "sig=****&amp;" +
         "spr=https&amp;st=2016-04-12T03%3A24%3A31Z&amp;" +
         "se=2016-04-13T03%3A29%3A31Z&amp;srt=s&amp;ss=bf&amp;sp=rwl";
 
@@ -79,8 +79,8 @@ public class SecretDetectorTest
         "https://somebucket.s3.amazonaws.com/vzy1-s-va_demo0/results/018b92f3" +
         "-01c2-02dd-0000-03d5000c8066_0/main/data_0_0_1?" +
         "x-amz-server-side-encryption-customer-algorithm=AES256&" +
-        "response-content-encoding=gzip&AWSAccessKeyId=☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺" +
-        "&Expires=1555481960&Signature=☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺";
+        "response-content-encoding=gzip&AWSAccessKeyId=****" +
+        "&Expires=1555481960&Signature=****";
 
     assertThat("Azure SAS token is not masked",
                maskedAzureSasToken.equals(
@@ -125,16 +125,18 @@ public class SecretDetectorTest
     final String maskedSqlText =
         "create stage mystage " +
         "URL = 's3://mybucket/mypath/' " +
-        "credentials = (aws_key_id = '☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺' " +
-        "aws_secret_key = '☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺'); " +
+        "credentials = (aws_key_id = '****' " +
+        "aws_secret_key = '****'); " +
         "create stage mystage2 " +
         "URL = 'azure//mystorage.blob.core.windows.net/cont' " +
         "credentials = (azure_sas_token = " +
         "'?sv=2016-05-31&ss=b&srt=sco&sp=rwdl&se=2018-06-27T10:05:50Z&" +
         "st=2017-06-27T02:05:50Z&spr=https,http&" +
-        "sig=☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺')";
+        "sig=****')";
 
     String masked = SecretDetector.maskSecrets(sqlText);
+    System.out.println(masked);
+    System.out.println(maskedSqlText);
     assertThat("Text with AWS secret and Azure SAS token is not masked",
                maskedSqlText.equals(masked));
 
@@ -150,28 +152,28 @@ public class SecretDetectorTest
     String connectionStr = "\"jdbc:snowflake://xxx.snowflakecomputing" +
                            ".com/?user=xxx&password=xxxxxx&role=xxx\"";
     String maskedConnectionStr = "\"jdbc:snowflake://xxx.snowflakecomputing" +
-                                 ".com/?user=xxx&password=☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺";
+                                 ".com/?user=xxx&password=****";
     assertThat("Text with password is not masked",
                maskedConnectionStr.equals(SecretDetector.maskSecrets(connectionStr)));
 
     connectionStr = "jdbc:snowflake://xxx.snowflakecomputing" +
                     ".com/?user=xxx&password=xxxxxx";
     maskedConnectionStr = "jdbc:snowflake://xxx.snowflakecomputing" +
-                          ".com/?user=xxx&password=☺☺☺☺☺☺";
+                          ".com/?user=xxx&password=****";
     assertThat("Text with password is not masked",
                maskedConnectionStr.equals(SecretDetector.maskSecrets(connectionStr)));
 
     connectionStr = "jdbc:snowflake://xxx.snowflakecomputing" +
                     ".com/?user=xxx&passcode=xxxxxx";
     maskedConnectionStr = "jdbc:snowflake://xxx.snowflakecomputing" +
-                          ".com/?user=xxx&passcode=☺☺☺☺☺☺";
+                          ".com/?user=xxx&passcode=****";
     assertThat("Text with password is not masked",
                maskedConnectionStr.equals(SecretDetector.maskSecrets(connectionStr)));
 
     connectionStr = "jdbc:snowflake://xxx.snowflakecomputing" +
                     ".com/?user=xxx&passWord=xxxxxx";
     maskedConnectionStr = "jdbc:snowflake://xxx.snowflakecomputing" +
-                          ".com/?user=xxx&passWord=☺☺☺☺☺☺";
+                          ".com/?user=xxx&passWord=****";
     assertThat("Text with password is not masked",
                maskedConnectionStr.equals(SecretDetector.maskSecrets(connectionStr)));
   }
@@ -208,7 +210,7 @@ public class SecretDetectorTest
 
     for (Map.Entry<String, String> entry : testParametersMasked.entrySet())
     {
-      assertEquals("☺☺☺☺☺", SecretDetector.maskParameterValue(entry.getKey(), entry.getValue()));
+      assertEquals("****", SecretDetector.maskParameterValue(entry.getKey(), entry.getValue()));
     }
     for (Map.Entry<String, String> entry : testParametersUnmasked.entrySet())
     {
@@ -221,14 +223,14 @@ public class SecretDetectorTest
   {
     String connectionToken = "\"Authorization: Snowflake Token=\"XXXXXXXXXX\"\"";
 
-    String maskedConnectionToken = "\"Authorization: Snowflake Token=\"☺☺☺☺☺☺☺☺☺☺\"\"";
+    String maskedConnectionToken = "\"Authorization: Snowflake Token=\"****\"\"";
 
     assertThat("Text with connection token is not masked",
                maskedConnectionToken.equals(SecretDetector.maskSecrets(connectionToken)));
 
     connectionToken = "\"{\"requestType\":\"ISSUE\",\"idToken\":\"XXXXXXXX\"}\"";
 
-    maskedConnectionToken = "\"{\"requestType\":\"ISSUE\",\"idToken\":\"☺☺☺☺☺☺☺☺\"}\"";
+    maskedConnectionToken = "\"{\"requestType\":\"ISSUE\",\"idToken\":\"****\"}\"";
 
     assertThat("Text with connection token is not masked",
                maskedConnectionToken.equals(SecretDetector.maskSecrets(connectionToken)));
@@ -250,7 +252,7 @@ public class SecretDetectorTest
     final String connStr =
         "https://snowflake.fakehostname.local:fakeport?LOGINTIMEOUT=20&ACCOUNT=fakeaccount&PASSWORD=fakepassword&USER=fakeuser";
     final String maskedConnStr =
-        "https://snowflake.fakehostname.local:fakeport?LOGINTIMEOUT=20&ACCOUNT=fakeaccount&PASSWORD=☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺";
+        "https://snowflake.fakehostname.local:fakeport?LOGINTIMEOUT=20&ACCOUNT=fakeaccount&PASSWORD=****";
 
     JSONObject obj = generateJsonObject();
     obj.put("connStr", connStr);
@@ -276,9 +278,9 @@ public class SecretDetectorTest
     final String connStr =
         "https://snowflake.fakehostname.local:fakeport?LOGINTIMEOUT=20&ACCOUNT=fakeaccount&PASSWORD=fakepassword&USER=fakeuser";
     final String maskedConnStr =
-        "https://snowflake.fakehostname.local:fakeport?LOGINTIMEOUT=20&ACCOUNT=fakeaccount&PASSWORD=☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺";
+        "https://snowflake.fakehostname.local:fakeport?LOGINTIMEOUT=20&ACCOUNT=fakeaccount&PASSWORD=****";
     final String pwdStr = "password=ThisShouldBeMasked";
-    final String maskedPwdStr = "password=☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺☺";
+    final String maskedPwdStr = "password=****";
 
     JSONObject obj = generateJsonObject();
     obj.put("connStr", connStr);
