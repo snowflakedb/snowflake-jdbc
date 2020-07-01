@@ -4,6 +4,7 @@ package net.snowflake.client.jdbc.telemetryOOB;
 import net.snowflake.client.jdbc.BaseJDBCTest;
 import net.snowflake.client.category.TestCategoryCore;
 import net.snowflake.client.jdbc.SnowflakeSQLLoggedException;
+import net.snowflake.common.core.SqlState;
 import org.apache.commons.lang3.time.StopWatch;
 import org.junit.After;
 import org.junit.Before;
@@ -235,6 +236,17 @@ public class TelemetryServiceIT extends BaseJDBCTest
     sw.stop();
   }
 
+  private void generateDummyException(int value) throws SnowflakeSQLLoggedException {
+    if (value > 0)
+    {
+      String queryID = "01234567-1234-1234-1234-00001abcdefg";
+      String reason = "This is a test exception.";
+      String sqlState = SqlState.NO_DATA;
+      int vendorCode = 0;
+      throw new SnowflakeSQLLoggedException(queryID, reason, sqlState, vendorCode);
+    }
+  }
+  
   /**
    * Manual test case for checking telemetry message for SnowflakeSQLExceptions. Connect to dev or prod account and
    * query client_telemetry table in s3testaccount for results.
