@@ -229,7 +229,8 @@ class SnowflakeDatabaseMetaDataResultSet extends SnowflakeBaseResultSet
     }
     else
     {
-      throw new SnowflakeSQLException(ErrorCode.INVALID_VALUE_CONVERT,
+      // user error -generated exception
+throw new SnowflakeSQLException(ErrorCode.INVALID_VALUE_CONVERT,
                                       obj.getClass().getName(), "TIME", obj);
     }
   }
@@ -246,7 +247,8 @@ class SnowflakeDatabaseMetaDataResultSet extends SnowflakeBaseResultSet
     }
     else
     {
-      throw new SnowflakeSQLException(ErrorCode.INVALID_VALUE_CONVERT,
+      // user error -generated exception
+throw new SnowflakeSQLException(ErrorCode.INVALID_VALUE_CONVERT,
                                       obj.getClass().getName(), "TIMESTAMP", obj);
     }
   }
@@ -263,7 +265,8 @@ class SnowflakeDatabaseMetaDataResultSet extends SnowflakeBaseResultSet
     }
     else
     {
-      throw new SnowflakeSQLException(ErrorCode.INVALID_VALUE_CONVERT,
+      // user error -generated exception
+throw new SnowflakeSQLException(ErrorCode.INVALID_VALUE_CONVERT,
                                       obj.getClass().getName(), "DATE", obj);
     }
   }
@@ -450,7 +453,8 @@ class SnowflakeDatabaseMetaDataResultSet extends SnowflakeBaseResultSet
     }
     catch (NumberFormatException nfe)
     {
-      throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
+      // user error -generated exception
+throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
                                       ErrorCode.INTERNAL_ERROR.getMessageCode(),
                                       "Invalid long: " + (String) obj);
     }

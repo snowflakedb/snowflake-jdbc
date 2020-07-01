@@ -642,7 +642,8 @@ public class SessionUtil
           SnowflakeUtil.checkErrorAndThrowExceptionIncludingReauth(jsonNode);
         }
 
-        throw new SnowflakeSQLException(
+        // user error -generated exception
+throw new SnowflakeSQLException(
             NO_QUERY_ID, jsonNode.path("message").asText(),
             SqlState.SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION, errorCode);
       }
@@ -1103,7 +1104,8 @@ public class SessionUtil
         logger.debug("The specified authenticator {} and the destination URL " +
                      "in the SAML assertion {} do not match.",
                      loginInput.getAuthenticator(), postBackUrl);
-        throw new SnowflakeSQLException(
+        // user error -generated exception
+throw new SnowflakeSQLException(
             SqlState.SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION,
             ErrorCode.IDP_INCORRECT_DESTINATION.getMessageCode());
       }
@@ -1201,7 +1203,8 @@ public class SessionUtil
       {
         logger.debug("The specified authenticator {} is not supported.",
                      loginInput.getAuthenticator());
-        throw new SnowflakeSQLException(
+        // user error -generated exception
+throw new SnowflakeSQLException(
             SqlState.SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION,
             ErrorCode.IDP_CONNECTION_ERROR.getMessageCode());
       }

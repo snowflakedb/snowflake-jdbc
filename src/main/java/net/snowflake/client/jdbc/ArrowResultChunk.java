@@ -304,7 +304,8 @@ public class ArrowResultChunk extends SnowflakeResultChunk
                 converters.add(new BigIntToTimeConverter(vector, i, context));
                 break;
               default:
-                throw new SnowflakeSQLException(
+                // user error -generated exception
+throw new SnowflakeSQLException(
                     SqlState.INTERNAL_ERROR,
                     ErrorCode.INTERNAL_ERROR.getMessageCode(),
                     "Unexpected Arrow Field for ",
@@ -325,7 +326,8 @@ public class ArrowResultChunk extends SnowflakeResultChunk
             }
             else
             {
-              throw new SnowflakeSQLException(
+              // user error -generated exception
+throw new SnowflakeSQLException(
                   SqlState.INTERNAL_ERROR,
                   ErrorCode.INTERNAL_ERROR.getMessageCode(),
                   "Unexpected Arrow Field for ",
@@ -346,7 +348,8 @@ public class ArrowResultChunk extends SnowflakeResultChunk
             }
             else
             {
-              throw new SnowflakeSQLException(
+              // user error -generated exception
+throw new SnowflakeSQLException(
                   SqlState.INTERNAL_ERROR,
                   ErrorCode.INTERNAL_ERROR.getMessageCode(),
                   "Unexpected Arrow Field for ",
@@ -367,7 +370,8 @@ public class ArrowResultChunk extends SnowflakeResultChunk
             }
             else
             {
-              throw new SnowflakeSQLException(
+              // user error -generated exception
+throw new SnowflakeSQLException(
                   SqlState.INTERNAL_ERROR,
                   ErrorCode.INTERNAL_ERROR.getMessageCode(),
                   "Unexpected SnowflakeType ",
@@ -376,7 +380,8 @@ public class ArrowResultChunk extends SnowflakeResultChunk
             break;
 
           default:
-            throw new SnowflakeSQLException(
+            // user error -generated exception
+throw new SnowflakeSQLException(
                 SqlState.INTERNAL_ERROR,
                 ErrorCode.INTERNAL_ERROR.getMessageCode(),
                 "Unexpected Arrow Field for ",
@@ -385,7 +390,8 @@ public class ArrowResultChunk extends SnowflakeResultChunk
       }
       else
       {
-        throw new SnowflakeSQLException(
+        // user error -generated exception
+throw new SnowflakeSQLException(
             SqlState.INTERNAL_ERROR,
             ErrorCode.INTERNAL_ERROR.getMessageCode(),
             "Unexpected Arrow Field for ",

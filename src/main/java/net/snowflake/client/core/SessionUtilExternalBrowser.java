@@ -239,7 +239,8 @@ public class SessionUtilExternalBrowser
       {
         logger.debug("response = {}", theString);
         String errorCode = jsonNode.path("code").asText();
-        throw new SnowflakeSQLException(
+        // user error -generated exception
+throw new SnowflakeSQLException(
             SqlState.SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION,
             Integer.valueOf(errorCode),
             jsonNode.path("message").asText());

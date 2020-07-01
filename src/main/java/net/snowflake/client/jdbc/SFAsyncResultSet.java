@@ -65,7 +65,8 @@ class SFAsyncResultSet extends SnowflakeBaseResultSet implements SnowflakeResult
     }
     catch (SFException ex)
     {
-      throw new SnowflakeSQLException(ex.getCause(),
+      // user error -generated exception
+throw new SnowflakeSQLException(ex.getCause(),
                                       ex.getSqlState(), ex.getVendorCode(), ex.getParams());
     }
   }
@@ -99,7 +100,8 @@ class SFAsyncResultSet extends SnowflakeBaseResultSet implements SnowflakeResult
     }
     catch (SFException ex)
     {
-      throw new SnowflakeSQLException(ex.getCause(),
+      // user error -generated exception
+throw new SnowflakeSQLException(ex.getCause(),
                                       ex.getSqlState(), ex.getVendorCode(), ex.getParams());
     }
   }
@@ -122,7 +124,8 @@ class SFAsyncResultSet extends SnowflakeBaseResultSet implements SnowflakeResult
   {
     if (isClosed())
     {
-      throw new SnowflakeSQLException(ErrorCode.RESULTSET_ALREADY_CLOSED);
+      // user error -generated exception
+throw new SnowflakeSQLException(ErrorCode.RESULTSET_ALREADY_CLOSED);
     }
   }
 
@@ -461,7 +464,8 @@ class SFAsyncResultSet extends SnowflakeBaseResultSet implements SnowflakeResult
     {
       if (isClosed())
       {
-        throw new SnowflakeSQLException(ErrorCode.RESULTSET_ALREADY_CLOSED);
+        // user error -generated exception
+throw new SnowflakeSQLException(ErrorCode.RESULTSET_ALREADY_CLOSED);
       }
     }
 

@@ -104,7 +104,8 @@ abstract class SnowflakeBaseResultSet implements ResultSet
   {
     if (isClosed())
     {
-      throw new SnowflakeSQLException(ErrorCode.RESULTSET_ALREADY_CLOSED);
+      // user error -generated exception
+throw new SnowflakeSQLException(ErrorCode.RESULTSET_ALREADY_CLOSED);
     }
   }
 

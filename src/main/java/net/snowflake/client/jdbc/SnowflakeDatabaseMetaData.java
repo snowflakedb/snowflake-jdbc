@@ -140,7 +140,8 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
   {
     if (connection.isClosed())
     {
-      throw new SnowflakeSQLException(ErrorCode.CONNECTION_CLOSED);
+      // user error -generated exception
+throw new SnowflakeSQLException(ErrorCode.CONNECTION_CLOSED);
     }
   }
 

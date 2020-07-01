@@ -231,7 +231,8 @@ class SnowflakeResultSetMetaDataV1 implements ResultSetMetaData, SnowflakeResult
     }
     catch (SFException ex)
     {
-      throw new SnowflakeSQLException(ex.getCause(),
+      // user error -generated exception
+throw new SnowflakeSQLException(ex.getCause(),
                                       ex.getSqlState(), ex.getVendorCode(), ex.getParams());
     }
   }

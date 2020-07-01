@@ -151,7 +151,8 @@ public class SFStatement
   {
     if (sql == null || sql.isEmpty())
     {
-      throw new SnowflakeSQLException(SqlState.SQL_STATEMENT_NOT_YET_COMPLETE,
+      // user error -generated exception
+throw new SnowflakeSQLException(SqlState.SQL_STATEMENT_NOT_YET_COMPLETE,
                                       ErrorCode.INVALID_SQL.getMessageCode(), sql);
 
     }
@@ -290,12 +291,14 @@ public class SFStatement
         // ensure first query type matches the calling JDBC method, if exists
         if (caller == CallingMethod.EXECUTE_QUERY && !type.isGenerateResultSet())
         {
-          throw new SnowflakeSQLException(
+          // user error -generated exception
+throw new SnowflakeSQLException(
               ErrorCode.QUERY_FIRST_RESULT_NOT_RESULT_SET);
         }
         else if (caller == CallingMethod.EXECUTE_UPDATE && type.isGenerateResultSet())
         {
-          throw new SnowflakeSQLException(
+          // user error -generated exception
+throw new SnowflakeSQLException(
               ErrorCode.UPDATE_FIRST_RESULT_NOT_UPDATE_COUNT);
         }
 
@@ -407,7 +410,8 @@ public class SFStatement
 
         if (this.requestId != null)
         {
-          throw new SnowflakeSQLException(SqlState.FEATURE_NOT_SUPPORTED,
+          // user error -generated exception
+throw new SnowflakeSQLException(SqlState.FEATURE_NOT_SUPPORTED,
                                           ErrorCode.STATEMENT_ALREADY_RUNNING_QUERY.getMessageCode());
         }
 

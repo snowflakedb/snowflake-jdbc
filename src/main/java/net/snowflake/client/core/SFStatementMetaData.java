@@ -70,13 +70,15 @@ public class SFStatementMetaData
   {
     if (param < 1 || param > numberOfBinds)
     {
-      throw new SnowflakeSQLException(SqlState.NUMERIC_VALUE_OUT_OF_RANGE,
+      // user error -generated exception
+throw new SnowflakeSQLException(SqlState.NUMERIC_VALUE_OUT_OF_RANGE,
                                       ErrorCode.NUMERIC_VALUE_OUT_OF_RANGE.getMessageCode(), param,
                                       numberOfBinds);
     }
     if (numberOfBinds != metaDataOfBinds.size() || metaDataOfBinds.size() == 0)
     {
-      throw new SnowflakeSQLException(SqlState.NO_DATA, ErrorCode.NO_VALID_DATA.getMessageCode());
+      // user error -generated exception
+throw new SnowflakeSQLException(SqlState.NO_DATA, ErrorCode.NO_VALID_DATA.getMessageCode());
     }
     return metaDataOfBinds.get(param - 1);
   }

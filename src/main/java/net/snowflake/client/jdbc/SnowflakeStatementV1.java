@@ -149,7 +149,8 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement
   {
     if (isClosed)
     {
-      throw new SnowflakeSQLException(ErrorCode.STATEMENT_CLOSED);
+      // user error -generated exception
+throw new SnowflakeSQLException(ErrorCode.STATEMENT_CLOSED);
     }
   }
 
@@ -217,7 +218,8 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement
     is not supported for staging commands. */
     if (StmtUtil.checkStageManageCommand(sql) != null && parameterBindings != null)
     {
-      throw new SnowflakeSQLException(
+      // user error -generated exception
+throw new SnowflakeSQLException(
           ErrorCode.UNSUPPORTED_STATEMENT_TYPE_IN_EXECUTION_API, StmtUtil.truncateSQL(sql));
     }
 
@@ -246,7 +248,8 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement
 
     if (updateCount == NO_UPDATES && updateQueryRequired)
     {
-      throw new SnowflakeSQLException(
+      // user error -generated exception
+throw new SnowflakeSQLException(
           ErrorCode.UNSUPPORTED_STATEMENT_TYPE_IN_EXECUTION_API, StmtUtil.truncateSQL(sql));
     }
 
@@ -874,7 +877,8 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement
     }
     catch (SFException ex)
     {
-      throw new SnowflakeSQLException(
+      // user error -generated exception
+throw new SnowflakeSQLException(
           ex.getCause(), ex.getSqlState(), ex.getVendorCode(), ex.getParams());
     }
   }
@@ -912,7 +916,8 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement
     }
     catch (SFException ex)
     {
-      throw new SnowflakeSQLException(ex);
+      // user error -generated exception
+throw new SnowflakeSQLException(ex);
     }
   }
 
@@ -932,7 +937,8 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement
     }
     catch (SFException ex)
     {
-      throw new SnowflakeSQLException(
+      // user error -generated exception
+throw new SnowflakeSQLException(
           ex.getCause(), ex.getSqlState(), ex.getVendorCode(), ex.getParams());
     }
   }

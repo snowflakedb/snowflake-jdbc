@@ -631,7 +631,8 @@ public class SnowflakeS3Client implements SnowflakeStorageClient
       catch (FileNotFoundException ex)
       {
         logger.error("Failed to open input file", ex);
-        throw new SnowflakeSQLException(ex, SqlState.INTERNAL_ERROR,
+        // user error -generated exception
+throw new SnowflakeSQLException(ex, SqlState.INTERNAL_ERROR,
                                         ErrorCode.INTERNAL_ERROR.getMessageCode(),
                                         "Failed to open input file", ex.getMessage());
       }

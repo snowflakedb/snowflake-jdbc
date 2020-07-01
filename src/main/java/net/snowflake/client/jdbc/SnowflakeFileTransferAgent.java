@@ -1031,7 +1031,8 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
       // it should not contain any ~ after the above replacement
       if (localLocation.contains("~"))
       {
-        throw new SnowflakeSQLException(SqlState.IO_ERROR,
+        // user error -generated exception
+throw new SnowflakeSQLException(SqlState.IO_ERROR,
                                         ErrorCode.PATH_NOT_DIRECTORY.getMessageCode(),
                                         localLocation);
       }
@@ -1054,7 +1055,8 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
       // local location should be a directory
       if ((new File(localLocation)).isFile())
       {
-        throw new SnowflakeSQLException(SqlState.IO_ERROR,
+        // user error -generated exception
+throw new SnowflakeSQLException(SqlState.IO_ERROR,
                                         ErrorCode.PATH_NOT_DIRECTORY.getMessageCode(), localLocation);
       }
     }
@@ -1378,14 +1380,16 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
     List<SnowflakeFileTransferMetadata> result = new ArrayList<>();
     if (stageInfo.getStageType() != StageInfo.StageType.GCS)
     {
-      throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
+      // user error -generated exception
+throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
                                       ErrorCode.INTERNAL_ERROR.getMessageCode(),
                                       "This API only supports GCS");
     }
 
     if (commandType != CommandType.UPLOAD)
     {
-      throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
+      // user error -generated exception
+throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
                                       ErrorCode.INTERNAL_ERROR.getMessageCode(),
                                       "This API only supports PUT command");
     }
@@ -1571,7 +1575,8 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
     {
       logger.error("downloadStream function doesn't support local file system");
 
-      throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
+      // user error -generated exception
+throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
                                       ErrorCode.INTERNAL_ERROR.getMessageCode(),
                                       "downloadStream function only supported in remote stages");
     }
@@ -2803,7 +2808,8 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
           {
             logger.debug("File doesn't exist: {}", sourceFile);
 
-            throw new SnowflakeSQLException(SqlState.DATA_EXCEPTION,
+            // user error -generated exception
+throw new SnowflakeSQLException(SqlState.DATA_EXCEPTION,
                                             ErrorCode.FILE_NOT_FOUND.getMessageCode(),
                                             sourceFile);
           }
@@ -2811,7 +2817,8 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
           {
             logger.debug("Not a file, but directory: {}", sourceFile);
 
-            throw new SnowflakeSQLException(SqlState.DATA_EXCEPTION,
+            // user error -generated exception
+throw new SnowflakeSQLException(SqlState.DATA_EXCEPTION,
                                             ErrorCode.FILE_IS_DIRECTORY.getMessageCode(),
                                             sourceFile);
           }
@@ -2892,7 +2899,8 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
           FileCompressionType.lookupByMimeSubType(sourceCompression.toLowerCase());
       if (!foundCompType.isPresent())
       {
-        throw new SnowflakeSQLException(SqlState.FEATURE_NOT_SUPPORTED,
+        // user error -generated exception
+throw new SnowflakeSQLException(SqlState.FEATURE_NOT_SUPPORTED,
                                         ErrorCode.COMPRESSION_TYPE_NOT_KNOWN.getMessageCode(),
                                         sourceCompression);
       }
@@ -2900,7 +2908,8 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
 
       if (!userSpecifiedSourceCompression.isSupported())
       {
-        throw new SnowflakeSQLException(SqlState.FEATURE_NOT_SUPPORTED,
+        // user error -generated exception
+throw new SnowflakeSQLException(SqlState.FEATURE_NOT_SUPPORTED,
                                         ErrorCode.COMPRESSION_TYPE_NOT_SUPPORTED.getMessageCode(),
                                         sourceCompression);
       }
@@ -3004,7 +3013,8 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
             else
             {
               // error if not supported
-              throw new SnowflakeSQLException(SqlState.FEATURE_NOT_SUPPORTED,
+              // user error -generated exception
+throw new SnowflakeSQLException(SqlState.FEATURE_NOT_SUPPORTED,
                                               ErrorCode.COMPRESSION_TYPE_NOT_SUPPORTED.getMessageCode(),
                                               currentFileCompressionType.name());
             }

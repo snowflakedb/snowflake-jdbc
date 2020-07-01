@@ -711,7 +711,8 @@ public class HttpUtil
       }
       catch (NumberFormatException | NullPointerException e)
       {
-        throw new SnowflakeSQLException(ErrorCode.INVALID_PROXY_PROPERTIES, "Could not parse port number");
+        // user error -generated exception
+throw new SnowflakeSQLException(ErrorCode.INVALID_PROXY_PROPERTIES, "Could not parse port number");
       }
 
       proxyUser =

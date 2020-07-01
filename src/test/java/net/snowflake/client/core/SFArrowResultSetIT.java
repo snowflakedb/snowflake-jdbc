@@ -299,7 +299,8 @@ public class SFArrowResultSetIT
         }
         catch (IOException e)
         {
-          throw new SnowflakeSQLException(ErrorCode.INTERNAL_ERROR, "Failed " +
+          // user error -generated exception
+throw new SnowflakeSQLException(ErrorCode.INTERNAL_ERROR, "Failed " +
                                                                     "to read data");
         }
       }

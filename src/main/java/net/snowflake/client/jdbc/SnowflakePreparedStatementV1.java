@@ -150,7 +150,8 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
       }
       catch (SFException e)
       {
-        throw new SnowflakeSQLException(e);
+        // user error -generated exception
+throw new SnowflakeSQLException(e);
       }
       catch (SnowflakeSQLException e)
       {
@@ -521,7 +522,8 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
     }
     else
     {
-      throw new SnowflakeSQLException(SqlState.FEATURE_NOT_SUPPORTED,
+      // user error -generated exception
+throw new SnowflakeSQLException(SqlState.FEATURE_NOT_SUPPORTED,
                                       ErrorCode.DATA_TYPE_NOT_SUPPORTED.getMessageCode(),
                                       "Object type: " + x.getClass());
     }
@@ -606,7 +608,8 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
               values = typeCheckedList;
               row = Integer.toString(values.size() + 1);
             }
-            throw new SnowflakeSQLException(SqlState.FEATURE_NOT_SUPPORTED,
+            // user error -generated exception
+throw new SnowflakeSQLException(SqlState.FEATURE_NOT_SUPPORTED,
                                             ErrorCode.ARRAY_BIND_MIXED_TYPES_NOT_SUPPORTED.getMessageCode(),
                                             SnowflakeType.getJavaType(SnowflakeType.fromString(prevType)).name(),
                                             SnowflakeType.getJavaType(SnowflakeType.fromString(newType)).name(),
@@ -925,7 +928,8 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
   {
     logger.debug("executeUpdate(String sql)");
 
-    throw new SnowflakeSQLException(
+    // user error -generated exception
+throw new SnowflakeSQLException(
         ErrorCode.UNSUPPORTED_STATEMENT_TYPE_IN_EXECUTION_API, StmtUtil.truncateSQL(sql));
   }
 
@@ -934,14 +938,16 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
   {
     logger.debug("execute(String sql)");
 
-    throw new SnowflakeSQLException(
+    // user error -generated exception
+throw new SnowflakeSQLException(
         ErrorCode.UNSUPPORTED_STATEMENT_TYPE_IN_EXECUTION_API, StmtUtil.truncateSQL(sql));
   }
 
   @Override
   public void addBatch(String sql) throws SQLException
   {
-    throw new SnowflakeSQLException(
+    // user error -generated exception
+throw new SnowflakeSQLException(
         ErrorCode.UNSUPPORTED_STATEMENT_TYPE_IN_EXECUTION_API, StmtUtil.truncateSQL(sql));
   }
 
@@ -965,7 +971,8 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
     describeSqlIfNotTried();
     if (this.statementMetaData.getStatementType().isGenerateResultSet())
     {
-      throw new SnowflakeSQLException(
+      // user error -generated exception
+throw new SnowflakeSQLException(
           ErrorCode.UNSUPPORTED_STATEMENT_TYPE_IN_EXECUTION_API, StmtUtil.truncateSQL(sql));
     }
 

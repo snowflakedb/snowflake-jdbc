@@ -161,7 +161,8 @@ public class SFResultSet extends SFJsonResultSet
       // we don't support sort result when there are offline chunks
       if (chunkCount > 0)
       {
-        throw new SnowflakeSQLException(SqlState.FEATURE_NOT_SUPPORTED,
+        // user error -generated exception
+throw new SnowflakeSQLException(SqlState.FEATURE_NOT_SUPPORTED,
                                         ErrorCode.CLIENT_SIDE_SORTING_NOT_SUPPORTED.getMessageCode());
       }
 

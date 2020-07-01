@@ -119,7 +119,8 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection
     SnowflakeConnectString conStr = SnowflakeConnectString.parse(url, info);
     if (!conStr.isValid())
     {
-      throw new SnowflakeSQLException(INVALID_CONNECT_STRING, url);
+      // user error -generated exception
+throw new SnowflakeSQLException(INVALID_CONNECT_STRING, url);
     }
     initialize(conStr);
   }
@@ -130,7 +131,8 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection
     SnowflakeConnectString conStr = SnowflakeConnectString.parse(url, info);
     if (!conStr.isValid())
     {
-      throw new SnowflakeSQLException(SqlState.CONNECTION_EXCEPTION, INVALID_CONNECT_STRING.getMessageCode(), url);
+      // user error -generated exception
+throw new SnowflakeSQLException(SqlState.CONNECTION_EXCEPTION, INVALID_CONNECT_STRING.getMessageCode(), url);
     }
     sfSession = new SFSession();
     sfSession.setSnowflakeConnectionString(conStr);
@@ -192,7 +194,8 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection
   {
     if (isClosed)
     {
-      throw new SnowflakeSQLException(ErrorCode.CONNECTION_CLOSED);
+      // user error -generated exception
+throw new SnowflakeSQLException(ErrorCode.CONNECTION_CLOSED);
     }
   }
 
@@ -1097,7 +1100,8 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection
 
     if (stageName == null)
     {
-      throw new SnowflakeSQLException(
+      // user error -generated exception
+throw new SnowflakeSQLException(
           SqlState.INTERNAL_ERROR,
           ErrorCode.INTERNAL_ERROR.getMessageCode(),
           "stage name is null");
@@ -1105,7 +1109,8 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection
 
     if (destFileName == null)
     {
-      throw new SnowflakeSQLException(
+      // user error -generated exception
+throw new SnowflakeSQLException(
           SqlState.INTERNAL_ERROR,
           ErrorCode.INTERNAL_ERROR.getMessageCode(),
           "stage name is null");
@@ -1168,7 +1173,8 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection
 
     if (Strings.isNullOrEmpty(stageName))
     {
-      throw new SnowflakeSQLException(
+      // user error -generated exception
+throw new SnowflakeSQLException(
           SqlState.INTERNAL_ERROR,
           ErrorCode.INTERNAL_ERROR.getMessageCode(),
           "stage name is null or empty");
@@ -1176,7 +1182,8 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection
 
     if (Strings.isNullOrEmpty(sourceFileName))
     {
-      throw new SnowflakeSQLException(
+      // user error -generated exception
+throw new SnowflakeSQLException(
           SqlState.INTERNAL_ERROR,
           ErrorCode.INTERNAL_ERROR.getMessageCode(),
           "source file name is null or empty");

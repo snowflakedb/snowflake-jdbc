@@ -66,7 +66,8 @@ class SnowflakeResultSetV1 extends SnowflakeBaseResultSet implements SnowflakeRe
     }
     catch (SFException ex)
     {
-      throw new SnowflakeSQLException(ex.getCause(),
+      // user error -generated exception
+throw new SnowflakeSQLException(ex.getCause(),
                                       ex.getSqlState(), ex.getVendorCode(), ex.getParams());
     }
   }
@@ -108,7 +109,8 @@ class SnowflakeResultSetV1 extends SnowflakeBaseResultSet implements SnowflakeRe
     }
     catch (SFException ex)
     {
-      throw new SnowflakeSQLException(ex.getCause(),
+      // user error -generated exception
+throw new SnowflakeSQLException(ex.getCause(),
                                       ex.getSqlState(), ex.getVendorCode(), ex.getParams());
     }
   }
@@ -129,7 +131,8 @@ class SnowflakeResultSetV1 extends SnowflakeBaseResultSet implements SnowflakeRe
     }
     catch (SFException ex)
     {
-      throw new SnowflakeSQLException(
+      // user error -generated exception
+throw new SnowflakeSQLException(
           ex.getCause(), ex.getSqlState(), ex.getVendorCode(), ex.getParams());
     }
   }
@@ -171,7 +174,8 @@ class SnowflakeResultSetV1 extends SnowflakeBaseResultSet implements SnowflakeRe
     }
     catch (SFException ex)
     {
-      throw new SnowflakeSQLException(ex.getCause(),
+      // user error -generated exception
+throw new SnowflakeSQLException(ex.getCause(),
                                       ex.getSqlState(), ex.getVendorCode(), ex.getParams());
     }
   }
@@ -185,7 +189,8 @@ class SnowflakeResultSetV1 extends SnowflakeBaseResultSet implements SnowflakeRe
     }
     catch (SFException ex)
     {
-      throw new SnowflakeSQLException(ex.getCause(),
+      // user error -generated exception
+throw new SnowflakeSQLException(ex.getCause(),
                                       ex.getSqlState(), ex.getVendorCode(), ex.getParams());
     }
   }
@@ -200,7 +205,8 @@ class SnowflakeResultSetV1 extends SnowflakeBaseResultSet implements SnowflakeRe
     }
     catch (SFException ex)
     {
-      throw new SnowflakeSQLException(ex.getCause(),
+      // user error -generated exception
+throw new SnowflakeSQLException(ex.getCause(),
                                       ex.getSqlState(), ex.getVendorCode(), ex.getParams());
     }
   }
@@ -214,7 +220,8 @@ class SnowflakeResultSetV1 extends SnowflakeBaseResultSet implements SnowflakeRe
     }
     catch (SFException ex)
     {
-      throw new SnowflakeSQLException(ex.getCause(),
+      // user error -generated exception
+throw new SnowflakeSQLException(ex.getCause(),
                                       ex.getSqlState(), ex.getVendorCode(), ex.getParams());
     }
   }
@@ -228,7 +235,8 @@ class SnowflakeResultSetV1 extends SnowflakeBaseResultSet implements SnowflakeRe
     }
     catch (SFException ex)
     {
-      throw new SnowflakeSQLException(ex.getCause(),
+      // user error -generated exception
+throw new SnowflakeSQLException(ex.getCause(),
                                       ex.getSqlState(), ex.getVendorCode(), ex.getParams());
     }
   }
@@ -242,7 +250,8 @@ class SnowflakeResultSetV1 extends SnowflakeBaseResultSet implements SnowflakeRe
     }
     catch (SFException ex)
     {
-      throw new SnowflakeSQLException(ex.getCause(),
+      // user error -generated exception
+throw new SnowflakeSQLException(ex.getCause(),
                                       ex.getSqlState(), ex.getVendorCode(), ex.getParams());
     }
   }
@@ -256,7 +265,8 @@ class SnowflakeResultSetV1 extends SnowflakeBaseResultSet implements SnowflakeRe
     }
     catch (SFException ex)
     {
-      throw new SnowflakeSQLException(ex.getCause(),
+      // user error -generated exception
+throw new SnowflakeSQLException(ex.getCause(),
                                       ex.getSqlState(), ex.getVendorCode(), ex.getParams());
     }
 
@@ -271,7 +281,8 @@ class SnowflakeResultSetV1 extends SnowflakeBaseResultSet implements SnowflakeRe
     }
     catch (SFException ex)
     {
-      throw new SnowflakeSQLException(ex.getCause(),
+      // user error -generated exception
+throw new SnowflakeSQLException(ex.getCause(),
                                       ex.getSqlState(), ex.getVendorCode(), ex.getParams());
     }
   }
@@ -287,7 +298,8 @@ class SnowflakeResultSetV1 extends SnowflakeBaseResultSet implements SnowflakeRe
     }
     catch (SFException ex)
     {
-      throw new SnowflakeSQLException(ex.getCause(),
+      // user error -generated exception
+throw new SnowflakeSQLException(ex.getCause(),
                                       ex.getSqlState(), ex.getVendorCode(), ex.getParams());
     }
   }
@@ -301,7 +313,8 @@ class SnowflakeResultSetV1 extends SnowflakeBaseResultSet implements SnowflakeRe
     }
     catch (SFException ex)
     {
-      throw new SnowflakeSQLException(ex.getCause(),
+      // user error -generated exception
+throw new SnowflakeSQLException(ex.getCause(),
                                       ex.getSqlState(), ex.getVendorCode(), ex.getParams());
     }
   }
@@ -316,7 +329,8 @@ class SnowflakeResultSetV1 extends SnowflakeBaseResultSet implements SnowflakeRe
     }
     catch (SFException ex)
     {
-      throw new SnowflakeSQLException(ex.getCause(),
+      // user error -generated exception
+throw new SnowflakeSQLException(ex.getCause(),
                                       ex.getSqlState(), ex.getVendorCode(), ex.getParams());
     }
   }
@@ -337,7 +351,8 @@ class SnowflakeResultSetV1 extends SnowflakeBaseResultSet implements SnowflakeRe
     }
     catch (SFException ex)
     {
-      throw new SnowflakeSQLException(ex.getCause(),
+      // user error -generated exception
+throw new SnowflakeSQLException(ex.getCause(),
                                       ex.getSqlState(), ex.getVendorCode(), ex.getParams());
     }
   }
@@ -351,7 +366,8 @@ class SnowflakeResultSetV1 extends SnowflakeBaseResultSet implements SnowflakeRe
     }
     catch (SFException ex)
     {
-      throw new SnowflakeSQLException(ex.getCause(),
+      // user error -generated exception
+throw new SnowflakeSQLException(ex.getCause(),
                                       ex.getSqlState(), ex.getVendorCode(), ex.getParams());
     }
   }
@@ -366,7 +382,8 @@ class SnowflakeResultSetV1 extends SnowflakeBaseResultSet implements SnowflakeRe
     }
     catch (SFException ex)
     {
-      throw new SnowflakeSQLException(ex.getCause(),
+      // user error -generated exception
+throw new SnowflakeSQLException(ex.getCause(),
                                       ex.getSqlState(), ex.getVendorCode(), ex.getParams());
     }
   }
@@ -380,7 +397,8 @@ class SnowflakeResultSetV1 extends SnowflakeBaseResultSet implements SnowflakeRe
     }
     catch (SFException ex)
     {
-      throw new SnowflakeSQLException(ex.getCause(),
+      // user error -generated exception
+throw new SnowflakeSQLException(ex.getCause(),
                                       ex.getSqlState(), ex.getVendorCode(), ex.getParams());
     }
   }
@@ -487,7 +505,8 @@ class SnowflakeResultSetV1 extends SnowflakeBaseResultSet implements SnowflakeRe
     {
       if (isClosed())
       {
-        throw new SnowflakeSQLException(ErrorCode.RESULTSET_ALREADY_CLOSED);
+        // user error -generated exception
+throw new SnowflakeSQLException(ErrorCode.RESULTSET_ALREADY_CLOSED);
       }
     }
 
