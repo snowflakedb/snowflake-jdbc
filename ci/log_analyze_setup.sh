@@ -9,12 +9,6 @@ LOCAL_CLIENT_LOG_DIR_PATH=$WORKSPACE/jenkins_rt_logs
 echo "[INFO] LOCAL_CLIENT_LOG_DIR_PATH=$LOCAL_CLIENT_LOG_DIR_PATH"
 echo "[INFO] LOCAL_CLIENT_LOG_DIR_PATH_DOCKER=$LOCAL_CLIENT_LOG_DIR_PATH_DOCKER"
 
-# We probably need this, because the regression test job has been split into multiple sub jobs, leading us to more than one log file
-#export CLIENT_LOG_DIR_PATH_DOCKER=/mnt/workspace
-#export CLIENT_LOG_DIR_PATH=$WORKSPACE
-#echo "[INFO] CLIENT_LOG_DIR_PATH=$CLIENT_LOG_DIR_PATH"
-#echo "[INFO] CLIENT_LOG_DIR_PATH_DOCKER=$CLIENT_LOG_DIR_PATH_DOCKER"
-
 export CLIENT_LOG_FILE_PATH_DOCKER=$LOCAL_CLIENT_LOG_DIR_PATH_DOCKER/snowflake_ssm_rt.log
 export CLIENT_LOG_FILE_PATH=$LOCAL_CLIENT_LOG_DIR_PATH/snowflake_ssm_rt.log
 echo "[INFO] CLIENT_LOG_FILE_PATH=$CLIENT_LOG_FILE_PATH"
