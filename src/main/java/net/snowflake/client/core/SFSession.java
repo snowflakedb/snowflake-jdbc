@@ -600,7 +600,7 @@ public class SFSession
     logger.debug(
         "input: server={}, account={}, user={}, password={}, role={}, " +
         "database={}, schema={}, warehouse={}, validate_default_parameters={}, authenticator={}, ocsp_mode={}, " +
-        "passcode_in_passward={}, passcode={}, private_key={}, " +
+        "passcode_in_password={}, passcode={}, private_key={}, " +
         "use_proxy={}, proxy_host={}, proxy_port={}, proxy_user={}, proxy_password={}, disable_socks_proxy={}, " +
         "application={}, app_id={}, app_version={}, " +
         "login_timeout={}, network_timeout={}, query_timeout={}, tracing={}, private_key_file={}, private_key_file_pwd={}. " +
