@@ -239,7 +239,8 @@ public class TelemetryServiceIT extends BaseJDBCTest
     sw.stop();
   }
 
-  private void generateDummyException(int value) throws SnowflakeSQLLoggedException {
+  private void generateDummyException(int value) throws SnowflakeSQLLoggedException
+  {
     if (value > 0)
     {
       String queryID = "01234567-1234-1234-1234-00001abcdefg";
@@ -249,10 +250,11 @@ public class TelemetryServiceIT extends BaseJDBCTest
       throw new SnowflakeSQLLoggedException(queryID, reason, sqlState, vendorCode);
     }
   }
-  
+
   /**
    * Test case for checking telemetry message for SnowflakeSQLExceptions. Assert that telemetry OOB endpoint is reached
    * after a SnowflakeSQLLoggedException is thrown.
+   *
    * @throws SQLException
    */
   @Test
@@ -262,7 +264,8 @@ public class TelemetryServiceIT extends BaseJDBCTest
     Connection con = getConnection();
     int count = TelemetryService.getInstance().getEventCount();
     int fakeErrorCode = 27;
-    try {
+    try
+    {
       generateDummyException(fakeErrorCode);
     }
     catch (SQLException e)
@@ -270,7 +273,7 @@ public class TelemetryServiceIT extends BaseJDBCTest
       // a connection error response (wrong user and password)
       // with status code 200 is returned in RT
       assertThat("Communication error", e.getErrorCode(),
-              equalTo(fakeErrorCode));
+                 equalTo(fakeErrorCode));
 
       // since it returns normal response,
       // the telemetry does not create new event
@@ -278,8 +281,8 @@ public class TelemetryServiceIT extends BaseJDBCTest
       if (TelemetryService.getInstance().isDeploymentEnabled())
       {
         assertThat("Telemetry event has not been reported successfully. Error: " +
-                        TelemetryService.getInstance().getLastClientError(),
-                TelemetryService.getInstance().getClientFailureCount(), equalTo(0));
+                   TelemetryService.getInstance().getLastClientError(),
+                   TelemetryService.getInstance().getClientFailureCount(), equalTo(0));
       }
       return;
     }
