@@ -543,8 +543,14 @@ public class SessionUtil
         * current session into clientEnv. These are the params set via the Properties map or in the
         * connection string. Includes username, password, serverUrl, timeout values, etc
        */
+
       for (Map.Entry<SFSessionProperty, Object> entry : connectionPropertiesMap.entrySet())
       {
+        // exclude client parameters already covered by other runtime parameters that have been added to clientEnv
+        if (entry.getKey().equals(SFSessionProperty.APP_ID) || entry.getKey().equals(SFSessionProperty.APP_VERSION))
+        {
+          continue;
+        }
         String propKey = entry.getKey().getPropertyKey();
         // mask sensitive values like passwords, tokens, etc
         String propVal = SecretDetector.maskParameterValue(propKey, entry.getValue().toString());
