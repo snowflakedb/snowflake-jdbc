@@ -8,7 +8,6 @@ import net.minidev.json.JSONObject;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryEvent;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
-import net.snowflake.client.util.SecretDetector;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -54,7 +53,7 @@ public class SnowflakeSQLLoggedException extends SnowflakeSQLException {
         value.put("SQLState", SQLState);
         value.put("Query ID", queryId);
         value.put("Vendor Code", vendorCode);
-        value.put("reason", SecretDetector.maskSecrets(reason));
+        value.put("reason", reason);
         buildExceptionTelemetryLog(value, this);
     }
 
@@ -74,7 +73,7 @@ public class SnowflakeSQLLoggedException extends SnowflakeSQLException {
         // add telemetry
         JSONObject value = new JSONObject();
         value.put("SQLState", SQLState);
-        value.put("reason", SecretDetector.maskSecrets(reason));
+        value.put("reason", reason);
         buildExceptionTelemetryLog(value, this);
     }
 
@@ -139,7 +138,7 @@ public class SnowflakeSQLLoggedException extends SnowflakeSQLException {
         super(reason);
         // add telemetry
         JSONObject value = new JSONObject();
-        value.put("reason", SecretDetector.maskSecrets(reason));
+        value.put("reason", reason);
         buildExceptionTelemetryLog(value, this);
     }
 }
