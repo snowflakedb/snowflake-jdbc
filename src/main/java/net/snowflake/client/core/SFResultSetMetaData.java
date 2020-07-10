@@ -329,15 +329,11 @@ public class SFResultSetMetaData
    */
   public int getColumnCount()
   {
-    logger.debug("public int getColumnCount()");
-
     return columnCount;
   }
 
   public int getColumnType(int column) throws SFException
   {
-    logger.debug("public int getColumnType(int column)");
-
     int internalColumnType = getInternalColumnType(column);
 
     int externalColumnType = internalColumnType;
@@ -355,8 +351,6 @@ public class SFResultSetMetaData
 
   public int getInternalColumnType(int column) throws SFException
   {
-    logger.debug("public int getInternalColumnType(int column)");
-
     int columnIdx = column - 1;
     if (column < 1 || column > columnTypes.size())
     {
@@ -372,7 +366,9 @@ public class SFResultSetMetaData
           "Missing column type for column " + column);
     }
 
-    return columnTypes.get(columnIdx);
+    int ret = columnTypes.get(columnIdx);
+    logger.debug( "internal type: {}", ret);
+    return ret;
   }
 
   public String getColumnTypeName(int column) throws SFException

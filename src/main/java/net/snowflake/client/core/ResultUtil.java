@@ -648,6 +648,7 @@ public class ResultUtil
   {
     // get the year of the date
     Calendar cal = Calendar.getInstance();
+    logger.debug("calendar: {}", cal);
     cal.setTime(date);
     int year = cal.get(Calendar.YEAR);
     int month = cal.get(Calendar.MONTH);
@@ -704,8 +705,8 @@ public class ResultUtil
                                            SFSession session)
   throws SFException
   {
-    logger.debug(
-        "public Timestamp getTimestamp(int columnIndex)");
+    logger.debug("timestampStr: {}, scale: {}, internalColumnType: {}, resultVersion: {}, sessionTZ: {}",
+            timestampStr, scale, internalColumnType, resultVersion, sessionTZ);
 
     try
     {
