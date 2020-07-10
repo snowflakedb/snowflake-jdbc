@@ -3,6 +3,7 @@ package net.snowflake.client.jdbc.telemetryOOB;
 
 import net.snowflake.client.category.TestCategoryCore;
 import net.snowflake.client.jdbc.BaseJDBCTest;
+import net.snowflake.client.jdbc.SnowflakeConnectionV1;
 import net.snowflake.client.jdbc.SnowflakeSQLLoggedException;
 import net.snowflake.common.core.SqlState;
 import org.apache.commons.lang3.time.StopWatch;
@@ -247,7 +248,7 @@ public class TelemetryServiceIT extends BaseJDBCTest
       String reason = "This is a test exception.";
       String sqlState = SqlState.NO_DATA;
       int vendorCode = value;
-      throw new SnowflakeSQLLoggedException(queryID, reason, sqlState, vendorCode);
+      throw new SnowflakeSQLLoggedException(queryID, reason, sqlState, vendorCode, null);
     }
   }
 
@@ -262,6 +263,7 @@ public class TelemetryServiceIT extends BaseJDBCTest
   {
     // make a connection to initialize telemetry instance
     Connection con = getConnection();
+    con.unwrap(SnowflakeConnectionV1.class).getSfSession();
     int count = TelemetryService.getInstance().getEventCount();
     int fakeErrorCode = 27;
     try
