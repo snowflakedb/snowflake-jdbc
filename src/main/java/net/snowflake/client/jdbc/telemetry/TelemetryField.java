@@ -15,6 +15,8 @@ public enum TelemetryField
   FAILED_BIND_SERIALIZATION("client_failed_bind_serialization"),
   FAILED_BIND_UPLOAD("client_failed_bind_upload"),
   FAILED_BIND_OTHER("client_failed_bind_other"),
+
+  SQL_EXCEPTION("client_sql_exception"),
   ;
 
   public final String field;
