@@ -434,7 +434,6 @@ public class ResultSetMultiTimeZoneIT extends BaseJDBCTest
     statement.execute("drop table if exists testDateTime");
   }
 
-
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testGetOldTimestamp() throws SQLException
@@ -460,6 +459,32 @@ public class ResultSetMultiTimeZoneIT extends BaseJDBCTest
     statement.execute("drop table if exists testOldTs");
     statement.close();
     con.close();
+  }
+
+  /**
+   * Ensure Timestamp object for TIMESTAMP_NTZ returns in the Jvm system timezone.
+   * @throws SQLException raises if any error occurs
+   */
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testTimestampNTZ() throws SQLException {
+    TimeZone orgTz = TimeZone.getDefault();
+    TimeZone.setDefault(TimeZone.getTimeZone("America/Phoenix"));
+    try (Connection connection = getConnection())
+    {
+      connection.createStatement().execute("alter session set timezone='UTC'");
+      Statement statement = connection.createStatement();
+      statement.execute("create or replace table t(c1 timestamp_ntz)");
+      PreparedStatement pstmt = connection.prepareStatement("insert into t values(?)");
+      Timestamp ts = buildTimestamp(2016, 3, 20, 3, 25, 45, 67800000);
+      pstmt.setTimestamp(1, ts);
+      pstmt.execute();
+      ResultSet rs = statement.executeQuery("select * from t");
+      assertTrue(rs.next());
+      // 7 Hours to UTC
+      assertEquals(7, (rs.getTimestamp("C1").getTime()-ts.getTime())/1000/60/60);
+    }
+    TimeZone.setDefault(orgTz);
   }
 
   @Test
