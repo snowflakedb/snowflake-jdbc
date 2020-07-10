@@ -773,7 +773,8 @@ public class ResultSetIT extends BaseJDBCTest
 
   @Test
   public void testTimestampNTZ() throws SQLException {
-    TimeZone.setDefault(TimeZone.getTimeZone("America/New_York"));
+    TimeZone orgTz = TimeZone.getDefault();
+    TimeZone.setDefault(TimeZone.getTimeZone("America/Phoenix"));
     Connection connection = getConnection();
     connection.createStatement().execute("alter session set timezone='UTC'");
     Statement statement = connection.createStatement();
@@ -784,8 +785,10 @@ public class ResultSetIT extends BaseJDBCTest
     pstmt.execute();
     ResultSet rs = statement.executeQuery("select * from t");
     assertTrue(rs.next());
-    assertEquals(ts, rs.getTimestamp("C1"));
+    // 7 Hours to UTC
+    assertEquals(7, (rs.getTimestamp("C1").getTime()-ts.getTime())/1000/60/60);
     connection.close();
+    TimeZone.setDefault(orgTz);
   }
 
   @Test
