@@ -772,6 +772,23 @@ public class ResultSetIT extends BaseJDBCTest
   }
 
   @Test
+  public void testTimestampNTZ() throws SQLException {
+    TimeZone.setDefault(TimeZone.getTimeZone("America/New_York"));
+    Connection connection = getConnection();
+    connection.createStatement().execute("alter session set timezone='UTC'");
+    Statement statement = connection.createStatement();
+    statement.execute("create or replace table t(c1 timestamp_ntz)");
+    PreparedStatement pstmt = connection.prepareStatement("insert into t values(?)");
+    Timestamp ts = buildTimestamp(2016, 3, 20, 3, 25, 45, 67800000);
+    pstmt.setTimestamp(1, ts);
+    pstmt.execute();
+    ResultSet rs = statement.executeQuery("select * from t");
+    assertTrue(rs.next());
+    assertEquals(ts, rs.getTimestamp("C1"));
+    connection.close();
+  }
+
+  @Test
   public void testDateTimeRelatedTypeConversion() throws SQLException
   {
     Connection connection = getConnection();

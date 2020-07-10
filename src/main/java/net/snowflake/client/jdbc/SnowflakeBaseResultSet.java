@@ -543,7 +543,7 @@ abstract class SnowflakeBaseResultSet implements ResultSet
   protected Object getObjectInternal(int columnIndex) throws SQLException
   {
     logger.debug(
-        "public Object getObjectInternal(int columnIndex)");
+               "getObjectInternal(int columnIndex)");
 
     if (nextRow == null)
     {
