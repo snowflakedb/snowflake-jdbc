@@ -6,6 +6,7 @@ package net.snowflake.client.jdbc;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import jdk.internal.joptsimple.internal.Strings;
 import net.minidev.json.JSONObject;
 import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.SFException;
@@ -34,12 +35,12 @@ public class SnowflakeSQLLoggedException extends SnowflakeSQLException
   /*
   OOB telemetry instance
    */
-  public TelemetryService oobInstance = TelemetryService.getInstance();
+  private TelemetryService oobInstance = TelemetryService.getInstance();
 
   /*
   IB telemtry instance
    */
-  public Telemetry ibInstance;
+  private Telemetry ibInstance = null;
 
   private final static ObjectMapper mapper =
           ObjectMapperFactory.getObjectMapper();
@@ -49,7 +50,7 @@ public class SnowflakeSQLLoggedException extends SnowflakeSQLException
    *              should be included in the telemetry data, such as sqlState or vendorCode
    * @param ex    The exception being thrown
    */
-  private void buildExceptionTelemetryLog(JSONObject value, SnowflakeSQLLoggedException ex)
+  private void sendOutOfBandTelemetryMessage(JSONObject value, SnowflakeSQLLoggedException ex)
   {
     TelemetryEvent.LogBuilder logBuilder = new TelemetryEvent.LogBuilder();
     StringWriter sw = new StringWriter();
@@ -84,118 +85,133 @@ public class SnowflakeSQLLoggedException extends SnowflakeSQLException
     }
   }
 
-
-  public SnowflakeSQLLoggedException(String queryId, String reason, String SQLState, int vendorCode, SFSession session)
+  public void sendTelemetryData(String queryId, String reason, String SQLState, int vendorCode, ErrorCode errorCode, SFSession session)
   {
-    super(queryId, reason, SQLState, vendorCode);
     // add telemetry
-    ibInstance = session.getTelemetryClient();
+    if (session != null)
+    {
+      ibInstance = session.getTelemetryClient();
+    }
     boolean success = false;
     if (ibInstance != null)
     {
       ObjectNode value = mapper.createObjectNode();
       value.put("type", TelemetryField.SQL_EXCEPTION.toString());
-      value.put("Query ID", queryId);
-      value.put("Vendor Code", vendorCode);
-      value.put("reason", reason);
+      if (!Strings.isNullOrEmpty(queryId))
+      {
+        value.put("Query ID", queryId);
+      }
+      if (!Strings.isNullOrEmpty(SQLState))
+      {
+        value.put("SQLState", SQLState);
+      }
+      if (vendorCode != -1)
+      {
+        value.put("Vendor Code", vendorCode);
+      }
+      if (errorCode != null)
+      {
+        value.put("Error Code", errorCode.toString());
+      }
+      if (!Strings.isNullOrEmpty(reason))
+      {
+        value.put("reason", reason);
+      }
       success = sendInBandTelemetryMessage(value, this);
     }
+    // If in-band telemetry is not successful, send out of band telemetry message instead
     if (!success)
     {
       JSONObject value = new JSONObject();
-      value.put("SQLState", SQLState);
-      value.put("Query ID", queryId);
-      value.put("Vendor Code", vendorCode);
-      value.put("reason", reason);
-      buildExceptionTelemetryLog(value, this);
+      if (!Strings.isNullOrEmpty(queryId))
+      {
+        value.put("Query ID", queryId);
+      }
+      if (!Strings.isNullOrEmpty(SQLState))
+      {
+        value.put("SQLState", SQLState);
+      }
+      if (vendorCode != -1)
+      {
+        value.put("Vendor Code", vendorCode);
+      }
+      if (errorCode != null)
+      {
+        value.put("Error Code", errorCode.toString());
+      }
+      if (!Strings.isNullOrEmpty(reason))
+      {
+        value.put("reason", reason);
+      }
+      sendOutOfBandTelemetryMessage(value, this);
     }
   }
 
-  public SnowflakeSQLLoggedException(String SQLState, int vendorCode)
+  public SnowflakeSQLLoggedException(String queryId, String reason, String SQLState, int vendorCode, SFSession session)
+  {
+    super(queryId, reason, SQLState, vendorCode);
+    sendTelemetryData(queryId, reason, SQLState, vendorCode, null, session);
+  }
+
+  public SnowflakeSQLLoggedException(String SQLState, int vendorCode, SFSession session)
   {
     super(SQLState, vendorCode);
-    // add telemetry
-    JSONObject value = new JSONObject();
-    value.put("SQLState", SQLState);
-    value.put("Vendor Code", vendorCode);
-    buildExceptionTelemetryLog(value, this);
+    sendTelemetryData(null, null, SQLState, vendorCode, null, session);
   }
 
-  public SnowflakeSQLLoggedException(String reason, String SQLState)
+  public SnowflakeSQLLoggedException(String reason, String SQLState, SFSession session)
   {
     super(reason, SQLState);
-    // add telemetry
-    JSONObject value = new JSONObject();
-    value.put("SQLState", SQLState);
-    value.put("reason", reason);
-    buildExceptionTelemetryLog(value, this);
+    sendTelemetryData(null, reason, SQLState, -1, null, session);
   }
 
-  public SnowflakeSQLLoggedException(String SQLState, int vendorCode, Object... params)
+  public SnowflakeSQLLoggedException(String SQLState, int vendorCode, SFSession session, Object... params)
   {
     super(SQLState, vendorCode, params);
-    // add telemetry
-    String errorMessage = errorResourceBundleManager.getLocalizedMessage(String.valueOf(vendorCode), params);
-    JSONObject value = new JSONObject();
-    value.put("SQLState", SQLState);
-    value.put("error message", errorMessage);
-    value.put("vendorCode", vendorCode);
-    buildExceptionTelemetryLog(value, this);
+    String reason = errorResourceBundleManager.getLocalizedMessage(String.valueOf(vendorCode), params);
+    sendTelemetryData(null, reason, SQLState, vendorCode, null, session);
   }
 
-  public SnowflakeSQLLoggedException(Throwable ex, ErrorCode errorCode, Object... params)
+  public SnowflakeSQLLoggedException(Throwable ex, ErrorCode errorCode, SFSession session, Object... params)
   {
     super(ex, errorCode, params);
     // add telemetry
-    String errorMessage =
+    String reason =
         errorResourceBundleManager.getLocalizedMessage(String.valueOf(errorCode.getMessageCode()), params);
-    JSONObject value = new JSONObject();
-    value.put("SQLState", errorCode.getSqlState());
-    value.put("error message", errorMessage);
-    value.put("VendorCode", errorCode.getMessageCode());
-    value.put("Error code", errorCode);
-    buildExceptionTelemetryLog(value, this);
+    sendTelemetryData(null, reason, errorCode.getSqlState(), errorCode.getMessageCode(), errorCode, session);
   }
 
   public SnowflakeSQLLoggedException(Throwable ex,
                                      String SQLState,
                                      int vendorCode,
+                                     SFSession session,
                                      Object... params)
   {
     super(ex, SQLState, vendorCode, params);
     // add telemetry
-    String errorMessage = errorResourceBundleManager.getLocalizedMessage(String.valueOf(vendorCode), params);
-    JSONObject value = new JSONObject();
-    value.put("error message", errorMessage);
-    value.put("VendorCode", vendorCode);
-    buildExceptionTelemetryLog(value, this);
+    String reason = errorResourceBundleManager.getLocalizedMessage(String.valueOf(vendorCode), params);
+    sendTelemetryData(null, reason, SQLState, vendorCode, null, session);
   }
 
-  public SnowflakeSQLLoggedException(ErrorCode errorCode, Object... params)
+  public SnowflakeSQLLoggedException(ErrorCode errorCode, SFSession session, Object... params)
   {
     super(errorCode, params);
     // add telemetry
-    String errorMessage =
+    String reason =
         errorResourceBundleManager.getLocalizedMessage(String.valueOf(errorCode.getMessageCode()), params);
-    JSONObject value = new JSONObject();
-    value.put("error message", errorMessage);
-    value.put("errorCode", errorCode);
-    buildExceptionTelemetryLog(value, this);
+    sendTelemetryData(null, reason, null, -1, errorCode, session);
   }
 
-  public SnowflakeSQLLoggedException(SFException e)
+  public SnowflakeSQLLoggedException(SFException e, SFSession session)
   {
     super(e);
     // add telemetry
-    buildExceptionTelemetryLog(null, this);
+    sendTelemetryData(null, null, null, -1, null, session);
   }
 
-  public SnowflakeSQLLoggedException(String reason)
+  public SnowflakeSQLLoggedException(String reason, SFSession session)
   {
     super(reason);
-    // add telemetry
-    JSONObject value = new JSONObject();
-    value.put("reason", reason);
-    buildExceptionTelemetryLog(value, this);
+    sendTelemetryData(null, reason, null, -1, null, session);
   }
 }
