@@ -6,7 +6,7 @@ package net.snowflake.client.jdbc;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import jdk.internal.joptsimple.internal.Strings;
+import com.google.api.client.util.Strings;
 import net.minidev.json.JSONObject;
 import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.SFException;
@@ -46,6 +46,8 @@ public class SnowflakeSQLLoggedException extends SnowflakeSQLException
           ObjectMapperFactory.getObjectMapper();
 
   /**
+   * Function to create a TelemetryEvent log from the JSONObject and exception and send it via OOB telemetry
+   *
    * @param value JSONnode containing relevant information specific to the exception constructor that
    *              should be included in the telemetry data, such as sqlState or vendorCode
    * @param ex    The exception being thrown
@@ -65,6 +67,14 @@ public class SnowflakeSQLLoggedException extends SnowflakeSQLException
     oobInstance.report(log);
   }
 
+  /**
+   * Function to create a TelemetryClient log and send it via in-band telemetry
+   *
+   * @param value ObjectNode containing information specific to the exception constructor that should be included in
+   *              the telemetry log, such as SQLState or reason for the error
+   * @param ex The exception being thrown
+   * @return true if in-band telemetry log sent successfully or false if it did not
+   */
   private boolean sendInBandTelemetryMessage(ObjectNode value, SnowflakeSQLLoggedException ex) {
     StringWriter sw = new StringWriter();
     PrintWriter pw = new PrintWriter(sw);
@@ -85,9 +95,20 @@ public class SnowflakeSQLLoggedException extends SnowflakeSQLException
     }
   }
 
+  /**
+   * Function to construct log data based on possible exception inputs and send data through in-band telemetry, or oob
+   * if in-band does not work
+   * @param queryId query ID if exists
+   * @param reason reason for the exception
+   * @param SQLState SQLState
+   * @param vendorCode vendor code
+   * @param errorCode error code
+   * @param session session object, which is needed to send in-band telemetry but not oob. Might be null, in which case
+   *                oob is used.
+   */
   public void sendTelemetryData(String queryId, String reason, String SQLState, int vendorCode, ErrorCode errorCode, SFSession session)
   {
-    // add telemetry
+    // if session is not null, try sending data using in-band telemetry
     if (session != null)
     {
       ibInstance = session.getTelemetryClient();
