@@ -252,11 +252,10 @@ public class TelemetryServiceIT extends BaseJDBCTest
       throw new SnowflakeSQLLoggedException(queryID, reason, sqlState, vendorCode, session);
     }
   }
-
+  
   /**
    * Test case for checking telemetry message for SnowflakeSQLExceptions. Assert that telemetry OOB endpoint is reached
    * after a SnowflakeSQLLoggedException is thrown.
-   *
    * @throws SQLException
    */
   @Test
@@ -273,7 +272,7 @@ public class TelemetryServiceIT extends BaseJDBCTest
     {
       // The error response has the same code as the the fakeErrorCode
       assertThat("Communication error", e.getErrorCode(),
-                 equalTo(fakeErrorCode));
+              equalTo(fakeErrorCode));
 
       // since it returns normal response,
       // the telemetry does not create new event
@@ -281,8 +280,8 @@ public class TelemetryServiceIT extends BaseJDBCTest
       if (TelemetryService.getInstance().isDeploymentEnabled())
       {
         assertThat("Telemetry event has not been reported successfully. Error: " +
-                   TelemetryService.getInstance().getLastClientError(),
-                   TelemetryService.getInstance().getClientFailureCount(), equalTo(0));
+                        TelemetryService.getInstance().getLastClientError(),
+                TelemetryService.getInstance().getClientFailureCount(), equalTo(0));
       }
       return;
     }

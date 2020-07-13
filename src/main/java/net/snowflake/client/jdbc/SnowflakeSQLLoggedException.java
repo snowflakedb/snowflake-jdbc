@@ -24,7 +24,7 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * @author USER
- * <p>
+ *
  * This SnowflakeSQLLoggedException class extends the SnowflakeSQLException class to add OOB telemetry data for sql
  * exceptions. Not all sql exceptions require OOB telemetry logging so the exceptions in this class should only be
  * thrown if there is a need for logging the exception with OOB telemetry.
