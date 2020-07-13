@@ -1,3 +1,9 @@
+**JDBC Driver 3.12.9**
+
+- \| SNOW-170944 | Enhance the way how JDBC masks sensitive data.
+- \| SNOW-171834 | Cut down on redundant parameters in ClientEnv field
+- \      
+
 **JDBC Driver 3.12.8**
 
 - \| SNOW-159743 | Unable to return query results on AIX using JDBC driver
