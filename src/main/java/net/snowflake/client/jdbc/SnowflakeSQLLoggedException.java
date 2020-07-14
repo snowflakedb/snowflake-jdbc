@@ -19,6 +19,8 @@ import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
@@ -114,6 +116,12 @@ public class SnowflakeSQLLoggedException extends SnowflakeSQLException
       ibInstance = session.getTelemetryClient();
     }
     boolean success = false;
+    ExecutorService threadExecutor = Executors.newSingleThreadExecutor();
+    threadExecutor.submit(() ->
+            {
+
+            }
+    )
     if (ibInstance != null)
     {
       ObjectNode value = mapper.createObjectNode();
