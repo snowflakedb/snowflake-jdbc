@@ -5,15 +5,18 @@
 package net.snowflake.client.jdbc;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SqlState;
 import net.snowflake.common.util.ClassUtil;
 import net.snowflake.common.util.FixedViewColumn;
+import org.apache.commons.io.IOUtils;
+import org.apache.http.Header;
+import org.apache.http.HttpResponse;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.Field;
 import java.sql.Types;
@@ -24,11 +27,6 @@ import java.util.Random;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
-
-import net.snowflake.client.log.SFLogger;
-import org.apache.commons.io.IOUtils;
-import org.apache.http.Header;
-import org.apache.http.HttpResponse;
 
 /**
  * @author jhuang
@@ -141,6 +139,28 @@ public class SnowflakeUtil
     }
     throw new SnowflakeSQLException(queryId, errorMessage, sqlState,
                                     errorCode);
+  }
+
+  /**
+   * Function to check if a retry is needed in pollForOutput function due to incomplete information from the server
+   * in the returned JSON node
+   * @param rootNode response from server as JSON node
+   * @return true if a retry is needed, or false if no retry is needed.
+   */
+  public static boolean checkForRetry(JsonNode rootNode)
+  {
+    // retry if there is no success entry at all
+    if (rootNode.path("success").isMissingNode())
+    {
+      return true;
+    }
+    // retry on success=false if there is no error code
+    if (!rootNode.path("success").asBoolean() && rootNode.path("code").isMissingNode())
+    {
+      return true;
+    }
+    // all other cases do not require retry
+    return false;
   }
 
   static public SnowflakeColumnMetadata extractColumnMetadata(
