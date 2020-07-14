@@ -241,16 +241,12 @@ public class TelemetryServiceIT extends BaseJDBCTest
     sw.stop();
   }
 
-  private void generateDummyException(int value, SFSession session) throws SnowflakeSQLLoggedException
+  private void generateDummyException(int vendorCode, SFSession session) throws SnowflakeSQLLoggedException
   {
-    if (value > 0)
-    {
-      String queryID = "01234567-1234-1234-1234-00001abcdefg";
-      String reason = "This is a test exception.";
-      String sqlState = SqlState.NO_DATA;
-      int vendorCode = value;
-      throw new SnowflakeSQLLoggedException(queryID, reason, sqlState, vendorCode, session);
-    }
+    String queryID = "01234567-1234-1234-1234-00001abcdefg";
+    String reason = "This is a test exception.";
+    String sqlState = SqlState.NO_DATA;
+    throw new SnowflakeSQLLoggedException(queryID, reason, sqlState, vendorCode, session);
   }
   
   /**
@@ -263,16 +259,17 @@ public class TelemetryServiceIT extends BaseJDBCTest
   {
     // make a connection to initialize telemetry instance
     Connection con = getConnection();
-    int fakeErrorCode = 27;
+    int fakeVendorCode = 27;
     try
     {
-      generateDummyException(fakeErrorCode, null);
+      generateDummyException(fakeVendorCode, null);
+      fail();
     }
     catch (SnowflakeSQLLoggedException e)
     {
       // The error response has the same code as the the fakeErrorCode
       assertThat("Communication error", e.getErrorCode(),
-              equalTo(fakeErrorCode));
+              equalTo(fakeVendorCode));
 
       // since it returns normal response,
       // the telemetry does not create new event
@@ -283,9 +280,7 @@ public class TelemetryServiceIT extends BaseJDBCTest
                         TelemetryService.getInstance().getLastClientError(),
                 TelemetryService.getInstance().getClientFailureCount(), equalTo(0));
       }
-      return;
     }
-    fail();
   }
 
   /**
@@ -302,14 +297,13 @@ public class TelemetryServiceIT extends BaseJDBCTest
     try
     {
       generateDummyException(fakeErrorCode, con.unwrap(SnowflakeConnectionV1.class).getSfSession());
+      fail();
     }
     catch (SnowflakeSQLLoggedException e)
     {
       // The error response has the same code as the fakeErrorCode
       assertThat("Communication error", e.getErrorCode(),
               equalTo(fakeErrorCode));
-      return;
     }
-    fail();
   }
 }
