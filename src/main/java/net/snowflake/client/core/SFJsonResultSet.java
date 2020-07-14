@@ -47,8 +47,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet
 
   public Object getObject(int columnIndex) throws SFException
   {
-    logger.debug(
-        "public Object getObject(int columnIndex)");
+    logger.debug("getObject: {}", columnIndex);
 
     int type = resultSetMetaData.getColumnType(columnIndex);
 
@@ -99,7 +98,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet
   @Override
   public String getString(int columnIndex) throws SFException
   {
-    logger.debug("public String getString(int columnIndex)");
+    logger.debug("getString: {}", columnIndex);
 
     // Column index starts from 1, not 0.
     Object obj = getObjectInternal(columnIndex);
@@ -414,8 +413,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet
 
   private SFTimestamp getSFTimestamp(int columnIndex) throws SFException
   {
-    logger.debug(
-        "public Timestamp getTimestamp(int columnIndex)");
+    logger.debug("getTimestamp: {}", columnIndex);
 
     Object obj = getObjectInternal(columnIndex);
 
@@ -466,6 +464,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet
   public Timestamp getTimestamp(int columnIndex, TimeZone tz)
   throws SFException
   {
+    logger.debug("getTimestamp: {}, {}", columnIndex, tz);
     int columnType = resultSetMetaData.getColumnType(columnIndex);
     if (Types.TIMESTAMP == columnType)
     {
@@ -475,16 +474,27 @@ public abstract class SFJsonResultSet extends SFBaseResultSet
       {
         return null;
       }
+      logger.debug("sfTs: seconds: {}, nano: {}, tz: {}", sfTS.getSeconds(), sfTS.getNanos(), tz);
       Timestamp res = sfTS.getTimestamp();
 
       if (res == null)
       {
         return null;
       }
-      // Adjust time if date happens before year 1582 for difference between
-      // Julian and Gregorian calendars
-      Timestamp adjustedTimestamp = ResultUtil.adjustTimestamp(res);
+      logger.debug("res1: seconds: {}, nano: {}, tz: {}, {}", res.getTime(), res.getNanos(), tz, res);
+      // SNOW-14777: for timestamp_ntz, we should treat the time as in client time
+      // zone so adjust the timestamp by subtracting the offset of the client
+      // timezone
 
+      if (honorClientTZForTimestampNTZ &&
+          resultSetMetaData.getInternalColumnType(columnIndex) == Types.TIMESTAMP)
+      {
+        res = sfTS.moveToTimeZone(tz).getTimestamp();
+      }
+
+      logger.debug("res2: seconds: {}, nano: {}, tz: {}, {}", res.getTime(), res.getNanos(), tz, res);
+      Timestamp adjustedTimestamp = ResultUtil.adjustTimestamp(res);
+      logger.debug("adjustedTimestamp: seconds: {}, nano: {}, tz: {}, {}", adjustedTimestamp.getTime(), adjustedTimestamp.getNanos(), tz, adjustedTimestamp);
       return adjustedTimestamp;
     }
     else if (Types.DATE == columnType)
