@@ -501,9 +501,20 @@ public class StmtUtil
       }
 
       if (pingPongResponseJson != null)
-      // raise server side error as an exception if any
+
       {
-        SnowflakeUtil.checkErrorAndThrowException(pingPongResponseJson);
+        // if JSON response is not successful, retry
+        if (!pingPongResponseJson.path("success").asBoolean())
+        {
+          retries++;
+        }
+        // raise server side error as an exception if retry count is exhausted
+        if (retries >= MAX_RETRIES)
+        {
+          SnowflakeUtil.checkErrorAndThrowException(pingPongResponseJson);
+          // reset retry count
+          retries = 0;
+        }
       }
 
       // check the response code to see if it is a progress report response
