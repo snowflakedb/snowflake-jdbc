@@ -1,4 +1,3 @@
-/*
 package net.snowflake.client.util;
 
 import net.minidev.json.JSONArray;
@@ -321,4 +320,3 @@ public class SecretDetectorTest
                maskedNestedObjArray.equals(SecretDetector.maskJsonObject(nestedObjArray)));
   }
 }
-*/

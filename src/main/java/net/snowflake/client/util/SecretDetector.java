@@ -234,8 +234,6 @@ public class SecretDetector
    */
   public static String maskSecrets(String text)
   {
-    return text;
-    /*
     return filterAccessTokens(
         filterConnectionTokens(
             filterPassword(
@@ -247,7 +245,6 @@ public class SecretDetector
             )
         )
     );
-    */
   }
 
 
