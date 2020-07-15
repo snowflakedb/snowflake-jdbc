@@ -2892,16 +2892,16 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
           FileCompressionType.lookupByMimeSubType(sourceCompression.toLowerCase());
       if (!foundCompType.isPresent())
       {
-        throw new SnowflakeSQLException(SqlState.FEATURE_NOT_SUPPORTED,
-                                        ErrorCode.COMPRESSION_TYPE_NOT_KNOWN.getMessageCode(),
+        throw new SnowflakeSQLLoggedException(SqlState.FEATURE_NOT_SUPPORTED,
+                                        ErrorCode.COMPRESSION_TYPE_NOT_KNOWN.getMessageCode(), connection,
                                         sourceCompression);
       }
       userSpecifiedSourceCompression = foundCompType.get();
 
       if (!userSpecifiedSourceCompression.isSupported())
       {
-        throw new SnowflakeSQLException(SqlState.FEATURE_NOT_SUPPORTED,
-                                        ErrorCode.COMPRESSION_TYPE_NOT_SUPPORTED.getMessageCode(),
+        throw new SnowflakeSQLLoggedException(SqlState.FEATURE_NOT_SUPPORTED,
+                                        ErrorCode.COMPRESSION_TYPE_NOT_SUPPORTED.getMessageCode(), connection,
                                         sourceCompression);
       }
 
@@ -3004,8 +3004,8 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
             else
             {
               // error if not supported
-              throw new SnowflakeSQLException(SqlState.FEATURE_NOT_SUPPORTED,
-                                              ErrorCode.COMPRESSION_TYPE_NOT_SUPPORTED.getMessageCode(),
+              throw new SnowflakeSQLLoggedException(SqlState.FEATURE_NOT_SUPPORTED,
+                                              ErrorCode.COMPRESSION_TYPE_NOT_SUPPORTED.getMessageCode(), connection,
                                               currentFileCompressionType.name());
             }
           }

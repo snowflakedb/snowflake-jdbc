@@ -467,9 +467,9 @@ public enum SnowflakeType
         return ANY;
 
       default:
-        throw new SnowflakeSQLException(
+        throw new SnowflakeSQLLoggedException(
             SqlState.FEATURE_NOT_SUPPORTED,
-            ErrorCode.DATA_TYPE_NOT_SUPPORTED.getMessageCode(),
+            ErrorCode.DATA_TYPE_NOT_SUPPORTED.getMessageCode(), null,
             javaType);
     }
   }

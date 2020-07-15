@@ -521,8 +521,8 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
     }
     else
     {
-      throw new SnowflakeSQLException(SqlState.FEATURE_NOT_SUPPORTED,
-                                      ErrorCode.DATA_TYPE_NOT_SUPPORTED.getMessageCode(),
+      throw new SnowflakeSQLLoggedException(SqlState.FEATURE_NOT_SUPPORTED,
+                                      ErrorCode.DATA_TYPE_NOT_SUPPORTED.getMessageCode(), connection.getSfSession(),
                                       "Object type: " + x.getClass());
     }
   }
@@ -606,8 +606,9 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
               values = typeCheckedList;
               row = Integer.toString(values.size() + 1);
             }
-            throw new SnowflakeSQLException(SqlState.FEATURE_NOT_SUPPORTED,
+            throw new SnowflakeSQLLoggedException(SqlState.FEATURE_NOT_SUPPORTED,
                                             ErrorCode.ARRAY_BIND_MIXED_TYPES_NOT_SUPPORTED.getMessageCode(),
+                                            connection.getSfSession(),
                                             SnowflakeType.getJavaType(SnowflakeType.fromString(prevType)).name(),
                                             SnowflakeType.getJavaType(SnowflakeType.fromString(newType)).name(),
                                             binding.getKey(), row);
