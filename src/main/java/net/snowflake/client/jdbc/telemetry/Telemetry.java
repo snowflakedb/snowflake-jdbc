@@ -3,6 +3,7 @@
  */
 package net.snowflake.client.jdbc.telemetry;
 
+import java.io.IOException;
 import java.util.concurrent.Future;
 
 public interface Telemetry
@@ -27,5 +28,5 @@ public interface Telemetry
    */
   Future<Boolean> sendBatchAsync();
 
-  boolean sendBatch();
+  boolean sendBatch() throws IOException;
 }
