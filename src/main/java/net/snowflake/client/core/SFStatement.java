@@ -419,7 +419,7 @@ public class SFStatement
         if (this.requestId != null)
         {
           throw new SnowflakeSQLException(SqlState.FEATURE_NOT_SUPPORTED,
-                                          ErrorCode.STATEMENT_ALREADY_RUNNING_QUERY.getMessageCode());
+                                          ErrorCode.STATEMENT_ALREADY_RUNNING_QUERY.getMessageCode(), session);
         }
 
         this.requestId = UUID.randomUUID().toString();
