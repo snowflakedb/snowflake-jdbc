@@ -119,9 +119,17 @@ public class SnowflakeSQLLoggedException extends SnowflakeSQLException
     ExecutorService threadExecutor = Executors.newSingleThreadExecutor();
     threadExecutor.submit(() ->
             {
+              try {
+                  ibInstance.sendBatch();
+              }
+              catch (Throwable e)
+              {
+                logger.debug("oops, your exception could not be recorded!");
+                // start OOB instead
+              }
 
             }
-    )
+    );
     if (ibInstance != null)
     {
       ObjectNode value = mapper.createObjectNode();

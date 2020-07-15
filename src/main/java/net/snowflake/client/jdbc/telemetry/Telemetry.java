@@ -26,4 +26,6 @@ public interface Telemetry
    * @return future indicating whether the logs were sent successfully
    */
   Future<Boolean> sendBatchAsync();
+
+  boolean sendBatch();
 }

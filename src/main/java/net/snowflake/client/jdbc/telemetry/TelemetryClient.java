@@ -7,7 +7,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import net.snowflake.client.core.HttpUtil;
-import net.snowflake.client.core.OCSPMode;
 import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.jdbc.SnowflakeConnectionV1;
@@ -261,7 +260,7 @@ public class TelemetryClient implements Telemetry
    * @return whether the logs were sent successfully
    * @throws IOException if closed or uploading batch fails
    */
-  private boolean sendBatch() throws IOException
+  public boolean sendBatch() throws IOException
   {
     if (isClosed)
     {
