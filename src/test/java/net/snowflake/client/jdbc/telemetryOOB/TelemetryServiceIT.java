@@ -28,7 +28,7 @@ import static org.junit.Assert.fail;
 @Category(TestCategoryCore.class)
 public class TelemetryServiceIT extends BaseJDBCTest
 {
-  private static final int WAIT_FOR_TELEMETRY_REPORT_IN_MILLISECS = 5000;
+  private static final int WAIT_FOR_TELEMETRY_REPORT_IN_MILLISECS = 2000;
   private boolean defaultState;
 
   @Before

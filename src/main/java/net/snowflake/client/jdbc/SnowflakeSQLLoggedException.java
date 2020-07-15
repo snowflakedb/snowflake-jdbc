@@ -17,12 +17,11 @@ import net.snowflake.client.jdbc.telemetry.TelemetryField;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryEvent;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 
 /**
  * @author mknister
@@ -63,7 +62,7 @@ public class SnowflakeSQLLoggedException extends SnowflakeSQLException
     String stackTrace = sw.toString();
     value.put("Stacktrace", stackTrace);
     TelemetryEvent log = logBuilder
-        .withName("Exception: " + ex.getMessage())
+        .withName("Exception: " + ex.getClass().getSimpleName())
         .withValue(value)
         .build();
     oobInstance.report(log);
@@ -77,24 +76,50 @@ public class SnowflakeSQLLoggedException extends SnowflakeSQLException
    * @param ex The exception being thrown
    * @return true if in-band telemetry log sent successfully or false if it did not
    */
-  private boolean sendInBandTelemetryMessage(ObjectNode value, SnowflakeSQLLoggedException ex) {
+  private void sendInBandTelemetryMessage(ObjectNode value, SnowflakeSQLLoggedException ex) throws IOException {
     StringWriter sw = new StringWriter();
     PrintWriter pw = new PrintWriter(sw);
     ex.printStackTrace(pw);
     String stackTrace = sw.toString();
     value.put("Stacktrace", stackTrace);
+    value.put("Exception", ex.getClass().getSimpleName());
     ibInstance.addLogToBatch(new TelemetryData(value, System.currentTimeMillis()));
-    Future<Boolean> success = ibInstance.sendBatchAsync();
-    try
+    ibInstance.sendBatch();
+  }
+
+  /**
+   * Helper function to create JSONObject node for OOB telemetry log
+   * @param queryId
+   * @param reason
+   * @param SQLState
+   * @param vendorCode
+   * @param errorCode
+   * @return JSONObject with data about SQLException
+   */
+  private JSONObject createOOBValue(String queryId, String reason, String SQLState, int vendorCode, ErrorCode errorCode)
+  {
+    JSONObject oobValue = new JSONObject();
+    if (!Strings.isNullOrEmpty(queryId))
     {
-      // wait for 10 seconds at most before giving up
-      return success.get(10, TimeUnit.SECONDS);
+      oobValue.put("Query ID", queryId);
     }
-    catch (Exception e)
+    if (!Strings.isNullOrEmpty(SQLState))
     {
-      success.cancel(true);
-      return false;
+      oobValue.put("SQLState", SQLState);
     }
+    if (vendorCode != -1)
+    {
+      oobValue.put("Vendor Code", vendorCode);
+    }
+    if (errorCode != null)
+    {
+      oobValue.put("Error Code", errorCode.toString());
+    }
+    if (!Strings.isNullOrEmpty(reason))
+    {
+      oobValue.put("reason", reason);
+    }
+    return oobValue;
   }
 
   /**
@@ -115,72 +140,53 @@ public class SnowflakeSQLLoggedException extends SnowflakeSQLException
     {
       ibInstance = session.getTelemetryClient();
     }
-    boolean success = false;
-    ExecutorService threadExecutor = Executors.newSingleThreadExecutor();
-    threadExecutor.submit(() ->
-            {
-              try {
-                  ibInstance.sendBatch();
-              }
-              catch (Throwable e)
-              {
-                logger.debug("oops, your exception could not be recorded!");
-                // start OOB instead
-              }
-
-            }
-    );
+    // if in-band instance is successfully created, compile sql exception data into an in-band telemetry log
     if (ibInstance != null)
     {
-      ObjectNode value = mapper.createObjectNode();
-      value.put("type", TelemetryField.SQL_EXCEPTION.toString());
+      ObjectNode ibValue = mapper.createObjectNode();
+      ibValue.put("type", TelemetryField.SQL_EXCEPTION.toString());
       if (!Strings.isNullOrEmpty(queryId))
       {
-        value.put("Query ID", queryId);
+        ibValue.put("Query ID", queryId);
       }
       if (!Strings.isNullOrEmpty(SQLState))
       {
-        value.put("SQLState", SQLState);
+        ibValue.put("SQLState", SQLState);
       }
       if (vendorCode != -1)
       {
-        value.put("Vendor Code", vendorCode);
+        ibValue.put("Vendor Code", vendorCode);
       }
       if (errorCode != null)
       {
-        value.put("Error Code", errorCode.toString());
+        ibValue.put("Error Code", errorCode.toString());
       }
       if (!Strings.isNullOrEmpty(reason))
       {
-        value.put("reason", reason);
+        ibValue.put("reason", reason);
       }
-      success = sendInBandTelemetryMessage(value, this);
+      // try  to send in-band data asynchronously
+      ExecutorService threadExecutor = Executors.newSingleThreadExecutor();
+      threadExecutor.submit(() ->
+              {
+                try {
+                  sendInBandTelemetryMessage(ibValue, this);
+                }
+                catch (Throwable e)
+                {
+                  // in-band failed so send OOB message instead
+                  logger.debug("In-band telemetry message failed to send. Sending out-of-band message instead.");
+                  JSONObject oobValue = createOOBValue(queryId, reason, SQLState, vendorCode, errorCode);
+                  sendOutOfBandTelemetryMessage(oobValue, this);
+                }
+              }
+      );
     }
-    // If in-band telemetry is not successful, send out of band telemetry message instead
-    if (!success)
+    // In-band is not possible so send OOB telemetry instead
+    else
     {
-      JSONObject value = new JSONObject();
-      if (!Strings.isNullOrEmpty(queryId))
-      {
-        value.put("Query ID", queryId);
-      }
-      if (!Strings.isNullOrEmpty(SQLState))
-      {
-        value.put("SQLState", SQLState);
-      }
-      if (vendorCode != -1)
-      {
-        value.put("Vendor Code", vendorCode);
-      }
-      if (errorCode != null)
-      {
-        value.put("Error Code", errorCode.toString());
-      }
-      if (!Strings.isNullOrEmpty(reason))
-      {
-        value.put("reason", reason);
-      }
-      sendOutOfBandTelemetryMessage(value, this);
+      JSONObject oobValue = createOOBValue(queryId, reason, SQLState, vendorCode, errorCode);
+      sendOutOfBandTelemetryMessage(oobValue, this);
     }
   }
 
