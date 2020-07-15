@@ -4,11 +4,8 @@
 package net.snowflake.client.core;
 
 import net.snowflake.client.core.arrow.ArrowVectorConverter;
-import net.snowflake.client.jdbc.ArrowResultChunk;
+import net.snowflake.client.jdbc.*;
 import net.snowflake.client.jdbc.ArrowResultChunk.ArrowChunkIterator;
-import net.snowflake.client.jdbc.ErrorCode;
-import net.snowflake.client.jdbc.SnowflakeResultSetSerializableV1;
-import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
 import net.snowflake.client.jdbc.telemetry.TelemetryData;
 import net.snowflake.client.jdbc.telemetry.TelemetryField;
@@ -216,9 +213,9 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
         // we don't support sort result when there are offline chunks
         if (resultSetSerializable.getChunkFileCount() > 0)
         {
-          throw new SnowflakeSQLException(SqlState.FEATURE_NOT_SUPPORTED,
+          throw new SnowflakeSQLLoggedException(SqlState.FEATURE_NOT_SUPPORTED,
                                           ErrorCode.CLIENT_SIDE_SORTING_NOT_SUPPORTED
-                                              .getMessageCode());
+                                              .getMessageCode(), session);
         }
 
         this.currentChunkIterator = getSortedFirstResultChunk(

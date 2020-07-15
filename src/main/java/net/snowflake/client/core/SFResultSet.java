@@ -6,11 +6,7 @@ package net.snowflake.client.core;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import net.snowflake.client.core.BasicEvent.QueryState;
-import net.snowflake.client.jdbc.ErrorCode;
-import net.snowflake.client.jdbc.JsonResultChunk;
-import net.snowflake.client.jdbc.SnowflakeResultChunk;
-import net.snowflake.client.jdbc.SnowflakeResultSetSerializableV1;
-import net.snowflake.client.jdbc.SnowflakeSQLException;
+import net.snowflake.client.jdbc.*;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
 import net.snowflake.client.jdbc.telemetry.TelemetryData;
 import net.snowflake.client.jdbc.telemetry.TelemetryField;
@@ -165,10 +161,9 @@ public class SFResultSet extends SFJsonResultSet
       // we don't support sort result when there are offline chunks
       if (chunkCount > 0)
       {
-        throw new SnowflakeSQLException(SqlState.FEATURE_NOT_SUPPORTED,
-                                        ErrorCode.CLIENT_SIDE_SORTING_NOT_SUPPORTED.getMessageCode());
+        throw new SnowflakeSQLLoggedException(SqlState.FEATURE_NOT_SUPPORTED,
+                                        ErrorCode.CLIENT_SIDE_SORTING_NOT_SUPPORTED.getMessageCode(), session);
       }
-
       sortResultSet();
     }
   }

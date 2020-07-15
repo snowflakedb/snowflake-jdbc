@@ -46,6 +46,7 @@ public class SnowflakeSQLLoggedException extends SnowflakeSQLException
   private final static ObjectMapper mapper =
           ObjectMapperFactory.getObjectMapper();
 
+
   /**
    * Function to create a TelemetryEvent log from the JSONObject and exception and send it via OOB telemetry
    *
