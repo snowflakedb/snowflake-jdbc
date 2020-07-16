@@ -304,9 +304,9 @@ public class ArrowResultChunk extends SnowflakeResultChunk
                 converters.add(new BigIntToTimeConverter(vector, i, context));
                 break;
               default:
-                throw new SnowflakeSQLException(
+                throw new SnowflakeSQLLoggedException(
                     SqlState.INTERNAL_ERROR,
-                    ErrorCode.INTERNAL_ERROR.getMessageCode(),
+                    ErrorCode.INTERNAL_ERROR.getMessageCode(), null,
                     "Unexpected Arrow Field for ",
                     st.name());
             }
@@ -325,9 +325,9 @@ public class ArrowResultChunk extends SnowflakeResultChunk
             }
             else
             {
-              throw new SnowflakeSQLException(
+              throw new SnowflakeSQLLoggedException(
                   SqlState.INTERNAL_ERROR,
-                  ErrorCode.INTERNAL_ERROR.getMessageCode(),
+                  ErrorCode.INTERNAL_ERROR.getMessageCode(), null,
                   "Unexpected Arrow Field for ",
                   st.name());
             }
@@ -346,9 +346,9 @@ public class ArrowResultChunk extends SnowflakeResultChunk
             }
             else
             {
-              throw new SnowflakeSQLException(
+              throw new SnowflakeSQLLoggedException(
                   SqlState.INTERNAL_ERROR,
-                  ErrorCode.INTERNAL_ERROR.getMessageCode(),
+                  ErrorCode.INTERNAL_ERROR.getMessageCode(), null,
                   "Unexpected Arrow Field for ",
                   st.name());
             }
@@ -367,27 +367,27 @@ public class ArrowResultChunk extends SnowflakeResultChunk
             }
             else
             {
-              throw new SnowflakeSQLException(
+              throw new SnowflakeSQLLoggedException(
                   SqlState.INTERNAL_ERROR,
-                  ErrorCode.INTERNAL_ERROR.getMessageCode(),
+                  ErrorCode.INTERNAL_ERROR.getMessageCode(), null,
                   "Unexpected SnowflakeType ",
                   st.name());
             }
             break;
 
           default:
-            throw new SnowflakeSQLException(
+            throw new SnowflakeSQLLoggedException(
                 SqlState.INTERNAL_ERROR,
-                ErrorCode.INTERNAL_ERROR.getMessageCode(),
+                ErrorCode.INTERNAL_ERROR.getMessageCode(), null,
                 "Unexpected Arrow Field for ",
                 st.name());
         }
       }
       else
       {
-        throw new SnowflakeSQLException(
+        throw new SnowflakeSQLLoggedException(
             SqlState.INTERNAL_ERROR,
-            ErrorCode.INTERNAL_ERROR.getMessageCode(),
+            ErrorCode.INTERNAL_ERROR.getMessageCode(), null,
             "Unexpected Arrow Field for ",
             type.toString());
       }

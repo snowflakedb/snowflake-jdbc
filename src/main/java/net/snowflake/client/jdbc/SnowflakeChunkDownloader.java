@@ -234,7 +234,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
 
     if (resultSetSerializable.getChunkFileCount() < 1)
     {
-      throw new SnowflakeSQLException(ErrorCode.INTERNAL_ERROR,
+      throw new SnowflakeSQLLoggedException(ErrorCode.INTERNAL_ERROR, null,
                                       "Incorrect chunk count: " +
                                       resultSetSerializable.getChunkFileCount());
     }
@@ -263,7 +263,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
           break;
 
         default:
-          throw new SnowflakeSQLException(ErrorCode.INTERNAL_ERROR,
+          throw new SnowflakeSQLLoggedException(ErrorCode.INTERNAL_ERROR, null,
                                           "Invalid result format: " + queryResultFormat.name());
       }
 
@@ -571,8 +571,8 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
             logOutOfMemoryError();
           }
 
-          throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
-                                          ErrorCode.INTERNAL_ERROR.getMessageCode(),
+          throw new SnowflakeSQLLoggedException(SqlState.INTERNAL_ERROR,
+                                          ErrorCode.INTERNAL_ERROR.getMessageCode(), null,
                                           currentChunk.getDownloadError());
         }
 

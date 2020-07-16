@@ -8,25 +8,12 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.microsoft.azure.storage.OperationContext;
-import com.microsoft.azure.storage.blob.BlobProperties;
-import com.microsoft.azure.storage.blob.CloudBlob;
-import com.microsoft.azure.storage.blob.CloudBlockBlob;
+import com.microsoft.azure.storage.*;
+import com.microsoft.azure.storage.blob.*;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.SFSession;
-import net.snowflake.client.jdbc.ErrorCode;
-import net.snowflake.client.jdbc.FileBackedOutputStream;
-import net.snowflake.client.jdbc.SnowflakeFileTransferAgent;
-import net.snowflake.client.jdbc.SnowflakeSQLException;
-import com.microsoft.azure.storage.StorageCredentials;
-import com.microsoft.azure.storage.StorageCredentialsAnonymous;
-import com.microsoft.azure.storage.StorageCredentialsSharedAccessSignature;
-import com.microsoft.azure.storage.StorageException;
-import com.microsoft.azure.storage.blob.CloudBlobClient;
-import com.microsoft.azure.storage.blob.CloudBlobContainer;
-import com.microsoft.azure.storage.blob.ListBlobItem;
-import net.snowflake.client.jdbc.SnowflakeUtil;
+import net.snowflake.client.jdbc.*;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.util.SFPair;
@@ -34,23 +21,13 @@ import net.snowflake.common.core.RemoteStoreFileEncryptionMaterial;
 import net.snowflake.common.core.SqlState;
 import org.apache.commons.io.IOUtils;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.net.SocketTimeoutException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.InvalidKeyException;
-import java.util.AbstractMap;
+import java.util.*;
 import java.util.AbstractMap.SimpleEntry;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import net.snowflake.client.jdbc.MatDesc;
 
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
@@ -144,8 +121,8 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient
             encryptionKeySize != 192 &&
             encryptionKeySize != 256)
         {
-          throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
-                                          ErrorCode.INTERNAL_ERROR.getMessageCode(),
+          throw new SnowflakeSQLLoggedException(SqlState.INTERNAL_ERROR,
+                                          ErrorCode.INTERNAL_ERROR.getMessageCode(), null,
                                           "unsupported key size", encryptionKeySize);
         }
       }
@@ -347,8 +324,8 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient
         {
           if (key == null || iv == null)
           {
-            throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
-                                            ErrorCode.INTERNAL_ERROR.getMessageCode(),
+            throw new SnowflakeSQLLoggedException(SqlState.INTERNAL_ERROR,
+                                            ErrorCode.INTERNAL_ERROR.getMessageCode(), connection,
                                             "File metadata incomplete");
           }
 
@@ -374,8 +351,8 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient
     }
     while (retryCount <= getMaxRetries());
 
-    throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
-                                    ErrorCode.INTERNAL_ERROR.getMessageCode(),
+    throw new SnowflakeSQLLoggedException(SqlState.INTERNAL_ERROR,
+                                    ErrorCode.INTERNAL_ERROR.getMessageCode(), connection,
                                     "Unexpected: download unsuccessful without exception!");
   }
 
@@ -422,8 +399,8 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient
         {
           if (key == null || iv == null)
           {
-            throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
-                                            ErrorCode.INTERNAL_ERROR.getMessageCode(),
+            throw new SnowflakeSQLLoggedException(SqlState.INTERNAL_ERROR,
+                                            ErrorCode.INTERNAL_ERROR.getMessageCode(), connection,
                                             "File metadata incomplete");
           }
 
@@ -455,8 +432,8 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient
     }
     while (retryCount < getMaxRetries());
 
-    throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
-                                    ErrorCode.INTERNAL_ERROR.getMessageCode(),
+    throw new SnowflakeSQLLoggedException(SqlState.INTERNAL_ERROR,
+                                    ErrorCode.INTERNAL_ERROR.getMessageCode(), connection,
                                     "Unexpected: download unsuccessful without exception!");
   }
 

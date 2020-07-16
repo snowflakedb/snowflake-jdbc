@@ -11,43 +11,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.gax.paging.Page;
 import com.google.auth.oauth2.AccessToken;
 import com.google.auth.oauth2.GoogleCredentials;
-import com.google.cloud.storage.Blob;
-import com.google.cloud.storage.BlobId;
-import com.google.cloud.storage.BlobInfo;
-import com.google.cloud.storage.Storage;
+import com.google.cloud.storage.*;
 import com.google.cloud.storage.Storage.BlobListOption;
-import com.google.cloud.storage.StorageException;
-import com.google.cloud.storage.StorageOptions;
 import com.google.common.base.Strings;
-
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.SocketTimeoutException;
-import java.net.URISyntaxException;
-import java.security.InvalidKeyException;
-import java.util.AbstractMap;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.OCSPMode;
 import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.SFSession;
-import net.snowflake.client.jdbc.ErrorCode;
-import net.snowflake.client.jdbc.FileBackedOutputStream;
-import net.snowflake.client.jdbc.MatDesc;
-import net.snowflake.client.jdbc.RestRequest;
-import net.snowflake.client.jdbc.SnowflakeFileTransferAgent;
-import net.snowflake.client.jdbc.SnowflakeSQLException;
-import net.snowflake.client.jdbc.SnowflakeUtil;
+import net.snowflake.client.jdbc.*;
 import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -62,6 +33,16 @@ import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.InputStreamEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
+
+import java.io.*;
+import java.net.SocketTimeoutException;
+import java.net.URISyntaxException;
+import java.security.InvalidKeyException;
+import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
@@ -361,8 +342,8 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient
         {
           if (key == null || iv == null)
           {
-            throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
-                                            ErrorCode.INTERNAL_ERROR.getMessageCode(),
+            throw new SnowflakeSQLLoggedException(SqlState.INTERNAL_ERROR,
+                                            ErrorCode.INTERNAL_ERROR.getMessageCode(), connection,
                                             "File metadata incomplete");
           }
 
@@ -389,8 +370,8 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient
     }
     while (retryCount <= getMaxRetries());
 
-    throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
-                                    ErrorCode.INTERNAL_ERROR.getMessageCode(),
+    throw new SnowflakeSQLLoggedException(SqlState.INTERNAL_ERROR,
+                                    ErrorCode.INTERNAL_ERROR.getMessageCode(), connection,
                                     "Unexpected: download unsuccessful without exception!");
   }
 
@@ -539,8 +520,8 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient
     }
     while (retryCount <= getMaxRetries());
 
-    throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
-                                    ErrorCode.INTERNAL_ERROR.getMessageCode(),
+    throw new SnowflakeSQLLoggedException(SqlState.INTERNAL_ERROR,
+                                    ErrorCode.INTERNAL_ERROR.getMessageCode(), connection,
                                     "Unexpected: download unsuccessful without exception!");
   }
 
@@ -716,8 +697,8 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient
     for (FileInputStream is : toClose)
       IOUtils.closeQuietly(is);
 
-    throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
-                                    ErrorCode.INTERNAL_ERROR.getMessageCode(),
+    throw new SnowflakeSQLLoggedException(SqlState.INTERNAL_ERROR,
+                                    ErrorCode.INTERNAL_ERROR.getMessageCode(), connection,
                                     "Unexpected: upload unsuccessful without exception!");
   }
 
