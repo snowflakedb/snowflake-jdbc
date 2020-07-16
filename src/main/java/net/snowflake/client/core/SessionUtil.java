@@ -271,12 +271,7 @@ public class SessionUtil
       }
     }
 
-    boolean isClientStoreTemporaryCredential = asBoolean(
-        loginInput.getSessionParameters().get(CLIENT_STORE_TEMPORARY_CREDENTIAL));
-    if (isClientStoreTemporaryCredential)
-    {
-      CredentialManager.getInstance().fillCachedIdToken(loginInput);
-    }
+    CredentialManager.getInstance().fillCachedIdToken(loginInput);
 
     try
     {
