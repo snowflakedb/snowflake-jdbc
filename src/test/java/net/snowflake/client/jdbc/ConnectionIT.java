@@ -1735,3 +1735,5 @@ public class ConnectionIT extends BaseJDBCTest
     assertEquals(QueryStatus.QUEUED, status);
   }
 }
+
+

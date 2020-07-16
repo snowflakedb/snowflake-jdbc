@@ -27,9 +27,4 @@ public class NoOpTelemetryClient implements Telemetry
     return CompletableFuture.completedFuture(true);
   }
 
-  @Override
-  public boolean sendBatch()
-  {
-    return false;
-  }
 }

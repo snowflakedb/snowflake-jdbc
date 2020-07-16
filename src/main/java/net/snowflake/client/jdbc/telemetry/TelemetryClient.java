@@ -260,7 +260,7 @@ public class TelemetryClient implements Telemetry
    * @return whether the logs were sent successfully
    * @throws IOException if closed or uploading batch fails
    */
-  public boolean sendBatch() throws IOException
+  private boolean sendBatch() throws IOException
   {
     if (isClosed)
     {

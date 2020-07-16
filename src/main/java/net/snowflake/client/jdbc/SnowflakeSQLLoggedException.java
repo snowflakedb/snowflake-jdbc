@@ -17,11 +17,9 @@ import net.snowflake.client.jdbc.telemetry.TelemetryField;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryEvent;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 
-import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 
 /**
  * @author mknister
@@ -76,7 +74,8 @@ public class SnowflakeSQLLoggedException extends SnowflakeSQLException
    * @param ex The exception being thrown
    * @return true if in-band telemetry log sent successfully or false if it did not
    */
-  private void sendInBandTelemetryMessage(ObjectNode value, SnowflakeSQLLoggedException ex) throws IOException {
+  private Future<Boolean> sendInBandTelemetryMessage(ObjectNode value, SnowflakeSQLLoggedException ex)
+  {
     StringWriter sw = new StringWriter();
     PrintWriter pw = new PrintWriter(sw);
     ex.printStackTrace(pw);
@@ -84,7 +83,7 @@ public class SnowflakeSQLLoggedException extends SnowflakeSQLException
     value.put("Stacktrace", stackTrace);
     value.put("Exception", ex.getClass().getSimpleName());
     ibInstance.addLogToBatch(new TelemetryData(value, System.currentTimeMillis()));
-    ibInstance.sendBatch();
+    return ibInstance.sendBatchAsync();
   }
 
   /**
@@ -135,6 +134,10 @@ public class SnowflakeSQLLoggedException extends SnowflakeSQLException
    */
   public void sendTelemetryData(String queryId, String reason, String SQLState, int vendorCode, ErrorCode errorCode, SFSession session)
   {
+    // initialize boolean value for in-band telemetry success (default false). Final value is needed in ExecutorService
+    boolean[] inBandSuccess = new boolean[1];
+    inBandSuccess[0] = false;
+
     // if session is not null, try sending data using in-band telemetry
     if (session != null)
     {
@@ -168,22 +171,26 @@ public class SnowflakeSQLLoggedException extends SnowflakeSQLException
       // try  to send in-band data asynchronously
       ExecutorService threadExecutor = Executors.newSingleThreadExecutor();
       threadExecutor.submit(() ->
-              {
-                try {
-                  sendInBandTelemetryMessage(ibValue, this);
-                }
-                catch (Throwable e)
-                {
-                  // in-band failed so send OOB message instead
-                  logger.debug("In-band telemetry message failed to send. Sending out-of-band message instead.");
-                  JSONObject oobValue = createOOBValue(queryId, reason, SQLState, vendorCode, errorCode);
-                  sendOutOfBandTelemetryMessage(oobValue, this);
-                }
-              }
+        {
+          Future<Boolean> sendInBand = sendInBandTelemetryMessage(ibValue, this);
+          // record whether in band telemetry message sent with boolean value inBandSuccess
+          try
+          {
+            inBandSuccess[0] = sendInBand.get(10, TimeUnit.SECONDS);
+          }
+          catch (Exception e)
+          {
+            inBandSuccess[0] = false;
+          }
+          if (!inBandSuccess[0])
+          {
+            logger.debug("In-band telemetry message failed to send. Sending out-of-band message instead");
+          }
+        }
       );
     }
-    // In-band is not possible so send OOB telemetry instead
-    else
+    // In-band is not possible or failed so send OOB telemetry instead
+    if (!inBandSuccess[0])
     {
       JSONObject oobValue = createOOBValue(queryId, reason, SQLState, vendorCode, errorCode);
       sendOutOfBandTelemetryMessage(oobValue, this);
