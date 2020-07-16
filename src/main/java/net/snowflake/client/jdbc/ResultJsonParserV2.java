@@ -45,8 +45,8 @@ public class ResultJsonParserV2
     this.resultChunk = resultChunk;
     if (state != State.UNINITIALIZED)
     {
-      throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
-                                      ErrorCode.INTERNAL_ERROR.getMessageCode(),
+      throw new SnowflakeSQLLoggedException(SqlState.INTERNAL_ERROR,
+                                      ErrorCode.INTERNAL_ERROR.getMessageCode(), null,
                                       "Json parser is already used!");
     }
     state = State.NEXT_ROW;
@@ -81,8 +81,8 @@ public class ResultJsonParserV2
 
     if (state != State.ROW_FINISHED)
     {
-      throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
-                                      ErrorCode.INTERNAL_ERROR.getMessageCode(),
+      throw new SnowflakeSQLLoggedException(SqlState.INTERNAL_ERROR,
+                                      ErrorCode.INTERNAL_ERROR.getMessageCode(), null,
                                       "SFResultJsonParser2Failed: Chunk is truncated!");
     }
     currentColumn = 0;
@@ -98,8 +98,8 @@ public class ResultJsonParserV2
   {
     if (state == State.UNINITIALIZED)
     {
-      throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
-                                      ErrorCode.INTERNAL_ERROR.getMessageCode(),
+      throw new SnowflakeSQLLoggedException(SqlState.INTERNAL_ERROR,
+                                      ErrorCode.INTERNAL_ERROR.getMessageCode(), null,
                                       "Json parser hasn't been initialized!");
     }
 
@@ -167,15 +167,15 @@ public class ResultJsonParserV2
     {
       if (outputPosition >= outputDataLength)
       {
-        throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
-                                        ErrorCode.INTERNAL_ERROR.getMessageCode(),
+        throw new SnowflakeSQLLoggedException(SqlState.INTERNAL_ERROR,
+                                        ErrorCode.INTERNAL_ERROR.getMessageCode(), null,
                                         "column chunk longer than expected");
       }
       switch (state)
       {
         case UNINITIALIZED:
-          throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
-                                          ErrorCode.INTERNAL_ERROR.getMessageCode(),
+          throw new SnowflakeSQLLoggedException(SqlState.INTERNAL_ERROR,
+                                          ErrorCode.INTERNAL_ERROR.getMessageCode(), null,
                                           "parser is in inconsistent state");
         case NEXT_ROW:
           switch (in.get())
@@ -192,9 +192,9 @@ public class ResultJsonParserV2
               break;
             default:
             {
-              throw new SnowflakeSQLException(
+              throw new SnowflakeSQLLoggedException(
                   SqlState.INTERNAL_ERROR,
-                  ErrorCode.INTERNAL_ERROR.getMessageCode(),
+                  ErrorCode.INTERNAL_ERROR.getMessageCode(), null,
                   String.format("encountered unexpected character 0x%x between rows",
                                 in.get(((Buffer) in).position() - 1)));
             }
@@ -214,9 +214,9 @@ public class ResultJsonParserV2
               break;
             default:
             {
-              throw new SnowflakeSQLException(
+              throw new SnowflakeSQLLoggedException(
                   SqlState.INTERNAL_ERROR,
-                  ErrorCode.INTERNAL_ERROR.getMessageCode(),
+                  ErrorCode.INTERNAL_ERROR.getMessageCode(), null,
                   String.format("encountered unexpected character 0x%x after array",
                                 in.get(((Buffer) in).position() - 1)));
             }
@@ -378,8 +378,8 @@ public class ResultJsonParserV2
               {
                 if (!parseCodepoint(in))
                 {
-                  throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
-                                                  ErrorCode.INTERNAL_ERROR.getMessageCode(),
+                  throw new SnowflakeSQLLoggedException(SqlState.INTERNAL_ERROR,
+                                                  ErrorCode.INTERNAL_ERROR.getMessageCode(), null,
                                                   "SFResultJsonParser2Failed: invalid escaped unicode character");
 
                 }
@@ -403,8 +403,8 @@ public class ResultJsonParserV2
               break;
             default:
             {
-              throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
-                                              ErrorCode.INTERNAL_ERROR.getMessageCode(),
+              throw new SnowflakeSQLLoggedException(SqlState.INTERNAL_ERROR,
+                                              ErrorCode.INTERNAL_ERROR.getMessageCode(), null,
                                               "SFResultJsonParser2Failed: encountered unexpected escape character " +
                                               "0x%x", in.get(((Buffer) in).position() - 1));
 
@@ -419,8 +419,8 @@ public class ResultJsonParserV2
               resultChunk.nextIndex();
               if (currentColumn >= resultChunk.getColCount())
               {
-                throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
-                                                ErrorCode.INTERNAL_ERROR.getMessageCode(),
+                throw new SnowflakeSQLLoggedException(SqlState.INTERNAL_ERROR,
+                                                ErrorCode.INTERNAL_ERROR.getMessageCode(), null,
                                                 "SFResultJsonParser2Failed: Too many columns!");
               }
               state = State.WAIT_FOR_VALUE;
@@ -438,9 +438,9 @@ public class ResultJsonParserV2
               break;
             default:
             {
-              throw new SnowflakeSQLException(
+              throw new SnowflakeSQLLoggedException(
                   SqlState.INTERNAL_ERROR,
-                  ErrorCode.INTERNAL_ERROR.getMessageCode(),
+                  ErrorCode.INTERNAL_ERROR.getMessageCode(), null,
                   String.format("encountered unexpected character 0x%x between columns",
                                 in.get(((Buffer) in).position() - 1)));
 

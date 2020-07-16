@@ -7,12 +7,7 @@ package net.snowflake.client.core;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
-import net.snowflake.client.jdbc.ErrorCode;
-import net.snowflake.client.jdbc.SnowflakeDriver;
-import net.snowflake.client.jdbc.SnowflakeReauthenticationRequest;
-import net.snowflake.client.jdbc.SnowflakeSQLException;
-import net.snowflake.client.jdbc.SnowflakeType;
-import net.snowflake.client.jdbc.SnowflakeUtil;
+import net.snowflake.client.jdbc.*;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
@@ -39,13 +34,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -1114,9 +1103,9 @@ public class SessionUtil
         logger.debug("The specified authenticator {} and the destination URL " +
                      "in the SAML assertion {} do not match.",
                      loginInput.getAuthenticator(), postBackUrl);
-        throw new SnowflakeSQLException(
+        throw new SnowflakeSQLLoggedException(
             SqlState.SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION,
-            ErrorCode.IDP_INCORRECT_DESTINATION.getMessageCode());
+            ErrorCode.IDP_INCORRECT_DESTINATION.getMessageCode(), null);
       }
     }
     catch (IOException | URISyntaxException ex)
@@ -1212,9 +1201,9 @@ public class SessionUtil
       {
         logger.debug("The specified authenticator {} is not supported.",
                      loginInput.getAuthenticator());
-        throw new SnowflakeSQLException(
+        throw new SnowflakeSQLLoggedException(
             SqlState.SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION,
-            ErrorCode.IDP_CONNECTION_ERROR.getMessageCode());
+            ErrorCode.IDP_CONNECTION_ERROR.getMessageCode(), null);
       }
     }
     catch (MalformedURLException ex)

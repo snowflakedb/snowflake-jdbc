@@ -630,8 +630,8 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
         // this shouldn't happen
         if (metadata == null)
         {
-          throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
-                                          ErrorCode.INTERNAL_ERROR.getMessageCode(),
+          throw new SnowflakeSQLLoggedException(SqlState.INTERNAL_ERROR,
+                                          ErrorCode.INTERNAL_ERROR.getMessageCode(), connection,
                                           "missing file metadata for: " + srcFilePath);
         }
 
@@ -832,8 +832,8 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
         // this shouldn't happen
         if (metadata == null)
         {
-          throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
-                                          ErrorCode.INTERNAL_ERROR.getMessageCode(),
+          throw new SnowflakeSQLLoggedException(SqlState.INTERNAL_ERROR,
+                                          ErrorCode.INTERNAL_ERROR.getMessageCode(), connection,
                                           "missing file metadata for: " + srcFilePath);
         }
 
@@ -1031,8 +1031,8 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
       // it should not contain any ~ after the above replacement
       if (localLocation.contains("~"))
       {
-        throw new SnowflakeSQLException(SqlState.IO_ERROR,
-                                        ErrorCode.PATH_NOT_DIRECTORY.getMessageCode(),
+        throw new SnowflakeSQLLoggedException(SqlState.IO_ERROR,
+                                        ErrorCode.PATH_NOT_DIRECTORY.getMessageCode(), connection,
                                         localLocation);
       }
 
@@ -1054,8 +1054,8 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
       // local location should be a directory
       if ((new File(localLocation)).isFile())
       {
-        throw new SnowflakeSQLException(SqlState.IO_ERROR,
-                                        ErrorCode.PATH_NOT_DIRECTORY.getMessageCode(), localLocation);
+        throw new SnowflakeSQLLoggedException(SqlState.IO_ERROR,
+                                        ErrorCode.PATH_NOT_DIRECTORY.getMessageCode(), connection, localLocation);
       }
     }
 
@@ -1202,8 +1202,8 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
 
     if (!localFilePath.isEmpty() && !localFilePath.equals(localFilePathFromGS))
     {
-      throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
-                                      ErrorCode.INTERNAL_ERROR.getMessageCode(),
+      throw new SnowflakeSQLLoggedException(SqlState.INTERNAL_ERROR,
+                                      ErrorCode.INTERNAL_ERROR.getMessageCode(), connection,
                                       "Unexpected local file path from GS. From GS: " +
                                       localFilePathFromGS + ", expected: " + localFilePath);
     }
@@ -1378,15 +1378,15 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
     List<SnowflakeFileTransferMetadata> result = new ArrayList<>();
     if (stageInfo.getStageType() != StageInfo.StageType.GCS)
     {
-      throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
-                                      ErrorCode.INTERNAL_ERROR.getMessageCode(),
+      throw new SnowflakeSQLLoggedException(SqlState.INTERNAL_ERROR,
+                                      ErrorCode.INTERNAL_ERROR.getMessageCode(), connection,
                                       "This API only supports GCS");
     }
 
     if (commandType != CommandType.UPLOAD)
     {
-      throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
-                                      ErrorCode.INTERNAL_ERROR.getMessageCode(),
+      throw new SnowflakeSQLLoggedException(SqlState.INTERNAL_ERROR,
+                                      ErrorCode.INTERNAL_ERROR.getMessageCode(), connection,
                                       "This API only supports PUT command");
     }
 
@@ -1534,8 +1534,8 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
       }
       else if (commandType == CommandType.DOWNLOAD)
       {
-        throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
-                                        ErrorCode.INTERNAL_ERROR.getMessageCode());
+        throw new SnowflakeSQLLoggedException(SqlState.INTERNAL_ERROR,
+                                        ErrorCode.INTERNAL_ERROR.getMessageCode(), connection);
       }
 
       threadExecutor.shutdown();
@@ -1572,7 +1572,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
       logger.error("downloadStream function doesn't support local file system");
 
       throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
-                                      ErrorCode.INTERNAL_ERROR.getMessageCode(),
+                                      ErrorCode.INTERNAL_ERROR.getMessageCode(), connection,
                                       "downloadStream function only supported in remote stages");
     }
 
@@ -2803,8 +2803,8 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
           {
             logger.debug("File doesn't exist: {}", sourceFile);
 
-            throw new SnowflakeSQLException(SqlState.DATA_EXCEPTION,
-                                            ErrorCode.FILE_NOT_FOUND.getMessageCode(),
+            throw new SnowflakeSQLLoggedException(SqlState.DATA_EXCEPTION,
+                                            ErrorCode.FILE_NOT_FOUND.getMessageCode(), connection,
                                             sourceFile);
           }
           else if (file.isDirectory())
@@ -2812,7 +2812,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
             logger.debug("Not a file, but directory: {}", sourceFile);
 
             throw new SnowflakeSQLException(SqlState.DATA_EXCEPTION,
-                                            ErrorCode.FILE_IS_DIRECTORY.getMessageCode(),
+                                            ErrorCode.FILE_IS_DIRECTORY.getMessageCode(), connection,
                                             sourceFile);
           }
         }
