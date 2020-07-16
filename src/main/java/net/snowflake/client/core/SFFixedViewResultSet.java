@@ -8,14 +8,14 @@ import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeFileTransferAgent.CommandType;
 import net.snowflake.client.jdbc.SnowflakeFixedView;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
+import net.snowflake.client.jdbc.SnowflakeSQLLoggedException;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SqlState;
 
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.util.List;
-
-import net.snowflake.client.log.SFLogger;
-import net.snowflake.client.log.SFLoggerFactory;
 
 /**
  * Fixed view result set. This class iterates through any fixed view
@@ -50,8 +50,8 @@ public class SFFixedViewResultSet extends SFJsonResultSet
     }
     catch (Exception ex)
     {
-      throw new SnowflakeSQLException(ex, SqlState.INTERNAL_ERROR,
-                                      ErrorCode.INTERNAL_ERROR.getMessageCode(),
+      throw new SnowflakeSQLLoggedException(ex, SqlState.INTERNAL_ERROR,
+                                      ErrorCode.INTERNAL_ERROR.getMessageCode(), session,
                                       "Failed to describe fixed view: "
                                       + fixedView.getClass().getName());
     }
