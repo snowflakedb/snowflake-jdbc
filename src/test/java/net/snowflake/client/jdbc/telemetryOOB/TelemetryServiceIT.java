@@ -1,8 +1,12 @@
 package net.snowflake.client.jdbc.telemetryOOB;
 
 
-import net.snowflake.client.jdbc.BaseJDBCTest;
 import net.snowflake.client.category.TestCategoryCore;
+import net.snowflake.client.core.SFSession;
+import net.snowflake.client.jdbc.BaseJDBCTest;
+import net.snowflake.client.jdbc.SnowflakeConnectionV1;
+import net.snowflake.client.jdbc.SnowflakeSQLLoggedException;
+import net.snowflake.common.core.SqlState;
 import org.apache.commons.lang3.time.StopWatch;
 import org.junit.After;
 import org.junit.Before;
@@ -10,9 +14,13 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.concurrent.TimeUnit;
 
+import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.fail;
 
 /**
  * Standalone test cases for the out of band telemetry service
@@ -20,6 +28,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @Category(TestCategoryCore.class)
 public class TelemetryServiceIT extends BaseJDBCTest
 {
+  private static final int WAIT_FOR_TELEMETRY_REPORT_IN_MILLISECS = 5000;
   private boolean defaultState;
 
   @Before
@@ -230,5 +239,71 @@ public class TelemetryServiceIT extends BaseJDBCTest
       }
     }
     sw.stop();
+  }
+
+  private void generateDummyException(int vendorCode, SFSession session) throws SnowflakeSQLLoggedException
+  {
+    String queryID = "01234567-1234-1234-1234-00001abcdefg";
+    String reason = "This is a test exception.";
+    String sqlState = SqlState.NO_DATA;
+    throw new SnowflakeSQLLoggedException(queryID, reason, sqlState, vendorCode, session);
+  }
+  
+  /**
+   * Test case for checking telemetry message for SnowflakeSQLExceptions. Assert that telemetry OOB endpoint is reached
+   * after a SnowflakeSQLLoggedException is thrown.
+   * @throws SQLException
+   */
+  @Test
+  public void testSnowflakeSQLLoggedExceptionOOBTelemetry() throws SQLException, InterruptedException
+  {
+    // make a connection to initialize telemetry instance
+    Connection con = getConnection();
+    int fakeVendorCode = 27;
+    try
+    {
+      generateDummyException(fakeVendorCode, null);
+      fail();
+    }
+    catch (SnowflakeSQLLoggedException e)
+    {
+      // The error response has the same code as the the fakeErrorCode
+      assertThat("Communication error", e.getErrorCode(),
+              equalTo(fakeVendorCode));
+
+      // since it returns normal response,
+      // the telemetry does not create new event
+      Thread.sleep(WAIT_FOR_TELEMETRY_REPORT_IN_MILLISECS);
+      if (TelemetryService.getInstance().isDeploymentEnabled())
+      {
+        assertThat("Telemetry event has not been reported successfully. Error: " +
+                        TelemetryService.getInstance().getLastClientError(),
+                TelemetryService.getInstance().getClientFailureCount(), equalTo(0));
+      }
+    }
+  }
+
+  /**
+   * Test case for checking telemetry message for SnowflakeSQLExceptions. In-band telemetry should be used.
+   *
+   * @throws SQLException
+   */
+  @Test
+  public void testSnowflakeSQLLoggedExceptionIBTelemetry() throws SQLException
+  {
+    // make a connection to initialize telemetry instance
+    Connection con = getConnection();
+    int fakeErrorCode = 27;
+    try
+    {
+      generateDummyException(fakeErrorCode, con.unwrap(SnowflakeConnectionV1.class).getSfSession());
+      fail();
+    }
+    catch (SnowflakeSQLLoggedException e)
+    {
+      // The error response has the same code as the fakeErrorCode
+      assertThat("Communication error", e.getErrorCode(),
+              equalTo(fakeErrorCode));
+    }
   }
 }

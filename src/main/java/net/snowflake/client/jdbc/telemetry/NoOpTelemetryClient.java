@@ -26,4 +26,5 @@ public class NoOpTelemetryClient implements Telemetry
   {
     return CompletableFuture.completedFuture(true);
   }
+
 }

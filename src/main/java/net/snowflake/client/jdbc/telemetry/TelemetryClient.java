@@ -7,7 +7,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import net.snowflake.client.core.HttpUtil;
-import net.snowflake.client.core.OCSPMode;
 import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.jdbc.SnowflakeConnectionV1;
