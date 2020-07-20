@@ -349,8 +349,10 @@ public class TelemetryService {
       uploadPayload();
     }
 
-    private void uploadPayload() {
-      logger.debug("running telemetry uploader");
+    private void uploadPayload()
+    {
+      logger.debug("Running telemetry uploader");
+      logger.debug("Payload of telemetry is: " + payload);
       CloseableHttpResponse response = null;
       boolean success = true;
 
