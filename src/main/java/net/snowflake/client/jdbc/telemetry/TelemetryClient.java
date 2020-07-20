@@ -234,9 +234,12 @@ public class TelemetryClient implements Telemetry {
     if (!tmpList.isEmpty()) {
       // session shared with JDBC
       String sessionToken = this.session.getSessionToken();
+      String payload = logsToString(tmpList);
+
+      logger.debug("Payload of telemetry is : " + payload);
 
       HttpPost post = new HttpPost(this.telemetryUrl);
-      post.setEntity(new StringEntity(logsToString(tmpList)));
+      post.setEntity(new StringEntity(payload));
       post.setHeader("Content-type", "application/json");
       post.setHeader("Authorization", "Snowflake Token=\"" + sessionToken + "\"");
 
