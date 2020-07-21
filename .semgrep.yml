@@ -1,0 +1,402 @@
+rules:
+- id: java.lang.security.audit.bad-hexa-conversion.bad-hexa-conversion
+  metadata:
+    cwe: 'CWE-704: Incorrect Type Conversion or Cast'
+    owasp: 'A3: Sensitive Data Exposure'
+    source-rule-url: https://find-sec-bugs.github.io/bugs.htm#BAD_HEXA_CONVERSION
+  message: |
+    This mistake weakens the hash value computed since it introduces more collisions.
+  severity: WARNING
+  languages: [java]
+  pattern: |-
+    $X $METHOD(...) {
+      ...
+      MessageDigest $MD = ...;
+      ...
+      $MD.digest(...);
+      ...
+      Integer.toHexString(...);
+    }
+- id: java.lang.security.audit.cbc-padding-oracle.cbc-padding-oracle
+  message: |
+    Using CBC with PKCS5Padding is susceptible to padding orcale attacks. A malicious actor
+    could discern the difference between plaintext with valid or invalid padding. Further,
+    CBC mode does not include any integrity checks. See https://find-sec-bugs.github.io/bugs.htm#CIPHER_INTEGRITY.
+    Use 'AES/GCM/NoPadding' instead.
+  metadata:
+    cwe: 'CWE-696: Incorrect Behavior Order'
+    owasp: 'A3: Sensitive Data Exposure'
+    source-rule-url: https://find-sec-bugs.github.io/bugs.htm#PADDING_ORACLE
+    references:
+    - https://capec.mitre.org/data/definitions/463.html
+  severity: WARNING
+  patterns:
+  - pattern: $CIPHER.getInstance("=~/.*\/CBC\/PKCS5Padding/");
+  fix: $CIPHER.getInstance("AES/GCM/NoPadding");
+  languages:
+  - java
+- id: java.lang.security.audit.command-injection-formatted-runtime-call.command-injection-formatted-runtime-call
+  patterns:
+  - pattern-either:
+    - pattern: $RUNTIME.exec($X + $Y);
+    - pattern: $RUNTIME.exec(String.format(...));
+    - pattern: $RUNTIME.loadLibrary($X + $Y);
+    - pattern: $RUNTIME.loadLibrary(String.format(...));
+  message: |
+    A formatted or concatenated string was detected as input to a java.lang.Runtime call.
+    This is dangerous if a variable is controlled by user input and could result in a
+    command injection. Ensure your variables are not controlled by users or sufficiently sanitized.
+  metadata:
+    cwe: "CWE-78: Improper Neutralization of Special Elements used in an OS Command\
+      \ ('OS Command Injection')"
+    owasp: 'A1: Injection'
+    source-rule-url: https://find-sec-bugs.github.io/bugs.htm#COMMAND_INJECTION.
+  severity: WARNING
+  languages:
+  - java
+- id: java.lang.security.audit.script-engine-injection.script-engine-injection
+  message: |
+    Potential code injection when using Script Engine.
+  metadata:
+    cwe: "CWE-94: Improper Control of Generation of Code ('Code Injection')"
+    owasp: 'A1: Injection'
+    source-rule-url: https://find-sec-bugs.github.io/bugs.htm#SCRIPT_ENGINE_INJECTION
+  severity: WARNING
+  languages: [java]
+  patterns:
+  - pattern-either:
+    - pattern-inside: |
+        class $CLASS {
+          ...
+          ScriptEngine $SE;
+          ...
+        }
+    - pattern-inside: |
+        class $CLASS {
+          ...
+          ScriptEngine $SE = ...;
+          ...
+        }
+    - pattern-inside: |
+        $X $METHOD(...) {
+          ...
+          ScriptEngine $SE = ...;
+          ...
+        }
+  - pattern: |
+      $X $METHOD(...) {
+        ...
+        $SE.eval(...);
+        ...
+      }
+  - pattern-not: |
+      $X $METHOD(...) {
+        ...
+        $SE.eval("...");
+        ...
+      }
+  - pattern-not: |
+      $X $METHOD(...) {
+        ...
+        String $S = "...";
+        ...
+        $SE.eval($S);
+        ...
+      }
+- id: java.lang.security.audit.weak-ssl-context.weak-ssl-context
+  metadata:
+    cwe: 'CWE-326: Inadequate Encryption Strength'
+    owasp: 'A3: Sensitive Data Exposure'
+    source_rule_url: https://find-sec-bugs.github.io/bugs.htm#SSL_CONTEXT
+    references:
+    - https://tools.ietf.org/html/rfc7568
+    - https://tools.ietf.org/id/draft-ietf-tls-oldversions-deprecate-02.html
+  message: |
+    An insecure SSL context was detected. TLS versions 1.0, 1.1, and all SSL versions
+    are considered weak encryption and are deprecated.
+    Use SSLContext.getInstance("TLSv1.2") for the best security.
+  severity: WARNING
+  languages: [java]
+  patterns:
+  - pattern-not: SSLContext.getInstance("TLS1.3")
+  - pattern-not: SSLContext.getInstance("TLS1.2")
+  - pattern: SSLContext.getInstance("...")
+- id: java.lang.security.audit.xml-decoder.xml-decoder
+  message: |
+    XMLDecoder should not be used to parse untrusted data. Deserializing user input can lead to arbitrary code execution.
+  metadata:
+    cwe: 'CWE-611: Improper Restriction of XML External Entity Reference'
+    owasp: 'A4: XML External Entities (XXE)'
+    source-rule-url: https://find-sec-bugs.github.io/bugs.htm#XML_DECODER
+  severity: WARNING
+  languages: [java]
+  patterns:
+  - pattern: |
+      $X $METHOD(...) {
+        ...
+        new XMLDecoder(...);
+        ...
+      }
+  - pattern-not: |
+      $X $METHOD(...) {
+        ...
+        new XMLDecoder("...");
+        ...
+      }
+  - pattern-not: |-
+      $X $METHOD(...) {
+        ...
+        String $STR = "...";
+        ...
+        new XMLDecoder($STR);
+        ...
+      }
+- id: java.lang.security.audit.xssrequestwrapper-is-insecure.xssrequestwrapper-is-insecure
+  metadata:
+    owasp: 'A7: Cross-Site Scripting (XSS)'
+    cwe: "CWE-79: Improper Neutralization of Input During Web Page Generation ('Cross-site\
+      \ Scripting')"
+    source-rule-url: https://find-sec-bugs.github.io/bugs.htm#XSS_REQUEST_WRAPPER
+  message: |
+    It looks like you're using an implementation of XSSRequestWrapper from dzone.
+    (https://www.javacodegeeks.com/2012/07/anti-cross-site-scripting-xss-filter.html)
+    The XSS filtering in this code is not secure and can be bypassed by malicious actors.
+    It is recommended to use a stack that automatically escapes in your view or templates
+    instead of filtering yourself.
+  severity: WARNING
+  patterns:
+  - pattern-either:
+    - pattern: |
+        class XSSRequestWrapper extends HttpServletRequestWrapper {
+          ...
+        }
+    - pattern: |-
+        $P = $X.compile("</script>", $X.CASE_INSENSITIVE);
+        $V = $P.matcher(...).replaceAll("");
+  languages:
+  - java
+- id: java.lang.security.audit.cookie-missing-httponly.cookie-missing-httponly
+  metadata:
+    cwe: "CWE-1004: Sensitive Cookie Without 'HttpOnly' Flag"
+    owasp: 'A3: Sensitive Data Exposure'
+    source-rule-url: https://find-sec-bugs.github.io/bugs.htm#INSECURE_COOKIE
+  message: |
+    A cookie was detected without setting the 'HttpOnly' flag. The 'HttpOnly' flag
+    for cookies instructs the browser to forbid client-side scripts from reading the
+    cookie. Set the 'HttpOnly' flag by calling 'cookie.setHttpOnly(true);'
+  severity: WARNING
+  languages: [java]
+  patterns:
+  - pattern-not-inside: $COOKIE.setValue(""); ...
+  - pattern-either:
+    - pattern: $COOKIE.setHttpOnly(false);
+    - patterns:
+      - pattern-not-inside: $COOKIE.setHttpOnly(...); ...
+      - pattern: $RESPONSE.addCookie($COOKIE);
+- id: java.lang.security.audit.cookie-missing-samesite.cookie-missing-samesite
+  metadata:
+    cwe: 'CWE-352: Cross-Site Request Forgery (CSRF)'
+    owasp: 'A6: Security Misconfiguration'
+    references:
+    - https://stackoverflow.com/questions/42717210/samesite-cookie-in-java-application
+  message: |
+    Detected cookie without the SameSite attribute.
+  severity: WARNING
+  languages: [java]
+  patterns:
+  - pattern-not-inside: |
+      $RETURNTYPE $METHOD(..., HttpServletResponse $RESP, ...) {
+        ...
+        $RESP.setHeader("Set-Cookie", "=~/.*SameSite=.*/");
+        ...
+      }
+  - pattern-either:
+    - pattern: $RESP.addCookie(...);
+    - pattern: $RESP.setHeader("Set-Cookie", ...);
+- id: java.lang.security.audit.cookie-missing-secure-flag.cookie-missing-secure-flag
+  metadata:
+    cwe: "CWE-614: Sensitive Cookie in HTTPS Session Without 'Secure' Attribute"
+    owasp: 'A3: Sensitive Data Exposure'
+    source-rule-url: https://find-sec-bugs.github.io/bugs.htm#INSECURE_COOKIE
+  message: |
+    A cookie was detected without setting the 'secure' flag. The 'secure' flag
+    for cookies prevents the client from transmitting the cookie over insecure
+    channels such as HTTP. Set the 'secure' flag by calling '$COOKIE.setSecure(true);'
+  severity: WARNING
+  languages: [java]
+  patterns:
+  - pattern-not-inside: $COOKIE.setValue(""); ...
+  - pattern-either:
+    - pattern: (Cookie $COOKIE).setSecure(false);
+    - patterns:
+      - pattern-not-inside: (Cookie $COOKIE).setSecure(...); ...
+      - pattern: $RESPONSE.addCookie($COOKIE);
+
+- id: java.lang.security.audit.crypto.no-static-initialization-vector.no-static-initialization-vector
+  message: |
+    Initialization Vectors (IVs) for block ciphers should be randomly generated
+    each time they are used. Using a static IV means the same plaintext
+    encrypts to the same ciphertext every time, weakening the strength
+    of the encryption.
+  metadata:
+    cwe: 'CWE-329: Not Using a Random IV with CBC Mode'
+    owasp: 'A3: Sensitive Data Exposure'
+    source-rule-url: https://find-sec-bugs.github.io/bugs.htm#STATIC_IV
+    references:
+    - https://cwe.mitre.org/data/definitions/329.html
+  severity: WARNING
+  languages: [java]
+  patterns:
+  - pattern-either:
+    - pattern: |
+        byte[] $IV = {
+            ...
+        };
+        ...
+        new IvParameterSpec($IV, ...);
+    - pattern: |
+        class $CLASS {
+            byte[] $IV = {
+                ...
+            };
+            ...
+            $METHOD(...) {
+                ...
+                new IvParameterSpec($IV, ...);
+                ...
+            }
+        }
+- id: java.lang.security.audit.crypto.weak-hash.use-of-sha1
+  message: Use of weak cryptographic primitive SHA1
+  languages: [java]
+  severity: WARNING
+  metadata:
+    owasp: 'A9: Using Components with Known Vulnerabilities'
+    cwe: 'CWE-327: Use of a Broken or Risky Cryptographic Algorithm'
+    source-rule-url: https://find-sec-bugs.github.io/bugs.htm#WEAK_MESSAGE_DIGEST_SHA1
+  pattern-either:
+  - pattern: |
+      MessageDigest $VAR = $MD.getInstance("SHA1");
+  - pattern: |
+      $DU.getSha1Digest().digest(...)
+- id: java.lang.security.audit.crypto.weak-hash.use-of-md5
+  message: Use of weak cryptographic primitive MD5
+  languages: [java]
+  severity: WARNING
+  metadata:
+    owasp: 'A9: Using Components with Known Vulnerabilities'
+    cwe: 'CWE-327: Use of a Broken or Risky Cryptographic Algorithm'
+    source-rule-url: https://find-sec-bugs.github.io/bugs.htm#WEAK_MESSAGE_DIGEST_MD5
+  pattern-either:
+  - pattern: |
+      MessageDigest $VAR = $MD.getInstance("MD5");
+  - pattern: |
+      $DU.getMd5Digest().digest(...)
+- id: java.lang.security.audit.crypto.no-null-cipher.no-null-cipher
+  pattern: new NullCipher(...);
+  metadata:
+    cwe: 'CWE-327: Use of a Broken or Risky Cryptographic Algorithm'
+    owasp: 'A3: Sensitive Data Exposure'
+    source-rule-url: https://find-sec-bugs.github.io/bugs.htm#NULL_CIPHER
+  message: |
+    NullCipher was detected. This will not encrypt anything;
+    the cipher text will be the same as the plain text. Use
+    a valid, secure cipher: Cipher.getInstance("AES/CBC/PKCS7PADDING").
+    See https://owasp.org/www-community/Using_the_Java_Cryptographic_Extensions
+    for more information.
+  severity: WARNING
+  languages:
+  - java
+- id: java.lang.security.audit.crypto.ssl.avoid-implementing-custom-digests.avoid-implementing-custom-digests
+  metadata:
+    cwe: 'CWE-327: Use of a Broken or Risky Cryptographic Algorithm'
+    owasp: 'A3: Sensitive Data Exposure'
+    source-rule-url: https://find-sec-bugs.github.io/bugs.htm#CUSTOM_MESSAGE_DIGEST
+    references:
+    - https://cheatsheetseries.owasp.org/cheatsheets/Cryptographic_Storage_Cheat_Sheet.html#custom-algorithms
+  message: |
+    Cryptographic algorithms are notoriously difficult to get right. By implementing
+    a custom message digest, you risk introducing security issues into your program.
+    Use one of the many sound message digests already available to you:
+    MessageDigest sha256Digest = MessageDigest.getInstance("SHA256");
+  severity: WARNING
+  languages: [java]
+  pattern: |-
+    class $CLASS extends MessageDigest {
+      ...
+    }
+- id: java.lang.security.audit.crypto.ssl.defaulthttpclient-is-deprecated.defaulthttpclient-is-deprecated
+  metadata:
+    cwe: 'CWE-326: Inadequate Encryption Strength'
+    owasp: 'A3: Sensitive Data Exposure'
+    source-rule-url: https://find-sec-bugs.github.io/bugs.htm#DEFAULT_HTTP_CLIENT
+  message: |
+    DefaultHttpClient is deprecated. Further, it does not support connections
+    using TLS1.2, which makes using DefaultHttpClient a security hazard.
+    Use SystemDefaultHttpClient instead, which supports TLS1.2.
+  severity: WARNING
+  languages: [java]
+  pattern: new DefaultHttpClient(...);
+- id: java.lang.security.audit.crypto.ssl.insecure-hostname-verifier.insecure-hostname-verifier
+  message: |
+    Insecure HostnameVerifier implementation detected. This will accept
+    any SSL certificate with any hostname, which creates the possibility
+    for man-in-the-middle attacks.
+  metadata:
+    cwe: 'CWE-295: Improper Certificate Validation'
+    owasp: 'A6: Security Misconfiguration'
+    source-rule-url: https://find-sec-bugs.github.io/bugs.htm#WEAK_HOSTNAME_VERIFIER
+  severity: WARNING
+  languages: [java]
+  patterns:
+  - pattern-either:
+    - pattern: |
+        class $CLASS implements HostnameVerifier {
+          ...
+          public boolean verify(...) { return true; }
+        }
+    - pattern: |-
+        new HostnameVerifier(...){
+          public boolean verify(...) {
+            return true;
+          }
+        }
+- id: java.lang.security.audit.crypto.ssl.insecure-trust-manager.insecure-trust-manager
+  metadata:
+    cwe: 'CWE-295: Improper Certificate Validation'
+    owasp: 'A3: Sensitive Data Exposure'
+    source-rule-url: https://find-sec-bugs.github.io/bugs.htm#WEAK_TRUST_MANAGER
+    references:
+    - https://stackoverflow.com/questions/2642777/trusting-all-certificates-using-httpclient-over-https
+  message: |
+    Detected empty trust manager implementations. This is dangerous because it accepts any
+    certificate, enabling man-in-the-middle attacks. Consider using a KeyStore
+    and TrustManagerFactory isntead.
+    See https://stackoverflow.com/questions/2642777/trusting-all-certificates-using-httpclient-over-https
+    for more information.
+  severity: WARNING
+  languages: [java]
+  patterns:
+  - pattern-inside: |
+      class $CLASS implements X509TrustManager {
+        ...
+      }
+  - pattern-not: public void checkClientTrusted(...) { $SOMETHING; }
+  - pattern-not: public void checkServerTrusted(...) { $SOMETHING; }
+  - pattern-either:
+    - pattern: public void checkClientTrusted(...) {}
+    - pattern: public void checkServerTrusted(...) {}
+    - pattern: public X509Certificate[] getAcceptedIssuers(...) { return null; }
+- id: java.lang.correctness.eqeq.eqeq
+  patterns:
+  - pattern-not-inside: assert $X;
+  - pattern-not-inside: |
+      assert $X : $Y;
+  - pattern-either:
+    - pattern: $X == $X
+    - pattern: $X != $X
+  - pattern-not: 1 == 1
+  message: '`$X == $X` or `$X != $X` is a useless comparison unless the value compared
+    is a float or double. To test if `$X` is not-a-number, use `Double.isNaN($X)`.'
+  languages: [java]
+  severity: ERROR
