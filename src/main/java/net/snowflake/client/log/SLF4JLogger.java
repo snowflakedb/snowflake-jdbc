@@ -58,7 +58,21 @@ public class SLF4JLogger implements SFLogger {
     }
   }
 
-  public void debug(String msg, Object... arguments) {
+  // Please don't use this function except you know what you are doing
+  public void debugNoMask(String msg)
+  {
+    if (isLocationAwareLogger)
+    {
+      ((LocationAwareLogger) slf4jLogger).log(null, FQCN, LocationAwareLogger.DEBUG_INT, msg, null, null);
+    }
+    else
+    {
+      slf4jLogger.debug(msg);
+    }
+  }
+
+  public void debug(String msg, Object... arguments)
+  {
     // use this as format example for JDK14Logger.
     if (isDebugEnabled()) {
       FormattingTuple ft = MessageFormatter.arrayFormat(msg, evaluateLambdaArgs(arguments));

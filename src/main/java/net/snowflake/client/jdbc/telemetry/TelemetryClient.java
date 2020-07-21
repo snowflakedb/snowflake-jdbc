@@ -236,7 +236,7 @@ public class TelemetryClient implements Telemetry {
       String sessionToken = this.session.getSessionToken();
       String payload = logsToString(tmpList);
 
-      logger.debug("Payload of telemetry is : " + payload);
+      logger.debugNoMask("Payload of telemetry is : " + payload);
 
       HttpPost post = new HttpPost(this.telemetryUrl);
       post.setEntity(new StringEntity(payload));

@@ -48,6 +48,8 @@ public interface SFLogger {
 
   void debug(String msg);
 
+  void debugNoMask(String msg);
+
   /**
    * Logs message at DEBUG level.
    *
