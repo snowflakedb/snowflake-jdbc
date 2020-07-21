@@ -30,8 +30,8 @@ import net.snowflake.client.util.SecretDetector;
 public class JDK14Logger implements SFLogger {
   private Logger jdkLogger;
 
-  private Set<String> logMethods =
-      new HashSet<>(Arrays.asList("debug", "error", "info", "trace", "warn"));
+  private Set<String> logMethods = new HashSet<>(Arrays.asList(
+      "debug", "error", "info", "trace", "warn", "debugNoMask"));
 
   private static boolean isLegacyLoggerInit = false;
 
@@ -59,8 +59,15 @@ public class JDK14Logger implements SFLogger {
     return this.jdkLogger.isLoggable(Level.WARNING);
   }
 
-  public void debug(String msg) {
-    logInternal(Level.FINE, msg);
+  public void debug(String msg)
+  {
+    logInternal(Level.FINE, msg, true);
+  }
+
+  // Please don't use this function except you know what you are doing
+  public void debugNoMask(String msg)
+  {
+    logInternal(Level.FINE, msg, false);
   }
 
   public void debug(String msg, Object... arguments) {
@@ -71,8 +78,9 @@ public class JDK14Logger implements SFLogger {
     logInternal(Level.FINE, msg, t);
   }
 
-  public void error(String msg) {
-    logInternal(Level.SEVERE, msg);
+  public void error(String msg)
+  {
+    logInternal(Level.SEVERE, msg, true);
   }
 
   public void error(String msg, Object... arguments) {
@@ -83,8 +91,9 @@ public class JDK14Logger implements SFLogger {
     logInternal(Level.SEVERE, msg, t);
   }
 
-  public void info(String msg) {
-    logInternal(Level.INFO, msg);
+  public void info(String msg)
+  {
+    logInternal(Level.INFO, msg, true);
   }
 
   public void info(String msg, Object... arguments) {
@@ -95,8 +104,9 @@ public class JDK14Logger implements SFLogger {
     logInternal(Level.INFO, msg, t);
   }
 
-  public void trace(String msg) {
-    logInternal(Level.FINEST, msg);
+  public void trace(String msg)
+  {
+    logInternal(Level.FINEST, msg, true);
   }
 
   public void trace(String msg, Object... arguments) {
@@ -107,8 +117,9 @@ public class JDK14Logger implements SFLogger {
     logInternal(Level.FINEST, msg, t);
   }
 
-  public void warn(String msg) {
-    logInternal(Level.WARNING, msg);
+  public void warn(String msg)
+  {
+    logInternal(Level.WARNING, msg, true);
   }
 
   public void warn(String msg, Object... arguments) {
@@ -119,10 +130,12 @@ public class JDK14Logger implements SFLogger {
     logInternal(Level.WARNING, msg, t);
   }
 
-  private void logInternal(Level level, String msg) {
-    if (jdkLogger.isLoggable(level)) {
+  private void logInternal(Level level, String msg, boolean masked)
+  {
+    if (jdkLogger.isLoggable(level))
+    {
       String[] source = findSourceInStack();
-      jdkLogger.logp(level, source[0], source[1], SecretDetector.maskSecrets(msg));
+      jdkLogger.logp(level, source[0], source[1], masked == true ? SecretDetector.maskSecrets(msg) : msg);
     }
   }
 
