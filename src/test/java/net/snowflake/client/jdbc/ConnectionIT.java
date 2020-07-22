@@ -11,40 +11,19 @@ import net.snowflake.client.core.QueryStatus;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.common.core.SqlState;
 import org.apache.commons.codec.binary.Base64;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.TemporaryFolder;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.SecureRandom;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLClientInfoException;
-import java.sql.SQLException;
-import java.sql.SQLFeatureNotSupportedException;
-import java.sql.Statement;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.Map;
-import java.util.Properties;
+import java.security.*;
+import java.sql.Timestamp;
+import java.sql.*;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -54,10 +33,7 @@ import static net.snowflake.client.core.SessionUtil.CLIENT_SESSION_KEEP_ALIVE_HE
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 /**
  * Connection integration tests
@@ -119,6 +95,55 @@ public class ConnectionIT extends BaseJDBCTest
     con.close();
     assertTrue(con.isClosed());
     con.close(); // ensure no exception
+  }
+
+  @Test
+  public void testError() throws SQLException
+  {
+    Connection con = getConnection();
+    Statement statement = con.createStatement();
+    TimeZone.setDefault(TimeZone.getTimeZone("Europe/Madrid"));
+    ResultSet rs = statement.executeQuery("SELECT DATE '2019-04-06' as datefield, TIMESTAMP '2019-04-06 00:00:00' as timestampfield");
+
+    // We are using a calendar with UTC time zone to retrieve dates and timestamps
+    Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+
+    rs.next();
+
+    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    sdf.setTimeZone(cal.getTimeZone());
+
+
+    System.out.println("TEST 1: getDate and getTimestamp with calendar option");
+
+    Date d_01 = rs.getDate(1, cal);
+    Timestamp t_01 = rs.getTimestamp(2, cal);
+
+
+    System.out.println("getDate:(1, cal): " + sdf.format(d_01));
+    System.out.println("getTimestamp(2, cal): " + sdf.format(t_01));
+
+    System.out.println("TEST 2: getTimestamp for both columns with calendar option");
+
+
+    Timestamp d_02 = rs.getTimestamp(1, cal);
+    Timestamp t_02 = rs.getTimestamp(2, cal);
+
+    System.out.println("getTimestamp:(1, cal): " + sdf.format(d_02));
+    System.out.println("getTimestamp(2, cal): " + sdf.format(t_02));
+
+
+    System.out.println("TEST 3: getDate and getTimestamp and NO calendar option");
+
+
+    Date d_03 = rs.getDate(1);
+    Timestamp t_03 = rs.getTimestamp(2);
+
+    System.out.println("getDate:(1): " +  sdf.format(d_03));
+    System.out.println("getTimestamp(2): " + sdf.format(t_03));
+
+    statement.close();
+    con.close();
   }
 
   @Test
