@@ -469,7 +469,7 @@ public enum SnowflakeType
       default:
         throw new SnowflakeSQLLoggedException(
             SqlState.FEATURE_NOT_SUPPORTED,
-            ErrorCode.DATA_TYPE_NOT_SUPPORTED.getMessageCode(), null,
+            ErrorCode.DATA_TYPE_NOT_SUPPORTED.getMessageCode(), /* session = */ null,
             javaType);
     }
   }
