@@ -1,9 +1,10 @@
 package net.snowflake.client.jdbc;
 
+import net.snowflake.client.core.SFSession;
 import net.snowflake.common.core.SqlState;
 
-import java.nio.ByteBuffer;
 import java.nio.Buffer;
+import java.nio.ByteBuffer;
 
 /**
  * Copyright (c) 2018-2019 Snowflake Computing Inc. All rights reserved.
@@ -40,13 +41,13 @@ public class ResultJsonParserV2
   //  private int currentRow;
   private JsonResultChunk resultChunk;
 
-  public void startParsing(JsonResultChunk resultChunk) throws SnowflakeSQLException
+  public void startParsing(JsonResultChunk resultChunk, SFSession session) throws SnowflakeSQLException
   {
     this.resultChunk = resultChunk;
     if (state != State.UNINITIALIZED)
     {
       throw new SnowflakeSQLLoggedException(SqlState.INTERNAL_ERROR,
-                                      ErrorCode.INTERNAL_ERROR.getMessageCode(), null,
+                                      ErrorCode.INTERNAL_ERROR.getMessageCode(), session,
                                       "Json parser is already used!");
     }
     state = State.NEXT_ROW;

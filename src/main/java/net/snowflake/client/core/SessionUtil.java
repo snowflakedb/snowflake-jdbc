@@ -1111,7 +1111,7 @@ public class SessionUtil
                      loginInput.getAuthenticator(), postBackUrl);
         throw new SnowflakeSQLLoggedException(
             SqlState.SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION,
-            ErrorCode.IDP_INCORRECT_DESTINATION.getMessageCode(), null);
+            ErrorCode.IDP_INCORRECT_DESTINATION.getMessageCode(), /* session = */ null);
       }
     }
     catch (IOException | URISyntaxException ex)

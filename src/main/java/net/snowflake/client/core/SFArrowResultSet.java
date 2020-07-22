@@ -342,7 +342,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     ByteArrayInputStream inputStream = new ByteArrayInputStream(bytes);
 
     // create a result chunk
-    ArrowResultChunk resultChunk = new ArrowResultChunk("", 0, 0, 0, rootAllocator);
+    ArrowResultChunk resultChunk = new ArrowResultChunk("", 0, 0, 0, rootAllocator, session);
 
     try
     {

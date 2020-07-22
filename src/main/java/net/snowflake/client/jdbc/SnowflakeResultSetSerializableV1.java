@@ -171,6 +171,7 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
   List<MetaDataOfBinds> metaDataOfBinds = new ArrayList<>();
   QueryResultFormat queryResultFormat;
   boolean treatNTZAsUTC;
+  SFSession session;
 
   // Below fields are transient, they are generated from parameters
   transient TimeZone timeZone;
@@ -261,6 +262,7 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
     this.chunkDownloader = toCopy.chunkDownloader;
     this.rootAllocator = toCopy.rootAllocator;
     this.resultSetMetaData = toCopy.resultSetMetaData;
+    this.session = toCopy.session;
   }
 
   public void setRootAllocator(RootAllocator rootAllocator)
@@ -505,6 +507,8 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
     return treatNTZAsUTC;
   }
 
+  public SFSession getSession() { return session; }
+
   /**
    * A factory function to create SnowflakeResultSetSerializable object
    * from result JSON node.
@@ -553,6 +557,8 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
     resultSetSerializable.totalRowCountTruncated
         = rootNode.path("data").path("totalTruncated").asBoolean();
 
+    resultSetSerializable.session = sfSession;
+
     logger.debug("query id: {}", resultSetSerializable.queryId);
 
     Optional<QueryResultFormat> queryResultFormat = QueryResultFormat
@@ -574,7 +580,7 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
 
       SnowflakeColumnMetadata columnMetadata
           = SnowflakeUtil.extractColumnMetadata(
-          colNode, sfSession.isJdbcTreatDecimalAsInt());
+          colNode, sfSession.isJdbcTreatDecimalAsInt(), sfSession);
 
       resultSetSerializable.resultColumnMetadata.add(columnMetadata);
 

@@ -5,6 +5,7 @@
 package net.snowflake.client.jdbc;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import net.snowflake.client.core.SFSession;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SqlState;
@@ -27,12 +28,15 @@ public class JsonResultChunk extends SnowflakeResultChunk
 
   private int currentRow;
 
+  private SFSession session;
+
   public JsonResultChunk(String url, int rowCount, int colCount,
-                         int uncompressedSize)
+                         int uncompressedSize, SFSession session)
   {
     super(url, rowCount, colCount, uncompressedSize);
     data = new BlockResultChunkDataV2(computeCharactersNeeded(),
                                       rowCount, colCount);
+    this.session = session;
   }
 
   public static Object extractCell(JsonNode resultData, int rowIdx, int colIdx)
@@ -81,7 +85,7 @@ public class JsonResultChunk extends SnowflakeResultChunk
       throw new SnowflakeSQLLoggedException(
           SqlState.INTERNAL_ERROR,
           ErrorCode.INTERNAL_ERROR
-              .getMessageCode(), null,
+              .getMessageCode(), this.session,
           "Exception: expected " +
           colCount +
           " columns and received " +

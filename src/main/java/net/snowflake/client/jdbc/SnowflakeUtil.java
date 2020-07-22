@@ -6,6 +6,7 @@ package net.snowflake.client.jdbc;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import net.snowflake.client.core.HttpUtil;
+import net.snowflake.client.core.SFSession;
 import net.snowflake.client.core.SFSessionProperty;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -16,11 +17,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.http.Header;
 import org.apache.http.HttpResponse;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
-import java.io.StringWriter;
+import java.io.*;
 import java.lang.reflect.Field;
 import java.sql.Types;
 import java.util.*;
@@ -156,7 +153,7 @@ public class SnowflakeUtil
 
   static public SnowflakeColumnMetadata extractColumnMetadata(
       JsonNode colNode,
-      boolean jdbcTreatDecimalAsInt)
+      boolean jdbcTreatDecimalAsInt, SFSession session)
   throws SnowflakeSQLException
   {
     String colName = colNode.path("name").asText();
@@ -256,7 +253,7 @@ public class SnowflakeUtil
       default:
         throw new SnowflakeSQLLoggedException(SqlState.INTERNAL_ERROR,
                                         ErrorCode.INTERNAL_ERROR
-                                            .getMessageCode(), null,
+                                            .getMessageCode(), session,
                                         "Unknown column type: " + internalColTypeName);
     }
 

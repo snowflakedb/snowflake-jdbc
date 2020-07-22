@@ -187,7 +187,7 @@ public interface SnowflakeStorageClient
     {
       throw new SnowflakeSQLLoggedException(
           SqlState.INTERNAL_ERROR,
-          ErrorCode.INTERNAL_ERROR.getMessageCode(), null,
+          ErrorCode.INTERNAL_ERROR.getMessageCode(), /*session = */ null,
           "uploadWithPresignedUrlWithoutConnection" +
           " only works for pre-signed URL.");
     }
