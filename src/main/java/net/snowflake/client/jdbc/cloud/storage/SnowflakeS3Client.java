@@ -75,6 +75,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient
   private ClientConfiguration clientConfig = null;
   private String stageRegion = null;
   private String stageEndPoint = null; // FIPS endpoint, if needed
+  private SFSession session;
 
   // socket factory used by s3 client's http client.
   private static SSLConnectionSocketFactory s3ConnectionSocketFactory = null;
@@ -83,9 +84,10 @@ public class SnowflakeS3Client implements SnowflakeStorageClient
                            ClientConfiguration clientConfig,
                            RemoteStoreFileEncryptionMaterial encMat,
                            String stageRegion,
-                           String stageEndPoint)
+                           String stageEndPoint, SFSession session)
   throws SnowflakeSQLException
   {
+    this.session = session;
     setupSnowflakeS3Client(stageCredentials, clientConfig,
                            encMat, stageRegion, stageEndPoint);
   }
@@ -157,7 +159,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient
       else
       {
         throw new SnowflakeSQLLoggedException(SqlState.INTERNAL_ERROR,
-                                        ErrorCode.INTERNAL_ERROR.getMessageCode(), null,
+                                        ErrorCode.INTERNAL_ERROR.getMessageCode(), session,
                                         "unsupported key size", encryptionKeySize);
       }
     }

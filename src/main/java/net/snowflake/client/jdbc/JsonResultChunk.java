@@ -35,7 +35,7 @@ public class JsonResultChunk extends SnowflakeResultChunk
   {
     super(url, rowCount, colCount, uncompressedSize);
     data = new BlockResultChunkDataV2(computeCharactersNeeded(),
-                                      rowCount, colCount);
+                                      rowCount, colCount, session);
     this.session = session;
   }
 
@@ -112,7 +112,7 @@ public class JsonResultChunk extends SnowflakeResultChunk
         {
           throw new SnowflakeSQLLoggedException(
               SqlState.INTERNAL_ERROR,
-              ErrorCode.INTERNAL_ERROR.getMessageCode(), null,
+              ErrorCode.INTERNAL_ERROR.getMessageCode(), this.session,
               "unknown data type in JSON row " + cell.getClass().toString());
         }
       }
@@ -319,12 +319,13 @@ public class JsonResultChunk extends SnowflakeResultChunk
    */
   private static class BlockResultChunkDataV2 implements ResultChunkData
   {
-    BlockResultChunkDataV2(int totalLength, int rowCount, int colCount)
+    BlockResultChunkDataV2(int totalLength, int rowCount, int colCount, SFSession session)
     {
       this.blockCount = getBlock(totalLength - 1) + 1;
       this.rowCount = rowCount;
       this.colCount = colCount;
       this.metaBlockCount = getMetaBlock(this.rowCount * this.colCount - 1) + 1;
+      this.session = session;
     }
 
     @Override
@@ -422,7 +423,7 @@ public class JsonResultChunk extends SnowflakeResultChunk
       throw new SnowflakeSQLLoggedException(
           SqlState.INTERNAL_ERROR,
           ErrorCode.INTERNAL_ERROR
-              .getMessageCode(), null,
+              .getMessageCode(), this.session,
           "Unimplemented");
     }
 
@@ -544,6 +545,7 @@ public class JsonResultChunk extends SnowflakeResultChunk
     private static final int blockLengthBits = 23;
     private static int blockLength = 1 << blockLengthBits;
     private final ArrayList<byte[]> data = new ArrayList<>();
+    SFSession session;
 
     // blocks for storing offsets and lengths
     int metaBlockCount;

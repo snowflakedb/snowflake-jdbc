@@ -40,7 +40,7 @@ public class SFFixedViewResultSet extends SFJsonResultSet
     try
     {
       resultSetMetaData
-          = new SFResultSetMetaData(fixedView.describeColumns(), session,
+          = new SFResultSetMetaData(fixedView.describeColumns(session), session,
                                     timestampNTZFormatter,
                                     timestampLTZFormatter,
                                     timestampTZFormatter,

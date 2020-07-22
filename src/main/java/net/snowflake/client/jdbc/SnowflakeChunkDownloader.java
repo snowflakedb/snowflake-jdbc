@@ -260,7 +260,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
           break;
 
         default:
-          throw new SnowflakeSQLLoggedException(ErrorCode.INTERNAL_ERROR, null,
+          throw new SnowflakeSQLLoggedException(ErrorCode.INTERNAL_ERROR, this.session,
                                           "Invalid result format: " + queryResultFormat.name());
       }
 
@@ -569,7 +569,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
           }
 
           throw new SnowflakeSQLLoggedException(SqlState.INTERNAL_ERROR,
-                                          ErrorCode.INTERNAL_ERROR.getMessageCode(), null,
+                                          ErrorCode.INTERNAL_ERROR.getMessageCode(), this.session,
                                           currentChunk.getDownloadError());
         }
 
@@ -1126,11 +1126,11 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
                      Thread.currentThread().getId(), chunkIndex);
         while ((len = jsonInputStream.read(buf)) != -1)
         {
-          jp.continueParsing(ByteBuffer.wrap(buf, 0, len));
+          jp.continueParsing(ByteBuffer.wrap(buf, 0, len), session);
         }
         logger.debug("Thread {} finish reading inputstream for #chunk{}",
                      Thread.currentThread().getId(), chunkIndex);
-        jp.endParsing();
+        jp.endParsing(session);
       }
 
       private HttpResponse getResultChunk(String chunkUrl)

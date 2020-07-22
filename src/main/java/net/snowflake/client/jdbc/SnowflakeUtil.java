@@ -356,7 +356,7 @@ public class SnowflakeUtil
   }
 
   static List<SnowflakeColumnMetadata> describeFixedViewColumns(
-      Class<?> clazz) throws SnowflakeSQLException
+      Class<?> clazz, SFSession session) throws SnowflakeSQLException
   {
     Field[] columns
         = ClassUtil.getAnnotatedDeclaredFields(clazz, FixedViewColumn.class,
@@ -400,7 +400,7 @@ public class SnowflakeUtil
       {
         throw new SnowflakeSQLLoggedException(SqlState.INTERNAL_ERROR,
                                         ErrorCode.INTERNAL_ERROR
-                                            .getMessageCode(), null,
+                                            .getMessageCode(), session,
                                         "Unsupported column type: " + type
                                             .getName());
       }

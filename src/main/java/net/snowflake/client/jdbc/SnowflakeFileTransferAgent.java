@@ -19,8 +19,8 @@ import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
-import net.snowflake.common.core.RemoteStoreFileEncryptionMaterial;
 import net.snowflake.common.core.FileCompressionType;
+import net.snowflake.common.core.RemoteStoreFileEncryptionMaterial;
 import net.snowflake.common.core.SqlState;
 import net.snowflake.common.util.ClassUtil;
 import net.snowflake.common.util.FixedViewColumn;
@@ -912,7 +912,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
 
     if (stageInfo.getStageType() != StageInfo.StageType.LOCAL_FS)
     {
-      storageClient = storageFactory.createClient(stageInfo, parallel, null);
+      storageClient = storageFactory.createClient(stageInfo, parallel, null, connection);
     }
   }
 
@@ -1523,7 +1523,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
                 SRC_FILE_NAME_FOR_STREAM,
                 fileMetadataMap.get(SRC_FILE_NAME_FOR_STREAM),
                 (stageInfo.getStageType() == StageInfo.StageType.LOCAL_FS) ?
-                null : storageFactory.createClient(stageInfo, parallel, encMat),
+                null : storageFactory.createClient(stageInfo, parallel, encMat, connection),
                 connection,
                 command,
                 sourceStream,
@@ -1590,7 +1590,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
     RemoteStoreFileEncryptionMaterial encMat = srcFileToEncMat.get(fileName);
     String presignedUrl = srcFileToPresignedUrl.get(fileName);
 
-    return storageFactory.createClient(stageInfo, parallel, encMat)
+    return storageFactory.createClient(stageInfo, parallel, encMat, connection)
         .downloadToStream(connection, command, parallel, remoteLocation.location,
                           stageFilePath, stageInfo.getRegion(), presignedUrl);
   }
@@ -1626,7 +1626,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
             localLocation,
             fileMetadataMap,
             (stageInfo.getStageType() == StageInfo.StageType.LOCAL_FS) ?
-            null : storageFactory.createClient(stageInfo, parallel, encMat),
+            null : storageFactory.createClient(stageInfo, parallel, encMat, connection),
             connection,
             command,
             parallel,
@@ -1728,7 +1728,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
             srcFile,
             fileMetadata,
             (stageInfo.getStageType() == StageInfo.StageType.LOCAL_FS) ?
-            null : storageFactory.createClient(stageInfo, parallel, encryptionMaterial.get(0)),
+            null : storageFactory.createClient(stageInfo, parallel, encryptionMaterial.get(0), connection),
             connection, command,
             null, false,
             (parallel > 1 ? 1 : this.parallel), srcFileObj, encryptionMaterial.get(0)));
@@ -2145,7 +2145,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
           destFileName, (requireCompress ? "yes" : "no"), uploadSize);
 
       SnowflakeStorageClient initialClient =
-          storageFactory.createClient(stageInfo, 1, encMat);
+          storageFactory.createClient(stageInfo, 1, encMat, /*session = */ null);
       pushFileToRemoteStoreWithPresignedUrl(
           metadata.getStageInfo(),
           metadata.getPresignedUrlFileName(),
@@ -3136,14 +3136,14 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
    * @throws Exception failed to construct list
    */
   @Override
-  public List<SnowflakeColumnMetadata> describeColumns() throws Exception
+  public List<SnowflakeColumnMetadata> describeColumns(SFSession session) throws Exception
   {
     return SnowflakeUtil.describeFixedViewColumns(
         commandType == CommandType.UPLOAD ?
         (showEncryptionParameter ?
          UploadCommandEncryptionFacade.class : UploadCommandFacade.class) :
         (showEncryptionParameter ?
-         DownloadCommandEncryptionFacade.class : DownloadCommandFacade.class));
+         DownloadCommandEncryptionFacade.class : DownloadCommandFacade.class), session);
   }
 
   @Override

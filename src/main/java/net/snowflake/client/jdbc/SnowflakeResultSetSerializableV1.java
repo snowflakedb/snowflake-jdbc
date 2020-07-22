@@ -999,7 +999,7 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
 
     if (this.chunkFileMetadatas.isEmpty() && this.firstChunkStringData == null)
     {
-      throw new SnowflakeSQLLoggedException("The Result Set serializable is invalid.", null);
+      throw new SnowflakeSQLLoggedException("The Result Set serializable is invalid.", this.session);
     }
 
     // In the beginning, only the first data chunk is included in the result
@@ -1093,7 +1093,7 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
         break;
       }
       default:
-        throw new SnowflakeSQLLoggedException(ErrorCode.INTERNAL_ERROR, null,
+        throw new SnowflakeSQLLoggedException(ErrorCode.INTERNAL_ERROR, this.session,
                                         "Unsupported query result format: " +
                                         getQueryResultFormat().name());
     }
@@ -1152,7 +1152,7 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
     else
     {
       // This shouldn't happen
-      throw new SnowflakeSQLLoggedException(ErrorCode.INTERNAL_ERROR, null,
+      throw new SnowflakeSQLLoggedException(ErrorCode.INTERNAL_ERROR, this.session,
                                       "setFirstChunkRowCountForArrow() should only be called for Arrow.");
     }
   }

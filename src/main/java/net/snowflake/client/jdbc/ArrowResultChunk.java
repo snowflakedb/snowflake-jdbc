@@ -274,7 +274,7 @@ public class ArrowResultChunk extends SnowflakeResultChunk
               default:
                 throw new SnowflakeSQLLoggedException(
                     SqlState.INTERNAL_ERROR,
-                    ErrorCode.INTERNAL_ERROR.getMessageCode(), null,
+                    ErrorCode.INTERNAL_ERROR.getMessageCode(), session,
                     "Unexpected Arrow Field for ",
                     st.name());
             }
@@ -316,7 +316,7 @@ public class ArrowResultChunk extends SnowflakeResultChunk
             {
               throw new SnowflakeSQLLoggedException(
                   SqlState.INTERNAL_ERROR,
-                  ErrorCode.INTERNAL_ERROR.getMessageCode(), null,
+                  ErrorCode.INTERNAL_ERROR.getMessageCode(), session,
                   "Unexpected Arrow Field for ",
                   st.name());
             }
@@ -337,7 +337,7 @@ public class ArrowResultChunk extends SnowflakeResultChunk
             {
               throw new SnowflakeSQLLoggedException(
                   SqlState.INTERNAL_ERROR,
-                  ErrorCode.INTERNAL_ERROR.getMessageCode(), null,
+                  ErrorCode.INTERNAL_ERROR.getMessageCode(), session,
                   "Unexpected SnowflakeType ",
                   st.name());
             }
@@ -346,7 +346,7 @@ public class ArrowResultChunk extends SnowflakeResultChunk
           default:
             throw new SnowflakeSQLLoggedException(
                 SqlState.INTERNAL_ERROR,
-                ErrorCode.INTERNAL_ERROR.getMessageCode(), null,
+                ErrorCode.INTERNAL_ERROR.getMessageCode(), session,
                 "Unexpected Arrow Field for ",
                 st.name());
         }
@@ -355,7 +355,7 @@ public class ArrowResultChunk extends SnowflakeResultChunk
       {
         throw new SnowflakeSQLLoggedException(
             SqlState.INTERNAL_ERROR,
-            ErrorCode.INTERNAL_ERROR.getMessageCode(), null,
+            ErrorCode.INTERNAL_ERROR.getMessageCode(), session,
             "Unexpected Arrow Field for ",
             type.toString());
       }

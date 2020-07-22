@@ -71,19 +71,19 @@ public class ResultJsonParserV2
    * Check if the chunk has been parsed correctly.
    * After calling this it is safe to acquire the output data
    */
-  public void endParsing() throws SnowflakeSQLException
+  public void endParsing(SFSession session) throws SnowflakeSQLException
   {
     if (((Buffer) partialEscapedUnicode).position() > 0)
     {
       ((Buffer) partialEscapedUnicode).flip();
-      continueParsingInternal(partialEscapedUnicode, true);
+      continueParsingInternal(partialEscapedUnicode, true, session);
       ((Buffer) partialEscapedUnicode).clear();
     }
 
     if (state != State.ROW_FINISHED)
     {
       throw new SnowflakeSQLLoggedException(SqlState.INTERNAL_ERROR,
-                                      ErrorCode.INTERNAL_ERROR.getMessageCode(), null,
+                                      ErrorCode.INTERNAL_ERROR.getMessageCode(), session,
                                       "SFResultJsonParser2Failed: Chunk is truncated!");
     }
     currentColumn = 0;
@@ -95,7 +95,7 @@ public class ResultJsonParserV2
    *
    * @param in readOnly byteBuffer backed by an array (the data to be reed is from position to limit)
    */
-  public void continueParsing(ByteBuffer in) throws SnowflakeSQLException
+  public void continueParsing(ByteBuffer in, SFSession session) throws SnowflakeSQLException
   {
     if (state == State.UNINITIALIZED)
     {
@@ -122,10 +122,10 @@ public class ResultJsonParserV2
       }
       ByteBuffer toBeParsed = partialEscapedUnicode.duplicate();
       ((Buffer) toBeParsed).flip();
-      continueParsingInternal(toBeParsed, false);
+      continueParsingInternal(toBeParsed, false, session);
       ((Buffer) partialEscapedUnicode).clear();
     }
-    continueParsingInternal(in, false);
+    continueParsingInternal(in, false,  session);
   }
 
   private void resizePartialEscapedUnicode(int lenToCopy)
@@ -151,7 +151,7 @@ public class ResultJsonParserV2
    * @throws SnowflakeSQLException Will be thrown if parsing the chunk data
    *                               fails
    */
-  private void continueParsingInternal(ByteBuffer in, boolean lastData) throws SnowflakeSQLException
+  private void continueParsingInternal(ByteBuffer in, boolean lastData, SFSession session) throws SnowflakeSQLException
   {
     /*
      * This function parses a Snowflake result chunk json, copies the data
@@ -169,14 +169,14 @@ public class ResultJsonParserV2
       if (outputPosition >= outputDataLength)
       {
         throw new SnowflakeSQLLoggedException(SqlState.INTERNAL_ERROR,
-                                        ErrorCode.INTERNAL_ERROR.getMessageCode(), null,
+                                        ErrorCode.INTERNAL_ERROR.getMessageCode(), session,
                                         "column chunk longer than expected");
       }
       switch (state)
       {
         case UNINITIALIZED:
           throw new SnowflakeSQLLoggedException(SqlState.INTERNAL_ERROR,
-                                          ErrorCode.INTERNAL_ERROR.getMessageCode(), null,
+                                          ErrorCode.INTERNAL_ERROR.getMessageCode(), session,
                                           "parser is in inconsistent state");
         case NEXT_ROW:
           switch (in.get())
@@ -195,7 +195,7 @@ public class ResultJsonParserV2
             {
               throw new SnowflakeSQLLoggedException(
                   SqlState.INTERNAL_ERROR,
-                  ErrorCode.INTERNAL_ERROR.getMessageCode(), null,
+                  ErrorCode.INTERNAL_ERROR.getMessageCode(), session,
                   String.format("encountered unexpected character 0x%x between rows",
                                 in.get(((Buffer) in).position() - 1)));
             }
@@ -217,7 +217,7 @@ public class ResultJsonParserV2
             {
               throw new SnowflakeSQLLoggedException(
                   SqlState.INTERNAL_ERROR,
-                  ErrorCode.INTERNAL_ERROR.getMessageCode(), null,
+                  ErrorCode.INTERNAL_ERROR.getMessageCode(), session,
                   String.format("encountered unexpected character 0x%x after array",
                                 in.get(((Buffer) in).position() - 1)));
             }
@@ -380,7 +380,7 @@ public class ResultJsonParserV2
                 if (!parseCodepoint(in))
                 {
                   throw new SnowflakeSQLLoggedException(SqlState.INTERNAL_ERROR,
-                                                  ErrorCode.INTERNAL_ERROR.getMessageCode(), null,
+                                                  ErrorCode.INTERNAL_ERROR.getMessageCode(), session,
                                                   "SFResultJsonParser2Failed: invalid escaped unicode character");
 
                 }
@@ -405,7 +405,7 @@ public class ResultJsonParserV2
             default:
             {
               throw new SnowflakeSQLLoggedException(SqlState.INTERNAL_ERROR,
-                                              ErrorCode.INTERNAL_ERROR.getMessageCode(), null,
+                                              ErrorCode.INTERNAL_ERROR.getMessageCode(), session,
                                               "SFResultJsonParser2Failed: encountered unexpected escape character " +
                                               "0x%x", in.get(((Buffer) in).position() - 1));
 
@@ -421,7 +421,7 @@ public class ResultJsonParserV2
               if (currentColumn >= resultChunk.getColCount())
               {
                 throw new SnowflakeSQLLoggedException(SqlState.INTERNAL_ERROR,
-                                                ErrorCode.INTERNAL_ERROR.getMessageCode(), null,
+                                                ErrorCode.INTERNAL_ERROR.getMessageCode(), session,
                                                 "SFResultJsonParser2Failed: Too many columns!");
               }
               state = State.WAIT_FOR_VALUE;
@@ -441,7 +441,7 @@ public class ResultJsonParserV2
             {
               throw new SnowflakeSQLLoggedException(
                   SqlState.INTERNAL_ERROR,
-                  ErrorCode.INTERNAL_ERROR.getMessageCode(), null,
+                  ErrorCode.INTERNAL_ERROR.getMessageCode(), session,
                   String.format("encountered unexpected character 0x%x between columns",
                                 in.get(((Buffer) in).position() - 1)));
 

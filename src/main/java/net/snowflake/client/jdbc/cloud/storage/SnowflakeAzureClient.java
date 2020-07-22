@@ -51,6 +51,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient
   private final static SFLogger logger =
       SFLoggerFactory.getLogger(SnowflakeAzureClient.class);
   private OperationContext opContext = null;
+  private static SFSession session;
 
   private SnowflakeAzureClient()
   {
@@ -65,9 +66,11 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient
    *                required to decrypt/encrypt content in stage
    */
   public static SnowflakeAzureClient createSnowflakeAzureClient(StageInfo stage,
-                                                                RemoteStoreFileEncryptionMaterial encMat)
+                                                                RemoteStoreFileEncryptionMaterial encMat,
+                                                                SFSession sfSession)
   throws SnowflakeSQLException
   {
+    session = sfSession;
     SnowflakeAzureClient azureClient = new SnowflakeAzureClient();
     azureClient.setupAzureClient(stage, encMat);
 
@@ -122,7 +125,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient
             encryptionKeySize != 256)
         {
           throw new SnowflakeSQLLoggedException(SqlState.INTERNAL_ERROR,
-                                          ErrorCode.INTERNAL_ERROR.getMessageCode(), null,
+                                          ErrorCode.INTERNAL_ERROR.getMessageCode(), session,
                                           "unsupported key size", encryptionKeySize);
         }
       }
