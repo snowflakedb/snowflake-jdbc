@@ -1209,7 +1209,7 @@ public class SessionUtil
                      loginInput.getAuthenticator());
         throw new SnowflakeSQLLoggedException(
             SqlState.SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION,
-            ErrorCode.IDP_CONNECTION_ERROR.getMessageCode(), null);
+            ErrorCode.IDP_CONNECTION_ERROR.getMessageCode(), /* session = */ null);
       }
     }
     catch (MalformedURLException ex)

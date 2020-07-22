@@ -100,7 +100,7 @@ public class ResultJsonParserV2
     if (state == State.UNINITIALIZED)
     {
       throw new SnowflakeSQLLoggedException(SqlState.INTERNAL_ERROR,
-                                      ErrorCode.INTERNAL_ERROR.getMessageCode(), null,
+                                      ErrorCode.INTERNAL_ERROR.getMessageCode(), session,
                                       "Json parser hasn't been initialized!");
     }
 
