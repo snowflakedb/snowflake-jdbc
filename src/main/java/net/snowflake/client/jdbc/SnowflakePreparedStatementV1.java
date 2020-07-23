@@ -483,6 +483,10 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
     {
       setBigDecimal(parameterIndex, (BigDecimal) x);
     }
+    else if (x instanceof Byte)
+    {
+      setByte(parameterIndex, (Byte) x);
+    }
     else if (x instanceof Short)
     {
       setShort(parameterIndex, (Short) x);
