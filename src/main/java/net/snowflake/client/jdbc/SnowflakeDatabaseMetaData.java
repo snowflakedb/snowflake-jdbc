@@ -1930,7 +1930,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData
 
             SnowflakeColumnMetadata columnMetadata = SnowflakeUtil
                 .extractColumnMetadata(jsonNode,
-                                       session.isJdbcTreatDecimalAsInt());
+                                       session.isJdbcTreatDecimalAsInt(), session);
 
             logger.debug("nullable: {}",
                          columnMetadata.isNullable());

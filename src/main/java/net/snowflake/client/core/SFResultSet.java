@@ -6,11 +6,7 @@ package net.snowflake.client.core;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import net.snowflake.client.core.BasicEvent.QueryState;
-import net.snowflake.client.jdbc.ErrorCode;
-import net.snowflake.client.jdbc.JsonResultChunk;
-import net.snowflake.client.jdbc.SnowflakeResultChunk;
-import net.snowflake.client.jdbc.SnowflakeResultSetSerializableV1;
-import net.snowflake.client.jdbc.SnowflakeSQLException;
+import net.snowflake.client.jdbc.*;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
 import net.snowflake.client.jdbc.telemetry.TelemetryData;
 import net.snowflake.client.jdbc.telemetry.TelemetryField;
@@ -227,9 +223,9 @@ public class SFResultSet extends SFJsonResultSet
 
         if (nextChunk == null)
         {
-          throw new SnowflakeSQLException(
+          throw new SnowflakeSQLLoggedException(
               SqlState.INTERNAL_ERROR,
-              ErrorCode.INTERNAL_ERROR.getMessageCode(),
+              ErrorCode.INTERNAL_ERROR.getMessageCode(), session,
               "Expect chunk but got null for chunk index " + nextChunkIndex);
         }
 

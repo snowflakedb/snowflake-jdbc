@@ -103,15 +103,15 @@ public class SnowflakeDriver implements Driver
         }
         else
         {
-          throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
-                                          ErrorCode.INTERNAL_ERROR.getMessageCode(),
-                                          "Invalid Snowflake JDBC Version: " + implementVersion);
+          throw new SnowflakeSQLLoggedException(SqlState.INTERNAL_ERROR,
+                                                ErrorCode.INTERNAL_ERROR.getMessageCode(), /*session = */ null,
+                                                "Invalid Snowflake JDBC Version: " + implementVersion);
         }
       }
       else
       {
         throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
-                                        ErrorCode.INTERNAL_ERROR.getMessageCode(),
+                                        ErrorCode.INTERNAL_ERROR.getMessageCode(), /*session = */ null,
                                         "Snowflake JDBC Version is not set. " +
                                         "Ensure version.properties is included.");
       }
