@@ -6,7 +6,7 @@ package net.snowflake.client.core;
 import com.fasterxml.jackson.databind.JsonNode;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeResultSetSerializableV1;
-import net.snowflake.client.jdbc.SnowflakeSQLException;
+import net.snowflake.client.jdbc.SnowflakeSQLLoggedException;
 
 import java.sql.SQLException;
 
@@ -41,9 +41,9 @@ class SFResultSetFactory
       case JSON:
         return new SFResultSet(resultSetSerializable, statement, sortResult);
       default:
-        throw new SnowflakeSQLException(ErrorCode.INTERNAL_ERROR,
-                                        "Unsupported query result format: " +
-                                        resultSetSerializable.getQueryResultFormat().name());
+        throw new SnowflakeSQLLoggedException(ErrorCode.INTERNAL_ERROR, statement.getSession(),
+                                              "Unsupported query result format: " +
+                                              resultSetSerializable.getQueryResultFormat().name());
     }
   }
 }

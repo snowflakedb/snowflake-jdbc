@@ -4,6 +4,7 @@
 package net.snowflake.client.jdbc;
 
 import net.snowflake.client.category.TestCategoryResultSet;
+import net.snowflake.client.core.SFSession;
 import org.apache.commons.text.StringEscapeUtils;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -23,6 +24,7 @@ public class ResultJsonParserV2IT
   @Test
   public void simpleTest() throws SnowflakeSQLException
   {
+    SFSession session = null;
     String simple = "[\"1\", \"1.01\"]," +
                     "[null, null]," +
                     "[\"2\", \"0.13\"]," +
@@ -32,11 +34,11 @@ public class ResultJsonParserV2IT
                     "[\"\\ud841\\udf0e\", \"\\ud841\\udf31\\ud841\\udf79\"]," +
                     "[\"{\\\"date\\\" : \\\"2017-04-28\\\",\\\"dealership\\\" : \\\"Tindel Toyota\\\"}\", \"[1,2,3,4,5]\"]";
     byte[] data = simple.getBytes(StandardCharsets.UTF_8);
-    JsonResultChunk chunk = new JsonResultChunk("", 8, 2, data.length);
+    JsonResultChunk chunk = new JsonResultChunk("", 8, 2, data.length, session);
     ResultJsonParserV2 jp = new ResultJsonParserV2();
-    jp.startParsing(chunk);
-    jp.continueParsing(ByteBuffer.wrap(data));
-    jp.endParsing();
+    jp.startParsing(chunk, session);
+    jp.continueParsing(ByteBuffer.wrap(data), session);
+    jp.endParsing(session);
     assertEquals("1", chunk.getCell(0, 0).toString());
     assertEquals("1.01", chunk.getCell(0, 1).toString());
     assertNull(chunk.getCell(1, 0));
@@ -58,6 +60,7 @@ public class ResultJsonParserV2IT
   @Test
   public void simpleStreamingTest() throws SnowflakeSQLException
   {
+    SFSession session = null;
     String simple = "[\"1\", \"1.01\"]," +
                     "[null, null]," +
                     "[\"2\", \"0.13\"]," +
@@ -67,22 +70,22 @@ public class ResultJsonParserV2IT
                     "[\"\\ud841\\udf0e\", \"\\ud841\\udf31\\ud841\\udf79\"]," +
                     "[\"{\\\"date\\\" : \\\"2017-04-28\\\",\\\"dealership\\\" : \\\"Tindel Toyota\\\"}\", \"[1,2,3,4,5]\"]";
     byte[] data = simple.getBytes(StandardCharsets.UTF_8);
-    JsonResultChunk chunk = new JsonResultChunk("", 8, 2, data.length);
+    JsonResultChunk chunk = new JsonResultChunk("", 8, 2, data.length, session);
     ResultJsonParserV2 jp = new ResultJsonParserV2();
-    jp.startParsing(chunk);
+    jp.startParsing(chunk, session);
     int len = 2;
     for (int i = 0; i < data.length; i += len)
     {
       if (i + len < data.length)
       {
-        jp.continueParsing(ByteBuffer.wrap(data, i, len));
+        jp.continueParsing(ByteBuffer.wrap(data, i, len), session);
       }
       else
       {
-        jp.continueParsing(ByteBuffer.wrap(data, i, data.length - i));
+        jp.continueParsing(ByteBuffer.wrap(data, i, data.length - i), session);
       }
     }
-    jp.endParsing();
+    jp.endParsing(session);
     assertEquals("1", chunk.getCell(0, 0).toString());
     assertEquals("1.01", chunk.getCell(0, 1).toString());
     assertNull(chunk.getCell(1, 0));
@@ -110,6 +113,7 @@ public class ResultJsonParserV2IT
   @Test
   public void LargestColumnTest() throws SnowflakeSQLException
   {
+    SFSession session = null;
     StringBuilder sb = new StringBuilder();
     StringBuilder a = new StringBuilder();
     for (int i = 0; i < 16 * 1024 * 1024; i++)
@@ -136,11 +140,11 @@ public class ResultJsonParserV2IT
 
 
     byte[] data = sb.toString().getBytes(StandardCharsets.UTF_8);
-    JsonResultChunk chunk = new JsonResultChunk("", 2, 2, data.length);
+    JsonResultChunk chunk = new JsonResultChunk("", 2, 2, data.length, session);
     ResultJsonParserV2 jp = new ResultJsonParserV2();
-    jp.startParsing(chunk);
-    jp.continueParsing(ByteBuffer.wrap(data));
-    jp.endParsing();
+    jp.startParsing(chunk, session);
+    jp.continueParsing(ByteBuffer.wrap(data), session);
+    jp.endParsing(session);
     assertEquals(a.toString(), chunk.getCell(0, 0).toString());
     assertEquals(b.toString(), chunk.getCell(0, 1).toString());
     assertEquals(c.toString(), chunk.getCell(1, 0).toString());

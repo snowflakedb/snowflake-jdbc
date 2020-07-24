@@ -174,6 +174,7 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
 
   // Below fields are transient, they are generated from parameters
   transient TimeZone timeZone;
+  transient Optional<SFSession> possibleSession = Optional.empty();
   transient boolean honorClientTZForTimestampNTZ;
   transient SnowflakeDateTimeFormat timestampNTZFormatter;
   transient SnowflakeDateTimeFormat timestampLTZFormatter;
@@ -244,6 +245,7 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
     this.sendResultTime = toCopy.sendResultTime;
     this.metaDataOfBinds = toCopy.metaDataOfBinds;
     this.queryResultFormat = toCopy.queryResultFormat;
+    this.possibleSession = toCopy.possibleSession;
 
     // Below fields are transient, they are generated from parameters
     this.timeZone = toCopy.timeZone;
@@ -505,6 +507,11 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
     return treatNTZAsUTC;
   }
 
+  public Optional<SFSession> getSession()
+  {
+    return possibleSession;
+  }
+
   /**
    * A factory function to create SnowflakeResultSetSerializable object
    * from result JSON node.
@@ -553,6 +560,8 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
     resultSetSerializable.totalRowCountTruncated
         = rootNode.path("data").path("totalTruncated").asBoolean();
 
+    resultSetSerializable.possibleSession = Optional.ofNullable(sfSession);
+
     logger.debug("query id: {}", resultSetSerializable.queryId);
 
     Optional<QueryResultFormat> queryResultFormat = QueryResultFormat
@@ -574,7 +583,7 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
 
       SnowflakeColumnMetadata columnMetadata
           = SnowflakeUtil.extractColumnMetadata(
-          colNode, sfSession.isJdbcTreatDecimalAsInt());
+          colNode, sfSession.isJdbcTreatDecimalAsInt(), sfSession);
 
       resultSetSerializable.resultColumnMetadata.add(columnMetadata);
 
@@ -993,7 +1002,8 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
 
     if (this.chunkFileMetadatas.isEmpty() && this.firstChunkStringData == null)
     {
-      throw new SQLException("The Result Set serializable is invalid.");
+      throw new SnowflakeSQLLoggedException("The Result Set serializable is invalid.",
+                                            this.possibleSession.orElse(/* session = */null));
     }
 
     // In the beginning, only the first data chunk is included in the result
@@ -1087,9 +1097,10 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
         break;
       }
       default:
-        throw new SnowflakeSQLException(ErrorCode.INTERNAL_ERROR,
-                                        "Unsupported query result format: " +
-                                        getQueryResultFormat().name());
+        throw new SnowflakeSQLLoggedException(ErrorCode.INTERNAL_ERROR,
+                                              this.possibleSession.orElse(/*session = */null),
+                                              "Unsupported query result format: " +
+                                              getQueryResultFormat().name());
     }
 
     // Create result set
@@ -1146,8 +1157,9 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
     else
     {
       // This shouldn't happen
-      throw new SnowflakeSQLException(ErrorCode.INTERNAL_ERROR,
-                                      "setFirstChunkRowCountForArrow() should only be called for Arrow.");
+      throw new SnowflakeSQLLoggedException(ErrorCode.INTERNAL_ERROR,
+                                            this.possibleSession.orElse( /*session = */ null),
+                                            "setFirstChunkRowCountForArrow() should only be called for Arrow.");
     }
   }
 

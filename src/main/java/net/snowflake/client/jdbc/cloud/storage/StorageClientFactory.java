@@ -3,10 +3,11 @@
  */
 package net.snowflake.client.jdbc.cloud.storage;
 
-import net.snowflake.client.core.HttpUtil;
-import net.snowflake.client.log.SFLogger;
 import com.amazonaws.ClientConfiguration;
+import net.snowflake.client.core.HttpUtil;
+import net.snowflake.client.core.SFSession;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
+import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.RemoteStoreFileEncryptionMaterial;
 
@@ -56,7 +57,7 @@ public class StorageClientFactory
    */
   public SnowflakeStorageClient createClient(StageInfo stage,
                                              int parallel,
-                                             RemoteStoreFileEncryptionMaterial encMat)
+                                             RemoteStoreFileEncryptionMaterial encMat, SFSession session)
   throws SnowflakeSQLException
   {
     logger.debug("createClient client type={}", stage.getStageType().name());
@@ -64,10 +65,10 @@ public class StorageClientFactory
     switch (stage.getStageType())
     {
       case S3:
-        return createS3Client(stage.getCredentials(), parallel, encMat, stage.getRegion(), stage.getEndPoint());
+        return createS3Client(stage.getCredentials(), parallel, encMat, stage.getRegion(), stage.getEndPoint(), session);
 
       case AZURE:
-        return createAzureClient(stage, encMat);
+        return createAzureClient(stage, encMat, session);
 
       case GCS:
         return createGCSClient(stage, encMat);
@@ -97,7 +98,7 @@ public class StorageClientFactory
                                            int parallel,
                                            RemoteStoreFileEncryptionMaterial encMat,
                                            String stageRegion,
-                                           String stageEndPoint)
+                                           String stageEndPoint, SFSession session)
   throws SnowflakeSQLException
   {
     final int S3_TRANSFER_MAX_RETRIES = 3;
@@ -120,7 +121,7 @@ public class StorageClientFactory
 
     try
     {
-      s3Client = new SnowflakeS3Client(stageCredentials, clientConfig, encMat, stageRegion, stageEndPoint);
+      s3Client = new SnowflakeS3Client(stageCredentials, clientConfig, encMat, stageRegion, stageEndPoint, session);
     }
     catch (Exception ex)
     {
@@ -165,12 +166,13 @@ public class StorageClientFactory
    * Creates a SnowflakeAzureClientObject which encapsulates
    * the Azure Storage client
    *
-   * @param stage  Stage information
-   * @param encMat encryption material for the client
+   * @param stage   Stage information
+   * @param encMat  encryption material for the client
+   * @param session
    * @return the SnowflakeS3Client  instance created
    */
   private SnowflakeAzureClient createAzureClient(StageInfo stage,
-                                                 RemoteStoreFileEncryptionMaterial encMat)
+                                                 RemoteStoreFileEncryptionMaterial encMat, SFSession session)
   throws SnowflakeSQLException
   {
     logger.debug("createAzureClient encryption={}", (encMat == null ? "no" : "yes"));
@@ -181,7 +183,7 @@ public class StorageClientFactory
 
     try
     {
-      azureClient = SnowflakeAzureClient.createSnowflakeAzureClient(stage, encMat);
+      azureClient = SnowflakeAzureClient.createSnowflakeAzureClient(stage, encMat, session);
     }
     catch (Exception ex)
     {

@@ -287,7 +287,7 @@ public class SFArrowResultSetIT
     {
       if (currentFileIndex < resultFileNames.size())
       {
-        ArrowResultChunk resultChunk = new ArrowResultChunk("", 0, 0, 0, rootAllocator);
+        ArrowResultChunk resultChunk = new ArrowResultChunk("", 0, 0, 0, rootAllocator, null);
         try
         {
           InputStream is = new FileInputStream(

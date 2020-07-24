@@ -5,16 +5,12 @@ package net.snowflake.client.jdbc.cloud.storage;
 
 import net.snowflake.client.core.OCSPMode;
 import net.snowflake.client.core.SFSession;
-import net.snowflake.client.jdbc.ErrorCode;
-import net.snowflake.client.jdbc.FileBackedOutputStream;
-import net.snowflake.client.jdbc.SnowflakeSQLException;
+import net.snowflake.client.jdbc.*;
+import net.snowflake.common.core.SqlState;
 
 import java.io.File;
 import java.io.InputStream;
 import java.util.Map;
-
-import net.snowflake.client.jdbc.MatDesc;
-import net.snowflake.common.core.SqlState;
 
 /**
  * Interface for storage client provider implementations
@@ -189,9 +185,9 @@ public interface SnowflakeStorageClient
   {
     if (!requirePresignedUrl())
     {
-      throw new SnowflakeSQLException(
+      throw new SnowflakeSQLLoggedException(
           SqlState.INTERNAL_ERROR,
-          ErrorCode.INTERNAL_ERROR.getMessageCode(),
+          ErrorCode.INTERNAL_ERROR.getMessageCode(), /*session = */ null,
           "uploadWithPresignedUrlWithoutConnection" +
           " only works for pre-signed URL.");
     }

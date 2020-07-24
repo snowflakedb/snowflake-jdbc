@@ -5,6 +5,7 @@
 package net.snowflake.client.jdbc;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import net.snowflake.client.core.SFSession;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SqlState;
@@ -27,12 +28,15 @@ public class JsonResultChunk extends SnowflakeResultChunk
 
   private int currentRow;
 
+  private SFSession session;
+
   public JsonResultChunk(String url, int rowCount, int colCount,
-                         int uncompressedSize)
+                         int uncompressedSize, SFSession session)
   {
     super(url, rowCount, colCount, uncompressedSize);
     data = new BlockResultChunkDataV2(computeCharactersNeeded(),
-                                      rowCount, colCount);
+                                      rowCount, colCount, session);
+    this.session = session;
   }
 
   public static Object extractCell(JsonNode resultData, int rowIdx, int colIdx)
@@ -78,10 +82,10 @@ public class JsonResultChunk extends SnowflakeResultChunk
   {
     if (row.length != colCount)
     {
-      throw new SnowflakeSQLException(
+      throw new SnowflakeSQLLoggedException(
           SqlState.INTERNAL_ERROR,
           ErrorCode.INTERNAL_ERROR
-              .getMessageCode(),
+              .getMessageCode(), this.session,
           "Exception: expected " +
           colCount +
           " columns and received " +
@@ -106,9 +110,9 @@ public class JsonResultChunk extends SnowflakeResultChunk
         }
         else
         {
-          throw new SnowflakeSQLException(
+          throw new SnowflakeSQLLoggedException(
               SqlState.INTERNAL_ERROR,
-              ErrorCode.INTERNAL_ERROR.getMessageCode(),
+              ErrorCode.INTERNAL_ERROR.getMessageCode(), this.session,
               "unknown data type in JSON row " + cell.getClass().toString());
         }
       }
@@ -315,12 +319,13 @@ public class JsonResultChunk extends SnowflakeResultChunk
    */
   private static class BlockResultChunkDataV2 implements ResultChunkData
   {
-    BlockResultChunkDataV2(int totalLength, int rowCount, int colCount)
+    BlockResultChunkDataV2(int totalLength, int rowCount, int colCount, SFSession session)
     {
       this.blockCount = getBlock(totalLength - 1) + 1;
       this.rowCount = rowCount;
       this.colCount = colCount;
       this.metaBlockCount = getMetaBlock(this.rowCount * this.colCount - 1) + 1;
+      this.session = session;
     }
 
     @Override
@@ -415,10 +420,10 @@ public class JsonResultChunk extends SnowflakeResultChunk
     @Override
     public void add(String string) throws SnowflakeSQLException
     {
-      throw new SnowflakeSQLException(
+      throw new SnowflakeSQLLoggedException(
           SqlState.INTERNAL_ERROR,
           ErrorCode.INTERNAL_ERROR
-              .getMessageCode(),
+              .getMessageCode(), this.session,
           "Unimplemented");
     }
 
@@ -540,6 +545,7 @@ public class JsonResultChunk extends SnowflakeResultChunk
     private static final int blockLengthBits = 23;
     private static int blockLength = 1 << blockLengthBits;
     private final ArrayList<byte[]> data = new ArrayList<>();
+    SFSession session;
 
     // blocks for storing offsets and lengths
     int metaBlockCount;

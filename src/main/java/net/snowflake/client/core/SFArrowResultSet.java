@@ -4,11 +4,8 @@
 package net.snowflake.client.core;
 
 import net.snowflake.client.core.arrow.ArrowVectorConverter;
-import net.snowflake.client.jdbc.ArrowResultChunk;
+import net.snowflake.client.jdbc.*;
 import net.snowflake.client.jdbc.ArrowResultChunk.ArrowChunkIterator;
-import net.snowflake.client.jdbc.ErrorCode;
-import net.snowflake.client.jdbc.SnowflakeResultSetSerializableV1;
-import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
 import net.snowflake.client.jdbc.telemetry.TelemetryData;
 import net.snowflake.client.jdbc.telemetry.TelemetryField;
@@ -277,9 +274,9 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
 
           if (nextChunk == null)
           {
-            throw new SnowflakeSQLException(
+            throw new SnowflakeSQLLoggedException(
                 SqlState.INTERNAL_ERROR,
-                ErrorCode.INTERNAL_ERROR.getMessageCode(),
+                ErrorCode.INTERNAL_ERROR.getMessageCode(), session,
                 "Expect chunk but got null for chunk index " + nextChunkIndex);
           }
 
@@ -345,7 +342,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     ByteArrayInputStream inputStream = new ByteArrayInputStream(bytes);
 
     // create a result chunk
-    ArrowResultChunk resultChunk = new ArrowResultChunk("", 0, 0, 0, rootAllocator);
+    ArrowResultChunk resultChunk = new ArrowResultChunk("", 0, 0, 0, rootAllocator, session);
 
     try
     {

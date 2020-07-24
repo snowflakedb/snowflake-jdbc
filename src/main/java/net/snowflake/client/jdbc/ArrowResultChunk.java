@@ -5,47 +5,13 @@ package net.snowflake.client.jdbc;
 
 import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.SFException;
-import net.snowflake.client.core.arrow.ArrowResultChunkIndexSorter;
-import net.snowflake.client.core.arrow.ArrowVectorConverter;
-import net.snowflake.client.core.arrow.BigIntToFixedConverter;
-import net.snowflake.client.core.arrow.BigIntToScaledFixedConverter;
-import net.snowflake.client.core.arrow.BigIntToTimeConverter;
-import net.snowflake.client.core.arrow.BigIntToTimestampLTZConverter;
-import net.snowflake.client.core.arrow.BigIntToTimestampNTZConverter;
-import net.snowflake.client.core.arrow.BitToBooleanConverter;
-import net.snowflake.client.core.arrow.DateConverter;
-import net.snowflake.client.core.arrow.DecimalToScaledFixedConverter;
-import net.snowflake.client.core.arrow.DoubleToRealConverter;
-import net.snowflake.client.core.arrow.IntToFixedConverter;
-import net.snowflake.client.core.arrow.IntToScaledFixedConverter;
-import net.snowflake.client.core.arrow.IntToTimeConverter;
-import net.snowflake.client.core.arrow.SmallIntToFixedConverter;
-import net.snowflake.client.core.arrow.SmallIntToScaledFixedConverter;
-import net.snowflake.client.core.arrow.ThreeFieldStructToTimestampTZConverter;
-import net.snowflake.client.core.arrow.TinyIntToFixedConverter;
-import net.snowflake.client.core.arrow.TinyIntToScaledFixedConverter;
-import net.snowflake.client.core.arrow.TwoFieldStructToTimestampLTZConverter;
-import net.snowflake.client.core.arrow.TwoFieldStructToTimestampNTZConverter;
-import net.snowflake.client.core.arrow.TwoFieldStructToTimestampTZConverter;
-import net.snowflake.client.core.arrow.VarBinaryToBinaryConverter;
-import net.snowflake.client.core.arrow.VarCharConverter;
+import net.snowflake.client.core.SFSession;
+import net.snowflake.client.core.arrow.*;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SqlState;
 import org.apache.arrow.memory.RootAllocator;
-import org.apache.arrow.vector.BigIntVector;
-import org.apache.arrow.vector.BitVector;
-import org.apache.arrow.vector.DateDayVector;
-import org.apache.arrow.vector.DecimalVector;
-import org.apache.arrow.vector.FieldVector;
-import org.apache.arrow.vector.Float8Vector;
-import org.apache.arrow.vector.IntVector;
-import org.apache.arrow.vector.SmallIntVector;
-import org.apache.arrow.vector.TinyIntVector;
-import org.apache.arrow.vector.ValueVector;
-import org.apache.arrow.vector.VarBinaryVector;
-import org.apache.arrow.vector.VarCharVector;
-import org.apache.arrow.vector.VectorSchemaRoot;
+import org.apache.arrow.vector.*;
 import org.apache.arrow.vector.complex.StructVector;
 import org.apache.arrow.vector.ipc.ArrowStreamReader;
 import org.apache.arrow.vector.types.Types;
@@ -82,13 +48,15 @@ public class ArrowResultChunk extends SnowflakeResultChunk
   private boolean enableSortFirstResultChunk;
   private IntVector firstResultChunkSortedIndices;
   private VectorSchemaRoot root;
+  private static SFSession session;
 
   public ArrowResultChunk(String url, int rowCount, int colCount,
-                          int uncompressedSize, RootAllocator rootAllocator)
+                          int uncompressedSize, RootAllocator rootAllocator, SFSession session)
   {
     super(url, rowCount, colCount, uncompressedSize);
     this.batchOfVectors = new ArrayList<>();
     this.rootAllocator = rootAllocator;
+    this.session = session;
   }
 
   private void addBatchData(List<ValueVector> batch)
@@ -304,9 +272,9 @@ public class ArrowResultChunk extends SnowflakeResultChunk
                 converters.add(new BigIntToTimeConverter(vector, i, context));
                 break;
               default:
-                throw new SnowflakeSQLException(
+                throw new SnowflakeSQLLoggedException(
                     SqlState.INTERNAL_ERROR,
-                    ErrorCode.INTERNAL_ERROR.getMessageCode(),
+                    ErrorCode.INTERNAL_ERROR.getMessageCode(), session,
                     "Unexpected Arrow Field for ",
                     st.name());
             }
@@ -325,9 +293,9 @@ public class ArrowResultChunk extends SnowflakeResultChunk
             }
             else
             {
-              throw new SnowflakeSQLException(
+              throw new SnowflakeSQLLoggedException(
                   SqlState.INTERNAL_ERROR,
-                  ErrorCode.INTERNAL_ERROR.getMessageCode(),
+                  ErrorCode.INTERNAL_ERROR.getMessageCode(), session,
                   "Unexpected Arrow Field for ",
                   st.name());
             }
@@ -346,9 +314,9 @@ public class ArrowResultChunk extends SnowflakeResultChunk
             }
             else
             {
-              throw new SnowflakeSQLException(
+              throw new SnowflakeSQLLoggedException(
                   SqlState.INTERNAL_ERROR,
-                  ErrorCode.INTERNAL_ERROR.getMessageCode(),
+                  ErrorCode.INTERNAL_ERROR.getMessageCode(), session,
                   "Unexpected Arrow Field for ",
                   st.name());
             }
@@ -367,27 +335,27 @@ public class ArrowResultChunk extends SnowflakeResultChunk
             }
             else
             {
-              throw new SnowflakeSQLException(
+              throw new SnowflakeSQLLoggedException(
                   SqlState.INTERNAL_ERROR,
-                  ErrorCode.INTERNAL_ERROR.getMessageCode(),
+                  ErrorCode.INTERNAL_ERROR.getMessageCode(), session,
                   "Unexpected SnowflakeType ",
                   st.name());
             }
             break;
 
           default:
-            throw new SnowflakeSQLException(
+            throw new SnowflakeSQLLoggedException(
                 SqlState.INTERNAL_ERROR,
-                ErrorCode.INTERNAL_ERROR.getMessageCode(),
+                ErrorCode.INTERNAL_ERROR.getMessageCode(), session,
                 "Unexpected Arrow Field for ",
                 st.name());
         }
       }
       else
       {
-        throw new SnowflakeSQLException(
+        throw new SnowflakeSQLLoggedException(
             SqlState.INTERNAL_ERROR,
-            ErrorCode.INTERNAL_ERROR.getMessageCode(),
+            ErrorCode.INTERNAL_ERROR.getMessageCode(), session,
             "Unexpected Arrow Field for ",
             type.toString());
       }
@@ -888,7 +856,7 @@ public class ArrowResultChunk extends SnowflakeResultChunk
   {
     EmptyArrowResultChunk()
     {
-      super("", 0, 0, 0, null);
+      super("", 0, 0, 0, null, null);
     }
 
     @Override

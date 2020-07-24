@@ -7,13 +7,7 @@ package net.snowflake.client.jdbc;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.databind.MappingJsonFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import net.snowflake.client.core.ChunkDownloader;
-import net.snowflake.client.core.DownloaderMetrics;
-import net.snowflake.client.core.HttpUtil;
-import net.snowflake.client.core.OCSPMode;
-import net.snowflake.client.core.ObjectMapperFactory;
-import net.snowflake.client.core.QueryResultFormat;
-import net.snowflake.client.core.SFArrowResultSet;
+import net.snowflake.client.core.*;
 import net.snowflake.client.jdbc.SnowflakeResultChunk.DownloadState;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.client.log.ArgSupplier;
@@ -87,6 +81,9 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
   private static final long SHUTDOWN_TIME = 3;
   private final SnowflakeConnectString snowflakeConnectionString;
   private final OCSPMode ocspMode;
+
+  // Session object, used solely for throwing exceptions. CAUTION: MAY BE NULL!
+  private SFSession session;
 
   private JsonResultChunk.ResultChunkDataCache chunkDataCache
       = new JsonResultChunk.ResultChunkDataCache();
@@ -228,15 +225,19 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
     this.queryResultFormat = resultSetSerializable.getQueryResultFormat();
     logger.debug("qrmk = {}", this.qrmk);
     this.chunkHeadersMap = resultSetSerializable.getChunkHeadersMap();
+    // session may be null. Its only use is for in-band telemetry in this class
+    this.session = (resultSetSerializable.getSession() != null) ?
+                   resultSetSerializable.getSession().orElse(null) : null;
+
 
     // create the chunks array
     this.chunks = new ArrayList<>(resultSetSerializable.getChunkFileCount());
 
     if (resultSetSerializable.getChunkFileCount() < 1)
     {
-      throw new SnowflakeSQLException(ErrorCode.INTERNAL_ERROR,
-                                      "Incorrect chunk count: " +
-                                      resultSetSerializable.getChunkFileCount());
+      throw new SnowflakeSQLLoggedException(ErrorCode.INTERNAL_ERROR, this.session,
+                                            "Incorrect chunk count: " +
+                                            resultSetSerializable.getChunkFileCount());
     }
 
     // initialize chunks with url and row count
@@ -252,19 +253,19 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
                                        chunkFileMetadata.getRowCount(),
                                        resultSetSerializable.getColumnCount(),
                                        chunkFileMetadata.getUncompressedByteSize(),
-                                       this.rootAllocator);
+                                       this.rootAllocator, this.session);
           break;
 
         case JSON:
           chunk = new JsonResultChunk(chunkFileMetadata.getFileURL(),
                                       chunkFileMetadata.getRowCount(),
                                       resultSetSerializable.getColumnCount(),
-                                      chunkFileMetadata.getUncompressedByteSize());
+                                      chunkFileMetadata.getUncompressedByteSize(), this.session);
           break;
 
         default:
-          throw new SnowflakeSQLException(ErrorCode.INTERNAL_ERROR,
-                                          "Invalid result format: " + queryResultFormat.name());
+          throw new SnowflakeSQLLoggedException(ErrorCode.INTERNAL_ERROR, this.session,
+                                                "Invalid result format: " + queryResultFormat.name());
       }
 
       logger.debug("add chunk, url={} rowCount={} uncompressedSize={} " +
@@ -368,7 +369,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
                                                                            nextChunk,
                                                                            qrmk, nextChunkToDownload,
                                                                            chunkHeadersMap,
-                                                                           networkTimeoutInMilli));
+                                                                           networkTimeoutInMilli, this.session));
         downloaderFutures.put(nextChunkToDownload, downloaderFuture);
         // increment next chunk to download
         nextChunkToDownload++;
@@ -571,9 +572,9 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
             logOutOfMemoryError();
           }
 
-          throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
-                                          ErrorCode.INTERNAL_ERROR.getMessageCode(),
-                                          currentChunk.getDownloadError());
+          throw new SnowflakeSQLLoggedException(SqlState.INTERNAL_ERROR,
+                                                ErrorCode.INTERNAL_ERROR.getMessageCode(), this.session,
+                                                currentChunk.getDownloadError());
         }
 
         logger.debug("#chunk{} is ready to consume",
@@ -679,7 +680,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
                                                                     chunks.get(nextChunkToConsume),
                                                                     qrmk, nextChunkToConsume,
                                                                     chunkHeadersMap,
-                                                                    networkTimeoutInMilli));
+                                                                    networkTimeoutInMilli, session));
         downloaderFutures.put(nextChunkToDownload, downloaderFuture);
       }
     }
@@ -825,7 +826,8 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
       final SnowflakeResultChunk resultChunk,
       final String qrmk, final int chunkIndex,
       final Map<String, String> chunkHeadersMap,
-      final int networkTimeoutInMilli)
+      final int networkTimeoutInMilli,
+      final SFSession session)
   {
     return new Callable<Void>()
     {
@@ -1120,7 +1122,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
          * is also known.
          */
         ResultJsonParserV2 jp = new ResultJsonParserV2();
-        jp.startParsing((JsonResultChunk) resultChunk);
+        jp.startParsing((JsonResultChunk) resultChunk, session);
 
         byte[] buf = new byte[STREAM_BUFFER_SIZE];
         int len;
@@ -1128,11 +1130,11 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
                      Thread.currentThread().getId(), chunkIndex);
         while ((len = jsonInputStream.read(buf)) != -1)
         {
-          jp.continueParsing(ByteBuffer.wrap(buf, 0, len));
+          jp.continueParsing(ByteBuffer.wrap(buf, 0, len), session);
         }
         logger.debug("Thread {} finish reading inputstream for #chunk{}",
                      Thread.currentThread().getId(), chunkIndex);
-        jp.endParsing();
+        jp.endParsing(session);
       }
 
       private HttpResponse getResultChunk(String chunkUrl)
