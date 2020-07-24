@@ -171,10 +171,10 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
   List<MetaDataOfBinds> metaDataOfBinds = new ArrayList<>();
   QueryResultFormat queryResultFormat;
   boolean treatNTZAsUTC;
-  Optional<SFSession> possibleSession = Optional.empty();
 
   // Below fields are transient, they are generated from parameters
   transient TimeZone timeZone;
+  transient Optional<SFSession> possibleSession = Optional.empty();
   transient boolean honorClientTZForTimestampNTZ;
   transient SnowflakeDateTimeFormat timestampNTZFormatter;
   transient SnowflakeDateTimeFormat timestampLTZFormatter;

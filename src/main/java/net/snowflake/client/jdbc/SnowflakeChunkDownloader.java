@@ -226,7 +226,9 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
     logger.debug("qrmk = {}", this.qrmk);
     this.chunkHeadersMap = resultSetSerializable.getChunkHeadersMap();
     // session may be null. Its only use is for in-band telemetry in this class
-    this.session = resultSetSerializable.getSession().orElse(null);
+    this.session = (resultSetSerializable.getSession() != null)?
+                    resultSetSerializable.getSession().orElse(null) : null;
+
 
     // create the chunks array
     this.chunks = new ArrayList<>(resultSetSerializable.getChunkFileCount());
