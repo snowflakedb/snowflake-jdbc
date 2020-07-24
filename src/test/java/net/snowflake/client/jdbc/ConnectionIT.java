@@ -100,10 +100,11 @@ public class ConnectionIT extends BaseJDBCTest
   @Test
   public void testError() throws SQLException
   {
-    TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
+    TimeZone.setDefault(TimeZone.getTimeZone("CET"));
     Connection con = getConnection();
     Statement statement = con.createStatement();
     statement.execute("alter session set jdbc_query_result_format = 'JSON'");
+    statement.execute("alter session set timezone='UTC'");
     ResultSet rs = statement.executeQuery("SELECT DATE '2019-04-06 00:00:00' as datefield, TIMESTAMP '2019-04-06 00:00:00' as timestampfield");
 
     // We are using a calendar with UTC time zone to retrieve dates and timestamps

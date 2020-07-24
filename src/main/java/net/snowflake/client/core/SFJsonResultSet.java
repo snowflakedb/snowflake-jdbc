@@ -454,7 +454,6 @@ public abstract class SFJsonResultSet extends SFBaseResultSet
     {
       return null;
     }
-    timeZone = TimeZone.getTimeZone("UTC");
 
     return ResultUtil.getSFTimestamp(
         obj.toString(),
