@@ -279,7 +279,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient
   /**
    * Download a file from remote storage.
    *
-   * @param connection            connection object
+   * @param session               session object
    * @param command               command to download file
    * @param localLocation         local file path
    * @param destFileName          destination file name
@@ -291,7 +291,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient
    * @throws SnowflakeSQLException download failure
    **/
   @Override
-  public void download(SFSession connection, String command, String localLocation, String destFileName,
+  public void download(SFSession session, String command, String localLocation, String destFileName,
                        int parallelism, String remoteStorageLocation, String stageFilePath, String stageRegion,
                        String presignedUrl)
   throws SnowflakeSQLException
@@ -328,7 +328,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient
           if (key == null || iv == null)
           {
             throw new SnowflakeSQLLoggedException(SqlState.INTERNAL_ERROR,
-                                            ErrorCode.INTERNAL_ERROR.getMessageCode(), connection,
+                                            ErrorCode.INTERNAL_ERROR.getMessageCode(), session,
                                             "File metadata incomplete");
           }
 
@@ -349,20 +349,20 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient
       catch (Exception ex)
       {
         logger.debug("Download unsuccessful {}", ex);
-        handleAzureException(ex, ++retryCount, "download", connection, command, this);
+        handleAzureException(ex, ++retryCount, "download", session, command, this);
       }
     }
     while (retryCount <= getMaxRetries());
 
     throw new SnowflakeSQLLoggedException(SqlState.INTERNAL_ERROR,
-                                    ErrorCode.INTERNAL_ERROR.getMessageCode(), connection,
+                                    ErrorCode.INTERNAL_ERROR.getMessageCode(), session,
                                     "Unexpected: download unsuccessful without exception!");
   }
 
   /**
    * Download a file from remote storage
    *
-   * @param connection            connection object
+   * @param session            session object
    * @param command               command to download file
    * @param parallelism           number of threads for parallel downloading
    * @param remoteStorageLocation remote storage location, i.e. bucket for s3
@@ -373,7 +373,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient
    * @throws SnowflakeSQLException when download failure
    */
   @Override
-  public InputStream downloadToStream(SFSession connection, String command, int parallelism,
+  public InputStream downloadToStream(SFSession session, String command, int parallelism,
                                       String remoteStorageLocation, String stageFilePath,
                                       String stageRegion, String presignedUrl) throws SnowflakeSQLException
   {
@@ -403,7 +403,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient
           if (key == null || iv == null)
           {
             throw new SnowflakeSQLLoggedException(SqlState.INTERNAL_ERROR,
-                                            ErrorCode.INTERNAL_ERROR.getMessageCode(), connection,
+                                            ErrorCode.INTERNAL_ERROR.getMessageCode(), session,
                                             "File metadata incomplete");
           }
 
@@ -429,21 +429,21 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient
       catch (Exception ex)
       {
         logger.debug("Downloading unsuccessful {}", ex);
-        handleAzureException(ex, ++retryCount, "download", connection, command
+        handleAzureException(ex, ++retryCount, "download", session, command
             , this);
       }
     }
     while (retryCount < getMaxRetries());
 
     throw new SnowflakeSQLLoggedException(SqlState.INTERNAL_ERROR,
-                                    ErrorCode.INTERNAL_ERROR.getMessageCode(), connection,
+                                    ErrorCode.INTERNAL_ERROR.getMessageCode(), session,
                                     "Unexpected: download unsuccessful without exception!");
   }
 
   /**
    * Upload a file/stream to remote storage
    *
-   * @param connection             connection object
+   * @param session             session object
    * @param command                upload command
    * @param parallelism            [ not used by the Azure implementation ]
    * @param uploadFromStream       true if upload source is stream
@@ -458,7 +458,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient
    * @throws SnowflakeSQLException if upload failed even after retry
    */
   @Override
-  public void upload(SFSession connection, String command, int parallelism, boolean uploadFromStream,
+  public void upload(SFSession session, String command, int parallelism, boolean uploadFromStream,
                      String remoteStorageLocation, File srcFile, String destFileName, InputStream inputStream,
                      FileBackedOutputStream fileBackedOutputStream, StorageObjectMetadata meta, String stageRegion,
                      String presignedUrl)
@@ -508,7 +508,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient
       }
       catch (Exception ex)
       {
-        handleAzureException(ex, ++retryCount, "upload", connection, command, this);
+        handleAzureException(ex, ++retryCount, "upload", session, command, this);
 
         if (uploadFromStream && fileBackedOutputStream == null)
         {
@@ -540,15 +540,15 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient
    * @param retryCount current number of retries, incremented by the caller before each call
    * @param operation  string that indicates the function/operation that was taking place,
    *                   when the exception was raised, for example "upload"
-   * @param connection the current SFSession object used by the client
+   * @param session the current SFSession object used by the client
    * @param command    the command attempted at the time of the exception
    * @throws SnowflakeSQLException exceptions not handled
    */
   @Override
-  public void handleStorageException(Exception ex, int retryCount, String operation, SFSession connection, String command)
+  public void handleStorageException(Exception ex, int retryCount, String operation, SFSession session, String command)
   throws SnowflakeSQLException
   {
-    handleAzureException(ex, retryCount, operation, connection, command, this);
+    handleAzureException(ex, retryCount, operation, session, command, this);
   }
 
   private SFPair<InputStream, Boolean> createUploadStream(
@@ -641,7 +641,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient
    * @param retryCount current number of retries, incremented by the caller before each call
    * @param operation  string that indicates the function/operation that was taking place,
    *                   when the exception was raised, for example "upload"
-   * @param connection the current SFSession object used by the client
+   * @param session the current SFSession object used by the client
    * @param command    the command attempted at the time of the exception
    * @param azClient   the current Snowflake Azure client object
    * @throws SnowflakeSQLException exceptions not handled
@@ -650,7 +650,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient
       Exception ex,
       int retryCount,
       String operation,
-      SFSession connection,
+      SFSession session,
       String command,
       SnowflakeAzureClient azClient)
   throws SnowflakeSQLException
@@ -672,7 +672,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient
       {
         // A 403 indicates that the SAS token has expired,
         // we need to refresh the Azure client with the new token
-        SnowflakeFileTransferAgent.renewExpiredToken(connection, command, azClient);
+        SnowflakeFileTransferAgent.renewExpiredToken(session, command, azClient);
       }
       // If we have exceeded the max number of retries, propagate the error
       if (retryCount > azClient.getMaxRetries())
@@ -715,7 +715,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient
         {
           // A 403 indicates that the SAS token has expired,
           // we need to refresh the Azure client with the new token
-          SnowflakeFileTransferAgent.renewExpiredToken(connection, command, azClient);
+          SnowflakeFileTransferAgent.renewExpiredToken(session, command, azClient);
         }
       }
     }

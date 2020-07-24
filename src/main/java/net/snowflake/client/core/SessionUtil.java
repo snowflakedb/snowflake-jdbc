@@ -1109,6 +1109,7 @@ public class SessionUtil
         logger.debug("The specified authenticator {} and the destination URL " +
                      "in the SAML assertion {} do not match.",
                      loginInput.getAuthenticator(), postBackUrl);
+        // Session is in process of getting created, so exception constructor takes in null session value
         throw new SnowflakeSQLLoggedException(
             SqlState.SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION,
             ErrorCode.IDP_INCORRECT_DESTINATION.getMessageCode(), /* session = */ null);
@@ -1207,6 +1208,7 @@ public class SessionUtil
       {
         logger.debug("The specified authenticator {} is not supported.",
                      loginInput.getAuthenticator());
+        // Session is in process of getting created, so exception constructor takes in null session value
         throw new SnowflakeSQLLoggedException(
             SqlState.SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION,
             ErrorCode.IDP_CONNECTION_ERROR.getMessageCode(), /* session = */ null);
