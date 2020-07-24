@@ -81,6 +81,8 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
   private static final long SHUTDOWN_TIME = 3;
   private final SnowflakeConnectString snowflakeConnectionString;
   private final OCSPMode ocspMode;
+
+  // Session object, used solely for throwing exceptions. CAUTION: MAY BE NULL!
   private SFSession session;
 
   private JsonResultChunk.ResultChunkDataCache chunkDataCache
@@ -221,10 +223,9 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
     this.prefetchSlots = resultSetSerializable.getResultPrefetchThreads() * 2;
     this.memoryLimit = resultSetSerializable.getMemoryLimit();
     this.queryResultFormat = resultSetSerializable.getQueryResultFormat();
-    this.session = resultSetSerializable.getSession();
     logger.debug("qrmk = {}", this.qrmk);
     this.chunkHeadersMap = resultSetSerializable.getChunkHeadersMap();
-    this.session = resultSetSerializable.getSession();
+    this.session = resultSetSerializable.getSession().orElse(null);
 
     // create the chunks array
     this.chunks = new ArrayList<>(resultSetSerializable.getChunkFileCount());

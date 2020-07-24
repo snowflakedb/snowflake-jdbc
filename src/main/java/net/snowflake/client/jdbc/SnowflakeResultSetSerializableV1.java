@@ -171,7 +171,7 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
   List<MetaDataOfBinds> metaDataOfBinds = new ArrayList<>();
   QueryResultFormat queryResultFormat;
   boolean treatNTZAsUTC;
-  SFSession session;
+  Optional<SFSession> possibleSession = Optional.empty();
 
   // Below fields are transient, they are generated from parameters
   transient TimeZone timeZone;
@@ -245,6 +245,7 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
     this.sendResultTime = toCopy.sendResultTime;
     this.metaDataOfBinds = toCopy.metaDataOfBinds;
     this.queryResultFormat = toCopy.queryResultFormat;
+    this.possibleSession = toCopy.possibleSession;
 
     // Below fields are transient, they are generated from parameters
     this.timeZone = toCopy.timeZone;
@@ -262,7 +263,6 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
     this.chunkDownloader = toCopy.chunkDownloader;
     this.rootAllocator = toCopy.rootAllocator;
     this.resultSetMetaData = toCopy.resultSetMetaData;
-    this.session = toCopy.session;
   }
 
   public void setRootAllocator(RootAllocator rootAllocator)
@@ -507,7 +507,7 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
     return treatNTZAsUTC;
   }
 
-  public SFSession getSession() { return session; }
+  public Optional<SFSession> getSession() { return possibleSession; }
 
   /**
    * A factory function to create SnowflakeResultSetSerializable object
@@ -557,7 +557,7 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
     resultSetSerializable.totalRowCountTruncated
         = rootNode.path("data").path("totalTruncated").asBoolean();
 
-    resultSetSerializable.session = sfSession;
+    resultSetSerializable.possibleSession = Optional.ofNullable(sfSession);
 
     logger.debug("query id: {}", resultSetSerializable.queryId);
 
