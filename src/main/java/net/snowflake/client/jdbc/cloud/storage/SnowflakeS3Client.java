@@ -78,7 +78,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient
   private SFSession session;
 
   // socket factory used by s3 client's http client.
-  private static SSLConnectionSocketFactory s3sessionSocketFactory = null;
+  private static SSLConnectionSocketFactory s3ConnectionSocketFactory = null;
 
   public SnowflakeS3Client(Map<?, ?> stageCredentials,
                            ClientConfiguration clientConfig,
@@ -818,17 +818,17 @@ public class SnowflakeS3Client implements SnowflakeStorageClient
 
   private static SSLConnectionSocketFactory getSSLConnectionSocketFactory()
   {
-    if (s3sessionSocketFactory == null)
+    if (s3ConnectionSocketFactory == null)
     {
       synchronized (SnowflakeS3Client.class)
       {
-        if (s3sessionSocketFactory == null)
+        if (s3ConnectionSocketFactory == null)
         {
           try
           {
             // trust manager is set to null, which will use default ones
             // instead of SFTrustManager (which enables ocsp checking)
-            s3sessionSocketFactory = new SFSSLConnectionSocketFactory(null,
+            s3ConnectionSocketFactory = new SFSSLConnectionSocketFactory(null,
                                                                          HttpUtil.isSocksProxyDisabled());
           }
           catch (KeyManagementException | NoSuchAlgorithmException e)
@@ -839,6 +839,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient
       }
     }
 
-    return s3sessionSocketFactory;
+    return s3ConnectionSocketFactory;
+
   }
 }

@@ -577,7 +577,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
    * @param srcFilePath      source file path
    * @param metadata         file metadata
    * @param client           client object used to communicate with c3
-   * @param connection       connection object
+   * @param session       session object
    * @param command          command string
    * @param inputStream      null if upload source is file
    * @param sourceFromStream whether upload source is file or stream
@@ -591,7 +591,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
       final String srcFilePath,
       final FileMetadata metadata,
       final SnowflakeStorageClient client,
-      final SFSession connection,
+      final SFSession session,
       final String command,
       final InputStream inputStream,
       final boolean sourceFromStream,
@@ -607,7 +607,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
         logger.debug("Entering getUploadFileCallable...");
 
         // make sure initialize context for the telemetry service for this thread
-        TelemetryService.getInstance().updateContext(connection.getSnowflakeConnectionString());
+        TelemetryService.getInstance().updateContext(session.getSnowflakeConnectionString());
 
         InputStream uploadStream = inputStream;
 
@@ -631,7 +631,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
         if (metadata == null)
         {
           throw new SnowflakeSQLLoggedException(SqlState.INTERNAL_ERROR,
-                                          ErrorCode.INTERNAL_ERROR.getMessageCode(), connection,
+                                          ErrorCode.INTERNAL_ERROR.getMessageCode(), session,
                                           "missing file metadata for: " + srcFilePath);
         }
 
@@ -709,9 +709,9 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
                        uploadSize);
 
           // Simulated failure code.
-          if (connection.getInjectFileUploadFailure()
+          if (session.getInjectFileUploadFailure()
               != null && srcFilePath.endsWith(
-              (connection).getInjectFileUploadFailure()))
+              (session).getInjectFileUploadFailure()))
           {
             throw new SnowflakeSimulatedUploadFailure(
                 srcFile != null ? srcFile.getName() : "Unknown");
@@ -733,7 +733,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
                                     destFileName,
                                     uploadStream, fileBackedOutputStream, uploadSize,
                                     digest, metadata.destCompressionType,
-                                    client, connection, command, parallel, fileToUpload,
+                                    client, session, command, parallel, fileToUpload,
                                     (fileToUpload == null), encMat);
               metadata.isEncrypted = encMat != null;
               break;
@@ -798,7 +798,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
    * @param localLocation   local location
    * @param fileMetadataMap file metadata map
    * @param client          remote store client
-   * @param connection      connection object
+   * @param session         session object
    * @param command         command string
    * @param encMat          remote store encryption material
    * @param parallel        number of parallel threads for downloading
@@ -811,7 +811,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
       final String localLocation,
       final Map<String, FileMetadata> fileMetadataMap,
       final SnowflakeStorageClient client,
-      final SFSession connection,
+      final SFSession session,
       final String command,
       final int parallel,
       final RemoteStoreFileEncryptionMaterial encMat,
@@ -825,7 +825,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
         logger.debug("Entering getDownloadFileCallable...");
 
         // make sure initialize context for the telemetry service for this thread
-        TelemetryService.getInstance().updateContext(connection.getSnowflakeConnectionString());
+        TelemetryService.getInstance().updateContext(session.getSnowflakeConnectionString());
 
         FileMetadata metadata = fileMetadataMap.get(srcFilePath);
 
@@ -833,7 +833,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
         if (metadata == null)
         {
           throw new SnowflakeSQLLoggedException(SqlState.INTERNAL_ERROR,
-                                          ErrorCode.INTERNAL_ERROR.getMessageCode(), connection,
+                                          ErrorCode.INTERNAL_ERROR.getMessageCode(), session,
                                           "missing file metadata for: " + srcFilePath);
         }
 
@@ -860,7 +860,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
                                       destFileName,
                                       localLocation,
                                       client,
-                                      connection,
+                                      session,
                                       command,
                                       parallel,
                                       encMat,
@@ -1990,7 +1990,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
                                             String digest,
                                             FileCompressionType compressionType,
                                             SnowflakeStorageClient initialClient,
-                                            SFSession connection,
+                                            SFSession session,
                                             String command,
                                             int parallel,
                                             File srcFile,
@@ -2037,7 +2037,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
         String localFilePath = getLocalFilePathFromCommand(command, false);
         String commandWithExactPath = command.replace(localFilePath, origDestFileName);
         // then hand that to GS to get the actual presigned URL we'll use
-        SFStatement statement = new SFStatement(connection);
+        SFStatement statement = new SFStatement(session);
         JsonNode jsonNode = parseCommandInGS(statement, commandWithExactPath);
 
         if (!jsonNode.path("data").path("stageInfo").path("presignedUrl").isMissingNode())
@@ -2045,7 +2045,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
           presignedUrl = jsonNode.path("data").path("stageInfo").path("presignedUrl").asText();
         }
       }
-      initialClient.upload(connection, command, parallel,
+      initialClient.upload(session, command, parallel,
                            uploadFromStream,
                            remoteLocation.location, srcFile, destFileName,
                            inputStream, fileBackedOutStr, meta, stage.getRegion(),
@@ -2278,7 +2278,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
                                               String destFileName,
                                               String localLocation,
                                               SnowflakeStorageClient initialClient,
-                                              SFSession connection,
+                                              SFSession session,
                                               String command,
                                               int parallel,
                                               RemoteStoreFileEncryptionMaterial encMat,
@@ -2302,7 +2302,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView
                      ? "NULL"
                      : encMat.getSmkId() + "|" + encMat.getQueryId()));
 
-    initialClient.download(connection, command,
+    initialClient.download(session, command,
                            localLocation, destFileName, parallel,
                            remoteLocation.location, stageFilePath, stage.getRegion(),
                            presignedUrl);
