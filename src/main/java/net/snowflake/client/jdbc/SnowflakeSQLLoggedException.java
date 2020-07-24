@@ -23,7 +23,7 @@ import java.util.concurrent.*;
 
 /**
  * @author USER
- *
+ * <p>
  * This SnowflakeSQLLoggedException class extends the SnowflakeSQLException class to add OOB telemetry data for sql
  * exceptions. Not all sql exceptions require OOB telemetry logging so the exceptions in this class should only be
  * thrown if there is a need for logging the exception with OOB telemetry.
@@ -42,7 +42,7 @@ public class SnowflakeSQLLoggedException extends SnowflakeSQLException
   private Telemetry ibInstance = null;
 
   private final static ObjectMapper mapper =
-          ObjectMapperFactory.getObjectMapper();
+      ObjectMapperFactory.getObjectMapper();
 
   /**
    * Function to create a TelemetryEvent log from the JSONObject and exception and send it via OOB telemetry
@@ -71,7 +71,7 @@ public class SnowflakeSQLLoggedException extends SnowflakeSQLException
    *
    * @param value ObjectNode containing information specific to the exception constructor that should be included in
    *              the telemetry log, such as SQLState or reason for the error
-   * @param ex The exception being thrown
+   * @param ex    The exception being thrown
    * @return true if in-band telemetry log sent successfully or false if it did not
    */
   private Future<Boolean> sendInBandTelemetryMessage(ObjectNode value, SnowflakeSQLLoggedException ex)
@@ -88,6 +88,7 @@ public class SnowflakeSQLLoggedException extends SnowflakeSQLException
 
   /**
    * Helper function to create JSONObject node for OOB telemetry log
+   *
    * @param queryId
    * @param reason
    * @param SQLState
@@ -124,13 +125,14 @@ public class SnowflakeSQLLoggedException extends SnowflakeSQLException
   /**
    * Function to construct log data based on possible exception inputs and send data through in-band telemetry, or oob
    * if in-band does not work
-   * @param queryId query ID if exists
-   * @param reason reason for the exception
-   * @param SQLState SQLState
+   *
+   * @param queryId    query ID if exists
+   * @param reason     reason for the exception
+   * @param SQLState   SQLState
    * @param vendorCode vendor code
-   * @param errorCode error code
-   * @param session session object, which is needed to send in-band telemetry but not oob. Might be null, in which case
-   *                oob is used.
+   * @param errorCode  error code
+   * @param session    session object, which is needed to send in-band telemetry but not oob. Might be null, in which case
+   *                   oob is used.
    */
   public void sendTelemetryData(String queryId, String reason, String SQLState, int vendorCode, ErrorCode errorCode, SFSession session)
   {
@@ -167,26 +169,26 @@ public class SnowflakeSQLLoggedException extends SnowflakeSQLException
       // try  to send in-band data asynchronously
       ExecutorService threadExecutor = Executors.newSingleThreadExecutor();
       threadExecutor.submit(() ->
-        {
-          boolean inBandSuccess;
-          Future<Boolean> sendInBand = sendInBandTelemetryMessage(ibValue, this);
-          // record whether in band telemetry message sent with boolean value inBandSuccess
-          try
-          {
-            inBandSuccess = sendInBand.get(10, TimeUnit.SECONDS);
-          }
-          catch (Exception e)
-          {
-            inBandSuccess = false;
-          }
-          // In-band failed so send OOB telemetry instead
-          if (!inBandSuccess)
-          {
-            logger.debug("In-band telemetry message failed to send. Sending out-of-band message instead");
-            JSONObject oobValue = createOOBValue(queryId, reason, SQLState, vendorCode, errorCode);
-            sendOutOfBandTelemetryMessage(oobValue, this);
-          }
-        }
+                            {
+                              boolean inBandSuccess;
+                              Future<Boolean> sendInBand = sendInBandTelemetryMessage(ibValue, this);
+                              // record whether in band telemetry message sent with boolean value inBandSuccess
+                              try
+                              {
+                                inBandSuccess = sendInBand.get(10, TimeUnit.SECONDS);
+                              }
+                              catch (Exception e)
+                              {
+                                inBandSuccess = false;
+                              }
+                              // In-band failed so send OOB telemetry instead
+                              if (!inBandSuccess)
+                              {
+                                logger.debug("In-band telemetry message failed to send. Sending out-of-band message instead");
+                                JSONObject oobValue = createOOBValue(queryId, reason, SQLState, vendorCode, errorCode);
+                                sendOutOfBandTelemetryMessage(oobValue, this);
+                              }
+                            }
       );
     }
     // In-band is not possible so send OOB telemetry instead

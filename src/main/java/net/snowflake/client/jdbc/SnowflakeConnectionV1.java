@@ -1096,17 +1096,17 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection
 
     if (stageName == null)
     {
-      throw new SnowflakeSQLException(
+      throw new SnowflakeSQLLoggedException(
           SqlState.INTERNAL_ERROR,
-          ErrorCode.INTERNAL_ERROR.getMessageCode(),
+          ErrorCode.INTERNAL_ERROR.getMessageCode(), sfSession,
           "stage name is null");
     }
 
     if (destFileName == null)
     {
-      throw new SnowflakeSQLException(
+      throw new SnowflakeSQLLoggedException(
           SqlState.INTERNAL_ERROR,
-          ErrorCode.INTERNAL_ERROR.getMessageCode(),
+          ErrorCode.INTERNAL_ERROR.getMessageCode(), sfSession,
           "stage name is null");
     }
 
@@ -1167,17 +1167,17 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection
 
     if (Strings.isNullOrEmpty(stageName))
     {
-      throw new SnowflakeSQLException(
+      throw new SnowflakeSQLLoggedException(
           SqlState.INTERNAL_ERROR,
-          ErrorCode.INTERNAL_ERROR.getMessageCode(),
+          ErrorCode.INTERNAL_ERROR.getMessageCode(), sfSession,
           "stage name is null or empty");
     }
 
     if (Strings.isNullOrEmpty(sourceFileName))
     {
-      throw new SnowflakeSQLException(
+      throw new SnowflakeSQLLoggedException(
           SqlState.INTERNAL_ERROR,
-          ErrorCode.INTERNAL_ERROR.getMessageCode(),
+          ErrorCode.INTERNAL_ERROR.getMessageCode(), sfSession,
           "source file name is null or empty");
     }
 

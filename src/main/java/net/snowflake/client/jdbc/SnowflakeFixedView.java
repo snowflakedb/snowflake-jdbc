@@ -4,6 +4,8 @@
 
 package net.snowflake.client.jdbc;
 
+import net.snowflake.client.core.SFSession;
+
 import java.util.List;
 
 /**
@@ -13,7 +15,7 @@ import java.util.List;
  */
 public interface SnowflakeFixedView
 {
-  List<SnowflakeColumnMetadata> describeColumns() throws Exception;
+  List<SnowflakeColumnMetadata> describeColumns(SFSession session) throws Exception;
 
   List<Object> getNextRow() throws Exception;
 
