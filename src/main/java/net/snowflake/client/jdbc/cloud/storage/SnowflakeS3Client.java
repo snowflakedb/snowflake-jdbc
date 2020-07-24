@@ -159,8 +159,8 @@ public class SnowflakeS3Client implements SnowflakeStorageClient
       else
       {
         throw new SnowflakeSQLLoggedException(SqlState.INTERNAL_ERROR,
-                                        ErrorCode.INTERNAL_ERROR.getMessageCode(), session,
-                                        "unsupported key size", encryptionKeySize);
+                                              ErrorCode.INTERNAL_ERROR.getMessageCode(), session,
+                                              "unsupported key size", encryptionKeySize);
       }
     }
     else
@@ -330,8 +330,8 @@ public class SnowflakeS3Client implements SnowflakeStorageClient
           if (key == null || iv == null)
           {
             throw new SnowflakeSQLLoggedException(SqlState.INTERNAL_ERROR,
-                                            ErrorCode.INTERNAL_ERROR.getMessageCode(),session,
-                                            "File metadata incomplete");
+                                                  ErrorCode.INTERNAL_ERROR.getMessageCode(), session,
+                                                  "File metadata incomplete");
           }
 
           // Decrypt file
@@ -366,8 +366,8 @@ public class SnowflakeS3Client implements SnowflakeStorageClient
     while (retryCount <= getMaxRetries());
 
     throw new SnowflakeSQLLoggedException(SqlState.INTERNAL_ERROR,
-                                    ErrorCode.INTERNAL_ERROR.getMessageCode(), session,
-                                    "Unexpected: download unsuccessful without exception!");
+                                          ErrorCode.INTERNAL_ERROR.getMessageCode(), session,
+                                          "Unexpected: download unsuccessful without exception!");
   }
 
   /**
@@ -411,8 +411,8 @@ public class SnowflakeS3Client implements SnowflakeStorageClient
           if (key == null || iv == null)
           {
             throw new SnowflakeSQLLoggedException(SqlState.INTERNAL_ERROR,
-                                            ErrorCode.INTERNAL_ERROR.getMessageCode(), session,
-                                            "File metadata incomplete");
+                                                  ErrorCode.INTERNAL_ERROR.getMessageCode(), session,
+                                                  "File metadata incomplete");
           }
 
           try
@@ -440,14 +440,14 @@ public class SnowflakeS3Client implements SnowflakeStorageClient
     } while (retryCount <= getMaxRetries());
 
     throw new SnowflakeSQLLoggedException(SqlState.INTERNAL_ERROR,
-                                    ErrorCode.INTERNAL_ERROR.getMessageCode(), session,
-                                    "Unexpected: download unsuccessful without exception!");
+                                          ErrorCode.INTERNAL_ERROR.getMessageCode(), session,
+                                          "Unexpected: download unsuccessful without exception!");
   }
 
   /**
    * Upload a file (-stream) to S3.
    *
-   * @param session             session object
+   * @param session                session object
    * @param command                upload command
    * @param parallelism            number of threads do parallel uploading
    * @param uploadFromStream       true if upload source is stream
@@ -571,8 +571,8 @@ public class SnowflakeS3Client implements SnowflakeStorageClient
       IOUtils.closeQuietly(is);
 
     throw new SnowflakeSQLLoggedException(SqlState.INTERNAL_ERROR,
-                                    ErrorCode.INTERNAL_ERROR.getMessageCode(), session,
-                                    "Unexpected: upload unsuccessful without exception!");
+                                          ErrorCode.INTERNAL_ERROR.getMessageCode(), session,
+                                          "Unexpected: upload unsuccessful without exception!");
   }
 
   private SFPair<InputStream, Boolean>

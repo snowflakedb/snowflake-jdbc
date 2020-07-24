@@ -343,8 +343,8 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient
           if (key == null || iv == null)
           {
             throw new SnowflakeSQLLoggedException(SqlState.INTERNAL_ERROR,
-                                            ErrorCode.INTERNAL_ERROR.getMessageCode(), session,
-                                            "File metadata incomplete");
+                                                  ErrorCode.INTERNAL_ERROR.getMessageCode(), session,
+                                                  "File metadata incomplete");
           }
 
           // Decrypt file
@@ -371,8 +371,8 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient
     while (retryCount <= getMaxRetries());
 
     throw new SnowflakeSQLLoggedException(SqlState.INTERNAL_ERROR,
-                                    ErrorCode.INTERNAL_ERROR.getMessageCode(), session,
-                                    "Unexpected: download unsuccessful without exception!");
+                                          ErrorCode.INTERNAL_ERROR.getMessageCode(), session,
+                                          "Unexpected: download unsuccessful without exception!");
   }
 
   /**
@@ -521,8 +521,8 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient
     while (retryCount <= getMaxRetries());
 
     throw new SnowflakeSQLLoggedException(SqlState.INTERNAL_ERROR,
-                                    ErrorCode.INTERNAL_ERROR.getMessageCode(), session,
-                                    "Unexpected: download unsuccessful without exception!");
+                                          ErrorCode.INTERNAL_ERROR.getMessageCode(), session,
+                                          "Unexpected: download unsuccessful without exception!");
   }
 
   /**
@@ -545,7 +545,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient
    * @throws SnowflakeSQLException if upload failed
    */
   @Override
-  public void uploadWithPresignedUrlWithoutConnection (
+  public void uploadWithPresignedUrlWithoutConnection(
       int networkTimeoutInMilli, OCSPMode ocspMode,
       int parallelism, boolean uploadFromStream,
       String remoteStorageLocation, File srcFile,
@@ -698,8 +698,8 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient
       IOUtils.closeQuietly(is);
 
     throw new SnowflakeSQLLoggedException(SqlState.INTERNAL_ERROR,
-                                    ErrorCode.INTERNAL_ERROR.getMessageCode(), session,
-                                    "Unexpected: upload unsuccessful without exception!");
+                                          ErrorCode.INTERNAL_ERROR.getMessageCode(), session,
+                                          "Unexpected: upload unsuccessful without exception!");
   }
 
   /**

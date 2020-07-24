@@ -226,8 +226,8 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
     logger.debug("qrmk = {}", this.qrmk);
     this.chunkHeadersMap = resultSetSerializable.getChunkHeadersMap();
     // session may be null. Its only use is for in-band telemetry in this class
-    this.session = (resultSetSerializable.getSession() != null)?
-                    resultSetSerializable.getSession().orElse(null) : null;
+    this.session = (resultSetSerializable.getSession() != null) ?
+                   resultSetSerializable.getSession().orElse(null) : null;
 
 
     // create the chunks array
@@ -236,8 +236,8 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
     if (resultSetSerializable.getChunkFileCount() < 1)
     {
       throw new SnowflakeSQLLoggedException(ErrorCode.INTERNAL_ERROR, this.session,
-                                      "Incorrect chunk count: " +
-                                      resultSetSerializable.getChunkFileCount());
+                                            "Incorrect chunk count: " +
+                                            resultSetSerializable.getChunkFileCount());
     }
 
     // initialize chunks with url and row count
@@ -265,7 +265,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
 
         default:
           throw new SnowflakeSQLLoggedException(ErrorCode.INTERNAL_ERROR, this.session,
-                                          "Invalid result format: " + queryResultFormat.name());
+                                                "Invalid result format: " + queryResultFormat.name());
       }
 
       logger.debug("add chunk, url={} rowCount={} uncompressedSize={} " +
@@ -573,8 +573,8 @@ public class SnowflakeChunkDownloader implements ChunkDownloader
           }
 
           throw new SnowflakeSQLLoggedException(SqlState.INTERNAL_ERROR,
-                                          ErrorCode.INTERNAL_ERROR.getMessageCode(), this.session,
-                                          currentChunk.getDownloadError());
+                                                ErrorCode.INTERNAL_ERROR.getMessageCode(), this.session,
+                                                currentChunk.getDownloadError());
         }
 
         logger.debug("#chunk{} is ready to consume",

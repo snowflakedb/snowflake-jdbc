@@ -51,9 +51,9 @@ public class SFFixedViewResultSet extends SFJsonResultSet
     catch (Exception ex)
     {
       throw new SnowflakeSQLLoggedException(ex, SqlState.INTERNAL_ERROR,
-                                      ErrorCode.INTERNAL_ERROR.getMessageCode(), session,
-                                      "Failed to describe fixed view: "
-                                      + fixedView.getClass().getName());
+                                            ErrorCode.INTERNAL_ERROR.getMessageCode(), session,
+                                            "Failed to describe fixed view: "
+                                            + fixedView.getClass().getName());
     }
   }
 

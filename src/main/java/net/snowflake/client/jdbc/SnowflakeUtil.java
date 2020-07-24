@@ -252,9 +252,9 @@ public class SnowflakeUtil
 
       default:
         throw new SnowflakeSQLLoggedException(SqlState.INTERNAL_ERROR,
-                                        ErrorCode.INTERNAL_ERROR
-                                            .getMessageCode(), session,
-                                        "Unknown column type: " + internalColTypeName);
+                                              ErrorCode.INTERNAL_ERROR
+                                                  .getMessageCode(), session,
+                                              "Unknown column type: " + internalColTypeName);
     }
 
     JsonNode extColTypeNameNode = colNode.path("extTypeName");
@@ -399,10 +399,10 @@ public class SnowflakeUtil
       else
       {
         throw new SnowflakeSQLLoggedException(SqlState.INTERNAL_ERROR,
-                                        ErrorCode.INTERNAL_ERROR
-                                            .getMessageCode(), session,
-                                        "Unsupported column type: " + type
-                                            .getName());
+                                              ErrorCode.INTERNAL_ERROR
+                                                  .getMessageCode(), session,
+                                              "Unsupported column type: " + type
+                                                  .getName());
       }
 
       // TODO: we hard code some of the values below but can change them

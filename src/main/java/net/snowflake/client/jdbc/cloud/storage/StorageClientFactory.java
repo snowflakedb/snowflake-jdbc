@@ -166,8 +166,8 @@ public class StorageClientFactory
    * Creates a SnowflakeAzureClientObject which encapsulates
    * the Azure Storage client
    *
-   * @param stage  Stage information
-   * @param encMat encryption material for the client
+   * @param stage   Stage information
+   * @param encMat  encryption material for the client
    * @param session
    * @return the SnowflakeS3Client  instance created
    */

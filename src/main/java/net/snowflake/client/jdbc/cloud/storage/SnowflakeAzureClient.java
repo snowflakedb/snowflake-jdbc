@@ -125,8 +125,8 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient
             encryptionKeySize != 256)
         {
           throw new SnowflakeSQLLoggedException(SqlState.INTERNAL_ERROR,
-                                          ErrorCode.INTERNAL_ERROR.getMessageCode(), session,
-                                          "unsupported key size", encryptionKeySize);
+                                                ErrorCode.INTERNAL_ERROR.getMessageCode(), session,
+                                                "unsupported key size", encryptionKeySize);
         }
       }
       HttpUtil.setProxyForAzure(opContext);
@@ -328,8 +328,8 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient
           if (key == null || iv == null)
           {
             throw new SnowflakeSQLLoggedException(SqlState.INTERNAL_ERROR,
-                                            ErrorCode.INTERNAL_ERROR.getMessageCode(), session,
-                                            "File metadata incomplete");
+                                                  ErrorCode.INTERNAL_ERROR.getMessageCode(), session,
+                                                  "File metadata incomplete");
           }
 
           // Decrypt file
@@ -355,14 +355,14 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient
     while (retryCount <= getMaxRetries());
 
     throw new SnowflakeSQLLoggedException(SqlState.INTERNAL_ERROR,
-                                    ErrorCode.INTERNAL_ERROR.getMessageCode(), session,
-                                    "Unexpected: download unsuccessful without exception!");
+                                          ErrorCode.INTERNAL_ERROR.getMessageCode(), session,
+                                          "Unexpected: download unsuccessful without exception!");
   }
 
   /**
    * Download a file from remote storage
    *
-   * @param session            session object
+   * @param session               session object
    * @param command               command to download file
    * @param parallelism           number of threads for parallel downloading
    * @param remoteStorageLocation remote storage location, i.e. bucket for s3
@@ -403,8 +403,8 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient
           if (key == null || iv == null)
           {
             throw new SnowflakeSQLLoggedException(SqlState.INTERNAL_ERROR,
-                                            ErrorCode.INTERNAL_ERROR.getMessageCode(), session,
-                                            "File metadata incomplete");
+                                                  ErrorCode.INTERNAL_ERROR.getMessageCode(), session,
+                                                  "File metadata incomplete");
           }
 
           try
@@ -436,14 +436,14 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient
     while (retryCount < getMaxRetries());
 
     throw new SnowflakeSQLLoggedException(SqlState.INTERNAL_ERROR,
-                                    ErrorCode.INTERNAL_ERROR.getMessageCode(), session,
-                                    "Unexpected: download unsuccessful without exception!");
+                                          ErrorCode.INTERNAL_ERROR.getMessageCode(), session,
+                                          "Unexpected: download unsuccessful without exception!");
   }
 
   /**
    * Upload a file/stream to remote storage
    *
-   * @param session             session object
+   * @param session                session object
    * @param command                upload command
    * @param parallelism            [ not used by the Azure implementation ]
    * @param uploadFromStream       true if upload source is stream
@@ -540,7 +540,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient
    * @param retryCount current number of retries, incremented by the caller before each call
    * @param operation  string that indicates the function/operation that was taking place,
    *                   when the exception was raised, for example "upload"
-   * @param session the current SFSession object used by the client
+   * @param session    the current SFSession object used by the client
    * @param command    the command attempted at the time of the exception
    * @throws SnowflakeSQLException exceptions not handled
    */
@@ -641,7 +641,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient
    * @param retryCount current number of retries, incremented by the caller before each call
    * @param operation  string that indicates the function/operation that was taking place,
    *                   when the exception was raised, for example "upload"
-   * @param session the current SFSession object used by the client
+   * @param session    the current SFSession object used by the client
    * @param command    the command attempted at the time of the exception
    * @param azClient   the current Snowflake Azure client object
    * @throws SnowflakeSQLException exceptions not handled

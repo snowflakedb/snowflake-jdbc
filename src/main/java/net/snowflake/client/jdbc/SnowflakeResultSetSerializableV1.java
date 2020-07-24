@@ -507,7 +507,10 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
     return treatNTZAsUTC;
   }
 
-  public Optional<SFSession> getSession() { return possibleSession; }
+  public Optional<SFSession> getSession()
+  {
+    return possibleSession;
+  }
 
   /**
    * A factory function to create SnowflakeResultSetSerializable object
@@ -1000,7 +1003,7 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
     if (this.chunkFileMetadatas.isEmpty() && this.firstChunkStringData == null)
     {
       throw new SnowflakeSQLLoggedException("The Result Set serializable is invalid.",
-              this.possibleSession.orElse(/* session = */null));
+                                            this.possibleSession.orElse(/* session = */null));
     }
 
     // In the beginning, only the first data chunk is included in the result
@@ -1095,9 +1098,9 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
       }
       default:
         throw new SnowflakeSQLLoggedException(ErrorCode.INTERNAL_ERROR,
-                                        this.possibleSession.orElse(/*session = */null),
-                                        "Unsupported query result format: " +
-                                        getQueryResultFormat().name());
+                                              this.possibleSession.orElse(/*session = */null),
+                                              "Unsupported query result format: " +
+                                              getQueryResultFormat().name());
     }
 
     // Create result set
@@ -1155,8 +1158,8 @@ public class SnowflakeResultSetSerializableV1 implements SnowflakeResultSetSeria
     {
       // This shouldn't happen
       throw new SnowflakeSQLLoggedException(ErrorCode.INTERNAL_ERROR,
-                                      this.possibleSession.orElse( /*session = */ null),
-                                      "setFirstChunkRowCountForArrow() should only be called for Arrow.");
+                                            this.possibleSession.orElse( /*session = */ null),
+                                            "setFirstChunkRowCountForArrow() should only be called for Arrow.");
     }
   }
 

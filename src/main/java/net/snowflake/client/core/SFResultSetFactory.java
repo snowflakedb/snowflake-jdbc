@@ -42,8 +42,8 @@ class SFResultSetFactory
         return new SFResultSet(resultSetSerializable, statement, sortResult);
       default:
         throw new SnowflakeSQLLoggedException(ErrorCode.INTERNAL_ERROR, statement.getSession(),
-                                        "Unsupported query result format: " +
-                                        resultSetSerializable.getQueryResultFormat().name());
+                                              "Unsupported query result format: " +
+                                              resultSetSerializable.getQueryResultFormat().name());
     }
   }
 }
