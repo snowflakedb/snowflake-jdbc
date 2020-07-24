@@ -840,6 +840,5 @@ public class SnowflakeS3Client implements SnowflakeStorageClient
     }
 
     return s3ConnectionSocketFactory;
-
   }
 }
