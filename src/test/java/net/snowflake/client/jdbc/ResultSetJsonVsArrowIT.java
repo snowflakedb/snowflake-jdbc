@@ -32,6 +32,14 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 /** Completely compare json and arrow resultSet behaviors */
 @RunWith(Parameterized.class)
 @Category(TestCategoryArrow.class)
@@ -1541,11 +1549,11 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
     Statement st = con.createStatement();
     TimeZone.setDefault(TimeZone.getTimeZone("PST"));
     st.execute("alter session set JDBC_TREAT_TIMESTAMP_NTZ_AS_UTC=true");
-    st.execute("create or replace table src_ts(col1 TIMESTAMP_NTZ)");
-    List<String> testTimeValues =
+    st.execute("create or replace table src_ts(col1 TIMESTAMP_NTZ, col2 TIMESTAMP_TZ)");
+    List<String> testTimestampNTZValues =
         Arrays.asList(
             // DLS start in 2018
-            "2018-03-11 01:10:34.0",
+            "2018-03-11 01:10:34.0123456",
             "2018-03-11 02:10:34.0",
             "2018-03-11 03:10:34.0",
             // DLS end in 2018
@@ -1561,17 +1569,41 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
             "2020-11-01 02:10:34.0",
             "2020-11-01 03:10:34.0");
 
-    for (int i = 0; i < testTimeValues.size(); i++) {
-      st.execute("insert into src_ts values('" + testTimeValues.get(i) + "')");
+    List<String> testTimestampTZValues =
+        Arrays.asList(
+            // DLS start in 2018
+            "2018-03-11 01:10:34.0 +0200",
+            "2018-03-11 02:10:34.0 +0200",
+            "2018-03-11 03:10:34.0 +0200",
+            // DLS end in 2018
+            "2018-11-04 01:10:34.0 +0200",
+            "2018-11-04 02:10:34.0 +0200",
+            "2018-11-04 03:10:34.0 +0200",
+            // DLS start in 2020
+            "2020-03-11 01:10:34.0 +0200",
+            "2020-03-11 02:10:34.0 +0200",
+            "2020-03-11 03:10:34.0 +0200",
+            // DLS end in 2020
+            "2020-11-01 01:10:34.0 +0200",
+            "2020-11-01 02:10:34.0 +0200",
+            "2020-11-01 03:10:34.0 +0200");
+
+    for (int i = 0; i < testTimestampNTZValues.size(); i++) {
+      st.execute(
+          "insert into src_ts(col1,col2) values('"
+              + testTimestampNTZValues.get(i)
+              + "', '"
+              + testTimestampTZValues.get(i)
+              + "')");
     }
 
-    ResultSet resultSet = st.executeQuery("SELECT COL1 FROM SRC_TS");
-    Object data = null;
-    int i = 1;
+    ResultSet resultSet = st.executeQuery("select col1, col2 from src_ts");
     int j = 0;
     while (resultSet.next()) {
-      data = resultSet.getObject(i);
-      assertEquals(data.toString(), testTimeValues.get(j));
+      Object data1 = resultSet.getObject(1);
+      assertEquals(testTimestampNTZValues.get(j), data1.toString());
+      Object data2 = resultSet.getObject(2);
+      // assertEquals(testTimestampTZValues.get(j), data2.toString());
       j++;
     }
     resultSet.close();

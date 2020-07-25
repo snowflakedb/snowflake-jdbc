@@ -4,15 +4,7 @@
 
 package net.snowflake.client.core.arrow;
 
-import java.sql.Date;
-import java.sql.Timestamp;
-import java.time.LocalDate;
-import java.util.Calendar;
-import java.util.TimeZone;
-import net.snowflake.client.core.IncidentUtil;
-import net.snowflake.client.core.ResultUtil;
-import net.snowflake.client.core.SFException;
-import net.snowflake.client.core.SFSession;
+import net.snowflake.client.core.*;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
@@ -195,11 +187,12 @@ public class ArrowResultUtil {
     // If JDBC_TREAT_TIMESTAMP_NTZ_AS_UTC=true, set timezone to UTC to get
     // timestamp object. This will avoid moving the timezone and creating
     // daylight savings offset errors.
-    if (timeZoneUTC) {
-      TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
-    }
     Timestamp ts = new Timestamp(seconds * ArrowResultUtil.powerOfTen(3));
     ts.setNanos(fraction);
+    if (timeZoneUTC)
+    {
+      return new TimestampNTZ(ts);
+    }
     return ts;
   }
 }
