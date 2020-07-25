@@ -3,13 +3,22 @@
  */
 package net.snowflake.client.jdbc;
 
-import com.google.common.base.Strings;
-import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningOnGithubAction;
-import net.snowflake.client.category.TestCategoryOthers;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import static java.sql.DatabaseMetaData.procedureReturnsResult;
+import static java.sql.ResultSetMetaData.columnNullableUnknown;
+import static net.snowflake.client.jdbc.SnowflakeDatabaseMetaData.NumericFunctionsSupported;
+import static net.snowflake.client.jdbc.SnowflakeDatabaseMetaData.StringFunctionsSupported;
+import static net.snowflake.client.jdbc.SnowflakeDatabaseMetaData.SystemFunctionsSupported;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
+import com.google.common.base.Strings;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
@@ -26,61 +35,46 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import net.snowflake.client.ConditionalIgnoreRule;
+import net.snowflake.client.RunningOnGithubAction;
+import net.snowflake.client.category.TestCategoryOthers;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
-import static java.sql.DatabaseMetaData.procedureReturnsResult;
-import static java.sql.ResultSetMetaData.columnNullableUnknown;
-import static net.snowflake.client.jdbc.SnowflakeDatabaseMetaData.NumericFunctionsSupported;
-import static net.snowflake.client.jdbc.SnowflakeDatabaseMetaData.StringFunctionsSupported;
-import static net.snowflake.client.jdbc.SnowflakeDatabaseMetaData.SystemFunctionsSupported;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.greaterThanOrEqualTo;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-/**
- * Database Metadata IT
- */
+/** Database Metadata IT */
 @Category(TestCategoryOthers.class)
-public class DatabaseMetaDataIT extends BaseJDBCTest
-{
+public class DatabaseMetaDataIT extends BaseJDBCTest {
   private static Pattern VERSION_PATTERN = Pattern.compile("^(\\d+)\\.(\\d+)(?:\\.\\d+)+\\s*.*");
-  private static String PI_PROCEDURE = "create or replace procedure GETPI()\n" +
-                                       "    returns float not null\n" +
-                                       "    language javascript\n" +
-                                       "    as\n" +
-                                       "    $$\n" +
-                                       "    return 3.1415926;\n" +
-                                       "    $$\n" +
-                                       "    ;";
-  private static String STPROC1_PROCEDURE = "create or replace procedure stproc1(param1 float, param2 string)\n" +
-                                            "    returns table(retval varchar)\n" +
-                                            "    language javascript\n" +
-                                            "    as\n" +
-                                            "    $$\n" +
-                                            "    var sql_command = \"Hello, world!\"\n" +
-                                            "    $$\n" +
-                                            "    ;";
+  private static String PI_PROCEDURE =
+      "create or replace procedure GETPI()\n"
+          + "    returns float not null\n"
+          + "    language javascript\n"
+          + "    as\n"
+          + "    $$\n"
+          + "    return 3.1415926;\n"
+          + "    $$\n"
+          + "    ;";
+  private static String STPROC1_PROCEDURE =
+      "create or replace procedure stproc1(param1 float, param2 string)\n"
+          + "    returns table(retval varchar)\n"
+          + "    language javascript\n"
+          + "    as\n"
+          + "    $$\n"
+          + "    var sql_command = \"Hello, world!\"\n"
+          + "    $$\n"
+          + "    ;";
 
   @Test
-  public void testGetConnection() throws SQLException
-  {
-    try (Connection connection = getConnection())
-    {
+  public void testGetConnection() throws SQLException {
+    try (Connection connection = getConnection()) {
       DatabaseMetaData metaData = connection.getMetaData();
       assertEquals(connection, metaData.getConnection());
     }
   }
 
   @Test
-  public void testDatabaseAndDriverInfo() throws SQLException
-  {
-    try (Connection connection = getConnection())
-    {
+  public void testDatabaseAndDriverInfo() throws SQLException {
+    try (Connection connection = getConnection()) {
       DatabaseMetaData metaData = connection.getMetaData();
 
       // JDBC x.x compatible
@@ -103,10 +97,8 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
   }
 
   @Test
-  public void testGetCatalogs() throws SQLException
-  {
-    try (Connection connection = getConnection())
-    {
+  public void testGetCatalogs() throws SQLException {
+    try (Connection connection = getConnection()) {
       DatabaseMetaData metaData = connection.getMetaData();
       assertEquals(".", metaData.getCatalogSeparator());
       assertEquals("database", metaData.getCatalogTerm());
@@ -117,76 +109,59 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
 
       int cnt = 0;
       Set<String> allVisibleDatabases = new HashSet<>();
-      while (resultSet.next())
-      {
+      while (resultSet.next()) {
         allVisibleDatabases.add(resultSet.getString(1));
-        if (cnt == 0)
-        {
+        if (cnt == 0) {
           assertTrue(resultSet.isFirst());
         }
         ++cnt;
-        try
-        {
+        try {
           resultSet.isLast();
           fail("No isLast support for query based metadata");
-        }
-        catch (SQLFeatureNotSupportedException ex)
-        {
+        } catch (SQLFeatureNotSupportedException ex) {
           // nop
         }
-        try
-        {
+        try {
           resultSet.isAfterLast();
           fail("No isAfterLast support for query based metadata");
-        }
-        catch (SQLFeatureNotSupportedException ex)
-        {
+        } catch (SQLFeatureNotSupportedException ex) {
           // nop
         }
       }
       assertThat(cnt, greaterThanOrEqualTo(1));
-      try
-      {
+      try {
         assertTrue(resultSet.isAfterLast());
         fail("The result set is automatically closed when all rows are fetched.");
-      }
-      catch (SQLException ex)
-      {
+      } catch (SQLException ex) {
         assertEquals((int) ErrorCode.RESULTSET_ALREADY_CLOSED.getMessageCode(), ex.getErrorCode());
       }
-      try
-      {
+      try {
         resultSet.isAfterLast();
         fail("No isAfterLast support for query based metadata");
-      }
-      catch (SQLException ex)
-      {
+      } catch (SQLException ex) {
         assertEquals((int) ErrorCode.RESULTSET_ALREADY_CLOSED.getMessageCode(), ex.getErrorCode());
       }
       resultSet.close(); // double closing does nothing.
       resultSet.next(); // no exception
 
-      List<String> allAccessibleDatabases = getInfoBySQL(
-          "select database_name from information_schema.databases");
+      List<String> allAccessibleDatabases =
+          getInfoBySQL("select database_name from information_schema.databases");
 
       assertTrue(allVisibleDatabases.containsAll(allAccessibleDatabases));
     }
   }
 
   @Test
-  public void testGetSchemas() throws Throwable
-  {
+  public void testGetSchemas() throws Throwable {
     // CLIENT_METADATA_REQUEST_USE_CONNECTION_CTX = false
-    try (Connection connection = getConnection())
-    {
+    try (Connection connection = getConnection()) {
       DatabaseMetaData metaData = connection.getMetaData();
       assertEquals("schema", metaData.getSchemaTerm());
       ResultSet resultSet = metaData.getSchemas();
       verifyResultSetMetaDataColumns(resultSet, DBMetadataResultSetMetadata.GET_SCHEMAS);
 
       Set<String> schemas = new HashSet<>();
-      while (resultSet.next())
-      {
+      while (resultSet.next()) {
         schemas.add(resultSet.getString(1));
       }
       resultSet.close();
@@ -194,8 +169,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
 
       Set<String> schemasInDb = new HashSet<>();
       resultSet = metaData.getSchemas(connection.getCatalog(), "%");
-      while (resultSet.next())
-      {
+      while (resultSet.next()) {
         schemasInDb.add(resultSet.getString(1));
       }
       assertThat(schemasInDb.size(), greaterThanOrEqualTo(1)); // one or more schemas
@@ -205,8 +179,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
     }
 
     // CLIENT_METADATA_REQUEST_USE_CONNECTION_CTX = true
-    try (Connection connection = getConnection())
-    {
+    try (Connection connection = getConnection()) {
       Statement statement = connection.createStatement();
       statement.execute("alter SESSION set CLIENT_METADATA_REQUEST_USE_CONNECTION_CTX=true");
 
@@ -214,8 +187,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
       assertEquals("schema", metaData.getSchemaTerm());
       ResultSet resultSet = metaData.getSchemas();
       Set<String> schemas = new HashSet<>();
-      while (resultSet.next())
-      {
+      while (resultSet.next()) {
         schemas.add(resultSet.getString(1));
       }
       assertThat(schemas.size(), equalTo(1)); // more than 1 schema
@@ -223,15 +195,12 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
   }
 
   @Test
-  public void testGetTableTypes() throws Throwable
-  {
-    try (Connection connection = getConnection())
-    {
+  public void testGetTableTypes() throws Throwable {
+    try (Connection connection = getConnection()) {
       DatabaseMetaData metaData = connection.getMetaData();
       ResultSet resultSet = metaData.getTableTypes();
       Set<String> types = new HashSet<>();
-      while (resultSet.next())
-      {
+      while (resultSet.next()) {
         types.add(resultSet.getString(1));
       }
       assertEquals(2, types.size());
@@ -241,30 +210,48 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
   }
 
   @Test
-  public void testUseConnectionCtx() throws SQLException
-  {
-    try (Connection connection = getConnection())
-    {
-      connection.createStatement().execute("alter SESSION set CLIENT_METADATA_REQUEST_USE_CONNECTION_CTX=true");
+  public void testUseConnectionCtx() throws SQLException {
+    try (Connection connection = getConnection()) {
+      connection
+          .createStatement()
+          .execute("alter SESSION set CLIENT_METADATA_REQUEST_USE_CONNECTION_CTX=true");
       String schema = connection.getSchema();
       DatabaseMetaData databaseMetaData = connection.getMetaData();
 
       // create tables within current schema.
       connection.createStatement().execute("create or replace schema TEST_CTX");
-      connection.createStatement().execute("create or replace table CTX_TBL_A (colA string, colB decimal, " +
-                                           "colC number PRIMARY KEY);");
-      connection.createStatement().execute("create or replace table CTX_TBL_B (colA string, colB decimal, " +
-                                           "colC number FOREIGN KEY REFERENCES CTX_TBL_A (colC));");
-      connection.createStatement().execute("create or replace table CTX_TBL_C (colA string, colB decimal, " +
-                                           "colC number, colD int, colE timestamp, colF string, colG number);");
+      connection
+          .createStatement()
+          .execute(
+              "create or replace table CTX_TBL_A (colA string, colB decimal, "
+                  + "colC number PRIMARY KEY);");
+      connection
+          .createStatement()
+          .execute(
+              "create or replace table CTX_TBL_B (colA string, colB decimal, "
+                  + "colC number FOREIGN KEY REFERENCES CTX_TBL_A (colC));");
+      connection
+          .createStatement()
+          .execute(
+              "create or replace table CTX_TBL_C (colA string, colB decimal, "
+                  + "colC number, colD int, colE timestamp, colF string, colG number);");
       // now create more tables under current schema
       connection.createStatement().execute("use schema " + schema);
-      connection.createStatement().execute("create or replace table CTX_TBL_D (colA string, colB decimal, " +
-                                           "colC number PRIMARY KEY);");
-      connection.createStatement().execute("create or replace table CTX_TBL_E (colA string, colB decimal, " +
-                                           "colC number FOREIGN KEY REFERENCES CTX_TBL_D (colC));");
-      connection.createStatement().execute("create or replace table CTX_TBL_F (colA string, colB decimal, " +
-                                           "colC number, colD int, colE timestamp, colF string, colG number);");
+      connection
+          .createStatement()
+          .execute(
+              "create or replace table CTX_TBL_D (colA string, colB decimal, "
+                  + "colC number PRIMARY KEY);");
+      connection
+          .createStatement()
+          .execute(
+              "create or replace table CTX_TBL_E (colA string, colB decimal, "
+                  + "colC number FOREIGN KEY REFERENCES CTX_TBL_D (colC));");
+      connection
+          .createStatement()
+          .execute(
+              "create or replace table CTX_TBL_F (colA string, colB decimal, "
+                  + "colC number, colD int, colE timestamp, colF string, colG number);");
 
       // this should only return TEST_CTX schema and tables
       connection.createStatement().execute("use schema TEST_CTX");
@@ -287,12 +274,13 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
       resultSet = databaseMetaData.getExportedKeys(null, null, null);
       assertEquals(1, getSizeOfResultSet(resultSet));
 
-      resultSet = databaseMetaData.getCrossReference(null, null, null, null,
-                                                     null, null);
+      resultSet = databaseMetaData.getCrossReference(null, null, null, null, null, null);
       assertEquals(1, getSizeOfResultSet(resultSet));
 
       // Now compare results to setting client metadata to false.
-      connection.createStatement().execute("alter SESSION set CLIENT_METADATA_REQUEST_USE_CONNECTION_CTX=false");
+      connection
+          .createStatement()
+          .execute("alter SESSION set CLIENT_METADATA_REQUEST_USE_CONNECTION_CTX=false");
       databaseMetaData = connection.getMetaData();
 
       resultSet = databaseMetaData.getSchemas(null, null);
@@ -313,22 +301,18 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
       resultSet = databaseMetaData.getExportedKeys(null, null, null);
       assertThat(getSizeOfResultSet(resultSet), greaterThanOrEqualTo(2));
 
-      resultSet = databaseMetaData.getCrossReference(null, null, null, null,
-                                                     null, null);
+      resultSet = databaseMetaData.getCrossReference(null, null, null, null, null, null);
       assertThat(getSizeOfResultSet(resultSet), greaterThanOrEqualTo(2));
-
     }
   }
 
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testSessionDatabaseParameter() throws Throwable
-  {
+  public void testSessionDatabaseParameter() throws Throwable {
     String altdb = "ALTERNATEDB";
     String altschema1 = "ALTERNATESCHEMA1";
     String altschema2 = "ALTERNATESCHEMA2";
-    try (Connection connection = getConnection())
-    {
+    try (Connection connection = getConnection()) {
       Statement statement = connection.createStatement();
       String catalog = connection.getCatalog();
       String schema = connection.getSchema();
@@ -336,10 +320,23 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
       statement.execute("create or replace schema " + altschema1);
       statement.execute("create or replace schema " + altschema2);
       statement.execute(
-          "create or replace table " + altdb + "." + altschema1 + ".testtable1 (colA string, colB number)");
+          "create or replace table "
+              + altdb
+              + "."
+              + altschema1
+              + ".testtable1 (colA string, colB number)");
       statement.execute(
-          "create or replace table " + altdb + "." + altschema2 + ".testtable2 (colA string, colB number)");
-      statement.execute("create or replace table " + catalog + "." + schema + ".testtable3 (colA string, colB number)");
+          "create or replace table "
+              + altdb
+              + "."
+              + altschema2
+              + ".testtable2 (colA string, colB number)");
+      statement.execute(
+          "create or replace table "
+              + catalog
+              + "."
+              + schema
+              + ".testtable3 (colA string, colB number)");
       statement.execute("use database " + altdb);
       statement.execute("use schema " + altschema1);
 
@@ -451,62 +448,53 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
       statement.execute("drop schema " + altdb + "." + altschema1);
       statement.execute("drop schema " + altdb + "." + altschema2);
       statement.execute("drop database " + altdb);
-
     }
   }
 
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testGetTables() throws Throwable
-  {
-    try (Connection connection = getConnection())
-    {
+  public void testGetTables() throws Throwable {
+    try (Connection connection = getConnection()) {
       String database = connection.getCatalog();
       String schema = connection.getSchema();
       final String targetTable = "T0";
       final String targetView = "V0";
 
       connection.createStatement().execute("create or replace table " + targetTable + "(C1 int)");
-      connection.createStatement().execute("create or replace view " + targetView + " as select 1 as C");
+      connection
+          .createStatement()
+          .execute("create or replace view " + targetView + " as select 1 as C");
 
       DatabaseMetaData metaData = connection.getMetaData();
 
       ResultSet resultSet;
 
       // match table
-      resultSet = metaData.getTables(database, schema, "%", new String[]{"TABLE"});
+      resultSet = metaData.getTables(database, schema, "%", new String[] {"TABLE"});
       verifyResultSetMetaDataColumns(resultSet, DBMetadataResultSetMetadata.GET_TABLES);
       Set<String> tables = new HashSet<>();
-      while (resultSet.next())
-      {
+      while (resultSet.next()) {
         tables.add(resultSet.getString(3));
       }
       assertTrue(tables.contains("T0"));
 
       // exact match table
-      resultSet = metaData.getTables(
-          database, schema, targetTable, new String[]{"TABLE"});
+      resultSet = metaData.getTables(database, schema, targetTable, new String[] {"TABLE"});
       tables = new HashSet<>();
-      while (resultSet.next())
-      {
+      while (resultSet.next()) {
         tables.add(resultSet.getString(3));
       }
       assertEquals(targetTable, tables.iterator().next());
 
       // match view
-      resultSet = metaData.getTables(
-          database, schema, "%", new String[]{"VIEW"}
-      );
+      resultSet = metaData.getTables(database, schema, "%", new String[] {"VIEW"});
       Set<String> views = new HashSet<>();
-      while (resultSet.next())
-      {
+      while (resultSet.next()) {
         views.add(resultSet.getString(3));
       }
       assertTrue(views.contains(targetView));
 
-      resultSet = metaData.getTablePrivileges(
-          database, schema, targetTable
-      );
+      resultSet = metaData.getTablePrivileges(database, schema, targetTable);
       assertEquals(1, getSizeOfResultSet(resultSet));
 
       connection.createStatement().execute("drop table if exists " + targetTable);
@@ -515,14 +503,11 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
   }
 
   @Test
-  public void testGetStringValueFromColumnDef() throws SQLException
-  {
+  public void testGetStringValueFromColumnDef() throws SQLException {
     Map<String, String> params = getConnectionParameters();
     Properties properties = new Properties();
-    for (Map.Entry<?, ?> entry : params.entrySet())
-    {
-      if (entry.getValue() != null)
-      {
+    for (Map.Entry<?, ?> entry : params.entrySet()) {
+      if (entry.getValue() != null) {
         properties.put(entry.getKey(), entry.getValue());
       }
     }
@@ -533,10 +518,13 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
     String schema = connection.getSchema();
     final String targetTable = "T0";
 
-    connection.createStatement().execute(
-        "create or replace table " + targetTable +
-        "(C1 string, C2 string default '', C3 string default 'apples', C4 string default '\"apples\"', C5 int, C6 " +
-        "int default 5, C7 string default '''', C8 string default '''apples''''', C9  string default '%')");
+    connection
+        .createStatement()
+        .execute(
+            "create or replace table "
+                + targetTable
+                + "(C1 string, C2 string default '', C3 string default 'apples', C4 string default '\"apples\"', C5 int, C6 "
+                + "int default 5, C7 string default '''', C8 string default '''apples''''', C9  string default '%')");
 
     DatabaseMetaData metaData = connection.getMetaData();
 
@@ -559,24 +547,23 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
     assertEquals("'''apples'''''", resultSet.getString("COLUMN_DEF"));
     assertTrue(resultSet.next());
     assertEquals("'%'", resultSet.getString("COLUMN_DEF"));
-
-
   }
 
   @Test
-  public void testGetColumns() throws Throwable
-  {
-    try (Connection connection = getConnection())
-    {
+  public void testGetColumns() throws Throwable {
+    try (Connection connection = getConnection()) {
       String database = connection.getCatalog();
       String schema = connection.getSchema();
       final String targetTable = "T0";
 
-      connection.createStatement().execute(
-          "create or replace table " + targetTable +
-          "(C1 int, C2 varchar(100), C3 string default '', C4 number(18,4), C5 double, C6 boolean, " +
-          "C7 date not null, C8 time, C9 timestamp_ntz(7), C10 binary," +
-          "C11 variant, C12 timestamp_ltz(8), C13 timestamp_tz(3))");
+      connection
+          .createStatement()
+          .execute(
+              "create or replace table "
+                  + targetTable
+                  + "(C1 int, C2 varchar(100), C3 string default '', C4 number(18,4), C5 double, C6 boolean, "
+                  + "C7 date not null, C8 time, C9 timestamp_ntz(7), C10 binary,"
+                  + "C11 variant, C12 timestamp_ltz(8), C13 timestamp_tz(3))");
 
       DatabaseMetaData metaData = connection.getMetaData();
 
@@ -595,10 +582,8 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
       assertEquals(38, resultSet.getInt("COLUMN_SIZE"));
       assertEquals(0, resultSet.getInt("DECIMAL_DIGITS"));
       assertEquals(0, resultSet.getInt("NUM_PREC_RADIX"));
-      assertEquals(ResultSetMetaData.columnNullable,
-                   resultSet.getInt("NULLABLE"));
-      assertEquals(true,
-                   resultSet.getBoolean("NULLABLE"));
+      assertEquals(ResultSetMetaData.columnNullable, resultSet.getInt("NULLABLE"));
+      assertEquals(true, resultSet.getBoolean("NULLABLE"));
       assertEquals("", resultSet.getString("REMARKS"));
       assertEquals(null, resultSet.getString("COLUMN_DEF"));
 
@@ -623,8 +608,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
       assertEquals(100, resultSet.getInt("COLUMN_SIZE"));
       assertEquals(0, resultSet.getInt("DECIMAL_DIGITS"));
       assertEquals(0, resultSet.getInt("NUM_PREC_RADIX"));
-      assertEquals(ResultSetMetaData.columnNullable,
-                   resultSet.getInt("NULLABLE"));
+      assertEquals(ResultSetMetaData.columnNullable, resultSet.getInt("NULLABLE"));
       assertEquals("", resultSet.getString("REMARKS"));
       assertEquals(null, resultSet.getString("COLUMN_DEF"));
 
@@ -649,8 +633,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
       assertEquals(16777216, resultSet.getInt("COLUMN_SIZE"));
       assertEquals(0, resultSet.getInt("DECIMAL_DIGITS"));
       assertEquals(0, resultSet.getInt("NUM_PREC_RADIX"));
-      assertEquals(ResultSetMetaData.columnNullable,
-                   resultSet.getInt("NULLABLE"));
+      assertEquals(ResultSetMetaData.columnNullable, resultSet.getInt("NULLABLE"));
       assertEquals("", resultSet.getString("REMARKS"));
       assertEquals("", resultSet.getString("COLUMN_DEF"));
 
@@ -675,8 +658,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
       assertEquals(18, resultSet.getInt("COLUMN_SIZE"));
       assertEquals(4, resultSet.getInt("DECIMAL_DIGITS"));
       assertEquals(0, resultSet.getInt("NUM_PREC_RADIX"));
-      assertEquals(ResultSetMetaData.columnNullable,
-                   resultSet.getInt("NULLABLE"));
+      assertEquals(ResultSetMetaData.columnNullable, resultSet.getInt("NULLABLE"));
       assertEquals("", resultSet.getString("REMARKS"));
       assertEquals(null, resultSet.getString("COLUMN_DEF"));
 
@@ -701,8 +683,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
       assertEquals(0, resultSet.getInt("COLUMN_SIZE"));
       assertEquals(0, resultSet.getInt("DECIMAL_DIGITS"));
       assertEquals(0, resultSet.getInt("NUM_PREC_RADIX"));
-      assertEquals(ResultSetMetaData.columnNullable,
-                   resultSet.getInt("NULLABLE"));
+      assertEquals(ResultSetMetaData.columnNullable, resultSet.getInt("NULLABLE"));
       assertEquals("", resultSet.getString("REMARKS"));
       assertEquals(null, resultSet.getString("COLUMN_DEF"));
 
@@ -727,8 +708,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
       assertEquals(0, resultSet.getInt("COLUMN_SIZE"));
       assertEquals(0, resultSet.getInt("DECIMAL_DIGITS"));
       assertEquals(0, resultSet.getInt("NUM_PREC_RADIX"));
-      assertEquals(ResultSetMetaData.columnNullable,
-                   resultSet.getInt("NULLABLE"));
+      assertEquals(ResultSetMetaData.columnNullable, resultSet.getInt("NULLABLE"));
       assertEquals("", resultSet.getString("REMARKS"));
       assertEquals(null, resultSet.getString("COLUMN_DEF"));
 
@@ -753,10 +733,8 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
       assertEquals(0, resultSet.getInt("COLUMN_SIZE"));
       assertEquals(0, resultSet.getInt("DECIMAL_DIGITS"));
       assertEquals(0, resultSet.getInt("NUM_PREC_RADIX"));
-      assertEquals(false,
-                   resultSet.getBoolean("NULLABLE"));
-      assertEquals(ResultSetMetaData.columnNoNulls,
-                   resultSet.getInt("NULLABLE"));
+      assertEquals(false, resultSet.getBoolean("NULLABLE"));
+      assertEquals(ResultSetMetaData.columnNoNulls, resultSet.getInt("NULLABLE"));
       assertEquals("", resultSet.getString("REMARKS"));
       assertEquals(null, resultSet.getString("COLUMN_DEF"));
 
@@ -781,8 +759,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
       assertEquals(0, resultSet.getInt("COLUMN_SIZE"));
       assertEquals(9, resultSet.getInt("DECIMAL_DIGITS"));
       assertEquals(0, resultSet.getInt("NUM_PREC_RADIX"));
-      assertEquals(ResultSetMetaData.columnNullable,
-                   resultSet.getInt("NULLABLE"));
+      assertEquals(ResultSetMetaData.columnNullable, resultSet.getInt("NULLABLE"));
       assertEquals("", resultSet.getString("REMARKS"));
       assertEquals(null, resultSet.getString("COLUMN_DEF"));
 
@@ -807,8 +784,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
       assertEquals(0, resultSet.getInt("COLUMN_SIZE"));
       assertEquals(7, resultSet.getInt("DECIMAL_DIGITS"));
       assertEquals(0, resultSet.getInt("NUM_PREC_RADIX"));
-      assertEquals(ResultSetMetaData.columnNullable,
-                   resultSet.getInt("NULLABLE"));
+      assertEquals(ResultSetMetaData.columnNullable, resultSet.getInt("NULLABLE"));
       assertEquals("", resultSet.getString("REMARKS"));
       assertEquals(null, resultSet.getString("COLUMN_DEF"));
 
@@ -833,8 +809,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
       assertEquals(8388608, resultSet.getInt("COLUMN_SIZE"));
       assertEquals(0, resultSet.getInt("DECIMAL_DIGITS"));
       assertEquals(0, resultSet.getInt("NUM_PREC_RADIX"));
-      assertEquals(ResultSetMetaData.columnNullable,
-                   resultSet.getInt("NULLABLE"));
+      assertEquals(ResultSetMetaData.columnNullable, resultSet.getInt("NULLABLE"));
       assertEquals("", resultSet.getString("REMARKS"));
       assertEquals(null, resultSet.getString("COLUMN_DEF"));
 
@@ -859,8 +834,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
       assertEquals(0, resultSet.getInt("COLUMN_SIZE"));
       assertEquals(0, resultSet.getInt("DECIMAL_DIGITS"));
       assertEquals(0, resultSet.getInt("NUM_PREC_RADIX"));
-      assertEquals(ResultSetMetaData.columnNullable,
-                   resultSet.getInt("NULLABLE"));
+      assertEquals(ResultSetMetaData.columnNullable, resultSet.getInt("NULLABLE"));
       assertEquals("", resultSet.getString("REMARKS"));
       assertEquals(null, resultSet.getString("COLUMN_DEF"));
 
@@ -885,8 +859,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
       assertEquals(0, resultSet.getInt("COLUMN_SIZE"));
       assertEquals(8, resultSet.getInt("DECIMAL_DIGITS"));
       assertEquals(0, resultSet.getInt("NUM_PREC_RADIX"));
-      assertEquals(ResultSetMetaData.columnNullable,
-                   resultSet.getInt("NULLABLE"));
+      assertEquals(ResultSetMetaData.columnNullable, resultSet.getInt("NULLABLE"));
       assertEquals("", resultSet.getString("REMARKS"));
       assertEquals(null, resultSet.getString("COLUMN_DEF"));
 
@@ -911,8 +884,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
       assertEquals(0, resultSet.getInt("COLUMN_SIZE"));
       assertEquals(3, resultSet.getInt("DECIMAL_DIGITS"));
       assertEquals(0, resultSet.getInt("NUM_PREC_RADIX"));
-      assertEquals(ResultSetMetaData.columnNullable,
-                   resultSet.getInt("NULLABLE"));
+      assertEquals(ResultSetMetaData.columnNullable, resultSet.getInt("NULLABLE"));
       assertEquals("", resultSet.getString("REMARKS"));
       assertEquals(null, resultSet.getString("COLUMN_DEF"));
 
@@ -926,10 +898,13 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
       assertEquals("NO", resultSet.getString("IS_AUTOINCREMENT"));
       assertEquals("NO", resultSet.getString("IS_GENERATEDCOLUMN"));
 
-      connection.createStatement().execute(
-          "create or replace table " + targetTable +
-          "(C1 string, C2 string default '', C3 string default 'apples', C4 string default '\"apples\"', C5 int, C6 " +
-          "int default 5, C7 string default '''', C8 string default '''apples''''', C9  string default '%')");
+      connection
+          .createStatement()
+          .execute(
+              "create or replace table "
+                  + targetTable
+                  + "(C1 string, C2 string default '', C3 string default 'apples', C4 string default '\"apples\"', C5 int, C6 "
+                  + "int default 5, C7 string default '''', C8 string default '''apples''''', C9  string default '%')");
 
       metaData = connection.getMetaData();
 
@@ -953,14 +928,10 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
       assertTrue(resultSet.next());
       assertEquals("%", resultSet.getString("COLUMN_DEF"));
 
-
-      try
-      {
+      try {
         resultSet.getString("INVALID_COLUMN");
         fail("must fail");
-      }
-      catch (SQLException ex)
-      {
+      } catch (SQLException ex) {
         // nop
       }
 
@@ -972,18 +943,16 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
     }
   }
 
-
   @Test
-  public void testGetPrimarykeys() throws Throwable
-  {
-    try (Connection connection = getConnection())
-    {
+  public void testGetPrimarykeys() throws Throwable {
+    try (Connection connection = getConnection()) {
       String database = connection.getCatalog();
       String schema = connection.getSchema();
       final String targetTable = "T0";
 
-      connection.createStatement().execute(
-          "create or replace table " + targetTable + "(C1 int primary key, C2 string)");
+      connection
+          .createStatement()
+          .execute("create or replace table " + targetTable + "(C1 int primary key, C2 string)");
 
       DatabaseMetaData metaData = connection.getMetaData();
 
@@ -1003,14 +972,13 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
     }
   }
 
-  public static void verifyResultSetMetaDataColumns(ResultSet resultSet, DBMetadataResultSetMetadata metadata) throws SQLException
-  {
+  public static void verifyResultSetMetaDataColumns(
+      ResultSet resultSet, DBMetadataResultSetMetadata metadata) throws SQLException {
     final int numCol = metadata.getColumnNames().size();
     ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
     assertEquals(numCol, resultSetMetaData.getColumnCount());
 
-    for (int col = 1; col <= numCol; ++col)
-    {
+    for (int col = 1; col <= numCol; ++col) {
       List<String> colNames = metadata.getColumnNames();
       List<String> colTypeNames = metadata.getColumnTypeNames();
       List<Integer> colTypes = metadata.getColumnTypes();
@@ -1021,16 +989,18 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
       assertEquals(colNames.get(col - 1), resultSetMetaData.getColumnName(col));
 
       assertEquals(colNames.get(col - 1), resultSetMetaData.getColumnLabel(col));
-      assertEquals(SnowflakeType.javaTypeToClassName(
-          resultSetMetaData.getColumnType(col)), resultSetMetaData.getColumnClassName(col));
+      assertEquals(
+          SnowflakeType.javaTypeToClassName(resultSetMetaData.getColumnType(col)),
+          resultSetMetaData.getColumnClassName(col));
       assertEquals(25, resultSetMetaData.getColumnDisplaySize(col));
       assertEquals((int) colTypes.get(col - 1), resultSetMetaData.getColumnType(col));
       assertEquals(colTypeNames.get(col - 1), resultSetMetaData.getColumnTypeName(col));
       assertEquals(9, resultSetMetaData.getPrecision(col));
       assertEquals(9, resultSetMetaData.getScale(col));
 
-      assertEquals(SnowflakeType.isJavaTypeSigned(
-          resultSetMetaData.getColumnType(col)), resultSetMetaData.isSigned(col));
+      assertEquals(
+          SnowflakeType.isJavaTypeSigned(resultSetMetaData.getColumnType(col)),
+          resultSetMetaData.isSigned(col));
       assertFalse(resultSetMetaData.isAutoIncrement(col));
       assertFalse(resultSetMetaData.isCaseSensitive(col));
       assertFalse(resultSetMetaData.isCurrency(col));
@@ -1044,22 +1014,24 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
   }
 
   @Test
-  public void testGetImportedKeys() throws Throwable
-  {
-    try (Connection connection = getConnection())
-    {
+  public void testGetImportedKeys() throws Throwable {
+    try (Connection connection = getConnection()) {
       String database = connection.getCatalog();
       String schema = connection.getSchema();
       final String targetTable1 = "T0";
       final String targetTable2 = "T1";
 
-      connection.createStatement().execute(
-          "create or replace table " +
-          targetTable1 + "(C1 int primary key, C2 string)");
-      connection.createStatement().execute(
-          "create or replace table " +
-          targetTable2 + "(C1 int primary key, C2 string, C3 int references " + targetTable1 + ")");
-
+      connection
+          .createStatement()
+          .execute("create or replace table " + targetTable1 + "(C1 int primary key, C2 string)");
+      connection
+          .createStatement()
+          .execute(
+              "create or replace table "
+                  + targetTable2
+                  + "(C1 int primary key, C2 string, C3 int references "
+                  + targetTable1
+                  + ")");
 
       DatabaseMetaData metaData = connection.getMetaData();
 
@@ -1077,12 +1049,9 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
       assertEquals(1, resultSet.getInt("KEY_SEQ"));
       assertNotEquals("", resultSet.getString("PK_NAME"));
       assertNotEquals("", resultSet.getString("FK_NAME"));
-      assertEquals(DatabaseMetaData.importedKeyNoAction,
-                   resultSet.getShort("UPDATE_RULE"));
-      assertEquals(DatabaseMetaData.importedKeyNoAction,
-                   resultSet.getShort("DELETE_RULE"));
-      assertEquals(DatabaseMetaData.importedKeyNotDeferrable,
-                   resultSet.getShort("DEFERRABILITY"));
+      assertEquals(DatabaseMetaData.importedKeyNoAction, resultSet.getShort("UPDATE_RULE"));
+      assertEquals(DatabaseMetaData.importedKeyNoAction, resultSet.getShort("DELETE_RULE"));
+      assertEquals(DatabaseMetaData.importedKeyNotDeferrable, resultSet.getShort("DEFERRABILITY"));
 
       connection.createStatement().execute("drop table if exists " + targetTable1);
       connection.createStatement().execute("drop table if exists " + targetTable2);
@@ -1090,22 +1059,24 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
   }
 
   @Test
-  public void testGetExportedKeys() throws Throwable
-  {
-    try (Connection connection = getConnection())
-    {
+  public void testGetExportedKeys() throws Throwable {
+    try (Connection connection = getConnection()) {
       String database = connection.getCatalog();
       String schema = connection.getSchema();
       final String targetTable1 = "T0";
       final String targetTable2 = "T1";
 
-      connection.createStatement().execute(
-          "create or replace table " +
-          targetTable1 + "(C1 int primary key, C2 string)");
-      connection.createStatement().execute(
-          "create or replace table " +
-          targetTable2 + "(C1 int primary key, C2 string, C3 int references " + targetTable1 + ")");
-
+      connection
+          .createStatement()
+          .execute("create or replace table " + targetTable1 + "(C1 int primary key, C2 string)");
+      connection
+          .createStatement()
+          .execute(
+              "create or replace table "
+                  + targetTable2
+                  + "(C1 int primary key, C2 string, C3 int references "
+                  + targetTable1
+                  + ")");
 
       DatabaseMetaData metaData = connection.getMetaData();
 
@@ -1124,12 +1095,9 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
       assertEquals(1, resultSet.getInt("KEY_SEQ"));
       assertNotEquals("", resultSet.getString("PK_NAME"));
       assertNotEquals("", resultSet.getString("FK_NAME"));
-      assertEquals(DatabaseMetaData.importedKeyNoAction,
-                   resultSet.getShort("UPDATE_RULE"));
-      assertEquals(DatabaseMetaData.importedKeyNoAction,
-                   resultSet.getShort("DELETE_RULE"));
-      assertEquals(DatabaseMetaData.importedKeyNotDeferrable,
-                   resultSet.getShort("DEFERRABILITY"));
+      assertEquals(DatabaseMetaData.importedKeyNoAction, resultSet.getShort("UPDATE_RULE"));
+      assertEquals(DatabaseMetaData.importedKeyNoAction, resultSet.getShort("DELETE_RULE"));
+      assertEquals(DatabaseMetaData.importedKeyNotDeferrable, resultSet.getShort("DEFERRABILITY"));
 
       connection.createStatement().execute("drop table if exists " + targetTable1);
       connection.createStatement().execute("drop table if exists " + targetTable2);
@@ -1137,27 +1105,30 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
   }
 
   @Test
-  public void testGetCrossReferences() throws Throwable
-  {
-    try (Connection connection = getConnection())
-    {
+  public void testGetCrossReferences() throws Throwable {
+    try (Connection connection = getConnection()) {
       String database = connection.getCatalog();
       String schema = connection.getSchema();
       final String targetTable1 = "T0";
       final String targetTable2 = "T1";
 
-      connection.createStatement().execute(
-          "create or replace table " +
-          targetTable1 + "(C1 int primary key, C2 string)");
-      connection.createStatement().execute(
-          "create or replace table " +
-          targetTable2 + "(C1 int primary key, C2 string, C3 int references " + targetTable1 + ")");
-
+      connection
+          .createStatement()
+          .execute("create or replace table " + targetTable1 + "(C1 int primary key, C2 string)");
+      connection
+          .createStatement()
+          .execute(
+              "create or replace table "
+                  + targetTable2
+                  + "(C1 int primary key, C2 string, C3 int references "
+                  + targetTable1
+                  + ")");
 
       DatabaseMetaData metaData = connection.getMetaData();
 
-      ResultSet resultSet = metaData.getCrossReference(
-          database, schema, targetTable1, database, schema, targetTable2);
+      ResultSet resultSet =
+          metaData.getCrossReference(
+              database, schema, targetTable1, database, schema, targetTable2);
       verifyResultSetMetaDataColumns(resultSet, DBMetadataResultSetMetadata.GET_FOREIGN_KEYS);
 
       assertTrue(resultSet.next());
@@ -1172,12 +1143,9 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
       assertEquals(1, resultSet.getInt("KEY_SEQ"));
       assertNotEquals("", resultSet.getString("PK_NAME"));
       assertNotEquals("", resultSet.getString("FK_NAME"));
-      assertEquals(DatabaseMetaData.importedKeyNoAction,
-                   resultSet.getShort("UPDATE_RULE"));
-      assertEquals(DatabaseMetaData.importedKeyNoAction,
-                   resultSet.getShort("DELETE_RULE"));
-      assertEquals(DatabaseMetaData.importedKeyNotDeferrable,
-                   resultSet.getShort("DEFERRABILITY"));
+      assertEquals(DatabaseMetaData.importedKeyNoAction, resultSet.getShort("UPDATE_RULE"));
+      assertEquals(DatabaseMetaData.importedKeyNoAction, resultSet.getShort("DELETE_RULE"));
+      assertEquals(DatabaseMetaData.importedKeyNotDeferrable, resultSet.getShort("DEFERRABILITY"));
 
       connection.createStatement().execute("drop table if exists " + targetTable1);
       connection.createStatement().execute("drop table if exists " + targetTable2);
@@ -1185,56 +1153,46 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
   }
 
   @Test
-  public void testGetObjectsDoesNotExists() throws Throwable
-  {
-    try (Connection connection = getConnection())
-    {
+  public void testGetObjectsDoesNotExists() throws Throwable {
+    try (Connection connection = getConnection()) {
       String database = connection.getCatalog();
       String schema = connection.getSchema();
       final String targetTable = "T0";
       final String targetView = "V0";
 
       connection.createStatement().execute("create or replace table " + targetTable + "(C1 int)");
-      connection.createStatement().execute("create or replace view " + targetView + " as select 1 as C");
+      connection
+          .createStatement()
+          .execute("create or replace view " + targetView + " as select 1 as C");
 
       DatabaseMetaData metaData = connection.getMetaData();
 
       // sanity check if getTables really works.
-      ResultSet resultSet = metaData.getTables(
-          database, schema, "%", null);
+      ResultSet resultSet = metaData.getTables(database, schema, "%", null);
       assertTrue(getSizeOfResultSet(resultSet) > 0);
 
       // invalid object type. empty result is expected.
-      resultSet = metaData.getTables(
-          database, schema, "%", new String[]{"INVALID_TYPE"}
-      );
+      resultSet = metaData.getTables(database, schema, "%", new String[] {"INVALID_TYPE"});
       assertEquals(0, getSizeOfResultSet(resultSet));
 
       // rest of the cases should return empty results.
-      resultSet = metaData.getSchemas(
-          "DB_NOT_EXIST", "SCHEMA_NOT_EXIST");
+      resultSet = metaData.getSchemas("DB_NOT_EXIST", "SCHEMA_NOT_EXIST");
       assertFalse(resultSet.next());
       assertTrue(resultSet.isClosed());
 
-
-      resultSet = metaData.getTables(
-          "DB_NOT_EXIST", "SCHEMA_NOT_EXIST", "%", null);
+      resultSet = metaData.getTables("DB_NOT_EXIST", "SCHEMA_NOT_EXIST", "%", null);
       assertFalse(resultSet.next());
 
-      resultSet = metaData.getTables(
-          database, "SCHEMA\\_NOT\\_EXIST", "%", null);
+      resultSet = metaData.getTables(database, "SCHEMA\\_NOT\\_EXIST", "%", null);
       assertFalse(resultSet.next());
 
-      resultSet = metaData.getColumns(
-          "DB_NOT_EXIST", "SCHEMA_NOT_EXIST", "%", "%");
+      resultSet = metaData.getColumns("DB_NOT_EXIST", "SCHEMA_NOT_EXIST", "%", "%");
       assertFalse(resultSet.next());
 
-      resultSet = metaData.getColumns(
-          database, "SCHEMA\\_NOT\\_EXIST", "%", "%");
+      resultSet = metaData.getColumns(database, "SCHEMA\\_NOT\\_EXIST", "%", "%");
       assertFalse(resultSet.next());
 
-      resultSet = metaData.getColumns(
-          database, schema, "TBL\\_NOT\\_EXIST", "%");
+      resultSet = metaData.getColumns(database, schema, "TBL\\_NOT\\_EXIST", "%");
       assertFalse(resultSet.next());
       connection.createStatement().execute("drop table if exists " + targetTable);
       connection.createStatement().execute("drop view if exists " + targetView);
@@ -1242,11 +1200,9 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
   }
 
   @Test
-  public void testTypeInfo() throws SQLException
-  {
+  public void testTypeInfo() throws SQLException {
 
-    try (Connection connection = getConnection())
-    {
+    try (Connection connection = getConnection()) {
       DatabaseMetaData metaData = connection.getMetaData();
       ResultSet resultSet = metaData.getTypeInfo();
       resultSet.next();
@@ -1269,62 +1225,72 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
     }
   }
 
-
   @Test
-  public void testProcedure() throws Throwable
-  {
-    try (Connection connection = getConnection())
-    {
+  public void testProcedure() throws Throwable {
+    try (Connection connection = getConnection()) {
       DatabaseMetaData metaData = connection.getMetaData();
       assertEquals("procedure", metaData.getProcedureTerm());
       // no stored procedure support
       assertTrue(metaData.supportsStoredProcedures());
       ResultSet resultSet;
-      resultSet = metaData.getProcedureColumns(
-          "%", "%", "%", "%");
+      resultSet = metaData.getProcedureColumns("%", "%", "%", "%");
       assertEquals(0, getSizeOfResultSet(resultSet));
-      resultSet = metaData.getProcedures(
-          "%", "%", "%");
+      resultSet = metaData.getProcedures("%", "%", "%");
       assertEquals(0, getSizeOfResultSet(resultSet));
     }
   }
 
   /**
-   * Test function getFunctionColumns. This function has input parameters of database, schema, UDF name, and optional
-   * UDF parameter names. It returns rows of information about the UDF, and returns 1 row per return value and 1 row
-   * per input parameter.
+   * Test function getFunctionColumns. This function has input parameters of database, schema, UDF
+   * name, and optional UDF parameter names. It returns rows of information about the UDF, and
+   * returns 1 row per return value and 1 row per input parameter.
    */
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testGetFunctionColumns() throws Exception
-  {
-    try (Connection connection = getConnection())
-    {
+  public void testGetFunctionColumns() throws Exception {
+    try (Connection connection = getConnection()) {
       String database = connection.getCatalog();
       String schema = connection.getSchema();
 
       /* Create a table and put values into it */
-      connection.createStatement().execute("create or replace table FuncColTest (colA int, colB string, colC " +
-                                           "number);");
+      connection
+          .createStatement()
+          .execute(
+              "create or replace table FuncColTest (colA int, colB string, colC " + "number);");
       connection.createStatement().execute("INSERT INTO FuncColTest VALUES (4, 'Hello', 6);");
       connection.createStatement().execute("INSERT INTO FuncColTest VALUES (8, 'World', 10);");
       /* Create a UDF that counts up the total rows in the table just created */
-      connection.createStatement().execute("create or replace function total_rows_in_table() returns number as " +
-                                           "'select count(*) from FuncColTest';");
+      connection
+          .createStatement()
+          .execute(
+              "create or replace function total_rows_in_table() returns number as "
+                  + "'select count(*) from FuncColTest';");
       /* Create another UDF that takes in 2 numbers and multiplies them together */
-      connection.createStatement().execute("create or replace function FUNC111 " +
-                                           "(a number, b number) RETURNS NUMBER COMMENT='multiply numbers' as 'a*b'");
+      connection
+          .createStatement()
+          .execute(
+              "create or replace function FUNC111 "
+                  + "(a number, b number) RETURNS NUMBER COMMENT='multiply numbers' as 'a*b'");
       /* Create another 2 tables to be used for another UDF */
-      connection.createStatement().execute("create or replace table BIN_TABLE(bin1 binary, bin2 binary(100), " +
-                                           "sharedCol decimal)");
-      connection.createStatement().execute("create or replace table JDBC_TBL111(colA string, colB decimal, colC " +
-                                           "timestamp)");
+      connection
+          .createStatement()
+          .execute(
+              "create or replace table BIN_TABLE(bin1 binary, bin2 binary(100), "
+                  + "sharedCol decimal)");
+      connection
+          .createStatement()
+          .execute(
+              "create or replace table JDBC_TBL111(colA string, colB decimal, colC "
+                  + "timestamp)");
       /* Create a UDF that returns a table made up of 4 columns from 2 different tables, joined together */
-      connection.createStatement().execute("create or replace function FUNC112 " +
-                                           "() RETURNS TABLE(colA string, colB decimal, bin2 binary, sharedCol decimal) COMMENT= 'returns " +
-                                           "table of 4 columns' as 'select JDBC_TBL111.colA, JDBC_TBL111.colB, " +
-                                           "BIN_TABLE.bin2, BIN_TABLE.sharedCol from JDBC_TBL111 inner join BIN_TABLE on JDBC_TBL111" +
-                                           ".colB =BIN_TABLE.sharedCol'");
+      connection
+          .createStatement()
+          .execute(
+              "create or replace function FUNC112 "
+                  + "() RETURNS TABLE(colA string, colB decimal, bin2 binary, sharedCol decimal) COMMENT= 'returns "
+                  + "table of 4 columns' as 'select JDBC_TBL111.colA, JDBC_TBL111.colB, "
+                  + "BIN_TABLE.bin2, BIN_TABLE.sharedCol from JDBC_TBL111 inner join BIN_TABLE on JDBC_TBL111"
+                  + ".colB =BIN_TABLE.sharedCol'");
       DatabaseMetaData metaData = connection.getMetaData();
       /* Call getFunctionColumns on FUNC111 and since there's no parameter name, get all rows back */
       ResultSet resultSet = metaData.getFunctionColumns(database, schema, "FUNC111", "%");
@@ -1412,7 +1378,9 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
       assertEquals("", resultSet.getString("COLUMN_NAME"));
       assertEquals(DatabaseMetaData.functionColumnOut, resultSet.getInt("COLUMN_TYPE"));
       assertEquals(Types.OTHER, resultSet.getInt("DATA_TYPE"));
-      assertEquals("TABLE (COLA VARCHAR, COLB NUMBER, BIN2 BINARY, SHAREDCOL NUMBER)", resultSet.getString("TYPE_NAME"));
+      assertEquals(
+          "TABLE (COLA VARCHAR, COLB NUMBER, BIN2 BINARY, SHAREDCOL NUMBER)",
+          resultSet.getString("TYPE_NAME"));
       assertEquals(0, resultSet.getInt("PRECISION"));
       // length column is not supported and will always be 0
       assertEquals(0, resultSet.getInt("LENGTH"));
@@ -1427,8 +1395,9 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
       assertEquals(0, resultSet.getInt("ORDINAL_POSITION"));
       // is_nullable column is not supported and always returns empty string
       assertEquals("", resultSet.getString("IS_NULLABLE"));
-      assertEquals("FUNC112() RETURN TABLE (COLA VARCHAR, COLB NUMBER, BIN2 BINARY, SHAREDCOL NUMBER)",
-                   resultSet.getString("SPECIFIC_NAME"));
+      assertEquals(
+          "FUNC112() RETURN TABLE (COLA VARCHAR, COLB NUMBER, BIN2 BINARY, SHAREDCOL NUMBER)",
+          resultSet.getString("SPECIFIC_NAME"));
       /* There are no input parameters so only 1 row is returned, describing return value of function */
       assertFalse(resultSet.next());
       /* Assert that calling getFunctionColumns with no parameters returns empty result set */
@@ -1468,14 +1437,14 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
 
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testGetTablePrivileges() throws Exception
-  {
-    try (Connection connection = getConnection())
-    {
+  public void testGetTablePrivileges() throws Exception {
+    try (Connection connection = getConnection()) {
       String database = connection.getCatalog();
       String schema = connection.getSchema();
-      connection.createStatement().execute("create or replace table PRIVTEST(colA string, colB number, colC " +
-                                           "timestamp)");
+      connection
+          .createStatement()
+          .execute(
+              "create or replace table PRIVTEST(colA string, colB number, colC " + "timestamp)");
       DatabaseMetaData metaData = connection.getMetaData();
       ResultSet resultSet = metaData.getTablePrivileges(database, schema, "PRIVTEST");
       verifyResultSetMetaDataColumns(resultSet, DBMetadataResultSetMetadata.GET_TABLE_PRIVILEGES);
@@ -1487,7 +1456,8 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
       assertEquals("SYSADMIN", resultSet.getString("GRANTEE"));
       assertEquals("OWNERSHIP", resultSet.getString("PRIVILEGE"));
       assertEquals("YES", resultSet.getString("IS_GRANTABLE"));
-      // grant select privileges to table for role security admin and test that a new row of table privileges is added
+      // grant select privileges to table for role security admin and test that a new row of table
+      // privileges is added
       connection.createStatement().execute("grant select on table PRIVTEST to role securityadmin");
       resultSet = metaData.getTablePrivileges(database, schema, "PRIVTEST");
       resultSet.next();
@@ -1506,7 +1476,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
       assertEquals("SECURITYADMIN", resultSet.getString("GRANTEE"));
       assertEquals("SELECT", resultSet.getString("PRIVILEGE"));
       assertEquals("NO", resultSet.getString("IS_GRANTABLE"));
-      //if tableNamePattern is null, empty resultSet is returned.
+      // if tableNamePattern is null, empty resultSet is returned.
       resultSet = metaData.getTablePrivileges(null, null, null);
       assertEquals(7, resultSet.getMetaData().getColumnCount());
       assertEquals(0, getSizeOfResultSet(resultSet));
@@ -1515,10 +1485,8 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
   }
 
   @Test
-  public void testGetProcedures() throws SQLException
-  {
-    try (Connection connection = getConnection())
-    {
+  public void testGetProcedures() throws SQLException {
+    try (Connection connection = getConnection()) {
       String database = connection.getCatalog();
       String schema = connection.getSchema();
 
@@ -1542,18 +1510,16 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
 
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testGetProcedureColumns() throws Exception
-  {
-    try (Connection connection = getConnection())
-    {
+  public void testGetProcedureColumns() throws Exception {
+    try (Connection connection = getConnection()) {
       String database = connection.getCatalog();
       String schema = connection.getSchema();
       connection.createStatement().execute(PI_PROCEDURE);
       connection.createStatement().execute(STPROC1_PROCEDURE);
       DatabaseMetaData metaData = connection.getMetaData();
       /* Call getProcedureColumns with no parameters for procedure name or column. This should return  all procedures
-       in the current database and schema. It will return all rows as well (1 row per result and 1 row per parameter
-       for each procedure) */
+      in the current database and schema. It will return all rows as well (1 row per result and 1 row per parameter
+      for each procedure) */
       ResultSet resultSet = metaData.getProcedureColumns(database, schema, "GETPI", "%");
       verifyResultSetMetaDataColumns(resultSet, DBMetadataResultSetMetadata.GET_PROCEDURE_COLUMNS);
       resultSet.next();
@@ -1608,7 +1574,9 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
       assertEquals(0, resultSet.getInt("ORDINAL_POSITION"));
       // is_nullable column is not supported and always returns empty string
       assertEquals("YES", resultSet.getString("IS_NULLABLE"));
-      assertEquals("STPROC1(FLOAT, VARCHAR) RETURN TABLE (RETVAL VARCHAR)", resultSet.getString("SPECIFIC_NAME"));
+      assertEquals(
+          "STPROC1(FLOAT, VARCHAR) RETURN TABLE (RETVAL VARCHAR)",
+          resultSet.getString("SPECIFIC_NAME"));
       resultSet.next();
       assertEquals(database, resultSet.getString("PROCEDURE_CAT"));
       assertEquals(schema, resultSet.getString("PROCEDURE_SCHEM"));
@@ -1634,7 +1602,9 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
       assertEquals(1, resultSet.getInt("ORDINAL_POSITION"));
       // is_nullable column is not supported and always returns empty string
       assertEquals("", resultSet.getString("IS_NULLABLE"));
-      assertEquals("STPROC1(FLOAT, VARCHAR) RETURN TABLE (RETVAL VARCHAR)", resultSet.getString("SPECIFIC_NAME"));
+      assertEquals(
+          "STPROC1(FLOAT, VARCHAR) RETURN TABLE (RETVAL VARCHAR)",
+          resultSet.getString("SPECIFIC_NAME"));
       resultSet.next();
       assertEquals(database, resultSet.getString("PROCEDURE_CAT"));
       assertEquals(schema, resultSet.getString("PROCEDURE_SCHEM"));
@@ -1660,7 +1630,9 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
       assertEquals(2, resultSet.getInt("ORDINAL_POSITION"));
       // is_nullable column is not supported and always returns empty string
       assertEquals("", resultSet.getString("IS_NULLABLE"));
-      assertEquals("STPROC1(FLOAT, VARCHAR) RETURN TABLE (RETVAL VARCHAR)", resultSet.getString("SPECIFIC_NAME"));
+      assertEquals(
+          "STPROC1(FLOAT, VARCHAR) RETURN TABLE (RETVAL VARCHAR)",
+          resultSet.getString("SPECIFIC_NAME"));
       assertFalse(resultSet.next());
       /* Call getProcedureColumns with specified procedure name and column name. This will return 2 rows: 1 for the
       result values of the procedure, and 1 for the parameter values for the specified parameter. */
@@ -1673,10 +1645,8 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
   }
 
   @Test
-  public void testDatabaseMetadata() throws SQLException
-  {
-    try (Connection connection = getConnection())
-    {
+  public void testDatabaseMetadata() throws SQLException {
+    try (Connection connection = getConnection()) {
       DatabaseMetaData metaData = connection.getMetaData();
 
       String dbVersion = metaData.getDatabaseProductVersion();
@@ -1703,7 +1673,8 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
       assertFalse(metaData.deletesAreDetected(1));
       assertTrue(metaData.doesMaxRowSizeIncludeBlobs());
       assertTrue(metaData.supportsTransactions());
-      assertEquals(Connection.TRANSACTION_READ_COMMITTED, metaData.getDefaultTransactionIsolation());
+      assertEquals(
+          Connection.TRANSACTION_READ_COMMITTED, metaData.getDefaultTransactionIsolation());
       assertEquals("$", metaData.getExtraNameCharacters());
       assertEquals("\"", metaData.getIdentifierQuoteString());
       assertEquals(0, getSizeOfResultSet(metaData.getIndexInfo(null, null, null, true, true)));
@@ -1728,7 +1699,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
       assertEquals(0, metaData.getMaxTablesInSelect());
       assertEquals(255, metaData.getMaxUserNameLength());
       assertEquals(0, getSizeOfResultSet(metaData.getTablePrivileges(null, null, null)));
-      //assertEquals("", metaData.getTimeDateFunctions());
+      // assertEquals("", metaData.getTimeDateFunctions());
       assertEquals(System.getenv("SNOWFLAKE_TEST_USER"), metaData.getUserName());
       assertFalse(metaData.insertsAreDetected(1));
       assertTrue(metaData.isCatalogAtStart());
@@ -1795,12 +1766,12 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
       assertTrue(metaData.supportsOuterJoins());
       assertFalse(metaData.supportsPositionedDelete());
       assertFalse(metaData.supportsPositionedUpdate());
-      assertTrue(metaData.supportsResultSetConcurrency(
-          ResultSet.TYPE_FORWARD_ONLY,
-          ResultSet.CONCUR_READ_ONLY));
-      assertFalse(metaData.supportsResultSetConcurrency(
-          ResultSet.TYPE_SCROLL_INSENSITIVE,
-          ResultSet.CONCUR_READ_ONLY));
+      assertTrue(
+          metaData.supportsResultSetConcurrency(
+              ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY));
+      assertFalse(
+          metaData.supportsResultSetConcurrency(
+              ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY));
       assertTrue(metaData.supportsResultSetType(ResultSet.TYPE_FORWARD_ONLY));
       assertTrue(metaData.supportsResultSetHoldability(ResultSet.CLOSE_CURSORS_AT_COMMIT));
       assertFalse(metaData.supportsResultSetHoldability(ResultSet.HOLD_CURSORS_OVER_COMMIT));
@@ -1820,21 +1791,21 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
       assertFalse(metaData.supportsSubqueriesInQuantifieds());
       assertTrue(metaData.supportsTableCorrelationNames());
       assertTrue(metaData.supportsTransactionIsolationLevel(Connection.TRANSACTION_READ_COMMITTED));
-      assertFalse(metaData.supportsTransactionIsolationLevel(Connection.TRANSACTION_REPEATABLE_READ));
+      assertFalse(
+          metaData.supportsTransactionIsolationLevel(Connection.TRANSACTION_REPEATABLE_READ));
       assertFalse(metaData.supportsTransactionIsolationLevel(Connection.TRANSACTION_SERIALIZABLE));
-      assertFalse(metaData.supportsTransactionIsolationLevel(Connection.TRANSACTION_READ_UNCOMMITTED));
+      assertFalse(
+          metaData.supportsTransactionIsolationLevel(Connection.TRANSACTION_READ_UNCOMMITTED));
       assertTrue(metaData.supportsUnion());
       assertTrue(metaData.supportsUnionAll());
       assertFalse(metaData.updatesAreDetected(1));
       assertFalse(metaData.usesLocalFilePerTable());
       assertFalse(metaData.usesLocalFiles());
-
     }
   }
 
   @Test
-  public void testHandlingSpecialChars() throws SQLException
-  {
+  public void testHandlingSpecialChars() throws SQLException {
     Connection connection = getConnection();
     String database = connection.getCatalog();
     String schema = connection.getSchema();
@@ -1842,14 +1813,17 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
     Statement statement = connection.createStatement();
     String escapeChar = metaData.getSearchStringEscape();
     // test getColumns with escaped special characters in table name
-    statement.execute("create or replace table \"TEST\\1\\_1\" (\"C%1\" integer,\"C\\1\\\\11\" integer)");
+    statement.execute(
+        "create or replace table \"TEST\\1\\_1\" (\"C%1\" integer,\"C\\1\\\\11\" integer)");
     statement.execute("INSERT INTO \"TEST\\1\\_1\" (\"C%1\",\"C\\1\\\\11\") VALUES (0,0)");
     // test getColumns with escaped special characters in schema and table name
     statement.execute("create or replace schema \"SPECIAL%_\\SCHEMA\"");
-    statement.execute("create or replace table \"SPECIAL%_\\SCHEMA\".\"TEST_1_1\" ( \"RNUM\" integer not null, " +
-                      "\"C21\" integer," +
-                      "\"C11\" integer,\"C%1\" integer,\"C\\1\\\\11\" integer , primary key (\"RNUM\"))");
-    statement.execute("INSERT INTO \"TEST_1_1\" (RNUM,C21,C11,\"C%1\",\"C\\1\\\\11\") VALUES (0,0,0,0,0)");
+    statement.execute(
+        "create or replace table \"SPECIAL%_\\SCHEMA\".\"TEST_1_1\" ( \"RNUM\" integer not null, "
+            + "\"C21\" integer,"
+            + "\"C11\" integer,\"C%1\" integer,\"C\\1\\\\11\" integer , primary key (\"RNUM\"))");
+    statement.execute(
+        "INSERT INTO \"TEST_1_1\" (RNUM,C21,C11,\"C%1\",\"C\\1\\\\11\") VALUES (0,0,0,0,0)");
     String escapedTable1 = "TEST" + escapeChar + "\\1" + escapeChar + "\\" + escapeChar + "_1";
     ResultSet resultSet = metaData.getColumns(database, schema, escapedTable1, null);
     assertTrue(resultSet.next());
@@ -1858,7 +1832,8 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
     assertEquals("C\\1\\\\11", resultSet.getString("COLUMN_NAME"));
     assertFalse(resultSet.next());
 
-    // Underscore can match to any character, so check that table comes back when underscore is not escaped.
+    // Underscore can match to any character, so check that table comes back when underscore is not
+    // escaped.
     String partiallyEscapedTable1 = "TEST" + escapeChar + "\\1" + escapeChar + "\\_1";
     resultSet = metaData.getColumns(database, schema, partiallyEscapedTable1, null);
     assertTrue(resultSet.next());
@@ -1882,7 +1857,8 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
     assertEquals("C\\1\\\\11", resultSet.getString("COLUMN_NAME"));
     assertFalse(resultSet.next());
 
-    // test getTables with real special characters and escaped special characters. Unescaped _ should allow both
+    // test getTables with real special characters and escaped special characters. Unescaped _
+    // should allow both
     // tables to be returned, while escaped _ should match up to the _ in both table names.
     statement.execute("create or replace table " + schema + ".\"TABLE_A\" (colA string)");
     statement.execute("create or replace table " + schema + ".\"TABLE_B\" (colB number)");
@@ -1905,12 +1881,9 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
     assertEquals("COLA", resultSet.getString("COLUMN_NAME"));
   }
 
-
   @Test
-  public void testOtherEmptyTables() throws Throwable
-  {
-    try (Connection connection = getConnection())
-    {
+  public void testOtherEmptyTables() throws Throwable {
+    try (Connection connection = getConnection()) {
       DatabaseMetaData metaData = connection.getMetaData();
 
       ResultSet resultSet;
@@ -1919,19 +1892,17 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
       assertEquals(0, getSizeOfResultSet(resultSet));
 
       // UDT is not supported.
-      resultSet = metaData.getUDTs(null, null, null, new int[]{});
+      resultSet = metaData.getUDTs(null, null, null, new int[] {});
       assertEquals(0, getSizeOfResultSet(resultSet));
     }
   }
 
   @Test
-  public void testFeatureNotSupportedException() throws Throwable
-  {
-    try (Connection connection = getConnection())
-    {
+  public void testFeatureNotSupportedException() throws Throwable {
+    try (Connection connection = getConnection()) {
       DatabaseMetaData metaData = connection.getMetaData();
-      expectFeatureNotSupportedException(() -> metaData.getBestRowIdentifier(
-          null, null, null, 0, true));
+      expectFeatureNotSupportedException(
+          () -> metaData.getBestRowIdentifier(null, null, null, 0, true));
       expectFeatureNotSupportedException(() -> metaData.getVersionColumns(null, null, null));
       expectFeatureNotSupportedException(() -> metaData.getSuperTypes(null, null, null));
       expectFeatureNotSupportedException(() -> metaData.getSuperTables(null, null, null));
@@ -1944,15 +1915,14 @@ public class DatabaseMetaDataIT extends BaseJDBCTest
       expectFeatureNotSupportedException(() -> metaData.getPseudoColumns(null, null, null, null));
       expectFeatureNotSupportedException(metaData::generatedKeyAlwaysReturned);
       expectFeatureNotSupportedException(() -> metaData.unwrap(SnowflakeDatabaseMetaData.class));
-      expectFeatureNotSupportedException(() -> metaData.isWrapperFor(SnowflakeDatabaseMetaData.class));
+      expectFeatureNotSupportedException(
+          () -> metaData.isWrapperFor(SnowflakeDatabaseMetaData.class));
     }
   }
 
   @Test
-  public void testGetFunctions() throws SQLException
-  {
-    try (Connection connection = getConnection())
-    {
+  public void testGetFunctions() throws SQLException {
+    try (Connection connection = getConnection()) {
       DatabaseMetaData metadata = connection.getMetaData();
       String supportedStringFuncs = metadata.getStringFunctions();
       assertEquals(StringFunctionsSupported, supportedStringFuncs);

@@ -4,20 +4,17 @@
 
 package net.snowflake.client.core;
 
-import net.snowflake.client.jdbc.ErrorCode;
-
 import java.security.PrivateKey;
 import java.util.regex.Pattern;
+import net.snowflake.client.jdbc.ErrorCode;
 
 /**
  * session properties accepted for opening a new session.
  *
  * @author jhuang
- * <p>
- * Created on 11/3/15
+ *     <p>Created on 11/3/15
  */
-public enum SFSessionProperty
-{
+public enum SFSessionProperty {
   SERVER_URL("serverURL", true, String.class),
   USER("user", false, String.class),
   PASSWORD("password", false, String.class),
@@ -59,7 +56,6 @@ public enum SFSessionProperty
   PRIVATE_KEY_FILE("private_key_file", false, String.class),
   PRIVATE_KEY_FILE_PWD("private_key_file_pwd", false, String.class);
 
-
   // property key in string
   private String propertyKey;
 
@@ -75,46 +71,32 @@ public enum SFSessionProperty
   // application name matcher
   public static Pattern APPLICATION_REGEX = Pattern.compile("^[A-Za-z][A-Za-z0-9\\.\\-_]{1,50}$");
 
-  public boolean isRequired()
-  {
+  public boolean isRequired() {
     return required;
   }
 
-  public String getPropertyKey()
-  {
+  public String getPropertyKey() {
     return propertyKey;
   }
 
-  public Class<?> getValueType()
-  {
+  public Class<?> getValueType() {
     return valueType;
   }
 
-  SFSessionProperty(String propertyKey,
-                    boolean required,
-                    Class<?> valueType,
-                    String... aliases)
-  {
+  SFSessionProperty(String propertyKey, boolean required, Class<?> valueType, String... aliases) {
     this.propertyKey = propertyKey;
     this.required = required;
     this.valueType = valueType;
     this.aliases = aliases;
   }
 
-  static SFSessionProperty lookupByKey(String propertyKey)
-  {
-    for (SFSessionProperty property : SFSessionProperty.values())
-    {
-      if (property.propertyKey.equalsIgnoreCase(propertyKey))
-      {
+  static SFSessionProperty lookupByKey(String propertyKey) {
+    for (SFSessionProperty property : SFSessionProperty.values()) {
+      if (property.propertyKey.equalsIgnoreCase(propertyKey)) {
         return property;
-      }
-      else
-      {
-        for (String alias : property.aliases)
-        {
-          if (alias.equalsIgnoreCase(propertyKey))
-          {
+      } else {
+        for (String alias : property.aliases) {
+          if (alias.equalsIgnoreCase(propertyKey)) {
             return property;
           }
         }
@@ -126,55 +108,39 @@ public enum SFSessionProperty
   /**
    * Check if property value is desired class. Convert if possible
    *
-   * @param property      The session property to check
+   * @param property The session property to check
    * @param propertyValue The property value to check
    * @return The checked property value
-   * @throws SFException Will be thrown if an invalid property value is
-   *                     passed in
+   * @throws SFException Will be thrown if an invalid property value is passed in
    */
-  static Object checkPropertyValue(SFSessionProperty property,
-                                   Object propertyValue)
-  throws SFException
-  {
-    if (propertyValue == null)
-    {
+  static Object checkPropertyValue(SFSessionProperty property, Object propertyValue)
+      throws SFException {
+    if (propertyValue == null) {
       return null;
     }
 
-    if (property.getValueType().isAssignableFrom(propertyValue.getClass()))
-    {
-      switch (property)
-      {
+    if (property.getValueType().isAssignableFrom(propertyValue.getClass())) {
+      switch (property) {
         case APPLICATION:
-          if (APPLICATION_REGEX.matcher((String) propertyValue).find())
-          {
+          if (APPLICATION_REGEX.matcher((String) propertyValue).find()) {
             return propertyValue;
-          }
-          else
-          {
-            throw new SFException(ErrorCode.INVALID_PARAMETER_VALUE,
-                                  propertyValue, property);
+          } else {
+            throw new SFException(ErrorCode.INVALID_PARAMETER_VALUE, propertyValue, property);
           }
         default:
           return propertyValue;
       }
-    }
-    else
-    {
-      if (property.getValueType() == Boolean.class &&
-          propertyValue instanceof String)
-      {
+    } else {
+      if (property.getValueType() == Boolean.class && propertyValue instanceof String) {
         return SFLoginInput.getBooleanValue(propertyValue);
-      }
-      else if (property.getValueType() == Integer.class &&
-               propertyValue instanceof String)
-      {
+      } else if (property.getValueType() == Integer.class && propertyValue instanceof String) {
         return Integer.valueOf((String) propertyValue);
       }
     }
 
-    throw new SFException(ErrorCode.INVALID_PARAMETER_TYPE,
-                          propertyValue.getClass().getName(),
-                          property.getValueType().getName());
+    throw new SFException(
+        ErrorCode.INVALID_PARAMETER_TYPE,
+        propertyValue.getClass().getName(),
+        property.getValueType().getName());
   }
 }

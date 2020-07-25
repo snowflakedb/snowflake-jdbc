@@ -5,36 +5,28 @@
 package net.snowflake.client.core;
 
 import com.google.common.base.Strings;
-import net.snowflake.client.log.SFLogger;
-import net.snowflake.client.log.SFLoggerFactory;
-
 import com.sun.jna.Library;
 import com.sun.jna.Native;
 import com.sun.jna.Pointer;
-
 import java.nio.charset.StandardCharsets;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
 
-public class SecureStorageAppleManager implements SecureStorageManager
-{
-  private static final
-  SFLogger logger = SFLoggerFactory.getLogger(SecureStorageAppleManager.class);
+public class SecureStorageAppleManager implements SecureStorageManager {
+  private static final SFLogger logger = SFLoggerFactory.getLogger(SecureStorageAppleManager.class);
 
   private final SecurityLib securityLib;
 
-  private SecureStorageAppleManager()
-  {
+  private SecureStorageAppleManager() {
     securityLib = SecurityLibManager.getInstance();
   }
 
-  public static SecureStorageAppleManager builder()
-  {
+  public static SecureStorageAppleManager builder() {
     return new SecureStorageAppleManager();
   }
 
-  public SecureStorageStatus setCredential(String host, String user, String cred)
-  {
-    if (Strings.isNullOrEmpty(cred))
-    {
+  public SecureStorageStatus setCredential(String host, String user, String cred) {
+    if (Strings.isNullOrEmpty(cred)) {
       logger.info("No credential provided");
       return SecureStorageStatus.SUCCESS;
     }
@@ -46,38 +38,51 @@ public class SecureStorageAppleManager implements SecureStorageManager
 
     Pointer[] itemRef = new Pointer[1];
     int errCode = 0;
-    synchronized (securityLib)
-    {
-      errCode = securityLib.SecKeychainFindGenericPassword(
-          null, targetBytes.length, targetBytes, userBytes.length, userBytes, null, null, itemRef);
+    synchronized (securityLib) {
+      errCode =
+          securityLib.SecKeychainFindGenericPassword(
+              null,
+              targetBytes.length,
+              targetBytes,
+              userBytes.length,
+              userBytes,
+              null,
+              null,
+              itemRef);
     }
 
-    if (errCode != SecurityLib.ERR_SEC_SUCCESS && errCode != SecurityLib.ERR_SEC_ITEM_NOT_FOUND)
-    {
-      logger.info(String.format("Failed to check the existence of the item in keychain. Error code = %d", Native.getLastError()));
+    if (errCode != SecurityLib.ERR_SEC_SUCCESS && errCode != SecurityLib.ERR_SEC_ITEM_NOT_FOUND) {
+      logger.info(
+          String.format(
+              "Failed to check the existence of the item in keychain. Error code = %d",
+              Native.getLastError()));
       return SecureStorageStatus.FAILURE;
     }
 
-    if (itemRef[0] != null)
-    {
-      synchronized (securityLib)
-      {
-        errCode = securityLib.SecKeychainItemModifyContent(
-            itemRef[0], null, credBytes.length, credBytes);
+    if (itemRef[0] != null) {
+      synchronized (securityLib) {
+        errCode =
+            securityLib.SecKeychainItemModifyContent(itemRef[0], null, credBytes.length, credBytes);
       }
-    }
-    else
-    {
-      synchronized (securityLib)
-      {
-        errCode = securityLib.SecKeychainAddGenericPassword(
-            Pointer.NULL, targetBytes.length, targetBytes, userBytes.length, userBytes, credBytes.length, credBytes, null);
+    } else {
+      synchronized (securityLib) {
+        errCode =
+            securityLib.SecKeychainAddGenericPassword(
+                Pointer.NULL,
+                targetBytes.length,
+                targetBytes,
+                userBytes.length,
+                userBytes,
+                credBytes.length,
+                credBytes,
+                null);
       }
     }
 
-    if (errCode != SecurityLib.ERR_SEC_SUCCESS)
-    {
-      logger.info(String.format("Failed to set/modify the item in keychain. Error code = %d", Native.getLastError()));
+    if (errCode != SecurityLib.ERR_SEC_SUCCESS) {
+      logger.info(
+          String.format(
+              "Failed to set/modify the item in keychain. Error code = %d", Native.getLastError()));
       return SecureStorageStatus.FAILURE;
     }
 
@@ -85,8 +90,7 @@ public class SecureStorageAppleManager implements SecureStorageManager
     return SecureStorageStatus.SUCCESS;
   }
 
-  public String getCredential(String host, String user)
-  {
+  public String getCredential(String host, String user) {
     String target = SecureStorageManager.convertTarget(host, user);
     byte[] targetBytes = target.getBytes(StandardCharsets.UTF_8);
     byte[] userBytes = user.toUpperCase().getBytes(StandardCharsets.UTF_8);
@@ -94,23 +98,29 @@ public class SecureStorageAppleManager implements SecureStorageManager
     int[] dataLength = new int[1];
     Pointer[] data = new Pointer[1];
 
-    try
-    {
+    try {
       int errCode = 0;
-      synchronized (securityLib)
-      {
-        errCode = securityLib.SecKeychainFindGenericPassword(
-            null, targetBytes.length, targetBytes, userBytes.length, userBytes,
-            dataLength, data, null);
+      synchronized (securityLib) {
+        errCode =
+            securityLib.SecKeychainFindGenericPassword(
+                null,
+                targetBytes.length,
+                targetBytes,
+                userBytes.length,
+                userBytes,
+                dataLength,
+                data,
+                null);
       }
 
-      if (errCode != SecurityLib.ERR_SEC_SUCCESS)
-      {
-        logger.info(String.format("Failed to find the item in keychain or item not exists. Error code = %d", Native.getLastError()));
+      if (errCode != SecurityLib.ERR_SEC_SUCCESS) {
+        logger.info(
+            String.format(
+                "Failed to find the item in keychain or item not exists. Error code = %d",
+                Native.getLastError()));
         return null;
       }
-      if (dataLength[0] == 0 || data[0] == null)
-      {
+      if (dataLength[0] == 0 || data[0] == null) {
         logger.info("Found empty item or no item is found");
         return null;
       }
@@ -120,21 +130,16 @@ public class SecureStorageAppleManager implements SecureStorageManager
 
       logger.debug("Successfully read the credential. Will return it as String now");
       return res;
-    }
-    finally
-    {
-      if (data[0] != null)
-      {
-        synchronized (securityLib)
-        {
+    } finally {
+      if (data[0] != null) {
+        synchronized (securityLib) {
           securityLib.SecKeychainItemFreeContent(null, data[0]);
         }
       }
     }
   }
 
-  public SecureStorageStatus deleteCredential(String host, String user)
-  {
+  public SecureStorageStatus deleteCredential(String host, String user) {
     String target = SecureStorageManager.convertTarget(host, user);
     byte[] targetBytes = target.getBytes(StandardCharsets.UTF_8);
     byte[] userBytes = user.toUpperCase().getBytes(StandardCharsets.UTF_8);
@@ -142,28 +147,35 @@ public class SecureStorageAppleManager implements SecureStorageManager
     Pointer[] itemRef = new Pointer[1];
 
     int errCode = 0;
-    synchronized (securityLib)
-    {
-      errCode = securityLib.SecKeychainFindGenericPassword(
-          null, targetBytes.length, targetBytes, userBytes.length, userBytes, null, null, itemRef);
+    synchronized (securityLib) {
+      errCode =
+          securityLib.SecKeychainFindGenericPassword(
+              null,
+              targetBytes.length,
+              targetBytes,
+              userBytes.length,
+              userBytes,
+              null,
+              null,
+              itemRef);
     }
 
-    if (errCode != SecurityLib.ERR_SEC_SUCCESS && errCode != SecurityLib.ERR_SEC_ITEM_NOT_FOUND)
-    {
-      logger.info(String.format("Failed to delete the item in keychain. Error code = %d", Native.getLastError()));
+    if (errCode != SecurityLib.ERR_SEC_SUCCESS && errCode != SecurityLib.ERR_SEC_ITEM_NOT_FOUND) {
+      logger.info(
+          String.format(
+              "Failed to delete the item in keychain. Error code = %d", Native.getLastError()));
       return SecureStorageStatus.FAILURE;
     }
 
-    if (itemRef[0] != null)
-    {
-      synchronized (securityLib)
-      {
+    if (itemRef[0] != null) {
+      synchronized (securityLib) {
         errCode = securityLib.SecKeychainItemDelete(itemRef[0]);
       }
 
-      if (errCode != SecurityLib.ERR_SEC_SUCCESS)
-      {
-        logger.info(String.format("Failed to delete the item in keychain. Error code = %d", Native.getLastError()));
+      if (errCode != SecurityLib.ERR_SEC_SUCCESS) {
+        logger.info(
+            String.format(
+                "Failed to delete the item in keychain. Error code = %d", Native.getLastError()));
         return SecureStorageStatus.FAILURE;
       }
     }
@@ -171,19 +183,13 @@ public class SecureStorageAppleManager implements SecureStorageManager
     return SecureStorageStatus.SUCCESS;
   }
 
-
-  static class SecurityLibManager
-  {
+  static class SecurityLibManager {
     private static SecurityLib INSTANCE = null;
 
-    public static SecurityLib getInstance()
-    {
-      if (INSTANCE == null)
-      {
-        synchronized (SecurityLibManager.class)
-        {
-          if (INSTANCE == null)
-          {
+    public static SecurityLib getInstance() {
+      if (INSTANCE == null) {
+        synchronized (SecurityLibManager.class) {
+          if (INSTANCE == null) {
             INSTANCE = (SecurityLib) Native.loadLibrary("Security", SecurityLib.class);
           }
         }
@@ -191,37 +197,28 @@ public class SecureStorageAppleManager implements SecureStorageManager
       return INSTANCE;
     }
 
-    /**
-     * This function is used only for unit test
-     */
-    public static void setInstance(SecurityLib instance)
-    {
+    /** This function is used only for unit test */
+    public static void setInstance(SecurityLib instance) {
       INSTANCE = instance;
     }
   }
 
-
-  /**
-   * the java mapping of OS X Security Library
-   */
-  interface SecurityLib extends Library
-  {
-    //SecurityLib INSTANCE = (SecurityLib) Native.loadLibrary("Security", SecurityLib.class);
+  /** the java mapping of OS X Security Library */
+  interface SecurityLib extends Library {
+    // SecurityLib INSTANCE = (SecurityLib) Native.loadLibrary("Security", SecurityLib.class);
 
     int ERR_SEC_SUCCESS = 0;
     int ERR_SEC_ITEM_NOT_FOUND = -25300;
 
     /**
      * https://developer.apple.com/documentation/security/1397301-seckeychainfindgenericpassword
-     * <p>
-     * func SecKeychainFindGenericPassword(_ keychainOrArray: CFTypeRef?,
-     * _ serviceNameLength: UInt32,
-     * _ serviceName: UnsafePointer<Int8>?, const char*
-     * _ accountNameLength: UInt32,
-     * _ accountName: UnsafePointer<Int8>?, const char*
-     * _ passwordLength: UnsafeMutablePointer<UInt32>?, UInt32*
-     * _ passwordData: UnsafeMutablePointer<UnsafeMutableRawPointer?>?, void**
-     * _ itemRef: UnsafeMutablePointer<SecKeychainItem?>?), SecKeychainItemRef* -> OSStatus
+     *
+     * <p>func SecKeychainFindGenericPassword(_ keychainOrArray: CFTypeRef?, _ serviceNameLength:
+     * UInt32, _ serviceName: UnsafePointer<Int8>?, const char* _ accountNameLength: UInt32, _
+     * accountName: UnsafePointer<Int8>?, const char* _ passwordLength:
+     * UnsafeMutablePointer<UInt32>?, UInt32* _ passwordData:
+     * UnsafeMutablePointer<UnsafeMutableRawPointer?>?, void** _ itemRef:
+     * UnsafeMutablePointer<SecKeychainItem?>?), SecKeychainItemRef* -> OSStatus
      */
     public int SecKeychainFindGenericPassword(
         Pointer keychainOrArray,
@@ -234,14 +231,11 @@ public class SecureStorageAppleManager implements SecureStorageManager
         Pointer[] itemRef);
 
     /**
-     * func SecKeychainAddGenericPassword(_ keychain: SecKeychain?, SecKeychainRef
-     * _ serviceNameLength: UInt32,
-     * _ serviceName: UnsafePointer<Int8>?, const char*
-     * _ accountNameLength: UInt32,
-     * _ accountName: UnsafePointer<Int8>?, const char*
-     * _ passwordLength: UInt32,
-     * _ passwordData: UnsafeRawPointer, const void*
-     * _ itemRef: UnsafeMutablePointer<SecKeychainItem?>?) SecKeychainItemRef* -> OSStatus
+     * func SecKeychainAddGenericPassword(_ keychain: SecKeychain?, SecKeychainRef _
+     * serviceNameLength: UInt32, _ serviceName: UnsafePointer<Int8>?, const char* _
+     * accountNameLength: UInt32, _ accountName: UnsafePointer<Int8>?, const char* _ passwordLength:
+     * UInt32, _ passwordData: UnsafeRawPointer, const void* _ itemRef:
+     * UnsafeMutablePointer<SecKeychainItem?>?) SecKeychainItemRef* -> OSStatus
      */
     public int SecKeychainAddGenericPassword(
         Pointer keychain,
@@ -254,25 +248,16 @@ public class SecureStorageAppleManager implements SecureStorageManager
         Pointer[] itemRef);
 
     /**
-     * OSStatus SecKeychainItemModifyContent(SecKeychainItemRef itemRef,
-     * const SecKeychainAttributeList *attrList,
-     * UInt32 length,
-     * const void *data);
+     * OSStatus SecKeychainItemModifyContent(SecKeychainItemRef itemRef, const
+     * SecKeychainAttributeList *attrList, UInt32 length, const void *data);
      */
     public int SecKeychainItemModifyContent(
-        Pointer itemRef,
-        Pointer attrList,
-        int length,
-        byte[] data);
+        Pointer itemRef, Pointer attrList, int length, byte[] data);
 
-    /**
-     * OSStatus SecKeychainItemDelete(SecKeychainItemRef itemRef);
-     */
+    /** OSStatus SecKeychainItemDelete(SecKeychainItemRef itemRef); */
     public int SecKeychainItemDelete(Pointer itemRef);
 
-    /**
-     * OSStatus SecKeychainItemFreeContent(SecKeychainAttributeList *attrList, void *data);
-     */
+    /** OSStatus SecKeychainItemFreeContent(SecKeychainAttributeList *attrList, void *data); */
     public int SecKeychainItemFreeContent(Pointer[] attrList, Pointer data);
   }
 }

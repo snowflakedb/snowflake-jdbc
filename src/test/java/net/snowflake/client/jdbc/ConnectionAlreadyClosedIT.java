@@ -3,40 +3,32 @@
  */
 package net.snowflake.client.jdbc;
 
-import net.snowflake.client.category.TestCategoryConnection;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import static org.junit.Assert.fail;
 
 import java.sql.Connection;
 import java.sql.SQLClientInfoException;
 import java.util.Properties;
-
-import static org.junit.Assert.fail;
+import net.snowflake.client.category.TestCategoryConnection;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 @Category(TestCategoryConnection.class)
-public class ConnectionAlreadyClosedIT extends BaseJDBCTest
-{
-  private interface MethodRaisesSQLClientInfoException
-  {
+public class ConnectionAlreadyClosedIT extends BaseJDBCTest {
+  private interface MethodRaisesSQLClientInfoException {
     void run() throws SQLClientInfoException;
   }
 
-  private void expectSQLClientInfoException(MethodRaisesSQLClientInfoException f)
-  {
-    try
-    {
+  private void expectSQLClientInfoException(MethodRaisesSQLClientInfoException f) {
+    try {
       f.run();
       fail("must raise exception");
-    }
-    catch (SQLClientInfoException ex)
-    {
+    } catch (SQLClientInfoException ex) {
       // noup
     }
   }
 
   @Test
-  public void testClosedConnection() throws Throwable
-  {
+  public void testClosedConnection() throws Throwable {
     Connection connection = getConnection();
     connection.close();
 
@@ -55,7 +47,8 @@ public class ConnectionAlreadyClosedIT extends BaseJDBCTest
     expectConnectionAlreadyClosedException(() -> connection.setReadOnly(false));
     expectConnectionAlreadyClosedException(() -> connection.setCatalog("fakedb"));
     expectConnectionAlreadyClosedException(() -> connection.setSchema("fakedb"));
-    expectConnectionAlreadyClosedException(() -> connection.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED));
+    expectConnectionAlreadyClosedException(
+        () -> connection.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED));
     expectSQLClientInfoException(() -> connection.setClientInfo(new Properties()));
     expectSQLClientInfoException(() -> connection.setClientInfo("name", "value"));
   }

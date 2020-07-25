@@ -7,21 +7,19 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Implements  platform-independent interface Azure BLOB and GCS object metadata
- * <p>
- * Only the metadata accessors and mutators used by the JDBC client currently are supported,
+ * Implements platform-independent interface Azure BLOB and GCS object metadata
+ *
+ * <p>Only the metadata accessors and mutators used by the JDBC client currently are supported,
  * additional methods should be added as needed
  *
  * @author lgiakoumakis, ppaulus (rename)
- **/
-public class CommonObjectMetadata implements StorageObjectMetadata
-{
+ */
+public class CommonObjectMetadata implements StorageObjectMetadata {
   private long contentLength;
   private Map<String, String> userDefinedMetadata;
   private String contentEncoding;
 
-  CommonObjectMetadata()
-  {
+  CommonObjectMetadata() {
     userDefinedMetadata = new HashMap<>();
   }
 
@@ -29,59 +27,45 @@ public class CommonObjectMetadata implements StorageObjectMetadata
    * Constructs a common metadata object
    * from the set of parameters that the JDBC client is using
    */
-  CommonObjectMetadata(long contentLength, String contentEncoding, Map<String, String> userDefinedMetadata)
-  {
+  CommonObjectMetadata(
+      long contentLength, String contentEncoding, Map<String, String> userDefinedMetadata) {
     this.contentEncoding = contentEncoding;
     this.contentLength = contentLength;
     this.userDefinedMetadata = userDefinedMetadata;
   }
 
-  /**
-   * @return returns a Map/key-value pairs of metadata properties
-   */
+  /** @return returns a Map/key-value pairs of metadata properties */
   @Override
-  public Map<String, String> getUserMetadata()
-  {
+  public Map<String, String> getUserMetadata() {
     return userDefinedMetadata;
   }
-
   ;
 
-  /**
-   * @return returns the size of object in bytes
-   */
+  /** @return returns the size of object in bytes */
   @Override
-  public long getContentLength()
-  {
+  public long getContentLength() {
     return contentLength;
   }
 
-  /**
-   * Sets size of the associated object in bytes
-   */
+  /** Sets size of the associated object in bytes */
   @Override
-  public void setContentLength(long contentLength)
-  {
+  public void setContentLength(long contentLength) {
     this.contentLength = contentLength;
   }
 
-  /**
-   * Adds the key value pair of custom user-metadata for the associated object.
-   */
+  /** Adds the key value pair of custom user-metadata for the associated object. */
   @Override
-  public void addUserMetadata(String key, String value)
-  {
+  public void addUserMetadata(String key, String value) {
     userDefinedMetadata.put(key, value);
   }
 
   /**
-   * Sets the optional Content-Encoding HTTP header specifying what content encodings,
-   * have been applied to the object and what decoding mechanisms must be applied,
-   * in order to obtain the media-type referenced by the Content-Type field.
+   * Sets the optional Content-Encoding HTTP header specifying what content encodings, have been
+   * applied to the object and what decoding mechanisms must be applied, in order to obtain the
+   * media-type referenced by the Content-Type field.
    */
   @Override
-  public void setContentEncoding(String encoding)
-  {
+  public void setContentEncoding(String encoding) {
     contentEncoding = encoding;
   }
 
@@ -89,8 +73,7 @@ public class CommonObjectMetadata implements StorageObjectMetadata
    * @return returns the content encoding type
    */
   @Override
-  public String getContentEncoding()
-  {
+  public String getContentEncoding() {
     return contentEncoding;
   }
 }

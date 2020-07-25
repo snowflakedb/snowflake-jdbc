@@ -4,17 +4,15 @@
 
 package net.snowflake.client.jdbc;
 
-import net.snowflake.client.core.SFSession;
-
 import java.util.List;
+import net.snowflake.client.core.SFSession;
 
 /**
  * An interface to use for returning query results from any java class
  *
  * @author jhuang
  */
-public interface SnowflakeFixedView
-{
+public interface SnowflakeFixedView {
   List<SnowflakeColumnMetadata> describeColumns(SFSession session) throws Exception;
 
   List<Object> getNextRow() throws Exception;
