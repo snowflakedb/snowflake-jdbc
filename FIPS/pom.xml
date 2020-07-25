@@ -784,8 +784,9 @@
         </plugins>
       </build>
     </profile>
+    <!-- Run mvn -P check-style verify -->
     <profile>
-      <id>reformat</id>
+      <id>check-style</id>
       <build>
         <plugins>
           <plugin>
@@ -795,7 +796,7 @@
             <executions>
               <execution>
                 <goals>
-                  <goal>format</goal>
+                  <goal>check</goal>
                 </goals>
               </execution>
             </executions>

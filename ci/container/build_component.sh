@@ -8,10 +8,10 @@ JDBC_ROOT=$(cd "${THIS_DIR}/../../" && pwd)
 
 cd $JDBC_ROOT
 rm -f lib/*.jar
-mvn clean install --batch-mode --show-version
+mvn clean install --batch-mode --show-version -P check-style
 [[ -n "$WHITESOURCE_API_KEY" ]] && $THIS_DIR/wss.sh
 
 cd FIPS
 rm -f lib/*.jar
-mvn clean install --batch-mode --show-version
+mvn clean install --batch-mode --show-version -P check-style
 $THIS_DIR/upload_artifact.sh
