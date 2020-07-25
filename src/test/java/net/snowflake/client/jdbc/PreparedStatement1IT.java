@@ -418,7 +418,7 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
                 .createStatement()
                 .execute(
                     "ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = 1"); // enable stage
-                                                                                   // bind
+            // bind
             for (int i = 0; i < timestamps.length; i++) {
               prepStatement.setInt(1, i);
               prepStatement.setTimestamp(2, timestamps[i]);
@@ -504,7 +504,7 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
               .createStatement()
               .execute(
                   "ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = 1"); // enable stage
-                                                                                 // bind
+          // bind
           for (int i = 0; i < times.length; i++) {
             prepStatement.setInt(1, i);
             prepStatement.setTime(2, times[i]);
