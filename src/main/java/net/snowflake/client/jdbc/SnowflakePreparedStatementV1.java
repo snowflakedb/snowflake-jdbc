@@ -123,7 +123,7 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
       try {
         this.statementMetaData = sfStatement.describe(sql);
       } catch (SFException e) {
-        throw new SnowflakeSQLException(e);
+        throw new SnowflakeSQLLoggedException(e, connection.getSfSession());
       } catch (SnowflakeSQLException e) {
         if (!errorCodesIgnoredInDescribeMode.contains(e.getErrorCode())) {
           throw e;

@@ -388,11 +388,12 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView {
    * Compress an input stream with GZIP and return the result size, digest and compressed stream.
    *
    * @param inputStream data input
+   * @param session the session
    * @return result size, digest and compressed stream
    * @throws SnowflakeSQLException if encountered exception when compressing
    */
-  private static InputStreamWithMetadata compressStreamWithGZIP(InputStream inputStream)
-      throws SnowflakeSQLException {
+  private static InputStreamWithMetadata compressStreamWithGZIP(
+      InputStream inputStream, SFSession session) throws SnowflakeSQLException {
     FileBackedOutputStream tempStream = new FileBackedOutputStream(MAX_BUFFER_SIZE, true);
 
     try {
@@ -424,10 +425,11 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView {
     } catch (IOException | NoSuchAlgorithmException ex) {
       logger.error("Exception compressing input stream", ex);
 
-      throw new SnowflakeSQLException(
+      throw new SnowflakeSQLLoggedException(
           ex,
           SqlState.INTERNAL_ERROR,
           ErrorCode.INTERNAL_ERROR.getMessageCode(),
+          session,
           "error encountered for compression");
     }
   }
@@ -441,8 +443,8 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView {
    * @deprecated Can be removed when all accounts are encrypted
    */
   @Deprecated
-  private static InputStreamWithMetadata compressStreamWithGZIPNoDigest(InputStream inputStream)
-      throws SnowflakeSQLException {
+  private static InputStreamWithMetadata compressStreamWithGZIPNoDigest(
+      InputStream inputStream, SFSession session) throws SnowflakeSQLException {
     try {
       FileBackedOutputStream tempStream = new FileBackedOutputStream(MAX_BUFFER_SIZE, true);
 
@@ -467,10 +469,11 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView {
     } catch (IOException ex) {
       logger.error("Exception compressing input stream", ex);
 
-      throw new SnowflakeSQLException(
+      throw new SnowflakeSQLLoggedException(
           ex,
           SqlState.INTERNAL_ERROR,
           ErrorCode.INTERNAL_ERROR.getMessageCode(),
+          session,
           "error encountered for compression");
     }
   }
@@ -582,8 +585,8 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView {
           if (metadata.requireCompress) {
             InputStreamWithMetadata compressedSizeAndStream =
                 (encMat == null
-                    ? compressStreamWithGZIPNoDigest(uploadStream)
-                    : compressStreamWithGZIP(uploadStream));
+                    ? compressStreamWithGZIPNoDigest(uploadStream, session)
+                    : compressStreamWithGZIP(uploadStream, session));
 
             fileBackedOutputStream = compressedSizeAndStream.fileBackedOutputStream;
 
@@ -646,7 +649,8 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView {
                   srcFilePath,
                   destFileName,
                   uploadStream,
-                  fileBackedOutputStream);
+                  fileBackedOutputStream,
+                  session);
               break;
 
             case S3:
@@ -766,7 +770,8 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView {
         try {
           switch (stage.getStageType()) {
             case LOCAL_FS:
-              pullFileFromLocal(stage.getLocation(), srcFilePath, localLocation, destFileName);
+              pullFileFromLocal(
+                  stage.getLocation(), srcFilePath, localLocation, destFileName, session);
               break;
 
             case AZURE:
@@ -1359,8 +1364,8 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView {
         // wait for all threads to complete without timeout
         threadExecutor.awaitTermination(Long.MAX_VALUE, TimeUnit.DAYS);
       } catch (InterruptedException ex) {
-        throw new SnowflakeSQLException(
-            SqlState.QUERY_CANCELED, ErrorCode.INTERRUPTED.getMessageCode());
+        throw new SnowflakeSQLLoggedException(
+            SqlState.QUERY_CANCELED, ErrorCode.INTERRUPTED.getMessageCode(), session);
       }
       logger.debug("Done with uploading from a stream");
     } finally {
@@ -1451,8 +1456,8 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView {
         // wait for all threads to complete without timeout
         threadExecutor.awaitTermination(Long.MAX_VALUE, TimeUnit.DAYS);
       } catch (InterruptedException ex) {
-        throw new SnowflakeSQLException(
-            SqlState.QUERY_CANCELED, ErrorCode.INTERRUPTED.getMessageCode());
+        throw new SnowflakeSQLLoggedException(
+            SqlState.QUERY_CANCELED, ErrorCode.INTERRUPTED.getMessageCode(), session);
       }
       logger.debug("Done with downloading");
     } finally {
@@ -1547,8 +1552,8 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView {
         // wait for all threads to complete without timeout
         threadExecutor.awaitTermination(Long.MAX_VALUE, TimeUnit.DAYS);
       } catch (InterruptedException ex) {
-        throw new SnowflakeSQLException(
-            SqlState.QUERY_CANCELED, ErrorCode.INTERRUPTED.getMessageCode());
+        throw new SnowflakeSQLLoggedException(
+            SqlState.QUERY_CANCELED, ErrorCode.INTERRUPTED.getMessageCode(), session);
       }
       logger.debug("Done with uploading");
 
@@ -1696,7 +1701,8 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView {
       String filePath,
       String destFileName,
       InputStream inputStream,
-      FileBackedOutputStream fileBackedOutStr)
+      FileBackedOutputStream fileBackedOutStr,
+      SFSession session)
       throws SQLException {
 
     // replace ~ with user home
@@ -1716,15 +1722,23 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView {
       }
       FileUtils.copyInputStreamToFile(inputStream, destFile);
     } catch (Exception ex) {
-      throw new SnowflakeSQLException(
-          ex, SqlState.INTERNAL_ERROR, ErrorCode.INTERNAL_ERROR.getMessageCode(), ex.getMessage());
+      throw new SnowflakeSQLLoggedException(
+          ex,
+          SqlState.INTERNAL_ERROR,
+          ErrorCode.INTERNAL_ERROR.getMessageCode(),
+          session,
+          ex.getMessage());
     }
 
     return true;
   }
 
   private static boolean pullFileFromLocal(
-      String sourceLocation, String filePath, String destLocation, String destFileName)
+      String sourceLocation,
+      String filePath,
+      String destLocation,
+      String destFileName,
+      SFSession session)
       throws SQLException {
     try {
       logger.debug(
@@ -1738,8 +1752,12 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView {
 
       FileUtils.copyFileToDirectory(srcFile, new File(destLocation));
     } catch (Exception ex) {
-      throw new SnowflakeSQLException(
-          ex, SqlState.INTERNAL_ERROR, ErrorCode.INTERNAL_ERROR.getMessageCode(), ex.getMessage());
+      throw new SnowflakeSQLLoggedException(
+          ex,
+          SqlState.INTERNAL_ERROR,
+          ErrorCode.INTERNAL_ERROR.getMessageCode(),
+          session,
+          ex.getMessage());
     }
 
     return true;
@@ -1822,7 +1840,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView {
   }
 
   /**
-   * Static API function to upload data without JDBC connection.
+   * Static API function to upload data without JDBC session.
    *
    * <p>NOTE: This function is developed based on getUploadFileCallable().
    *
@@ -1862,8 +1880,8 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView {
       if (requireCompress) {
         InputStreamWithMetadata compressedSizeAndStream =
             (encMat == null
-                ? compressStreamWithGZIPNoDigest(uploadStream)
-                : compressStreamWithGZIP(uploadStream));
+                ? compressStreamWithGZIPNoDigest(uploadStream, /* session = */ null)
+                : compressStreamWithGZIP(uploadStream, /* session = */ null));
 
         fileBackedOutputStream = compressedSizeAndStream.fileBackedOutputStream;
 
@@ -1931,10 +1949,10 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView {
   }
 
   /**
-   * Push a file (or stream) to remote store with pre-signed URL without JDBC connection.
+   * Push a file (or stream) to remote store with pre-signed URL without JDBC session.
    *
    * <p>NOTE: This function is developed based on pushFileToRemoteStore(). The main difference is
-   * that the caller needs to provide pre-signed URL and the upload doesn't need JDBC connection.
+   * that the caller needs to provide pre-signed URL and the upload doesn't need JDBC session.
    */
   private static void pushFileToRemoteStoreWithPresignedUrl(
       StageInfo stage,
@@ -2005,15 +2023,15 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView {
    * fresh token from GS and then calls .renew() on the storage client to refresh itself with the
    * new token
    *
-   * @param connection a connection object
+   * @param session a session object
    * @param command a command to be retried
    * @param client a Snowflake Storage client object
    * @throws SnowflakeSQLException if any error occurs
    */
   public static void renewExpiredToken(
-      SFSession connection, String command, SnowflakeStorageClient client)
+      SFSession session, String command, SnowflakeStorageClient client)
       throws SnowflakeSQLException {
-    SFStatement statement = new SFStatement(connection);
+    SFStatement statement = new SFStatement(session);
     JsonNode jsonNode = parseCommandInGS(statement, command);
     Map<?, ?> stageCredentials = extractStageCreds(jsonNode);
 
@@ -2246,7 +2264,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView {
             if (fileMetadataMap.get(mappedSrcFile).requireCompress) {
               logger.debug("Compressing stream for digest check");
 
-              InputStreamWithMetadata res = compressStreamWithGZIP(fileStream);
+              InputStreamWithMetadata res = compressStreamWithGZIP(fileStream, session);
 
               fileStream = res.fileBackedOutputStream.asByteSource().openStream();
               fileBackedOutputStreams.add(res.fileBackedOutputStream);
@@ -2300,10 +2318,11 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView {
             continue;
           }
         } catch (IOException | NoSuchAlgorithmException ex) {
-          throw new SnowflakeSQLException(
+          throw new SnowflakeSQLLoggedException(
               ex,
               SqlState.INTERNAL_ERROR,
               ErrorCode.INTERNAL_ERROR.getMessageCode(),
+              session,
               "Error reading: " + localFile);
         }
 
@@ -2370,7 +2389,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView {
           if (fileMetadataMap.get(mappedSrcFile).requireCompress) {
             logger.debug("Compressing stream for digest check");
 
-            InputStreamWithMetadata res = compressStreamWithGZIP(localFileStream);
+            InputStreamWithMetadata res = compressStreamWithGZIP(localFileStream, session);
             fileBackedOutputStreams.add(res.fileBackedOutputStream);
 
             localFileStream = res.fileBackedOutputStream.asByteSource().openStream();
@@ -2380,10 +2399,11 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView {
           localFileHashText = res.digest;
           fileBackedOutputStreams.add(res.fileBackedOutputStream);
         } catch (IOException | NoSuchAlgorithmException ex) {
-          throw new SnowflakeSQLException(
+          throw new SnowflakeSQLLoggedException(
               ex,
               SqlState.INTERNAL_ERROR,
               ErrorCode.INTERNAL_ERROR.getMessageCode(),
+              session,
               "Error reading local file: " + localFile);
         } finally {
           for (FileBackedOutputStream stream : fileBackedOutputStreams) {
@@ -2409,10 +2429,11 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView {
           fileBackedOutputStream = res.fileBackedOutputStream;
 
         } catch (IOException | NoSuchAlgorithmException ex) {
-          throw new SnowflakeSQLException(
+          throw new SnowflakeSQLLoggedException(
               ex,
               SqlState.INTERNAL_ERROR,
               ErrorCode.INTERNAL_ERROR.getMessageCode(),
+              session,
               "Error reading stage file: " + stageFilePath);
         } finally {
           try {

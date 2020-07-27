@@ -283,8 +283,8 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
       logOutOfMemoryError();
       StringWriter errors = new StringWriter();
       outOfMemoryError.printStackTrace(new PrintWriter(errors));
-      throw new SnowflakeSQLException(
-          SqlState.INTERNAL_ERROR, ErrorCode.INTERNAL_ERROR.getMessageCode(), errors);
+      throw new SnowflakeSQLLoggedException(
+          SqlState.INTERNAL_ERROR, ErrorCode.INTERNAL_ERROR.getMessageCode(), this.session, errors);
     }
   }
 
@@ -485,8 +485,8 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
       logOutOfMemoryError();
       StringWriter errors = new StringWriter();
       outOfMemoryError.printStackTrace(new PrintWriter(errors));
-      throw new SnowflakeSQLException(
-          SqlState.INTERNAL_ERROR, ErrorCode.INTERNAL_ERROR.getMessageCode(), errors);
+      throw new SnowflakeSQLLoggedException(
+          SqlState.INTERNAL_ERROR, ErrorCode.INTERNAL_ERROR.getMessageCode(), this.session, errors);
     }
 
     SnowflakeResultChunk currentChunk = this.chunks.get(nextChunkToConsume);
@@ -783,9 +783,10 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
         try {
           response = getResultChunk(resultChunk.getUrl());
         } catch (URISyntaxException | IOException ex) {
-          throw new SnowflakeSQLException(
+          throw new SnowflakeSQLLoggedException(
               SqlState.IO_ERROR,
               ErrorCode.NETWORK_ERROR.getMessageCode(),
+              session,
               "Error encountered when request a result chunk URL: "
                   + resultChunk.getUrl()
                   + " "
@@ -819,9 +820,10 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
         } catch (Exception ex) {
           logger.error("Failed to decompress data: {}", response);
 
-          throw new SnowflakeSQLException(
+          throw new SnowflakeSQLLoggedException(
               SqlState.INTERNAL_ERROR,
               ErrorCode.INTERNAL_ERROR.getMessageCode(),
+              session,
               "Failed to decompress data: " + response.toString());
         }
 
@@ -893,10 +895,11 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
               chunkIndex,
               ex.getLocalizedMessage());
 
-          throw new SnowflakeSQLException(
+          throw new SnowflakeSQLLoggedException(
               ex,
               SqlState.INTERNAL_ERROR,
               ErrorCode.INTERNAL_ERROR.getMessageCode(),
+              session,
               "Exception: " + ex.getLocalizedMessage());
         } finally {
           // close the buffer reader will close underlying stream
@@ -907,10 +910,11 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
           try {
             inputStream.close();
           } catch (IOException ex) {
-            throw new SnowflakeSQLException(
+            throw new SnowflakeSQLLoggedException(
                 ex,
                 SqlState.INTERNAL_ERROR,
                 ErrorCode.INTERNAL_ERROR.getMessageCode(),
+                session,
                 "Exception: " + ex.getLocalizedMessage());
           }
         }

@@ -59,6 +59,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
   private StageInfo stageInfo;
   private RemoteStoreFileEncryptionMaterial encMat;
   private Storage gcsClient = null;
+  private SFSession session = null;
 
   private static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeGCSClient.class);
 
@@ -71,9 +72,10 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
    *                required to decrypt/encrypt content in stage
    */
   public static SnowflakeGCSClient createSnowflakeGCSClient(
-      StageInfo stage, RemoteStoreFileEncryptionMaterial encMat) throws SnowflakeSQLException {
+      StageInfo stage, RemoteStoreFileEncryptionMaterial encMat, SFSession session)
+      throws SnowflakeSQLException {
     SnowflakeGCSClient sfGcsClient = new SnowflakeGCSClient();
-    sfGcsClient.setupGCSClient(stage, encMat);
+    sfGcsClient.setupGCSClient(stage, encMat, session);
 
     return sfGcsClient;
   }
@@ -121,7 +123,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
   @Override
   public void renew(Map<?, ?> stageCredentials) throws SnowflakeSQLException {
     stageInfo.setCredentials(stageCredentials);
-    setupGCSClient(stageInfo, encMat);
+    setupGCSClient(stageInfo, encMat, session);
   }
 
   @Override
@@ -309,9 +311,10 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
             EncryptionProvider.decrypt(localFile, key, iv, this.encMat);
           } catch (Exception ex) {
             logger.error("Error decrypting file", ex);
-            throw new SnowflakeSQLException(
+            throw new SnowflakeSQLLoggedException(
                 SqlState.INTERNAL_ERROR,
                 ErrorCode.INTERNAL_ERROR.getMessageCode(),
+                session,
                 "Cannot decrypt file");
           }
         }
@@ -447,9 +450,10 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
             }
           } catch (Exception ex) {
             logger.error("Error decrypting file", ex);
-            throw new SnowflakeSQLException(
+            throw new SnowflakeSQLLoggedException(
                 SqlState.INTERNAL_ERROR,
                 ErrorCode.INTERNAL_ERROR.getMessageCode(),
+                session,
                 "Cannot decrypt file");
           }
         }
@@ -627,10 +631,11 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
         handleStorageException(ex, ++retryCount, "upload", session, command);
 
         if (uploadFromStream && fileBackedOutputStream == null) {
-          throw new SnowflakeSQLException(
+          throw new SnowflakeSQLLoggedException(
               ex,
               SqlState.SYSTEM_ERROR,
               ErrorCode.IO_ERROR.getMessageCode(),
+              session,
               "Encountered exception during upload: "
                   + ex.getMessage()
                   + "\nCannot retry upload from stream.");
@@ -719,14 +724,16 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
           "Call returned for URL: {}",
           (ArgSupplier) () -> scrubPresignedUrl(this.stageInfo.getPresignedUrl()));
     } catch (URISyntaxException e) {
-      throw new SnowflakeSQLException(
+      throw new SnowflakeSQLLoggedException(
           SqlState.INTERNAL_ERROR,
           ErrorCode.INTERNAL_ERROR.getMessageCode(),
+          session,
           "Unexpected: upload presigned URL invalid");
     } catch (Exception e) {
-      throw new SnowflakeSQLException(
+      throw new SnowflakeSQLLoggedException(
           SqlState.INTERNAL_ERROR,
           ErrorCode.INTERNAL_ERROR.getMessageCode(),
+          session,
           "Unexpected: upload with presigned url failed");
     }
   }
@@ -784,10 +791,11 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
           uploadFromStream = true;
         } catch (Exception ex) {
           logger.error("Failed to encrypt input", ex);
-          throw new SnowflakeSQLException(
+          throw new SnowflakeSQLLoggedException(
               ex,
               SqlState.INTERNAL_ERROR,
               ErrorCode.INTERNAL_ERROR.getMessageCode(),
+              session,
               "Failed to encrypt input",
               ex.getMessage());
         }
@@ -806,18 +814,20 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
       }
     } catch (FileNotFoundException ex) {
       logger.error("Failed to open input file", ex);
-      throw new SnowflakeSQLException(
+      throw new SnowflakeSQLLoggedException(
           ex,
           SqlState.INTERNAL_ERROR,
           ErrorCode.INTERNAL_ERROR.getMessageCode(),
+          session,
           "Failed to open input file",
           ex.getMessage());
     } catch (IOException ex) {
       logger.error("Failed to open input stream", ex);
-      throw new SnowflakeSQLException(
+      throw new SnowflakeSQLLoggedException(
           ex,
           SqlState.INTERNAL_ERROR,
           ErrorCode.INTERNAL_ERROR.getMessageCode(),
+          session,
           "Failed to open input stream",
           ex.getMessage());
     }
@@ -847,10 +857,11 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
 
       // If we have exceeded the max number of retries, propagate the error
       if (retryCount > getMaxRetries()) {
-        throw new SnowflakeSQLException(
+        throw new SnowflakeSQLLoggedException(
             se,
             SqlState.SYSTEM_ERROR,
             ErrorCode.GCP_SERVICE_ERROR.getMessageCode(),
+            session,
             operation,
             se.getCode(),
             se.getMessage(),
@@ -888,10 +899,11 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
       if (ex instanceof InterruptedException
           || SnowflakeUtil.getRootCause(ex) instanceof SocketTimeoutException) {
         if (retryCount > getMaxRetries()) {
-          throw new SnowflakeSQLException(
+          throw new SnowflakeSQLLoggedException(
               ex,
               SqlState.SYSTEM_ERROR,
               ErrorCode.IO_ERROR.getMessageCode(),
+              session,
               "Encountered exception during " + operation + ": " + ex.getMessage());
         } else {
           logger.debug(
@@ -901,10 +913,11 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
               retryCount);
         }
       } else {
-        throw new SnowflakeSQLException(
+        throw new SnowflakeSQLLoggedException(
             ex,
             SqlState.SYSTEM_ERROR,
             ErrorCode.IO_ERROR.getMessageCode(),
+            session,
             "Encountered exception during " + operation + ": " + ex.getMessage());
       }
     }
@@ -998,12 +1011,14 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
    *                required to decrypt/encrypt content in stage
    * @throws IllegalArgumentException when invalid credentials are used
    */
-  private void setupGCSClient(StageInfo stage, RemoteStoreFileEncryptionMaterial encMat)
+  private void setupGCSClient(
+      StageInfo stage, RemoteStoreFileEncryptionMaterial encMat, SFSession session)
       throws IllegalArgumentException, SnowflakeSQLException {
     // Save the client creation parameters so that we can reuse them,
     // to reset the GCS client.
     this.stageInfo = stage;
     this.encMat = encMat;
+    this.session = session;
 
     logger.debug("Setting up the GCS client ");
 

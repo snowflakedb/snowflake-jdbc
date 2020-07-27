@@ -9,6 +9,7 @@ import java.sql.SQLException;
 import java.util.List;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SFResultSetMetaData;
+import net.snowflake.client.core.SFSession;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 
@@ -25,10 +26,12 @@ class SnowflakeResultSetMetaDataV1 implements ResultSetMetaData, SnowflakeResult
   private SFResultSetMetaData resultSetMetaData;
   private String queryId;
   private QueryType queryType = QueryType.SYNC;
+  private SFSession session;
 
   SnowflakeResultSetMetaDataV1(SFResultSetMetaData resultSetMetaData) throws SnowflakeSQLException {
     this.resultSetMetaData = resultSetMetaData;
     this.queryId = resultSetMetaData.getQueryId();
+    this.session = resultSetMetaData.getSession();
   }
 
   public void setQueryType(QueryType type) {
@@ -63,8 +66,8 @@ class SnowflakeResultSetMetaDataV1 implements ResultSetMetaData, SnowflakeResult
     try {
       return resultSetMetaData.getInternalColumnType(column);
     } catch (SFException ex) {
-      throw new SnowflakeSQLException(
-          ex.getCause(), ex.getSqlState(), ex.getVendorCode(), ex.getParams());
+      throw new SnowflakeSQLLoggedException(
+          ex.getCause(), ex.getSqlState(), ex.getVendorCode(), session, ex.getParams());
     }
   }
 
@@ -169,8 +172,8 @@ class SnowflakeResultSetMetaDataV1 implements ResultSetMetaData, SnowflakeResult
     try {
       return resultSetMetaData.getColumnType(column);
     } catch (SFException ex) {
-      throw new SnowflakeSQLException(
-          ex.getCause(), ex.getSqlState(), ex.getVendorCode(), ex.getParams());
+      throw new SnowflakeSQLLoggedException(
+          ex.getCause(), ex.getSqlState(), ex.getVendorCode(), session, ex.getParams());
     }
   }
 
@@ -179,8 +182,8 @@ class SnowflakeResultSetMetaDataV1 implements ResultSetMetaData, SnowflakeResult
     try {
       return resultSetMetaData.getColumnTypeName(column);
     } catch (SFException ex) {
-      throw new SnowflakeSQLException(
-          ex.getCause(), ex.getSqlState(), ex.getVendorCode(), ex.getParams());
+      throw new SnowflakeSQLLoggedException(
+          ex.getCause(), ex.getSqlState(), ex.getVendorCode(), session, ex.getParams());
     }
   }
 

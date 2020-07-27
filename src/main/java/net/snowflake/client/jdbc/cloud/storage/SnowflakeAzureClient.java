@@ -11,7 +11,14 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.microsoft.azure.storage.*;
+import com.microsoft.azure.storage.StorageCredentials;
+import com.microsoft.azure.storage.StorageCredentialsAnonymous;
+import com.microsoft.azure.storage.StorageCredentialsSharedAccessSignature;
+import com.microsoft.azure.storage.StorageException;
 import com.microsoft.azure.storage.blob.*;
+import com.microsoft.azure.storage.blob.CloudBlobClient;
+import com.microsoft.azure.storage.blob.CloudBlobContainer;
+import com.microsoft.azure.storage.blob.ListBlobItem;
 import java.io.*;
 import java.net.SocketTimeoutException;
 import java.net.URI;
@@ -19,6 +26,10 @@ import java.net.URISyntaxException;
 import java.security.InvalidKeyException;
 import java.util.*;
 import java.util.AbstractMap.SimpleEntry;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.SFSession;
@@ -46,7 +57,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
   private CloudBlobClient azStorageClient;
   private static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeAzureClient.class);
   private OperationContext opContext = null;
-  private static SFSession session;
+  private SFSession session;
 
   private SnowflakeAzureClient() {}
   ;
@@ -60,9 +71,8 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
   public static SnowflakeAzureClient createSnowflakeAzureClient(
       StageInfo stage, RemoteStoreFileEncryptionMaterial encMat, SFSession sfSession)
       throws SnowflakeSQLException {
-    session = sfSession;
     SnowflakeAzureClient azureClient = new SnowflakeAzureClient();
-    azureClient.setupAzureClient(stage, encMat);
+    azureClient.setupAzureClient(stage, encMat, sfSession);
 
     return azureClient;
   }
@@ -77,12 +87,14 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
    *                required to decrypt/encrypt content in stage
    * @throws IllegalArgumentException when invalid credentials are used
    */
-  private void setupAzureClient(StageInfo stage, RemoteStoreFileEncryptionMaterial encMat)
+  private void setupAzureClient(
+      StageInfo stage, RemoteStoreFileEncryptionMaterial encMat, SFSession sfSession)
       throws IllegalArgumentException, SnowflakeSQLException {
     // Save the client creation parameters so that we can reuse them,
     // to reset the Azure client.
     this.stageInfo = stage;
     this.encMat = encMat;
+    this.session = sfSession;
 
     logger.debug("Setting up the Azure client ");
     opContext = new OperationContext();
@@ -161,7 +173,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
   @Override
   public void renew(Map<?, ?> stageCredentials) throws SnowflakeSQLException {
     stageInfo.setCredentials(stageCredentials);
-    setupAzureClient(stageInfo, encMat);
+    setupAzureClient(stageInfo, encMat, session);
   }
 
   /** shuts down the client */
@@ -567,10 +579,11 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
           uploadFromStream = true;
         } catch (Exception ex) {
           logger.error("Failed to encrypt input", ex);
-          throw new SnowflakeSQLException(
+          throw new SnowflakeSQLLoggedException(
               ex,
               SqlState.INTERNAL_ERROR,
               ErrorCode.INTERNAL_ERROR.getMessageCode(),
+              session,
               "Failed to encrypt input",
               ex.getMessage());
         }
@@ -589,18 +602,20 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
       }
     } catch (FileNotFoundException ex) {
       logger.error("Failed to open input file", ex);
-      throw new SnowflakeSQLException(
+      throw new SnowflakeSQLLoggedException(
           ex,
           SqlState.INTERNAL_ERROR,
           ErrorCode.INTERNAL_ERROR.getMessageCode(),
+          session,
           "Failed to open input file",
           ex.getMessage());
     } catch (IOException ex) {
       logger.error("Failed to open input stream", ex);
-      throw new SnowflakeSQLException(
+      throw new SnowflakeSQLLoggedException(
           ex,
           SqlState.INTERNAL_ERROR,
           ErrorCode.INTERNAL_ERROR.getMessageCode(),
+          session,
           "Failed to open input stream",
           ex.getMessage());
     }
@@ -647,10 +662,11 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
       }
       // If we have exceeded the max number of retries, propagate the error
       if (retryCount > azClient.getMaxRetries()) {
-        throw new SnowflakeSQLException(
+        throw new SnowflakeSQLLoggedException(
             se,
             SqlState.SYSTEM_ERROR,
             ErrorCode.AZURE_SERVICE_ERROR.getMessageCode(),
+            session,
             operation,
             se.getErrorCode(),
             se.getHttpStatusCode(),
@@ -689,10 +705,11 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
       if (ex instanceof InterruptedException
           || SnowflakeUtil.getRootCause(ex) instanceof SocketTimeoutException) {
         if (retryCount > azClient.getMaxRetries()) {
-          throw new SnowflakeSQLException(
+          throw new SnowflakeSQLLoggedException(
               ex,
               SqlState.SYSTEM_ERROR,
               ErrorCode.IO_ERROR.getMessageCode(),
+              session,
               "Encountered exception during " + operation + ": " + ex.getMessage());
         } else {
           logger.debug(
@@ -702,10 +719,11 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
               retryCount);
         }
       } else {
-        throw new SnowflakeSQLException(
+        throw new SnowflakeSQLLoggedException(
             ex,
             SqlState.SYSTEM_ERROR,
             ErrorCode.IO_ERROR.getMessageCode(),
+            session,
             "Encountered exception during " + operation + ": " + ex.getMessage());
       }
     }
@@ -760,10 +778,11 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
 
       return new SimpleEntry<String, String>(key, iv);
     } catch (Exception ex) {
-      throw new SnowflakeSQLException(
+      throw new SnowflakeSQLLoggedException(
           ex,
           SqlState.SYSTEM_ERROR,
           ErrorCode.IO_ERROR.getMessageCode(),
+          session,
           "Error parsing encryption data as json" + ": " + ex.getMessage());
     }
   }

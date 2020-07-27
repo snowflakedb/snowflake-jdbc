@@ -224,8 +224,8 @@ public class SFResultSet extends SFJsonResultSet {
 
         return true;
       } catch (InterruptedException ex) {
-        throw new SnowflakeSQLException(
-            SqlState.QUERY_CANCELED, ErrorCode.INTERRUPTED.getMessageCode());
+        throw new SnowflakeSQLLoggedException(
+            SqlState.QUERY_CANCELED, ErrorCode.INTERRUPTED.getMessageCode(), session);
       }
     } else if (chunkCount > 0) {
       try {
@@ -233,8 +233,8 @@ public class SFResultSet extends SFJsonResultSet {
         DownloaderMetrics metrics = chunkDownloader.terminate();
         logChunkDownloaderMetrics(metrics);
       } catch (InterruptedException ex) {
-        throw new SnowflakeSQLException(
-            SqlState.QUERY_CANCELED, ErrorCode.INTERRUPTED.getMessageCode());
+        throw new SnowflakeSQLLoggedException(
+            SqlState.QUERY_CANCELED, ErrorCode.INTERRUPTED.getMessageCode(), session);
       }
     }
 
@@ -388,8 +388,8 @@ public class SFResultSet extends SFJsonResultSet {
         currentChunk = null;
       }
     } catch (InterruptedException ex) {
-      throw new SnowflakeSQLException(
-          SqlState.QUERY_CANCELED, ErrorCode.INTERRUPTED.getMessageCode());
+      throw new SnowflakeSQLLoggedException(
+          SqlState.QUERY_CANCELED, ErrorCode.INTERRUPTED.getMessageCode(), session);
     }
   }
 

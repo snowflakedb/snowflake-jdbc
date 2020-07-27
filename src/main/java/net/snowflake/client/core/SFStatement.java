@@ -316,7 +316,8 @@ public class SFStatement {
         try {
           statement.cancel();
         } catch (SFException ex) {
-          throw new SnowflakeSQLException(ex, ex.getSqlState(), ex.getVendorCode(), ex.getParams());
+          throw new SnowflakeSQLLoggedException(
+              ex, ex.getSqlState(), ex.getVendorCode(), session, ex.getParams());
         }
         return null;
       }

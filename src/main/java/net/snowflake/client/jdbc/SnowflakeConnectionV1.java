@@ -125,9 +125,8 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
       initSessionProperties(conStr);
       missingProperties = sfSession.checkProperties();
     } catch (SFException ex) {
-      throw new SnowflakeSQLException(
-          ex.getCause(), ex.getSqlState(),
-          ex.getVendorCode(), ex.getParams());
+      throw new SnowflakeSQLLoggedException(
+          ex.getCause(), ex.getSqlState(), ex.getVendorCode(), sfSession, ex.getParams());
     }
 
     isClosed = false;
@@ -157,9 +156,8 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
       databaseMinorVersion = sfSession.getDatabaseMinorVersion();
       showStatementParameters = sfSession.getPreparedStatementLogging();
     } catch (SFException ex) {
-      throw new SnowflakeSQLException(
-          ex.getCause(), ex.getSqlState(),
-          ex.getVendorCode(), ex.getParams());
+      throw new SnowflakeSQLLoggedException(
+          ex.getCause(), ex.getSqlState(), ex.getVendorCode(), sfSession, ex.getParams());
     }
 
     appendWarnings(sfSession.getSqlWarnings());
@@ -314,8 +312,8 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
       openStatements.clear();
 
     } catch (SFException ex) {
-      throw new SnowflakeSQLException(
-          ex.getCause(), ex.getSqlState(), ex.getVendorCode(), ex.getParams());
+      throw new SnowflakeSQLLoggedException(
+          ex.getCause(), ex.getSqlState(), ex.getVendorCode(), sfSession, ex.getParams());
     }
   }
 
@@ -1040,8 +1038,11 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
       try {
         return new GZIPInputStream(stream);
       } catch (IOException ex) {
-        throw new SnowflakeSQLException(
-            SqlState.INTERNAL_ERROR, ErrorCode.INTERNAL_ERROR.getMessageCode(), ex.getMessage());
+        throw new SnowflakeSQLLoggedException(
+            SqlState.INTERNAL_ERROR,
+            ErrorCode.INTERNAL_ERROR.getMessageCode(),
+            sfSession,
+            ex.getMessage());
       }
     } else {
       return stream;
