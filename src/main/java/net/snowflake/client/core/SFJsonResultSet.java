@@ -30,7 +30,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
   private static final SFLogger logger = SFLoggerFactory.getLogger(SFJsonResultSet.class);
 
   // Timezone used for TimestampNTZ
-  private final static TimeZone timeZoneUTC = TimeZone.getTimeZone("UTC");
+  private static final TimeZone timeZoneUTC = TimeZone.getTimeZone("UTC");
 
   TimeZone timeZone;
 

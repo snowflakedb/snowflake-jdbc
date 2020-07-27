@@ -1,15 +1,14 @@
 package net.snowflake.client.jdbc;
 
+import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.junit.Assert.assertThat;
-
-import static org.hamcrest.core.IsInstanceOf.instanceOf;
 
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
@@ -20,6 +19,8 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
 import java.sql.Types;
+import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.TimeZone;
@@ -34,8 +35,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
-
-import java.time.ZonedDateTime;
 
 /** Completely compare json and arrow resultSet behaviors */
 @RunWith(Parameterized.class)
@@ -1611,16 +1610,15 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
     st.close();
   }
 
-  private ZonedDateTime parseTimestampTZ(String dateTimeString) {
-    String[] tzPieces = dateTimeString.split("\\s");
-    String s =
-        (tzPieces[0]
-            + "T"
-            + tzPieces[1]
-            + tzPieces[2].substring(0, 3)
-            + ":"
-            + tzPieces[2].substring(3));
-    return ZonedDateTime.parse(s);
+  static ZonedDateTime parseTimestampTZ(String dateTimeString) {
+    String[] dts = dateTimeString.split("\\s");
+    return ZonedDateTime.parse(
+        (dts[0] + "T" + dts[1] + dts[2].substring(0, 3) + ":" + dts[2].substring(3)));
+  }
+
+  static LocalDateTime parseTimestampNTZ(String dateTimeString) {
+    String[] dts = dateTimeString.split("\\s");
+    return LocalDateTime.parse(dts[0] + "T" + dts[1]);
   }
 
   @Test
