@@ -53,8 +53,12 @@ class SnowflakeResultSetV1 extends SnowflakeBaseResultSet implements SnowflakeRe
     try {
       this.resultSetMetaData = new SnowflakeResultSetMetaDataV1(sfBaseResultSet.getMetaData());
     } catch (SFException ex) {
-      throw new SnowflakeSQLException(
-          ex.getCause(), ex.getSqlState(), ex.getVendorCode(), ex.getParams());
+      throw new SnowflakeSQLLoggedException(
+          ex.getCause(),
+          ex.getSqlState(),
+          ex.getVendorCode(),
+          sfBaseResultSet.getSession(),
+          ex.getParams());
     }
   }
 
@@ -86,8 +90,12 @@ class SnowflakeResultSetV1 extends SnowflakeBaseResultSet implements SnowflakeRe
     try {
       this.resultSetMetaData = new SnowflakeResultSetMetaDataV1(sfBaseResultSet.getMetaData());
     } catch (SFException ex) {
-      throw new SnowflakeSQLException(
-          ex.getCause(), ex.getSqlState(), ex.getVendorCode(), ex.getParams());
+      throw new SnowflakeSQLLoggedException(
+          ex.getCause(),
+          ex.getSqlState(),
+          ex.getVendorCode(),
+          sfBaseResultSet.getSession(),
+          ex.getParams());
     }
   }
 

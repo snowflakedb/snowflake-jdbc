@@ -13,22 +13,12 @@ import com.google.common.base.Strings;
 import java.security.PrivateKey;
 import java.sql.DriverPropertyInfo;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
-import net.snowflake.client.jdbc.ErrorCode;
-import net.snowflake.client.jdbc.SnowflakeConnectString;
-import net.snowflake.client.jdbc.SnowflakeSQLException;
-import net.snowflake.client.jdbc.SnowflakeType;
-import net.snowflake.client.jdbc.SnowflakeUtil;
+import net.snowflake.client.jdbc.*;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
 import net.snowflake.client.jdbc.telemetry.TelemetryClient;
 import net.snowflake.client.log.JDK14Logger;
@@ -283,8 +273,8 @@ public class SFSession {
       response = HttpUtil.executeGeneralRequest(get, loginTimeout, getOCSPMode());
       jsonNode = OBJECT_MAPPER.readTree(response);
     } catch (Exception e) {
-      throw new SQLException(
-          "No response or invalid response from GET request. Error: {}", e.getMessage());
+      throw new SnowflakeSQLLoggedException(
+          "No response or invalid response from GET request. Error: {}", e.getMessage(), this);
     }
     // Get response as JSON and parse it to get the query status
     // check the success field first

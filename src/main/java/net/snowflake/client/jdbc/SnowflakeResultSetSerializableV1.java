@@ -814,7 +814,9 @@ public class SnowflakeResultSetSerializableV1
         this.firstChunkRowset =
             (this.firstChunkStringData != null) ? mapper.readTree(this.firstChunkStringData) : null;
       } catch (IOException ex) {
-        throw new SQLException("The JSON data is invalid. The error is: " + ex.getMessage());
+        throw new SnowflakeSQLLoggedException(
+            "The JSON data is invalid. The error is: " + ex.getMessage(),
+            possibleSession.orElse(/* session = */ null));
       }
     }
 
@@ -973,8 +975,9 @@ public class SnowflakeResultSetSerializableV1
           root.clear();
         }
       } catch (Exception ex) {
-        throw new SnowflakeSQLException(
+        throw new SnowflakeSQLLoggedException(
             ErrorCode.INTERNAL_ERROR,
+            possibleSession.orElse(/* session = */ null),
             "Fail to retrieve row count for first arrow chunk: " + ex.getCause());
       } finally {
         if (root != null) {

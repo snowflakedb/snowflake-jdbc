@@ -453,10 +453,11 @@ public class ArrowResultChunk extends SnowflakeResultChunk {
       batchOfVectors.clear();
       batchOfVectors.add(first);
     } catch (SFException ex) {
-      throw new SnowflakeSQLException(
+      throw new SnowflakeSQLLoggedException(
           ex,
           SqlState.INTERNAL_ERROR,
           ErrorCode.INTERNAL_ERROR.getMessageCode(),
+          session,
           "Failed to merge first result chunk: " + ex.getLocalizedMessage());
     }
   }

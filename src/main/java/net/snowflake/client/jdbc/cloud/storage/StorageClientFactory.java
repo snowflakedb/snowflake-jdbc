@@ -67,7 +67,7 @@ public class StorageClientFactory {
         return createAzureClient(stage, encMat, session);
 
       case GCS:
-        return createGCSClient(stage, encMat);
+        return createGCSClient(stage, encMat, session);
 
       default:
         // We don't create a storage client for FS_LOCAL,
@@ -191,13 +191,14 @@ public class StorageClientFactory {
    * @return the SnowflakeGCSClient instance created
    */
   private SnowflakeGCSClient createGCSClient(
-      StageInfo stage, RemoteStoreFileEncryptionMaterial encMat) throws SnowflakeSQLException {
+      StageInfo stage, RemoteStoreFileEncryptionMaterial encMat, SFSession session)
+      throws SnowflakeSQLException {
     logger.debug("createGCSClient encryption={}", (encMat == null ? "no" : "yes"));
 
     SnowflakeGCSClient gcsClient;
 
     try {
-      gcsClient = SnowflakeGCSClient.createSnowflakeGCSClient(stage, encMat);
+      gcsClient = SnowflakeGCSClient.createSnowflakeGCSClient(stage, encMat, session);
     } catch (Exception ex) {
       logger.debug("Exception creating GCS Storage client", ex);
       throw ex;
