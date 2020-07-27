@@ -5,9 +5,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 
-/**
- * Timestamp with toString in UTC timezone.
- */
+/** Timestamp with toString in UTC timezone. */
 public class TimestampNTZ extends Timestamp {
   public TimestampNTZ(Timestamp ts) {
     super(ts.getTime());

@@ -4,6 +4,11 @@
 
 package net.snowflake.client.core.arrow;
 
+import java.sql.Date;
+import java.sql.Timestamp;
+import java.time.LocalDate;
+import java.util.Calendar;
+import java.util.TimeZone;
 import net.snowflake.client.core.*;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.log.ArgSupplier;
@@ -189,8 +194,7 @@ public class ArrowResultUtil {
     // daylight savings offset errors.
     Timestamp ts = new Timestamp(seconds * ArrowResultUtil.powerOfTen(3));
     ts.setNanos(fraction);
-    if (timeZoneUTC)
-    {
+    if (timeZoneUTC) {
       return new TimestampNTZ(ts);
     }
     return ts;

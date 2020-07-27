@@ -436,16 +436,14 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
         return null;
       }
       Timestamp res = sfTS.getTimestamp();
-      if (res == null)
-      {
+      if (res == null) {
         return null;
       }
 
       // If timestamp type is NTZ and JDBC_TREAT_TIMESTAMP_NTZ_AS_UTC=true, keep
       // timezone in UTC to avoid daylight savings errors
-      if (resultSetSerializable.getTreatNTZAsUTC() &&
-              resultSetMetaData.getInternalColumnType(columnIndex) == Types.TIMESTAMP)
-      {
+      if (resultSetSerializable.getTreatNTZAsUTC()
+          && resultSetMetaData.getInternalColumnType(columnIndex) == Types.TIMESTAMP) {
         res = new TimestampNTZ(res);
       }
       // If JDBC_TREAT_TIMESTAMP_NTZ_AS_UTC=false, default behavior is to honor
@@ -663,5 +661,4 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
   private Timestamp getTimestamp(int columnIndex) throws SFException {
     return getTimestamp(columnIndex, TimeZone.getDefault());
   }
-
 }
