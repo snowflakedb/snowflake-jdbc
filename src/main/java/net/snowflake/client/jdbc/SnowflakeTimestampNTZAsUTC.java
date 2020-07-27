@@ -11,9 +11,13 @@ import java.time.format.DateTimeFormatter;
 
 /** Timestamp with toString in UTC timezone. */
 public class SnowflakeTimestampNTZAsUTC extends Timestamp {
+  public SnowflakeTimestampNTZAsUTC(long seconds, int nanoseconds) {
+    super(seconds);
+    this.setNanos(nanoseconds);
+  }
+
   public SnowflakeTimestampNTZAsUTC(Timestamp ts) {
-    super(ts.getTime());
-    this.setNanos(ts.getNanos());
+    this(ts.getTime(), ts.getNanos());
   }
 
   /**

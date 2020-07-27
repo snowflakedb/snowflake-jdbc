@@ -7,6 +7,9 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.junit.Assert.assertThat;
+
+import static org.hamcrest.core.IsInstanceOf.instanceOf;
 
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
@@ -31,6 +34,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+
+import java.time.ZonedDateTime;
 
 /** Completely compare json and arrow resultSet behaviors */
 @RunWith(Parameterized.class)
@@ -1594,12 +1599,28 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
     while (resultSet.next()) {
       Object data1 = resultSet.getObject(1);
       assertEquals(testTimestampNTZValues.get(j), data1.toString());
+
       Object data2 = resultSet.getObject(2);
-      // assertEquals(testTimestampTZValues.get(j), data2.toString());
+      assertThat(data2, instanceOf(Timestamp.class));
+      assertEquals(
+          parseTimestampTZ(testTimestampTZValues.get(j)).toEpochSecond(),
+          ((Timestamp) data2).getTime() / 1000);
       j++;
     }
     resultSet.close();
     st.close();
+  }
+
+  private ZonedDateTime parseTimestampTZ(String dateTimeString) {
+    String[] tzPieces = dateTimeString.split("\\s");
+    String s =
+        (tzPieces[0]
+            + "T"
+            + tzPieces[1]
+            + tzPieces[2].substring(0, 3)
+            + ":"
+            + tzPieces[2].substring(3));
+    return ZonedDateTime.parse(s);
   }
 
   @Test

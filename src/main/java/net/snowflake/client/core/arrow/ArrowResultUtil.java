@@ -193,11 +193,12 @@ public class ArrowResultUtil {
     // If JDBC_TREAT_TIMESTAMP_NTZ_AS_UTC=true, set timezone to UTC to get
     // timestamp object. This will avoid moving the timezone and creating
     // daylight savings offset errors.
-    Timestamp ts = new Timestamp(seconds * ArrowResultUtil.powerOfTen(3));
-    ts.setNanos(fraction);
     if (timeZoneUTC) {
-      return new SnowflakeTimestampNTZAsUTC(ts);
+      return new SnowflakeTimestampNTZAsUTC(seconds * ArrowResultUtil.powerOfTen(3), fraction);
+    } else {
+      Timestamp ts = new Timestamp(seconds * ArrowResultUtil.powerOfTen(3));
+      ts.setNanos(fraction);
+      return ts;
     }
-    return ts;
   }
 }

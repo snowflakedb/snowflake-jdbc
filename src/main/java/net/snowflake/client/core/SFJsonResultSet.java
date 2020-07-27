@@ -30,16 +30,16 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
   private static final SFLogger logger = SFLoggerFactory.getLogger(SFJsonResultSet.class);
 
   // Timezone used for TimestampNTZ
-  private static TimeZone timeZoneUTC = TimeZone.getTimeZone("UTC");
+  private final static TimeZone timeZoneUTC = TimeZone.getTimeZone("UTC");
 
   TimeZone timeZone;
 
   /**
    * Given a column index, get current row's value as an object
    *
-   * @param columnIndex
-   * @return
-   * @throws SFException
+   * @param columnIndex index of columns
+   * @return an object
+   * @throws SFException raises if any error occurs
    */
   protected abstract Object getObjectInternal(int columnIndex) throws SFException;
 
@@ -457,9 +457,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
       }
       // Adjust time if date happens before year 1582 for difference between
       // Julian and Gregorian calendars
-      Timestamp adjustedTimestamp = ResultUtil.adjustTimestamp(res);
-
-      return adjustedTimestamp;
+      return ResultUtil.adjustTimestamp(res);
     } else if (Types.DATE == columnType) {
       Date d = getDate(columnIndex, tz);
       if (d == null) {
