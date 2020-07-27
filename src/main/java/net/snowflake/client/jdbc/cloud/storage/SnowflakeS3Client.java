@@ -71,7 +71,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
   private ClientConfiguration clientConfig = null;
   private String stageRegion = null;
   private String stageEndPoint = null; // FIPS endpoint, if needed
-  private SFSession session;
+  private SFSession session = null;
 
   // socket factory used by s3 client's http client.
   private static SSLConnectionSocketFactory s3ConnectionSocketFactory = null;
@@ -85,7 +85,8 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
       SFSession session)
       throws SnowflakeSQLException {
     this.session = session;
-    setupSnowflakeS3Client(stageCredentials, clientConfig, encMat, stageRegion, stageEndPoint);
+    setupSnowflakeS3Client(
+        stageCredentials, clientConfig, encMat, stageRegion, stageEndPoint, session);
   }
 
   private void setupSnowflakeS3Client(
@@ -93,7 +94,8 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
       ClientConfiguration clientConfig,
       RemoteStoreFileEncryptionMaterial encMat,
       String stageRegion,
-      String stageEndPoint)
+      String stageEndPoint,
+      SFSession session)
       throws SnowflakeSQLException {
     // Save the client creation parameters so that we can reuse them,
     // to reset the AWS client. We won't save the awsCredentials since
@@ -102,6 +104,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
     this.stageRegion = stageRegion;
     this.encMat = encMat;
     this.stageEndPoint = stageEndPoint; // FIPS endpoint, if needed
+    this.session = session;
 
     logger.debug("Setting up AWS client ");
 
@@ -215,7 +218,12 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
   public void renew(Map<?, ?> stageCredentials) throws SnowflakeSQLException {
     // We renew the client with fresh credentials and with its original parameters
     setupSnowflakeS3Client(
-        stageCredentials, this.clientConfig, this.encMat, this.stageRegion, this.stageEndPoint);
+        stageCredentials,
+        this.clientConfig,
+        this.encMat,
+        this.stageRegion,
+        this.stageEndPoint,
+        this.session);
   }
 
   @Override
@@ -571,10 +579,11 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
         uploadFromStream = true;
       } catch (Exception ex) {
         logger.error("Failed to encrypt input", ex);
-        throw new SnowflakeSQLException(
+        throw new SnowflakeSQLLoggedException(
             ex,
             SqlState.INTERNAL_ERROR,
             ErrorCode.INTERNAL_ERROR.getMessageCode(),
+            session,
             "Failed to encrypt input",
             ex.getMessage());
       }
@@ -590,18 +599,20 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
 
       } catch (FileNotFoundException ex) {
         logger.error("Failed to open input file", ex);
-        throw new SnowflakeSQLException(
+        throw new SnowflakeSQLLoggedException(
             ex,
             SqlState.INTERNAL_ERROR,
             ErrorCode.INTERNAL_ERROR.getMessageCode(),
+            session,
             "Failed to open input file",
             ex.getMessage());
       } catch (IOException ex) {
         logger.error("Failed to open input stream", ex);
-        throw new SnowflakeSQLException(
+        throw new SnowflakeSQLLoggedException(
             ex,
             SqlState.INTERNAL_ERROR,
             ErrorCode.INTERNAL_ERROR.getMessageCode(),
+            session,
             "Failed to open input stream",
             ex.getMessage());
       }
@@ -642,10 +653,11 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
 
         if (ex instanceof AmazonServiceException) {
           AmazonServiceException ex1 = (AmazonServiceException) ex;
-          throw new SnowflakeSQLException(
+          throw new SnowflakeSQLLoggedException(
               ex1,
               SqlState.SYSTEM_ERROR,
               ErrorCode.S3_OPERATION_ERROR.getMessageCode(),
+              session,
               operation,
               ex1.getErrorType().toString(),
               ex1.getErrorCode(),
@@ -653,10 +665,11 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
               ex1.getRequestId(),
               extendedRequestId);
         } else {
-          throw new SnowflakeSQLException(
+          throw new SnowflakeSQLLoggedException(
               ex,
               SqlState.SYSTEM_ERROR,
               ErrorCode.AWS_CLIENT_ERROR.getMessageCode(),
+              session,
               operation,
               ex.getMessage());
         }
@@ -696,10 +709,11 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
       if (ex instanceof InterruptedException
           || SnowflakeUtil.getRootCause(ex) instanceof SocketTimeoutException) {
         if (retryCount > s3Client.getMaxRetries()) {
-          throw new SnowflakeSQLException(
+          throw new SnowflakeSQLLoggedException(
               ex,
               SqlState.SYSTEM_ERROR,
               ErrorCode.IO_ERROR.getMessageCode(),
+              session,
               "Encountered exception during " + operation + ": " + ex.getMessage());
         } else {
           logger.debug(
@@ -709,10 +723,11 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
               retryCount);
         }
       } else {
-        throw new SnowflakeSQLException(
+        throw new SnowflakeSQLLoggedException(
             ex,
             SqlState.SYSTEM_ERROR,
             ErrorCode.IO_ERROR.getMessageCode(),
+            session,
             "Encountered exception during " + operation + ": " + ex.getMessage());
       }
     }

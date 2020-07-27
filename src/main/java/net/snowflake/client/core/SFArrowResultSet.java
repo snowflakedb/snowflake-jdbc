@@ -238,8 +238,8 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
             return false;
           }
         } catch (InterruptedException ex) {
-          throw new SnowflakeSQLException(
-              SqlState.QUERY_CANCELED, ErrorCode.INTERRUPTED.getMessageCode());
+          throw new SnowflakeSQLLoggedException(
+              SqlState.QUERY_CANCELED, ErrorCode.INTERRUPTED.getMessageCode(), session);
         }
       } else {
         // always free current chunk
@@ -251,8 +251,8 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
             logChunkDownloaderMetrics(metrics);
           }
         } catch (InterruptedException e) {
-          throw new SnowflakeSQLException(
-              SqlState.QUERY_CANCELED, ErrorCode.INTERRUPTED.getMessageCode());
+          throw new SnowflakeSQLLoggedException(
+              SqlState.QUERY_CANCELED, ErrorCode.INTERRUPTED.getMessageCode(), session);
         }
       }
 
@@ -276,8 +276,9 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     try {
       resultChunk.readArrowStream(inputStream);
     } catch (IOException e) {
-      throw new SnowflakeSQLException(
+      throw new SnowflakeSQLLoggedException(
           ErrorCode.INTERNAL_ERROR,
+          session,
           "Failed to " + "load data in first chunk into arrow vector ex: " + e.getMessage());
     }
 
@@ -499,8 +500,8 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
         closeRootAllocator(rootAllocator);
       }
     } catch (InterruptedException ex) {
-      throw new SnowflakeSQLException(
-          SqlState.QUERY_CANCELED, ErrorCode.INTERRUPTED.getMessageCode());
+      throw new SnowflakeSQLLoggedException(
+          SqlState.QUERY_CANCELED, ErrorCode.INTERRUPTED.getMessageCode(), session);
     }
   }
 

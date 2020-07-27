@@ -300,6 +300,15 @@ public class SFResultSetMetaData {
   }
 
   /**
+   * get the session
+   *
+   * @return session object
+   */
+  public SFSession getSession() {
+    return session;
+  }
+
+  /**
    * Get the list of column names
    *
    * @return column names in list
