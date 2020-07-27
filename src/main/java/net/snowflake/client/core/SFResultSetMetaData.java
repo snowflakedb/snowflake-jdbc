@@ -304,8 +304,7 @@ public class SFResultSetMetaData {
    *
    * @return session object
    */
-  public SFSession getSession()
-  {
+  public SFSession getSession() {
     return session;
   }
 

@@ -161,9 +161,9 @@ public class RestRequest {
       } catch (Exception ex) {
         // if exception is caused by illegal state, e.g shutdown of http client
         // because of closing of connection, stop retrying
-        if (ex instanceof IllegalStateException)
-        {
-          throw new SnowflakeSQLLoggedException(ex, ErrorCode.INVALID_STATE, /* session = */ null, ex.getMessage());
+        if (ex instanceof IllegalStateException) {
+          throw new SnowflakeSQLLoggedException(
+              ex, ErrorCode.INVALID_STATE, /* session = */ null, ex.getMessage());
         }
         savedEx = ex;
         // if the request took more than 5 min (socket timeout) log an error
