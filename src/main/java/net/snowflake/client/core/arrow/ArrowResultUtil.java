@@ -11,6 +11,7 @@ import java.util.Calendar;
 import java.util.TimeZone;
 import net.snowflake.client.core.*;
 import net.snowflake.client.jdbc.ErrorCode;
+import net.snowflake.client.jdbc.SnowflakeTimestampNTZAsUTC;
 import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -195,7 +196,7 @@ public class ArrowResultUtil {
     Timestamp ts = new Timestamp(seconds * ArrowResultUtil.powerOfTen(3));
     ts.setNanos(fraction);
     if (timeZoneUTC) {
-      return new TimestampNTZ(ts);
+      return new SnowflakeTimestampNTZAsUTC(ts);
     }
     return ts;
   }

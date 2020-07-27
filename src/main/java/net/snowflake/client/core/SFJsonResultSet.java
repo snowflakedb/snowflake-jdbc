@@ -14,6 +14,7 @@ import java.sql.Types;
 import java.util.TimeZone;
 import net.snowflake.client.core.arrow.ArrowResultUtil;
 import net.snowflake.client.jdbc.ErrorCode;
+import net.snowflake.client.jdbc.SnowflakeTimestampNTZAsUTC;
 import net.snowflake.client.jdbc.SnowflakeUtil;
 import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
@@ -444,7 +445,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
       // timezone in UTC to avoid daylight savings errors
       if (resultSetSerializable.getTreatNTZAsUTC()
           && resultSetMetaData.getInternalColumnType(columnIndex) == Types.TIMESTAMP) {
-        res = new TimestampNTZ(res);
+        res = new SnowflakeTimestampNTZAsUTC(res);
       }
       // If JDBC_TREAT_TIMESTAMP_NTZ_AS_UTC=false, default behavior is to honor
       // client timezone for NTZ time. Move NTZ timestamp offset to correspond to

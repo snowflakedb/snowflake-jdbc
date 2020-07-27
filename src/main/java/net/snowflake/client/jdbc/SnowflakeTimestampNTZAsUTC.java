@@ -1,4 +1,8 @@
-package net.snowflake.client.core;
+/*
+ * Copyright (c) 2012-2020 Snowflake Computing Inc. All rights reserved.
+ */
+
+package net.snowflake.client.jdbc;
 
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
@@ -6,12 +10,17 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 
 /** Timestamp with toString in UTC timezone. */
-public class TimestampNTZ extends Timestamp {
-  public TimestampNTZ(Timestamp ts) {
+public class SnowflakeTimestampNTZAsUTC extends Timestamp {
+  public SnowflakeTimestampNTZAsUTC(Timestamp ts) {
     super(ts.getTime());
     this.setNanos(ts.getNanos());
   }
 
+  /**
+   * Returns a string representation in UTC
+   *
+   * @return a string representation of the object
+   */
   public synchronized String toString() {
     int trailingZeros = 0;
     int tmpNanos = this.getNanos();
