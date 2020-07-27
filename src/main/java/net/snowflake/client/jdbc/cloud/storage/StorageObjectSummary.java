@@ -10,7 +10,6 @@ import com.microsoft.azure.storage.StorageException;
 import com.microsoft.azure.storage.blob.BlobProperties;
 import com.microsoft.azure.storage.blob.CloudBlob;
 import com.microsoft.azure.storage.blob.ListBlobItem;
-
 import java.net.URISyntaxException;
 
 /**
@@ -18,24 +17,21 @@ import java.net.URISyntaxException;
  *
  * @author lgiakoumakis
  */
-public class StorageObjectSummary
-{
-  private String location;      // location translates to "bucket" for S3
+public class StorageObjectSummary {
+  private String location; // location translates to "bucket" for S3
   private String key;
   private String md5;
   private long size;
-
 
   /**
    * Contructs a StorageObjectSummary object from the S3 equivalent S3ObjectSummary
    *
    * @param location Location of the S3 object
-   * @param key      Key of the S3Object
-   * @param md5      The MD5 hash of the object
-   * @param size     The size of the S3 object
+   * @param key Key of the S3Object
+   * @param md5 The MD5 hash of the object
+   * @param size The size of the S3 object
    */
-  private StorageObjectSummary(String location, String key, String md5, long size)
-  {
+  private StorageObjectSummary(String location, String key, String md5, long size) {
     this.location = location;
     this.key = key;
     this.md5 = md5;
@@ -48,8 +44,7 @@ public class StorageObjectSummary
    * @param objSummary the AWS S3 ObjectSummary object to copy from
    * @return the ObjectSummary object created
    */
-  public static StorageObjectSummary createFromS3ObjectSummary(S3ObjectSummary objSummary)
-  {
+  public static StorageObjectSummary createFromS3ObjectSummary(S3ObjectSummary objSummary) {
 
     return new StorageObjectSummary(
         objSummary.getBucketName(),
@@ -58,21 +53,18 @@ public class StorageObjectSummary
         // used in skip duplicate files in PUT command, It's not
         // critical to guarantee that it's MD5
         objSummary.getETag(),
-        objSummary.getSize()
-    );
+        objSummary.getSize());
   }
 
   /**
-   * Contructs a StorageObjectSummary object from Azure BLOB properties
-   * Using factory methods to create these objects since Azure can throw,
-   * while retrieving the BLOB properties
+   * Contructs a StorageObjectSummary object from Azure BLOB properties Using factory methods to
+   * create these objects since Azure can throw, while retrieving the BLOB properties
    *
    * @param listBlobItem an Azure ListBlobItem object
    * @return the ObjectSummary object created
    */
   public static StorageObjectSummary createFromAzureListBlobItem(ListBlobItem listBlobItem)
-  throws StorageProviderException
-  {
+      throws StorageProviderException {
     String location, key, md5;
     long size;
 
@@ -81,8 +73,7 @@ public class StorageObjectSummary
     // will point us to the underlying BLOB and will get the properties from it
     // During the process the Storage Client could fail, hence we need to wrap the
     // get calls in try/catch and handle possible exceptions
-    try
-    {
+    try {
       location = listBlobItem.getContainer().getName();
 
       CloudBlob cloudBlob = (CloudBlob) listBlobItem;
@@ -93,16 +84,15 @@ public class StorageObjectSummary
       // used for skipping file on PUT command, hense is ok.
       md5 = convertBase64ToHex(blobProperties.getContentMD5());
       size = blobProperties.getLength();
-    }
-    catch (URISyntaxException | StorageException ex)
-    {
-      // This should only happen if somehow we got here with and invalid URI (it should never happen)
-      // ...or there is a Storage service error. Unlike S3, Azure fetches metadata from the BLOB itself,
+    } catch (URISyntaxException | StorageException ex) {
+      // This should only happen if somehow we got here with and invalid URI (it should never
+      // happen)
+      // ...or there is a Storage service error. Unlike S3, Azure fetches metadata from the BLOB
+      // itself,
       // and its a lazy operation
       throw new StorageProviderException(ex);
     }
     return new StorageObjectSummary(location, key, md5, size);
-
   }
 
   /**
@@ -111,8 +101,7 @@ public class StorageObjectSummary
    * @param blob GCS blob object
    * @return a new StorageObjectSummary
    */
-  public static StorageObjectSummary createFromGcsBlob(Blob blob)
-  {
+  public static StorageObjectSummary createFromGcsBlob(Blob blob) {
     String bucketName = blob.getBucket();
     String path = blob.getName();
     String hexMD5 = blob.getMd5ToHexString();
@@ -120,55 +109,38 @@ public class StorageObjectSummary
     return new StorageObjectSummary(bucketName, path, hexMD5, size);
   }
 
-  private static String convertBase64ToHex(String base64String)
-  {
-    try
-    {
+  private static String convertBase64ToHex(String base64String) {
+    try {
       byte[] bytes = Base64.decode(base64String);
 
       final StringBuilder builder = new StringBuilder();
-      for (byte b : bytes)
-      {
+      for (byte b : bytes) {
         builder.append(String.format("%02x", b));
       }
       return builder.toString();
       // return empty string if input is not a valid Base64 string
-    }
-    catch (Exception e)
-    {
+    } catch (Exception e) {
       return "";
     }
   }
 
-  /**
-   * @return returns the location of the object
-   */
-  public String getLocation()
-  {
+  /** @return returns the location of the object */
+  public String getLocation() {
     return location;
   }
 
-  /**
-   * @return returns the key property of the object
-   */
-  public String getKey()
-  {
+  /** @return returns the key property of the object */
+  public String getKey() {
     return key;
   }
 
-  /**
-   * @return returns the MD5 hash of the object
-   */
-  public String getMD5()
-  {
+  /** @return returns the MD5 hash of the object */
+  public String getMD5() {
     return md5;
   }
 
-  /**
-   * @return returns the size property of the object
-   */
-  public long getSize()
-  {
+  /** @return returns the size property of the object */
+  public long getSize() {
     return size;
   }
 }

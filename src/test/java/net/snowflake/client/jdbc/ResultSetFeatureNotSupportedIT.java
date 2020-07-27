@@ -1,9 +1,5 @@
 package net.snowflake.client.jdbc;
 
-import net.snowflake.client.category.TestCategoryResultSet;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-
 import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -14,17 +10,16 @@ import java.sql.Statement;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.Collections;
+import net.snowflake.client.category.TestCategoryResultSet;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 @Category(TestCategoryResultSet.class)
-public class ResultSetFeatureNotSupportedIT extends BaseJDBCTest
-{
+public class ResultSetFeatureNotSupportedIT extends BaseJDBCTest {
   @Test
-  public void testQueryResultSetNotSupportedException() throws Throwable
-  {
-    try (Connection connection = getConnection())
-    {
-      try (Statement statement = connection.createStatement())
-      {
+  public void testQueryResultSetNotSupportedException() throws Throwable {
+    try (Connection connection = getConnection()) {
+      try (Statement statement = connection.createStatement()) {
         ResultSet resultSet = statement.executeQuery("select 1");
         checkFeatureNotSupportedException(resultSet);
       }
@@ -32,10 +27,8 @@ public class ResultSetFeatureNotSupportedIT extends BaseJDBCTest
   }
 
   @Test
-  public void testMetadataResultSetNotSupportedException() throws Throwable
-  {
-    try (Connection connection = getConnection())
-    {
+  public void testMetadataResultSetNotSupportedException() throws Throwable {
+    try (Connection connection = getConnection()) {
       DatabaseMetaData metaData = connection.getMetaData();
       String database = connection.getCatalog();
       String schema = connection.getSchema();
@@ -43,17 +36,12 @@ public class ResultSetFeatureNotSupportedIT extends BaseJDBCTest
       checkFeatureNotSupportedException(metaData.getCatalogs());
       checkFeatureNotSupportedException(metaData.getSchemas());
       checkFeatureNotSupportedException(metaData.getSchemas(database, null));
-      checkFeatureNotSupportedException(metaData.getTables(
-          database, schema, null, null));
-      checkFeatureNotSupportedException(metaData.getColumns(
-          database, schema, null, null));
+      checkFeatureNotSupportedException(metaData.getTables(database, schema, null, null));
+      checkFeatureNotSupportedException(metaData.getColumns(database, schema, null, null));
     }
-
   }
 
-  private void checkFeatureNotSupportedException(ResultSet resultSet)
-  throws SQLException
-  {
+  private void checkFeatureNotSupportedException(ResultSet resultSet) throws SQLException {
     expectFeatureNotSupportedException(() -> resultSet.getAsciiStream(1));
     expectFeatureNotSupportedException(() -> resultSet.getBinaryStream(1));
 
@@ -86,7 +74,7 @@ public class ResultSetFeatureNotSupportedIT extends BaseJDBCTest
     expectFeatureNotSupportedException(() -> resultSet.updateDouble(1, 6.0));
     expectFeatureNotSupportedException(() -> resultSet.updateBigDecimal(1, new BigDecimal(7)));
     expectFeatureNotSupportedException(() -> resultSet.updateString(1, "test1"));
-    expectFeatureNotSupportedException(() -> resultSet.updateBytes(1, new byte[]{}));
+    expectFeatureNotSupportedException(() -> resultSet.updateBytes(1, new byte[] {}));
     expectFeatureNotSupportedException(() -> resultSet.updateDate(1, new Date(1)));
     expectFeatureNotSupportedException(() -> resultSet.updateTime(1, new Time(0)));
     expectFeatureNotSupportedException(() -> resultSet.updateTimestamp(1, new Timestamp(3)));
@@ -107,7 +95,7 @@ public class ResultSetFeatureNotSupportedIT extends BaseJDBCTest
     expectFeatureNotSupportedException(() -> resultSet.updateDouble("col1", 6.0));
     expectFeatureNotSupportedException(() -> resultSet.updateBigDecimal("col1", new BigDecimal(7)));
     expectFeatureNotSupportedException(() -> resultSet.updateString("col1", "test1"));
-    expectFeatureNotSupportedException(() -> resultSet.updateBytes("col1", new byte[]{}));
+    expectFeatureNotSupportedException(() -> resultSet.updateBytes("col1", new byte[] {}));
     expectFeatureNotSupportedException(() -> resultSet.updateDate("col1", new Date(0)));
     expectFeatureNotSupportedException(() -> resultSet.updateTime("col1", new Time(0)));
     expectFeatureNotSupportedException(() -> resultSet.updateTimestamp("col1", new Timestamp(3)));
@@ -147,13 +135,18 @@ public class ResultSetFeatureNotSupportedIT extends BaseJDBCTest
     expectFeatureNotSupportedException(() -> resultSet.updateNString(1, "testN"));
     expectFeatureNotSupportedException(() -> resultSet.updateNClob(1, new FakeNClob()));
     expectFeatureNotSupportedException(() -> resultSet.updateSQLXML(1, new FakeSQLXML()));
-    expectFeatureNotSupportedException(() -> resultSet.updateNCharacterStream(1, new FakeReader(), 100));
+    expectFeatureNotSupportedException(
+        () -> resultSet.updateNCharacterStream(1, new FakeReader(), 100));
     expectFeatureNotSupportedException(() -> resultSet.updateNCharacterStream(1, new FakeReader()));
-    expectFeatureNotSupportedException(() -> resultSet.updateAsciiStream(1, new FakeInputStream(), 100));
+    expectFeatureNotSupportedException(
+        () -> resultSet.updateAsciiStream(1, new FakeInputStream(), 100));
     expectFeatureNotSupportedException(() -> resultSet.updateAsciiStream(1, new FakeInputStream()));
-    expectFeatureNotSupportedException(() -> resultSet.updateBinaryStream(1, new FakeInputStream(), 100));
-    expectFeatureNotSupportedException(() -> resultSet.updateBinaryStream(1, new FakeInputStream()));
-    expectFeatureNotSupportedException(() -> resultSet.updateCharacterStream(1, new FakeReader(), 100));
+    expectFeatureNotSupportedException(
+        () -> resultSet.updateBinaryStream(1, new FakeInputStream(), 100));
+    expectFeatureNotSupportedException(
+        () -> resultSet.updateBinaryStream(1, new FakeInputStream()));
+    expectFeatureNotSupportedException(
+        () -> resultSet.updateCharacterStream(1, new FakeReader(), 100));
     expectFeatureNotSupportedException(() -> resultSet.updateCharacterStream(1, new FakeReader()));
     expectFeatureNotSupportedException(() -> resultSet.updateBlob(1, new FakeInputStream(), 100));
     expectFeatureNotSupportedException(() -> resultSet.updateBlob(1, new FakeInputStream()));
@@ -183,15 +176,24 @@ public class ResultSetFeatureNotSupportedIT extends BaseJDBCTest
     expectFeatureNotSupportedException(() -> resultSet.updateNString("col2", "testN"));
     expectFeatureNotSupportedException(() -> resultSet.updateNClob("col2", new FakeNClob()));
     expectFeatureNotSupportedException(() -> resultSet.updateSQLXML("col2", new FakeSQLXML()));
-    expectFeatureNotSupportedException(() -> resultSet.updateNCharacterStream("col2", new FakeReader(), 100));
-    expectFeatureNotSupportedException(() -> resultSet.updateNCharacterStream("col2", new FakeReader()));
-    expectFeatureNotSupportedException(() -> resultSet.updateAsciiStream("col2", new FakeInputStream(), 100));
-    expectFeatureNotSupportedException(() -> resultSet.updateAsciiStream("col2", new FakeInputStream()));
-    expectFeatureNotSupportedException(() -> resultSet.updateBinaryStream("col2", new FakeInputStream(), 100));
-    expectFeatureNotSupportedException(() -> resultSet.updateBinaryStream("col2", new FakeInputStream()));
-    expectFeatureNotSupportedException(() -> resultSet.updateCharacterStream("col2", new FakeReader(), 100));
-    expectFeatureNotSupportedException(() -> resultSet.updateCharacterStream("col2", new FakeReader()));
-    expectFeatureNotSupportedException(() -> resultSet.updateBlob("col2", new FakeInputStream(), 100));
+    expectFeatureNotSupportedException(
+        () -> resultSet.updateNCharacterStream("col2", new FakeReader(), 100));
+    expectFeatureNotSupportedException(
+        () -> resultSet.updateNCharacterStream("col2", new FakeReader()));
+    expectFeatureNotSupportedException(
+        () -> resultSet.updateAsciiStream("col2", new FakeInputStream(), 100));
+    expectFeatureNotSupportedException(
+        () -> resultSet.updateAsciiStream("col2", new FakeInputStream()));
+    expectFeatureNotSupportedException(
+        () -> resultSet.updateBinaryStream("col2", new FakeInputStream(), 100));
+    expectFeatureNotSupportedException(
+        () -> resultSet.updateBinaryStream("col2", new FakeInputStream()));
+    expectFeatureNotSupportedException(
+        () -> resultSet.updateCharacterStream("col2", new FakeReader(), 100));
+    expectFeatureNotSupportedException(
+        () -> resultSet.updateCharacterStream("col2", new FakeReader()));
+    expectFeatureNotSupportedException(
+        () -> resultSet.updateBlob("col2", new FakeInputStream(), 100));
     expectFeatureNotSupportedException(() -> resultSet.updateBlob("col2", new FakeInputStream()));
     expectFeatureNotSupportedException(() -> resultSet.updateClob("col2", new FakeReader(), 100));
     expectFeatureNotSupportedException(() -> resultSet.updateClob("col2", new FakeReader()));

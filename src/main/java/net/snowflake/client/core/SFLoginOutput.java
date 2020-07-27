@@ -6,11 +6,8 @@ package net.snowflake.client.core;
 
 import java.util.Map;
 
-/**
- * Login output information including session tokens, database versions
- */
-public class SFLoginOutput
-{
+/** Login output information including session tokens, database versions */
+public class SFLoginOutput {
   private String sessionToken;
   private String masterToken;
   private long masterTokenValidityInSeconds;
@@ -27,23 +24,23 @@ public class SFLoginOutput
   private boolean updatedByTokenRequest;
   private String sessionId;
 
-  SFLoginOutput()
-  {
-  }
+  SFLoginOutput() {}
 
-  SFLoginOutput(String sessionToken, String masterToken,
-                long masterTokenValidityInSeconds,
-                String idToken,
-                String databaseVersion,
-                int databaseMajorVersion, int databaseMinorVersion,
-                int httpClientSocketTimeout,
-                String sessionDatabase,
-                String sessionSchema,
-                String sessionRole,
-                String sessionWarehouse,
-                String sessionId,
-                Map<String, Object> commonParams)
-  {
+  SFLoginOutput(
+      String sessionToken,
+      String masterToken,
+      long masterTokenValidityInSeconds,
+      String idToken,
+      String databaseVersion,
+      int databaseMajorVersion,
+      int databaseMinorVersion,
+      int httpClientSocketTimeout,
+      String sessionDatabase,
+      String sessionSchema,
+      String sessionRole,
+      String sessionWarehouse,
+      String sessionId,
+      Map<String, Object> commonParams) {
     this.sessionToken = sessionToken;
     this.masterToken = masterToken;
     this.idToken = idToken;
@@ -60,122 +57,99 @@ public class SFLoginOutput
     this.sessionId = sessionId;
   }
 
-  public boolean getAutoCommit()
-  {
+  public boolean getAutoCommit() {
     return (Boolean) this.commonParams.get("AUTOCOMMIT");
   }
 
-  public String getSessionId()
-  {
+  public String getSessionId() {
     return sessionId;
   }
 
-  public String getSessionToken()
-  {
+  public String getSessionToken() {
     return sessionToken;
   }
 
-  public SFLoginOutput setSessionToken(String sessionToken)
-  {
+  public SFLoginOutput setSessionToken(String sessionToken) {
     this.sessionToken = sessionToken;
     return this;
   }
 
-  String getMasterToken()
-  {
+  String getMasterToken() {
     return masterToken;
   }
 
-  SFLoginOutput setMasterToken(String masterToken)
-  {
+  SFLoginOutput setMasterToken(String masterToken) {
     this.masterToken = masterToken;
     return this;
   }
 
-  String getIdToken()
-  {
+  String getIdToken() {
     return idToken;
   }
 
-  SFLoginOutput setIdToken(String idToken)
-  {
+  SFLoginOutput setIdToken(String idToken) {
     this.idToken = idToken;
     return this;
   }
 
-  String getDatabaseVersion()
-  {
+  String getDatabaseVersion() {
     return databaseVersion;
   }
 
-  int getDatabaseMajorVersion()
-  {
+  int getDatabaseMajorVersion() {
     return databaseMajorVersion;
   }
 
-  int getDatabaseMinorVersion()
-  {
+  int getDatabaseMinorVersion() {
     return databaseMinorVersion;
   }
 
-  int getHttpClientSocketTimeout()
-  {
+  int getHttpClientSocketTimeout() {
     return httpClientSocketTimeout;
   }
 
-  Map<String, Object> getCommonParams()
-  {
+  Map<String, Object> getCommonParams() {
     return commonParams;
   }
 
-  SFLoginOutput setCommonParams(Map<String, Object> commonParams)
-  {
+  SFLoginOutput setCommonParams(Map<String, Object> commonParams) {
     this.commonParams = commonParams;
     return this;
   }
 
-  String getSessionDatabase()
-  {
+  String getSessionDatabase() {
     return sessionDatabase;
   }
 
-  void setSessionDatabase(String sessionDatabase)
-  {
+  void setSessionDatabase(String sessionDatabase) {
     this.sessionDatabase = sessionDatabase;
   }
 
-  String getSessionSchema()
-  {
+  String getSessionSchema() {
     return sessionSchema;
   }
 
-  void setSessionSchema(String sessionSchema)
-  {
+  void setSessionSchema(String sessionSchema) {
     this.sessionSchema = sessionSchema;
   }
 
-  String getSessionRole()
-  {
+  String getSessionRole() {
     return sessionRole;
   }
 
-  void setSessionRole(String sessionRole)
-  {
+  void setSessionRole(String sessionRole) {
     this.sessionRole = sessionRole;
   }
 
-  String getSessionWarehouse()
-  {
+  String getSessionWarehouse() {
     return sessionWarehouse;
   }
 
-  void setSessionWarehouse(String sessionWarehouse)
-  {
+  void setSessionWarehouse(String sessionWarehouse) {
     this.sessionWarehouse = sessionWarehouse;
   }
 
-  long getMasterTokenValidityInSeconds()
-  {
+  long getMasterTokenValidityInSeconds() {
     return masterTokenValidityInSeconds;
   }
 }
