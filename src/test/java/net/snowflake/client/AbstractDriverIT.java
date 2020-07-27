@@ -3,9 +3,9 @@
  */
 package net.snowflake.client;
 
-import com.google.common.base.Strings;
-import org.junit.Rule;
+import static org.hamcrest.MatcherAssert.assertThat;
 
+import com.google.common.base.Strings;
 import java.net.URL;
 import java.sql.Connection;
 import java.sql.Date;
@@ -21,17 +21,12 @@ import java.util.Properties;
 import java.util.TimeZone;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.junit.Rule;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-
-/**
- * Base test class with common constants, data structures and methods
- */
-public class AbstractDriverIT
-{
+/** Base test class with common constants, data structures and methods */
+public class AbstractDriverIT {
   // This is required to use ConditionalIgnore annotation.
-  @Rule
-  public ConditionalIgnoreRule rule = new ConditionalIgnoreRule();
+  @Rule public ConditionalIgnoreRule rule = new ConditionalIgnoreRule();
 
   public static final String DRIVER_CLASS = "net.snowflake.client.jdbc.SnowflakeDriver";
   public static final String DRIVER_CLASS_COM = "com.snowflake.client.jdbc.SnowflakeDriver";
@@ -43,56 +38,48 @@ public class AbstractDriverIT
 
   protected static final String[] fileNames = {TEST_DATA_FILE, TEST_DATA_FILE_2};
 
-  private static Logger logger =
-      Logger.getLogger(AbstractDriverIT.class.getName());
+  private static Logger logger = Logger.getLogger(AbstractDriverIT.class.getName());
 
-  protected final int ERROR_CODE_BIND_VARIABLE_NOT_ALLOWED_IN_VIEW_OR_UDF_DEF
-      = 2210;
+  protected final int ERROR_CODE_BIND_VARIABLE_NOT_ALLOWED_IN_VIEW_OR_UDF_DEF = 2210;
 
   protected final int ERROR_CODE_DOMAIN_OBJECT_DOES_NOT_EXIST = 2003;
 
-
-  public static Map<String, String> getConnectionParameters(String accountName)
-  {
+  public static Map<String, String> getConnectionParameters(String accountName) {
     Map<String, String> params = new HashMap<>();
     String account;
     String host;
-    if (accountName == null)
-    {
+    if (accountName == null) {
       account = System.getenv("SNOWFLAKE_TEST_ACCOUNT");
       host = System.getenv("SNOWFLAKE_TEST_HOST");
-    }
-    else
-    {
+    } else {
       account = accountName;
       // By default, the test will run against reg deployment.
       // If developer needs to run in Intellij, you can set this env as ".dev.local"
       String deployment = System.getenv("SNOWFLAKE_TEST_DEPLOYMENT");
-      if (Strings.isNullOrEmpty(deployment))
-      {
+      if (Strings.isNullOrEmpty(deployment)) {
         deployment = ".reg.local";
       }
       host = accountName.trim() + deployment;
     }
-    assertThat("set SNOWFLAKE_TEST_ACCOUNT environment variable to the account name.", !Strings.isNullOrEmpty(account));
+    assertThat(
+        "set SNOWFLAKE_TEST_ACCOUNT environment variable to the account name.",
+        !Strings.isNullOrEmpty(account));
     params.put("account", account);
 
-    if (Strings.isNullOrEmpty(host))
-    {
+    if (Strings.isNullOrEmpty(host)) {
       host = account + ".snowflakecomputing.com";
     }
 
-    assertThat("set SNOWFLAKE_TEST_HOST environment variable to the host name.", !Strings.isNullOrEmpty(host));
+    assertThat(
+        "set SNOWFLAKE_TEST_HOST environment variable to the host name.",
+        !Strings.isNullOrEmpty(host));
     params.put("host", host);
 
     String protocol = System.getenv("SNOWFLAKE_TEST_PROTOCOL");
     String ssl;
-    if ("http".equals(protocol))
-    {
+    if ("http".equals(protocol)) {
       ssl = "off";
-    }
-    else
-    {
+    } else {
       ssl = "on";
     }
     params.put("ssl", ssl);
@@ -102,18 +89,15 @@ public class AbstractDriverIT
     params.put("user", user);
 
     String password = System.getenv("SNOWFLAKE_TEST_PASSWORD");
-    assertThat("set SNOWFLAKE_TEST_PASSWORD environment variable.", !Strings.isNullOrEmpty(password));
+    assertThat(
+        "set SNOWFLAKE_TEST_PASSWORD environment variable.", !Strings.isNullOrEmpty(password));
     params.put("password", password);
 
     String port = System.getenv("SNOWFLAKE_TEST_PORT");
-    if (Strings.isNullOrEmpty(port))
-    {
-      if ("on".equals(ssl))
-      {
+    if (Strings.isNullOrEmpty(port)) {
+      if ("on".equals(ssl)) {
         port = "443";
-      }
-      else
-      {
+      } else {
         port = "80";
       }
     }
@@ -121,7 +105,8 @@ public class AbstractDriverIT
     params.put("port", port);
 
     String database = System.getenv("SNOWFLAKE_TEST_DATABASE");
-    assertThat("set SNOWFLAKE_TEST_DATABASE environment variable.", !Strings.isNullOrEmpty(database));
+    assertThat(
+        "set SNOWFLAKE_TEST_DATABASE environment variable.", !Strings.isNullOrEmpty(database));
     params.put("database", database);
 
     String schema = System.getenv("SNOWFLAKE_TEST_SCHEMA");
@@ -133,7 +118,8 @@ public class AbstractDriverIT
     params.put("role", role);
 
     String warehouse = System.getenv("SNOWFLAKE_TEST_WAREHOUSE");
-    assertThat("set SNOWFLAKE_TEST_WAREHOUSE environment variable.", !Strings.isNullOrEmpty(warehouse));
+    assertThat(
+        "set SNOWFLAKE_TEST_WAREHOUSE environment variable.", !Strings.isNullOrEmpty(warehouse));
     params.put("warehouse", warehouse);
 
     params.put("uri", String.format("jdbc:snowflake://%s:%s", host, port));
@@ -153,24 +139,19 @@ public class AbstractDriverIT
     return params;
   }
 
-  public static Map<String, String> getConnectionParameters()
-  {
+  public static Map<String, String> getConnectionParameters() {
     return getConnectionParameters(null);
   }
 
-
   /**
-   * Gets a connection with default session parameter settings,
-   * but tunable query api version and socket timeout setting
+   * Gets a connection with default session parameter settings, but tunable query api version and
+   * socket timeout setting
    *
    * @param paramProperties connection properties
    * @return Connection a database connection
    * @throws SQLException raised if any error occurs
    */
-
-  public static Connection getConnection(Properties paramProperties)
-  throws SQLException
-  {
+  public static Connection getConnection(Properties paramProperties) throws SQLException {
     return getConnection(DONT_INJECT_SOCKET_TIMEOUT, paramProperties, false, false);
   }
 
@@ -180,9 +161,7 @@ public class AbstractDriverIT
    * @return Connection a database connection
    * @throws SQLException raised if any error occurs
    */
-  public static Connection getConnection(String accountName)
-  throws SQLException
-  {
+  public static Connection getConnection(String accountName) throws SQLException {
     return getConnection(DONT_INJECT_SOCKET_TIMEOUT, null, false, false, accountName);
   }
 
@@ -192,23 +171,19 @@ public class AbstractDriverIT
    * @return Connection a database connection
    * @throws SQLException raised if any error occurs
    */
-  public static Connection getConnection()
-  throws SQLException
-  {
+  public static Connection getConnection() throws SQLException {
     return getConnection(DONT_INJECT_SOCKET_TIMEOUT, null, false, false);
   }
 
   /**
-   * Gets a connection with default session parameter settings,
-   * but tunable query api version and socket timeout setting
+   * Gets a connection with default session parameter settings, but tunable query api version and
+   * socket timeout setting
    *
    * @param injectSocketTimeout number of seconds to inject in connection
    * @return Connection a database connection
    * @throws SQLException raised if any error occurs
    */
-  public static Connection getConnection(int injectSocketTimeout)
-  throws SQLException
-  {
+  public static Connection getConnection(int injectSocketTimeout) throws SQLException {
     return getConnection(injectSocketTimeout, null, false, false);
   }
 
@@ -218,9 +193,7 @@ public class AbstractDriverIT
    * @return Connection a database connection
    * @throws SQLException raised if any error occurs
    */
-  protected static Connection getSnowflakeAdminConnection()
-  throws SQLException
-  {
+  protected static Connection getSnowflakeAdminConnection() throws SQLException {
     return getConnection(DONT_INJECT_SOCKET_TIMEOUT, null, true, false);
   }
 
@@ -232,13 +205,13 @@ public class AbstractDriverIT
    * @throws SQLException raised if any error occurs
    */
   protected static Connection getSnowflakeAdminConnection(Properties paramProperties)
-  throws SQLException
-  {
+      throws SQLException {
     return getConnection(DONT_INJECT_SOCKET_TIMEOUT, paramProperties, true, false);
   }
 
   /**
-   * Gets a connection in same way as function below but with default account (gotten from environment variables)
+   * Gets a connection in same way as function below but with default account (gotten from
+   * environment variables)
    *
    * @param injectSocketTimeout
    * @param paramProperties
@@ -249,38 +222,36 @@ public class AbstractDriverIT
    */
   public static Connection getConnection(
       int injectSocketTimeout, Properties paramProperties, boolean isAdmin, boolean usesCom)
-  throws SQLException
-  {
+      throws SQLException {
     return getConnection(injectSocketTimeout, paramProperties, isAdmin, usesCom, null);
   }
 
   /**
-   * Gets a connection for the custom session parameter settings and
-   * tunable query api version and socket timeout setting
+   * Gets a connection for the custom session parameter settings and tunable query api version and
+   * socket timeout setting
    *
    * @param injectSocketTimeout number of seconds to inject in connection
-   * @param paramProperties     connection properties
-   * @param isAdmin             is Snowflake admin user?
-   * @param usesCom             uses com.snowflake instead of net.snowflake?
+   * @param paramProperties connection properties
+   * @param isAdmin is Snowflake admin user?
+   * @param usesCom uses com.snowflake instead of net.snowflake?
    * @return Connectiona database connection
    * @throws SQLException raised if any error occurs
    */
   public static Connection getConnection(
-      int injectSocketTimeout, Properties paramProperties, boolean isAdmin, boolean usesCom, String accountName)
-  throws SQLException
-  {
+      int injectSocketTimeout,
+      Properties paramProperties,
+      boolean isAdmin,
+      boolean usesCom,
+      String accountName)
+      throws SQLException {
     // Load Snowflake JDBC class
     String driverClass = DRIVER_CLASS;
-    if (usesCom)
-    {
+    if (usesCom) {
       driverClass = DRIVER_CLASS_COM;
     }
-    try
-    {
+    try {
       Class.forName(driverClass);
-    }
-    catch (Exception e)
-    {
+    } catch (Exception e) {
       logger.log(Level.SEVERE, "Cannot find Driver", e);
       throw new RuntimeException(e.getCause());
     }
@@ -288,20 +259,19 @@ public class AbstractDriverIT
 
     // build connection properties
     Properties properties = new Properties();
-    if (isAdmin)
-    {
-      assertThat("set SNOWFLAKE_TEST_ADMIN_USER environment variable.",
-                 !Strings.isNullOrEmpty(params.get("adminUser")));
-      assertThat("set SNOWFLAKE_TEST_ADMIN_PASSWORD environment variable.",
-                 !Strings.isNullOrEmpty(params.get("adminPassword")));
+    if (isAdmin) {
+      assertThat(
+          "set SNOWFLAKE_TEST_ADMIN_USER environment variable.",
+          !Strings.isNullOrEmpty(params.get("adminUser")));
+      assertThat(
+          "set SNOWFLAKE_TEST_ADMIN_PASSWORD environment variable.",
+          !Strings.isNullOrEmpty(params.get("adminPassword")));
 
       properties.put("user", params.get("adminUser"));
       properties.put("password", params.get("adminPassword"));
       properties.put("role", "accountadmin");
       properties.put("account", "snowflake");
-    }
-    else
-    {
+    } else {
       properties.put("user", params.get("user"));
       properties.put("password", params.get("password"));
       properties.put("role", params.get("role"));
@@ -316,17 +286,13 @@ public class AbstractDriverIT
 
     properties.put("insecureMode", false); // use OCSP for all tests.
 
-    if (injectSocketTimeout > 0)
-    {
-      properties.put(
-          "injectSocketTimeout", String.valueOf(injectSocketTimeout));
+    if (injectSocketTimeout > 0) {
+      properties.put("injectSocketTimeout", String.valueOf(injectSocketTimeout));
     }
 
     // Set the session parameter properties
-    if (paramProperties != null)
-    {
-      for (Map.Entry<?, ?> entry : paramProperties.entrySet())
-      {
+    if (paramProperties != null) {
+      for (Map.Entry<?, ?> entry : paramProperties.entrySet()) {
         properties.put(entry.getKey(), entry.getValue());
       }
     }
@@ -336,24 +302,20 @@ public class AbstractDriverIT
   /**
    * Close SQL Objects
    *
-   * @param resultSet  a result set object
-   * @param statement  a statement object
+   * @param resultSet a result set object
+   * @param statement a statement object
    * @param connection a connection
    * @throws SQLException raised if any error occurs
    */
-  public void closeSQLObjects(ResultSet resultSet, Statement statement,
-                              Connection connection) throws SQLException
-  {
-    if (resultSet != null)
-    {
+  public void closeSQLObjects(ResultSet resultSet, Statement statement, Connection connection)
+      throws SQLException {
+    if (resultSet != null) {
       resultSet.close();
     }
-    if (statement != null)
-    {
+    if (statement != null) {
       statement.close();
     }
-    if (connection != null)
-    {
+    if (connection != null) {
       connection.close();
     }
   }
@@ -361,18 +323,15 @@ public class AbstractDriverIT
   /**
    * Close SQL Objects
    *
-   * @param statement  a statement object
+   * @param statement a statement object
    * @param connection a connection
    * @throws SQLException raised if any error occurs
    */
-  public void closeSQLObjects(Statement statement, Connection connection) throws SQLException
-  {
-    if (statement != null)
-    {
+  public void closeSQLObjects(Statement statement, Connection connection) throws SQLException {
+    if (statement != null) {
       statement.close();
     }
-    if (connection != null)
-    {
+    if (connection != null) {
       connection.close();
     }
   }
@@ -383,23 +342,18 @@ public class AbstractDriverIT
    * @param fileName a file name
    * @return a full path name of the file
    */
-  public static String getFullPathFileInResource(String fileName)
-  {
+  public static String getFullPathFileInResource(String fileName) {
     ClassLoader classLoader = AbstractDriverIT.class.getClassLoader();
     URL url = classLoader.getResource(fileName);
-    if (url != null)
-    {
+    if (url != null) {
       return url.getFile();
-    }
-    else
-    {
+    } else {
       throw new RuntimeException("No file is found: " + fileName);
     }
   }
 
   protected static Timestamp buildTimestamp(
-      int year, int month, int day, int hour, int minute, int second, int fractionInNanoseconds)
-  {
+      int year, int month, int day, int hour, int minute, int second, int fractionInNanoseconds) {
     Calendar cal = Calendar.getInstance();
     cal.set(year, month, day, hour, minute, second);
     Timestamp ts = new Timestamp(cal.getTime().getTime());
@@ -407,21 +361,18 @@ public class AbstractDriverIT
     return ts;
   }
 
-  protected static Date buildDate(int year, int month, int day)
-  {
+  protected static Date buildDate(int year, int month, int day) {
     Calendar cal = Calendar.getInstance();
     cal.set(year, month, day, 0, 0, 0);
     cal.set(Calendar.MILLISECOND, 0);
     return new Date(cal.getTime().getTime());
   }
 
-  protected static Date buildDateWithTZ(int year, int month, int day, TimeZone tz)
-  {
+  protected static Date buildDateWithTZ(int year, int month, int day, TimeZone tz) {
     Calendar cal = Calendar.getInstance();
     cal.setTimeZone(tz);
     cal.set(year, month, day, 0, 0, 0);
     cal.set(Calendar.MILLISECOND, 0);
     return new Date(cal.getTime().getTime());
   }
-
 }

@@ -4,52 +4,43 @@
 
 package net.snowflake.client.core;
 
-import net.snowflake.client.log.ArgSupplier;
-import net.snowflake.client.log.SFLogger;
-import net.snowflake.client.log.SFLoggerFactory;
-import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
-import org.apache.http.protocol.HttpContext;
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLServerSocketFactory;
-import javax.net.ssl.TrustManager;
 import java.io.IOException;
 import java.net.Proxy;
 import java.net.Socket;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLServerSocketFactory;
+import javax.net.ssl.TrustManager;
+import net.snowflake.client.log.ArgSupplier;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+import org.apache.http.protocol.HttpContext;
 
-import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
-
-/**
- * Snowflake custom SSLConnectionSocketFactory
- */
-public class SFSSLConnectionSocketFactory extends SSLConnectionSocketFactory
-{
-  static final SFLogger logger = SFLoggerFactory.getLogger(
-      SFSSLConnectionSocketFactory.class);
+/** Snowflake custom SSLConnectionSocketFactory */
+public class SFSSLConnectionSocketFactory extends SSLConnectionSocketFactory {
+  static final SFLogger logger = SFLoggerFactory.getLogger(SFSSLConnectionSocketFactory.class);
 
   private static final String SSL_VERSION = "TLSv1.2";
 
   private final boolean socksProxyDisabled;
 
-  public SFSSLConnectionSocketFactory(TrustManager[] trustManagers,
-                                      boolean socksProxyDisabled)
-  throws NoSuchAlgorithmException, KeyManagementException
-  {
+  public SFSSLConnectionSocketFactory(TrustManager[] trustManagers, boolean socksProxyDisabled)
+      throws NoSuchAlgorithmException, KeyManagementException {
     super(
         initSSLContext(trustManagers),
-        new String[]{SSL_VERSION},
+        new String[] {SSL_VERSION},
         decideCipherSuites(),
-        SSLConnectionSocketFactory.getDefaultHostnameVerifier()
-    );
+        SSLConnectionSocketFactory.getDefaultHostnameVerifier());
     this.socksProxyDisabled = socksProxyDisabled;
   }
 
   private static SSLContext initSSLContext(TrustManager[] trustManagers)
-  throws NoSuchAlgorithmException, KeyManagementException
-  {
+      throws NoSuchAlgorithmException, KeyManagementException {
     // enforce using SSL_VERSION
     SSLContext sslContext = SSLContext.getInstance(SSL_VERSION);
     sslContext.init(
@@ -60,10 +51,8 @@ public class SFSSLConnectionSocketFactory extends SSLConnectionSocketFactory
   }
 
   @Override
-  public Socket createSocket(HttpContext ctx) throws IOException
-  {
-    return socksProxyDisabled ? new Socket(Proxy.NO_PROXY)
-                              : super.createSocket(ctx);
+  public Socket createSocket(HttpContext ctx) throws IOException {
+    return socksProxyDisabled ? new Socket(Proxy.NO_PROXY) : super.createSocket(ctx);
   }
 
   /**
@@ -71,21 +60,20 @@ public class SFSSLConnectionSocketFactory extends SSLConnectionSocketFactory
    *
    * @return List of cipher suites.
    */
-  private static String[] decideCipherSuites()
-  {
+  private static String[] decideCipherSuites() {
     String sysCipherSuites = systemGetProperty("https.cipherSuites");
 
-    String[] cipherSuites = sysCipherSuites != null ? sysCipherSuites.split(",") :
-                            // use jdk default cipher suites
-                            ((SSLServerSocketFactory) SSLServerSocketFactory.getDefault())
-                                .getDefaultCipherSuites();
+    String[] cipherSuites =
+        sysCipherSuites != null
+            ? sysCipherSuites.split(",")
+            :
+            // use jdk default cipher suites
+            ((SSLServerSocketFactory) SSLServerSocketFactory.getDefault()).getDefaultCipherSuites();
 
     // cipher suites need to be picked up in code explicitly for jdk 1.7
     // https://stackoverflow.com/questions/44378970/
-    logger.trace("Cipher suites used: {}",
-                 (ArgSupplier) () -> Arrays.toString(cipherSuites));
+    logger.trace("Cipher suites used: {}", (ArgSupplier) () -> Arrays.toString(cipherSuites));
 
     return cipherSuites;
   }
-
 }

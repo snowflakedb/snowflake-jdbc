@@ -11,19 +11,15 @@ import net.snowflake.common.core.SqlState;
  *
  * @author jhuang
  */
-public enum ErrorCode
-{
+public enum ErrorCode {
 
   /**
    * Error codes partitioning:
-   * <p>
-   * 0NNNNN: GS SQL error codes
-   * 1NNNNN: XP error codes
-   * 2NNNNN: JDBC driver error codes
-   * 3NNNNN: GS generic error codes
-   * 4NNNNN: Node.js driver error codes
-   * <p>
-   * N can be any digits from 0 to 9.
+   *
+   * <p>0NNNNN: GS SQL error codes 1NNNNN: XP error codes 2NNNNN: JDBC driver error codes 3NNNNN: GS
+   * generic error codes 4NNNNN: Node.js driver error codes
+   *
+   * <p>N can be any digits from 0 to 9.
    */
   INTERNAL_ERROR(200001, SqlState.INTERNAL_ERROR),
   CONNECTION_ERROR(200002, SqlState.SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION),
@@ -34,8 +30,7 @@ public enum ErrorCode
   FAIL_LIST_FILES(200007, SqlState.DATA_EXCEPTION),
   FILE_NOT_FOUND(200008, SqlState.DATA_EXCEPTION),
   FILE_IS_DIRECTORY(200009, SqlState.DATA_EXCEPTION),
-  DUPLICATE_CONNECTION_PROPERTY_SPECIFIED(200010,
-                                          SqlState.DATA_EXCEPTION),
+  DUPLICATE_CONNECTION_PROPERTY_SPECIFIED(200010, SqlState.DATA_EXCEPTION),
   MISSING_USERNAME(200011, SqlState.INVALID_AUTHORIZATION_SPECIFICATION),
   MISSING_PASSWORD(200012, SqlState.INVALID_AUTHORIZATION_SPECIFICATION),
   S3_OPERATION_ERROR(200013, SqlState.SYSTEM_ERROR),
@@ -53,8 +48,7 @@ public enum ErrorCode
   STATEMENT_ALREADY_RUNNING_QUERY(200025, SqlState.FEATURE_NOT_SUPPORTED),
   MISSING_SERVER_URL(200026, SqlState.INVALID_AUTHORIZATION_SPECIFICATION),
   TOO_MANY_SESSION_PARAMETERS(200027, SqlState.FEATURE_NOT_SUPPORTED),
-  MISSING_CONNECTION_PROPERTY(200028,
-                              SqlState.INVALID_AUTHORIZATION_SPECIFICATION),
+  MISSING_CONNECTION_PROPERTY(200028, SqlState.INVALID_AUTHORIZATION_SPECIFICATION),
   INVALID_CONNECTION_URL(200029, SqlState.INVALID_AUTHORIZATION_SPECIFICATION),
   DUPLICATE_STATEMENT_PARAMETER_SPECIFIED(200030, SqlState.DATA_EXCEPTION),
   TOO_MANY_STATEMENT_PARAMETERS(200031, SqlState.FEATURE_NOT_SUPPORTED),
@@ -65,13 +59,10 @@ public enum ErrorCode
   INVALID_STATE(200036, SqlState.FEATURE_NOT_SUPPORTED),
   RESULTSET_ALREADY_CLOSED(200037, SqlState.FEATURE_NOT_SUPPORTED),
   INVALID_VALUE_CONVERT(200038, SqlState.FEATURE_NOT_SUPPORTED),
-  IDP_CONNECTION_ERROR(200039,
-                       SqlState.SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION),
-  IDP_INCORRECT_DESTINATION(200040,
-                            SqlState.SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION),
+  IDP_CONNECTION_ERROR(200039, SqlState.SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION),
+  IDP_INCORRECT_DESTINATION(200040, SqlState.SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION),
   CONNECTION_ESTABLISHED_WITH_DIFFERENT_PROP(200041, SqlState.WARNING),
-  UNSUPPORTED_STATEMENT_TYPE_IN_EXECUTION_API(200042,
-                                              SqlState.FEATURE_NOT_SUPPORTED),
+  UNSUPPORTED_STATEMENT_TYPE_IN_EXECUTION_API(200042, SqlState.FEATURE_NOT_SUPPORTED),
   STATEMENT_PREPARE_FAILURE(200043, SqlState.FEATURE_NOT_SUPPORTED),
   AZURE_SERVICE_ERROR(200044, SqlState.SYSTEM_ERROR),
 
@@ -92,44 +83,37 @@ public enum ErrorCode
   INVALID_OKTA_USERNAME(200060, SqlState.CONNECTION_EXCEPTION),
   GCP_SERVICE_ERROR(200061, SqlState.SYSTEM_ERROR);
 
-  public final static String errorMessageResource =
-      "net.snowflake.client.jdbc.jdbc_error_messages";
+  public static final String errorMessageResource = "net.snowflake.client.jdbc.jdbc_error_messages";
+
+  /** Snowflake internal message associated to the error. */
+  private final Integer messageCode;
+
+  private final String sqlState;
 
   /**
-   * Snowflake internal message associated to the error.
-   */
-  final private Integer messageCode;
-
-  final private String sqlState;
-
-  /**
-   * Construct a new error code specification given Snowflake internal error
-   * code and SQL state error code.
-   * <p/>
+   * Construct a new error code specification given Snowflake internal error code and SQL state
+   * error code.
+   *
+   * <p>
    *
    * @param messageCode Snowflake internal error code
-   * @param sqlState    SQL state error code
+   * @param sqlState SQL state error code
    */
-  ErrorCode(Integer messageCode, String sqlState)
-  {
+  ErrorCode(Integer messageCode, String sqlState) {
     this.messageCode = messageCode;
     this.sqlState = sqlState;
   }
 
-  public Integer getMessageCode()
-  {
+  public Integer getMessageCode() {
     return messageCode;
   }
 
-  public String getSqlState()
-  {
+  public String getSqlState() {
     return sqlState;
   }
 
   @Override
-  public String toString()
-  {
-    return "ErrorCode{" + "messageCode=" + messageCode + ", sqlState=" +
-           sqlState + '}';
+  public String toString() {
+    return "ErrorCode{" + "messageCode=" + messageCode + ", sqlState=" + sqlState + '}';
   }
 }
