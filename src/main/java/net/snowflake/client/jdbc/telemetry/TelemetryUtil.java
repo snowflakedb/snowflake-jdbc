@@ -29,4 +29,9 @@ public class TelemetryUtil {
     obj.put(VALUE, value);
     return new TelemetryData(obj, System.currentTimeMillis());
   }
+
+  public static TelemetryData buildJobData(ObjectNode obj)
+  {
+    return new TelemetryData(obj, System.currentTimeMillis());
+  }
 }
