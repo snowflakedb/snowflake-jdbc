@@ -3,6 +3,13 @@
  */
 package net.snowflake.client.jdbc;
 
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import net.snowflake.client.category.TestCategoryCore;
 import org.apache.http.StatusLine;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -14,47 +21,30 @@ import org.junit.experimental.categories.Category;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import static org.mockito.Mockito.*;
-import static org.junit.Assert.*;
-
 @Category(TestCategoryCore.class)
-public class RestRequestIT
-{
-  private CloseableHttpResponse retryResponse()
-  {
+public class RestRequestIT {
+  private CloseableHttpResponse retryResponse() {
     StatusLine retryStatusLine = mock(StatusLine.class);
-    when(retryStatusLine.getStatusCode())
-        .thenReturn(503);
+    when(retryStatusLine.getStatusCode()).thenReturn(503);
 
     CloseableHttpResponse retryResponse = mock(CloseableHttpResponse.class);
-    when(retryResponse.getStatusLine())
-        .thenReturn(retryStatusLine);
+    when(retryResponse.getStatusLine()).thenReturn(retryStatusLine);
 
     return retryResponse;
   }
 
-  private CloseableHttpResponse successResponse()
-  {
+  private CloseableHttpResponse successResponse() {
     StatusLine successStatusLine = mock(StatusLine.class);
-    when(successStatusLine.getStatusCode())
-        .thenReturn(200);
+    when(successStatusLine.getStatusCode()).thenReturn(200);
 
     CloseableHttpResponse successResponse = mock(CloseableHttpResponse.class);
-    when(successResponse.getStatusLine())
-        .thenReturn(successStatusLine);
+    when(successResponse.getStatusLine()).thenReturn(successStatusLine);
 
     return successResponse;
   }
 
-  private void execute(CloseableHttpClient client, String uri,
-                       boolean includeRetryParameters)
-  throws IOException, SnowflakeSQLException
-  {
+  private void execute(CloseableHttpClient client, String uri, boolean includeRetryParameters)
+      throws IOException, SnowflakeSQLException {
     RestRequest.execute(
         client,
         new HttpGet(uri),
@@ -68,106 +58,85 @@ public class RestRequestIT
   }
 
   @Test
-  public void testRetryParamsInRequest() throws IOException, SnowflakeSQLException
-  {
+  public void testRetryParamsInRequest() throws IOException, SnowflakeSQLException {
     CloseableHttpClient client = mock(CloseableHttpClient.class);
     when(client.execute(any(HttpUriRequest.class)))
-        .thenAnswer(new Answer<CloseableHttpResponse>()
-        {
-          int callCount = 0;
+        .thenAnswer(
+            new Answer<CloseableHttpResponse>() {
+              int callCount = 0;
 
-          @Override
-          public CloseableHttpResponse answer(InvocationOnMock invocation)
-          throws Throwable
-          {
-            HttpUriRequest arg = (HttpUriRequest) invocation.getArguments()[0];
-            String params = arg.getURI().getQuery();
+              @Override
+              public CloseableHttpResponse answer(InvocationOnMock invocation) throws Throwable {
+                HttpUriRequest arg = (HttpUriRequest) invocation.getArguments()[0];
+                String params = arg.getURI().getQuery();
 
-            if (callCount == 0)
-            {
-              assertFalse(params.contains("retryCount="));
-              assertFalse(params.contains("clientStartTime="));
-              assertTrue(params.contains("request_guid="));
-            }
-            else
-            {
-              assertTrue(params.contains("retryCount=" + callCount));
-              assertTrue(params.contains("clientStartTime="));
-              assertTrue(params.contains("request_guid="));
-            }
+                if (callCount == 0) {
+                  assertFalse(params.contains("retryCount="));
+                  assertFalse(params.contains("clientStartTime="));
+                  assertTrue(params.contains("request_guid="));
+                } else {
+                  assertTrue(params.contains("retryCount=" + callCount));
+                  assertTrue(params.contains("clientStartTime="));
+                  assertTrue(params.contains("request_guid="));
+                }
 
-            callCount += 1;
-            if (callCount >= 3)
-            {
-              return successResponse();
-            }
-            else
-            {
-              return retryResponse();
-            }
-          }
-        });
+                callCount += 1;
+                if (callCount >= 3) {
+                  return successResponse();
+                } else {
+                  return retryResponse();
+                }
+              }
+            });
 
     execute(client, "fakeurl.com/?requestId=abcd-1234", true);
   }
 
   @Test
-  public void testRetryNoParamsInRequest() throws IOException, SnowflakeSQLException
-  {
+  public void testRetryNoParamsInRequest() throws IOException, SnowflakeSQLException {
     CloseableHttpClient client = mock(CloseableHttpClient.class);
     when(client.execute(any(HttpUriRequest.class)))
-        .thenAnswer(new Answer<CloseableHttpResponse>()
-        {
-          int callCount = 0;
+        .thenAnswer(
+            new Answer<CloseableHttpResponse>() {
+              int callCount = 0;
 
-          @Override
-          public CloseableHttpResponse answer(InvocationOnMock invocation)
-          throws Throwable
-          {
-            HttpUriRequest arg = (HttpUriRequest) invocation.getArguments()[0];
-            String params = arg.getURI().getQuery();
+              @Override
+              public CloseableHttpResponse answer(InvocationOnMock invocation) throws Throwable {
+                HttpUriRequest arg = (HttpUriRequest) invocation.getArguments()[0];
+                String params = arg.getURI().getQuery();
 
-            if (callCount > 0)
-            {
-              assertTrue(params.contains("retryCount=" + callCount));
-            }
-            assertFalse(params.contains("clientStartTime="));
-            assertTrue(params.contains("request_guid="));
+                if (callCount > 0) {
+                  assertTrue(params.contains("retryCount=" + callCount));
+                }
+                assertFalse(params.contains("clientStartTime="));
+                assertTrue(params.contains("request_guid="));
 
-            callCount += 1;
-            if (callCount >= 3)
-            {
-              return successResponse();
-            }
-            else
-            {
-              return retryResponse();
-            }
-          }
-        });
+                callCount += 1;
+                if (callCount >= 3) {
+                  return successResponse();
+                } else {
+                  return retryResponse();
+                }
+              }
+            });
 
     execute(client, "fakeurl.com/?requestId=abcd-1234", false);
   }
 
-  private CloseableHttpResponse anyStatusCodeResponse(int statusCode)
-  {
+  private CloseableHttpResponse anyStatusCodeResponse(int statusCode) {
     StatusLine successStatusLine = mock(StatusLine.class);
     when(successStatusLine.getStatusCode()).thenReturn(statusCode);
 
     CloseableHttpResponse response = mock(CloseableHttpResponse.class);
-    when(response.getStatusLine())
-        .thenReturn(successStatusLine);
+    when(response.getStatusLine()).thenReturn(successStatusLine);
 
     return response;
   }
 
   @Test
-  public void testIsRetryableHTTPCode() throws Exception
-  {
-    class TestCase
-    {
-      TestCase(int statusCode, boolean retryHTTP403, boolean result)
-      {
+  public void testIsRetryableHTTPCode() throws Exception {
+    class TestCase {
+      TestCase(int statusCode, boolean retryHTTP403, boolean result) {
         this.statusCode = statusCode;
         this.retryHTTP403 = retryHTTP403;
         this.result = result;
@@ -285,20 +254,18 @@ public class RestRequestIT
     testCases.add(new TestCase(510, true, false));
     testCases.add(new TestCase(511, true, false));
 
-    for (TestCase t : testCases)
-    {
-      if (t.result)
-      {
+    for (TestCase t : testCases) {
+      if (t.result) {
         assertTrue(
-            String.format("Result must be true but false: HTTP Code: %d, RetryHTTP403: %s",
-                          t.statusCode, t.retryHTTP403),
+            String.format(
+                "Result must be true but false: HTTP Code: %d, RetryHTTP403: %s",
+                t.statusCode, t.retryHTTP403),
             RestRequest.isRetryableHTTPCode(anyStatusCodeResponse(t.statusCode), t.retryHTTP403));
-      }
-      else
-      {
+      } else {
         assertFalse(
-            String.format("Result must be false but true: HTTP Code: %d, RetryHTTP403: %s",
-                          t.statusCode, t.retryHTTP403),
+            String.format(
+                "Result must be false but true: HTTP Code: %d, RetryHTTP403: %s",
+                t.statusCode, t.retryHTTP403),
             RestRequest.isRetryableHTTPCode(anyStatusCodeResponse(t.statusCode), t.retryHTTP403));
       }
     }

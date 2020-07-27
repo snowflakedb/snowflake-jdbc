@@ -5,10 +5,6 @@
 package net.snowflake.client.core;
 
 import com.google.common.base.Strings;
-import net.snowflake.client.log.SFLogger;
-import net.snowflake.client.log.SFLoggerFactory;
-
-import com.sun.jna.LastErrorException;
 import com.sun.jna.Memory;
 import com.sun.jna.Native;
 import com.sun.jna.Pointer;
@@ -18,34 +14,30 @@ import com.sun.jna.platform.win32.WinBase.FILETIME;
 import com.sun.jna.ptr.PointerByReference;
 import com.sun.jna.win32.StdCallLibrary;
 import com.sun.jna.win32.W32APIOptions;
-
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.nio.charset.StandardCharsets;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
 
-public class SecureStorageWindowsManager implements SecureStorageManager
-{
-  private static final
-  SFLogger logger = SFLoggerFactory.getLogger(SecureStorageWindowsManager.class);
+public class SecureStorageWindowsManager implements SecureStorageManager {
+  private static final SFLogger logger =
+      SFLoggerFactory.getLogger(SecureStorageWindowsManager.class);
 
   private final Advapi32Lib advapi32Lib;
 
-  private SecureStorageWindowsManager()
-  {
+  private SecureStorageWindowsManager() {
     advapi32Lib = Advapi32LibManager.getInstance();
   }
 
-  public static SecureStorageWindowsManager builder()
-  {
+  public static SecureStorageWindowsManager builder() {
     return new SecureStorageWindowsManager();
   }
 
-  public SecureStorageStatus setCredential(String host, String user, String token)
-  {
-    if (Strings.isNullOrEmpty(token))
-    {
+  public SecureStorageStatus setCredential(String host, String user, String token) {
+    if (Strings.isNullOrEmpty(token)) {
       logger.info("No token provided");
       return SecureStorageStatus.SUCCESS;
     }
@@ -65,14 +57,15 @@ public class SecureStorageWindowsManager implements SecureStorageManager
     cred.UserName = new WString(user.toUpperCase());
 
     boolean ret = false;
-    synchronized (advapi32Lib)
-    {
+    synchronized (advapi32Lib) {
       ret = advapi32Lib.CredWriteW(cred, 0);
     }
 
-    if (!ret)
-    {
-      logger.info(String.format("Failed to write to Windows Credential Manager. Error code = %d", Native.getLastError()));
+    if (!ret) {
+      logger.info(
+          String.format(
+              "Failed to write to Windows Credential Manager. Error code = %d",
+              Native.getLastError()));
       return SecureStorageStatus.FAILURE;
     }
     logger.info("Wrote to Windows Credential Manager successfully");
@@ -80,38 +73,41 @@ public class SecureStorageWindowsManager implements SecureStorageManager
     return SecureStorageStatus.SUCCESS;
   }
 
-  public String getCredential(String host, String user)
-  {
+  public String getCredential(String host, String user) {
     PointerByReference pCredential = new PointerByReference();
     String target = SecureStorageManager.convertTarget(host, user);
 
-    try
-    {
+    try {
       boolean ret = false;
-      synchronized (advapi32Lib)
-      {
+      synchronized (advapi32Lib) {
         ret =
-            advapi32Lib.CredReadW(target, SecureStorageWindowsCredentialType.CRED_TYPE_GENERIC.getType(), 0, pCredential);
+            advapi32Lib.CredReadW(
+                target,
+                SecureStorageWindowsCredentialType.CRED_TYPE_GENERIC.getType(),
+                0,
+                pCredential);
       }
 
-      if (!ret)
-      {
-        logger.info(String.format("Failed to read target or could not find it in Windows Credential Manager. Error code = %d", Native.getLastError()));
+      if (!ret) {
+        logger.info(
+            String.format(
+                "Failed to read target or could not find it in Windows Credential Manager. Error code = %d",
+                Native.getLastError()));
         return null;
       }
 
       logger.debug("Found the token from Windows Credential Manager and now copying it");
 
-      SecureStorageWindowsCredential cred = new SecureStorageWindowsCredential(pCredential.getValue());
+      SecureStorageWindowsCredential cred =
+          new SecureStorageWindowsCredential(pCredential.getValue());
 
-      if (SecureStorageWindowsCredentialType.typeOf(cred.Type) != SecureStorageWindowsCredentialType.CRED_TYPE_GENERIC)
-      {
+      if (SecureStorageWindowsCredentialType.typeOf(cred.Type)
+          != SecureStorageWindowsCredentialType.CRED_TYPE_GENERIC) {
         logger.info("Wrong type of credential. Expected: CRED_TYPE_GENERIC");
         return null;
       }
 
-      if (cred.CredentialBlobSize == 0)
-      {
+      if (cred.CredentialBlobSize == 0) {
         logger.info("Returned credential is empty");
         return null;
       }
@@ -120,32 +116,30 @@ public class SecureStorageWindowsManager implements SecureStorageManager
       String res = new String(credBytes, StandardCharsets.UTF_16LE);
       logger.debug("Successfully read the token. Will return it as String now");
       return res;
-    }
-    finally
-    {
-      if (pCredential.getValue() != null)
-      {
-        synchronized (advapi32Lib)
-        {
+    } finally {
+      if (pCredential.getValue() != null) {
+        synchronized (advapi32Lib) {
           advapi32Lib.CredFree(pCredential.getValue());
         }
       }
     }
   }
 
-  public SecureStorageStatus deleteCredential(String host, String user)
-  {
+  public SecureStorageStatus deleteCredential(String host, String user) {
     String target = SecureStorageManager.convertTarget(host, user);
 
     boolean ret = false;
-    synchronized (advapi32Lib)
-    {
-      ret = advapi32Lib.CredDeleteW(target, SecureStorageWindowsCredentialType.CRED_TYPE_GENERIC.getType(), 0);
+    synchronized (advapi32Lib) {
+      ret =
+          advapi32Lib.CredDeleteW(
+              target, SecureStorageWindowsCredentialType.CRED_TYPE_GENERIC.getType(), 0);
     }
 
-    if (!ret)
-    {
-      logger.info(String.format("Failed to delete target in Windows Credential Manager. Error code = %d", Native.getLastError()));
+    if (!ret) {
+      logger.info(
+          String.format(
+              "Failed to delete target in Windows Credential Manager. Error code = %d",
+              Native.getLastError()));
       return SecureStorageStatus.FAILURE;
     }
 
@@ -153,26 +147,15 @@ public class SecureStorageWindowsManager implements SecureStorageManager
     return SecureStorageStatus.SUCCESS;
   }
 
-
-  public static class SecureStorageWindowsCredential extends Structure
-  {
+  public static class SecureStorageWindowsCredential extends Structure {
     /**
-     * typedef struct _CREDENTIAL {
-     * DWORD                 Flags;
-     * DWORD                 Type;
-     * LPTSTR                TargetName;
-     * LPTSTR                Comment;
-     * FILETIME              LastWritten;
-     * DWORD                 CredentialBlobSize;
-     * LPBYTE                CredentialBlob;
-     * DWORD                 Persist;
-     * DWORD                 AttributeCount;
-     * PCREDENTIAL_ATTRIBUTE Attributes;
-     * LPTSTR                TargetAlias;
-     * LPTSTR                UserName;
-     * } CREDENTIAL, *PCREDENTIAL;
+     * typedef struct _CREDENTIAL { DWORD Flags; DWORD Type; LPTSTR TargetName; LPTSTR Comment;
+     * FILETIME LastWritten; DWORD CredentialBlobSize; LPBYTE CredentialBlob; DWORD Persist; DWORD
+     * AttributeCount; PCREDENTIAL_ATTRIBUTE Attributes; LPTSTR TargetAlias; LPTSTR UserName; }
+     * CREDENTIAL, *PCREDENTIAL;
      */
     public int Flags;
+
     public int Type;
     public WString TargetName;
     public WString Comment;
@@ -186,39 +169,34 @@ public class SecureStorageWindowsManager implements SecureStorageManager
     public WString UserName;
 
     @Override
-    protected List<String> getFieldOrder()
-    {
-      return Arrays.asList("Flags",
-                           "Type",
-                           "TargetName",
-                           "Comment",
-                           "LastWritten",
-                           "CredentialBlobSize",
-                           "CredentialBlob",
-                           "Persist",
-                           "AttributeCount",
-                           "Attributes",
-                           "TargetAlias",
-                           "UserName");
+    protected List<String> getFieldOrder() {
+      return Arrays.asList(
+          "Flags",
+          "Type",
+          "TargetName",
+          "Comment",
+          "LastWritten",
+          "CredentialBlobSize",
+          "CredentialBlob",
+          "Persist",
+          "AttributeCount",
+          "Attributes",
+          "TargetAlias",
+          "UserName");
     }
 
-    public SecureStorageWindowsCredential()
-    {
+    public SecureStorageWindowsCredential() {
       super();
     }
 
-    public SecureStorageWindowsCredential(Pointer p)
-    {
+    public SecureStorageWindowsCredential(Pointer p) {
       super(p);
       read();
     }
   }
 
-  /**
-   * Windows credential types
-   */
-  enum SecureStorageWindowsCredentialType
-  {
+  /** Windows credential types */
+  enum SecureStorageWindowsCredentialType {
     CRED_TYPE_GENERIC(1),
     CRED_TYPE_DOMAIN_PASSWORD(2),
     CRED_TYPE_DOMAIN_CERTIFICATE(3),
@@ -231,32 +209,27 @@ public class SecureStorageWindowsManager implements SecureStorageManager
     private static Map<Integer, SecureStorageWindowsCredentialType> map =
         new HashMap<Integer, SecureStorageWindowsCredentialType>();
 
-    private SecureStorageWindowsCredentialType(int type)
-    {
+    private SecureStorageWindowsCredentialType(int type) {
       this.type = type;
     }
 
-    static
-    {
-      for (SecureStorageWindowsCredentialType credType : SecureStorageWindowsCredentialType.values())
-      {
+    static {
+      for (SecureStorageWindowsCredentialType credType :
+          SecureStorageWindowsCredentialType.values()) {
         map.put(credType.type, credType);
       }
     }
 
-    public static SecureStorageWindowsCredentialType typeOf(int type)
-    {
+    public static SecureStorageWindowsCredentialType typeOf(int type) {
       return map.get(type);
     }
 
-    public int getType()
-    {
+    public int getType() {
       return type;
     }
   }
 
-  enum SecureStorageWindowsCredentialPersistType
-  {
+  enum SecureStorageWindowsCredentialPersistType {
     CRED_PERSIST_NONE(0),
     CRED_PERSIST_SESSION(1),
     CRED_PERSIST_LOCAL_MACHINE(2),
@@ -266,91 +239,61 @@ public class SecureStorageWindowsManager implements SecureStorageManager
     private static Map<Integer, SecureStorageWindowsCredentialPersistType> map =
         new HashMap<Integer, SecureStorageWindowsCredentialPersistType>();
 
-    private SecureStorageWindowsCredentialPersistType(int type)
-    {
+    private SecureStorageWindowsCredentialPersistType(int type) {
       this.type = type;
     }
 
-    static
-    {
-      for (SecureStorageWindowsCredentialPersistType credPersistType : SecureStorageWindowsCredentialPersistType.values())
-      {
+    static {
+      for (SecureStorageWindowsCredentialPersistType credPersistType :
+          SecureStorageWindowsCredentialPersistType.values()) {
         map.put(credPersistType.type, credPersistType);
       }
     }
 
-    public int getType()
-    {
+    public int getType() {
       return type;
     }
   }
 
-  static class Advapi32LibManager
-  {
+  static class Advapi32LibManager {
     private static Advapi32Lib INSTANCE = null;
 
-    public static Advapi32Lib getInstance()
-    {
-      if (INSTANCE == null)
-      {
-        synchronized (Advapi32LibManager.class)
-        {
-          if (INSTANCE == null)
-          {
-            INSTANCE = (Advapi32Lib) Native.loadLibrary("advapi32", Advapi32Lib.class, W32APIOptions.UNICODE_OPTIONS);
+    public static Advapi32Lib getInstance() {
+      if (INSTANCE == null) {
+        synchronized (Advapi32LibManager.class) {
+          if (INSTANCE == null) {
+            INSTANCE =
+                (Advapi32Lib)
+                    Native.loadLibrary(
+                        "advapi32", Advapi32Lib.class, W32APIOptions.UNICODE_OPTIONS);
           }
         }
       }
       return INSTANCE;
     }
 
-    /**
-     * This function is used only for unit test
-     */
-    public static void setInstance(Advapi32Lib instance)
-    {
+    /** This function is used only for unit test */
+    public static void setInstance(Advapi32Lib instance) {
       INSTANCE = instance;
     }
   }
 
-  interface Advapi32Lib extends StdCallLibrary
-  {
+  interface Advapi32Lib extends StdCallLibrary {
     // map Windows advapi32.dll to Interface Advapi32Lib
-    //Advapi32Lib INSTANCE =
-    //   (Advapi32Lib) Native.loadLibrary("advapi32", Advapi32Lib.class, W32APIOptions.UNICODE_OPTIONS);
+    // Advapi32Lib INSTANCE =
+    //   (Advapi32Lib) Native.loadLibrary("advapi32", Advapi32Lib.class,
+    // W32APIOptions.UNICODE_OPTIONS);
 
-    /**
-     * BOOL CredReadW(
-     * LPCWSTR      TargetName,
-     * DWORD        Type,
-     * DWORD        Flags,
-     * PCREDENTIALW *Credential
-     * );
-     */
+    /** BOOL CredReadW( LPCWSTR TargetName, DWORD Type, DWORD Flags, PCREDENTIALW *Credential ); */
     boolean CredReadW(String targetName, int type, int flags, PointerByReference pcred);
 
-    /**
-     * BOOL CredWriteW(
-     * PCREDENTIALW Credential,
-     * DWORD        Flags
-     * );
-     */
+    /** BOOL CredWriteW( PCREDENTIALW Credential, DWORD Flags ); */
     boolean CredWriteW(SecureStorageWindowsManager.SecureStorageWindowsCredential cred, int flags);
 
-    /**
-     * BOOL CredDeleteW(
-     * LPCWSTR TargetName,
-     * DWORD   Type,
-     * DWORD   Flags
-     * );
-     */
+    /** BOOL CredDeleteW( LPCWSTR TargetName, DWORD Type, DWORD Flags ); */
     boolean CredDeleteW(String targetName, int type, int flags);
 
-    /**
-     * void CredFree(
-     * PVOID Buffer
-     * );
-     */
+    /** void CredFree( PVOID Buffer ); */
     void CredFree(Pointer cred);
   }
 }

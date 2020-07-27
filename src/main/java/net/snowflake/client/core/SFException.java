@@ -5,16 +5,12 @@
 package net.snowflake.client.core;
 
 import net.snowflake.client.jdbc.ErrorCode;
-import net.snowflake.common.core.ResourceBundleManager;
-
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
+import net.snowflake.common.core.ResourceBundleManager;
 
-/**
- * Created by jhuang on 1/5/16.
- */
-public class SFException extends Throwable
-{
+/** Created by jhuang on 1/5/16. */
+public class SFException extends Throwable {
   static final SFLogger logger = SFLoggerFactory.getLogger(SFException.class);
 
   private static final long serialVersionUID = 1L;
@@ -28,11 +24,10 @@ public class SFException extends Throwable
   private int vendorCode;
   private Object[] params;
 
-  public SFException(ErrorCode errorCode,
-                     Object... params)
-  {
-    super(errorResourceBundleManager.getLocalizedMessage(
-        String.valueOf(errorCode.getMessageCode()), params));
+  public SFException(ErrorCode errorCode, Object... params) {
+    super(
+        errorResourceBundleManager.getLocalizedMessage(
+            String.valueOf(errorCode.getMessageCode()), params));
 
     this.cause = null;
     this.queryId = null;
@@ -41,12 +36,11 @@ public class SFException extends Throwable
     this.params = params;
   }
 
-  public SFException(Throwable cause,
-                     ErrorCode errorCode,
-                     Object... params)
-  {
-    super(errorResourceBundleManager.getLocalizedMessage(
-        String.valueOf(errorCode.getMessageCode()), params), cause);
+  public SFException(Throwable cause, ErrorCode errorCode, Object... params) {
+    super(
+        errorResourceBundleManager.getLocalizedMessage(
+            String.valueOf(errorCode.getMessageCode()), params),
+        cause);
 
     this.cause = null;
     this.queryId = null;
@@ -55,36 +49,30 @@ public class SFException extends Throwable
     this.params = params;
   }
 
-  public Throwable getCause()
-  {
+  public Throwable getCause() {
     return cause;
   }
 
-  public String getQueryId()
-  {
+  public String getQueryId() {
     return queryId;
   }
 
-  public String getSqlState()
-  {
+  public String getSqlState() {
     return sqlState;
   }
 
-  public int getVendorCode()
-  {
+  public int getVendorCode() {
     return vendorCode;
   }
 
-  public Object[] getParams()
-  {
+  public Object[] getParams() {
     return params;
   }
 
   @Override
-  public String toString()
-  {
-    return super.toString() +
-           (getQueryId() != null ? ", query id = " + getQueryId() : "") +
-           (getSqlState() != null ? ", sql state = " + getSqlState() : "");
+  public String toString() {
+    return super.toString()
+        + (getQueryId() != null ? ", query id = " + getQueryId() : "")
+        + (getSqlState() != null ? ", sql state = " + getSqlState() : "");
   }
 }

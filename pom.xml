@@ -836,24 +836,20 @@
       </build>
     </profile>
     <profile>
-      <id>reformat</id>
+      <id>check-style</id>
       <build>
         <plugins>
           <plugin>
-            <groupId>org.codehaus.mojo</groupId>
-            <artifactId>exec-maven-plugin</artifactId>
+            <groupId>com.coveo</groupId>
+            <artifactId>fmt-maven-plugin</artifactId>
+            <version>2.10</version>
             <executions>
               <execution>
-                <id>reformat-code</id>
-                <phase>process-sources</phase>
                 <goals>
-                  <goal>exec</goal>
+                  <goal>check</goal>
                 </goals>
-                <configuration>
-                  <executable>${basedir}/scripts/format_code.sh</executable>
-                </configuration>
               </execution>
-             </executions>
+            </executions>
           </plugin>
         </plugins>
       </build>

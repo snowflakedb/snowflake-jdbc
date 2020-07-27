@@ -3,12 +3,7 @@
  */
 package net.snowflake.client.jdbc;
 
-import net.snowflake.client.AbstractDriverIT;
-import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningOnGithubAction;
-import net.snowflake.client.category.TestCategoryOthers;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.sql.Connection;
@@ -17,26 +12,24 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Properties;
 import java.util.logging.Logger;
+import net.snowflake.client.AbstractDriverIT;
+import net.snowflake.client.ConditionalIgnoreRule;
+import net.snowflake.client.RunningOnGithubAction;
+import net.snowflake.client.category.TestCategoryOthers;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
-import static org.junit.Assert.assertTrue;
-
-/**
- * Created by tcruanes on 4/24/17.
- */
+/** Created by tcruanes on 4/24/17. */
 @Category(TestCategoryOthers.class)
-public final class SessionVariablesIT extends AbstractDriverIT
-{
+public final class SessionVariablesIT extends AbstractDriverIT {
   private static Logger logger = Logger.getLogger(BaseJDBCTest.class.getName());
 
-  private static void sql(final Connection connection, String sqlText)
-  throws SQLException
-  {
+  private static void sql(final Connection connection, String sqlText) throws SQLException {
     // Create a warehouse for the test
     Statement stmt = connection.createStatement();
     stmt.setMaxRows(1);
     boolean hasResultSet = stmt.execute(sqlText);
-    if (hasResultSet)
-    {
+    if (hasResultSet) {
       assertTrue(stmt.getResultSet().next());
     }
     stmt.close();
@@ -44,8 +37,7 @@ public final class SessionVariablesIT extends AbstractDriverIT
 
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testSessionVariables() throws SQLException, IOException
-  {
+  public void testSessionVariables() throws SQLException, IOException {
     // build connection properties
     Properties properties = new Properties();
     properties.put("var1", "some example");
@@ -55,10 +47,11 @@ public final class SessionVariablesIT extends AbstractDriverIT
 
     // Open a connection under the snowflake account and enable variable support
     Connection con = getSnowflakeAdminConnection(properties);
-    sql(con,
+    sql(
+        con,
         "alter system set"
-        + " enable_assignment_scalar=true,"
-        + " enable_assignment_statement=true");
+            + " enable_assignment_scalar=true,"
+            + " enable_assignment_statement=true");
     con.close();
 
     // Create a new connection passing along some variables.
@@ -82,7 +75,5 @@ public final class SessionVariablesIT extends AbstractDriverIT
     con = getSnowflakeAdminConnection(properties);
     sql(con, "alter system unset enable_assignment_scalar, enable_assignment_statement");
     con.close();
-
   }
-
 }

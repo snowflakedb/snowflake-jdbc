@@ -5,25 +5,21 @@
 package net.snowflake.client.loader;
 
 import java.io.IOException;
-
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 
 /**
- * Queue that sequentially finalizes BufferStage uploads and schedules them for
- * processing in ProcessQueue.
+ * Queue that sequentially finalizes BufferStage uploads and schedules them for processing in
+ * ProcessQueue.
  */
-public class PutQueue implements Runnable
-{
-  private static final SFLogger LOGGER = SFLoggerFactory.getLogger(
-      PutQueue.class);
+public class PutQueue implements Runnable {
+  private static final SFLogger LOGGER = SFLoggerFactory.getLogger(PutQueue.class);
 
   private final Thread _thread;
 
   private final StreamLoader _loader;
 
-  public PutQueue(StreamLoader loader)
-  {
+  public PutQueue(StreamLoader loader) {
     LOGGER.debug("");
     _loader = loader;
     _thread = new Thread(this);
@@ -32,30 +28,23 @@ public class PutQueue implements Runnable
   }
 
   @Override
-  public void run()
-  {
+  public void run() {
 
-    while (true)
-    {
+    while (true) {
 
       BufferStage stage = null;
 
-      try
-      {
+      try {
 
         stage = _loader.takePut();
 
-        if (stage.getRowCount() == 0)
-        {
+        if (stage.getRowCount() == 0) {
           // Nothing was written to that stage
-          if (stage.isTerminate())
-          {
+          if (stage.isTerminate()) {
             _loader.queueProcess(stage);
             stage.completeUploading();
             break;
-          }
-          else
-          {
+          } else {
             continue;
           }
         }
@@ -66,34 +55,24 @@ public class PutQueue implements Runnable
         // Schedules it for processing
         _loader.queueProcess(stage);
 
-        if (stage.isTerminate())
-        {
+        if (stage.isTerminate()) {
           break;
         }
 
-      }
-      catch (InterruptedException | IOException ex)
-      {
+      } catch (InterruptedException | IOException ex) {
         LOGGER.error("Exception: ", ex);
         break;
-      }
-      finally
-      {
+      } finally {
 
       }
     }
   }
 
-  public void join()
-  {
-    try
-    {
+  public void join() {
+    try {
       _thread.join(0);
-    }
-    catch (InterruptedException ex)
-    {
+    } catch (InterruptedException ex) {
       LOGGER.error("Exception: ", ex);
     }
   }
-
 }

@@ -4,8 +4,7 @@
 
 package net.snowflake.client.jdbc;
 
-public interface SnowflakeFileTransferMetadata
-{
+public interface SnowflakeFileTransferMetadata {
   /**
    * Determine this metadata is for transferring one or multiple files.
    *

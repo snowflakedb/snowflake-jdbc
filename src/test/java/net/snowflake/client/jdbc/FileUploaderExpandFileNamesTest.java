@@ -3,11 +3,12 @@
  */
 package net.snowflake.client.jdbc;
 
+import static org.junit.Assert.*;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 import java.util.Set;
-
 import net.snowflake.client.category.TestCategoryOthers;
 import net.snowflake.client.core.OCSPMode;
 import org.junit.Rule;
@@ -15,20 +16,13 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.TemporaryFolder;
 
-import static org.junit.Assert.*;
-
-/**
- * Tests for SnowflakeFileTransferAgent.expandFileNames
- */
+/** Tests for SnowflakeFileTransferAgent.expandFileNames */
 @Category(TestCategoryOthers.class)
-public class FileUploaderExpandFileNamesTest
-{
-  @Rule
-  public TemporaryFolder folder = new TemporaryFolder();
+public class FileUploaderExpandFileNamesTest {
+  @Rule public TemporaryFolder folder = new TemporaryFolder();
 
   @Test
-  public void testProcessFileNames() throws Exception
-  {
+  public void testProcessFileNames() throws Exception {
     folder.newFile("TestFileA");
     folder.newFile("TestFileB");
 
@@ -36,12 +30,9 @@ public class FileUploaderExpandFileNamesTest
     System.setProperty("user.dir", folderName);
     System.setProperty("user.home", folderName);
 
-    String[] locations =
-        {
-            folderName + "/Tes*Fil*A",
-            folderName + "/TestFil?B",
-            "~/TestFileC", "TestFileD"
-        };
+    String[] locations = {
+      folderName + "/Tes*Fil*A", folderName + "/TestFil?B", "~/TestFileC", "TestFileD"
+    };
 
     Set<String> files = SnowflakeFileTransferAgent.expandFileNames(locations);
 
@@ -52,55 +43,43 @@ public class FileUploaderExpandFileNamesTest
   }
 
   @Test
-  public void testSnowflakeFileTransferConfig() throws Exception
-  {
+  public void testSnowflakeFileTransferConfig() throws Exception {
     SnowflakeFileTransferMetadataV1 metadata =
         new SnowflakeFileTransferMetadataV1(
             "dummy_presigned_url", null, null, null, null, null, null);
 
-    SnowflakeFileTransferConfig.Builder builder =
-        SnowflakeFileTransferConfig.Builder.newInstance();
+    SnowflakeFileTransferConfig.Builder builder = SnowflakeFileTransferConfig.Builder.newInstance();
 
     int throwCount = 0;
     int expectedThrowCount = 3;
 
     // metadata field is needed.
-    try
-    {
+    try {
       builder.build();
-    }
-    catch (IllegalArgumentException ex)
-    {
+    } catch (IllegalArgumentException ex) {
       throwCount++;
     }
     builder.setSnowflakeFileTransferMetadata(metadata);
 
     // upload stream is needed.
-    try
-    {
+    try {
       builder.build();
-    }
-    catch (IllegalArgumentException ex)
-    {
+    } catch (IllegalArgumentException ex) {
       throwCount++;
     }
-    InputStream input = new InputStream()
-    {
-      @Override
-      public int read() throws IOException
-      {
-        return 0;
-      }
-    };
+    InputStream input =
+        new InputStream() {
+          @Override
+          public int read() throws IOException {
+            return 0;
+          }
+        };
     builder.setUploadStream(input);
 
     // OCSP mode is needed.
-    try
-    {
+    try {
       builder.build();
-    }
-    catch (IllegalArgumentException ex)
-    {
+    } catch (IllegalArgumentException ex) {
       throwCount++;
     }
     builder.setOcspMode(OCSPMode.FAIL_CLOSED);
@@ -127,5 +106,4 @@ public class FileUploaderExpandFileNamesTest
 
     assertEquals(expectedThrowCount, throwCount);
   }
-
 }

@@ -3,24 +3,17 @@
  */
 package net.snowflake.client.jdbc;
 
-import org.junit.Test;
-
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 import java.sql.SQLException;
+import org.junit.Test;
 
-/**
- * Data source unit test
- */
-public class SnowflakeBasicDataSourceTest
-{
-  /**
-   * snow-37186
-   */
+/** Data source unit test */
+public class SnowflakeBasicDataSourceTest {
+  /** snow-37186 */
   @Test
-  public void testSetLoginTimeout() throws SQLException
-  {
+  public void testSetLoginTimeout() throws SQLException {
     SnowflakeBasicDataSource ds = new SnowflakeBasicDataSource();
 
     ds.setLoginTimeout(10);

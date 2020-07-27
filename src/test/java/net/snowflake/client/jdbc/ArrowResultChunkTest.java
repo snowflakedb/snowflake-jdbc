@@ -3,18 +3,15 @@
  */
 package net.snowflake.client.jdbc;
 
-import org.junit.Test;
-
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-public class ArrowResultChunkTest
-{
+import org.junit.Test;
+
+public class ArrowResultChunkTest {
   @Test
-  public void testEmptyChunkIterator() throws SnowflakeSQLException
-  {
-    ArrowResultChunk.ArrowChunkIterator iterator =
-        ArrowResultChunk.getEmptyChunkIterator();
+  public void testEmptyChunkIterator() throws SnowflakeSQLException {
+    ArrowResultChunk.ArrowChunkIterator iterator = ArrowResultChunk.getEmptyChunkIterator();
 
     assertThat(iterator.next(), is(false));
     assertThat(iterator.isAfterLast(), is(true));

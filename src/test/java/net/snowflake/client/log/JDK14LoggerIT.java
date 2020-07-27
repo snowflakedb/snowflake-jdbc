@@ -3,7 +3,11 @@
  */
 package net.snowflake.client.log;
 
-
+import java.util.logging.Formatter;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.LogRecord;
+import java.util.logging.Logger;
 import net.snowflake.client.category.TestCategoryCore;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -11,68 +15,45 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.experimental.categories.Category;
 
-import java.util.logging.Formatter;
-import java.util.logging.Handler;
-import java.util.logging.Level;
-import java.util.logging.LogRecord;
-import java.util.logging.Logger;
-
-/**
- * A class for testing {@link JDK14Logger}
- */
+/** A class for testing {@link JDK14Logger} */
 @Category(TestCategoryCore.class)
-public class JDK14LoggerIT extends AbstractLoggerIT
-{
-  /**
-   * {@link JDK14Logger} instance that will be tested in this class
-   */
-  private static final JDK14Logger LOGGER = new JDK14Logger(
-      JDK14LoggerIT.class.getName());
+public class JDK14LoggerIT extends AbstractLoggerIT {
+  /** {@link JDK14Logger} instance that will be tested in this class */
+  private static final JDK14Logger LOGGER = new JDK14Logger(JDK14LoggerIT.class.getName());
 
   /**
-   * Used for storing the log level set on the logger instance before starting
-   * the tests. Once the tests are run, this log level will be restored.
+   * Used for storing the log level set on the logger instance before starting the tests. Once the
+   * tests are run, this log level will be restored.
    */
   private static Level logLevelToRestore;
 
   /**
-   * This is the logger instance internally used by the JDK14Logger instance.
-   * Logger.getLogger() returns the cached instance if an instance by the same
-   * name was created before. The name used for creating JDK14Logger instance is
-   * also used here to get the same internal logger instance.
-   * <p>
-   * JDK14Logger doesn't expose methods to add handlers and set other
-   * configurations, hence direct access to the internal logger is required.
+   * This is the logger instance internally used by the JDK14Logger instance. Logger.getLogger()
+   * returns the cached instance if an instance by the same name was created before. The name used
+   * for creating JDK14Logger instance is also used here to get the same internal logger instance.
+   *
+   * <p>JDK14Logger doesn't expose methods to add handlers and set other configurations, hence
+   * direct access to the internal logger is required.
    */
-  private static final Logger internalLogger = Logger.getLogger(
-      JDK14LoggerIT.class.getName());
+  private static final Logger internalLogger = Logger.getLogger(JDK14LoggerIT.class.getName());
 
   /**
-   * Used for storing whether the parent logger handlers were run in the logger
-   * instance before starting the tests. Once the tests are run, the behavior
-   * will be restored.
+   * Used for storing whether the parent logger handlers were run in the logger instance before
+   * starting the tests. Once the tests are run, the behavior will be restored.
    */
   private static boolean useParentHandlersToRestore = true;
 
-  /**
-   * This handler will be added to the internal logger to get logged messages.
-   */
-  private TestJDK14LogHandler handler = new TestJDK14LogHandler(
-      new SFFormatter());
+  /** This handler will be added to the internal logger to get logged messages. */
+  private TestJDK14LogHandler handler = new TestJDK14LogHandler(new SFFormatter());
 
-  /**
-   * Message last logged using JDK14Logger.
-   */
+  /** Message last logged using JDK14Logger. */
   private String lastLogMessage = null;
 
-  /**
-   * Level at which last message was logged using JDK14Logger.
-   */
+  /** Level at which last message was logged using JDK14Logger. */
   private Level lastLogMessageLevel = null;
 
   @BeforeClass
-  public static void oneTimeSetUp()
-  {
+  public static void oneTimeSetUp() {
     logLevelToRestore = internalLogger.getLevel();
     useParentHandlersToRestore = internalLogger.getUseParentHandlers();
 
@@ -80,30 +61,25 @@ public class JDK14LoggerIT extends AbstractLoggerIT
   }
 
   @AfterClass
-  public static void oneTimeTearDown()
-  {
+  public static void oneTimeTearDown() {
     internalLogger.setLevel(logLevelToRestore);
     internalLogger.setUseParentHandlers(useParentHandlersToRestore);
   }
 
   @Before
-  public void setUp()
-  {
+  public void setUp() {
     super.setUp();
     internalLogger.addHandler(this.handler);
   }
 
   @After
-  public void tearDown()
-  {
+  public void tearDown() {
     internalLogger.removeHandler(this.handler);
   }
 
   @Override
-  void logMessage(LogLevel level, String message, Object... args)
-  {
-    switch (level)
-    {
+  void logMessage(LogLevel level, String message, Object... args) {
+    switch (level) {
       case ERROR:
         LOGGER.error(message, args);
         break;
@@ -123,38 +99,29 @@ public class JDK14LoggerIT extends AbstractLoggerIT
   }
 
   @Override
-  void setLogLevel(LogLevel level)
-  {
+  void setLogLevel(LogLevel level) {
     internalLogger.setLevel(toJavaCoreLoggerLevel(level));
   }
 
   @Override
-  String getLoggedMessage()
-  {
+  String getLoggedMessage() {
     return this.lastLogMessage;
   }
 
   @Override
-  LogLevel getLoggedMessageLevel()
-  {
+  LogLevel getLoggedMessageLevel() {
     return fromJavaCoreLoggerLevel(this.lastLogMessageLevel);
   }
 
   @Override
-  void clearLastLoggedMessageAndLevel()
-  {
+  void clearLastLoggedMessageAndLevel() {
     this.lastLogMessage = null;
     this.lastLogMessageLevel = null;
   }
 
-  /**
-   * Converts log levels in {@link LogLevel} to appropriate levels in
-   * {@link Level}.
-   */
-  private Level toJavaCoreLoggerLevel(LogLevel level)
-  {
-    switch (level)
-    {
+  /** Converts log levels in {@link LogLevel} to appropriate levels in {@link Level}. */
+  private Level toJavaCoreLoggerLevel(LogLevel level) {
+    switch (level) {
       case ERROR:
         return Level.SEVERE;
       case WARNING:
@@ -170,58 +137,43 @@ public class JDK14LoggerIT extends AbstractLoggerIT
     return Level.FINEST;
   }
 
-  /**
-   * Converts log levels in {@link Level} to appropriate levels in
-   * {@link LogLevel}.
-   */
-  private LogLevel fromJavaCoreLoggerLevel(Level level)
-  {
-    if (Level.SEVERE.equals(level))
-    {
+  /** Converts log levels in {@link Level} to appropriate levels in {@link LogLevel}. */
+  private LogLevel fromJavaCoreLoggerLevel(Level level) {
+    if (Level.SEVERE.equals(level)) {
       return LogLevel.ERROR;
     }
-    if (Level.WARNING.equals(level))
-    {
+    if (Level.WARNING.equals(level)) {
       return LogLevel.WARNING;
     }
-    if (Level.INFO.equals(level))
-    {
+    if (Level.INFO.equals(level)) {
       return LogLevel.INFO;
     }
-    if (Level.FINE.equals(level) || Level.FINER.equals(level))
-    {
+    if (Level.FINE.equals(level) || Level.FINER.equals(level)) {
       return LogLevel.DEBUG;
     }
-    if (Level.FINEST.equals(level) || Level.ALL.equals(level))
-    {
+    if (Level.FINEST.equals(level) || Level.ALL.equals(level)) {
       return LogLevel.TRACE;
     }
 
-    throw new IllegalArgumentException(String.format(
-        "Specified log level '%s' not supported", level.toString()));
+    throw new IllegalArgumentException(
+        String.format("Specified log level '%s' not supported", level.toString()));
   }
 
-  /**
-   * An handler that will be used for getting messages logged by a
-   * {@link Logger} instance
-   */
-  private class TestJDK14LogHandler extends Handler
-  {
+  /** An handler that will be used for getting messages logged by a {@link Logger} instance */
+  private class TestJDK14LogHandler extends Handler {
     /**
      * Creates an instance of {@link TestJDK14LogHandler}
      *
-     * @param formatter Formatter that will be used for formatting log records
-     *                  in this handler instance
+     * @param formatter Formatter that will be used for formatting log records in this handler
+     *     instance
      */
-    TestJDK14LogHandler(Formatter formatter)
-    {
+    TestJDK14LogHandler(Formatter formatter) {
       super();
       super.setFormatter(formatter);
     }
 
     @Override
-    public void publish(LogRecord record)
-    {
+    public void publish(LogRecord record) {
       // Assign the log message and it's level to the outer class instance
       // variables so that it can see the messages logged
       lastLogMessage = getFormatter().formatMessage(record);
@@ -229,15 +181,9 @@ public class JDK14LoggerIT extends AbstractLoggerIT
     }
 
     @Override
-    public void flush()
-    {
-
-    }
+    public void flush() {}
 
     @Override
-    public void close()
-    {
-
-    }
+    public void close() {}
   }
 }

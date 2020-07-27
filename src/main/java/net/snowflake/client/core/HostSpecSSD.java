@@ -1,33 +1,27 @@
 package net.snowflake.client.core;
 
-class HostSpecSSD
-{
+class HostSpecSSD {
   private String hostname;
   private String hostSpecDirective;
 
-  HostSpecSSD()
-  {
+  HostSpecSSD() {
     this.hostname = null;
     this.hostSpecDirective = null;
   }
 
-  String getHostname()
-  {
+  String getHostname() {
     return this.hostname;
   }
 
-  String getHostSpecDirective()
-  {
+  String getHostSpecDirective() {
     return this.hostSpecDirective;
   }
 
-  void setHostname(String hname)
-  {
+  void setHostname(String hname) {
     this.hostname = hname;
   }
 
-  void setHostSpecDirective(String ssd)
-  {
+  void setHostSpecDirective(String ssd) {
     this.hostSpecDirective = ssd;
   }
 }

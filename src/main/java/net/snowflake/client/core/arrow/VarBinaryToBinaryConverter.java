@@ -11,48 +11,39 @@ import net.snowflake.common.core.SFBinary;
 import org.apache.arrow.vector.ValueVector;
 import org.apache.arrow.vector.VarBinaryVector;
 
-public class VarBinaryToBinaryConverter extends AbstractArrowVectorConverter
-{
+public class VarBinaryToBinaryConverter extends AbstractArrowVectorConverter {
   private VarBinaryVector varBinaryVector;
 
-  public VarBinaryToBinaryConverter(ValueVector valueVector, int columnIndex, DataConversionContext context)
-  {
+  public VarBinaryToBinaryConverter(
+      ValueVector valueVector, int columnIndex, DataConversionContext context) {
     super(SnowflakeType.BINARY.name(), valueVector, columnIndex, context);
     this.varBinaryVector = (VarBinaryVector) valueVector;
   }
 
   @Override
-  public String toString(int index)
-  {
+  public String toString(int index) {
     byte[] bytes = toBytes(index);
     SFBinary binary = new SFBinary(bytes);
     return bytes == null ? null : context.getBinaryFormatter().format(binary);
   }
 
   @Override
-  public byte[] toBytes(int index)
-  {
+  public byte[] toBytes(int index) {
     return varBinaryVector.getObject(index);
   }
 
   @Override
-  public Object toObject(int index)
-  {
+  public Object toObject(int index) {
     return toBytes(index);
   }
 
   @Override
-  public boolean toBoolean(int index) throws SFException
-  {
+  public boolean toBoolean(int index) throws SFException {
     String str = toString(index);
-    if (str == null)
-    {
+    if (str == null) {
       return false;
-    }
-    else
-    {
-      throw new SFException(ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr,
-                            "Boolean", str);
+    } else {
+      throw new SFException(ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr, "Boolean", str);
     }
   }
 }
