@@ -1544,94 +1544,104 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
   public void TestTimestampNTZWithDLS() throws SQLException {
     Connection con = init();
     Statement st = con.createStatement();
+    TimeZone origTz = TimeZone.getDefault();
     TimeZone.setDefault(TimeZone.getTimeZone("PST"));
-    st.execute("alter session set JDBC_TREAT_TIMESTAMP_NTZ_AS_UTC=true");
-    st.execute("create or replace table src_ts(col1 TIMESTAMP_NTZ, col2 TIMESTAMP_TZ)");
-    List<String> testTimestampNTZValues =
-        Arrays.asList(
-            // DLS start in 2018
-            "2018-03-11 01:10:34.0123456",
-            "2018-03-11 02:10:34.0",
-            "2018-03-11 03:10:34.0",
-            // DLS end in 2018
-            "2018-11-04 01:10:34.0",
-            "2018-11-04 02:10:34.0",
-            "2018-11-04 03:10:34.0",
-            // DLS start in 2020
-            "2020-03-11 01:10:34.0",
-            "2020-03-11 02:10:34.0",
-            "2020-03-11 03:10:34.0",
-            // DLS end in 2020
-            "2020-11-01 01:10:34.0",
-            "2020-11-01 02:10:34.0",
-            "2020-11-01 03:10:34.0");
+    try {
+      st.execute("alter session set JDBC_TREAT_TIMESTAMP_NTZ_AS_UTC=true");
+      st.execute("create or replace table src_ts(col1 TIMESTAMP_NTZ, col2 TIMESTAMP_TZ)");
+      List<String> testTimestampNTZValues =
+          Arrays.asList(
+              // DLS start in 2018
+              "2018-03-11 01:10:34.0123456",
+              "2018-03-11 02:10:34.0",
+              "2018-03-11 03:10:34.0",
+              // DLS end in 2018
+              "2018-11-04 01:10:34.0",
+              "2018-11-04 02:10:34.0",
+              "2018-11-04 03:10:34.0",
+              // DLS start in 2020
+              "2020-03-11 01:10:34.0",
+              "2020-03-11 02:10:34.0",
+              "2020-03-11 03:10:34.0",
+              // DLS end in 2020
+              "2020-11-01 01:10:34.0",
+              "2020-11-01 02:10:34.0",
+              "2020-11-01 03:10:34.0");
 
-    List<String> testTimestampTZValues =
-        Arrays.asList(
-            // DLS start in 2018
-            "2018-03-11 01:10:34.0 +0200",
-            "2018-03-11 02:10:34.0 +0200",
-            "2018-03-11 03:10:34.0 +0200",
-            // DLS end in 2018
-            "2018-11-04 01:10:34.0 +0200",
-            "2018-11-04 02:10:34.0 +0200",
-            "2018-11-04 03:10:34.0 +0200",
-            // DLS start in 2020
-            "2020-03-11 01:10:34.0 +0200",
-            "2020-03-11 02:10:34.0 +0200",
-            "2020-03-11 03:10:34.0 +0200",
-            // DLS end in 2020
-            "2020-11-01 01:10:34.0 +0200",
-            "2020-11-01 02:10:34.0 +0200",
-            "2020-11-01 03:10:34.0 +0200");
+      List<String> testTimestampTZValues =
+          Arrays.asList(
+              // DLS start in 2018
+              "2018-03-11 01:10:34.0 +0200",
+              "2018-03-11 02:10:34.0 +0200",
+              "2018-03-11 03:10:34.0 +0200",
+              // DLS end in 2018
+              "2018-11-04 01:10:34.0 +0200",
+              "2018-11-04 02:10:34.0 +0200",
+              "2018-11-04 03:10:34.0 +0200",
+              // DLS start in 2020
+              "2020-03-11 01:10:34.0 +0200",
+              "2020-03-11 02:10:34.0 +0200",
+              "2020-03-11 03:10:34.0 +0200",
+              // DLS end in 2020
+              "2020-11-01 01:10:34.0 +0200",
+              "2020-11-01 02:10:34.0 +0200",
+              "2020-11-01 03:10:34.0 +0200");
 
-    for (int i = 0; i < testTimestampNTZValues.size(); i++) {
-      st.execute(
-          "insert into src_ts(col1,col2) values('"
-              + testTimestampNTZValues.get(i)
-              + "', '"
-              + testTimestampTZValues.get(i)
-              + "')");
+      for (int i = 0; i < testTimestampNTZValues.size(); i++) {
+        st.execute(
+            "insert into src_ts(col1,col2) values('"
+                + testTimestampNTZValues.get(i)
+                + "', '"
+                + testTimestampTZValues.get(i)
+                + "')");
+      }
+
+      ResultSet resultSet = st.executeQuery("select col1, col2 from src_ts");
+      int j = 0;
+      while (resultSet.next()) {
+        Object data1 = resultSet.getObject(1);
+        assertEquals(testTimestampNTZValues.get(j), data1.toString());
+
+        Object data2 = resultSet.getObject(2);
+        assertThat(data2, instanceOf(Timestamp.class));
+        assertEquals(
+            parseTimestampTZ(testTimestampTZValues.get(j)).toEpochSecond(),
+            ((Timestamp) data2).getTime() / 1000);
+        j++;
+      }
+      resultSet.close();
+      st.close();
+    } finally {
+      TimeZone.setDefault(origTz);
     }
-
-    ResultSet resultSet = st.executeQuery("select col1, col2 from src_ts");
-    int j = 0;
-    while (resultSet.next()) {
-      Object data1 = resultSet.getObject(1);
-      assertEquals(testTimestampNTZValues.get(j), data1.toString());
-
-      Object data2 = resultSet.getObject(2);
-      assertThat(data2, instanceOf(Timestamp.class));
-      assertEquals(
-          parseTimestampTZ(testTimestampTZValues.get(j)).toEpochSecond(),
-          ((Timestamp) data2).getTime() / 1000);
-      j++;
-    }
-    resultSet.close();
-    st.close();
   }
 
   @Test
   public void TestTimestampNTZBinding() throws SQLException {
     Connection con = init();
     Statement st = con.createStatement();
+    TimeZone origTz = TimeZone.getDefault();
     TimeZone.setDefault(TimeZone.getTimeZone("PST"));
-    st.execute("alter session set CLIENT_TIMESTAMP_TYPE_MAPPING=TIMESTAMP_NTZ");
-    st.execute("alter session set JDBC_TREAT_TIMESTAMP_NTZ_AS_UTC=true");
-    st.execute("create or replace table src_ts(col1 TIMESTAMP_NTZ)");
-    PreparedStatement prepst = con.prepareStatement("insert into src_ts values(?)");
-    Timestamp tz = Timestamp.valueOf("2018-03-11 01:10:34.0");
-    prepst.setTimestamp(1, tz);
-    prepst.execute();
+    try {
+      st.execute("alter session set CLIENT_TIMESTAMP_TYPE_MAPPING=TIMESTAMP_NTZ");
+      st.execute("alter session set JDBC_TREAT_TIMESTAMP_NTZ_AS_UTC=true");
+      st.execute("create or replace table src_ts(col1 TIMESTAMP_NTZ)");
+      PreparedStatement prepst = con.prepareStatement("insert into src_ts values(?)");
+      Timestamp tz = Timestamp.valueOf("2018-03-11 01:10:34.0");
+      prepst.setTimestamp(1, tz);
+      prepst.execute();
 
-    ResultSet resultSet = st.executeQuery("SELECT COL1 FROM SRC_TS");
-    Object data;
-    int i = 1;
-    while (resultSet.next()) {
-      data = resultSet.getObject(i);
-      System.out.println(data.toString());
+      ResultSet resultSet = st.executeQuery("SELECT COL1 FROM SRC_TS");
+      Object data;
+      int i = 1;
+      while (resultSet.next()) {
+        data = resultSet.getObject(i);
+        System.out.println(data.toString());
+      }
+      resultSet.close();
+      st.close();
+    } finally {
+      TimeZone.setDefault(origTz);
     }
-    resultSet.close();
-    st.close();
   }
 }

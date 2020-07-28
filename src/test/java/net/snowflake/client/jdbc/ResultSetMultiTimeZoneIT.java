@@ -430,28 +430,33 @@ public class ResultSetMultiTimeZoneIT extends BaseJDBCTest {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testPrepareOldTimestamp() throws SQLException {
-    Connection con = getConnection();
-    Statement statement = con.createStatement();
-
-    statement.execute("create or replace table testPrepOldTs(cola timestamp_ntz, colb date)");
-    statement.execute("alter session set client_timestamp_type_mapping=timestamp_ntz");
-    PreparedStatement ps = con.prepareStatement("insert into testPrepOldTs values (?, ?)");
-
+    TimeZone origTz = TimeZone.getDefault();
     TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
-    ps.setTimestamp(1, Timestamp.valueOf("0001-01-01 08:00:00"));
-    ps.setDate(2, Date.valueOf("0001-01-01"));
-    ps.executeUpdate();
+    try {
+      Connection con = getConnection();
+      Statement statement = con.createStatement();
 
-    ResultSet resultSet = statement.executeQuery("select * from testPrepOldTs");
+      statement.execute("create or replace table testPrepOldTs(cola timestamp_ntz, colb date)");
+      statement.execute("alter session set client_timestamp_type_mapping=timestamp_ntz");
+      PreparedStatement ps = con.prepareStatement("insert into testPrepOldTs values (?, ?)");
 
-    resultSet.next();
-    assertThat(resultSet.getTimestamp(1).toString(), equalTo("0001-01-01 08:00:00.0"));
-    assertThat(resultSet.getDate(2).toString(), equalTo("0001-01-01"));
+      ps.setTimestamp(1, Timestamp.valueOf("0001-01-01 08:00:00"));
+      ps.setDate(2, Date.valueOf("0001-01-01"));
+      ps.executeUpdate();
 
-    statement.execute("drop table if exists testPrepOldTs");
+      ResultSet resultSet = statement.executeQuery("select * from testPrepOldTs");
 
-    statement.close();
+      resultSet.next();
+      assertThat(resultSet.getTimestamp(1).toString(), equalTo("0001-01-01 08:00:00.0"));
+      assertThat(resultSet.getDate(2).toString(), equalTo("0001-01-01"));
 
-    con.close();
+      statement.execute("drop table if exists testPrepOldTs");
+
+      statement.close();
+
+      con.close();
+    } finally {
+      TimeZone.setDefault(origTz);
+    }
   }
 }
