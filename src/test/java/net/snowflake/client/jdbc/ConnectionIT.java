@@ -104,7 +104,10 @@ public class ConnectionIT extends BaseJDBCTest
     Connection con = getConnection();
     Statement statement = con.createStatement();
     statement.execute("alter session set jdbc_query_result_format = 'JSON'");
-    statement.execute("alter session set timezone='UTC'");
+    statement.execute("alter session set timezone = 'CET'");
+    ResultSet rs2 = statement.executeQuery("show parameters like 'timezone'");
+    rs2.next();
+    System.out.println("System timezone: " + rs2.getString(2));
     ResultSet rs = statement.executeQuery("SELECT DATE '2019-04-06 00:00:00' as datefield, TIMESTAMP '2019-04-06 00:00:00' as timestampfield");
 
     // We are using a calendar with UTC time zone to retrieve dates and timestamps
