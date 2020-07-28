@@ -79,7 +79,8 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView {
   // with 4 threads by default
   private Set<String> smallSourceFiles;
 
-  private static final int BIG_FILE_THRESHOLD = 64 * 1024 * 1024;
+  /* Threshold for splitting a file to upload multiple parts in parallel */
+  private int multipartUploadThreshold;
 
   private Map<String, FileMetadata> fileMetadataMap;
 
@@ -821,6 +822,8 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView {
     this.session = session;
     this.statement = statement;
     this.statusRows = new ArrayList<>();
+    // convert threshold from megabytes to bytes
+    this.multipartUploadThreshold = session.getMultipartUploadThreshold() * 1024 * 1024;
 
     // parse the command
     logger.debug("Start parsing");
@@ -874,6 +877,20 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView {
           ErrorCode.INTERNAL_ERROR.getMessageCode(),
           "Failed to parse the locations due to: " + ex.getMessage());
     }
+
+    JsonNode thresholdNode = jsonNode.path("data").path("threshold");
+    int threshold = thresholdNode.asInt();
+    // if value is 0, this means an error was made in parsing the threshold.
+    if (threshold == 0) {
+      throw new SnowflakeSQLLoggedException(
+          session,
+          ErrorCode.INVALID_PARAMETER_TYPE.getMessageCode(),
+          SqlState.INVALID_PARAMETER_VALUE,
+          "unknown",
+          "positive integer");
+      // convert from megabytes to bytes
+    }
+    multipartUploadThreshold = threshold * 1024 * 1024;
 
     showEncryptionParameter =
         jsonNode.path("data").path("clientShowEncryptionParameter").asBoolean();
@@ -1580,7 +1597,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView {
 
   private void segregateFilesBySize() {
     for (String srcFile : sourceFiles) {
-      if ((new File(srcFile)).length() > BIG_FILE_THRESHOLD) {
+      if ((new File(srcFile)).length() > (multipartUploadThreshold)) {
         if (bigSourceFiles == null) {
           bigSourceFiles = new HashSet<String>(sourceFiles.size());
         }

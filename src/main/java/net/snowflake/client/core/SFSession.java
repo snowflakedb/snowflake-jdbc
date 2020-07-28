@@ -216,6 +216,9 @@ public class SFSession {
   // validate the default parameters by GS?
   private boolean validateDefaultParameters;
 
+  // threshold for uploading file in multiple chunks for put commands. Default 200MB
+  private int multipartUploadThreshold = 200;
+
   // list of active asynchronous queries. Used to see if session should be closed when connection
   // closes
   protected Set<String> activeAsyncQueries = ConcurrentHashMap.newKeySet();
@@ -1386,6 +1389,14 @@ public class SFSession {
 
   public void setValidateDefaultParameters(boolean v) {
     validateDefaultParameters = v;
+  }
+
+  public int getMultipartUploadThreshold() {
+    return multipartUploadThreshold;
+  }
+
+  public void setMultipartUploadThreshold(int v) {
+    multipartUploadThreshold = v;
   }
 
   private SnowflakeConnectString sfConnStr;
