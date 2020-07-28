@@ -3,15 +3,14 @@
  */
 package net.snowflake.client.jdbc;
 
-import org.junit.After;
-import org.junit.Before;
-
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.TimeZone;
+import org.junit.After;
+import org.junit.Before;
 
 abstract class ResultSetArrowForce0MultiTimeZone extends BaseJDBCTest {
   static List<Object[]> testData() {
@@ -36,16 +35,14 @@ abstract class ResultSetArrowForce0MultiTimeZone extends BaseJDBCTest {
   }
 
   @Before
-  public void setUp()
-  {
+  public void setUp() {
     origTz = TimeZone.getDefault();
     TimeZone.setDefault(TimeZone.getTimeZone(this.tz));
   }
 
   @After
-  public void tearDown()
-  {
-    TimeZone.setDefault(origTz));
+  public void tearDown() {
+    TimeZone.setDefault(origTz);
   }
 
   Connection init(String table, String column, String values) throws SQLException {
