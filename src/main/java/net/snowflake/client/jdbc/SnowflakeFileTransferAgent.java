@@ -2513,7 +2513,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView {
           } else if (file.isDirectory()) {
             logger.debug("Not a file, but directory: {}", sourceFile);
 
-            throw new SnowflakeSQLException(
+            throw new SnowflakeSQLLoggedException(
                 SqlState.DATA_EXCEPTION,
                 ErrorCode.FILE_IS_DIRECTORY.getMessageCode(),
                 session,
