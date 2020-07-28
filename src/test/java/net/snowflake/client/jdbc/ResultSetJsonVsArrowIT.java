@@ -1,3 +1,6 @@
+/*
+ * Copyright (c) 2012-2020 Snowflake Computing Inc. All rights reserved.
+ */
 package net.snowflake.client.jdbc;
 
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
@@ -19,8 +22,6 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
 import java.sql.Types;
-import java.time.LocalDateTime;
-import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.TimeZone;
@@ -46,13 +47,13 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
     return new Object[][] {{"JSON"}, {"Arrow"}};
   }
 
-  protected static String queryResultFormat;
+  protected String queryResultFormat;
 
   public ResultSetJsonVsArrowIT(String queryResultFormat) {
     this.queryResultFormat = queryResultFormat;
   }
 
-  public static Connection getConnection() throws SQLException {
+  public Connection init() throws SQLException {
     Connection conn = getConnection(BaseJDBCTest.DONT_INJECT_SOCKET_TIMEOUT);
     Statement stmt = conn.createStatement();
     stmt.execute("alter session set jdbc_query_result_format = '" + queryResultFormat + "'");
@@ -62,7 +63,7 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
 
   @Test
   public void testGSResult() throws SQLException {
-    Connection con = getConnection();
+    Connection con = init();
     Statement statement = con.createStatement();
     ResultSet rs =
         statement.executeQuery(
@@ -89,7 +90,7 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
 
   @Test
   public void testGSResultReal() throws SQLException {
-    Connection con = getConnection();
+    Connection con = init();
     Statement statement = con.createStatement();
     statement.execute("create or replace table t (a real)");
     statement.execute("insert into t values (123.456)");
@@ -101,7 +102,7 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
 
   @Test
   public void testGSResultScan() throws SQLException {
-    Connection con = getConnection();
+    Connection con = init();
     Statement statement = con.createStatement();
     statement.execute("create or replace table t (a text)");
     statement.execute("insert into t values ('test')");
@@ -117,7 +118,7 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
 
   @Test
   public void testGSResultForEmptyAndSmallTable() throws SQLException {
-    Connection con = getConnection();
+    Connection con = init();
     Statement statement = con.createStatement();
     statement.execute("create or replace table t (a int)");
     ResultSet rs = statement.executeQuery("select * from t;");
@@ -131,7 +132,7 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
 
   @Test
   public void testSNOW89737() throws SQLException {
-    Connection con = getConnection();
+    Connection con = init();
     Statement statement = con.createStatement();
 
     statement.execute(
@@ -181,7 +182,7 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
    */
   @Test
   public void testSemiStructuredData() throws SQLException {
-    Connection con = getConnection();
+    Connection con = init();
     ResultSet rs =
         con.createStatement()
             .executeQuery(
@@ -216,7 +217,7 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
   }
 
   private Connection init(String table, String column, String values) throws SQLException {
-    Connection con = getConnection();
+    Connection con = init();
     con.createStatement().execute("create or replace table " + table + " " + column);
     con.createStatement().execute("insert into " + table + " values " + values);
     return con;
@@ -1455,7 +1456,7 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
       "insert into T values (3);",
     };
 
-    Connection conn = getConnection();
+    Connection conn = init();
     Statement stat = conn.createStatement();
     for (String q : queries) {
       stat.execute(q);
@@ -1476,7 +1477,7 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
 
   @Test
   public void testTimestampNTZAreAllNulls() throws SQLException {
-    Connection con = getConnection();
+    Connection con = init();
     Statement statement = con.createStatement();
     statement.executeQuery(
         "create or replace table test_null_ts_ntz (a timestampntz(9)) as select null from table(generator"
@@ -1493,7 +1494,7 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
   @Test
   public void TestArrowStringRoundTrip() throws SQLException {
     String big_number = "11111111112222222222333333333344444444";
-    Connection con = getConnection();
+    Connection con = init();
     Statement st = con.createStatement();
     try {
       for (int i = 0; i < 38; i++) {
@@ -1519,7 +1520,7 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
 
   @Test
   public void TestArrowFloatRoundTrip() throws SQLException {
-    Connection con = getConnection();
+    Connection con = init();
     Statement st = con.createStatement();
     float[] cases = {Float.MAX_VALUE, Float.MIN_VALUE};
     try {
@@ -1541,7 +1542,7 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
 
   @Test
   public void TestTimestampNTZWithDLS() throws SQLException {
-    Connection con = getConnection();
+    Connection con = init();
     Statement st = con.createStatement();
     TimeZone.setDefault(TimeZone.getTimeZone("PST"));
     st.execute("alter session set JDBC_TREAT_TIMESTAMP_NTZ_AS_UTC=true");
@@ -1610,20 +1611,9 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
     st.close();
   }
 
-  static ZonedDateTime parseTimestampTZ(String dateTimeString) {
-    String[] dts = dateTimeString.split("\\s");
-    return ZonedDateTime.parse(
-        (dts[0] + "T" + dts[1] + dts[2].substring(0, 3) + ":" + dts[2].substring(3)));
-  }
-
-  static LocalDateTime parseTimestampNTZ(String dateTimeString) {
-    String[] dts = dateTimeString.split("\\s");
-    return LocalDateTime.parse(dts[0] + "T" + dts[1]);
-  }
-
   @Test
   public void TestTimestampNTZBinding() throws SQLException {
-    Connection con = getConnection();
+    Connection con = init();
     Statement st = con.createStatement();
     TimeZone.setDefault(TimeZone.getTimeZone("PST"));
     st.execute("alter session set CLIENT_TIMESTAMP_TYPE_MAPPING=TIMESTAMP_NTZ");
@@ -1635,14 +1625,12 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
     prepst.execute();
 
     ResultSet resultSet = st.executeQuery("SELECT COL1 FROM SRC_TS");
-    Object data = null;
+    Object data;
     int i = 1;
-    int j = 0;
     while (resultSet.next()) {
       data = resultSet.getObject(i);
       System.out.println(data.toString());
     }
-    // System.out.println(data);
     resultSet.close();
     st.close();
   }

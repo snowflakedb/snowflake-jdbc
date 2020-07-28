@@ -14,7 +14,7 @@ import org.junit.runners.Parameterized;
  * Not this test case is not thread safe, because TimeZone.setDefault is called.
  */
 @RunWith(Parameterized.class)
-public class SnowflakeTimestampNTZAsUTCTest {
+public class SnowflakeTimestampNTZAsUTCTest extends BaseJDBCTest {
   private static TimeZone orgTimeZone;
 
   private final String timeZone;
@@ -70,7 +70,7 @@ public class SnowflakeTimestampNTZAsUTCTest {
   @Test
   public void testTimestampNTZ() throws Throwable {
     TimeZone.setDefault(TimeZone.getTimeZone(timeZone));
-    LocalDateTime dt = ResultSetJsonVsArrowIT.parseTimestampNTZ(this.inputTimestamp);
+    LocalDateTime dt = parseTimestampNTZ(this.inputTimestamp);
     SnowflakeTimestampNTZAsUTC stn =
         new SnowflakeTimestampNTZAsUTC(dt.toEpochSecond(ZoneOffset.UTC) * 1000, dt.getNano());
     assertEquals(this.outputTimestamp, stn.toString());

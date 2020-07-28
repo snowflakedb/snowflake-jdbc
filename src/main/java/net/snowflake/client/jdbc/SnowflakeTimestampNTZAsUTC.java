@@ -11,6 +11,8 @@ import java.time.format.DateTimeFormatter;
 
 /** Timestamp with toString in UTC timezone. */
 public class SnowflakeTimestampNTZAsUTC extends Timestamp {
+  private static final long serialVersionUID = 1L;
+
   public SnowflakeTimestampNTZAsUTC(long seconds, int nanoseconds) {
     super(seconds);
     this.setNanos(nanoseconds);
@@ -37,7 +39,7 @@ public class SnowflakeTimestampNTZAsUTC extends Timestamp {
       }
     }
     final String baseFormat = "uuuu-MM-dd HH:mm:ss.";
-    StringBuffer buf = new StringBuffer(baseFormat.length() + 9 - trailingZeros);
+    StringBuilder buf = new StringBuilder(baseFormat.length() + 9 - trailingZeros);
     buf.append(baseFormat);
     for (int i = 0; i < 9 - trailingZeros; ++i) {
       buf.append("S");
