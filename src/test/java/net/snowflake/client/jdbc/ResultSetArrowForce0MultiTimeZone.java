@@ -15,7 +15,7 @@ import org.junit.Before;
 abstract class ResultSetArrowForce0MultiTimeZone extends BaseJDBCTest {
   static List<Object[]> testData() {
     String[] timeZones = new String[] {"UTC", "America/New_York", "MEZ"};
-    String[] queryFormats = new String[] {"json", "arrow_force"};
+    String[] queryFormats = new String[] {"json", "arrow"};
     List<Object[]> ret = new ArrayList<>();
     for (String queryFormat : queryFormats) {
       for (String timeZone : timeZones) {

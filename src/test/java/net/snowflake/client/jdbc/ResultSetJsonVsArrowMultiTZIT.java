@@ -11,6 +11,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.text.ParseException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import net.snowflake.client.category.TestCategoryArrow;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
@@ -23,19 +26,20 @@ import org.junit.runners.Parameterized;
 @Category(TestCategoryArrow.class)
 public class ResultSetJsonVsArrowMultiTZIT extends BaseJDBCTest {
   @Parameterized.Parameters(name = "format={0}, tz={1}")
-  public static Object[][] data() {
+  public static Collection<Object[]> data() {
     // all tests in this class need to run for both query result formats json and arrow
-    return new Object[][] {
-      {"json", "UTC"},
-      {"json", "America/New_York"},
-      {"json", "Asia/Singapore"},
-      {"arrow_force", "UTC"},
-      {"arrow_force", "America/New_York"},
-      {"arrow_force", "Asia/Singapore"},
-    };
+    String[] timeZones = new String[] {"UTC", "America/New_York", "Asia/Singapore"};
+    String[] queryFormats = new String[] {"json", "arrow"};
+    List<Object[]> ret = new ArrayList<>();
+    for (String queryFormat : queryFormats) {
+      for (String timeZone : timeZones) {
+        ret.add(new Object[] {queryFormat, timeZone});
+      }
+    }
+    return ret;
   }
 
-  private static String queryResultFormat;
+  private String queryResultFormat;
   private String tz;
 
   public static Connection getConnection(int injectSocketTimeout) throws SQLException {
@@ -61,7 +65,9 @@ public class ResultSetJsonVsArrowMultiTZIT extends BaseJDBCTest {
   }
 
   private Connection init(String table, String column, String values) throws SQLException {
-    Connection con = getConnection();
+    Connection con = getConnection(BaseJDBCTest.DONT_INJECT_SOCKET_TIMEOUT);
+    con.createStatement()
+        .execute("alter session set jdbc_query_result_format = '" + queryResultFormat + "'");
     con.createStatement().execute("create or replace table " + table + " " + column);
     con.createStatement().execute("insert into " + table + " values " + values);
     return con;
@@ -71,14 +77,6 @@ public class ResultSetJsonVsArrowMultiTZIT extends BaseJDBCTest {
     con.createStatement().execute("drop table " + table);
     con.close();
     System.clearProperty("user.timezone");
-  }
-
-  public static Connection getConnection() throws SQLException {
-    Connection conn = getConnection(BaseJDBCTest.DONT_INJECT_SOCKET_TIMEOUT);
-    Statement stmt = conn.createStatement();
-    stmt.execute("alter session set jdbc_query_result_format = '" + queryResultFormat + "'");
-    stmt.close();
-    return conn;
   }
 
   @Test
