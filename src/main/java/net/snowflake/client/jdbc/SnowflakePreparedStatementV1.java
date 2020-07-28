@@ -8,38 +8,10 @@ import java.io.InputStream;
 import java.io.Reader;
 import java.math.BigDecimal;
 import java.net.URL;
-import java.sql.Array;
-import java.sql.Blob;
-import java.sql.Clob;
+import java.sql.*;
 import java.sql.Date;
-import java.sql.NClob;
-import java.sql.ParameterMetaData;
-import java.sql.PreparedStatement;
-import java.sql.Ref;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.RowId;
-import java.sql.SQLException;
-import java.sql.SQLFeatureNotSupportedException;
-import java.sql.SQLXML;
-import java.sql.Time;
-import java.sql.Timestamp;
-import java.sql.Types;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TimeZone;
-import net.snowflake.client.core.ParameterBindingDTO;
-import net.snowflake.client.core.ResultUtil;
-import net.snowflake.client.core.SFException;
-import net.snowflake.client.core.SFStatementMetaData;
-import net.snowflake.client.core.StmtUtil;
+import java.util.*;
+import net.snowflake.client.core.*;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SFBinary;
@@ -427,9 +399,10 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
     } else if (x instanceof Boolean) {
       setBoolean(parameterIndex, (Boolean) x);
     } else {
-      throw new SnowflakeSQLException(
+      throw new SnowflakeSQLLoggedException(
           SqlState.FEATURE_NOT_SUPPORTED,
           ErrorCode.DATA_TYPE_NOT_SUPPORTED.getMessageCode(),
+          connection.getSfSession(),
           "Object type: " + x.getClass());
     }
   }
@@ -493,9 +466,10 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
               values = typeCheckedList;
               row = Integer.toString(values.size() + 1);
             }
-            throw new SnowflakeSQLException(
+            throw new SnowflakeSQLLoggedException(
                 SqlState.FEATURE_NOT_SUPPORTED,
                 ErrorCode.ARRAY_BIND_MIXED_TYPES_NOT_SUPPORTED.getMessageCode(),
+                connection.getSfSession(),
                 SnowflakeType.getJavaType(SnowflakeType.fromString(prevType)).name(),
                 SnowflakeType.getJavaType(SnowflakeType.fromString(newType)).name(),
                 binding.getKey(),

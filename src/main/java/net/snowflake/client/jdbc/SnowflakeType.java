@@ -4,18 +4,15 @@
 
 package net.snowflake.client.jdbc;
 
+import net.snowflake.common.core.SFBinary;
+import net.snowflake.common.core.SqlState;
+
 import java.math.BigDecimal;
-import java.sql.SQLException;
-import java.sql.SQLFeatureNotSupportedException;
-import java.sql.Time;
-import java.sql.Timestamp;
-import java.sql.Types;
+import java.sql.*;
 import java.text.DateFormat;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
-import net.snowflake.common.core.SFBinary;
-import net.snowflake.common.core.SqlState;
 
 /** Type converters */
 public enum SnowflakeType {
@@ -424,9 +421,10 @@ public enum SnowflakeType {
         return ANY;
 
       default:
-        throw new SnowflakeSQLException(
+        throw new SnowflakeSQLLoggedException(
             SqlState.FEATURE_NOT_SUPPORTED,
             ErrorCode.DATA_TYPE_NOT_SUPPORTED.getMessageCode(),
+            /* session = */ null,
             javaType);
     }
   }
