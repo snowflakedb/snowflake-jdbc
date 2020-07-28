@@ -25,8 +25,8 @@ abstract class ResultSetArrowForce0MultiTimeZone extends BaseJDBCTest {
     return ret;
   }
 
-  protected String queryResultFormat;
-  protected String tz;
+  protected final String queryResultFormat;
+  protected final String tz;
   private TimeZone origTz;
 
   ResultSetArrowForce0MultiTimeZone(String queryResultFormat, String timeZone) {

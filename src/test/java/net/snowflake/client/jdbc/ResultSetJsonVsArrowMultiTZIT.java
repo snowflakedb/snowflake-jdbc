@@ -39,8 +39,8 @@ public class ResultSetJsonVsArrowMultiTZIT extends BaseJDBCTest {
     return ret;
   }
 
-  private String queryResultFormat;
-  private String tz;
+  private final String queryResultFormat;
+  private final String tz;
 
   public static Connection getConnection(int injectSocketTimeout) throws SQLException {
     Connection connection = BaseJDBCTest.getConnection(injectSocketTimeout);
@@ -99,7 +99,7 @@ public class ResultSetJsonVsArrowMultiTZIT extends BaseJDBCTest {
   }
 
   @Test
-  public void testDate() throws SQLException, ParseException {
+  public void testDate() throws Exception {
     String[] cases = {
       "2017-01-01",
       "2014-01-02",
@@ -147,7 +147,7 @@ public class ResultSetJsonVsArrowMultiTZIT extends BaseJDBCTest {
       assertEquals("00:01:23", rs.getString(1));
     }
     rs.next();
-    assertEquals(null, rs.getTime(1));
+    assertNull(rs.getTime(1));
   }
 
   @Test
