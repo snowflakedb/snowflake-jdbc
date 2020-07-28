@@ -1548,7 +1548,8 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
     TimeZone.setDefault(TimeZone.getTimeZone("PST"));
     try {
       st.execute("alter session set JDBC_TREAT_TIMESTAMP_NTZ_AS_UTC=true");
-      st.execute("create or replace table src_ts(col1 TIMESTAMP_NTZ, col2 TIMESTAMP_TZ)");
+      st.execute(
+          "create or replace table src_ts(col1 TIMESTAMP_NTZ, col2 TIMESTAMP_LTZ, col3 TIMESTAMP_TZ)");
       List<String> testTimestampNTZValues =
           Arrays.asList(
               // DLS start in 2018
@@ -1568,6 +1569,26 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
               "2020-11-01 02:10:34.0",
               "2020-11-01 03:10:34.0");
 
+      List<String[]> testTimestampLTZValues =
+          Arrays.asList(
+              // DLS start in 2018
+              new String[] {"2018-03-11 01:10:34.0123456", "2018-03-11 01:10:34.0123456"},
+              new String[] {
+                "2018-03-11 02:10:34.0", "2018-03-11 01:10:34.0"
+              }, // only this has an impact
+              new String[] {"2018-03-11 03:10:34.0", "2018-03-11 03:10:34.0"},
+              // DLS end in 2018
+              new String[] {"2018-11-04 01:10:34.0", "2018-11-04 01:10:34.0"},
+              new String[] {"2018-11-04 02:10:34.0", "2018-11-04 02:10:34.0"},
+              new String[] {"2018-11-04 03:10:34.0", "2018-11-04 03:10:34.0"},
+              // DLS start in 2020
+              new String[] {"2020-03-11 01:10:34.0", "2020-03-11 01:10:34.0"},
+              new String[] {"2020-03-11 02:10:34.0", "2020-03-11 02:10:34.0"},
+              new String[] {"2020-03-11 03:10:34.0", "2020-03-11 03:10:34.0"},
+              // DLS end in 2020
+              new String[] {"2020-11-01 01:10:34.0", "2020-11-01 01:10:34.0"},
+              new String[] {"2020-11-01 02:10:34.0", "2020-11-01 02:10:34.0"},
+              new String[] {"2020-11-01 03:10:34.0", "2020-11-01 03:10:34.0"});
       List<String> testTimestampTZValues =
           Arrays.asList(
               // DLS start in 2018
@@ -1589,24 +1610,29 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
 
       for (int i = 0; i < testTimestampNTZValues.size(); i++) {
         st.execute(
-            "insert into src_ts(col1,col2) values('"
+            "insert into src_ts(col1,col2,col3) values('"
                 + testTimestampNTZValues.get(i)
+                + "', '"
+                + testTimestampLTZValues.get(i)[0]
                 + "', '"
                 + testTimestampTZValues.get(i)
                 + "')");
       }
 
-      ResultSet resultSet = st.executeQuery("select col1, col2 from src_ts");
+      ResultSet resultSet = st.executeQuery("select col1, col2, col3 from src_ts");
       int j = 0;
       while (resultSet.next()) {
         Object data1 = resultSet.getObject(1);
         assertEquals(testTimestampNTZValues.get(j), data1.toString());
 
         Object data2 = resultSet.getObject(2);
-        assertThat(data2, instanceOf(Timestamp.class));
+        assertEquals(testTimestampLTZValues.get(j)[1], data2.toString());
+
+        Object data3 = resultSet.getObject(3);
+        assertThat(data3, instanceOf(Timestamp.class));
         assertEquals(
             parseTimestampTZ(testTimestampTZValues.get(j)).toEpochSecond(),
-            ((Timestamp) data2).getTime() / 1000);
+            ((Timestamp) data3).getTime() / 1000);
         j++;
       }
       resultSet.close();
