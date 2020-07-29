@@ -14,6 +14,7 @@ import java.sql.Types;
 import java.util.TimeZone;
 import net.snowflake.client.core.arrow.ArrowResultUtil;
 import net.snowflake.client.jdbc.ErrorCode;
+import net.snowflake.client.jdbc.SnowflakeTimestampNTZAsUTC;
 import net.snowflake.client.jdbc.SnowflakeUtil;
 import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
@@ -29,16 +30,16 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
   private static final SFLogger logger = SFLoggerFactory.getLogger(SFJsonResultSet.class);
 
   // Timezone used for TimestampNTZ
-  private static TimeZone timeZoneUTC = TimeZone.getTimeZone("UTC");
+  private static final TimeZone timeZoneUTC = TimeZone.getTimeZone("UTC");
 
   TimeZone timeZone;
 
   /**
    * Given a column index, get current row's value as an object
    *
-   * @param columnIndex
-   * @return
-   * @throws SFException
+   * @param columnIndex index of columns
+   * @return an object
+   * @throws SFException raises if any error occurs
    */
   protected abstract Object getObjectInternal(int columnIndex) throws SFException;
 
@@ -435,18 +436,16 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
       if (sfTS == null) {
         return null;
       }
+      Timestamp res = sfTS.getTimestamp();
+      if (res == null) {
+        return null;
+      }
+
       // If timestamp type is NTZ and JDBC_TREAT_TIMESTAMP_NTZ_AS_UTC=true, keep
       // timezone in UTC to avoid daylight savings errors
       if (resultSetSerializable.getTreatNTZAsUTC()
-          && resultSetMetaData.getInternalColumnType(columnIndex) == Types.TIMESTAMP
-          && columnType != SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_LTZ
-          && columnType != SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_TZ) {
-        TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
-      }
-      Timestamp res = sfTS.getTimestamp();
-
-      if (res == null) {
-        return null;
+          && resultSetMetaData.getInternalColumnType(columnIndex) == Types.TIMESTAMP) {
+        res = new SnowflakeTimestampNTZAsUTC(res);
       }
       // If JDBC_TREAT_TIMESTAMP_NTZ_AS_UTC=false, default behavior is to honor
       // client timezone for NTZ time. Move NTZ timestamp offset to correspond to
@@ -458,9 +457,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
       }
       // Adjust time if date happens before year 1582 for difference between
       // Julian and Gregorian calendars
-      Timestamp adjustedTimestamp = ResultUtil.adjustTimestamp(res);
-
-      return adjustedTimestamp;
+      return ResultUtil.adjustTimestamp(res);
     } else if (Types.DATE == columnType) {
       Date d = getDate(columnIndex, tz);
       if (d == null) {

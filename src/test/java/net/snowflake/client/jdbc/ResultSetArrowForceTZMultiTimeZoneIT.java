@@ -9,6 +9,7 @@ import static org.junit.Assert.assertNull;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Collection;
 import net.snowflake.client.category.TestCategoryArrow;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
@@ -21,7 +22,7 @@ import org.junit.runners.Parameterized;
 @Category(TestCategoryArrow.class)
 public class ResultSetArrowForceTZMultiTimeZoneIT extends ResultSetArrowForce0MultiTimeZone {
   @Parameterized.Parameters(name = "format={0}, tz={1}")
-  public static Object[][] data() {
+  public static Collection<Object[]> data() {
     return ResultSetArrowForce0MultiTimeZone.testData();
   }
 
