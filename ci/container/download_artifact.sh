@@ -28,9 +28,6 @@ if [[ -z "$GITHUB_ACTIONS" ]] ;then
                 echo "[WARN] failed to download jar files from $source_stage. Retrying from $source_latest_stage"
                 source_stage=$source_latest_stage
                 aws s3 cp --only-show-errors $source_stage/ . --recursive
-            else
-                echo "[ERROR] No jar exists in $source_stage. Ensure the build job was success"
-                exit 1
             fi
         fi
         if ! ls $LIB_DIR/*.jar; then
