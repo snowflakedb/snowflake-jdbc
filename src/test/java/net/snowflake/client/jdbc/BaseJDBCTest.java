@@ -24,6 +24,8 @@ import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.sql.SQLXML;
 import java.sql.Statement;
+import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -93,6 +95,31 @@ public class BaseJDBCTest extends AbstractDriverIT {
       result.add(rs.getString(1));
     }
     return result;
+  }
+
+  /**
+   * Parses a datetime string in the format YYYY-MM-DD HH24:MI:SS.S... +TZH:TZM and creates
+   * ZonedDateTime object.
+   *
+   * @param dateTimeString a datetime string
+   * @return a ZonedDateTime object.
+   */
+  ZonedDateTime parseTimestampTZ(String dateTimeString) {
+    String[] dts = dateTimeString.split("\\s");
+    return ZonedDateTime.parse(
+        (dts[0] + "T" + dts[1] + dts[2].substring(0, 3) + ":" + dts[2].substring(3)));
+  }
+
+  /**
+   * Parses a datetime string in the format YYYY-MM-DD HH24:MI:SS.S... and creates LocalDateTime
+   * object.
+   *
+   * @param dateTimeString a datetime string
+   * @return a LocalDateTime object.
+   */
+  LocalDateTime parseTimestampNTZ(String dateTimeString) {
+    String[] dts = dateTimeString.split("\\s");
+    return LocalDateTime.parse(dts[0] + "T" + dts[1]);
   }
 
   class FakeRef implements Ref {

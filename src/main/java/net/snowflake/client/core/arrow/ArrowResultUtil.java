@@ -9,11 +9,9 @@ import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.util.Calendar;
 import java.util.TimeZone;
-import net.snowflake.client.core.IncidentUtil;
-import net.snowflake.client.core.ResultUtil;
-import net.snowflake.client.core.SFException;
-import net.snowflake.client.core.SFSession;
+import net.snowflake.client.core.*;
 import net.snowflake.client.jdbc.ErrorCode;
+import net.snowflake.client.jdbc.SnowflakeTimestampNTZAsUTC;
 import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -196,10 +194,11 @@ public class ArrowResultUtil {
     // timestamp object. This will avoid moving the timezone and creating
     // daylight savings offset errors.
     if (timeZoneUTC) {
-      TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
+      return new SnowflakeTimestampNTZAsUTC(seconds * ArrowResultUtil.powerOfTen(3), fraction);
+    } else {
+      Timestamp ts = new Timestamp(seconds * ArrowResultUtil.powerOfTen(3));
+      ts.setNanos(fraction);
+      return ts;
     }
-    Timestamp ts = new Timestamp(seconds * ArrowResultUtil.powerOfTen(3));
-    ts.setNanos(fraction);
-    return ts;
   }
 }
