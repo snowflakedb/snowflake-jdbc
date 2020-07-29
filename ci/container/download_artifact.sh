@@ -22,7 +22,7 @@ if [[ -z "$GITHUB_ACTIONS" ]] ;then
         source_stage=$base_stage/${GIT_COMMIT}
         echo "[INFO] downloading ${source_stage}/"
         aws s3 cp --only-show-errors $source_stage/ . --recursive
-        if ! ls $LIB_DIR/*.jar; then
+        if ! ls $LIB_DIR/*.jar >& /dev/null; then
             if [[ "$BRANCH" == "master" ]]; then
                 source_latest_stage=$base_stage/${git_latest_commit}
                 echo "[WARN] failed to download jar files from $source_stage. Retrying from $source_latest_stage"
@@ -30,7 +30,7 @@ if [[ -z "$GITHUB_ACTIONS" ]] ;then
                 aws s3 cp --only-show-errors $source_stage/ . --recursive
             fi
         fi
-        if ! ls $LIB_DIR/*.jar; then
+        if ! ls $LIB_DIR/*.jar >& /dev/null; then
             echo "[ERROR] No jar exists in $source_stage. Ensure the build job was success"
             exit 1
         fi
