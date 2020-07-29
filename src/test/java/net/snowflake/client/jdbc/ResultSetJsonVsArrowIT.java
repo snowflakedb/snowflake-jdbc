@@ -1,10 +1,15 @@
+/*
+ * Copyright (c) 2012-2020 Snowflake Computing Inc. All rights reserved.
+ */
 package net.snowflake.client.jdbc;
 
+import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -42,13 +47,13 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
     return new Object[][] {{"JSON"}, {"Arrow"}};
   }
 
-  protected static String queryResultFormat;
+  protected String queryResultFormat;
 
   public ResultSetJsonVsArrowIT(String queryResultFormat) {
     this.queryResultFormat = queryResultFormat;
   }
 
-  public static Connection getConnection() throws SQLException {
+  public Connection init() throws SQLException {
     Connection conn = getConnection(BaseJDBCTest.DONT_INJECT_SOCKET_TIMEOUT);
     Statement stmt = conn.createStatement();
     stmt.execute("alter session set jdbc_query_result_format = '" + queryResultFormat + "'");
@@ -58,7 +63,7 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
 
   @Test
   public void testGSResult() throws SQLException {
-    Connection con = getConnection();
+    Connection con = init();
     Statement statement = con.createStatement();
     ResultSet rs =
         statement.executeQuery(
@@ -85,7 +90,7 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
 
   @Test
   public void testGSResultReal() throws SQLException {
-    Connection con = getConnection();
+    Connection con = init();
     Statement statement = con.createStatement();
     statement.execute("create or replace table t (a real)");
     statement.execute("insert into t values (123.456)");
@@ -97,7 +102,7 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
 
   @Test
   public void testGSResultScan() throws SQLException {
-    Connection con = getConnection();
+    Connection con = init();
     Statement statement = con.createStatement();
     statement.execute("create or replace table t (a text)");
     statement.execute("insert into t values ('test')");
@@ -113,7 +118,7 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
 
   @Test
   public void testGSResultForEmptyAndSmallTable() throws SQLException {
-    Connection con = getConnection();
+    Connection con = init();
     Statement statement = con.createStatement();
     statement.execute("create or replace table t (a int)");
     ResultSet rs = statement.executeQuery("select * from t;");
@@ -127,7 +132,7 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
 
   @Test
   public void testSNOW89737() throws SQLException {
-    Connection con = getConnection();
+    Connection con = init();
     Statement statement = con.createStatement();
 
     statement.execute(
@@ -177,7 +182,7 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
    */
   @Test
   public void testSemiStructuredData() throws SQLException {
-    Connection con = getConnection();
+    Connection con = init();
     ResultSet rs =
         con.createStatement()
             .executeQuery(
@@ -212,7 +217,7 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
   }
 
   private Connection init(String table, String column, String values) throws SQLException {
-    Connection con = getConnection();
+    Connection con = init();
     con.createStatement().execute("create or replace table " + table + " " + column);
     con.createStatement().execute("insert into " + table + " values " + values);
     return con;
@@ -1451,47 +1456,47 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
       "insert into T values (3);",
     };
 
-    Connection conn = getConnection();
-    Statement stat = conn.createStatement();
-    for (String q : queries) {
-      stat.execute(q);
-    }
+    try (Connection conn = init()) {
+      Statement stat = conn.createStatement();
+      for (String q : queries) {
+        stat.execute(q);
+      }
 
-    ResultSet rs = stat.executeQuery("select * from S");
-    assertTrue(rs.next());
-    assertEquals(1, rs.getInt(1));
-    assertTrue(rs.next());
-    assertEquals(2, rs.getInt(1));
-    assertTrue(rs.next());
-    assertEquals(3, rs.getInt(1));
-    assertFalse(rs.next());
-    stat.execute("drop stream S");
-    stat.execute("drop table T");
-    stat.close();
+      ResultSet rs = stat.executeQuery("select * from S");
+      assertTrue(rs.next());
+      assertEquals(1, rs.getInt(1));
+      assertTrue(rs.next());
+      assertEquals(2, rs.getInt(1));
+      assertTrue(rs.next());
+      assertEquals(3, rs.getInt(1));
+      assertFalse(rs.next());
+      stat.execute("drop stream S");
+      stat.execute("drop table T");
+    }
   }
 
   @Test
   public void testTimestampNTZAreAllNulls() throws SQLException {
-    Connection con = getConnection();
-    Statement statement = con.createStatement();
-    statement.executeQuery(
-        "create or replace table test_null_ts_ntz (a timestampntz(9)) as select null from table(generator"
-            + "(rowcount => 1000000)) v "
-            + "order by 1;");
-    ResultSet rs = statement.executeQuery("select * from test_null_ts_ntz");
-    while (rs.next()) {
-      rs.getObject(1);
+    try (Connection con = init()) {
+      Statement statement = con.createStatement();
+      statement.executeQuery(
+          "create or replace table test_null_ts_ntz (a timestampntz(9)) as select null from table(generator"
+              + "(rowcount => 1000000)) v "
+              + "order by 1;");
+      ResultSet rs = statement.executeQuery("select * from test_null_ts_ntz");
+      while (rs.next()) {
+        rs.getObject(1);
+      }
+      statement.executeQuery("drop table if exists test_null_ts_ntz");
+      statement.close();
     }
-    statement.executeQuery("drop table if exists test_null_ts_ntz");
-    statement.close();
   }
 
   @Test
   public void TestArrowStringRoundTrip() throws SQLException {
     String big_number = "11111111112222222222333333333344444444";
-    Connection con = getConnection();
-    Statement st = con.createStatement();
-    try {
+    try (Connection con = init()) {
+      Statement st = con.createStatement();
       for (int i = 0; i < 38; i++) {
         StringBuilder to_insert = new StringBuilder(big_number);
         if (i != 0) {
@@ -1507,18 +1512,14 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
         st.execute("rollback");
         st.execute("drop table if exists test_arrow_string");
       }
-    } finally {
-      st.close();
-      con.close();
     }
   }
 
   @Test
   public void TestArrowFloatRoundTrip() throws SQLException {
-    Connection con = getConnection();
-    Statement st = con.createStatement();
     float[] cases = {Float.MAX_VALUE, Float.MIN_VALUE};
-    try {
+    try (Connection con = init()) {
+      Statement st = con.createStatement();
       for (float f : cases) {
         st.executeQuery("create or replace table test_arrow_float (a FLOAT)");
         st.executeQuery("begin");
@@ -1529,78 +1530,135 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
         st.executeQuery("rollback");
         st.executeQuery("drop table if exists test_arrow_float");
       }
-    } finally {
-      st.close();
-      con.close();
     }
   }
 
   @Test
   public void TestTimestampNTZWithDLS() throws SQLException {
-    Connection con = getConnection();
-    Statement st = con.createStatement();
-    TimeZone.setDefault(TimeZone.getTimeZone("PST"));
-    st.execute("alter session set JDBC_TREAT_TIMESTAMP_NTZ_AS_UTC=true");
-    st.execute("create or replace table src_ts(col1 TIMESTAMP_NTZ)");
-    List<String> testTimeValues =
-        Arrays.asList(
-            // DLS start in 2018
-            "2018-03-11 01:10:34.0",
-            "2018-03-11 02:10:34.0",
-            "2018-03-11 03:10:34.0",
-            // DLS end in 2018
-            "2018-11-04 01:10:34.0",
-            "2018-11-04 02:10:34.0",
-            "2018-11-04 03:10:34.0",
-            // DLS start in 2020
-            "2020-03-11 01:10:34.0",
-            "2020-03-11 02:10:34.0",
-            "2020-03-11 03:10:34.0",
-            // DLS end in 2020
-            "2020-11-01 01:10:34.0",
-            "2020-11-01 02:10:34.0",
-            "2020-11-01 03:10:34.0");
+    TimeZone origTz = TimeZone.getDefault();
+    String[] timeZones = new String[] {"America/New_York", "America/Los_Angeles"};
+    try (Connection con = init()) {
+      Statement st = con.createStatement();
+      for (String timeZone : timeZones) {
+        TimeZone.setDefault(TimeZone.getTimeZone(timeZone));
+        st.execute("alter session set JDBC_TREAT_TIMESTAMP_NTZ_AS_UTC=true");
+        st.execute("alter session set TIMEZONE='" + timeZone + "'");
+        st.execute(
+            "create or replace table src_ts(col1 TIMESTAMP_NTZ, col2 TIMESTAMP_LTZ, col3 TIMESTAMP_TZ)");
+        List<String> testTimestampNTZValues =
+            Arrays.asList(
+                // DLS start in 2018
+                "2018-03-11 01:10:34.0123456",
+                "2018-03-11 02:10:34.0",
+                "2018-03-11 03:10:34.0",
+                // DLS end in 2018
+                "2018-11-04 01:10:34.0",
+                "2018-11-04 02:10:34.0",
+                "2018-11-04 03:10:34.0",
+                // DLS start in 2020
+                "2020-03-11 01:10:34.0",
+                "2020-03-11 02:10:34.0",
+                "2020-03-11 03:10:34.0",
+                // DLS end in 2020
+                "2020-11-01 01:10:34.0",
+                "2020-11-01 02:10:34.0",
+                "2020-11-01 03:10:34.0");
 
-    for (int i = 0; i < testTimeValues.size(); i++) {
-      st.execute("insert into src_ts values('" + testTimeValues.get(i) + "')");
-    }
+        List<String[]> testTimestampLTZValues =
+            Arrays.asList(
+                // DLS start in 2018
+                new String[] {"2018-03-11 01:10:34.0123456", "2018-03-11 01:10:34.0123456"},
+                new String[] {
+                  "2018-03-11 02:10:34.0", "2018-03-11 01:10:34.0"
+                }, // only this has an impact
+                new String[] {"2018-03-11 03:10:34.0", "2018-03-11 03:10:34.0"},
+                // DLS end in 2018
+                new String[] {"2018-11-04 01:10:34.0", "2018-11-04 01:10:34.0"},
+                new String[] {"2018-11-04 02:10:34.0", "2018-11-04 02:10:34.0"},
+                new String[] {"2018-11-04 03:10:34.0", "2018-11-04 03:10:34.0"},
+                // DLS start in 2020
+                new String[] {"2020-03-11 01:10:34.0", "2020-03-11 01:10:34.0"},
+                new String[] {"2020-03-11 02:10:34.0", "2020-03-11 02:10:34.0"},
+                new String[] {"2020-03-11 03:10:34.0", "2020-03-11 03:10:34.0"},
+                // DLS end in 2020
+                new String[] {"2020-11-01 01:10:34.0", "2020-11-01 01:10:34.0"},
+                new String[] {"2020-11-01 02:10:34.0", "2020-11-01 02:10:34.0"},
+                new String[] {"2020-11-01 03:10:34.0", "2020-11-01 03:10:34.0"});
+        List<String> testTimestampTZValues =
+            Arrays.asList(
+                // DLS start in 2018
+                "2018-03-11 01:10:34.0 +0200",
+                "2018-03-11 02:10:34.0 +0200",
+                "2018-03-11 03:10:34.0 +0200",
+                // DLS end in 2018
+                "2018-11-04 01:10:34.0 +0200",
+                "2018-11-04 02:10:34.0 +0200",
+                "2018-11-04 03:10:34.0 +0200",
+                // DLS start in 2020
+                "2020-03-11 01:10:34.0 +0200",
+                "2020-03-11 02:10:34.0 +0200",
+                "2020-03-11 03:10:34.0 +0200",
+                // DLS end in 2020
+                "2020-11-01 01:10:34.0 +0200",
+                "2020-11-01 02:10:34.0 +0200",
+                "2020-11-01 03:10:34.0 +0200");
 
-    ResultSet resultSet = st.executeQuery("SELECT COL1 FROM SRC_TS");
-    Object data = null;
-    int i = 1;
-    int j = 0;
-    while (resultSet.next()) {
-      data = resultSet.getObject(i);
-      assertEquals(data.toString(), testTimeValues.get(j));
-      j++;
+        for (int i = 0; i < testTimestampNTZValues.size(); i++) {
+          st.execute(
+              "insert into src_ts(col1,col2,col3) values('"
+                  + testTimestampNTZValues.get(i)
+                  + "', '"
+                  + testTimestampLTZValues.get(i)[0]
+                  + "', '"
+                  + testTimestampTZValues.get(i)
+                  + "')");
+        }
+
+        ResultSet resultSet = st.executeQuery("select col1, col2, col3 from src_ts");
+        int j = 0;
+        while (resultSet.next()) {
+          Object data1 = resultSet.getObject(1);
+          assertEquals(testTimestampNTZValues.get(j), data1.toString());
+
+          Object data2 = resultSet.getObject(2);
+          assertEquals(testTimestampLTZValues.get(j)[1], data2.toString());
+
+          Object data3 = resultSet.getObject(3);
+          assertThat(data3, instanceOf(Timestamp.class));
+          assertEquals(
+              parseTimestampTZ(testTimestampTZValues.get(j)).toEpochSecond(),
+              ((Timestamp) data3).getTime() / 1000);
+          j++;
+        }
+      }
+    } finally {
+      TimeZone.setDefault(origTz);
     }
-    resultSet.close();
-    st.close();
   }
 
   @Test
   public void TestTimestampNTZBinding() throws SQLException {
-    Connection con = getConnection();
-    Statement st = con.createStatement();
-    TimeZone.setDefault(TimeZone.getTimeZone("PST"));
-    st.execute("alter session set CLIENT_TIMESTAMP_TYPE_MAPPING=TIMESTAMP_NTZ");
-    st.execute("alter session set JDBC_TREAT_TIMESTAMP_NTZ_AS_UTC=true");
-    st.execute("create or replace table src_ts(col1 TIMESTAMP_NTZ)");
-    PreparedStatement prepst = con.prepareStatement("insert into src_ts values(?)");
-    Timestamp tz = Timestamp.valueOf("2018-03-11 01:10:34.0");
-    prepst.setTimestamp(1, tz);
-    prepst.execute();
+    TimeZone origTz = TimeZone.getDefault();
+    try (Connection con = init()) {
+      TimeZone.setDefault(TimeZone.getTimeZone("PST"));
+      Statement st = con.createStatement();
+      st.execute("alter session set CLIENT_TIMESTAMP_TYPE_MAPPING=TIMESTAMP_NTZ");
+      st.execute("alter session set JDBC_TREAT_TIMESTAMP_NTZ_AS_UTC=true");
+      st.execute("create or replace table src_ts(col1 TIMESTAMP_NTZ)");
+      PreparedStatement prepst = con.prepareStatement("insert into src_ts values(?)");
+      Timestamp tz = Timestamp.valueOf("2018-03-11 01:10:34.0");
+      prepst.setTimestamp(1, tz);
+      prepst.execute();
 
-    ResultSet resultSet = st.executeQuery("SELECT COL1 FROM SRC_TS");
-    Object data = null;
-    int i = 1;
-    int j = 0;
-    while (resultSet.next()) {
-      data = resultSet.getObject(i);
-      System.out.println(data.toString());
+      ResultSet resultSet = st.executeQuery("SELECT COL1 FROM SRC_TS");
+      Object data;
+      int i = 1;
+      while (resultSet.next()) {
+        data = resultSet.getObject(i);
+        System.out.println(data.toString());
+      }
+    } finally {
+      TimeZone.setDefault(origTz);
     }
-    // System.out.println(data);
-    resultSet.close();
-    st.close();
   }
 }
