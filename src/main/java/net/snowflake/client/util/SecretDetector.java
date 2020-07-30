@@ -334,3 +334,4 @@ public class SecretDetector {
     return node;
   }
 }
+
