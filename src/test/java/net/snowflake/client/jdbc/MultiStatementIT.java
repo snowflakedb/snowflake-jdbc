@@ -3,20 +3,6 @@
  */
 package net.snowflake.client.jdbc;
 
-import static net.snowflake.client.ConditionalIgnoreRule.ConditionalIgnore;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryStatement;
 import net.snowflake.client.core.SFSession;
@@ -24,6 +10,16 @@ import net.snowflake.common.core.SqlState;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+
+import static net.snowflake.client.ConditionalIgnoreRule.ConditionalIgnore;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.*;
 
 /** Multi Statement tests */
 @Category(TestCategoryStatement.class)
@@ -33,6 +29,7 @@ public class MultiStatementIT extends BaseJDBCTest {
   public static Connection getConnection() throws SQLException {
     Connection conn = BaseJDBCTest.getConnection();
     Statement stmt = conn.createStatement();
+    stmt.execute("alter session set enable_fix_175547 = false");
     stmt.execute("alter session set jdbc_query_result_format = '" + queryResultFormat + "'");
     stmt.close();
     return conn;
