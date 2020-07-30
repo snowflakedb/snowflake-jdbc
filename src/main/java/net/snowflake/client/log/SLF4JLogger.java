@@ -58,7 +58,7 @@ public class SLF4JLogger implements SFLogger {
     }
   }
 
-  // Please don't use this function except you know what you are doing
+  // This function is used to display unmasked, potentially sensitive log information for internal regression testing purposes. Do not use otherwise
   public void debugNoMask(String msg)
   {
     if (isLocationAwareLogger)
