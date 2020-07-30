@@ -64,7 +64,7 @@ public class JDK14Logger implements SFLogger {
     logInternal(Level.FINE, msg, true);
   }
 
-  // Please don't use this function except you know what you are doing
+  // This function is used to display unmasked, potentially sensitive log information for internal regression testing purposes. Do not use otherwise.
   public void debugNoMask(String msg)
   {
     logInternal(Level.FINE, msg, false);
