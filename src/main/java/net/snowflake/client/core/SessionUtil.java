@@ -963,9 +963,10 @@ public class SessionUtil {
         // Session is in process of getting created, so exception constructor takes in null session
         // value
         throw new SnowflakeSQLLoggedException(
-            SqlState.SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION,
+            null,
             ErrorCode.IDP_INCORRECT_DESTINATION.getMessageCode(),
-            /* session = */ null);
+            SqlState.SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION
+            /* session = */ );
       }
     } catch (IOException | URISyntaxException ex) {
       handleFederatedFlowError(loginInput, ex);
@@ -1047,9 +1048,10 @@ public class SessionUtil {
         // Session is in process of getting created, so exception constructor takes in null session
         // value
         throw new SnowflakeSQLLoggedException(
-            SqlState.SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION,
+            null,
             ErrorCode.IDP_CONNECTION_ERROR.getMessageCode(),
-            /* session = */ null);
+            SqlState.SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION
+            /* session = */ );
       }
     } catch (MalformedURLException ex) {
       handleFederatedFlowError(loginInput, ex);

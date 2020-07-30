@@ -83,10 +83,10 @@ public class SnowflakeDriver implements Driver {
           patchVersion = Long.parseLong(versionBreakdown[2]);
         } else {
           throw new SnowflakeSQLLoggedException(
-              SqlState.INTERNAL_ERROR,
+              null,
               ErrorCode.INTERNAL_ERROR.getMessageCode(),
-              /*session = */ null,
-              "Invalid Snowflake JDBC Version: " + implementVersion);
+              SqlState.INTERNAL_ERROR,
+              /*session = */ "Invalid Snowflake JDBC Version: " + implementVersion);
         }
       } else {
         throw new SnowflakeSQLException(

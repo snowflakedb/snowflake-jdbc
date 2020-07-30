@@ -157,9 +157,9 @@ public class SFResultSet extends SFJsonResultSet {
       // we don't support sort result when there are offline chunks
       if (chunkCount > 0) {
         throw new SnowflakeSQLLoggedException(
-            SqlState.FEATURE_NOT_SUPPORTED,
+            session,
             ErrorCode.CLIENT_SIDE_SORTING_NOT_SUPPORTED.getMessageCode(),
-            session);
+            SqlState.FEATURE_NOT_SUPPORTED);
       }
 
       sortResultSet();
@@ -208,9 +208,9 @@ public class SFResultSet extends SFJsonResultSet {
 
         if (nextChunk == null) {
           throw new SnowflakeSQLLoggedException(
-              SqlState.INTERNAL_ERROR,
-              ErrorCode.INTERNAL_ERROR.getMessageCode(),
               session,
+              ErrorCode.INTERNAL_ERROR.getMessageCode(),
+              SqlState.INTERNAL_ERROR,
               "Expect chunk but got null for chunk index " + nextChunkIndex);
         }
 
@@ -226,7 +226,7 @@ public class SFResultSet extends SFJsonResultSet {
         return true;
       } catch (InterruptedException ex) {
         throw new SnowflakeSQLLoggedException(
-            SqlState.QUERY_CANCELED, ErrorCode.INTERRUPTED.getMessageCode(), session);
+            session, ErrorCode.INTERRUPTED.getMessageCode(), SqlState.QUERY_CANCELED);
       }
     } else if (chunkCount > 0) {
       try {
@@ -235,7 +235,7 @@ public class SFResultSet extends SFJsonResultSet {
         logChunkDownloaderMetrics(metrics);
       } catch (InterruptedException ex) {
         throw new SnowflakeSQLLoggedException(
-            SqlState.QUERY_CANCELED, ErrorCode.INTERRUPTED.getMessageCode(), session);
+            session, ErrorCode.INTERRUPTED.getMessageCode(), SqlState.QUERY_CANCELED);
       }
     }
 
@@ -390,7 +390,7 @@ public class SFResultSet extends SFJsonResultSet {
       }
     } catch (InterruptedException ex) {
       throw new SnowflakeSQLLoggedException(
-          SqlState.QUERY_CANCELED, ErrorCode.INTERRUPTED.getMessageCode(), session);
+          session, ErrorCode.INTERRUPTED.getMessageCode(), SqlState.QUERY_CANCELED);
     }
   }
 

@@ -158,9 +158,9 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
                 .withClientConfiguration(clientConfig);
       } else {
         throw new SnowflakeSQLLoggedException(
-            SqlState.INTERNAL_ERROR,
-            ErrorCode.INTERNAL_ERROR.getMessageCode(),
             session,
+            ErrorCode.INTERNAL_ERROR.getMessageCode(),
+            SqlState.INTERNAL_ERROR,
             "unsupported key size",
             encryptionKeySize);
       }
@@ -321,9 +321,9 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
         if (this.isEncrypting() && this.getEncryptionKeySize() < 256) {
           if (key == null || iv == null) {
             throw new SnowflakeSQLLoggedException(
-                SqlState.INTERNAL_ERROR,
-                ErrorCode.INTERNAL_ERROR.getMessageCode(),
                 session,
+                ErrorCode.INTERNAL_ERROR.getMessageCode(),
+                SqlState.INTERNAL_ERROR,
                 "File metadata incomplete");
           }
 
@@ -349,9 +349,9 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
     } while (retryCount <= getMaxRetries());
 
     throw new SnowflakeSQLLoggedException(
-        SqlState.INTERNAL_ERROR,
-        ErrorCode.INTERNAL_ERROR.getMessageCode(),
         session,
+        ErrorCode.INTERNAL_ERROR.getMessageCode(),
+        SqlState.INTERNAL_ERROR,
         "Unexpected: download unsuccessful without exception!");
   }
 
@@ -395,9 +395,9 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
         if (this.isEncrypting() && this.getEncryptionKeySize() < 256) {
           if (key == null || iv == null) {
             throw new SnowflakeSQLLoggedException(
-                SqlState.INTERNAL_ERROR,
-                ErrorCode.INTERNAL_ERROR.getMessageCode(),
                 session,
+                ErrorCode.INTERNAL_ERROR.getMessageCode(),
+                SqlState.INTERNAL_ERROR,
                 "File metadata incomplete");
           }
 
@@ -418,9 +418,9 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
     } while (retryCount <= getMaxRetries());
 
     throw new SnowflakeSQLLoggedException(
-        SqlState.INTERNAL_ERROR,
-        ErrorCode.INTERNAL_ERROR.getMessageCode(),
         session,
+        ErrorCode.INTERNAL_ERROR.getMessageCode(),
+        SqlState.INTERNAL_ERROR,
         "Unexpected: download unsuccessful without exception!");
   }
 
@@ -551,9 +551,9 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
     for (FileInputStream is : toClose) IOUtils.closeQuietly(is);
 
     throw new SnowflakeSQLLoggedException(
-        SqlState.INTERNAL_ERROR,
-        ErrorCode.INTERNAL_ERROR.getMessageCode(),
         session,
+        ErrorCode.INTERNAL_ERROR.getMessageCode(),
+        SqlState.INTERNAL_ERROR,
         "Unexpected: upload unsuccessful without exception!");
   }
 
@@ -597,10 +597,10 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
       } catch (Exception ex) {
         logger.error("Failed to encrypt input", ex);
         throw new SnowflakeSQLLoggedException(
-            ex,
+            session,
             SqlState.INTERNAL_ERROR,
             ErrorCode.INTERNAL_ERROR.getMessageCode(),
-            session,
+            ex,
             "Failed to encrypt input",
             ex.getMessage());
       }
@@ -623,19 +623,19 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
       } catch (FileNotFoundException ex) {
         logger.error("Failed to open input file", ex);
         throw new SnowflakeSQLLoggedException(
-            ex,
+            session,
             SqlState.INTERNAL_ERROR,
             ErrorCode.INTERNAL_ERROR.getMessageCode(),
-            session,
+            ex,
             "Failed to open input file",
             ex.getMessage());
       } catch (IOException ex) {
         logger.error("Failed to open input stream", ex);
         throw new SnowflakeSQLLoggedException(
-            ex,
+            session,
             SqlState.INTERNAL_ERROR,
             ErrorCode.INTERNAL_ERROR.getMessageCode(),
-            session,
+            ex,
             "Failed to open input stream",
             ex.getMessage());
       }
@@ -677,10 +677,10 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
         if (ex instanceof AmazonServiceException) {
           AmazonServiceException ex1 = (AmazonServiceException) ex;
           throw new SnowflakeSQLLoggedException(
-              ex1,
+              session,
               SqlState.SYSTEM_ERROR,
               ErrorCode.S3_OPERATION_ERROR.getMessageCode(),
-              session,
+              ex1,
               operation,
               ex1.getErrorType().toString(),
               ex1.getErrorCode(),
@@ -689,10 +689,10 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
               extendedRequestId);
         } else {
           throw new SnowflakeSQLLoggedException(
-              ex,
+              session,
               SqlState.SYSTEM_ERROR,
               ErrorCode.AWS_CLIENT_ERROR.getMessageCode(),
-              session,
+              ex,
               operation,
               ex.getMessage());
         }
@@ -733,10 +733,10 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
           || SnowflakeUtil.getRootCause(ex) instanceof SocketTimeoutException) {
         if (retryCount > s3Client.getMaxRetries()) {
           throw new SnowflakeSQLLoggedException(
-              ex,
+              session,
               SqlState.SYSTEM_ERROR,
               ErrorCode.IO_ERROR.getMessageCode(),
-              session,
+              ex,
               "Encountered exception during " + operation + ": " + ex.getMessage());
         } else {
           logger.debug(
@@ -747,10 +747,10 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
         }
       } else {
         throw new SnowflakeSQLLoggedException(
-            ex,
+            session,
             SqlState.SYSTEM_ERROR,
             ErrorCode.IO_ERROR.getMessageCode(),
-            session,
+            ex,
             "Encountered exception during " + operation + ": " + ex.getMessage());
       }
     }

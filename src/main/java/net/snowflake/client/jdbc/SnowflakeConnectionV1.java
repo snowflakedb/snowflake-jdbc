@@ -126,7 +126,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
       missingProperties = sfSession.checkProperties();
     } catch (SFException ex) {
       throw new SnowflakeSQLLoggedException(
-          ex.getCause(), ex.getSqlState(), ex.getVendorCode(), sfSession, ex.getParams());
+          sfSession, ex.getSqlState(), ex.getVendorCode(), ex.getCause(), ex.getParams());
     }
 
     isClosed = false;
@@ -157,7 +157,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
       showStatementParameters = sfSession.getPreparedStatementLogging();
     } catch (SFException ex) {
       throw new SnowflakeSQLLoggedException(
-          ex.getCause(), ex.getSqlState(), ex.getVendorCode(), sfSession, ex.getParams());
+          sfSession, ex.getSqlState(), ex.getVendorCode(), ex.getCause(), ex.getParams());
     }
 
     appendWarnings(sfSession.getSqlWarnings());
@@ -313,7 +313,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
 
     } catch (SFException ex) {
       throw new SnowflakeSQLLoggedException(
-          ex.getCause(), ex.getSqlState(), ex.getVendorCode(), sfSession, ex.getParams());
+          sfSession, ex.getSqlState(), ex.getVendorCode(), ex.getCause(), ex.getParams());
     }
   }
 
@@ -920,17 +920,17 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
 
     if (stageName == null) {
       throw new SnowflakeSQLLoggedException(
-          SqlState.INTERNAL_ERROR,
-          ErrorCode.INTERNAL_ERROR.getMessageCode(),
           sfSession,
+          ErrorCode.INTERNAL_ERROR.getMessageCode(),
+          SqlState.INTERNAL_ERROR,
           "stage name is null");
     }
 
     if (destFileName == null) {
       throw new SnowflakeSQLLoggedException(
-          SqlState.INTERNAL_ERROR,
-          ErrorCode.INTERNAL_ERROR.getMessageCode(),
           sfSession,
+          ErrorCode.INTERNAL_ERROR.getMessageCode(),
+          SqlState.INTERNAL_ERROR,
           "stage name is null");
     }
 
@@ -986,17 +986,17 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
 
     if (Strings.isNullOrEmpty(stageName)) {
       throw new SnowflakeSQLLoggedException(
-          SqlState.INTERNAL_ERROR,
-          ErrorCode.INTERNAL_ERROR.getMessageCode(),
           sfSession,
+          ErrorCode.INTERNAL_ERROR.getMessageCode(),
+          SqlState.INTERNAL_ERROR,
           "stage name is null or empty");
     }
 
     if (Strings.isNullOrEmpty(sourceFileName)) {
       throw new SnowflakeSQLLoggedException(
-          SqlState.INTERNAL_ERROR,
-          ErrorCode.INTERNAL_ERROR.getMessageCode(),
           sfSession,
+          ErrorCode.INTERNAL_ERROR.getMessageCode(),
+          SqlState.INTERNAL_ERROR,
           "source file name is null or empty");
     }
 
@@ -1039,9 +1039,9 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
         return new GZIPInputStream(stream);
       } catch (IOException ex) {
         throw new SnowflakeSQLLoggedException(
-            SqlState.INTERNAL_ERROR,
-            ErrorCode.INTERNAL_ERROR.getMessageCode(),
             sfSession,
+            ErrorCode.INTERNAL_ERROR.getMessageCode(),
+            SqlState.INTERNAL_ERROR,
             ex.getMessage());
       }
     } else {

@@ -235,9 +235,9 @@ public class SFStatement {
 
     if (result == null) {
       throw new SnowflakeSQLLoggedException(
-          SqlState.INTERNAL_ERROR,
-          ErrorCode.INTERNAL_ERROR.getMessageCode(),
           session,
+          ErrorCode.INTERNAL_ERROR.getMessageCode(),
+          SqlState.INTERNAL_ERROR,
           "got null result");
     }
 
@@ -264,10 +264,10 @@ public class SFStatement {
         // ensure first query type matches the calling JDBC method, if exists
         if (caller == CallingMethod.EXECUTE_QUERY && !type.isGenerateResultSet()) {
           throw new SnowflakeSQLLoggedException(
-              ErrorCode.QUERY_FIRST_RESULT_NOT_RESULT_SET, session);
+              session, ErrorCode.QUERY_FIRST_RESULT_NOT_RESULT_SET);
         } else if (caller == CallingMethod.EXECUTE_UPDATE && type.isGenerateResultSet()) {
           throw new SnowflakeSQLLoggedException(
-              ErrorCode.UPDATE_FIRST_RESULT_NOT_UPDATE_COUNT, session);
+              session, ErrorCode.UPDATE_FIRST_RESULT_NOT_UPDATE_COUNT);
         }
 
         // this will update resultSet to point to the first child result before we return it
@@ -317,7 +317,7 @@ public class SFStatement {
           statement.cancel();
         } catch (SFException ex) {
           throw new SnowflakeSQLLoggedException(
-              ex, ex.getSqlState(), ex.getVendorCode(), session, ex.getParams());
+              session, ex.getSqlState(), ex.getVendorCode(), ex, ex.getParams());
         }
         return null;
       }
@@ -362,9 +362,9 @@ public class SFStatement {
 
         if (this.requestId != null) {
           throw new SnowflakeSQLLoggedException(
-              SqlState.FEATURE_NOT_SUPPORTED,
+              session,
               ErrorCode.STATEMENT_ALREADY_RUNNING_QUERY.getMessageCode(),
-              session);
+              SqlState.FEATURE_NOT_SUPPORTED);
         }
 
         this.requestId = UUID.randomUUID().toString();
