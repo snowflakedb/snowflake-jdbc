@@ -6,6 +6,8 @@ rules:
     source-rule-url: https://find-sec-bugs.github.io/bugs.htm#BAD_HEXA_CONVERSION
   message: |
     This mistake weakens the hash value computed since it introduces more collisions.
+    In this situation, the method Integer.toHexString() should be replaced with String.format().
+    For more information, please refer to https://snowflakecomputing.atlassian.net/wiki/spaces/CLO/pages/1127713128/Semgrep+Finding+Remediation#bad-hexa-conversion
   severity: WARNING
   languages: [java]
   pattern: |-
@@ -21,8 +23,9 @@ rules:
   message: |
     Using CBC with PKCS5Padding is susceptible to padding orcale attacks. A malicious actor
     could discern the difference between plaintext with valid or invalid padding. Further,
-    CBC mode does not include any integrity checks. See https://find-sec-bugs.github.io/bugs.htm#CIPHER_INTEGRITY.
+    CBC mode does not include any integrity checks (https://find-sec-bugs.github.io/bugs.htm#CIPHER_INTEGRITY).
     Use 'AES/GCM/NoPadding' instead.
+    For more information, please refer to https://snowflakecomputing.atlassian.net/wiki/spaces/CLO/pages/1127713128/Semgrep+Finding+Remediation#cbc-padding-oracle
   metadata:
     cwe: 'CWE-696: Incorrect Behavior Order'
     owasp: 'A3: Sensitive Data Exposure'
@@ -46,6 +49,7 @@ rules:
     A formatted or concatenated string was detected as input to a java.lang.Runtime call.
     This is dangerous if a variable is controlled by user input and could result in a
     command injection. Ensure your variables are not controlled by users or sufficiently sanitized.
+    For more information, please refer to https://snowflakecomputing.atlassian.net/wiki/spaces/CLO/pages/1127713128/Semgrep+Finding+Remediation#command-injection-formatted-runtime-call
   metadata:
     cwe: "CWE-78: Improper Neutralization of Special Elements used in an OS Command\
       \ ('OS Command Injection')"
@@ -57,6 +61,8 @@ rules:
 - id: java.lang.security.audit.script-engine-injection.script-engine-injection
   message: |
     Potential code injection when using Script Engine.
+    Ensure that untrusted data is not being passed to this function or otherwise ensure that proper sandboxing is being performed.
+    For more information, please refer to https://snowflakecomputing.atlassian.net/wiki/spaces/CLO/pages/1127713128/Semgrep+Finding+Remediation#script-engine-injection
   metadata:
     cwe: "CWE-94: Improper Control of Generation of Code ('Code Injection')"
     owasp: 'A1: Injection'
@@ -114,7 +120,8 @@ rules:
   message: |
     An insecure SSL context was detected. TLS versions 1.0, 1.1, and all SSL versions
     are considered weak encryption and are deprecated.
-    Use SSLContext.getInstance("TLSv1.2") for the best security.
+    Use SSLContext.getInstance("TLSv1.2") or SSLContext.getInstance("TLSv1.3") for the best security.
+    For more information, please refer to https://snowflakecomputing.atlassian.net/wiki/spaces/CLO/pages/1127713128/Semgrep+Finding+Remediation#weak-ssl-context
   severity: WARNING
   languages: [java]
   patterns:
@@ -124,6 +131,8 @@ rules:
 - id: java.lang.security.audit.xml-decoder.xml-decoder
   message: |
     XMLDecoder should not be used to parse untrusted data. Deserializing user input can lead to arbitrary code execution.
+    Ensure that only trusted data is being parsed using XMLDecoder.
+    For more information, please refer to https://snowflakecomputing.atlassian.net/wiki/spaces/CLO/pages/1127713128/Semgrep+Finding+Remediation#xml-decoder
   metadata:
     cwe: 'CWE-611: Improper Restriction of XML External Entity Reference'
     owasp: 'A4: XML External Entities (XXE)'
@@ -163,6 +172,7 @@ rules:
     The XSS filtering in this code is not secure and can be bypassed by malicious actors.
     It is recommended to use a stack that automatically escapes in your view or templates
     instead of filtering yourself.
+    For more information, please refer to https://snowflakecomputing.atlassian.net/wiki/spaces/CLO/pages/1127713128/Semgrep+Finding+Remediation#xssrequestwrapper-is-insecure
   severity: WARNING
   patterns:
   - pattern-either:
@@ -179,11 +189,12 @@ rules:
   metadata:
     cwe: "CWE-1004: Sensitive Cookie Without 'HttpOnly' Flag"
     owasp: 'A3: Sensitive Data Exposure'
-    source-rule-url: https://find-sec-bugs.github.io/bugs.htm#INSECURE_COOKIE
+    source-rule-url: https://find-sec-bugs.github.io/bugs.htm#HTTPONLY_COOKIE
   message: |
     A cookie was detected without setting the 'HttpOnly' flag. The 'HttpOnly' flag
     for cookies instructs the browser to forbid client-side scripts from reading the
     cookie. Set the 'HttpOnly' flag by calling 'cookie.setHttpOnly(true);'
+    For more information, please refer to https://snowflakecomputing.atlassian.net/wiki/spaces/CLO/pages/1127713128/Semgrep+Finding+Remediation#cookie-missing-httponly
   severity: WARNING
   languages: [java]
   patterns:
@@ -201,6 +212,8 @@ rules:
     - https://stackoverflow.com/questions/42717210/samesite-cookie-in-java-application
   message: |
     Detected cookie without the SameSite attribute.
+    Set the SameSite attributed on the cookie.
+    For more information, please refer to https://snowflakecomputing.atlassian.net/wiki/spaces/CLO/pages/1127713128/Semgrep+Finding+Remediation#cookie-missing-samesite
   severity: WARNING
   languages: [java]
   patterns:
@@ -222,6 +235,7 @@ rules:
     A cookie was detected without setting the 'secure' flag. The 'secure' flag
     for cookies prevents the client from transmitting the cookie over insecure
     channels such as HTTP. Set the 'secure' flag by calling '$COOKIE.setSecure(true);'
+    For more information, please refer to https://snowflakecomputing.atlassian.net/wiki/spaces/CLO/pages/1127713128/Semgrep+Finding+Remediation#cookie-missing-secure-flag
   severity: WARNING
   languages: [java]
   patterns:
@@ -231,13 +245,13 @@ rules:
     - patterns:
       - pattern-not-inside: (Cookie $COOKIE).setSecure(...); ...
       - pattern: $RESPONSE.addCookie($COOKIE);
-
 - id: java.lang.security.audit.crypto.no-static-initialization-vector.no-static-initialization-vector
   message: |
     Initialization Vectors (IVs) for block ciphers should be randomly generated
     each time they are used. Using a static IV means the same plaintext
     encrypts to the same ciphertext every time, weakening the strength
     of the encryption.
+    For more information, please refer to https://snowflakecomputing.atlassian.net/wiki/spaces/CLO/pages/1127713128/Semgrep+Finding+Remediation#no-static-initialization-vector
   metadata:
     cwe: 'CWE-329: Not Using a Random IV with CBC Mode'
     owasp: 'A3: Sensitive Data Exposure'
@@ -267,7 +281,10 @@ rules:
             }
         }
 - id: java.lang.security.audit.crypto.weak-hash.use-of-sha1
-  message: Use of weak cryptographic primitive SHA1
+  message: |
+    Use of weak cryptographic primitive SHA1
+    Use SHA256 at minimum for signature verification and use PBKDF2 for hashing passwords.
+    For more informations, please refer to https://snowflakecomputing.atlassian.net/wiki/spaces/CLO/pages/1127713128/Semgrep+Finding+Remediation#use-of-sha1
   languages: [java]
   severity: WARNING
   metadata:
@@ -280,7 +297,10 @@ rules:
   - pattern: |
       $DU.getSha1Digest().digest(...)
 - id: java.lang.security.audit.crypto.weak-hash.use-of-md5
-  message: Use of weak cryptographic primitive MD5
+  message: |
+    Use of weak cryptographic primitive MD5
+    Use SHA256 at minimum for signature verification and use PBKDF2 for hashing passwords.
+    For more information, please refer to https://snowflakecomputing.atlassian.net/wiki/spaces/CLO/pages/1127713128/Semgrep+Finding+Remediation#use-of-md5
   languages: [java]
   severity: WARNING
   metadata:
@@ -301,9 +321,8 @@ rules:
   message: |
     NullCipher was detected. This will not encrypt anything;
     the cipher text will be the same as the plain text. Use
-    a valid, secure cipher: Cipher.getInstance("AES/CBC/PKCS7PADDING").
-    See https://owasp.org/www-community/Using_the_Java_Cryptographic_Extensions
-    for more information.
+    a valid, secure cipher: Cipher.getInstance("AES/GCM/NoPadding").
+    For more information, please refer to https://snowflakecomputing.atlassian.net/wiki/spaces/CLO/pages/1127713128/Semgrep+Finding+Remediation#no-null-cipher
   severity: WARNING
   languages:
   - java
@@ -319,6 +338,7 @@ rules:
     a custom message digest, you risk introducing security issues into your program.
     Use one of the many sound message digests already available to you:
     MessageDigest sha256Digest = MessageDigest.getInstance("SHA256");
+    For more information, please refer to https://snowflakecomputing.atlassian.net/wiki/spaces/CLO/pages/1127713128/Semgrep+Finding+Remediation#avoid-implementing-custom-digests
   severity: WARNING
   languages: [java]
   pattern: |-
@@ -334,6 +354,7 @@ rules:
     DefaultHttpClient is deprecated. Further, it does not support connections
     using TLS1.2, which makes using DefaultHttpClient a security hazard.
     Use SystemDefaultHttpClient instead, which supports TLS1.2.
+    For more information, please refer to https://snowflakecomputing.atlassian.net/wiki/spaces/CLO/pages/1127713128/Semgrep+Finding+Remediation#defaulthttpclient-is-deprecated
   severity: WARNING
   languages: [java]
   pattern: new DefaultHttpClient(...);
@@ -342,6 +363,7 @@ rules:
     Insecure HostnameVerifier implementation detected. This will accept
     any SSL certificate with any hostname, which creates the possibility
     for man-in-the-middle attacks.
+    For more information, please refer to https://snowflakecomputing.atlassian.net/wiki/spaces/CLO/pages/1127713128/Semgrep+Finding+Remediation#insecure-hostname-verifier
   metadata:
     cwe: 'CWE-295: Improper Certificate Validation'
     owasp: 'A6: Security Misconfiguration'
@@ -372,8 +394,7 @@ rules:
     Detected empty trust manager implementations. This is dangerous because it accepts any
     certificate, enabling man-in-the-middle attacks. Consider using a KeyStore
     and TrustManagerFactory isntead.
-    See https://stackoverflow.com/questions/2642777/trusting-all-certificates-using-httpclient-over-https
-    for more information.
+    For more information, please refer to https://snowflakecomputing.atlassian.net/wiki/spaces/CLO/pages/1127713128/Semgrep+Finding+Remediation#insecure-trust-manager
   severity: WARNING
   languages: [java]
   patterns:
@@ -396,7 +417,9 @@ rules:
     - pattern: $X == $X
     - pattern: $X != $X
   - pattern-not: 1 == 1
-  message: '`$X == $X` or `$X != $X` is a useless comparison unless the value compared
+  message: |
+    '`$X == $X` or `$X != $X` is a useless comparison unless the value compared
     is a float or double. To test if `$X` is not-a-number, use `Double.isNaN($X)`.'
+    For more information, please refer to https://snowflakecomputing.atlassian.net/wiki/spaces/CLO/pages/1127713128/Semgrep+Finding+Remediation#eqeq
   languages: [java]
   severity: ERROR
