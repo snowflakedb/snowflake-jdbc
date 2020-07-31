@@ -88,25 +88,6 @@ public class ConnectionIT extends BaseJDBCTest {
   }
 
   @Test
-  public void testMultiStmtTransaction() throws SQLException {
-    Connection connection = getConnection();
-    Statement statement = connection.createStatement();
-    statement.execute("alter session set enable_fix_175547 = false");
-
-    statement.execute(
-        "create or replace table test_multi_txn(c1 number, c2 string)" + " as select 10, 'z'");
-
-    statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 4);
-    String multiStmtQuery =
-        "begin;\n"
-            + "delete from test_multi_txn;\n"
-            + "insert into test_multi_txn values (1, 'a'), (2, 'b');\n"
-            + "commit";
-
-    boolean hasResultSet = statement.execute(multiStmtQuery);
-  }
-
-  @Test
   @Ignore
   public void test300ConnectionsWithSingleClientInstance() throws SQLException {
     // concurrent testing
