@@ -8,11 +8,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
-import net.minidev.json.JSONArray;
-import net.minidev.json.JSONObject;
-import net.snowflake.client.log.SFLogger;
-import net.snowflake.client.log.SFLoggerFactory;
-
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -294,39 +289,28 @@ public class SecretDetector {
     return array;
   }
 
-  public static JsonNode maskJacksonNode(JsonNode node)
-  {
-    if (node.isTextual())
-    {
+  public static JsonNode maskJacksonNode(JsonNode node) {
+    if (node.isTextual()) {
       String maskedText = SecretDetector.maskSecrets(node.textValue());
-      if (!maskedText.equals(node.textValue()))
-      {
+      if (!maskedText.equals(node.textValue())) {
         return new TextNode(maskedText);
       }
-    }
-    else if (node.isObject())
-    {
+    } else if (node.isObject()) {
       ObjectNode objNode = (ObjectNode) node;
       Iterator<String> fieldNames = objNode.fieldNames();
 
-      while (fieldNames.hasNext())
-      {
+      while (fieldNames.hasNext()) {
         String fieldName = fieldNames.next();
         JsonNode tmpNode = maskJacksonNode(objNode.get(fieldName));
-        if (objNode.get(fieldName).isTextual())
-        {
+        if (objNode.get(fieldName).isTextual()) {
           objNode.set(fieldName, tmpNode);
         }
       }
-    }
-    else if (node.isArray())
-    {
+    } else if (node.isArray()) {
       ArrayNode arrayNode = (ArrayNode) node;
-      for (int i = 0; i < arrayNode.size(); i++)
-      {
+      for (int i = 0; i < arrayNode.size(); i++) {
         JsonNode tmpNode = maskJacksonNode(arrayNode.get(i));
-        if (arrayNode.get(i).isTextual())
-        {
+        if (arrayNode.get(i).isTextual()) {
           arrayNode.set(i, tmpNode);
         }
       }
@@ -334,4 +318,3 @@ public class SecretDetector {
     return node;
   }
 }
-
