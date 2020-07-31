@@ -72,6 +72,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
   private String stageRegion = null;
   private String stageEndPoint = null; // FIPS endpoint, if needed
   private SFSession session = null;
+  private boolean isClientSideEncrypted = true;
 
   // socket factory used by s3 client's http client.
   private static SSLConnectionSocketFactory s3ConnectionSocketFactory = null;
@@ -82,11 +83,12 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
       RemoteStoreFileEncryptionMaterial encMat,
       String stageRegion,
       String stageEndPoint,
+      boolean isClientSideEncrypted,
       SFSession session)
       throws SnowflakeSQLException {
     this.session = session;
     setupSnowflakeS3Client(
-        stageCredentials, clientConfig, encMat, stageRegion, stageEndPoint, session);
+        stageCredentials, clientConfig, encMat, stageRegion, stageEndPoint, isClientSideEncrypted, session);
   }
 
   private void setupSnowflakeS3Client(
@@ -95,6 +97,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
       RemoteStoreFileEncryptionMaterial encMat,
       String stageRegion,
       String stageEndPoint,
+      boolean isClientSideEncrypted,
       SFSession session)
       throws SnowflakeSQLException {
     // Save the client creation parameters so that we can reuse them,
@@ -105,6 +108,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
     this.encMat = encMat;
     this.stageEndPoint = stageEndPoint; // FIPS endpoint, if needed
     this.session = session;
+    this.isClientSideEncrypted = isClientSideEncrypted;
 
     logger.debug("Setting up AWS client ");
 
@@ -199,7 +203,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
 
   @Override
   public boolean isEncrypting() {
-    return encryptionKeySize > 0;
+    return encryptionKeySize > 0 && isClientSideEncrypted;
   }
 
   @Override
@@ -223,6 +227,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
         this.encMat,
         this.stageRegion,
         this.stageEndPoint,
+        this.isClientSideEncrypted,
         this.session);
   }
 
@@ -488,6 +493,11 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
 
         final Upload myUpload;
 
+        if (!this.isClientSideEncrypted) {
+          // since we're not client-side encrypting, make sure we're server-side encrypting with SSE-S3
+          s3Meta.setSSEAlgorithm(ObjectMetadata.AES_256_SERVER_SIDE_ENCRYPTION);
+        }
+
         if (uploadStreamInfo.right) {
           myUpload = tx.upload(remoteStorageLocation, destFileName, uploadStreamInfo.left, s3Meta);
         } else {
@@ -589,6 +599,11 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
       }
     } else {
       try {
+        if (!isClientSideEncrypted) {
+          // since we're not client-side encrypting, make sure we're server-side encrypting with SSE-S3
+          meta.setSSEAlgorithm(ObjectMetadata.AES_256_SERVER_SIDE_ENCRYPTION);
+        }
+
         result =
             uploadFromStream
                 ? (fileBackedOutputStream != null
