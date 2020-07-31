@@ -20,6 +20,7 @@ public class StageInfo implements Serializable {
   private String endPoint; // The Azure Storage endpoint (Azure only)
   private String storageAccount; // The Azure Storage account (Azure only)
   private String presignedUrl; // GCS gives us back a presigned URL instead of a cred
+  private boolean isClientSideEncrypted; // whether to encrypt/decrypt files on the stage
 
   /*
    * Creates a StageInfo object
@@ -31,6 +32,7 @@ public class StageInfo implements Serializable {
    * @param region The geographic region where the stage is located (S3 only)
    * @param endPoint The Azure Storage end point (Azure only)
    * @param storageAccount The Azure Storage account (azure only)
+   * @param isClientSideEncrypted Whether the stage should use client-side encryption
    * @throws IllegalArgumentException one or more parameters required were missing
    */
   public static StageInfo createStageInfo(
@@ -39,7 +41,8 @@ public class StageInfo implements Serializable {
       Map<?, ?> credentials,
       String region,
       String endPoint,
-      String storageAccount)
+      String storageAccount,
+      boolean isClientSideEncrypted)
       throws IllegalArgumentException {
     StageType stageType;
     // Ensure that all the required parameters are specified
@@ -78,7 +81,8 @@ public class StageInfo implements Serializable {
       default:
         throw new IllegalArgumentException("Invalid stage type: " + locationType);
     }
-    return new StageInfo(stageType, location, credentials, region, endPoint, storageAccount);
+    return new StageInfo(
+        stageType, location, credentials, region, endPoint, storageAccount, isClientSideEncrypted);
   }
 
   /*
@@ -92,6 +96,7 @@ public class StageInfo implements Serializable {
    * @param region The geographic region where the stage is located (S3 only)
    * @param endPoint The Azure Storage end point (Azure only)
    * @param storageAccount The Azure Storage account (azure only)
+   * @param isClientSideEncrypted Whether the stage uses client-side encryption
    */
   private StageInfo(
       StageType stageType,
@@ -99,13 +104,15 @@ public class StageInfo implements Serializable {
       Map<?, ?> credentials,
       String region,
       String endPoint,
-      String storageAccount) {
+      String storageAccount,
+      boolean isClientSideEncrypted) {
     this.stageType = stageType;
     this.location = location;
     this.credentials = credentials;
     this.region = region;
     this.endPoint = endPoint;
     this.storageAccount = storageAccount;
+    this.isClientSideEncrypted = isClientSideEncrypted;
   }
 
   public StageType getStageType() {
@@ -142,6 +149,10 @@ public class StageInfo implements Serializable {
 
   public void setPresignedUrl(String presignedUrl) {
     this.presignedUrl = presignedUrl;
+  }
+
+  public boolean getIsClientSideEncrypted() {
+    return isClientSideEncrypted;
   }
 
   private static boolean isSpecified(String arg) {

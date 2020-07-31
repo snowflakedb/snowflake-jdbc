@@ -113,7 +113,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
         azCreds = StorageCredentialsAnonymous.ANONYMOUS;
       }
 
-      if (encMat != null) {
+      if (stage.getIsClientSideEncrypted() && encMat != null) {
         byte[] decodedKey = Base64.decode(encMat.getQueryStageMasterKey());
         encryptionKeySize = decodedKey.length * 8;
 
@@ -155,7 +155,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
   /** @return Returns true if encryption is enabled */
   @Override
   public boolean isEncrypting() {
-    return encryptionKeySize > 0;
+    return encryptionKeySize > 0 && this.stageInfo.getIsClientSideEncrypted();
   }
 
   /** @return Returns the size of the encryption key */
@@ -299,27 +299,29 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
 
         // Get the user-defined BLOB metadata
         Map<String, String> userDefinedMetadata = blob.getMetadata();
-        AbstractMap.SimpleEntry<String, String> encryptionData =
-            parseEncryptionData(userDefinedMetadata.get(AZ_ENCRYPTIONDATAPROP));
+        if (isEncrypting()) {
+          AbstractMap.SimpleEntry<String, String> encryptionData =
+              parseEncryptionData(userDefinedMetadata.get(AZ_ENCRYPTIONDATAPROP));
 
-        String key = encryptionData.getKey();
-        String iv = encryptionData.getValue();
+          String key = encryptionData.getKey();
+          String iv = encryptionData.getValue();
 
-        if (this.isEncrypting() && this.getEncryptionKeySize() <= 256) {
-          if (key == null || iv == null) {
-            throw new SnowflakeSQLLoggedException(
-                SqlState.INTERNAL_ERROR,
-                ErrorCode.INTERNAL_ERROR.getMessageCode(),
-                session,
-                "File metadata incomplete");
-          }
+          if (this.isEncrypting() && this.getEncryptionKeySize() <= 256) {
+            if (key == null || iv == null) {
+              throw new SnowflakeSQLLoggedException(
+                  SqlState.INTERNAL_ERROR,
+                  ErrorCode.INTERNAL_ERROR.getMessageCode(),
+                  session,
+                  "File metadata incomplete");
+            }
 
-          // Decrypt file
-          try {
-            EncryptionProvider.decrypt(localFile, key, iv, this.encMat);
-          } catch (Exception ex) {
-            logger.error("Error decrypting file", ex);
-            throw ex;
+            // Decrypt file
+            try {
+              EncryptionProvider.decrypt(localFile, key, iv, this.encMat);
+            } catch (Exception ex) {
+              logger.error("Error decrypting file", ex);
+              throw ex;
+            }
           }
         }
         return;

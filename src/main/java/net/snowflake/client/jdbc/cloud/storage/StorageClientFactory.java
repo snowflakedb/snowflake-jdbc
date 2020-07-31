@@ -61,6 +61,7 @@ public class StorageClientFactory {
             encMat,
             stage.getRegion(),
             stage.getEndPoint(),
+            stage.getIsClientSideEncrypted(),
             session);
 
       case AZURE:
@@ -86,6 +87,8 @@ public class StorageClientFactory {
    * @param encMat encryption material for the client
    * @param stageRegion the region where the stage is located
    * @param stageEndPoint the FIPS endpoint for the stage, if needed
+   * @param isClientSideEncrypted whether client-side encryption should be used
+   * @param session the active session
    * @return the SnowflakeS3Client instance created
    * @throws SnowflakeSQLException failure to create the S3 client
    */
@@ -95,6 +98,7 @@ public class StorageClientFactory {
       RemoteStoreFileEncryptionMaterial encMat,
       String stageRegion,
       String stageEndPoint,
+      boolean isClientSideEncrypted,
       SFSession session)
       throws SnowflakeSQLException {
     final int S3_TRANSFER_MAX_RETRIES = 3;
@@ -119,7 +123,13 @@ public class StorageClientFactory {
     try {
       s3Client =
           new SnowflakeS3Client(
-              stageCredentials, clientConfig, encMat, stageRegion, stageEndPoint, session);
+              stageCredentials,
+              clientConfig,
+              encMat,
+              stageRegion,
+              stageEndPoint,
+              isClientSideEncrypted,
+              session);
     } catch (Exception ex) {
       logger.debug("Exception creating s3 client", ex);
       throw ex;
@@ -167,8 +177,6 @@ public class StorageClientFactory {
       StageInfo stage, RemoteStoreFileEncryptionMaterial encMat, SFSession session)
       throws SnowflakeSQLException {
     logger.debug("createAzureClient encryption={}", (encMat == null ? "no" : "yes"));
-
-    // TODO: implement support for encryption SNOW-33042
 
     SnowflakeAzureClient azureClient;
 
