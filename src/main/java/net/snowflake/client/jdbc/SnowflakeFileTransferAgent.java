@@ -977,7 +977,8 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView {
 
     boolean isClientSideEncrypted = true;
     if (!jsonNode.path("data").path("stageInfo").path("isClientSideEncrypted").isMissingNode()) {
-      isClientSideEncrypted = jsonNode.path("data").path("stageInfo").path("isClientSideEncrypted").asBoolean(true);
+      isClientSideEncrypted =
+          jsonNode.path("data").path("stageInfo").path("isClientSideEncrypted").asBoolean(true);
     }
 
     // endPoint and storageAccount are only available in Azure stages. Value
@@ -1058,7 +1059,13 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView {
 
     stageInfo =
         StageInfo.createStageInfo(
-            stageLocationType, stageLocation, stageCredentials, stageRegion, endPoint, stgAcct, isClientSideEncrypted);
+            stageLocationType,
+            stageLocation,
+            stageCredentials,
+            stageRegion,
+            endPoint,
+            stgAcct,
+            isClientSideEncrypted);
 
     // Setup pre-signed URL into stage info if pre-signed URL is returned.
     if (stageInfo.getStageType() == StageInfo.StageType.GCS) {

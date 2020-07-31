@@ -123,7 +123,13 @@ public class StorageClientFactory {
     try {
       s3Client =
           new SnowflakeS3Client(
-              stageCredentials, clientConfig, encMat, stageRegion, stageEndPoint, isClientSideEncrypted, session);
+              stageCredentials,
+              clientConfig,
+              encMat,
+              stageRegion,
+              stageEndPoint,
+              isClientSideEncrypted,
+              session);
     } catch (Exception ex) {
       logger.debug("Exception creating s3 client", ex);
       throw ex;

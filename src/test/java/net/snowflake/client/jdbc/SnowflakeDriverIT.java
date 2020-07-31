@@ -3312,8 +3312,10 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
     }
   }
 
-  /** Tests unencrypted named stages, which don't use client-side encryption to enable data lake
+  /**
+   * Tests unencrypted named stages, which don't use client-side encryption to enable data lake
    * scenarios. Unencrypted named stages are specified with encryption=(TYPE='SNOWFLAKE_SSE').
+   *
    * @throws Throwable
    */
   @Test
@@ -3337,27 +3339,30 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
 
         try {
           statement.execute("alter session set ENABLE_UNENCRYPTED_INTERNAL_STAGES=true");
-          statement.execute("CREATE OR REPLACE STAGE testPutGet_unencstage encryption=(TYPE='SNOWFLAKE_SSE')");
+          statement.execute(
+              "CREATE OR REPLACE STAGE testPutGet_unencstage encryption=(TYPE='SNOWFLAKE_SSE')");
 
           assertTrue(
-                  "Failed to put a file",
-                  statement.execute("PUT file://" + sourceFilePath + " @testPutGet_unencstage"));
+              "Failed to put a file",
+              statement.execute("PUT file://" + sourceFilePath + " @testPutGet_unencstage"));
 
           findFile(statement, "ls @testPutGet_unencstage/");
 
           // download the file we just uploaded to stage
           assertTrue(
-                  "Failed to get a file",
-                  statement.execute(
-                          "GET @testPutGet_unencstage 'file://" + destFolderCanonicalPath + "' parallel=8"));
+              "Failed to get a file",
+              statement.execute(
+                  "GET @testPutGet_unencstage 'file://"
+                      + destFolderCanonicalPath
+                      + "' parallel=8"));
 
           // Make sure that the downloaded file exists, it should be gzip compressed
           File downloaded = new File(destFolderCanonicalPathWithSeparator + TEST_DATA_FILE + ".gz");
           assert (downloaded.exists());
 
           Process p =
-                  Runtime.getRuntime()
-                          .exec("gzip -d " + destFolderCanonicalPathWithSeparator + TEST_DATA_FILE + ".gz");
+              Runtime.getRuntime()
+                  .exec("gzip -d " + destFolderCanonicalPathWithSeparator + TEST_DATA_FILE + ".gz");
           p.waitFor();
 
           File original = new File(sourceFilePath);

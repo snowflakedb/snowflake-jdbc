@@ -301,7 +301,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
         Map<String, String> userDefinedMetadata = blob.getMetadata();
         if (isEncrypting()) {
           AbstractMap.SimpleEntry<String, String> encryptionData =
-                  parseEncryptionData(userDefinedMetadata.get(AZ_ENCRYPTIONDATAPROP));
+              parseEncryptionData(userDefinedMetadata.get(AZ_ENCRYPTIONDATAPROP));
 
           String key = encryptionData.getKey();
           String iv = encryptionData.getValue();
@@ -309,10 +309,10 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
           if (this.isEncrypting() && this.getEncryptionKeySize() <= 256) {
             if (key == null || iv == null) {
               throw new SnowflakeSQLLoggedException(
-                      SqlState.INTERNAL_ERROR,
-                      ErrorCode.INTERNAL_ERROR.getMessageCode(),
-                      session,
-                      "File metadata incomplete");
+                  SqlState.INTERNAL_ERROR,
+                  ErrorCode.INTERNAL_ERROR.getMessageCode(),
+                  session,
+                  "File metadata incomplete");
             }
 
             // Decrypt file
