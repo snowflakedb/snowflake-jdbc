@@ -11,6 +11,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.text.SimpleDateFormat;
+import java.util.Collection;
 import java.util.TimeZone;
 import net.snowflake.client.category.TestCategoryArrow;
 import org.apache.commons.lang3.StringUtils;
@@ -24,7 +25,7 @@ import org.junit.runners.Parameterized;
 @Category(TestCategoryArrow.class)
 public class ResultSetArrowForceLTZMultiTimeZoneIT extends ResultSetArrowForce0MultiTimeZone {
   @Parameterized.Parameters(name = "format={0}, tz={1}")
-  public static Object[][] data() {
+  public static Collection<Object[]> data() {
     return ResultSetArrowForce0MultiTimeZone.testData();
   }
 

@@ -91,11 +91,17 @@ For detailed documentation, please refer to https://docs.snowflake.net/manuals/u
 Development
 =============
 
-Follow these steps to apply the coding style.
+Run the maven command to check the coding style.
 
 .. code-block:: bash
 
     mvn -P check-style verify
+
+Follow the instruction if any error occurs or run this command to fix the formats.
+
+.. code-block:: bash
+
+    mvn com.coveo:fmt-maven-plugin:format
 
 You may import the coding style from IntelliJ so that the coding style can be applied on IDE:
 
