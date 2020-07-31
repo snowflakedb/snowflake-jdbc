@@ -8,7 +8,6 @@ JDBC_ROOT=$(cd "${THIS_DIR}/../../" && pwd)
 
 if [[ -z "$GITHUB_ACTIONS" ]] ;then
     export GIT_BRANCH=${GIT_BRANCH:-origin/$(git rev-parse --abbrev-ref HEAD)}
-    export GIT_COMMIT=${GIT_COMMIT:-$(git rev-parse HEAD)}
 
     BRANCH=$(basename ${GIT_BRANCH})
 
@@ -17,7 +16,9 @@ if [[ -z "$GITHUB_ACTIONS" ]] ;then
 
     mkdir -p $LIB_DIR
     pushd $LIB_DIR >& /dev/null
-        source_stage=s3://sfc-jenkins/repository/jdbc/${BRANCH}/${GIT_COMMIT}
+        base_stage=s3://sfc-jenkins/repository/jdbc/${BRANCH}
+        export GIT_COMMIT=${GIT_COMMIT:-$(aws s3 cp $base_stage/latest_commit -)}
+        source_stage=$base_stage/${GIT_COMMIT}
         echo "[INFO] downloading ${source_stage}/"
         aws s3 cp --only-show-errors $source_stage/ . --recursive
     popd >& /dev/null

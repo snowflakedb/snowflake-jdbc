@@ -249,12 +249,14 @@ public class SnowflakeUtil {
         colSrcTable);
   }
 
-  static String javaTypeToSFTypeString(int javaType) throws SnowflakeSQLException {
-    return SnowflakeType.javaTypeToSFType(javaType).name();
+  static String javaTypeToSFTypeString(int javaType, SFSession session)
+      throws SnowflakeSQLException {
+    return SnowflakeType.javaTypeToSFType(javaType, session).name();
   }
 
-  static SnowflakeType javaTypeToSFType(int javaType) throws SnowflakeSQLException {
-    return SnowflakeType.javaTypeToSFType(javaType);
+  static SnowflakeType javaTypeToSFType(int javaType, SFSession session)
+      throws SnowflakeSQLException {
+    return SnowflakeType.javaTypeToSFType(javaType, session);
   }
 
   /**

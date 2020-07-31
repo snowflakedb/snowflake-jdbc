@@ -8,38 +8,10 @@ import java.io.InputStream;
 import java.io.Reader;
 import java.math.BigDecimal;
 import java.net.URL;
-import java.sql.Array;
-import java.sql.Blob;
-import java.sql.Clob;
+import java.sql.*;
 import java.sql.Date;
-import java.sql.NClob;
-import java.sql.ParameterMetaData;
-import java.sql.PreparedStatement;
-import java.sql.Ref;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.RowId;
-import java.sql.SQLException;
-import java.sql.SQLFeatureNotSupportedException;
-import java.sql.SQLXML;
-import java.sql.Time;
-import java.sql.Timestamp;
-import java.sql.Types;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TimeZone;
-import net.snowflake.client.core.ParameterBindingDTO;
-import net.snowflake.client.core.ResultUtil;
-import net.snowflake.client.core.SFException;
-import net.snowflake.client.core.SFStatementMetaData;
-import net.snowflake.client.core.StmtUtil;
+import java.util.*;
+import net.snowflake.client.core.*;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SFBinary;
@@ -191,7 +163,8 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
     logger.debug("setBoolean(parameterIndex: {}, boolean x)", parameterIndex);
     ParameterBindingDTO binding =
         new ParameterBindingDTO(
-            SnowflakeUtil.javaTypeToSFTypeString(Types.BOOLEAN), String.valueOf(x));
+            SnowflakeUtil.javaTypeToSFTypeString(Types.BOOLEAN, connection.getSfSession()),
+            String.valueOf(x));
     parameterBindings.put(String.valueOf(parameterIndex), binding);
   }
 
@@ -200,7 +173,8 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
     logger.debug("setByte(parameterIndex: {}, byte x)", parameterIndex);
     ParameterBindingDTO binding =
         new ParameterBindingDTO(
-            SnowflakeUtil.javaTypeToSFTypeString(Types.TINYINT), String.valueOf(x));
+            SnowflakeUtil.javaTypeToSFTypeString(Types.TINYINT, connection.getSfSession()),
+            String.valueOf(x));
     parameterBindings.put(String.valueOf(parameterIndex), binding);
   }
 
@@ -210,7 +184,8 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
 
     ParameterBindingDTO binding =
         new ParameterBindingDTO(
-            SnowflakeUtil.javaTypeToSFTypeString(Types.SMALLINT), String.valueOf(x));
+            SnowflakeUtil.javaTypeToSFTypeString(Types.SMALLINT, connection.getSfSession()),
+            String.valueOf(x));
     parameterBindings.put(String.valueOf(parameterIndex), binding);
   }
 
@@ -220,7 +195,8 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
 
     ParameterBindingDTO binding =
         new ParameterBindingDTO(
-            SnowflakeUtil.javaTypeToSFTypeString(Types.INTEGER), String.valueOf(x));
+            SnowflakeUtil.javaTypeToSFTypeString(Types.INTEGER, connection.getSfSession()),
+            String.valueOf(x));
     parameterBindings.put(String.valueOf(parameterIndex), binding);
   }
 
@@ -230,7 +206,8 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
 
     ParameterBindingDTO binding =
         new ParameterBindingDTO(
-            SnowflakeUtil.javaTypeToSFTypeString(Types.BIGINT), String.valueOf(x));
+            SnowflakeUtil.javaTypeToSFTypeString(Types.BIGINT, connection.getSfSession()),
+            String.valueOf(x));
     parameterBindings.put(String.valueOf(parameterIndex), binding);
   }
 
@@ -240,7 +217,8 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
 
     ParameterBindingDTO binding =
         new ParameterBindingDTO(
-            SnowflakeUtil.javaTypeToSFTypeString(Types.FLOAT), String.valueOf(x));
+            SnowflakeUtil.javaTypeToSFTypeString(Types.FLOAT, connection.getSfSession()),
+            String.valueOf(x));
     parameterBindings.put(String.valueOf(parameterIndex), binding);
   }
 
@@ -250,7 +228,8 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
 
     ParameterBindingDTO binding =
         new ParameterBindingDTO(
-            SnowflakeUtil.javaTypeToSFTypeString(Types.DOUBLE), String.valueOf(x));
+            SnowflakeUtil.javaTypeToSFTypeString(Types.DOUBLE, connection.getSfSession()),
+            String.valueOf(x));
     parameterBindings.put(String.valueOf(parameterIndex), binding);
   }
 
@@ -263,7 +242,8 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
     } else {
       ParameterBindingDTO binding =
           new ParameterBindingDTO(
-              SnowflakeUtil.javaTypeToSFTypeString(Types.DECIMAL), String.valueOf(x));
+              SnowflakeUtil.javaTypeToSFTypeString(Types.DECIMAL, connection.getSfSession()),
+              String.valueOf(x));
       parameterBindings.put(String.valueOf(parameterIndex), binding);
     }
   }
@@ -273,7 +253,8 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
     logger.debug("setString(parameterIndex: {}, String x)", parameterIndex);
 
     ParameterBindingDTO binding =
-        new ParameterBindingDTO(SnowflakeUtil.javaTypeToSFTypeString(Types.VARCHAR), x);
+        new ParameterBindingDTO(
+            SnowflakeUtil.javaTypeToSFTypeString(Types.VARCHAR, connection.getSfSession()), x);
     parameterBindings.put(String.valueOf(parameterIndex), binding);
   }
 
@@ -283,7 +264,8 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
 
     ParameterBindingDTO binding =
         new ParameterBindingDTO(
-            SnowflakeUtil.javaTypeToSFTypeString(Types.BINARY), new SFBinary(x).toHex());
+            SnowflakeUtil.javaTypeToSFTypeString(Types.BINARY, connection.getSfSession()),
+            new SFBinary(x).toHex());
     parameterBindings.put(String.valueOf(parameterIndex), binding);
   }
 
@@ -296,7 +278,7 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
     } else {
       ParameterBindingDTO binding =
           new ParameterBindingDTO(
-              SnowflakeUtil.javaTypeToSFTypeString(Types.DATE),
+              SnowflakeUtil.javaTypeToSFTypeString(Types.DATE, connection.getSfSession()),
               String.valueOf(
                   x.getTime()
                       + TimeZone.getDefault().getOffset(x.getTime())
@@ -323,7 +305,8 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
 
       ParameterBindingDTO binding =
           new ParameterBindingDTO(
-              SnowflakeUtil.javaTypeToSFTypeString(Types.TIME), String.valueOf(nanosSinceMidnight));
+              SnowflakeUtil.javaTypeToSFTypeString(Types.TIME, connection.getSfSession()),
+              String.valueOf(nanosSinceMidnight));
 
       parameterBindings.put(String.valueOf(parameterIndex), binding);
       sfStatement.setHasUnsupportedStageBind(true);
@@ -343,7 +326,8 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
                     .scaleByPowerOfTen(9)
                     .add(BigDecimal.valueOf(x.getNanos())));
 
-    SnowflakeType sfType = SnowflakeUtil.javaTypeToSFType(Types.TIMESTAMP);
+    SnowflakeType sfType =
+        SnowflakeUtil.javaTypeToSFType(Types.TIMESTAMP, connection.getSfSession());
 
     if (sfType == SnowflakeType.TIMESTAMP) {
       sfType = connection.getSfSession().getTimestampMappedType();
@@ -395,7 +379,8 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
 
       ParameterBindingDTO binding =
           new ParameterBindingDTO(
-              SnowflakeUtil.javaTypeToSFTypeString(targetSqlType), String.valueOf(x));
+              SnowflakeUtil.javaTypeToSFTypeString(targetSqlType, connection.getSfSession()),
+              String.valueOf(x));
       parameterBindings.put(String.valueOf(parameterIndex), binding);
     }
   }
@@ -427,9 +412,10 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
     } else if (x instanceof Boolean) {
       setBoolean(parameterIndex, (Boolean) x);
     } else {
-      throw new SnowflakeSQLException(
+      throw new SnowflakeSQLLoggedException(
           SqlState.FEATURE_NOT_SUPPORTED,
           ErrorCode.DATA_TYPE_NOT_SUPPORTED.getMessageCode(),
+          connection.getSfSession(),
           "Object type: " + x.getClass());
     }
   }
@@ -493,9 +479,10 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
               values = typeCheckedList;
               row = Integer.toString(values.size() + 1);
             }
-            throw new SnowflakeSQLException(
+            throw new SnowflakeSQLLoggedException(
                 SqlState.FEATURE_NOT_SUPPORTED,
                 ErrorCode.ARRAY_BIND_MIXED_TYPES_NOT_SUPPORTED.getMessageCode(),
+                connection.getSfSession(),
                 SnowflakeType.getJavaType(SnowflakeType.fromString(prevType)).name(),
                 SnowflakeType.getJavaType(SnowflakeType.fromString(newType)).name(),
                 binding.getKey(),
@@ -570,7 +557,8 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
                   - ResultUtil.msDiffJulianToGregorian(x));
 
       ParameterBindingDTO binding =
-          new ParameterBindingDTO(SnowflakeUtil.javaTypeToSFTypeString(Types.DATE), value);
+          new ParameterBindingDTO(
+              SnowflakeUtil.javaTypeToSFTypeString(Types.DATE, connection.getSfSession()), value);
       parameterBindings.put(String.valueOf(parameterIndex), binding);
     }
   }
@@ -589,7 +577,8 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
 
     // convert the time from being in UTC to be in local time zone
     String value = null;
-    SnowflakeType sfType = SnowflakeUtil.javaTypeToSFType(Types.TIMESTAMP);
+    SnowflakeType sfType =
+        SnowflakeUtil.javaTypeToSFType(Types.TIMESTAMP, connection.getSfSession());
     if (x != null) {
       long milliSecSinceEpoch = x.getTime();
 

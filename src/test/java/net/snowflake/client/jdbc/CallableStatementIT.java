@@ -34,7 +34,7 @@ public class CallableStatementIT extends BaseJDBCTest {
   @Parameterized.Parameters
   public static Object[][] data() {
     // all tests in this class need to run for both query result formats json and arrow
-    return new Object[][] {{"JSON"}, {"Arrow_force"}};
+    return new Object[][] {{"JSON"}, {"arrow"}};
   }
 
   private static String queryResultFormat;
