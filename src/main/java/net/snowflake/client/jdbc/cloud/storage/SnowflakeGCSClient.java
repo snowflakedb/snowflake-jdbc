@@ -254,10 +254,10 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
               if (isEncrypting()) {
                 for (Header header : response.getAllHeaders()) {
                   if (header
-                          .getName()
-                          .equalsIgnoreCase(GCS_METADATA_PREFIX + GCS_ENCRYPTIONDATAPROP)) {
+                      .getName()
+                      .equalsIgnoreCase(GCS_METADATA_PREFIX + GCS_ENCRYPTIONDATAPROP)) {
                     AbstractMap.SimpleEntry<String, String> encryptionData =
-                            parseEncryptionData(header.getValue());
+                        parseEncryptionData(header.getValue());
 
                     key = encryptionData.getKey();
                     iv = encryptionData.getValue();
@@ -290,7 +290,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
           if (isEncrypting()) {
             if (userDefinedMetadata != null) {
               AbstractMap.SimpleEntry<String, String> encryptionData =
-                      parseEncryptionData(userDefinedMetadata.get(GCS_ENCRYPTIONDATAPROP));
+                  parseEncryptionData(userDefinedMetadata.get(GCS_ENCRYPTIONDATAPROP));
 
               key = encryptionData.getKey();
               iv = encryptionData.getValue();
@@ -305,10 +305,10 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
               && this.getEncryptionKeySize() <= 256) {
             if (key == null || iv == null) {
               throw new SnowflakeSQLLoggedException(
-                      SqlState.INTERNAL_ERROR,
-                      ErrorCode.INTERNAL_ERROR.getMessageCode(),
-                      session,
-                      "File metadata incomplete");
+                  SqlState.INTERNAL_ERROR,
+                  ErrorCode.INTERNAL_ERROR.getMessageCode(),
+                  session,
+                  "File metadata incomplete");
             }
 
             // Decrypt file
@@ -317,10 +317,10 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
             } catch (Exception ex) {
               logger.error("Error decrypting file", ex);
               throw new SnowflakeSQLLoggedException(
-                      SqlState.INTERNAL_ERROR,
-                      ErrorCode.INTERNAL_ERROR.getMessageCode(),
-                      session,
-                      "Cannot decrypt file");
+                  SqlState.INTERNAL_ERROR,
+                  ErrorCode.INTERNAL_ERROR.getMessageCode(),
+                  session,
+                  "Cannot decrypt file");
             }
           }
         }
@@ -404,10 +404,10 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
               if (isEncrypting()) {
                 for (Header header : response.getAllHeaders()) {
                   if (header
-                          .getName()
-                          .equalsIgnoreCase(GCS_METADATA_PREFIX + GCS_ENCRYPTIONDATAPROP)) {
+                      .getName()
+                      .equalsIgnoreCase(GCS_METADATA_PREFIX + GCS_ENCRYPTIONDATAPROP)) {
                     AbstractMap.SimpleEntry<String, String> encryptionData =
-                            parseEncryptionData(header.getValue());
+                        parseEncryptionData(header.getValue());
 
                     key = encryptionData.getKey();
                     iv = encryptionData.getValue();
@@ -437,7 +437,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
             // Get the user-defined BLOB metadata
             Map<String, String> userDefinedMetadata = blob.getMetadata();
             AbstractMap.SimpleEntry<String, String> encryptionData =
-                    parseEncryptionData(userDefinedMetadata.get(GCS_ENCRYPTIONDATAPROP));
+                parseEncryptionData(userDefinedMetadata.get(GCS_ENCRYPTIONDATAPROP));
 
             key = encryptionData.getKey();
             iv = encryptionData.getValue();

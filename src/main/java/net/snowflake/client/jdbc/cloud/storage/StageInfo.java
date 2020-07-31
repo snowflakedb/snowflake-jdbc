@@ -81,7 +81,8 @@ public class StageInfo implements Serializable {
       default:
         throw new IllegalArgumentException("Invalid stage type: " + locationType);
     }
-    return new StageInfo(stageType, location, credentials, region, endPoint, storageAccount, isClientSideEncrypted);
+    return new StageInfo(
+        stageType, location, credentials, region, endPoint, storageAccount, isClientSideEncrypted);
   }
 
   /*
@@ -150,7 +151,9 @@ public class StageInfo implements Serializable {
     this.presignedUrl = presignedUrl;
   }
 
-  public boolean getIsClientSideEncrypted() { return isClientSideEncrypted; }
+  public boolean getIsClientSideEncrypted() {
+    return isClientSideEncrypted;
+  }
 
   private static boolean isSpecified(String arg) {
     return !(arg == null || arg.equalsIgnoreCase(""));

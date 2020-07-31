@@ -88,7 +88,13 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
       throws SnowflakeSQLException {
     this.session = session;
     setupSnowflakeS3Client(
-        stageCredentials, clientConfig, encMat, stageRegion, stageEndPoint, isClientSideEncrypted, session);
+        stageCredentials,
+        clientConfig,
+        encMat,
+        stageRegion,
+        stageEndPoint,
+        isClientSideEncrypted,
+        session);
   }
 
   private void setupSnowflakeS3Client(
@@ -494,7 +500,8 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
         final Upload myUpload;
 
         if (!this.isClientSideEncrypted) {
-          // since we're not client-side encrypting, make sure we're server-side encrypting with SSE-S3
+          // since we're not client-side encrypting, make sure we're server-side encrypting with
+          // SSE-S3
           s3Meta.setSSEAlgorithm(ObjectMetadata.AES_256_SERVER_SIDE_ENCRYPTION);
         }
 
@@ -600,7 +607,8 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
     } else {
       try {
         if (!isClientSideEncrypted) {
-          // since we're not client-side encrypting, make sure we're server-side encrypting with SSE-S3
+          // since we're not client-side encrypting, make sure we're server-side encrypting with
+          // SSE-S3
           meta.setSSEAlgorithm(ObjectMetadata.AES_256_SERVER_SIDE_ENCRYPTION);
         }
 
