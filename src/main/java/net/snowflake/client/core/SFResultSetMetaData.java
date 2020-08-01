@@ -350,8 +350,6 @@ public class SFResultSetMetaData
       externalColumnType = Types.TIMESTAMP;
     }
 
-    logger.debug("column type = {}", externalColumnType);
-
     return externalColumnType;
   }
 

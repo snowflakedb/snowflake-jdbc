@@ -49,9 +49,6 @@ public abstract class SFJsonResultSet extends SFBaseResultSet
 
   public Object getObject(int columnIndex) throws SFException
   {
-    logger.debug(
-        "public Object getObject(int columnIndex)");
-
     int type = resultSetMetaData.getColumnType(columnIndex);
 
     Object obj = getObjectInternal(columnIndex);
@@ -106,8 +103,6 @@ public abstract class SFJsonResultSet extends SFBaseResultSet
   @Override
   public String getString(int columnIndex) throws SFException
   {
-    logger.debug("public String getString(int columnIndex)");
-
     // Column index starts from 1, not 0.
     Object obj = getObjectInternal(columnIndex);
     if (obj == null)
@@ -393,10 +388,6 @@ public abstract class SFJsonResultSet extends SFBaseResultSet
   @Override
   public BigDecimal getBigDecimal(int columnIndex) throws SFException
   {
-    logger.debug(
-        "public BigDecimal getBigDecimal(int columnIndex)");
-
-
     // Column index starts from 1, not 0.
     Object obj = getObjectInternal(columnIndex);
 
