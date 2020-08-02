@@ -45,6 +45,7 @@ public class SecretDetector {
           "(sig|signature|AWSAccessKeyId|password|passcode)=([a-z0-9%/+]{16,})",
           Pattern.CASE_INSENSITIVE);
 
+  // Search for password pattern
   private static final Pattern PASSWORD_PATTERN =
       Pattern.compile(
           "(password|passcode|pwd)"
