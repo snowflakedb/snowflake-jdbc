@@ -1,3 +1,9 @@
+**JDBC Driver 3.12.10**
+- \| SNOW-136193 | JDBC is adjusting DLS for some values that are towards the DLS switch, resulting in a wrong result
+- \| SNOW-164505 | Implement telemetry events in JDBC driver where needed
+- \| SNOW-170758 | SAML/SSO works in Snowflake UI but does not work with SnowSQL or JDBC when using ExternalBrowser
+- \
+
 **JDBC Driver 3.12.9**
 
 - \| SNOW-170944 | Enhance the way how JDBC masks sensitive data.
