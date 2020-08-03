@@ -321,6 +321,7 @@ public class SecretDetector {
     return node;
   }
 
+  // This class aims to parse minidev.json's node better
   public static class SecretDetectorJSONStyle extends JSONStyle {
     public SecretDetectorJSONStyle() {
       super();
