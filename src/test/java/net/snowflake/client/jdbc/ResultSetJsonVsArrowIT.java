@@ -3,39 +3,28 @@
  */
 package net.snowflake.client.jdbc;
 
-import static org.hamcrest.core.IsInstanceOf.instanceOf;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.math.BigDecimal;
-import java.nio.ByteBuffer;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.sql.Timestamp;
-import java.sql.Types;
-import java.util.Arrays;
-import java.util.List;
-import java.util.TimeZone;
-import java.util.stream.Collectors;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryArrow;
 import org.apache.arrow.vector.BigIntVector;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+
+import java.math.BigDecimal;
+import java.nio.ByteBuffer;
+import java.sql.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.TimeZone;
+import java.util.stream.Collectors;
+
+import static org.hamcrest.core.IsInstanceOf.instanceOf;
+import static org.junit.Assert.*;
 
 /** Completely compare json and arrow resultSet behaviors */
 @RunWith(Parameterized.class)
@@ -1492,6 +1481,7 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
     }
   }
 
+  @Ignore
   @Test
   public void TestArrowStringRoundTrip() throws SQLException {
     String big_number = "11111111112222222222333333333344444444";
@@ -1515,6 +1505,7 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
     }
   }
 
+  @Ignore
   @Test
   public void TestArrowFloatRoundTrip() throws SQLException {
     float[] cases = {Float.MAX_VALUE, Float.MIN_VALUE};
