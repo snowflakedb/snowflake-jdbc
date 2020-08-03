@@ -302,12 +302,19 @@ public class TelemetryService {
     }
 
     // Start a new thread to upload without blocking the current thread
-    Runnable runUpload = new TelemetryUploader(this, exportQueueToString(event));
+    Runnable runUpload =
+        new TelemetryUploader(this, exportQueueToString(event), exportQueueToLogString(event));
     TelemetryThreadPool.getInstance().execute(runUpload);
   }
 
   /** Convert an event to a payload in string */
   public String exportQueueToString(TelemetryEvent event) {
+    JSONArray logs = new JSONArray();
+    logs.add(event);
+    return logs.toString();
+  }
+
+  public String exportQueueToLogString(TelemetryEvent event) {
     JSONArray logs = new JSONArray();
     logs.add(event);
     return JSONArray.toJSONString(logs, new SecretDetector.SecretDetectorJSONStyle());
@@ -316,6 +323,7 @@ public class TelemetryService {
   static class TelemetryUploader implements Runnable {
     private TelemetryService instance;
     private String payload;
+    private String payloadLogStr;
     private static final int TIMEOUT = 3000; // 3 second timeout limit
     private static final RequestConfig config =
         RequestConfig.custom()
@@ -324,9 +332,10 @@ public class TelemetryService {
             .setSocketTimeout(TIMEOUT)
             .build();
 
-    public TelemetryUploader(TelemetryService _instance, String _payload) {
+    public TelemetryUploader(TelemetryService _instance, String _payload, String _payloadLogStr) {
       instance = _instance;
       payload = _payload;
+      payloadLogStr = _payloadLogStr;
     }
 
     public void run() {
@@ -350,7 +359,7 @@ public class TelemetryService {
     }
 
     private void uploadPayload() {
-      logger.debugNoMask("Running telemetry uploader. The payload is: " + payload);
+      logger.debugNoMask("Running telemetry uploader. The payload is: " + payloadLogStr);
       CloseableHttpResponse response = null;
       boolean success = true;
 
