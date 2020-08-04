@@ -1484,7 +1484,6 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
     String big_number = "11111111112222222222333333333344444444";
     try (Connection con = init()) {
       Statement st = con.createStatement();
-      st.execute("alter session set AUTOCOMMIT=FALSE");
       for (int i = 0; i < 38; i++) {
         StringBuilder to_insert = new StringBuilder(big_number);
         if (i != 0) {
@@ -1498,7 +1497,6 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
         assertEquals(to_insert.toString(), rs.getString(1));
         st.execute("drop table if exists test_arrow_string");
       }
-      st.execute("alter session set AUTOCOMMIT=TRUE");
     }
   }
 
@@ -1507,7 +1505,6 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
     float[] cases = {Float.MAX_VALUE, Float.MIN_VALUE};
     try (Connection con = init()) {
       Statement st = con.createStatement();
-      st.execute("alter session set AUTOCOMMIT=FALSE");
       for (float f : cases) {
         st.executeQuery("create or replace table test_arrow_float (a FLOAT)");
         st.executeQuery("insert into test_arrow_float values (" + f + ")");
@@ -1516,7 +1513,6 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
         assertEquals(f, rs.getFloat(1), Float.MIN_VALUE);
         st.executeQuery("drop table if exists test_arrow_float");
       }
-      st.execute("alter session set AUTOCOMMIT=TRUE");
     }
   }
 
