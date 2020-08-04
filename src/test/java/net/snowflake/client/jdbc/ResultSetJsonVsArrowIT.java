@@ -3,17 +3,8 @@
  */
 package net.snowflake.client.jdbc;
 
-import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningOnGithubAction;
-import net.snowflake.client.category.TestCategoryArrow;
-import org.apache.arrow.vector.BigIntVector;
-import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import static org.hamcrest.core.IsInstanceOf.instanceOf;
+import static org.junit.Assert.*;
 
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
@@ -22,9 +13,17 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.TimeZone;
 import java.util.stream.Collectors;
-
-import static org.hamcrest.core.IsInstanceOf.instanceOf;
-import static org.junit.Assert.*;
+import net.snowflake.client.ConditionalIgnoreRule;
+import net.snowflake.client.RunningOnGithubAction;
+import net.snowflake.client.category.TestCategoryArrow;
+import org.apache.arrow.vector.BigIntVector;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.springframework.transaction.annotation.Transactional;
 
 /** Completely compare json and arrow resultSet behaviors */
 @RunWith(Parameterized.class)
@@ -1481,7 +1480,7 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
     }
   }
 
-  @Ignore
+  @Transactional
   @Test
   public void TestArrowStringRoundTrip() throws SQLException {
     String big_number = "11111111112222222222333333333344444444";
@@ -1499,13 +1498,12 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
         ResultSet rs = st.executeQuery("select * from test_arrow_string");
         assertTrue(rs.next());
         assertEquals(to_insert.toString(), rs.getString(1));
-        st.execute("rollback");
         st.execute("drop table if exists test_arrow_string");
       }
     }
   }
 
-  @Ignore
+  @Transactional
   @Test
   public void TestArrowFloatRoundTrip() throws SQLException {
     float[] cases = {Float.MAX_VALUE, Float.MIN_VALUE};
@@ -1518,7 +1516,6 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
         ResultSet rs = st.executeQuery("select * from test_arrow_float");
         assertTrue(rs.next());
         assertEquals(f, rs.getFloat(1), Float.MIN_VALUE);
-        st.executeQuery("rollback");
         st.executeQuery("drop table if exists test_arrow_float");
       }
     }
