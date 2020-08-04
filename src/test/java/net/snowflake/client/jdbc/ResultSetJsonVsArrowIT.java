@@ -4,24 +4,11 @@
 package net.snowflake.client.jdbc;
 
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.sql.Timestamp;
-import java.sql.Types;
+import java.sql.*;
 import java.util.Arrays;
 import java.util.List;
 import java.util.TimeZone;
@@ -1504,12 +1491,10 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
           to_insert.insert(insert_to, ".");
         }
         st.execute("create or replace table test_arrow_string (a NUMBER(38, " + i + ") )");
-        st.execute("begin");
         st.execute("insert into test_arrow_string values (" + to_insert + ")");
         ResultSet rs = st.executeQuery("select * from test_arrow_string");
         assertTrue(rs.next());
         assertEquals(to_insert.toString(), rs.getString(1));
-        st.execute("rollback");
         st.execute("drop table if exists test_arrow_string");
       }
     }
@@ -1522,12 +1507,10 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
       Statement st = con.createStatement();
       for (float f : cases) {
         st.executeQuery("create or replace table test_arrow_float (a FLOAT)");
-        st.executeQuery("begin");
         st.executeQuery("insert into test_arrow_float values (" + f + ")");
         ResultSet rs = st.executeQuery("select * from test_arrow_float");
         assertTrue(rs.next());
         assertEquals(f, rs.getFloat(1), Float.MIN_VALUE);
-        st.executeQuery("rollback");
         st.executeQuery("drop table if exists test_arrow_float");
       }
     }
