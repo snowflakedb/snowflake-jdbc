@@ -1,18 +1,8 @@
 /*
- * Copyright (c) 2012-2020 Snowflake Computing Inc. All rights reserved.
+ * Copyright (c) 2012-2020 Snowflake Computing Inc. All rights reserved.  
  */
 package net.snowflake.client.jdbc;
 
-import static org.hamcrest.core.IsInstanceOf.instanceOf;
-import static org.junit.Assert.*;
-
-import java.math.BigDecimal;
-import java.nio.ByteBuffer;
-import java.sql.*;
-import java.util.Arrays;
-import java.util.List;
-import java.util.TimeZone;
-import java.util.stream.Collectors;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryArrow;
@@ -23,6 +13,17 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+
+import java.math.BigDecimal;
+import java.nio.ByteBuffer;
+import java.sql.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.TimeZone;
+import java.util.stream.Collectors;
+
+import static org.hamcrest.core.IsInstanceOf.instanceOf;
+import static org.junit.Assert.*;
 
 /** Completely compare json and arrow resultSet behaviors */
 @RunWith(Parameterized.class)
