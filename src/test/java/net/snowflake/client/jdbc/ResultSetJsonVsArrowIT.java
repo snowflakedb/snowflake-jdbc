@@ -23,7 +23,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
-import org.springframework.transaction.annotation.Transactional;
 
 /** Completely compare json and arrow resultSet behaviors */
 @RunWith(Parameterized.class)
@@ -1480,7 +1479,6 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
     }
   }
 
-  @Transactional
   @Test
   public void TestArrowStringRoundTrip() throws SQLException {
     String big_number = "11111111112222222222333333333344444444";
@@ -1493,7 +1491,6 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
           to_insert.insert(insert_to, ".");
         }
         st.execute("create or replace table test_arrow_string (a NUMBER(38, " + i + ") )");
-        st.execute("begin");
         st.execute("insert into test_arrow_string values (" + to_insert + ")");
         ResultSet rs = st.executeQuery("select * from test_arrow_string");
         assertTrue(rs.next());
@@ -1503,7 +1500,6 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
     }
   }
 
-  @Transactional
   @Test
   public void TestArrowFloatRoundTrip() throws SQLException {
     float[] cases = {Float.MAX_VALUE, Float.MIN_VALUE};
@@ -1511,7 +1507,6 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
       Statement st = con.createStatement();
       for (float f : cases) {
         st.executeQuery("create or replace table test_arrow_float (a FLOAT)");
-        st.executeQuery("begin");
         st.executeQuery("insert into test_arrow_float values (" + f + ")");
         ResultSet rs = st.executeQuery("select * from test_arrow_float");
         assertTrue(rs.next());
