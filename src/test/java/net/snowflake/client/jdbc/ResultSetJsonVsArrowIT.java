@@ -20,6 +20,7 @@ import net.snowflake.client.category.TestCategoryArrow;
 import org.apache.arrow.vector.BigIntVector;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -1480,6 +1481,7 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
     }
   }
 
+  @Ignore
   @Test
   public void TestArrowStringRoundTrip() throws SQLException {
     String big_number = "11111111112222222222333333333344444444";
@@ -1503,6 +1505,7 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
     }
   }
 
+  @Ignore
   @Test
   public void TestArrowFloatRoundTrip() throws SQLException {
     float[] cases = {Float.MAX_VALUE, Float.MIN_VALUE};
