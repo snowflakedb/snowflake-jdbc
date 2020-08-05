@@ -172,7 +172,7 @@ public class SecretDetector {
             text.length() <= MAX_LENGTH ? text : text.substring(0, MAX_LENGTH));
 
     if (matcher.find()) {
-      return matcher.replaceAll("$1$2****");
+      return matcher.replaceAll("$1$2**** ");
     }
     return text;
   }
