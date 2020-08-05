@@ -231,9 +231,9 @@ public class ArrowResultChunk extends SnowflakeResultChunk {
                 break;
               default:
                 throw new SnowflakeSQLLoggedException(
-                    SqlState.INTERNAL_ERROR,
-                    ErrorCode.INTERNAL_ERROR.getMessageCode(),
                     session,
+                    ErrorCode.INTERNAL_ERROR.getMessageCode(),
+                    SqlState.INTERNAL_ERROR,
                     "Unexpected Arrow Field for ",
                     st.name());
             }
@@ -249,9 +249,9 @@ public class ArrowResultChunk extends SnowflakeResultChunk {
               converters.add(new TwoFieldStructToTimestampLTZConverter(vector, i, context));
             } else {
               throw new SnowflakeSQLLoggedException(
-                  SqlState.INTERNAL_ERROR,
-                  ErrorCode.INTERNAL_ERROR.getMessageCode(),
                   session,
+                  ErrorCode.INTERNAL_ERROR.getMessageCode(),
+                  SqlState.INTERNAL_ERROR,
                   "Unexpected Arrow Field for ",
                   st.name());
             }
@@ -266,9 +266,9 @@ public class ArrowResultChunk extends SnowflakeResultChunk {
               converters.add(new TwoFieldStructToTimestampNTZConverter(vector, i, context));
             } else {
               throw new SnowflakeSQLLoggedException(
-                  SqlState.INTERNAL_ERROR,
-                  ErrorCode.INTERNAL_ERROR.getMessageCode(),
                   session,
+                  ErrorCode.INTERNAL_ERROR.getMessageCode(),
+                  SqlState.INTERNAL_ERROR,
                   "Unexpected Arrow Field for ",
                   st.name());
             }
@@ -284,9 +284,9 @@ public class ArrowResultChunk extends SnowflakeResultChunk {
               converters.add(new ThreeFieldStructToTimestampTZConverter(vector, i, context));
             } else {
               throw new SnowflakeSQLLoggedException(
-                  SqlState.INTERNAL_ERROR,
-                  ErrorCode.INTERNAL_ERROR.getMessageCode(),
                   session,
+                  ErrorCode.INTERNAL_ERROR.getMessageCode(),
+                  SqlState.INTERNAL_ERROR,
                   "Unexpected SnowflakeType ",
                   st.name());
             }
@@ -294,17 +294,17 @@ public class ArrowResultChunk extends SnowflakeResultChunk {
 
           default:
             throw new SnowflakeSQLLoggedException(
-                SqlState.INTERNAL_ERROR,
-                ErrorCode.INTERNAL_ERROR.getMessageCode(),
                 session,
+                ErrorCode.INTERNAL_ERROR.getMessageCode(),
+                SqlState.INTERNAL_ERROR,
                 "Unexpected Arrow Field for ",
                 st.name());
         }
       } else {
         throw new SnowflakeSQLLoggedException(
-            SqlState.INTERNAL_ERROR,
-            ErrorCode.INTERNAL_ERROR.getMessageCode(),
             session,
+            ErrorCode.INTERNAL_ERROR.getMessageCode(),
+            SqlState.INTERNAL_ERROR,
             "Unexpected Arrow Field for ",
             type.toString());
       }
@@ -454,10 +454,10 @@ public class ArrowResultChunk extends SnowflakeResultChunk {
       batchOfVectors.add(first);
     } catch (SFException ex) {
       throw new SnowflakeSQLLoggedException(
-          ex,
+          session,
           SqlState.INTERNAL_ERROR,
           ErrorCode.INTERNAL_ERROR.getMessageCode(),
-          session,
+          ex,
           "Failed to merge first result chunk: " + ex.getLocalizedMessage());
     }
   }

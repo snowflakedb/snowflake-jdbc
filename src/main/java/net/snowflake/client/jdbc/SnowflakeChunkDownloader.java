@@ -211,8 +211,8 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
 
     if (resultSetSerializable.getChunkFileCount() < 1) {
       throw new SnowflakeSQLLoggedException(
-          ErrorCode.INTERNAL_ERROR,
           this.session,
+          ErrorCode.INTERNAL_ERROR,
           "Incorrect chunk count: " + resultSetSerializable.getChunkFileCount());
     }
 
@@ -245,8 +245,8 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
 
         default:
           throw new SnowflakeSQLLoggedException(
-              ErrorCode.INTERNAL_ERROR,
               this.session,
+              ErrorCode.INTERNAL_ERROR,
               "Invalid result format: " + queryResultFormat.name());
       }
 
@@ -284,7 +284,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
       StringWriter errors = new StringWriter();
       outOfMemoryError.printStackTrace(new PrintWriter(errors));
       throw new SnowflakeSQLLoggedException(
-          SqlState.INTERNAL_ERROR, ErrorCode.INTERNAL_ERROR.getMessageCode(), this.session, errors);
+          this.session, ErrorCode.INTERNAL_ERROR.getMessageCode(), SqlState.INTERNAL_ERROR, errors);
     }
   }
 
@@ -486,7 +486,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
       StringWriter errors = new StringWriter();
       outOfMemoryError.printStackTrace(new PrintWriter(errors));
       throw new SnowflakeSQLLoggedException(
-          SqlState.INTERNAL_ERROR, ErrorCode.INTERNAL_ERROR.getMessageCode(), this.session, errors);
+          this.session, ErrorCode.INTERNAL_ERROR.getMessageCode(), SqlState.INTERNAL_ERROR, errors);
     }
 
     SnowflakeResultChunk currentChunk = this.chunks.get(nextChunkToConsume);
@@ -520,9 +520,9 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
           }
 
           throw new SnowflakeSQLLoggedException(
-              SqlState.INTERNAL_ERROR,
-              ErrorCode.INTERNAL_ERROR.getMessageCode(),
               this.session,
+              ErrorCode.INTERNAL_ERROR.getMessageCode(),
+              SqlState.INTERNAL_ERROR,
               currentChunk.getDownloadError());
         }
 
@@ -784,9 +784,9 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
           response = getResultChunk(resultChunk.getUrl());
         } catch (URISyntaxException | IOException ex) {
           throw new SnowflakeSQLLoggedException(
-              SqlState.IO_ERROR,
-              ErrorCode.NETWORK_ERROR.getMessageCode(),
               session,
+              ErrorCode.NETWORK_ERROR.getMessageCode(),
+              SqlState.IO_ERROR,
               "Error encountered when request a result chunk URL: "
                   + resultChunk.getUrl()
                   + " "
@@ -821,9 +821,9 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
           logger.error("Failed to decompress data: {}", response);
 
           throw new SnowflakeSQLLoggedException(
-              SqlState.INTERNAL_ERROR,
-              ErrorCode.INTERNAL_ERROR.getMessageCode(),
               session,
+              ErrorCode.INTERNAL_ERROR.getMessageCode(),
+              SqlState.INTERNAL_ERROR,
               "Failed to decompress data: " + response.toString());
         }
 
@@ -896,10 +896,10 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
               ex.getLocalizedMessage());
 
           throw new SnowflakeSQLLoggedException(
-              ex,
+              session,
               SqlState.INTERNAL_ERROR,
               ErrorCode.INTERNAL_ERROR.getMessageCode(),
-              session,
+              ex,
               "Exception: " + ex.getLocalizedMessage());
         } finally {
           // close the buffer reader will close underlying stream
@@ -911,10 +911,10 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
             inputStream.close();
           } catch (IOException ex) {
             throw new SnowflakeSQLLoggedException(
-                ex,
+                session,
                 SqlState.INTERNAL_ERROR,
                 ErrorCode.INTERNAL_ERROR.getMessageCode(),
-                session,
+                ex,
                 "Exception: " + ex.getLocalizedMessage());
           }
         }

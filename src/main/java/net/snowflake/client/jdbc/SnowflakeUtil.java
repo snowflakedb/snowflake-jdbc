@@ -219,9 +219,9 @@ public class SnowflakeUtil {
 
       default:
         throw new SnowflakeSQLLoggedException(
-            SqlState.INTERNAL_ERROR,
-            ErrorCode.INTERNAL_ERROR.getMessageCode(),
             session,
+            ErrorCode.INTERNAL_ERROR.getMessageCode(),
+            SqlState.INTERNAL_ERROR,
             "Unknown column type: " + internalColTypeName);
     }
 
@@ -342,9 +342,9 @@ public class SnowflakeUtil {
         stype = SnowflakeType.TEXT;
       } else {
         throw new SnowflakeSQLLoggedException(
-            SqlState.INTERNAL_ERROR,
-            ErrorCode.INTERNAL_ERROR.getMessageCode(),
             session,
+            ErrorCode.INTERNAL_ERROR.getMessageCode(),
+            SqlState.INTERNAL_ERROR,
             "Unsupported column type: " + type.getName());
       }
 
