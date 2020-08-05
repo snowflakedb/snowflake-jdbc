@@ -174,9 +174,9 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
         // we don't support sort result when there are offline chunks
         if (resultSetSerializable.getChunkFileCount() > 0) {
           throw new SnowflakeSQLLoggedException(
-              SqlState.FEATURE_NOT_SUPPORTED,
+              session,
               ErrorCode.CLIENT_SIDE_SORTING_NOT_SUPPORTED.getMessageCode(),
-              session);
+              SqlState.FEATURE_NOT_SUPPORTED);
         }
 
         this.currentChunkIterator =
@@ -220,9 +220,9 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
 
           if (nextChunk == null) {
             throw new SnowflakeSQLLoggedException(
-                SqlState.INTERNAL_ERROR,
-                ErrorCode.INTERNAL_ERROR.getMessageCode(),
                 session,
+                ErrorCode.INTERNAL_ERROR.getMessageCode(),
+                SqlState.INTERNAL_ERROR,
                 "Expect chunk but got null for chunk index " + nextChunkIndex);
           }
 
@@ -240,7 +240,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
           }
         } catch (InterruptedException ex) {
           throw new SnowflakeSQLLoggedException(
-              SqlState.QUERY_CANCELED, ErrorCode.INTERRUPTED.getMessageCode(), session);
+              session, ErrorCode.INTERRUPTED.getMessageCode(), SqlState.QUERY_CANCELED);
         }
       } else {
         // always free current chunk
@@ -253,7 +253,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
           }
         } catch (InterruptedException e) {
           throw new SnowflakeSQLLoggedException(
-              SqlState.QUERY_CANCELED, ErrorCode.INTERRUPTED.getMessageCode(), session);
+              session, ErrorCode.INTERRUPTED.getMessageCode(), SqlState.QUERY_CANCELED);
         }
       }
 
@@ -278,8 +278,8 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
       resultChunk.readArrowStream(inputStream);
     } catch (IOException e) {
       throw new SnowflakeSQLLoggedException(
-          ErrorCode.INTERNAL_ERROR,
           session,
+          ErrorCode.INTERNAL_ERROR,
           "Failed to " + "load data in first chunk into arrow vector ex: " + e.getMessage());
     }
 
@@ -502,7 +502,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
       }
     } catch (InterruptedException ex) {
       throw new SnowflakeSQLLoggedException(
-          SqlState.QUERY_CANCELED, ErrorCode.INTERRUPTED.getMessageCode(), session);
+          session, ErrorCode.INTERRUPTED.getMessageCode(), SqlState.QUERY_CANCELED);
     }
   }
 

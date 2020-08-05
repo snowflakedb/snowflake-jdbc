@@ -66,7 +66,7 @@ class SFAsyncResultSet extends SnowflakeBaseResultSet implements SnowflakeResult
       this.resultSetMetaData.setQueryType(SnowflakeResultSetMetaDataV1.QueryType.ASYNC);
     } catch (SFException ex) {
       throw new SnowflakeSQLLoggedException(
-          ex.getCause(), ex.getSqlState(), ex.getVendorCode(), this.session, ex.getParams());
+          this.session, ex.getSqlState(), ex.getVendorCode(), ex.getCause(), ex.getParams());
     }
   }
 
@@ -91,7 +91,7 @@ class SFAsyncResultSet extends SnowflakeBaseResultSet implements SnowflakeResult
       this.resultSetMetaData.setQueryType(SnowflakeResultSetMetaDataV1.QueryType.ASYNC);
     } catch (SFException ex) {
       throw new SnowflakeSQLLoggedException(
-          ex.getCause(), ex.getSqlState(), ex.getVendorCode(), this.session, ex.getParams());
+          this.session, ex.getSqlState(), ex.getVendorCode(), ex.getCause(), ex.getParams());
     }
   }
 

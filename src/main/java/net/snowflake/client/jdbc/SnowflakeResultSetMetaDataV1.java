@@ -67,7 +67,7 @@ class SnowflakeResultSetMetaDataV1 implements ResultSetMetaData, SnowflakeResult
       return resultSetMetaData.getInternalColumnType(column);
     } catch (SFException ex) {
       throw new SnowflakeSQLLoggedException(
-          ex.getCause(), ex.getSqlState(), ex.getVendorCode(), session, ex.getParams());
+          session, ex.getSqlState(), ex.getVendorCode(), ex.getCause(), ex.getParams());
     }
   }
 
@@ -173,7 +173,7 @@ class SnowflakeResultSetMetaDataV1 implements ResultSetMetaData, SnowflakeResult
       return resultSetMetaData.getColumnType(column);
     } catch (SFException ex) {
       throw new SnowflakeSQLLoggedException(
-          ex.getCause(), ex.getSqlState(), ex.getVendorCode(), session, ex.getParams());
+          session, ex.getSqlState(), ex.getVendorCode(), ex.getCause(), ex.getParams());
     }
   }
 
@@ -183,7 +183,7 @@ class SnowflakeResultSetMetaDataV1 implements ResultSetMetaData, SnowflakeResult
       return resultSetMetaData.getColumnTypeName(column);
     } catch (SFException ex) {
       throw new SnowflakeSQLLoggedException(
-          ex.getCause(), ex.getSqlState(), ex.getVendorCode(), session, ex.getParams());
+          session, ex.getSqlState(), ex.getVendorCode(), ex.getCause(), ex.getParams());
     }
   }
 

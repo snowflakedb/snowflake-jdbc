@@ -9,7 +9,10 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.api.client.util.Strings;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.concurrent.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import net.minidev.json.JSONObject;
 import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.SFException;
@@ -184,23 +187,23 @@ public class SnowflakeSQLLoggedException extends SnowflakeSQLException {
   }
 
   public SnowflakeSQLLoggedException(
-      String queryId, String reason, String SQLState, int vendorCode, SFSession session) {
+      SFSession session, String reason, String SQLState, int vendorCode, String queryId) {
     super(queryId, reason, SQLState, vendorCode);
     sendTelemetryData(queryId, reason, SQLState, vendorCode, null, session);
   }
 
-  public SnowflakeSQLLoggedException(String SQLState, int vendorCode, SFSession session) {
+  public SnowflakeSQLLoggedException(SFSession session, int vendorCode, String SQLState) {
     super(SQLState, vendorCode);
     sendTelemetryData(null, null, SQLState, vendorCode, null, session);
   }
 
-  public SnowflakeSQLLoggedException(String reason, String SQLState, SFSession session) {
+  public SnowflakeSQLLoggedException(SFSession session, String SQLState, String reason) {
     super(reason, SQLState);
     sendTelemetryData(null, reason, SQLState, -1, null, session);
   }
 
   public SnowflakeSQLLoggedException(
-      String SQLState, int vendorCode, SFSession session, Object... params) {
+      SFSession session, int vendorCode, String SQLState, Object... params) {
     super(SQLState, vendorCode, params);
     String reason =
         errorResourceBundleManager.getLocalizedMessage(String.valueOf(vendorCode), params);
@@ -208,7 +211,7 @@ public class SnowflakeSQLLoggedException extends SnowflakeSQLException {
   }
 
   public SnowflakeSQLLoggedException(
-      Throwable ex, ErrorCode errorCode, SFSession session, Object... params) {
+      SFSession session, ErrorCode errorCode, Throwable ex, Object... params) {
     super(ex, errorCode, params);
     // add telemetry
     String reason =
@@ -219,7 +222,7 @@ public class SnowflakeSQLLoggedException extends SnowflakeSQLException {
   }
 
   public SnowflakeSQLLoggedException(
-      Throwable ex, String SQLState, int vendorCode, SFSession session, Object... params) {
+      SFSession session, String SQLState, int vendorCode, Throwable ex, Object... params) {
     super(ex, SQLState, vendorCode, params);
     // add telemetry
     String reason =
@@ -227,7 +230,7 @@ public class SnowflakeSQLLoggedException extends SnowflakeSQLException {
     sendTelemetryData(null, reason, SQLState, vendorCode, null, session);
   }
 
-  public SnowflakeSQLLoggedException(ErrorCode errorCode, SFSession session, Object... params) {
+  public SnowflakeSQLLoggedException(SFSession session, ErrorCode errorCode, Object... params) {
     super(errorCode, params);
     // add telemetry
     String reason =
@@ -236,13 +239,13 @@ public class SnowflakeSQLLoggedException extends SnowflakeSQLException {
     sendTelemetryData(null, reason, null, -1, errorCode, session);
   }
 
-  public SnowflakeSQLLoggedException(SFException e, SFSession session) {
+  public SnowflakeSQLLoggedException(SFSession session, SFException e) {
     super(e);
     // add telemetry
     sendTelemetryData(null, null, null, -1, null, session);
   }
 
-  public SnowflakeSQLLoggedException(String reason, SFSession session) {
+  public SnowflakeSQLLoggedException(SFSession session, String reason) {
     super(reason);
     sendTelemetryData(null, reason, null, -1, null, session);
   }

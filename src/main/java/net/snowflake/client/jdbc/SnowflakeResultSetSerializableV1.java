@@ -815,8 +815,8 @@ public class SnowflakeResultSetSerializableV1
             (this.firstChunkStringData != null) ? mapper.readTree(this.firstChunkStringData) : null;
       } catch (IOException ex) {
         throw new SnowflakeSQLLoggedException(
-            "The JSON data is invalid. The error is: " + ex.getMessage(),
-            possibleSession.orElse(/* session = */ null));
+            possibleSession.orElse(/* session = */ null),
+            "The JSON data is invalid. The error is: " + ex.getMessage());
       }
     }
 
@@ -854,8 +854,8 @@ public class SnowflakeResultSetSerializableV1
 
     if (this.chunkFileMetadatas.isEmpty() && this.firstChunkStringData == null) {
       throw new SnowflakeSQLLoggedException(
-          "The Result Set serializable is invalid.",
-          this.possibleSession.orElse(/* session = */ null));
+          this.possibleSession.orElse(/* session = */ null),
+          "The Result Set serializable is invalid.");
     }
 
     // In the beginning, only the first data chunk is included in the result
@@ -940,8 +940,8 @@ public class SnowflakeResultSetSerializableV1
         }
       default:
         throw new SnowflakeSQLLoggedException(
-            ErrorCode.INTERNAL_ERROR,
             this.possibleSession.orElse(/*session = */ null),
+            ErrorCode.INTERNAL_ERROR,
             "Unsupported query result format: " + getQueryResultFormat().name());
     }
 
@@ -976,8 +976,8 @@ public class SnowflakeResultSetSerializableV1
         }
       } catch (Exception ex) {
         throw new SnowflakeSQLLoggedException(
-            ErrorCode.INTERNAL_ERROR,
             possibleSession.orElse(/* session = */ null),
+            ErrorCode.INTERNAL_ERROR,
             "Fail to retrieve row count for first arrow chunk: " + ex.getCause());
       } finally {
         if (root != null) {
@@ -987,8 +987,8 @@ public class SnowflakeResultSetSerializableV1
     } else {
       // This shouldn't happen
       throw new SnowflakeSQLLoggedException(
-          ErrorCode.INTERNAL_ERROR,
           this.possibleSession.orElse(/*session = */ null),
+          ErrorCode.INTERNAL_ERROR,
           "setFirstChunkRowCountForArrow() should only be called for Arrow.");
     }
   }

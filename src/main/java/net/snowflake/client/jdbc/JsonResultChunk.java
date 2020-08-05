@@ -68,9 +68,9 @@ public class JsonResultChunk extends SnowflakeResultChunk {
   public final void addRow(Object[] row) throws SnowflakeSQLException {
     if (row.length != colCount) {
       throw new SnowflakeSQLLoggedException(
-          SqlState.INTERNAL_ERROR,
-          ErrorCode.INTERNAL_ERROR.getMessageCode(),
           this.session,
+          ErrorCode.INTERNAL_ERROR.getMessageCode(),
+          SqlState.INTERNAL_ERROR,
           "Exception: expected " + colCount + " columns and received " + row.length);
     }
 
@@ -84,9 +84,9 @@ public class JsonResultChunk extends SnowflakeResultChunk {
           data.add((boolean) cell ? "1" : "0");
         } else {
           throw new SnowflakeSQLLoggedException(
-              SqlState.INTERNAL_ERROR,
-              ErrorCode.INTERNAL_ERROR.getMessageCode(),
               this.session,
+              ErrorCode.INTERNAL_ERROR.getMessageCode(),
+              SqlState.INTERNAL_ERROR,
               "unknown data type in JSON row " + cell.getClass().toString());
         }
       }
@@ -348,9 +348,9 @@ public class JsonResultChunk extends SnowflakeResultChunk {
     @Override
     public void add(String string) throws SnowflakeSQLException {
       throw new SnowflakeSQLLoggedException(
-          SqlState.INTERNAL_ERROR,
-          ErrorCode.INTERNAL_ERROR.getMessageCode(),
           this.session,
+          ErrorCode.INTERNAL_ERROR.getMessageCode(),
+          SqlState.INTERNAL_ERROR,
           "Unimplemented");
     }
 

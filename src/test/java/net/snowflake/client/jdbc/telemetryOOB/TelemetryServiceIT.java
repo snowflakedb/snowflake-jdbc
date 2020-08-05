@@ -204,7 +204,7 @@ public class TelemetryServiceIT extends BaseJDBCTest {
     String queryID = "01234567-1234-1234-1234-00001abcdefg";
     String reason = "This is a test exception.";
     String sqlState = SqlState.NO_DATA;
-    throw new SnowflakeSQLLoggedException(queryID, reason, sqlState, vendorCode, session);
+    throw new SnowflakeSQLLoggedException(session, reason, sqlState, vendorCode, queryID);
   }
 
   /**

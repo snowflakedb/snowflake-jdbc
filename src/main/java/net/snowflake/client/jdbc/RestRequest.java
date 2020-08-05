@@ -163,7 +163,7 @@ public class RestRequest {
         // because of closing of connection, stop retrying
         if (ex instanceof IllegalStateException) {
           throw new SnowflakeSQLLoggedException(
-              ex, ErrorCode.INVALID_STATE, /* session = */ null, ex.getMessage());
+              null, ErrorCode.INVALID_STATE, ex, /* session = */ ex.getMessage());
         }
         savedEx = ex;
         // if the request took more than 5 min (socket timeout) log an error

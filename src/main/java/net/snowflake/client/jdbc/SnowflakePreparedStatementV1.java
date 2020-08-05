@@ -95,7 +95,7 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
       try {
         this.statementMetaData = sfStatement.describe(sql);
       } catch (SFException e) {
-        throw new SnowflakeSQLLoggedException(e, connection.getSfSession());
+        throw new SnowflakeSQLLoggedException(connection.getSfSession(), e);
       } catch (SnowflakeSQLException e) {
         if (!errorCodesIgnoredInDescribeMode.contains(e.getErrorCode())) {
           throw e;
@@ -413,9 +413,9 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
       setBoolean(parameterIndex, (Boolean) x);
     } else {
       throw new SnowflakeSQLLoggedException(
-          SqlState.FEATURE_NOT_SUPPORTED,
-          ErrorCode.DATA_TYPE_NOT_SUPPORTED.getMessageCode(),
           connection.getSfSession(),
+          ErrorCode.DATA_TYPE_NOT_SUPPORTED.getMessageCode(),
+          SqlState.FEATURE_NOT_SUPPORTED,
           "Object type: " + x.getClass());
     }
   }
@@ -480,9 +480,9 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
               row = Integer.toString(values.size() + 1);
             }
             throw new SnowflakeSQLLoggedException(
-                SqlState.FEATURE_NOT_SUPPORTED,
-                ErrorCode.ARRAY_BIND_MIXED_TYPES_NOT_SUPPORTED.getMessageCode(),
                 connection.getSfSession(),
+                ErrorCode.ARRAY_BIND_MIXED_TYPES_NOT_SUPPORTED.getMessageCode(),
+                SqlState.FEATURE_NOT_SUPPORTED,
                 SnowflakeType.getJavaType(SnowflakeType.fromString(prevType)).name(),
                 SnowflakeType.getJavaType(SnowflakeType.fromString(newType)).name(),
                 binding.getKey(),
