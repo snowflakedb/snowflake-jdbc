@@ -274,7 +274,7 @@ public class SFSession {
       jsonNode = OBJECT_MAPPER.readTree(response);
     } catch (Exception e) {
       throw new SnowflakeSQLLoggedException(
-          "No response or invalid response from GET request. Error: {}", e.getMessage(), this);
+          this, e.getMessage(), "No response or invalid response from GET request. Error: {}");
     }
     // Get response as JSON and parse it to get the query status
     // check the success field first

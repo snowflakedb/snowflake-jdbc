@@ -194,8 +194,8 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
     is not supported for staging commands. */
     if (StmtUtil.checkStageManageCommand(sql) != null && parameterBindings != null) {
       throw new SnowflakeSQLLoggedException(
-          ErrorCode.UNSUPPORTED_STATEMENT_TYPE_IN_EXECUTION_API,
           connection.getSfSession(),
+          ErrorCode.UNSUPPORTED_STATEMENT_TYPE_IN_EXECUTION_API,
           StmtUtil.truncateSQL(sql));
     }
 
@@ -219,8 +219,8 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
 
     if (updateCount == NO_UPDATES && updateQueryRequired) {
       throw new SnowflakeSQLLoggedException(
-          ErrorCode.UNSUPPORTED_STATEMENT_TYPE_IN_EXECUTION_API,
           connection.getSfSession(),
+          ErrorCode.UNSUPPORTED_STATEMENT_TYPE_IN_EXECUTION_API,
           StmtUtil.truncateSQL(sql));
     }
 
@@ -432,9 +432,9 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
           updateCounts.intArr[i] = (int) cnt;
         } else {
           throw new SnowflakeSQLLoggedException(
-              SqlState.NUMERIC_VALUE_OUT_OF_RANGE,
-              ErrorCode.EXECUTE_BATCH_INTEGER_OVERFLOW.getMessageCode(),
               connection.getSfSession(),
+              ErrorCode.EXECUTE_BATCH_INTEGER_OVERFLOW.getMessageCode(),
+              SqlState.NUMERIC_VALUE_OUT_OF_RANGE,
               i);
         }
         batchQueryIDs.add(queryID);
@@ -594,7 +594,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
       try {
         updateCount = ResultUtil.calculateUpdateCount(sfResultSet);
       } catch (SFException ex) {
-        throw new SnowflakeSQLLoggedException(ex, connection.getSfSession());
+        throw new SnowflakeSQLLoggedException(connection.getSfSession(), ex);
       }
       return false;
     } else // no more results
