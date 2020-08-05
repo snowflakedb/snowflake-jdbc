@@ -154,28 +154,28 @@ public class SecretDetectorTest {
     String connectionStr =
         "\"jdbc:snowflake://xxx.snowflakecomputing" + ".com/?user=xxx&password=xxxxxx&role=xxx\"";
     String maskedConnectionStr =
-        "\"jdbc:snowflake://xxx.snowflakecomputing" + ".com/?user=xxx&password=****";
+        "\"jdbc:snowflake://xxx.snowflakecomputing" + ".com/?user=xxx&password=**** ";
     assertThat(
         "Text with password is not masked",
         maskedConnectionStr.equals(SecretDetector.maskSecrets(connectionStr)));
 
     connectionStr = "jdbc:snowflake://xxx.snowflakecomputing" + ".com/?user=xxx&password=xxxxxx";
     maskedConnectionStr =
-        "jdbc:snowflake://xxx.snowflakecomputing" + ".com/?user=xxx&password=****";
+        "jdbc:snowflake://xxx.snowflakecomputing" + ".com/?user=xxx&password=**** ";
     assertThat(
         "Text with password is not masked",
         maskedConnectionStr.equals(SecretDetector.maskSecrets(connectionStr)));
 
     connectionStr = "jdbc:snowflake://xxx.snowflakecomputing" + ".com/?user=xxx&passcode=xxxxxx";
     maskedConnectionStr =
-        "jdbc:snowflake://xxx.snowflakecomputing" + ".com/?user=xxx&passcode=****";
+        "jdbc:snowflake://xxx.snowflakecomputing" + ".com/?user=xxx&passcode=**** ";
     assertThat(
         "Text with password is not masked",
         maskedConnectionStr.equals(SecretDetector.maskSecrets(connectionStr)));
 
     connectionStr = "jdbc:snowflake://xxx.snowflakecomputing" + ".com/?user=xxx&passWord=xxxxxx";
     maskedConnectionStr =
-        "jdbc:snowflake://xxx.snowflakecomputing" + ".com/?user=xxx&passWord=****";
+        "jdbc:snowflake://xxx.snowflakecomputing" + ".com/?user=xxx&passWord=**** ";
     assertThat(
         "Text with password is not masked",
         maskedConnectionStr.equals(SecretDetector.maskSecrets(connectionStr)));
@@ -250,7 +250,7 @@ public class SecretDetectorTest {
     final String connStr =
         "https://snowflake.fakehostname.local:fakeport?LOGINTIMEOUT=20&ACCOUNT=fakeaccount&PASSWORD=fakepassword&USER=fakeuser";
     final String maskedConnStr =
-        "https://snowflake.fakehostname.local:fakeport?LOGINTIMEOUT=20&ACCOUNT=fakeaccount&PASSWORD=****";
+        "https://snowflake.fakehostname.local:fakeport?LOGINTIMEOUT=20&ACCOUNT=fakeaccount&PASSWORD=**** ";
 
     JSONObject obj = generateJsonObject();
     obj.put("connStr", connStr);
@@ -277,7 +277,7 @@ public class SecretDetectorTest {
     final String connStr =
         "https://snowflake.fakehostname.local:fakeport?LOGINTIMEOUT=20&ACCOUNT=fakeaccount&PASSWORD=fakepassword&USER=fakeuser";
     final String maskedConnStr =
-        "https://snowflake.fakehostname.local:fakeport?LOGINTIMEOUT=20&ACCOUNT=fakeaccount&PASSWORD=****";
+        "https://snowflake.fakehostname.local:fakeport?LOGINTIMEOUT=20&ACCOUNT=fakeaccount&PASSWORD=**** ";
     final String pwdStr = "password=ThisShouldBeMasked";
     final String maskedPwdStr = "password=****";
 
