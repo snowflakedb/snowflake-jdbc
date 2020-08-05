@@ -3,12 +3,17 @@
  */
 package net.snowflake.client.jdbc;
 
-import static net.snowflake.client.core.QueryStatus.RUNNING;
-import static net.snowflake.client.core.SessionUtil.CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY;
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.*;
+import net.snowflake.client.ConditionalIgnoreRule.ConditionalIgnore;
+import net.snowflake.client.RunningNotOnTestaccount;
+import net.snowflake.client.RunningOnGithubAction;
+import net.snowflake.client.category.TestCategoryConnection;
+import net.snowflake.client.core.QueryStatus;
+import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
+import net.snowflake.common.core.SqlState;
+import org.apache.commons.codec.binary.Base64;
+import org.junit.*;
+import org.junit.experimental.categories.Category;
+import org.junit.rules.TemporaryFolder;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -22,17 +27,13 @@ import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import net.snowflake.client.ConditionalIgnoreRule.ConditionalIgnore;
-import net.snowflake.client.RunningNotOnTestaccount;
-import net.snowflake.client.RunningOnGithubAction;
-import net.snowflake.client.category.TestCategoryConnection;
-import net.snowflake.client.core.QueryStatus;
-import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
-import net.snowflake.common.core.SqlState;
-import org.apache.commons.codec.binary.Base64;
-import org.junit.*;
-import org.junit.experimental.categories.Category;
-import org.junit.rules.TemporaryFolder;
+
+import static net.snowflake.client.core.QueryStatus.RUNNING;
+import static net.snowflake.client.core.SessionUtil.CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.*;
 
 /** Connection integration tests */
 @Category(TestCategoryConnection.class)
@@ -1584,5 +1585,43 @@ public class ConnectionIT extends BaseJDBCTest {
     status = rs4.unwrap(SnowflakeResultSet.class).getStatus();
     // Since 4 queries were started at once, status is most likely QUEUED
     assertEquals(QueryStatus.QUEUED, status);
+  }
+
+  @Test
+  public void testSetString() throws SQLException, IOException {
+    Connection connection = getConnection();
+    String csvFilePath = "/Users/mschipper/cases/00056404/ONTIME.CSV";
+
+    int batchSize = 20000;
+
+    // SQL
+    String sql = "INSERT INTO SANDBOX.\"PUBLIC\".ONTIME7 (\"YEAR\",QUARTER,\"MONTH\",DAY_OF_MONTH,DAY_OF_WEEK,FL_DATE,UNIQUE_CARRIER,AIRLINE_ID,CARRIER,TAIL_NUM,FL_NUM,ORIGIN_AIRPORT_ID,ORIGIN_AIRPORT_SEQ_ID,ORIGIN_CITY_MARKET_ID,ORIGIN,ORIGIN_CITY_NAME,ORIGIN_STATE_ABR,ORIGIN_STATE_FIPS,ORIGIN_STATE_NM,ORIGIN_WAC,DEST_AIRPORT_ID,DEST_AIRPORT_SEQ_ID,DEST_CITY_MARKET_ID,DEST,DEST_CITY_NAME,DEST_STATE_ABR,DEST_STATE_FIPS,DEST_STATE_NM,DEST_WAC,CRS_DEP_TIME,DEP_TIME,DEP_DELAY,DEP_DELAY_NEW,DEP_DEL15,DEP_DELAY_GROUP,DEP_TIME_BLK,TAXI_OUT,WHEELS_OFF,CANCELLED,CANCELLATION_CODE,DIVERTED,AIR_TIME,CARRIER_DELAY,WEATHER_DELAY,NAS_DELAY,SECURITY_DELAY,LATE_AIRCRAFT_DELAY,COL) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+    PreparedStatement statement = connection.prepareStatement(sql);
+    BufferedReader lineReader = new BufferedReader(new FileReader(csvFilePath));
+    String lineText = null;
+
+    int count = 0;
+
+    lineReader.readLine(); // skip header line
+    while ((lineText = lineReader.readLine()) != null) {
+      String[] data = lineText.split(",");
+      String column;
+      for (int i = 0; i < 48; i++)
+      {
+        column = data[i];
+        statement.setString(i+1, column);
+      }
+      statement.addBatch();
+
+      if (++count % batchSize == 0) {
+        statement.executeBatch();
+      }
+    }
+    lineReader.close();
+    // execute the remaining queries
+    statement.executeBatch();
+
+    statement.close();
+    connection.close();
   }
 }
