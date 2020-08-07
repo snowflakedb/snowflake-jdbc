@@ -2,6 +2,7 @@
 #
 # Set a complex password for test user snowman
 #
+
 import os
 import sys
 import snowflake.connector
