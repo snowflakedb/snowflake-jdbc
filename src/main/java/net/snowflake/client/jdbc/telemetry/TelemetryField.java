@@ -17,8 +17,7 @@ public enum TelemetryField {
 
   SQL_EXCEPTION("client_sql_exception"),
 
-  METADATA_METRICS("client_metadata_api_metrics")
-  ;
+  METADATA_METRICS("client_metadata_api_metrics");
 
   public final String field;
 
