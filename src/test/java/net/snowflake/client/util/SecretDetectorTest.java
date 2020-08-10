@@ -331,10 +331,10 @@ public class SecretDetectorTest {
     ObjectNode objNode = mapper.createObjectNode();
     objNode.put("testInfo", "pwd=HelloWorld!");
 
-    String maskedObjNodeStr = "{\"testInfo\":\"pwd=****\"}";
+    String maskedObjNodeStr = "{\"testInfo\":\"pwd=**** \"}";
     assertThat(
         "Jackson ObjectNode is not masked successfully",
-        maskedObjNodeStr.toString().equals(SecretDetector.maskJacksonNode(objNode).toString()));
+        maskedObjNodeStr.equals(SecretDetector.maskJacksonNode(objNode).toString()));
 
     // test nested object node
     ObjectNode objNode1 = mapper.createObjectNode();
@@ -344,11 +344,11 @@ public class SecretDetectorTest {
     objNodeNested.put("testInfo2", "sig=ajwAWD45%+ajrH92knKfsfakj");
     objNode1.set("testNested", objNodeNested);
 
-    String maskedObjNested =
-        "{\"testInfo\":\"pwd=****\",\"testNested\":{\"dummy\":\"dummy\",\"testInfo2\":\"sig=****\"}}";
+    String maskedObjNestedStr =
+        "{\"testInfo\":\"pwd=**** \",\"testNested\":{\"dummy\":\"dummy\",\"testInfo2\":\"sig=****\"}}";
     assertThat(
         "Nested Jackson ObjectNode is not masked successfully",
-        maskedObjNested.toString().equals(SecretDetector.maskJacksonNode(objNode1).toString()));
+        maskedObjNestedStr.equals(SecretDetector.maskJacksonNode(objNode1).toString()));
 
     // test array node
     ObjectNode objNode2 = mapper.createObjectNode();
@@ -373,7 +373,7 @@ public class SecretDetectorTest {
     objNode4.put("password", "password = HelloWorld!");
 
     String maskedNestedArrayStr =
-        "{\"testArrayNode\":[{\"testInfo\":\"\\\"privateKeyData\\\": \\\"XXXX\\\"\"}],\"hello\":\"world\",\"password\":\"password = ****\"}";
+        "{\"testArrayNode\":[{\"testInfo\":\"\\\"privateKeyData\\\": \\\"XXXX\\\"\"}],\"hello\":\"world\",\"password\":\"password = **** \"}";
     SecretDetector.maskJacksonNode(objNode4);
     assertThat(
         "Nested Jackson array node is not masked successfully",
