@@ -22,7 +22,6 @@ import net.snowflake.common.util.Wildcard;
 
 import java.sql.*;
 import java.util.*;
-import java.util.concurrent.Future;
 import java.util.regex.Pattern;
 
 import static net.snowflake.client.jdbc.DBMetadataResultSetMetadata.*;
@@ -123,14 +122,13 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
     }
   }
 
-  private Future<Boolean> sendInBandTelemetryMetadataMetrics(String functionName, String showCommand)
+  private void sendInBandTelemetryMetadataMetrics(String functionName, String showCommand)
   {
     ObjectNode ibValue = mapper.createObjectNode();
     ibValue.put("type", TelemetryField.METADATA_METRICS.toString());
     ibValue.put("function", functionName);
     ibValue.put("show command", showCommand);
     ibInstance.addLogToBatch(new TelemetryData(ibValue, System.currentTimeMillis()));
-    return ibInstance.sendBatchAsync();
   }
 
   // used to get convert string back to normal after its special characters have been escaped to
