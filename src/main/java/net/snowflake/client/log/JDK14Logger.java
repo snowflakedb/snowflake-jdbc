@@ -31,7 +31,7 @@ public class JDK14Logger implements SFLogger {
   private Logger jdkLogger;
 
   private Set<String> logMethods =
-      new HashSet<>(Arrays.asList("debug", "error", "info", "trace", "warn"));
+      new HashSet<>(Arrays.asList("debug", "error", "info", "trace", "warn", "debugNoMask"));
 
   private static boolean isLegacyLoggerInit = false;
 
@@ -60,7 +60,13 @@ public class JDK14Logger implements SFLogger {
   }
 
   public void debug(String msg) {
-    logInternal(Level.FINE, msg);
+    logInternal(Level.FINE, msg, true);
+  }
+
+  // This function is used to display unmasked, potentially sensitive log information for internal
+  // regression testing purposes. Do not use otherwise.
+  public void debugNoMask(String msg) {
+    logInternal(Level.FINE, msg, false);
   }
 
   public void debug(String msg, Object... arguments) {
@@ -72,7 +78,7 @@ public class JDK14Logger implements SFLogger {
   }
 
   public void error(String msg) {
-    logInternal(Level.SEVERE, msg);
+    logInternal(Level.SEVERE, msg, true);
   }
 
   public void error(String msg, Object... arguments) {
@@ -84,7 +90,7 @@ public class JDK14Logger implements SFLogger {
   }
 
   public void info(String msg) {
-    logInternal(Level.INFO, msg);
+    logInternal(Level.INFO, msg, true);
   }
 
   public void info(String msg, Object... arguments) {
@@ -96,7 +102,7 @@ public class JDK14Logger implements SFLogger {
   }
 
   public void trace(String msg) {
-    logInternal(Level.FINEST, msg);
+    logInternal(Level.FINEST, msg, true);
   }
 
   public void trace(String msg, Object... arguments) {
@@ -108,7 +114,7 @@ public class JDK14Logger implements SFLogger {
   }
 
   public void warn(String msg) {
-    logInternal(Level.WARNING, msg);
+    logInternal(Level.WARNING, msg, true);
   }
 
   public void warn(String msg, Object... arguments) {
@@ -119,10 +125,11 @@ public class JDK14Logger implements SFLogger {
     logInternal(Level.WARNING, msg, t);
   }
 
-  private void logInternal(Level level, String msg) {
+  private void logInternal(Level level, String msg, boolean masked) {
     if (jdkLogger.isLoggable(level)) {
       String[] source = findSourceInStack();
-      jdkLogger.logp(level, source[0], source[1], SecretDetector.maskSecrets(msg));
+      jdkLogger.logp(
+          level, source[0], source[1], masked == true ? SecretDetector.maskSecrets(msg) : msg);
     }
   }
 
