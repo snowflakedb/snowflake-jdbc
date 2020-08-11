@@ -4,14 +4,17 @@
 
 package net.snowflake.client.util;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.TextNode;
+import java.io.IOException;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import net.minidev.json.JSONArray;
 import net.minidev.json.JSONObject;
+import net.minidev.json.JSONStyle;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 
@@ -44,6 +47,7 @@ public class SecretDetector {
           "(sig|signature|AWSAccessKeyId|password|passcode)=([a-z0-9%/+]{16,})",
           Pattern.CASE_INSENSITIVE);
 
+  // Search for password pattern
   private static final Pattern PASSWORD_PATTERN =
       Pattern.compile(
           "(password|passcode|pwd)"
@@ -286,5 +290,53 @@ public class SecretDetector {
     }
 
     return array;
+  }
+
+  public static JsonNode maskJacksonNode(JsonNode node) {
+    if (node.isTextual()) {
+      String maskedText = SecretDetector.maskSecrets(node.textValue());
+      if (!maskedText.equals(node.textValue())) {
+        return new TextNode(maskedText);
+      }
+    } else if (node.isObject()) {
+      ObjectNode objNode = (ObjectNode) node;
+      Iterator<String> fieldNames = objNode.fieldNames();
+
+      while (fieldNames.hasNext()) {
+        String fieldName = fieldNames.next();
+        JsonNode tmpNode = maskJacksonNode(objNode.get(fieldName));
+        if (objNode.get(fieldName).isTextual()) {
+          objNode.set(fieldName, tmpNode);
+        }
+      }
+    } else if (node.isArray()) {
+      ArrayNode arrayNode = (ArrayNode) node;
+      for (int i = 0; i < arrayNode.size(); i++) {
+        JsonNode tmpNode = maskJacksonNode(arrayNode.get(i));
+        if (arrayNode.get(i).isTextual()) {
+          arrayNode.set(i, tmpNode);
+        }
+      }
+    }
+    return node;
+  }
+
+  // This class aims to parse minidev.json's node better
+  public static class SecretDetectorJSONStyle extends JSONStyle {
+    public SecretDetectorJSONStyle() {
+      super();
+    }
+
+    public void objectNext(Appendable out) throws IOException {
+      out.append(", ");
+    }
+
+    public void arrayStop(Appendable out) throws IOException {
+      out.append("] ");
+    }
+
+    public void arrayNextElm(Appendable out) throws IOException {
+      out.append(", ");
+    }
   }
 }
