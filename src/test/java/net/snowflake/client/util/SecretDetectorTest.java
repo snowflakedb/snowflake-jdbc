@@ -3,10 +3,14 @@ package net.snowflake.client.util;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.util.HashMap;
 import java.util.Map;
 import net.minidev.json.JSONArray;
 import net.minidev.json.JSONObject;
+import net.snowflake.client.core.ObjectMapperFactory;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.Test;
 
@@ -319,5 +323,60 @@ public class SecretDetectorTest {
     assertThat(
         "JSONArray within JSONObject is not masked successfully",
         maskedNestedObjArray.equals(SecretDetector.maskJsonObject(nestedObjArray)));
+  }
+
+  @Test
+  public void testMaskJacksonObject() {
+    final ObjectMapper mapper = ObjectMapperFactory.getObjectMapper();
+    ObjectNode objNode = mapper.createObjectNode();
+    objNode.put("testInfo", "pwd=HelloWorld!");
+
+    String maskedObjNodeStr = "{\"testInfo\":\"pwd=**** \"}";
+    assertThat(
+        "Jackson ObjectNode is not masked successfully",
+        maskedObjNodeStr.equals(SecretDetector.maskJacksonNode(objNode).toString()));
+
+    // test nested object node
+    ObjectNode objNode1 = mapper.createObjectNode();
+    objNode1.put("testInfo", "pwd=HelloWorld!");
+    ObjectNode objNodeNested = mapper.createObjectNode();
+    objNodeNested.put("dummy", "dummy");
+    objNodeNested.put("testInfo2", "sig=ajwAWD45%+ajrH92knKfsfakj");
+    objNode1.set("testNested", objNodeNested);
+
+    String maskedObjNestedStr =
+        "{\"testInfo\":\"pwd=**** \",\"testNested\":{\"dummy\":\"dummy\",\"testInfo2\":\"sig=****\"}}";
+    assertThat(
+        "Nested Jackson ObjectNode is not masked successfully",
+        maskedObjNestedStr.equals(SecretDetector.maskJacksonNode(objNode1).toString()));
+
+    // test array node
+    ObjectNode objNode2 = mapper.createObjectNode();
+    objNode2.put("testInfo", "aws_secret_key= 'fakeAWSsecretKey!123'");
+    ArrayNode arrayObj = mapper.createArrayNode();
+    arrayObj.add(objNode2);
+    arrayObj.add("fake token: SDFADAVN4ASD28ASFG3234x");
+
+    String maskedArrayNodeStr = "[{\"testInfo\":\"aws_secret_key= '****'\"},\"fake token: ****\"]";
+    assertThat(
+        "Jackson ArrayNode is not masked successfully",
+        maskedArrayNodeStr.equals(SecretDetector.maskJacksonNode(arrayObj).toString()));
+
+    // test nested array node
+    ObjectNode objNode3 = mapper.createObjectNode();
+    objNode3.put("testInfo", "\"privateKeyData\": \"abcdefg012345/=+\"");
+    ArrayNode arrayObj1 = mapper.createArrayNode();
+    arrayObj1.add(objNode3);
+    ObjectNode objNode4 = mapper.createObjectNode();
+    objNode4.set("testArrayNode", arrayObj1);
+    objNode4.put("hello", "world");
+    objNode4.put("password", "password = HelloWorld!");
+
+    String maskedNestedArrayStr =
+        "{\"testArrayNode\":[{\"testInfo\":\"\\\"privateKeyData\\\": \\\"XXXX\\\"\"}],\"hello\":\"world\",\"password\":\"password = **** \"}";
+    SecretDetector.maskJacksonNode(objNode4);
+    assertThat(
+        "Nested Jackson array node is not masked successfully",
+        maskedNestedArrayStr.equals(SecretDetector.maskJacksonNode(objNode4).toString()));
   }
 }
