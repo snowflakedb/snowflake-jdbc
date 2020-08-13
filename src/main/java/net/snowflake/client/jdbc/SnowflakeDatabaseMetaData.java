@@ -1016,7 +1016,12 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
 
     ResultSet resultSet =
         executeAndReturnEmptyResultIfNotFound(statement, showProcedureCommand, GET_PROCEDURES);
-    String queryId = resultSet.unwrap(SnowflakeResultSet.class).getQueryID();
+    String queryId;
+    try {
+      queryId = resultSet.unwrap(SnowflakeResultSet.class).getQueryID();
+    } catch (SQLException e) {
+      queryId = "";
+    }
     sendInBandTelemetryMetadataMetrics(
         queryId,
         "getProcedures",
@@ -1089,7 +1094,12 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
     ResultSet resultSetStepOne =
         executeAndReturnEmptyResultIfNotFound(
             statement, showProcedureCommand, GET_PROCEDURE_COLUMNS);
-    String queryId = resultSetStepOne.unwrap(SnowflakeResultSet.class).getQueryID();
+    String queryId;
+    try {
+      queryId = resultSetStepOne.unwrap(SnowflakeResultSet.class).getQueryID();
+    } catch (SQLException e) {
+      queryId = "";
+    }
     sendInBandTelemetryMetadataMetrics(
         queryId,
         "getProcedureColumns",
@@ -1397,7 +1407,12 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
     logger.debug("sql command to get table metadata: {}", showCommand);
 
     resultSet = executeAndReturnEmptyResultIfNotFound(statement, showCommand, GET_TABLES);
-    String queryId = resultSet.unwrap(SnowflakeResultSet.class).getQueryID();
+    String queryId;
+    try {
+      queryId = resultSet.unwrap(SnowflakeResultSet.class).getQueryID();
+    } catch (SQLException e) {
+      queryId = "";
+    }
     sendInBandTelemetryMetadataMetrics(
         queryId,
         "getTables",
@@ -1492,9 +1507,6 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
             return false;
           }
         };
-    String queryId = resultSet.unwrap(SnowflakeResultSet.class).getQueryID();
-    sendInBandTelemetryMetadataMetrics(
-        queryId, "getCatalogs", showDB, "none", "none", "none", "none");
     return resultSet;
   }
 
@@ -1505,17 +1517,12 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
     Statement statement = connection.createStatement();
 
     // TODO: We should really get the list of table types from GS
-    ResultSet resultSet =
-        new SnowflakeDatabaseMetaDataResultSet(
-            Collections.singletonList("TABLE_TYPE"),
-            Collections.singletonList("TEXT"),
-            Collections.singletonList(Types.VARCHAR),
-            new Object[][] {{"TABLE"}, {"VIEW"}},
-            statement);
-    String queryId = resultSet.unwrap(SnowflakeResultSet.class).getQueryID();
-    sendInBandTelemetryMetadataMetrics(
-        queryId, "getTableTypes", "none", "none", "none", "none", "none");
-    return resultSet;
+    return new SnowflakeDatabaseMetaDataResultSet(
+        Collections.singletonList("TABLE_TYPE"),
+        Collections.singletonList("TEXT"),
+        Collections.singletonList(Types.VARCHAR),
+        new Object[][] {{"TABLE"}, {"VIEW"}},
+        statement);
   }
 
   @Override
@@ -1598,7 +1605,12 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
     ResultSet resultSet =
         executeAndReturnEmptyResultIfNotFound(
             statement, showColumnCommand, extendedSet ? GET_COLUMNS_EXTENDED_SET : GET_COLUMNS);
-    String queryId = resultSet.unwrap(SnowflakeResultSet.class).getQueryID();
+    String queryId;
+    try {
+      queryId = resultSet.unwrap(SnowflakeResultSet.class).getQueryID();
+    } catch (SQLException e) {
+      queryId = "";
+    }
     sendInBandTelemetryMetadataMetrics(
         queryId,
         "getColumns",
@@ -1786,9 +1798,6 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
                 Types.VARCHAR),
             new Object[][] {},
             statement);
-    String queryId = resultSet.unwrap(SnowflakeResultSet.class).getQueryID();
-    sendInBandTelemetryMetadataMetrics(
-        queryId, "getColumnPrivileges", "none", catalog, schema, table, columnNamePattern);
     return resultSet;
   }
 
@@ -1845,7 +1854,12 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
 
     ResultSet resultSet =
         executeAndReturnEmptyResultIfNotFound(statement, showView, GET_TABLE_PRIVILEGES);
-    String queryId = resultSet.unwrap(SnowflakeResultSet.class).getQueryID();
+    String queryId;
+    try {
+      queryId = resultSet.unwrap(SnowflakeResultSet.class).getQueryID();
+    } catch (SQLException e) {
+      queryId = "";
+    }
     sendInBandTelemetryMetadataMetrics(
         queryId, "getTablePrivileges", showView, catalog, schemaPattern, tableNamePattern, "none");
     return new SnowflakeDatabaseMetaDataQueryResultSet(GET_TABLE_PRIVILEGES, resultSet, statement) {
@@ -1951,7 +1965,12 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
     logger.debug("sql command to get primary key metadata: {}", showPKCommand);
     ResultSet resultSet =
         executeAndReturnEmptyResultIfNotFound(statement, showPKCommand, GET_PRIMARY_KEYS);
-    String queryId = resultSet.unwrap(SnowflakeResultSet.class).getQueryID();
+    String queryId;
+    try {
+      queryId = resultSet.unwrap(SnowflakeResultSet.class).getQueryID();
+    } catch (SQLException e) {
+      queryId = "";
+    }
     sendInBandTelemetryMetadataMetrics(
         queryId, "getPrimaryKeys", showPKCommand, catalog, schema, table, "none");
     // Return empty result set since we don't have primary keys yet
@@ -2055,7 +2074,12 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
 
     ResultSet resultSet =
         executeAndReturnEmptyResultIfNotFound(statement, command, GET_FOREIGN_KEYS);
-    String queryId = resultSet.unwrap(SnowflakeResultSet.class).getQueryID();
+    String queryId;
+    try {
+      queryId = resultSet.unwrap(SnowflakeResultSet.class).getQueryID();
+    } catch (SQLException e) {
+      queryId = "";
+    }
     sendInBandTelemetryMetadataMetrics(
         queryId, "getForeignKeys", command, parentCatalog, parentSchema, parentTable, "none");
 
@@ -2811,7 +2835,12 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
 
     ResultSet resultSet =
         executeAndReturnEmptyResultIfNotFound(statement, showSchemas, GET_SCHEMAS);
-    String queryId = resultSet.unwrap(SnowflakeResultSet.class).getQueryID();
+    String queryId;
+    try {
+      queryId = resultSet.unwrap(SnowflakeResultSet.class).getQueryID();
+    } catch (SQLException e) {
+      queryId = "";
+    }
     sendInBandTelemetryMetadataMetrics(
         queryId, "getSchemas", showSchemas, catalog, schemaPattern, "none", "none");
     return new SnowflakeDatabaseMetaDataQueryResultSet(GET_SCHEMAS, resultSet, statement) {
@@ -2881,7 +2910,12 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
 
     ResultSet resultSet =
         executeAndReturnEmptyResultIfNotFound(statement, showFunctionCommand, GET_FUNCTIONS);
-    String queryId = resultSet.unwrap(SnowflakeResultSet.class).getQueryID();
+    String queryId;
+    try {
+      queryId = resultSet.unwrap(SnowflakeResultSet.class).getQueryID();
+    } catch (SQLException e) {
+      queryId = "";
+    }
     sendInBandTelemetryMetadataMetrics(
         queryId,
         "getFunctions",
@@ -2967,7 +3001,12 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
 
     ResultSet resultSetStepOne =
         executeAndReturnEmptyResultIfNotFound(statement, showFunctionCommand, GET_FUNCTION_COLUMNS);
-    String queryId = resultSetStepOne.unwrap(SnowflakeResultSet.class).getQueryID();
+    String queryId;
+    try {
+      queryId = resultSetStepOne.unwrap(SnowflakeResultSet.class).getQueryID();
+    } catch (SQLException e) {
+      queryId = "";
+    }
     sendInBandTelemetryMetadataMetrics(
         queryId,
         "getFunctionColumns",
