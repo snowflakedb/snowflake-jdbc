@@ -4,16 +4,10 @@
 
 package net.snowflake.client.jdbc;
 
-import static net.snowflake.client.jdbc.DBMetadataResultSetMetadata.*;
-import static net.snowflake.client.jdbc.SnowflakeType.convertStringToType;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Strings;
-import java.sql.*;
-import java.util.*;
-import java.util.regex.Pattern;
 import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
@@ -25,6 +19,13 @@ import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.util.SFPair;
 import net.snowflake.common.core.SqlState;
 import net.snowflake.common.util.Wildcard;
+
+import java.sql.*;
+import java.util.*;
+import java.util.regex.Pattern;
+
+import static net.snowflake.client.jdbc.DBMetadataResultSetMetadata.*;
+import static net.snowflake.client.jdbc.SnowflakeType.convertStringToType;
 
 public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
 
@@ -125,6 +126,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
    * Function to send in-band telemetry data about DatabaseMetadata get API calls and their
    * associated SHOW commands
    *
+   * @param resultSet The ResultSet generated from the SHOW command in the function call
    * @param functionName name of DatabaseMetadata API function call
    * @param showCommand show command getting sent to GS
    * @param catalog database
@@ -133,13 +135,22 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
    * @param specificNamePattern name of table column, function parameter name, etc
    */
   private void sendInBandTelemetryMetadataMetrics(
-      String queryId,
+      ResultSet resultSet,
       String functionName,
       String showCommand,
       String catalog,
       String schema,
       String generalNamePattern,
       String specificNamePattern) {
+    String queryId = "";
+    if (resultSet instanceof SnowflakeResultSet)
+    {
+      try {
+        resultSet.unwrap(SnowflakeResultSet.class).getQueryID();
+      } catch (SQLException e) {
+        // do nothing here; just don't include the query ID
+      }
+    }
     ObjectNode ibValue = mapper.createObjectNode();
     ibValue.put("type", TelemetryField.METADATA_METRICS.toString());
     ibValue.put("queryId", queryId);
@@ -1016,14 +1027,8 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
 
     ResultSet resultSet =
         executeAndReturnEmptyResultIfNotFound(statement, showProcedureCommand, GET_PROCEDURES);
-    String queryId;
-    try {
-      queryId = resultSet.unwrap(SnowflakeResultSet.class).getQueryID();
-    } catch (SQLException e) {
-      queryId = "";
-    }
     sendInBandTelemetryMetadataMetrics(
-        queryId,
+        resultSet,
         "getProcedures",
         showProcedureCommand,
         catalog,
@@ -1094,14 +1099,8 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
     ResultSet resultSetStepOne =
         executeAndReturnEmptyResultIfNotFound(
             statement, showProcedureCommand, GET_PROCEDURE_COLUMNS);
-    String queryId;
-    try {
-      queryId = resultSetStepOne.unwrap(SnowflakeResultSet.class).getQueryID();
-    } catch (SQLException e) {
-      queryId = "";
-    }
     sendInBandTelemetryMetadataMetrics(
-        queryId,
+        resultSetStepOne,
         "getProcedureColumns",
         showProcedureCommand,
         catalog,
@@ -1407,14 +1406,8 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
     logger.debug("sql command to get table metadata: {}", showCommand);
 
     resultSet = executeAndReturnEmptyResultIfNotFound(statement, showCommand, GET_TABLES);
-    String queryId;
-    try {
-      queryId = resultSet.unwrap(SnowflakeResultSet.class).getQueryID();
-    } catch (SQLException e) {
-      queryId = "";
-    }
     sendInBandTelemetryMetadataMetrics(
-        queryId,
+        resultSet,
         "getTables",
         showCommand,
         catalog,
@@ -1488,7 +1481,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
     String showDB = "show /* JDBC:DatabaseMetaData.getCatalogs() */ databases in account";
 
     Statement statement = connection.createStatement();
-    ResultSet resultSet =
+    return
         new SnowflakeDatabaseMetaDataQueryResultSet(
             GET_CATALOGS, statement.executeQuery(showDB), statement) {
           @Override
@@ -1507,7 +1500,6 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
             return false;
           }
         };
-    return resultSet;
   }
 
   @Override
@@ -1605,14 +1597,8 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
     ResultSet resultSet =
         executeAndReturnEmptyResultIfNotFound(
             statement, showColumnCommand, extendedSet ? GET_COLUMNS_EXTENDED_SET : GET_COLUMNS);
-    String queryId;
-    try {
-      queryId = resultSet.unwrap(SnowflakeResultSet.class).getQueryID();
-    } catch (SQLException e) {
-      queryId = "";
-    }
     sendInBandTelemetryMetadataMetrics(
-        queryId,
+        resultSet,
         "getColumns",
         showColumnCommand,
         catalog,
@@ -1775,8 +1761,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
     raiseSQLExceptionIfConnectionIsClosed();
 
     Statement statement = connection.createStatement();
-    ResultSet resultSet =
-        new SnowflakeDatabaseMetaDataResultSet(
+    return new SnowflakeDatabaseMetaDataResultSet(
             Arrays.asList(
                 "TABLE_CAT",
                 "TABLE_SCHEM",
@@ -1798,7 +1783,6 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
                 Types.VARCHAR),
             new Object[][] {},
             statement);
-    return resultSet;
   }
 
   @Override
@@ -1854,14 +1838,8 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
 
     ResultSet resultSet =
         executeAndReturnEmptyResultIfNotFound(statement, showView, GET_TABLE_PRIVILEGES);
-    String queryId;
-    try {
-      queryId = resultSet.unwrap(SnowflakeResultSet.class).getQueryID();
-    } catch (SQLException e) {
-      queryId = "";
-    }
     sendInBandTelemetryMetadataMetrics(
-        queryId, "getTablePrivileges", showView, catalog, schemaPattern, tableNamePattern, "none");
+        resultSet, "getTablePrivileges", showView, catalog, schemaPattern, tableNamePattern, "none");
     return new SnowflakeDatabaseMetaDataQueryResultSet(GET_TABLE_PRIVILEGES, resultSet, statement) {
       @Override
       public boolean next() throws SQLException {
@@ -1965,14 +1943,8 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
     logger.debug("sql command to get primary key metadata: {}", showPKCommand);
     ResultSet resultSet =
         executeAndReturnEmptyResultIfNotFound(statement, showPKCommand, GET_PRIMARY_KEYS);
-    String queryId;
-    try {
-      queryId = resultSet.unwrap(SnowflakeResultSet.class).getQueryID();
-    } catch (SQLException e) {
-      queryId = "";
-    }
     sendInBandTelemetryMetadataMetrics(
-        queryId, "getPrimaryKeys", showPKCommand, catalog, schema, table, "none");
+        resultSet, "getPrimaryKeys", showPKCommand, catalog, schema, table, "none");
     // Return empty result set since we don't have primary keys yet
     return new SnowflakeDatabaseMetaDataQueryResultSet(GET_PRIMARY_KEYS, resultSet, statement) {
       @Override
@@ -2074,14 +2046,8 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
 
     ResultSet resultSet =
         executeAndReturnEmptyResultIfNotFound(statement, command, GET_FOREIGN_KEYS);
-    String queryId;
-    try {
-      queryId = resultSet.unwrap(SnowflakeResultSet.class).getQueryID();
-    } catch (SQLException e) {
-      queryId = "";
-    }
     sendInBandTelemetryMetadataMetrics(
-        queryId, "getForeignKeys", command, parentCatalog, parentSchema, parentTable, "none");
+        resultSet, "getForeignKeys", command, parentCatalog, parentSchema, parentTable, "none");
 
     return new SnowflakeDatabaseMetaDataQueryResultSet(GET_FOREIGN_KEYS, resultSet, statement) {
       @Override
@@ -2835,14 +2801,8 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
 
     ResultSet resultSet =
         executeAndReturnEmptyResultIfNotFound(statement, showSchemas, GET_SCHEMAS);
-    String queryId;
-    try {
-      queryId = resultSet.unwrap(SnowflakeResultSet.class).getQueryID();
-    } catch (SQLException e) {
-      queryId = "";
-    }
     sendInBandTelemetryMetadataMetrics(
-        queryId, "getSchemas", showSchemas, catalog, schemaPattern, "none", "none");
+        resultSet, "getSchemas", showSchemas, catalog, schemaPattern, "none", "none");
     return new SnowflakeDatabaseMetaDataQueryResultSet(GET_SCHEMAS, resultSet, statement) {
       public boolean next() throws SQLException {
         logger.debug("public boolean next()");
@@ -2910,14 +2870,8 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
 
     ResultSet resultSet =
         executeAndReturnEmptyResultIfNotFound(statement, showFunctionCommand, GET_FUNCTIONS);
-    String queryId;
-    try {
-      queryId = resultSet.unwrap(SnowflakeResultSet.class).getQueryID();
-    } catch (SQLException e) {
-      queryId = "";
-    }
     sendInBandTelemetryMetadataMetrics(
-        queryId,
+        resultSet,
         "getFunctions",
         showFunctionCommand,
         catalog,
@@ -3001,14 +2955,8 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
 
     ResultSet resultSetStepOne =
         executeAndReturnEmptyResultIfNotFound(statement, showFunctionCommand, GET_FUNCTION_COLUMNS);
-    String queryId;
-    try {
-      queryId = resultSetStepOne.unwrap(SnowflakeResultSet.class).getQueryID();
-    } catch (SQLException e) {
-      queryId = "";
-    }
     sendInBandTelemetryMetadataMetrics(
-        queryId,
+        resultSetStepOne,
         "getFunctionColumns",
         showFunctionCommand,
         catalog,
