@@ -106,6 +106,9 @@ public class ProcessQueue implements Runnable {
           List<String> selectedColumns = _loader.getColumns();
           conn.createStatement().execute(currentCommand);
 
+          //diable clustering key as if one column as clustering key, then that column can't be dropped
+          conn.createStatement().execute("alter table \"" + stage.getId() + "\" drop clustering key");
+
           // the temp table can contain only a subset of columns
           // so remove unselected columns
           for (String col : allColumns) {
