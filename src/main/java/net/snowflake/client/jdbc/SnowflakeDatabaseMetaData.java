@@ -4,16 +4,10 @@
 
 package net.snowflake.client.jdbc;
 
-import static net.snowflake.client.jdbc.DBMetadataResultSetMetadata.*;
-import static net.snowflake.client.jdbc.SnowflakeType.convertStringToType;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Strings;
-import java.sql.*;
-import java.util.*;
-import java.util.regex.Pattern;
 import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
@@ -26,6 +20,13 @@ import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.util.SFPair;
 import net.snowflake.common.core.SqlState;
 import net.snowflake.common.util.Wildcard;
+
+import java.sql.*;
+import java.util.*;
+import java.util.regex.Pattern;
+
+import static net.snowflake.client.jdbc.DBMetadataResultSetMetadata.*;
+import static net.snowflake.client.jdbc.SnowflakeType.convertStringToType;
 
 public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
 
@@ -129,7 +130,6 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
    * @param resultSet The ResultSet generated from the SHOW command in the function call. Can be of
    *     type SnowflakeResultSet or SnowflakeDatabaseMetaDataResultSet
    * @param functionName name of DatabaseMetadata API function call
-   * @param showCommand show command getting sent to GS
    * @param catalog database
    * @param schema schema
    * @param generalNamePattern name of table, function, etc
