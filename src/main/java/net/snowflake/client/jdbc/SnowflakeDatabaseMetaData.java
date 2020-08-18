@@ -142,27 +142,24 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
       String generalNamePattern,
       String specificNamePattern) {
     String queryId = "";
-    if (resultSet instanceof SnowflakeResultSet) {
-      try {
+    try {
+      if (resultSet.isWrapperFor(SnowflakeResultSet.class)) {
         queryId = resultSet.unwrap(SnowflakeResultSet.class).getQueryID();
-      } catch (SQLException e) {
         // do nothing here; just don't include the query ID
-      }
-    } else if (resultSet instanceof SnowflakeDatabaseMetaDataResultSet) {
-      try {
+      } else if (resultSet.isWrapperFor(SnowflakeDatabaseMetaDataResultSet.class)) {
         queryId = resultSet.unwrap(SnowflakeDatabaseMetaDataResultSet.class).getQueryID();
-      } catch (SQLException e) {
-        // do nothing here; just don't include the query ID
       }
+    } catch (SQLException e) {
+      // do nothing here; just don't include query ID
     }
     ObjectNode ibValue = mapper.createObjectNode();
     ibValue.put("type", TelemetryField.METADATA_METRICS.toString());
-    ibValue.put("queryId", queryId);
-    ibValue.put("functionName", functionName);
-    ibValue.with("functionParameters").put("catalog", catalog);
-    ibValue.with("functionParameters").put("schema", schema);
-    ibValue.with("functionParameters").put("generalNamePattern", generalNamePattern);
-    ibValue.with("functionParameters").put("specificNamePattern", specificNamePattern);
+    ibValue.put("query_id", queryId);
+    ibValue.put("function_name", functionName);
+    ibValue.with("function_parameters").put("catalog", catalog);
+    ibValue.with("function_parameters").put("schema", schema);
+    ibValue.with("function_parameters").put("general_name_pattern", generalNamePattern);
+    ibValue.with("function_parameters").put("specific_name_pattern", specificNamePattern);
     TelemetryData data = TelemetryUtil.buildJobData(ibValue);
     ibInstance.addLogToBatch(data);
   }
