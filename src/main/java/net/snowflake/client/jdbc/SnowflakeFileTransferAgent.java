@@ -1226,7 +1226,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView {
   /**
    * This is API function to retrieve the File Transfer Metadatas.
    *
-   * <p>NOTE: It only supports PUT on GCP when it is created.
+   * <p>NOTE: It only supports PUT on S3/AZURE/GCS
    *
    * @return The file transfer metadatas for to-be-transferred files.
    * @throws SnowflakeSQLException if any error occurs
@@ -1234,12 +1234,14 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView {
   public List<SnowflakeFileTransferMetadata> getFileTransferMetadatas()
       throws SnowflakeSQLException {
     List<SnowflakeFileTransferMetadata> result = new ArrayList<>();
-    if (stageInfo.getStageType() != StageInfo.StageType.GCS) {
+    if (stageInfo.getStageType() != StageInfo.StageType.GCS
+        && stageInfo.getStageType() != StageInfo.StageType.AZURE
+        && stageInfo.getStageType() != StageInfo.StageType.S3) {
       throw new SnowflakeSQLLoggedException(
           session,
           ErrorCode.INTERNAL_ERROR.getMessageCode(),
           SqlState.INTERNAL_ERROR,
-          "This API only supports GCS");
+          "This API only supports S3/AZURE/GCS");
     }
 
     if (commandType != CommandType.UPLOAD) {
@@ -1930,22 +1932,45 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView {
 
       SnowflakeStorageClient initialClient =
           storageFactory.createClient(stageInfo, 1, encMat, /*session = */ null);
-      pushFileToRemoteStoreWithPresignedUrl(
-          metadata.getStageInfo(),
-          metadata.getPresignedUrlFileName(),
-          uploadStream,
-          fileBackedOutputStream,
-          uploadSize,
-          digest,
-          (requireCompress ? FileCompressionType.GZIP : null),
-          initialClient,
-          networkTimeoutInMilli,
-          ocspMode,
-          1,
-          null,
-          true,
-          encMat,
-          metadata.getPresignedUrl());
+
+      switch (stageInfo.getStageType()) {
+        case S3:
+        case AZURE:
+          pushFileToRemoteStore(
+              metadata.getStageInfo(),
+              destFileName,
+              uploadStream,
+              fileBackedOutputStream,
+              uploadSize,
+              digest,
+              (requireCompress ? FileCompressionType.GZIP : null),
+              initialClient,
+              config.getSession(),
+              config.getCommand(),
+              1,
+              fileToUpload,
+              (fileToUpload == null),
+              encMat);
+          break;
+        case GCS:
+          pushFileToRemoteStoreWithPresignedUrl(
+              metadata.getStageInfo(),
+              metadata.getPresignedUrlFileName(),
+              uploadStream,
+              fileBackedOutputStream,
+              uploadSize,
+              digest,
+              (requireCompress ? FileCompressionType.GZIP : null),
+              initialClient,
+              networkTimeoutInMilli,
+              ocspMode,
+              1,
+              null,
+              true,
+              encMat,
+              metadata.getPresignedUrl());
+          break;
+      }
     } catch (Exception ex) {
       logger.error("Exception encountered during file upload: ", ex.getMessage());
       throw ex;
