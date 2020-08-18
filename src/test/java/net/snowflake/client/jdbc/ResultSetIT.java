@@ -3,18 +3,11 @@
  */
 package net.snowflake.client.jdbc;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningOnGithubAction;
-import net.snowflake.client.category.TestCategoryResultSet;
-import net.snowflake.client.jdbc.telemetry.*;
-import net.snowflake.common.core.SFBinary;
-import org.apache.arrow.vector.Float8Vector;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import static org.hamcrest.CoreMatchers.*;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.*;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -29,10 +22,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.regex.Pattern;
-
-import static org.hamcrest.CoreMatchers.*;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.*;
+import net.snowflake.client.ConditionalIgnoreRule;
+import net.snowflake.client.RunningOnGithubAction;
+import net.snowflake.client.category.TestCategoryResultSet;
+import net.snowflake.client.jdbc.telemetry.*;
+import net.snowflake.common.core.SFBinary;
+import org.apache.arrow.vector.Float8Vector;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 /** Test ResultSet */
 @Category(TestCategoryResultSet.class)
@@ -1129,17 +1128,21 @@ public class ResultSetIT extends BaseJDBCTest {
   public void testMetadataAPIMetricCollection() throws SQLException {
     Connection con = getConnection();
     Telemetry telemetry =
-            con.unwrap(SnowflakeConnectionV1.class).getSfSession().getTelemetryClient();
+        con.unwrap(SnowflakeConnectionV1.class).getSfSession().getTelemetryClient();
     DatabaseMetaData metadata = con.getMetaData();
-    // Call one of the DatabaseMetadata API functions but for simplicity, ensure returned ResultSet is empty
+    // Call one of the DatabaseMetadata API functions but for simplicity, ensure returned ResultSet
+    // is empty
     metadata.getColumns("fakecatalog", "fakeschema", null, null);
     LinkedList<TelemetryData> logs = ((TelemetryClient) telemetry).logBuffer();
-    // No result set has been downloaded from server so no chunk downloader metrics have been collected
+    // No result set has been downloaded from server so no chunk downloader metrics have been
+    // collected
     // Logs should contain 1 item: the data about the getColumns() parameters
     assertEquals(logs.size(), 1);
     // Assert the log is of type client_metadata_api_metrics
     for (TelemetryData log : logs) {
-      assertEquals(log.getMessage().get(TelemetryUtil.TYPE).textValue(), TelemetryField.METADATA_METRICS.toString());
+      assertEquals(
+          log.getMessage().get(TelemetryUtil.TYPE).textValue(),
+          TelemetryField.METADATA_METRICS.toString());
       assertEquals(log.getMessage().get("functionName").textValue(), "getColumns");
       JsonNode parameterValues = log.getMessage().get("functionParameters");
       assertEquals(parameterValues.get("catalog").textValue(), "fakecatalog");

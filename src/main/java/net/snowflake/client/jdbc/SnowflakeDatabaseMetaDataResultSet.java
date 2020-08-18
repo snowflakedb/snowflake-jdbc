@@ -4,18 +4,17 @@
 
 package net.snowflake.client.jdbc;
 
-import net.snowflake.client.core.SFResultSetMetaData;
-import net.snowflake.client.core.SFSession;
-import net.snowflake.client.log.SFLogger;
-import net.snowflake.client.log.SFLoggerFactory;
-import net.snowflake.common.core.SqlState;
-
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.nio.charset.StandardCharsets;
 import java.sql.*;
 import java.util.List;
 import java.util.TimeZone;
+import net.snowflake.client.core.SFResultSetMetaData;
+import net.snowflake.client.core.SFSession;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
+import net.snowflake.common.core.SqlState;
 
 class SnowflakeDatabaseMetaDataResultSet extends SnowflakeBaseResultSet {
   ResultSet showObjectResultSet;
@@ -94,18 +93,21 @@ class SnowflakeDatabaseMetaDataResultSet extends SnowflakeBaseResultSet {
   }
 
   protected SnowflakeDatabaseMetaDataResultSet(
-          DBMetadataResultSetMetadata metadataType, Object[][] rows, Statement statement)
-          throws SQLException {
+      DBMetadataResultSetMetadata metadataType, Object[][] rows, Statement statement)
+      throws SQLException {
     this(
-            metadataType.getColumnNames(),
-            metadataType.getColumnTypeNames(),
-            metadataType.getColumnTypes(),
-            rows,
-            statement);
+        metadataType.getColumnNames(),
+        metadataType.getColumnTypeNames(),
+        metadataType.getColumnTypes(),
+        rows,
+        statement);
   }
 
   protected SnowflakeDatabaseMetaDataResultSet(
-      DBMetadataResultSetMetadata metadataType, Object[][] rows, Statement statement, String queryId)
+      DBMetadataResultSetMetadata metadataType,
+      Object[][] rows,
+      Statement statement,
+      String queryId)
       throws SQLException {
     this(
         metadataType.getColumnNames(),
@@ -239,9 +241,11 @@ class SnowflakeDatabaseMetaDataResultSet extends SnowflakeBaseResultSet {
     }
   }
 
-  static ResultSet getEmptyResult(DBMetadataResultSetMetadata metadataType, Statement statement, String queryId)
-    throws SQLException {
-    return new SnowflakeDatabaseMetaDataResultSet(metadataType, new Object[][] {}, statement, queryId);
+  static ResultSet getEmptyResult(
+      DBMetadataResultSetMetadata metadataType, Statement statement, String queryId)
+      throws SQLException {
+    return new SnowflakeDatabaseMetaDataResultSet(
+        metadataType, new Object[][] {}, statement, queryId);
   }
 
   static ResultSet getEmptyResultSet(DBMetadataResultSetMetadata metadataType, Statement statement)
@@ -427,8 +431,7 @@ class SnowflakeDatabaseMetaDataResultSet extends SnowflakeBaseResultSet {
     }
   }
 
-  public String getQueryID()
-  {
+  public String getQueryID() {
     return queryId;
   }
 
