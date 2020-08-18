@@ -217,17 +217,22 @@ public class SnowflakeUtil {
         extColTypeName = "BINARY";
         break;
 
+      case USER_DEFINED_TYPE:
+        colType = Types.VARCHAR;
+        JsonNode extColTypeNameNode = colNode.path("gludt");
+        if (!extColTypeNameNode.isMissingNode()) {
+          extColTypeName = extColTypeNameNode.asText();
+        } else {
+          extColTypeName = "USER_DEFINED_TYPE";
+        }
+        break;
+
       default:
         throw new SnowflakeSQLLoggedException(
             session,
             ErrorCode.INTERNAL_ERROR.getMessageCode(),
             SqlState.INTERNAL_ERROR,
             "Unknown column type: " + internalColTypeName);
-    }
-
-    JsonNode extColTypeNameNode = colNode.path("extTypeName");
-    if (!extColTypeNameNode.isMissingNode()) {
-      extColTypeName = extColTypeNameNode.asText();
     }
 
     String colSrcDatabase = colNode.path("database").asText();
