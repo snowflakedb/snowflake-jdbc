@@ -145,12 +145,13 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
     try {
       if (resultSet.isWrapperFor(SnowflakeResultSet.class)) {
         queryId = resultSet.unwrap(SnowflakeResultSet.class).getQueryID();
-        // do nothing here; just don't include the query ID
       } else if (resultSet.isWrapperFor(SnowflakeDatabaseMetaDataResultSet.class)) {
         queryId = resultSet.unwrap(SnowflakeDatabaseMetaDataResultSet.class).getQueryID();
       }
     } catch (SQLException e) {
-      // do nothing here; just don't include query ID
+      // This should never be reached because resultSet should always be one of the 2 types
+      // unwrapped above.
+      // In case we get here, do nothing; just don't include query ID
     }
     ObjectNode ibValue = mapper.createObjectNode();
     ibValue.put("type", TelemetryField.METADATA_METRICS.toString());
