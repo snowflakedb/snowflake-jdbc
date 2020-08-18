@@ -4,24 +4,18 @@
 
 package net.snowflake.client.jdbc;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.nio.charset.StandardCharsets;
-import java.sql.Date;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.SQLFeatureNotSupportedException;
-import java.sql.Statement;
-import java.sql.Time;
-import java.sql.Timestamp;
-import java.sql.Types;
-import java.util.List;
-import java.util.TimeZone;
 import net.snowflake.client.core.SFResultSetMetaData;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SqlState;
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.nio.charset.StandardCharsets;
+import java.sql.*;
+import java.util.List;
+import java.util.TimeZone;
 
 class SnowflakeDatabaseMetaDataResultSet extends SnowflakeBaseResultSet {
   ResultSet showObjectResultSet;
@@ -29,6 +23,8 @@ class SnowflakeDatabaseMetaDataResultSet extends SnowflakeBaseResultSet {
   private boolean wasNull = false;
   protected Object[][] rows;
   protected int row = -1;
+
+  private String queryId;
 
   static final SFLogger logger =
       SFLoggerFactory.getLogger(SnowflakeDatabaseMetaDataResultSet.class);
@@ -98,7 +94,18 @@ class SnowflakeDatabaseMetaDataResultSet extends SnowflakeBaseResultSet {
   }
 
   protected SnowflakeDatabaseMetaDataResultSet(
-      DBMetadataResultSetMetadata metadataType, Object[][] rows, Statement statement)
+          DBMetadataResultSetMetadata metadataType, Object[][] rows, Statement statement)
+          throws SQLException {
+    this(
+            metadataType.getColumnNames(),
+            metadataType.getColumnTypeNames(),
+            metadataType.getColumnTypes(),
+            rows,
+            statement);
+  }
+
+  protected SnowflakeDatabaseMetaDataResultSet(
+      DBMetadataResultSetMetadata metadataType, Object[][] rows, Statement statement, String queryId)
       throws SQLException {
     this(
         metadataType.getColumnNames(),
@@ -106,6 +113,7 @@ class SnowflakeDatabaseMetaDataResultSet extends SnowflakeBaseResultSet {
         metadataType.getColumnTypes(),
         rows,
         statement);
+    this.queryId = queryId;
   }
 
   @Override
@@ -229,6 +237,11 @@ class SnowflakeDatabaseMetaDataResultSet extends SnowflakeBaseResultSet {
       throw new SnowflakeSQLException(
           ErrorCode.INVALID_VALUE_CONVERT, obj.getClass().getName(), "DATE", obj);
     }
+  }
+
+  static ResultSet getEmptyResult(DBMetadataResultSetMetadata metadataType, Statement statement, String queryId)
+    throws SQLException {
+    return new SnowflakeDatabaseMetaDataResultSet(metadataType, new Object[][] {}, statement, queryId);
   }
 
   static ResultSet getEmptyResultSet(DBMetadataResultSetMetadata metadataType, Statement statement)
@@ -412,6 +425,11 @@ class SnowflakeDatabaseMetaDataResultSet extends SnowflakeBaseResultSet {
     } else {
       return ((Number) obj).doubleValue();
     }
+  }
+
+  public String getQueryID()
+  {
+    return queryId;
   }
 
   /** @deprecated */

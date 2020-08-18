@@ -3,17 +3,17 @@
  */
 package net.snowflake.client.jdbc;
 
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.nullValue;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import com.fasterxml.jackson.databind.JsonNode;
+import net.snowflake.client.ConditionalIgnoreRule;
+import net.snowflake.client.RunningOnGithubAction;
+import net.snowflake.client.category.TestCategoryResultSet;
+import net.snowflake.client.jdbc.telemetry.*;
+import net.snowflake.common.core.SFBinary;
+import org.apache.arrow.vector.Float8Vector;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -23,34 +23,16 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-import java.sql.Clob;
-import java.sql.Connection;
-import java.sql.DatabaseMetaData;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.sql.Types;
+import java.sql.*;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.regex.Pattern;
-import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningOnGithubAction;
-import net.snowflake.client.category.TestCategoryResultSet;
-import net.snowflake.client.jdbc.telemetry.Telemetry;
-import net.snowflake.client.jdbc.telemetry.TelemetryClient;
-import net.snowflake.client.jdbc.telemetry.TelemetryData;
-import net.snowflake.client.jdbc.telemetry.TelemetryField;
-import net.snowflake.client.jdbc.telemetry.TelemetryUtil;
-import net.snowflake.common.core.SFBinary;
-import org.apache.arrow.vector.Float8Vector;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+
+import static org.hamcrest.CoreMatchers.*;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.*;
 
 /** Test ResultSet */
 @Category(TestCategoryResultSet.class)
@@ -1141,6 +1123,30 @@ public class ResultSetIT extends BaseJDBCTest {
           succeeded[i]);
     }
     telemetry.sendBatchAsync();
+  }
+
+  @Test
+  public void testMetadataAPIMetricCollection() throws SQLException {
+    Connection con = getConnection();
+    Telemetry telemetry =
+            con.unwrap(SnowflakeConnectionV1.class).getSfSession().getTelemetryClient();
+    DatabaseMetaData metadata = con.getMetaData();
+    // Call one of the DatabaseMetadata API functions but for simplicity, ensure returned ResultSet is empty
+    metadata.getColumns("fakecatalog", "fakeschema", null, null);
+    LinkedList<TelemetryData> logs = ((TelemetryClient) telemetry).logBuffer();
+    // No result set has been downloaded from server so no chunk downloader metrics have been collected
+    // Logs should contain 1 item: the data about the getColumns() parameters
+    assertEquals(logs.size(), 1);
+    // Assert the log is of type client_metadata_api_metrics
+    for (TelemetryData log : logs) {
+      assertEquals(log.getMessage().get(TelemetryUtil.TYPE).textValue(), TelemetryField.METADATA_METRICS.toString());
+      assertEquals(log.getMessage().get("functionName").textValue(), "getColumns");
+      JsonNode parameterValues = log.getMessage().get("functionParameters");
+      assertEquals(parameterValues.get("catalog").textValue(), "fakecatalog");
+      assertEquals(parameterValues.get("schema").textValue(), "fakeschema");
+      assertEquals(parameterValues.get("generalNamePattern").textValue(), null);
+      assertEquals(parameterValues.get("specificNamePattern").textValue(), null);
+    }
   }
 
   @Test
