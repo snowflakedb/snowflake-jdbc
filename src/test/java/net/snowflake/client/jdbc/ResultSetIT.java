@@ -3,11 +3,18 @@
  */
 package net.snowflake.client.jdbc;
 
-import static org.hamcrest.CoreMatchers.*;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.*;
-
 import com.fasterxml.jackson.databind.JsonNode;
+import net.snowflake.client.ConditionalIgnoreRule;
+import net.snowflake.client.RunningOnGithubAction;
+import net.snowflake.client.category.TestCategoryResultSet;
+import net.snowflake.client.jdbc.telemetry.*;
+import net.snowflake.common.core.SFBinary;
+import org.apache.arrow.vector.Float8Vector;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -22,16 +29,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.regex.Pattern;
-import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningOnGithubAction;
-import net.snowflake.client.category.TestCategoryResultSet;
-import net.snowflake.client.jdbc.telemetry.*;
-import net.snowflake.common.core.SFBinary;
-import org.apache.arrow.vector.Float8Vector;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+
+import static org.hamcrest.CoreMatchers.*;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.*;
 
 /** Test ResultSet */
 @Category(TestCategoryResultSet.class)
@@ -1159,6 +1160,9 @@ public class ResultSetIT extends BaseJDBCTest {
 
     metadata.getProcedureColumns("TESTDB", "TESTSCHEMA", null, null);
     logs = ((TelemetryClient) telemetry).logBuffer();
+    for (TelemetryData log : logs) {
+      System.out.println(log.getMessage().get(TelemetryUtil.TYPE).textValue());
+    }
     assertEquals(logs.size(), 2);
     // first item in log buffer is metrics on time to consume first result set chunk
     assertEquals(
