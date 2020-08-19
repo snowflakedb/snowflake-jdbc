@@ -1161,9 +1161,6 @@ public class ResultSetIT extends BaseJDBCTest {
     String schema = con.getSchema();
     ResultSet rs = metadata.getColumns(catalog, schema, null, null);
     logs = ((TelemetryClient) telemetry).logBuffer();
-    for (TelemetryData log : logs) {
-      System.out.println(log.getMessage().get(TelemetryUtil.TYPE).textValue());
-    }
     assertEquals(logs.size(), 2);
     // first item in log buffer is metrics on time to consume first result set chunk
     assertEquals(
@@ -1175,7 +1172,7 @@ public class ResultSetIT extends BaseJDBCTest {
         logs.get(1).getMessage().get(TelemetryUtil.TYPE).textValue(),
         TelemetryField.METADATA_METRICS.toString());
     // Assert function name and params match and that query id exists
-    assertEquals(logs.get(1).getMessage().get("function_name").textValue(), "getProcedureColumns");
+    assertEquals(logs.get(1).getMessage().get("function_name").textValue(), "getColumns");
     assertTrue(
         Pattern.matches(
             "[a-z0-9]{8}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{12}",
