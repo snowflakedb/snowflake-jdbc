@@ -1159,7 +1159,7 @@ public class ResultSetIT extends BaseJDBCTest {
 
     String catalog = con.getCatalog();
     String schema = con.getSchema();
-    ResultSet rs = metadata.getProcedureColumns(catalog, schema, null, null);
+    ResultSet rs = metadata.getColumns(catalog, schema, null, null);
     logs = ((TelemetryClient) telemetry).logBuffer();
     for (TelemetryData log : logs) {
       System.out.println(log.getMessage().get(TelemetryUtil.TYPE).textValue());
