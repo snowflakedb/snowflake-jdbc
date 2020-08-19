@@ -3,18 +3,11 @@
  */
 package net.snowflake.client.jdbc;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningOnGithubAction;
-import net.snowflake.client.category.TestCategoryResultSet;
-import net.snowflake.client.jdbc.telemetry.*;
-import net.snowflake.common.core.SFBinary;
-import org.apache.arrow.vector.Float8Vector;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import static org.hamcrest.CoreMatchers.*;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.*;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -29,10 +22,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.regex.Pattern;
-
-import static org.hamcrest.CoreMatchers.*;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.*;
+import net.snowflake.client.ConditionalIgnoreRule;
+import net.snowflake.client.RunningOnGithubAction;
+import net.snowflake.client.category.TestCategoryResultSet;
+import net.snowflake.client.jdbc.telemetry.*;
+import net.snowflake.common.core.SFBinary;
+import org.apache.arrow.vector.Float8Vector;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 /** Test ResultSet */
 @Category(TestCategoryResultSet.class)
@@ -1158,7 +1157,9 @@ public class ResultSetIT extends BaseJDBCTest {
     // send data to clear log for next test
     telemetry.sendBatchAsync();
 
-    metadata.getProcedureColumns("TESTDB", "TESTSCHEMA", null, null);
+    String catalog = con.getCatalog();
+    String schema = con.getSchema();
+    ResultSet rs = metadata.getProcedureColumns(catalog, schema, null, null);
     logs = ((TelemetryClient) telemetry).logBuffer();
     for (TelemetryData log : logs) {
       System.out.println(log.getMessage().get(TelemetryUtil.TYPE).textValue());
@@ -1180,8 +1181,8 @@ public class ResultSetIT extends BaseJDBCTest {
             "[a-z0-9]{8}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{12}",
             logs.get(1).getMessage().get("query_id").textValue()));
     parameterValues = logs.get(1).getMessage().get("function_parameters");
-    assertEquals(parameterValues.get("catalog").textValue(), "TESTDB");
-    assertEquals(parameterValues.get("schema").textValue(), "TESTSCHEMA");
+    assertEquals(parameterValues.get("catalog").textValue(), catalog);
+    assertEquals(parameterValues.get("schema").textValue(), schema);
     assertEquals(parameterValues.get("general_name_pattern").textValue(), null);
     assertEquals(parameterValues.get("specific_name_pattern").textValue(), null);
   }
