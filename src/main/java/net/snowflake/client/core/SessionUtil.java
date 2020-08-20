@@ -100,8 +100,6 @@ public class SessionUtil {
       "CLIENT_METADATA_REQUEST_USE_CONNECTION_CTX";
   public static final String CLIENT_METADATA_USE_SESSION_DATABASE =
       "CLIENT_METADATA_USE_SESSION_DATABASE";
-  public static final String CLIENT_MULTIPART_UPLOAD_THRESHOLD_IN_PUT =
-      "CLIENT_MULTIPART_UPLOAD_THRESHOLD_IN_PUT";
 
   static final String SF_HEADER_SERVICE_NAME = "X-Snowflake-Service";
 
@@ -1339,10 +1337,6 @@ public class SessionUtil {
       } else if (CLIENT_VALIDATE_DEFAULT_PARAMETERS.equalsIgnoreCase(entry.getKey())) {
         if (session != null) {
           session.setValidateDefaultParameters(SFLoginInput.getBooleanValue(entry.getValue()));
-        }
-      } else if (CLIENT_MULTIPART_UPLOAD_THRESHOLD_IN_PUT.equalsIgnoreCase(entry.getKey())) {
-        if (session != null) {
-          session.setMultipartUploadThreshold((int) entry.getValue());
         }
       }
     }
