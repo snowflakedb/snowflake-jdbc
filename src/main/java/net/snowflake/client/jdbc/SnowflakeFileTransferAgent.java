@@ -81,7 +81,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView {
   private Set<String> smallSourceFiles;
 
   /* Threshold for splitting a file to upload multiple parts in parallel */
-  private int multipartUploadThreshold;
+  private int multipartUploadThreshold = 200 * 1024 * 1024;
 
   private Map<String, FileMetadata> fileMetadataMap;
 
@@ -879,17 +879,11 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView {
 
     JsonNode thresholdNode = jsonNode.path("data").path("threshold");
     int threshold = thresholdNode.asInt();
-    // if value is 0, this means an error was made in parsing the threshold.
-    if (threshold == 0) {
-      throw new SnowflakeSQLLoggedException(
-          session,
-          ErrorCode.INVALID_PARAMETER_TYPE.getMessageCode(),
-          SqlState.INVALID_PARAMETER_VALUE,
-          "unknown",
-          "positive integer");
-      // convert from megabytes to bytes
+    // if value is <= 0, this means an error was made in parsing the threshold or the threshold is invalid.
+    // Only use the threshold value if it is valid.
+    if (threshold > 0) {
+      multipartUploadThreshold = threshold * 1024 * 1024;
     }
-    multipartUploadThreshold = threshold * 1024 * 1024;
 
     showEncryptionParameter =
         jsonNode.path("data").path("clientShowEncryptionParameter").asBoolean();
