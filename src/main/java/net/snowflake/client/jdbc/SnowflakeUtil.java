@@ -243,8 +243,7 @@ public class SnowflakeUtil {
     }
 
     JsonNode extColTypeNameNode = colNode.path("extTypeName");
-    if (!extColTypeNameNode.isMissingNode())
-    {
+    if (!extColTypeNameNode.isMissingNode()) {
       extColTypeName = extColTypeNameNode.asText();
     }
 
