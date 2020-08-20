@@ -217,13 +217,20 @@ public class SnowflakeUtil {
         extColTypeName = "BINARY";
         break;
 
-      case USER_DEFINED_TYPE:
+      case GEOGRAPHY:
         colType = Types.VARCHAR;
-        JsonNode extColTypeNameNode = colNode.path("gludt");
-        if (!extColTypeNameNode.isMissingNode()) {
-          extColTypeName = extColTypeNameNode.asText();
-        } else {
-          extColTypeName = "USER_DEFINED_TYPE";
+        extColTypeName = "GEOGRAPHY";
+        JsonNode udtOutputType = colNode.path("outputType");
+        if (!udtOutputType.isMissingNode()) {
+          SnowflakeType outputType = SnowflakeType.fromString(udtOutputType.asText());
+          switch (outputType) {
+            case OBJECT:
+            case TEXT:
+              colType = Types.VARCHAR;
+              break;
+            case BINARY:
+              colType = Types.BINARY;
+          }
         }
         break;
 
@@ -233,6 +240,12 @@ public class SnowflakeUtil {
             ErrorCode.INTERNAL_ERROR.getMessageCode(),
             SqlState.INTERNAL_ERROR,
             "Unknown column type: " + internalColTypeName);
+    }
+
+    JsonNode extColTypeNameNode = colNode.path("extTypeName");
+    if (!extColTypeNameNode.isMissingNode())
+    {
+      extColTypeName = extColTypeNameNode.asText();
     }
 
     String colSrcDatabase = colNode.path("database").asText();
