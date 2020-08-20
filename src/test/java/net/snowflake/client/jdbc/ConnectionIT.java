@@ -1426,11 +1426,6 @@ public class ConnectionIT extends BaseJDBCTest {
     if (status != QueryStatus.NO_DATA) {
       assertEquals(QueryStatus.FAILED_WITH_ERROR, status);
       assertEquals(2003, status.getErrorCode());
-      assertEquals(
-          "SQL compilation error:\n"
-              + "Object 'NONEXISTENTTABLE' does not exist or not "
-              + "authorized.",
-          status.getErrorMessage());
     }
     statement.close();
     con.close();
