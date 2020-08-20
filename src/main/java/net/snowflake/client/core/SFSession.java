@@ -4,20 +4,9 @@
 
 package net.snowflake.client.core;
 
-import static net.snowflake.client.core.QueryStatus.getStatusFromString;
-import static net.snowflake.client.core.QueryStatus.isAnError;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
-import java.security.PrivateKey;
-import java.sql.DriverPropertyInfo;
-import java.sql.SQLException;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Level;
 import net.snowflake.client.jdbc.*;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
 import net.snowflake.client.jdbc.telemetry.TelemetryClient;
@@ -30,6 +19,18 @@ import org.apache.http.HttpHeaders;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
+
+import java.security.PrivateKey;
+import java.sql.DriverPropertyInfo;
+import java.sql.SQLException;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
+
+import static net.snowflake.client.core.QueryStatus.getStatusFromString;
+import static net.snowflake.client.core.QueryStatus.isAnError;
 
 /** Snowflake session implementation */
 public class SFSession {
@@ -215,9 +216,6 @@ public class SFSession {
 
   // validate the default parameters by GS?
   private boolean validateDefaultParameters;
-
-  // threshold for uploading file in multiple chunks for put commands. Default 200MB
-  private int multipartUploadThreshold = 200;
 
   // list of active asynchronous queries. Used to see if session should be closed when connection
   // closes
@@ -1389,14 +1387,6 @@ public class SFSession {
 
   public void setValidateDefaultParameters(boolean v) {
     validateDefaultParameters = v;
-  }
-
-  public int getMultipartUploadThreshold() {
-    return multipartUploadThreshold;
-  }
-
-  public void setMultipartUploadThreshold(int v) {
-    multipartUploadThreshold = v;
   }
 
   private SnowflakeConnectString sfConnStr;
