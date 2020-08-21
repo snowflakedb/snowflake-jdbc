@@ -1192,27 +1192,28 @@ public class ResultSetIT extends BaseJDBCTest {
     String schema = con.getSchema();
     ResultSet rs = metadata.getColumns(catalog, schema, null, null);
     logs = ((TelemetryClient) telemetry).logBuffer();
-    assertEquals(logs.size(), 2);
-    // first item in log buffer is metrics on time to consume first result set chunk
-    assertEquals(
-        logs.get(0).getMessage().get(TelemetryUtil.TYPE).textValue(),
-        TelemetryField.TIME_CONSUME_FIRST_RESULT.toString());
-    // second item in log buffer is metrics on getProcedureColumns() parameters
-    // Assert the log is of type client_metadata_api_metrics
-    assertEquals(
-        logs.get(1).getMessage().get(TelemetryUtil.TYPE).textValue(),
-        TelemetryField.METADATA_METRICS.toString());
-    // Assert function name and params match and that query id exists
-    assertEquals(logs.get(1).getMessage().get("function_name").textValue(), "getColumns");
-    assertTrue(
-        Pattern.matches(
-            "[a-z0-9]{8}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{12}",
-            logs.get(1).getMessage().get("query_id").textValue()));
-    parameterValues = logs.get(1).getMessage().get("function_parameters");
-    assertEquals(parameterValues.get("catalog").textValue(), catalog);
-    assertEquals(parameterValues.get("schema").textValue(), schema);
-    assertEquals(parameterValues.get("general_name_pattern").textValue(), null);
-    assertEquals(parameterValues.get("specific_name_pattern").textValue(), null);
+    int countMetadataMetrics = 0;
+    for (TelemetryData log : logs) {
+      // one item in log buffer is metrics on getProcedureColumns() parameters
+      if (log.getMessage()
+          .get(TelemetryUtil.TYPE)
+          .textValue()
+          .equals(TelemetryField.METADATA_METRICS.toString())) {
+        // Assert function name and params match and that query id exists
+        assertEquals(log.getMessage().get("function_name").textValue(), "getColumns");
+        assertTrue(
+            Pattern.matches(
+                "[a-z0-9]{8}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{12}",
+                log.getMessage().get("query_id").textValue()));
+        parameterValues = log.getMessage().get("function_parameters");
+        assertEquals(parameterValues.get("catalog").textValue(), catalog);
+        assertEquals(parameterValues.get("schema").textValue(), schema);
+        assertEquals(parameterValues.get("general_name_pattern").textValue(), null);
+        assertEquals(parameterValues.get("specific_name_pattern").textValue(), null);
+        countMetadataMetrics++;
+      }
+    }
+    assertEquals(countMetadataMetrics, 1);
   }
 
   @Test
