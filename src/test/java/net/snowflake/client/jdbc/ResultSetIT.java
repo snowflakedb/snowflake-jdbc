@@ -94,6 +94,7 @@ public class ResultSetIT extends BaseJDBCTest {
 
   @Before
   public void setUp() throws SQLException {
+    System.out.println("Running setUp");
     Connection con = getConnection();
 
     // TEST_RS
@@ -130,6 +131,7 @@ public class ResultSetIT extends BaseJDBCTest {
 
   @After
   public void tearDown() throws SQLException {
+    System.out.println("Running tearDown");
     Connection con = getConnection();
     con.createStatement().execute("drop table if exists orders_jdbc");
     con.createStatement().execute("drop table if exists test_rs");
@@ -138,6 +140,7 @@ public class ResultSetIT extends BaseJDBCTest {
 
   @Test
   public void testFindColumn() throws SQLException {
+    System.out.println("Running testFindColumn");
     Connection connection = getConnection();
     Statement statement = connection.createStatement();
     ResultSet resultSet = statement.executeQuery(selectAllSQL);
@@ -148,6 +151,7 @@ public class ResultSetIT extends BaseJDBCTest {
 
   @Test
   public void testGetColumnClassNameForBinary() throws Throwable {
+    System.out.println("Running testGetColumnClassNameForBinary");
     Connection connection = getConnection();
     Statement statement = connection.createStatement();
     statement.execute("create or replace table bintable (b binary)");
@@ -171,6 +175,7 @@ public class ResultSetIT extends BaseJDBCTest {
 
   @Test
   public void testGetMethod() throws Throwable {
+    System.out.println("testGetMethod");
     String prepInsertString = "insert into test_get values(?, ?, ?, ?, ?, ?, ?, ?)";
     int bigInt = Integer.MAX_VALUE;
     long bigLong = Long.MAX_VALUE;
@@ -236,6 +241,7 @@ public class ResultSetIT extends BaseJDBCTest {
 
   @Test
   public void testGetObjectOnDatabaseMetadataResultSet() throws SQLException {
+    System.out.println("testGetObjectOnDatabaseMetadataResultSet");
     Connection connection = getConnection();
     DatabaseMetaData databaseMetaData = connection.getMetaData();
     ResultSet resultSet = databaseMetaData.getTypeInfo();
@@ -248,6 +254,7 @@ public class ResultSetIT extends BaseJDBCTest {
 
   @Test
   public void testGetShort() throws SQLException {
+    System.out.println("testGetShort");
     ResultSet resultSet = numberCrossTesting();
     resultSet.next();
     // assert that 0 is returned for null values for every type of value
@@ -289,6 +296,7 @@ public class ResultSetIT extends BaseJDBCTest {
 
   @Test
   public void testGetInt() throws SQLException {
+    System.out.println("testGetInt");
     ResultSet resultSet = numberCrossTesting();
     resultSet.next();
     // assert that 0 is returned for null values for every type of value
@@ -329,6 +337,7 @@ public class ResultSetIT extends BaseJDBCTest {
 
   @Test
   public void testGetLong() throws SQLException {
+    System.out.println("testGetLong");
     ResultSet resultSet = numberCrossTesting();
     resultSet.next();
     // assert that 0 is returned for null values for every type of value
@@ -369,6 +378,7 @@ public class ResultSetIT extends BaseJDBCTest {
 
   @Test
   public void testGetFloat() throws SQLException {
+    System.out.println("testGetFloat");
     ResultSet resultSet = numberCrossTesting();
     resultSet.next();
     // assert that 0 is returned for null values for every type of value
@@ -409,6 +419,7 @@ public class ResultSetIT extends BaseJDBCTest {
 
   @Test
   public void testGetDouble() throws SQLException {
+    System.out.println("testGetDouble");
     ResultSet resultSet = numberCrossTesting();
     resultSet.next();
     // assert that 0 is returned for null values for every type of value
@@ -449,6 +460,7 @@ public class ResultSetIT extends BaseJDBCTest {
 
   @Test
   public void testGetBigDecimal() throws SQLException {
+    System.out.println("testGetBigDecimal");
     Connection connection = getConnection();
     Statement statement = connection.createStatement();
     statement.execute("create or replace table test_get(colA number(38,9))");
@@ -508,6 +520,7 @@ public class ResultSetIT extends BaseJDBCTest {
 
   @Test
   public void testCursorPosition() throws SQLException {
+    System.out.println("testCursorPosition");
     Connection connection = getConnection();
     Statement statement = connection.createStatement();
     statement.execute(selectAllSQL);
@@ -538,6 +551,7 @@ public class ResultSetIT extends BaseJDBCTest {
 
   @Test
   public void testGetBytes() throws SQLException {
+    System.out.println("testGetBytes");
     Properties props = new Properties();
     props.setProperty("enable_binary_datatype", Boolean.TRUE.toString());
     Connection connection = getConnection(props);
@@ -615,6 +629,7 @@ public class ResultSetIT extends BaseJDBCTest {
 
   @Test
   public void testResultSetMetadata() throws SQLException {
+    System.out.println("testResultSetMetadata");
     Connection connection = getConnection();
     final Map<String, String> params = getConnectionParameters();
     Statement statement = connection.createStatement();
@@ -665,6 +680,7 @@ public class ResultSetIT extends BaseJDBCTest {
   // SNOW-31647
   @Test
   public void testColumnMetaWithZeroPrecision() throws SQLException {
+    System.out.println("testColumnMetaWithZeroPrecision");
     Connection connection = getConnection();
     Statement statement = connection.createStatement();
 
@@ -686,6 +702,7 @@ public class ResultSetIT extends BaseJDBCTest {
 
   @Test
   public void testGetObjectOnFixedView() throws Exception {
+    System.out.println("testGetObjectOnFixedView");
     Connection connection = getConnection();
     Statement statement = connection.createStatement();
 
@@ -723,6 +740,7 @@ public class ResultSetIT extends BaseJDBCTest {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testGetColumnDisplaySizeAndPrecision() throws SQLException {
+    System.out.println("testGetColumnDisplaySizeAndPrecision");
     Connection connection = getConnection();
     Statement statement = connection.createStatement();
 
@@ -767,6 +785,7 @@ public class ResultSetIT extends BaseJDBCTest {
 
   @Test
   public void testGetBoolean() throws SQLException {
+    System.out.println("testGetBoolean");
     Connection connection = getConnection();
     Statement statement = connection.createStatement();
     statement.execute("create or replace table testBoolean(cola boolean)");
@@ -836,6 +855,7 @@ public class ResultSetIT extends BaseJDBCTest {
 
   @Test
   public void testGetClob() throws Throwable {
+    System.out.println("testGetClob");
     Connection connection = getConnection();
     Statement statement = connection.createStatement();
     statement.execute("create or replace table testClob(cola text)");
@@ -877,6 +897,7 @@ public class ResultSetIT extends BaseJDBCTest {
 
   @Test
   public void testFetchOnClosedResultSet() throws SQLException {
+    System.out.println("testFetchOnClosedResultSet");
     Connection connection = getConnection();
     Statement statement = connection.createStatement();
     ResultSet resultSet = statement.executeQuery(selectAllSQL);
@@ -888,6 +909,7 @@ public class ResultSetIT extends BaseJDBCTest {
 
   @Test
   public void testReleaseDownloaderCurrentMemoryUsage() throws SQLException {
+    System.out.println("testReleaseDownloaderCurrentMemoryUsage");
     Connection connection = getConnection();
     Statement statement = connection.createStatement();
     final long initialMemoryUsage = SnowflakeChunkDownloader.getCurrentMemoryUsage();
@@ -909,15 +931,18 @@ public class ResultSetIT extends BaseJDBCTest {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testResultColumnSearchCaseSensitiveOld() throws Exception {
+    System.out.println("testResultColumnSearchCaseSensitiveOld");
     subTestResultColumnSearchCaseSensitive("JDBC_RS_COLUMN_CASE_INSENSITIVE");
   }
 
   @Test
   public void testResultColumnSearchCaseSensitive() throws Exception {
+    System.out.println("testResultColumnSearchCaseSensitive");
     subTestResultColumnSearchCaseSensitive("CLIENT_RESULT_COLUMN_CASE_INSENSITIVE");
   }
 
   private void subTestResultColumnSearchCaseSensitive(String parameterName) throws Exception {
+    System.out.println("subTestResultColumnSearchCaseSensitive");
     Properties prop = new Properties();
     prop.put("tracing", "FINEST");
     Connection connection = getConnection(prop);
@@ -951,6 +976,7 @@ public class ResultSetIT extends BaseJDBCTest {
 
   @Test
   public void testInvalidColumnIndex() throws SQLException {
+    System.out.println("testInvalidColumnIndex");
     Connection connection = getConnection();
     Statement statement = connection.createStatement();
     ResultSet resultSet = statement.executeQuery(selectAllSQL);
@@ -976,6 +1002,7 @@ public class ResultSetIT extends BaseJDBCTest {
   /** SNOW-28882: wasNull was not set properly */
   @Test
   public void testWasNull() throws Exception {
+    System.out.println("testWasNull");
     Connection con = getConnection();
     ResultSet ret =
         con.createStatement()
@@ -997,6 +1024,7 @@ public class ResultSetIT extends BaseJDBCTest {
   /** SNOW-28390 */
   @Test
   public void testParseInfAndNaNNumber() throws Exception {
+    System.out.println("testParseInfAndNaNNumber");
     Connection con = getConnection();
     ResultSet ret =
         con.createStatement().executeQuery("select to_double('inf'), to_double('-inf')");
@@ -1015,6 +1043,7 @@ public class ResultSetIT extends BaseJDBCTest {
   /** SNOW-33227 */
   @Test
   public void testTreatDecimalAsInt() throws Exception {
+    System.out.println("testTreatDecimalAsInt");
     Connection con = getConnection();
     ResultSet ret = con.createStatement().executeQuery("select 1");
 
@@ -1032,7 +1061,7 @@ public class ResultSetIT extends BaseJDBCTest {
 
   @Test
   public void testIsLast() throws Exception {
-
+    System.out.println("testIsLast");
     Connection con = getConnection();
     ResultSet ret = con.createStatement().executeQuery("select * from orders_jdbc");
     assertTrue("should be before the first", ret.isBeforeFirst());
@@ -1082,6 +1111,7 @@ public class ResultSetIT extends BaseJDBCTest {
 
   @Test
   public void testMultipleChunks() throws SQLException, IOException {
+    System.out.println("testMultipleChunks");
     Connection con = getConnection();
     Statement statement = con.createStatement();
 
@@ -1126,6 +1156,7 @@ public class ResultSetIT extends BaseJDBCTest {
 
   @Test
   public void testMetadataAPIMetricCollection() throws SQLException {
+    System.out.println("testMetadataAPIMetricCollection");
     Connection con = getConnection();
     Telemetry telemetry =
         con.unwrap(SnowflakeConnectionV1.class).getSfSession().getTelemetryClient();
@@ -1186,6 +1217,7 @@ public class ResultSetIT extends BaseJDBCTest {
 
   @Test
   public void testUpdateCountOnCopyCmd() throws Exception {
+    System.out.println("testUpdateCountOnCopyCmd");
     Connection con = getConnection();
     Statement statement = con.createStatement();
 
@@ -1208,6 +1240,7 @@ public class ResultSetIT extends BaseJDBCTest {
 
   @Test
   public void testGetTimeNullTimestampAndTimestampNullTime() throws Throwable {
+    System.out.println("testGetTimeNullTimestampAndTimestampNullTime");
     try (Connection con = getConnection()) {
       con.createStatement().execute("create or replace table testnullts(c1 timestamp, c2 time)");
       try {
