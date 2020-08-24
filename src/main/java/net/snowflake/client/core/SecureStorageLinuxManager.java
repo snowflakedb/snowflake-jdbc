@@ -47,7 +47,7 @@ public class SecureStorageLinuxManager implements SecureStorageManager {
     return new SecureStorageLinuxManager();
   }
 
-  public SecureStorageStatus setCredential(String host, String user, String token) {
+  public SecureStorageStatus setCredential(String host, String user, String type, String token) {
     if (Strings.isNullOrEmpty(token)) {
       logger.info("No token provided");
       return SecureStorageStatus.SUCCESS;
@@ -73,7 +73,7 @@ public class SecureStorageLinuxManager implements SecureStorageManager {
     return SecureStorageStatus.SUCCESS;
   }
 
-  public String getCredential(String host, String user) {
+  public String getCredential(String host, String user, String type) {
     JsonNode res = fileCacheManager.readCacheFile();
     readJsonStoreCache(res);
 
@@ -92,7 +92,7 @@ public class SecureStorageLinuxManager implements SecureStorageManager {
    * the future, deletion for a specific credential is needed, we can change this function to
    * satisfy it."
    */
-  public SecureStorageStatus deleteCredential(String host, String user) {
+  public SecureStorageStatus deleteCredential(String host, String user, String type) {
     fileCacheManager.deleteCacheFile();
     idTokenCache.clear();
     return SecureStorageStatus.SUCCESS;

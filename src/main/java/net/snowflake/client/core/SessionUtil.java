@@ -65,6 +65,8 @@ public class SessionUtil {
   private static final String SF_HEADER_TOKEN_TAG = "Token";
   private static final String CLIENT_STORE_TEMPORARY_CREDENTIAL =
       "CLIENT_STORE_TEMPORARY_CREDENTIAL";
+  private static final String CLIENT_ALLOW_MFA_CACHING =
+      "CLIENT_ALLOW_MFA_CACHING";
   private static final String SERVICE_NAME = "SERVICE_NAME";
   private static final String CLIENT_IN_BAND_TELEMETRY_ENABLED = "CLIENT_TELEMETRY_ENABLED";
   private static final String CLIENT_OUT_OF_BAND_TELEMETRY_ENABLED =
@@ -159,6 +161,7 @@ public class SessionUtil {
               CLIENT_IN_BAND_TELEMETRY_ENABLED,
               CLIENT_OUT_OF_BAND_TELEMETRY_ENABLED,
               CLIENT_STORE_TEMPORARY_CREDENTIAL,
+              CLIENT_ALLOW_MFA_CACHING,
               "JDBC_USE_JSON_PARSER",
               "AUTOCOMMIT",
               "JDBC_EFFICIENT_CHUNK_STORAGE",
@@ -200,6 +203,10 @@ public class SessionUtil {
           .equalsIgnoreCase(ClientAuthnDTO.AuthenticatorType.SNOWFLAKE.name())) {
         // OKTA authenticator v1.
         return ClientAuthnDTO.AuthenticatorType.OKTA;
+      } else if (!loginInput
+          .getAuthenticator()
+          .equalsIgnoreCase(ClientAuthnDTO.AuthenticatorType.USERNAME_PASSWORD_MFA())) {
+        return ClientAuthnDTO.AuthenticatorType.USERNAME_PASSWORD_MFA;
       }
     }
 
@@ -259,11 +266,15 @@ public class SessionUtil {
       }
     }
 
-    boolean isClientStoreTemporaryCredential =
-        asBoolean(loginInput.getSessionParameters().get(CLIENT_STORE_TEMPORARY_CREDENTIAL));
-    if (isClientStoreTemporaryCredential) {
-      CredentialManager.getInstance().fillCachedIdToken(loginInput);
+    if (authenticator.equals(ClientAuthnDTO.AuthenticatorType.USERNAME_PASSWORD_MFA)) {
+      if (Constants.getOS() == Constants.OS.MAC || Constants.getOS() == Constants.OS.WINDOWS) {
+        loginInput.getSessionParameters().put(CLIENT_ALLOW_MFA_CACHING, true);
+      } else {
+        loginInput.getSessionParameters().put(CLIENT_ALLOW_MFA_CACHING, false);
+      }
     }
+
+    preNewSession(loginInput);
 
     try {
       return newSession(loginInput, connectionPropertiesMap, tracingLevel);
@@ -271,6 +282,16 @@ public class SessionUtil {
       // Id Token expired. We run newSession again with id_token cache cleared
       logger.debug("ID Token being used has expired. Reauthenticating with ID Token cleared...");
       return newSession(loginInput, connectionPropertiesMap, tracingLevel);
+    }
+  }
+
+  static private void preNewSession(SFLoginInput loginInput) throws SFException {
+    if (asBoolean(loginInput.getSessionParameters().get(CLIENT_STORE_TEMPORARY_CREDENTIAL))) {
+      CredentialManager.getInstance().fillCachedIdToken(loginInput);
+    } 
+
+    if (asBoolean(loginInput.getSessionParameters().get(CLIENT_ALLOW_MFA_CACHING))) {
+      CredentialManager.getInstance().fillCachedMfaToken(loginInput);
     }
   }
 
@@ -308,6 +329,7 @@ public class SessionUtil {
     String sessionId;
     long masterTokenValidityInSeconds;
     String idToken;
+    String mfaToken;
     String databaseVersion = null;
     int databaseMajorVersion = 0;
     int databaseMinorVersion = 0;
@@ -418,6 +440,11 @@ public class SessionUtil {
           || authenticatorType == ClientAuthnDTO.AuthenticatorType.SNOWFLAKE_JWT) {
         data.put(ClientAuthnParameter.AUTHENTICATOR.name(), authenticatorType.name());
         data.put(ClientAuthnParameter.TOKEN.name(), loginInput.getToken());
+      } else if (authenticatorType == ClientAuthnDTO.AuthenticatorType.USERNAME_PASSWORD_MFA) {
+        data.put(ClientAuthnParameter.PASSWORD.name(), loginInput.getPassword());
+        if (loginInput.getMfaToken() != null) {
+          data.put(ClientAuthnParameter.TOKEN.name(), loginInput.getMfaToken());
+        }
       }
 
       // map of client environment parameters, including connection parameters
@@ -583,6 +610,8 @@ public class SessionUtil {
       sessionToken = jsonNode.path("data").path("token").asText();
       masterToken = jsonNode.path("data").path("masterToken").asText();
       idToken = nullStringAsEmptyString(jsonNode.path("data").path("idToken").asText());
+      // WUFAN TODO, checkout whether mfa token is given as field `mfaToken`:
+      mfaToken = nullStringAsEmptyString(jsonNode.path("data").path("mfaToken").asText());
       masterTokenValidityInSeconds = jsonNode.path("data").path("masterValidityInSeconds").asLong();
       String serverVersion = jsonNode.path("data").path("serverVersion").asText();
       sessionId = jsonNode.path("data").path("sessionId").asText();
@@ -682,6 +711,7 @@ public class SessionUtil {
             masterToken,
             masterTokenValidityInSeconds,
             idToken,
+            mfaToken,
             databaseVersion,
             databaseMajorVersion,
             databaseMinorVersion,
@@ -696,6 +726,11 @@ public class SessionUtil {
     if (consentCacheIdToken) {
       CredentialManager.getInstance().writeTemporaryCredential(loginInput, ret);
     }
+
+    if (asBoolean(loginInput.getSessionParameters().get(CLIENT_ALLOW_MFA_CACHING))) {
+      CredentialManager.getInstance().writeMfaToken(loginInput, ret);
+    }
+
     return ret;
   }
 
@@ -791,11 +826,10 @@ public class SessionUtil {
       setServiceNameHeader(loginInput, postRequest);
 
       logger.debug(
-          "request type: {}, old session token: {}, " + "master token: {}, id token: {}",
+          "request type: {}, old session token: {}, " + "master token: {}",
           requestType.value,
           (ArgSupplier) () -> loginInput.getSessionToken() != null ? "******" : null,
-          (ArgSupplier) () -> loginInput.getMasterToken() != null ? "******" : null,
-          (ArgSupplier) () -> loginInput.getIdToken() != null ? "******" : null);
+          (ArgSupplier) () -> loginInput.getMasterToken() != null ? "******" : null);
 
       String theString =
           HttpUtil.executeGeneralRequest(
