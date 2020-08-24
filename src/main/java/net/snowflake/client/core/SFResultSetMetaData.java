@@ -4,15 +4,6 @@
 
 package net.snowflake.client.core;
 
-import java.sql.Date;
-import java.sql.ResultSetMetaData;
-import java.sql.Types;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.TimeZone;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeColumnMetadata;
 import net.snowflake.client.jdbc.SnowflakeUtil;
@@ -21,6 +12,11 @@ import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SFTime;
 import net.snowflake.common.core.SFTimestamp;
 import net.snowflake.common.core.SnowflakeDateTimeFormat;
+
+import java.sql.Date;
+import java.sql.ResultSetMetaData;
+import java.sql.Types;
+import java.util.*;
 
 /** Snowflake ResultSetMetaData */
 public class SFResultSetMetaData {
@@ -358,8 +354,6 @@ public class SFResultSetMetaData {
         || internalColumnType == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_TZ) {
       externalColumnType = Types.TIMESTAMP;
     }
-
-    logger.debug("column type = {}", externalColumnType);
 
     return externalColumnType;
   }

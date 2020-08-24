@@ -4,14 +4,6 @@
 
 package net.snowflake.client.core;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.nio.ByteBuffer;
-import java.sql.Date;
-import java.sql.Time;
-import java.sql.Timestamp;
-import java.sql.Types;
-import java.util.TimeZone;
 import net.snowflake.client.core.arrow.ArrowResultUtil;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeTimestampNTZAsUTC;
@@ -24,6 +16,15 @@ import net.snowflake.common.core.SFBinaryFormat;
 import net.snowflake.common.core.SFTime;
 import net.snowflake.common.core.SFTimestamp;
 import org.apache.arrow.vector.Float8Vector;
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.nio.ByteBuffer;
+import java.sql.Date;
+import java.sql.Time;
+import java.sql.Timestamp;
+import java.sql.Types;
+import java.util.TimeZone;
 
 /** Abstract class used to represent snowflake result set in json format */
 public abstract class SFJsonResultSet extends SFBaseResultSet {
@@ -44,7 +45,6 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
   protected abstract Object getObjectInternal(int columnIndex) throws SFException;
 
   public Object getObject(int columnIndex) throws SFException {
-    logger.debug("public Object getObject(int columnIndex)");
 
     int type = resultSetMetaData.getColumnType(columnIndex);
 
