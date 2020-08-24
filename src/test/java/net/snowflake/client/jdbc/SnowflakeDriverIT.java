@@ -2878,7 +2878,8 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
       statement = connection.createStatement();
 
       String sql =
-          "SELECT random()||random(), randstr(1000, random()) FROM table(generator(rowcount => 10000))";
+          "SELECT random()||random(), randstr(1000, random()) FROM table(generator(rowcount =>"
+              + " 10000))";
       ResultSet result = statement.executeQuery(sql);
 
       int cnt = 0;
@@ -2944,7 +2945,8 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
 
       preparedStatement =
           snowflakeConnection.prepareStatement(
-              "select bv:\"1\":\"value\"::string, bv:\"2\":\"value\"::string from (select parse_json(system$get_bind_values(?)) bv)");
+              "select bv:\"1\":\"value\"::string, bv:\"2\":\"value\"::string from (select"
+                  + " parse_json(system$get_bind_values(?)) bv)");
       preparedStatement.setString(1, queryId);
       resultSet = preparedStatement.executeQuery();
       resultSet.next();
@@ -3378,6 +3380,75 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
     }
   }
 
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testGeoMetadata() throws Throwable {
+    Connection connection = null;
+    Statement regularStatement = null;
+
+    try {
+      Properties paramProperties = new Properties();
+
+      paramProperties.put("ENABLE_FIX_182763", true);
+
+      connection = getConnection(paramProperties);
+
+      regularStatement = connection.createStatement();
+
+      regularStatement.execute("create or replace table t_geo(geo geography);");
+
+      testGeoMetadataSingle(connection, regularStatement, "geoJson", Types.VARCHAR);
+
+      testGeoMetadataSingle(connection, regularStatement, "geoJson", Types.VARCHAR);
+
+      testGeoMetadataSingle(connection, regularStatement, "wkt", Types.VARCHAR);
+
+      testGeoMetadataSingle(connection, regularStatement, "wkt", Types.VARCHAR);
+
+      testGeoMetadataSingle(connection, regularStatement, "wkb", Types.BINARY);
+
+      testGeoMetadataSingle(connection, regularStatement, "wkb", Types.BINARY);
+
+    } finally {
+      if (regularStatement != null) {
+        regularStatement.execute("drop table t_geo");
+        regularStatement.close();
+      }
+
+      if (connection != null) {
+        connection.close();
+      }
+    }
+  }
+
+  private void testGeoMetadataSingle(
+      Connection connection,
+      Statement regularStatement,
+      String outputFormat,
+      int expectedColumnType)
+      throws Throwable {
+    ResultSet resultSet = null;
+
+    try {
+      regularStatement.execute("alter session set GEOGRAPHY_OUTPUT_FORMAT='" + outputFormat + "'");
+
+      DatabaseMetaData md = connection.getMetaData();
+      resultSet = md.getColumns(null, null, "T_GEO", null);
+      ResultSetMetaData metadata = resultSet.getMetaData();
+
+      assertEquals(24, metadata.getColumnCount());
+
+      assertTrue(resultSet.next());
+
+      assertEquals(expectedColumnType, resultSet.getInt(5));
+      assertEquals("GEOGRAPHY", resultSet.getString(6));
+    } finally {
+      if (resultSet != null) {
+        resultSet.close();
+      }
+    }
+  }
+
   /**
    * Tests that result columns of type GEOGRAPHY appear as VARCHAR / VARIANT / BINARY to the client,
    * depending on the value of GEOGRAPHY_OUTPUT_FORMAT
@@ -3676,7 +3747,8 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
 
       preparedStatement =
           connection.prepareStatement(
-              "select 3 where to_timestamp_ltz(?, 3) = '1970-01-01 00:00:12.345 +000'::timestamp_ltz");
+              "select 3 where to_timestamp_ltz(?, 3) = '1970-01-01 00:00:12.345"
+                  + " +000'::timestamp_ltz");
 
       // First test, normal usage.
       preparedStatement.setInt(1, 12345);

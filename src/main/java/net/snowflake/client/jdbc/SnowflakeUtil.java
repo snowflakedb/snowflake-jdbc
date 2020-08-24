@@ -217,6 +217,23 @@ public class SnowflakeUtil {
         extColTypeName = "BINARY";
         break;
 
+      case GEOGRAPHY:
+        colType = Types.VARCHAR;
+        extColTypeName = "GEOGRAPHY";
+        JsonNode udtOutputType = colNode.path("outputType");
+        if (!udtOutputType.isMissingNode()) {
+          SnowflakeType outputType = SnowflakeType.fromString(udtOutputType.asText());
+          switch (outputType) {
+            case OBJECT:
+            case TEXT:
+              colType = Types.VARCHAR;
+              break;
+            case BINARY:
+              colType = Types.BINARY;
+          }
+        }
+        break;
+
       default:
         throw new SnowflakeSQLLoggedException(
             session,
