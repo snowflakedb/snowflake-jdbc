@@ -3,11 +3,18 @@
  */
 package net.snowflake.client.jdbc;
 
-import static org.hamcrest.CoreMatchers.*;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.*;
-
 import com.fasterxml.jackson.databind.JsonNode;
+import net.snowflake.client.ConditionalIgnoreRule;
+import net.snowflake.client.RunningOnGithubAction;
+import net.snowflake.client.category.TestCategoryResultSet;
+import net.snowflake.client.jdbc.telemetry.*;
+import net.snowflake.common.core.SFBinary;
+import org.apache.arrow.vector.Float8Vector;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -22,16 +29,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.regex.Pattern;
-import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningOnGithubAction;
-import net.snowflake.client.category.TestCategoryResultSet;
-import net.snowflake.client.jdbc.telemetry.*;
-import net.snowflake.common.core.SFBinary;
-import org.apache.arrow.vector.Float8Vector;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+
+import static org.hamcrest.CoreMatchers.*;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.*;
 
 /** Test ResultSet */
 @Category(TestCategoryResultSet.class)
@@ -907,7 +908,7 @@ public class ResultSetIT extends BaseJDBCTest {
     assertFalse(resultSet.next());
   }
 
-  @Test
+  //@Test
   public void testReleaseDownloaderCurrentMemoryUsage() throws SQLException {
     System.out.println("testReleaseDownloaderCurrentMemoryUsage");
     Connection connection = getConnection();
