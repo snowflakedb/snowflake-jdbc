@@ -1,3 +1,9 @@
+**JDBC Driver 3.12.11**
+
+- \| SNOW-182450 | Added in-band telemetry metrics for the DatabaseMetaData get methods (e.g. getTables).
+- \| SNOW-176125 | When the log level is set to DEBUG, log the OOB telemetry entries that are sent to Snowflake.
+- \      
+
 **JDBC Driver 3.12.10**
 - \| SNOW-136193 | JDBC is adjusting DLS for some values that are towards the DLS switch, resulting in a wrong result
 - \| SNOW-164505 | Implement telemetry events in JDBC driver where needed
