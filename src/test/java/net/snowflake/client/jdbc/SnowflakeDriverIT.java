@@ -3677,7 +3677,6 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
         for (SnowflakeFileTransferMetadata oneMetadata : metadatas1) {
           InputStream inputStream = new FileInputStream(srcPath1);
 
-          assert (oneMetadata.isForOneFile());
           SnowflakeFileTransferAgent.uploadWithoutConnection(
               SnowflakeFileTransferConfig.Builder.newInstance()
                   .setSnowflakeFileTransferMetadata(oneMetadata)
@@ -3707,7 +3706,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
           p.waitFor();
 
           InputStream gzInputStream = new FileInputStream(gzfilePath);
-          assert (oneMetadata.isForOneFile());
+
           SnowflakeFileTransferAgent.uploadWithoutConnection(
               SnowflakeFileTransferConfig.Builder.newInstance()
                   .setSnowflakeFileTransferMetadata(oneMetadata)
