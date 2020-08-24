@@ -37,6 +37,7 @@ public class SFLoginInput {
   private PrivateKey privateKey;
   private String application;
   private String idToken;
+  private String mfaToken;
   private String serviceName;
   private OCSPMode ocspMode;
   private String privateKeyFile;
@@ -239,6 +240,15 @@ public class SFLoginInput {
 
   SFLoginInput setIdToken(String idToken) {
     this.idToken = idToken;
+    return this;
+  }
+
+  String getMfaToken() {
+    return mfaToken;
+  }
+
+  SFLoginInput setMfaToken(String mfaToken) {
+    this.mfaToken = mfaToken;
     return this;
   }
 

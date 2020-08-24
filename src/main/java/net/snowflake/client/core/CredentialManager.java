@@ -13,7 +13,11 @@ import net.snowflake.client.log.SFLoggerFactory;
 
 public class CredentialManager {
   private static final SFLogger logger = SFLoggerFactory.getLogger(CredentialManager.class);
+
   private SecureStorageManager secureStorageManager;
+
+  private static final String ID_TOKEN = "ID_TOKEN";
+  private static final String MFA_TOKEN = "MFATOKEN";
 
   private CredentialManager() {
     if (Constants.getOS() == Constants.OS.MAC) {
@@ -43,12 +47,29 @@ public class CredentialManager {
   synchronized void fillCachedIdToken(SFLoginInput loginInput) throws SFException {
     String idToken =
         secureStorageManager.getCredential(
-            extractHostFromServerUrl(loginInput.getServerUrl()), loginInput.getUserName());
+            extractHostFromServerUrl(loginInput.getServerUrl()), loginInput.getUserName(), ID_TOKEN);
 
     if (idToken == null) {
       logger.debug("retrieved idToken is null");
     }
     loginInput.setIdToken(idToken); // idToken can be null
+    return;
+  }
+
+  /**
+   * Reuse the cached mfa token stored locally
+   *
+   * @param loginInput login input to attach mfa token
+   */
+  synchronized void fillCachedMfaToken(SFLoginInput loginInput) throws SFException {
+    String mfaToken =
+        secureStorageManager.getCredential(
+            extractHostFromServerUrl(loginInput.getServerUrl()), loginInput.getUserName(), MFA_TOKEN);
+
+    if (mfaToken == null) {
+      logger.debug("retrieved mfaToken is null");
+    }
+    loginInput.setMfaToken(mfaToken); // mfaToken can be null
     return;
   }
 
@@ -67,12 +88,30 @@ public class CredentialManager {
     }
 
     secureStorageManager.setCredential(
-        extractHostFromServerUrl(loginInput.getServerUrl()), loginInput.getUserName(), idToken);
+        extractHostFromServerUrl(loginInput.getServerUrl()), loginInput.getUserName(), ID_TOKEN, idToken);
+  }
+
+  synchronized void writeMfaToken(SFLoginInput loginInput, SFLoginOutput loginOutput)
+      throws SFException {
+      // WUFAN TODO:
+      String mfaToken = loginOutput.getMfaToken();
+      if (Strings.isNullOrEmpty(mfaToken)) {
+        logger.debug("no username_pwd_mfa token is given.");
+        return; // no mfa token
+      }
+
+    secureStorageManager.setCredential(
+        extractHostFromServerUtl(loginInput.getServerUrl()), loginInput.getUserName(), MFA_TOKEN, mfaToken);
   }
 
   /** Delete the id token cache */
   void deleteIdTokenCache(String host, String user) {
-    secureStorageManager.deleteCredential(host, user);
+    secureStorageManager.deleteCredential(host, user, ID_TOKEN);
+  }
+
+  /** Delete the mfa token cache */
+  void deleteMfaTokenCache(String host, String user) {
+    secureStorageManager.deleteCredential(host, user, MFA_TOKEN);
   }
 
   /**

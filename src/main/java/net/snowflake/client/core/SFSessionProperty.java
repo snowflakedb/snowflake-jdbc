@@ -25,6 +25,7 @@ public enum SFSessionProperty {
   PASSCODE("passcode", false, String.class),
   TOKEN("token", false, String.class),
   ID_TOKEN("id_token", false, String.class),
+  MFA_TOKEN("mfa_token", false, String.class),
   ID_TOKEN_PASSWORD("id_token_password", false, String.class),
   ROLE("role", false, String.class),
   AUTHENTICATOR("authenticator", false, String.class),

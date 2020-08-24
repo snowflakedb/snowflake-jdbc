@@ -36,7 +36,7 @@ public class SecureStorageWindowsManager implements SecureStorageManager {
     return new SecureStorageWindowsManager();
   }
 
-  public SecureStorageStatus setCredential(String host, String user, String token) {
+  public SecureStorageStatus setCredential(String host, String user, String type, String token) {
     if (Strings.isNullOrEmpty(token)) {
       logger.info("No token provided");
       return SecureStorageStatus.SUCCESS;
@@ -46,7 +46,7 @@ public class SecureStorageWindowsManager implements SecureStorageManager {
     Memory credBlobMem = new Memory(credBlob.length);
     credBlobMem.write(0, credBlob, 0, credBlob.length);
 
-    String target = SecureStorageManager.convertTarget(host, user);
+    String target = SecureStorageManager.convertTarget(host, user, type);
 
     SecureStorageWindowsCredential cred = new SecureStorageWindowsCredential();
     cred.Type = SecureStorageWindowsCredentialType.CRED_TYPE_GENERIC.getType();
@@ -73,9 +73,9 @@ public class SecureStorageWindowsManager implements SecureStorageManager {
     return SecureStorageStatus.SUCCESS;
   }
 
-  public String getCredential(String host, String user) {
+  public String getCredential(String host, String user, String type) {
     PointerByReference pCredential = new PointerByReference();
-    String target = SecureStorageManager.convertTarget(host, user);
+    String target = SecureStorageManager.convertTarget(host, user, type);
 
     try {
       boolean ret = false;
@@ -125,8 +125,8 @@ public class SecureStorageWindowsManager implements SecureStorageManager {
     }
   }
 
-  public SecureStorageStatus deleteCredential(String host, String user) {
-    String target = SecureStorageManager.convertTarget(host, user);
+  public SecureStorageStatus deleteCredential(String host, String user, String type) {
+    String target = SecureStorageManager.convertTarget(host, user, type);
 
     boolean ret = false;
     synchronized (advapi32Lib) {
