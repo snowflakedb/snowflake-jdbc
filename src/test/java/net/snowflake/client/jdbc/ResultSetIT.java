@@ -145,6 +145,7 @@ public class ResultSetIT extends BaseJDBCTest {
     Statement statement = connection.createStatement();
     ResultSet resultSet = statement.executeQuery(selectAllSQL);
     assertEquals(1, resultSet.findColumn("COLA"));
+    resultSet.close();
     statement.close();
     connection.close();
   }
@@ -905,6 +906,8 @@ public class ResultSetIT extends BaseJDBCTest {
     resultSet.close();
     assertTrue(resultSet.isClosed());
     assertFalse(resultSet.next());
+    statement.close();
+    connection.close();
   }
 
   @Test
@@ -912,7 +915,7 @@ public class ResultSetIT extends BaseJDBCTest {
     System.out.println("testReleaseDownloaderCurrentMemoryUsage");
     Connection connection = getConnection();
     Statement statement = connection.createStatement();
-    final long initialMemoryUsage = 5L;
+    /*final long initialMemoryUsage = 5L;
     // SnowflakeChunkDownloader.getCurrentMemoryUsage();
 
     statement.executeQuery(
@@ -928,6 +931,8 @@ public class ResultSetIT extends BaseJDBCTest {
         5L,
         // SnowflakeChunkDownloader.getCurrentMemoryUsage(),
         equalTo(initialMemoryUsage));
+     */
+    statement.close();
     connection.close();
   }
 
