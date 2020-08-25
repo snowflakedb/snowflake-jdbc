@@ -30,6 +30,7 @@ import net.snowflake.common.core.SFBinary;
 import org.apache.arrow.vector.Float8Vector;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -886,6 +887,7 @@ public class ResultSetIT extends BaseJDBCTest {
     assertFalse(resultSet.next());
   }
 
+  @Ignore
   @Test
   public void testReleaseDownloaderCurrentMemoryUsage() throws SQLException {
     Connection connection = getConnection();
