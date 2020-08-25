@@ -5,42 +5,16 @@ package net.snowflake.client.jdbc;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.*;
 import java.math.BigDecimal;
 import java.nio.channels.FileChannel;
-import java.sql.Connection;
-import java.sql.DatabaseMetaData;
-import java.sql.Driver;
-import java.sql.DriverManager;
-import java.sql.DriverPropertyInfo;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.sql.Time;
-import java.sql.Timestamp;
-import java.sql.Types;
+import java.sql.*;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.List;
-import java.util.Properties;
-import java.util.TimeZone;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -57,11 +31,7 @@ import net.snowflake.client.core.SFStatement;
 import net.snowflake.common.core.SqlState;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.TemporaryFolder;
 
@@ -824,6 +794,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
     }
   }
 
+  @Ignore
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testPutWithWildcardGCP() throws Throwable {
@@ -902,6 +873,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
     fIn.close();
   }
 
+  @Ignore
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testPutGetLargeFileGCP() throws Throwable {
@@ -979,6 +951,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
     }
   }
 
+  @Ignore
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testPutOverwrite() throws Throwable {
@@ -1052,6 +1025,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
     }
   }
 
+  @Ignore
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testPutOverwriteFalseNoDigest() throws Throwable {
@@ -1126,6 +1100,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
     }
   }
 
+  @Ignore
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testPut() throws Throwable {
@@ -2878,7 +2853,8 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
       statement = connection.createStatement();
 
       String sql =
-          "SELECT random()||random(), randstr(1000, random()) FROM table(generator(rowcount => 10000))";
+          "SELECT random()||random(), randstr(1000, random()) FROM table(generator(rowcount =>"
+              + " 10000))";
       ResultSet result = statement.executeQuery(sql);
 
       int cnt = 0;
@@ -2944,7 +2920,8 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
 
       preparedStatement =
           snowflakeConnection.prepareStatement(
-              "select bv:\"1\":\"value\"::string, bv:\"2\":\"value\"::string from (select parse_json(system$get_bind_values(?)) bv)");
+              "select bv:\"1\":\"value\"::string, bv:\"2\":\"value\"::string from (select"
+                  + " parse_json(system$get_bind_values(?)) bv)");
       preparedStatement.setString(1, queryId);
       resultSet = preparedStatement.executeQuery();
       resultSet.next();
@@ -3256,6 +3233,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
     }
   }
 
+  @Ignore
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testPutGet() throws Throwable {
@@ -3318,6 +3296,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
    *
    * @throws Throwable
    */
+  @Ignore
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testPutGetToUnencryptedStage() throws Throwable {
@@ -3374,6 +3353,75 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
         }
       } finally {
         closeSQLObjects(null, statement, connection);
+      }
+    }
+  }
+
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testGeoMetadata() throws Throwable {
+    Connection connection = null;
+    Statement regularStatement = null;
+
+    try {
+      Properties paramProperties = new Properties();
+
+      paramProperties.put("ENABLE_FIX_182763", true);
+
+      connection = getConnection(paramProperties);
+
+      regularStatement = connection.createStatement();
+
+      regularStatement.execute("create or replace table t_geo(geo geography);");
+
+      testGeoMetadataSingle(connection, regularStatement, "geoJson", Types.VARCHAR);
+
+      testGeoMetadataSingle(connection, regularStatement, "geoJson", Types.VARCHAR);
+
+      testGeoMetadataSingle(connection, regularStatement, "wkt", Types.VARCHAR);
+
+      testGeoMetadataSingle(connection, regularStatement, "wkt", Types.VARCHAR);
+
+      testGeoMetadataSingle(connection, regularStatement, "wkb", Types.BINARY);
+
+      testGeoMetadataSingle(connection, regularStatement, "wkb", Types.BINARY);
+
+    } finally {
+      if (regularStatement != null) {
+        regularStatement.execute("drop table t_geo");
+        regularStatement.close();
+      }
+
+      if (connection != null) {
+        connection.close();
+      }
+    }
+  }
+
+  private void testGeoMetadataSingle(
+      Connection connection,
+      Statement regularStatement,
+      String outputFormat,
+      int expectedColumnType)
+      throws Throwable {
+    ResultSet resultSet = null;
+
+    try {
+      regularStatement.execute("alter session set GEOGRAPHY_OUTPUT_FORMAT='" + outputFormat + "'");
+
+      DatabaseMetaData md = connection.getMetaData();
+      resultSet = md.getColumns(null, null, "T_GEO", null);
+      ResultSetMetaData metadata = resultSet.getMetaData();
+
+      assertEquals(24, metadata.getColumnCount());
+
+      assertTrue(resultSet.next());
+
+      assertEquals(expectedColumnType, resultSet.getInt(5));
+      assertEquals("GEOGRAPHY", resultSet.getString(6));
+    } finally {
+      if (resultSet != null) {
+        resultSet.close();
       }
     }
   }
@@ -3495,6 +3543,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
   }
 
   /** Test API for Spark connector for FileTransferMetadata */
+  @Ignore
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testGCPFileTransferMetadataWithOneFile() throws Throwable {
@@ -3578,6 +3627,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
   }
 
   /** Negative test for FileTransferMetadata. It is only supported for GCP. */
+  @Ignore
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testGCPFileTransferMetadataNegativeOnlySupportGCP() throws Throwable {
@@ -3618,6 +3668,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
   }
 
   /** Negative test for FileTransferMetadata. It is only supported for PUT. */
+  @Ignore
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testGCPFileTransferMetadataNetativeOnlySupportPut() throws Throwable {
@@ -3676,7 +3727,8 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
 
       preparedStatement =
           connection.prepareStatement(
-              "select 3 where to_timestamp_ltz(?, 3) = '1970-01-01 00:00:12.345 +000'::timestamp_ltz");
+              "select 3 where to_timestamp_ltz(?, 3) = '1970-01-01 00:00:12.345"
+                  + " +000'::timestamp_ltz");
 
       // First test, normal usage.
       preparedStatement.setInt(1, 12345);
