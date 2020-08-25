@@ -3738,46 +3738,6 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
     }
   }
 
-  /** Negative test for FileTransferMetadata. It is only supported for GCP/Azure/S3. */
-  @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testGCPFileTransferMetadataNegativeOnlySupportGCP() throws Throwable {
-    Connection connection = null;
-    List<String> unsupportedAaccounts = Arrays.asList(null);
-    int expectExceptionCount = unsupportedAaccounts.size();
-    int actualExceptionCount = 0;
-    for (String accountName : unsupportedAaccounts) {
-      try {
-        connection = getConnection(accountName);
-        Statement statement = connection.createStatement();
-
-        // create a stage to put the file in
-        statement.execute("CREATE OR REPLACE STAGE " + testStageName);
-
-        SFSession sfSession = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
-
-        String putCommand = "put 'file://file.gz' @" + testStageName;
-
-        SnowflakeFileTransferAgent sfAgent =
-            new SnowflakeFileTransferAgent(putCommand, sfSession, new SFStatement(sfSession));
-
-        // Start negative test
-        sfAgent.getFileTransferMetadatas();
-        fail("Above function should raise exception for non-GCP storage");
-      } catch (Exception ex) {
-        System.out.println("Negative test to hit expected exception: " + ex.getMessage());
-        actualExceptionCount++;
-      } finally {
-        if (connection != null) {
-          connection.createStatement().execute("DROP STAGE if exists " + testStageName);
-          connection.close();
-        }
-        connection = null;
-      }
-    }
-    assertEquals(expectExceptionCount, actualExceptionCount);
-  }
-
   /** Negative test for FileTransferMetadata. It is only supported for PUT. */
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
