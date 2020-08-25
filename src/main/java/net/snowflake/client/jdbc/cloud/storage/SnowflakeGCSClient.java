@@ -3,8 +3,6 @@
  */
 package net.snowflake.client.jdbc.cloud.storage;
 
-import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
-
 import com.amazonaws.util.Base64;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
@@ -16,15 +14,6 @@ import com.google.auth.oauth2.GoogleCredentials;
 import com.google.cloud.storage.*;
 import com.google.cloud.storage.Storage.BlobListOption;
 import com.google.common.base.Strings;
-import java.io.*;
-import java.net.SocketTimeoutException;
-import java.net.URISyntaxException;
-import java.security.InvalidKeyException;
-import java.util.AbstractMap;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.OCSPMode;
 import net.snowflake.client.core.ObjectMapperFactory;
@@ -44,6 +33,18 @@ import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.InputStreamEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
+
+import java.io.*;
+import java.net.SocketTimeoutException;
+import java.net.URISyntaxException;
+import java.security.InvalidKeyException;
+import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
 /**
  * Encapsulates the GCS Storage client and all GCS operations and logic
@@ -706,7 +707,10 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
       httpRequest.addHeader("content-encoding", contentEncoding);
 
       for (Entry<String, String> entry : metadata.entrySet()) {
-        httpRequest.addHeader(GCS_METADATA_PREFIX + entry.getKey(), entry.getValue());
+        if (!entry.getKey().equals("sfc-digest"))
+        {
+          httpRequest.addHeader(GCS_METADATA_PREFIX + entry.getKey(), entry.getValue());
+        }
       }
 
       InputStreamEntity contentEntity = new InputStreamEntity(content, -1);

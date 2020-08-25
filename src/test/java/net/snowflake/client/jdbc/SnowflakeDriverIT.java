@@ -3,50 +3,8 @@
  */
 package net.snowflake.client.jdbc;
 
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.*;
-import java.math.BigDecimal;
-import java.nio.channels.FileChannel;
-import java.sql.Connection;
-import java.sql.DatabaseMetaData;
-import java.sql.Driver;
-import java.sql.DriverManager;
-import java.sql.DriverPropertyInfo;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.sql.Time;
-import java.sql.Timestamp;
-import java.sql.Types;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.List;
-import java.util.Properties;
-import java.util.TimeZone;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.UUID;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.zip.GZIPInputStream;
 import net.snowflake.client.AbstractDriverIT;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
@@ -57,13 +15,26 @@ import net.snowflake.client.core.SFStatement;
 import net.snowflake.common.core.SqlState;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.TemporaryFolder;
+
+import java.io.*;
+import java.math.BigDecimal;
+import java.nio.channels.FileChannel;
+import java.sql.*;
+import java.text.SimpleDateFormat;
+import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.zip.GZIPInputStream;
+
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.*;
 
 /** General integration tests */
 @Category(TestCategoryOthers.class)
@@ -905,8 +876,6 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testPutGetLargeFileGCP() throws Throwable {
-    Connection connection = getConnection("gcpaccount");
-    Statement statement = connection.createStatement();
 
     File destFolder = tmpFolder.newFolder();
     String destFolderCanonicalPath = destFolder.getCanonicalPath();
@@ -920,18 +889,30 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
     bw.write(System.lineSeparator());
     bw.close();
     File largeTempFile2 = tmpFolder.newFile("largeFile2.csv");
-
+    for (int i = 0; i < 6; i++) {
+      copyContentFrom(largeTempFile, largeTempFile2);
+      copyContentFrom(largeTempFile2, largeTempFile);
+    }
     String sourceFilePath = largeTempFile.getCanonicalPath();
+
+    for (int j = 0; j < 100; j++)
+    {
+    Properties props = new Properties();
+    props.put("user", "USER");
+    props.put("password", "PASSWORD");
+    props.put("database", "TESTDB");
+    props.put("schema", "MEGTESTSCHEMA");
+    props.put("wh", "MEGTEST");
+
+    Connection connection = DriverManager.getConnection( "jdbc:snowflake://sfctest0.us-central1.gcp.snowflakecomputing.com", props);
+    Statement statement = connection.createStatement();
 
     try {
       // copy info from 1 file to another and continue doubling file size until we reach ~1.5GB,
       // which is a large file
-      for (int i = 0; i < 12; i++) {
-        copyContentFrom(largeTempFile, largeTempFile2);
-        copyContentFrom(largeTempFile2, largeTempFile);
-      }
 
       // create a stage to put the file in
+      statement.execute("use warehouse MEGTEST");
       statement.execute("CREATE OR REPLACE STAGE largefile_stage");
       assertTrue(
           "Failed to put a file",
@@ -976,6 +957,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
       statement.execute("DROP TABLE IF EXISTS large_table");
       statement.close();
       connection.close();
+    }
     }
   }
 
