@@ -79,8 +79,11 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView {
   // with 4 threads by default
   private Set<String> smallSourceFiles;
 
-  /* Threshold for splitting a file to upload multiple parts in parallel */
-  private int multipartUploadThreshold = 200 * 1024 * 1024;
+  // Constant variable in MB for big file threshold
+  private static final int BIG_FILE_THRESHOLD_MB = 200;
+
+  // Threshold for splitting a file to upload multiple parts in parallel
+  private int multipartUploadThreshold = BIG_FILE_THRESHOLD_MB * 1024 * 1024;
 
   private Map<String, FileMetadata> fileMetadataMap;
 
@@ -1590,7 +1593,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView {
 
   private void segregateFilesBySize() {
     for (String srcFile : sourceFiles) {
-      if ((new File(srcFile)).length() > (multipartUploadThreshold)) {
+      if ((new File(srcFile)).length() > multipartUploadThreshold) {
         if (bigSourceFiles == null) {
           bigSourceFiles = new HashSet<String>(sourceFiles.size());
         }
