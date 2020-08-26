@@ -4,21 +4,9 @@
 
 package net.snowflake.client.core;
 
-import static net.snowflake.client.core.SFTrustManager.resetOCSPResponseCacherServerURL;
-import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
-import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import net.snowflake.client.jdbc.*;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.client.log.ArgSupplier;
@@ -39,6 +27,19 @@ import org.apache.http.message.HeaderGroup;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
+
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static net.snowflake.client.core.SFTrustManager.resetOCSPResponseCacherServerURL;
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
 /** Low level session util */
 public class SessionUtil {
@@ -205,7 +206,7 @@ public class SessionUtil {
         return ClientAuthnDTO.AuthenticatorType.OKTA;
       } else if (!loginInput
           .getAuthenticator()
-          .equalsIgnoreCase(ClientAuthnDTO.AuthenticatorType.USERNAME_PASSWORD_MFA())) {
+          .equalsIgnoreCase(ClientAuthnDTO.AuthenticatorType.USERNAME_PASSWORD_MFA.name())) {
         return ClientAuthnDTO.AuthenticatorType.USERNAME_PASSWORD_MFA;
       }
     }
