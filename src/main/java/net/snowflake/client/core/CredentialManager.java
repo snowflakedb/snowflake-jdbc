@@ -5,11 +5,12 @@
 package net.snowflake.client.core;
 
 import com.google.common.base.Strings;
-import java.net.MalformedURLException;
-import java.net.URL;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
+
+import java.net.MalformedURLException;
+import java.net.URL;
 
 public class CredentialManager {
   private static final SFLogger logger = SFLoggerFactory.getLogger(CredentialManager.class);
@@ -101,7 +102,7 @@ public class CredentialManager {
       }
 
     secureStorageManager.setCredential(
-        extractHostFromServerUtl(loginInput.getServerUrl()), loginInput.getUserName(), MFA_TOKEN, mfaToken);
+        extractHostFromServerUrl(loginInput.getServerUrl()), loginInput.getUserName(), MFA_TOKEN, mfaToken);
   }
 
   /** Delete the id token cache */
