@@ -10,6 +10,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import com.sun.jna.Memory;
 import com.sun.jna.Pointer;
 import com.sun.jna.ptr.PointerByReference;
+import org.junit.Test;
+
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -216,6 +218,7 @@ public class SecureStorageManagerTest {
   private static final String user = "fakeUser";
   private static final String idToken = "fakeIdToken";
   private static final String idToken0 = "fakeIdToken0";
+  private static final String ID_TOKEN = "ID_TOKEN";
 
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningNotOnWinMac.class)
@@ -256,28 +259,28 @@ public class SecureStorageManagerTest {
   private void testBody(SecureStorageManager manager) {
     // first delete possible old credential
     assertThat(
-        manager.deleteCredential(host, user),
+        manager.deleteCredential(host, user, ID_TOKEN),
         equalTo(SecureStorageManager.SecureStorageStatus.SUCCESS));
 
     // ensure no old credential exists
-    assertThat(manager.getCredential(host, user), is(nullValue()));
+    assertThat(manager.getCredential(host, user, ID_TOKEN), is(nullValue()));
 
     // set token
     assertThat(
-        manager.setCredential(host, user, idToken),
+        manager.setCredential(host, user, ID_TOKEN, idToken),
         equalTo(SecureStorageManager.SecureStorageStatus.SUCCESS));
-    assertThat(manager.getCredential(host, user), equalTo(idToken));
+    assertThat(manager.getCredential(host, user, ID_TOKEN), equalTo(idToken));
 
     // update token
     assertThat(
-        manager.setCredential(host, user, idToken0),
+        manager.setCredential(host, user, ID_TOKEN, idToken0),
         equalTo(SecureStorageManager.SecureStorageStatus.SUCCESS));
-    assertThat(manager.getCredential(host, user), equalTo(idToken0));
+    assertThat(manager.getCredential(host, user, ID_TOKEN), equalTo(idToken0));
 
     // delete token
     assertThat(
-        manager.deleteCredential(host, user),
+        manager.deleteCredential(host, user, ID_TOKEN),
         equalTo(SecureStorageManager.SecureStorageStatus.SUCCESS));
-    assertThat(manager.getCredential(host, user), is(nullValue()));
+    assertThat(manager.getCredential(host, user, ID_TOKEN), is(nullValue()));
   }
 }
