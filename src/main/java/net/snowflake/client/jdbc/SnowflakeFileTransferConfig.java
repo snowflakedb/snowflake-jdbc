@@ -7,6 +7,7 @@ package net.snowflake.client.jdbc;
 import java.io.InputStream;
 import java.util.Properties;
 import net.snowflake.client.core.OCSPMode;
+import net.snowflake.client.core.SFSession;
 
 /**
  * This class manages the parameters to call SnowflakeFileTransferAgent.uploadWithoutConnection()
@@ -20,6 +21,8 @@ public class SnowflakeFileTransferConfig {
   private Properties proxyProperties;
   private String prefix;
   private String destFileName;
+  private SFSession session; // Optional, added for S3 and Azure
+  private String command; // Optional, added for S3 and Azure
 
   public SnowflakeFileTransferConfig(Builder builder) {
     this.metadata = builder.metadata;
@@ -64,6 +67,14 @@ public class SnowflakeFileTransferConfig {
     return destFileName;
   }
 
+  public SFSession getSession() {
+    return session;
+  }
+
+  public String getCommand() {
+    return command;
+  }
+
   // Builder class
   public static class Builder {
     private SnowflakeFileTransferMetadata metadata = null;
@@ -74,6 +85,8 @@ public class SnowflakeFileTransferConfig {
     private Properties proxyProperties = null;
     private String prefix = null;
     private String destFileName = null;
+    private SFSession session = null;
+    private String command = null;
 
     public static Builder newInstance() {
       return new Builder();
@@ -136,6 +149,16 @@ public class SnowflakeFileTransferConfig {
 
     public Builder setDestFileName(String destFileName) {
       this.destFileName = destFileName;
+      return this;
+    }
+
+    public Builder setSFSession(SFSession session) {
+      this.session = session;
+      return this;
+    }
+
+    public Builder setCommand(String command) {
+      this.command = command;
       return this;
     }
   }
