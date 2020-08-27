@@ -41,11 +41,11 @@ public class JDK14JCLWrapper implements Log {
   }
 
   public void info(Object msg) {
-    // do nothing
+    logger.info(String.valueOf(msg));
   }
 
   public void info(Object msg, Throwable t) {
-    // do nothing
+    logger.info(String.valueOf(msg), t);
   }
 
   public boolean isDebugEnabled() {
@@ -61,7 +61,7 @@ public class JDK14JCLWrapper implements Log {
   }
 
   public boolean isInfoEnabled() {
-    return false;
+    logger.isInfoEnabled();
   }
 
   public boolean isTraceEnabled() {
@@ -69,7 +69,7 @@ public class JDK14JCLWrapper implements Log {
   }
 
   public boolean isWarnEnabled() {
-    return false;
+    return logger.isWarnEnabled();
   }
 
   public void trace(Object msg) {
@@ -81,10 +81,10 @@ public class JDK14JCLWrapper implements Log {
   }
 
   public void warn(Object msg) {
-    // do nothing
+    logger.warn(String.valueOf(msg));
   }
 
   public void warn(Object msg, Throwable t) {
-    // do nothing
+    logger.warn(String.valueOf(msg), t);
   }
 }

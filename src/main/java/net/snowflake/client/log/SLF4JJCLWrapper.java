@@ -68,7 +68,7 @@ public class SLF4JJCLWrapper implements Log {
   }
 
   public boolean isInfoEnabled() {
-    return false;
+    return this.slf4jLogger.isInfoEnabled();
   }
 
   public boolean isTraceEnabled() {
@@ -76,6 +76,6 @@ public class SLF4JJCLWrapper implements Log {
   }
 
   public boolean isWarnEnabled() {
-    return false;
+    return this.slf4jLogger.isWarnEnabled();
   }
 }
