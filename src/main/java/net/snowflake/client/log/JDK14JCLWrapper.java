@@ -57,11 +57,11 @@ public class JDK14JCLWrapper implements Log {
   }
 
   public boolean isFatalEnabled() {
-    return this.isErrorEnabled();
+    return logger.isErrorEnabled();
   }
 
   public boolean isInfoEnabled() {
-    logger.isInfoEnabled();
+    return logger.isInfoEnabled();
   }
 
   public boolean isTraceEnabled() {
