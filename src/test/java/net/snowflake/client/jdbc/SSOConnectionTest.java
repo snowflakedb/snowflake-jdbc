@@ -318,7 +318,6 @@ public class SSOConnectionTest {
       assertThat("token", sfcon.getSfSession().getSessionToken(), equalTo(MOCK_SESSION_TOKEN));
       assertThat("idToken", sfcon.getSfSession().getIdToken(), equalTo(MOCK_ID_TOKEN));
 
-      // To be changed
       // second connection reads the cache and use the id token to get the
       // session token.
       Connection conSecond = DriverManager.getConnection(url, properties);
@@ -328,6 +327,5 @@ public class SSOConnectionTest {
       // we won't get a new id_token here
       assertThat("idToken", sfcon.getSfSession().getIdToken(), equalTo(MOCK_ID_TOKEN));
     }
-  }
   // }
 }
