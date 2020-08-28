@@ -7,11 +7,22 @@ import static net.snowflake.client.jdbc.ErrorCode.ROW_DOES_NOT_EXIST;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.net.URL;
-import java.sql.*;
+import java.sql.BatchUpdateException;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
+import java.sql.Statement;
 import java.util.Arrays;
 import java.util.List;
 import net.snowflake.client.AbstractDriverIT;
@@ -339,7 +350,6 @@ public class StatementIT extends BaseJDBCTest {
     connection.close();
   }
 
-  @Ignore
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testCopyAndUpload() throws Exception {
@@ -418,7 +428,6 @@ public class StatementIT extends BaseJDBCTest {
     connection.close();
   }
 
-  @Ignore
   @Test
   public void testExecuteBatch() throws Exception {
     Connection connection = getConnection();
