@@ -3,7 +3,6 @@
  */
 package net.snowflake.client.log;
 
-import net.snowflake.client.util.SecretDetector;
 import org.apache.commons.logging.Log;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,15 +30,7 @@ public class SLF4JJCLWrapper implements Log {
   }
 
   public void debug(Object message) {
-    // In this special use case, only this function is used by apache httpclient to output sensitive
-    // data in our use case
-    String msg = SecretDetector.maskSecrets(String.valueOf(message));
-    if (isLocationAwareLogger) {
-      ((LocationAwareLogger) slf4jLogger)
-          .log(null, FQCN, LocationAwareLogger.DEBUG_INT, msg, null, null);
-    } else {
-      slf4jLogger.debug(msg);
-    }
+    // do nothing
   }
 
   public void debug(Object msg, Throwable t) {}
@@ -65,7 +56,7 @@ public class SLF4JJCLWrapper implements Log {
   public void warn(Object msg, Throwable t) {}
 
   public boolean isDebugEnabled() {
-    return this.slf4jLogger.isDebugEnabled();
+    return false;
   }
 
   public boolean isErrorEnabled() {
@@ -81,7 +72,7 @@ public class SLF4JJCLWrapper implements Log {
   }
 
   public boolean isTraceEnabled() {
-    return this.slf4jLogger.isTraceEnabled();
+    return false;
   }
 
   public boolean isWarnEnabled() {

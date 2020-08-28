@@ -44,7 +44,6 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
   protected abstract Object getObjectInternal(int columnIndex) throws SFException;
 
   public Object getObject(int columnIndex) throws SFException {
-    logger.debug("public Object getObject(int columnIndex)");
 
     int type = resultSetMetaData.getColumnType(columnIndex);
 
