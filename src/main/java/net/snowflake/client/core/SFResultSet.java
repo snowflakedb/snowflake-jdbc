@@ -19,6 +19,7 @@ import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SqlState;
 
+import java.sql.Date;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -438,6 +439,11 @@ public class SFResultSet extends SFJsonResultSet
   {
     return nextChunkIndex == chunkCount &&
            currentChunkRowIndex >= currentChunkRowCount;
+  }
+
+  @Override
+  public Date getDate(int columnIndex) throws SFException {
+    return null;
   }
 
   @Override

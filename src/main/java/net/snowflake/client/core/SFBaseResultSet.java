@@ -225,4 +225,6 @@ public abstract class SFBaseResultSet
   {
     return this.resultSetSerializable.splitBySize(maxSizeInBytes);
   }
+
+    public abstract Date getDate(int columnIndex, TimeZone tz) throws SFException;
 }

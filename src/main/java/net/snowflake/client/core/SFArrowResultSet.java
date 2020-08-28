@@ -2,7 +2,6 @@
  * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
  */
 package net.snowflake.client.core;
-
 import net.snowflake.client.core.arrow.ArrowVectorConverter;
 import net.snowflake.client.jdbc.ArrowResultChunk;
 import net.snowflake.client.jdbc.ArrowResultChunk.ArrowChunkIterator;
@@ -538,14 +537,17 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
   }
 
   @Override
-  public Date getDate(int columnIndex) throws SFException
-  {
-    ArrowVectorConverter converter =
-        currentChunkIterator.getCurrentConverter(columnIndex - 1);
+  public Date getDate(int columnIndex) throws SFException {
+    return null;
+  }
+
+  @Override
+  public Date getDate(int columnIndex, TimeZone tz) throws SFException {
+    ArrowVectorConverter converter = currentChunkIterator.getCurrentConverter(columnIndex - 1);
     int index = currentChunkIterator.getCurrentRowInRecordBatch();
     wasNull = converter.isNull(index);
     return converter.toDate(index);
-  }
+  } 
 
   @Override
   public Time getTime(int columnIndex) throws SFException

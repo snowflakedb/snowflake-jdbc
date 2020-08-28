@@ -25,13 +25,9 @@ import java.sql.Timestamp;
 import java.sql.Types;
 import java.util.TimeZone;
 
-/**
- * Abstract class used to represent snowflake result set in json format
- */
-public abstract class SFJsonResultSet extends SFBaseResultSet
-{
-  static private final SFLogger logger = SFLoggerFactory.getLogger(
-      SFJsonResultSet.class);
+/** Abstract class used to represent snowflake result set in json format */
+public abstract class SFJsonResultSet extends SFBaseResultSet {
+  private static final SFLogger logger = SFLoggerFactory.getLogger(SFJsonResultSet.class);
 
   // Timezone used for TimestampNTZ
   private static TimeZone timeZoneUTC = TimeZone.getTimeZone("UTC");
@@ -708,12 +704,13 @@ public abstract class SFJsonResultSet extends SFBaseResultSet
     }
   }
 
-  @Override
-  public Date getDate(int columnIndex) throws SFException
-  {
-    return getDate(columnIndex, TimeZone.getDefault());
-  }
 
+  /*public Date getDate(int columnIndex) throws SFException {
+>>>>>>> Stashed changes
+    return getDate(columnIndex, TimeZone.getDefault());
+  }*/
+
+  @Override
   public Date getDate(int columnIndex, TimeZone tz) throws SFException
   {
     if (tz == null)
