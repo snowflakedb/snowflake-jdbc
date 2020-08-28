@@ -24,7 +24,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 
 class Buddy {
-  static String name(int x) {
+  static String name() {
     return "John";
   }
 }
@@ -56,12 +56,16 @@ public class SnowflakeMFACacheTest extends BaseJDBCTest {
   @Test
   public void testNormalConnection() throws SQLException, IOException {
     String ret = getMockedHttpResponse().toString();
-    try (MockedStatic<HttpUtil> theMock = Mockito.mockStatic(HttpUtil.class)) {
+    assertTrue(Buddy.name() == "John");
+    try (MockedStatic<HttpUtil> theMock = Mockito.mockStatic(HttpUtil.class); MockedStatic<Buddy> mockBuddy = Mockito.mockStatic(Buddy.class)) {
       theMock.when(() -> HttpUtil.executeGeneralRequest(any(HttpPost.class), anyInt(), any(OCSPMode.class))).thenReturn(ret);
+      mockBuddy.when(Buddy::name).thenReturn("Daddy");
+      assertTrue(Buddy.name() == "Daddy");
       Connection con = getConnection();
       assertFalse(con.isClosed());
       con.close();
       assertTrue(con.isClosed());
+      assertFalse(Buddy.name() == "John");
     }
   }
 }
