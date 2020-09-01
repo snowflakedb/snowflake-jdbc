@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
- */
+ *//*
+
 
 package net.snowflake.client.jdbc;
 
@@ -74,14 +75,16 @@ class FakeSessionUtilExternalBrowser extends SessionUtilExternalBrowser {
     }
   }
 
-  /**
+  */
+/**
    * Mock ServerSocket and Socket.
    *
    * <p>Socket mock will be included in ServerSocket mock.
    *
    * @return Server socket
    * @throws IOException if any IO error occurs
-   */
+   *//*
+
   private static ServerSocket initMockServerSocket() throws IOException {
     // mock client socket
     final Socket mockSocket = mock(Socket.class);
@@ -286,3 +289,4 @@ public class SSOConnectionTest {
     return loginInput;
   }
 }
+*/
