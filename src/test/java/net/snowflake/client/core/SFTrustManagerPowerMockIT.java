@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2018-2019 Snowflake Computing Inc. All right reserved.
- */
+ *//*
+
 package net.snowflake.client.core;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -37,10 +38,12 @@ public class SFTrustManagerPowerMockIT {
     TrustManagerFactory.class
   })
 
-  /*
+  */
+/*
    * Test SF_OCSP_RESPONSE_CACHE_DIR environment variable changes the
    * location of the OCSP cache directory.
-   */
+   *//*
+
   public void testUnitOCSPWithCustomCacheDirectory() throws Throwable {
     mockStatic(System.class);
     mockStatic(TrustManagerFactory.class);
@@ -64,3 +67,4 @@ public class SFTrustManagerPowerMockIT {
         new File(cacheFolder, SFTrustManager.CACHE_FILE_NAME).exists());
   }
 }
+*/

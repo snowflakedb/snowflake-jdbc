@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
- */
+ *//*
+
 package net.snowflake.client.jdbc;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -20,7 +21,9 @@ import org.mockito.Mockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
-/** Unit test for SERVICE_NAME parameter. */
+*/
+/** Unit test for SERVICE_NAME parameter. *//*
+
 @Ignore("powermock incompat with JDK>=9, see https://github.com/powermock/powermock/issues/901")
 @RunWith(PowerMockRunner.class)
 public class ServiceNameTest {
@@ -120,3 +123,4 @@ public class ServiceNameTest {
         is(NEW_SERVICE_NAME));
   }
 }
+*/
