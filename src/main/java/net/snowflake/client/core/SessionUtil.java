@@ -199,15 +199,15 @@ public class SessionUtil {
           .getAuthenticator()
           .equalsIgnoreCase(ClientAuthnDTO.AuthenticatorType.SNOWFLAKE_JWT.name())) {
         return ClientAuthnDTO.AuthenticatorType.SNOWFLAKE_JWT;
+      } else if (loginInput
+          .getAuthenticator()
+          .equalsIgnoreCase(ClientAuthnDTO.AuthenticatorType.USERNAME_PASSWORD_MFA.name())) {
+        return ClientAuthnDTO.AuthenticatorType.USERNAME_PASSWORD_MFA;
       } else if (!loginInput
           .getAuthenticator()
           .equalsIgnoreCase(ClientAuthnDTO.AuthenticatorType.SNOWFLAKE.name())) {
         // OKTA authenticator v1.
         return ClientAuthnDTO.AuthenticatorType.OKTA;
-      } else if (!loginInput
-          .getAuthenticator()
-          .equalsIgnoreCase(ClientAuthnDTO.AuthenticatorType.USERNAME_PASSWORD_MFA.name())) {
-        return ClientAuthnDTO.AuthenticatorType.USERNAME_PASSWORD_MFA;
       }
     }
 
@@ -271,7 +271,10 @@ public class SessionUtil {
       if (Constants.getOS() == Constants.OS.MAC || Constants.getOS() == Constants.OS.WINDOWS) {
         loginInput.getSessionParameters().put(CLIENT_ALLOW_MFA_CACHING, true);
       } else {
-        loginInput.getSessionParameters().put(CLIENT_ALLOW_MFA_CACHING, false);
+        if (!loginInput.getSessionParameters().containsKey(CLIENT_ALLOW_MFA_CACHING)) {
+          // for testing purpose
+          loginInput.getSessionParameters().put(CLIENT_ALLOW_MFA_CACHING, false);
+        }
       }
     }
 
