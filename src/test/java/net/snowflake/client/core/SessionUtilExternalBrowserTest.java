@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
- */
+ *//*
+
 package net.snowflake.client.core;
 
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -51,7 +52,9 @@ class MockAuthExternalBrowserHandlers
   }
 }
 
-/** Simulates SessionUtilExternalBrower without popping up a browser window */
+*/
+/** Simulates SessionUtilExternalBrower without popping up a browser window *//*
+
 class FakeSessionUtilExternalBrowser extends SessionUtilExternalBrowser {
   static final String MOCK_SAML_TOKEN = "MOCK_SAML_TOKEN";
   private final ServerSocket mockServerSocket;
@@ -69,7 +72,8 @@ class FakeSessionUtilExternalBrowser extends SessionUtilExternalBrowser {
     }
   }
 
-  /**
+  */
+/**
    * Mock ServerSocket and Socket.
    *
    * <p>Socket mock will be included in ServerSocket mock.
@@ -77,7 +81,8 @@ class FakeSessionUtilExternalBrowser extends SessionUtilExternalBrowser {
    * @param isPost true if the response is POST request otherwise GET request
    * @return Server socket
    * @throws IOException if any IO error occurs
-   */
+   *//*
+
   private static ServerSocket initMockServerSocket(boolean isPost) throws IOException {
     // mock client socket
     final Socket mockSocket = mock(Socket.class);
@@ -129,11 +134,13 @@ public class SessionUtilExternalBrowserTest {
   private static final String MOCK_PROOF_KEY = "specialkey";
   private static final String MOCK_SSO_URL = "https://sso.someidp.net/";
 
-  /**
+  */
+/**
    * Unit test for SessionUtilExternalBrowser
    *
    * @throws Throwable if any error occurs
-   */
+   *//*
+
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   @PrepareForTest({
@@ -164,11 +171,13 @@ public class SessionUtilExternalBrowserTest {
     assertThat("", sub.getToken(), equalTo(FakeSessionUtilExternalBrowser.MOCK_SAML_TOKEN));
   }
 
-  /**
+  */
+/**
    * Unit test for SessionUtilExternalBrowser (fail)
    *
    * @throws Throwable if any error occurs
-   */
+   *//*
+
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   @PrepareForTest({
@@ -193,11 +202,13 @@ public class SessionUtilExternalBrowserTest {
     }
   }
 
-  /**
+  */
+/**
    * Mock HttpUtil and SFLoginInput
    *
    * @return a mock object for SFLoginInput
-   */
+   *//*
+
   private SFLoginInput initMockLoginInput() {
     // mock HttpUtil
     mockStatic(HttpUtil.class);
@@ -212,3 +223,4 @@ public class SessionUtilExternalBrowserTest {
     return loginInput;
   }
 }
+*/
