@@ -8,10 +8,9 @@ import com.google.common.base.Strings;
 import com.sun.jna.Library;
 import com.sun.jna.Native;
 import com.sun.jna.Pointer;
+import java.nio.charset.StandardCharsets;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
-
-import java.nio.charset.StandardCharsets;
 
 public class SecureStorageAppleManager implements SecureStorageManager {
   private static final SFLogger logger = SFLoggerFactory.getLogger(SecureStorageAppleManager.class);

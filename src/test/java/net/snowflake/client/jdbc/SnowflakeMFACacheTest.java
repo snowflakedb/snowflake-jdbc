@@ -4,31 +4,33 @@
 
 package net.snowflake.client.jdbc;
 
+import static org.junit.Assert.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.StringWriter;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.util.Properties;
+import net.snowflake.client.category.TestCategoryConnection;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.OCSPMode;
 import net.snowflake.client.core.ObjectMapperFactory;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.client.methods.HttpPost;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.StringWriter;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.Properties;
-
-import static org.junit.Assert.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
 
 class Buddy {
   static String name() {
@@ -36,7 +38,8 @@ class Buddy {
   }
 }
 
-public class SnowflakeMFACacheTest extends BaseJDBCTest {
+@Category(TestCategoryConnection.class)
+public class SnowflakeMFACacheTest {
   private static final ObjectMapper mapper = ObjectMapperFactory.getObjectMapper();
   private static final String[] mockedMfaToken = {"mockedMfaToken0", "mockedMfaToken1"};
 
@@ -59,7 +62,7 @@ public class SnowflakeMFACacheTest extends BaseJDBCTest {
 
     respNode.set("data", dataNode);
     respNode.put("success", success);
-    //respNode.put("success", false);
+    // respNode.put("success", false);
     respNode.put("message", "msg");
 
     return respNode;
@@ -82,15 +85,35 @@ public class SnowflakeMFACacheTest extends BaseJDBCTest {
     return jsonNode;
   }
 
+  private Properties getBaseProp() {
+    Properties prop = new Properties();
+    prop.put("account", "testaccount");
+    prop.put("user", "testuser");
+    prop.put("password", "testpassword");
+    prop.put("authenticator", "username_password_mfa");
+    prop.put("CLIENT_ALLOW_MFA_CACHING", true);
+    return prop;
+  }
+
+  // Sample code for how to use mockito static mocking feature.
   @Test
-  public void testNormalConnection() throws SQLException, IOException {
+  public void testMockitoStaticMockSample() throws SQLException, IOException {
     String ret = getNormalMockedHttpResponse(true, 0).toString();
     assertTrue(Buddy.name() == "John");
-    try (MockedStatic<HttpUtil> theMock = Mockito.mockStatic(HttpUtil.class); MockedStatic<Buddy> mockBuddy = Mockito.mockStatic(Buddy.class)) {
-      theMock.when(() -> HttpUtil.executeGeneralRequest(any(HttpPost.class), anyInt(), any(OCSPMode.class))).thenReturn(ret);
+    try (MockedStatic<HttpUtil> theMock = Mockito.mockStatic(HttpUtil.class);
+        MockedStatic<Buddy> mockBuddy = Mockito.mockStatic(Buddy.class)) {
+      theMock
+          .when(
+              () ->
+                  HttpUtil.executeGeneralRequest(
+                      any(HttpPost.class), anyInt(), any(OCSPMode.class)))
+          .thenReturn(ret);
       mockBuddy.when(Buddy::name).thenReturn("Daddy");
       assertTrue(Buddy.name() == "Daddy");
-      Connection con = getConnection();
+
+      Properties prop = getBaseProp();
+      String url = "jdbc:snowflake://testaccount.snowflakecomputing.com";
+      Connection con = DriverManager.getConnection(url, prop);
       assertFalse(con.isClosed());
       con.close();
       assertTrue(con.isClosed());
@@ -100,7 +123,7 @@ public class SnowflakeMFACacheTest extends BaseJDBCTest {
 
   @Test
   public void testMFAFunctionality() throws SQLException {
-    try (MockedStatic<HttpUtil> mockedHttpUtil = Mockito.mockStatic(HttpUtil.class);) {
+    try (MockedStatic<HttpUtil> mockedHttpUtil = Mockito.mockStatic(HttpUtil.class); ) {
       mockedHttpUtil
           .when(
               () ->
@@ -109,6 +132,7 @@ public class SnowflakeMFACacheTest extends BaseJDBCTest {
           .thenAnswer(
               new Answer<String>() {
                 int callCount = 0;
+
                 @Override
                 public String answer(InvocationOnMock invocation) throws Throwable {
                   String res;
@@ -117,20 +141,35 @@ public class SnowflakeMFACacheTest extends BaseJDBCTest {
 
                   if (callCount == 0) {
                     jsonNode = parseRequest((HttpPost) args[0]);
-                    assertTrue(jsonNode.path("data").path("SESSION_PARAMETERS").path("CLIENT_ALLOW_MFA_CACHING").asBoolean());
+                    assertTrue(
+                        jsonNode
+                            .path("data")
+                            .path("SESSION_PARAMETERS")
+                            .path("CLIENT_ALLOW_MFA_CACHING")
+                            .asBoolean());
                     res = getNormalMockedHttpResponse(true, 0).toString();
                   } else if (callCount == 1) {
                     res = getNormalMockedHttpResponse(true, -1).toString();
                   } else if (callCount == 2) {
                     jsonNode = parseRequest((HttpPost) args[0]);
-                    assertTrue(jsonNode.path("data").path("SESSION_PARAMETERS").path("CLIENT_ALLOW_MFA_CACHING").asBoolean());
+                    assertTrue(
+                        jsonNode
+                            .path("data")
+                            .path("SESSION_PARAMETERS")
+                            .path("CLIENT_ALLOW_MFA_CACHING")
+                            .asBoolean());
                     assertEquals(jsonNode.path("data").path("TOKEN").asText(), mockedMfaToken[0]);
                     res = getNormalMockedHttpResponse(true, 1).toString();
                   } else if (callCount == 3) {
                     res = getNormalMockedHttpResponse(true, -1).toString();
                   } else if (callCount == 4) {
                     jsonNode = parseRequest((HttpPost) args[0]);
-                    assertTrue(jsonNode.path("data").path("SESSION_PARAMETERS").path("CLIENT_ALLOW_MFA_CACHING").asBoolean());
+                    assertTrue(
+                        jsonNode
+                            .path("data")
+                            .path("SESSION_PARAMETERS")
+                            .path("CLIENT_ALLOW_MFA_CACHING")
+                            .asBoolean());
                     assertEquals(jsonNode.path("data").path("TOKEN").asText(), mockedMfaToken[1]);
                     res = getNormalMockedHttpResponse(true, -1).toString();
                   } else if (callCount == 5) {
@@ -144,14 +183,15 @@ public class SnowflakeMFACacheTest extends BaseJDBCTest {
                 }
               });
 
-      Properties properties = new Properties();
-      properties.put("authenticator", "username_password_mfa");
-      properties.put("CLIENT_ALLOW_MFA_CACHING", true);
-      Connection con = getConnection(properties);
+      Properties prop = getBaseProp();
+
+      // connect url
+      String url = "jdbc:snowflake://testaccount.snowflakecomputing.com";
+      Connection con = DriverManager.getConnection(url, prop);
       con.close();
-      Connection con1 = getConnection(properties);
+      Connection con1 = DriverManager.getConnection(url, prop);
       con1.close();
-      Connection con2 = getConnection(properties);
+      Connection con2 = DriverManager.getConnection(url, prop);
       con2.close();
     }
   }
