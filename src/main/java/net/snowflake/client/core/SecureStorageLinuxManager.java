@@ -26,6 +26,7 @@ public class SecureStorageLinuxManager implements SecureStorageManager {
   private static final String CACHE_FILE_NAME = "temporary_credential.json";
   private static final String CACHE_DIR_PROP = "net.snowflake.jdbc.temporaryCredentialCacheDir";
   private static final String CACHE_DIR_ENV = "SF_TEMPORARY_CREDENTIAL_CACHE_DIR";
+  private static final String DRIVER_NAME = "SNOWFLAKE-JDBC-DRIVER";
   private static final long CACHE_EXPIRATION_IN_SECONDS = 86400L;
   private static final long CACHE_FILE_LOCK_EXPIRATION_IN_SECONDS = 60L;
   private FileCacheManager fileCacheManager;
@@ -56,7 +57,7 @@ public class SecureStorageLinuxManager implements SecureStorageManager {
     idTokenCache.computeIfAbsent(host.toUpperCase(), newMap -> new HashMap<>());
 
     Map<String, String> currentUserMap = idTokenCache.get(host.toUpperCase());
-    currentUserMap.put(user.toUpperCase(), token);
+    currentUserMap.put(buildCredName(user, type), token);
 
     ObjectNode out = mapper.createObjectNode();
     for (Map.Entry<String, Map<String, String>> elem : idTokenCache.entrySet()) {
@@ -83,7 +84,7 @@ public class SecureStorageLinuxManager implements SecureStorageManager {
       return null;
     }
 
-    return userMap.get(user.toUpperCase());
+    return userMap.get(buildCredName(user, type));
   }
 
   /**
@@ -115,5 +116,9 @@ public class SecureStorageLinuxManager implements SecureStorageManager {
         idTokenCache.get(host).put(userMap.getKey(), userMap.getValue().asText());
       }
     }
+  }
+
+  private String buildCredName(String user, String type) {
+    return user.toUpperCase() + ":" + DRIVER_NAME + ":" + type.toUpperCase();
   }
 }
