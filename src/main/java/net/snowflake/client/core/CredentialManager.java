@@ -5,12 +5,11 @@
 package net.snowflake.client.core;
 
 import com.google.common.base.Strings;
+import java.net.MalformedURLException;
+import java.net.URL;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
-
-import java.net.MalformedURLException;
-import java.net.URL;
 
 public class CredentialManager {
   private static final SFLogger logger = SFLoggerFactory.getLogger(CredentialManager.class);
@@ -48,7 +47,9 @@ public class CredentialManager {
   synchronized void fillCachedIdToken(SFLoginInput loginInput) throws SFException {
     String idToken =
         secureStorageManager.getCredential(
-            extractHostFromServerUrl(loginInput.getServerUrl()), loginInput.getUserName(), ID_TOKEN);
+            extractHostFromServerUrl(loginInput.getServerUrl()),
+            loginInput.getUserName(),
+            ID_TOKEN);
 
     if (idToken == null) {
       logger.debug("retrieved idToken is null");
@@ -65,7 +66,9 @@ public class CredentialManager {
   synchronized void fillCachedMfaToken(SFLoginInput loginInput) throws SFException {
     String mfaToken =
         secureStorageManager.getCredential(
-            extractHostFromServerUrl(loginInput.getServerUrl()), loginInput.getUserName(), MFA_TOKEN);
+            extractHostFromServerUrl(loginInput.getServerUrl()),
+            loginInput.getUserName(),
+            MFA_TOKEN);
 
     if (mfaToken == null) {
       logger.debug("retrieved mfaToken is null");
@@ -89,20 +92,26 @@ public class CredentialManager {
     }
 
     secureStorageManager.setCredential(
-        extractHostFromServerUrl(loginInput.getServerUrl()), loginInput.getUserName(), ID_TOKEN, idToken);
+        extractHostFromServerUrl(loginInput.getServerUrl()),
+        loginInput.getUserName(),
+        ID_TOKEN,
+        idToken);
   }
 
   synchronized void writeMfaToken(SFLoginInput loginInput, SFLoginOutput loginOutput)
       throws SFException {
-      // WUFAN TODO:
-      String mfaToken = loginOutput.getMfaToken();
-      if (Strings.isNullOrEmpty(mfaToken)) {
-        logger.debug("no username_pwd_mfa token is given.");
-        return; // no mfa token
-      }
+    // WUFAN TODO:
+    String mfaToken = loginOutput.getMfaToken();
+    if (Strings.isNullOrEmpty(mfaToken)) {
+      logger.debug("no username_pwd_mfa token is given.");
+      return; // no mfa token
+    }
 
     secureStorageManager.setCredential(
-        extractHostFromServerUrl(loginInput.getServerUrl()), loginInput.getUserName(), MFA_TOKEN, mfaToken);
+        extractHostFromServerUrl(loginInput.getServerUrl()),
+        loginInput.getUserName(),
+        MFA_TOKEN,
+        mfaToken);
   }
 
   /** Delete the id token cache */

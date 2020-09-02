@@ -4,9 +4,21 @@
 
 package net.snowflake.client.core;
 
+import static net.snowflake.client.core.SFTrustManager.resetOCSPResponseCacherServerURL;
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import net.snowflake.client.jdbc.*;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.client.log.ArgSupplier;
@@ -27,19 +39,6 @@ import org.apache.http.message.HeaderGroup;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
-
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
-import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import static net.snowflake.client.core.SFTrustManager.resetOCSPResponseCacherServerURL;
-import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
 /** Low level session util */
 public class SessionUtil {
@@ -66,8 +65,7 @@ public class SessionUtil {
   private static final String SF_HEADER_TOKEN_TAG = "Token";
   private static final String CLIENT_STORE_TEMPORARY_CREDENTIAL =
       "CLIENT_STORE_TEMPORARY_CREDENTIAL";
-  private static final String CLIENT_ALLOW_MFA_CACHING =
-      "CLIENT_ALLOW_MFA_CACHING";
+  private static final String CLIENT_ALLOW_MFA_CACHING = "CLIENT_ALLOW_MFA_CACHING";
   private static final String SERVICE_NAME = "SERVICE_NAME";
   private static final String CLIENT_IN_BAND_TELEMETRY_ENABLED = "CLIENT_TELEMETRY_ENABLED";
   private static final String CLIENT_OUT_OF_BAND_TELEMETRY_ENABLED =
@@ -289,10 +287,10 @@ public class SessionUtil {
     }
   }
 
-  static private void preNewSession(SFLoginInput loginInput) throws SFException {
+  private static void preNewSession(SFLoginInput loginInput) throws SFException {
     if (asBoolean(loginInput.getSessionParameters().get(CLIENT_STORE_TEMPORARY_CREDENTIAL))) {
       CredentialManager.getInstance().fillCachedIdToken(loginInput);
-    } 
+    }
 
     if (asBoolean(loginInput.getSessionParameters().get(CLIENT_ALLOW_MFA_CACHING))) {
       CredentialManager.getInstance().fillCachedMfaToken(loginInput);
