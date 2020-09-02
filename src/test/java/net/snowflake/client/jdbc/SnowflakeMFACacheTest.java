@@ -62,7 +62,6 @@ public class SnowflakeMFACacheTest {
 
     respNode.set("data", dataNode);
     respNode.put("success", success);
-    // respNode.put("success", false);
     respNode.put("message", "msg");
 
     return respNode;
