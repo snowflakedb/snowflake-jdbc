@@ -612,7 +612,6 @@ public class SessionUtil {
       sessionToken = jsonNode.path("data").path("token").asText();
       masterToken = jsonNode.path("data").path("masterToken").asText();
       idToken = nullStringAsEmptyString(jsonNode.path("data").path("idToken").asText());
-      // WUFAN TODO, checkout whether mfa token is given as field `mfaToken`:
       mfaToken = nullStringAsEmptyString(jsonNode.path("data").path("mfaToken").asText());
       masterTokenValidityInSeconds = jsonNode.path("data").path("masterValidityInSeconds").asLong();
       String serverVersion = jsonNode.path("data").path("serverVersion").asText();

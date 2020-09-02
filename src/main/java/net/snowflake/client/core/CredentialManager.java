@@ -100,7 +100,6 @@ public class CredentialManager {
 
   synchronized void writeMfaToken(SFLoginInput loginInput, SFLoginOutput loginOutput)
       throws SFException {
-    // WUFAN TODO:
     String mfaToken = loginOutput.getMfaToken();
     if (Strings.isNullOrEmpty(mfaToken)) {
       logger.debug("no username_pwd_mfa token is given.");
