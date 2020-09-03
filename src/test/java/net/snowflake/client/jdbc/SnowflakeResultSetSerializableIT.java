@@ -179,7 +179,14 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
       }
 
       // Read data from object
-      ResultSet rs = resultSetChunk.getResultSet(props);
+      // sfFullURL is used to support private link URL.
+      // This test case is not for private link env, so just use a valid URL for testing purpose.
+      ResultSet rs =
+          resultSetChunk.getResultSet(
+              SnowflakeResultSetSerializable.ResultSetRetrieveConfig.Builder.newInstance()
+                  .setProxyProperties(props)
+                  .setSfFullURL("https://sfctest0.snowflakecomputing.com")
+                  .build());
 
       // print result set meta data
       ResultSetMetaData metadata = rs.getMetaData();
@@ -920,5 +927,22 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
         && actualRowCountFromMetadata == expectedTotalRowCount
         && actualTotalCompressedSize == expectedTotalCompressedSize
         && expectedTotalUncompressedSize == actualTotalUncompressedSize;
+  }
+
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testResultSetRetrieveConfig() throws Throwable {
+    SnowflakeResultSetSerializable.ResultSetRetrieveConfig.Builder builder =
+        SnowflakeResultSetSerializable.ResultSetRetrieveConfig.Builder.newInstance();
+
+    boolean hitExpectedException = false;
+    try {
+      builder.setSfFullURL("sfctest0.snowflakecomputing.com");
+      // The URL is invalid because it doesn't include protocol, it should raise exception
+      builder.build();
+    } catch (Exception ex) {
+      hitExpectedException = true;
+    }
+    assertTrue(hitExpectedException);
   }
 }

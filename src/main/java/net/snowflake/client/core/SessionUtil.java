@@ -370,19 +370,11 @@ public class SessionUtil {
       throw new SFException(ex, ErrorCode.INTERNAL_ERROR, "unexpected URI syntax exception:1");
     }
 
-    if (loginInput.getServerUrl().indexOf(".privatelink.snowflakecomputing.com") > 0) {
-      // Privatelink uses special OCSP Cache server
-      try {
-        URL url = new URL(loginInput.getServerUrl());
-        String host = url.getHost();
-        logger.debug("HOST: {}", host);
-        String ocspCacheServerUrl =
-            String.format("http://ocsp.%s/%s", host, SFTrustManager.CACHE_FILE_NAME);
-        logger.debug("OCSP Cache Server for Privatelink: {}", ocspCacheServerUrl);
-        resetOCSPResponseCacherServerURL(ocspCacheServerUrl);
-      } catch (IOException ex) {
-        throw new SFException(ex, ErrorCode.INTERNAL_ERROR, "unexpected URL syntax exception");
-      }
+    try {
+      // Adjust OCSP cache server if it is private link
+      resetOCSPUrlIfNecessary(loginInput.getServerUrl());
+    } catch (IOException ex) {
+      throw new SFException(ex, ErrorCode.INTERNAL_ERROR, "unexpected URL syntax exception");
     }
 
     HttpPost postRequest = null;
@@ -1351,6 +1343,25 @@ public class SessionUtil {
 
     TokenRequestType(String value) {
       this.value = value;
+    }
+  }
+
+  /**
+   * Reset OCSP cache server if the snowflake server URL is for private link. If the URL is not for
+   * private link, do nothing.
+   *
+   * @param serverUrl The Snowflake URL includes protocol such as "https://"
+   */
+  public static void resetOCSPUrlIfNecessary(String serverUrl) throws IOException {
+    if (serverUrl.indexOf(".privatelink.snowflakecomputing.com") > 0) {
+      // Privatelink uses special OCSP Cache server
+      URL url = new URL(serverUrl);
+      String host = url.getHost();
+      logger.debug("HOST: {}", host);
+      String ocspCacheServerUrl =
+          String.format("http://ocsp.%s/%s", host, SFTrustManager.CACHE_FILE_NAME);
+      logger.debug("OCSP Cache Server for Privatelink: {}", ocspCacheServerUrl);
+      resetOCSPResponseCacherServerURL(ocspCacheServerUrl);
     }
   }
 }
