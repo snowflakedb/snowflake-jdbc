@@ -33,6 +33,8 @@ public class SnowflakeFileTransferConfig {
     this.proxyProperties = builder.proxyProperties;
     this.prefix = builder.prefix;
     this.destFileName = builder.destFileName;
+    this.session = builder.session;
+    this.command = builder.command;
   }
 
   public SnowflakeFileTransferMetadata getSnowflakeFileTransferMetadata() {
