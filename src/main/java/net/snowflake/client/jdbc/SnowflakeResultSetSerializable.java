@@ -13,11 +13,64 @@ import java.util.Properties;
  * serializable object.
  */
 public interface SnowflakeResultSetSerializable {
+  // This wraps the required info for retrieving ResultSet
+  class ResultSetRetrieveConfig {
+    private Properties proxyProperties;
+    private String sfFullURL;
+
+    public ResultSetRetrieveConfig(Builder builder) {
+      this.proxyProperties = builder.proxyProperties;
+      this.sfFullURL = builder.sfFullURL;
+    }
+
+    public Properties getProxyProperties() {
+      return proxyProperties;
+    }
+
+    public String getSfFullURL() {
+      return sfFullURL;
+    }
+
+    // The inner builder class for ResultSetRetrieveConfig
+    public static class Builder {
+      private Builder() {}
+
+      private Properties proxyProperties = null;
+      private String sfFullURL = null;
+
+      public static Builder newInstance() {
+        return new Builder();
+      }
+
+      public ResultSetRetrieveConfig build() throws IllegalArgumentException {
+        // The SFURL must include protocol like https or http
+        if (sfFullURL == null || !sfFullURL.toLowerCase().startsWith("http")) {
+          throw new IllegalArgumentException(
+              "The SF URL must include protocol. The invalid is: " + sfFullURL);
+        }
+
+        return new ResultSetRetrieveConfig(this);
+      }
+
+      public Builder setProxyProperties(Properties proxyProperties) {
+        this.proxyProperties = proxyProperties;
+        return this;
+      }
+
+      public Builder setSfFullURL(String sfFullURL) {
+        this.sfFullURL = sfFullURL;
+        return this;
+      }
+    }
+  }
+
   /**
    * Get ResultSet from the ResultSet Serializable object so that the user can access the data.
    *
    * @return a ResultSet which represents for the data wrapped in the object
+   * @deprecated Please use new interface function getResultSet(ResultSetRetrieveConfig)
    */
+  @Deprecated
   ResultSet getResultSet() throws SQLException;
 
   /**
@@ -25,8 +78,18 @@ public interface SnowflakeResultSetSerializable {
    *
    * @param info The proxy server information if proxy is necessary.
    * @return a ResultSet which represents for the data wrapped in the object
+   * @deprecated Please use new interface function getResultSet(ResultSetRetrieveConfig)
    */
+  @Deprecated
   ResultSet getResultSet(Properties info) throws SQLException;
+
+  /**
+   * Get ResultSet from the ResultSet Serializable object so that the user can access the data.
+   *
+   * @param resultSetRetrieveConfig The extra info to retrieve the result set.
+   * @return a ResultSet which represents for the data wrapped in the object
+   */
+  ResultSet getResultSet(ResultSetRetrieveConfig resultSetRetrieveConfig) throws SQLException;
 
   /**
    * Retrieve total row count included in the the ResultSet Serializable object.
