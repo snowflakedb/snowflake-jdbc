@@ -10,6 +10,7 @@ if [[ -z "$GITHUB_ACTIONS" ]] ;then
     export GIT_BRANCH=${GIT_BRANCH:-origin/$(git rev-parse --abbrev-ref HEAD)}
     export GIT_COMMIT=${GIT_COMMIT:-$(git rev-parse HEAD)}
     export WORKSPACE=${WORKSPACE:-/tmp}
+    echo "[INFO] Git Branch is $GIT_BRANCH"
     if [[ "$GIT_BRANCH" == PR-* ]]; then
       BRANCH=$GIT_BRANCH
       echo "[INFO] 1 Branch is $BRANCH"
