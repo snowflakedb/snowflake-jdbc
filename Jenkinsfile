@@ -11,9 +11,9 @@ timestamps {
       sh '''\
         |export JAVA_HOME=/usr/java/latest
         |export PATH=$JAVA_HOME/bin:$PATH
-        |export GIT_BRANCH=${env.GIT_BRANCH}
+        |export GIT_BRANCH=${GIT_BRANCH}
         |$WORKSPACE/ci/build.sh
-        |echo "Branch is : ${env.GIT_BRANCH}"
+        |echo "Branch is : ${GIT_BRANCH}"
       '''.stripMargin()
       sh '''\
         |cat <<PARAMS > $WORKSPACE/test_properties.txt
