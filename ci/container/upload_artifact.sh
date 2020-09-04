@@ -12,9 +12,11 @@ if [[ -z "$GITHUB_ACTIONS" ]] ;then
     export WORKSPACE=${WORKSPACE:-/tmp}
     if [[ "$GIT_BRANCH" == PR-* ]]; then
       BRANCH=$GIT_BRANCH
+      echo "[INFO] 1 Branch is $BRANCH"
     else
       BRANCH=$(basename ${GIT_BRANCH})
     fi
+    echo "[INFO] Branch is $BRANCH"
 
     target_stage=s3://sfc-jenkins/repository/jdbc/$BRANCH/${GIT_COMMIT}
     echo "[INFO] Uploading jar to $target_stage/"
