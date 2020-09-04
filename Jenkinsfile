@@ -3,14 +3,17 @@ timestamps {
     stage('checkout') {
       scmInfo = checkout scm
       println("${scmInfo}")
+      env.GIT_BRANCH = scmInfo.GIT_BRANCH
+
     }
 
     stage('build') {
       sh '''\
         |export JAVA_HOME=/usr/java/latest
         |export PATH=$JAVA_HOME/bin:$PATH
-        |export GIT_BRANCH=${GIT_BRANCH}
+        |export GIT_BRANCH=${env.GIT_BRANCH}
         |$WORKSPACE/ci/build.sh
+        |echo "Branch is : ${env.GIT_BRANCH}"
       '''.stripMargin()
       sh '''\
         |cat <<PARAMS > $WORKSPACE/test_properties.txt
