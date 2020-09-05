@@ -26,28 +26,12 @@ timestamps {
       string(name: 'parent_build_number', value: env.BUILD_NUMBER)
     ]
 
-    parallel {
-      stage('Tests') {
-        build job: 'RT-LanguageJDBC1-PC',
-        wait: false,
-        propagate: false,
-        parameters: params
 
-        build job: 'RT-LanguageJDBC2-PC',
-        wait: false,
-        propagate: false,
-        parameters: params
-
-        build job: 'RT-LanguageJDBC3-PC',
-        wait: false,
-        propagate: false,
-        parameters: params
-
+    stage('Tests') {
         build job: 'RT-LanguageJDBC4-PC',
         wait: false,
         propagate: false,
         parameters: params
-      }
     }
   }
 }
