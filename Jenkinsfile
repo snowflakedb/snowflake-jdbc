@@ -29,7 +29,7 @@ timestamps {
 
     stage('Tests') {
       parallel(
-        build job: 'RT-LanguageJDBC3-PC',parameters: params,
+        build job: 'RT-LanguageJDBC3-PC',parameters: params
         build job: 'RT-LanguageJDBC4-PC',parameters: params
       )
     }
