@@ -7,7 +7,7 @@ timestamps {
 
     }
 
-    stage('build') {
+    stage('Build') {
       sh '''\
         |export JAVA_HOME=/usr/java/latest
         |export PATH=$JAVA_HOME/bin:$PATH
@@ -29,9 +29,13 @@ timestamps {
 
       stage('Test') {
         parallel (
-          'JDBC3': { build job: 'RT-LanguageJDBC3-PC',parameters: params
+          'Test JDBC 1': { build job: 'RT-LanguageJDBC1-PC',parameters: params
               },
-          'JDBC2': { build job: 'RT-LanguageJDBC2-PC',parameters: params
+          'Test JDBC 2': { build job: 'RT-LanguageJDBC2-PC',parameters: params
+              },
+          'Test JDBC 3': { build job: 'RT-LanguageJDBC3-PC',parameters: params
+              }
+          'Test JDBC 4': { build job: 'RT-LanguageJDBC4-PC',parameters: params
               }
         )
       }
