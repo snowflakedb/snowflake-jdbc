@@ -28,10 +28,7 @@ timestamps {
 
 
     stage('Tests') {
-        build job: 'RT-LanguageJDBC4-PC',
-        wait: false,
-        propagate: false,
-        parameters: params
+        build job: 'RT-LanguageJDBC4-PC',parameters: params
     }
   }
 }
