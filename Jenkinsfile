@@ -34,7 +34,7 @@ timestamps {
           'Test JDBC 2': { build job: 'RT-LanguageJDBC2-PC',parameters: params
               },
           'Test JDBC 3': { build job: 'RT-LanguageJDBC3-PC',parameters: params
-              }
+              },
           'Test JDBC 4': { build job: 'RT-LanguageJDBC4-PC',parameters: params
               }
         )
