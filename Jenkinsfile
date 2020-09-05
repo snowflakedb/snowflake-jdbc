@@ -28,10 +28,25 @@ timestamps {
 
     parallel {
       stage('Tests') {
-        build(job: 'RT-LanguageJDBC1-PC', parameters: params)
-        build(job: 'RT-LanguageJDBC2-PC', parameters: params)
-        build(job: 'RT-LanguageJDBC3-PC', parameters: params)
-        build(job: 'RT-LanguageJDBC4-PC', parameters: params)
+        build job: 'RT-LanguageJDBC1-PC',
+        wait: false,
+        propagate: false,
+        parameters: params
+
+        build job: 'RT-LanguageJDBC2-PC',
+        wait: false,
+        propagate: false,
+        parameters: params
+
+        build job: 'RT-LanguageJDBC3-PC',
+        wait: false,
+        propagate: false,
+        parameters: params
+
+        build job: 'RT-LanguageJDBC4-PC',
+        wait: false,
+        propagate: false,
+        parameters: params
       }
     }
   }
