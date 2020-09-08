@@ -90,7 +90,7 @@ public class SnowflakeMFACacheTest {
     prop.put("user", "testuser");
     prop.put("password", "testpassword");
     prop.put("authenticator", "username_password_mfa");
-    prop.put("CLIENT_ALLOW_MFA_CACHING", true);
+    prop.put("CLIENT_REQUEST_MFA_TOKEN", true);
     return prop;
   }
 
@@ -144,7 +144,7 @@ public class SnowflakeMFACacheTest {
                         jsonNode
                             .path("data")
                             .path("SESSION_PARAMETERS")
-                            .path("CLIENT_ALLOW_MFA_CACHING")
+                            .path("CLIENT_REQUEST_MFA_TOKEN")
                             .asBoolean());
                     res = getNormalMockedHttpResponse(true, 0).toString();
                   } else if (callCount == 1) {
@@ -155,7 +155,7 @@ public class SnowflakeMFACacheTest {
                         jsonNode
                             .path("data")
                             .path("SESSION_PARAMETERS")
-                            .path("CLIENT_ALLOW_MFA_CACHING")
+                            .path("CLIENT_REQUEST_MFA_TOKEN")
                             .asBoolean());
                     assertEquals(jsonNode.path("data").path("TOKEN").asText(), mockedMfaToken[0]);
                     res = getNormalMockedHttpResponse(true, 1).toString();
@@ -167,7 +167,7 @@ public class SnowflakeMFACacheTest {
                         jsonNode
                             .path("data")
                             .path("SESSION_PARAMETERS")
-                            .path("CLIENT_ALLOW_MFA_CACHING")
+                            .path("CLIENT_REQUEST_MFA_TOKEN")
                             .asBoolean());
                     assertEquals(jsonNode.path("data").path("TOKEN").asText(), mockedMfaToken[1]);
                     res = getNormalMockedHttpResponse(true, -1).toString();
