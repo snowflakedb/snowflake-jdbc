@@ -374,7 +374,7 @@ public class SessionUtil {
       // Adjust OCSP cache server if it is private link
       resetOCSPUrlIfNecessary(loginInput.getServerUrl());
     } catch (IOException ex) {
-      throw new SFException(ex, ErrorCode.INTERNAL_ERROR, "unexpected URL syntax exception");
+      throw new SFException(ex, ErrorCode.IO_ERROR, "unexpected URL syntax exception");
     }
 
     HttpPost postRequest = null;
