@@ -35,6 +35,10 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
 
   private String queryResultFormat;
 
+  // sfFullURL is used to support private link URL.
+  // This test case is not for private link env, so just use a valid URL for testing purpose.
+  private String sfFullURL = "https://sfctest0.snowflakecomputing.com";
+
   public SnowflakeResultSetSerializableIT() {
     this("json");
   }
@@ -179,13 +183,11 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
       }
 
       // Read data from object
-      // sfFullURL is used to support private link URL.
-      // This test case is not for private link env, so just use a valid URL for testing purpose.
       ResultSet rs =
           resultSetChunk.getResultSet(
               SnowflakeResultSetSerializable.ResultSetRetrieveConfig.Builder.newInstance()
                   .setProxyProperties(props)
-                  .setSfFullURL("https://sfctest0.snowflakecomputing.com")
+                  .setSfFullURL(sfFullURL)
                   .build());
 
       // print result set meta data
@@ -474,7 +476,12 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
       fi.close();
 
       // Get ResultSet from object
-      ResultSet rs = resultSetChunk.getResultSet();
+      ResultSet rs =
+          resultSetChunk.getResultSet(
+              SnowflakeResultSetSerializable.ResultSetRetrieveConfig.Builder.newInstance()
+                  .setProxyProperties(new Properties())
+                  .setSfFullURL(sfFullURL)
+                  .build());
 
       String[] filePathParts = filename.split(File.separator);
       String appendix = filePathParts[filePathParts.length - 1];
@@ -621,7 +628,13 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
       try {
         SnowflakeResultSetSerializable resultSetSerializable = resultSetSerializables.get(0);
 
-        ResultSet resultSet = resultSetSerializable.getResultSet();
+        ResultSet resultSet =
+            resultSetSerializable.getResultSet(
+                SnowflakeResultSetSerializable.ResultSetRetrieveConfig.Builder.newInstance()
+                    .setProxyProperties(new Properties())
+                    .setSfFullURL(sfFullURL)
+                    .build());
+
         while (resultSet.next()) {
           resultSet.getString(1);
         }
@@ -893,7 +906,14 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
       chunkFileCount += resultSetChunk.chunkFileCount;
 
       // Get actual row count from result set.
-      ResultSet rs = resultSetChunk.getResultSet(props);
+      // sfFullURL is used to support private link URL.
+      // This test case is not for private link env, so just use a valid URL for testing purpose.
+      ResultSet rs =
+          resultSetChunk.getResultSet(
+              SnowflakeResultSetSerializable.ResultSetRetrieveConfig.Builder.newInstance()
+                  .setProxyProperties(props)
+                  .setSfFullURL(sfFullURL)
+                  .build());
 
       // Accumulate the actual row count from result set.
       while (rs.next()) {
@@ -930,7 +950,6 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testResultSetRetrieveConfig() throws Throwable {
     SnowflakeResultSetSerializable.ResultSetRetrieveConfig.Builder builder =
         SnowflakeResultSetSerializable.ResultSetRetrieveConfig.Builder.newInstance();
