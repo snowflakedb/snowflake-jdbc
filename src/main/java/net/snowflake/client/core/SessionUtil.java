@@ -65,7 +65,7 @@ public class SessionUtil {
   private static final String SF_HEADER_TOKEN_TAG = "Token";
   private static final String CLIENT_STORE_TEMPORARY_CREDENTIAL =
       "CLIENT_STORE_TEMPORARY_CREDENTIAL";
-  private static final String CLIENT_ALLOW_MFA_CACHING = "CLIENT_ALLOW_MFA_CACHING";
+  private static final String CLIENT_REQUEST_MFA_TOKEN = "CLIENT_REQUEST_MFA_TOKEN";
   private static final String SERVICE_NAME = "SERVICE_NAME";
   private static final String CLIENT_IN_BAND_TELEMETRY_ENABLED = "CLIENT_TELEMETRY_ENABLED";
   private static final String CLIENT_OUT_OF_BAND_TELEMETRY_ENABLED =
@@ -160,7 +160,7 @@ public class SessionUtil {
               CLIENT_IN_BAND_TELEMETRY_ENABLED,
               CLIENT_OUT_OF_BAND_TELEMETRY_ENABLED,
               CLIENT_STORE_TEMPORARY_CREDENTIAL,
-              CLIENT_ALLOW_MFA_CACHING,
+              CLIENT_REQUEST_MFA_TOKEN,
               "JDBC_USE_JSON_PARSER",
               "AUTOCOMMIT",
               "JDBC_EFFICIENT_CHUNK_STORAGE",
@@ -267,11 +267,11 @@ public class SessionUtil {
 
     if (authenticator.equals(ClientAuthnDTO.AuthenticatorType.USERNAME_PASSWORD_MFA)) {
       if (Constants.getOS() == Constants.OS.MAC || Constants.getOS() == Constants.OS.WINDOWS) {
-        loginInput.getSessionParameters().put(CLIENT_ALLOW_MFA_CACHING, true);
+        loginInput.getSessionParameters().put(CLIENT_REQUEST_MFA_TOKEN, true);
       } else {
-        if (!loginInput.getSessionParameters().containsKey(CLIENT_ALLOW_MFA_CACHING)) {
+        if (!loginInput.getSessionParameters().containsKey(CLIENT_REQUEST_MFA_TOKEN)) {
           // for testing purpose
-          loginInput.getSessionParameters().put(CLIENT_ALLOW_MFA_CACHING, false);
+          loginInput.getSessionParameters().put(CLIENT_REQUEST_MFA_TOKEN, false);
         }
       }
     }
@@ -292,7 +292,7 @@ public class SessionUtil {
       CredentialManager.getInstance().fillCachedIdToken(loginInput);
     }
 
-    if (asBoolean(loginInput.getSessionParameters().get(CLIENT_ALLOW_MFA_CACHING))) {
+    if (asBoolean(loginInput.getSessionParameters().get(CLIENT_REQUEST_MFA_TOKEN))) {
       CredentialManager.getInstance().fillCachedMfaToken(loginInput);
     }
   }
@@ -728,7 +728,7 @@ public class SessionUtil {
       CredentialManager.getInstance().writeTemporaryCredential(loginInput, ret);
     }
 
-    if (asBoolean(loginInput.getSessionParameters().get(CLIENT_ALLOW_MFA_CACHING))) {
+    if (asBoolean(loginInput.getSessionParameters().get(CLIENT_REQUEST_MFA_TOKEN))) {
       CredentialManager.getInstance().writeMfaToken(loginInput, ret);
     }
 
