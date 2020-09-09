@@ -1,9 +1,16 @@
 package net.snowflake.client.core;
 
+import static net.snowflake.client.core.SessionUtil.CLIENT_MEMORY_LIMIT;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+import java.nio.charset.StandardCharsets;
+import java.sql.ResultSet;
+import java.util.Base64;
+import java.util.Properties;
+import net.snowflake.client.jdbc.SnowflakeResultSetSerializable;
+import net.snowflake.client.jdbc.SnowflakeResultSetSerializableV1;
 import org.junit.Test;
 
 public class SFTrustManagerTest {
@@ -97,6 +104,56 @@ public class SFTrustManagerTest {
           equalTo("https://ocspssd.us-east-1.privatelink.snowflakecomputing.com/ocsp/retry"));
     } finally {
       System.clearProperty("net.snowflake.jdbc.ocsp_activate_new_endpoint");
+    }
+  }
+
+  /**
+   * Test resultSetSerializable.getResultSet(ResultSetRetrieveConfig) can work with private link
+   * URL.
+   *
+   * @throws Exception
+   */
+  @Test
+  public void testSnowflakeResultSetSerializable_getResultSet() throws Exception {
+    try {
+      // Create an empty result set serializable object
+      SnowflakeResultSetSerializableV1 resultSetSerializable =
+          new SnowflakeResultSetSerializableV1();
+      resultSetSerializable.setFristChunkStringData(
+          Base64.getEncoder().encodeToString("".getBytes(StandardCharsets.UTF_8)));
+      resultSetSerializable.setChunkFileCount(0);
+      resultSetSerializable.getParameters().put(CLIENT_MEMORY_LIMIT, 10);
+      resultSetSerializable.setQueryResultFormat(QueryResultFormat.ARROW);
+
+      // Get ResultSet with NON private link URL.
+      System.clearProperty("net.snowflake.jdbc.ssd_support_enabled");
+      SFTrustManager.ssdManager = new SSDManager();
+      SFTrustManager.SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN = null;
+      ResultSet rs =
+          resultSetSerializable.getResultSet(
+              SnowflakeResultSetSerializable.ResultSetRetrieveConfig.Builder.newInstance()
+                  .setProxyProperties(new Properties())
+                  .setSfFullURL("https://sfctest0.snowflakecomputing.com")
+                  .build());
+      // For non-private link, do nothing for SFTrustManager
+      assertThat(SFTrustManager.SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN, nullValue());
+
+      // Get ResultSet with private link URL.
+      System.clearProperty("net.snowflake.jdbc.ssd_support_enabled");
+      SFTrustManager.ssdManager = new SSDManager();
+      SFTrustManager.SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN = null;
+      rs =
+          resultSetSerializable.getResultSet(
+              SnowflakeResultSetSerializable.ResultSetRetrieveConfig.Builder.newInstance()
+                  .setProxyProperties(new Properties())
+                  .setSfFullURL("https://sfctest0.us-west-2.privatelink.snowflakecomputing.com")
+                  .build());
+      // For private link, SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN is reset accordingly.
+      assertThat(
+          SFTrustManager.SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN,
+          equalTo("http://ocsp.sfctest0.us-west-2.privatelink.snowflakecomputing.com/retry/%s/%s"));
+    } finally {
+      System.clearProperty("net.snowflake.jdbc.ssd_support_enabled");
     }
   }
 }
