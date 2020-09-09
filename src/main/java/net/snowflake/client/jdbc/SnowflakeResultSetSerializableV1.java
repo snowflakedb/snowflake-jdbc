@@ -899,13 +899,40 @@ public class SnowflakeResultSetSerializableV1
   }
 
   /**
-   * Get ResultSet from the ResultSet Serializable object so that the user can access the data. The
-   * ResultSet is sessionless.
+   * Get ResultSet from the ResultSet Serializable object so that the user can access the data.
    *
+   * @param resultSetRetrieveConfig The extra info to retrieve the result set.
    * @return a ResultSet which represents for the data wrapped in the object
    */
-  public ResultSet getResultSet() throws SQLException {
-    return getResultSet(null);
+  public ResultSet getResultSet(ResultSetRetrieveConfig resultSetRetrieveConfig)
+      throws SQLException {
+    // Adjust OCSP cache server if necessary.
+    try {
+      SessionUtil.resetOCSPUrlIfNecessary(resultSetRetrieveConfig.getSfFullURL());
+    } catch (IOException e) {
+      throw new SnowflakeSQLLoggedException(
+          /*session = */ null, // There is no connection
+          ErrorCode.INTERNAL_ERROR,
+          "Hit exception when adjusting OCSP cache server. The original message is: "
+              + e.getMessage());
+    }
+
+    return getResultSetInternal(resultSetRetrieveConfig.getProxyProperties());
+  }
+
+  /**
+   * Get ResultSet from the ResultSet Serializable object so that the user can access the data.
+   *
+   * <p>This API is used by spark spark connector from 2.6.0 to 2.8.1. It is deprecated from
+   * sc:2.8.2/jdbc:3.12.12 since Sept 2020. It is safe to remove it after Sept 2022.
+   *
+   * @param info The proxy sever information if proxy is necessary.
+   * @return a ResultSet which represents for the data wrapped in the object
+   * @deprecated Please use new interface function getResultSet(ResultSetRetrieveConfig)
+   */
+  @Deprecated
+  public ResultSet getResultSet(Properties info) throws SQLException {
+    return getResultSetInternal(info);
   }
 
   /**
@@ -914,7 +941,7 @@ public class SnowflakeResultSetSerializableV1
    * @param info The proxy sever information if proxy is necessary.
    * @return a ResultSet which represents for the data wrapped in the object
    */
-  public ResultSet getResultSet(Properties info) throws SQLException {
+  private ResultSet getResultSetInternal(Properties info) throws SQLException {
     // Setup proxy info if necessary
     SnowflakeUtil.setupProxyPropertiesIfNecessary(info);
 
