@@ -3,50 +3,8 @@
  */
 package net.snowflake.client.jdbc;
 
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.*;
-import java.math.BigDecimal;
-import java.nio.channels.FileChannel;
-import java.sql.Connection;
-import java.sql.DatabaseMetaData;
-import java.sql.Driver;
-import java.sql.DriverManager;
-import java.sql.DriverPropertyInfo;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.sql.Time;
-import java.sql.Timestamp;
-import java.sql.Types;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.List;
-import java.util.Properties;
-import java.util.TimeZone;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.UUID;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.zip.GZIPInputStream;
 import net.snowflake.client.AbstractDriverIT;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
@@ -57,13 +15,26 @@ import net.snowflake.client.core.SFStatement;
 import net.snowflake.common.core.SqlState;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.TemporaryFolder;
+
+import java.io.*;
+import java.math.BigDecimal;
+import java.nio.channels.FileChannel;
+import java.sql.*;
+import java.text.SimpleDateFormat;
+import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.zip.GZIPInputStream;
+
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.*;
 
 /** General integration tests */
 @Category(TestCategoryOthers.class)
@@ -900,6 +871,29 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
     fOut.transferFrom(fIn, fIn.size(), fIn.size());
     fOut.close();
     fIn.close();
+  }
+
+  @Test
+  public void testTimeForFetchingData() throws Throwable {
+    Connection con = getConnection();
+    Statement statement = con.createStatement();
+    String sourceFilePath = getFullPathFileInResource("file11cols.csv");
+
+    statement.execute("CREATE OR REPLACE STAGE test_stage");
+    assertTrue(
+            "Failed to put a file",
+            statement.execute("PUT file://" + sourceFilePath + " @test_stage"));
+
+    // check that file exists in stage after PUT
+    findFile(statement, "ls @test_stage/");
+
+    // create a new table with columns matching CSV file
+    statement.execute("create or replace table column_11_table (col1 int, col2 bigint, col3 bigint, col4 bigint, col5 string, col6 string, col7 int, col8 int, col9 int, col10 double, col11 int)");
+    // copy rows from file into table
+    statement.execute("copy into column_11_table from @test_stage/file11cols.csv.gz");
+    ResultSet resultSet = statement.executeQuery("select * from column_11_table");
+
+
   }
 
   @Test
