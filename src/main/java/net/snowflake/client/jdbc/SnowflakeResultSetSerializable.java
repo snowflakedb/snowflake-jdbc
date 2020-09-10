@@ -70,6 +70,18 @@ public interface SnowflakeResultSetSerializable {
    * <p>This API is used by spark spark connector from 2.6.0 to 2.8.1. It is deprecated from
    * sc:2.8.2/jdbc:3.12.12 since Sept 2020. It is safe to remove it after Sept 2022.
    *
+   * @return a ResultSet which represents for the data wrapped in the object
+   * @deprecated Please use new interface function getResultSet(ResultSetRetrieveConfig)
+   */
+  @Deprecated
+  ResultSet getResultSet() throws SQLException;
+
+  /**
+   * Get ResultSet from the ResultSet Serializable object so that the user can access the data.
+   *
+   * <p>This API is used by spark spark connector from 2.6.0 to 2.8.1. It is deprecated from
+   * sc:2.8.2/jdbc:3.12.12 since Sept 2020. It is safe to remove it after Sept 2022.
+   *
    * @param info The proxy server information if proxy is necessary.
    * @return a ResultSet which represents for the data wrapped in the object
    * @deprecated Please use new interface function getResultSet(ResultSetRetrieveConfig)
