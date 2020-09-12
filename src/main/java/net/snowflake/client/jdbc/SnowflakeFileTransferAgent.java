@@ -79,11 +79,8 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView {
   // with 4 threads by default
   private Set<String> smallSourceFiles;
 
-  // Constant variable in MB for big file threshold
-  private static final int BIG_FILE_THRESHOLD_MB = 200;
-
   // Threshold for splitting a file to upload multiple parts in parallel
-  private int multipartUploadThreshold = BIG_FILE_THRESHOLD_MB * 1024 * 1024;
+  private static final int BIG_FILE_THRESHOLD = 64 * 1024 * 1024;
 
   private Map<String, FileMetadata> fileMetadataMap;
 
@@ -879,15 +876,6 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView {
           "Failed to parse the locations due to: " + ex.getMessage());
     }
 
-    JsonNode thresholdNode = jsonNode.path("data").path("threshold");
-    int threshold = thresholdNode.asInt();
-    // if value is <= 0, this means an error was made in parsing the threshold or the threshold is
-    // invalid.
-    // Only use the threshold value if it is valid.
-    if (threshold > 0) {
-      multipartUploadThreshold = threshold * 1024 * 1024;
-    }
-
     showEncryptionParameter =
         jsonNode.path("data").path("clientShowEncryptionParameter").asBoolean();
 
@@ -1595,7 +1583,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView {
 
   private void segregateFilesBySize() {
     for (String srcFile : sourceFiles) {
-      if ((new File(srcFile)).length() > multipartUploadThreshold) {
+      if ((new File(srcFile)).length() > BIG_FILE_THRESHOLD) {
         if (bigSourceFiles == null) {
           bigSourceFiles = new HashSet<String>(sourceFiles.size());
         }
