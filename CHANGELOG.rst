@@ -1,3 +1,8 @@
+**JDBC Driver 3.12.12**
+
+- \| SNOW-180303 | Removed unnecessary log lines from the JDBC Driver log.
+- \
+
 **JDBC Driver 3.12.11**
 
 - \| SNOW-182450 | Added in-band telemetry metrics for the DatabaseMetaData get methods (e.g. getTables).
