@@ -82,7 +82,7 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
 
   /**
    * Test to ensure it's possible to upload Time values via stage array binding and get proper
-   * values back
+   * values back (SNOW-194437)
    *
    * @throws SQLException
    */

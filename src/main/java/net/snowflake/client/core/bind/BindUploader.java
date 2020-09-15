@@ -125,8 +125,8 @@ public class BindUploader implements Closeable {
 
     Time v1 = new Time(sec * 1000);
     String formatWithDate = timestampFormat.format(v1) + String.format("%09d", nano);
+    // Take out the Date portion of the formatted string. Only time data is needed.
     return formatWithDate.substring(11);
-    // return timeFormat.format(new java.sql.Date(Long.parseLong(o)));
   }
 
   private synchronized String synchronizedTimestampFormat(String o) {
