@@ -6,23 +6,9 @@ package net.snowflake.client.jdbc;
 import static net.snowflake.client.jdbc.ErrorCode.NUMERIC_VALUE_OUT_OF_RANGE;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ParameterMetaData;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.sql.Time;
-import java.sql.Timestamp;
-import java.sql.Types;
+import java.sql.*;
 import java.util.Map;
 import java.util.Properties;
 import net.snowflake.client.ConditionalIgnoreRule;
@@ -91,6 +77,41 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
           assertThat(e.getErrorCode(), is(NUMERIC_VALUE_OUT_OF_RANGE.getMessageCode()));
         }
       }
+    }
+  }
+
+  /**
+   * Test to ensure it's possible to upload Time values via stage array binding and get proper
+   * values back
+   *
+   * @throws SQLException
+   */
+  @Test
+  public void testInsertStageArrayBindWithTime() throws SQLException {
+    try (Connection connection = init()) {
+      Statement statement = connection.createStatement();
+      statement.execute("alter session set CLIENT_STAGE_ARRAY_BINDING_THRESHOLD=2");
+      statement.execute("create or replace table testStageBindTime (c1 time, c2 date)");
+      PreparedStatement prepSt =
+          connection.prepareStatement("insert into testStageBindTime values (?, ?), (?, ?)");
+      prepSt.setTime(1, new Time(1));
+      prepSt.setDate(2, new Date(1));
+      prepSt.addBatch();
+      prepSt.setTime(1, new Time(100));
+      prepSt.setDate(2, new Date(100));
+      prepSt.addBatch();
+      prepSt.executeBatch();
+      // check results
+      ResultSet rs = statement.executeQuery("select * from testStageBindTime");
+      rs.next();
+      assertEquals(new Time(1), rs.getTime(1));
+      assertEquals(new Date(1).toString(), rs.getDate(2).toString());
+      rs.next();
+      assertEquals(new Time(100), rs.getTime(1));
+      assertEquals(new Date(100).toString(), rs.getDate(2).toString());
+      rs.close();
+      statement.execute("alter session unset CLIENT_STAGE_ARRAY_BINDING_THRESHOLD");
+      statement.close();
     }
   }
 
