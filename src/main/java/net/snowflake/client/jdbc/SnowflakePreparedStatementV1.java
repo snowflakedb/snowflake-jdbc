@@ -309,7 +309,6 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
               String.valueOf(nanosSinceMidnight));
 
       parameterBindings.put(String.valueOf(parameterIndex), binding);
-      sfStatement.setHasUnsupportedStageBind(true);
     }
   }
 
@@ -356,9 +355,6 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
   @Override
   public void clearParameters() throws SQLException {
     parameterBindings.clear();
-    if (batchParameterBindings.isEmpty()) {
-      sfStatement.setHasUnsupportedStageBind(false);
-    }
   }
 
   @Override
@@ -768,7 +764,6 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
     parameterBindings.clear();
     wasPrevValueNull.clear();
     batchSize = 0;
-    sfStatement.setHasUnsupportedStageBind(false);
   }
 
   @Override

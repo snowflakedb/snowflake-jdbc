@@ -73,10 +73,6 @@ public class SFStatement {
   /** id used in combine describe and execute */
   private String describeJobUUID;
 
-  // when uploading binds to stage, we use a table scan which cannot parse times from ms
-  // so, if the user binds time values, we don't upload to stage
-  private boolean hasUnsupportedStageBind = false;
-
   // list of child result objects for queries called by the current query, if any
   private List<SFChildResult> childResults = null;
 
@@ -384,7 +380,6 @@ public class SFStatement {
       if (0 < session.getArrayBindStageThreshold()
           && session.getArrayBindStageThreshold() <= numBinds
           && !describeOnly
-          && !hasUnsupportedStageBind
           && BindUploader.isArrayBind(bindValues)) {
         try (BindUploader uploader = BindUploader.newInstance(session, requestId)) {
           uploader.upload(bindValues);
@@ -880,10 +875,6 @@ public class SFStatement {
 
   protected SFSession getSession() {
     return session;
-  }
-
-  public void setHasUnsupportedStageBind(boolean hasUnsupportedStageBind) {
-    this.hasUnsupportedStageBind = hasUnsupportedStageBind;
   }
 
   // *NOTE* this new SQL format is incomplete. It should only be used under certain circumstances.
