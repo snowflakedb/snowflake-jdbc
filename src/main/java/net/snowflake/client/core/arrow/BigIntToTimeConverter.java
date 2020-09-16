@@ -3,10 +3,6 @@
  */
 package net.snowflake.client.core.arrow;
 
-import java.nio.ByteBuffer;
-import java.sql.Time;
-import java.sql.Timestamp;
-import java.util.TimeZone;
 import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.IncidentUtil;
 import net.snowflake.client.core.ResultUtil;
@@ -18,9 +14,12 @@ import net.snowflake.common.core.SFTime;
 import org.apache.arrow.vector.BigIntVector;
 import org.apache.arrow.vector.ValueVector;
 
+import java.sql.Time;
+import java.sql.Timestamp;
+import java.util.TimeZone;
+
 public class BigIntToTimeConverter extends AbstractArrowVectorConverter {
   private BigIntVector bigIntVector;
-  protected ByteBuffer byteBuf = ByteBuffer.allocate(BigIntVector.TYPE_WIDTH);
 
   public BigIntToTimeConverter(
       ValueVector fieldVector, int columnIndex, DataConversionContext context) {

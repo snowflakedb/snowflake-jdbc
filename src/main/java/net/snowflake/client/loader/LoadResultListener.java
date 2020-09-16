@@ -44,9 +44,6 @@ public interface LoadResultListener {
    */
   void addErrorCount(int number);
 
-  /** Method to reset the error count back to zero */
-  void resetErrorCount();
-
   /**
    * method to get the total number of errors
    *
@@ -61,18 +58,12 @@ public interface LoadResultListener {
    */
   void addErrorRecordCount(int number);
 
-  /** Method to reset the errorRecordCount back to zero */
-  void resetErrorRecordCount();
-
   /**
    * method to get the total number of error records
    *
    * @return the number of rows in errors
    */
   int getErrorRecordCount();
-
-  /** Resets submitted row count */
-  void resetSubmittedRowCount();
 
   /**
    * Adds the number of submitted rows

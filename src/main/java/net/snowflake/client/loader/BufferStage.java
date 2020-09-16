@@ -4,20 +4,17 @@
 
 package net.snowflake.client.loader;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
 
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
+import java.io.*;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.zip.GZIPOutputStream;
-import net.snowflake.client.log.SFLogger;
-import net.snowflake.client.log.SFLoggerFactory;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Class representing a unit of work for uploader. Corresponds to a collection of data files for a
@@ -269,10 +266,6 @@ public class BufferStage {
 
   public String getId() {
     return _id;
-  }
-
-  public void setId(String _id) {
-    this._id = _id;
   }
 
   public State state() {

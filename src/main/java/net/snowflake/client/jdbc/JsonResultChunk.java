@@ -5,19 +5,19 @@
 package net.snowflake.client.jdbc;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import net.snowflake.client.core.SFSession;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
+import net.snowflake.common.core.SqlState;
+
 import java.lang.ref.SoftReference;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.LinkedList;
 import java.util.List;
-import net.snowflake.client.core.SFSession;
-import net.snowflake.client.log.SFLogger;
-import net.snowflake.client.log.SFLoggerFactory;
-import net.snowflake.common.core.SqlState;
 
 public class JsonResultChunk extends SnowflakeResultChunk {
-  private static final int NULL_VALUE = Integer.MIN_VALUE;
 
   private static final SFLogger logger = SFLoggerFactory.getLogger(JsonResultChunk.class);
 
@@ -65,6 +65,8 @@ public class JsonResultChunk extends SnowflakeResultChunk {
     return data.get(colCount * rowIdx + colIdx);
   }
 
+
+  @SuppressWarnings("unused")
   public final void addRow(Object[] row) throws SnowflakeSQLException {
     if (row.length != colCount) {
       throw new SnowflakeSQLLoggedException(
@@ -99,6 +101,7 @@ public class JsonResultChunk extends SnowflakeResultChunk {
    *
    * @throws SnowflakeSQLException when rows are not all downloaded
    */
+  @SuppressWarnings("unused")
   public final void ensureRowsComplete() throws SnowflakeSQLException {
     // Check that all the rows have been decoded, raise an error if not
     if (rowCount != currentRow) {

@@ -4,9 +4,9 @@
 
 package net.snowflake.client.loader;
 
-import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
-
 import java.io.File;
+
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
 /** Bulk loader for Snowflake */
 public interface Loader {
@@ -38,19 +38,6 @@ public interface Loader {
   void submitRow(Object[] data);
 
   /**
-   * If operation is changed, previous data is committed
-   *
-   * @param op operation will be reset
-   */
-  void resetOperation(Operation op);
-
-  /**
-   * Rollback uncommitted changes. If no transaction was initialized, indeterminate fraction of rows
-   * could have been committed.
-   */
-  void rollback();
-
-  /**
    * Finishes processing and commits or rolls back. Will throw the exception that was the cause of
    * an abort
    *
@@ -72,10 +59,6 @@ public interface Loader {
     DataError(String msg, Throwable ex) {
       super(msg, ex);
     }
-
-    DataError(Throwable ex) {
-      super(ex);
-    }
   }
 
   // Raised for connection and other system errors.
@@ -96,6 +79,4 @@ public interface Loader {
     }
   }
 
-  // get the listener instance used by this loader instance
-  LoadResultListener getListener();
 }

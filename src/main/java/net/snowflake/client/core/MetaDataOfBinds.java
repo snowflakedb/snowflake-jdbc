@@ -50,18 +50,6 @@ public class MetaDataOfBinds implements Serializable {
     return this.scale;
   }
 
-  public int getByteLength() {
-    return this.byteLength;
-  }
-
-  public int getLength() {
-    return this.length;
-  }
-
-  public String getName() {
-    return this.name;
-  }
-
   public String getTypeName() {
     return this.type;
   }

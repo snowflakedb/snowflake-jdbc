@@ -3,9 +3,10 @@
  */
 package net.snowflake.client.core;
 
-import java.security.cert.CertificateException;
 import net.minidev.json.JSONObject;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
+
+import java.security.cert.CertificateException;
 
 public class OCSPTelemetryData {
   private String certId;
@@ -21,6 +22,7 @@ public class OCSPTelemetryData {
     this.cacheEnabled = true;
   }
 
+  @SuppressWarnings("unused")
   public OCSPTelemetryData(
       String certid,
       String sfc_peer_host,

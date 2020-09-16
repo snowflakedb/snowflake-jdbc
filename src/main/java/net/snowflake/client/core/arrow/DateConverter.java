@@ -3,10 +3,6 @@
  */
 package net.snowflake.client.core.arrow;
 
-import java.math.BigDecimal;
-import java.sql.Date;
-import java.sql.Timestamp;
-import java.util.TimeZone;
 import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.IncidentUtil;
 import net.snowflake.client.core.ResultUtil;
@@ -18,17 +14,21 @@ import org.apache.arrow.vector.DateDayVector;
 import org.apache.arrow.vector.IntVector;
 import org.apache.arrow.vector.ValueVector;
 
+import java.math.BigDecimal;
+import java.sql.Date;
+import java.sql.Timestamp;
+import java.util.TimeZone;
+
 /** Convert Arrow DateDayVector to Date */
 public class DateConverter extends AbstractArrowVectorConverter {
   private DateDayVector dateVector;
-  private static TimeZone timeZoneUTC = TimeZone.getTimeZone("UTC");
 
   public DateConverter(ValueVector fieldVector, int columnIndex, DataConversionContext context) {
     super(SnowflakeType.DATE.name(), fieldVector, columnIndex, context);
     this.dateVector = (DateDayVector) fieldVector;
   }
 
-  private Date getDate(int index, TimeZone tz) throws SFException {
+  private Date getDate(int index) throws SFException {
     if (isNull(index)) {
       return null;
     } else {
@@ -40,7 +40,7 @@ public class DateConverter extends AbstractArrowVectorConverter {
 
   @Override
   public Date toDate(int index) throws SFException {
-    return getDate(index, TimeZone.getDefault());
+    return getDate(index);
   }
 
   @Override
@@ -106,7 +106,7 @@ public class DateConverter extends AbstractArrowVectorConverter {
               null,
               null);
     }
-    Date date = getDate(index, timeZoneUTC);
+    Date date = getDate(index);
     return date == null ? null : ResultUtil.getDateAsString(date, context.getDateFormatter());
   }
 

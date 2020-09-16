@@ -4,35 +4,22 @@
 
 package net.snowflake.client.core;
 
-import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
+import net.snowflake.client.jdbc.SnowflakeDriver;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
+import org.joda.time.DateTime;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.PrintWriter;
+import java.io.*;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.TimeZone;
-import java.util.TreeSet;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Formatter;
 import java.util.logging.Handler;
 import java.util.logging.LogRecord;
 import java.util.zip.GZIPOutputStream;
-import net.snowflake.client.jdbc.SnowflakeDriver;
-import net.snowflake.client.log.SFLogger;
-import net.snowflake.client.log.SFLoggerFactory;
-import org.joda.time.DateTime;
+
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
 /** @author jrosen */
 public class EventHandler extends Handler {
@@ -111,22 +98,11 @@ public class EventHandler extends Handler {
     }
   }
 
-  /** Runnable to handle periodic flushing of the event buffer */
-  private class QueueFlusher implements Runnable {
-    @Override
-    public void run() {
-      flushEventBuffer();
-    }
-  }
-
   // Location to dump log entries to
   private final String logDumpPathPrefix;
 
   // Max size the event buffer can reach before being forcibly flushed
   private final int maxEntries;
-
-  // Period of time (in ms) to wait before waking the QueueFlusher
-  private final int flushPeriodMs;
 
   // Map to keep track of incident signatures for throttling incidents
   private final Map<String, AtomicInteger> incidentCounter;
@@ -140,12 +116,8 @@ public class EventHandler extends Handler {
   // Queue to buffer log messages
   private final ArrayList<LogRecord> logBuffer;
 
-  // Executor to periodically flush the eventBuffer
-  private ScheduledExecutorService flusher;
-
   public EventHandler(int maxEntries, int flushPeriodMs) {
     this.maxEntries = maxEntries;
-    this.flushPeriodMs = flushPeriodMs;
 
     eventBuffer = new ArrayList<>();
     logBuffer = new ArrayList<>();
@@ -154,51 +126,6 @@ public class EventHandler extends Handler {
 
     incidentCounter = new HashMap<>();
     throttledIncidents = new HashMap<>();
-  }
-
-  /**
-   * Returns current size of the event buffer
-   *
-   * @return size of eventBuffer
-   */
-  public synchronized int getBufferSize() {
-    return eventBuffer.size();
-  }
-
-  /**
-   * Returns the current size of the log buffer
-   *
-   * @return size of log buffer
-   */
-  public synchronized long getLogBufferSize() {
-    return logBuffer.size();
-  }
-
-  /** Creates and runs a new QueueFlusher thread */
-  synchronized void startFlusher() {
-    // Create a new scheduled executor service with a threadfactory that
-    // creates daemonized threads; this way if the user doesn't exit nicely
-    // the JVM Runtime won't hang
-    flusher =
-        Executors.newScheduledThreadPool(
-            1,
-            new ThreadFactory() {
-              @Override
-              public Thread newThread(Runnable r) {
-                Thread t = Executors.defaultThreadFactory().newThread(r);
-                t.setDaemon(true);
-                return t;
-              }
-            });
-
-    flusher.scheduleWithFixedDelay(new QueueFlusher(), 0, flushPeriodMs, TimeUnit.MILLISECONDS);
-  }
-
-  /** Stops the running QueueFlusher thread, if any */
-  synchronized void stopFlusher() {
-    if (flusher != null) {
-      flusher.shutdown();
-    }
   }
 
   /*
@@ -211,16 +138,6 @@ public class EventHandler extends Handler {
     if (flushBuffer || eventBuffer.size() >= maxEntries) {
       this.flushEventBuffer();
     }
-  }
-
-  /**
-   * Triggers a new event of type @type with message @message and flushes the eventBuffer if full
-   *
-   * @param type event type
-   * @param message triggering message
-   */
-  void triggerBasicEvent(Event.EventType type, String message) {
-    triggerBasicEvent(type, message, false);
   }
 
   /**
@@ -511,6 +428,5 @@ public class EventHandler extends Handler {
   @Override
   public void close() {
     this.flushEventBuffer();
-    this.stopFlusher();
   }
 }

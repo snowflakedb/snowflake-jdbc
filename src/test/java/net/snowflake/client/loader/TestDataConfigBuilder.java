@@ -3,20 +3,15 @@
  */
 package net.snowflake.client.loader;
 
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.MatcherAssert.assertThat;
+import net.snowflake.client.jdbc.SnowflakeConnectionV1;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
-import net.snowflake.client.jdbc.SnowflakeConnectionV1;
+
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 class TestDataConfigBuilder {
   static final String TARGET_TABLE_NAME = "LOADER_test_TABLE";
@@ -362,16 +357,6 @@ class TestDataConfigBuilder {
     }
 
     @Override
-    public void resetErrorCount() {
-      errorCount.set(0);
-    }
-
-    @Override
-    public void resetErrorRecordCount() {
-      errorRecordCount.set(0);
-    }
-
-    @Override
     public void addErrorCount(int count) {
       errorCount.addAndGet(count);
     }
@@ -379,11 +364,6 @@ class TestDataConfigBuilder {
     @Override
     public void addErrorRecordCount(int count) {
       errorRecordCount.addAndGet(count);
-    }
-
-    @Override
-    public void resetSubmittedRowCount() {
-      submittedRowCount.set(0);
     }
 
     @Override

@@ -871,16 +871,6 @@ public class StreamLoader implements Loader, Runnable {
         }
 
         @Override
-        public void resetErrorCount() {
-          errorCount.set(0);
-        }
-
-        @Override
-        public void resetErrorRecordCount() {
-          errorRecordCount.set(0);
-        }
-
-        @Override
         public void addErrorCount(int count) {
           errorCount.addAndGet(count);
         }
@@ -888,11 +878,6 @@ public class StreamLoader implements Loader, Runnable {
         @Override
         public void addErrorRecordCount(int count) {
           errorRecordCount.addAndGet(count);
-        }
-
-        @Override
-        public void resetSubmittedRowCount() {
-          submittedRowCount.set(0);
         }
 
         @Override

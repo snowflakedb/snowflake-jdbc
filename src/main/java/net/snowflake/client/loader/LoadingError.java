@@ -4,12 +4,13 @@
 
 package net.snowflake.client.loader;
 
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
+
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
-import net.snowflake.client.log.SFLogger;
-import net.snowflake.client.log.SFLoggerFactory;
 
 /** Wrapper for data format errors returned by the COPY/validate command */
 public class LoadingError {
@@ -70,28 +71,8 @@ public class LoadingError {
     }
   }
 
-  public String getStage() {
-    return _stage;
-  }
-
-  public String getPrefix() {
-    return _prefix;
-  }
-
-  public String getFile() {
-    return _file;
-  }
-
   public String getTarget() {
     return _target;
-  }
-
-  public String getProperty(ErrorProperty p) {
-    return this._properties.get(p);
-  }
-
-  public void setProperty(ErrorProperty p, String value) {
-    this._properties.put(p, value);
   }
 
   public String toString() {
