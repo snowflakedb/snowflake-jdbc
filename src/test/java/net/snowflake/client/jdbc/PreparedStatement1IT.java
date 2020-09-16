@@ -84,9 +84,13 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
    * Test to ensure it's possible to upload Time values via stage array binding and get proper
    * values back (SNOW-194437)
    *
+   * <p>Ignored on GitHub Action because CLIENT_STAGE_ARRAY_BINDING_THRESHOLD parameter is not
+   * available to customers so cannot be set when running on Github Action
+   *
    * @throws SQLException
    */
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testInsertStageArrayBindWithTime() throws SQLException {
     try (Connection connection = init()) {
       Statement statement = connection.createStatement();
