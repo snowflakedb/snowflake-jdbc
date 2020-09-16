@@ -3,14 +3,6 @@
  */
 package net.snowflake.client.jdbc;
 
-import static net.snowflake.client.jdbc.ErrorCode.NUMERIC_VALUE_OUT_OF_RANGE;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.*;
-
-import java.sql.*;
-import java.util.Map;
-import java.util.Properties;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryStatement;
@@ -19,6 +11,15 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+
+import java.sql.*;
+import java.util.Map;
+import java.util.Properties;
+
+import static net.snowflake.client.jdbc.ErrorCode.NUMERIC_VALUE_OUT_OF_RANGE;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.*;
 
 @Category(TestCategoryStatement.class)
 public class PreparedStatement1IT extends PreparedStatement0IT {
@@ -95,24 +96,30 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
     try (Connection connection = init()) {
       Statement statement = connection.createStatement();
       statement.execute("alter session set CLIENT_STAGE_ARRAY_BINDING_THRESHOLD=2");
-      statement.execute("create or replace table testStageBindTime (c1 time, c2 date)");
+      statement.execute("create or replace table testStageBindTime (c1 time, c2 time)");
       PreparedStatement prepSt =
           connection.prepareStatement("insert into testStageBindTime values (?, ?), (?, ?)");
-      prepSt.setTime(1, new Time(1));
-      prepSt.setDate(2, new Date(1));
-      prepSt.addBatch();
-      prepSt.setTime(1, new Time(100));
-      prepSt.setDate(2, new Date(100));
-      prepSt.addBatch();
+      Time[][] timeValues = {{new Time(0), new Time(1)},
+              {new Time(100), new Time(-100)},
+              {new Time(-456782), new Time(123456)},
+              {new Time(Integer.MIN_VALUE), new Time(Integer.MAX_VALUE)}};
+      for (int i = 0; i < timeValues.length; i++)
+      {
+        prepSt.setTime(1, timeValues[i][0]);
+        prepSt.setTime(2, timeValues[i][1]);
+        prepSt.addBatch();
+      }
       prepSt.executeBatch();
       // check results
       ResultSet rs = statement.executeQuery("select * from testStageBindTime");
-      rs.next();
-      assertEquals(new Time(1), rs.getTime(1));
-      assertEquals(new Date(1).toString(), rs.getDate(2).toString());
-      rs.next();
-      assertEquals(new Time(100), rs.getTime(1));
-      assertEquals(new Date(100).toString(), rs.getDate(2).toString());
+      for (int i = 0; i < timeValues.length; i++)
+      {
+        rs.next();
+        System.out.println(rs.getTime(1).toString());
+        System.out.println(rs.getTime(2).toString());
+        assertEquals(timeValues[i][0], rs.getTime(1));
+        assertEquals(timeValues[i][1], rs.getTime(2));
+      }
       rs.close();
       statement.execute("drop table if exists testStageBindTime");
       statement.execute("alter session unset CLIENT_STAGE_ARRAY_BINDING_THRESHOLD");
