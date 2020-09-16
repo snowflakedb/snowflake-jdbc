@@ -21,6 +21,7 @@ import net.snowflake.client.jdbc.SnowflakeFileTransferAgent;
 import net.snowflake.client.jdbc.SnowflakeType;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
+import net.snowflake.client.util.SFPair;
 
 public class BindUploader implements Closeable {
   private static final SFLogger logger = SFLoggerFactory.getLogger(BindUploader.class);
@@ -111,17 +112,9 @@ public class BindUploader implements Closeable {
     if (o == null) {
       return null;
     }
-    String inpString = o;
-
-    long sec;
-    int nano;
-    if (inpString.length() < 10) {
-      sec = 0;
-      nano = Integer.parseInt(inpString);
-    } else {
-      sec = Long.parseLong(inpString.substring(0, inpString.length() - 9));
-      nano = Integer.parseInt(inpString.substring(inpString.length() - 9));
-    }
+    SFPair<Long, Integer> times = getNanosAndSecs(o, false);
+    long sec = times.left;
+    int nano = times.right;
 
     Time v1 = new Time(sec * 1000);
     String formatWithDate = timestampFormat.format(v1) + String.format("%09d", nano);
@@ -129,12 +122,7 @@ public class BindUploader implements Closeable {
     return formatWithDate.substring(11);
   }
 
-  private synchronized String synchronizedTimestampFormat(String o) {
-    if (o == null) {
-      return null;
-    }
-
-    boolean isNegative = o.length() > 0 && o.charAt(0) == '-';
+  private synchronized SFPair<Long, Integer> getNanosAndSecs(String o, boolean isNegative) {
     String inpString = o;
     if (isNegative) {
       inpString = o.substring(1);
@@ -157,6 +145,19 @@ public class BindUploader implements Closeable {
         sec--;
       }
     }
+    return SFPair.of(sec, nano);
+  }
+
+  private synchronized String synchronizedTimestampFormat(String o) {
+    if (o == null) {
+      return null;
+    }
+
+    boolean isNegative = o.length() > 0 && o.charAt(0) == '-';
+    SFPair<Long, Integer> times = getNanosAndSecs(o, isNegative);
+    long sec = times.left;
+    int nano = times.right;
+
     Timestamp v1 = new Timestamp(sec * 1000);
     return timestampFormat.format(v1) + String.format("%09d", nano) + " +00:00";
   }

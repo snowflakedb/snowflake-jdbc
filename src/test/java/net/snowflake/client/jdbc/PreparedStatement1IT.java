@@ -110,6 +110,7 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
       assertEquals(new Time(100), rs.getTime(1));
       assertEquals(new Date(100).toString(), rs.getDate(2).toString());
       rs.close();
+      statement.execute("drop table if exists testStageBindTime");
       statement.execute("alter session unset CLIENT_STAGE_ARRAY_BINDING_THRESHOLD");
       statement.close();
     }
