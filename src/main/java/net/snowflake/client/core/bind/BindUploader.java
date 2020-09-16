@@ -122,7 +122,7 @@ public class BindUploader implements Closeable {
     return formatWithDate.substring(11);
   }
 
-  private synchronized SFPair<Long, Integer> getNanosAndSecs(String o, boolean isNegative) {
+  private SFPair<Long, Integer> getNanosAndSecs(String o, boolean isNegative) {
     String inpString = o;
     if (isNegative) {
       inpString = o.substring(1);
