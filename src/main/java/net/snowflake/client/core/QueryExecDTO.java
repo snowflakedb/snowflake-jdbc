@@ -54,14 +54,6 @@ public class QueryExecDTO {
     this.asyncExec = asyncExec; // indicates whether query should be asynchronous
   }
 
-  public String getSqlText() {
-    return sqlText;
-  }
-
-  public void setSqlText(String sqlText) {
-    this.sqlText = sqlText;
-  }
-
   @Deprecated
   public Integer getSequenceId() {
     return sequenceId;
@@ -72,30 +64,6 @@ public class QueryExecDTO {
     this.sequenceId = sequenceId;
   }
 
-  public Map<String, ParameterBindingDTO> getBindings() {
-    return bindings;
-  }
-
-  public void setBindings(Map<String, ParameterBindingDTO> bindings) {
-    this.bindings = bindings;
-  }
-
-  public String getBindStage() {
-    return bindStage;
-  }
-
-  public void setBindStage(String bindStage) {
-    this.bindStage = bindStage;
-  }
-
-  public boolean isDescribeOnly() {
-    return describeOnly;
-  }
-
-  public void setDescribeOnly(boolean describeOnly) {
-    this.describeOnly = describeOnly;
-  }
-
   public Map<String, Object> getParameters() {
     return parameters;
   }
@@ -104,35 +72,8 @@ public class QueryExecDTO {
     this.parameters = parameters;
   }
 
-  public String getDescribedJobId() {
-    return describedJobId;
-  }
-
   public void setDescribedJobId(String describedJobId) {
     this.describedJobId = describedJobId;
   }
 
-  public long getQuerySubmissionTime() {
-    return querySubmissionTime;
-  }
-
-  public void setQuerySubmissionTime(long querySubmissionTime) {
-    this.querySubmissionTime = querySubmissionTime;
-  }
-
-  public void setIsInternal(boolean isInternal) {
-    this.isInternal = isInternal;
-  }
-
-  public boolean getIsInternal() {
-    return this.isInternal;
-  }
-
-  public void setAsyncExec(boolean asyncExec) {
-    this.asyncExec = asyncExec;
-  }
-
-  public boolean getAsyncExec() {
-    return this.asyncExec;
-  }
 }

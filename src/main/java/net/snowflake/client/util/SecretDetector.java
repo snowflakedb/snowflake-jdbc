@@ -8,15 +8,14 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
+import net.minidev.json.JSONArray;
+import net.minidev.json.JSONObject;
+import net.minidev.json.JSONStyle;
+
 import java.io.IOException;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import net.minidev.json.JSONArray;
-import net.minidev.json.JSONObject;
-import net.minidev.json.JSONStyle;
-import net.snowflake.client.log.SFLogger;
-import net.snowflake.client.log.SFLoggerFactory;
 
 /** Search for credentials in sql and/or other text */
 public class SecretDetector {
@@ -72,12 +71,8 @@ public class SecretDetector {
           "(token|assertion content)" + "(['\"\\s:=]+)" + "([a-z0-9=/_\\-+]{8,})",
           Pattern.CASE_INSENSITIVE);
 
-  private static final int LOOK_AHEAD = 10;
-
   // only attempt to find secrets in its leading 100Kb SNOW-30961
   private static final int MAX_LENGTH = 100 * 1000;
-
-  private static final SFLogger LOGGER = SFLoggerFactory.getLogger(SecretDetector.class);
 
   private static String[] SENSITIVE_NAMES = {
     "access_key_id",

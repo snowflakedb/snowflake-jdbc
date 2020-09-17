@@ -22,7 +22,7 @@ public class OCSPTelemetryData {
     this.cacheEnabled = true;
   }
 
-  @SuppressWarnings("unused")
+
   public OCSPTelemetryData(
       String certid,
       String sfc_peer_host,
