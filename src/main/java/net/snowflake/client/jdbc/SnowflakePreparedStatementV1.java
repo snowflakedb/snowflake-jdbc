@@ -298,6 +298,12 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
       // Convert to nanoseconds since midnight using the input time mod 24 hours.
       final long MS_IN_DAY = 86400 * 1000;
       long msSinceEpoch = x.getTime();
+      if (msSinceEpoch < 0) {
+        throw new SnowflakeSQLLoggedException(
+            connection.getSfSession(),
+            SqlState.INVALID_PARAMETER_VALUE,
+            "Invalid bind value " + msSinceEpoch + " for type TIME");
+      }
       // Use % + % instead of just % to get the nonnegative remainder.
       // TODO(mkember): Change to use Math.floorMod when Client is on Java 8.
       long msSinceMidnight = (msSinceEpoch % MS_IN_DAY + MS_IN_DAY) % MS_IN_DAY;
@@ -309,7 +315,6 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
               String.valueOf(nanosSinceMidnight));
 
       parameterBindings.put(String.valueOf(parameterIndex), binding);
-      sfStatement.setHasUnsupportedStageBind(true);
     }
   }
 
@@ -356,9 +361,6 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
   @Override
   public void clearParameters() throws SQLException {
     parameterBindings.clear();
-    if (batchParameterBindings.isEmpty()) {
-      sfStatement.setHasUnsupportedStageBind(false);
-    }
   }
 
   @Override
@@ -768,7 +770,6 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
     parameterBindings.clear();
     wasPrevValueNull.clear();
     batchSize = 0;
-    sfStatement.setHasUnsupportedStageBind(false);
   }
 
   @Override
