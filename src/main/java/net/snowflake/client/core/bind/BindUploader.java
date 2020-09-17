@@ -6,33 +6,22 @@ package net.snowflake.client.core.bind;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import java.io.Closeable;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.SQLException;
+import java.sql.Time;
 import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.GregorianCalendar;
-import java.util.List;
-import java.util.Map;
-import java.util.TimeZone;
+import java.util.*;
 import java.util.zip.GZIPOutputStream;
-import net.snowflake.client.core.ParameterBindingDTO;
-import net.snowflake.client.core.SFBaseResultSet;
-import net.snowflake.client.core.SFException;
-import net.snowflake.client.core.SFSession;
-import net.snowflake.client.core.SFStatement;
+import net.snowflake.client.core.*;
 import net.snowflake.client.jdbc.SnowflakeFileTransferAgent;
 import net.snowflake.client.jdbc.SnowflakeType;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
+import net.snowflake.client.util.SFPair;
 
 public class BindUploader implements Closeable {
   private static final SFLogger logger = SFLoggerFactory.getLogger(BindUploader.class);
@@ -77,6 +66,7 @@ public class BindUploader implements Closeable {
 
   private final DateFormat timestampFormat;
   private final DateFormat dateFormat;
+  private final SimpleDateFormat timeFormat;
 
   static class ColumnTypeDataPair {
     public String type;
@@ -107,6 +97,8 @@ public class BindUploader implements Closeable {
     this.timestampFormat.setCalendar(calendarUTC);
     this.dateFormat = new SimpleDateFormat("yyyy-MM-dd");
     this.dateFormat.setCalendar(calendarUTC);
+    this.timeFormat = new SimpleDateFormat("HH:mm:ss.");
+    this.timeFormat.setCalendar(calendarUTC);
   }
 
   private synchronized String synchronizedDateFormat(String o) {
@@ -116,12 +108,21 @@ public class BindUploader implements Closeable {
     return dateFormat.format(new java.sql.Date(Long.parseLong(o)));
   }
 
-  private synchronized String synchronizedTimestampFormat(String o) {
+  private synchronized String synchronizedTimeFormat(String o) {
     if (o == null) {
       return null;
     }
+    SFPair<Long, Integer> times = getNanosAndSecs(o, false);
+    long sec = times.left;
+    int nano = times.right;
 
-    boolean isNegative = o.length() > 0 && o.charAt(0) == '-';
+    Time v1 = new Time(sec * 1000);
+    String formatWithDate = timestampFormat.format(v1) + String.format("%09d", nano);
+    // Take out the Date portion of the formatted string. Only time data is needed.
+    return formatWithDate.substring(11);
+  }
+
+  private SFPair<Long, Integer> getNanosAndSecs(String o, boolean isNegative) {
     String inpString = o;
     if (isNegative) {
       inpString = o.substring(1);
@@ -144,6 +145,19 @@ public class BindUploader implements Closeable {
         sec--;
       }
     }
+    return SFPair.of(sec, nano);
+  }
+
+  private synchronized String synchronizedTimestampFormat(String o) {
+    if (o == null) {
+      return null;
+    }
+
+    boolean isNegative = o.length() > 0 && o.charAt(0) == '-';
+    SFPair<Long, Integer> times = getNanosAndSecs(o, isNegative);
+    long sec = times.left;
+    int nano = times.right;
+
     Timestamp v1 = new Timestamp(sec * 1000);
     return timestampFormat.format(v1) + String.format("%09d", nano) + " +00:00";
   }
@@ -227,6 +241,10 @@ public class BindUploader implements Closeable {
         } else if ("DATE".equals(type)) {
           for (Object e : list) {
             convertedList.add(synchronizedDateFormat((String) e));
+          }
+        } else if ("TIME".equals(type)) {
+          for (Object e : list) {
+            convertedList.add(synchronizedTimeFormat((String) e));
           }
         } else {
           for (Object e : list) {

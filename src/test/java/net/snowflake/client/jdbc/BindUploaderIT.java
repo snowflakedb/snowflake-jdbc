@@ -13,19 +13,9 @@ import java.io.InputStreamReader;
 import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.sql.Connection;
+import java.sql.*;
 import java.sql.Date;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.sql.Time;
-import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.TimeZone;
+import java.util.*;
 import java.util.zip.GZIPInputStream;
 import net.snowflake.client.category.TestCategoryOthers;
 import net.snowflake.client.core.ParameterBindingDTO;
@@ -80,9 +70,9 @@ public class BindUploaderIT extends BaseJDBCTest {
   };
 
   private static final String csv1 =
-      "42,1234,12.34,12.34,42,row1,807F,1970-01-01,0,1970-01-01 00:00:00.000000000 +00:00";
+      "42,1234,12.34,12.34,42,row1,807F,1970-01-01,00:00:00.000000000,1970-01-01 00:00:00.000000000 +00:00";
   private static final String csv2 =
-      "420,12340,120.34,120.34,420,row2,7F80,1970-01-01,1000000,1970-01-01 00:00:00.001000000 +00:00";
+      "420,12340,120.34,120.34,420,row2,7F80,1970-01-01,00:00:00.001000000,1970-01-01 00:00:00.001000000 +00:00";
 
   private static final String STAGE_DIR = "binduploaderit";
   private static final String SELECT_FROM_STAGE =
