@@ -24,15 +24,6 @@ public class StorageProviderException extends RuntimeException {
   }
 
   /**
-   * Method to obtain the original provider exception that led to this exception being thrown.
-   *
-   * @return The original provider exception that led to this exception.
-   */
-  public Exception getOriginalProviderException() {
-    return (Exception) (super.getCause());
-  }
-
-  /**
    * Returns true if this is an exception corresponding to a HTTP 404 error returned by the storage
    * provider
    *

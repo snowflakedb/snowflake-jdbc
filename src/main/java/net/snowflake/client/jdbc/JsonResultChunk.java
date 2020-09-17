@@ -17,7 +17,6 @@ import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SqlState;
 
 public class JsonResultChunk extends SnowflakeResultChunk {
-  private static final int NULL_VALUE = Integer.MIN_VALUE;
 
   private static final SFLogger logger = SFLoggerFactory.getLogger(JsonResultChunk.class);
 
@@ -63,50 +62,6 @@ public class JsonResultChunk extends SnowflakeResultChunk {
    */
   public final Object getCell(int rowIdx, int colIdx) {
     return data.get(colCount * rowIdx + colIdx);
-  }
-
-  public final void addRow(Object[] row) throws SnowflakeSQLException {
-    if (row.length != colCount) {
-      throw new SnowflakeSQLLoggedException(
-          this.session,
-          ErrorCode.INTERNAL_ERROR.getMessageCode(),
-          SqlState.INTERNAL_ERROR,
-          "Exception: expected " + colCount + " columns and received " + row.length);
-    }
-
-    for (Object cell : row) {
-      if (cell == null) {
-        data.add(null);
-      } else {
-        if (cell instanceof String) {
-          data.add((String) cell);
-        } else if (cell instanceof Boolean) {
-          data.add((boolean) cell ? "1" : "0");
-        } else {
-          throw new SnowflakeSQLLoggedException(
-              this.session,
-              ErrorCode.INTERNAL_ERROR.getMessageCode(),
-              SqlState.INTERNAL_ERROR,
-              "unknown data type in JSON row " + cell.getClass().toString());
-        }
-      }
-    }
-    currentRow++;
-  }
-
-  /**
-   * Checks that all data has been added after parsing.
-   *
-   * @throws SnowflakeSQLException when rows are not all downloaded
-   */
-  public final void ensureRowsComplete() throws SnowflakeSQLException {
-    // Check that all the rows have been decoded, raise an error if not
-    if (rowCount != currentRow) {
-      throw new SnowflakeSQLException(
-          SqlState.INTERNAL_ERROR,
-          ErrorCode.INTERNAL_ERROR.getMessageCode(),
-          "Exception: expected " + rowCount + " rows and received " + currentRow);
-    }
   }
 
   @Override

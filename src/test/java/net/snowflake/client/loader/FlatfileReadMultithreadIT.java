@@ -241,16 +241,6 @@ class ResultListener implements LoadResultListener {
   }
 
   @Override
-  public void resetErrorCount() {
-    errorCount.set(0);
-  }
-
-  @Override
-  public void resetErrorRecordCount() {
-    errorRecordCount.set(0);
-  }
-
-  @Override
   public void addErrorCount(int count) {
     errorCount.addAndGet(count);
   }
@@ -258,11 +248,6 @@ class ResultListener implements LoadResultListener {
   @Override
   public void addErrorRecordCount(int count) {
     errorRecordCount.addAndGet(count);
-  }
-
-  @Override
-  public void resetSubmittedRowCount() {
-    submittedRowCount.set(0);
   }
 
   @Override

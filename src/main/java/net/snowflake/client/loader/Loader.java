@@ -38,13 +38,6 @@ public interface Loader {
   void submitRow(Object[] data);
 
   /**
-   * If operation is changed, previous data is committed
-   *
-   * @param op operation will be reset
-   */
-  void resetOperation(Operation op);
-
-  /**
    * Rollback uncommitted changes. If no transaction was initialized, indeterminate fraction of rows
    * could have been committed.
    */

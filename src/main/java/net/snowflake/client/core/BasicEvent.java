@@ -38,10 +38,6 @@ public class BasicEvent extends Event {
       this.argString = argString;
     }
 
-    public int getId() {
-      return id;
-    }
-
     public String getDescription() {
       return description;
     }

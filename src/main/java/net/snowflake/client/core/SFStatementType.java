@@ -97,21 +97,9 @@ public enum SFStatementType {
     return statementTypeId;
   }
 
-  public boolean isDDL() {
-    return this == DDL;
-  }
-
   public boolean isDML() {
     return statementTypeId >= DML.getStatementTypeId()
         && statementTypeId < DML.getStatementTypeId() + LEVEL_3_RANGE;
-  }
-
-  public boolean isTCL() {
-    return this == TCL;
-  }
-
-  public boolean isSCL() {
-    return this == SCL;
   }
 
   public boolean isGenerateResultSet() {

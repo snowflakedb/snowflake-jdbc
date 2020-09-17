@@ -703,30 +703,6 @@ public class StreamLoader implements Loader, Runnable {
     LOGGER.debug("Snowflake loader terminating");
   }
 
-  // If operation changes, existing stage needs to be scheduled for processing.
-  @Override
-  public void resetOperation(Operation op) {
-    LOGGER.debug("Reset Loader");
-
-    if (op.equals(_op)) {
-      // no-op
-      return;
-    }
-
-    LOGGER.debug("Operation is changing from {} to {}", _op, op);
-    _op = op;
-
-    if (_stage != null) {
-      try {
-        queuePut(_stage);
-      } catch (InterruptedException ex) {
-        LOGGER.error(_stage.getId(), ex);
-      }
-    }
-
-    _stage = new BufferStage(this, _op, _csvFileBucketSize, _csvFileSize);
-  }
-
   String getTable() {
     return _table;
   }
@@ -871,16 +847,6 @@ public class StreamLoader implements Loader, Runnable {
         }
 
         @Override
-        public void resetErrorCount() {
-          errorCount.set(0);
-        }
-
-        @Override
-        public void resetErrorRecordCount() {
-          errorRecordCount.set(0);
-        }
-
-        @Override
         public void addErrorCount(int count) {
           errorCount.addAndGet(count);
         }
@@ -888,11 +854,6 @@ public class StreamLoader implements Loader, Runnable {
         @Override
         public void addErrorRecordCount(int count) {
           errorRecordCount.addAndGet(count);
-        }
-
-        @Override
-        public void resetSubmittedRowCount() {
-          submittedRowCount.set(0);
         }
 
         @Override

@@ -21,7 +21,6 @@ public class SFLoginOutput {
   private String sessionRole;
   private String sessionWarehouse;
   private Map<String, Object> commonParams;
-  private boolean updatedByTokenRequest;
   private String sessionId;
 
   SFLoginOutput() {}
