@@ -6,29 +6,11 @@ package net.snowflake.client.jdbc;
 
 import static net.snowflake.client.core.Constants.MB;
 
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.databind.MappingJsonFactory;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.PrintWriter;
-import java.io.PushbackInputStream;
-import java.io.StringWriter;
+import java.io.*;
 import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Random;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.ThreadLocalRandom;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.*;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.zip.GZIPInputStream;
@@ -62,11 +44,6 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
 
   // SSE-C algorithm value
   private static final String SSE_C_AES = "AES256";
-
-  // object mapper for deserialize JSON
-  private static final ObjectMapper mapper = ObjectMapperFactory.getObjectMapper();
-  /** a shared JSON parser factory. */
-  private static final JsonFactory jsonFactory = new MappingJsonFactory();
 
   private static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeChunkDownloader.class);
   private static final int STREAM_BUFFER_SIZE = MB;

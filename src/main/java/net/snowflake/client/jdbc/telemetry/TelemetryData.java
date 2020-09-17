@@ -21,10 +21,6 @@ public class TelemetryData {
     this.timeStamp = timeStamp;
   }
 
-  public long getTimeStamp() {
-    return timeStamp;
-  }
-
   public ObjectNode getMessage() {
     return message;
   }

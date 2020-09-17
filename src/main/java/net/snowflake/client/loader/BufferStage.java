@@ -6,11 +6,7 @@ package net.snowflake.client.loader;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
+import java.io.*;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -269,14 +265,6 @@ public class BufferStage {
 
   public String getId() {
     return _id;
-  }
-
-  public void setId(String _id) {
-    this._id = _id;
-  }
-
-  public State state() {
-    return _state;
   }
 
   public void setState(State state) {

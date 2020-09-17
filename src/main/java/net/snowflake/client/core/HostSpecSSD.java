@@ -9,10 +9,6 @@ class HostSpecSSD {
     this.hostSpecDirective = null;
   }
 
-  String getHostname() {
-    return this.hostname;
-  }
-
   String getHostSpecDirective() {
     return this.hostSpecDirective;
   }

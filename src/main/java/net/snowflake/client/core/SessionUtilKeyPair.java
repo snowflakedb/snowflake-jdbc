@@ -44,8 +44,6 @@ class SessionUtilKeyPair {
 
   private Provider SecurityProvider = null;
 
-  private SecretKeyFactory secretKeyFactory = null;
-
   private static final String ISSUER_FMT = "%s.%s.%s";
 
   private static final String SUBJECT_FMT = "%s.%s";

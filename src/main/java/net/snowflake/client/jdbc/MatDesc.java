@@ -49,18 +49,6 @@ public class MatDesc {
     this(smkId, queryId, DEFAULT_KEY_SIZE);
   }
 
-  public long getSmkId() {
-    return this.smkId;
-  }
-
-  public String getQueryId() {
-    return this.queryId;
-  }
-
-  public int getKeySize() {
-    return this.keySize;
-  }
-
   /**
    * Try to parse the material descriptor string.
    *

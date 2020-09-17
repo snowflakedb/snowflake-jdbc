@@ -52,10 +52,6 @@ public class SFStatementMetaData {
     return resultSetMetaData;
   }
 
-  public void setResultSetMetaData(SFResultSetMetaData resultSetMetaData) {
-    this.resultSetMetaData = resultSetMetaData;
-  }
-
   public int getNumberOfBinds() {
     return numberOfBinds;
   }
@@ -72,10 +68,6 @@ public class SFStatementMetaData {
       throw new SnowflakeSQLException(SqlState.NO_DATA, ErrorCode.NO_VALID_DATA.getMessageCode());
     }
     return metaDataOfBinds.get(param - 1);
-  }
-
-  public void setNumberOfBinds(int numberOfBinds) {
-    this.numberOfBinds = numberOfBinds;
   }
 
   /**

@@ -1013,10 +1013,6 @@ public class SFSession {
     return injectSocketTimeout;
   }
 
-  public void setInjectSocketTimeout(int injectSocketTimeout) {
-    this.injectSocketTimeout = injectSocketTimeout;
-  }
-
   public void setInjectFileUploadFailure(String fileToFail) {
     this.injectFileUploadFailure = fileToFail;
   }
@@ -1037,18 +1033,6 @@ public class SFSession {
     return injectClientPause;
   }
 
-  public void setInjectClientPause(int injectClientPause) {
-    this.injectClientPause = injectClientPause;
-  }
-
-  protected int getHttpClientConnectionTimeout() {
-    return httpClientConnectionTimeout;
-  }
-
-  protected int getHttpClientSocketTimeout() {
-    return httpClientSocketTimeout;
-  }
-
   protected int getAndIncrementSequenceId() {
     return sequenceId.getAndIncrement();
   }
@@ -1061,20 +1045,8 @@ public class SFSession {
     return this.sfSQLMode;
   }
 
-  public boolean isEnableHeartbeat() {
-    return enableHeartbeat;
-  }
-
   public void setEnableHeartbeat(boolean enableHeartbeat) {
     this.enableHeartbeat = enableHeartbeat;
-  }
-
-  public void setHeartbeatFrequency(int frequency) {
-    this.heartbeatFrequency = frequency;
-  }
-
-  public long getHeartbeatFrequency() {
-    return this.heartbeatFrequency;
   }
 
   public boolean getAutoCommit() {
@@ -1257,14 +1229,6 @@ public class SFSession {
         String.format("%s.%s.%s", this.getDatabase(), this.getSchema(), arrayBindStage);
   }
 
-  public String getIdToken() {
-    return idToken;
-  }
-
-  public boolean isStoreTemporaryCredential() {
-    return this.storeTemporaryCredential;
-  }
-
   public void setStoreTemporaryCredential(boolean storeTemporaryCredential) {
     this.storeTemporaryCredential = storeTemporaryCredential;
   }
@@ -1378,10 +1342,6 @@ public class SFSession {
 
   public int getClientPrefetchThreads() {
     return clientPrefetchThreads;
-  }
-
-  public boolean isValidateDefaultParameters() {
-    return validateDefaultParameters;
   }
 
   public void setValidateDefaultParameters(boolean v) {

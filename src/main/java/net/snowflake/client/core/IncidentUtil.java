@@ -30,7 +30,6 @@ public class IncidentUtil {
 
   // Json message variables
   public static final String TIMESTAMP = "timestamp";
-  public static final String INCIDENT_INFO = "incidentInfo";
 
   // Determines name of dump file.
   public static final String INC_DUMP_FILE_NAME = "sf_incident_";

@@ -187,10 +187,6 @@ public class TelemetryService {
     return this.connStr;
   }
 
-  public SnowflakeConnectString getSnowflakeConnectionString() {
-    return sfConnStr;
-  }
-
   private enum TELEMETRY_API {
     SFCTEST(
         "https://sfctest.client-telemetry.snowflakecomputing.com/enqueue",
@@ -275,14 +271,6 @@ public class TelemetryService {
    */
   public int getClientFailureCount() {
     return clientFailureCnt.get();
-  }
-
-  /**
-   * @return the number of times an event was attempted to be reported but failed due to a
-   *     server-side error
-   */
-  public int getServerFailureCount() {
-    return serverFailureCnt.get();
   }
 
   /** @return the string containing the most recent failed response */
