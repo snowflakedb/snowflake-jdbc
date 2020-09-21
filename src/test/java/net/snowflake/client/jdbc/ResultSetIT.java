@@ -6,11 +6,7 @@ package net.snowflake.client.jdbc;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryResultSet;
-import net.snowflake.client.jdbc.telemetry.Telemetry;
-import net.snowflake.client.jdbc.telemetry.TelemetryClient;
-import net.snowflake.client.jdbc.telemetry.TelemetryData;
-import net.snowflake.client.jdbc.telemetry.TelemetryField;
-import net.snowflake.client.jdbc.telemetry.TelemetryUtil;
+import net.snowflake.client.jdbc.telemetry.*;
 import net.snowflake.common.core.SFBinary;
 import org.apache.arrow.vector.Float8Vector;
 import org.junit.After;
@@ -26,32 +22,15 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-import java.sql.Clob;
-import java.sql.Connection;
-import java.sql.DatabaseMetaData;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.sql.Types;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
+import java.sql.*;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.*;
 import java.util.regex.Pattern;
 
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 /**
  * Test ResultSet
@@ -167,6 +146,60 @@ public class ResultSetIT extends BaseJDBCTest
     Connection con = getConnection();
     con.createStatement().execute("drop table if exists orders_jdbc");
     con.createStatement().execute("drop table if exists test_rs");
+    con.close();
+  }
+
+  @Test
+  public void testError() throws SQLException
+  {
+    //TimeZone.setDefault(TimeZone.getTimeZone("CET"));
+    Connection con = getConnection();
+    Statement statement = con.createStatement();
+    statement.execute("alter session set jdbc_query_result_format = 'JSON'");
+    statement.execute("alter session set timezone = 'CET'");
+    ResultSet rs2 = statement.executeQuery("show parameters like 'timezone'");
+    rs2.next();
+    System.out.println("System timezone: " + rs2.getString(2));
+    ResultSet rs = statement.executeQuery("SELECT DATE '1970-01-02 00:00:00' as datefield, TIMESTAMP '1970-01-02 00:00:00' as timestampfield");
+
+    // We are using a calendar with UTC time zone to retrieve dates and timestamps
+    Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+
+    rs.next();
+
+    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    sdf.setTimeZone(cal.getTimeZone());
+
+
+    System.out.println("TEST 1: getDate and getTimestamp with calendar option");
+
+    Date d_01 = rs.getDate(1, cal);
+    Timestamp t_01 = rs.getTimestamp(2, cal);
+
+
+    System.out.println("getDate:(1, cal): " + sdf.format(d_01));
+    System.out.println("getTimestamp(2, cal): " + sdf.format(t_01));
+
+    System.out.println("TEST 2: getTimestamp for both columns with calendar option");
+
+
+    Timestamp d_02 = rs.getTimestamp(1, cal);
+    Timestamp t_02 = rs.getTimestamp(2, cal);
+
+    System.out.println("getTimestamp:(1, cal): " + sdf.format(d_02));
+    System.out.println("getTimestamp(2, cal): " + sdf.format(t_02));
+
+
+    System.out.println("TEST 3: getDate and getTimestamp and NO calendar option");
+
+
+    Date d_03 = rs.getDate(1);
+    Timestamp t_03 = rs.getTimestamp(2);
+
+    System.out.println("getDate:(1): " +  sdf.format(d_03));
+    System.out.println("getTimestamp(2): " + sdf.format(t_03));
+
+    statement.close();
     con.close();
   }
 
