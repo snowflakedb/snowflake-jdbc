@@ -886,6 +886,7 @@ public class ResultSetIT extends BaseJDBCTest {
     assertFalse(resultSet.next());
   }
 
+  // nit comment for retriggering test, to be deleted
   @Test
   public void testReleaseDownloaderCurrentMemoryUsage() throws SQLException {
     Connection connection = getConnection();
