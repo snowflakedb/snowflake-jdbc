@@ -6,28 +6,15 @@ package net.snowflake.client.jdbc;
 import static net.snowflake.client.jdbc.ErrorCode.NUMERIC_VALUE_OUT_OF_RANGE;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ParameterMetaData;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.sql.Time;
-import java.sql.Timestamp;
-import java.sql.Types;
+import java.sql.*;
 import java.util.Map;
 import java.util.Properties;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryStatement;
+import net.snowflake.common.core.SqlState;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -91,6 +78,56 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
           assertThat(e.getErrorCode(), is(NUMERIC_VALUE_OUT_OF_RANGE.getMessageCode()));
         }
       }
+    }
+  }
+
+  /**
+   * Test to ensure it's possible to upload Time values via stage array binding and get proper
+   * values back (SNOW-194437)
+   *
+   * <p>Ignored on GitHub Action because CLIENT_STAGE_ARRAY_BINDING_THRESHOLD parameter is not
+   * available to customers so cannot be set when running on Github Action
+   *
+   * @throws SQLException
+   */
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testInsertStageArrayBindWithTime() throws SQLException {
+    try (Connection connection = init()) {
+      Statement statement = connection.createStatement();
+      statement.execute("alter session set CLIENT_STAGE_ARRAY_BINDING_THRESHOLD=2");
+      statement.execute("create or replace table testStageBindTime (c1 time, c2 time)");
+      PreparedStatement prepSt =
+          connection.prepareStatement("insert into testStageBindTime values (?, ?)");
+      Time[][] timeValues = {
+        {new Time(0), new Time(1)},
+        {new Time(1000), new Time(Integer.MAX_VALUE)},
+        {new Time(123456), new Time(55555)}
+      };
+      for (int i = 0; i < timeValues.length; i++) {
+        prepSt.setTime(1, timeValues[i][0]);
+        prepSt.setTime(2, timeValues[i][1]);
+        prepSt.addBatch();
+      }
+      prepSt.executeBatch();
+      // check results
+      ResultSet rs = statement.executeQuery("select * from testStageBindTime");
+      for (int i = 0; i < timeValues.length; i++) {
+        rs.next();
+        assertEquals(timeValues[i][0].toString(), rs.getTime(1).toString());
+        assertEquals(timeValues[i][1].toString(), rs.getTime(2).toString());
+      }
+      rs.close();
+      // test that negative time values results in an error
+      try {
+        prepSt.setTime(1, new Time(-100));
+        fail("Exception should have been thrown for negative setTime() value.");
+      } catch (SnowflakeSQLException e) {
+        assertEquals(e.getSQLState(), SqlState.INVALID_PARAMETER_VALUE);
+      }
+      statement.execute("drop table if exists testStageBindTime");
+      statement.execute("alter session unset CLIENT_STAGE_ARRAY_BINDING_THRESHOLD");
+      statement.close();
     }
   }
 
@@ -460,11 +497,10 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
   public void testStageBatchTimes() throws SQLException {
     try (Connection connection = init()) {
       Time tMidnight = new Time(0);
-      Time tNeg = new Time(-1);
       Time tPos = new Time(1);
       Time tNow = new Time(System.currentTimeMillis());
       Time tNoon = new Time(12 * 60 * 60 * 1000);
-      Time[] times = new Time[] {tMidnight, tNeg, tPos, tNow, tNoon, null};
+      Time[] times = new Time[] {tMidnight, tPos, tNow, tNoon, null};
       int[] countResult;
       try {
         connection

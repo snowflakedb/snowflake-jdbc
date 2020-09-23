@@ -324,7 +324,7 @@ public class TelemetryService {
     private TelemetryService instance;
     private String payload;
     private String payloadLogStr;
-    private static final int TIMEOUT = 3000; // 3 second timeout limit
+    private static final int TIMEOUT = 5000; // 5 second timeout limit
     private static final RequestConfig config =
         RequestConfig.custom()
             .setConnectionRequestTimeout(TIMEOUT)
