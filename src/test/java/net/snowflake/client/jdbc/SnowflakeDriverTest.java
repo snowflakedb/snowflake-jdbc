@@ -407,7 +407,7 @@ public class SnowflakeDriverTest {
   }
 
   @Test
-  public void testInvalidConnect() throws SQLException {
+  public void testInvalidNullConnect() throws SQLException {
     SnowflakeDriver snowflakeDriver = SnowflakeDriver.INSTANCE;
     assertNull(snowflakeDriver.connect(null, null));
   }
