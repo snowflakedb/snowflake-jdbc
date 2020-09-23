@@ -5,17 +5,16 @@
 package net.snowflake.client.core;
 
 import com.google.common.base.Strings;
-import java.net.MalformedURLException;
-import java.net.URL;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 
+import java.net.MalformedURLException;
+import java.net.URL;
+
 public class CredentialManager {
   private static final SFLogger logger = SFLoggerFactory.getLogger(CredentialManager.class);
   private SecureStorageManager secureStorageManager;
-
-  private static CredentialManager instance;
 
   private CredentialManager() {
     if (Constants.getOS() == Constants.OS.MAC) {
@@ -29,15 +28,12 @@ public class CredentialManager {
     }
   }
 
+  private static class CredentialManagerHolder {
+    private static final CredentialManager INSTANCE = new CredentialManager();
+  }
+
   public static CredentialManager getInstance() {
-    if (instance == null) {
-      synchronized (CredentialManager.class) {
-        if (instance == null) {
-          instance = new CredentialManager();
-        }
-      }
-    }
-    return instance;
+    return CredentialManagerHolder.INSTANCE;
   }
 
   /**
