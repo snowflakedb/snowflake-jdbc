@@ -1,22 +1,5 @@
 package net.snowflake.client.jdbc;
 
-import static org.hamcrest.Matchers.greaterThan;
-import static org.junit.Assert.*;
-import static org.junit.Assert.assertThat;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Properties;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryResultSet;
@@ -25,6 +8,15 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.TemporaryFolder;
+
+import java.io.*;
+import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Properties;
+
+import static org.hamcrest.Matchers.greaterThan;
+import static org.junit.Assert.*;
 
 /** SnowflakeResultSetSerializable tests */
 @Category(TestCategoryResultSet.class)
@@ -463,7 +455,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
    * @return a name file list where the new serializable objects resides.
    * @throws Throwable if any error occurs.
    */
-  private List<String> splitResultSetSerializables(List<String> files, long maxSizeInBytes)
+  synchronized private List<String> splitResultSetSerializables(List<String> files, long maxSizeInBytes)
       throws Throwable {
     List<String> resultFileList = new ArrayList<>();
 
