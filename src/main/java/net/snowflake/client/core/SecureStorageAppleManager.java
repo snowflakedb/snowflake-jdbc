@@ -187,7 +187,8 @@ public class SecureStorageAppleManager implements SecureStorageManager {
     private static SecurityLib INSTANCE = null;
 
     private static class ResourceHolder {
-      private static final SecurityLib INSTANCE = (SecurityLib) Native.loadLibrary("Security", SecurityLib.class);
+      private static final SecurityLib INSTANCE =
+          (SecurityLib) Native.loadLibrary("Security", SecurityLib.class);
     }
 
     public static SecurityLib getInstance() {

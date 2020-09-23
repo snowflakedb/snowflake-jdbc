@@ -259,10 +259,9 @@ public class SecureStorageWindowsManager implements SecureStorageManager {
     private static Advapi32Lib INSTANCE = null;
 
     private static class ResourceHolder {
-      private static final Advapi32Lib INSTANCE = 
-                (Advapi32Lib)
-                    Native.loadLibrary(
-                        "advapi32", Advapi32Lib.class, W32APIOptions.UNICODE_OPTIONS);
+      private static final Advapi32Lib INSTANCE =
+          (Advapi32Lib)
+              Native.loadLibrary("advapi32", Advapi32Lib.class, W32APIOptions.UNICODE_OPTIONS);
     }
 
     public static Advapi32Lib getInstance() {
