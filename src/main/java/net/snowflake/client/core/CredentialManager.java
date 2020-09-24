@@ -15,8 +15,6 @@ public class CredentialManager {
   private static final SFLogger logger = SFLoggerFactory.getLogger(CredentialManager.class);
   private SecureStorageManager secureStorageManager;
 
-  private static CredentialManager instance;
-
   private CredentialManager() {
     if (Constants.getOS() == Constants.OS.MAC) {
       secureStorageManager = SecureStorageAppleManager.builder();
@@ -29,15 +27,12 @@ public class CredentialManager {
     }
   }
 
+  private static class CredentialManagerHolder {
+    private static final CredentialManager INSTANCE = new CredentialManager();
+  }
+
   public static CredentialManager getInstance() {
-    if (instance == null) {
-      synchronized (CredentialManager.class) {
-        if (instance == null) {
-          instance = new CredentialManager();
-        }
-      }
-    }
-    return instance;
+    return CredentialManagerHolder.INSTANCE;
   }
 
   /**
