@@ -7,7 +7,6 @@ import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.junit.Assert.*;
 
 import java.sql.SQLException;
-import java.sql.SQLFeatureNotSupportedException;
 import java.util.*;
 import org.junit.Test;
 
@@ -430,7 +429,7 @@ public class SnowflakeDriverTest {
   }
 
   @Test
-  public void testGetParentLogger() throws SQLFeatureNotSupportedException {
+  public void testGetParentLogger() throws SQLException {
     SnowflakeDriver snowflakeDriver = SnowflakeDriver.INSTANCE;
     assertNull(snowflakeDriver.getParentLogger());
   }
