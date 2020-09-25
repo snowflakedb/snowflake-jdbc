@@ -3,16 +3,11 @@
  */
 package net.snowflake.client.jdbc;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.junit.Assert.*;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.sql.SQLException;
+import java.util.*;
 import org.junit.Test;
 
 /** Driver unit test */
@@ -408,5 +403,43 @@ public class SnowflakeDriverTest {
     assertFalse(snowflakeDriver.acceptsURL("jdbc:snowflake://testaccount.com?proxyHost=%%"));
     assertFalse(
         snowflakeDriver.acceptsURL("jdbc:snowflake://testaccount.com?proxyHost=%b&proxyPort="));
+  }
+
+  @Test
+  public void testInvalidNullConnect() throws SQLException {
+    SnowflakeDriver snowflakeDriver = SnowflakeDriver.INSTANCE;
+    assertNull(snowflakeDriver.connect(null, null));
+  }
+
+  @Test
+  public void testGetVersion() {
+    SnowflakeDriver snowflakeDriver = SnowflakeDriver.INSTANCE;
+
+    int majorVersion = snowflakeDriver.getMajorVersion();
+    int minorVersion = snowflakeDriver.getMinorVersion();
+
+    assertThat(majorVersion, greaterThanOrEqualTo(3));
+    assertThat(minorVersion, greaterThanOrEqualTo(0));
+  }
+
+  @Test
+  public void testJDBCCompliant() {
+    SnowflakeDriver snowflakeDriver = SnowflakeDriver.INSTANCE;
+    assertFalse(snowflakeDriver.jdbcCompliant());
+  }
+
+  @Test
+  public void testGetParentLogger() throws SQLException {
+    SnowflakeDriver snowflakeDriver = SnowflakeDriver.INSTANCE;
+    assertNull(snowflakeDriver.getParentLogger());
+  }
+
+  @Test
+  public void testMain() {
+    // Can't get version information during test phase
+    // Just make sure this function won't break
+    SnowflakeDriver snowflakeDriver = SnowflakeDriver.INSTANCE;
+    String[] args = {"--version"};
+    snowflakeDriver.main(args);
   }
 }
