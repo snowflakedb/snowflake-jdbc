@@ -21,8 +21,8 @@ import org.junit.experimental.categories.Category;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
-@Category(TestCategoryCore.class)
-public class RestRequestIT {
+/** RestRequest unit tests. */
+public class RestRequestTest {
   private CloseableHttpResponse retryResponse() {
     StatusLine retryStatusLine = mock(StatusLine.class);
     when(retryStatusLine.getStatusCode()).thenReturn(503);

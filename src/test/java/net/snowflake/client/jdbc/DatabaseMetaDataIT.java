@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All right reserved.
+ * Copyright (c) 2012-2020 Snowflake Computing Inc. All right reserved.
  */
 package net.snowflake.client.jdbc;
 
@@ -1899,21 +1899,6 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
       expectFeatureNotSupportedException(() -> metaData.unwrap(SnowflakeDatabaseMetaData.class));
       expectFeatureNotSupportedException(
           () -> metaData.isWrapperFor(SnowflakeDatabaseMetaData.class));
-    }
-  }
-
-  @Test
-  public void testGetFunctions() throws SQLException {
-    try (Connection connection = getConnection()) {
-      DatabaseMetaData metadata = connection.getMetaData();
-      String supportedStringFuncs = metadata.getStringFunctions();
-      assertEquals(StringFunctionsSupported, supportedStringFuncs);
-
-      String supportedNumberFuncs = metadata.getNumericFunctions();
-      assertEquals(NumericFunctionsSupported, supportedNumberFuncs);
-
-      String supportedSystemFuncs = metadata.getSystemFunctions();
-      assertEquals(SystemFunctionsSupported, supportedSystemFuncs);
     }
   }
 }
