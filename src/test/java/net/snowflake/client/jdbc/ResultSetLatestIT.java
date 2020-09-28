@@ -1,23 +1,22 @@
 package net.snowflake.client.jdbc;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import net.snowflake.client.category.TestCategoryResultSet;
-import net.snowflake.client.jdbc.telemetry.*;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.*;
+import static org.junit.Assert.assertNull;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
 import java.sql.*;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
-
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.*;
-import static org.junit.Assert.assertNull;
+import net.snowflake.client.category.TestCategoryResultSet;
+import net.snowflake.client.jdbc.telemetry.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 @Category(TestCategoryResultSet.class)
 public class ResultSetLatestIT extends BaseJDBCTest {

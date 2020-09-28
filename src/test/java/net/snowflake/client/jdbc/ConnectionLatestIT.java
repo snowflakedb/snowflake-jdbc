@@ -18,7 +18,6 @@ import java.sql.*;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
-
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryConnection;
@@ -40,8 +39,7 @@ import org.junit.rules.TemporaryFolder;
  */
 @Category(TestCategoryConnection.class)
 public class ConnectionLatestIT extends BaseJDBCTest {
-  @Rule
-  public TemporaryFolder tmpFolder = new TemporaryFolder();
+  @Rule public TemporaryFolder tmpFolder = new TemporaryFolder();
 
   private boolean defaultState;
 
@@ -408,25 +406,24 @@ public class ConnectionLatestIT extends BaseJDBCTest {
       DriverManager.getConnection(wrongUri, properties);
     } catch (SQLException e) {
       assertThat(
-              "Communication error",
-              e.getErrorCode(),
-              equalTo(ErrorCode.NETWORK_ERROR.getMessageCode()));
+          "Communication error",
+          e.getErrorCode(),
+          equalTo(ErrorCode.NETWORK_ERROR.getMessageCode()));
 
       conEnd = System.currentTimeMillis();
       assertThat("Login time out not taking effective", conEnd - connStart < 60000);
       Thread.sleep(WAIT_FOR_TELEMETRY_REPORT_IN_MILLISECS);
       if (TelemetryService.getInstance().isDeploymentEnabled()) {
         assertThat(
-                "Telemetry event has not been reported successfully. Error: "
-                        + TelemetryService.getInstance().getLastClientError(),
-                TelemetryService.getInstance().getClientFailureCount(),
-                equalTo(0));
+            "Telemetry event has not been reported successfully. Error: "
+                + TelemetryService.getInstance().getLastClientError(),
+            TelemetryService.getInstance().getClientFailureCount(),
+            equalTo(0));
       }
       return;
     }
     fail();
   }
-
 
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
@@ -452,7 +449,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
       pubKey = pubKey.replace("-----BEGIN PUBLIC KEY-----", "");
       pubKey = pubKey.replace("-----END PUBLIC KEY-----", "");
       statement.execute(
-              String.format("alter user %s set rsa_public_key='%s'", params.get("user"), pubKey));
+          String.format("alter user %s set rsa_public_key='%s'", params.get("user"), pubKey));
     }
 
     Connection con = ds.getConnection();

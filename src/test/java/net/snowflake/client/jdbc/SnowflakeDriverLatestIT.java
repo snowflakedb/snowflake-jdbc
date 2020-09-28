@@ -1,16 +1,6 @@
 package net.snowflake.client.jdbc;
 
-import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningOnGithubAction;
-import net.snowflake.client.category.TestCategoryOthers;
-import net.snowflake.client.core.OCSPMode;
-import net.snowflake.client.core.SFSession;
-import net.snowflake.client.core.SFStatement;
-import org.apache.commons.io.IOUtils;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.rules.TemporaryFolder;
+import static org.junit.Assert.*;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -22,8 +12,17 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 import java.util.zip.GZIPInputStream;
-
-import static org.junit.Assert.*;
+import net.snowflake.client.ConditionalIgnoreRule;
+import net.snowflake.client.RunningOnGithubAction;
+import net.snowflake.client.category.TestCategoryOthers;
+import net.snowflake.client.core.OCSPMode;
+import net.snowflake.client.core.SFSession;
+import net.snowflake.client.core.SFStatement;
+import org.apache.commons.io.IOUtils;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.rules.TemporaryFolder;
 
 @Category(TestCategoryOthers.class)
 public class SnowflakeDriverLatestIT extends BaseJDBCTest {
