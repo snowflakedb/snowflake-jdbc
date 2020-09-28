@@ -275,6 +275,7 @@
             <exclude>**/SnowflakeResultSetSerializableArrowIT.java</exclude>
             <exclude>**/SFArrowResultSetIT.java</exclude>
             <exclude>**/ResultSetLatestIT.java</exclude>
+            <exclude>**/ResultSetArrowIT.java</exclude>
           </testExcludes>
           <useIncrementalCompilation>false</useIncrementalCompilation>
         </configuration>
