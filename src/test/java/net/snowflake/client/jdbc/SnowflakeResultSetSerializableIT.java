@@ -2,18 +2,9 @@ package net.snowflake.client.jdbc;
 
 import static org.hamcrest.Matchers.greaterThan;
 import static org.junit.Assert.*;
-import static org.junit.Assert.assertThat;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.io.*;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -463,8 +454,8 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
    * @return a name file list where the new serializable objects resides.
    * @throws Throwable if any error occurs.
    */
-  private List<String> splitResultSetSerializables(List<String> files, long maxSizeInBytes)
-      throws Throwable {
+  private synchronized List<String> splitResultSetSerializables(
+      List<String> files, long maxSizeInBytes) throws Throwable {
     List<String> resultFileList = new ArrayList<>();
 
     for (String filename : files) {
