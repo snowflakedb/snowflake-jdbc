@@ -19,7 +19,6 @@ import java.util.Properties;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryResultSet;
-import net.snowflake.client.jdbc.telemetry.*;
 import net.snowflake.common.core.SFBinary;
 import org.apache.arrow.vector.Float8Vector;
 import org.junit.After;
@@ -34,7 +33,11 @@ public class ResultSetIT extends BaseJDBCTest {
 
   private final String selectAllSQL = "select * from test_rs";
 
-  private static ResultSet numberCrossTesting() throws SQLException {
+  private static byte[] byteArrayTestCase1 = new byte[0];
+  private static byte[] byteArrayTestCase2 = {(byte) 0xAB, (byte) 0xCD, (byte) 0x12};
+  private static byte[] byteArrayTestCase3 = {(byte) 0x00, (byte) 0xFF, (byte) 0x42, (byte) 0x01};
+
+  static ResultSet numberCrossTesting() throws SQLException {
     Connection con = getConnection();
     Statement statement = con.createStatement();
 
@@ -522,89 +525,64 @@ public class ResultSetIT extends BaseJDBCTest {
     connection.close();
   }
 
-  private byte[] intToByteArray(int i) {
-    return BigInteger.valueOf(i).toByteArray();
-  }
-
-  private byte[] floatToByteArray(float i) {
-    return ByteBuffer.allocate(Float8Vector.TYPE_WIDTH).putDouble(0, i).array();
-  }
-
+  /**
+   * Gets bytes in HEX form.
+   *
+   * @throws SQLException arises if any exception occurs.
+   */
   @Test
   public void testGetBytes() throws SQLException {
     Properties props = new Properties();
-    props.setProperty("enable_binary_datatype", Boolean.TRUE.toString());
     Connection connection = getConnection(props);
     Statement statement = connection.createStatement();
     statement.execute("create or replace table bin (b Binary)");
 
-    byte[] bytes1 = new byte[0];
-    byte[] bytes2 = {(byte) 0xAB, (byte) 0xCD, (byte) 0x12};
-    byte[] bytes3 = {(byte) 0x00, (byte) 0xFF, (byte) 0x42, (byte) 0x01};
-
     PreparedStatement prepStatement =
         connection.prepareStatement("insert into bin values (?), (?), (?)");
-    prepStatement.setBytes(1, bytes1);
-    prepStatement.setBytes(2, bytes2);
-    prepStatement.setBytes(3, bytes3);
+    prepStatement.setBytes(1, byteArrayTestCase1);
+    prepStatement.setBytes(2, byteArrayTestCase2);
+    prepStatement.setBytes(3, byteArrayTestCase3);
     prepStatement.execute();
 
     // Get results in hex format (default).
     ResultSet resultSet = statement.executeQuery("select * from bin");
     resultSet.next();
-    assertArrayEquals(bytes1, resultSet.getBytes(1));
+    assertArrayEquals(byteArrayTestCase1, resultSet.getBytes(1));
     assertEquals("", resultSet.getString(1));
     resultSet.next();
-    assertArrayEquals(bytes2, resultSet.getBytes(1));
+    assertArrayEquals(byteArrayTestCase2, resultSet.getBytes(1));
     assertEquals("ABCD12", resultSet.getString(1));
     resultSet.next();
-    assertArrayEquals(bytes3, resultSet.getBytes(1));
+    assertArrayEquals(byteArrayTestCase3, resultSet.getBytes(1));
     assertEquals("00FF4201", resultSet.getString(1));
+    statement.execute("drop table if exists bin");
+    connection.close();
+  }
 
-    // Get results in base64 format.
+  /**
+   * Get bytes in Base64
+   *
+   * @throws Exception arises if any error occurs
+   */
+  @Test
+  public void testGetBytesInBase64() throws Exception {
+    Properties props = new Properties();
     props.setProperty("binary_output_format", "BAse64");
-    connection = getConnection(props);
-    statement = connection.createStatement();
-    resultSet = statement.executeQuery("select * from bin");
+    Connection connection = getConnection(props);
+    Statement statement = connection.createStatement();
+    ResultSet resultSet = statement.executeQuery("select * from bin");
     resultSet.next();
-    assertArrayEquals(bytes1, resultSet.getBytes(1));
+    assertArrayEquals(byteArrayTestCase1, resultSet.getBytes(1));
     assertEquals("", resultSet.getString(1));
     resultSet.next();
-    assertArrayEquals(bytes2, resultSet.getBytes(1));
+    assertArrayEquals(byteArrayTestCase2, resultSet.getBytes(1));
     assertEquals("q80S", resultSet.getString(1));
     resultSet.next();
-    assertArrayEquals(bytes3, resultSet.getBytes(1));
+    assertArrayEquals(byteArrayTestCase3, resultSet.getBytes(1));
     assertEquals("AP9CAQ==", resultSet.getString(1));
 
     statement.execute("drop table if exists bin");
     connection.close();
-
-    resultSet = numberCrossTesting();
-    resultSet.next();
-    // assert that 0 is returned for null values for every type of value
-    for (int i = 1; i < 13; i++) {
-      assertArrayEquals(null, resultSet.getBytes(i));
-    }
-    resultSet.next();
-    assertArrayEquals(intToByteArray(2), resultSet.getBytes(1));
-    assertArrayEquals(intToByteArray(5), resultSet.getBytes(2));
-    assertArrayEquals(floatToByteArray(3.5f), resultSet.getBytes(3));
-    assertArrayEquals(new byte[] {1}, resultSet.getBytes(4));
-    assertArrayEquals(new byte[] {(byte) '1'}, resultSet.getBytes(5));
-    assertArrayEquals("1".getBytes(), resultSet.getBytes(6));
-
-    for (int i = 7; i < 12; i++) {
-      try {
-        resultSet.getBytes(i);
-        fail("Failing on " + i);
-      } catch (SQLException ex) {
-        assertEquals(200038, ex.getErrorCode());
-      }
-    }
-
-    byte[] decoded = SFBinary.fromHex("48454C4C4F").getBytes();
-
-    assertArrayEquals(decoded, resultSet.getBytes(12));
   }
 
   // SNOW-31647

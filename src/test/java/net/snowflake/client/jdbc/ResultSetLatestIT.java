@@ -1,11 +1,14 @@
 package net.snowflake.client.jdbc;
 
+import static net.snowflake.client.jdbc.ResultSetIT.numberCrossTesting;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.*;
 import static org.junit.Assert.assertNull;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
+import java.math.BigInteger;
+import java.nio.ByteBuffer;
 import java.sql.*;
 import java.util.LinkedList;
 import java.util.List;
@@ -13,6 +16,8 @@ import java.util.Map;
 import java.util.regex.Pattern;
 import net.snowflake.client.category.TestCategoryResultSet;
 import net.snowflake.client.jdbc.telemetry.*;
+import net.snowflake.common.core.SFBinary;
+import org.apache.arrow.vector.Float8Vector;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -215,5 +220,48 @@ public class ResultSetLatestIT extends BaseJDBCTest {
     statement.execute("drop table if exists test_rsmd");
     statement.close();
     connection.close();
+  }
+
+  private byte[] intToByteArray(int i) {
+    return BigInteger.valueOf(i).toByteArray();
+  }
+
+  private byte[] floatToByteArray(float i) {
+    return ByteBuffer.allocate(Float8Vector.TYPE_WIDTH).putDouble(0, i).array();
+  }
+
+  /**
+   * Gets bytes from other data types
+   *
+   * @throws Exception ariases if any exception occurs.
+   */
+  @Test
+  public void testBytesCrossTypeTests() throws Exception {
+    ResultSet resultSet = numberCrossTesting();
+    resultSet.next();
+    // assert that 0 is returned for null values for every type of value
+    for (int i = 1; i < 13; i++) {
+      assertArrayEquals(null, resultSet.getBytes(i));
+    }
+    resultSet.next();
+    assertArrayEquals(intToByteArray(2), resultSet.getBytes(1));
+    assertArrayEquals(intToByteArray(5), resultSet.getBytes(2));
+    assertArrayEquals(floatToByteArray(3.5f), resultSet.getBytes(3));
+    assertArrayEquals(new byte[] {1}, resultSet.getBytes(4));
+    assertArrayEquals(new byte[] {(byte) '1'}, resultSet.getBytes(5));
+    assertArrayEquals("1".getBytes(), resultSet.getBytes(6));
+
+    for (int i = 7; i < 12; i++) {
+      try {
+        resultSet.getBytes(i);
+        fail("Failing on " + i);
+      } catch (SQLException ex) {
+        assertEquals(200038, ex.getErrorCode());
+      }
+    }
+
+    byte[] decoded = SFBinary.fromHex("48454C4C4F").getBytes();
+
+    assertArrayEquals(decoded, resultSet.getBytes(12));
   }
 }
