@@ -84,7 +84,7 @@ for c in "${CATEGORY[@]}"; do
                 -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn \
                 verify \
                 --batch-mode --show-version
-        popd TestOnly >& /dev/null
+        popd >& /dev/null
     elif [[ "$c" == "TestCategoryFips" ]]; then
         pushd FIPS >& /dev/null
             echo "[INFO] Run Fips tests"
