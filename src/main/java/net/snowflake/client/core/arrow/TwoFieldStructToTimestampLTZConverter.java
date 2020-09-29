@@ -3,6 +3,10 @@
  */
 package net.snowflake.client.core.arrow;
 
+import java.sql.Date;
+import java.sql.Time;
+import java.sql.Timestamp;
+import java.util.TimeZone;
 import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.IncidentUtil;
 import net.snowflake.client.core.ResultUtil;
@@ -15,22 +19,14 @@ import org.apache.arrow.vector.IntVector;
 import org.apache.arrow.vector.ValueVector;
 import org.apache.arrow.vector.complex.StructVector;
 
-import java.sql.Date;
-import java.sql.Time;
-import java.sql.Timestamp;
-import java.util.TimeZone;
-
-/**
- * converter from two-field struct (epochs and fraction) to Timestamp_LTZ
- */
-public class TwoFieldStructToTimestampLTZConverter extends AbstractArrowVectorConverter
-{
+/** converter from two-field struct (epochs and fraction) to Timestamp_LTZ */
+public class TwoFieldStructToTimestampLTZConverter extends AbstractArrowVectorConverter {
   private StructVector structVector;
   private BigIntVector epochs;
   private IntVector fractions;
 
-  public TwoFieldStructToTimestampLTZConverter(ValueVector fieldVector, int columnIndex, DataConversionContext context)
-  {
+  public TwoFieldStructToTimestampLTZConverter(
+      ValueVector fieldVector, int columnIndex, DataConversionContext context) {
     super(SnowflakeType.TIMESTAMP_LTZ.name(), fieldVector, columnIndex, context);
     structVector = (StructVector) fieldVector;
     epochs = structVector.getChild(FIELD_NAME_EPOCH, BigIntVector.class);
@@ -38,65 +34,52 @@ public class TwoFieldStructToTimestampLTZConverter extends AbstractArrowVectorCo
   }
 
   @Override
-  public boolean isNull(int index)
-  {
+  public boolean isNull(int index) {
     return epochs.isNull(index);
   }
 
   @Override
-  public String toString(int index) throws SFException
-  {
-    if (context.getTimestampLTZFormatter() == null)
-    {
-      throw (SFException) IncidentUtil.generateIncidentV2WithException(
-          context.getSession(),
-          new SFException(ErrorCode.INTERNAL_ERROR,
-                          "missing timestamp LTZ formatter"),
-          null,
-          null);
+  public String toString(int index) throws SFException {
+    if (context.getTimestampLTZFormatter() == null) {
+      throw (SFException)
+          IncidentUtil.generateIncidentV2WithException(
+              context.getSession(),
+              new SFException(ErrorCode.INTERNAL_ERROR, "missing timestamp LTZ formatter"),
+              null,
+              null);
     }
 
-    try
-    {
-      Timestamp ts = epochs.isNull(index)
-                     ? null
-                     : getTimestamp(index, TimeZone.getDefault(), true);
+    try {
+      Timestamp ts = epochs.isNull(index) ? null : getTimestamp(index, TimeZone.getDefault(), true);
 
-      return ts == null ? null :
-             context.getTimestampLTZFormatter().format(
-                 ts, context.getTimeZone(), context.getScale(columnIndex));
-    }
-    catch (TimestampOperationNotAvailableException e)
-    {
+      return ts == null
+          ? null
+          : context
+              .getTimestampLTZFormatter()
+              .format(ts, context.getTimeZone(), context.getScale(columnIndex));
+    } catch (TimestampOperationNotAvailableException e) {
       return e.getSecsSinceEpoch().toPlainString();
     }
   }
 
   @Override
-  public Object toObject(int index) throws SFException
-  {
+  public Object toObject(int index) throws SFException {
     return toTimestamp(index, TimeZone.getDefault());
   }
 
   @Override
-  public Timestamp toTimestamp(int index, TimeZone tz) throws SFException
-  {
+  public Timestamp toTimestamp(int index, TimeZone tz) throws SFException {
     return isNull(index) ? null : getTimestamp(index, tz, false);
   }
 
-  private Timestamp getTimestamp(int index, TimeZone tz, boolean fromToString) throws SFException
-  {
+  private Timestamp getTimestamp(int index, TimeZone tz, boolean fromToString) throws SFException {
     long epoch = epochs.getDataBuffer().getLong(index * BigIntVector.TYPE_WIDTH);
     int fraction = fractions.getDataBuffer().getInt(index * IntVector.TYPE_WIDTH);
 
-    if (ArrowResultUtil.isTimestampOverflow(epoch))
-    {
-      if (fromToString)
-      {
+    if (ArrowResultUtil.isTimestampOverflow(epoch)) {
+      if (fromToString) {
         throw new TimestampOperationNotAvailableException(epoch, fraction);
-      }
-      else
-      {
+      } else {
         return null;
       }
     }
@@ -109,23 +92,17 @@ public class TwoFieldStructToTimestampLTZConverter extends AbstractArrowVectorCo
   }
 
   @Override
-  public byte[] toBytes(int index) throws SFException
-  {
-    if (epochs.isNull(index))
-    {
+  public byte[] toBytes(int index) throws SFException {
+    if (epochs.isNull(index)) {
       return null;
     }
-    throw new SFException(ErrorCode.INVALID_VALUE_CONVERT,
-                          logicalTypeStr,
-                          "byteArray",
-                          toString(index));
+    throw new SFException(
+        ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr, "byteArray", toString(index));
   }
 
   @Override
-  public Date toDate(int index, TimeZone tz) throws SFException
-  {
-    if (isNull(index))
-    {
+  public Date toDate(int index, TimeZone tz) throws SFException {
+    if (isNull(index)) {
       return null;
     }
     Timestamp ts = getTimestamp(index, TimeZone.getDefault(), false);
@@ -134,22 +111,19 @@ public class TwoFieldStructToTimestampLTZConverter extends AbstractArrowVectorCo
   }
 
   @Override
-  public Time toTime(int index) throws SFException
-  {
+  public Time toTime(int index) throws SFException {
     Timestamp ts = toTimestamp(index, TimeZone.getDefault());
     return ts == null ? null : new Time(ts.getTime());
   }
 
   @Override
-  public boolean toBoolean(int index) throws SFException
-  {
-    if (epochs.isNull(index))
-    {
+  public boolean toBoolean(int index) throws SFException {
+    if (epochs.isNull(index)) {
       return false;
     }
     Timestamp val = toTimestamp(index, TimeZone.getDefault());
-    throw new SFException(ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr,
-                          SnowflakeUtil.BOOLEAN_STR, val);
+    throw new SFException(
+        ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr,
+        SnowflakeUtil.BOOLEAN_STR, val);
   }
-
 }

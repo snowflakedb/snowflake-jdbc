@@ -3,19 +3,15 @@
  */
 package net.snowflake.client.core.arrow;
 
-import net.snowflake.client.core.SFException;
-
 import java.math.BigDecimal;
 import java.sql.Date;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.TimeZone;
+import net.snowflake.client.core.SFException;
 
-/**
- * Interface to convert from arrow vector values into java data types.
- */
-public interface ArrowVectorConverter
-{
+/** Interface to convert from arrow vector values into java data types. */
+public interface ArrowVectorConverter {
   /**
    * Determine whether source value in arrow vector is null value or not
    *
@@ -128,7 +124,7 @@ public interface ArrowVectorConverter
    * Convert value in arrow vector to Timestamp
    *
    * @param index index of the value to be converted in the vector
-   * @param tz    time zone
+   * @param tz time zone
    * @return Timestamp converted from arrow vector
    * @throws SFException invalid data conversion
    */
@@ -152,8 +148,8 @@ public interface ArrowVectorConverter
    */
   Object toObject(int index) throws SFException;
 
-  /**
-   * @param isUTC true or false value of whether NTZ timestamp should be set to UTC
-   */
+  /** @param isUTC true or false value of whether NTZ timestamp should be set to UTC */
   void setTreatNTZAsUTC(boolean isUTC);
+
+  void setSessionTimeZone(TimeZone tz);
 }

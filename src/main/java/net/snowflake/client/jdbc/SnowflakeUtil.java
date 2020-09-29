@@ -5,17 +5,6 @@
 package net.snowflake.client.jdbc;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import net.snowflake.client.core.HttpUtil;
-import net.snowflake.client.core.SFSessionProperty;
-import net.snowflake.client.log.SFLogger;
-import net.snowflake.client.log.SFLoggerFactory;
-import net.snowflake.common.core.SqlState;
-import net.snowflake.common.util.ClassUtil;
-import net.snowflake.common.util.FixedViewColumn;
-import org.apache.commons.io.IOUtils;
-import org.apache.http.Header;
-import org.apache.http.HttpResponse;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -27,21 +16,26 @@ import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
+import net.snowflake.client.core.HttpUtil;
+import net.snowflake.client.core.SFSessionProperty;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
+import net.snowflake.common.core.SqlState;
+import net.snowflake.common.util.ClassUtil;
+import net.snowflake.common.util.FixedViewColumn;
+import org.apache.commons.io.IOUtils;
+import org.apache.http.Header;
+import org.apache.http.HttpResponse;
 
-/**
- * @author jhuang
- */
-public class SnowflakeUtil
-{
+/** @author jhuang */
+public class SnowflakeUtil {
 
   static final SFLogger logger = SFLoggerFactory.getLogger(RestRequest.class);
 
-  /**
-   * Additional data types not covered by standard JDBC
-   */
-  public final static int EXTRA_TYPES_TIMESTAMP_LTZ = 50000;
+  /** Additional data types not covered by standard JDBC */
+  public static final int EXTRA_TYPES_TIMESTAMP_LTZ = 50000;
 
-  public final static int EXTRA_TYPES_TIMESTAMP_TZ = 50001;
+  public static final int EXTRA_TYPES_TIMESTAMP_TZ = 50001;
 
   // reauthenticate
   private static final int ID_TOKEN_EXPIRED_GS_CODE = 390110;
@@ -64,35 +58,27 @@ public class SnowflakeUtil
   public static final String BYTE_STR = "byte";
   public static final String BYTES_STR = "byte array";
 
-
-  static public void checkErrorAndThrowExceptionIncludingReauth(JsonNode rootNode)
-  throws SnowflakeSQLException
-  {
+  public static void checkErrorAndThrowExceptionIncludingReauth(JsonNode rootNode)
+      throws SnowflakeSQLException {
     checkErrorAndThrowExceptionSub(rootNode, true);
   }
 
-  static public void checkErrorAndThrowException(JsonNode rootNode)
-  throws SnowflakeSQLException
-  {
+  public static void checkErrorAndThrowException(JsonNode rootNode) throws SnowflakeSQLException {
     checkErrorAndThrowExceptionSub(rootNode, false);
   }
 
   /**
-   * Check the error in the JSON node and generate an exception based on
-   * information extracted from the node.
+   * Check the error in the JSON node and generate an exception based on information extracted from
+   * the node.
    *
-   * @param rootNode                 json object contains error information
-   * @param raiseReauthenticateError raises SnowflakeReauthenticationRequest
-   *                                 if true
+   * @param rootNode json object contains error information
+   * @param raiseReauthenticateError raises SnowflakeReauthenticationRequest if true
    * @throws SnowflakeSQLException the exception get from the error in the json
    */
-  static private void checkErrorAndThrowExceptionSub(
-      JsonNode rootNode, boolean raiseReauthenticateError)
-  throws SnowflakeSQLException
-  {
+  private static void checkErrorAndThrowExceptionSub(
+      JsonNode rootNode, boolean raiseReauthenticateError) throws SnowflakeSQLException {
     // no need to throw exception if success
-    if (rootNode.path("success").asBoolean())
-    {
+    if (rootNode.path("success").asBoolean()) {
       return;
     }
 
@@ -102,63 +88,47 @@ public class SnowflakeUtil
     String queryId = "unknown";
 
     // if we have sqlstate in data, it's a sql error
-    if (!rootNode.path("data").path("sqlState").isMissingNode())
-    {
+    if (!rootNode.path("data").path("sqlState").isMissingNode()) {
       sqlState = rootNode.path("data").path("sqlState").asText();
       errorCode = rootNode.path("data").path("errorCode").asInt();
       queryId = rootNode.path("data").path("queryId").asText();
       errorMessage = rootNode.path("message").asText();
-    }
-    else
-    {
+    } else {
       sqlState = SqlState.INTERNAL_ERROR; // use internal error sql state
 
       // check if there is an error code in the envelope
-      if (!rootNode.path("code").isMissingNode())
-      {
+      if (!rootNode.path("code").isMissingNode()) {
         errorCode = rootNode.path("code").asInt();
         errorMessage = rootNode.path("message").asText();
-      }
-      else
-      {
+      } else {
         errorCode = ErrorCode.INTERNAL_ERROR.getMessageCode();
         errorMessage = "no_error_code_from_server";
 
-        try
-        {
+        try {
           PrintWriter writer = new PrintWriter("output.json", "UTF-8");
           writer.print(rootNode.toString());
-        }
-        catch (Exception ex)
-        {
+        } catch (Exception ex) {
           logger.debug("{}", ex);
         }
       }
     }
 
-    if (raiseReauthenticateError)
-    {
-      switch (errorCode)
-      {
+    if (raiseReauthenticateError) {
+      switch (errorCode) {
         case ID_TOKEN_EXPIRED_GS_CODE:
         case SESSION_NOT_EXIST_GS_CODE:
         case MASTER_TOKEN_NOTFOUND:
         case MASTER_EXPIRED_GS_CODE:
         case MASTER_TOKEN_INVALID_GS_CODE:
         case ID_TOKEN_INVALID_LOGIN_REQUEST_GS_CODE:
-          throw new SnowflakeReauthenticationRequest(
-              queryId, errorMessage, sqlState, errorCode);
+          throw new SnowflakeReauthenticationRequest(queryId, errorMessage, sqlState, errorCode);
       }
     }
-    throw new SnowflakeSQLException(queryId, errorMessage, sqlState,
-                                    errorCode);
+    throw new SnowflakeSQLException(queryId, errorMessage, sqlState, errorCode);
   }
 
-  static public SnowflakeColumnMetadata extractColumnMetadata(
-      JsonNode colNode,
-      boolean jdbcTreatDecimalAsInt)
-  throws SnowflakeSQLException
-  {
+  public static SnowflakeColumnMetadata extractColumnMetadata(
+      JsonNode colNode, boolean jdbcTreatDecimalAsInt) throws SnowflakeSQLException {
     String colName = colNode.path("name").asText();
     String internalColTypeName = colNode.path("type").asText();
     boolean nullable = colNode.path("nullable").asBoolean();
@@ -172,9 +142,7 @@ public class SnowflakeUtil
 
     SnowflakeType baseType = SnowflakeType.fromString(internalColTypeName);
 
-    switch (baseType)
-    {
-
+    switch (baseType) {
       case TEXT:
         colType = Types.VARCHAR;
         extColTypeName = "VARCHAR";
@@ -191,8 +159,7 @@ public class SnowflakeUtil
         break;
 
       case FIXED:
-        colType = jdbcTreatDecimalAsInt && scale == 0
-                  ? Types.BIGINT : Types.DECIMAL;
+        colType = jdbcTreatDecimalAsInt && scale == 0 ? Types.BIGINT : Types.DECIMAL;
         extColTypeName = "NUMBER";
         break;
 
@@ -213,7 +180,6 @@ public class SnowflakeUtil
         break;
 
       case TIMESTAMP_TZ:
-
         colType = EXTRA_TYPES_TIMESTAMP_TZ;
         extColTypeName = "TIMESTAMPTZ";
         break;
@@ -254,15 +220,14 @@ public class SnowflakeUtil
         break;
 
       default:
-        throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
-                                        ErrorCode.INTERNAL_ERROR
-                                            .getMessageCode(),
-                                        "Unknown column type: " + internalColTypeName);
+        throw new SnowflakeSQLException(
+            SqlState.INTERNAL_ERROR,
+            ErrorCode.INTERNAL_ERROR.getMessageCode(),
+            "Unknown column type: " + internalColTypeName);
     }
 
     JsonNode extColTypeNameNode = colNode.path("extTypeName");
-    if (!extColTypeNameNode.isMissingNode())
-    {
+    if (!extColTypeNameNode.isMissingNode()) {
       extColTypeName = extColTypeNameNode.asText();
     }
 
@@ -270,72 +235,62 @@ public class SnowflakeUtil
     String colSrcSchema = colNode.path("schema").asText();
     String colSrcTable = colNode.path("table").asText();
 
-    return new SnowflakeColumnMetadata(colName, colType, nullable, length,
-                                       precision, scale, extColTypeName,
-                                       fixed, baseType, colSrcDatabase,
-                                       colSrcSchema, colSrcTable);
+    return new SnowflakeColumnMetadata(
+        colName,
+        colType,
+        nullable,
+        length,
+        precision,
+        scale,
+        extColTypeName,
+        fixed,
+        baseType,
+        colSrcDatabase,
+        colSrcSchema,
+        colSrcTable);
   }
 
-  static String javaTypeToSFTypeString(int javaType)
-  throws SnowflakeSQLException
-  {
+  static String javaTypeToSFTypeString(int javaType) throws SnowflakeSQLException {
     return SnowflakeType.javaTypeToSFType(javaType).name();
   }
 
-  static SnowflakeType javaTypeToSFType(int javaType)
-  throws SnowflakeSQLException
-  {
+  static SnowflakeType javaTypeToSFType(int javaType) throws SnowflakeSQLException {
     return SnowflakeType.javaTypeToSFType(javaType);
   }
 
   /**
-   * A small function for concatenating two file paths by making sure one and
-   * only one path separator is placed between the two paths.
-   * <p>
-   * This is necessary since for S3 file name, having different number of file
-   * separators in a path will mean different files.
-   * </p>
-   * <p>
-   * Typical use case is to concatenate a file name to a directory.
-   * </p>
+   * A small function for concatenating two file paths by making sure one and only one path
+   * separator is placed between the two paths.
    *
-   * @param leftPath  left path
+   * <p>This is necessary since for S3 file name, having different number of file separators in a
+   * path will mean different files.
+   *
+   * <p>Typical use case is to concatenate a file name to a directory.
+   *
+   * @param leftPath left path
    * @param rightPath right path
-   * @param fileSep   file separator
+   * @param fileSep file separator
    * @return concatenated file path
    */
-  static String concatFilePathNames(String leftPath,
-                                    String rightPath,
-                                    String fileSep)
-  {
+  static String concatFilePathNames(String leftPath, String rightPath, String fileSep) {
     String leftPathTrimmed = leftPath.trim();
     String rightPathTrimmed = rightPath.trim();
 
-    if (leftPathTrimmed.isEmpty())
-    {
+    if (leftPathTrimmed.isEmpty()) {
       return rightPath;
     }
 
-    if (leftPathTrimmed.endsWith(fileSep)
-        && rightPathTrimmed.startsWith(fileSep))
-    {
+    if (leftPathTrimmed.endsWith(fileSep) && rightPathTrimmed.startsWith(fileSep)) {
       return leftPathTrimmed + rightPathTrimmed.substring(1);
-    }
-    else if (!leftPathTrimmed.endsWith(fileSep)
-             && !rightPathTrimmed.startsWith(fileSep))
-    {
+    } else if (!leftPathTrimmed.endsWith(fileSep) && !rightPathTrimmed.startsWith(fileSep)) {
       return leftPathTrimmed + fileSep + rightPathTrimmed;
-    }
-    else
-    {
+    } else {
       return leftPathTrimmed + rightPathTrimmed;
     }
   }
 
-  static String greatestCommonPrefix(String val1, String val2)
-  {
-    if (val1 == null || val2 == null)
-    {
+  static String greatestCommonPrefix(String val1, String val2) {
+    if (val1 == null || val2 == null) {
       return null;
     }
 
@@ -343,14 +298,10 @@ public class SnowflakeUtil
 
     int len = Math.min(val1.length(), val2.length());
 
-    for (int idx = 0; idx < len; idx++)
-    {
-      if (val1.charAt(idx) == val2.charAt(idx))
-      {
+    for (int idx = 0; idx < len; idx++) {
+      if (val1.charAt(idx) == val2.charAt(idx)) {
         greatestCommonPrefix.append(val1.charAt(idx));
-      }
-      else
-      {
+      } else {
         break;
       }
     }
@@ -358,21 +309,16 @@ public class SnowflakeUtil
     return greatestCommonPrefix.toString();
   }
 
-  static List<SnowflakeColumnMetadata> describeFixedViewColumns(
-      Class<?> clazz) throws SnowflakeSQLException
-  {
-    Field[] columns
-        = ClassUtil.getAnnotatedDeclaredFields(clazz, FixedViewColumn.class,
-                                               true);
+  static List<SnowflakeColumnMetadata> describeFixedViewColumns(Class<?> clazz)
+      throws SnowflakeSQLException {
+    Field[] columns = ClassUtil.getAnnotatedDeclaredFields(clazz, FixedViewColumn.class, true);
 
     Arrays.sort(columns, new FixedViewColumn.OrdinalComparatorForFields());
 
     List<SnowflakeColumnMetadata> rowType = new ArrayList<SnowflakeColumnMetadata>();
 
-    for (Field column : columns)
-    {
-      FixedViewColumn columnAnnotation
-          = column.getAnnotation(FixedViewColumn.class);
+    for (Field column : columns) {
+      FixedViewColumn columnAnnotation = column.getAnnotation(FixedViewColumn.class);
 
       String typeName;
       int colType;
@@ -380,49 +326,42 @@ public class SnowflakeUtil
       Class<?> type = column.getType();
       SnowflakeType stype = SnowflakeType.TEXT;
 
-
-      if (type == Integer.TYPE)
-      {
+      if (type == Integer.TYPE) {
         colType = Types.INTEGER;
         typeName = "INTEGER";
         stype = SnowflakeType.INTEGER;
       }
-      if (type == Long.TYPE)
-      {
+      if (type == Long.TYPE) {
         colType = Types.DECIMAL;
         typeName = "DECIMAL";
         stype = SnowflakeType.INTEGER;
-      }
-      else if (type == String.class)
-      {
+      } else if (type == String.class) {
         colType = Types.VARCHAR;
         typeName = "VARCHAR";
         stype = SnowflakeType.TEXT;
-      }
-      else
-      {
-        throw new SnowflakeSQLException(SqlState.INTERNAL_ERROR,
-                                        ErrorCode.INTERNAL_ERROR
-                                            .getMessageCode(),
-                                        "Unsupported column type: " + type
-                                            .getName());
+      } else {
+        throw new SnowflakeSQLException(
+            SqlState.INTERNAL_ERROR,
+            ErrorCode.INTERNAL_ERROR.getMessageCode(),
+            "Unsupported column type: " + type.getName());
       }
 
       // TODO: we hard code some of the values below but can change them
       // later to derive from annotation as well.
-      rowType.add(new SnowflakeColumnMetadata(
-          columnAnnotation.name(), // column name
-          colType, // column type
-          false, // nullable
-          20480, // length
-          10, // precision
-          0, // scale
-          typeName, // type name
-          true,
-          stype,  // fixed
-          "",     // database
-          "",     // schema
-          ""));   // table
+      rowType.add(
+          new SnowflakeColumnMetadata(
+              columnAnnotation.name(), // column name
+              colType, // column type
+              false, // nullable
+              20480, // length
+              10, // precision
+              0, // scale
+              typeName, // type name
+              true,
+              stype, // fixed
+              "", // database
+              "", // schema
+              "")); // table
     }
 
     return rowType;
@@ -430,54 +369,41 @@ public class SnowflakeUtil
 
   /**
    * A utility to log response details.
-   * <p>
-   * Used when there is an error in http response
-   * </p>
+   *
+   * <p>Used when there is an error in http response
    *
    * @param response http response get from server
-   * @param logger   logger object
+   * @param logger logger object
    */
-  static public void logResponseDetails(HttpResponse response, SFLogger logger)
-  {
-    if (response == null)
-    {
+  public static void logResponseDetails(HttpResponse response, SFLogger logger) {
+    if (response == null) {
       logger.error("null response");
       return;
     }
 
     // log the response
-    if (response.getStatusLine() != null)
-    {
-      logger.error("Response status line reason: {}",
-                   response.getStatusLine().getReasonPhrase());
+    if (response.getStatusLine() != null) {
+      logger.error("Response status line reason: {}", response.getStatusLine().getReasonPhrase());
     }
 
     // log each header from response
     Header[] headers = response.getAllHeaders();
-    if (headers != null)
-    {
-      for (Header header : headers)
-      {
-        logger.debug("Header name: {}, value: {}",
-                     header.getName(), header.getValue());
+    if (headers != null) {
+      for (Header header : headers) {
+        logger.debug("Header name: {}, value: {}", header.getName(), header.getValue());
       }
     }
 
     // log response
-    if (response.getEntity() != null)
-    {
-      try
-      {
+    if (response.getEntity() != null) {
+      try {
         StringWriter writer = new StringWriter();
-        BufferedReader bufferedReader = new BufferedReader(
-            new InputStreamReader((response.getEntity().getContent())));
+        BufferedReader bufferedReader =
+            new BufferedReader(new InputStreamReader((response.getEntity().getContent())));
         IOUtils.copy(bufferedReader, writer);
         logger.error("Response content: {}", writer.toString());
-      }
-      catch (IOException ex)
-      {
-        logger.error("Failed to read content due to exception: "
-                     + "{}", ex.getMessage());
+      } catch (IOException ex) {
+        logger.error("Failed to read content due to exception: " + "{}", ex.getMessage());
       }
     }
   }
@@ -486,49 +412,40 @@ public class SnowflakeUtil
    * Returns a new thread pool configured with the default settings.
    *
    * @param threadNamePrefix prefix of the thread name
-   * @param parallel         the number of concurrency
+   * @param parallel the number of concurrency
    * @return A new thread pool configured with the default settings.
    */
-  static public ThreadPoolExecutor createDefaultExecutorService(
-      final String threadNamePrefix, final int parallel)
-  {
-    ThreadFactory threadFactory = new ThreadFactory()
-    {
-      private int threadCount = 1;
+  public static ThreadPoolExecutor createDefaultExecutorService(
+      final String threadNamePrefix, final int parallel) {
+    ThreadFactory threadFactory =
+        new ThreadFactory() {
+          private int threadCount = 1;
 
-      public Thread newThread(Runnable r)
-      {
-        Thread thread = new Thread(r);
-        thread.setName(threadNamePrefix + threadCount++);
-        return thread;
-      }
-    };
-    return (ThreadPoolExecutor) Executors.newFixedThreadPool(parallel,
-                                                             threadFactory);
+          public Thread newThread(Runnable r) {
+            Thread thread = new Thread(r);
+            thread.setName(threadNamePrefix + threadCount++);
+            return thread;
+          }
+        };
+    return (ThreadPoolExecutor) Executors.newFixedThreadPool(parallel, threadFactory);
   }
 
-  static public Throwable getRootCause(Exception ex)
-  {
+  public static Throwable getRootCause(Exception ex) {
     Throwable cause = ex;
-    while (cause.getCause() != null)
-    {
+    while (cause.getCause() != null) {
       cause = cause.getCause();
     }
 
     return cause;
   }
 
-  static public boolean isBlank(String input)
-  {
-    if ("".equals(input) || input == null)
-    {
+  public static boolean isBlank(String input) {
+    if ("".equals(input) || input == null) {
       return true;
     }
 
-    for (char c : input.toCharArray())
-    {
-      if (!Character.isWhitespace(c))
-      {
+    for (char c : input.toCharArray()) {
+      if (!Character.isWhitespace(c)) {
         return false;
       }
     }
@@ -536,29 +453,22 @@ public class SnowflakeUtil
     return true;
   }
 
-  private static final String ALPHA_NUMERIC_STRING =
-      "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  private static final String ALPHA_NUMERIC_STRING = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 
-  public static String randomAlphaNumeric(int count)
-  {
+  public static String randomAlphaNumeric(int count) {
     StringBuilder builder = new StringBuilder();
     Random random = new Random();
-    while (count-- != 0)
-    {
+    while (count-- != 0) {
       int character = random.nextInt(ALPHA_NUMERIC_STRING.length());
       builder.append(ALPHA_NUMERIC_STRING.charAt(character));
     }
     return builder.toString();
   }
 
-  static public String systemGetProperty(String property)
-  {
-    try
-    {
+  public static String systemGetProperty(String property) {
+    try {
       return System.getProperty(property);
-    }
-    catch (SecurityException ex)
-    {
+    } catch (SecurityException ex) {
       logger.debug("Security exception raised: {}", ex.getMessage());
       return null;
     }
@@ -569,46 +479,34 @@ public class SnowflakeUtil
    *
    * @param info proxy server properties.
    */
-  static public void setupProxyPropertiesIfNecessary(Properties info)
-  throws SnowflakeSQLException
-  {
+  public static void setupProxyPropertiesIfNecessary(Properties info) throws SnowflakeSQLException {
     // Setup proxy properties.
-    if (info != null && info.size() > 0 &&
-        info.getProperty(SFSessionProperty.USE_PROXY.getPropertyKey()) != null)
-    {
-      Map<SFSessionProperty, Object> connectionPropertiesMap =
-          new HashMap<>(info.size());
-      Boolean useProxy = Boolean.valueOf(
-          info.getProperty(SFSessionProperty.USE_PROXY.getPropertyKey()));
-      if (useProxy)
-      {
+    if (info != null
+        && info.size() > 0
+        && info.getProperty(SFSessionProperty.USE_PROXY.getPropertyKey()) != null) {
+      Map<SFSessionProperty, Object> connectionPropertiesMap = new HashMap<>(info.size());
+      Boolean useProxy =
+          Boolean.valueOf(info.getProperty(SFSessionProperty.USE_PROXY.getPropertyKey()));
+      if (useProxy) {
         connectionPropertiesMap.put(SFSessionProperty.USE_PROXY, true);
 
         // set up other proxy related values.
         String propValue = null;
-        if ((propValue = info.getProperty(
-            SFSessionProperty.PROXY_HOST.getPropertyKey())) != null)
-        {
+        if ((propValue = info.getProperty(SFSessionProperty.PROXY_HOST.getPropertyKey())) != null) {
           connectionPropertiesMap.put(SFSessionProperty.PROXY_HOST, propValue);
         }
-        if ((propValue = info.getProperty(
-            SFSessionProperty.PROXY_PORT.getPropertyKey())) != null)
-        {
+        if ((propValue = info.getProperty(SFSessionProperty.PROXY_PORT.getPropertyKey())) != null) {
           connectionPropertiesMap.put(SFSessionProperty.PROXY_PORT, propValue);
         }
-        if ((propValue = info.getProperty(
-            SFSessionProperty.PROXY_USER.getPropertyKey())) != null)
-        {
+        if ((propValue = info.getProperty(SFSessionProperty.PROXY_USER.getPropertyKey())) != null) {
           connectionPropertiesMap.put(SFSessionProperty.PROXY_USER, propValue);
         }
-        if ((propValue = info.getProperty(
-            SFSessionProperty.PROXY_PASSWORD.getPropertyKey())) != null)
-        {
+        if ((propValue = info.getProperty(SFSessionProperty.PROXY_PASSWORD.getPropertyKey()))
+            != null) {
           connectionPropertiesMap.put(SFSessionProperty.PROXY_PASSWORD, propValue);
         }
-        if ((propValue = info.getProperty(
-            SFSessionProperty.NON_PROXY_HOSTS.getPropertyKey())) != null)
-        {
+        if ((propValue = info.getProperty(SFSessionProperty.NON_PROXY_HOSTS.getPropertyKey()))
+            != null) {
           connectionPropertiesMap.put(SFSessionProperty.NON_PROXY_HOSTS, propValue);
         }
 
@@ -617,5 +515,4 @@ public class SnowflakeUtil
       }
     }
   }
-
 }

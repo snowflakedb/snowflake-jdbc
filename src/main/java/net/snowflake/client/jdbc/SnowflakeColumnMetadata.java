@@ -6,11 +6,8 @@ package net.snowflake.client.jdbc;
 
 import java.io.Serializable;
 
-/**
- * @author jhuang
- */
-public class SnowflakeColumnMetadata implements Serializable
-{
+/** @author jhuang */
+public class SnowflakeColumnMetadata implements Serializable {
   private static final long serialVersionUID = 1L;
   private String name;
   private String typeName;
@@ -25,12 +22,19 @@ public class SnowflakeColumnMetadata implements Serializable
   private String columnSrcSchema;
   private String columnSrcDatabase;
 
-  public SnowflakeColumnMetadata(String name, int type, boolean nullable,
-                                 int length, int precision, int scale,
-                                 String typeName, boolean fixed,
-                                 SnowflakeType base, String columnSrcDatabase,
-                                 String columnSrcSchema, String columnSrcTable)
-  {
+  public SnowflakeColumnMetadata(
+      String name,
+      int type,
+      boolean nullable,
+      int length,
+      int precision,
+      int scale,
+      String typeName,
+      boolean fixed,
+      SnowflakeType base,
+      String columnSrcDatabase,
+      String columnSrcSchema,
+      String columnSrcTable) {
     this.name = name;
     this.type = type;
     this.nullable = nullable;
@@ -45,108 +49,87 @@ public class SnowflakeColumnMetadata implements Serializable
     this.columnSrcTable = columnSrcTable;
   }
 
-  public String getName()
-  {
+  public String getName() {
     return name;
   }
 
-  public void setName(String name)
-  {
+  public void setName(String name) {
     this.name = name;
   }
 
-  public int getType()
-  {
+  public int getType() {
     return type;
   }
 
-  public void setType(int type)
-  {
+  public void setType(int type) {
     this.type = type;
   }
 
-  public boolean isNullable()
-  {
+  public boolean isNullable() {
     return nullable;
   }
 
-  public void setNullable(boolean nullable)
-  {
+  public void setNullable(boolean nullable) {
     this.nullable = nullable;
   }
 
-  public int getLength()
-  {
+  public int getLength() {
     return length;
   }
 
-  public void setLength(int length)
-  {
+  public void setLength(int length) {
     this.length = length;
   }
 
-  public int getPrecision()
-  {
+  public int getPrecision() {
     return precision;
   }
 
-  public void setPrecision(int precision)
-  {
+  public void setPrecision(int precision) {
     this.precision = precision;
   }
 
-  public int getScale()
-  {
+  public int getScale() {
     return scale;
   }
 
-  public void setScale(int scale)
-  {
+  public void setScale(int scale) {
     this.scale = scale;
   }
 
-  public String getTypeName()
-  {
+  public String getTypeName() {
     return typeName;
   }
 
-  public void setTypeName(String typeName)
-  {
+  public void setTypeName(String typeName) {
     this.typeName = typeName;
   }
 
-  public boolean isFixed()
-  {
+  public boolean isFixed() {
     return fixed;
   }
 
-  public void setFixed(boolean fixed)
-  {
+  public void setFixed(boolean fixed) {
     this.fixed = fixed;
   }
 
-  public SnowflakeType getBase()
-  {
+  public SnowflakeType getBase() {
     return this.base;
   }
 
-  public String getColumnSrcTable()
-  {
+  public String getColumnSrcTable() {
     return this.columnSrcTable;
   }
 
-  public String getColumnSrcSchema()
-  {
+  public String getColumnSrcSchema() {
     return this.columnSrcSchema;
   }
 
-  public String getColumnSrcDatabase()
-  {
+  public String getColumnSrcDatabase() {
     return this.columnSrcDatabase;
   }
 
-  public String toString()
-  {
+  public String toString() {
     StringBuilder sBuilder = new StringBuilder();
 
     sBuilder.append("name=").append(name);

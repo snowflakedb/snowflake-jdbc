@@ -3,6 +3,10 @@
  */
 package net.snowflake.client.core.arrow;
 
+import java.math.BigDecimal;
+import java.sql.Date;
+import java.sql.Timestamp;
+import java.util.TimeZone;
 import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.IncidentUtil;
 import net.snowflake.client.core.ResultUtil;
@@ -14,150 +18,120 @@ import org.apache.arrow.vector.DateDayVector;
 import org.apache.arrow.vector.IntVector;
 import org.apache.arrow.vector.ValueVector;
 
-import java.math.BigDecimal;
-import java.sql.Date;
-import java.sql.Timestamp;
-import java.util.TimeZone;
-
-/**
- * Convert Arrow DateDayVector to Date
- */
-public class DateConverter extends AbstractArrowVectorConverter
-{
+/** Convert Arrow DateDayVector to Date */
+public class DateConverter extends AbstractArrowVectorConverter {
   private DateDayVector dateVector;
   private static TimeZone timeZoneUTC = TimeZone.getTimeZone("UTC");
+  private static TimeZone sessionTimeZone = TimeZone.getDefault();
 
+  public void setSessionTimeZone(TimeZone time) {
+    this.sessionTimeZone = time;
+  }
 
-  public DateConverter(ValueVector fieldVector, int columnIndex, DataConversionContext context)
-  {
+  public DateConverter(ValueVector fieldVector, int columnIndex, DataConversionContext context) {
     super(SnowflakeType.DATE.name(), fieldVector, columnIndex, context);
     this.dateVector = (DateDayVector) fieldVector;
   }
 
-  private Date getDate(int index, TimeZone tz) throws SFException
-  {
-    if (isNull(index))
-    {
+  private Date getDate(int index, TimeZone tz) throws SFException {
+    if (isNull(index)) {
       return null;
-    }
-    else
-    {
+    } else {
       int val = dateVector.getDataBuffer().getInt(index * IntVector.TYPE_WIDTH);
+
+      if (tz == null) {
+        return ArrowResultUtil.getDate(val);
+      }
       // Note: use default time zone to match with current getDate() behavior
-      return ArrowResultUtil.getDate(val, tz, null);
+      return ArrowResultUtil.getDate(val, tz, sessionTimeZone);
     }
   }
 
   @Override
-  public Date toDate(int index, TimeZone tz) throws SFException
-  {
+  public Date toDate(int index, TimeZone tz) throws SFException {
     return getDate(index, tz);
   }
 
   @Override
-  public int toInt(int index)
-  {
-    if (isNull(index))
-    {
+  public int toInt(int index) {
+    if (isNull(index)) {
       return 0;
-    }
-    else
-    {
+    } else {
       int val = dateVector.getDataBuffer().getInt(index * IntVector.TYPE_WIDTH);
       return val;
     }
   }
 
   @Override
-  public short toShort(int index) throws SFException
-  {
-    try
-    {
+  public short toShort(int index) throws SFException {
+    try {
       return (short) toInt(index);
-    }
-    catch (ClassCastException ex)
-    {
-      throw new SFException(ErrorCode.INVALID_VALUE_CONVERT,
-                            logicalTypeStr,
-                            SnowflakeUtil.SHORT_STR,
-                            toInt(index));
+    } catch (ClassCastException ex) {
+      throw new SFException(
+          ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr, SnowflakeUtil.SHORT_STR, toInt(index));
     }
   }
 
   @Override
-  public long toLong(int index)
-  {
+  public long toLong(int index) {
     return toInt(index);
   }
 
   @Override
-  public float toFloat(int index)
-  {
+  public float toFloat(int index) {
     return toInt(index);
   }
 
   @Override
-  public double toDouble(int index)
-  {
+  public double toDouble(int index) {
     return toInt(index);
   }
 
   @Override
-  public BigDecimal toBigDecimal(int index)
-  {
-    if (isNull(index))
-    {
+  public BigDecimal toBigDecimal(int index) {
+    if (isNull(index)) {
       return null;
     }
     return BigDecimal.valueOf(toInt(index));
   }
 
   @Override
-  public Timestamp toTimestamp(int index, TimeZone tz) throws SFException
-  {
+  public Timestamp toTimestamp(int index, TimeZone tz) throws SFException {
     Date date = toDate(index, tz);
-    if (date == null)
-    {
+    if (date == null) {
       return null;
-    }
-    else
-    {
+    } else {
       return new Timestamp(date.getTime());
     }
   }
 
   @Override
-  public String toString(int index) throws SFException
-  {
-    if (context.getDateFormatter() == null)
-    {
-      throw (SFException) IncidentUtil.generateIncidentV2WithException(
-          context.getSession(),
-          new SFException(ErrorCode.INTERNAL_ERROR,
-                          "missing date formatter"),
-          null,
-          null);
+  public String toString(int index) throws SFException {
+    if (context.getDateFormatter() == null) {
+      throw (SFException)
+          IncidentUtil.generateIncidentV2WithException(
+              context.getSession(),
+              new SFException(ErrorCode.INTERNAL_ERROR, "missing date formatter"),
+              null,
+              null);
     }
     Date date = getDate(index, timeZoneUTC);
-    return date == null ? null :
-           ResultUtil.getDateAsString(date, context.getDateFormatter());
+    return date == null ? null : ResultUtil.getDateAsString(date, context.getDateFormatter());
   }
 
   @Override
-  public Object toObject(int index) throws SFException
-  {
+  public Object toObject(int index) throws SFException {
     return toDate(index, TimeZone.getDefault());
   }
 
   @Override
-  public boolean toBoolean(int index) throws SFException
-  {
-    if (isNull(index))
-    {
+  public boolean toBoolean(int index) throws SFException {
+    if (isNull(index)) {
       return false;
     }
     Date val = toDate(index, TimeZone.getDefault());
-    throw new SFException(ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr,
-                          SnowflakeUtil.BOOLEAN_STR, val);
+    throw new SFException(
+        ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr,
+        SnowflakeUtil.BOOLEAN_STR, val);
   }
 }

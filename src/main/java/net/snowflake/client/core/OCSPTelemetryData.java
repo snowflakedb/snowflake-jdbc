@@ -3,13 +3,11 @@
  */
 package net.snowflake.client.core;
 
+import java.security.cert.CertificateException;
 import net.minidev.json.JSONObject;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 
-import java.security.cert.CertificateException;
-
-public class OCSPTelemetryData
-{
+public class OCSPTelemetryData {
   private String certId;
   private String sfcPeerHost;
   private String ocspUrl;
@@ -18,20 +16,19 @@ public class OCSPTelemetryData
   private Boolean cacheHit;
   private OCSPMode ocspMode;
 
-  public OCSPTelemetryData()
-  {
+  public OCSPTelemetryData() {
     this.ocspMode = OCSPMode.FAIL_OPEN;
     this.cacheEnabled = true;
   }
 
-  public OCSPTelemetryData(String certid,
-                           String sfc_peer_host,
-                           String ocsp_url,
-                           String ocsp_req,
-                           OCSPMode ocspMode,
-                           Boolean cache_enabled,
-                           Boolean cache_hit)
-  {
+  public OCSPTelemetryData(
+      String certid,
+      String sfc_peer_host,
+      String ocsp_url,
+      String ocsp_req,
+      OCSPMode ocspMode,
+      Boolean cache_enabled,
+      Boolean cache_hit) {
     this.certId = certid;
     this.sfcPeerHost = sfc_peer_host;
     this.ocspUrl = ocsp_url;
@@ -41,55 +38,42 @@ public class OCSPTelemetryData
     this.cacheHit = cache_hit;
   }
 
-  public void setCertId(String certId)
-  {
+  public void setCertId(String certId) {
     this.certId = certId;
   }
 
-  public void setSfcPeerHost(String sfcPeerHost)
-  {
+  public void setSfcPeerHost(String sfcPeerHost) {
     this.sfcPeerHost = sfcPeerHost;
   }
 
-  public void setOcspUrl(String ocspUrl)
-  {
+  public void setOcspUrl(String ocspUrl) {
     this.ocspUrl = ocspUrl;
   }
 
-  public void setOcspReq(String ocspReq)
-  {
+  public void setOcspReq(String ocspReq) {
     this.ocspReq = ocspReq;
   }
 
-
-  public void setCacheEnabled(Boolean cacheEnabled)
-  {
+  public void setCacheEnabled(Boolean cacheEnabled) {
     this.cacheEnabled = cacheEnabled;
-    if (!cacheEnabled)
-    {
+    if (!cacheEnabled) {
       this.cacheHit = false;
     }
   }
 
-  public void setCacheHit(Boolean cacheHit)
-  {
-    if (!this.cacheEnabled)
-    {
+  public void setCacheHit(Boolean cacheHit) {
+    if (!this.cacheEnabled) {
       this.cacheHit = false;
-    }
-    else
-    {
+    } else {
       this.cacheHit = cacheHit;
     }
   }
 
-  public void setOCSPMode(OCSPMode ocspMode)
-  {
+  public void setOCSPMode(OCSPMode ocspMode) {
     this.ocspMode = ocspMode;
   }
 
-  public String generateTelemetry(String eventType, CertificateException ex)
-  {
+  public String generateTelemetry(String eventType, CertificateException ex) {
     JSONObject value = new JSONObject();
     String valueStr;
     value.put("eventType", eventType);
@@ -101,8 +85,7 @@ public class OCSPTelemetryData
     value.put("cacheEnabled", this.cacheEnabled);
     value.put("cacheHit", this.cacheHit);
     valueStr = value.toString(); // Avoid adding exception stacktrace to user logs.
-    TelemetryService.getInstance().logOCSPExceptionTelemetryEvent(
-        eventType, value, ex);
+    TelemetryService.getInstance().logOCSPExceptionTelemetryEvent(eventType, value, ex);
     return valueStr;
   }
 }

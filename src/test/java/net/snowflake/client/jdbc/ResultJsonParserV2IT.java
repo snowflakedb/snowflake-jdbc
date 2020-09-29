@@ -3,34 +3,30 @@
  */
 package net.snowflake.client.jdbc;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import net.snowflake.client.category.TestCategoryResultSet;
 import org.apache.commons.text.StringEscapeUtils;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-
-/**
- * This is the unit tests for ResultJsonParserV2
- */
+/** This is the unit tests for ResultJsonParserV2 */
 @Category(TestCategoryResultSet.class)
-public class ResultJsonParserV2IT
-{
+public class ResultJsonParserV2IT {
   @Test
-  public void simpleTest() throws SnowflakeSQLException
-  {
-    String simple = "[\"1\", \"1.01\"]," +
-                    "[null, null]," +
-                    "[\"2\", \"0.13\"]," +
-                    "[\"\", \"\"]," +
-                    "[\"\\\"escape\\\"\", \"\\\"escape\\\"\"]," +
-                    "[\"\\u2605\", \"\\u263A\\u263A\"]," +
-                    "[\"\\ud841\\udf0e\", \"\\ud841\\udf31\\ud841\\udf79\"]," +
-                    "[\"{\\\"date\\\" : \\\"2017-04-28\\\",\\\"dealership\\\" : \\\"Tindel Toyota\\\"}\", \"[1,2,3,4,5]\"]";
+  public void simpleTest() throws SnowflakeSQLException {
+    String simple =
+        "[\"1\", \"1.01\"],"
+            + "[null, null],"
+            + "[\"2\", \"0.13\"],"
+            + "[\"\", \"\"],"
+            + "[\"\\\"escape\\\"\", \"\\\"escape\\\"\"],"
+            + "[\"\\u2605\", \"\\u263A\\u263A\"],"
+            + "[\"\\ud841\\udf0e\", \"\\ud841\\udf31\\ud841\\udf79\"],"
+            + "[\"{\\\"date\\\" : \\\"2017-04-28\\\",\\\"dealership\\\" : \\\"Tindel Toyota\\\"}\", \"[1,2,3,4,5]\"]";
     byte[] data = simple.getBytes(StandardCharsets.UTF_8);
     JsonResultChunk chunk = new JsonResultChunk("", 8, 2, data.length);
     ResultJsonParserV2 jp = new ResultJsonParserV2();
@@ -51,34 +47,32 @@ public class ResultJsonParserV2IT
     assertEquals("☺☺", chunk.getCell(5, 1).toString());
     assertEquals("𠜎", chunk.getCell(6, 0).toString());
     assertEquals("𠜱𠝹", chunk.getCell(6, 1).toString());
-    assertEquals("{\"date\" : \"2017-04-28\",\"dealership\" : \"Tindel Toyota\"}", chunk.getCell(7, 0).toString());
+    assertEquals(
+        "{\"date\" : \"2017-04-28\",\"dealership\" : \"Tindel Toyota\"}",
+        chunk.getCell(7, 0).toString());
     assertEquals("[1,2,3,4,5]", chunk.getCell(7, 1).toString());
   }
 
   @Test
-  public void simpleStreamingTest() throws SnowflakeSQLException
-  {
-    String simple = "[\"1\", \"1.01\"]," +
-                    "[null, null]," +
-                    "[\"2\", \"0.13\"]," +
-                    "[\"\", \"\"]," +
-                    "[\"\\\"escape\\\"\", \"\\\"escape\\\"\"]," +
-                    "[\"☺☺\", \"☺☺☺\"], " +
-                    "[\"\\ud841\\udf0e\", \"\\ud841\\udf31\\ud841\\udf79\"]," +
-                    "[\"{\\\"date\\\" : \\\"2017-04-28\\\",\\\"dealership\\\" : \\\"Tindel Toyota\\\"}\", \"[1,2,3,4,5]\"]";
+  public void simpleStreamingTest() throws SnowflakeSQLException {
+    String simple =
+        "[\"1\", \"1.01\"],"
+            + "[null, null],"
+            + "[\"2\", \"0.13\"],"
+            + "[\"\", \"\"],"
+            + "[\"\\\"escape\\\"\", \"\\\"escape\\\"\"],"
+            + "[\"☺☺\", \"☺☺☺\"], "
+            + "[\"\\ud841\\udf0e\", \"\\ud841\\udf31\\ud841\\udf79\"],"
+            + "[\"{\\\"date\\\" : \\\"2017-04-28\\\",\\\"dealership\\\" : \\\"Tindel Toyota\\\"}\", \"[1,2,3,4,5]\"]";
     byte[] data = simple.getBytes(StandardCharsets.UTF_8);
     JsonResultChunk chunk = new JsonResultChunk("", 8, 2, data.length);
     ResultJsonParserV2 jp = new ResultJsonParserV2();
     jp.startParsing(chunk);
     int len = 2;
-    for (int i = 0; i < data.length; i += len)
-    {
-      if (i + len < data.length)
-      {
+    for (int i = 0; i < data.length; i += len) {
+      if (i + len < data.length) {
         jp.continueParsing(ByteBuffer.wrap(data, i, len));
-      }
-      else
-      {
+      } else {
         jp.continueParsing(ByteBuffer.wrap(data, i, data.length - i));
       }
     }
@@ -97,9 +91,10 @@ public class ResultJsonParserV2IT
     assertEquals("☺☺☺", chunk.getCell(5, 1).toString());
     assertEquals("𠜎", chunk.getCell(6, 0).toString());
     assertEquals("𠜱𠝹", chunk.getCell(6, 1).toString());
-    assertEquals("{\"date\" : \"2017-04-28\",\"dealership\" : \"Tindel Toyota\"}", chunk.getCell(7, 0).toString());
+    assertEquals(
+        "{\"date\" : \"2017-04-28\",\"dealership\" : \"Tindel Toyota\"}",
+        chunk.getCell(7, 0).toString());
     assertEquals("[1,2,3,4,5]", chunk.getCell(7, 1).toString());
-
   }
 
   /**
@@ -108,32 +103,33 @@ public class ResultJsonParserV2IT
    * @throws SnowflakeSQLException Will be thrown if parsing fails
    */
   @Test
-  public void LargestColumnTest() throws SnowflakeSQLException
-  {
+  public void LargestColumnTest() throws SnowflakeSQLException {
     StringBuilder sb = new StringBuilder();
     StringBuilder a = new StringBuilder();
-    for (int i = 0; i < 16 * 1024 * 1024; i++)
-    {
+    for (int i = 0; i < 16 * 1024 * 1024; i++) {
       a.append("a");
     }
     StringBuilder b = new StringBuilder();
-    for (int i = 0; i < 16 * 1024 * 1024; i++)
-    {
+    for (int i = 0; i < 16 * 1024 * 1024; i++) {
       b.append("b");
     }
     StringBuilder c = new StringBuilder();
-    for (int i = 0; i < 16 * 1024 * 1024; i++)
-    {
+    for (int i = 0; i < 16 * 1024 * 1024; i++) {
       c.append("c");
     }
     StringBuilder s = new StringBuilder();
-    for (int i = 0; i < 16 * 1024 * 1024 - 5; i += 6)
-    {
+    for (int i = 0; i < 16 * 1024 * 1024 - 5; i += 6) {
       s.append("\\u263A");
     }
-    sb.append("[\"").append(a).append("\",\"").append(b)
-        .append("\"],[\"").append(c).append("\",\"").append(s).append("\"]");
-
+    sb.append("[\"")
+        .append(a)
+        .append("\",\"")
+        .append(b)
+        .append("\"],[\"")
+        .append(c)
+        .append("\",\"")
+        .append(s)
+        .append("\"]");
 
     byte[] data = sb.toString().getBytes(StandardCharsets.UTF_8);
     JsonResultChunk chunk = new JsonResultChunk("", 2, 2, data.length);

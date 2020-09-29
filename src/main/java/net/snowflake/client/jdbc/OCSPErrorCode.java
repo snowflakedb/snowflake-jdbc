@@ -1,7 +1,6 @@
 package net.snowflake.client.jdbc;
 
-public enum OCSPErrorCode
-{
+public enum OCSPErrorCode {
   CERTIFICATE_STATUS_GOOD,
   CERTIFICATE_STATUS_REVOKED,
   CERTIFICATE_STATUS_UNKNOWN,

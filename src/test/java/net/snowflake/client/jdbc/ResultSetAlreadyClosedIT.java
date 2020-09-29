@@ -3,9 +3,8 @@
  */
 package net.snowflake.client.jdbc;
 
-import net.snowflake.client.category.TestCategoryResultSet;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -13,18 +12,15 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Calendar;
-
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import net.snowflake.client.category.TestCategoryResultSet;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 @Category(TestCategoryResultSet.class)
-public class ResultSetAlreadyClosedIT extends BaseJDBCTest
-{
+public class ResultSetAlreadyClosedIT extends BaseJDBCTest {
   @Test
-  public void testQueryResultSetAlreadyClosed() throws Throwable
-  {
-    try (Connection connection = getConnection())
-    {
+  public void testQueryResultSetAlreadyClosed() throws Throwable {
+    try (Connection connection = getConnection()) {
       Statement statement = connection.createStatement();
       ResultSet resultSet = statement.executeQuery("select 1");
       checkAlreadyClosed(resultSet);
@@ -32,10 +28,8 @@ public class ResultSetAlreadyClosedIT extends BaseJDBCTest
   }
 
   @Test
-  public void testMetadataResultSetAlreadyClosed() throws Throwable
-  {
-    try (Connection connection = getConnection())
-    {
+  public void testMetadataResultSetAlreadyClosed() throws Throwable {
+    try (Connection connection = getConnection()) {
       String database = connection.getCatalog();
       String schema = connection.getSchema();
       DatabaseMetaData metaData = connection.getMetaData();
@@ -49,14 +43,12 @@ public class ResultSetAlreadyClosedIT extends BaseJDBCTest
   }
 
   @Test
-  public void testEmptyResultSetAlreadyClosed() throws Throwable
-  {
+  public void testEmptyResultSetAlreadyClosed() throws Throwable {
     ResultSet resultSet = new SnowflakeResultSetV1.EmptyResultSet();
     checkAlreadyClosed(resultSet);
   }
 
-  private void checkAlreadyClosed(ResultSet resultSet) throws SQLException
-  {
+  private void checkAlreadyClosed(ResultSet resultSet) throws SQLException {
     resultSet.close();
     resultSet.close(); // second close won't raise exception
     assertTrue(resultSet.isClosed());
@@ -103,7 +95,8 @@ public class ResultSetAlreadyClosedIT extends BaseJDBCTest
     expectResultSetAlreadyClosedException(() -> resultSet.getClob("col1"));
     expectResultSetAlreadyClosedException(() -> resultSet.getDate("col1", Calendar.getInstance()));
     expectResultSetAlreadyClosedException(() -> resultSet.getTime("col1", Calendar.getInstance()));
-    expectResultSetAlreadyClosedException(() -> resultSet.getTimestamp("col1", Calendar.getInstance()));
+    expectResultSetAlreadyClosedException(
+        () -> resultSet.getTimestamp("col1", Calendar.getInstance()));
 
     expectResultSetAlreadyClosedException(resultSet::getWarnings);
     expectResultSetAlreadyClosedException(resultSet::clearWarnings);
@@ -117,7 +110,8 @@ public class ResultSetAlreadyClosedIT extends BaseJDBCTest
     expectResultSetAlreadyClosedException(resultSet::isLast);
     expectResultSetAlreadyClosedException(resultSet::getRow);
 
-    expectResultSetAlreadyClosedException(() -> resultSet.setFetchDirection(ResultSet.FETCH_FORWARD));
+    expectResultSetAlreadyClosedException(
+        () -> resultSet.setFetchDirection(ResultSet.FETCH_FORWARD));
     expectResultSetAlreadyClosedException(() -> resultSet.setFetchSize(10));
     expectResultSetAlreadyClosedException(resultSet::getFetchDirection);
     expectResultSetAlreadyClosedException(resultSet::getFetchSize);

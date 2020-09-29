@@ -1,5 +1,3 @@
 package net.snowflake.client.category;
 
-public interface TestCategoryArrow
-{
-}
+public interface TestCategoryArrow {}

@@ -1,5 +1,3 @@
 package net.snowflake.client.category;
 
-public interface TestCategoryConnection
-{
-}
+public interface TestCategoryConnection {}

@@ -4,15 +4,6 @@
 
 package net.snowflake.client.core;
 
-import net.snowflake.client.jdbc.ErrorCode;
-import net.snowflake.client.jdbc.SnowflakeResultSetSerializable;
-import net.snowflake.client.jdbc.SnowflakeResultSetSerializableV1;
-import net.snowflake.client.jdbc.SnowflakeSQLException;
-import net.snowflake.client.log.SFLogger;
-import net.snowflake.client.log.SFLoggerFactory;
-import net.snowflake.common.core.SFBinaryFormat;
-import net.snowflake.common.core.SnowflakeDateTimeFormat;
-
 import java.math.BigDecimal;
 import java.sql.Date;
 import java.sql.SQLException;
@@ -23,14 +14,18 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
+import net.snowflake.client.jdbc.ErrorCode;
+import net.snowflake.client.jdbc.SnowflakeResultSetSerializable;
+import net.snowflake.client.jdbc.SnowflakeResultSetSerializableV1;
+import net.snowflake.client.jdbc.SnowflakeSQLException;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
+import net.snowflake.common.core.SFBinaryFormat;
+import net.snowflake.common.core.SnowflakeDateTimeFormat;
 
-/**
- * Base class for query result set and metadata result set
- */
-public abstract class SFBaseResultSet
-{
-  static private final SFLogger logger =
-      SFLoggerFactory.getLogger(SFBaseResultSet.class);
+/** Base class for query result set and metadata result set */
+public abstract class SFBaseResultSet {
+  private static final SFLogger logger = SFLoggerFactory.getLogger(SFBaseResultSet.class);
 
   boolean wasNull = false;
 
@@ -41,7 +36,7 @@ public abstract class SFBaseResultSet
   protected Map<String, Object> parameters = new HashMap<>();
 
   // Formatters for different datatypes
-  //TODO move all formatter to DataConversionContext.java
+  // TODO move all formatter to DataConversionContext.java
   SnowflakeDateTimeFormat timestampNTZFormatter;
   SnowflakeDateTimeFormat timestampLTZFormatter;
   SnowflakeDateTimeFormat timestampTZFormatter;
@@ -63,14 +58,13 @@ public abstract class SFBaseResultSet
   // indicate whether the result set has been closed or not.
   protected boolean isClosed;
 
-
   // The serializable object which can serialize the metadata for this
   // result set
   protected SnowflakeResultSetSerializableV1 resultSetSerializable;
 
-  abstract public boolean isLast();
+  public abstract boolean isLast();
 
-  abstract public boolean isAfterLast();
+  public abstract boolean isAfterLast();
 
   public abstract String getString(int columnIndex) throws SFException;
 
@@ -94,8 +88,7 @@ public abstract class SFBaseResultSet
 
   public abstract Time getTime(int columnIndex) throws SFException;
 
-  public abstract Timestamp getTimestamp(int columnIndex, TimeZone tz)
-  throws SFException;
+  public abstract Timestamp getTimestamp(int columnIndex, TimeZone tz) throws SFException;
 
   public abstract Object getObject(int columnIndex) throws SFException;
 
@@ -107,30 +100,25 @@ public abstract class SFBaseResultSet
 
   // this is useful to override the initial statement type if it is incorrect
   // (e.g. result scan yields a query type, but the results are from a DML statement)
-  public abstract void setStatementType(SFStatementType statementType)
-  throws SQLException;
+  public abstract void setStatementType(SFStatementType statementType) throws SQLException;
 
   public abstract String getQueryId();
 
-  public void setSession(SFSession session)
-  {
+  public void setSession(SFSession session) {
     this.session = session;
   }
 
-  public SFSession getSession()
-  {
+  public SFSession getSession() {
     return this.session;
   }
 
   // default implementation
-  public boolean next() throws SFException, SnowflakeSQLException
-  {
+  public boolean next() throws SFException, SnowflakeSQLException {
     logger.debug("public boolean next()");
     return false;
   }
 
-  public void close() throws SnowflakeSQLException
-  {
+  public void close() throws SnowflakeSQLException {
     logger.debug("public void close()");
 
     // no exception even if already closed.
@@ -138,93 +126,72 @@ public abstract class SFBaseResultSet
     isClosed = true;
   }
 
-  public boolean wasNull()
-  {
+  public boolean wasNull() {
     logger.debug("public boolean wasNull() returning {}", wasNull);
 
     return wasNull;
   }
 
-
-  public SFResultSetMetaData getMetaData() throws SFException
-  {
+  public SFResultSetMetaData getMetaData() throws SFException {
     return resultSetMetaData;
   }
 
-  public int getRow() throws SQLException
-  {
+  public int getRow() throws SQLException {
     return row;
   }
 
-  public boolean absolute(int row) throws SFException
-  {
-    throw new SFException(
-        ErrorCode.FEATURE_UNSUPPORTED, "seek to a specific row");
+  public boolean absolute(int row) throws SFException {
+    throw new SFException(ErrorCode.FEATURE_UNSUPPORTED, "seek to a specific row");
   }
 
-  public boolean relative(int rows) throws SFException
-  {
-    throw new SFException(
-        ErrorCode.FEATURE_UNSUPPORTED, "seek to a row relative to current row");
+  public boolean relative(int rows) throws SFException {
+    throw new SFException(ErrorCode.FEATURE_UNSUPPORTED, "seek to a row relative to current row");
   }
 
-  public boolean previous() throws SFException
-  {
-    throw new SFException(
-        ErrorCode.FEATURE_UNSUPPORTED, "seek to a previous row");
+  public boolean previous() throws SFException {
+    throw new SFException(ErrorCode.FEATURE_UNSUPPORTED, "seek to a previous row");
   }
 
-  protected int getNumberOfBinds()
-  {
+  protected int getNumberOfBinds() {
     return numberOfBinds;
   }
 
-  protected List<MetaDataOfBinds> getMetaDataOfBinds()
-  {
+  protected List<MetaDataOfBinds> getMetaDataOfBinds() {
     return metaDataOfBinds;
   }
 
-  public boolean isFirst()
-  {
+  public boolean isFirst() {
     return row == 1;
   }
 
-  public boolean isBeforeFirst()
-  {
+  public boolean isBeforeFirst() {
     return row == 0;
   }
 
-  public boolean isClosed()
-  {
+  public boolean isClosed() {
     return isClosed;
   }
 
-  public boolean isArrayBindSupported()
-  {
+  public boolean isArrayBindSupported() {
     return false;
   }
 
   /**
-   * Split this whole SnowflakeResultSetSerializable into small pieces based
-   * on the user specified data size.
+   * Split this whole SnowflakeResultSetSerializable into small pieces based on the user specified
+   * data size.
    *
-   * @param maxSizeInBytes The expected max data size wrapped in the
-   *                       ResultSetSerializables object.
-   *                       NOTE: this parameter is intended to make the data
-   *                       size in each serializable object to be less than it.
-   *                       But if user specifies a small value which may be
-   *                       smaller than the data size of one result chunk.
-   *                       So the definition can't be guaranteed completely.
-   *                       For this special case, one serializable object is
-   *                       used to wrap the data chunk.
+   * @param maxSizeInBytes The expected max data size wrapped in the ResultSetSerializables object.
+   *     NOTE: this parameter is intended to make the data size in each serializable object to be
+   *     less than it. But if user specifies a small value which may be smaller than the data size
+   *     of one result chunk. So the definition can't be guaranteed completely. For this special
+   *     case, one serializable object is used to wrap the data chunk.
    * @return a list of SnowflakeResultSetSerializable
    * @throws SQLException if fails to split objects.
    */
   public List<SnowflakeResultSetSerializable> getResultSetSerializables(long maxSizeInBytes)
-  throws SQLException
-  {
+      throws SQLException {
     return this.resultSetSerializable.splitBySize(maxSizeInBytes);
   }
 
-    public abstract Date getDate(int columnIndex, TimeZone tz) throws SFException;
+  public abstract Date getDate(int columnIndex, TimeZone tz) throws SFException;
 }

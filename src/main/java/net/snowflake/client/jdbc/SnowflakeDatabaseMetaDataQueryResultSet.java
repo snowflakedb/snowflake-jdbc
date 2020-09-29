@@ -8,19 +8,18 @@ import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.sql.Statement;
 
-/**
- * Database Metadata query based result set.
- */
-class SnowflakeDatabaseMetaDataQueryResultSet extends SnowflakeDatabaseMetaDataResultSet
-{
+/** Database Metadata query based result set. */
+class SnowflakeDatabaseMetaDataQueryResultSet extends SnowflakeDatabaseMetaDataResultSet {
 
   SnowflakeDatabaseMetaDataQueryResultSet(
-      DBMetadataResultSetMetadata metadataType,
-      ResultSet resultSet,
-      Statement statement) throws SQLException
-  {
-    super(metadataType.getColumnNames(), metadataType.getColumnTypeNames(),
-          metadataType.getColumnTypes(), resultSet, statement);
+      DBMetadataResultSetMetadata metadataType, ResultSet resultSet, Statement statement)
+      throws SQLException {
+    super(
+        metadataType.getColumnNames(),
+        metadataType.getColumnTypeNames(),
+        metadataType.getColumnTypes(),
+        resultSet,
+        statement);
   }
 
   /**
@@ -30,8 +29,7 @@ class SnowflakeDatabaseMetaDataQueryResultSet extends SnowflakeDatabaseMetaDataR
    * @throws SQLException if the result set is closed or SQLFeatureNotSupportedException
    */
   @Override
-  public boolean isLast() throws SQLException
-  {
+  public boolean isLast() throws SQLException {
     raiseSQLExceptionIfResultSetIsClosed();
     throw new SQLFeatureNotSupportedException();
   }
@@ -43,8 +41,7 @@ class SnowflakeDatabaseMetaDataQueryResultSet extends SnowflakeDatabaseMetaDataR
    * @throws SQLException if the result set is closed or SQLFeatureNotSupportedException
    */
   @Override
-  public boolean isAfterLast() throws SQLException
-  {
+  public boolean isAfterLast() throws SQLException {
     raiseSQLExceptionIfResultSetIsClosed();
     throw new SQLFeatureNotSupportedException();
   }
