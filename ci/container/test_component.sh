@@ -74,8 +74,9 @@ for c in "${CATEGORY[@]}"; do
     c=$(echo $c | sed 's/ *$//g')
     if [[ -n "$IS_OLD_VERSION" ]]; then
         pushd TestOnly >& /dev/null
-            JDBC_VERSION=$(mvn org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate     -Dexpression=project.version | grep -v "[INFO]")
+            JDBC_VERSION=$(mvn org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version --batch-mode | grep -v "[INFO]")
             echo "[INFO] Run JDBC $JDBC_VERSION tests"
+            set -x
             mvn -DjenkinsIT \
                 -Djava.io.tmpdir=$WORKSPACE \
                 -Djacoco.skip.instrument=false \
