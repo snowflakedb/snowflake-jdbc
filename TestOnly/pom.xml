@@ -276,6 +276,11 @@
             <exclude>**/SFArrowResultSetIT.java</exclude>
             <exclude>**/ResultSetLatestIT.java</exclude>
             <exclude>**/ResultSetArrowIT.java</exclude>
+            <exclude>**/ResultSetArrowForce0MultiTimeZone.java</exclude>
+            <exclude>**/ResultSetArrowForceLTZMultiTimeZoneIT.java</exclude>
+            <exclude>**/ResultSetArrowForceTZMultiTimeZoneIT.java</exclude>
+            <exclude>**/PreparedStatementArrow1IT.java</exclude>
+            <exclude>**/PreparedStatementArrow2IT.java</exclude>
           </testExcludes>
           <useIncrementalCompilation>false</useIncrementalCompilation>
         </configuration>
