@@ -122,7 +122,7 @@ public class TwoFieldStructToTimestampLTZConverter extends AbstractArrowVectorCo
   }
 
   @Override
-  public Date toDate(int index) throws SFException
+  public Date toDate(int index, TimeZone tz) throws SFException
   {
     if (isNull(index))
     {

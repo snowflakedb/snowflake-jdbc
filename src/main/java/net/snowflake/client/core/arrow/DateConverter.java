@@ -17,7 +17,6 @@ import org.apache.arrow.vector.ValueVector;
 import java.math.BigDecimal;
 import java.sql.Date;
 import java.sql.Timestamp;
-import java.time.LocalDate;
 import java.util.TimeZone;
 
 /**
@@ -45,14 +44,14 @@ public class DateConverter extends AbstractArrowVectorConverter
     {
       int val = dateVector.getDataBuffer().getInt(index * IntVector.TYPE_WIDTH);
       // Note: use default time zone to match with current getDate() behavior
-      return ArrowResultUtil.getDate(val);
+      return ArrowResultUtil.getDate(val, tz, null);
     }
   }
 
   @Override
-  public Date toDate(int index) throws SFException
+  public Date toDate(int index, TimeZone tz) throws SFException
   {
-    return getDate(index, TimeZone.getDefault());
+    return getDate(index, tz);
   }
 
   @Override
@@ -116,7 +115,7 @@ public class DateConverter extends AbstractArrowVectorConverter
   @Override
   public Timestamp toTimestamp(int index, TimeZone tz) throws SFException
   {
-    Date date = toDate(index);
+    Date date = toDate(index, tz);
     if (date == null)
     {
       return null;
@@ -147,7 +146,7 @@ public class DateConverter extends AbstractArrowVectorConverter
   @Override
   public Object toObject(int index) throws SFException
   {
-    return toDate(index);
+    return toDate(index, TimeZone.getDefault());
   }
 
   @Override
@@ -157,7 +156,7 @@ public class DateConverter extends AbstractArrowVectorConverter
     {
       return false;
     }
-    Date val = toDate(index);
+    Date val = toDate(index, TimeZone.getDefault());
     throw new SFException(ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr,
                           SnowflakeUtil.BOOLEAN_STR, val);
   }

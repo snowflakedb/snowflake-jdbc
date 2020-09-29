@@ -205,7 +205,7 @@ public class TwoFieldStructToTimestampNTZConverterTest extends BaseConverterTest
     while (j < rowCount)
     {
       Timestamp ts = converter.toTimestamp(j, TimeZone.getDefault());
-      Date date = converter.toDate(j);
+      Date date = converter.toDate(j, TimeZone.getDefault());
       Time time = converter.toTime(j);
       String tsStr = converter.toString(j);
 

@@ -152,11 +152,11 @@ public class ResultSetIT extends BaseJDBCTest
   @Test
   public void testError() throws SQLException
   {
-    //TimeZone.setDefault(TimeZone.getTimeZone("CET"));
+    TimeZone.setDefault(TimeZone.getTimeZone("CET"));
     Connection con = getConnection();
     Statement statement = con.createStatement();
-    statement.execute("alter session set jdbc_query_result_format = 'JSON'");
-    statement.execute("alter session set timezone = 'CET'");
+    statement.execute("alter session set jdbc_query_result_format = 'arrow'");
+    statement.execute("alter session set timezone = 'America/Los_Angeles'");
     ResultSet rs2 = statement.executeQuery("show parameters like 'timezone'");
     rs2.next();
     System.out.println("System timezone: " + rs2.getString(2));

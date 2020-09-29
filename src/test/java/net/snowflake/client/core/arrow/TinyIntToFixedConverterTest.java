@@ -189,7 +189,7 @@ public class TinyIntToFixedConverterTest extends BaseConverterTest
     TestUtil.assertSFException(invalidConversionErrorCode,
                                () -> converter.toShort(0));
     TestUtil.assertSFException(invalidConversionErrorCode,
-                               () -> converter.toDate(0));
+                               () -> converter.toDate(0, TimeZone.getDefault()));
     TestUtil.assertSFException(invalidConversionErrorCode,
                                () -> converter.toTime(0));
     TestUtil.assertSFException(invalidConversionErrorCode,

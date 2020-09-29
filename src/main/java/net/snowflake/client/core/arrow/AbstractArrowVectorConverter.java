@@ -155,7 +155,7 @@ abstract class AbstractArrowVectorConverter implements ArrowVectorConverter
   }
 
   @Override
-  public Date toDate(int index) throws SFException
+  public Date toDate(int index, TimeZone tz) throws SFException
   {
     throw new SFException(ErrorCode.INVALID_VALUE_CONVERT,
                           logicalTypeStr,

@@ -109,10 +109,11 @@ public interface ArrowVectorConverter
    * Convert value in arrow vector to Date
    *
    * @param index index of the value to be converted in the vector
+   * @param tz
    * @return Date converted from arrow vector
    * @throws SFException invalid data conversion
    */
-  Date toDate(int index) throws SFException;
+  Date toDate(int index, TimeZone tz) throws SFException;
 
   /**
    * Convert value in arrow vector to Time

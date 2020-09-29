@@ -546,7 +546,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     ArrowVectorConverter converter = currentChunkIterator.getCurrentConverter(columnIndex - 1);
     int index = currentChunkIterator.getCurrentRowInRecordBatch();
     wasNull = converter.isNull(index);
-    return converter.toDate(index);
+    return converter.toDate(index, tz);
   } 
 
   @Override

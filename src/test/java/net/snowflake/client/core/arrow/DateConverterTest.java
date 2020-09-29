@@ -1,8 +1,6 @@
 package net.snowflake.client.core.arrow;
 
 import net.snowflake.client.TestUtil;
-import net.snowflake.client.core.DataConversionContext;
-import net.snowflake.client.core.ResultUtil;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SFSession;
 import org.apache.arrow.memory.BufferAllocator;
@@ -14,7 +12,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
-import java.nio.ByteBuffer;
 import java.sql.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -179,7 +176,7 @@ public class DateConverterTest extends BaseConverterTest
     {
       int intVal = converter.toInt(i);
       String strVal = converter.toString(i);
-      Date obj = converter.toDate(i);
+      Date obj = converter.toDate(i, TimeZone.getDefault());
       String str = converter.toString(i);
       if (nullValIndex.contains(i))
       {

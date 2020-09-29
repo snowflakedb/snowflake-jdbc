@@ -705,17 +705,14 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
   }
 
 
-  /*public Date getDate(int columnIndex) throws SFException {
->>>>>>> Stashed changes
-    return getDate(columnIndex, TimeZone.getDefault());
-  }*/
-
   @Override
   public Date getDate(int columnIndex, TimeZone tz) throws SFException
   {
+    boolean useOutsideTimezone = true;
     if (tz == null)
     {
       tz = TimeZone.getDefault();
+      useOutsideTimezone = false;
     }
 
     logger.debug("public Date getDate(int columnIndex)");
@@ -736,6 +733,13 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
     }
     else if (Types.DATE == columnType)
     {
+      // if the session timezone does not match the JVM timezone, display date from the session timezone converted
+      // into the JVM timezone
+      if (tz != timeZone && useOutsideTimezone)
+      {
+        return ResultUtil.getDate((String) obj, timeZone, session);
+      }
+      // if no timezone conversion is needed, use more efficient function
       return ArrowResultUtil.getDate(Integer.parseInt((String) obj));
     }
     // for Types.TIME and all other type, throw user error

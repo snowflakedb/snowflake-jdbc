@@ -119,7 +119,7 @@ public class BigIntToTimestampLTZConverterTest extends BaseConverterTest
     while (j < rowCount)
     {
       Timestamp ts = converter.toTimestamp(j, getTimeZone());
-      Date date = converter.toDate(j);
+      Date date = converter.toDate(j, getTimeZone());
       Time time = converter.toTime(j);
       String tsStr = converter.toString(j);
 

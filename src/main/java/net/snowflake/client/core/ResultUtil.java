@@ -410,7 +410,7 @@ public class ResultUtil
    * @return java date object
    * @throws SFException if date is invalid
    */
-  @Deprecated
+
   static public Date getDate(String str, TimeZone tz, SFSession session) throws SFException
   {
     try
