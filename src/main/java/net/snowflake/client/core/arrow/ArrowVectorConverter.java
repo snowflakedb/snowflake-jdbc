@@ -12,9 +12,9 @@ import net.snowflake.client.core.SFException;
 
 /** Interface to convert from arrow vector values into java data types. */
 public interface ArrowVectorConverter {
-    void setSessionTimeZone(TimeZone tz);
+  void setSessionTimeZone(TimeZone tz);
 
-    /**
+  /**
    * Determine whether source value in arrow vector is null value or not
    *
    * @param index index of value to be checked

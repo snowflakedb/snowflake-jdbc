@@ -4,10 +4,6 @@
 
 package net.snowflake.client.jdbc;
 
-import net.snowflake.client.core.QueryStatus;
-import net.snowflake.client.core.SFBaseResultSet;
-import net.snowflake.client.core.SFException;
-
 import java.io.InputStream;
 import java.io.Reader;
 import java.math.BigDecimal;
@@ -17,6 +13,9 @@ import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
+import net.snowflake.client.core.QueryStatus;
+import net.snowflake.client.core.SFBaseResultSet;
+import net.snowflake.client.core.SFException;
 
 /** Snowflake ResultSet implementation */
 class SnowflakeResultSetV1 extends SnowflakeBaseResultSet implements SnowflakeResultSet, ResultSet {

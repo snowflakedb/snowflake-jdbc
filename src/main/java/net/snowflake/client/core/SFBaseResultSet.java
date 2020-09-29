@@ -4,6 +4,12 @@
 
 package net.snowflake.client.core;
 
+import java.math.BigDecimal;
+import java.sql.Date;
+import java.sql.SQLException;
+import java.sql.Time;
+import java.sql.Timestamp;
+import java.util.*;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeResultSetSerializable;
 import net.snowflake.client.jdbc.SnowflakeResultSetSerializableV1;
@@ -12,13 +18,6 @@ import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SFBinaryFormat;
 import net.snowflake.common.core.SnowflakeDateTimeFormat;
-
-import java.math.BigDecimal;
-import java.sql.Date;
-import java.sql.SQLException;
-import java.sql.Time;
-import java.sql.Timestamp;
-import java.util.*;
 
 /** Base class for query result set and metadata result set */
 public abstract class SFBaseResultSet {

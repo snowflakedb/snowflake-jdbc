@@ -3,17 +3,16 @@
  */
 package net.snowflake.client.core.arrow;
 
-import net.snowflake.client.core.DataConversionContext;
-import net.snowflake.client.core.SFException;
-import net.snowflake.client.jdbc.ErrorCode;
-import net.snowflake.client.jdbc.SnowflakeUtil;
-import org.apache.arrow.vector.ValueVector;
-
 import java.math.BigDecimal;
 import java.sql.Date;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.TimeZone;
+import net.snowflake.client.core.DataConversionContext;
+import net.snowflake.client.core.SFException;
+import net.snowflake.client.jdbc.ErrorCode;
+import net.snowflake.client.jdbc.SnowflakeUtil;
+import org.apache.arrow.vector.ValueVector;
 
 /**
  * Abstract class of arrow vector converter. For most types, throw invalid convert error. It depends

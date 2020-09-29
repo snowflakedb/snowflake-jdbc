@@ -4,9 +4,6 @@
 
 package net.snowflake.client.jdbc;
 
-import net.snowflake.client.log.SFLogger;
-import net.snowflake.client.log.SFLoggerFactory;
-
 import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringReader;
@@ -17,6 +14,8 @@ import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TimeZone;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
 
 /** Base class for query result set and metadata result set */
 abstract class SnowflakeBaseResultSet implements ResultSet {
