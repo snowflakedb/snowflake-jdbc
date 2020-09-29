@@ -4,14 +4,6 @@
 
 package net.snowflake.client.core;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.nio.ByteBuffer;
-import java.sql.Date;
-import java.sql.Time;
-import java.sql.Timestamp;
-import java.sql.Types;
-import java.util.TimeZone;
 import net.snowflake.client.core.arrow.ArrowResultUtil;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeTimestampNTZAsUTC;
@@ -24,6 +16,15 @@ import net.snowflake.common.core.SFBinaryFormat;
 import net.snowflake.common.core.SFTime;
 import net.snowflake.common.core.SFTimestamp;
 import org.apache.arrow.vector.Float8Vector;
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.nio.ByteBuffer;
+import java.sql.Date;
+import java.sql.Time;
+import java.sql.Timestamp;
+import java.sql.Types;
+import java.util.TimeZone;
 
 /** Abstract class used to represent snowflake result set in json format */
 public abstract class SFJsonResultSet extends SFBaseResultSet {
@@ -134,7 +135,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
         return timestampStr;
 
       case Types.DATE:
-        Date date = getDate(columnIndex, timeZoneUTC);
+        Date date = getDate(columnIndex);
 
         if (dateFormatter == null) {
           throw (SFException)
@@ -430,6 +431,10 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
   public Timestamp getTimestamp(int columnIndex, TimeZone tz) throws SFException {
     int columnType = resultSetMetaData.getColumnType(columnIndex);
     if (Types.TIMESTAMP == columnType) {
+      if (tz == null)
+      {
+        tz = TimeZone.getDefault();
+      }
       SFTimestamp sfTS = getSFTimestamp(columnIndex);
 
       if (sfTS == null) {
@@ -612,16 +617,13 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
     }
   }
 
-  @Override
+
   public Date getDate(int columnIndex) throws SFException {
     return getDate(columnIndex, TimeZone.getDefault());
   }
 
+  @Override
   public Date getDate(int columnIndex, TimeZone tz) throws SFException {
-    if (tz == null) {
-      tz = TimeZone.getDefault();
-    }
-
     logger.debug("public Date getDate(int columnIndex)");
 
     // Column index starts from 1, not 0.
@@ -634,9 +636,16 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
     int columnType = resultSetMetaData.getColumnType(columnIndex);
 
     if (Types.TIMESTAMP == columnType) {
+      if (tz == null) {
+        tz = TimeZone.getDefault();
+      }
       return new Date(getTimestamp(columnIndex, tz).getTime());
     } else if (Types.DATE == columnType) {
-      return ArrowResultUtil.getDate(Integer.parseInt((String) obj));
+      if (tz == null)
+      {
+        return ArrowResultUtil.getDate(Integer.parseInt((String) obj));
+      }
+      return ArrowResultUtil.getDate(Integer.parseInt((String) obj), tz, timeZone);
     }
     // for Types.TIME and all other type, throw user error
     else {

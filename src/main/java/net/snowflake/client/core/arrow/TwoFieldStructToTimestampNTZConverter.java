@@ -3,10 +3,6 @@
  */
 package net.snowflake.client.core.arrow;
 
-import java.sql.Date;
-import java.sql.Time;
-import java.sql.Timestamp;
-import java.util.TimeZone;
 import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.IncidentUtil;
 import net.snowflake.client.core.ResultUtil;
@@ -18,6 +14,11 @@ import org.apache.arrow.vector.BigIntVector;
 import org.apache.arrow.vector.IntVector;
 import org.apache.arrow.vector.ValueVector;
 import org.apache.arrow.vector.complex.StructVector;
+
+import java.sql.Date;
+import java.sql.Time;
+import java.sql.Timestamp;
+import java.util.TimeZone;
 
 /** converter from two-field struct (epochs and fraction) to Timestamp_NTZ */
 public class TwoFieldStructToTimestampNTZConverter extends AbstractArrowVectorConverter {
@@ -70,6 +71,10 @@ public class TwoFieldStructToTimestampNTZConverter extends AbstractArrowVectorCo
 
   @Override
   public Timestamp toTimestamp(int index, TimeZone tz) throws SFException {
+    if (tz == null)
+    {
+      tz = TimeZone.getDefault();
+    }
     return isNull(index) ? null : getTimestamp(index, tz, false);
   }
 
@@ -107,7 +112,7 @@ public class TwoFieldStructToTimestampNTZConverter extends AbstractArrowVectorCo
   }
 
   @Override
-  public Date toDate(int index) throws SFException {
+  public Date toDate(int index, TimeZone tz) throws SFException {
     return isNull(index)
         ? null
         : new Date(getTimestamp(index, TimeZone.getDefault(), false).getTime());

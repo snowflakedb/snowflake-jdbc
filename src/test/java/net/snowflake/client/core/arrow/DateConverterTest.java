@@ -1,19 +1,7 @@
 package net.snowflake.client.core.arrow;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.nullValue;
-import static org.hamcrest.MatcherAssert.assertThat;
-
-import java.sql.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Random;
-import java.util.Set;
-import java.util.TimeZone;
 import net.snowflake.client.TestUtil;
 import net.snowflake.client.core.SFException;
-import net.snowflake.client.core.SFSession;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.memory.RootAllocator;
 import org.apache.arrow.vector.DateDayVector;
@@ -22,6 +10,13 @@ import org.apache.arrow.vector.types.pojo.FieldType;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+
+import java.sql.Date;
+import java.util.*;
+
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 @RunWith(Parameterized.class)
 public class DateConverterTest extends BaseConverterTest {
@@ -92,7 +87,7 @@ public class DateConverterTest extends BaseConverterTest {
       int intVal = converter.toInt(j);
       String strVal = converter.toString(j);
       Object obj = converter.toObject(j);
-      Object oldObj = ArrowResultUtil.getDate(intVal, TimeZone.getDefault(), new SFSession());
+      Object oldObj = ArrowResultUtil.getDate(intVal, TimeZone.getDefault(), TimeZone.getDefault());
       if (nullValIndex.contains(j)) {
         assertThat(intVal, is(0));
         assertThat(obj, is(nullValue()));
@@ -142,7 +137,7 @@ public class DateConverterTest extends BaseConverterTest {
     for (int i = 0; i < rowCount; i++) {
       int intVal = converter.toInt(i);
       String strVal = converter.toString(i);
-      Date obj = converter.toDate(i);
+      Date obj = converter.toDate(i, getTimeZone());
       String str = converter.toString(i);
       if (nullValIndex.contains(i)) {
         assertThat(intVal, is(0));

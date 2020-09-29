@@ -3,19 +3,6 @@
  */
 package net.snowflake.client.core;
 
-import static net.snowflake.client.core.StmtUtil.eventHandler;
-import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
-
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.sql.Date;
-import java.sql.SQLException;
-import java.sql.Time;
-import java.sql.Timestamp;
-import java.util.Base64;
-import java.util.TimeZone;
 import net.snowflake.client.core.arrow.ArrowVectorConverter;
 import net.snowflake.client.jdbc.*;
 import net.snowflake.client.jdbc.ArrowResultChunk.ArrowChunkIterator;
@@ -29,6 +16,20 @@ import net.snowflake.common.core.SFBinaryFormat;
 import net.snowflake.common.core.SnowflakeDateTimeFormat;
 import net.snowflake.common.core.SqlState;
 import org.apache.arrow.memory.RootAllocator;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.sql.Date;
+import java.sql.SQLException;
+import java.sql.Time;
+import java.sql.Timestamp;
+import java.util.Base64;
+import java.util.TimeZone;
+
+import static net.snowflake.client.core.StmtUtil.eventHandler;
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
 /** Arrow result set implementation */
 public class SFArrowResultSet extends SFBaseResultSet implements DataConversionContext {
@@ -430,11 +431,12 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
   }
 
   @Override
-  public Date getDate(int columnIndex) throws SFException {
+  public Date getDate(int columnIndex, TimeZone tz) throws SFException {
     ArrowVectorConverter converter = currentChunkIterator.getCurrentConverter(columnIndex - 1);
     int index = currentChunkIterator.getCurrentRowInRecordBatch();
     wasNull = converter.isNull(index);
-    return converter.toDate(index);
+    converter.setSessionTimeZone(timeZone);
+    return converter.toDate(index, tz);
   }
 
   @Override
@@ -467,6 +469,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     ArrowVectorConverter converter = currentChunkIterator.getCurrentConverter(columnIndex - 1);
     int index = currentChunkIterator.getCurrentRowInRecordBatch();
     wasNull = converter.isNull(index);
+    converter.setSessionTimeZone(timeZone);
     return converter.toBigDecimal(index);
   }
 

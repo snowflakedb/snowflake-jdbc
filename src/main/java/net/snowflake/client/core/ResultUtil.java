@@ -5,19 +5,6 @@
 package net.snowflake.client.core;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import java.math.BigDecimal;
-import java.sql.Date;
-import java.sql.SQLException;
-import java.sql.Timestamp;
-import java.sql.Types;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.TimeZone;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeUtil;
 import net.snowflake.client.log.ArgSupplier;
@@ -27,6 +14,13 @@ import net.snowflake.common.core.SFTime;
 import net.snowflake.common.core.SFTimestamp;
 import net.snowflake.common.core.SnowflakeDateTimeFormat;
 import net.snowflake.common.util.TimeUtil;
+
+import java.math.BigDecimal;
+import java.sql.Date;
+import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.sql.Types;
+import java.util.*;
 
 public class ResultUtil {
   static final SFLogger logger = SFLoggerFactory.getLogger(ResultUtil.class);
@@ -362,7 +356,7 @@ public class ResultUtil {
    * @return java date object
    * @throws SFException if date is invalid
    */
-  @Deprecated
+
   public static Date getDate(String str, TimeZone tz, SFSession session) throws SFException {
     try {
       long milliSecsSinceEpoch = Long.valueOf(str) * MILLIS_IN_ONE_DAY;

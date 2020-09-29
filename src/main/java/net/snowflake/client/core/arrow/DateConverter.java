@@ -3,10 +3,6 @@
  */
 package net.snowflake.client.core.arrow;
 
-import java.math.BigDecimal;
-import java.sql.Date;
-import java.sql.Timestamp;
-import java.util.TimeZone;
 import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.IncidentUtil;
 import net.snowflake.client.core.ResultUtil;
@@ -18,6 +14,11 @@ import org.apache.arrow.vector.DateDayVector;
 import org.apache.arrow.vector.IntVector;
 import org.apache.arrow.vector.ValueVector;
 
+import java.math.BigDecimal;
+import java.sql.Date;
+import java.sql.Timestamp;
+import java.util.TimeZone;
+
 /** Convert Arrow DateDayVector to Date */
 public class DateConverter extends AbstractArrowVectorConverter {
   private DateDayVector dateVector;
@@ -28,19 +29,28 @@ public class DateConverter extends AbstractArrowVectorConverter {
     this.dateVector = (DateDayVector) fieldVector;
   }
 
+  @Override
+  public void setSessionTimeZone(TimeZone tz) {
+    this.sessionTimeZone = tz;
+  }
+
   private Date getDate(int index, TimeZone tz) throws SFException {
     if (isNull(index)) {
       return null;
     } else {
       int val = dateVector.getDataBuffer().getInt(index * IntVector.TYPE_WIDTH);
+      if (tz == null || sessionTimeZone == null)
+      {
+        return ArrowResultUtil.getDate(val);
+      }
       // Note: use default time zone to match with current getDate() behavior
-      return ArrowResultUtil.getDate(val);
+      return ArrowResultUtil.getDate(val, tz, sessionTimeZone);
     }
   }
 
   @Override
-  public Date toDate(int index) throws SFException {
-    return getDate(index, TimeZone.getDefault());
+  public Date toDate(int index, TimeZone tz) throws SFException {
+    return getDate(index, tz);
   }
 
   @Override
@@ -88,7 +98,7 @@ public class DateConverter extends AbstractArrowVectorConverter {
 
   @Override
   public Timestamp toTimestamp(int index, TimeZone tz) throws SFException {
-    Date date = toDate(index);
+    Date date = toDate(index, tz);
     if (date == null) {
       return null;
     } else {
@@ -112,7 +122,7 @@ public class DateConverter extends AbstractArrowVectorConverter {
 
   @Override
   public Object toObject(int index) throws SFException {
-    return toDate(index);
+    return toDate(index, TimeZone.getDefault());
   }
 
   @Override
@@ -120,7 +130,7 @@ public class DateConverter extends AbstractArrowVectorConverter {
     if (isNull(index)) {
       return false;
     }
-    Date val = toDate(index);
+    Date val = toDate(index, TimeZone.getDefault());
     throw new SFException(
         ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr,
         SnowflakeUtil.BOOLEAN_STR, val);

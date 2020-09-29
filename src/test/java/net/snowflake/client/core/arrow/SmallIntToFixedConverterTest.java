@@ -3,22 +3,6 @@
  */
 package net.snowflake.client.core.arrow;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.hamcrest.CoreMatchers.nullValue;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
-
-import java.math.BigDecimal;
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.Set;
-import java.util.TimeZone;
 import net.snowflake.client.TestUtil;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.jdbc.ErrorCode;
@@ -28,6 +12,14 @@ import org.apache.arrow.vector.SmallIntVector;
 import org.apache.arrow.vector.types.Types;
 import org.apache.arrow.vector.types.pojo.FieldType;
 import org.junit.Test;
+
+import java.math.BigDecimal;
+import java.nio.ByteBuffer;
+import java.util.*;
+
+import static org.hamcrest.CoreMatchers.*;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertEquals;
 
 public class SmallIntToFixedConverterTest extends BaseConverterTest {
   /** allocator for arrow */
@@ -163,7 +155,7 @@ public class SmallIntToFixedConverterTest extends BaseConverterTest {
     TestUtil.assertSFException(invalidConversionErrorCode, () -> converter.toInt(0));
     TestUtil.assertSFException(invalidConversionErrorCode, () -> converter.toShort(0));
     TestUtil.assertSFException(invalidConversionErrorCode, () -> converter.toByte(0));
-    TestUtil.assertSFException(invalidConversionErrorCode, () -> converter.toDate(0));
+    TestUtil.assertSFException(invalidConversionErrorCode, () -> converter.toDate(0, getTimeZone()));
     TestUtil.assertSFException(invalidConversionErrorCode, () -> converter.toTime(0));
     TestUtil.assertSFException(
         invalidConversionErrorCode, () -> converter.toTimestamp(0, TimeZone.getDefault()));

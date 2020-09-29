@@ -4,11 +4,6 @@
 
 package net.snowflake.client.core.arrow;
 
-import static org.junit.Assert.assertEquals;
-
-import java.sql.Timestamp;
-import java.util.Random;
-import java.util.TimeZone;
 import net.snowflake.client.core.ResultUtil;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SFSession;
@@ -17,6 +12,12 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+
+import java.sql.Timestamp;
+import java.util.Random;
+import java.util.TimeZone;
+
+import static org.junit.Assert.assertEquals;
 
 @RunWith(Parameterized.class)
 public class ArrowResultUtilTest {
@@ -59,7 +60,7 @@ public class ArrowResultUtilTest {
 
     start = System.currentTimeMillis();
     for (int i = 0; i < times; i++) {
-      ArrowResultUtil.getDate(days[i], tz, session);
+      ArrowResultUtil.getDate(days[i], tz, tz);
     }
     long duration2 = System.currentTimeMillis() - start;
 

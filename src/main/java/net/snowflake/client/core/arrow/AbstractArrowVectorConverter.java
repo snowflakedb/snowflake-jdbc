@@ -3,16 +3,17 @@
  */
 package net.snowflake.client.core.arrow;
 
-import java.math.BigDecimal;
-import java.sql.Date;
-import java.sql.Time;
-import java.sql.Timestamp;
-import java.util.TimeZone;
 import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeUtil;
 import org.apache.arrow.vector.ValueVector;
+
+import java.math.BigDecimal;
+import java.sql.Date;
+import java.sql.Time;
+import java.sql.Timestamp;
+import java.util.TimeZone;
 
 /**
  * Abstract class of arrow vector converter. For most types, throw invalid convert error. It depends
@@ -33,6 +34,8 @@ abstract class AbstractArrowVectorConverter implements ArrowVectorConverter {
   protected int columnIndex;
 
   protected boolean treatNTZasUTC;
+
+  protected TimeZone sessionTimeZone;
 
   /** Field names of the struct vectors used by timestamp */
   public static final String FIELD_NAME_EPOCH = "epoch"; // seconds since epoch
@@ -116,7 +119,7 @@ abstract class AbstractArrowVectorConverter implements ArrowVectorConverter {
   }
 
   @Override
-  public Date toDate(int index) throws SFException {
+  public Date toDate(int index, TimeZone tz) throws SFException {
     throw new SFException(
         ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr, SnowflakeUtil.DATE_STR, "");
   }
@@ -145,6 +148,11 @@ abstract class AbstractArrowVectorConverter implements ArrowVectorConverter {
   @Override
   public void setTreatNTZAsUTC(boolean isUTC) {
     this.treatNTZasUTC = isUTC;
+  }
+
+  @Override
+  public void setSessionTimeZone(TimeZone tz) {
+    this.sessionTimeZone = tz;
   }
 
   @Override

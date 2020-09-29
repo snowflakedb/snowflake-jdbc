@@ -4,33 +4,19 @@
 
 package net.snowflake.client.jdbc;
 
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
+
 import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringReader;
 import java.math.BigDecimal;
 import java.net.URL;
-import java.sql.Array;
-import java.sql.Blob;
-import java.sql.Clob;
-import java.sql.Date;
-import java.sql.NClob;
-import java.sql.Ref;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.RowId;
-import java.sql.SQLException;
-import java.sql.SQLFeatureNotSupportedException;
-import java.sql.SQLWarning;
-import java.sql.SQLXML;
-import java.sql.Statement;
-import java.sql.Time;
-import java.sql.Timestamp;
+import java.sql.*;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TimeZone;
-import net.snowflake.client.log.SFLogger;
-import net.snowflake.client.log.SFLoggerFactory;
 
 /** Base class for query result set and metadata result set */
 abstract class SnowflakeBaseResultSet implements ResultSet {
@@ -104,7 +90,7 @@ abstract class SnowflakeBaseResultSet implements ResultSet {
   @Override
   public Date getDate(int columnIndex) throws SQLException {
     raiseSQLExceptionIfResultSetIsClosed();
-    return getDate(columnIndex, TimeZone.getDefault());
+    return getDate(columnIndex, (TimeZone) null);
   }
 
   @Override
@@ -113,7 +99,7 @@ abstract class SnowflakeBaseResultSet implements ResultSet {
   @Override
   public Timestamp getTimestamp(int columnIndex) throws SQLException {
     raiseSQLExceptionIfResultSetIsClosed();
-    return getTimestamp(columnIndex, TimeZone.getDefault());
+    return getTimestamp(columnIndex, (TimeZone) null);
   }
 
   public abstract Timestamp getTimestamp(int columnIndex, TimeZone tz) throws SQLException;
