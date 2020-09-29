@@ -3,6 +3,11 @@
  */
 package net.snowflake.client.jdbc;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+
+import java.util.Properties;
+import java.util.concurrent.atomic.AtomicBoolean;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.OCSPMode;
 import net.snowflake.client.core.SFSessionProperty;
@@ -11,13 +16,7 @@ import org.junit.Test;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
-import java.util.Properties;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
-
- /** Unit test for SERVICE_NAME parameter. */
+/** Unit test for SERVICE_NAME parameter. */
 public class ServiceNameTest {
   static final String SERVICE_NAME_KEY = "SERVICE_NAME";
   static final String INITIAL_SERVICE_NAME = "initialServiceName";
@@ -94,28 +93,43 @@ public class ServiceNameTest {
   @Test
   public void testAddServiceNameToRequestHeader() throws Throwable {
     try (MockedStatic<HttpUtil> mockedHttpUtil = Mockito.mockStatic(HttpUtil.class)) {
-        mockedHttpUtil.when(() -> HttpUtil.executeGeneralRequest(Mockito.any(HttpRequestBase.class), Mockito.anyInt(), Mockito.any(OCSPMode.class)))
-                .thenReturn(responseLogin());
-        mockedHttpUtil.when(() -> HttpUtil.executeRequest(Mockito.any(HttpRequestBase.class), Mockito.anyInt(), Mockito.anyInt(), Mockito.any(AtomicBoolean.class), Mockito.anyBoolean(), Mockito.anyBoolean(), Mockito.any(OCSPMode.class)))
-                .thenReturn(responseQuery());
+      mockedHttpUtil
+          .when(
+              () ->
+                  HttpUtil.executeGeneralRequest(
+                      Mockito.any(HttpRequestBase.class),
+                      Mockito.anyInt(),
+                      Mockito.any(OCSPMode.class)))
+          .thenReturn(responseLogin());
+      mockedHttpUtil
+          .when(
+              () ->
+                  HttpUtil.executeRequest(
+                      Mockito.any(HttpRequestBase.class),
+                      Mockito.anyInt(),
+                      Mockito.anyInt(),
+                      Mockito.any(AtomicBoolean.class),
+                      Mockito.anyBoolean(),
+                      Mockito.anyBoolean(),
+                      Mockito.any(OCSPMode.class)))
+          .thenReturn(responseQuery());
 
-        Properties props = new Properties();
-        props.setProperty(SFSessionProperty.ACCOUNT.getPropertyKey(), "fakeaccount");
-        props.setProperty(SFSessionProperty.USER.getPropertyKey(), "fakeuser");
-        props.setProperty(SFSessionProperty.PASSWORD.getPropertyKey(), "fakepassword");
-        props.setProperty(SFSessionProperty.INSECURE_MODE.getPropertyKey(), Boolean.TRUE.toString());
-        SnowflakeConnectionV1 con =
-                new SnowflakeConnectionV1("jdbc:snowflake://http://fakeaccount.snowflakecomputing.com", props);
-        assertThat(con.getSfSession().getServiceName(), is(INITIAL_SERVICE_NAME));
+      Properties props = new Properties();
+      props.setProperty(SFSessionProperty.ACCOUNT.getPropertyKey(), "fakeaccount");
+      props.setProperty(SFSessionProperty.USER.getPropertyKey(), "fakeuser");
+      props.setProperty(SFSessionProperty.PASSWORD.getPropertyKey(), "fakepassword");
+      props.setProperty(SFSessionProperty.INSECURE_MODE.getPropertyKey(), Boolean.TRUE.toString());
+      SnowflakeConnectionV1 con =
+          new SnowflakeConnectionV1(
+              "jdbc:snowflake://http://fakeaccount.snowflakecomputing.com", props);
+      assertThat(con.getSfSession().getServiceName(), is(INITIAL_SERVICE_NAME));
 
-        SnowflakeStatementV1 stmt = (SnowflakeStatementV1) con.createStatement();
-        stmt.execute("SELECT 1");
-        assertThat(
-                stmt.getConnection().unwrap(SnowflakeConnectionV1.class).getSfSession().getServiceName(),
-                is(NEW_SERVICE_NAME));
+      SnowflakeStatementV1 stmt = (SnowflakeStatementV1) con.createStatement();
+      stmt.execute("SELECT 1");
+      assertThat(
+          stmt.getConnection().unwrap(SnowflakeConnectionV1.class).getSfSession().getServiceName(),
+          is(NEW_SERVICE_NAME));
     }
-
-
 
     /*
     // login response

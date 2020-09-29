@@ -4,8 +4,22 @@
 
 package net.snowflake.client.jdbc;
 
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.*;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.*;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.util.ArrayList;
+import java.util.Properties;
 import net.snowflake.client.core.*;
 import net.snowflake.common.core.ClientAuthnDTO;
 import org.apache.commons.io.IOUtils;
@@ -16,21 +30,6 @@ import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
-
-import java.io.*;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.net.URI;
-import java.nio.charset.StandardCharsets;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.util.ArrayList;
-import java.util.Properties;
-
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.*;
 
 class MockAuthExternalBrowserHandlers
     implements SessionUtilExternalBrowser.AuthExternalBrowserHandlers {
@@ -106,7 +105,6 @@ class FakeSessionUtilExternalBrowser extends SessionUtilExternalBrowser {
   }
 }
 
-
 public class SSOConnectionTest {
   private static final String MOCK_PROOF_KEY = "specialkey";
   private static final String MOCK_SSO_URL = "https://sso.someidp.net/";
@@ -147,7 +145,8 @@ public class SSOConnectionTest {
     public String token;
     public String masterToken;
     public String idToken;
-    public ArrayList<HttpUtilResponseDataParaDTO> parameters = new ArrayList<HttpUtilResponseDataParaDTO>();
+    public ArrayList<HttpUtilResponseDataParaDTO> parameters =
+        new ArrayList<HttpUtilResponseDataParaDTO>();
 
     HttpUtilResponseDataAuthDTO(String token, String masterToken, String idToken) {
       this.token = token;
@@ -186,7 +185,10 @@ public class SSOConnectionTest {
     }
   }
 
-  private void initMock(MockedStatic<HttpUtil> mockedHttpUtil, MockedStatic<SessionUtilExternalBrowser> mockedSessionUtilExternalBrowser) throws Throwable {
+  private void initMock(
+      MockedStatic<HttpUtil> mockedHttpUtil,
+      MockedStatic<SessionUtilExternalBrowser> mockedSessionUtilExternalBrowser)
+      throws Throwable {
     initMockHttpUtil(mockedHttpUtil);
     SFLoginInput loginInput = initMockLoginInput();
     initMockSessionUtilExternalBrowser(mockedSessionUtilExternalBrowser, loginInput);
@@ -209,10 +211,12 @@ public class SSOConnectionTest {
     return jsonNode;
   }
 
-  private void initMockHttpUtil(MockedStatic<HttpUtil> mockedHttpUtil) throws SnowflakeSQLException, IOException {
-    //CloseableHttpClient httpClient = mock(CloseableHttpClient.class);
+  private void initMockHttpUtil(MockedStatic<HttpUtil> mockedHttpUtil)
+      throws SnowflakeSQLException, IOException {
+    // CloseableHttpClient httpClient = mock(CloseableHttpClient.class);
     // initHttpClient always returns a mock CloseableHttpClient
-    //mockedHttpUtil.when(() -> HttpUtil.initHttpClient(Mockito.any(OCSPMode.class), Mockito.any(File.class)))
+    // mockedHttpUtil.when(() -> HttpUtil.initHttpClient(Mockito.any(OCSPMode.class),
+    // Mockito.any(File.class)))
     //    .thenReturn(httpClient);
 
     // connect to SSO for the first connection
@@ -233,7 +237,10 @@ public class SSOConnectionTest {
     String retSecondAuthentication =
         mapper.writeValueAsString(
             new HttpUtilResponseDTO(
-                true, null, new HttpUtilResponseDataAuthDTO(MOCK_NEW_SESSION_TOKEN, MOCK_NEW_MASTER_TOKEN, "")));
+                true,
+                null,
+                new HttpUtilResponseDataAuthDTO(
+                    MOCK_NEW_SESSION_TOKEN, MOCK_NEW_MASTER_TOKEN, "")));
 
     // TODO, do we really need this?
     // select '1' used internally to refresh the current objects
@@ -260,14 +267,33 @@ public class SSOConnectionTest {
                   resp = retInitialSSO;
                 } else if (callCount == 1) {
                   jsonNode = parseRequest((HttpPost) args[0]);
-                  assertTrue(jsonNode.path("data").path("SESSION_PARAMETERS").path("CLIENT_STORE_TEMPORARY_CREDENTIAL").asBoolean());
-                  assertThat("authenticator", jsonNode.path("data").path("AUTHENTICATOR").asText(), equalTo(ClientAuthnDTO.AuthenticatorType.EXTERNALBROWSER.name()));
+                  assertTrue(
+                      jsonNode
+                          .path("data")
+                          .path("SESSION_PARAMETERS")
+                          .path("CLIENT_STORE_TEMPORARY_CREDENTIAL")
+                          .asBoolean());
+                  assertThat(
+                      "authenticator",
+                      jsonNode.path("data").path("AUTHENTICATOR").asText(),
+                      equalTo(ClientAuthnDTO.AuthenticatorType.EXTERNALBROWSER.name()));
                   resp = retInitialAuthentication;
                 } else if (callCount == 2) {
                   jsonNode = parseRequest((HttpPost) args[0]);
-                  assertTrue(jsonNode.path("data").path("SESSION_PARAMETERS").path("CLIENT_STORE_TEMPORARY_CREDENTIAL").asBoolean());
-                  assertThat("authenticator", jsonNode.path("data").path("AUTHENTICATOR").asText(), equalTo(ID_TOKEN_AUTHENTICATOR));
-                  assertThat("idToken", jsonNode.path("data").path("TOKEN").asText(), equalTo(MOCK_ID_TOKEN));
+                  assertTrue(
+                      jsonNode
+                          .path("data")
+                          .path("SESSION_PARAMETERS")
+                          .path("CLIENT_STORE_TEMPORARY_CREDENTIAL")
+                          .asBoolean());
+                  assertThat(
+                      "authenticator",
+                      jsonNode.path("data").path("AUTHENTICATOR").asText(),
+                      equalTo(ID_TOKEN_AUTHENTICATOR));
+                  assertThat(
+                      "idToken",
+                      jsonNode.path("data").path("TOKEN").asText(),
+                      equalTo(MOCK_ID_TOKEN));
                   resp = retSecondAuthentication;
                 }
 
@@ -279,14 +305,17 @@ public class SSOConnectionTest {
     // TODO, do we really need this?
     // the last query, "select '1'", hits the query-request endpoint,
     // so it calls executeRequest with the includeRetryParameters parameter
-    //mockedHttpUtil.when(() -> HttpUtil.executeGeneralRequest(
+    // mockedHttpUtil.when(() -> HttpUtil.executeGeneralRequest(
     //        Mockito.any(HttpRequestBase.class), Mockito.anyInt(), Mockito.any(OCSPMode.class)))
     //    .thenReturn(retSelectOne);
   }
 
-  private void initMockSessionUtilExternalBrowser(MockedStatic<SessionUtilExternalBrowser> mockedSessionUtilExternalBrowser, SFLoginInput loginInput) {
+  private void initMockSessionUtilExternalBrowser(
+      MockedStatic<SessionUtilExternalBrowser> mockedSessionUtilExternalBrowser,
+      SFLoginInput loginInput) {
     SessionUtilExternalBrowser fakeExternalBrowser = new FakeSessionUtilExternalBrowser(loginInput);
-    mockedSessionUtilExternalBrowser.when(() -> SessionUtilExternalBrowser.createInstance(Mockito.any(SFLoginInput.class)))
+    mockedSessionUtilExternalBrowser
+        .when(() -> SessionUtilExternalBrowser.createInstance(Mockito.any(SFLoginInput.class)))
         .thenReturn(fakeExternalBrowser);
   }
 
@@ -306,37 +335,36 @@ public class SSOConnectionTest {
         MockedStatic<SessionUtilExternalBrowser> mockedSessionUtilExternalBrowser =
             mockStatic(SessionUtilExternalBrowser.class)) {
 
-        initMock(mockedHttpUtil, mockedSessionUtilExternalBrowser);
-        SessionUtil.deleteIdTokenCache("testaccount.snowflakecomputing.com", "testuser");
+      initMock(mockedHttpUtil, mockedSessionUtilExternalBrowser);
+      SessionUtil.deleteIdTokenCache("testaccount.snowflakecomputing.com", "testuser");
 
-        Properties properties = new Properties();
-        properties.put("user", "testuser");
-        properties.put("password", "testpassword");
-        properties.put("account", "testaccount");
-        properties.put("insecureMode", true);
-        properties.put("authenticator", "externalbrowser");
-        properties.put("CLIENT_STORE_TEMPORARY_CREDENTIAL", true);
+      Properties properties = new Properties();
+      properties.put("user", "testuser");
+      properties.put("password", "testpassword");
+      properties.put("account", "testaccount");
+      properties.put("insecureMode", true);
+      properties.put("authenticator", "externalbrowser");
+      properties.put("CLIENT_STORE_TEMPORARY_CREDENTIAL", true);
 
-        // connect url
-        String url = "jdbc:snowflake://testaccount.snowflakecomputing.com";
+      // connect url
+      String url = "jdbc:snowflake://testaccount.snowflakecomputing.com";
 
+      // initial connection getting id token and storing in the cache file.
+      Connection con = DriverManager.getConnection(url, properties);
+      SnowflakeConnectionV1 sfcon = (SnowflakeConnectionV1) con;
+      assertThat("token", sfcon.getSfSession().getSessionToken(), equalTo(MOCK_SESSION_TOKEN));
+      assertThat("idToken", sfcon.getSfSession().getIdToken(), equalTo(MOCK_ID_TOKEN));
 
-        // initial connection getting id token and storing in the cache file.
-        Connection con = DriverManager.getConnection(url, properties);
-        SnowflakeConnectionV1 sfcon = (SnowflakeConnectionV1) con;
-        assertThat("token", sfcon.getSfSession().getSessionToken(), equalTo(MOCK_SESSION_TOKEN));
-        assertThat("idToken", sfcon.getSfSession().getIdToken(), equalTo(MOCK_ID_TOKEN));
-
-        // To be changed
-        // second connection reads the cache and use the id token to get the
-        // session token.
-        Connection conSecond = DriverManager.getConnection(url, properties);
-        SnowflakeConnectionV1 sfconSecond = (SnowflakeConnectionV1) conSecond;
-        assertThat(
-            "token", sfconSecond.getSfSession().getSessionToken(), equalTo(MOCK_NEW_SESSION_TOKEN));
-        // TODO: looks like we won't get a new id_token here
-        assertThat("idToken", sfcon.getSfSession().getIdToken(), equalTo(MOCK_ID_TOKEN));
-      }
+      // To be changed
+      // second connection reads the cache and use the id token to get the
+      // session token.
+      Connection conSecond = DriverManager.getConnection(url, properties);
+      SnowflakeConnectionV1 sfconSecond = (SnowflakeConnectionV1) conSecond;
+      assertThat(
+          "token", sfconSecond.getSfSession().getSessionToken(), equalTo(MOCK_NEW_SESSION_TOKEN));
+      // TODO: looks like we won't get a new id_token here
+      assertThat("idToken", sfcon.getSfSession().getIdToken(), equalTo(MOCK_ID_TOKEN));
     }
-  //}
+  }
+  // }
 }
