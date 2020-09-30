@@ -11,15 +11,13 @@ import java.io.File;
 import java.io.IOException;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
-import net.snowflake.client.category.TestCategoryCore;
 import net.snowflake.client.jdbc.SnowflakeUtil;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.rules.TemporaryFolder;
 import org.mockito.MockedStatic;
 
-//@Category(TestCategoryCore.class)
+// @Category(TestCategoryCore.class)
 public class SFTrustManagerMockitoMockTest {
 
   @Rule public TemporaryFolder tmpFolder = new TemporaryFolder();
@@ -42,7 +40,7 @@ public class SFTrustManagerMockitoMockTest {
           .thenReturn(cacheFolder.getCanonicalPath());
 
       System.out.println(
-          "[WUFAN] DEBUG: SF_OCSP_RESPONSE_CACHE_DIR = "
+          "[WUFAN DEBUG] SF_OCSP_RESPONSE_CACHE_DIR = "
               + SnowflakeUtil.systemGetEnv("SF_OCSP_RESPONSE_CACHE_DIR"));
 
       TrustManagerFactory tested = mock(TrustManagerFactory.class);
