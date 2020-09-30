@@ -275,11 +275,14 @@
             <exclude>**/*Manual.java</exclude>
             <!-- Telemetry API is new -->
             <exclude>**/TelemetryServiceIT.java</exclude>
+            <exclude>**/TelemetryIT.java</exclude>
             <!-- OCSP implementation is new -->
             <exclude>**/SFTrustManagerIT.java</exclude>
+            <!-- Logger improvement is new -->
             <exclude>**/SLF4JLoggerIT.java</exclude>
+            <!-- Async support is new -->
             <exclude>**/ResultSetAsyncIT.java</exclude>
-            <exclude>**/TelemetryIT.java</exclude>
+            <!-- ResultSet serialization is new -->
             <exclude>**/SnowflakeResultSetSerializable*IT.java</exclude>
           </testExcludes>
           <useIncrementalCompilation>false</useIncrementalCompilation>
