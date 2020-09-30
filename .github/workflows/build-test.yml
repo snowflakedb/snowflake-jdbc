@@ -49,7 +49,7 @@ jobs:
             matrix:
                 image: [ 'jdbc-centos6-default' ]
                 cloud: [ 'AWS' ]
-                category: ['TestCategoryResultSet,TestCategoryOthers,TestCategoryLoader', 'TestCategoryConnection,TestCategoryStatement', 'TestCategoryCore']
+                category: ['TestCategoryResultSet,TestCategoryOthers', 'TestCategoryConnection,TestCategoryStatement', 'TestCategoryCore,TestCategoryLoader']
                 is_old_version: ['true']
         steps:
             - uses: actions/checkout@v1
