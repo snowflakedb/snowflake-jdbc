@@ -325,7 +325,7 @@ public class SSOConnectionTest {
       SnowflakeConnectionV1 sfconSecond = (SnowflakeConnectionV1) conSecond;
       assertThat(
           "token", sfconSecond.getSfSession().getSessionToken(), equalTo(MOCK_NEW_SESSION_TOKEN));
-      // TODO: looks like we won't get a new id_token here
+      // we won't get a new id_token here
       assertThat("idToken", sfcon.getSfSession().getIdToken(), equalTo(MOCK_ID_TOKEN));
     }
   }
