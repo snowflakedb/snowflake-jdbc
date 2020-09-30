@@ -35,14 +35,14 @@ abstract class PreparedStatement0IT extends BaseJDBCTest {
   final String tableFuncSQL = "select 1 from table(generator(rowCount => ?))";
 
   @Before
-  void setUp() throws SQLException {
+  public void setUp() throws SQLException {
     try (Connection con = init()) {
       con.createStatement().execute(createTableSQL);
     }
   }
 
   @After
-  void tearDown() throws SQLException {
+  public void tearDown() throws SQLException {
     try (Connection con = init()) {
       con.createStatement().execute(deleteTableSQL);
     }

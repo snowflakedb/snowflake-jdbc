@@ -1,16 +1,15 @@
 package net.snowflake.client.jdbc;
 
-import org.junit.After;
-import org.junit.Before;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Properties;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import org.junit.After;
+import org.junit.Before;
 
 /** Result set test base class. */
 public class ResultSet0IT extends BaseJDBCTest {

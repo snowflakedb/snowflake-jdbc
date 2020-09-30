@@ -22,16 +22,6 @@ import org.junit.experimental.categories.Category;
 
 @Category(TestCategoryStatement.class)
 public class PreparedStatement1IT extends PreparedStatement0IT {
-  @Before
-  public void setUp() throws SQLException {
-    super.setUp();
-  }
-
-  @After
-  public void tearDown() throws SQLException {
-    super.tearDown();
-  }
-
   public PreparedStatement1IT() {
     super("json");
   }

@@ -262,26 +262,25 @@
           <source>8</source>
           <target>8</target>
           <testExcludes>
+            <!-- arrow tests -->
             <exclude>**/net/snowflake/client/core/arrow/*.java</exclude>
+            <exclude>**/ResultSetArrow*.java</exclude>
+            <exclude>**/PreparedStatementArrow*IT.java</exclude>
+            <exclude>**/SFArrowResultSetIT.java</exclude>
+            <!-- Latest JDBC driver tests that cannot run with the oldest driver -->
             <exclude>**/*LatestIT.java</exclude>
+            <!-- Unit Tests -->
             <exclude>**/*Test.java</exclude>
-            <exclude>**/ConnectionManual.java</exclude>
+            <!-- Manual Tests -->
+            <exclude>**/*Manual.java</exclude>
+            <!-- Telemetry API is new -->
             <exclude>**/TelemetryServiceIT.java</exclude>
-            <exclude>**/SLF4JLoggerIT.java</exclude>
+            <!-- OCSP implementation is new -->
             <exclude>**/SFTrustManagerIT.java</exclude>
+            <exclude>**/SLF4JLoggerIT.java</exclude>
             <exclude>**/ResultSetAsyncIT.java</exclude>
             <exclude>**/TelemetryIT.java</exclude>
-            <exclude>**/SnowflakeResultSetSerializableIT.java</exclude>
-            <exclude>**/SnowflakeResultSetSerializableArrowIT.java</exclude>
-            <exclude>**/SFArrowResultSetIT.java</exclude>
-            <exclude>**/ResultSetLatestIT.java</exclude>
-            <exclude>**/ResultSetArrowIT.java</exclude>
-            <exclude>**/ResultSetArrowLatestIT.java</exclude>
-            <exclude>**/ResultSetArrowForce0MultiTimeZone.java</exclude>
-            <exclude>**/ResultSetArrowForceLTZMultiTimeZoneIT.java</exclude>
-            <exclude>**/ResultSetArrowForceTZMultiTimeZoneIT.java</exclude>
-            <exclude>**/PreparedStatementArrow1IT.java</exclude>
-            <exclude>**/PreparedStatementArrow2IT.java</exclude>
+            <exclude>**/SnowflakeResultSetSerializable*IT.java</exclude>
           </testExcludes>
           <useIncrementalCompilation>false</useIncrementalCompilation>
         </configuration>
