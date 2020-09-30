@@ -483,53 +483,6 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
   }
 
   @Test
-  public void testGetStringValueFromColumnDef() throws SQLException {
-    Map<String, String> params = getConnectionParameters();
-    Properties properties = new Properties();
-    for (Map.Entry<?, ?> entry : params.entrySet()) {
-      if (entry.getValue() != null) {
-        properties.put(entry.getKey(), entry.getValue());
-      }
-    }
-    // test out connection parameter stringsQuoted to remove strings from quotes
-    properties.put("stringsQuotedForColumnDef", "true");
-    Connection connection = DriverManager.getConnection(params.get("uri"), properties);
-    String database = connection.getCatalog();
-    String schema = connection.getSchema();
-    final String targetTable = "T0";
-
-    connection
-        .createStatement()
-        .execute(
-            "create or replace table "
-                + targetTable
-                + "(C1 string, C2 string default '', C3 string default 'apples', C4 string default '\"apples\"', C5 int, C6 "
-                + "int default 5, C7 string default '''', C8 string default '''apples''''', C9  string default '%')");
-
-    DatabaseMetaData metaData = connection.getMetaData();
-
-    ResultSet resultSet = metaData.getColumns(database, schema, targetTable, "%");
-    assertTrue(resultSet.next());
-    assertEquals(null, resultSet.getString("COLUMN_DEF"));
-    assertTrue(resultSet.next());
-    assertEquals("''", resultSet.getString("COLUMN_DEF"));
-    assertTrue(resultSet.next());
-    assertEquals("'apples'", resultSet.getString("COLUMN_DEF"));
-    assertTrue(resultSet.next());
-    assertEquals("'\"apples\"'", resultSet.getString("COLUMN_DEF"));
-    assertTrue(resultSet.next());
-    assertEquals(null, resultSet.getString("COLUMN_DEF"));
-    assertTrue(resultSet.next());
-    assertEquals("5", resultSet.getString("COLUMN_DEF"));
-    assertTrue(resultSet.next());
-    assertEquals("''''", resultSet.getString("COLUMN_DEF"));
-    assertTrue(resultSet.next());
-    assertEquals("'''apples'''''", resultSet.getString("COLUMN_DEF"));
-    assertTrue(resultSet.next());
-    assertEquals("'%'", resultSet.getString("COLUMN_DEF"));
-  }
-
-  @Test
   public void testGetColumns() throws Throwable {
     try (Connection connection = getConnection()) {
       String database = connection.getCatalog();

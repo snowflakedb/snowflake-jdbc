@@ -14,8 +14,7 @@ import org.junit.experimental.categories.Category;
  */
 @Category(TestCategoryArrow.class)
 public class PreparedStatementArrow2LatestIT extends PreparedStatement2LatestIT {
-  PreparedStatementArrow2LatestIT() {
+  public PreparedStatementArrow2LatestIT() {
     super("arrow");
   }
-  ;
 }
