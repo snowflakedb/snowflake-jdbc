@@ -127,7 +127,6 @@ public class SessionUtilExternalBrowserTest {
    * @throws Throwable if any error occurs
    */
   @Test
-  // @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testSessionUtilExternalBrowser() throws Throwable {
     final SFLoginInput loginInput = initMockLoginInput();
 
@@ -164,7 +163,6 @@ public class SessionUtilExternalBrowserTest {
    * @throws Throwable if any error occurs
    */
   @Test
-  // @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testSessionUtilExternalBrowserFail() throws Throwable {
     final SFLoginInput loginInput = initMockLoginInput();
 
