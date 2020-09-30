@@ -3,9 +3,9 @@
  */
 package net.snowflake.client.jdbc;
 
+import static net.snowflake.client.jdbc.DatabaseMetaDataIT.verifyResultSetMetaDataColumns;
 import static net.snowflake.client.jdbc.SnowflakeDatabaseMetaData.*;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import java.sql.*;
 import java.util.Map;
@@ -71,7 +71,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
 
     ResultSet resultSet = metaData.getColumns(database, schema, targetTable, "%");
     assertTrue(resultSet.next());
-    assertEquals(null, resultSet.getString("COLUMN_DEF"));
+    assertNull(resultSet.getString("COLUMN_DEF"));
     assertTrue(resultSet.next());
     assertEquals("''", resultSet.getString("COLUMN_DEF"));
     assertTrue(resultSet.next());
@@ -79,7 +79,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
     assertTrue(resultSet.next());
     assertEquals("'\"apples\"'", resultSet.getString("COLUMN_DEF"));
     assertTrue(resultSet.next());
-    assertEquals(null, resultSet.getString("COLUMN_DEF"));
+    assertNull(resultSet.getString("COLUMN_DEF"));
     assertTrue(resultSet.next());
     assertEquals("5", resultSet.getString("COLUMN_DEF"));
     assertTrue(resultSet.next());
@@ -88,5 +88,32 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
     assertEquals("'''apples'''''", resultSet.getString("COLUMN_DEF"));
     assertTrue(resultSet.next());
     assertEquals("'%'", resultSet.getString("COLUMN_DEF"));
+  }
+
+  @Test
+  public void testGetColumnsNullable() throws Throwable {
+    try (Connection connection = getConnection()) {
+      String database = connection.getCatalog();
+      String schema = connection.getSchema();
+      final String targetTable = "T0";
+
+      connection
+          .createStatement()
+          .execute(
+              "create or replace table "
+                  + targetTable
+                  + "(C1 int, C2 varchar(100), C3 string default '', C4 number(18,4), C5 double, C6 boolean, "
+                  + "C7 date not null, C8 time, C9 timestamp_ntz(7), C10 binary,"
+                  + "C11 variant, C12 timestamp_ltz(8), C13 timestamp_tz(3))");
+
+      DatabaseMetaData metaData = connection.getMetaData();
+
+      ResultSet resultSet = metaData.getColumns(database, schema, targetTable, "%");
+      verifyResultSetMetaDataColumns(resultSet, DBMetadataResultSetMetadata.GET_COLUMNS);
+
+      // C1 metadata
+      assertTrue(resultSet.next());
+      assertTrue(resultSet.getBoolean("NULLABLE"));
+    }
   }
 }
