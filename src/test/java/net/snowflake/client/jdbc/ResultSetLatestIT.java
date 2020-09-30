@@ -1,12 +1,13 @@
+/*
+ * Copyright (c) 2012-2020 Snowflake Computing Inc. All right reserved.
+ */
 package net.snowflake.client.jdbc;
 
-import static net.snowflake.client.jdbc.ResultSetIT.numberCrossTesting;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.*;
 import static org.junit.Assert.assertNull;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.sql.*;
@@ -18,60 +19,29 @@ import net.snowflake.client.category.TestCategoryResultSet;
 import net.snowflake.client.jdbc.telemetry.*;
 import net.snowflake.common.core.SFBinary;
 import org.apache.arrow.vector.Float8Vector;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
+/** Test for ResultSet runnable only by the latest JDBC driver. */
 @Category(TestCategoryResultSet.class)
-public class ResultSetLatestIT extends BaseJDBCTest {
-  @Before
-  public void setUp() throws SQLException {
-    Connection con = getConnection();
+public class ResultSetLatestIT extends ResultSet0IT {
 
-    // TEST_RS
-    con.createStatement().execute("create or replace table test_rs (colA string)");
-    con.createStatement().execute("insert into test_rs values('rowOne')");
-    con.createStatement().execute("insert into test_rs values('rowTwo')");
-    con.createStatement().execute("insert into test_rs values('rowThree')");
-
-    // ORDERS_JDBC
-    Statement statement = con.createStatement();
-    statement.execute(
-        "create or replace table orders_jdbc"
-            + "(C1 STRING NOT NULL COMMENT 'JDBC', "
-            + "C2 STRING, C3 STRING, C4 STRING, C5 STRING, C6 STRING, "
-            + "C7 STRING, C8 STRING, C9 STRING) "
-            + "stage_file_format = (field_delimiter='|' "
-            + "error_on_column_count_mismatch=false)");
-    // put files
-    assertTrue(
-        "Failed to put a file",
-        statement.execute(
-            "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE) + " @%orders_jdbc"));
-    assertTrue(
-        "Failed to put a file",
-        statement.execute(
-            "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE_2) + " @%orders_jdbc"));
-
-    int numRows = statement.executeUpdate("copy into orders_jdbc");
-
-    assertEquals("Unexpected number of rows copied: " + numRows, 73, numRows);
-
-    con.close();
+  public ResultSetLatestIT() {
+    this("json");
   }
 
-  @After
-  public void tearDown() throws SQLException {
-    Connection con = getConnection();
-    con.createStatement().execute("drop table if exists orders_jdbc");
-    con.createStatement().execute("drop table if exists test_rs");
-    con.close();
+  ResultSetLatestIT(String queryResultFormat) {
+    super(queryResultFormat);
   }
 
+  /**
+   * Metadata API metric collection. The old driver didn't collect metrics.
+   *
+   * @throws SQLException arises if any exception occurs
+   */
   @Test
   public void testMetadataAPIMetricCollection() throws SQLException {
-    Connection con = getConnection();
+    Connection con = init();
     Telemetry telemetry =
         con.unwrap(SnowflakeConnectionV1.class).getSfSession().getTelemetryClient();
     DatabaseMetaData metadata = con.getMetaData();
@@ -104,7 +74,7 @@ public class ResultSetLatestIT extends BaseJDBCTest {
 
     String catalog = con.getCatalog();
     String schema = con.getSchema();
-    ResultSet rs = metadata.getColumns(catalog, schema, null, null);
+    metadata.getColumns(catalog, schema, null, null);
     logs = ((TelemetryClient) telemetry).logBuffer();
     assertEquals(logs.size(), 2);
     // first item in log buffer is metrics on time to consume first result set chunk
@@ -129,9 +99,14 @@ public class ResultSetLatestIT extends BaseJDBCTest {
     assertNull(parameterValues.get("specific_name_pattern").textValue());
   }
 
+  /**
+   * Large result chunk metrics tests. The old driver didn't collect metrics.
+   *
+   * @throws SQLException arises if any exception occurs
+   */
   @Test
-  public void testMultipleChunks() throws SQLException, IOException {
-    Connection con = getConnection();
+  public void testMultipleChunks() throws Exception {
+    Connection con = init();
     Statement statement = con.createStatement();
 
     // 10000 rows should be enough to force result into multiple chunks
@@ -173,9 +148,14 @@ public class ResultSetLatestIT extends BaseJDBCTest {
     telemetry.sendBatchAsync();
   }
 
+  /**
+   * Result set metadata
+   *
+   * @throws SQLException arises if any exception occurs
+   */
   @Test
   public void testResultSetMetadata() throws SQLException {
-    Connection connection = getConnection();
+    Connection connection = init();
     final Map<String, String> params = getConnectionParameters();
     Statement statement = connection.createStatement();
 
@@ -222,14 +202,6 @@ public class ResultSetLatestIT extends BaseJDBCTest {
     connection.close();
   }
 
-  private byte[] intToByteArray(int i) {
-    return BigInteger.valueOf(i).toByteArray();
-  }
-
-  private byte[] floatToByteArray(float i) {
-    return ByteBuffer.allocate(Float8Vector.TYPE_WIDTH).putDouble(0, i).array();
-  }
-
   /**
    * Gets bytes from other data types
    *
@@ -263,5 +235,13 @@ public class ResultSetLatestIT extends BaseJDBCTest {
     byte[] decoded = SFBinary.fromHex("48454C4C4F").getBytes();
 
     assertArrayEquals(decoded, resultSet.getBytes(12));
+  }
+
+  private byte[] intToByteArray(int i) {
+    return BigInteger.valueOf(i).toByteArray();
+  }
+
+  private byte[] floatToByteArray(float i) {
+    return ByteBuffer.allocate(Float8Vector.TYPE_WIDTH).putDouble(0, i).array();
   }
 }

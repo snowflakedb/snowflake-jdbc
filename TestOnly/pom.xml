@@ -276,6 +276,7 @@
             <exclude>**/SFArrowResultSetIT.java</exclude>
             <exclude>**/ResultSetLatestIT.java</exclude>
             <exclude>**/ResultSetArrowIT.java</exclude>
+            <exclude>**/ResultSetArrowLatestIT.java</exclude>
             <exclude>**/ResultSetArrowForce0MultiTimeZone.java</exclude>
             <exclude>**/ResultSetArrowForceLTZMultiTimeZoneIT.java</exclude>
             <exclude>**/ResultSetArrowForceTZMultiTimeZoneIT.java</exclude>
