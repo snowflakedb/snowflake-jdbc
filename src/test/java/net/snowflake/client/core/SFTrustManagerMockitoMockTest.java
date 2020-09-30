@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2019 Snowflake Computing Inc. All right reserved.
+ * Copyright (c) 2018-2020 Snowflake Computing Inc. All right reserved.
  */
 
 package net.snowflake.client.core;
