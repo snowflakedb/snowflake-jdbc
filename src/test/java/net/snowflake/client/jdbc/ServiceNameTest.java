@@ -130,33 +130,5 @@ public class ServiceNameTest {
           stmt.getConnection().unwrap(SnowflakeConnectionV1.class).getSfSession().getServiceName(),
           is(NEW_SERVICE_NAME));
     }
-
-    /*
-    // login response
-    when(HttpUtil.executeGeneralRequest(
-            Mockito.any(HttpRequestBase.class), Mockito.anyInt(), Mockito.any(OCSPMode.class)))
-        .thenReturn(responseLogin());
-
-    // query response
-    when(HttpUtil.executeGeneralRequest(
-            Mockito.any(HttpRequestBase.class), Mockito.anyInt(), Mockito.any(OCSPMode.class)))
-        .thenReturn(responseQuery());
-
-    Properties props = new Properties();
-    props.setProperty(SFSessionProperty.ACCOUNT.getPropertyKey(), "fakeaccount");
-    props.setProperty(SFSessionProperty.USER.getPropertyKey(), "fakeuser");
-    props.setProperty(SFSessionProperty.PASSWORD.getPropertyKey(), "fakepassword");
-    props.setProperty(SFSessionProperty.INSECURE_MODE.getPropertyKey(), Boolean.TRUE.toString());
-    SnowflakeConnectionV1 con =
-        new SnowflakeConnectionV1("http://fakeaccount.snowflakecomputing.com", props);
-    assertThat(con.getSfSession().getServiceName(), is(INITIAL_SERVICE_NAME));
-
-    SnowflakeStatementV1 stmt = (SnowflakeStatementV1) con.createStatement();
-    stmt.execute("SELECT 1");
-    assertThat(
-        stmt.getConnection().unwrap(SnowflakeConnectionV1.class).getSfSession().getServiceName(),
-        is(NEW_SERVICE_NAME));
-
-     */
   }
 }
