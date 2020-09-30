@@ -157,22 +157,6 @@ public class SSOConnectionTest {
     }
   }
 
-  class HttpUtilResponseDataTokenRequestDTO {
-    public String sessionToken;
-
-    HttpUtilResponseDataTokenRequestDTO(String sessionToken) {
-      this.sessionToken = sessionToken;
-    }
-  }
-
-  class HttpUtilResponseDataQueryRequestDTO {
-    public String value;
-
-    HttpUtilResponseDataQueryRequestDTO(String value) {
-      this.value = value;
-    }
-  }
-
   class HttpUtilResponseDTO {
     public boolean success;
     public String message;
@@ -211,14 +195,7 @@ public class SSOConnectionTest {
     return jsonNode;
   }
 
-  private void initMockHttpUtil(MockedStatic<HttpUtil> mockedHttpUtil)
-      throws SnowflakeSQLException, IOException {
-    // CloseableHttpClient httpClient = mock(CloseableHttpClient.class);
-    // initHttpClient always returns a mock CloseableHttpClient
-    // mockedHttpUtil.when(() -> HttpUtil.initHttpClient(Mockito.any(OCSPMode.class),
-    // Mockito.any(File.class)))
-    //    .thenReturn(httpClient);
-
+  private void initMockHttpUtil(MockedStatic<HttpUtil> mockedHttpUtil) throws IOException {
     // connect to SSO for the first connection
     String retInitialSSO =
         mapper.writeValueAsString(
@@ -241,13 +218,6 @@ public class SSOConnectionTest {
                 null,
                 new HttpUtilResponseDataAuthDTO(
                     MOCK_NEW_SESSION_TOKEN, MOCK_NEW_MASTER_TOKEN, "")));
-
-    // TODO, do we really need this?
-    // select '1' used internally to refresh the current objects
-    // for the second connection
-    String retSelectOne =
-        mapper.writeValueAsString(
-            new HttpUtilResponseDTO(true, null, new HttpUtilResponseDataQueryRequestDTO("value")));
 
     mockedHttpUtil
         .when(
@@ -301,13 +271,6 @@ public class SSOConnectionTest {
                 return resp;
               }
             });
-
-    // TODO, do we really need this?
-    // the last query, "select '1'", hits the query-request endpoint,
-    // so it calls executeRequest with the includeRetryParameters parameter
-    // mockedHttpUtil.when(() -> HttpUtil.executeGeneralRequest(
-    //        Mockito.any(HttpRequestBase.class), Mockito.anyInt(), Mockito.any(OCSPMode.class)))
-    //    .thenReturn(retSelectOne);
   }
 
   private void initMockSessionUtilExternalBrowser(
