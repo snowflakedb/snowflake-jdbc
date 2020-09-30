@@ -77,7 +77,7 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
    * <p>Ignored on GitHub Action because CLIENT_STAGE_ARRAY_BINDING_THRESHOLD parameter is not
    * available to customers so cannot be set when running on Github Action
    *
-   * @throws SQLException
+   * @throws SQLException arises if any exception occurs
    */
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
@@ -94,18 +94,18 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
         {new Time(123456), new Time(55555)},
         {Time.valueOf("01:02:00"), new Time(-100)},
       };
-      for (int i = 0; i < timeValues.length; i++) {
-        prepSt.setTime(1, timeValues[i][0]);
-        prepSt.setTime(2, timeValues[i][1]);
+      for (Time[] value : timeValues) {
+        prepSt.setTime(1, value[0]);
+        prepSt.setTime(2, value[1]);
         prepSt.addBatch();
       }
       prepSt.executeBatch();
       // check results
       ResultSet rs = statement.executeQuery("select * from testStageBindTime");
-      for (int i = 0; i < timeValues.length; i++) {
+      for (Time[] timeValue : timeValues) {
         rs.next();
-        assertEquals(timeValues[i][0].toString(), rs.getTime(1).toString());
-        assertEquals(timeValues[i][1].toString(), rs.getTime(2).toString());
+        assertEquals(timeValue[0].toString(), rs.getTime(1).toString());
+        assertEquals(timeValue[1].toString(), rs.getTime(2).toString());
       }
       rs.close();
       statement.execute("drop table if exists testStageBindTime");
@@ -333,9 +333,9 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
                   .executeQuery("SELECT colC FROM TEST_PREPST ORDER BY id ASC")) {
             String errorMessage =
                 "Strings should match (" + (threshold > 0 ? "stage" : "non-stage") + ")";
-            for (int i = 0; i < rows.length; i++) {
+            for (String row : rows) {
               resultSet.next();
-              assertEquals(errorMessage, rows[i], resultSet.getString(1));
+              assertEquals(errorMessage, row, resultSet.getString(1));
             }
           }
         }
@@ -685,7 +685,7 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
         prepStatement.addBatch();
         prepStatement.executeBatch();
       }
-      String qid1 = null;
+      String qid1;
       try (PreparedStatement prepStatement = connection.prepareStatement(deleteSQL)) {
         prepStatement.setInt(1, 1);
         int count = prepStatement.executeUpdate();
@@ -881,7 +881,7 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
    * CLIENT_ENABLE_LOG_INFO_STATEMENT_PARAMETERS is enabled. Look in /tmp folder for
    * snowflake_jdbc0.log.0 and check that it lists binding params.
    *
-   * @throws SQLException
+   * @throws SQLException arises if any exception occurs
    */
   @Test
   @Ignore

@@ -22,7 +22,12 @@ import org.apache.arrow.vector.Float8Vector;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-/** Test for ResultSet runnable only by the latest JDBC driver. */
+/**
+ * ResultSet integration tests for the latest JDBC driver. This doesn't work for the oldest
+ * supported driver. Revisit this tests whenever bumping up the oldest supported driver to examine
+ * if the tests still is not applicable. If it is applicable, move tests to ResultSetIT so that both
+ * the latest and oldest supported driver run the tests.
+ */
 @Category(TestCategoryResultSet.class)
 public class ResultSetLatestIT extends ResultSet0IT {
 

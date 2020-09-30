@@ -1,3 +1,6 @@
+/*
+ * Copyright (c) 2012-2020 Snowflake Computing Inc. All right reserved.
+ */
 package net.snowflake.client.jdbc;
 
 import static net.snowflake.client.jdbc.OpenGroupCLIFuncIT.testFunction;
@@ -9,17 +12,24 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 /**
- * Open Group CLI function integration tests for the latest JDBC driver but not the oldest supported
- * driver. Revisit this tests whenever bumping up the oldest supported driver to examine if the
- * tests still is not applicable. If it is applicable, move tests to OpenGroupCLIFuncIT so that both
- * the latest and oldest supported driver run the tests.
+ * Open Group CLI function integration tests for the latest JDBC driver. This doesn't work for the
+ * oldest supported driver. Revisit this tests whenever bumping up the oldest supported driver to
+ * examine if the tests still are not applicable. If it is applicable, move tests to
+ * OpenGroupCLIFuncIT so that both the latest and oldest supported driver run the tests.
  */
 @Category(TestCategoryOthers.class)
 public class OpenGroupCLIFuncLatestIT extends BaseJDBCTest {
+  /**
+   * Numeric function tests
+   *
+   * @throws SQLException arises if any exception occurs
+   */
   @Test
   public void testNumericFunctions() throws SQLException {
     try (Connection connection = getConnection()) {
       testFunction(connection, "select {fn ABS(-1)}", "1");
+      // This doesn't work for the old driver which doesn't support Arrow format yet where the arrow
+      // float data type reserves higher precision.
       testFunction(connection, "select {fn ACOS(0.5)}", "1.0471975511965979");
       testFunction(connection, "select {fn ASIN(0.5)}", "0.5235987755982989");
       testFunction(connection, "select {fn CEILING(1.3)}", "2");

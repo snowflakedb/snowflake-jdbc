@@ -3512,4 +3512,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
       closeSQLObjects(preparedStatement, connection);
     }
   }
+  // NOTE: Don't add new tests here. Instead, add it to other appropriate test class or create a new
+  // one.
+  // This class is too large to have more tests.
 }

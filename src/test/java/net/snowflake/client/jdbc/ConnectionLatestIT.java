@@ -32,10 +32,10 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.TemporaryFolder;
 
 /**
- * Connection integration tests for the latest JDBC driver but not the oldest supported driver.
- * Revisit this tests whenever bumping up the oldest supported driver to examine if the tests still
- * is not applicable. If it is applicable, move tests to ConnectionIT so that both the latest and
- * oldest supported driver run the tests.
+ * Connection integration tests for the latest JDBC driver. This doesn't work for the oldest
+ * supported driver. Revisit this tests whenever bumping up the oldest supported driver to examine
+ * if the tests still is not applicable. If it is applicable, move tests to ConnectionIT so that
+ * both the latest and oldest supported driver run the tests.
  */
 @Category(TestCategoryConnection.class)
 public class ConnectionLatestIT extends BaseJDBCTest {

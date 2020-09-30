@@ -1,3 +1,6 @@
+/*
+ * Copyright (c) 2012-2020 Snowflake Computing Inc. All right reserved.
+ */
 package net.snowflake.client.jdbc;
 
 import static org.junit.Assert.*;
@@ -23,6 +26,12 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.TemporaryFolder;
 
+/**
+ * General JDBC tests for the latest JDBC driver. This doesn't work for the oldest supported driver.
+ * Revisit this tests whenever bumping up the oldest supported driver to examine if the tests still
+ * is not applicable. If it is applicable, move tests to SnowflakeDriverIT so that both the latest
+ * and oldest supported driver run the tests.
+ */
 @Category(TestCategoryOthers.class)
 public class SnowflakeDriverLatestIT extends BaseJDBCTest {
   @Rule public TemporaryFolder tmpFolder = new TemporaryFolder();

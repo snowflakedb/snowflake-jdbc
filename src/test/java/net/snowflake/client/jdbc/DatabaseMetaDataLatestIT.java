@@ -15,14 +15,13 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 /**
- * DatabaseMetaData test for the latest JDBC driver but not the oldest supported driver. Revisit
- * this tests whenever bumping up the oldest supported driver to examine if the tests still is not
- * applicable. If it is applicable, move tests to DatabaseMetaDataIT so that both the latest and
- * oldest supported driver run the tests.
+ * DatabaseMetaData test for the latest JDBC driver. This doesn't work for the oldest supported
+ * driver. Revisit this tests whenever bumping up the oldest supported driver to examine if the
+ * tests still is not applicable. If it is applicable, move tests to DatabaseMetaDataIT so that both
+ * the latest and oldest supported driver run the tests.
  */
 @Category(TestCategoryOthers.class)
 public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
-
   /**
    * Tests for getFunctions
    *
