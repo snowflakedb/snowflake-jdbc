@@ -493,6 +493,11 @@ public class SnowflakeUtil {
     }
   }
 
+  // This function is for mocking purpose. Because System functions can't be mocked by mockito
+  public static String systemGetEnv(String env) {
+    return System.getenv(env);
+  }
+
   /**
    * Setup JDBC proxy properties if necessary.
    *
