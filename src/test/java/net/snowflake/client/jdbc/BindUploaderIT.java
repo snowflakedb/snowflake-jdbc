@@ -6,17 +6,11 @@ package net.snowflake.client.jdbc;
 
 import static org.junit.Assert.*;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStreamReader;
 import java.math.BigDecimal;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.sql.*;
 import java.sql.Date;
 import java.util.*;
-import java.util.zip.GZIPInputStream;
 import net.snowflake.client.category.TestCategoryOthers;
 import net.snowflake.client.core.ParameterBindingDTO;
 import net.snowflake.client.core.SFSession;
@@ -137,35 +131,6 @@ public class BindUploaderIT extends BaseJDBCTest {
   public void testTempDirCreated() {
     assertTrue(Files.exists(bindUploader.getBindDir()));
     assertTrue(Files.isDirectory(bindUploader.getBindDir()));
-  }
-
-  // Test csv correctness, and deletion after close
-  @Test
-  public void testSerializeCSVSimple() throws Exception {
-    bindUploader.upload(getBindings(conn));
-
-    // CSV should exist in bind directory until the uploader is closed
-    Path p = bindUploader.getBindDir();
-    assertTrue(Files.exists(p));
-    assertTrue(Files.isDirectory(p));
-
-    File[] files = p.toFile().listFiles();
-    assertNotNull("file must exists", files);
-    assertEquals(files.length, 1);
-
-    File csvFile = files[0];
-    try (BufferedReader br =
-        new BufferedReader(
-            new InputStreamReader(new GZIPInputStream(new FileInputStream(csvFile))))) {
-      assertEquals(csv1, br.readLine());
-      assertEquals(csv2, br.readLine());
-      assertNull(br.readLine());
-    }
-
-    bindUploader.close();
-
-    // After the uploader closes, it should clean up the CSV
-    assertFalse(Files.exists(p));
   }
 
   static String parseRow(ResultSet rs) throws Exception {

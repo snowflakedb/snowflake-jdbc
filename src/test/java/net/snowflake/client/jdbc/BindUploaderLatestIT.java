@@ -124,4 +124,33 @@ public class BindUploaderLatestIT extends BaseJDBCTest {
     assertEquals(csv2, parseRow(rs));
     assertFalse(rs.next());
   }
+
+  // Test csv correctness, and deletion after close
+  @Test
+  public void testSerializeCSVSimple() throws Exception {
+    bindUploader.upload(getBindings(conn));
+
+    // CSV should exist in bind directory until the uploader is closed
+    Path p = bindUploader.getBindDir();
+    assertTrue(Files.exists(p));
+    assertTrue(Files.isDirectory(p));
+
+    File[] files = p.toFile().listFiles();
+    assertNotNull("file must exists", files);
+    assertEquals(files.length, 1);
+
+    File csvFile = files[0];
+    try (BufferedReader br =
+        new BufferedReader(
+            new InputStreamReader(new GZIPInputStream(new FileInputStream(csvFile))))) {
+      assertEquals(csv1, br.readLine());
+      assertEquals(csv2, br.readLine());
+      assertNull(br.readLine());
+    }
+
+    bindUploader.close();
+
+    // After the uploader closes, it should clean up the CSV
+    assertFalse(Files.exists(p));
+  }
 }
