@@ -496,7 +496,12 @@ public class SnowflakeUtil {
   // This function is for mocking purpose. Because System static functions can't be mocked by
   // mockito
   public static String systemGetEnv(String env) {
-    return System.getenv(env);
+    try {
+      return System.getenv(env);
+    } catch (SecurityException ex) {
+      logger.debug("Security exception raised: {}", ex.getMessage());
+      return null;
+    }
   }
 
   /**

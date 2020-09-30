@@ -4,6 +4,7 @@
 
 package net.snowflake.client.core;
 
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetEnv;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
 import com.amazonaws.http.apache.SdkProxyRoutePlanner;
@@ -368,7 +369,7 @@ public class SFTrustManager extends X509ExtendedTrustManager {
       SF_OCSP_RESPONSE_CACHE_SERVER_URL_VALUE = ocspCacheUrl;
     }
     try {
-      ocspCacheUrl = System.getenv(SF_OCSP_RESPONSE_CACHE_SERVER_URL);
+      ocspCacheUrl = systemGetEnv(SF_OCSP_RESPONSE_CACHE_SERVER_URL);
       if (ocspCacheUrl != null) {
         SF_OCSP_RESPONSE_CACHE_SERVER_URL_VALUE = ocspCacheUrl;
       }
@@ -389,7 +390,7 @@ public class SFTrustManager extends X509ExtendedTrustManager {
       return false;
     }
     try {
-      ocspCacheServerEnabled = System.getenv(SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED);
+      ocspCacheServerEnabled = systemGetEnv(SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED);
       if (Boolean.FALSE.toString().equalsIgnoreCase(ocspCacheServerEnabled)) {
         LOGGER.debug("No OCSP Response Cache Server is used.");
         return false;
@@ -715,7 +716,7 @@ public class SFTrustManager extends X509ExtendedTrustManager {
   private void checkNewOCSPEndpointAvailability() {
     String new_ocsp_ept;
     try {
-      new_ocsp_ept = System.getenv("SF_OCSP_ACTIVATE_NEW_ENDPOINT");
+      new_ocsp_ept = systemGetEnv("SF_OCSP_ACTIVATE_NEW_ENDPOINT");
     } catch (Throwable ex) {
       LOGGER.debug(
           "Could not get environment variable to check for New OCSP Endpoint Availability");
