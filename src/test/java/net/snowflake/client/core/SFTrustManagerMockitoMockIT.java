@@ -4,22 +4,26 @@
 
 package net.snowflake.client.core;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.mockito.Mockito.*;
-
-import java.io.File;
-import java.io.IOException;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.TrustManagerFactory;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
+import net.snowflake.client.category.TestCategoryCore;
 import net.snowflake.client.jdbc.SnowflakeUtil;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.rules.TemporaryFolder;
 import org.mockito.MockedStatic;
 
-public class SFTrustManagerMockitoMockTest {
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
+import java.io.File;
+import java.io.IOException;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.mockito.Mockito.*;
+
+@Category(TestCategoryCore.class)
+public class SFTrustManagerMockitoMockIT {
 
   @Rule public TemporaryFolder tmpFolder = new TemporaryFolder();
 
