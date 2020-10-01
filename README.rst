@@ -82,6 +82,29 @@ EU(Frankfurt) Region:
 
     jdbc:snowflake://<account>.eu-central-1.snowflakecomputing.com/?<connection_params>
 
+Tests
+=========
+
+Run Tests
+---------
+
+.. code-block:: bash
+
+    mvn -DjenkinsIT -DtestCategory=net.snowflake.client.category.<category> verify
+
+where ``category`` is the class name under the package ``net.snowflake.client.category``.
+
+Test Class Naming Convention
+----------------------------
+
+The test cases are fallen into a couple of criterias:
+
+- The unit test class names end with ``Test``. They run part of the JDBC build jobs.
+- The integration test class names end with ``IT``. They run part of the ``verify`` maven goal along with the test category specified by the parameter ``testCategory`` having ``net.snowflake.client.category`` classes.
+- The manual test class names end with ``Manual``. They don't run in the CI but you can run manually by running them.
+
+Aside from the general test criterias, the test case class names ending with ``LatestIT`` run only with the latest JDBC driver.
+The main reason why they are separated from other ``IT`` classes is to run the old JDBC driver tests. See ``./TestOnly`` directory for further information.
 
 Documentation
 =============

@@ -7,7 +7,7 @@ The primary goal is to run the tests against the oldest support JDBC driver to e
 Run Tests
 ==========
 
-.. code-block: bash
+.. code-block:: bash
 
     mvn -DjenkinsIT -DtestCategory=net.snowflake.client.category.<category> verify
 
