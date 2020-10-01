@@ -3,12 +3,13 @@
  */
 package net.snowflake.client.core.arrow;
 
+import net.snowflake.client.core.SFException;
+
 import java.math.BigDecimal;
 import java.sql.Date;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.TimeZone;
-import net.snowflake.client.core.SFException;
 
 /** Interface to convert from arrow vector values into java data types. */
 public interface ArrowVectorConverter {
@@ -107,13 +108,14 @@ public interface ArrowVectorConverter {
    * Convert value in arrow vector to Date
    *
    * @param index index of the value to be converted in the vector
-   * @param tz
+   * @param jvmTz JVM timezone
+   * @param useDateFormat boolean value to check whether to change timezone or not
    * @return Date converted from arrow vector
    * @throws SFException invalid data conversion
    */
-  Date toDate(int index, TimeZone tz) throws SFException;
+  Date toDate(int index, TimeZone jvmTz, boolean useDateFormat) throws SFException;
 
-  /**
+    /**
    * Convert value in arrow vector to Time
    *
    * @param index index of the value to be converted in the vector

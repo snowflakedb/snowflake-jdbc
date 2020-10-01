@@ -3,11 +3,6 @@
  */
 package net.snowflake.client.core.arrow;
 
-import java.nio.ByteBuffer;
-import java.sql.Date;
-import java.sql.Time;
-import java.sql.Timestamp;
-import java.util.TimeZone;
 import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.IncidentUtil;
 import net.snowflake.client.core.ResultUtil;
@@ -17,6 +12,12 @@ import net.snowflake.client.jdbc.SnowflakeType;
 import net.snowflake.client.jdbc.SnowflakeUtil;
 import org.apache.arrow.vector.BigIntVector;
 import org.apache.arrow.vector.ValueVector;
+
+import java.nio.ByteBuffer;
+import java.sql.Date;
+import java.sql.Time;
+import java.sql.Timestamp;
+import java.util.TimeZone;
 
 /** converter from BigInt (Long) to Timestamp_LTZ */
 public class BigIntToTimestampLTZConverter extends AbstractArrowVectorConverter {
@@ -81,7 +82,7 @@ public class BigIntToTimestampLTZConverter extends AbstractArrowVectorConverter 
   }
 
   @Override
-  public Date toDate(int index, TimeZone tz) throws SFException {
+  public Date toDate(int index, TimeZone tz, boolean useDateFormat) throws SFException {
     return isNull(index) ? null : new Date(getTimestamp(index, TimeZone.getDefault()).getTime());
   }
 

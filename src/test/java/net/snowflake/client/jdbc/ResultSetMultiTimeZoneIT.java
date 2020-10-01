@@ -3,14 +3,6 @@
  */
 package net.snowflake.client.jdbc;
 
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.*;
-
-import java.sql.*;
-import java.sql.Date;
-import java.text.SimpleDateFormat;
-import java.util.*;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryResultSet;
@@ -20,6 +12,15 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+
+import java.sql.Date;
+import java.sql.*;
+import java.text.SimpleDateFormat;
+import java.util.*;
+
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.*;
 
 /** Test ResultSet */
 @RunWith(Parameterized.class)
@@ -180,8 +181,9 @@ public class ResultSetMultiTimeZoneIT extends BaseJDBCTest {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testDateAndTimestampWithTimezone() throws SQLException {
-    Connection con = getConnection();
-    Statement statement = con.createStatement();
+    Connection connection = init();
+    Statement statement = connection.createStatement();
+    statement.execute("alter session set JDBC_FORMAT_DATE_WITH_TIMEZONE=true");
     ResultSet rs =
         statement.executeQuery(
             "SELECT DATE '1970-01-02 00:00:00' as datefield, "
@@ -206,16 +208,18 @@ public class ResultSetMultiTimeZoneIT extends BaseJDBCTest {
     // match
     assertEquals(rs.getDate(1, cal), rs.getDate(2, cal));
 
-    // getDate() without Calendar input for timezone should return a the same date with no timezone
+    // getDate() without Calendar input for timezone should return the same date with no timezone
     // offset
     assertEquals("1970-01-02 00:00:00", sdf.format(rs.getDate(1)));
+    assertEquals("1970-01-02 00:00:00", sdf.format(rs.getDate(2)));
 
     // getTimestamp() without Calendar input for timezone still should return the timezone offset
     assertEquals("1970-01-02 08:00:00", sdf.format(rs.getTimestamp(2)));
+    assertEquals("1970-01-02 08:00:00", sdf.format(rs.getTimestamp(1)));
 
     rs.close();
     statement.close();
-    con.close();
+    connection.close();
   }
 
   // SNOW-25029: The driver should reduce Time milliseconds mod 24h.

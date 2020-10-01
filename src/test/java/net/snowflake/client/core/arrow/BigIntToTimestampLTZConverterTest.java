@@ -4,13 +4,6 @@
 
 package net.snowflake.client.core.arrow;
 
-import static org.hamcrest.CoreMatchers.*;
-import static org.hamcrest.MatcherAssert.assertThat;
-
-import java.sql.Date;
-import java.sql.Time;
-import java.sql.Timestamp;
-import java.util.*;
 import net.snowflake.client.TestUtil;
 import net.snowflake.client.core.ResultUtil;
 import net.snowflake.client.core.SFException;
@@ -24,6 +17,14 @@ import org.apache.arrow.vector.types.pojo.FieldType;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+
+import java.sql.Date;
+import java.sql.Time;
+import java.sql.Timestamp;
+import java.util.*;
+
+import static org.hamcrest.CoreMatchers.*;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 @RunWith(Parameterized.class)
 public class BigIntToTimestampLTZConverterTest extends BaseConverterTest {
@@ -96,7 +97,7 @@ public class BigIntToTimestampLTZConverterTest extends BaseConverterTest {
     this.setScale(testScales[i]);
     while (j < rowCount) {
       Timestamp ts = converter.toTimestamp(j, getTimeZone());
-      Date date = converter.toDate(j, getTimeZone());
+      Date date = converter.toDate(j, getTimeZone(), false);
       Time time = converter.toTime(j);
       String tsStr = converter.toString(j);
 
