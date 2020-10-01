@@ -3,6 +3,13 @@
  */
 package net.snowflake.client.core.arrow;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertEquals;
+
+import java.math.BigDecimal;
+import java.util.*;
 import net.snowflake.client.TestUtil;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.jdbc.ErrorCode;
@@ -12,14 +19,6 @@ import org.apache.arrow.vector.TinyIntVector;
 import org.apache.arrow.vector.types.Types;
 import org.apache.arrow.vector.types.pojo.FieldType;
 import org.junit.Test;
-
-import java.math.BigDecimal;
-import java.util.*;
-
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.nullValue;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
 
 public class TinyIntToFixedConverterTest extends BaseConverterTest {
   /** allocator for arrow */

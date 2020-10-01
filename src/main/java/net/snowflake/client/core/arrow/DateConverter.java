@@ -3,6 +3,10 @@
  */
 package net.snowflake.client.core.arrow;
 
+import java.math.BigDecimal;
+import java.sql.Date;
+import java.sql.Timestamp;
+import java.util.TimeZone;
 import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.IncidentUtil;
 import net.snowflake.client.core.ResultUtil;
@@ -13,11 +17,6 @@ import net.snowflake.client.jdbc.SnowflakeUtil;
 import org.apache.arrow.vector.DateDayVector;
 import org.apache.arrow.vector.IntVector;
 import org.apache.arrow.vector.ValueVector;
-
-import java.math.BigDecimal;
-import java.sql.Date;
-import java.sql.Timestamp;
-import java.util.TimeZone;
 
 /** Convert Arrow DateDayVector to Date */
 public class DateConverter extends AbstractArrowVectorConverter {

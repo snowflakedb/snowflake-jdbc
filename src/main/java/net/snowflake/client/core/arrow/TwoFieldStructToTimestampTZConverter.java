@@ -3,6 +3,10 @@
  */
 package net.snowflake.client.core.arrow;
 
+import java.sql.Date;
+import java.sql.Time;
+import java.sql.Timestamp;
+import java.util.TimeZone;
 import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.IncidentUtil;
 import net.snowflake.client.core.ResultUtil;
@@ -15,11 +19,6 @@ import org.apache.arrow.vector.BigIntVector;
 import org.apache.arrow.vector.IntVector;
 import org.apache.arrow.vector.ValueVector;
 import org.apache.arrow.vector.complex.StructVector;
-
-import java.sql.Date;
-import java.sql.Time;
-import java.sql.Timestamp;
-import java.util.TimeZone;
 
 /** converter from two-field struct (epoch and time zone) to Timestamp_TZ */
 public class TwoFieldStructToTimestampTZConverter extends AbstractArrowVectorConverter {
