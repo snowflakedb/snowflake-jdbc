@@ -37,14 +37,9 @@ public class SFTrustManagerMockitoMockIT {
         MockedStatic<SnowflakeUtil> mockedSnowflakeUtil = mockStatic(SnowflakeUtil.class)) {
 
       File cacheFolder = tmpFolder.newFolder();
-      System.out.println("[WUFAN DEBUG] cacheFolder's path is " + cacheFolder.getCanonicalPath());
       mockedSnowflakeUtil
           .when(() -> SnowflakeUtil.systemGetEnv("SF_OCSP_RESPONSE_CACHE_DIR"))
           .thenReturn(cacheFolder.getCanonicalPath());
-
-      System.out.println(
-          "[WUFAN DEBUG] SF_OCSP_RESPONSE_CACHE_DIR = "
-              + SnowflakeUtil.systemGetEnv("SF_OCSP_RESPONSE_CACHE_DIR"));
 
       TrustManagerFactory tested = mock(TrustManagerFactory.class);
       when(tested.getTrustManagers()).thenReturn(new TrustManager[] {});
