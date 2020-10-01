@@ -13,18 +13,9 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <arrow.version>0.15.1</arrow.version>
-    <slf4j.version>1.7.25</slf4j.version>
-    <jsoup.version>1.11.3</jsoup.version>
-    <tika.version>1.22</tika.version>
-    <jackson.version>2.11.0</jackson.version>
     <jacksondatabind.version>2.11.0</jacksondatabind.version>
-    <httpclient.version>4.5.5</httpclient.version>
     <jacoco.version>0.8.4</jacoco.version>
     <jacoco.skip.instrument>true</jacoco.skip.instrument>
-    <awssdk.version>1.11.364</awssdk.version>
-    <google.api.client.version>1.30.5</google.api.client.version>
-    <google.http.client.version>1.36.0</google.http.client.version>
-    <bouncycastle.version>1.64</bouncycastle.version>
     <jna.version>5.5.0</jna.version>
     <mockito.version>3.5.6</mockito.version>
     <shadeBase>net.snowflake.client.jdbc.internal</shadeBase>
