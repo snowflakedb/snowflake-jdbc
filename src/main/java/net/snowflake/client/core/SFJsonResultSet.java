@@ -638,7 +638,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
       }
       return new Date(getTimestamp(columnIndex, tz).getTime());
     } else if (Types.DATE == columnType) {
-      if (tz == null || !session.getFormatDateWithTimezone()) {
+      if (tz == null || !resultSetSerializable.getFormatDateWithTimeZone()) {
         return ArrowResultUtil.getDate(Integer.parseInt((String) obj));
       }
       return ArrowResultUtil.getDate(Integer.parseInt((String) obj), tz, timeZone);

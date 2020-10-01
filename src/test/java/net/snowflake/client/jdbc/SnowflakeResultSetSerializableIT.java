@@ -418,6 +418,8 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
     try (Connection connection = init()) {
       Statement statement = connection.createStatement();
 
+      statement.execute("create or replace schema testschema");
+
       statement.execute(
           "create or replace table table_basic " + " (int_c int, string_c string(128))");
 
