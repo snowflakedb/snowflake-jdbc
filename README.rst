@@ -146,7 +146,7 @@ The test cases are fallen into a couple of criterias:
 - The manual test class names end with ``Manual``. They don't run in the CI but you can run them manually.
 
 Aside from the general test criterias, the test case class names ending with ``LatestIT`` run only with the latest JDBC driver.
-The main reason why they are separated from other ``IT`` classes is to run the old JDBC driver tests. See ``./TestOnly`` directory for further information.
+The main motivation behind is to skip those tests for the old JDBC driver. See ``./TestOnly`` directory for further information.
 
 Support
 =============
