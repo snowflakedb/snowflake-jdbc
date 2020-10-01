@@ -88,8 +88,6 @@ class FileCacheManager {
         this.cacheDirectorySystemProperty != null
             ? systemGetProperty(this.cacheDirectorySystemProperty)
             : null;
-    System.out.println(
-        "[WUFAN DEBUG] cacheDirPath after cacheDirectorySystemProperty is " + cacheDirPath);
     if (cacheDirPath == null) {
       try {
         cacheDirPath =
@@ -103,7 +101,6 @@ class FileCacheManager {
         return this;
       }
     }
-    System.out.println("[WUFAN DEBUG] cacheDirPath after cacheDirectoryEnv is " + cacheDirPath);
 
     if (cacheDirPath != null) {
       this.cacheDir = new File(cacheDirPath);
@@ -135,13 +132,9 @@ class FileCacheManager {
     if (!this.cacheDir.mkdirs() && !this.cacheDir.exists()) {
       LOGGER.debug(
           "Cannot create the cache directory {}. Giving up.", this.cacheDir.getAbsolutePath());
-      System.out.printf(
-          "[WUFAN DEBUG] Cannot create the cache directory %s. Giving up.%n",
-          this.cacheDir.getAbsolutePath());
       return this;
     }
     LOGGER.debug("Verified Directory {}", this.cacheDir.getAbsolutePath());
-    System.out.printf("[WUFAN DEBUG] Verified Directory %s%n", this.cacheDir.getAbsolutePath());
 
     File cacheFileTmp = new File(this.cacheDir, this.baseCacheFileName).getAbsoluteFile();
     try {
@@ -151,21 +144,14 @@ class FileCacheManager {
       // writable.
       if (cacheFileTmp.createNewFile()) {
         LOGGER.debug("Successfully created a cache file {}", cacheFileTmp);
-        System.out.printf(
-            "[WUFAN DEBUG] Successfully created a cache file %s%n", cacheFileTmp.getAbsolutePath());
       } else {
         LOGGER.debug("Cache file already exists {}", cacheFileTmp);
-        System.out.printf(
-            "[WUFAN DEBUG] Cache file already exists %s%n", cacheFileTmp.getAbsolutePath());
       }
       this.cacheFile = cacheFileTmp.getCanonicalFile();
       this.cacheLockFile =
           new File(this.cacheFile.getParentFile(), this.baseCacheFileName + ".lck");
     } catch (IOException | SecurityException ex) {
       LOGGER.info("Failed to touch the cache file. Ignored. {}", cacheFileTmp.getAbsoluteFile());
-      System.out.printf(
-          "[WUFAN DEBUG] Failed to touch the cache file. Ignored. %s%n",
-          cacheFileTmp.getAbsoluteFile());
     }
     return this;
   }

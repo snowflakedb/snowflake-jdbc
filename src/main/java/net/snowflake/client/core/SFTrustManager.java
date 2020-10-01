@@ -193,7 +193,6 @@ public class SFTrustManager extends X509ExtendedTrustManager {
 
   static {
     // init OCSP response cache file manager
-    System.out.println("[WUFAN DEBUG] try to init FileCacheManager for SFTrustManager");
     fileCacheManager =
         FileCacheManager.builder()
             .setCacheDirectorySystemProperty(CACHE_DIR_PROP)
