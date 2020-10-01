@@ -74,7 +74,7 @@
     <dependency>
       <groupId>net.snowflake</groupId>
       <artifactId>snowflake-jdbc</artifactId>
-      <version>3.9.2</version>
+      <version>${project.version}</version>
       <type>jar</type>
     </dependency>
     <dependency>

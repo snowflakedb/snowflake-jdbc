@@ -25,9 +25,9 @@ import org.junit.experimental.categories.Category;
 public class ResultSetIT extends ResultSet0IT {
   private final String selectAllSQL = "select * from test_rs";
 
-  private static byte[] byteArrayTestCase1 = new byte[0];
-  private static byte[] byteArrayTestCase2 = {(byte) 0xAB, (byte) 0xCD, (byte) 0x12};
-  private static byte[] byteArrayTestCase3 = {(byte) 0x00, (byte) 0xFF, (byte) 0x42, (byte) 0x01};
+  private static final byte[] byteArrayTestCase1 = new byte[0];
+  private static final byte[] byteArrayTestCase2 = {(byte) 0xAB, (byte) 0xCD, (byte) 0x12};
+  private static final byte[] byteArrayTestCase3 = {(byte) 0x00, (byte) 0xFF, (byte) 0x42, (byte) 0x01};
 
   public ResultSetIT() {
     this("json");
@@ -378,7 +378,7 @@ public class ResultSetIT extends ResultSet0IT {
     resultSet = numberCrossTesting();
     resultSet.next();
     for (int i = 1; i < 13; i++) {
-      assertEquals(null, resultSet.getBigDecimal(i));
+      assertNull(resultSet.getBigDecimal(i));
     }
     resultSet.next();
     assertEquals(new BigDecimal(2), resultSet.getBigDecimal(1));
@@ -417,9 +417,9 @@ public class ResultSetIT extends ResultSet0IT {
     assertTrue(resultSet.isFirst());
     assertEquals(1, resultSet.getRow());
     resultSet.next();
-    assertTrue(!resultSet.isFirst());
+    assertFalse(resultSet.isFirst());
     assertEquals(2, resultSet.getRow());
-    assertTrue(!resultSet.isLast());
+    assertFalse(resultSet.isLast());
     resultSet.next();
     assertEquals(3, resultSet.getRow());
     assertTrue(resultSet.isLast());
@@ -716,7 +716,7 @@ public class ResultSetIT extends ResultSet0IT {
     Connection connection = init();
     Statement statement = connection.createStatement();
     ResultSet resultSet = statement.executeQuery(selectAllSQL);
-    assertTrue(!resultSet.isClosed());
+    assertFalse(resultSet.isClosed());
     resultSet.close();
     assertTrue(resultSet.isClosed());
     assertFalse(resultSet.next());
