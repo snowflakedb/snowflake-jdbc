@@ -1,13 +1,5 @@
 package net.snowflake.client.jdbc;
 
-import static org.hamcrest.Matchers.greaterThan;
-import static org.junit.Assert.*;
-
-import java.io.*;
-import java.sql.*;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Properties;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryResultSet;
@@ -16,6 +8,15 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.TemporaryFolder;
+
+import java.io.*;
+import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Properties;
+
+import static org.hamcrest.Matchers.greaterThan;
+import static org.junit.Assert.*;
 
 /** SnowflakeResultSetSerializable tests */
 @Category(TestCategoryResultSet.class)
@@ -257,12 +258,50 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
     assertEquals(chunkResultString, originalResultCSVString);
   }
 
+  private void testBasicTableHarnessAsync(
+          int rowCount, long maxSizeInBytes, String whereClause, boolean needSetupTable)
+          throws Throwable {
+    List<String> fileNameList = null;
+    String originalResultCSVString = null;
+    Connection connection = init();
+      Statement statement = connection.createStatement();
+
+      if (needSetupTable) {
+        statement.execute(
+                "create or replace table table_basic " + " (int_c int, string_c string(128))");
+
+        if (rowCount > 0) {
+          statement.execute(
+                  "insert into table_basic select "
+                          + "seq4(), 'arrow_1234567890arrow_1234567890arrow_1234567890arrow_1234567890'"
+                          + " from table(generator(rowcount=>"
+                          + rowCount
+                          + "))");
+        }
+      }
+
+      String sqlSelect = "select * from table_basic " + whereClause;
+      ResultSet rs0 = statement.unwrap(SnowflakeStatement.class).executeAsyncQuery(sqlSelect);
+      String queryID = rs0.unwrap(SnowflakeResultSet.class).getQueryID();
+      rs0.close();
+      connection.close();
+      connection = init();
+      ResultSet rs = connection.unwrap(SnowflakeConnection.class).createResultSet(queryID);
+      fileNameList = serializeResultSet((SnowflakeResultSet) rs, maxSizeInBytes, "txt");
+
+      originalResultCSVString = generateCSVResult(rs);
+      rs.close();
+
+    String chunkResultString = deserializeResultSet(fileNameList);
+    assertEquals(chunkResultString, originalResultCSVString);
+  }
+
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testBasicTableWithEmptyResult() throws Throwable {
     // Use complex WHERE clause in order to test both ARROW and JSON.
     // It looks GS only generates JSON format result.
-    testBasicTableHarness(10, 1024, "where int_c * int_c = 2", true);
+    testBasicTableHarnessAsync(10, 1024, "where int_c * int_c = 2", true);
   }
 
   @Test
