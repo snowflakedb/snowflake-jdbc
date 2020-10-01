@@ -27,7 +27,9 @@ public class ResultSetIT extends ResultSet0IT {
 
   private static final byte[] byteArrayTestCase1 = new byte[0];
   private static final byte[] byteArrayTestCase2 = {(byte) 0xAB, (byte) 0xCD, (byte) 0x12};
-  private static final byte[] byteArrayTestCase3 = {(byte) 0x00, (byte) 0xFF, (byte) 0x42, (byte) 0x01};
+  private static final byte[] byteArrayTestCase3 = {
+    (byte) 0x00, (byte) 0xFF, (byte) 0x42, (byte) 0x01
+  };
 
   public ResultSetIT() {
     this("json");
