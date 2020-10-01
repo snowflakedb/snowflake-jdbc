@@ -177,6 +177,10 @@ public class ResultSetMultiTimeZoneIT extends BaseJDBCTest {
     connection.close();
   }
 
+  /**
+   * Test for getDate(int columnIndex, Calendar cal) function to ensure it matches values with
+   * getTimestamp function
+   */
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testDateAndTimestampWithTimezone() throws SQLException {
