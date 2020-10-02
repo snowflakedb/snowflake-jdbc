@@ -493,6 +493,24 @@ public class SnowflakeUtil {
     }
   }
 
+  public static String systemGetEnv(String env) {
+    try {
+      return System.getenv(env);
+    } catch (SecurityException ex) {
+      logger.debug(
+          "Failed to get environment variable {}. Security exception raised: {}",
+          env,
+          ex.getMessage());
+      // TODO: Need to remove this throw in the future.
+      // We rethrow this exception only for consistency, because all places that used
+      // System.getenv() are wrapped by try/catch, and a small part of logic relies on the
+      // exception.
+      // Please remember when you try to delete this throw statement, you might also need to change
+      // the related code, e.g. try/catch,  where this function gets called.
+      throw ex;
+    }
+  }
+
   /**
    * Setup JDBC proxy properties if necessary.
    *
