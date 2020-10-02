@@ -4,6 +4,7 @@
 
 package net.snowflake.client.core;
 
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetEnv;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -40,10 +41,10 @@ class SSDManager {
     String key_upd_ssd = null;
     String host_spec_ssd = null;
     try {
-      ssd_status = System.getenv("SF_OCSP_ACTIVATE_SSD");
+      ssd_status = systemGetEnv("SF_OCSP_ACTIVATE_SSD");
       if (ssd_status != null) {
-        key_upd_ssd = System.getenv(keyUpdDirEnvVariable);
-        host_spec_ssd = System.getenv(hostSpecBypassEnvVariable);
+        key_upd_ssd = systemGetEnv(keyUpdDirEnvVariable);
+        host_spec_ssd = systemGetEnv(hostSpecBypassEnvVariable);
       }
     } catch (Throwable ex) {
       LOGGER.debug("Failed to get environment variable for Server Side Directive support");

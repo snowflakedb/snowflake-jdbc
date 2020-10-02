@@ -4,6 +4,7 @@
 
 package net.snowflake.client.core;
 
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetEnv;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
 import com.amazonaws.http.apache.SdkProxyRoutePlanner;
@@ -33,24 +34,10 @@ import java.security.interfaces.RSAPublicKey;
 import java.security.spec.X509EncodedKeySpec;
 import java.text.MessageFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.Enumeration;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TimeZone;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.SSLEngine;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.TrustManagerFactory;
-import javax.net.ssl.X509ExtendedTrustManager;
-import javax.net.ssl.X509TrustManager;
+import javax.net.ssl.*;
 import net.snowflake.client.jdbc.OCSPErrorCode;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -78,31 +65,14 @@ import org.apache.http.impl.client.DefaultRedirectStrategy;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.ssl.SSLInitializationException;
-import org.bouncycastle.asn1.ASN1Encodable;
-import org.bouncycastle.asn1.ASN1Integer;
-import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.asn1.ASN1OctetString;
-import org.bouncycastle.asn1.DEROctetString;
-import org.bouncycastle.asn1.DLSequence;
+import org.bouncycastle.asn1.*;
 import org.bouncycastle.asn1.ocsp.CertID;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
-import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.asn1.x509.*;
 import org.bouncycastle.asn1.x509.Certificate;
-import org.bouncycastle.asn1.x509.Extension;
-import org.bouncycastle.asn1.x509.Extensions;
-import org.bouncycastle.asn1.x509.GeneralName;
-import org.bouncycastle.asn1.x509.TBSCertificate;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
-import org.bouncycastle.cert.ocsp.BasicOCSPResp;
-import org.bouncycastle.cert.ocsp.CertificateID;
-import org.bouncycastle.cert.ocsp.CertificateStatus;
-import org.bouncycastle.cert.ocsp.OCSPException;
-import org.bouncycastle.cert.ocsp.OCSPReq;
-import org.bouncycastle.cert.ocsp.OCSPReqBuilder;
-import org.bouncycastle.cert.ocsp.OCSPResp;
-import org.bouncycastle.cert.ocsp.RevokedStatus;
-import org.bouncycastle.cert.ocsp.SingleResp;
+import org.bouncycastle.cert.ocsp.*;
 import org.bouncycastle.operator.DigestCalculator;
 
 /**
@@ -368,7 +338,7 @@ public class SFTrustManager extends X509ExtendedTrustManager {
       SF_OCSP_RESPONSE_CACHE_SERVER_URL_VALUE = ocspCacheUrl;
     }
     try {
-      ocspCacheUrl = System.getenv(SF_OCSP_RESPONSE_CACHE_SERVER_URL);
+      ocspCacheUrl = systemGetEnv(SF_OCSP_RESPONSE_CACHE_SERVER_URL);
       if (ocspCacheUrl != null) {
         SF_OCSP_RESPONSE_CACHE_SERVER_URL_VALUE = ocspCacheUrl;
       }
@@ -389,7 +359,7 @@ public class SFTrustManager extends X509ExtendedTrustManager {
       return false;
     }
     try {
-      ocspCacheServerEnabled = System.getenv(SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED);
+      ocspCacheServerEnabled = systemGetEnv(SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED);
       if (Boolean.FALSE.toString().equalsIgnoreCase(ocspCacheServerEnabled)) {
         LOGGER.debug("No OCSP Response Cache Server is used.");
         return false;
@@ -715,7 +685,7 @@ public class SFTrustManager extends X509ExtendedTrustManager {
   private void checkNewOCSPEndpointAvailability() {
     String new_ocsp_ept;
     try {
-      new_ocsp_ept = System.getenv("SF_OCSP_ACTIVATE_NEW_ENDPOINT");
+      new_ocsp_ept = systemGetEnv("SF_OCSP_ACTIVATE_NEW_ENDPOINT");
     } catch (Throwable ex) {
       LOGGER.debug(
           "Could not get environment variable to check for New OCSP Endpoint Availability");
