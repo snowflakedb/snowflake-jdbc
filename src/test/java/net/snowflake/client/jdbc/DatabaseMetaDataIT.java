@@ -17,6 +17,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
+import net.snowflake.client.TestUtil;
 import net.snowflake.client.category.TestCategoryOthers;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -1634,7 +1635,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
       assertEquals(255, metaData.getMaxUserNameLength());
       assertEquals(0, getSizeOfResultSet(metaData.getTablePrivileges(null, null, null)));
       // assertEquals("", metaData.getTimeDateFunctions());
-      assertEquals(System.getenv("SNOWFLAKE_TEST_USER"), metaData.getUserName());
+      assertEquals(TestUtil.systemGetEnv("SNOWFLAKE_TEST_USER"), metaData.getUserName());
       assertFalse(metaData.insertsAreDetected(1));
       assertTrue(metaData.isCatalogAtStart());
       assertFalse(metaData.isReadOnly());
