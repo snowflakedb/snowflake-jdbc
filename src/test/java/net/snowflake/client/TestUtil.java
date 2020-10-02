@@ -7,9 +7,12 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 import net.snowflake.client.core.SFException;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
 import org.junit.Assert;
 
 public class TestUtil {
+  private static final SFLogger logger = SFLoggerFactory.getLogger(TestUtil.class);
   /**
    * Util function to assert a piece will throw exception and assert on the error code
    *
@@ -29,5 +32,34 @@ public class TestUtil {
   @FunctionalInterface
   public interface TestRunInterface {
     void run() throws SFException;
+  }
+
+  /**
+   * System.getenv wrapper. If System.getenv raises an SecurityException, it is ignored and returns
+   * null.
+   *
+   * <p>This is replicated from SnowflakeUtil.systemGetEnv, because the old driver doesn't have that
+   * function for the tests to use it. Replace this function call with SnowflakeUtil.systemGetEnv
+   * when it is available.
+   *
+   * @param env the environment variable name.
+   * @return the environment variable value if set, otherwise null.
+   */
+  public static String systemGetEnv(String env) {
+    try {
+      return System.getenv(env);
+    } catch (SecurityException ex) {
+      logger.debug(
+          "Failed to get environment variable {}. Security exception raised: {}",
+          env,
+          ex.getMessage());
+      // TODO: Need to remove this throw in the future.
+      // We rethrow this exception only for consistency, because all places that used
+      // System.getenv() are wrapped by try/catch, and a small part of logic relies on the
+      // exception.
+      // Please remember when you try to delete this throw statement, you might also need to change
+      // the related code, e.g. try/catch,  where this function gets called.
+      throw ex;
+    }
   }
 }

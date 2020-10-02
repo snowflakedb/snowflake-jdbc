@@ -484,6 +484,13 @@ public class SnowflakeUtil {
     return builder.toString();
   }
 
+  /**
+   * System.getProperty wrapper. If System.getProperty raises an SecurityException, it is ignored
+   * and returns null.
+   *
+   * @param property the property name
+   * @return the property value if set, otherwise null.
+   */
   public static String systemGetProperty(String property) {
     try {
       return System.getProperty(property);
@@ -493,6 +500,13 @@ public class SnowflakeUtil {
     }
   }
 
+  /**
+   * System.getenv wrapper. If System.getenv raises an SecurityException, it is ignored and returns
+   * null.
+   *
+   * @param env the environment variable name.
+   * @return the environment variable value if set, otherwise null.
+   */
   public static String systemGetEnv(String env) {
     try {
       return System.getenv(env);
