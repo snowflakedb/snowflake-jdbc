@@ -5,34 +5,14 @@ package net.snowflake.client.jdbc;
 
 import static java.sql.DatabaseMetaData.procedureReturnsResult;
 import static java.sql.ResultSetMetaData.columnNullableUnknown;
-import static net.snowflake.client.jdbc.SnowflakeDatabaseMetaData.NumericFunctionsSupported;
-import static net.snowflake.client.jdbc.SnowflakeDatabaseMetaData.StringFunctionsSupported;
-import static net.snowflake.client.jdbc.SnowflakeDatabaseMetaData.SystemFunctionsSupported;
+import static net.snowflake.client.jdbc.SnowflakeDatabaseMetaData.*;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 import com.google.common.base.Strings;
-import java.sql.Connection;
-import java.sql.DatabaseMetaData;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
-import java.sql.SQLFeatureNotSupportedException;
-import java.sql.Statement;
-import java.sql.Types;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
+import java.sql.*;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import net.snowflake.client.ConditionalIgnoreRule;
@@ -1408,6 +1388,8 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
       /* Assert there are 17 columns in result set and 1 row */
       assertEquals(17, resultSet.getMetaData().getColumnCount());
       assertEquals(1, getSizeOfResultSet(resultSet));
+      // getSizeofResultSet will mess up the row index of resultSet
+      resultSet = metaData.getFunctionColumns(database, schema, "total_rows_in_table%", "%");
       resultSet.next();
       assertEquals(database, resultSet.getString("FUNCTION_CAT"));
       assertEquals(schema, resultSet.getString("FUNCTION_SCHEM"));
