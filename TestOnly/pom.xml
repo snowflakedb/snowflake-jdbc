@@ -116,11 +116,6 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
-       <groupId>org.codehaus.jackson</groupId>
-       <artifactId>jackson-mapper-asl</artifactId>
-       <version>1.9.9</version>
-    </dependency>
-    <dependency>
       <groupId>net.minidev</groupId>
       <artifactId>json-smart-mini</artifactId>
       <version>1.0.6.3</version>
