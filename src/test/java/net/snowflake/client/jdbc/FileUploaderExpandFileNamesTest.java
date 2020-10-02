@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All right reserved.
+ * Copyright (c) 2012-2020 Snowflake Computing Inc. All right reserved.
  */
 package net.snowflake.client.jdbc;
 
@@ -9,15 +9,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 import java.util.Set;
-import net.snowflake.client.category.TestCategoryOthers;
 import net.snowflake.client.core.OCSPMode;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.rules.TemporaryFolder;
 
 /** Tests for SnowflakeFileTransferAgent.expandFileNames */
-@Category(TestCategoryOthers.class)
 public class FileUploaderExpandFileNamesTest {
   @Rule public TemporaryFolder folder = new TemporaryFolder();
 
