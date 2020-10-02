@@ -21,7 +21,7 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class IncidentTests extends BaseIncidentTest {
+public class IncidentIT extends BaseIncidentTest {
   // Copied from StringLimiter in GS
   private static int countLines(String input) {
     if (input == null || input.isEmpty()) {
@@ -43,7 +43,7 @@ public class IncidentTests extends BaseIncidentTest {
     String jobId = "ji";
     String requestId = "ri";
     String raiser =
-        "net.snowflake.client.core.IncidentTests$"
+        "net.snowflake.client.core.IncidentIT$"
             + "CreateIncidentTests.SimpleIncidentCreationTestExpliciit";
     String errorMessage = "error Message";
     String errorStackTrace = "this is a stack element\nthis is another " + "element";
@@ -113,7 +113,7 @@ public class IncidentTests extends BaseIncidentTest {
     String expected_signature =
         errorMessage
             + ". at net.snowflake.client.core"
-            + ".IncidentTests.simpleFlushTest(IncidentTests.java:";
+            + ".IncidentIT.simpleFlushTest(IncidentIT.java:";
     Connection connection = getConnection();
 
     Incident incident =
