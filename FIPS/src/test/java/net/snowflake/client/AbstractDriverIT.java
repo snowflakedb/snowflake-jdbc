@@ -3,25 +3,15 @@
  */
 package net.snowflake.client;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-
 import com.google.common.base.Strings;
+import org.junit.Rule;
+
 import java.net.URL;
-import java.sql.Connection;
-import java.sql.Date;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
-import java.sql.Timestamp;
-import java.util.Calendar;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Properties;
-import java.util.TimeZone;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.junit.Rule;
+
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /** Base test class with common constants, data structures and methods */
 public class AbstractDriverIT {
