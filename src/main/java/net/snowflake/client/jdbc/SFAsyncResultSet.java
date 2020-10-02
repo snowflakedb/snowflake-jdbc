@@ -169,6 +169,9 @@ class SFAsyncResultSet extends SnowflakeBaseResultSet implements SnowflakeResult
   @Override
   public boolean next() throws SQLException {
     getRealResults();
+      this.resultSetMetaData =
+              (SnowflakeResultSetMetaDataV1)
+                      resultSetForNext.unwrap(SnowflakeResultSetV1.class).getMetaData();
     return resultSetForNext.next();
   }
 
