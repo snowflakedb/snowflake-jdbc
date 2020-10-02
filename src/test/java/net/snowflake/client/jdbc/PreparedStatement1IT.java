@@ -14,7 +14,6 @@ import java.util.Properties;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryStatement;
-import net.snowflake.common.core.SqlState;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -102,7 +101,8 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
       Time[][] timeValues = {
         {new Time(0), new Time(1)},
         {new Time(1000), new Time(Integer.MAX_VALUE)},
-        {new Time(123456), new Time(55555)}
+        {new Time(123456), new Time(55555)},
+        {Time.valueOf("01:02:00"), new Time(-100)},
       };
       for (int i = 0; i < timeValues.length; i++) {
         prepSt.setTime(1, timeValues[i][0]);
@@ -118,13 +118,6 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
         assertEquals(timeValues[i][1].toString(), rs.getTime(2).toString());
       }
       rs.close();
-      // test that negative time values results in an error
-      try {
-        prepSt.setTime(1, new Time(-100));
-        fail("Exception should have been thrown for negative setTime() value.");
-      } catch (SnowflakeSQLException e) {
-        assertEquals(e.getSQLState(), SqlState.INVALID_PARAMETER_VALUE);
-      }
       statement.execute("drop table if exists testStageBindTime");
       statement.execute("alter session unset CLIENT_STAGE_ARRAY_BINDING_THRESHOLD");
       statement.close();
@@ -497,10 +490,11 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
   public void testStageBatchTimes() throws SQLException {
     try (Connection connection = init()) {
       Time tMidnight = new Time(0);
+      Time tNeg = new Time(-1);
       Time tPos = new Time(1);
       Time tNow = new Time(System.currentTimeMillis());
       Time tNoon = new Time(12 * 60 * 60 * 1000);
-      Time[] times = new Time[] {tMidnight, tPos, tNow, tNoon, null};
+      Time[] times = new Time[] {tMidnight, tNeg, tPos, tNow, tNoon, null};
       int[] countResult;
       try {
         connection
