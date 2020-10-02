@@ -4,35 +4,22 @@
 
 package net.snowflake.client.jdbc;
 
-import java.io.InputStream;
-import java.io.Reader;
-import java.math.BigDecimal;
-import java.net.URL;
-import java.sql.Array;
-import java.sql.Blob;
-import java.sql.Clob;
-import java.sql.Date;
-import java.sql.NClob;
-import java.sql.Ref;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.RowId;
-import java.sql.SQLException;
-import java.sql.SQLWarning;
-import java.sql.SQLXML;
-import java.sql.Statement;
-import java.sql.Time;
-import java.sql.Timestamp;
-import java.util.Calendar;
-import java.util.List;
-import java.util.Map;
-import java.util.TimeZone;
-import java.util.regex.Pattern;
 import net.snowflake.client.core.QueryStatus;
 import net.snowflake.client.core.SFBaseResultSet;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.common.core.SqlState;
+
+import java.io.InputStream;
+import java.io.Reader;
+import java.math.BigDecimal;
+import java.net.URL;
+import java.sql.*;
+import java.util.Calendar;
+import java.util.List;
+import java.util.Map;
+import java.util.TimeZone;
+import java.util.regex.Pattern;
 
 /** SFAsyncResultSet implementation */
 class SFAsyncResultSet extends SnowflakeBaseResultSet implements SnowflakeResultSet, ResultSet {
@@ -367,19 +354,13 @@ class SFAsyncResultSet extends SnowflakeBaseResultSet implements SnowflakeResult
   /**
    * Get a list of ResultSetSerializables for the ResultSet in order to parallel processing
    *
-   * @param maxSizeInBytes The expected max data size wrapped in the ResultSetSerializables object.
-   *     NOTE: this parameter is intended to make the data size in each serializable object to be
-   *     less than it. But if user specifies a small value which may be smaller than the data size
-   *     of one result chunk. So the definition can't be guaranteed completely. For this special
-   *     case, one serializable object is used to wrap the data chunk.
-   * @return a list of ResultSetSerializables
-   * @throws if fails to get the ResultSetSerializable objects.
+   * Not currently supported for asynchronous result sets.
    */
   @Override
   public List<SnowflakeResultSetSerializable> getResultSetSerializables(long maxSizeInBytes)
       throws SQLException {
     raiseSQLExceptionIfResultSetIsClosed();
-    return sfBaseResultSet.getResultSetSerializables(maxSizeInBytes);
+    throw new SQLFeatureNotSupportedException();
   }
 
   /** Empty result set */

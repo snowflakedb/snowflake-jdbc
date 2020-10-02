@@ -281,12 +281,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
       }
 
       String sqlSelect = "select * from table_basic " + whereClause;
-      ResultSet rs0 = statement.unwrap(SnowflakeStatement.class).executeAsyncQuery(sqlSelect);
-      String queryID = rs0.unwrap(SnowflakeResultSet.class).getQueryID();
-      rs0.close();
-      connection.close();
-      connection = init();
-      ResultSet rs = connection.unwrap(SnowflakeConnection.class).createResultSet(queryID);
+      ResultSet rs = statement.unwrap(SnowflakeStatement.class).executeAsyncQuery(sqlSelect);
       fileNameList = serializeResultSet((SnowflakeResultSet) rs, maxSizeInBytes, "txt");
 
       originalResultCSVString = generateCSVResult(rs);
