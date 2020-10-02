@@ -4,18 +4,19 @@
 
 package net.snowflake.client.jdbc;
 
-import net.snowflake.client.category.TestCategoryResultSet;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import static org.junit.Assert.*;
 
 import java.io.Reader;
 import java.math.BigDecimal;
 import java.sql.*;
+import java.text.DecimalFormat;
+import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
-
-import static org.junit.Assert.*;
+import net.snowflake.client.category.TestCategoryResultSet;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 /** Test AsyncResultSet */
 @Category(TestCategoryResultSet.class)
@@ -129,17 +130,24 @@ public class ResultSetAsyncIT extends BaseJDBCTest {
   }
 
   @Test
-  public void testisClosedIsLastisAfterLast() throws SQLException {
+  public void testOrderAndClosureFunctions() throws SQLException {
     // Set up environment
     Connection connection = getConnection();
-    final Map<String, String> params = getConnectionParameters();
     Statement statement = connection.createStatement();
     statement.execute("create or replace table test_rsmd(colA number(20, 5), colB string)");
     statement.execute("insert into test_rsmd values(1.00, 'str'),(2.00, 'str2')");
     ResultSet resultSet =
         statement.unwrap(SnowflakeStatement.class).executeAsyncQuery("select * from test_rsmd");
-    String queryID = resultSet.unwrap(SnowflakeResultSet.class).getQueryID();
+
+    // test isFirst, isBeforeFirst
+    assertTrue("should be before the first", resultSet.isBeforeFirst());
+    assertFalse("should not be the first", resultSet.isFirst());
+    resultSet.next();
+    assertFalse("should not be before the first", resultSet.isBeforeFirst());
+    assertTrue("should be the first", resultSet.isFirst());
+
     // test isClosed functions
+    String queryID = resultSet.unwrap(SnowflakeResultSet.class).getQueryID();
     assertFalse(resultSet.isClosed());
     // close resultSet and test again
     resultSet.close();
@@ -167,8 +175,28 @@ public class ResultSetAsyncIT extends BaseJDBCTest {
   }
 
   @Test
+  public void testWasNull() throws SQLException {
+    Connection connection = getConnection();
+    Statement statement = connection.createStatement();
+    statement.execute("create or replace table test_null(colA number, colB string)");
+    PreparedStatement prepst = connection.prepareStatement("insert into test_null values (?, ?)");
+    prepst.setNull(1, Types.INTEGER);
+    prepst.setString(2, "hello");
+    prepst.execute();
+
+    ResultSet resultSet =
+        statement.unwrap(SnowflakeStatement.class).executeAsyncQuery("select * from test_null");
+    resultSet.next();
+    resultSet.getInt(1);
+    assertTrue(resultSet.wasNull()); // integer value is null
+    resultSet.getString(2);
+    assertFalse(resultSet.wasNull()); // string value is not null
+  }
+
+  @Test
   public void testGetMethods() throws Throwable {
-    String prepInsertString = "insert into test_get values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    String prepInsertString =
+        "insert into test_get values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
     int bigInt = Integer.MAX_VALUE;
     long bigLong = Long.MAX_VALUE;
     short bigShort = Short.MAX_VALUE;
@@ -186,7 +214,8 @@ public class ResultSetAsyncIT extends BaseJDBCTest {
     Clob clob = connection.createClob();
     clob.setString(1, "hello world");
     Statement statement = connection.createStatement();
-    statement.execute("create or replace table test_get(colA integer, colB number, colC number, colD string, colE double, colF float, colG boolean, colH text, colI binary, colJ number(38,9), colK int, colL date, colM time, colN timestamp_ltz)");
+    statement.execute(
+        "create or replace table test_get(colA integer, colB number, colC number, colD string, colE double, colF float, colG boolean, colH text, colI binary(3), colJ number(38,9), colK int, colL date, colM time, colN timestamp_ltz)");
 
     PreparedStatement prepStatement = connection.prepareStatement(prepInsertString);
     prepStatement.setInt(1, bigInt);
@@ -206,7 +235,7 @@ public class ResultSetAsyncIT extends BaseJDBCTest {
     prepStatement.execute();
 
     ResultSet resultSet =
-            statement.unwrap(SnowflakeStatement.class).executeAsyncQuery("select * from test_get");
+        statement.unwrap(SnowflakeStatement.class).executeAsyncQuery("select * from test_get");
     resultSet.next();
     assertEquals(bigInt, resultSet.getInt(1));
     assertEquals(bigInt, resultSet.getInt("COLA"));
@@ -231,16 +260,20 @@ public class ResultSetAsyncIT extends BaseJDBCTest {
     assertTrue(resultSet.getBoolean("COLG"));
     assertEquals("hello world", resultSet.getClob("COLH").toString());
 
-    //assertEquals(bytes, resultSet.getBytes(9));
-    //assertEquals(bytes, resultSet.getBytes("COLI"));
-    //assertEquals(bigDecimal, resultSet.getBigDecimal(10));
-    //assertEquals(bigDecimal, resultSet.getBigDecimal("COLJ"));
+    // TODO: figure out why getBytes returns an offset.
+    // assertEquals(bytes, resultSet.getBytes(9));
+    // assertEquals(bytes, resultSet.getBytes("COLI"));
+
+    DecimalFormat df = new DecimalFormat("#.00");
+    assertEquals(df.format(bigDecimal), df.format(resultSet.getBigDecimal(10)));
+    assertEquals(df.format(bigDecimal), df.format(resultSet.getBigDecimal("COLJ")));
+
     assertEquals(oneByte, resultSet.getByte(11));
     assertEquals(oneByte, resultSet.getByte("COLK"));
 
-
-    //assertEquals(date, resultSet.getDate(12));
-    //assertEquals(date, resultSet.getDate("COLL"));
+    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+    assertEquals(sdf.format(date), sdf.format(resultSet.getDate(12)));
+    assertEquals(sdf.format(date), sdf.format(resultSet.getDate("COLL")));
     assertEquals(time, resultSet.getTime(13));
     assertEquals(time, resultSet.getTime("COLM"));
     assertEquals(ts, resultSet.getTimestamp(14));
@@ -248,7 +281,7 @@ public class ResultSetAsyncIT extends BaseJDBCTest {
 
     // test getObject
     assertEquals(str, resultSet.getObject(4).toString());
-
+    assertEquals(str, resultSet.getObject("COLD").toString());
 
     // test getStatement method
     assertEquals(statement, resultSet.getStatement());
@@ -258,5 +291,21 @@ public class ResultSetAsyncIT extends BaseJDBCTest {
     statement.close();
     resultSet.close();
     connection.close();
+  }
+
+  /** At the moment, asynchronous result sets cannot be serialized. */
+  @Test
+  public void testIsSerializable() throws SQLException {
+    Connection connection = getConnection();
+    Statement statement = connection.createStatement();
+    ResultSet resultSet =
+        statement.unwrap(SnowflakeStatement.class).executeAsyncQuery("show parameters");
+    try {
+      resultSet.unwrap(SnowflakeResultSet.class).getResultSetSerializables(500);
+      fail(
+          "SFAsyncResultSet.getResultSetSerializables should return SQLFeatureNotSupportedException");
+    } catch (SQLFeatureNotSupportedException e) {
+      // Do nothing. Test passes if we catch this exception.
+    }
   }
 }

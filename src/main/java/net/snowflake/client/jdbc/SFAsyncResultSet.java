@@ -4,12 +4,6 @@
 
 package net.snowflake.client.jdbc;
 
-import net.snowflake.client.core.QueryStatus;
-import net.snowflake.client.core.SFBaseResultSet;
-import net.snowflake.client.core.SFException;
-import net.snowflake.client.core.SFSession;
-import net.snowflake.common.core.SqlState;
-
 import java.io.InputStream;
 import java.io.Reader;
 import java.math.BigDecimal;
@@ -20,6 +14,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
 import java.util.regex.Pattern;
+import net.snowflake.client.core.QueryStatus;
+import net.snowflake.client.core.SFBaseResultSet;
+import net.snowflake.client.core.SFException;
+import net.snowflake.client.core.SFSession;
+import net.snowflake.common.core.SqlState;
 
 /** SFAsyncResultSet implementation */
 class SFAsyncResultSet extends SnowflakeBaseResultSet implements SnowflakeResultSet, ResultSet {
@@ -168,10 +167,7 @@ class SFAsyncResultSet extends SnowflakeBaseResultSet implements SnowflakeResult
    */
   @Override
   public boolean next() throws SQLException {
-    getRealResults();
-      this.resultSetMetaData =
-              (SnowflakeResultSetMetaDataV1)
-                      resultSetForNext.unwrap(SnowflakeResultSetV1.class).getMetaData();
+    getMetaData();
     return resultSetForNext.next();
   }
 
@@ -332,6 +328,12 @@ class SFAsyncResultSet extends SnowflakeBaseResultSet implements SnowflakeResult
   @Override
   public boolean isBeforeFirst() throws SQLException {
     raiseSQLExceptionIfResultSetIsClosed();
+    // if ResultSet is not initialized yet, this means neither next() nor getMetaData() has been
+    // called.
+    // If next() hasn't been called, we are at the beginning of the ResultSet so should return true.
+    if (!resultSetForNextInitialized) {
+      return true;
+    }
     return resultSetForNext.isBeforeFirst();
   }
 
@@ -357,7 +359,7 @@ class SFAsyncResultSet extends SnowflakeBaseResultSet implements SnowflakeResult
   /**
    * Get a list of ResultSetSerializables for the ResultSet in order to parallel processing
    *
-   * Not currently supported for asynchronous result sets.
+   * <p>Not currently supported for asynchronous result sets.
    */
   @Override
   public List<SnowflakeResultSetSerializable> getResultSetSerializables(long maxSizeInBytes)
