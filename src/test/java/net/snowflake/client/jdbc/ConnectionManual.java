@@ -3,6 +3,7 @@ package net.snowflake.client.jdbc;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.util.Properties;
+import net.snowflake.client.TestUtil;
 import net.snowflake.client.core.SessionUtil;
 
 /**
@@ -47,9 +48,9 @@ public class ConnectionManual {
   }
 
   private Properties getProperties() {
-    String account = System.getenv("SNOWFLAKE_TEST_ACCOUNT");
-    String ssoUser = System.getenv("SNOWFLAKE_TEST_SSO_USER");
-    String ssl = System.getenv("SNOWFLAKE_TEST_SSL");
+    String account = TestUtil.systemGetEnv("SNOWFLAKE_TEST_ACCOUNT");
+    String ssoUser = TestUtil.systemGetEnv("SNOWFLAKE_TEST_SSO_USER");
+    String ssl = TestUtil.systemGetEnv("SNOWFLAKE_TEST_SSL");
 
     Properties properties = new Properties();
     properties.put("user", ssoUser);
@@ -62,20 +63,20 @@ public class ConnectionManual {
   }
 
   private String getUrl() {
-    String account = System.getenv("SNOWFLAKE_TEST_ACCOUNT");
-    String port = System.getenv("SNOWFLAKE_TEST_PORT");
+    String account = TestUtil.systemGetEnv("SNOWFLAKE_TEST_ACCOUNT");
+    String port = TestUtil.systemGetEnv("SNOWFLAKE_TEST_PORT");
     return String.format("jdbc:snowflake://%s.reg.snowflakecomputing.com:%s", account, port);
   }
 
   private Connection getAdminConnection() throws Throwable {
-    String adminAccount = System.getenv("SNOWFLAKE_TEST_ADMIN_ACCOUNT");
+    String adminAccount = TestUtil.systemGetEnv("SNOWFLAKE_TEST_ADMIN_ACCOUNT");
     if (adminAccount == null) {
       adminAccount = "snowflake";
     }
-    String adminUser = System.getenv("SNOWFLAKE_TEST_ADMIN_USER");
-    String adminPassword = System.getenv("SNOWFLAKE_TEST_ADMIN_PASSWORD");
-    String port = System.getenv("SNOWFLAKE_TEST_PORT");
-    String ssl = System.getenv("SNOWFLAKE_TEST_SSL");
+    String adminUser = TestUtil.systemGetEnv("SNOWFLAKE_TEST_ADMIN_USER");
+    String adminPassword = TestUtil.systemGetEnv("SNOWFLAKE_TEST_ADMIN_PASSWORD");
+    String port = TestUtil.systemGetEnv("SNOWFLAKE_TEST_PORT");
+    String ssl = TestUtil.systemGetEnv("SNOWFLAKE_TEST_SSL");
     if (ssl == null) {
       ssl = "on";
     }
@@ -119,9 +120,9 @@ public class ConnectionManual {
   }
 
   private void testSSO() throws Throwable {
-    String database = System.getenv("SNOWFLAKE_TEST_DATABASE");
-    String schema1 = System.getenv("SNOWFLAKE_TEST_SCHEMA");
-    String schema2 = System.getenv("SNOWFLAKE_TEST_SCHEMA2");
+    String database = TestUtil.systemGetEnv("SNOWFLAKE_TEST_DATABASE");
+    String schema1 = TestUtil.systemGetEnv("SNOWFLAKE_TEST_SCHEMA");
+    String schema2 = TestUtil.systemGetEnv("SNOWFLAKE_TEST_SCHEMA2");
 
     Properties properties = getProperties();
     String url = getUrl();

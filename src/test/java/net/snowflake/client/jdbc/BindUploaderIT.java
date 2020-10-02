@@ -6,17 +6,11 @@ package net.snowflake.client.jdbc;
 
 import static org.junit.Assert.*;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStreamReader;
 import java.math.BigDecimal;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.sql.*;
 import java.sql.Date;
 import java.util.*;
-import java.util.zip.GZIPInputStream;
 import net.snowflake.client.category.TestCategoryOthers;
 import net.snowflake.client.core.ParameterBindingDTO;
 import net.snowflake.client.core.SFSession;
@@ -69,13 +63,13 @@ public class BindUploaderIT extends BaseJDBCTest {
     new Timestamp(1)
   };
 
-  private static final String csv1 =
+  static final String csv1 =
       "42,1234,12.34,12.34,42,row1,807F,1970-01-01,00:00:00.000000000,1970-01-01 00:00:00.000000000 +00:00";
-  private static final String csv2 =
+  static final String csv2 =
       "420,12340,120.34,120.34,420,row2,7F80,1970-01-01,00:00:00.001000000,1970-01-01 00:00:00.001000000 +00:00";
 
-  private static final String STAGE_DIR = "binduploaderit";
-  private static final String SELECT_FROM_STAGE =
+  static final String STAGE_DIR = "binduploaderit";
+  static final String SELECT_FROM_STAGE =
       "select $1, $2, $3, $4, $5, $6, $7, $8, $9, $10 from '@SYSTEM$BIND/"
           + STAGE_DIR
           + "' ORDER BY $1 ASC";
@@ -110,7 +104,7 @@ public class BindUploaderIT extends BaseJDBCTest {
     TimeZone.setDefault(prevTimeZone);
   }
 
-  private Map<String, ParameterBindingDTO> getBindings() throws SQLException {
+  static Map<String, ParameterBindingDTO> getBindings(Connection conn) throws SQLException {
     SnowflakePreparedStatementV1 stmt =
         (SnowflakePreparedStatementV1) conn.prepareStatement(dummyInsert);
     bind(stmt, row1);
@@ -118,7 +112,7 @@ public class BindUploaderIT extends BaseJDBCTest {
     return stmt.getBatchParameterBindings();
   }
 
-  private void bind(SnowflakePreparedStatementV1 stmt, Object[] row) throws SQLException {
+  static void bind(SnowflakePreparedStatementV1 stmt, Object[] row) throws SQLException {
     stmt.setInt(1, (int) row[0]);
     stmt.setLong(2, (long) row[1]);
     stmt.setFloat(3, (float) row[2]);
@@ -139,75 +133,7 @@ public class BindUploaderIT extends BaseJDBCTest {
     assertTrue(Files.isDirectory(bindUploader.getBindDir()));
   }
 
-  // Test csv correctness, and deletion after close
-  @Test
-  public void testSerializeCSVSimple() throws Exception {
-    bindUploader.upload(getBindings());
-
-    // CSV should exist in bind directory until the uploader is closed
-    Path p = bindUploader.getBindDir();
-    assertTrue(Files.exists(p));
-    assertTrue(Files.isDirectory(p));
-
-    File[] files = p.toFile().listFiles();
-    assertNotNull("file must exists", files);
-    assertEquals(files.length, 1);
-
-    File csvFile = files[0];
-    try (BufferedReader br =
-        new BufferedReader(
-            new InputStreamReader(new GZIPInputStream(new FileInputStream(csvFile))))) {
-      assertEquals(csv1, br.readLine());
-      assertEquals(csv2, br.readLine());
-      assertNull(br.readLine());
-    }
-
-    bindUploader.close();
-
-    // After the uploader closes, it should clean up the CSV
-    assertFalse(Files.exists(p));
-  }
-
-  // Test multiple csv creation on reaching size limit
-  @Test
-  public void testSerializeCSVMultiple() throws Exception {
-    // after each write, the size will exceed 1 byte, so there should be 2 files
-    bindUploader.setFileSize(1);
-
-    bindUploader.upload(getBindings());
-
-    // CSV should exist in bind directory until the uploader is closed
-    Path p = bindUploader.getBindDir();
-    assertTrue(Files.exists(p));
-    assertTrue(Files.isDirectory(p));
-
-    File[] files = p.toFile().listFiles();
-    Arrays.sort(files);
-    assertNotNull(files);
-    assertEquals(2, files.length);
-    File csvFile = files[0];
-    try (BufferedReader br =
-        new BufferedReader(
-            new InputStreamReader(new GZIPInputStream(new FileInputStream(csvFile))))) {
-      assertEquals(csv1, br.readLine());
-      assertNull(br.readLine());
-    }
-
-    csvFile = files[1];
-    try (BufferedReader br =
-        new BufferedReader(
-            new InputStreamReader(new GZIPInputStream(new FileInputStream(csvFile))))) {
-      assertEquals(csv2, br.readLine());
-      assertNull(br.readLine());
-    }
-
-    bindUploader.close();
-
-    // After the uploader closes, it should clean up the CSV
-    assertFalse(Files.exists(p));
-  }
-
-  private String parseRow(ResultSet rs) throws Exception {
+  static String parseRow(ResultSet rs) throws Exception {
     StringBuilder sb = new StringBuilder();
     for (int i = 1; i <= 10; i++) {
       sb.append(rs.getString(i));
@@ -216,37 +142,6 @@ public class BindUploaderIT extends BaseJDBCTest {
       }
     }
     return sb.toString();
-  }
-
-  // Test single csv upload and successful parsing
-  @Test
-  public void testUploadedResultsSimple() throws Exception {
-    bindUploader.upload(getBindings());
-
-    Statement stmt = conn.createStatement();
-    ResultSet rs = stmt.executeQuery(SELECT_FROM_STAGE);
-    rs.next();
-    assertEquals(csv1, parseRow(rs));
-    rs.next();
-    assertEquals(csv2, parseRow(rs));
-    assertFalse(rs.next());
-  }
-
-  // Test multiple csv upload and successful parsing
-  @Test
-  public void testUploadedResultsMultiple() throws Exception {
-    // after each write, the size will exceed 1 byte, so there should be 2 files
-    bindUploader.setFileSize(1);
-
-    bindUploader.upload(getBindings());
-
-    Statement stmt = conn.createStatement();
-    ResultSet rs = stmt.executeQuery(SELECT_FROM_STAGE);
-    rs.next();
-    assertEquals(csv1, parseRow(rs));
-    rs.next();
-    assertEquals(csv2, parseRow(rs));
-    assertFalse(rs.next());
   }
 
   @Test

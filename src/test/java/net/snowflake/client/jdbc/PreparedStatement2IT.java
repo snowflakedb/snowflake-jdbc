@@ -31,24 +31,12 @@ import java.util.Set;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryStatement;
-import org.junit.After;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 @Category(TestCategoryStatement.class)
 public class PreparedStatement2IT extends PreparedStatement0IT {
-  @Before
-  public void setUp() throws SQLException {
-    super.setUp();
-  }
-
-  @After
-  public void tearDown() throws SQLException {
-    super.tearDown();
-  }
-
   public PreparedStatement2IT() {
     super("json");
   }
@@ -658,80 +646,6 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
     }
   }
 
-  @Test
-  public void testPrepareUDTF() throws Exception {
-    try (Connection connection = init()) {
-      try {
-        connection
-            .createStatement()
-            .execute("create or replace table employee(id number, address text)");
-        connection
-            .createStatement()
-            .execute(
-                "create or replace function employee_detail(sid number, addr text)\n"
-                    + " returns table(id number, address text)\n"
-                    + "LANGUAGE SQL\n"
-                    + "as\n"
-                    + "$$\n"
-                    + "select *\n"
-                    + "from employee\n"
-                    + "where  id=sid\n"
-                    + "$$;");
-
-        // should resolve successfully
-        try (PreparedStatement prepStatement =
-            connection.prepareStatement("select * from table(employee_detail(?, ?))")) {
-          prepStatement.setInt(1, 1);
-          prepStatement.setString(2, "abc");
-          prepStatement.execute();
-        }
-
-        // should resolve successfully
-        try (PreparedStatement prepStatement =
-            connection.prepareStatement("select * from table(employee_detail(?, 'abc'))")) {
-
-          prepStatement.setInt(1, 1);
-          prepStatement.execute();
-        }
-
-        try (PreparedStatement prepStatement =
-            connection.prepareStatement("select * from table(employee_detail(?, 123))"); ) {
-          // second argument is invalid
-          prepStatement.setInt(1, 1);
-          prepStatement.execute();
-          Assert.fail();
-        } catch (SQLException e) {
-          // failed because argument type did not match
-          Assert.assertThat(e.getErrorCode(), is(1044));
-        }
-
-        // create a udf with same name but different arguments and return type
-        connection
-            .createStatement()
-            .execute(
-                "create or replace function employee_detail(name text , addr text)\n"
-                    + " returns table(id number)\n"
-                    + "LANGUAGE SQL\n"
-                    + "as\n"
-                    + "$$\n"
-                    + "select id\n"
-                    + "from employee\n"
-                    + "$$;");
-
-        try (PreparedStatement prepStatement =
-            connection.prepareStatement("select * from table(employee_detail(?, 'abc'))")) {
-          prepStatement.setInt(1, 1);
-          prepStatement.execute();
-        }
-      } finally {
-        connection
-            .createStatement()
-            .execute("drop function if exists employee_detail(number, text)");
-        connection.createStatement().execute("drop function if exists employee_detail(text, text)");
-      }
-    }
-  }
-
   /**
    * Check if both the {@link ResultSet} passed in has equivalent data. Checks the toString of the
    * underlying data returned.
@@ -973,50 +887,6 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
         fail("hold cursor over commit is not supported.");
       } catch (SQLException ex) {
         assertEquals((int) ErrorCode.FEATURE_UNSUPPORTED.getMessageCode(), ex.getErrorCode());
-      }
-    }
-  }
-
-  /**
-   * SNOW-88426: skip bind parameter index check if prepare fails and defer the error checks to
-   * execute
-   */
-  @Test
-  public void testSelectWithBinding() throws Throwable {
-    try (Connection connection = init()) {
-      connection
-          .createStatement()
-          .execute("create or replace table TESTNULL(created_time timestamp_ntz, mid int)");
-      PreparedStatement ps;
-      ResultSet rs;
-      try {
-        // skip bind parameter index check if prepare fails and defer the error checks to execute
-        ps =
-            connection.prepareStatement(
-                "SELECT 1 FROM TESTNULL WHERE CREATED_TIME = TO_TIMESTAMP(?, 3) and MID = ?");
-        ps.setObject(1, 0);
-        ps.setObject(2, null);
-        ps.setObject(1000, null); // this won't raise an exception.
-        rs = ps.executeQuery();
-        assertFalse(rs.next());
-        rs.close();
-        ps.close();
-
-        // describe is success and do the index range check
-        ps =
-            connection.prepareStatement(
-                "SELECT 1 FROM TESTNULL WHERE CREATED_TIME = TO_TIMESTAMP(?::NUMBER, 3) and MID = ?");
-        ps.setObject(1, 0);
-        ps.setObject(2, null);
-        ps.setObject(1000, null); // this won't raise an exception.
-
-        rs = ps.executeQuery();
-        assertFalse(rs.next());
-        rs.close();
-        ps.close();
-
-      } finally {
-        connection.createStatement().execute("drop table if exists TESTNULL");
       }
     }
   }
