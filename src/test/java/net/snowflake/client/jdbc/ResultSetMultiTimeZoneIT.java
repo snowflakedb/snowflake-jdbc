@@ -186,20 +186,26 @@ public class ResultSetMultiTimeZoneIT extends BaseJDBCTest {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testTimeRange() throws SQLException {
-    final String insertTime = "insert into timeTest values (?), (?)";
+    final String insertTime = "insert into timeTest values (?), (?), (?), (?)";
     Connection connection = init();
     Statement statement = connection.createStatement();
     statement.execute("create or replace table timeTest (c1 time)");
 
-    long ms1 = 86400 * 1000; // 1970-01-02 00:00:00
-    long ms2 = 1451680250123L; // 2016-01-01 12:30:50.123
+    long ms1 = -2202968667333L; // 1900-03-11 09:15:33.667
+    long ms2 = -1; // 1969-12-31 23:59:99.999
+    long ms3 = 86400 * 1000; // 1970-01-02 00:00:00
+    long ms4 = 1451680250123L; // 2016-01-01 12:30:50.123
 
     Time tm1 = new Time(ms1);
     Time tm2 = new Time(ms2);
+    Time tm3 = new Time(ms3);
+    Time tm4 = new Time(ms4);
 
     PreparedStatement prepStatement = connection.prepareStatement(insertTime);
     prepStatement.setTime(1, tm1);
     prepStatement.setTime(2, tm2);
+    prepStatement.setTime(3, tm3);
+    prepStatement.setTime(4, tm4);
 
     prepStatement.execute();
 
@@ -216,6 +222,12 @@ public class ResultSetMultiTimeZoneIT extends BaseJDBCTest {
     resultSet.next();
     assertNotEquals(tm2, resultSet.getTime(1));
     assertEquals(new Time((ms2 % M + M) % M), resultSet.getTime(1));
+    resultSet.next();
+    assertNotEquals(tm3, resultSet.getTime(1));
+    assertEquals(new Time((ms3 % M + M) % M), resultSet.getTime(1));
+    resultSet.next();
+    assertNotEquals(tm4, resultSet.getTime(1));
+    assertEquals(new Time((ms4 % M + M) % M), resultSet.getTime(1));
     statement.execute("drop table if exists timeTest");
     connection.close();
   }
