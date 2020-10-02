@@ -331,10 +331,7 @@ class SFAsyncResultSet extends SnowflakeBaseResultSet implements SnowflakeResult
     // if ResultSet is not initialized yet, this means neither next() nor getMetaData() has been
     // called.
     // If next() hasn't been called, we are at the beginning of the ResultSet so should return true.
-    if (!resultSetForNextInitialized) {
-      return true;
-    }
-    return resultSetForNext.isBeforeFirst();
+    return !resultSetForNextInitialized || resultSetForNext.isBeforeFirst();
   }
 
   @Override
