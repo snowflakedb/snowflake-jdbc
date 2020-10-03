@@ -4,16 +4,13 @@
 
 package net.snowflake.client.jdbc;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.sql.Types;
+import java.io.Reader;
+import java.math.BigDecimal;
+import java.sql.*;
+import java.text.DecimalFormat;
+import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -133,17 +130,24 @@ public class ResultSetAsyncIT extends BaseJDBCTest {
   }
 
   @Test
-  public void testisClosedIsLastisAfterLast() throws SQLException {
+  public void testOrderAndClosureFunctions() throws SQLException {
     // Set up environment
     Connection connection = getConnection();
-    final Map<String, String> params = getConnectionParameters();
     Statement statement = connection.createStatement();
     statement.execute("create or replace table test_rsmd(colA number(20, 5), colB string)");
     statement.execute("insert into test_rsmd values(1.00, 'str'),(2.00, 'str2')");
     ResultSet resultSet =
         statement.unwrap(SnowflakeStatement.class).executeAsyncQuery("select * from test_rsmd");
-    String queryID = resultSet.unwrap(SnowflakeResultSet.class).getQueryID();
+
+    // test isFirst, isBeforeFirst
+    assertTrue("should be before the first", resultSet.isBeforeFirst());
+    assertFalse("should not be the first", resultSet.isFirst());
+    resultSet.next();
+    assertFalse("should not be before the first", resultSet.isBeforeFirst());
+    assertTrue("should be the first", resultSet.isFirst());
+
     // test isClosed functions
+    String queryID = resultSet.unwrap(SnowflakeResultSet.class).getQueryID();
     assertFalse(resultSet.isClosed());
     // close resultSet and test again
     resultSet.close();
@@ -168,5 +172,140 @@ public class ResultSetAsyncIT extends BaseJDBCTest {
     assertTrue(resultSet.isClosed());
     statement.close();
     connection.close();
+  }
+
+  @Test
+  public void testWasNull() throws SQLException {
+    Connection connection = getConnection();
+    Statement statement = connection.createStatement();
+    statement.execute("create or replace table test_null(colA number, colB string)");
+    PreparedStatement prepst = connection.prepareStatement("insert into test_null values (?, ?)");
+    prepst.setNull(1, Types.INTEGER);
+    prepst.setString(2, "hello");
+    prepst.execute();
+
+    ResultSet resultSet =
+        statement.unwrap(SnowflakeStatement.class).executeAsyncQuery("select * from test_null");
+    resultSet.next();
+    resultSet.getInt(1);
+    assertTrue(resultSet.wasNull()); // integer value is null
+    resultSet.getString(2);
+    assertFalse(resultSet.wasNull()); // string value is not null
+  }
+
+  @Test
+  public void testGetMethods() throws Throwable {
+    String prepInsertString =
+        "insert into test_get values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    int bigInt = Integer.MAX_VALUE;
+    long bigLong = Long.MAX_VALUE;
+    short bigShort = Short.MAX_VALUE;
+    String str = "hello";
+    double bigDouble = Double.MAX_VALUE;
+    float bigFloat = Float.MAX_VALUE;
+    byte[] bytes = {(byte) 0xAB, (byte) 0xCD, (byte) 0x12};
+    BigDecimal bigDecimal = new BigDecimal("10000000000");
+    byte oneByte = (byte) 1;
+    Date date = new Date(44);
+    Time time = new Time(500);
+    Timestamp ts = new Timestamp(333);
+
+    Connection connection = getConnection();
+    Clob clob = connection.createClob();
+    clob.setString(1, "hello world");
+    Statement statement = connection.createStatement();
+    statement.execute(
+        "create or replace table test_get(colA integer, colB number, colC number, colD string, colE double, colF float, colG boolean, colH text, colI binary(3), colJ number(38,9), colK int, colL date, colM time, colN timestamp_ltz)");
+
+    PreparedStatement prepStatement = connection.prepareStatement(prepInsertString);
+    prepStatement.setInt(1, bigInt);
+    prepStatement.setLong(2, bigLong);
+    prepStatement.setLong(3, bigShort);
+    prepStatement.setString(4, str);
+    prepStatement.setDouble(5, bigDouble);
+    prepStatement.setFloat(6, bigFloat);
+    prepStatement.setBoolean(7, true);
+    prepStatement.setClob(8, clob);
+    prepStatement.setBytes(9, bytes);
+    prepStatement.setBigDecimal(10, bigDecimal);
+    prepStatement.setByte(11, oneByte);
+    prepStatement.setDate(12, date);
+    prepStatement.setTime(13, time);
+    prepStatement.setTimestamp(14, ts);
+    prepStatement.execute();
+
+    ResultSet resultSet =
+        statement.unwrap(SnowflakeStatement.class).executeAsyncQuery("select * from test_get");
+    resultSet.next();
+    assertEquals(bigInt, resultSet.getInt(1));
+    assertEquals(bigInt, resultSet.getInt("COLA"));
+    assertEquals(bigLong, resultSet.getLong(2));
+    assertEquals(bigLong, resultSet.getLong("COLB"));
+    assertEquals(bigShort, resultSet.getShort(3));
+    assertEquals(bigShort, resultSet.getShort("COLC"));
+    assertEquals(str, resultSet.getString(4));
+    assertEquals(str, resultSet.getString("COLD"));
+    Reader reader = resultSet.getCharacterStream("COLD");
+    char[] sample = new char[str.length()];
+
+    assertEquals(str.length(), reader.read(sample));
+    assertEquals(str.charAt(0), sample[0]);
+    assertEquals(str, new String(sample));
+
+    assertEquals(bigDouble, resultSet.getDouble(5), 0);
+    assertEquals(bigDouble, resultSet.getDouble("COLE"), 0);
+    assertEquals(bigFloat, resultSet.getFloat(6), 0);
+    assertEquals(bigFloat, resultSet.getFloat("COLF"), 0);
+    assertTrue(resultSet.getBoolean(7));
+    assertTrue(resultSet.getBoolean("COLG"));
+    assertEquals("hello world", resultSet.getClob("COLH").toString());
+
+    // TODO: figure out why getBytes returns an offset.
+    // assertEquals(bytes, resultSet.getBytes(9));
+    // assertEquals(bytes, resultSet.getBytes("COLI"));
+
+    DecimalFormat df = new DecimalFormat("#.00");
+    assertEquals(df.format(bigDecimal), df.format(resultSet.getBigDecimal(10)));
+    assertEquals(df.format(bigDecimal), df.format(resultSet.getBigDecimal("COLJ")));
+
+    assertEquals(oneByte, resultSet.getByte(11));
+    assertEquals(oneByte, resultSet.getByte("COLK"));
+
+    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+    assertEquals(sdf.format(date), sdf.format(resultSet.getDate(12)));
+    assertEquals(sdf.format(date), sdf.format(resultSet.getDate("COLL")));
+    assertEquals(time, resultSet.getTime(13));
+    assertEquals(time, resultSet.getTime("COLM"));
+    assertEquals(ts, resultSet.getTimestamp(14));
+    assertEquals(ts, resultSet.getTimestamp("COLN"));
+
+    // test getObject
+    assertEquals(str, resultSet.getObject(4).toString());
+    assertEquals(str, resultSet.getObject("COLD").toString());
+
+    // test getStatement method
+    assertEquals(statement, resultSet.getStatement());
+
+    prepStatement.close();
+    statement.execute("drop table if exists table_get");
+    statement.close();
+    resultSet.close();
+    connection.close();
+  }
+
+  /** At the moment, asynchronous result sets cannot be serialized. */
+  @Test
+  public void testIsSerializable() throws SQLException {
+    Connection connection = getConnection();
+    Statement statement = connection.createStatement();
+    ResultSet resultSet =
+        statement.unwrap(SnowflakeStatement.class).executeAsyncQuery("show parameters");
+    try {
+      resultSet.unwrap(SnowflakeResultSet.class).getResultSetSerializables(500);
+      fail(
+          "SFAsyncResultSet.getResultSetSerializables should return SQLFeatureNotSupportedException");
+    } catch (SQLFeatureNotSupportedException e) {
+      // Do nothing. Test passes if we catch this exception.
+    }
   }
 }
