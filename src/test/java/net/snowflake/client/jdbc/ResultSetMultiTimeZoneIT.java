@@ -225,10 +225,12 @@ public class ResultSetMultiTimeZoneIT extends BaseJDBCTest {
     assertEquals("1970-01-02 00:00:00", sdf.format(rs.getTimestamp(1)));
 
     // test that session parameter functions as expected. When false, getDate() has same behavior
-    // with or without
-    // Calendar input
+    // with or without Calendar input
     statement.execute("alter session set JDBC_FORMAT_DATE_WITH_TIMEZONE=false");
+    rs = statement.executeQuery("SELECT DATE '1945-05-10 00:00:00' as datefield");
+    rs.next();
     assertEquals(rs.getDate(1, cal), rs.getDate(1));
+    assertEquals("1945-05-10 00:00:00", sdf.format(rs.getDate(1, cal)));
 
     rs.close();
     statement.close();
