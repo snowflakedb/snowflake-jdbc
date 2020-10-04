@@ -9,7 +9,6 @@ import static net.snowflake.client.jdbc.ConnectionIT.WAIT_FOR_TELEMETRY_REPORT_I
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.*;
-import static org.junit.Assert.assertEquals;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -78,8 +77,16 @@ public class ConnectionLatestIT extends BaseJDBCTest {
             .executeAsyncQuery("select count(*) from table(generator(timeLimit => 40))");
     // Retrieve query ID for part 2 of test, check status of query
     String queryID = rs1.unwrap(SnowflakeResultSet.class).getQueryID();
-    Thread.sleep(100);
-    QueryStatus status = rs1.unwrap(SnowflakeResultSet.class).getStatus();
+    QueryStatus status = null;
+    for (int retry = 0; retry < 5; ++retry) {
+      Thread.sleep(100);
+      status = rs1.unwrap(SnowflakeResultSet.class).getStatus();
+      // Sometimes 100 millis is too short for GS to get query status with provided queryID, in
+      // which case we will get NO_DATA.
+      if (status != QueryStatus.NO_DATA) {
+        break;
+      }
+    }
     // Query should take 60 seconds so should be running
     assertEquals(RUNNING, status);
     // close connection and wait for 1 minute while query finishes running
