@@ -1,3 +1,11 @@
+**JDBC Driver 3.12.13**
+
+- \| SNOW-194437 | INSERT of TIME type bind values via JDBC does not trigger bulk array load via stage.
+- \| SNOW-161733 | JDBC setString function performance is not satisfactory.
+- \| SNOW-195989 | Snowflake JDBC driver is unable to connect via Key-Pair authentication if they private key is encrypted and if the key is generated using OpenSSL 1.1.1g on Windows or Ubuntu.
+- \| SNOW-199080 | Yearly GPG key rotation.
+- \
+
 **JDBC Driver 3.12.12**
 
 - \| SNOW-180303 | Removed unnecessary log lines from the JDBC Driver log.
