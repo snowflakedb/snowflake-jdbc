@@ -955,4 +955,51 @@ public class ResultSetIT extends ResultSet0IT {
       }
     }
   }
+
+  @Test
+  public void testEmptyResultSet() throws SQLException {
+    Connection con = init();
+    Statement statement = con.createStatement();
+    // the only function that returns ResultSetV1.emptyResultSet()
+    ResultSet rs = statement.getGeneratedKeys();
+    assertFalse(rs.next());
+    assertFalse(rs.isClosed());
+    assertEquals(0, rs.getInt(1));
+    assertEquals(0, rs.getInt("col1"));
+    assertEquals(0L, rs.getLong(2));
+    assertEquals(0L, rs.getLong("col2"));
+    assertEquals(0, rs.getShort(3));
+    assertEquals(0, rs.getShort("col3"));
+    assertEquals("", rs.getString(4));
+    assertEquals("", rs.getString("col4"));
+    assertEquals(0, rs.getDouble(5), 0);
+    assertEquals(0, rs.getDouble("col5"), 0);
+    assertEquals(0, rs.getFloat(6), 0);
+    assertEquals(0, rs.getFloat("col6"), 0);
+    assertEquals(false, rs.getBoolean(7));
+    assertEquals(false, rs.getBoolean("col7"));
+    assertEquals((byte) 0, rs.getByte(8));
+    assertEquals((byte) 0, rs.getByte("col8"));
+    assertEquals(null, rs.getBinaryStream(9));
+    assertEquals(null, rs.getBinaryStream("col9"));
+    assertEquals(null, rs.getDate(10));
+    assertEquals(null, rs.getDate("col10"));
+    assertEquals(null, rs.getTime(11));
+    assertEquals(null, rs.getTime("col11"));
+    assertEquals(null, rs.getTimestamp(12));
+    assertEquals(null, rs.getTimestamp("col12"));
+    assertEquals(null, rs.getDate(13));
+    assertEquals(null, rs.getDate("col13"));
+    assertEquals(null, rs.getAsciiStream(14));
+    assertEquals(null, rs.getAsciiStream("col14"));
+    assertFalse(rs.wasNull());
+    assertFalse(rs.isFirst());
+    assertFalse(rs.isBeforeFirst());
+    assertFalse(rs.isLast());
+    assertFalse(rs.isAfterLast());
+    rs.close();
+    assertTrue(rs.isClosed());
+    statement.close();
+    con.close();
+  }
 }
