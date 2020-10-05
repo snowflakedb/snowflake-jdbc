@@ -11,6 +11,7 @@ import java.io.File;
 import java.io.IOException;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
+import net.snowflake.client.TestUtil;
 import net.snowflake.client.category.TestCategoryCore;
 import net.snowflake.client.jdbc.SnowflakeUtil;
 import org.junit.Ignore;
@@ -38,7 +39,7 @@ public class SFTrustManagerMockitoMockIT {
 
       File cacheFolder = tmpFolder.newFolder();
       mockedSnowflakeUtil
-          .when(() -> SnowflakeUtil.systemGetEnv("SF_OCSP_RESPONSE_CACHE_DIR"))
+          .when(() -> TestUtil.systemGetEnv("SF_OCSP_RESPONSE_CACHE_DIR"))
           .thenReturn(cacheFolder.getCanonicalPath());
 
       TrustManagerFactory tested = mock(TrustManagerFactory.class);

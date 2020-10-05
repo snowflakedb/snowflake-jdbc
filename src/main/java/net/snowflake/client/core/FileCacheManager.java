@@ -118,6 +118,10 @@ class FileCacheManager {
           homeDir = systemGetProperty("java.io.tmpdir");
         }
       }
+      if (homeDir == null) {
+        // if still home directory is null, no cache dir is set.
+        return this;
+      }
       if (Constants.getOS() == Constants.OS.WINDOWS) {
         this.cacheDir =
             new File(

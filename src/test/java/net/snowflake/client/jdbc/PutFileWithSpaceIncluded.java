@@ -13,6 +13,7 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
+import net.snowflake.client.TestUtil;
 import net.snowflake.client.category.TestCategoryOthers;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
@@ -30,11 +31,11 @@ public class PutFileWithSpaceIncluded extends BaseJDBCTest {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void putFileWithSpaceIncluded() throws Exception {
-    String AWS_SECRET_KEY = System.getenv("AWS_SECRET_ACCESS_KEY");
-    String AWS_KEY_ID = System.getenv("AWS_ACCESS_KEY_ID");
-    String SF_AWS_USER_BUCKET = System.getenv("SF_AWS_USER_BUCKET");
+    String AWS_SECRET_KEY = TestUtil.systemGetEnv("AWS_SECRET_ACCESS_KEY");
+    String AWS_KEY_ID = TestUtil.systemGetEnv("AWS_ACCESS_KEY_ID");
+    String SF_AWS_USER_BUCKET = TestUtil.systemGetEnv("SF_AWS_USER_BUCKET");
     if (SF_AWS_USER_BUCKET == null) {
-      String userName = System.getenv("USERNAME");
+      String userName = TestUtil.systemGetEnv("USERNAME");
       assertNotNull(userName);
       SF_AWS_USER_BUCKET = "sfc-dev1-regression/" + userName + "/snow-13400";
     }

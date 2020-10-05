@@ -484,6 +484,13 @@ public class SnowflakeUtil {
     return builder.toString();
   }
 
+  /**
+   * System.getProperty wrapper. If System.getProperty raises an SecurityException, it is ignored
+   * and returns null.
+   *
+   * @param property the property name
+   * @return the property value if set, otherwise null.
+   */
   public static String systemGetProperty(String property) {
     try {
       return System.getProperty(property);
@@ -493,6 +500,13 @@ public class SnowflakeUtil {
     }
   }
 
+  /**
+   * System.getenv wrapper. If System.getenv raises an SecurityException, it is ignored and returns
+   * null.
+   *
+   * @param env the environment variable name.
+   * @return the environment variable value if set, otherwise null.
+   */
   public static String systemGetEnv(String env) {
     try {
       return System.getenv(env);
@@ -501,14 +515,8 @@ public class SnowflakeUtil {
           "Failed to get environment variable {}. Security exception raised: {}",
           env,
           ex.getMessage());
-      // TODO: Need to remove this throw in the future.
-      // We rethrow this exception only for consistency, because all places that used
-      // System.getenv() are wrapped by try/catch, and a small part of logic relies on the
-      // exception.
-      // Please remember when you try to delete this throw statement, you might also need to change
-      // the related code, e.g. try/catch,  where this function gets called.
-      throw ex;
     }
+    return null;
   }
 
   /**

@@ -49,13 +49,13 @@ public class AbstractDriverIT {
     String account;
     String host;
     if (accountName == null) {
-      account = System.getenv("SNOWFLAKE_TEST_ACCOUNT");
-      host = System.getenv("SNOWFLAKE_TEST_HOST");
+      account = TestUtil.systemGetEnv("SNOWFLAKE_TEST_ACCOUNT");
+      host = TestUtil.systemGetEnv("SNOWFLAKE_TEST_HOST");
     } else {
       account = accountName;
       // By default, the test will run against reg deployment.
       // If developer needs to run in Intellij, you can set this env as ".dev.local"
-      String deployment = System.getenv("SNOWFLAKE_TEST_DEPLOYMENT");
+      String deployment = TestUtil.systemGetEnv("SNOWFLAKE_TEST_DEPLOYMENT");
       if (Strings.isNullOrEmpty(deployment)) {
         deployment = ".reg.local";
       }
@@ -75,7 +75,7 @@ public class AbstractDriverIT {
         !Strings.isNullOrEmpty(host));
     params.put("host", host);
 
-    String protocol = System.getenv("SNOWFLAKE_TEST_PROTOCOL");
+    String protocol = TestUtil.systemGetEnv("SNOWFLAKE_TEST_PROTOCOL");
     String ssl;
     if ("http".equals(protocol)) {
       ssl = "off";
@@ -84,16 +84,16 @@ public class AbstractDriverIT {
     }
     params.put("ssl", ssl);
 
-    String user = System.getenv("SNOWFLAKE_TEST_USER");
+    String user = TestUtil.systemGetEnv("SNOWFLAKE_TEST_USER");
     assertThat("set SNOWFLAKE_TEST_USER environment variable.", !Strings.isNullOrEmpty(user));
     params.put("user", user);
 
-    String password = System.getenv("SNOWFLAKE_TEST_PASSWORD");
+    String password = TestUtil.systemGetEnv("SNOWFLAKE_TEST_PASSWORD");
     assertThat(
         "set SNOWFLAKE_TEST_PASSWORD environment variable.", !Strings.isNullOrEmpty(password));
     params.put("password", password);
 
-    String port = System.getenv("SNOWFLAKE_TEST_PORT");
+    String port = TestUtil.systemGetEnv("SNOWFLAKE_TEST_PORT");
     if (Strings.isNullOrEmpty(port)) {
       if ("on".equals(ssl)) {
         port = "443";
@@ -104,36 +104,36 @@ public class AbstractDriverIT {
     assertThat("set SNOWFLAKE_TEST_PORT environment variable.", !Strings.isNullOrEmpty(port));
     params.put("port", port);
 
-    String database = System.getenv("SNOWFLAKE_TEST_DATABASE");
+    String database = TestUtil.systemGetEnv("SNOWFLAKE_TEST_DATABASE");
     assertThat(
         "set SNOWFLAKE_TEST_DATABASE environment variable.", !Strings.isNullOrEmpty(database));
     params.put("database", database);
 
-    String schema = System.getenv("SNOWFLAKE_TEST_SCHEMA");
+    String schema = TestUtil.systemGetEnv("SNOWFLAKE_TEST_SCHEMA");
     assertThat("set SNOWFLAKE_TEST_SCHEMA environment variable.", !Strings.isNullOrEmpty(schema));
     params.put("schema", schema);
 
-    String role = System.getenv("SNOWFLAKE_TEST_ROLE");
+    String role = TestUtil.systemGetEnv("SNOWFLAKE_TEST_ROLE");
     assertThat("set SNOWFLAKE_TEST_ROLE environment variable.", !Strings.isNullOrEmpty(role));
     params.put("role", role);
 
-    String warehouse = System.getenv("SNOWFLAKE_TEST_WAREHOUSE");
+    String warehouse = TestUtil.systemGetEnv("SNOWFLAKE_TEST_WAREHOUSE");
     assertThat(
         "set SNOWFLAKE_TEST_WAREHOUSE environment variable.", !Strings.isNullOrEmpty(warehouse));
     params.put("warehouse", warehouse);
 
     params.put("uri", String.format("jdbc:snowflake://%s:%s", host, port));
 
-    String adminUser = System.getenv("SNOWFLAKE_TEST_ADMIN_USER");
+    String adminUser = TestUtil.systemGetEnv("SNOWFLAKE_TEST_ADMIN_USER");
     params.put("adminUser", adminUser);
 
-    String adminPassword = System.getenv("SNOWFLAKE_TEST_ADMIN_PASSWORD");
+    String adminPassword = TestUtil.systemGetEnv("SNOWFLAKE_TEST_ADMIN_PASSWORD");
     params.put("adminPassword", adminPassword);
 
-    String ssoUser = System.getenv("SNOWFLAKE_TEST_SSO_USER");
+    String ssoUser = TestUtil.systemGetEnv("SNOWFLAKE_TEST_SSO_USER");
     params.put("ssoUser", ssoUser);
 
-    String ssoPassword = System.getenv("SNOWFLAKE_TEST_SSO_PASSWORD");
+    String ssoPassword = TestUtil.systemGetEnv("SNOWFLAKE_TEST_SSO_PASSWORD");
     params.put("ssoPassword", ssoPassword);
 
     return params;

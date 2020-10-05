@@ -1,3 +1,6 @@
+/*
+ * Copyright (c) 2012-2020 Snowflake Computing Inc. All rights reserved.
+ */
 package net.snowflake.client.jdbc.telemetry;
 
 import static org.junit.Assert.assertEquals;

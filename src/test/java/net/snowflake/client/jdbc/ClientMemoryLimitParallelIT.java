@@ -9,7 +9,6 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Properties;
 import net.snowflake.client.category.TestCategoryOthers;
-import org.codehaus.jackson.map.Serializers;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -20,7 +19,7 @@ import org.slf4j.LoggerFactory;
 
 /** @author azhan attempts to test the CLIENT_MEMORY_LIMIT working in multi-threading */
 @Category(TestCategoryOthers.class)
-public class ClientMemoryLimitParallelIT extends Serializers.Base {
+public class ClientMemoryLimitParallelIT {
   private static Logger LOGGER =
       LoggerFactory.getLogger(ClientMemoryLimitParallelIT.class.getName());
 
@@ -81,7 +80,7 @@ public class ClientMemoryLimitParallelIT extends Serializers.Base {
    */
   @Test
   @Ignore("Long term high memory usage test")
-  public void testParallelQueries() {
+  public void testParallelQueries() throws Exception {
     Runnable testQuery =
         new Runnable() {
           public void run() {
@@ -113,16 +112,11 @@ public class ClientMemoryLimitParallelIT extends Serializers.Base {
     t4.start();
     t5.start();
 
-    try {
-      t1.join();
-      t2.join();
-      t3.join();
-      t4.join();
-      t5.join();
-    } catch (InterruptedException ie) {
-      // do not expect exception in test
-      assertEquals(null, ie);
-    }
+    t1.join();
+    t2.join();
+    t3.join();
+    t4.join();
+    t5.join();
   }
 
   /**
@@ -130,21 +124,16 @@ public class ClientMemoryLimitParallelIT extends Serializers.Base {
    * make sure there is no hanging
    */
   @Test
-  public void testQueryNotHanging() {
-    try {
-      Properties paramProperties = new Properties();
-      Connection connection = getConnection(paramProperties);
-      // create statement
-      Statement statement = connection.createStatement();
+  public void testQueryNotHanging() throws SQLException {
+    Properties paramProperties = new Properties();
+    Connection connection = getConnection(paramProperties);
+    // create statement
+    Statement statement = connection.createStatement();
 
-      queryRows(statement, 100, 160);
-      // close
-      statement.close();
-      connection.close();
-    } catch (SQLException e) {
-      // do not expect exception in test
-      assertEquals(null, e);
-    }
+    queryRows(statement, 100, 160);
+    // close
+    statement.close();
+    connection.close();
   }
 
   private static void queryRows(Statement stmt, int limit, int chunkSize) throws SQLException {

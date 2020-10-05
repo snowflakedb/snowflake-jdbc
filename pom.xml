@@ -780,30 +780,6 @@
       </build>
     </profile>
     <profile>
-      <id>ingest-testing</id>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.apache.avro</groupId>
-            <artifactId>avro-maven-plugin</artifactId>
-            <version>1.8.1</version>
-            <executions>
-              <execution>
-                <phase>generate-test-sources</phase>
-                <goals>
-                  <goal>schema</goal>
-                </goals>
-                <configuration>
-                  <sourceDirectory>${project.basedir}/src/test/java/net/snowflake/client/ingest/avro</sourceDirectory>
-                  <outputDirectory>${project.basedir}/src/test/java/</outputDirectory>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-    <profile>
       <id>java-9</id>
       <activation>
         <jdk>9</jdk>
@@ -871,7 +847,6 @@
                 </goals>
                 <configuration>
                   <excludes>
-                    <exclude>**/ingest/*.java</exclude>
                     <exclude>**/DellBoomiCloudIT.java</exclude>
                   </excludes>
                   <systemPropertyVariables>
@@ -1060,7 +1035,6 @@
                 </goals>
                 <configuration>
                   <excludes>
-                    <exclude>**/ingest/*.java</exclude>
                     <exclude>**/DellBoomiCloudIT.java</exclude>
                   </excludes>
                   <systemPropertyVariables>
