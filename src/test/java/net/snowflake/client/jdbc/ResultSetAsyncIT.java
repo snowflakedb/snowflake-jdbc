@@ -308,4 +308,25 @@ public class ResultSetAsyncIT extends BaseJDBCTest {
       // Do nothing. Test passes if we catch this exception.
     }
   }
+
+  @Test
+  public void testEmptyResultSet() throws SQLException {
+    Connection connection = getConnection();
+    Statement statement = connection.createStatement();
+    ResultSet rs =
+        statement.unwrap(SnowflakeStatement.class).executeAsyncQuery("select * from empty_table");
+    // if user never calls getMetadata() or next(), empty result set is used to get results.
+    // empty ResultSet returns all nulls, 0s, and empty values.
+    assertFalse(rs.isClosed());
+    assertEquals(0, rs.getInt(1));
+    try {
+      assertEquals(0, rs.getInt("col1"));
+      fail("Fetching from a column name that does not exist should return a SQLException");
+    } catch (SQLException e) {
+      // findColumn fails with empty metadata with exception "Column not found".
+    }
+    rs.close(); // close empty result set
+    assertTrue(rs.isClosed());
+    connection.close();
+  }
 }
