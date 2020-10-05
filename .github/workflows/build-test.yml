@@ -41,3 +41,24 @@ jobs:
                 TARGET_DOCKER_TEST_IMAGE: ${{ matrix.image }}
                 JDBC_TEST_CATEGORY: ${{ matrix.category }}
               run: ./ci/test.sh
+
+    test-linux-old-driver:
+        name: Old JDBC ${{ matrix.category }} on ${{ matrix.image }}
+        runs-on: ubuntu-latest
+        strategy:
+            matrix:
+                image: [ 'jdbc-centos6-default' ]
+                cloud: [ 'AWS' ]
+                category: ['TestCategoryResultSet,TestCategoryOthers', 'TestCategoryConnection,TestCategoryStatement', 'TestCategoryCore,TestCategoryLoader']
+                is_old_version: ['true']
+        steps:
+            - uses: actions/checkout@v1
+            - name: Tests
+              shell: bash
+              env:
+                PARAMETERS_SECRET: ${{ secrets.PARAMETERS_SECRET }}
+                CLOUD_PROVIDER: ${{ matrix.cloud }}
+                TARGET_DOCKER_TEST_IMAGE: ${{ matrix.image }}
+                JDBC_TEST_CATEGORY: ${{ matrix.category }}
+                IS_OLD_VERSION: ${{ matrix.is_old_version }}
+              run: ./ci/test.sh

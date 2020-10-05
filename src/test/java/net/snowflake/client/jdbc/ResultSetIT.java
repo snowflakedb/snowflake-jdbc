@@ -7,138 +7,41 @@ import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.*;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.math.BigDecimal;
-import java.math.BigInteger;
-import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.sql.*;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
 import java.util.Properties;
-import java.util.regex.Pattern;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryResultSet;
-import net.snowflake.client.jdbc.telemetry.*;
-import net.snowflake.common.core.SFBinary;
-import org.apache.arrow.vector.Float8Vector;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 /** Test ResultSet */
 @Category(TestCategoryResultSet.class)
-public class ResultSetIT extends BaseJDBCTest {
-  protected static String queryResultFormat = "json";
-
+public class ResultSetIT extends ResultSet0IT {
   private final String selectAllSQL = "select * from test_rs";
 
-  private static ResultSet numberCrossTesting() throws SQLException {
-    Connection con = getConnection();
-    Statement statement = con.createStatement();
+  private static final byte[] byteArrayTestCase1 = new byte[0];
+  private static final byte[] byteArrayTestCase2 = {(byte) 0xAB, (byte) 0xCD, (byte) 0x12};
+  private static final byte[] byteArrayTestCase3 = {
+    (byte) 0x00, (byte) 0xFF, (byte) 0x42, (byte) 0x01
+  };
 
-    statement.execute(
-        "create or replace table test_types(c1 number, c2 integer, c3 float, c4 boolean,"
-            + "c5 char, c6 varchar, c7 date, c8 datetime, c9 time, c10 timestamp_ltz, "
-            + "c11 timestamp_tz, c12 binary)");
-    statement.execute(
-        "insert into test_types values (null, null, null, null, null, null, null, null, null, null, "
-            + "null, null)");
-    statement.execute(
-        "insert into test_types values(2, 5, 3.5, true,"
-            + "'1','1', '1994-12-27', "
-            + "'1994-12-27 05:05:05', '05:05:05', '1994-12-27 05:05:05', '1994-12-27 05:05:05', '48454C4C4F')");
-    statement.execute("insert into test_types (c5, c6) values('h', 'hello')");
-    ResultSet resultSet = statement.executeQuery("select * from test_types");
-    return resultSet;
+  public ResultSetIT() {
+    this("json");
   }
 
-  public static Connection getConnection(int injectSocketTimeout) throws SQLException {
-    Connection connection = BaseJDBCTest.getConnection(injectSocketTimeout);
-
-    Statement statement = connection.createStatement();
-    statement.execute(
-        "alter session set "
-            + "TIMEZONE='America/Los_Angeles',"
-            + "TIMESTAMP_TYPE_MAPPING='TIMESTAMP_LTZ',"
-            + "TIMESTAMP_OUTPUT_FORMAT='DY, DD MON YYYY HH24:MI:SS TZHTZM',"
-            + "TIMESTAMP_TZ_OUTPUT_FORMAT='DY, DD MON YYYY HH24:MI:SS TZHTZM',"
-            + "TIMESTAMP_LTZ_OUTPUT_FORMAT='DY, DD MON YYYY HH24:MI:SS TZHTZM',"
-            + "TIMESTAMP_NTZ_OUTPUT_FORMAT='DY, DD MON YYYY HH24:MI:SS TZHTZM'");
-    statement.close();
-    return connection;
-  }
-
-  public static Connection getConnection() throws SQLException {
-    Connection conn = getConnection(BaseJDBCTest.DONT_INJECT_SOCKET_TIMEOUT);
-    Statement stmt = conn.createStatement();
-    stmt.execute("alter session set jdbc_query_result_format = '" + queryResultFormat + "'");
-    stmt.close();
-    return conn;
-  }
-
-  public static Connection getConnection(Properties paramProperties) throws SQLException {
-    Connection conn = getConnection(DONT_INJECT_SOCKET_TIMEOUT, paramProperties, false, false);
-    Statement stmt = conn.createStatement();
-    stmt.execute("alter session set jdbc_query_result_format = '" + queryResultFormat + "'");
-    stmt.close();
-    return conn;
-  }
-
-  @Before
-  public void setUp() throws SQLException {
-    Connection con = getConnection();
-
-    // TEST_RS
-    con.createStatement().execute("create or replace table test_rs (colA string)");
-    con.createStatement().execute("insert into test_rs values('rowOne')");
-    con.createStatement().execute("insert into test_rs values('rowTwo')");
-    con.createStatement().execute("insert into test_rs values('rowThree')");
-
-    // ORDERS_JDBC
-    Statement statement = con.createStatement();
-    statement.execute(
-        "create or replace table orders_jdbc"
-            + "(C1 STRING NOT NULL COMMENT 'JDBC', "
-            + "C2 STRING, C3 STRING, C4 STRING, C5 STRING, C6 STRING, "
-            + "C7 STRING, C8 STRING, C9 STRING) "
-            + "stage_file_format = (field_delimiter='|' "
-            + "error_on_column_count_mismatch=false)");
-    // put files
-    assertTrue(
-        "Failed to put a file",
-        statement.execute(
-            "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE) + " @%orders_jdbc"));
-    assertTrue(
-        "Failed to put a file",
-        statement.execute(
-            "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE_2) + " @%orders_jdbc"));
-
-    int numRows = statement.executeUpdate("copy into orders_jdbc");
-
-    assertEquals("Unexpected number of rows copied: " + numRows, 73, numRows);
-
-    con.close();
-  }
-
-  @After
-  public void tearDown() throws SQLException {
-    Connection con = getConnection();
-    con.createStatement().execute("drop table if exists orders_jdbc");
-    con.createStatement().execute("drop table if exists test_rs");
-    con.close();
+  ResultSetIT(String queryResultFormat) {
+    super(queryResultFormat);
   }
 
   @Test
   public void testFindColumn() throws SQLException {
-    Connection connection = getConnection();
+    Connection connection = init();
     Statement statement = connection.createStatement();
     ResultSet resultSet = statement.executeQuery(selectAllSQL);
     assertEquals(1, resultSet.findColumn("COLA"));
@@ -148,7 +51,7 @@ public class ResultSetIT extends BaseJDBCTest {
 
   @Test
   public void testGetColumnClassNameForBinary() throws Throwable {
-    Connection connection = getConnection();
+    Connection connection = init();
     Statement statement = connection.createStatement();
     statement.execute("create or replace table bintable (b binary)");
     statement.execute("insert into bintable values ('00f1f2')");
@@ -179,7 +82,7 @@ public class ResultSetIT extends BaseJDBCTest {
     double bigDouble = Double.MAX_VALUE;
     float bigFloat = Float.MAX_VALUE;
 
-    Connection connection = getConnection();
+    Connection connection = init();
     Clob clob = connection.createClob();
     clob.setString(1, "hello world");
     Statement statement = connection.createStatement();
@@ -236,7 +139,7 @@ public class ResultSetIT extends BaseJDBCTest {
 
   @Test
   public void testGetObjectOnDatabaseMetadataResultSet() throws SQLException {
-    Connection connection = getConnection();
+    Connection connection = init();
     DatabaseMetaData databaseMetaData = connection.getMetaData();
     ResultSet resultSet = databaseMetaData.getTypeInfo();
     resultSet.next();
@@ -449,7 +352,7 @@ public class ResultSetIT extends BaseJDBCTest {
 
   @Test
   public void testGetBigDecimal() throws SQLException {
-    Connection connection = getConnection();
+    Connection connection = init();
     Statement statement = connection.createStatement();
     statement.execute("create or replace table test_get(colA number(38,9))");
     PreparedStatement preparedStatement =
@@ -477,7 +380,7 @@ public class ResultSetIT extends BaseJDBCTest {
     resultSet = numberCrossTesting();
     resultSet.next();
     for (int i = 1; i < 13; i++) {
-      assertEquals(null, resultSet.getBigDecimal(i));
+      assertNull(resultSet.getBigDecimal(i));
     }
     resultSet.next();
     assertEquals(new BigDecimal(2), resultSet.getBigDecimal(1));
@@ -508,7 +411,7 @@ public class ResultSetIT extends BaseJDBCTest {
 
   @Test
   public void testCursorPosition() throws SQLException {
-    Connection connection = getConnection();
+    Connection connection = init();
     Statement statement = connection.createStatement();
     statement.execute(selectAllSQL);
     ResultSet resultSet = statement.getResultSet();
@@ -516,9 +419,9 @@ public class ResultSetIT extends BaseJDBCTest {
     assertTrue(resultSet.isFirst());
     assertEquals(1, resultSet.getRow());
     resultSet.next();
-    assertTrue(!resultSet.isFirst());
+    assertFalse(resultSet.isFirst());
     assertEquals(2, resultSet.getRow());
-    assertTrue(!resultSet.isLast());
+    assertFalse(resultSet.isLast());
     resultSet.next();
     assertEquals(3, resultSet.getRow());
     assertTrue(resultSet.isLast());
@@ -528,144 +431,79 @@ public class ResultSetIT extends BaseJDBCTest {
     connection.close();
   }
 
-  private byte[] intToByteArray(int i) {
-    return BigInteger.valueOf(i).toByteArray();
-  }
-
-  private byte[] floatToByteArray(float i) {
-    return ByteBuffer.allocate(Float8Vector.TYPE_WIDTH).putDouble(0, i).array();
-  }
-
+  /**
+   * Gets bytes in HEX form.
+   *
+   * @throws SQLException arises if any exception occurs.
+   */
   @Test
   public void testGetBytes() throws SQLException {
     Properties props = new Properties();
-    props.setProperty("enable_binary_datatype", Boolean.TRUE.toString());
-    Connection connection = getConnection(props);
-    Statement statement = connection.createStatement();
-    statement.execute("create or replace table bin (b Binary)");
-
-    byte[] bytes1 = new byte[0];
-    byte[] bytes2 = {(byte) 0xAB, (byte) 0xCD, (byte) 0x12};
-    byte[] bytes3 = {(byte) 0x00, (byte) 0xFF, (byte) 0x42, (byte) 0x01};
-
-    PreparedStatement prepStatement =
-        connection.prepareStatement("insert into bin values (?), (?), (?)");
-    prepStatement.setBytes(1, bytes1);
-    prepStatement.setBytes(2, bytes2);
-    prepStatement.setBytes(3, bytes3);
-    prepStatement.execute();
+    Connection connection = init(props);
+    ingestBinaryTestData(connection);
 
     // Get results in hex format (default).
-    ResultSet resultSet = statement.executeQuery("select * from bin");
+    ResultSet resultSet = connection.createStatement().executeQuery("select * from bin");
     resultSet.next();
-    assertArrayEquals(bytes1, resultSet.getBytes(1));
+    assertArrayEquals(byteArrayTestCase1, resultSet.getBytes(1));
     assertEquals("", resultSet.getString(1));
     resultSet.next();
-    assertArrayEquals(bytes2, resultSet.getBytes(1));
+    assertArrayEquals(byteArrayTestCase2, resultSet.getBytes(1));
     assertEquals("ABCD12", resultSet.getString(1));
     resultSet.next();
-    assertArrayEquals(bytes3, resultSet.getBytes(1));
+    assertArrayEquals(byteArrayTestCase3, resultSet.getBytes(1));
     assertEquals("00FF4201", resultSet.getString(1));
-
-    // Get results in base64 format.
-    props.setProperty("binary_output_format", "BAse64");
-    connection = getConnection(props);
-    statement = connection.createStatement();
-    resultSet = statement.executeQuery("select * from bin");
-    resultSet.next();
-    assertArrayEquals(bytes1, resultSet.getBytes(1));
-    assertEquals("", resultSet.getString(1));
-    resultSet.next();
-    assertArrayEquals(bytes2, resultSet.getBytes(1));
-    assertEquals("q80S", resultSet.getString(1));
-    resultSet.next();
-    assertArrayEquals(bytes3, resultSet.getBytes(1));
-    assertEquals("AP9CAQ==", resultSet.getString(1));
-
-    statement.execute("drop table if exists bin");
+    connection.createStatement().execute("drop table if exists bin");
     connection.close();
-
-    resultSet = numberCrossTesting();
-    resultSet.next();
-    // assert that 0 is returned for null values for every type of value
-    for (int i = 1; i < 13; i++) {
-      assertArrayEquals(null, resultSet.getBytes(i));
-    }
-    resultSet.next();
-    assertArrayEquals(intToByteArray(2), resultSet.getBytes(1));
-    assertArrayEquals(intToByteArray(5), resultSet.getBytes(2));
-    assertArrayEquals(floatToByteArray(3.5f), resultSet.getBytes(3));
-    assertArrayEquals(new byte[] {1}, resultSet.getBytes(4));
-    assertArrayEquals(new byte[] {(byte) '1'}, resultSet.getBytes(5));
-    assertArrayEquals("1".getBytes(), resultSet.getBytes(6));
-
-    for (int i = 7; i < 12; i++) {
-      try {
-        resultSet.getBytes(i);
-        fail("Failing on " + i);
-      } catch (SQLException ex) {
-        assertEquals(200038, ex.getErrorCode());
-      }
-    }
-
-    byte[] decoded = SFBinary.fromHex("48454C4C4F").getBytes();
-
-    assertArrayEquals(decoded, resultSet.getBytes(12));
   }
 
+  /**
+   * Ingests the byte test data
+   *
+   * @param connection Connection
+   * @throws SQLException arises if any exception occurs
+   */
+  private void ingestBinaryTestData(Connection connection) throws SQLException {
+    connection.createStatement().execute("create or replace table bin (b Binary)");
+    PreparedStatement prepStatement =
+        connection.prepareStatement("insert into bin values (?), (?), (?)");
+    prepStatement.setBytes(1, byteArrayTestCase1);
+    prepStatement.setBytes(2, byteArrayTestCase2);
+    prepStatement.setBytes(3, byteArrayTestCase3);
+    prepStatement.execute();
+  }
+
+  /**
+   * Get bytes in Base64
+   *
+   * @throws Exception arises if any error occurs
+   */
   @Test
-  public void testResultSetMetadata() throws SQLException {
-    Connection connection = getConnection();
-    final Map<String, String> params = getConnectionParameters();
-    Statement statement = connection.createStatement();
+  public void testGetBytesInBase64() throws Exception {
+    Properties props = new Properties();
+    props.setProperty("binary_output_format", "BAse64");
+    Connection connection = init(props);
+    ingestBinaryTestData(connection);
 
-    statement.execute("create or replace table test_rsmd(colA number(20, 5), colB string)");
-    statement.execute("insert into test_rsmd values(1.00, 'str'),(2.00, 'str2')");
-    ResultSet resultSet = statement.executeQuery("select * from test_rsmd");
-    ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
-    assertEquals(
-        params.get("database").toUpperCase(), resultSetMetaData.getCatalogName(1).toUpperCase());
-    assertEquals(
-        params.get("schema").toUpperCase(), resultSetMetaData.getSchemaName(1).toUpperCase());
-    assertEquals("TEST_RSMD", resultSetMetaData.getTableName(1));
-    assertEquals(String.class.getName(), resultSetMetaData.getColumnClassName(2));
-    assertEquals(2, resultSetMetaData.getColumnCount());
-    assertEquals(22, resultSetMetaData.getColumnDisplaySize(1));
-    assertEquals("COLA", resultSetMetaData.getColumnLabel(1));
-    assertEquals("COLA", resultSetMetaData.getColumnName(1));
-    assertEquals(3, resultSetMetaData.getColumnType(1));
-    assertEquals("NUMBER", resultSetMetaData.getColumnTypeName(1));
-    assertEquals(20, resultSetMetaData.getPrecision(1));
-    assertEquals(5, resultSetMetaData.getScale(1));
-    assertFalse(resultSetMetaData.isAutoIncrement(1));
-    assertFalse(resultSetMetaData.isCaseSensitive(1));
-    assertFalse(resultSetMetaData.isCurrency(1));
-    assertFalse(resultSetMetaData.isDefinitelyWritable(1));
-    assertEquals(ResultSetMetaData.columnNullable, resultSetMetaData.isNullable(1));
-    assertTrue(resultSetMetaData.isReadOnly(1));
-    assertTrue(resultSetMetaData.isSearchable(1));
-    assertTrue(resultSetMetaData.isSigned(1));
-    SnowflakeResultSetMetaData secretMetaData =
-        resultSetMetaData.unwrap(SnowflakeResultSetMetaData.class);
-    List<String> colNames = secretMetaData.getColumnNames();
-    assertEquals("COLA", colNames.get(0));
-    assertEquals("COLB", colNames.get(1));
-    assertEquals(Types.DECIMAL, secretMetaData.getInternalColumnType(1));
-    assertEquals(Types.VARCHAR, secretMetaData.getInternalColumnType(2));
-    assertTrue(
-        Pattern.matches(
-            "[a-z0-9]{8}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{12}",
-            secretMetaData.getQueryID()));
+    ResultSet resultSet = connection.createStatement().executeQuery("select * from bin");
+    resultSet.next();
+    assertArrayEquals(byteArrayTestCase1, resultSet.getBytes(1));
+    assertEquals("", resultSet.getString(1));
+    resultSet.next();
+    assertArrayEquals(byteArrayTestCase2, resultSet.getBytes(1));
+    assertEquals("q80S", resultSet.getString(1));
+    resultSet.next();
+    assertArrayEquals(byteArrayTestCase3, resultSet.getBytes(1));
+    assertEquals("AP9CAQ==", resultSet.getString(1));
 
-    statement.execute("drop table if exists test_rsmd");
-    statement.close();
+    connection.createStatement().execute("drop table if exists bin");
     connection.close();
   }
 
   // SNOW-31647
   @Test
   public void testColumnMetaWithZeroPrecision() throws SQLException {
-    Connection connection = getConnection();
+    Connection connection = init();
     Statement statement = connection.createStatement();
 
     statement.execute(
@@ -686,7 +524,7 @@ public class ResultSetIT extends BaseJDBCTest {
 
   @Test
   public void testGetObjectOnFixedView() throws Exception {
-    Connection connection = getConnection();
+    Connection connection = init();
     Statement statement = connection.createStatement();
 
     statement.execute(
@@ -723,7 +561,7 @@ public class ResultSetIT extends BaseJDBCTest {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testGetColumnDisplaySizeAndPrecision() throws SQLException {
-    Connection connection = getConnection();
+    Connection connection = init();
     Statement statement = connection.createStatement();
 
     ResultSet resultSet = statement.executeQuery("select cast(1 as char)");
@@ -767,7 +605,7 @@ public class ResultSetIT extends BaseJDBCTest {
 
   @Test
   public void testGetBoolean() throws SQLException {
-    Connection connection = getConnection();
+    Connection connection = init();
     Statement statement = connection.createStatement();
     statement.execute("create or replace table testBoolean(cola boolean)");
     statement.execute("insert into testBoolean values(false)");
@@ -836,7 +674,7 @@ public class ResultSetIT extends BaseJDBCTest {
 
   @Test
   public void testGetClob() throws Throwable {
-    Connection connection = getConnection();
+    Connection connection = init();
     Statement statement = connection.createStatement();
     statement.execute("create or replace table testClob(cola text)");
     statement.execute("insert into testClob values('hello world')");
@@ -877,10 +715,10 @@ public class ResultSetIT extends BaseJDBCTest {
 
   @Test
   public void testFetchOnClosedResultSet() throws SQLException {
-    Connection connection = getConnection();
+    Connection connection = init();
     Statement statement = connection.createStatement();
     ResultSet resultSet = statement.executeQuery(selectAllSQL);
-    assertTrue(!resultSet.isClosed());
+    assertFalse(resultSet.isClosed());
     resultSet.close();
     assertTrue(resultSet.isClosed());
     assertFalse(resultSet.next());
@@ -888,7 +726,7 @@ public class ResultSetIT extends BaseJDBCTest {
 
   @Test
   public void testReleaseDownloaderCurrentMemoryUsage() throws SQLException {
-    Connection connection = getConnection();
+    Connection connection = init();
     Statement statement = connection.createStatement();
     final long initialMemoryUsage = SnowflakeChunkDownloader.getCurrentMemoryUsage();
 
@@ -920,7 +758,7 @@ public class ResultSetIT extends BaseJDBCTest {
   private void subTestResultColumnSearchCaseSensitive(String parameterName) throws Exception {
     Properties prop = new Properties();
     prop.put("tracing", "FINEST");
-    Connection connection = getConnection(prop);
+    Connection connection = init(prop);
     Statement statement = connection.createStatement();
 
     ResultSet resultSet = statement.executeQuery("select 1 AS TESTCOL");
@@ -951,7 +789,7 @@ public class ResultSetIT extends BaseJDBCTest {
 
   @Test
   public void testInvalidColumnIndex() throws SQLException {
-    Connection connection = getConnection();
+    Connection connection = init();
     Statement statement = connection.createStatement();
     ResultSet resultSet = statement.executeQuery(selectAllSQL);
 
@@ -976,7 +814,7 @@ public class ResultSetIT extends BaseJDBCTest {
   /** SNOW-28882: wasNull was not set properly */
   @Test
   public void testWasNull() throws Exception {
-    Connection con = getConnection();
+    Connection con = init();
     ResultSet ret =
         con.createStatement()
             .executeQuery(
@@ -997,7 +835,7 @@ public class ResultSetIT extends BaseJDBCTest {
   /** SNOW-28390 */
   @Test
   public void testParseInfAndNaNNumber() throws Exception {
-    Connection con = getConnection();
+    Connection con = init();
     ResultSet ret =
         con.createStatement().executeQuery("select to_double('inf'), to_double('-inf')");
     ret.next();
@@ -1015,7 +853,7 @@ public class ResultSetIT extends BaseJDBCTest {
   /** SNOW-33227 */
   @Test
   public void testTreatDecimalAsInt() throws Exception {
-    Connection con = getConnection();
+    Connection con = init();
     ResultSet ret = con.createStatement().executeQuery("select 1");
 
     ResultSetMetaData metaData = ret.getMetaData();
@@ -1032,8 +870,7 @@ public class ResultSetIT extends BaseJDBCTest {
 
   @Test
   public void testIsLast() throws Exception {
-
-    Connection con = getConnection();
+    Connection con = init();
     ResultSet ret = con.createStatement().executeQuery("select * from orders_jdbc");
     assertTrue("should be before the first", ret.isBeforeFirst());
     assertFalse("should not be the first", ret.isFirst());
@@ -1081,112 +918,8 @@ public class ResultSetIT extends BaseJDBCTest {
   }
 
   @Test
-  public void testMultipleChunks() throws SQLException, IOException {
-    Connection con = getConnection();
-    Statement statement = con.createStatement();
-
-    // 10000 rows should be enough to force result into multiple chunks
-    ResultSet resultSet =
-        statement.executeQuery(
-            "select seq8(), randstr(1000, random()) from table(generator(rowcount => 10000))");
-    int cnt = 0;
-    while (resultSet.next()) {
-      ++cnt;
-    }
-    assertTrue(cnt >= 0);
-    Telemetry telemetry =
-        con.unwrap(SnowflakeConnectionV1.class).getSfSession().getTelemetryClient();
-    LinkedList<TelemetryData> logs = ((TelemetryClient) telemetry).logBuffer();
-
-    // there should be a log for each of the following fields
-    TelemetryField[] expectedFields = {
-      TelemetryField.TIME_CONSUME_FIRST_RESULT, TelemetryField.TIME_CONSUME_LAST_RESULT,
-      TelemetryField.TIME_WAITING_FOR_CHUNKS, TelemetryField.TIME_DOWNLOADING_CHUNKS,
-      TelemetryField.TIME_PARSING_CHUNKS
-    };
-    boolean[] succeeded = new boolean[expectedFields.length];
-
-    for (int i = 0; i < expectedFields.length; i++) {
-      succeeded[i] = false;
-      for (TelemetryData log : logs) {
-        if (log.getMessage().get(TelemetryUtil.TYPE).textValue().equals(expectedFields[i].field)) {
-          succeeded[i] = true;
-          break;
-        }
-      }
-    }
-
-    for (int i = 0; i < expectedFields.length; i++) {
-      assertThat(
-          String.format("%s field not found in telemetry logs\n", expectedFields[i].field),
-          succeeded[i]);
-    }
-    telemetry.sendBatchAsync();
-  }
-
-  @Test
-  public void testMetadataAPIMetricCollection() throws SQLException {
-    Connection con = getConnection();
-    Telemetry telemetry =
-        con.unwrap(SnowflakeConnectionV1.class).getSfSession().getTelemetryClient();
-    DatabaseMetaData metadata = con.getMetaData();
-    // Call one of the DatabaseMetadata API functions but for simplicity, ensure returned ResultSet
-    // is empty
-    metadata.getColumns("fakecatalog", "fakeschema", null, null);
-    LinkedList<TelemetryData> logs = ((TelemetryClient) telemetry).logBuffer();
-    // No result set has been downloaded from server so no chunk downloader metrics have been
-    // collected
-    // Logs should contain 1 item: the data about the getColumns() parameters
-    assertEquals(logs.size(), 1);
-    // Assert the log is of type client_metadata_api_metrics
-    assertEquals(
-        logs.get(0).getMessage().get(TelemetryUtil.TYPE).textValue(),
-        TelemetryField.METADATA_METRICS.toString());
-    // Assert function name and params match and that query id exists
-    assertEquals(logs.get(0).getMessage().get("function_name").textValue(), "getColumns");
-    assertTrue(
-        Pattern.matches(
-            "[a-z0-9]{8}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{12}",
-            logs.get(0).getMessage().get("query_id").textValue()));
-    JsonNode parameterValues = logs.get(0).getMessage().get("function_parameters");
-    assertEquals(parameterValues.get("catalog").textValue(), "fakecatalog");
-    assertEquals(parameterValues.get("schema").textValue(), "fakeschema");
-    assertEquals(parameterValues.get("general_name_pattern").textValue(), null);
-    assertEquals(parameterValues.get("specific_name_pattern").textValue(), null);
-
-    // send data to clear log for next test
-    telemetry.sendBatchAsync();
-
-    String catalog = con.getCatalog();
-    String schema = con.getSchema();
-    ResultSet rs = metadata.getColumns(catalog, schema, null, null);
-    logs = ((TelemetryClient) telemetry).logBuffer();
-    assertEquals(logs.size(), 2);
-    // first item in log buffer is metrics on time to consume first result set chunk
-    assertEquals(
-        logs.get(0).getMessage().get(TelemetryUtil.TYPE).textValue(),
-        TelemetryField.TIME_CONSUME_FIRST_RESULT.toString());
-    // second item in log buffer is metrics on getProcedureColumns() parameters
-    // Assert the log is of type client_metadata_api_metrics
-    assertEquals(
-        logs.get(1).getMessage().get(TelemetryUtil.TYPE).textValue(),
-        TelemetryField.METADATA_METRICS.toString());
-    // Assert function name and params match and that query id exists
-    assertEquals(logs.get(1).getMessage().get("function_name").textValue(), "getColumns");
-    assertTrue(
-        Pattern.matches(
-            "[a-z0-9]{8}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{12}",
-            logs.get(1).getMessage().get("query_id").textValue()));
-    parameterValues = logs.get(1).getMessage().get("function_parameters");
-    assertEquals(parameterValues.get("catalog").textValue(), catalog);
-    assertEquals(parameterValues.get("schema").textValue(), schema);
-    assertEquals(parameterValues.get("general_name_pattern").textValue(), null);
-    assertEquals(parameterValues.get("specific_name_pattern").textValue(), null);
-  }
-
-  @Test
   public void testUpdateCountOnCopyCmd() throws Exception {
-    Connection con = getConnection();
+    Connection con = init();
     Statement statement = con.createStatement();
 
     statement.execute("create or replace table testcopy(cola string)");
@@ -1208,7 +941,7 @@ public class ResultSetIT extends BaseJDBCTest {
 
   @Test
   public void testGetTimeNullTimestampAndTimestampNullTime() throws Throwable {
-    try (Connection con = getConnection()) {
+    try (Connection con = init()) {
       con.createStatement().execute("create or replace table testnullts(c1 timestamp, c2 time)");
       try {
         con.createStatement().execute("insert into testnullts(c1, c2) values(null, null)");

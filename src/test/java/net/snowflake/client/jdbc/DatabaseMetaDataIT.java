@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All right reserved.
+ * Copyright (c) 2012-2020 Snowflake Computing Inc. All right reserved.
  */
 package net.snowflake.client.jdbc;
 
@@ -17,6 +17,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
+import net.snowflake.client.TestUtil;
 import net.snowflake.client.category.TestCategoryOthers;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -24,8 +25,9 @@ import org.junit.experimental.categories.Category;
 /** Database Metadata IT */
 @Category(TestCategoryOthers.class)
 public class DatabaseMetaDataIT extends BaseJDBCTest {
-  private static Pattern VERSION_PATTERN = Pattern.compile("^(\\d+)\\.(\\d+)(?:\\.\\d+)+\\s*.*");
-  private static String PI_PROCEDURE =
+  private static final Pattern VERSION_PATTERN =
+      Pattern.compile("^(\\d+)\\.(\\d+)(?:\\.\\d+)+\\s*.*");
+  private static final String PI_PROCEDURE =
       "create or replace procedure GETPI()\n"
           + "    returns float not null\n"
           + "    language javascript\n"
@@ -34,7 +36,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
           + "    return 3.1415926;\n"
           + "    $$\n"
           + "    ;";
-  private static String STPROC1_PROCEDURE =
+  private static final String STPROC1_PROCEDURE =
       "create or replace procedure stproc1(param1 float, param2 string)\n"
           + "    returns table(retval varchar)\n"
           + "    language javascript\n"
@@ -483,53 +485,6 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
   }
 
   @Test
-  public void testGetStringValueFromColumnDef() throws SQLException {
-    Map<String, String> params = getConnectionParameters();
-    Properties properties = new Properties();
-    for (Map.Entry<?, ?> entry : params.entrySet()) {
-      if (entry.getValue() != null) {
-        properties.put(entry.getKey(), entry.getValue());
-      }
-    }
-    // test out connection parameter stringsQuoted to remove strings from quotes
-    properties.put("stringsQuotedForColumnDef", "true");
-    Connection connection = DriverManager.getConnection(params.get("uri"), properties);
-    String database = connection.getCatalog();
-    String schema = connection.getSchema();
-    final String targetTable = "T0";
-
-    connection
-        .createStatement()
-        .execute(
-            "create or replace table "
-                + targetTable
-                + "(C1 string, C2 string default '', C3 string default 'apples', C4 string default '\"apples\"', C5 int, C6 "
-                + "int default 5, C7 string default '''', C8 string default '''apples''''', C9  string default '%')");
-
-    DatabaseMetaData metaData = connection.getMetaData();
-
-    ResultSet resultSet = metaData.getColumns(database, schema, targetTable, "%");
-    assertTrue(resultSet.next());
-    assertEquals(null, resultSet.getString("COLUMN_DEF"));
-    assertTrue(resultSet.next());
-    assertEquals("''", resultSet.getString("COLUMN_DEF"));
-    assertTrue(resultSet.next());
-    assertEquals("'apples'", resultSet.getString("COLUMN_DEF"));
-    assertTrue(resultSet.next());
-    assertEquals("'\"apples\"'", resultSet.getString("COLUMN_DEF"));
-    assertTrue(resultSet.next());
-    assertEquals(null, resultSet.getString("COLUMN_DEF"));
-    assertTrue(resultSet.next());
-    assertEquals("5", resultSet.getString("COLUMN_DEF"));
-    assertTrue(resultSet.next());
-    assertEquals("''''", resultSet.getString("COLUMN_DEF"));
-    assertTrue(resultSet.next());
-    assertEquals("'''apples'''''", resultSet.getString("COLUMN_DEF"));
-    assertTrue(resultSet.next());
-    assertEquals("'%'", resultSet.getString("COLUMN_DEF"));
-  }
-
-  @Test
   public void testGetColumns() throws Throwable {
     try (Connection connection = getConnection()) {
       String database = connection.getCatalog();
@@ -563,9 +518,8 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
       assertEquals(0, resultSet.getInt("DECIMAL_DIGITS"));
       assertEquals(0, resultSet.getInt("NUM_PREC_RADIX"));
       assertEquals(ResultSetMetaData.columnNullable, resultSet.getInt("NULLABLE"));
-      assertEquals(true, resultSet.getBoolean("NULLABLE"));
       assertEquals("", resultSet.getString("REMARKS"));
-      assertEquals(null, resultSet.getString("COLUMN_DEF"));
+      assertNull(resultSet.getString("COLUMN_DEF"));
 
       assertEquals(0, resultSet.getInt("CHAR_OCTET_LENGTH"));
       assertEquals(1, resultSet.getInt("ORDINAL_POSITION"));
@@ -590,7 +544,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
       assertEquals(0, resultSet.getInt("NUM_PREC_RADIX"));
       assertEquals(ResultSetMetaData.columnNullable, resultSet.getInt("NULLABLE"));
       assertEquals("", resultSet.getString("REMARKS"));
-      assertEquals(null, resultSet.getString("COLUMN_DEF"));
+      assertNull(resultSet.getString("COLUMN_DEF"));
 
       assertEquals(100, resultSet.getInt("CHAR_OCTET_LENGTH"));
       assertEquals(2, resultSet.getInt("ORDINAL_POSITION"));
@@ -640,7 +594,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
       assertEquals(0, resultSet.getInt("NUM_PREC_RADIX"));
       assertEquals(ResultSetMetaData.columnNullable, resultSet.getInt("NULLABLE"));
       assertEquals("", resultSet.getString("REMARKS"));
-      assertEquals(null, resultSet.getString("COLUMN_DEF"));
+      assertNull(resultSet.getString("COLUMN_DEF"));
 
       assertEquals(0, resultSet.getInt("CHAR_OCTET_LENGTH"));
       assertEquals(4, resultSet.getInt("ORDINAL_POSITION"));
@@ -665,7 +619,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
       assertEquals(0, resultSet.getInt("NUM_PREC_RADIX"));
       assertEquals(ResultSetMetaData.columnNullable, resultSet.getInt("NULLABLE"));
       assertEquals("", resultSet.getString("REMARKS"));
-      assertEquals(null, resultSet.getString("COLUMN_DEF"));
+      assertNull(resultSet.getString("COLUMN_DEF"));
 
       assertEquals(0, resultSet.getInt("CHAR_OCTET_LENGTH"));
       assertEquals(5, resultSet.getInt("ORDINAL_POSITION"));
@@ -690,7 +644,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
       assertEquals(0, resultSet.getInt("NUM_PREC_RADIX"));
       assertEquals(ResultSetMetaData.columnNullable, resultSet.getInt("NULLABLE"));
       assertEquals("", resultSet.getString("REMARKS"));
-      assertEquals(null, resultSet.getString("COLUMN_DEF"));
+      assertNull(resultSet.getString("COLUMN_DEF"));
 
       assertEquals(0, resultSet.getInt("CHAR_OCTET_LENGTH"));
       assertEquals(6, resultSet.getInt("ORDINAL_POSITION"));
@@ -713,10 +667,9 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
       assertEquals(0, resultSet.getInt("COLUMN_SIZE"));
       assertEquals(0, resultSet.getInt("DECIMAL_DIGITS"));
       assertEquals(0, resultSet.getInt("NUM_PREC_RADIX"));
-      assertEquals(false, resultSet.getBoolean("NULLABLE"));
       assertEquals(ResultSetMetaData.columnNoNulls, resultSet.getInt("NULLABLE"));
       assertEquals("", resultSet.getString("REMARKS"));
-      assertEquals(null, resultSet.getString("COLUMN_DEF"));
+      assertNull(resultSet.getString("COLUMN_DEF"));
 
       assertEquals(0, resultSet.getInt("CHAR_OCTET_LENGTH"));
       assertEquals(7, resultSet.getInt("ORDINAL_POSITION"));
@@ -741,7 +694,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
       assertEquals(0, resultSet.getInt("NUM_PREC_RADIX"));
       assertEquals(ResultSetMetaData.columnNullable, resultSet.getInt("NULLABLE"));
       assertEquals("", resultSet.getString("REMARKS"));
-      assertEquals(null, resultSet.getString("COLUMN_DEF"));
+      assertNull(resultSet.getString("COLUMN_DEF"));
 
       assertEquals(0, resultSet.getInt("CHAR_OCTET_LENGTH"));
       assertEquals(8, resultSet.getInt("ORDINAL_POSITION"));
@@ -766,7 +719,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
       assertEquals(0, resultSet.getInt("NUM_PREC_RADIX"));
       assertEquals(ResultSetMetaData.columnNullable, resultSet.getInt("NULLABLE"));
       assertEquals("", resultSet.getString("REMARKS"));
-      assertEquals(null, resultSet.getString("COLUMN_DEF"));
+      assertNull(resultSet.getString("COLUMN_DEF"));
 
       assertEquals(0, resultSet.getInt("CHAR_OCTET_LENGTH"));
       assertEquals(9, resultSet.getInt("ORDINAL_POSITION"));
@@ -791,7 +744,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
       assertEquals(0, resultSet.getInt("NUM_PREC_RADIX"));
       assertEquals(ResultSetMetaData.columnNullable, resultSet.getInt("NULLABLE"));
       assertEquals("", resultSet.getString("REMARKS"));
-      assertEquals(null, resultSet.getString("COLUMN_DEF"));
+      assertNull(resultSet.getString("COLUMN_DEF"));
 
       assertEquals(0, resultSet.getInt("CHAR_OCTET_LENGTH"));
       assertEquals(10, resultSet.getInt("ORDINAL_POSITION"));
@@ -816,7 +769,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
       assertEquals(0, resultSet.getInt("NUM_PREC_RADIX"));
       assertEquals(ResultSetMetaData.columnNullable, resultSet.getInt("NULLABLE"));
       assertEquals("", resultSet.getString("REMARKS"));
-      assertEquals(null, resultSet.getString("COLUMN_DEF"));
+      assertNull(resultSet.getString("COLUMN_DEF"));
 
       assertEquals(0, resultSet.getInt("CHAR_OCTET_LENGTH"));
       assertEquals(11, resultSet.getInt("ORDINAL_POSITION"));
@@ -841,7 +794,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
       assertEquals(0, resultSet.getInt("NUM_PREC_RADIX"));
       assertEquals(ResultSetMetaData.columnNullable, resultSet.getInt("NULLABLE"));
       assertEquals("", resultSet.getString("REMARKS"));
-      assertEquals(null, resultSet.getString("COLUMN_DEF"));
+      assertNull(resultSet.getString("COLUMN_DEF"));
 
       assertEquals(0, resultSet.getInt("CHAR_OCTET_LENGTH"));
       assertEquals(12, resultSet.getInt("ORDINAL_POSITION"));
@@ -866,7 +819,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
       assertEquals(0, resultSet.getInt("NUM_PREC_RADIX"));
       assertEquals(ResultSetMetaData.columnNullable, resultSet.getInt("NULLABLE"));
       assertEquals("", resultSet.getString("REMARKS"));
-      assertEquals(null, resultSet.getString("COLUMN_DEF"));
+      assertNull(resultSet.getString("COLUMN_DEF"));
 
       assertEquals(0, resultSet.getInt("CHAR_OCTET_LENGTH"));
       assertEquals(13, resultSet.getInt("ORDINAL_POSITION"));
@@ -890,7 +843,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
 
       resultSet = metaData.getColumns(database, schema, targetTable, "%");
       assertTrue(resultSet.next());
-      assertEquals(null, resultSet.getString("COLUMN_DEF"));
+      assertNull(resultSet.getString("COLUMN_DEF"));
       assertTrue(resultSet.next());
       assertEquals("", resultSet.getString("COLUMN_DEF"));
       assertTrue(resultSet.next());
@@ -898,7 +851,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
       assertTrue(resultSet.next());
       assertEquals("\"apples\"", resultSet.getString("COLUMN_DEF"));
       assertTrue(resultSet.next());
-      assertEquals(null, resultSet.getString("COLUMN_DEF"));
+      assertNull(resultSet.getString("COLUMN_DEF"));
       assertTrue(resultSet.next());
       assertEquals("5", resultSet.getString("COLUMN_DEF"));
       assertTrue(resultSet.next());
@@ -952,7 +905,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
     }
   }
 
-  public static void verifyResultSetMetaDataColumns(
+  static void verifyResultSetMetaDataColumns(
       ResultSet resultSet, DBMetadataResultSetMetadata metadata) throws SQLException {
     final int numCol = metadata.getColumnNames().size();
     ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
@@ -1682,7 +1635,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
       assertEquals(255, metaData.getMaxUserNameLength());
       assertEquals(0, getSizeOfResultSet(metaData.getTablePrivileges(null, null, null)));
       // assertEquals("", metaData.getTimeDateFunctions());
-      assertEquals(System.getenv("SNOWFLAKE_TEST_USER"), metaData.getUserName());
+      assertEquals(TestUtil.systemGetEnv("SNOWFLAKE_TEST_USER"), metaData.getUserName());
       assertFalse(metaData.insertsAreDetected(1));
       assertTrue(metaData.isCatalogAtStart());
       assertFalse(metaData.isReadOnly());
@@ -1899,21 +1852,6 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
       expectFeatureNotSupportedException(() -> metaData.unwrap(SnowflakeDatabaseMetaData.class));
       expectFeatureNotSupportedException(
           () -> metaData.isWrapperFor(SnowflakeDatabaseMetaData.class));
-    }
-  }
-
-  @Test
-  public void testGetFunctions() throws SQLException {
-    try (Connection connection = getConnection()) {
-      DatabaseMetaData metadata = connection.getMetaData();
-      String supportedStringFuncs = metadata.getStringFunctions();
-      assertEquals(StringFunctionsSupported, supportedStringFuncs);
-
-      String supportedNumberFuncs = metadata.getNumericFunctions();
-      assertEquals(NumericFunctionsSupported, supportedNumberFuncs);
-
-      String supportedSystemFuncs = metadata.getSystemFunctions();
-      assertEquals(SystemFunctionsSupported, supportedSystemFuncs);
     }
   }
 }

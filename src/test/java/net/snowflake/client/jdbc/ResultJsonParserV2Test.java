@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
+ * Copyright (c) 2012-2020 Snowflake Computing Inc. All rights reserved.
  */
 package net.snowflake.client.jdbc;
 
@@ -8,15 +8,12 @@ import static org.junit.Assert.assertNull;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-import net.snowflake.client.category.TestCategoryResultSet;
 import net.snowflake.client.core.SFSession;
 import org.apache.commons.text.StringEscapeUtils;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 
 /** This is the unit tests for ResultJsonParserV2 */
-@Category(TestCategoryResultSet.class)
-public class ResultJsonParserV2IT {
+public class ResultJsonParserV2Test {
   @Test
   public void simpleTest() throws SnowflakeSQLException {
     SFSession session = null;

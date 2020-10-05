@@ -1,6 +1,6 @@
 #!/bin/bash -e
 #
-# Test ODBC
+# Test JDBC
 #
 set -o pipefail
 THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
@@ -57,6 +57,7 @@ for name in "${!TARGET_TEST_IMAGES[@]}"; do
         -e JOB_NAME \
         -e BUILD_NUMBER \
         -e JDBC_TEST_CATEGORY \
+        -e IS_OLD_VERSION \
         --add-host=snowflake.reg.local:${IP_ADDR} \
         --add-host=s3testaccount.reg.local:${IP_ADDR} \
         --add-host=azureaccount.reg.local:${IP_ADDR} \

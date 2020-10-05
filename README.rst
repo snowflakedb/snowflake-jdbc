@@ -82,7 +82,6 @@ EU(Frankfurt) Region:
 
     jdbc:snowflake://<account>.eu-central-1.snowflakecomputing.com/?<connection_params>
 
-
 Documentation
 =============
 
@@ -109,6 +108,45 @@ You may import the coding style from IntelliJ so that the coding style can be ap
 - Enable `google-java-format` for the JDBC project.
 - In the source code window, select **Code** -> **Reformat** to apply the coding style.
 
+
+Tests
+=====
+
+Run Tests
+---------
+
+Set the environment variables to specify the target database.
+
+.. code-block:: bash
+
+    export SNOWFLAKE_TEST_HOST=<your_host>
+    export SNOWFLAKE_TEST_ACCOUNT=<your_account>
+    export SNOWFLAKE_TEST_USER=<your_user>
+    export SNOWFLAKE_TEST_PASSWORD=<your_password>
+    export SNOWFLAKE_TEST_DATABASE=<your_database>
+    export SNOWFLAKE_TEST_SCHEMA=<your_schema>
+    export SNOWFLAKE_TEST_WAREHOUSE=<your_warehouse>
+    export SNOWFLAKE_TEST_ROLE=<your_role>
+
+Run the maven ``verify`` goal.
+
+.. code-block:: bash
+
+    mvn -DjenkinsIT -DtestCategory=net.snowflake.client.category.<category> verify
+
+where ``category`` is the class name under the package ``net.snowflake.client.category``.
+
+Test Class Naming Convention
+----------------------------
+
+The test cases are fallen into a couple of criterias:
+
+- The unit test class names end with ``Test``. They run part of the JDBC build jobs.
+- The integration test class names end with ``IT``. They run part of the ``verify`` maven goal along with the test category specified by the parameter ``testCategory`` having ``net.snowflake.client.category`` classes.
+- The manual test class names end with ``Manual``. They don't run in the CI but you can run them manually.
+
+Aside from the general test criterias, the test case class names ending with ``LatestIT`` run only with the latest JDBC driver.
+The main motivation behind is to skip those tests for the old JDBC driver. See ``./TestOnly`` directory for further information.
 
 Support
 =============
