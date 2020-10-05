@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 import net.snowflake.client.category.TestCategoryResultSet;
+import net.snowflake.common.core.SqlState;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -309,6 +310,15 @@ public class ResultSetAsyncIT extends BaseJDBCTest {
     }
   }
 
+  /**
+   * This is a corner case for if a user forgets to call one of these functions before attempting to
+   * fetch real data. An empty ResultSet is initially returned form executeAsyncQuery() but is
+   * replaced by a real ResultSet when next() or getMetaData() is called. If neither is called, user
+   * can try to get results from empty result set but exceptions are thrown whenever a column name
+   * cannot be found.
+   *
+   * @throws SQLException
+   */
   @Test
   public void testEmptyResultSet() throws SQLException {
     Connection connection = getConnection();
@@ -320,10 +330,11 @@ public class ResultSetAsyncIT extends BaseJDBCTest {
     assertFalse(rs.isClosed());
     assertEquals(0, rs.getInt(1));
     try {
-      assertEquals(0, rs.getInt("col1"));
+      rs.getInt("col1");
       fail("Fetching from a column name that does not exist should return a SQLException");
     } catch (SQLException e) {
       // findColumn fails with empty metadata with exception "Column not found".
+      assertEquals(SqlState.UNDEFINED_COLUMN, e.getSQLState());
     }
     rs.close(); // close empty result set
     assertTrue(rs.isClosed());
