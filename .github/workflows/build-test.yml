@@ -50,7 +50,7 @@ jobs:
                 image: [ 'jdbc-centos6-default' ]
                 cloud: [ 'AWS' ]
                 category: ['TestCategoryResultSet,TestCategoryOthers', 'TestCategoryConnection,TestCategoryStatement', 'TestCategoryCore,TestCategoryLoader']
-                is_old_version: ['true']
+                is_old_driver: ['true']
         steps:
             - uses: actions/checkout@v1
             - name: Tests
@@ -60,5 +60,5 @@ jobs:
                 CLOUD_PROVIDER: ${{ matrix.cloud }}
                 TARGET_DOCKER_TEST_IMAGE: ${{ matrix.image }}
                 JDBC_TEST_CATEGORY: ${{ matrix.category }}
-                IS_OLD_VERSION: ${{ matrix.is_old_version }}
+                is_old_driver: ${{ matrix.is_old_driver }}
               run: ./ci/test.sh

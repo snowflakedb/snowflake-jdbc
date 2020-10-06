@@ -16,6 +16,7 @@ import java.util.Map;
 import java.util.TimeZone;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
+import net.snowflake.common.core.SqlState;
 
 /** Base class for query result set and metadata result set */
 abstract class SnowflakeBaseResultSet implements ResultSet {
@@ -285,7 +286,7 @@ abstract class SnowflakeBaseResultSet implements ResultSet {
     int columnIndex = resultSetMetaData.getColumnIndex(columnLabel);
 
     if (columnIndex == -1) {
-      throw new SQLException("Column not found: " + columnLabel);
+      throw new SQLException("Column not found: " + columnLabel, SqlState.UNDEFINED_COLUMN);
     } else {
       return ++columnIndex;
     }

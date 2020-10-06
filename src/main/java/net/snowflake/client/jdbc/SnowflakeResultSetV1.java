@@ -476,7 +476,7 @@ class SnowflakeResultSetV1 extends SnowflakeBaseResultSet implements SnowflakeRe
     @Override
     public String getString(String columnLabel) throws SQLException {
       raiseSQLExceptionIfResultSetIsClosed();
-      return null;
+      return "";
     }
 
     @Override
