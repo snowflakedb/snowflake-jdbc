@@ -4,6 +4,8 @@
 - \| SNOW-161733 | JDBC setString function performance is not satisfactory.
 - \| SNOW-195989 | Snowflake JDBC driver is unable to connect via Key-Pair authentication if they private key is encrypted and if the key is generated using OpenSSL 1.1.1g on Windows or Ubuntu.
 - \| SNOW-199080 | Yearly GPG key rotation.
+- \| SNOW-174837 | Upgraded google-oauth-client from 1.30.4 --> 1.31.0 to fix security vulnerability
+- \| SNOW-201613 | Fix for CVE 2019 10172
 - \
 
 **JDBC Driver 3.12.12**
