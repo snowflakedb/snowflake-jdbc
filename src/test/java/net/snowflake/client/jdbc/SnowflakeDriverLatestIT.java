@@ -3,11 +3,10 @@
  */
 package net.snowflake.client.jdbc;
 
+import static net.snowflake.client.jdbc.SnowflakeDriverIT.findFile;
 import static org.junit.Assert.*;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
+import java.io.*;
 import java.sql.*;
 import java.util.Arrays;
 import java.util.List;
@@ -20,6 +19,7 @@ import net.snowflake.client.category.TestCategoryOthers;
 import net.snowflake.client.core.OCSPMode;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.core.SFStatement;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.junit.Rule;
 import org.junit.Test;
@@ -35,6 +35,7 @@ import org.junit.rules.TemporaryFolder;
 @Category(TestCategoryOthers.class)
 public class SnowflakeDriverLatestIT extends BaseJDBCTest {
   @Rule public TemporaryFolder tmpFolder = new TemporaryFolder();
+  @Rule public TemporaryFolder tmpFolder2 = new TemporaryFolder();
 
   public String testStageName =
       String.format("test_stage_%s", UUID.randomUUID().toString()).replaceAll("-", "_");
@@ -338,6 +339,400 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
       driver.getPropertyInfo(url, props);
     } catch (SQLException e) {
       assertEquals((int) ErrorCode.INVALID_CONNECT_STRING.getMessageCode(), e.getErrorCode());
+    }
+  }
+
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testPutOverwriteFalseNoDigest() throws Throwable {
+    Connection connection = null;
+    Statement statement = null;
+
+    // create 2 files: an original, and one that will overwrite the original
+    File file1 = tmpFolder.newFile("testfile.csv");
+    BufferedWriter bw = new BufferedWriter(new FileWriter(file1));
+    bw.write("Writing original file content. This should get overwritten.");
+    bw.close();
+
+    File file2 = tmpFolder2.newFile("testfile.csv");
+    bw = new BufferedWriter(new FileWriter(file2));
+    bw.write("This is all new! This should be the result of the overwriting.");
+    bw.close();
+
+    String sourceFilePathOriginal = file1.getCanonicalPath();
+    String sourceFilePathOverwrite = file2.getCanonicalPath();
+
+    File destFolder = tmpFolder.newFolder();
+    String destFolderCanonicalPath = destFolder.getCanonicalPath();
+    String destFolderCanonicalPathWithSeparator = destFolderCanonicalPath + File.separator;
+
+    List<String> accounts = Arrays.asList(null, "s3testaccount", "azureaccount", "gcpaccount");
+    for (int i = 0; i < accounts.size(); i++) {
+      try {
+        connection = getConnection(accounts.get(i));
+
+        statement = connection.createStatement();
+
+        // create a stage to put the file in
+        statement.execute("CREATE OR REPLACE STAGE testing_stage");
+        assertTrue(
+            "Failed to put a file",
+            statement.execute("PUT file://" + sourceFilePathOriginal + " @testing_stage"));
+        // check that file exists in stage after PUT
+        findFile(statement, "ls @testing_stage/");
+
+        // put another file in same stage with same filename with overwrite = true
+        assertTrue(
+            "Failed to put a file",
+            statement.execute(
+                "PUT file://" + sourceFilePathOverwrite + " @testing_stage overwrite=false"));
+
+        // check that file exists in stage after PUT
+        findFile(statement, "ls @testing_stage/");
+
+        // get file from new stage
+        assertTrue(
+            "Failed to get files",
+            statement.execute(
+                "GET @testing_stage 'file://" + destFolderCanonicalPath + "' parallel=8"));
+
+        // Make sure that the downloaded file exists; it should be gzip compressed
+        File downloaded = new File(destFolderCanonicalPathWithSeparator + "testfile.csv.gz");
+        assertTrue(downloaded.exists());
+
+        // unzip the file
+        Process p =
+            Runtime.getRuntime()
+                .exec("gzip -d " + destFolderCanonicalPathWithSeparator + "testfile.csv.gz");
+        p.waitFor();
+
+        // 2nd file should never be uploaded
+        File unzipped = new File(destFolderCanonicalPathWithSeparator + "testfile.csv");
+        assertTrue(FileUtils.contentEqualsIgnoreEOL(file1, unzipped, null));
+      } finally {
+        statement.execute("DROP TABLE IF EXISTS testLoadToLocalFS");
+        statement.close();
+      }
+    }
+  }
+
+  /**
+   * Test NULL in LIMIT and OFFSET with Snow-76376 enabled this should be handled as without LIMIT
+   * and OFFSET
+   */
+  @Test
+  public void testSnow76376() throws Throwable {
+    Connection connection = null;
+    PreparedStatement preparedStatement = null;
+    Statement regularStatement = null;
+    ResultSet resultSet = null;
+
+    try {
+      connection = getConnection();
+      regularStatement = connection.createStatement();
+      regularStatement.execute(
+          "create or replace table t(a int) as select * from values" + "(1),(2),(8),(10)");
+
+      preparedStatement =
+          connection.prepareStatement("SELECT * FROM t " + "ORDER BY a LIMIT " + "? OFFSET ?");
+
+      ////////////////////////////
+      // both NULL
+      preparedStatement.setNull(1, 4); // int
+      preparedStatement.setNull(2, 4); // int
+
+      if (preparedStatement.execute()) {
+        resultSet = preparedStatement.getResultSet();
+        resultSet.next();
+        assertEquals(1, resultSet.getInt(1));
+        resultSet.next();
+        assertEquals(2, resultSet.getInt(1));
+        resultSet.next();
+        assertEquals(8, resultSet.getInt(1));
+        resultSet.next();
+        assertEquals(10, resultSet.getInt(1));
+      } else {
+        fail("Could not execute preparedStatement with OFFSET and LIMIT set " + "to NULL");
+      }
+
+      ////////////////////////////
+      // both empty string
+      preparedStatement.setString(1, "");
+      preparedStatement.setString(2, "");
+
+      if (preparedStatement.execute()) {
+        resultSet = preparedStatement.getResultSet();
+        resultSet.next();
+        assertEquals(1, resultSet.getInt(1));
+        resultSet.next();
+        assertEquals(2, resultSet.getInt(1));
+        resultSet.next();
+        assertEquals(8, resultSet.getInt(1));
+        resultSet.next();
+        assertEquals(10, resultSet.getInt(1));
+      } else {
+        fail("Could not execute preparedStatement with OFFSET and LIMIT set " + "to empty string");
+      }
+
+      ////////////////////////////
+      // only LIMIT NULL
+      preparedStatement.setNull(1, 4); // int
+      preparedStatement.setInt(2, 2);
+
+      if (preparedStatement.execute()) {
+        resultSet = preparedStatement.getResultSet();
+        resultSet.next();
+        assertEquals(8, resultSet.getInt(1));
+        resultSet.next();
+        assertEquals(10, resultSet.getInt(1));
+      } else {
+        fail("Could not execute preparedStatement with LIMIT set to NULL");
+      }
+
+      ////////////////////////////
+      // only LIMIT empty string
+      preparedStatement.setString(1, "");
+      preparedStatement.setInt(2, 2);
+
+      if (preparedStatement.execute()) {
+        resultSet = preparedStatement.getResultSet();
+        resultSet.next();
+        assertEquals(8, resultSet.getInt(1));
+        resultSet.next();
+        assertEquals(10, resultSet.getInt(1));
+      } else {
+        fail("Could not execute preparedStatement with LIMIT set to empty " + "string");
+      }
+
+      ////////////////////////////
+      // only OFFSET NULL
+      preparedStatement.setInt(1, 3); // int
+      preparedStatement.setNull(2, 4);
+
+      if (preparedStatement.execute()) {
+        resultSet = preparedStatement.getResultSet();
+        resultSet.next();
+        assertEquals(1, resultSet.getInt(1));
+        resultSet.next();
+        assertEquals(2, resultSet.getInt(1));
+        resultSet.next();
+        assertEquals(8, resultSet.getInt(1));
+      } else {
+        fail("Could not execute preparedStatement with OFFSET set to NULL");
+      }
+
+      ////////////////////////////
+      // only OFFSET empty string
+      preparedStatement.setInt(1, 3); // int
+      preparedStatement.setNull(2, 4);
+
+      if (preparedStatement.execute()) {
+        resultSet = preparedStatement.getResultSet();
+        resultSet.next();
+        assertEquals(1, resultSet.getInt(1));
+        resultSet.next();
+        assertEquals(2, resultSet.getInt(1));
+        resultSet.next();
+        assertEquals(8, resultSet.getInt(1));
+      } else {
+        fail("Could not execute preparedStatement with OFFSET set to empty " + "string");
+      }
+
+      ////////////////////////////
+      // OFFSET and LIMIT NULL for constant select query
+      preparedStatement =
+          connection.prepareStatement("SELECT 1 FROM t " + "ORDER BY a LIMIT " + "? OFFSET ?");
+      preparedStatement.setNull(1, 4); // int
+      preparedStatement.setNull(2, 4); // int
+      if (preparedStatement.execute()) {
+        resultSet = preparedStatement.getResultSet();
+        for (int i = 0; i < 4; i++) {
+          resultSet.next();
+          assertEquals(1, resultSet.getInt(1));
+        }
+      } else {
+        fail("Could not execute constant preparedStatement with OFFSET and " + "LIMIT set to NULL");
+      }
+
+      ////////////////////////////
+      // OFFSET and LIMIT empty string for constant select query
+      preparedStatement.setString(1, ""); // int
+      preparedStatement.setString(2, ""); // int
+      if (preparedStatement.execute()) {
+        resultSet = preparedStatement.getResultSet();
+        for (int i = 0; i < 4; i++) {
+          resultSet.next();
+          assertEquals(1, resultSet.getInt(1));
+        }
+      } else {
+        fail(
+            "Could not execute constant preparedStatement with OFFSET and "
+                + "LIMIT set to empty string");
+      }
+
+    } finally {
+      if (regularStatement != null) {
+        regularStatement.execute("drop table t");
+        regularStatement.close();
+      }
+
+      closeSQLObjects(resultSet, preparedStatement, connection);
+    }
+  }
+
+  /**
+   * Tests that result columns of type GEOGRAPHY appear as VARCHAR / VARIANT / BINARY to the client,
+   * depending on the value of GEOGRAPHY_OUTPUT_FORMAT
+   *
+   * @throws Throwable
+   */
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testGeoOutputTypes() throws Throwable {
+    Connection connection = null;
+    Statement regularStatement = null;
+
+    try {
+      Properties paramProperties = new Properties();
+
+      paramProperties.put("ENABLE_USER_DEFINED_TYPE_EXPANSION", true);
+      paramProperties.put("ENABLE_GEOGRAPHY_TYPE", true);
+
+      connection = getConnection(paramProperties);
+
+      regularStatement = connection.createStatement();
+
+      regularStatement.execute("create or replace table t_geo(geo geography);");
+
+      regularStatement.execute("insert into t_geo values ('POINT(0 0)'), ('LINESTRING(1 1, 2 2)')");
+
+      testGeoOutputTypeSingle(
+          regularStatement, false, "geoJson", "OBJECT", "java.lang.String", Types.VARCHAR);
+
+      testGeoOutputTypeSingle(
+          regularStatement, true, "geoJson", "GEOGRAPHY", "java.lang.String", Types.VARCHAR);
+
+      testGeoOutputTypeSingle(
+          regularStatement, false, "wkt", "VARCHAR", "java.lang.String", Types.VARCHAR);
+
+      testGeoOutputTypeSingle(
+          regularStatement, true, "wkt", "GEOGRAPHY", "java.lang.String", Types.VARCHAR);
+
+      testGeoOutputTypeSingle(regularStatement, false, "wkb", "BINARY", "[B", Types.BINARY);
+
+      testGeoOutputTypeSingle(regularStatement, true, "wkb", "GEOGRAPHY", "[B", Types.BINARY);
+    } finally {
+      if (regularStatement != null) {
+        regularStatement.execute("drop table t_geo");
+        regularStatement.close();
+      }
+
+      if (connection != null) {
+        connection.close();
+      }
+    }
+  }
+
+  private void testGeoOutputTypeSingle(
+      Statement regularStatement,
+      boolean enableExternalTypeNames,
+      String outputFormat,
+      String expectedColumnTypeName,
+      String expectedColumnClassName,
+      int expectedColumnType)
+      throws Throwable {
+    ResultSet resultSet = null;
+
+    try {
+      regularStatement.execute("alter session set GEOGRAPHY_OUTPUT_FORMAT='" + outputFormat + "'");
+
+      regularStatement.execute(
+          "alter session set ENABLE_UDT_EXTERNAL_TYPE_NAMES=" + enableExternalTypeNames);
+
+      resultSet = regularStatement.executeQuery("select * from t_geo");
+
+      ResultSetMetaData metadata = resultSet.getMetaData();
+
+      assertEquals(1, metadata.getColumnCount());
+
+      // GeoJSON: SQL type OBJECT, Java type String
+      assertEquals(expectedColumnTypeName, metadata.getColumnTypeName(1));
+      assertEquals(expectedColumnClassName, metadata.getColumnClassName(1));
+      assertEquals(expectedColumnType, metadata.getColumnType(1));
+
+    } finally {
+      if (resultSet != null) {
+        resultSet.close();
+      }
+    }
+  }
+
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testGeoMetadata() throws Throwable {
+    Connection connection = null;
+    Statement regularStatement = null;
+
+    try {
+      Properties paramProperties = new Properties();
+
+      paramProperties.put("ENABLE_FIX_182763", true);
+
+      connection = getConnection(paramProperties);
+
+      regularStatement = connection.createStatement();
+
+      regularStatement.execute("create or replace table t_geo(geo geography);");
+
+      testGeoMetadataSingle(connection, regularStatement, "geoJson", Types.VARCHAR);
+
+      testGeoMetadataSingle(connection, regularStatement, "geoJson", Types.VARCHAR);
+
+      testGeoMetadataSingle(connection, regularStatement, "wkt", Types.VARCHAR);
+
+      testGeoMetadataSingle(connection, regularStatement, "wkt", Types.VARCHAR);
+
+      testGeoMetadataSingle(connection, regularStatement, "wkb", Types.BINARY);
+
+      testGeoMetadataSingle(connection, regularStatement, "wkb", Types.BINARY);
+
+    } finally {
+      if (regularStatement != null) {
+        regularStatement.execute("drop table t_geo");
+        regularStatement.close();
+      }
+
+      if (connection != null) {
+        connection.close();
+      }
+    }
+  }
+
+  private void testGeoMetadataSingle(
+      Connection connection,
+      Statement regularStatement,
+      String outputFormat,
+      int expectedColumnType)
+      throws Throwable {
+    ResultSet resultSet = null;
+
+    try {
+      regularStatement.execute("alter session set GEOGRAPHY_OUTPUT_FORMAT='" + outputFormat + "'");
+
+      DatabaseMetaData md = connection.getMetaData();
+      resultSet = md.getColumns(null, null, "T_GEO", null);
+      ResultSetMetaData metadata = resultSet.getMetaData();
+
+      assertEquals(24, metadata.getColumnCount());
+
+      assertTrue(resultSet.next());
+
+      assertEquals(expectedColumnType, resultSet.getInt(5));
+      assertEquals("GEOGRAPHY", resultSet.getString(6));
+    } finally {
+      if (resultSet != null) {
+        resultSet.close();
+      }
     }
   }
 }
