@@ -3,6 +3,9 @@
  */
 package net.snowflake.client.jdbc;
 
+import static org.junit.Assert.*;
+
+import java.sql.*;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryOthers;
@@ -11,10 +14,6 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-
-import java.sql.*;
-
-import static org.junit.Assert.*;
 
 /** Database Metadata IT */
 @Category(TestCategoryOthers.class)

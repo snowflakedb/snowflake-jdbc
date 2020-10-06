@@ -1,5 +1,11 @@
 package net.snowflake.client.jdbc;
 
+import static net.snowflake.client.jdbc.DatabaseMetaDataInternalIT.endMetaData;
+import static net.snowflake.client.jdbc.DatabaseMetaDataInternalIT.initMetaData;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+
+import java.sql.*;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryOthers;
@@ -7,13 +13,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-
-import java.sql.*;
-
-import static net.snowflake.client.jdbc.DatabaseMetaDataInternalIT.endMetaData;
-import static net.snowflake.client.jdbc.DatabaseMetaDataInternalIT.initMetaData;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 
 /**
  * Database Metadata tests for the latest JDBC driver. This doesn't work for the oldest supported

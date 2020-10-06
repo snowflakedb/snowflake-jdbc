@@ -3,16 +3,15 @@
  */
 package net.snowflake.client.jdbc;
 
+import static net.snowflake.client.jdbc.PreparedStatement1IT.bindOneParamSet;
+import static org.junit.Assert.*;
+
+import java.sql.*;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryStatement;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-
-import java.sql.*;
-
-import static net.snowflake.client.jdbc.PreparedStatement1IT.bindOneParamSet;
-import static org.junit.Assert.*;
 
 /**
  * PreparedStatement integration tests for the latest JDBC driver. This doesn't work for the oldest
