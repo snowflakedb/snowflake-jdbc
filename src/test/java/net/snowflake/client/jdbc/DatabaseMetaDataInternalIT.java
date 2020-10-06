@@ -3,16 +3,9 @@
  */
 package net.snowflake.client.jdbc;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
-import java.sql.Connection;
-import java.sql.DatabaseMetaData;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.sql.Types;
+import java.sql.*;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryOthers;
@@ -32,43 +25,51 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest {
 
   @Before
   public void setUp() throws SQLException {
-    Connection con = getConnection();
-    Statement st = con.createStatement();
+    try (Connection con = getConnection()) {
+      initMetaData(con);
+    }
+  }
 
-    st.execute("create or replace database JDBC_DB1");
-    st.execute("create or replace schema JDBC_SCHEMA11");
-    st.execute("create or replace table JDBC_TBL111(colA string, colB decimal, colC timestamp)");
-    st.execute("create or replace schema TEST_CTX");
-    st.execute(
-        "create or replace table JDBC_A (colA string, colB decimal, "
-            + "colC number PRIMARY KEY);");
-    st.execute(
-        "create or replace table JDBC_B (colA string, colB decimal, "
-            + "colC number FOREIGN KEY REFERENCES JDBC_A(colC));");
-    st.execute("create or replace schema JDBC_SCHEMA12");
-    st.execute("create or replace table JDBC_TBL121(colA varchar)");
-    st.execute(
-        "create or replace table JDBC_TBL122(colA NUMBER(20, 2) AUTOINCREMENT comment "
-            + "'cmt colA', colB NUMBER(20, 2) DEFAULT(3) NOT NULL, colC NUMBER(20,2) IDENTITY(20, 2))");
-    st.execute("create or replace database JDBC_DB2");
-    st.execute("create or replace schema JDBC_SCHEMA21");
-    st.execute("create or replace table JDBC_TBL211(colA string)");
-    st.execute("create or replace table JDBC_BIN(bin1 binary, bin2 binary(100))");
+  static void initMetaData(Connection con) throws SQLException {
+    try (Statement st = con.createStatement()) {
 
-    //    st.execute("create or replace table JDBC_TBL211(colA string(25) NOT NULL DEFAULT
-    // 'defstring')");
-    st.close();
-    con.close();
+      st.execute("create or replace database JDBC_DB1");
+      st.execute("create or replace schema JDBC_SCHEMA11");
+      st.execute("create or replace table JDBC_TBL111(colA string, colB decimal, colC timestamp)");
+      st.execute("create or replace schema TEST_CTX");
+      st.execute(
+          "create or replace table JDBC_A (colA string, colB decimal, "
+              + "colC number PRIMARY KEY);");
+      st.execute(
+          "create or replace table JDBC_B (colA string, colB decimal, "
+              + "colC number FOREIGN KEY REFERENCES JDBC_A(colC));");
+      st.execute("create or replace schema JDBC_SCHEMA12");
+      st.execute("create or replace table JDBC_TBL121(colA varchar)");
+      st.execute(
+          "create or replace table JDBC_TBL122(colA NUMBER(20, 2) AUTOINCREMENT comment "
+              + "'cmt colA', colB NUMBER(20, 2) DEFAULT(3) NOT NULL, colC NUMBER(20,2) IDENTITY(20, 2))");
+      st.execute("create or replace database JDBC_DB2");
+      st.execute("create or replace schema JDBC_SCHEMA21");
+      st.execute("create or replace table JDBC_TBL211(colA string)");
+      st.execute("create or replace table JDBC_BIN(bin1 binary, bin2 binary(100))");
+
+      //    st.execute("create or replace table JDBC_TBL211(colA string(25) NOT NULL DEFAULT
+      // 'defstring')");
+    }
   }
 
   @After
   public void tearDown() throws SQLException {
-    Connection con = getConnection();
-    Statement st = con.createStatement();
-    st.execute("drop database if exists JDBC_DB1");
-    st.execute("drop database if exists JDBC_DB2");
-    st.close();
-    con.close();
+    try (Connection con = getConnection()) {
+      endMetaData(con);
+    }
+  }
+
+  static void endMetaData(Connection con) throws SQLException {
+    try (Statement st = con.createStatement()) {
+      st.execute("drop database if exists JDBC_DB1");
+      st.execute("drop database if exists JDBC_DB2");
+    }
   }
 
   @Test
@@ -223,118 +224,6 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest {
 
     statement.close();
     connection.close();
-  }
-
-  @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testGetFunctionColumns() throws SQLException {
-    connection = getConnection();
-    statement = connection.createStatement();
-    statement.execute(
-        "create or replace function JDBC_DB1.JDBC_SCHEMA11.FUNC111 "
-            + "(a number, b number) RETURNS NUMBER COMMENT='multiply numbers' as 'a*b'");
-    statement.execute(
-        "create or replace table JDBC_DB1.JDBC_SCHEMA11.BIN_TABLE(bin1 binary, bin2 binary(100), "
-            + "sharedCol decimal)");
-    // statement.execute("create or replace table JDBC_TBL111(colA string, colB decimal, colC
-    // timestamp)");
-    statement.execute(
-        "create or replace function JDBC_DB1.JDBC_SCHEMA11.FUNC112 "
-            + "() RETURNS TABLE(colA string, colB decimal, bin2 binary, sharedCol decimal) COMMENT= 'returns "
-            + "table of 4 columns'"
-            + " as 'select JDBC_DB1.JDBC_SCHEMA11.JDBC_TBL111.colA, JDBC_DB1.JDBC_SCHEMA11.JDBC_TBL111.colB, "
-            + "JDBC_DB1.JDBC_SCHEMA11.BIN_TABLE.bin2, JDBC_DB1.JDBC_SCHEMA11.BIN_TABLE.sharedCol from JDBC_DB1"
-            + ".JDBC_SCHEMA11.JDBC_TBL111 inner join JDBC_DB1.JDBC_SCHEMA11.BIN_TABLE on JDBC_DB1.JDBC_SCHEMA11"
-            + ".JDBC_TBL111.colB = JDBC_DB1.JDBC_SCHEMA11.BIN_TABLE.sharedCol'");
-    databaseMetaData = connection.getMetaData();
-    // test each column return the right value
-    resultSet = databaseMetaData.getFunctionColumns("JDBC_DB1", "JDBC_SCHEMA11", "FUNC111", "%");
-    resultSet.next();
-    assertEquals("JDBC_DB1", resultSet.getString("FUNCTION_CAT"));
-    assertEquals("JDBC_SCHEMA11", resultSet.getString("FUNCTION_SCHEM"));
-    assertEquals("FUNC111", resultSet.getString("FUNCTION_NAME"));
-    assertEquals("", resultSet.getString("COLUMN_NAME"));
-    assertEquals(DatabaseMetaData.functionReturn, resultSet.getInt("COLUMN_TYPE"));
-    assertEquals(Types.NUMERIC, resultSet.getInt("DATA_TYPE"));
-    assertEquals("NUMBER(38,0)", resultSet.getString("TYPE_NAME"));
-    assertEquals(38, resultSet.getInt("PRECISION"));
-    assertEquals(0, resultSet.getInt("LENGTH"));
-    assertEquals(0, resultSet.getShort("SCALE"));
-    assertEquals(10, resultSet.getInt("RADIX"));
-    assertEquals(DatabaseMetaData.functionNullableUnknown, resultSet.getInt("NULLABLE"));
-    assertEquals("multiply numbers", resultSet.getString("REMARKS"));
-    assertEquals(0, resultSet.getInt("CHAR_OCTET_LENGTH"));
-    assertEquals(0, resultSet.getInt("ORDINAL_POSITION"));
-    assertEquals("", resultSet.getString("IS_NULLABLE"));
-    assertEquals("FUNC111(NUMBER, NUMBER) RETURN NUMBER", resultSet.getString("SPECIFIC_NAME"));
-    resultSet.next();
-    assertEquals("JDBC_DB1", resultSet.getString("FUNCTION_CAT"));
-    assertEquals("JDBC_SCHEMA11", resultSet.getString("FUNCTION_SCHEM"));
-    assertEquals("FUNC111", resultSet.getString("FUNCTION_NAME"));
-    assertEquals("A", resultSet.getString("COLUMN_NAME"));
-    assertEquals(1, resultSet.getInt("COLUMN_TYPE"));
-    assertEquals(Types.NUMERIC, resultSet.getInt("DATA_TYPE"));
-    assertEquals("NUMBER", resultSet.getString("TYPE_NAME"));
-    assertEquals(38, resultSet.getInt("PRECISION"));
-    assertEquals(0, resultSet.getInt("LENGTH"));
-    assertEquals(0, resultSet.getShort("SCALE"));
-    assertEquals(10, resultSet.getInt("RADIX"));
-    assertEquals(DatabaseMetaData.functionNullableUnknown, resultSet.getInt("NULLABLE"));
-    assertEquals("multiply numbers", resultSet.getString("REMARKS"));
-    assertEquals(0, resultSet.getInt("CHAR_OCTET_LENGTH"));
-    assertEquals(1, resultSet.getInt("ORDINAL_POSITION"));
-    assertEquals("", resultSet.getString("IS_NULLABLE"));
-    assertEquals("FUNC111(NUMBER, NUMBER) RETURN NUMBER", resultSet.getString("SPECIFIC_NAME"));
-    resultSet.next();
-    assertEquals("JDBC_DB1", resultSet.getString("FUNCTION_CAT"));
-    assertEquals("JDBC_SCHEMA11", resultSet.getString("FUNCTION_SCHEM"));
-    assertEquals("FUNC111", resultSet.getString("FUNCTION_NAME"));
-    assertEquals("B", resultSet.getString("COLUMN_NAME"));
-    assertEquals(1, resultSet.getInt("COLUMN_TYPE"));
-    assertEquals(Types.NUMERIC, resultSet.getInt("DATA_TYPE"));
-    assertEquals("NUMBER", resultSet.getString("TYPE_NAME"));
-    assertEquals(38, resultSet.getInt("PRECISION"));
-    assertEquals(0, resultSet.getInt("LENGTH"));
-    assertEquals(0, resultSet.getShort("SCALE"));
-    assertEquals(10, resultSet.getInt("RADIX"));
-    assertEquals(DatabaseMetaData.functionNullableUnknown, resultSet.getInt("NULLABLE"));
-    assertEquals("multiply numbers", resultSet.getString("REMARKS"));
-    assertEquals(0, resultSet.getInt("CHAR_OCTET_LENGTH"));
-    assertEquals(2, resultSet.getInt("ORDINAL_POSITION"));
-    assertEquals("", resultSet.getString("IS_NULLABLE"));
-    assertEquals("FUNC111(NUMBER, NUMBER) RETURN NUMBER", resultSet.getString("SPECIFIC_NAME"));
-    assertFalse(resultSet.next());
-    resultSet = databaseMetaData.getFunctionColumns("JDBC_DB1", "JDBC_SCHEMA11", "FUNC112", "%");
-    resultSet.next();
-    assertEquals("JDBC_DB1", resultSet.getString("FUNCTION_CAT"));
-    assertEquals("JDBC_SCHEMA11", resultSet.getString("FUNCTION_SCHEM"));
-    assertEquals("FUNC112", resultSet.getString("FUNCTION_NAME"));
-    assertEquals("", resultSet.getString("COLUMN_NAME"));
-    assertEquals(DatabaseMetaData.functionColumnOut, resultSet.getInt("COLUMN_TYPE"));
-    assertEquals(Types.OTHER, resultSet.getInt("DATA_TYPE"));
-    assertEquals(
-        "TABLE (COLA VARCHAR, COLB NUMBER, BIN2 BINARY, SHAREDCOL NUMBER)",
-        resultSet.getString("TYPE_NAME"));
-    assertEquals(0, resultSet.getInt("PRECISION"));
-    assertEquals(0, resultSet.getInt("LENGTH"));
-    assertEquals(0, resultSet.getInt("SCALE"));
-    assertEquals(10, resultSet.getInt("RADIX"));
-    assertEquals(DatabaseMetaData.functionNullableUnknown, resultSet.getInt("NULLABLE"));
-    assertEquals("returns table of 4 columns", resultSet.getString("REMARKS"));
-    assertEquals(0, resultSet.getInt("CHAR_OCTET_LENGTH"));
-    assertEquals(0, resultSet.getInt("ORDINAL_POSITION"));
-    assertEquals("", resultSet.getString("IS_NULLABLE"));
-    assertEquals(
-        "FUNC112() RETURN TABLE (COLA VARCHAR, COLB NUMBER, BIN2 BINARY, SHAREDCOL NUMBER)",
-        resultSet.getString("SPECIFIC_NAME"));
-    assertFalse(resultSet.next());
-    resultSet = databaseMetaData.getFunctionColumns(null, "%", "%", "%");
-    // we have 81 columns returned
-    assertEquals(81, getSizeOfResultSet(resultSet));
-    // setting catalog to % will result in 0 columns. % does not apply for catalog, only for other
-    // params
-    resultSet = databaseMetaData.getFunctionColumns("%", "%", "%", "%");
-    assertEquals(0, getSizeOfResultSet(resultSet));
   }
 
   @Test
