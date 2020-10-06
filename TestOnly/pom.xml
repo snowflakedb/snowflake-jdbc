@@ -312,7 +312,7 @@
                       net.snowflake.client.log.JDK14Logger
                     </net.snowflake.jdbc.loggerImpl>
                     <java.util.logging.config.file>
-                      ${basedir}/src/test/resources/logging.properties
+                      ${basedir}/../src/test/resources/logging.properties
                     </java.util.logging.config.file>
                   </systemPropertyVariables>
                 </configuration>

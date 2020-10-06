@@ -19,9 +19,14 @@ export CLIENT_KNOWN_SSM_FILE_PATH=$LOCAL_CLIENT_LOG_DIR_PATH/rt_jenkins_log_know
 echo "[INFO] CLIENT_KNOWN_SSM_FILE_PATH=$CLIENT_KNOWN_SSM_FILE_PATH"
 echo "[INFO] CLIENT_KNOWN_SSM_FILE_PATH_DOCKER=$CLIENT_KNOWN_SSM_FILE_PATH_DOCKER"
 
-# To close log analyze, just set ENABLE_ODBC_LOG_ANALYZE to not "true", e.g. "false".
-export ENABLE_CLIENT_LOG_ANALYZE="true"
-# export ENABLE_ODBC_LOG_ANALYZE="false"
+# To close log analyze, just set ENABLE_CLIENT_LOG_ANALYZE to not "true", e.g. "false".
+if [[ "$is_old_driver" != "true" ]]; then
+    export ENABLE_CLIENT_LOG_ANALYZE=true
+else
+    # Disable the secret log analyzer for the old client tests, because the old drivers don't necessarily have the fixes.
+    # It is good enough to check for the latest JDBC driver
+    export ENABLE_CLIENT_LOG_ANALYZE=false
+fi
 
 # The new complex password we use for jenkins test
 export SNOWFLAKE_TEST_PASSWORD_NEW="ThisIsRandomPassword123!"

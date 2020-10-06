@@ -72,7 +72,7 @@ read -ra CATEGORY <<< "$JDBC_TEST_CATEGORY"
 cd $SOURCE_ROOT
 for c in "${CATEGORY[@]}"; do
     c=$(echo $c | sed 's/ *$//g')
-    if [[ -n "$IS_OLD_VERSION" ]]; then
+    if [[ "$is_old_driver" == "true" ]]; then
         pushd TestOnly >& /dev/null
             JDBC_VERSION=$(mvn org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version --batch-mode | grep -v "[INFO]")
             echo "[INFO] Run JDBC $JDBC_VERSION tests"
