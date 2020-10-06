@@ -10,8 +10,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.*;
 
 import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.security.*;
 import java.sql.*;
 import java.util.Collections;
@@ -304,45 +302,6 @@ public class ConnectionIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testBasicDataSourceSerialization() throws Exception {
-    // test with username/password authentication
-    // set up DataSource object and ensure connection works
-    Map<String, String> params = getConnectionParameters();
-    SnowflakeBasicDataSource ds = new SnowflakeBasicDataSource();
-    ds.setServerName(params.get("host"));
-    ds.setSsl("on".equals(params.get("ssl")));
-    ds.setAccount(params.get("account"));
-    ds.setPortNumber(Integer.parseInt(params.get("port")));
-    ds.setUser(params.get("user"));
-    ds.setPassword(params.get("password"));
-    Connection con = ds.getConnection();
-    ResultSet resultSet = con.createStatement().executeQuery("select 1");
-    resultSet.next();
-    assertThat("select 1", resultSet.getInt(1), equalTo(1));
-    con.close();
-    File serializedFile = tmpFolder.newFile("serializedStuff.ser");
-    // serialize datasource object into a file
-    FileOutputStream outputFile = new FileOutputStream(serializedFile);
-    ObjectOutputStream out = new ObjectOutputStream(outputFile);
-    out.writeObject(ds);
-    out.close();
-    outputFile.close();
-    // deserialize into datasource object again
-    FileInputStream inputFile = new FileInputStream(serializedFile);
-    ObjectInputStream in = new ObjectInputStream(inputFile);
-    SnowflakeBasicDataSource ds2 = (SnowflakeBasicDataSource) in.readObject();
-    in.close();
-    inputFile.close();
-    // test connection a second time
-    con = ds2.getConnection();
-    resultSet = con.createStatement().executeQuery("select 1");
-    resultSet.next();
-    assertThat("select 1", resultSet.getInt(1), equalTo(1));
-    con.close();
-  }
-
-  @Test
   @Ignore
   public void testDataSourceOktaSerialization() throws Exception {
     // test with username/password authentication
@@ -460,123 +419,6 @@ public class ConnectionIT extends BaseJDBCTest {
     statement.execute("use role accountadmin");
     statement.execute(String.format("alter user %s unset rsa_public_key", testUser));
     statement.execute(String.format("alter user %s unset rsa_public_key_2", testUser));
-    connection.close();
-  }
-
-  @Test
-  @ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testPrivateKeyInConnectionString() throws SQLException, IOException {
-    Map<String, String> parameters = getConnectionParameters();
-    String testUser = parameters.get("user");
-
-    // Test with non-password-protected private key file (.pem)
-    Connection connection = getConnection();
-    Statement statement = connection.createStatement();
-    statement.execute("use role accountadmin");
-    String pathfile = getFullPathFileInResource("rsa_key.pub");
-    String pubKey = new String(Files.readAllBytes(Paths.get(pathfile)));
-    pubKey = pubKey.replace("-----BEGIN PUBLIC KEY-----", "");
-    pubKey = pubKey.replace("-----END PUBLIC KEY-----", "");
-    statement.execute(String.format("alter user %s set rsa_public_key='%s'", testUser, pubKey));
-    connection.close();
-
-    // PKCS #8
-    String privateKeyLocation = getFullPathFileInResource("rsa_key.p8");
-    String uri = parameters.get("uri") + "/?private_key_file=" + privateKeyLocation;
-    Properties properties = new Properties();
-    properties.put("account", parameters.get("account"));
-    properties.put("user", testUser);
-    properties.put("ssl", parameters.get("ssl"));
-    properties.put("port", parameters.get("port"));
-    connection = DriverManager.getConnection(uri, properties);
-    connection.close();
-
-    // PKCS #1
-    privateKeyLocation = getFullPathFileInResource("rsa_key.pem");
-    uri = parameters.get("uri") + "/?private_key_file=" + privateKeyLocation;
-    properties = new Properties();
-    properties.put("account", parameters.get("account"));
-    properties.put("user", testUser);
-    properties.put("ssl", parameters.get("ssl"));
-    properties.put("port", parameters.get("port"));
-    connection = DriverManager.getConnection(uri, properties);
-    connection.close();
-
-    // test with password-protected private key file (.p8)
-    connection = getConnection();
-    statement = connection.createStatement();
-    statement.execute("use role accountadmin");
-    pathfile = getFullPathFileInResource("encrypted_rsa_key.pub");
-    pubKey = new String(Files.readAllBytes(Paths.get(pathfile)));
-    pubKey = pubKey.replace("-----BEGIN PUBLIC KEY-----", "");
-    pubKey = pubKey.replace("-----END PUBLIC KEY-----", "");
-    statement.execute(String.format("alter user %s set rsa_public_key='%s'", testUser, pubKey));
-    connection.close();
-
-    privateKeyLocation = getFullPathFileInResource("encrypted_rsa_key.p8");
-    uri =
-        parameters.get("uri")
-            + "/?private_key_file_pwd=test&private_key_file="
-            + privateKeyLocation;
-
-    connection = DriverManager.getConnection(uri, properties);
-    connection.close();
-
-    // test with incorrect password for private key
-    uri =
-        parameters.get("uri")
-            + "/?private_key_file_pwd=wrong_password&private_key_file="
-            + privateKeyLocation;
-    try {
-      connection = DriverManager.getConnection(uri, properties);
-      fail();
-    } catch (SQLException e) {
-      assertEquals(
-          (int) ErrorCode.INVALID_OR_UNSUPPORTED_PRIVATE_KEY.getMessageCode(), e.getErrorCode());
-    }
-    connection.close();
-
-    // test with invalid public/private key combo (using 1st public key with 2nd private key)
-    connection = getConnection();
-    statement = connection.createStatement();
-    statement.execute("use role accountadmin");
-    pathfile = getFullPathFileInResource("rsa_key.pub");
-    pubKey = new String(Files.readAllBytes(Paths.get(pathfile)));
-    pubKey = pubKey.replace("-----BEGIN PUBLIC KEY-----", "");
-    pubKey = pubKey.replace("-----END PUBLIC KEY-----", "");
-    statement.execute(String.format("alter user %s set rsa_public_key='%s'", testUser, pubKey));
-    connection.close();
-
-    privateKeyLocation = getFullPathFileInResource("encrypted_rsa_key.p8");
-    uri =
-        parameters.get("uri")
-            + "/?private_key_file_pwd=test&private_key_file="
-            + privateKeyLocation;
-    try {
-      connection = DriverManager.getConnection(uri, properties);
-      fail();
-    } catch (SQLException e) {
-      assertEquals(390144, e.getErrorCode());
-    }
-    connection.close();
-
-    // test with invalid private key
-    privateKeyLocation = getFullPathFileInResource("invalid_private_key.pem");
-    uri = parameters.get("uri") + "/?private_key_file=" + privateKeyLocation;
-    try {
-      connection = DriverManager.getConnection(uri, properties);
-      fail();
-    } catch (SQLException e) {
-      assertEquals(
-          (int) ErrorCode.INVALID_OR_UNSUPPORTED_PRIVATE_KEY.getMessageCode(), e.getErrorCode());
-    }
-    connection.close();
-
-    // clean up
-    connection = getConnection();
-    statement = connection.createStatement();
-    statement.execute("use role accountadmin");
-    statement.execute(String.format("alter user %s unset rsa_public_key", testUser));
     connection.close();
   }
 
