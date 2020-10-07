@@ -3,14 +3,23 @@
  */
 package net.snowflake.client.loader;
 
-import static org.hamcrest.CoreMatchers.*;
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.fail;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Time;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.Date;
+import java.util.Random;
+import java.util.TimeZone;
 import net.snowflake.client.category.TestCategoryLoader;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -442,56 +451,6 @@ public class LoaderIT extends LoaderBase {
             .createStatement()
             .executeQuery(
                 String.format("SELECT * FROM \"%s\" ORDER BY \"Column 1\"", targetTableName));
-
-    rs.next();
-    assertThat("The first id", rs.getInt(1), equalTo(0));
-    assertThat("The first str", rs.getString(2), equalTo("foo_0"));
-  }
-
-  /**
-   * Test loading data with a table containing a clustering key. The test would fail if the
-   * clustering key assigned to the temp table was not first dropped in ProcessQueue.java.
-   *
-   * @throws Exception raises if any error occurs
-   */
-  @Test
-  public void testKeyClusteringTable() throws Exception {
-    String targetTableName = "CLUSTERED_TABLE";
-
-    // create table with spaces in column names
-    testConnection
-        .createStatement()
-        .execute(
-            String.format(
-                "CREATE OR REPLACE TABLE \"%s\" ("
-                    + "ID int, "
-                    + "\"Column1\" varchar(255), "
-                    + "\"Column2\" varchar(255))",
-                targetTableName));
-    // Add the clustering key; all columns clustered together
-    testConnection
-        .createStatement()
-        .execute(
-            String.format(
-                "alter table %s cluster by (ID, \"Column1\", \"Column2\")", targetTableName));
-    TestDataConfigBuilder tdcb = new TestDataConfigBuilder(testConnection, putConnection);
-    // Only submit data for 2 columns out of 3 in the table so that 1 column will be dropped in temp
-    // table
-    tdcb.setTableName(targetTableName).setColumns(Arrays.asList("ID", "Column1"));
-    StreamLoader loader = tdcb.getStreamLoader();
-    loader.start();
-
-    for (int i = 0; i < 5; ++i) {
-      Object[] row = new Object[] {i, "foo_" + i};
-      loader.submitRow(row);
-    }
-    loader.finish();
-
-    ResultSet rs =
-        testConnection
-            .createStatement()
-            .executeQuery(
-                String.format("SELECT * FROM \"%s\" ORDER BY \"Column1\"", targetTableName));
 
     rs.next();
     assertThat("The first id", rs.getInt(1), equalTo(0));

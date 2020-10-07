@@ -1,7 +1,6 @@
 package net.snowflake.client.loader;
 
 import static org.hamcrest.CoreMatchers.*;
-import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.fail;
 
@@ -151,5 +150,55 @@ public class LoaderLatestIT extends LoaderBase {
         "C3. No commit should happen",
         Double.toHexString((rs.getDouble("C3"))),
         equalTo("0x1.044ccp4"));
+  }
+
+  /**
+   * Test loading data with a table containing a clustering key. The test would fail if the
+   * clustering key assigned to the temp table was not first dropped in ProcessQueue.java.
+   *
+   * @throws Exception raises if any error occurs
+   */
+  @Test
+  public void testKeyClusteringTable() throws Exception {
+    String targetTableName = "CLUSTERED_TABLE";
+
+    // create table with spaces in column names
+    testConnection
+        .createStatement()
+        .execute(
+            String.format(
+                "CREATE OR REPLACE TABLE \"%s\" ("
+                    + "ID int, "
+                    + "\"Column1\" varchar(255), "
+                    + "\"Column2\" varchar(255))",
+                targetTableName));
+    // Add the clustering key; all columns clustered together
+    testConnection
+        .createStatement()
+        .execute(
+            String.format(
+                "alter table %s cluster by (ID, \"Column1\", \"Column2\")", targetTableName));
+    TestDataConfigBuilder tdcb = new TestDataConfigBuilder(testConnection, putConnection);
+    // Only submit data for 2 columns out of 3 in the table so that 1 column will be dropped in temp
+    // table
+    tdcb.setTableName(targetTableName).setColumns(Arrays.asList("ID", "Column1"));
+    StreamLoader loader = tdcb.getStreamLoader();
+    loader.start();
+
+    for (int i = 0; i < 5; ++i) {
+      Object[] row = new Object[] {i, "foo_" + i};
+      loader.submitRow(row);
+    }
+    loader.finish();
+
+    ResultSet rs =
+        testConnection
+            .createStatement()
+            .executeQuery(
+                String.format("SELECT * FROM \"%s\" ORDER BY \"Column1\"", targetTableName));
+
+    rs.next();
+    assertThat("The first id", rs.getInt(1), equalTo(0));
+    assertThat("The first str", rs.getString(2), equalTo("foo_0"));
   }
 }
