@@ -4,12 +4,16 @@
 package net.snowflake.client.jdbc;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import net.snowflake.client.ConditionalIgnoreRule;
+import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryStatement;
 import org.junit.Assert;
 import org.junit.Test;
@@ -145,6 +149,47 @@ public class PreparedStatement2LatestIT extends PreparedStatement0IT {
 
       } finally {
         connection.createStatement().execute("drop table if exists TESTNULL");
+      }
+    }
+  }
+
+  @Test
+  public void testLimitBind() throws SQLException {
+    try (Connection connection = init()) {
+      String stmtStr = "select seq4() from table(generator(rowcount=>100)) limit ?";
+      try (PreparedStatement prepStatement = connection.prepareStatement(stmtStr)) {
+        prepStatement.setInt(1, 10);
+        prepStatement.executeQuery(); // ensure no error is raised.
+      }
+    }
+  }
+
+  /** SNOW-31746 */
+  @Test
+  public void testConstOptLimitBind() throws SQLException {
+    try (Connection connection = init()) {
+      String stmtStr = "select 1 limit ? offset ?";
+      try (PreparedStatement prepStatement = connection.prepareStatement(stmtStr)) {
+        prepStatement.setInt(1, 10);
+        prepStatement.setInt(2, 0);
+        try (ResultSet resultSet = prepStatement.executeQuery()) {
+          resultSet.next();
+          assertThat(resultSet.getInt(1), is(1));
+          assertThat(resultSet.next(), is(false));
+        }
+      }
+    }
+  }
+
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testTableFuncBindInput() throws SQLException {
+    try (Connection connection = init()) {
+      try (PreparedStatement prepStatement = connection.prepareStatement(tableFuncSQL)) {
+        prepStatement.setInt(1, 2);
+        try (ResultSet resultSet = prepStatement.executeQuery()) {
+          assertEquals(2, getSizeOfResultSet(resultSet));
+        }
       }
     }
   }

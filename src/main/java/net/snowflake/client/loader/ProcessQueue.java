@@ -94,7 +94,7 @@ public class ProcessQueue implements Runnable {
           int errorCount = 0;
           String lastErrorRow = "";
 
-          // Create temp table to load data (may has a subset of columns)
+          // Create temp table to load data (may have a subset of columns)
           LOGGER.debug("Creating Temporary Table: name={}", stage.getId());
           currentState = State.CREATE_TEMP_TABLE;
           List<String> allColumns = getAllColumns(conn);
@@ -105,6 +105,11 @@ public class ProcessQueue implements Runnable {
               "CREATE TEMPORARY TABLE \"" + stage.getId() + "\" LIKE " + _loader.getFullTableName();
           List<String> selectedColumns = _loader.getColumns();
           conn.createStatement().execute(currentCommand);
+
+          // In case clustering key exists, drop it from the temporary table so that unused
+          // columns can be dropped from the table without errors.
+          String dropClusteringKey = "alter table \"" + stage.getId() + "\" drop clustering key";
+          conn.createStatement().execute(dropClusteringKey);
 
           // the temp table can contain only a subset of columns
           // so remove unselected columns

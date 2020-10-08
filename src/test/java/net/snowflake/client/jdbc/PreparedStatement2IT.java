@@ -131,34 +131,6 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
   }
 
   @Test
-  public void testLimitBind() throws SQLException {
-    try (Connection connection = init()) {
-      String stmtStr = "select seq4() from table(generator(rowcount=>100)) limit ?";
-      try (PreparedStatement prepStatement = connection.prepareStatement(stmtStr)) {
-        prepStatement.setInt(1, 10);
-        prepStatement.executeQuery(); // ensure no error is raised.
-      }
-    }
-  }
-
-  /** SNOW-31746 */
-  @Test
-  public void testConstOptLimitBind() throws SQLException {
-    try (Connection connection = init()) {
-      String stmtStr = "select 1 limit ? offset ?";
-      try (PreparedStatement prepStatement = connection.prepareStatement(stmtStr)) {
-        prepStatement.setInt(1, 10);
-        prepStatement.setInt(2, 0);
-        try (ResultSet resultSet = prepStatement.executeQuery()) {
-          resultSet.next();
-          assertThat(resultSet.getInt(1), is(1));
-          assertThat(resultSet.next(), is(false));
-        }
-      }
-    }
-  }
-
-  @Test
   public void testBindWithNullValue() throws SQLException {
     try (Connection connection = init()) {
       connection
@@ -521,19 +493,6 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
         assertThat(resultSet.getString(1), is("2017-11-30 18:17:05.123456789 +0800"));
       }
       connection.createStatement().execute("drop table if exists testbindtstz");
-    }
-  }
-
-  @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testTableFuncBindInput() throws SQLException {
-    try (Connection connection = init()) {
-      try (PreparedStatement prepStatement = connection.prepareStatement(tableFuncSQL)) {
-        prepStatement.setInt(1, 2);
-        try (ResultSet resultSet = prepStatement.executeQuery()) {
-          assertEquals(2, getSizeOfResultSet(resultSet));
-        }
-      }
     }
   }
 
