@@ -3,7 +3,6 @@
  */
 package net.snowflake.client.jdbc;
 
-import static net.snowflake.client.core.QueryStatus.RUNNING;
 import static net.snowflake.client.jdbc.ConnectionIT.INVALID_CONNECTION_INFO_CODE;
 import static net.snowflake.client.jdbc.ConnectionIT.WAIT_FOR_TELEMETRY_REPORT_IN_MILLISECS;
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -88,7 +87,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
       }
     }
     // Query should take 60 seconds so should be running
-    assertEquals(RUNNING, status);
+    assertEquals(QueryStatus.RUNNING, status);
     // close connection and wait for 1 minute while query finishes running
     statement.close();
     con.close();
@@ -117,9 +116,9 @@ public class ConnectionLatestIT extends BaseJDBCTest {
             .executeAsyncQuery("select * from nonexistentTable");
     Thread.sleep(100);
     status = rs1.unwrap(SnowflakeResultSet.class).getStatus();
-    // when GS response is slow, allow up to 1 second of retries to get query status
+    // when GS response is slow, allow up to 1 second of retries to get final query status
     int counter = 0;
-    while (status == QueryStatus.NO_DATA && counter < 10) {
+    while ((status == QueryStatus.NO_DATA || status == QueryStatus.RUNNING) && counter < 10) {
       Thread.sleep(100);
       status = rs1.unwrap(SnowflakeResultSet.class).getStatus();
     }
