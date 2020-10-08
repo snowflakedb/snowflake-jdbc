@@ -134,7 +134,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
         return timestampStr;
 
       case Types.DATE:
-        Date date = getDate(columnIndex, timeZoneUTC);
+        Date date = getDate(columnIndex);
 
         if (dateFormatter == null) {
           throw (SFException)
@@ -430,6 +430,9 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
   public Timestamp getTimestamp(int columnIndex, TimeZone tz) throws SFException {
     int columnType = resultSetMetaData.getColumnType(columnIndex);
     if (Types.TIMESTAMP == columnType) {
+      if (tz == null) {
+        tz = TimeZone.getDefault();
+      }
       SFTimestamp sfTS = getSFTimestamp(columnIndex);
 
       if (sfTS == null) {
@@ -612,16 +615,12 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
     }
   }
 
-  @Override
   public Date getDate(int columnIndex) throws SFException {
     return getDate(columnIndex, TimeZone.getDefault());
   }
 
+  @Override
   public Date getDate(int columnIndex, TimeZone tz) throws SFException {
-    if (tz == null) {
-      tz = TimeZone.getDefault();
-    }
-
     logger.debug("public Date getDate(int columnIndex)");
 
     // Column index starts from 1, not 0.
@@ -634,9 +633,15 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
     int columnType = resultSetMetaData.getColumnType(columnIndex);
 
     if (Types.TIMESTAMP == columnType) {
+      if (tz == null) {
+        tz = TimeZone.getDefault();
+      }
       return new Date(getTimestamp(columnIndex, tz).getTime());
     } else if (Types.DATE == columnType) {
-      return ArrowResultUtil.getDate(Integer.parseInt((String) obj));
+      if (tz == null || !resultSetSerializable.getFormatDateWithTimeZone()) {
+        return ArrowResultUtil.getDate(Integer.parseInt((String) obj));
+      }
+      return ArrowResultUtil.getDate(Integer.parseInt((String) obj), tz, timeZone);
     }
     // for Types.TIME and all other type, throw user error
     else {

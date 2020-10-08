@@ -354,7 +354,7 @@ public class BindingDataIT extends AbstractDriverIT {
 
     ResultSet resultSet = preparedStatement.executeQuery();
     assertThat(resultSet.next(), is(true));
-    assertThat(resultSet.getDate("C1", calendar), is(dateValue));
+    assertThat(resultSet.getDate("C1"), is(dateValue));
 
     resultSet.close();
     preparedStatement.close();

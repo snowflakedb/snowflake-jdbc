@@ -59,7 +59,7 @@ public class ArrowResultUtilTest {
 
     start = System.currentTimeMillis();
     for (int i = 0; i < times; i++) {
-      ArrowResultUtil.getDate(days[i], tz, session);
+      ArrowResultUtil.getDate(days[i], tz, tz);
     }
     long duration2 = System.currentTimeMillis() - start;
 

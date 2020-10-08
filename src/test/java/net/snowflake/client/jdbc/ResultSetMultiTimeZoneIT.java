@@ -46,8 +46,8 @@ public class ResultSetMultiTimeZoneIT extends BaseJDBCTest {
     System.setProperty("user.timezone", timeZone);
   }
 
-  public static Connection init(int injectSocketTimeout) throws SQLException {
-    Connection connection = BaseJDBCTest.getConnection(injectSocketTimeout);
+  public Connection init() throws SQLException {
+    Connection connection = BaseJDBCTest.getConnection();
 
     Statement statement = connection.createStatement();
     statement.execute(
@@ -59,15 +59,10 @@ public class ResultSetMultiTimeZoneIT extends BaseJDBCTest {
             + "TIMESTAMP_LTZ_OUTPUT_FORMAT='DY, DD MON YYYY HH24:MI:SS TZHTZM',"
             + "TIMESTAMP_NTZ_OUTPUT_FORMAT='DY, DD MON YYYY HH24:MI:SS TZHTZM'");
     statement.close();
+    connection
+        .createStatement()
+        .execute("alter session set jdbc_query_result_format = '" + queryResultFormat + "'");
     return connection;
-  }
-
-  public Connection init() throws SQLException {
-    Connection conn = init(BaseJDBCTest.DONT_INJECT_SOCKET_TIMEOUT);
-    Statement stmt = conn.createStatement();
-    stmt.execute("alter session set jdbc_query_result_format = '" + queryResultFormat + "'");
-    stmt.close();
-    return conn;
   }
 
   public Connection init(Properties paramProperties) throws SQLException {
@@ -148,11 +143,6 @@ public class ResultSetMultiTimeZoneIT extends BaseJDBCTest {
     resultSet.next();
     assertEquals(date, resultSet.getDate(1));
     assertEquals(date, resultSet.getDate("COLA"));
-
-    // Note: Currently calendar does not affect getDate result
-    assertEquals(resultSet.getDate(1), resultSet.getDate(1, cal));
-    assertEquals(resultSet.getDate("COLA"), resultSet.getDate("COLA", cal));
-
     assertEquals(ts, resultSet.getTimestamp(2));
     assertEquals(ts, resultSet.getTimestamp("COLB"));
     assertEquals(tm, resultSet.getTime(3));

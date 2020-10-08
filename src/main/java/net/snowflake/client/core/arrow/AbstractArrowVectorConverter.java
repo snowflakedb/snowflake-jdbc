@@ -34,6 +34,8 @@ abstract class AbstractArrowVectorConverter implements ArrowVectorConverter {
 
   protected boolean treatNTZasUTC;
 
+  protected TimeZone sessionTimeZone;
+
   /** Field names of the struct vectors used by timestamp */
   public static final String FIELD_NAME_EPOCH = "epoch"; // seconds since epoch
 
@@ -116,7 +118,7 @@ abstract class AbstractArrowVectorConverter implements ArrowVectorConverter {
   }
 
   @Override
-  public Date toDate(int index) throws SFException {
+  public Date toDate(int index, TimeZone jvmTz, boolean useDateFormat) throws SFException {
     throw new SFException(
         ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr, SnowflakeUtil.DATE_STR, "");
   }
@@ -145,6 +147,11 @@ abstract class AbstractArrowVectorConverter implements ArrowVectorConverter {
   @Override
   public void setTreatNTZAsUTC(boolean isUTC) {
     this.treatNTZasUTC = isUTC;
+  }
+
+  @Override
+  public void setSessionTimeZone(TimeZone tz) {
+    this.sessionTimeZone = tz;
   }
 
   @Override

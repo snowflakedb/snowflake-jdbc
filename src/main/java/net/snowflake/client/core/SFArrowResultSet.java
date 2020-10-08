@@ -85,6 +85,12 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
   private boolean treatNTZAsUTC;
 
   /**
+   * If customer wants getDate(int col, Calendar cal) function to format date with Calendar
+   * timezone, set to true
+   */
+  private boolean formatDateWithTimezone;
+
+  /**
    * Constructor takes a result from the API response that we get from executing a SQL statement.
    *
    * <p>The constructor will initialize the ResultSetMetaData.
@@ -109,6 +115,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     session.setRole(resultSetSerializable.getFinalRoleName());
     session.setWarehouse(resultSetSerializable.getFinalWarehouseName());
     treatNTZAsUTC = resultSetSerializable.getTreatNTZAsUTC();
+    formatDateWithTimezone = resultSetSerializable.getFormatDateWithTimeZone();
 
     // update the driver/session with common parameters from GS
     SessionUtil.updateSfDriverParamValues(this.parameters, statement.getSession());
@@ -164,6 +171,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     this.binaryFormatter = resultSetSerializable.getBinaryFormatter();
     this.resultSetMetaData = resultSetSerializable.getSFResultSetMetaData();
     this.treatNTZAsUTC = resultSetSerializable.getTreatNTZAsUTC();
+    this.formatDateWithTimezone = resultSetSerializable.getFormatDateWithTimeZone();
 
     // sort result set if needed
     String rowsetBase64 = resultSetSerializable.getFirstChunkStringData();
@@ -430,11 +438,12 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
   }
 
   @Override
-  public Date getDate(int columnIndex) throws SFException {
+  public Date getDate(int columnIndex, TimeZone tz) throws SFException {
     ArrowVectorConverter converter = currentChunkIterator.getCurrentConverter(columnIndex - 1);
     int index = currentChunkIterator.getCurrentRowInRecordBatch();
     wasNull = converter.isNull(index);
-    return converter.toDate(index);
+    converter.setSessionTimeZone(timeZone);
+    return converter.toDate(index, tz, resultSetSerializable.getFormatDateWithTimeZone());
   }
 
   @Override
@@ -467,6 +476,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     ArrowVectorConverter converter = currentChunkIterator.getCurrentConverter(columnIndex - 1);
     int index = currentChunkIterator.getCurrentRowInRecordBatch();
     wasNull = converter.isNull(index);
+    converter.setSessionTimeZone(timeZone);
     return converter.toBigDecimal(index);
   }
 

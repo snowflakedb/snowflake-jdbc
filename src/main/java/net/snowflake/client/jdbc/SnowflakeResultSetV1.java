@@ -205,11 +205,9 @@ class SnowflakeResultSetV1 extends SnowflakeBaseResultSet implements SnowflakeRe
   }
 
   public Date getDate(int columnIndex, TimeZone tz) throws SQLException {
-    // Note: currently we provide this API but it does not use TimeZone tz.
-    // TODO: use the time zone passed from the arguments
     raiseSQLExceptionIfResultSetIsClosed();
     try {
-      return sfBaseResultSet.getDate(columnIndex);
+      return sfBaseResultSet.getDate(columnIndex, tz);
     } catch (SFException ex) {
       throw new SnowflakeSQLException(
           ex.getCause(), ex.getSqlState(), ex.getVendorCode(), ex.getParams());

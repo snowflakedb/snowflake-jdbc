@@ -70,6 +70,9 @@ public class BigIntToTimestampNTZConverter extends AbstractArrowVectorConverter 
   }
 
   private Timestamp getTimestamp(int index, TimeZone tz, boolean fromToString) throws SFException {
+    if (tz == null) {
+      tz = TimeZone.getDefault();
+    }
     long val = bigIntVector.getDataBuffer().getLong(index * BigIntVector.TYPE_WIDTH);
 
     int scale = context.getScale(columnIndex);
@@ -87,7 +90,7 @@ public class BigIntToTimestampNTZConverter extends AbstractArrowVectorConverter 
   }
 
   @Override
-  public Date toDate(int index) throws SFException {
+  public Date toDate(int index, TimeZone tz, boolean dateFormat) throws SFException {
     return isNull(index)
         ? null
         : new Date(getTimestamp(index, TimeZone.getDefault(), false).getTime());

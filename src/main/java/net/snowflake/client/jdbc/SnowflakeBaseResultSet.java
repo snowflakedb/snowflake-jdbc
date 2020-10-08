@@ -90,7 +90,7 @@ abstract class SnowflakeBaseResultSet implements ResultSet {
   @Override
   public Date getDate(int columnIndex) throws SQLException {
     raiseSQLExceptionIfResultSetIsClosed();
-    return getDate(columnIndex, TimeZone.getDefault());
+    return getDate(columnIndex, (TimeZone) null);
   }
 
   @Override
@@ -99,7 +99,7 @@ abstract class SnowflakeBaseResultSet implements ResultSet {
   @Override
   public Timestamp getTimestamp(int columnIndex) throws SQLException {
     raiseSQLExceptionIfResultSetIsClosed();
-    return getTimestamp(columnIndex, TimeZone.getDefault());
+    return getTimestamp(columnIndex, (TimeZone) null);
   }
 
   public abstract Timestamp getTimestamp(int columnIndex, TimeZone tz) throws SQLException;
@@ -827,7 +827,6 @@ abstract class SnowflakeBaseResultSet implements ResultSet {
   @Override
   public Date getDate(int columnIndex, Calendar cal) throws SQLException {
     logger.debug("public Date getDate(int columnIndex, Calendar cal)");
-
     return getDate(columnIndex, cal.getTimeZone());
   }
 
