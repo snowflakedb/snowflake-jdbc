@@ -70,6 +70,9 @@ public class TwoFieldStructToTimestampNTZConverter extends AbstractArrowVectorCo
 
   @Override
   public Timestamp toTimestamp(int index, TimeZone tz) throws SFException {
+    if (tz == null) {
+      tz = TimeZone.getDefault();
+    }
     return isNull(index) ? null : getTimestamp(index, tz, false);
   }
 
@@ -107,7 +110,7 @@ public class TwoFieldStructToTimestampNTZConverter extends AbstractArrowVectorCo
   }
 
   @Override
-  public Date toDate(int index) throws SFException {
+  public Date toDate(int index, TimeZone tz, boolean dateFormat) throws SFException {
     return isNull(index)
         ? null
         : new Date(getTimestamp(index, TimeZone.getDefault(), false).getTime());

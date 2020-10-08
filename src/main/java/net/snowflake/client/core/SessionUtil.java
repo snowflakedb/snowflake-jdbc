@@ -73,6 +73,7 @@ public class SessionUtil {
       "CLIENT_RESULT_COLUMN_CASE_INSENSITIVE";
   private static final String JDBC_RS_COLUMN_CASE_INSENSITIVE = "JDBC_RS_COLUMN_CASE_INSENSITIVE";
   private static final String JDBC_TREAT_TIMESTAMP_NTZ_AS_UTC = "JDBC_TREAT_TIMESTAMP_NTZ_AS_UTC";
+  private static final String JDBC_FORMAT_DATE_WITH_TIMEZONE = "JDBC_FORMAT_DATE_WITH_TIMEZONE";
   private static final String CLIENT_RESULT_CHUNK_SIZE_JVM =
       "net.snowflake.jdbc.clientResultChunkSize";
   public static final String CLIENT_RESULT_CHUNK_SIZE = "CLIENT_RESULT_CHUNK_SIZE";
@@ -163,6 +164,7 @@ public class SessionUtil {
               "JDBC_EFFICIENT_CHUNK_STORAGE",
               JDBC_RS_COLUMN_CASE_INSENSITIVE,
               JDBC_TREAT_TIMESTAMP_NTZ_AS_UTC,
+              JDBC_FORMAT_DATE_WITH_TIMEZONE,
               CLIENT_RESULT_COLUMN_CASE_INSENSITIVE,
               CLIENT_METADATA_REQUEST_USE_CONNECTION_CTX,
               CLIENT_METADATA_USE_SESSION_DATABASE,
@@ -1270,6 +1272,10 @@ public class SessionUtil {
       } else if (JDBC_TREAT_TIMESTAMP_NTZ_AS_UTC.equalsIgnoreCase(entry.getKey())) {
         if (session != null) {
           session.setTreatNTZAsUTC((boolean) entry.getValue());
+        }
+      } else if (JDBC_FORMAT_DATE_WITH_TIMEZONE.equalsIgnoreCase(entry.getKey())) {
+        if (session != null) {
+          session.setFormatDateWithTimezone((boolean) entry.getValue());
         }
       } else if ("CLIENT_TIMESTAMP_TYPE_MAPPING".equalsIgnoreCase(entry.getKey())) {
         if (session != null) {

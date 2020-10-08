@@ -9,14 +9,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.Set;
-import java.util.TimeZone;
+import java.util.*;
 import net.snowflake.client.TestUtil;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.jdbc.ErrorCode;
@@ -153,7 +146,8 @@ public class TinyIntToFixedConverterTest extends BaseConverterTest {
     TestUtil.assertSFException(invalidConversionErrorCode, () -> converter.toLong(0));
     TestUtil.assertSFException(invalidConversionErrorCode, () -> converter.toInt(0));
     TestUtil.assertSFException(invalidConversionErrorCode, () -> converter.toShort(0));
-    TestUtil.assertSFException(invalidConversionErrorCode, () -> converter.toDate(0));
+    TestUtil.assertSFException(
+        invalidConversionErrorCode, () -> converter.toDate(0, getTimeZone(), false));
     TestUtil.assertSFException(invalidConversionErrorCode, () -> converter.toTime(0));
     TestUtil.assertSFException(
         invalidConversionErrorCode, () -> converter.toTimestamp(0, TimeZone.getDefault()));
