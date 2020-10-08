@@ -28,19 +28,22 @@ public class DateConverter extends AbstractArrowVectorConverter {
     this.dateVector = (DateDayVector) fieldVector;
   }
 
-  private Date getDate(int index, TimeZone tz) throws SFException {
+  private Date getDate(int index, TimeZone jvmTz, boolean useDateFormat) throws SFException {
     if (isNull(index)) {
       return null;
     } else {
       int val = dateVector.getDataBuffer().getInt(index * IntVector.TYPE_WIDTH);
+      if (jvmTz == null || sessionTimeZone == null || !useDateFormat) {
+        return ArrowResultUtil.getDate(val);
+      }
       // Note: use default time zone to match with current getDate() behavior
-      return ArrowResultUtil.getDate(val);
+      return ArrowResultUtil.getDate(val, jvmTz, sessionTimeZone);
     }
   }
 
   @Override
-  public Date toDate(int index) throws SFException {
-    return getDate(index, TimeZone.getDefault());
+  public Date toDate(int index, TimeZone jvmTz, boolean useDateFormat) throws SFException {
+    return getDate(index, jvmTz, useDateFormat);
   }
 
   @Override
@@ -88,7 +91,7 @@ public class DateConverter extends AbstractArrowVectorConverter {
 
   @Override
   public Timestamp toTimestamp(int index, TimeZone tz) throws SFException {
-    Date date = toDate(index);
+    Date date = toDate(index, tz, true);
     if (date == null) {
       return null;
     } else {
@@ -106,13 +109,13 @@ public class DateConverter extends AbstractArrowVectorConverter {
               null,
               null);
     }
-    Date date = getDate(index, timeZoneUTC);
+    Date date = getDate(index, timeZoneUTC, false);
     return date == null ? null : ResultUtil.getDateAsString(date, context.getDateFormatter());
   }
 
   @Override
   public Object toObject(int index) throws SFException {
-    return toDate(index);
+    return toDate(index, TimeZone.getDefault(), false);
   }
 
   @Override
@@ -120,7 +123,7 @@ public class DateConverter extends AbstractArrowVectorConverter {
     if (isNull(index)) {
       return false;
     }
-    Date val = toDate(index);
+    Date val = toDate(index, TimeZone.getDefault(), false);
     throw new SFException(
         ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr,
         SnowflakeUtil.BOOLEAN_STR, val);

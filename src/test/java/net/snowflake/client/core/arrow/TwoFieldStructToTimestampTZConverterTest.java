@@ -11,13 +11,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import java.sql.Date;
 import java.sql.Time;
 import java.sql.Timestamp;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.Set;
+import java.util.*;
 import net.snowflake.client.TestUtil;
 import net.snowflake.client.core.ResultUtil;
 import net.snowflake.client.core.SFException;
@@ -130,7 +124,7 @@ public class TwoFieldStructToTimestampTZConverterTest extends BaseConverterTest 
     this.setScale(testScales[i]);
     while (j < rowCount) {
       Timestamp ts = converter.toTimestamp(j, getTimeZone());
-      Date date = converter.toDate(j);
+      Date date = converter.toDate(j, getTimeZone(), false);
       Time time = converter.toTime(j);
       String tsStr = converter.toString(j);
 

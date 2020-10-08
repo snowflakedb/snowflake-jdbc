@@ -9,7 +9,9 @@ import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.util.Calendar;
 import java.util.TimeZone;
-import net.snowflake.client.core.*;
+import net.snowflake.client.core.IncidentUtil;
+import net.snowflake.client.core.ResultUtil;
+import net.snowflake.client.core.SFException;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeTimestampNTZAsUTC;
 import net.snowflake.client.log.ArgSupplier;
@@ -53,23 +55,21 @@ public class ArrowResultUtil {
   }
 
   /**
-   * deprecated method to get Date from integer
+   * Method to get Date from integer using timezone offsets
    *
    * @param day
-   * @param tz
-   * @param session
+   * @param oldTz
+   * @param newTz
    * @return
    * @throws SFException
    */
-  @Deprecated
-  public static Date getDate(int day, TimeZone tz, SFSession session) throws SFException {
+  public static Date getDate(int day, TimeZone oldTz, TimeZone newTz) throws SFException {
     try {
       // return the date adjusted to the JVM default time zone
       long milliSecsSinceEpoch = (long) day * ResultUtil.MILLIS_IN_ONE_DAY;
 
       long milliSecsSinceEpochNew =
-          milliSecsSinceEpoch
-              + moveToTimeZoneOffset(milliSecsSinceEpoch, TimeZone.getTimeZone("UTC"), tz);
+          milliSecsSinceEpoch + moveToTimeZoneOffset(milliSecsSinceEpoch, oldTz, newTz);
 
       Date preDate = new Date(milliSecsSinceEpochNew);
 
@@ -85,7 +85,7 @@ public class ArrowResultUtil {
     } catch (NumberFormatException ex) {
       throw (SFException)
           IncidentUtil.generateIncidentV2WithException(
-              session,
+              null,
               new SFException(ErrorCode.INTERNAL_ERROR, "Invalid date value: " + day),
               null,
               null);
