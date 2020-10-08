@@ -6,12 +6,7 @@ package net.snowflake.client.jdbc;
 
 import static net.snowflake.client.core.Constants.GB;
 import static net.snowflake.client.core.Constants.MB;
-import static net.snowflake.client.core.SessionUtil.CLIENT_ENABLE_CONSERVATIVE_MEMORY_USAGE;
-import static net.snowflake.client.core.SessionUtil.CLIENT_MEMORY_LIMIT;
-import static net.snowflake.client.core.SessionUtil.CLIENT_PREFETCH_THREADS;
-import static net.snowflake.client.core.SessionUtil.CLIENT_RESULT_CHUNK_SIZE;
-import static net.snowflake.client.core.SessionUtil.DEFAULT_CLIENT_MEMORY_LIMIT;
-import static net.snowflake.client.core.SessionUtil.DEFAULT_CLIENT_PREFETCH_THREADS;
+import static net.snowflake.client.core.SessionUtil.*;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -21,20 +16,7 @@ import java.io.Serializable;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
-import net.snowflake.client.core.ChunkDownloader;
-import net.snowflake.client.core.MetaDataOfBinds;
-import net.snowflake.client.core.OCSPMode;
-import net.snowflake.client.core.ObjectMapperFactory;
-import net.snowflake.client.core.QueryResultFormat;
-import net.snowflake.client.core.ResultUtil;
-import net.snowflake.client.core.SFArrowResultSet;
-import net.snowflake.client.core.SFBaseResultSet;
-import net.snowflake.client.core.SFResultSet;
-import net.snowflake.client.core.SFResultSetMetaData;
-import net.snowflake.client.core.SFSession;
-import net.snowflake.client.core.SFStatement;
-import net.snowflake.client.core.SFStatementType;
-import net.snowflake.client.core.SessionUtil;
+import net.snowflake.client.core.*;
 import net.snowflake.client.jdbc.telemetry.NoOpTelemetryClient;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
 import net.snowflake.client.log.ArgSupplier;
@@ -155,6 +137,7 @@ public class SnowflakeResultSetSerializableV1
   List<MetaDataOfBinds> metaDataOfBinds = new ArrayList<>();
   QueryResultFormat queryResultFormat;
   boolean treatNTZAsUTC;
+  boolean formatDateWithTimezone;
 
   // Below fields are transient, they are generated from parameters
   transient TimeZone timeZone;
@@ -205,6 +188,7 @@ public class SnowflakeResultSetSerializableV1
     this.resultSetConcurrency = toCopy.resultSetConcurrency;
     this.resultSetHoldability = toCopy.resultSetHoldability;
     this.treatNTZAsUTC = toCopy.treatNTZAsUTC;
+    this.formatDateWithTimezone = toCopy.formatDateWithTimezone;
 
     // Below are some metadata fields parsed from the result JSON node
     this.queryId = toCopy.queryId;
@@ -437,6 +421,10 @@ public class SnowflakeResultSetSerializableV1
     return treatNTZAsUTC;
   }
 
+  public boolean getFormatDateWithTimeZone() {
+    return formatDateWithTimezone;
+  }
+
   public Optional<SFSession> getSession() {
     return possibleSession;
   }
@@ -583,6 +571,7 @@ public class SnowflakeResultSetSerializableV1
     resultSetSerializable.networkTimeoutInMilli = sfSession.getNetworkTimeoutInMilli();
     resultSetSerializable.isResultColumnCaseInsensitive = sfSession.isResultColumnCaseInsensitive();
     resultSetSerializable.treatNTZAsUTC = sfSession.getTreatNTZAsUTC();
+    resultSetSerializable.formatDateWithTimezone = sfSession.getFormatDateWithTimezone();
 
     // setup transient fields from parameter
     resultSetSerializable.setupFieldsFromParameters();

@@ -70,6 +70,8 @@ public class SFResultSet extends SFJsonResultSet {
   // instead of a local/session timezone, set to true
   private boolean treatNTZAsUTC;
 
+  private boolean formatDateWithTimezone;
+
   /**
    * Constructor takes a result from the API response that we get from executing a SQL statement.
    *
@@ -94,6 +96,7 @@ public class SFResultSet extends SFJsonResultSet {
     session.setRole(resultSetSerializable.getFinalRoleName());
     session.setWarehouse(resultSetSerializable.getFinalWarehouseName());
     this.treatNTZAsUTC = resultSetSerializable.getTreatNTZAsUTC();
+    this.formatDateWithTimezone = resultSetSerializable.getFormatDateWithTimeZone();
 
     // update the driver/session with common parameters from GS
     SessionUtil.updateSfDriverParamValues(this.parameters, statement.getSession());
@@ -151,6 +154,7 @@ public class SFResultSet extends SFJsonResultSet {
     this.metaDataOfBinds = resultSetSerializable.getMetaDataOfBinds();
     this.resultSetMetaData = resultSetSerializable.getSFResultSetMetaData();
     this.treatNTZAsUTC = resultSetSerializable.getTreatNTZAsUTC();
+    this.formatDateWithTimezone = resultSetSerializable.getFormatDateWithTimeZone();
 
     // sort result set if needed
     if (sortResult) {

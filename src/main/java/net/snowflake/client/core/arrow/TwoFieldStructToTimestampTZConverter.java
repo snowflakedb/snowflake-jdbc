@@ -80,7 +80,7 @@ public class TwoFieldStructToTimestampTZConverter extends AbstractArrowVectorCon
   }
 
   @Override
-  public Date toDate(int index) throws SFException {
+  public Date toDate(int index, TimeZone tz, boolean dateFormat) throws SFException {
     if (epochs.isNull(index)) {
       return null;
     }
