@@ -9,26 +9,11 @@ import static net.snowflake.client.core.Constants.MB;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.databind.MappingJsonFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.PrintWriter;
-import java.io.PushbackInputStream;
-import java.io.StringWriter;
+import java.io.*;
 import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Random;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.ThreadLocalRandom;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.*;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.zip.GZIPInputStream;
@@ -974,13 +959,13 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
 
             resultChunk.getLock().unlock();
           }
-        } catch (SnowflakeSQLException ex) {
+        } catch (Throwable th) {
           resultChunk.getLock().lock();
           try {
             logger.debug("get lock to set chunk download error");
             resultChunk.setDownloadState(DownloadState.FAILURE);
             StringWriter errors = new StringWriter();
-            ex.printStackTrace(new PrintWriter(errors));
+            th.printStackTrace(new PrintWriter(errors));
             resultChunk.setDownloadError(errors.toString());
 
             logger.debug("wake up consumer if it is waiting for a chunk to be ready");
@@ -994,8 +979,8 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
           logger.debug(
               "Thread {} Exception encountered ({}:{}) fetching #chunk{} from: {}, Error {}",
               Thread.currentThread().getId(),
-              ex.getClass().getName(),
-              ex.getLocalizedMessage(),
+              th.getClass().getName(),
+              th.getLocalizedMessage(),
               chunkIndex,
               resultChunk.getScrubbedUrl(),
               resultChunk.getDownloadError());
