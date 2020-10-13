@@ -312,6 +312,8 @@ public class ResultSetLatestIT extends ResultSet0IT {
           new OutOfMemoryError("Fake OOM error for testing"));
       resultSet = statement.executeQuery(query);
       try {
+        // Normally this step won't cause too long. Because we will get exception once trying to get
+        // result from the first chunk downloader
         while (resultSet.next())
           ;
         fail("Should not reach here. Last next() command is supposed to throw an exception");
@@ -321,6 +323,9 @@ public class ResultSetLatestIT extends ResultSet0IT {
     } finally {
       SnowflakeChunkDownloader.setInjectedDownloaderException(null);
     }
+
+    statement.close();
+    connection.close();
   }
 
   private byte[] intToByteArray(int i) {
