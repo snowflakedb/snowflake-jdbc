@@ -918,9 +918,6 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
 
       private long startTime;
 
-      // For testing purpose
-      private Throwable injectedException = SnowflakeChunkDownloader.injectedDownloaderException;
-
       public Void call() {
         resultChunk.getLock().lock();
         try {
@@ -942,9 +939,9 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
         TelemetryService.getInstance().updateContext(downloader.snowflakeConnectionString);
 
         try {
-          if (injectedException != null) {
+          if (SnowflakeChunkDownloader.injectedDownloaderException != null) {
             // Normal flow will never hit here. This is only for testing purpose
-            throw injectedException;
+            throw SnowflakeChunkDownloader.injectedDownloaderException;
           }
 
           InputStream is = getInputStream();
