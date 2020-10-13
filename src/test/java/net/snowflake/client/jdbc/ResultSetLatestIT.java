@@ -307,17 +307,19 @@ public class ResultSetLatestIT extends ResultSet0IT {
     ResultSet resultSet = statement.executeQuery(query);
     resultSet.next(); // should finish successfully
 
-    SnowflakeChunkDownloader.setInjectedDownloaderException(
-        new OutOfMemoryError("Fake OOM error for testing"));
-    resultSet = statement.executeQuery(query);
     try {
-      resultSet.next();
-      fail("Should not reach here. Last next() command is supposed to throw an exception");
-    } catch (SnowflakeSQLException ex) {
-      // pass
+      SnowflakeChunkDownloader.setInjectedDownloaderException(
+          new OutOfMemoryError("Fake OOM error for testing"));
+      resultSet = statement.executeQuery(query);
+      try {
+        while (resultSet.next())
+          ;
+        fail("Should not reach here. Last next() command is supposed to throw an exception");
+      } catch (SnowflakeSQLException ex) {
+        // pass, do nothing
+      }
     } finally {
-      statement.close();
-      connection.close();
+      SnowflakeChunkDownloader.setInjectedDownloaderException(null);
     }
   }
 
