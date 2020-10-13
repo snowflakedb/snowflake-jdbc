@@ -132,6 +132,13 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
   private static final int MAX_NUM_OF_RETRY = 10;
   private static final int MAX_RETRY_JITTER = 1000; // milliseconds
 
+  private static Throwable injectedDownloaderException; // for testing purpose
+
+  // This function should only be used for testing purpose
+  static void setInjectedDownloaderException(Throwable th) {
+    injectedDownloaderException = th;
+  }
+
   public OCSPMode getOCSPMode() {
     return ocspMode;
   }
@@ -911,6 +918,9 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
 
       private long startTime;
 
+      // For testing purpose
+      private Throwable injectedException = SnowflakeChunkDownloader.injectedDownloaderException;
+
       public Void call() {
         resultChunk.getLock().lock();
         try {
@@ -932,6 +942,11 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
         TelemetryService.getInstance().updateContext(downloader.snowflakeConnectionString);
 
         try {
+          if (injectedException != null) {
+            // Normal flow will never hit here. This is only for testing purpose
+            throw injectedException;
+          }
+
           InputStream is = getInputStream();
           logger.debug(
               "Thread {} start downloading #chunk{}", Thread.currentThread().getId(), chunkIndex);
