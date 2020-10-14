@@ -132,7 +132,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
   private static final int MAX_NUM_OF_RETRY = 10;
   private static final int MAX_RETRY_JITTER = 1000; // milliseconds
 
-  private static Throwable injectedDownloaderException; // for testing purpose
+  private static Throwable injectedDownloaderException = null; // for testing purpose
 
   // This function should only be used for testing purpose
   static void setInjectedDownloaderException(Throwable th) {
