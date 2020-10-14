@@ -3,19 +3,21 @@
  */
 package net.snowflake.client.core.arrow;
 
-import java.nio.ByteBuffer;
-import java.sql.Time;
-import java.sql.Timestamp;
-import java.util.TimeZone;
 import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.IncidentUtil;
 import net.snowflake.client.core.ResultUtil;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.jdbc.ErrorCode;
+import net.snowflake.client.jdbc.SnowflakeTimeAsWallclock;
 import net.snowflake.client.jdbc.SnowflakeType;
 import net.snowflake.common.core.SFTime;
 import org.apache.arrow.vector.IntVector;
 import org.apache.arrow.vector.ValueVector;
+
+import java.nio.ByteBuffer;
+import java.sql.Time;
+import java.sql.Timestamp;
+import java.util.TimeZone;
 
 public class IntToTimeConverter extends AbstractArrowVectorConverter {
   private IntVector intVector;
@@ -57,8 +59,8 @@ public class IntToTimeConverter extends AbstractArrowVectorConverter {
       if (sfTime == null) {
         return null;
       }
-      return new Time(
-          sfTime.getFractionalSeconds(ResultUtil.DEFAULT_SCALE_OF_SFTIME_FRACTION_SECONDS));
+      return new SnowflakeTimeAsWallclock(
+          sfTime.getFractionalSeconds(ResultUtil.DEFAULT_SCALE_OF_SFTIME_FRACTION_SECONDS), sfTime.getNanosecondsWithinSecond());
     }
   }
 
