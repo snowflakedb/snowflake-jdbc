@@ -43,7 +43,7 @@ public class ResultSetMultiTimeZoneIT extends BaseJDBCTest {
 
   public ResultSetMultiTimeZoneIT(String queryResultFormat, String timeZone) {
     this.queryResultFormat = queryResultFormat;
-    System.setProperty("user.timezone", timeZone);
+    TimeZone.setDefault(TimeZone.getTimeZone(timeZone));
   }
 
   public Connection init() throws SQLException {
@@ -137,8 +137,6 @@ public class ResultSetMultiTimeZoneIT extends BaseJDBCTest {
 
     prepStatement.execute();
 
-    TimeZone gmt = TimeZone.getTimeZone("GMT");
-    Calendar cal = Calendar.getInstance(gmt);
     ResultSet resultSet = statement.executeQuery("select * from datetime");
     resultSet.next();
     assertEquals(date, resultSet.getDate(1));

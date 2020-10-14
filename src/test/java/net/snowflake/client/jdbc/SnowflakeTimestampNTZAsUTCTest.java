@@ -7,8 +7,13 @@ import static org.junit.Assert.assertEquals;
 
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
-import java.util.*;
-import org.junit.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.TimeZone;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
@@ -74,8 +79,9 @@ public class SnowflakeTimestampNTZAsUTCTest extends BaseJDBCTest {
   public void testTimestampNTZ() throws Throwable {
     TimeZone.setDefault(TimeZone.getTimeZone(timeZone));
     LocalDateTime dt = parseTimestampNTZ(this.inputTimestamp);
-    SnowflakeTimestampNTZAsUTC stn =
-        new SnowflakeTimestampNTZAsUTC(dt.toEpochSecond(ZoneOffset.UTC) * 1000, dt.getNano());
+    SnowflakeTimestampWithSessionTimezone stn =
+        new SnowflakeTimestampWithSessionTimezone(
+            dt.toEpochSecond(ZoneOffset.UTC) * 1000, dt.getNano(), TimeZone.getTimeZone("UTC"));
     assertEquals(this.outputTimestamp, stn.toString());
   }
 }
