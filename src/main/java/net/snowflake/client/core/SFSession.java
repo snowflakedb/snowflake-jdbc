@@ -4,20 +4,9 @@
 
 package net.snowflake.client.core;
 
-import static net.snowflake.client.core.QueryStatus.getStatusFromString;
-import static net.snowflake.client.core.QueryStatus.isAnError;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
-import java.security.PrivateKey;
-import java.sql.DriverPropertyInfo;
-import java.sql.SQLException;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Level;
 import net.snowflake.client.jdbc.*;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
 import net.snowflake.client.jdbc.telemetry.TelemetryClient;
@@ -30,6 +19,18 @@ import org.apache.http.HttpHeaders;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
+
+import java.security.PrivateKey;
+import java.sql.DriverPropertyInfo;
+import java.sql.SQLException;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
+
+import static net.snowflake.client.core.QueryStatus.getStatusFromString;
+import static net.snowflake.client.core.QueryStatus.isAnError;
 
 /** Snowflake session implementation */
 public class SFSession {
@@ -176,6 +177,9 @@ public class SFSession {
 
   // parameter to guard against behavior change to getDate() with Calendar timezone
   private boolean formatDateWithTimezone = false;
+
+  // parameter to guard against behavior change to getTime()
+  private boolean useWallclockTime = false;
 
   private SnowflakeType timestampMappedType = SnowflakeType.TIMESTAMP_LTZ;
 
@@ -1158,6 +1162,14 @@ public class SFSession {
 
   public boolean getFormatDateWithTimezone() {
     return this.formatDateWithTimezone;
+  }
+
+  public void useWallclockTime(boolean useWallclockTime) {
+    this.useWallclockTime = useWallclockTime;
+  }
+
+  public boolean getUseWallclockTime() {
+    return this.useWallclockTime;
   }
 
   public boolean getTreatNTZAsUTC() {

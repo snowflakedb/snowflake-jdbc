@@ -945,6 +945,7 @@ public class ResultSetIT extends ResultSet0IT {
     try (Connection con = init()) {
       con.createStatement().execute("create or replace table testnullts(c1 timestamp, c2 time)");
       try {
+
         con.createStatement().execute("insert into testnullts(c1, c2) values(null, null)");
         ResultSet rs = con.createStatement().executeQuery("select * from testnullts");
         assertTrue("should return result", rs.next());
@@ -955,5 +956,19 @@ public class ResultSetIT extends ResultSet0IT {
         con.createStatement().execute("drop table if exists testnullts");
       }
     }
+  }
+
+  @Test
+  public void testGetWallclockTime() throws SQLException
+  {
+      Connection con = init();
+      Statement statement = con.createStatement();
+      statement.execute("create or replace table timetable (coltime time, coltimestamp timestamp)");
+      statement.execute("insert into timetable values ('17:17:17.543', '1970-01-01 17:17:17.543')");
+      ResultSet rs = statement.executeQuery("select * from timetable");
+      rs.next();
+
+      String time = rs.getTime(1).toString();
+      statement.execute("drop table if exists timetable");
   }
 }

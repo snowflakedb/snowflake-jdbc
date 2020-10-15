@@ -8,15 +8,13 @@ import java.time.format.DateTimeFormatter;
 public class SnowflakeTimeAsWallclock extends Time {
 
     int nanos = 0;
+    boolean useWallclockTime = false;
 
-    public SnowflakeTimeAsWallclock(long time, int nanos) {
+    public SnowflakeTimeAsWallclock(long time, int nanos, boolean useWallclockTime) {
         super(time);
         this.nanos = nanos;
+        this.useWallclockTime = useWallclockTime;
     }
-
-   /* public SnowflakeTimeAsWallclock(Time ts) {
-        this(ts.getTime(), 0);
-    }*/
 
     /**
      * Returns a string representation in UTC so as to display "wallclock time"
@@ -24,6 +22,10 @@ public class SnowflakeTimeAsWallclock extends Time {
      * @return a string representation of the object
      */
     public synchronized String toString() {
+        if (!useWallclockTime)
+        {
+            return super.toString();
+        }
         int trailingZeros = 0;
         int tmpNanos = this.nanos;
         if (tmpNanos > 0) {

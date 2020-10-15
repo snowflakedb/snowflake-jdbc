@@ -412,7 +412,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
         return null;
       }
       return new SnowflakeTimeAsWallclock(
-          sfTime.getFractionalSeconds(ResultUtil.DEFAULT_SCALE_OF_SFTIME_FRACTION_SECONDS), sfTime.getNanosecondsWithinSecond());
+          sfTime.getFractionalSeconds(ResultUtil.DEFAULT_SCALE_OF_SFTIME_FRACTION_SECONDS), sfTime.getNanosecondsWithinSecond(), resultSetSerializable.useWallclockTime());
     } else if (Types.TIMESTAMP == columnType) {
       Timestamp ts = getTimestamp(columnIndex);
       if (ts == null) {

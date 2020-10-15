@@ -3,19 +3,6 @@
  */
 package net.snowflake.client.core;
 
-import static net.snowflake.client.core.StmtUtil.eventHandler;
-import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
-
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.sql.Date;
-import java.sql.SQLException;
-import java.sql.Time;
-import java.sql.Timestamp;
-import java.util.Base64;
-import java.util.TimeZone;
 import net.snowflake.client.core.arrow.ArrowVectorConverter;
 import net.snowflake.client.jdbc.*;
 import net.snowflake.client.jdbc.ArrowResultChunk.ArrowChunkIterator;
@@ -29,6 +16,20 @@ import net.snowflake.common.core.SFBinaryFormat;
 import net.snowflake.common.core.SnowflakeDateTimeFormat;
 import net.snowflake.common.core.SqlState;
 import org.apache.arrow.memory.RootAllocator;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.sql.Date;
+import java.sql.SQLException;
+import java.sql.Time;
+import java.sql.Timestamp;
+import java.util.Base64;
+import java.util.TimeZone;
+
+import static net.snowflake.client.core.StmtUtil.eventHandler;
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
 /** Arrow result set implementation */
 public class SFArrowResultSet extends SFBaseResultSet implements DataConversionContext {
@@ -85,6 +86,11 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
   private boolean treatNTZAsUTC;
 
   /**
+   * Set to true if want to use wallclock time
+   */
+  private boolean useWallclockTime;
+
+  /**
    * If customer wants getDate(int col, Calendar cal) function to format date with Calendar
    * timezone, set to true
    */
@@ -116,6 +122,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     session.setWarehouse(resultSetSerializable.getFinalWarehouseName());
     treatNTZAsUTC = resultSetSerializable.getTreatNTZAsUTC();
     formatDateWithTimezone = resultSetSerializable.getFormatDateWithTimeZone();
+    useWallclockTime = resultSetSerializable.useWallclockTime();
 
     // update the driver/session with common parameters from GS
     SessionUtil.updateSfDriverParamValues(this.parameters, statement.getSession());
@@ -172,6 +179,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     this.resultSetMetaData = resultSetSerializable.getSFResultSetMetaData();
     this.treatNTZAsUTC = resultSetSerializable.getTreatNTZAsUTC();
     this.formatDateWithTimezone = resultSetSerializable.getFormatDateWithTimeZone();
+    this.useWallclockTime = resultSetSerializable.useWallclockTime();
 
     // sort result set if needed
     String rowsetBase64 = resultSetSerializable.getFirstChunkStringData();
@@ -451,6 +459,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     ArrowVectorConverter converter = currentChunkIterator.getCurrentConverter(columnIndex - 1);
     int index = currentChunkIterator.getCurrentRowInRecordBatch();
     wasNull = converter.isNull(index);
+    converter.setUseWallClockTime(useWallclockTime);
     return converter.toTime(index);
   }
 
@@ -468,6 +477,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     int index = currentChunkIterator.getCurrentRowInRecordBatch();
     wasNull = converter.isNull(index);
     converter.setTreatNTZAsUTC(treatNTZAsUTC);
+    converter.setUseWallClockTime(useWallclockTime);
     return converter.toObject(index);
   }
 
@@ -477,6 +487,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     int index = currentChunkIterator.getCurrentRowInRecordBatch();
     wasNull = converter.isNull(index);
     converter.setSessionTimeZone(timeZone);
+    converter.setUseWallClockTime(useWallclockTime);
     return converter.toBigDecimal(index);
   }
 

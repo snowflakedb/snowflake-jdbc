@@ -51,7 +51,7 @@ public class BigIntToTimeConverter extends AbstractArrowVectorConverter {
         return null;
       }
       return new SnowflakeTimeAsWallclock(
-          sfTime.getFractionalSeconds(ResultUtil.DEFAULT_SCALE_OF_SFTIME_FRACTION_SECONDS), sfTime.getNanosecondsWithinSecond());
+          sfTime.getFractionalSeconds(ResultUtil.DEFAULT_SCALE_OF_SFTIME_FRACTION_SECONDS), sfTime.getNanosecondsWithinSecond(), useWallClockTime);
     }
   }
 
