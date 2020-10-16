@@ -944,7 +944,6 @@ public class ResultSetIT extends ResultSet0IT {
     try (Connection con = init()) {
       con.createStatement().execute("create or replace table testnullts(c1 timestamp, c2 time)");
       try {
-
         con.createStatement().execute("insert into testnullts(c1, c2) values(null, null)");
         ResultSet rs = con.createStatement().executeQuery("select * from testnullts");
         assertTrue("should return result", rs.next());

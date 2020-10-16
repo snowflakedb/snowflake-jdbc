@@ -15,6 +15,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
 import java.util.regex.Pattern;
+import net.snowflake.client.ConditionalIgnoreRule;
+import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryResultSet;
 import net.snowflake.client.jdbc.telemetry.*;
 import net.snowflake.common.core.SFBinary;
@@ -303,6 +305,7 @@ public class ResultSetLatestIT extends ResultSet0IT {
   }
 
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testGetWallclockTimeToString() throws SQLException {
     // set up
     TimeZone tzOriginal = TimeZone.getDefault();

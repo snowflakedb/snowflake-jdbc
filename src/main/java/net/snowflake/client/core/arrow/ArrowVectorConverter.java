@@ -14,7 +14,7 @@ import net.snowflake.client.core.SFException;
 public interface ArrowVectorConverter {
 
   /**
-   * Boolean
+   * Set to true when time value should be displayed in wallclock time (no timezone offset)
    *
    * @param useWallClockTime
    */
