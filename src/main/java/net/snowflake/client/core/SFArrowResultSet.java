@@ -3,6 +3,19 @@
  */
 package net.snowflake.client.core;
 
+import static net.snowflake.client.core.StmtUtil.eventHandler;
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.sql.Date;
+import java.sql.SQLException;
+import java.sql.Time;
+import java.sql.Timestamp;
+import java.util.Base64;
+import java.util.TimeZone;
 import net.snowflake.client.core.arrow.ArrowVectorConverter;
 import net.snowflake.client.jdbc.*;
 import net.snowflake.client.jdbc.ArrowResultChunk.ArrowChunkIterator;
@@ -16,20 +29,6 @@ import net.snowflake.common.core.SFBinaryFormat;
 import net.snowflake.common.core.SnowflakeDateTimeFormat;
 import net.snowflake.common.core.SqlState;
 import org.apache.arrow.memory.RootAllocator;
-
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.sql.Date;
-import java.sql.SQLException;
-import java.sql.Time;
-import java.sql.Timestamp;
-import java.util.Base64;
-import java.util.TimeZone;
-
-import static net.snowflake.client.core.StmtUtil.eventHandler;
-import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
 /** Arrow result set implementation */
 public class SFArrowResultSet extends SFBaseResultSet implements DataConversionContext {
@@ -85,9 +84,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
    */
   private boolean treatNTZAsUTC;
 
-  /**
-   * Set to true if want to use wallclock time
-   */
+  /** Set to true if want to use wallclock time */
   private boolean useWallclockTime;
 
   /**

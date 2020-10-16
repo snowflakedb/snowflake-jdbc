@@ -4,6 +4,14 @@
 
 package net.snowflake.client.core;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.nio.ByteBuffer;
+import java.sql.Date;
+import java.sql.Time;
+import java.sql.Timestamp;
+import java.sql.Types;
+import java.util.TimeZone;
 import net.snowflake.client.core.arrow.ArrowResultUtil;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeTimeAsWallclock;
@@ -17,15 +25,6 @@ import net.snowflake.common.core.SFBinaryFormat;
 import net.snowflake.common.core.SFTime;
 import net.snowflake.common.core.SFTimestamp;
 import org.apache.arrow.vector.Float8Vector;
-
-import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.nio.ByteBuffer;
-import java.sql.Date;
-import java.sql.Time;
-import java.sql.Timestamp;
-import java.sql.Types;
-import java.util.TimeZone;
 
 /** Abstract class used to represent snowflake result set in json format */
 public abstract class SFJsonResultSet extends SFBaseResultSet {
@@ -412,13 +411,16 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
         return null;
       }
       return new SnowflakeTimeAsWallclock(
-          sfTime.getFractionalSeconds(ResultUtil.DEFAULT_SCALE_OF_SFTIME_FRACTION_SECONDS), sfTime.getNanosecondsWithinSecond(), resultSetSerializable.useWallclockTime());
+          sfTime.getFractionalSeconds(ResultUtil.DEFAULT_SCALE_OF_SFTIME_FRACTION_SECONDS),
+          sfTime.getNanosecondsWithinSecond(),
+          resultSetSerializable.useWallclockTime());
     } else if (Types.TIMESTAMP == columnType) {
       Timestamp ts = getTimestamp(columnIndex);
       if (ts == null) {
         return null;
       }
-      return new Time(ts.getTime());
+      return new SnowflakeTimeAsWallclock(
+          ts.getTime(), ts.getNanos(), resultSetSerializable.useWallclockTime());
     } else {
       throw new SFException(
           ErrorCode.INVALID_VALUE_CONVERT,

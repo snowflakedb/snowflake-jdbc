@@ -3,24 +3,24 @@
  */
 package net.snowflake.client.core.arrow;
 
-import net.snowflake.client.core.SFException;
-
 import java.math.BigDecimal;
 import java.sql.Date;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.TimeZone;
+import net.snowflake.client.core.SFException;
 
 /** Interface to convert from arrow vector values into java data types. */
 public interface ArrowVectorConverter {
 
   /**
    * Boolean
+   *
    * @param useWallClockTime
    */
-    void setUseWallClockTime(boolean useWallClockTime);
+  void setUseWallClockTime(boolean useWallClockTime);
 
-    void setSessionTimeZone(TimeZone tz);
+  void setSessionTimeZone(TimeZone tz);
 
   /**
    * Determine whether source value in arrow vector is null value or not

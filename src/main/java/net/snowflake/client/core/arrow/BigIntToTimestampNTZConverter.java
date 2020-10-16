@@ -13,6 +13,7 @@ import net.snowflake.client.core.IncidentUtil;
 import net.snowflake.client.core.ResultUtil;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.jdbc.ErrorCode;
+import net.snowflake.client.jdbc.SnowflakeTimeAsWallclock;
 import net.snowflake.client.jdbc.SnowflakeType;
 import net.snowflake.client.jdbc.SnowflakeUtil;
 import org.apache.arrow.vector.BigIntVector;
@@ -99,7 +100,9 @@ public class BigIntToTimestampNTZConverter extends AbstractArrowVectorConverter 
   @Override
   public Time toTime(int index) throws SFException {
     Timestamp ts = toTimestamp(index, TimeZone.getDefault());
-    return ts == null ? null : new Time(ts.getTime());
+    return ts == null
+        ? null
+        : new SnowflakeTimeAsWallclock(ts.getTime(), ts.getNanos(), useWallClockTime);
   }
 
   @Override

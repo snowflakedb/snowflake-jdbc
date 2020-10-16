@@ -4,8 +4,18 @@
 
 package net.snowflake.client.jdbc;
 
+import static net.snowflake.client.core.Constants.GB;
+import static net.snowflake.client.core.Constants.MB;
+import static net.snowflake.client.core.SessionUtil.*;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.Serializable;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.*;
 import net.snowflake.client.core.*;
 import net.snowflake.client.jdbc.telemetry.NoOpTelemetryClient;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
@@ -17,17 +27,6 @@ import net.snowflake.common.core.SnowflakeDateTimeFormat;
 import org.apache.arrow.memory.RootAllocator;
 import org.apache.arrow.vector.VectorSchemaRoot;
 import org.apache.arrow.vector.ipc.ArrowStreamReader;
-
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.Serializable;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.*;
-
-import static net.snowflake.client.core.Constants.GB;
-import static net.snowflake.client.core.Constants.MB;
-import static net.snowflake.client.core.SessionUtil.*;
 
 /**
  * This object is an intermediate object between result JSON from GS and ResultSet. Originally, it

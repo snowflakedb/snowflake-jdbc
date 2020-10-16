@@ -3,6 +3,10 @@
  */
 package net.snowflake.client.core.arrow;
 
+import java.nio.ByteBuffer;
+import java.sql.Time;
+import java.sql.Timestamp;
+import java.util.TimeZone;
 import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.IncidentUtil;
 import net.snowflake.client.core.ResultUtil;
@@ -14,11 +18,6 @@ import net.snowflake.client.jdbc.SnowflakeUtil;
 import net.snowflake.common.core.SFTime;
 import org.apache.arrow.vector.BigIntVector;
 import org.apache.arrow.vector.ValueVector;
-
-import java.nio.ByteBuffer;
-import java.sql.Time;
-import java.sql.Timestamp;
-import java.util.TimeZone;
 
 public class BigIntToTimeConverter extends AbstractArrowVectorConverter {
   private BigIntVector bigIntVector;
@@ -51,7 +50,9 @@ public class BigIntToTimeConverter extends AbstractArrowVectorConverter {
         return null;
       }
       return new SnowflakeTimeAsWallclock(
-          sfTime.getFractionalSeconds(ResultUtil.DEFAULT_SCALE_OF_SFTIME_FRACTION_SECONDS), sfTime.getNanosecondsWithinSecond(), useWallClockTime);
+          sfTime.getFractionalSeconds(ResultUtil.DEFAULT_SCALE_OF_SFTIME_FRACTION_SECONDS),
+          sfTime.getNanosecondsWithinSecond(),
+          useWallClockTime);
     }
   }
 
