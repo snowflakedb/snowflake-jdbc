@@ -293,6 +293,41 @@ public class ResultSetLatestIT extends ResultSet0IT {
     assertArrayEquals(decoded, resultSet.getBytes(12));
   }
 
+  // SNOW-204185
+  // 30s for timeout. This test usually finishes in around 10s.
+  @Test(timeout = 30000)
+  public void testResultChunkDownloaderException() throws SQLException {
+    Connection connection = init();
+    Statement statement = connection.createStatement();
+
+    // The generated resultSet must be big enough for triggering result chunk downloader
+    String query =
+        "select current_date(), true,2345234, 2343.0, 'testrgint\\n\\t' from table(generator(rowcount=>10000))";
+
+    ResultSet resultSet = statement.executeQuery(query);
+    resultSet.next(); // should finish successfully
+
+    try {
+      SnowflakeChunkDownloader.setInjectedDownloaderException(
+          new OutOfMemoryError("Fake OOM error for testing"));
+      resultSet = statement.executeQuery(query);
+      try {
+        // Normally this step won't cause too long. Because we will get exception once trying to get
+        // result from the first chunk downloader
+        while (resultSet.next())
+          ;
+        fail("Should not reach here. Last next() command is supposed to throw an exception");
+      } catch (SnowflakeSQLException ex) {
+        // pass, do nothing
+      }
+    } finally {
+      SnowflakeChunkDownloader.setInjectedDownloaderException(null);
+    }
+
+    statement.close();
+    connection.close();
+  }
+
   private byte[] intToByteArray(int i) {
     return BigInteger.valueOf(i).toByteArray();
   }
