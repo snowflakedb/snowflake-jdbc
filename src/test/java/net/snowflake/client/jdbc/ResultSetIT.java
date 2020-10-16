@@ -14,7 +14,6 @@ import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.sql.*;
 import java.util.Properties;
-import java.util.TimeZone;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryResultSet;
@@ -956,52 +955,5 @@ public class ResultSetIT extends ResultSet0IT {
         con.createStatement().execute("drop table if exists testnullts");
       }
     }
-  }
-
-  @Test
-  public void testGetWallclockTimeToString() throws SQLException {
-    // set up
-    TimeZone tzOriginal = TimeZone.getDefault();
-    TimeZone.setDefault(TimeZone.getTimeZone("PST"));
-    Connection con = init();
-    Statement statement = con.createStatement();
-    statement.execute("alter session set timezone='UTC'");
-    statement.execute("create or replace table timetable (coltime time, coltimestamp timestamp)");
-    String timeVal = "17:17:17";
-    String offsetTimeVal = "09:17:17";
-    String timeNanos = timeVal + ".54321";
-    statement.execute(
-        "insert into timetable values ('" + timeVal + "', '1970-01-01 " + timeVal + "')");
-    statement.execute(
-        "insert into timetable values ('" + timeNanos + "', '1970-01-01 " + timeNanos + "')");
-    // Test getTime with default behavior, JVM PST timezone (offset of 8 hours from UTC)
-    ResultSet rs = statement.executeQuery("select * from timetable");
-    rs.next();
-    assertEquals(offsetTimeVal, rs.getTime(1).toString()); // time is offset by 8 hours
-    assertEquals(offsetTimeVal, rs.getTime(2).toString()); // time is offset by 8 hours
-    rs.next();
-    assertEquals(
-        offsetTimeVal, rs.getTime(1).toString()); // time is offset by 8 hours, no nanos by default
-    assertEquals(
-        offsetTimeVal, rs.getTime(2).toString()); // time is offset by 8 hours, no nanos by default
-    // Test with new parameter, JVM PST timezone (offset of 8 hours from UTC)
-    statement.execute("alter session set JDBC_USE_WALLCLOCK_TIME=true");
-    rs = statement.executeQuery("select * from timetable");
-    rs.next();
-    assertEquals(
-        timeVal, rs.getTime(1).toString()); // time value matches inserted value; no offset!
-    assertEquals(
-        timeVal, rs.getTime(2).toString()); // timestamp value matches inserted value; no offset!
-    rs.next();
-    assertEquals(timeNanos, rs.getTime(1).toString()); // No offset! Nanos do appear by default
-    assertEquals(timeNanos, rs.getTime(2).toString()); // No offset! Nanos do appear by default
-
-    // tear down
-    TimeZone.setDefault(tzOriginal);
-    rs.close();
-    statement.execute("alter session unset timezone");
-    statement.execute("drop table if exists timetable");
-    statement.close();
-    con.close();
   }
 }
