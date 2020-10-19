@@ -4,12 +4,9 @@
 
 package net.snowflake.client.jdbc;
 
-import java.sql.Connection;
-import java.sql.Driver;
-import java.sql.DriverManager;
-import java.sql.DriverPropertyInfo;
-import java.sql.SQLException;
-import java.sql.SQLFeatureNotSupportedException;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.sql.*;
 import java.util.List;
 import java.util.Properties;
 import net.snowflake.common.core.ResourceBundleManager;
@@ -63,6 +60,31 @@ public class SnowflakeDriver implements Driver {
       // fail to enable required feature for Arrow
       disableArrowResultFormat = true;
       disableArrowResultFormatMessage = t.getLocalizedMessage();
+    }
+    disableIllegalReflectiveAccessWarning();
+  }
+
+  private static void disableIllegalReflectiveAccessWarning() {
+    // The netty dependency of arrow will cause an illegal reflective access warning
+    // This function try to eliminate the warning by setting
+    // jdk.internal.module.IllegalAccessLogger's logger as null
+    try {
+      Class unsafeClass = Class.forName("sun.misc.Unsafe");
+      Field field = unsafeClass.getDeclaredField("theUnsafe");
+      field.setAccessible(true);
+      Object unsafe = field.get(null);
+
+      Method putObjectVolatile =
+          unsafeClass.getDeclaredMethod(
+              "putObjectVolatile", Object.class, long.class, Object.class);
+      Method staticFieldOffset = unsafeClass.getDeclaredMethod("staticFieldOffset", Field.class);
+
+      Class loggerClass = Class.forName("jdk.internal.module.IllegalAccessLogger");
+      Field loggerField = loggerClass.getDeclaredField("logger");
+      Long offset = (Long) staticFieldOffset.invoke(unsafe, loggerField);
+      putObjectVolatile.invoke(unsafe, loggerClass, offset, null);
+    } catch (Throwable ex) {
+      // If failed to eliminate warnings, do nothing
     }
   }
 
