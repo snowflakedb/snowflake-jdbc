@@ -3,9 +3,11 @@
  */
 package net.snowflake.client.jdbc;
 
-import static org.hamcrest.CoreMatchers.*;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.*;
+import net.snowflake.client.ConditionalIgnoreRule;
+import net.snowflake.client.RunningOnGithubAction;
+import net.snowflake.client.category.TestCategoryResultSet;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -14,11 +16,11 @@ import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.sql.*;
 import java.util.Properties;
-import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningOnGithubAction;
-import net.snowflake.client.category.TestCategoryResultSet;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import java.util.TimeZone;
+
+import static org.hamcrest.CoreMatchers.*;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.*;
 
 /** Test ResultSet */
 @Category(TestCategoryResultSet.class)
@@ -953,6 +955,29 @@ public class ResultSetIT extends ResultSet0IT {
       } finally {
         con.createStatement().execute("drop table if exists testnullts");
       }
+    }
+  }
+
+  @Test
+  public void testTimeZone() throws Throwable {
+    Connection con = init();
+    Statement statement = con.createStatement();
+    //statement.execute("alter session set timezone='UTC'");
+    statement.execute("alter session set timezone='America/Los_Angeles'");
+    statement.execute("create or replace table timetable(coltime time, coltimestamp timestamp, coldate date)");
+    statement.execute("insert into timetable values ('23:23:23', '1970-01-01 23:23:23', '1970-01-01 23:23:23')");
+    statement.execute("insert into timetable values ('01:01:01', '1970-01-01 01:01:01', '1970-01-01 01:01:01')");
+    ResultSet timeResult = statement.executeQuery("show parameters like 'TIMEZONE'");
+    timeResult.next();
+    System.out.println("Session timezone: " + timeResult.getString(2));
+    //TimeZone.setDefault(TimeZone.getTimeZone("PST"));
+    System.out.println("JVM timezone: " + TimeZone.getDefault());
+    ResultSet rs = statement.executeQuery("select * from timetable");
+    while (rs.next())
+    {
+      System.out.println("getTime:      " + rs.getTime(1) + "   " + rs.getTime(2) + "   XXXX");
+      System.out.println("getTimestamp: " + rs.getTimestamp(1) + "   " + rs.getTimestamp(2) + "   " + rs.getTimestamp(3));
+      System.out.println("getDate:      XXXX     " + rs.getDate(2) + "   " + rs.getDate(3));
     }
   }
 }
