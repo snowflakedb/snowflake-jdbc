@@ -781,8 +781,7 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
     try {
       if (this.statementMetaData.isArrayBindSupported()) {
         if (batchSize <= 0) {
-          logger.debug(
-              "executeBatch() using array bind with no batch data. Return int[0] directly");
+          logger.warn("executeBatch() using array bind with no batch data. Return int[0] directly");
           return new int[0];
         }
 
