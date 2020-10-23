@@ -130,4 +130,35 @@ public class PreparedStatement1LatestIT extends PreparedStatement0IT {
       statement.close();
     }
   }
+
+  /**
+   * Test to ensure when giving no input batch data, no exceptions will be thrown
+   *
+   * <p>Ignored on GitHub Action because CLIENT_STAGE_ARRAY_BINDING_THRESHOLD parameter is not
+   * available to customers so cannot be set when running on Github Action
+   *
+   * @throws SQLException arises if any exception occurs
+   */
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testExecuteEmptyBatch() throws SQLException {
+    try (Connection connection = init()) {
+      try (PreparedStatement prepStatement = connection.prepareStatement(insertSQL)) {
+        // executeBatch shouldn't throw exceptions
+        assertEquals(
+            "For empty batch, we should return int[0].", 0, prepStatement.executeBatch().length);
+      }
+
+      connection
+          .createStatement()
+          .execute(
+              "ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = 0"); // disable stage bind
+      // we need a new PreparedStatement to pick up the changed status (not use stage bind)
+      try (PreparedStatement prepStatement = connection.prepareStatement(insertSQL)) {
+        // executeBatch shouldn't throw exceptions
+        assertEquals(
+            "For empty batch, we should return int[0].", 0, prepStatement.executeBatch().length);
+      }
+    }
+  }
 }
