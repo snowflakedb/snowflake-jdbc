@@ -131,7 +131,16 @@ public class PreparedStatement1LatestIT extends PreparedStatement0IT {
     }
   }
 
+  /**
+   * Test to ensure when giving no input batch data, no exceptions will be thrown
+   *
+   * <p>Ignored on GitHub Action because CLIENT_STAGE_ARRAY_BINDING_THRESHOLD parameter is not
+   * available to customers so cannot be set when running on Github Action
+   *
+   * @throws SQLException arises if any exception occurs
+   */
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testExecuteEmptyBatch() throws SQLException {
     try (Connection connection = init()) {
       try (PreparedStatement prepStatement = connection.prepareStatement(insertSQL)) {
