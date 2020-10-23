@@ -126,28 +126,6 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
   }
 
   @Test
-  public void testExecuteEmptyBatch() throws SQLException {
-    try (Connection connection = init()) {
-      try (PreparedStatement prepStatement = connection.prepareStatement(insertSQL)) {
-        // executeBatch shouldn't throw exceptions
-        assertEquals(
-            "For empty batch, we should return int[0].", 0, prepStatement.executeBatch().length);
-      }
-
-      connection
-          .createStatement()
-          .execute(
-              "ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = 0"); // disable stage bind
-      // we need a new PreparedStatement to pick up the changed status (not use stage bind)
-      try (PreparedStatement prepStatement = connection.prepareStatement(insertSQL)) {
-        // executeBatch shouldn't throw exceptions
-        assertEquals(
-            "For empty batch, we should return int[0].", 0, prepStatement.executeBatch().length);
-      }
-    }
-  }
-
-  @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testInsertBatch() throws SQLException {
     int[] countResult;
