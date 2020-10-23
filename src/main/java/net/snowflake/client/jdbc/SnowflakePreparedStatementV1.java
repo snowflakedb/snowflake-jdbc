@@ -780,6 +780,12 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
     int[] updateCounts = null;
     try {
       if (this.statementMetaData.isArrayBindSupported()) {
+        if (batchSize <= 0) {
+          logger.debug(
+              "executeBatch() using array bind with no batch data. Return int[0] directly");
+          return new int[0];
+        }
+
         int updateCount = (int) executeUpdateInternal(this.sql, batchParameterBindings, false);
 
         // when update count is the same as the number of bindings in the batch,
