@@ -413,13 +413,20 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
     throw new SQLFeatureNotSupportedException();
   }
 
+  /**
+   * Puts this connection in read-only mode as a hint to the driver to enable
+   * database optimizations.
+   * @param readOnly {@code true} enables read-only mode; {@code false} otherwise
+   * @exception SQLException if a database access error occurs, this
+   *  method is called on a closed connection or this
+   *            method is called during a transaction
+   */
   @Override
   public void setReadOnly(boolean readOnly) throws SQLException {
+    // This is hint only. Although Snowflake does not support read-only transactions SQLFeatureNotSupportedException
+    // should not be thrown here.
     logger.debug("void setReadOnly(boolean readOnly)");
     raiseSQLExceptionIfConnectionIsClosed();
-    if (readOnly) {
-      throw new SQLFeatureNotSupportedException();
-    }
   }
 
   @Override
@@ -456,10 +463,11 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
     if (level == Connection.TRANSACTION_NONE || level == Connection.TRANSACTION_READ_COMMITTED) {
       this.transactionIsolation = level;
     } else {
-      throw new SQLFeatureNotSupportedException(
-          "Transaction Isolation " + level + " not supported.",
-          FEATURE_UNSUPPORTED.getSqlState(),
-          FEATURE_UNSUPPORTED.getMessageCode());
+      // According to the spec this method should not throw SQLFeatureNotSupportedException
+      // even if given level is not supported
+      appendWarning(new SQLWarning("Transaction Isolation " + level + " not supported.",
+              FEATURE_UNSUPPORTED.getSqlState(),
+              FEATURE_UNSUPPORTED.getMessageCode()));
     }
   }
 
@@ -591,12 +599,16 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
 
   @Override
   public void setTypeMap(Map<String, Class<?>> map) throws SQLException {
+    raiseSQLExceptionIfConnectionIsClosed();
     throw new SQLFeatureNotSupportedException();
   }
 
   @Override
   public void setHoldability(int holdability) throws SQLException {
-    throw new SQLFeatureNotSupportedException();
+    raiseSQLExceptionIfConnectionIsClosed();
+    if (holdability != ResultSet.CLOSE_CURSORS_AT_COMMIT) {
+      throw new SQLFeatureNotSupportedException();
+    }
   }
 
   @Override
@@ -607,16 +619,19 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
 
   @Override
   public Savepoint setSavepoint() throws SQLException {
+    raiseSQLExceptionIfConnectionIsClosed();
     throw new SQLFeatureNotSupportedException();
   }
 
   @Override
   public Savepoint setSavepoint(String name) throws SQLException {
+    raiseSQLExceptionIfConnectionIsClosed();
     throw new SQLFeatureNotSupportedException();
   }
 
   @Override
   public void releaseSavepoint(Savepoint savepoint) throws SQLException {
+    raiseSQLExceptionIfConnectionIsClosed();
     throw new SQLFeatureNotSupportedException();
   }
 
@@ -627,7 +642,6 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
 
   @Override
   public Clob createClob() throws SQLException {
-    raiseSQLExceptionIfConnectionIsClosed();
     return new SnowflakeClob();
   }
 
