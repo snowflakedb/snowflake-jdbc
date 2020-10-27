@@ -1,3 +1,11 @@
+**JDBC Driver 3.12.14**
+
+- \| SNOW-150601 | Suppressed a warning about Illegal reflective access.
+- \| SNOW-163265 | Fixed an issue when the getDate method passed in a Calendar object.
+- \| SNOW-201788 | Prevented attempts to drop a column that is part of clustering key when generating a temp table.
+- \| SNOW-204185 | Fixed an edge case in which ResultSet.next() can hang when the ResultSet data downloader threads hit unexpected errors.
+- \| SNOW-208695 | Updated the junit version from 4.12 to 4.13.1.
+
 **JDBC Driver 3.12.13**
 
 - \| SNOW-194437 | INSERT of TIME type bind values via JDBC does not trigger bulk array load via stage.
