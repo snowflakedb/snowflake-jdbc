@@ -4,9 +4,7 @@
 
 package net.snowflake.client.core;
 
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 import com.sun.jna.Memory;
@@ -215,6 +213,11 @@ public class SecureStorageManagerTest {
 
   @Test
   public void testWindowsManager() {
+    if (Constants.getOS() != Constants.OS.WINDOWS) {
+      assertThat(SecureStorageWindowsManager.Advapi32LibManager.getInstance(), is(nullValue()));
+    } else {
+      assertThat(SecureStorageWindowsManager.Advapi32LibManager.getInstance(), is(notNullValue()));
+    }
     SecureStorageWindowsManager.Advapi32LibManager.setInstance(new MockAdvapi32Lib());
     SecureStorageManager manager = SecureStorageWindowsManager.builder();
 
@@ -223,6 +226,11 @@ public class SecureStorageManagerTest {
 
   @Test
   public void testMacManager() {
+    if (Constants.getOS() != Constants.OS.MAC) {
+      assertThat(SecureStorageAppleManager.SecurityLibManager.getInstance(), is(nullValue()));
+    } else {
+      assertThat(SecureStorageAppleManager.SecurityLibManager.getInstance(), is(notNullValue()));
+    }
     SecureStorageAppleManager.SecurityLibManager.setInstance(new MockSecurityLib());
     SecureStorageManager manager = SecureStorageAppleManager.builder();
 
