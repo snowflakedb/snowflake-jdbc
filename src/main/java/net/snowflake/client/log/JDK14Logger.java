@@ -3,21 +3,18 @@
  */
 package net.snowflake.client.log;
 
-import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
+import net.snowflake.client.core.EventHandler;
+import net.snowflake.client.core.EventUtil;
+import net.snowflake.client.util.SecretDetector;
 
 import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.logging.FileHandler;
-import java.util.logging.Handler;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.logging.SimpleFormatter;
-import net.snowflake.client.core.EventHandler;
-import net.snowflake.client.core.EventUtil;
-import net.snowflake.client.util.SecretDetector;
+import java.util.logging.*;
+
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
 /**
  * Use java.util.logging to implements SFLogger.
@@ -152,6 +149,11 @@ public class JDK14Logger implements SFLogger {
   public static void addHandler(Handler handler) {
     Logger snowflakeLogger = Logger.getLogger(SFFormatter.CLASS_NAME_PREFIX);
     snowflakeLogger.addHandler(handler);
+  }
+
+  public static void removeHandler(Handler handler) {
+    Logger snowflakeLogger = Logger.getLogger(SFFormatter.CLASS_NAME_PREFIX);
+    snowflakeLogger.removeHandler(handler);
   }
 
   public static void setLevel(Level level) {

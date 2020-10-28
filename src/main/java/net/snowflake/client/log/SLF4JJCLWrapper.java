@@ -29,6 +29,11 @@ public class SLF4JJCLWrapper implements Log {
     isLocationAwareLogger = slf4jLogger instanceof LocationAwareLogger;
   }
 
+  public Logger getLogger()
+  {
+    return slf4jLogger;
+  }
+
   public void debug(Object message) {
     // do nothing
   }
