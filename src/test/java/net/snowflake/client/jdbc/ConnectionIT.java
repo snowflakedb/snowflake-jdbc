@@ -3,20 +3,11 @@
  */
 package net.snowflake.client.jdbc;
 
-import net.snowflake.client.ConditionalIgnoreRule.ConditionalIgnore;
-import net.snowflake.client.RunningNotOnTestaccount;
-import net.snowflake.client.RunningOnGithubAction;
-import net.snowflake.client.TestUtil;
-import net.snowflake.client.category.TestCategoryConnection;
-import net.snowflake.client.core.SFSession;
-import net.snowflake.common.core.SqlState;
-import org.apache.commons.codec.binary.Base64;
-import org.junit.Assert;
-import org.junit.Ignore;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.rules.TemporaryFolder;
+import static net.snowflake.client.core.SessionUtil.CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.*;
 
 import java.io.*;
 import java.security.*;
@@ -27,12 +18,19 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-
-import static net.snowflake.client.core.SessionUtil.CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY;
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.*;
+import net.snowflake.client.ConditionalIgnoreRule.ConditionalIgnore;
+import net.snowflake.client.RunningNotOnTestaccount;
+import net.snowflake.client.RunningOnGithubAction;
+import net.snowflake.client.TestUtil;
+import net.snowflake.client.category.TestCategoryConnection;
+import net.snowflake.common.core.SqlState;
+import org.apache.commons.codec.binary.Base64;
+import org.junit.Assert;
+import org.junit.Ignore;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.rules.TemporaryFolder;
 
 /** Connection integration tests */
 @Category(TestCategoryConnection.class)
@@ -59,21 +57,6 @@ public class ConnectionIT extends BaseJDBCTest {
     con.close();
     assertTrue(con.isClosed());
     con.close(); // ensure no exception
-  }
-
-  @Test
-  public void testConnectionParameters() throws SQLException {
-    Connection con = getConnection();
-    SFSession session = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
-    session.setInjectSocketTimeout(5);
-    assertEquals(session.getInjectSocketTimeout(), 5);
-    session.setInjectClientPause(5);
-    assertEquals(session.getInjectClientPause(), 5);
-    session.isEnableHeartbeat();
-    session.setHeartbeatFrequency(5);
-    long heartbeat = session.getHeartbeatFrequency();
-    boolean val = session.isStoreTemporaryCredential();
-    boolean val2 = session.isValidateDefaultParameters();
   }
 
   @Test
