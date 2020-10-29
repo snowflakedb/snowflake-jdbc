@@ -161,6 +161,12 @@ public class JDK14Logger implements SFLogger {
     snowflakeLogger.setLevel(level);
   }
 
+  public static Level getLevel()
+  {
+    Logger snowflakeLogger = Logger.getLogger(SFFormatter.CLASS_NAME_PREFIX);
+    return snowflakeLogger.getLevel();
+  }
+
   /**
    * This is legacy way of enable logging in JDBC (through TRACING parameter) Only effective when
    * java.util.logging.config.file is not specified

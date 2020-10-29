@@ -16,6 +16,8 @@ public class SLF4JJJCLWrapperIT {
     /** Message last logged using SLF4JLogger. */
     private String lastLogMessage = null;
 
+    private Level levelToRestore = null;
+
     /** An appender that will be used for getting messages logged by a {@link Logger} instance */
     private class TestAppender extends AppenderBase<ILoggingEvent> {
         @Override
@@ -45,28 +47,22 @@ public class SLF4JJJCLWrapperIT {
 
     @Before
     public void setUp() {
+        levelToRestore = logger.getLevel();
         if (!testAppender.isStarted()) {
             testAppender.start();
         }
+        // Set debug level to lowest possible level so all messages can be recorded.
         logger.setLevel(Level.TRACE);
         logger.addAppender(testAppender);
     }
 
     @After
     public void tearDown() {
+        logger.setLevel(levelToRestore);
         logger.detachAppender(testAppender);
     }
 
-    @Test
-    public void testEnabledMessaging()
-    {
-        assertFalse(wrapper.isTraceEnabled());
-        assertFalse(wrapper.isDebugEnabled());
-        assertTrue(wrapper.isInfoEnabled());
-        assertTrue(wrapper.isErrorEnabled());
-        assertTrue(wrapper.isFatalEnabled());
-    }
-
+    // helper function, throwables allowed
     private void testNullLogMessagesWithThrowable(LogLevel level, String message, Throwable t)
     {
         switch (level) {
@@ -89,6 +85,7 @@ public class SLF4JJJCLWrapperIT {
         assertEquals(null, getLoggedMessage());
     }
 
+    // helper function, no throwables
     private void testNullLogMessagesNoThrowable(LogLevel level, String message)
     {
         switch (level) {
@@ -111,6 +108,9 @@ public class SLF4JJJCLWrapperIT {
         assertEquals(null, getLoggedMessage());
     }
 
+    /**
+     * Test that all levels are disabled for wrapper class. No messages returned at any level.
+     */
     @Test
     public void testNullLogMessages()
     {
@@ -119,5 +119,19 @@ public class SLF4JJJCLWrapperIT {
             testNullLogMessagesWithThrowable(level, "sample message", null);
             testNullLogMessagesNoThrowable(level, "sample message");
         }
+    }
+
+    /**
+     * Test that tracing and debugging are disabled for apache at all times. With other levels, pass in
+     * results from the actual logger to see if messages can be enabled.
+     */
+    @Test
+    public void testEnabledMessaging()
+    {
+        assertFalse(wrapper.isTraceEnabled());
+        assertFalse(wrapper.isDebugEnabled());
+        assertTrue(wrapper.isInfoEnabled());
+        assertTrue(wrapper.isErrorEnabled());
+        assertTrue(wrapper.isFatalEnabled());
     }
 }

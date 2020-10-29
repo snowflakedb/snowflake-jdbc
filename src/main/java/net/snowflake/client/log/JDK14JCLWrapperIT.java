@@ -9,8 +9,7 @@ import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 
-import static org.junit.Assert.*;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class JDK14JCLWrapperIT {
     JDK14JCLWrapper wrapper = new JDK14JCLWrapper(JDK14JCLWrapperIT.class.getName());
@@ -20,7 +19,7 @@ public class JDK14JCLWrapperIT {
     private String lastLogMessage = null;
 
     /** Level at which last message was logged using JDK14Logger. */
-    private Level lastLogMessageLevel = null;
+    private Level logLevelToRestore = null;
 
     private class TestJDK14LogHandler extends Handler {
         /**
@@ -36,10 +35,9 @@ public class JDK14JCLWrapperIT {
 
         @Override
         public void publish(LogRecord record) {
-            // Assign the log message and it's level to the outer class instance
+            // Assign the log message and its level to the outer class instance
             // variables so that it can see the messages logged
             lastLogMessage = getFormatter().formatMessage(record);
-            lastLogMessageLevel = record.getLevel();
         }
 
         @Override
@@ -62,30 +60,23 @@ public class JDK14JCLWrapperIT {
 
     @Before
     public void setUp() {
+        logLevelToRestore = logger.getLevel();
+        // Set debug level to lowest so that all possible messages can be sent.
         logger.setLevel(Level.FINEST);
         logger.addHandler(this.handler);
     }
 
     @After
     public void tearDown() {
+        logger.setLevel(logLevelToRestore);
         logger.removeHandler(this.handler);
-    }
-
-    @Test
-    public void testEnabledMessaging()
-    {
-        assertFalse(wrapper.isTraceEnabled());
-        assertFalse(wrapper.isDebugEnabled());
-        assertTrue(wrapper.isInfoEnabled());
-        assertTrue(wrapper.isErrorEnabled());
-        assertTrue(wrapper.isFatalEnabled());
     }
 
     String getLoggedMessage() {
         return this.lastLogMessage;
     }
 
-    private void testNullLogMessagesWithThrowable(LogLevel level, String message, Throwable t)
+    private void testLogMessagesWithThrowable(LogLevel level, String message, Throwable t)
     {
         switch (level) {
             case ERROR:
@@ -97,17 +88,11 @@ public class JDK14JCLWrapperIT {
             case INFO:
                 wrapper.info(message, t);
                 break;
-            case DEBUG:
-                wrapper.debug(message, t);
-                break;
-            case TRACE:
-                wrapper.trace(message, t);
-                break;
         }
-        assertEquals(null, getLoggedMessage());
+        assertEquals(message, getLoggedMessage());
     }
 
-    private void testNullLogMessagesNoThrowable(LogLevel level, String message)
+    private void testLogMessagesNoThrowable(LogLevel level, String message)
     {
         switch (level) {
             case ERROR:
@@ -119,24 +104,68 @@ public class JDK14JCLWrapperIT {
             case INFO:
                 wrapper.info(message);
                 break;
-            case DEBUG:
-                wrapper.debug(message);
-                break;
+        }
+        assertEquals(message, getLoggedMessage());
+    }
+
+    private void testNullLogMessagesWithThrowable(LogLevel level, String message, Throwable t)
+    {
+        switch(level) {
             case TRACE:
-                wrapper.trace(message);
+                wrapper.trace(message, t);
+                break;
+            case DEBUG:
+                wrapper.debug(message, t);
                 break;
         }
         assertEquals(null, getLoggedMessage());
     }
 
+    private void testNullLogMessagesNoThrowable(LogLevel level, String message)
+    {
+        switch(level) {
+            case TRACE:
+                wrapper.trace(message);
+                break;
+            case DEBUG:
+                wrapper.debug(message);
+                break;
+        }
+        assertEquals(null, getLoggedMessage());
+    }
+
+    /**
+     * Test that trace and debug levels never display messages in wrapper (disabled for apache overall).
+     * Other 3 levels of error, warn, and info can display logs if debug level is set at/below them.
+     */
     @Test
     public void testNullLogMessages()
     {
-        for (LogLevel level: LogLevel.values())
+        LogLevel[] levelsDisplayingOutput = {LogLevel.ERROR, LogLevel.WARN, LogLevel.INFO};
+        LogLevel[] levelsWithNoOutput = {LogLevel.TRACE, LogLevel.DEBUG};
+        for (LogLevel level: levelsWithNoOutput)
         {
             testNullLogMessagesWithThrowable(level, "sample message", null);
             testNullLogMessagesNoThrowable(level, "sample message");
         }
+        for (LogLevel level: levelsDisplayingOutput)
+        {
+            testLogMessagesWithThrowable(level, "sample message", null);
+            testLogMessagesNoThrowable(level, "sample message");
+        }
     }
 
+    /**
+     * Test that trace and debug are always disabled, while other 3 levels are enabled when debug level
+     * is set at/below that level.
+     */
+    @Test
+    public void testEnabledMessaging()
+    {
+        assertFalse(wrapper.isTraceEnabled());
+        assertFalse(wrapper.isDebugEnabled());
+        assertTrue(wrapper.isInfoEnabled());
+        assertTrue(wrapper.isErrorEnabled());
+        assertTrue(wrapper.isFatalEnabled());
+    }
 }
