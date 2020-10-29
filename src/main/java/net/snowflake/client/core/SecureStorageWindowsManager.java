@@ -5,7 +5,11 @@
 package net.snowflake.client.core;
 
 import com.google.common.base.Strings;
-import com.sun.jna.*;
+import com.sun.jna.Memory;
+import com.sun.jna.Native;
+import com.sun.jna.Pointer;
+import com.sun.jna.Structure;
+import com.sun.jna.WString;
 import com.sun.jna.platform.win32.WinBase.FILETIME;
 import com.sun.jna.ptr.PointerByReference;
 import com.sun.jna.win32.StdCallLibrary;
@@ -256,10 +260,8 @@ public class SecureStorageWindowsManager implements SecureStorageManager {
 
     private static class ResourceHolder {
       private static final Advapi32Lib INSTANCE =
-          Constants.getOS() == Constants.OS.WINDOWS
-              ? (Advapi32Lib)
-                  Native.loadLibrary("advapi32", Advapi32Lib.class, W32APIOptions.UNICODE_OPTIONS)
-              : null;
+          (Advapi32Lib)
+              Native.loadLibrary("advapi32", Advapi32Lib.class, W32APIOptions.UNICODE_OPTIONS);
     }
 
     public static Advapi32Lib getInstance() {
