@@ -3,14 +3,10 @@
  */
 package net.snowflake.client.core;
 
+import static net.snowflake.client.core.SFException.errorResourceBundleManager;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import net.snowflake.client.jdbc.ErrorCode;
-import net.snowflake.client.jdbc.SnowflakeConnectionV1;
-import org.apache.commons.lang3.RandomStringUtils;
-import org.junit.Assert;
-import org.junit.Test;
-
 import java.io.File;
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -19,8 +15,11 @@ import java.sql.Statement;
 import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import static net.snowflake.client.core.SFException.errorResourceBundleManager;
+import net.snowflake.client.jdbc.ErrorCode;
+import net.snowflake.client.jdbc.SnowflakeConnectionV1;
+import org.apache.commons.lang3.RandomStringUtils;
+import org.junit.Assert;
+import org.junit.Test;
 
 public class IncidentIT extends BaseIncidentTest {
   // Copied from StringLimiter in GS
@@ -67,12 +66,12 @@ public class IncidentIT extends BaseIncidentTest {
     String jobId = "ji";
     String requestId = "ri";
     String raiser =
-            "net.snowflake.client.core.IncidentIT$"
-                    + "CreateIncidentTests.SimpleIncidentCreationTestExpliciit";
+        "net.snowflake.client.core.IncidentIT$"
+            + "CreateIncidentTests.SimpleIncidentCreationTestExpliciit";
     String errorMessage = "error Message";
     String errorStackTrace = "this is a stack element\nthis is another " + "element";
     Incident incident =
-            new Incident(new SFSession(), jobId, requestId, errorMessage, errorStackTrace, raiser);
+        new Incident(new SFSession(), jobId, requestId, errorMessage, errorStackTrace, raiser);
     incident.setType(Event.EventType.NETWORK_ERROR);
     Assert.assertEquals(Event.EventType.NETWORK_ERROR, incident.getType());
     String newMessage = "hello";

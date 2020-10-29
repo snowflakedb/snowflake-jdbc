@@ -5,17 +5,16 @@
 package net.snowflake.client.jdbc;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import net.snowflake.client.core.SFSession;
-import net.snowflake.client.log.SFLogger;
-import net.snowflake.client.log.SFLoggerFactory;
-import net.snowflake.common.core.SqlState;
-
 import java.lang.ref.SoftReference;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.LinkedList;
 import java.util.List;
+import net.snowflake.client.core.SFSession;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
+import net.snowflake.common.core.SqlState;
 
 public class JsonResultChunk extends SnowflakeResultChunk {
   private static final int NULL_VALUE = Integer.MIN_VALUE;
@@ -65,7 +64,6 @@ public class JsonResultChunk extends SnowflakeResultChunk {
   public final Object getCell(int rowIdx, int colIdx) {
     return data.get(colCount * rowIdx + colIdx);
   }
-
 
   @Override
   public void reset() {
