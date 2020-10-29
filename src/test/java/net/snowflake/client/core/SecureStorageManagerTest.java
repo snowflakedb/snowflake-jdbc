@@ -4,9 +4,7 @@
 
 package net.snowflake.client.core;
 
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 import com.sun.jna.Memory;
@@ -15,6 +13,7 @@ import com.sun.jna.ptr.PointerByReference;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import org.junit.Ignore;
 import org.junit.Test;
 
 class MockAdvapi32Lib implements SecureStorageWindowsManager.Advapi32Lib {
@@ -212,6 +211,19 @@ public class SecureStorageManagerTest {
   private static final String user = "fakeUser";
   private static final String idToken = "fakeIdToken";
   private static final String idToken0 = "fakeIdToken0";
+
+  @Ignore("This test won't run until we setup Mac & Windows testing env.")
+  @Test
+  public void testLoadNativeLibrary() {
+    // Make sure the loading of native platform library won't break.
+    if (Constants.getOS() == Constants.OS.MAC) {
+      assertThat(SecureStorageAppleManager.SecurityLibManager.getInstance(), is(nullValue()));
+    }
+
+    if (Constants.getOS() == Constants.OS.WINDOWS) {
+      assertThat(SecureStorageWindowsManager.Advapi32LibManager.getInstance(), is(notNullValue()));
+    }
+  }
 
   @Test
   public void testWindowsManager() {
