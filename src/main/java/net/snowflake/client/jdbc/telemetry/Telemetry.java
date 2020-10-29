@@ -5,15 +5,19 @@ package net.snowflake.client.jdbc.telemetry;
 
 import java.util.concurrent.Future;
 
-public interface Telemetry {
+public interface Telemetry
+{
   /**
-   * Attempt to add log to batch, and suppress exceptions thrown in case of failure
+   * Attempt to add log to batch, and suppress exceptions thrown in case of
+   * failure
    *
    * @param log entry to add
    */
   void addLogToBatch(TelemetryData log);
 
-  /** Close telemetry connector and send any unsubmitted logs */
+  /**
+   * Close telemetry connector and send any unsubmitted logs
+   */
   void close();
 
   /**

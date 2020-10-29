@@ -14,50 +14,74 @@ import net.snowflake.client.core.ObjectMapperFactory;
  *
  * @author ffunke
  */
-public class MatDesc {
-  /** MatDesc key for query ID */
+public class MatDesc
+{
+  /**
+   * MatDesc key for query ID
+   */
   public static String QUERY_ID = "queryId";
 
-  /** MatDesc key for stage master key ID */
+  /**
+   * MatDesc key for stage master key ID
+   */
   public static String SMK_ID = "smkId";
 
-  /** MatDesc key for the length of the key in bits */
+  /**
+   * MatDesc key for the length of the key in bits
+   */
   public static String KEY_SIZE = "keySize";
 
-  /** If key size is not explicitly specified, assume DEFAULT_KEY_SIZE */
+  /**
+   * If key size is not explicitly specified, assume DEFAULT_KEY_SIZE
+   */
   public static int DEFAULT_KEY_SIZE = 256;
 
-  /** The JSON parser for matdesc entries */
-  private static final ObjectMapper mapper = ObjectMapperFactory.getObjectMapper();
 
-  /** The Stage Master Key ID */
-  private final long smkId;
+  /**
+   * The JSON parser for matdesc entries
+   */
+  private final static ObjectMapper mapper =
+      ObjectMapperFactory.getObjectMapper();
 
-  /** The query ID */
-  private final String queryId;
+  /**
+   * The Stage Master Key ID
+   */
+  final private long smkId;
 
-  /** The key length in bits */
-  private final int keySize;
+  /**
+   * The query ID
+   */
+  final private String queryId;
 
-  public MatDesc(long smkId, String queryId, int keySize) {
+  /**
+   * The key length in bits
+   */
+  final private int keySize;
+
+  public MatDesc(long smkId, String queryId, int keySize)
+  {
     this.smkId = smkId;
     this.queryId = queryId;
     this.keySize = keySize;
   }
 
-  public MatDesc(long smkId, String queryId) {
+  public MatDesc(long smkId, String queryId)
+  {
     this(smkId, queryId, DEFAULT_KEY_SIZE);
   }
 
-  public long getSmkId() {
+  public long getSmkId()
+  {
     return this.smkId;
   }
 
-  public String getQueryId() {
+  public String getQueryId()
+  {
     return this.queryId;
   }
 
-  public int getKeySize() {
+  public int getKeySize()
+  {
     return this.keySize;
   }
 
@@ -67,34 +91,43 @@ public class MatDesc {
    * @param matdesc string
    * @return The material description or null
    */
-  public static MatDesc parse(String matdesc) {
-    if (matdesc == null) {
+  public static MatDesc parse(String matdesc)
+  {
+    if (matdesc == null)
+    {
       return null;
     }
-    try {
+    try
+    {
       JsonNode jsonNode = mapper.readTree(matdesc);
       JsonNode queryIdNode = jsonNode.path(QUERY_ID);
-      if (queryIdNode.isMissingNode() || queryIdNode.isNull()) {
+      if (queryIdNode.isMissingNode() || queryIdNode.isNull())
+      {
         return null;
       }
       JsonNode smkIdNode = jsonNode.path(SMK_ID);
-      if (smkIdNode.isMissingNode() || smkIdNode.isNull()) {
+      if (smkIdNode.isMissingNode() || smkIdNode.isNull())
+      {
         return null;
       }
       String queryId = queryIdNode.asText();
       long smkId = smkIdNode.asLong();
       JsonNode keySizeNode = jsonNode.path(KEY_SIZE);
-      if (!keySizeNode.isMissingNode() && !keySizeNode.isNull()) {
+      if (!keySizeNode.isMissingNode() && !keySizeNode.isNull())
+      {
         return new MatDesc(smkId, queryId, keySizeNode.asInt());
       }
       return new MatDesc(smkId, queryId);
-    } catch (Exception ex) {
+    }
+    catch (Exception ex)
+    {
       return null;
     }
   }
 
   @Override
-  public String toString() {
+  public String toString()
+  {
     ObjectNode obj = mapper.createObjectNode();
     obj.put(QUERY_ID, this.queryId);
     obj.put(SMK_ID, Long.toString(this.smkId));

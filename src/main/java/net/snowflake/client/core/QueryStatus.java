@@ -1,7 +1,10 @@
 package net.snowflake.client.core;
 
-/** Copied from QueryDTO.java in Global Services. */
-public enum QueryStatus {
+/**
+ * Copied from QueryDTO.java in Global Services.
+ */
+public enum QueryStatus
+{
   RUNNING(0, "RUNNING"),
   ABORTING(1, "ABORTING"),
   SUCCESS(2, "SUCCESS"),
@@ -15,7 +18,9 @@ public enum QueryStatus {
   QUEUED_REPAIRING_WAREHOUSE(9, "QUEUED_REPARING_WAREHOUSE"),
   RESTARTED(10, "RESTARTED"),
 
-  /** The state when a statement is waiting on a lock on resource held by another statement. */
+  /**
+   * The state when a statement is waiting on a lock on resource held by another statement.
+   */
   BLOCKED(11, "BLOCKED"),
   NO_DATA(12, "NO_DATA");
 
@@ -24,50 +29,61 @@ public enum QueryStatus {
   private String errorMessage = "No error reported";
   private int errorCode = 0;
 
-  QueryStatus(int value, String description) {
+  QueryStatus(int value, String description)
+  {
     this.value = value;
     this.description = description;
   }
 
-  public int getValue() {
+  public int getValue()
+  {
     return this.value;
   }
 
-  public String getDescription() {
+  public String getDescription()
+  {
     return this.description;
   }
 
-  public String getErrorMessage() {
+  public String getErrorMessage()
+  {
     return this.errorMessage;
   }
 
-  public int getErrorCode() {
+  public int getErrorCode()
+  {
     return this.errorCode;
   }
 
-  public void setErrorMessage(String message) {
+  public void setErrorMessage(String message)
+  {
     this.errorMessage = message;
   }
 
-  public void setErrorCode(int errorCode) {
+  public void setErrorCode(int errorCode)
+  {
     this.errorCode = errorCode;
   }
 
-  public static boolean isStillRunning(QueryStatus status) {
-    switch (status.getValue()) {
+  public static boolean isStillRunning(QueryStatus status)
+  {
+    switch (status.getValue())
+    {
       case 0: // "RUNNING"
-      case 8: // "RESUMING_WAREHOUSE"
-      case 5: // "QUEUED"
-      case 9: // "QUEUED_REPAIRING_WAREHOUSE"
-      case 12: // "NO_DATA"
+      case 8: //"RESUMING_WAREHOUSE"
+      case 5: //"QUEUED"
+      case 9: //"QUEUED_REPAIRING_WAREHOUSE"
+      case 12: //"NO_DATA"
         return true;
       default:
         return false;
     }
   }
 
-  public static boolean isAnError(QueryStatus status) {
-    switch (status.getValue()) {
+  public static boolean isAnError(QueryStatus status)
+  {
+    switch (status.getValue())
+    {
       case 1: // Aborting
       case 3: // Failed with error
       case 4: // Aborted
@@ -80,10 +96,15 @@ public enum QueryStatus {
     }
   }
 
-  public static QueryStatus getStatusFromString(String description) {
-    if (description != null) {
-      for (QueryStatus st : QueryStatus.values()) {
-        if (description.equalsIgnoreCase(st.getDescription())) {
+  public static QueryStatus getStatusFromString(String description)
+  {
+    if (description != null)
+    {
+      for (QueryStatus st : QueryStatus.values())
+      {
+        if (description.equalsIgnoreCase(
+            st.getDescription()))
+        {
           return st;
         }
       }

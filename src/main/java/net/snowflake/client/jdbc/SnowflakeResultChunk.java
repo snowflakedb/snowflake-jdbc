@@ -4,25 +4,30 @@
 
 package net.snowflake.client.jdbc;
 
+import net.snowflake.client.util.SecretDetector;
+
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
-import net.snowflake.client.util.SecretDetector;
 
 /**
  * Class for result chunk
- *
- * <p>Created by jhuang on 11/12/14.
+ * <p>
+ * Created by jhuang on 11/12/14.
  */
-public abstract class SnowflakeResultChunk {
-  public boolean isReleased() {
+public abstract class SnowflakeResultChunk
+{
+  public boolean isReleased()
+  {
     return released;
   }
 
-  public void setReleased() {
+  public void setReleased()
+  {
     released = true;
   }
 
-  public enum DownloadState {
+  public enum DownloadState
+  {
     NOT_STARTED,
     IN_PROGRESS,
     SUCCESS,
@@ -71,13 +76,19 @@ public abstract class SnowflakeResultChunk {
    */
   abstract long computeNeededChunkMemory();
 
-  /** Free the data stored in this chunk. Called when finish consuming the chunk */
+  /**
+   * Free the data stored in this chunk. Called when finish consuming the chunk
+   */
   abstract void freeData();
 
-  /** Reset all data structure used in this result chunk */
+  /**
+   * Reset all data structure used in this result chunk
+   */
   abstract void reset();
 
-  public SnowflakeResultChunk(String url, int rowCount, int colCount, int uncompressedSize) {
+  public SnowflakeResultChunk(String url, int rowCount, int colCount,
+                              int uncompressedSize)
+  {
     this.url = url;
     this.scrubbedUrl = SecretDetector.maskSASToken(this.url);
     this.rowCount = rowCount;
@@ -85,63 +96,79 @@ public abstract class SnowflakeResultChunk {
     this.uncompressedSize = uncompressedSize;
   }
 
-  public final String getUrl() {
+
+  public final String getUrl()
+  {
     return url;
   }
 
-  public final String getScrubbedUrl() {
+  public final String getScrubbedUrl()
+  {
     return this.scrubbedUrl;
   }
 
-  public final int getRowCount() {
+  public final int getRowCount()
+  {
     return rowCount;
   }
 
-  public final int getUncompressedSize() {
+  public final int getUncompressedSize()
+  {
     return uncompressedSize;
   }
 
-  public final int getColCount() {
+  public final int getColCount()
+  {
     return this.colCount;
   }
 
-  public long getDownloadTime() {
+  public long getDownloadTime()
+  {
     return downloadTime;
   }
 
-  public void setDownloadTime(long downloadTime) {
+  public void setDownloadTime(long downloadTime)
+  {
     this.downloadTime = downloadTime;
   }
 
-  public long getParseTime() {
+  public long getParseTime()
+  {
     return parseTime;
   }
 
-  public void setParseTime(long parseTime) {
+  public void setParseTime(long parseTime)
+  {
     this.parseTime = parseTime;
   }
 
-  public ReentrantLock getLock() {
+  public ReentrantLock getLock()
+  {
     return lock;
   }
 
-  public Condition getDownloadCondition() {
+  public Condition getDownloadCondition()
+  {
     return downloadCondition;
   }
 
-  public String getDownloadError() {
+  public String getDownloadError()
+  {
     return downloadError;
   }
 
-  public void setDownloadError(String downloadError) {
+  public void setDownloadError(String downloadError)
+  {
     this.downloadError = downloadError;
   }
 
-  public DownloadState getDownloadState() {
+  public DownloadState getDownloadState()
+  {
     return downloadState;
   }
 
-  public void setDownloadState(DownloadState downloadState) {
+  public void setDownloadState(DownloadState downloadState)
+  {
     this.downloadState = downloadState;
   }
 }

@@ -4,9 +4,6 @@
 
 package net.snowflake.client.core;
 
-import java.sql.SQLException;
-import java.sql.SQLFeatureNotSupportedException;
-import java.util.List;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeFileTransferAgent.CommandType;
 import net.snowflake.client.jdbc.SnowflakeFixedView;
@@ -16,40 +13,47 @@ import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SqlState;
 
+import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
+import java.util.List;
+
 /**
- * Fixed view result set. This class iterates through any fixed view implementation and return the
- * objects as rows
+ * Fixed view result set. This class iterates through any fixed view
+ * implementation and return the objects as rows
  */
-public class SFFixedViewResultSet extends SFJsonResultSet {
-  private static final SFLogger logger = SFLoggerFactory.getLogger(SFFixedViewResultSet.class);
+public class SFFixedViewResultSet extends SFJsonResultSet
+{
+  static private final SFLogger logger = SFLoggerFactory.getLogger(
+      SFFixedViewResultSet.class);
 
   private SnowflakeFixedView fixedView;
   private Object[] nextRow = null;
   private final CommandType commandType;
 
-  public SFFixedViewResultSet(SnowflakeFixedView fixedView, CommandType commandType)
-      throws SnowflakeSQLException {
+  public SFFixedViewResultSet(SnowflakeFixedView fixedView,
+                              CommandType commandType)
+  throws SnowflakeSQLException
+  {
     this.fixedView = fixedView;
     this.commandType = commandType;
 
-    try {
-      resultSetMetaData =
-          new SFResultSetMetaData(
-              fixedView.describeColumns(session),
-              session,
-              timestampNTZFormatter,
-              timestampLTZFormatter,
-              timestampTZFormatter,
-              dateFormatter,
-              timeFormatter);
+    try
+    {
+      resultSetMetaData
+          = new SFResultSetMetaData(fixedView.describeColumns(session), session,
+                                    timestampNTZFormatter,
+                                    timestampLTZFormatter,
+                                    timestampTZFormatter,
+                                    dateFormatter,
+                                    timeFormatter);
 
-    } catch (Exception ex) {
-      throw new SnowflakeSQLLoggedException(
-          session,
-          SqlState.INTERNAL_ERROR,
-          ErrorCode.INTERNAL_ERROR.getMessageCode(),
-          ex,
-          "Failed to describe fixed view: " + fixedView.getClass().getName());
+    }
+    catch (Exception ex)
+    {
+      throw new SnowflakeSQLLoggedException(ex, SqlState.INTERNAL_ERROR,
+                                            ErrorCode.INTERNAL_ERROR.getMessageCode(), session,
+                                            "Failed to describe fixed view: "
+                                            + fixedView.getClass().getName());
     }
   }
 
@@ -60,32 +64,37 @@ public class SFFixedViewResultSet extends SFJsonResultSet {
    * @throws net.snowflake.client.core.SFException if failed to get next row
    */
   @Override
-  public boolean next() throws SFException {
+  public boolean next() throws SFException
+  {
     logger.debug("next called");
 
     List<Object> nextRowList;
-    try {
+    try
+    {
       // call the fixed view next row method
       nextRowList = fixedView.getNextRow();
-    } catch (Exception ex) {
-      throw (SFException)
-          IncidentUtil.generateIncidentV2WithException(
-              session,
-              new SFException(
-                  ErrorCode.INTERNAL_ERROR,
-                  IncidentUtil.oneLiner("Error getting next row from " + "fixed view:", ex)),
-              null,
-              null);
+    }
+    catch (Exception ex)
+    {
+      throw (SFException) IncidentUtil.generateIncidentV2WithException(
+          session,
+          new SFException(ErrorCode.INTERNAL_ERROR,
+                          IncidentUtil.oneLiner("Error getting next row from " +
+                                                "fixed view:", ex)),
+          null,
+          null);
     }
 
     row++;
 
-    if (nextRowList == null) {
+    if (nextRowList == null)
+    {
       logger.debug("end of result");
       return false;
     }
 
-    if (nextRow == null) {
+    if (nextRow == null)
+    {
       nextRow = new Object[nextRowList.size()];
     }
     nextRow = nextRowList.toArray(nextRow);
@@ -94,14 +103,18 @@ public class SFFixedViewResultSet extends SFJsonResultSet {
   }
 
   @Override
-  protected Object getObjectInternal(int columnIndex) throws SFException {
-    logger.debug("public Object getObjectInternal(int columnIndex)");
+  protected Object getObjectInternal(int columnIndex) throws SFException
+  {
+    logger.debug(
+        "public Object getObjectInternal(int columnIndex)");
 
-    if (nextRow == null) {
+    if (nextRow == null)
+    {
       throw new SFException(ErrorCode.ROW_DOES_NOT_EXIST);
     }
 
-    if (columnIndex <= 0 || columnIndex > nextRow.length) {
+    if (columnIndex <= 0 || columnIndex > nextRow.length)
+    {
       throw new SFException(ErrorCode.COLUMN_DOES_NOT_EXIST, columnIndex);
     }
 
@@ -111,7 +124,8 @@ public class SFFixedViewResultSet extends SFJsonResultSet {
   }
 
   @Override
-  public void close() throws SnowflakeSQLException {
+  public void close() throws SnowflakeSQLException
+  {
     super.close();
     // free the object so that they can be Garbage collected
     nextRow = null;
@@ -119,31 +133,40 @@ public class SFFixedViewResultSet extends SFJsonResultSet {
   }
 
   @Override
-  public SFStatementType getStatementType() {
-    if (this.commandType == CommandType.DOWNLOAD) {
+  public SFStatementType getStatementType()
+  {
+    if (this.commandType == CommandType.DOWNLOAD)
+    {
       return SFStatementType.GET;
-    } else {
+    }
+    else
+    {
       return SFStatementType.PUT;
     }
   }
 
   @Override
-  public void setStatementType(SFStatementType statementType) throws SQLException {
+  public void setStatementType(SFStatementType statementType)
+  throws SQLException
+  {
     throw new SQLFeatureNotSupportedException();
   }
 
   @Override
-  public boolean isLast() {
+  public boolean isLast()
+  {
     return row == fixedView.getTotalRows();
   }
 
   @Override
-  public boolean isAfterLast() {
+  public boolean isAfterLast()
+  {
     return row > fixedView.getTotalRows();
   }
 
   @Override
-  public String getQueryId() {
+  public String getQueryId()
+  {
     return "";
   }
 }

@@ -5,12 +5,18 @@ package net.snowflake.client.log;
 
 /**
  * Interface used by JDBC driver to log information
- *
- * <p>Five levels are included in this interface, from high to low: ERROR WARN INFO DEBUG TRACE
- *
- * <p>Created by hyu on 11/17/16.
+ * <p>
+ * Five levels are included in this interface, from high to low:
+ * ERROR
+ * WARN
+ * INFO
+ * DEBUG
+ * TRACE
+ * <p>
+ * Created by hyu on 11/17/16.
  */
-public interface SFLogger {
+public interface SFLogger
+{
   /**
    * Is debug level enabled?
    *
@@ -53,11 +59,13 @@ public interface SFLogger {
   /**
    * Logs message at DEBUG level.
    *
-   * @param msg Message or message format
-   * @param arguments objects that supply value to placeholders in the message format. Expensive
-   *     operations that supply these values can be specified using lambdas implementing {@link
-   *     ArgSupplier} so that they are run only if the message is going to be logged. E.g., {@code
-   *     Logger.debug("Value: {}", (ArgSupplier) () -> expensiveOperation());}
+   * @param msg       Message or message format
+   * @param arguments objects that supply value to placeholders in the message
+   *                  format. Expensive operations that supply these values can
+   *                  be specified using lambdas implementing {@link ArgSupplier}
+   *                  so that they are run only if the message is going to be
+   *                  logged. E.g.,
+   *                  {@code Logger.debug("Value: {}", (ArgSupplier) () -> expensiveOperation());}
    */
   void debug(String msg, Object... arguments);
 
@@ -68,11 +76,13 @@ public interface SFLogger {
   /**
    * Logs message at ERROR level.
    *
-   * @param msg Message or message format
-   * @param arguments objects that supply value to placeholders in the message format. Expensive
-   *     operations that supply these values can be specified using lambdas implementing {@link
-   *     ArgSupplier} so that they are run only if the message is going to be logged. E.g., {@code
-   *     Logger.warn("Value: {}", (ArgSupplier) () -> expensiveOperation());}
+   * @param msg       Message or message format
+   * @param arguments objects that supply value to placeholders in the message
+   *                  format. Expensive operations that supply these values can
+   *                  be specified using lambdas implementing {@link ArgSupplier}
+   *                  so that they are run only if the message is going to be
+   *                  logged. E.g.,
+   *                  {@code Logger.warn("Value: {}", (ArgSupplier) () -> expensiveOperation());}
    */
   void error(String msg, Object... arguments);
 
@@ -83,11 +93,13 @@ public interface SFLogger {
   /**
    * Logs message at INFO level.
    *
-   * @param msg Message or message format
-   * @param arguments objects that supply value to placeholders in the message format. Expensive
-   *     operations that supply these values can be specified using lambdas implementing {@link
-   *     ArgSupplier} so that they are run only if the message is going to be logged. E.g., {@code
-   *     Logger.info("Value: {}", (ArgSupplier) () -> expensiveOperation());}
+   * @param msg       Message or message format
+   * @param arguments objects that supply value to placeholders in the message
+   *                  format. Expensive operations that supply these values can
+   *                  be specified using lambdas implementing {@link ArgSupplier}
+   *                  so that they are run only if the message is going to be
+   *                  logged. E.g.,
+   *                  {@code Logger.info("Value: {}", (ArgSupplier) () -> expensiveOperation());}
    */
   void info(String msg, Object... arguments);
 
@@ -98,11 +110,13 @@ public interface SFLogger {
   /**
    * Logs message at TRACE level.
    *
-   * @param msg Message or message format
-   * @param arguments objects that supply value to placeholders in the message format. Expensive
-   *     operations that supply these values can be specified using lambdas implementing {@link
-   *     ArgSupplier} so that they are run only if the message is going to be logged. E.g., {@code
-   *     Logger.trace("Value: {}", (ArgSupplier) () -> expensiveOperation());}
+   * @param msg       Message or message format
+   * @param arguments objects that supply value to placeholders in the message
+   *                  format. Expensive operations that supply these values can
+   *                  be specified using lambdas implementing {@link ArgSupplier}
+   *                  so that they are run only if the message is going to be
+   *                  logged. E.g.,
+   *                  {@code Logger.trace("Value: {}", (ArgSupplier) () -> expensiveOperation());}
    */
   void trace(String msg, Object... arguments);
 
@@ -113,11 +127,13 @@ public interface SFLogger {
   /**
    * Logs message at WARN level.
    *
-   * @param msg Message or message format
-   * @param arguments objects that supply value to placeholders in the message format. Expensive
-   *     operations that supply these values can be specified using lambdas implementing {@link
-   *     ArgSupplier} so that they are run only if the message is going to be logged. E.g., {@code
-   *     Logger.warn("Value: {}", (ArgSupplier) () -> expensiveOperation());}
+   * @param msg       Message or message format
+   * @param arguments objects that supply value to placeholders in the message
+   *                  format. Expensive operations that supply these values can
+   *                  be specified using lambdas implementing {@link ArgSupplier}
+   *                  so that they are run only if the message is going to be
+   *                  logged. E.g.,
+   *                  {@code Logger.warn("Value: {}", (ArgSupplier) () -> expensiveOperation());}
    */
   void warn(String msg, Object... arguments);
 

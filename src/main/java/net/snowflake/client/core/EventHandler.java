@@ -4,7 +4,7 @@
 
 package net.snowflake.client.core;
 
-import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
+import net.snowflake.client.jdbc.SnowflakeDriver;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -29,14 +29,21 @@ import java.util.logging.Formatter;
 import java.util.logging.Handler;
 import java.util.logging.LogRecord;
 import java.util.zip.GZIPOutputStream;
-import net.snowflake.client.jdbc.SnowflakeDriver;
-import net.snowflake.client.log.SFLogger;
-import net.snowflake.client.log.SFLoggerFactory;
+
 import org.joda.time.DateTime;
 
-/** @author jrosen */
-public class EventHandler extends Handler {
-  private static final SFLogger logger = SFLoggerFactory.getLogger(EventHandler.class);
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
+
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
+
+/**
+ * @author jrosen
+ */
+public class EventHandler extends Handler
+{
+  private static final SFLogger logger =
+      SFLoggerFactory.getLogger(EventHandler.class);
 
   // Number of entries in the log buffer in memory
   protected static final long LOG_BUFFER_SIZE = (1L << 14);
@@ -70,29 +77,30 @@ public class EventHandler extends Handler {
   protected static final String DISABLE_DUMP_COMPR_PROP = "snowflake.disable_log_compression";
 
   private static final int THROTTLE_DURATION_HRS =
-      systemGetProperty(THROTTLE_DURATION_PROP) == null
-          ? 1
-          : Integer.valueOf(systemGetProperty(THROTTLE_DURATION_PROP));
+      systemGetProperty(THROTTLE_DURATION_PROP) == null ?
+      1 : Integer.valueOf(systemGetProperty(THROTTLE_DURATION_PROP));
 
   private static final int INCIDENT_THROTTLE_LIMIT_PER_HR =
-      systemGetProperty(THROTTLE_LIMIT_PROP) == null
-          ? 1
-          : Integer.valueOf(systemGetProperty(THROTTLE_LIMIT_PROP));
+      systemGetProperty(THROTTLE_LIMIT_PROP) == null ?
+      1 : Integer.valueOf(systemGetProperty(THROTTLE_LIMIT_PROP));
 
   // Default values
   private static final int DEFAULT_MAX_DUMP_FILES = 100;
   private static final int DEFAULT_MAX_DUMPDIR_SIZE_MB = 128;
 
-  void triggerIncident(Incident incident) {
+  void triggerIncident(Incident incident)
+  {
     logger.debug("New incident V2 triggered, flushing event buffer");
 
-    if (SnowflakeDriver.isDisableIncidents()) {
+    if (SnowflakeDriver.isDisableIncidents())
+    {
       logger.debug("Incidents disabled by Snowflake, creation failed");
       return;
     }
 
     // Do we need to throttle based on the signature to this incident?
-    if (needsToThrottle(incident.signature)) {
+    if (needsToThrottle(incident.signature))
+    {
       logger.debug("Incident throttled, not reported");
       return;
     }
@@ -100,7 +108,8 @@ public class EventHandler extends Handler {
     // Push the incident event and flush the event buffer.
     pushEvent(incident, true);
 
-    if (systemGetProperty(DISABLE_DUMPS_PROP) == null) {
+    if (systemGetProperty(DISABLE_DUMPS_PROP) == null)
+    {
       logger.debug("Dumping log buffer to local disk");
 
       // Dump the buffered log contents to disk.
@@ -111,10 +120,14 @@ public class EventHandler extends Handler {
     }
   }
 
-  /** Runnable to handle periodic flushing of the event buffer */
-  private class QueueFlusher implements Runnable {
+  /**
+   * Runnable to handle periodic flushing of the event buffer
+   */
+  private class QueueFlusher implements Runnable
+  {
     @Override
-    public void run() {
+    public void run()
+    {
       flushEventBuffer();
     }
   }
@@ -143,7 +156,8 @@ public class EventHandler extends Handler {
   // Executor to periodically flush the eventBuffer
   private ScheduledExecutorService flusher;
 
-  public EventHandler(int maxEntries, int flushPeriodMs) {
+  public EventHandler(int maxEntries, int flushPeriodMs)
+  {
     this.maxEntries = maxEntries;
     this.flushPeriodMs = flushPeriodMs;
 
@@ -161,7 +175,8 @@ public class EventHandler extends Handler {
    *
    * @return size of eventBuffer
    */
-  public synchronized int getBufferSize() {
+  public synchronized int getBufferSize()
+  {
     return eventBuffer.size();
   }
 
@@ -170,33 +185,46 @@ public class EventHandler extends Handler {
    *
    * @return size of log buffer
    */
-  public synchronized long getLogBufferSize() {
+  public synchronized long getLogBufferSize()
+  {
     return logBuffer.size();
   }
 
-  /** Creates and runs a new QueueFlusher thread */
-  synchronized void startFlusher() {
+  /**
+   * Creates and runs a new QueueFlusher thread
+   */
+  synchronized void startFlusher()
+  {
     // Create a new scheduled executor service with a threadfactory that
     // creates daemonized threads; this way if the user doesn't exit nicely
     // the JVM Runtime won't hang
     flusher =
-        Executors.newScheduledThreadPool(
-            1,
-            new ThreadFactory() {
-              @Override
-              public Thread newThread(Runnable r) {
-                Thread t = Executors.defaultThreadFactory().newThread(r);
-                t.setDaemon(true);
-                return t;
-              }
-            });
+        Executors.newScheduledThreadPool(1,
+                                         new ThreadFactory()
+                                         {
+                                           @Override
+                                           public Thread newThread(Runnable r)
+                                           {
+                                             Thread t =
+                                                 Executors.defaultThreadFactory().newThread(r);
+                                             t.setDaemon(true);
+                                             return t;
+                                           }
+                                         });
 
-    flusher.scheduleWithFixedDelay(new QueueFlusher(), 0, flushPeriodMs, TimeUnit.MILLISECONDS);
+    flusher.scheduleWithFixedDelay(new QueueFlusher(),
+                                   0,
+                                   flushPeriodMs,
+                                   TimeUnit.MILLISECONDS);
   }
 
-  /** Stops the running QueueFlusher thread, if any */
-  synchronized void stopFlusher() {
-    if (flusher != null) {
+  /**
+   * Stops the running QueueFlusher thread, if any
+   */
+  synchronized void stopFlusher()
+  {
+    if (flusher != null)
+    {
       flusher.shutdown();
     }
   }
@@ -205,83 +233,95 @@ public class EventHandler extends Handler {
    * Pushes an event onto the event buffer and flushes if specified or if
    * the buffer has reached maximum capacity.
    */
-  private synchronized void pushEvent(Event event, boolean flushBuffer) {
+  private synchronized void pushEvent(Event event, boolean flushBuffer)
+  {
     eventBuffer.add(event);
 
-    if (flushBuffer || eventBuffer.size() >= maxEntries) {
+    if (flushBuffer || eventBuffer.size() >= maxEntries)
+    {
       this.flushEventBuffer();
     }
   }
 
   /**
-   * Triggers a new event of type @type with message @message and flushes the eventBuffer if full
+   * Triggers a new event of type @type with message @message and flushes
+   * the eventBuffer if full
    *
-   * @param type event type
+   * @param type    event type
    * @param message triggering message
    */
-  void triggerBasicEvent(Event.EventType type, String message) {
+  void triggerBasicEvent(Event.EventType type, String message)
+  {
     triggerBasicEvent(type, message, false);
   }
 
   /**
-   * Triggers a new BaseEvent of type @type with message @message and flushes the eventBuffer if
-   * full or @flushBuffer is true
+   * Triggers a new BaseEvent of type @type with message @message and flushes
+   * the eventBuffer if full or @flushBuffer is true
    *
-   * @param type event type
-   * @param message trigger message
+   * @param type        event type
+   * @param message     trigger message
    * @param flushBuffer true if push the event to flush buffer
    */
-  void triggerBasicEvent(Event.EventType type, String message, boolean flushBuffer) {
+  void triggerBasicEvent(Event.EventType type,
+                         String message,
+                         boolean flushBuffer)
+  {
     Event triggeredEvent = new BasicEvent(type, message);
 
     pushEvent(triggeredEvent, flushBuffer);
   }
 
+
   /**
-   * Triggers a state transition event to @newState with an identifier (eg, requestId, jobUUID, etc)
+   * Triggers a state transition event to @newState with an identifier
+   * (eg, requestId, jobUUID, etc)
    *
-   * @param newState new state
+   * @param newState   new state
    * @param identifier event id
    */
-  void triggerStateTransition(BasicEvent.QueryState newState, String identifier) {
-    String msg =
-        "{newState: "
-            + newState.getDescription()
-            + ", "
-            + "info: "
-            + identifier
-            + ", "
-            + "timestamp: "
-            + getCurrentTimestamp()
-            + "}";
+  void triggerStateTransition(BasicEvent.QueryState newState,
+                              String identifier)
+  {
+    String msg = "{newState: " + newState.getDescription() + ", " +
+                 "info: " + identifier + ", " +
+                 "timestamp: " + getCurrentTimestamp() +
+                 "}";
 
-    Event triggeredEvent = new BasicEvent(Event.EventType.STATE_TRANSITION, msg);
+    Event triggeredEvent =
+        new BasicEvent(Event.EventType.STATE_TRANSITION, msg);
 
     pushEvent(triggeredEvent, false);
   }
 
-  static String getCurrentTimestamp() {
+  static String getCurrentTimestamp()
+  {
     DateFormat fmt = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
     fmt.setTimeZone(TimeZone.getTimeZone("UTC"));
     return fmt.format(new Date());
+
   }
+
 
   /**
    * Dumps the contents of the in-memory log buffer to disk and clears the buffer.
    *
    * @param identifier event id
    */
-  public void dumpLogBuffer(String identifier) {
+  public void dumpLogBuffer(String identifier)
+  {
     final ArrayList<LogRecord> logBufferCopy;
     final PrintWriter logDumper;
     final OutputStream outStream;
     Formatter formatter = this.getFormatter();
 
     // Check if compression of dump file is enabled
-    boolean disableCompression = systemGetProperty(DISABLE_DUMP_COMPR_PROP) != null;
+    boolean disableCompression =
+        systemGetProperty(DISABLE_DUMP_COMPR_PROP) != null;
 
     // If no identifying factor (eg, an incident id) was provided, get one
-    if (identifier == null) {
+    if (identifier == null)
+    {
       identifier = EventUtil.getDumpFileId();
     }
 
@@ -289,17 +329,19 @@ public class EventHandler extends Handler {
     // disk with dump files
     cleanupSfDumps(true);
 
-    String logDumpPath =
-        logDumpPathPrefix + "/" + LOG_DUMP_FILE_NAME + identifier + LOG_DUMP_FILE_EXT;
+    String logDumpPath = logDumpPathPrefix + "/" + LOG_DUMP_FILE_NAME +
+                         identifier + LOG_DUMP_FILE_EXT;
 
-    if (!disableCompression) {
+    if (!disableCompression)
+    {
       logDumpPath += LOG_DUMP_COMP_EXT;
     }
 
     logger.debug("EventHandler dumping log buffer to {}", logDumpPath);
 
     // Copy logBuffer because this is potentially long running.
-    synchronized (this) {
+    synchronized (this)
+    {
       logBufferCopy = new ArrayList<>(logBuffer);
       logBuffer.clear();
     }
@@ -310,19 +352,22 @@ public class EventHandler extends Handler {
      * Because log files could potentially be very large, we should never open
      * them in append mode. It's rare that this should happen anyways...
      */
-    try {
+    try
+    {
       // If the dump path doesn't already exist, create it.
-      if (outputFile.getParentFile() != null) {
+      if (outputFile.getParentFile() != null)
+      {
         outputFile.getParentFile().mkdirs();
       }
 
-      outStream =
-          disableCompression
-              ? new FileOutputStream(logDumpPath, false)
-              : new GZIPOutputStream(new FileOutputStream(logDumpPath, false));
+      outStream = disableCompression ?
+                  new FileOutputStream(logDumpPath, false) :
+                  new GZIPOutputStream(new FileOutputStream(logDumpPath, false));
 
       logDumper = new PrintWriter(outStream, true);
-    } catch (IOException exc) {
+    }
+    catch (IOException exc)
+    {
       // Not much to do here, can't dump logs so exit out.
       logger.debug("Log dump failed, exception: {}", exc.getMessage());
 
@@ -330,8 +375,10 @@ public class EventHandler extends Handler {
     }
 
     // Iterate over log entries, format them, then dump them.
-    for (LogRecord entry : logBufferCopy) {
-      logDumper.write(formatter != null ? formatter.format(entry) : entry.getMessage());
+    for (LogRecord entry : logBufferCopy)
+    {
+      logDumper.write(formatter != null ? formatter.format(entry) :
+                      entry.getMessage());
     }
 
     // Clean up
@@ -342,47 +389,52 @@ public class EventHandler extends Handler {
   /**
    * Function to remove old Snowflake Dump files to make room for new ones.
    *
-   * @param deleteOldest if true, always deletes the oldest file found if max number of dump files
-   *     has been reached
+   * @param deleteOldest if true, always deletes the oldest file found if max
+   *                     number of dump files has been reached
    */
-  protected void cleanupSfDumps(boolean deleteOldest) {
+  protected void cleanupSfDumps(boolean deleteOldest)
+  {
     // Check what the maximum number of dumpfiles and the max allowable
     // aggregate dump file size is.
     int maxDumpFiles =
-        systemGetProperty(MAX_NUM_DUMP_FILES_PROP) != null
-            ? Integer.valueOf(systemGetProperty(MAX_NUM_DUMP_FILES_PROP))
-            : DEFAULT_MAX_DUMP_FILES;
+        systemGetProperty(MAX_NUM_DUMP_FILES_PROP) != null ?
+        Integer.valueOf(systemGetProperty(MAX_NUM_DUMP_FILES_PROP)) :
+        DEFAULT_MAX_DUMP_FILES;
 
     int maxDumpDirSizeMB =
-        systemGetProperty(MAX_SIZE_DUMPS_MB_PROP) != null
-            ? Integer.valueOf(systemGetProperty(MAX_SIZE_DUMPS_MB_PROP))
-            : DEFAULT_MAX_DUMPDIR_SIZE_MB;
+        systemGetProperty(MAX_SIZE_DUMPS_MB_PROP) != null ?
+        Integer.valueOf(systemGetProperty(MAX_SIZE_DUMPS_MB_PROP)) :
+        DEFAULT_MAX_DUMPDIR_SIZE_MB;
 
     File dumpDir = new File(logDumpPathPrefix);
     long dirSizeBytes = 0;
 
-    if (dumpDir.listFiles() == null) {
+    if (dumpDir.listFiles() == null)
+    {
       return;
     }
 
     // Keep a sorted list of files by size as we go in case we need to
     // delete some
     TreeSet<File> fileList =
-        new TreeSet<>(
-            new Comparator<File>() {
-              @Override
-              public int compare(File a, File b) {
-                return a.length() < b.length() ? -1 : 1;
-              }
-            });
+        new TreeSet<>(new Comparator<File>()
+        {
+          @Override
+          public int compare(File a, File b)
+          {
+            return a.length() < b.length() ? -1 : 1;
+          }
+        });
 
     // Loop over files in this directory and get rid of old ones
     // while accumulating the total size
-    for (File file : dumpDir.listFiles()) {
-      if ((!file.getName().startsWith(LOG_DUMP_FILE_NAME)
-              && !file.getName().startsWith(IncidentUtil.INC_DUMP_FILE_NAME))
-          || (System.currentTimeMillis() - file.lastModified() > FILE_EXPN_TIME_MS
-              && file.delete())) {
+    for (File file : dumpDir.listFiles())
+    {
+      if ((!file.getName().startsWith(LOG_DUMP_FILE_NAME) &&
+           !file.getName().startsWith(IncidentUtil.INC_DUMP_FILE_NAME)) ||
+          (System.currentTimeMillis() - file.lastModified() > FILE_EXPN_TIME_MS &&
+           file.delete()))
+      {
         continue;
       }
 
@@ -392,66 +444,76 @@ public class EventHandler extends Handler {
 
     // If we're exceeding our max allotted disk usage, cut some stuff out;
     // else if we need to make space for a new dump delete the oldest.
-    if (dirSizeBytes >= ((long) maxDumpDirSizeMB << 20)) {
+    if (dirSizeBytes >= ((long) maxDumpDirSizeMB << 20))
+    {
       // While we take up more than half the allotted disk usage, keep deleting.
-      for (File file : fileList) {
-        if (dirSizeBytes < ((long) maxDumpDirSizeMB << 19)) {
+      for (File file : fileList)
+      {
+        if (dirSizeBytes < ((long) maxDumpDirSizeMB << 19))
+        {
           break;
         }
 
         long victimSize = file.length();
-        if (file.delete()) {
+        if (file.delete())
+        {
           dirSizeBytes -= victimSize;
         }
       }
-    } else if (deleteOldest && fileList.size() >= maxDumpFiles) {
+    }
+    else if (deleteOldest && fileList.size() >= maxDumpFiles)
+    {
       fileList.first().delete();
     }
   } // cleanupSfDumps(...)
 
   /**
-   * Function to copy the event buffer, clear it, and iterate of the copy, calling each event's
-   * flush() method one by one.
-   *
-   * <p>NOTE: This function is subject to a race condition; while the buffer copy is being iterated
-   * over, the next round of buffer entries could be flushed creating a flush order that is not
-   * "strictly consistent". While this could hypothetically also cause the system to run out of
-   * memory due to an unbounded number of eventBuffer copies, that scenario is unlikely.
+   * Function to copy the event buffer, clear it, and iterate of the copy,
+   * calling each event's flush() method one by one.
+   * <p>
+   * NOTE: This function is subject to a race condition; while the buffer copy
+   * is being iterated over, the next round of buffer entries could be flushed
+   * creating a flush order that is not "strictly consistent". While this could
+   * hypothetically also cause the system to run out of memory due to an
+   * unbounded number of eventBuffer copies, that scenario is unlikely.
    */
-  private void flushEventBuffer() {
+  private void flushEventBuffer()
+  {
     ArrayList<Event> eventBufferCopy;
 
     logger.debug("Flushing eventBuffer");
 
     // Copy event buffer because this may be long running
-    synchronized (this) {
+    synchronized (this)
+    {
       eventBufferCopy = new ArrayList<>(eventBuffer);
       eventBuffer.clear();
     }
 
-    for (Event event : eventBufferCopy) {
+    for (Event event : eventBufferCopy)
+    {
       event.flush();
     }
   }
 
   /**
-   * Checks to see if the reporting of an incident should be throttled due to the number of times
-   * the signature has been seen in the last hour
+   * Checks to see if the reporting of an incident should be throttled due
+   * to the number of times the signature has been seen in the last hour
    *
    * @param signature incident signature
    * @return true if incidents needs to be throttled
    */
-  private synchronized boolean needsToThrottle(String signature) {
+  private synchronized boolean needsToThrottle(String signature)
+  {
     AtomicInteger sigCount;
 
     // Are we already throttling this signature?
-    if (throttledIncidents.containsKey(signature)) {
+    if (throttledIncidents.containsKey(signature))
+    {
       // Lazily check if it's time to unthrottle
-      if (throttledIncidents
-              .get(signature)
-              .plusHours(THROTTLE_DURATION_HRS)
-              .compareTo(DateTime.now())
-          <= 0) {
+      if (throttledIncidents.get(signature).plusHours(THROTTLE_DURATION_HRS).
+          compareTo(DateTime.now()) <= 0)
+      {
         // Start counting the # of times we've seen this again & stop throttling.
         throttledIncidents.remove(signature);
         incidentCounter.put(signature, new AtomicInteger(1));
@@ -462,10 +524,13 @@ public class EventHandler extends Handler {
     }
 
     sigCount = incidentCounter.get(signature);
-    if (sigCount == null) {
+    if (sigCount == null)
+    {
       // If there isn't an entry to track this signature, make one.
       incidentCounter.put(signature, sigCount = new AtomicInteger(0));
-    } else if (sigCount.get() + 1 >= INCIDENT_THROTTLE_LIMIT_PER_HR) {
+    }
+    else if (sigCount.get() + 1 >= INCIDENT_THROTTLE_LIMIT_PER_HR)
+    {
       // We've hit the limit so throttle.
       incidentCounter.remove(signature);
       throttledIncidents.put(signature, DateTime.now());
@@ -476,31 +541,39 @@ public class EventHandler extends Handler {
     return false;
   }
 
+
   /* Overridden methods for Handler interface */
 
-  /** Flushes all eventBuffer entries. */
+  /**
+   * Flushes all eventBuffer entries.
+   */
   @Override
-  public synchronized void flush() {
+  public synchronized void flush()
+  {
     logger.debug("EventHandler flushing loger buffer");
 
     dumpLogBuffer("");
   }
 
   /**
-   * Overridden Logger.Handler publish(...) method. Buffers unformatted log records in memory in a
-   * circular buffer-like fashion.
+   * Overridden Logger.Handler publish(...) method. Buffers unformatted log
+   * records in memory in a circular buffer-like fashion.
    *
    * @param record log record
    */
   @Override
-  public synchronized void publish(LogRecord record) {
-    if (!super.isLoggable(record)
-        || this.getLevel() != null && record.getLevel().intValue() < this.getLevel().intValue()) {
+  public synchronized void publish(LogRecord record)
+  {
+    if (!super.isLoggable(record) || this.getLevel() != null &&
+                                     record.getLevel().intValue() < this.getLevel().intValue())
+    {
       return;
     }
 
-    synchronized (logBuffer) {
-      if (logBuffer.size() == LOG_BUFFER_SIZE) {
+    synchronized (logBuffer)
+    {
+      if (logBuffer.size() == LOG_BUFFER_SIZE)
+      {
         logBuffer.remove(0);
       }
 
@@ -509,7 +582,8 @@ public class EventHandler extends Handler {
   }
 
   @Override
-  public void close() {
+  public void close()
+  {
     this.flushEventBuffer();
     this.stopFlusher();
   }

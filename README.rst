@@ -90,11 +90,21 @@ For detailed documentation, please refer to https://docs.snowflake.net/manuals/u
 Development
 =============
 
+<<<<<<< HEAD
 Run the maven command to check the coding style.
+=======
+Follow these steps to apply the coding style specified in ``intellij-codestyle.xml``.
+
+- Download the IntelliJ IDEA from https://www.jetbrains.com/idea/download/ if the software is not already installed.
+- Ensure IntelliJ is not running.
+- Run the following command:
+>>>>>>> parent of d33a7811... SNOW-175613 change coding style to Google Java Format (#291)
 
 .. code-block:: bash
 
-    mvn -P check-style verify
+    $INTELLIJ_HOME/bin/format.sh -mask "*.java" -settings intellij-codestyle.xml -R src
+
+where ``INTELLIJ_HOME`` refers to the IntelliJ directory.
 
 Follow the instruction if any error occurs or run this command to fix the formats.
 
@@ -104,8 +114,9 @@ Follow the instruction if any error occurs or run this command to fix the format
 
 You may import the coding style from IntelliJ so that the coding style can be applied on IDE:
 
-- In the **File** -> **Settings/Plugins**, and install `google-java-format` plugin.
-- Enable `google-java-format` for the JDBC project.
+- In the **File** -> **Settings/Preferences**, and then **Code Style** -> **Java**.
+- Click the gear icon to select **Import Scheme**.
+- Select ``intellij-codestyle.xml`` to set the schema.
 - In the source code window, select **Code** -> **Reformat** to apply the coding style.
 
 

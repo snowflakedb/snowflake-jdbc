@@ -4,47 +4,54 @@
 
 package net.snowflake.client.core;
 
+import com.sun.jna.Pointer;
+import com.sun.jna.Memory;
+import com.sun.jna.ptr.PointerByReference;
+
+import org.junit.Test;
+
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-import com.sun.jna.Memory;
-import com.sun.jna.Pointer;
-import com.sun.jna.ptr.PointerByReference;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import org.junit.Test;
 
-class MockAdvapi32Lib implements SecureStorageWindowsManager.Advapi32Lib {
+class MockAdvapi32Lib implements SecureStorageWindowsManager.Advapi32Lib
+{
   @Override
-  public boolean CredReadW(String targetName, int type, int flags, PointerByReference pcred) {
+  public boolean CredReadW(String targetName, int type, int flags, PointerByReference pcred)
+  {
     Pointer target = MockWindowsCredentialManager.getCredential(targetName);
     pcred.setValue(target);
     return target == null ? false : true;
   }
 
   @Override
-  public boolean CredWriteW(
-      SecureStorageWindowsManager.SecureStorageWindowsCredential cred, int flags) {
+  public boolean CredWriteW(SecureStorageWindowsManager.SecureStorageWindowsCredential cred, int flags)
+  {
     MockWindowsCredentialManager.addCredential(cred);
     return true;
   }
 
   @Override
-  public boolean CredDeleteW(String targetName, int type, int flags) {
+  public boolean CredDeleteW(String targetName, int type, int flags)
+  {
     MockWindowsCredentialManager.deleteCredential(targetName);
     return true;
   }
 
   @Override
-  public void CredFree(Pointer cred) {
+  public void CredFree(Pointer cred)
+  {
     // mock function
   }
 }
 
-class MockSecurityLib implements SecureStorageAppleManager.SecurityLib {
+class MockSecurityLib implements SecureStorageAppleManager.SecurityLib
+{
   @Override
   public int SecKeychainFindGenericPassword(
       Pointer keychainOrArray,
@@ -54,22 +61,27 @@ class MockSecurityLib implements SecureStorageAppleManager.SecurityLib {
       byte[] accountName,
       int[] passwordLength,
       Pointer[] passwordData,
-      Pointer[] itemRef) {
+      Pointer[] itemRef)
+  {
     MockMacKeychainManager.MockMacKeychainItem credItem =
         MockMacKeychainManager.getCredential(serviceName, accountName);
-    if (credItem == null) {
+    if (credItem == null)
+    {
       return SecureStorageAppleManager.SecurityLib.ERR_SEC_ITEM_NOT_FOUND;
     }
 
-    if (passwordLength != null && passwordLength.length > 0) {
+    if (passwordLength != null && passwordLength.length > 0)
+    {
       passwordLength[0] = credItem.getLength();
     }
 
-    if (passwordData != null && passwordData.length > 0) {
+    if (passwordData != null && passwordData.length > 0)
+    {
       passwordData[0] = credItem.getPointer();
     }
 
-    if (itemRef != null && itemRef.length > 0) {
+    if (itemRef != null && itemRef.length > 0)
+    {
       itemRef[0] = credItem.getPointer();
     }
     return SecureStorageAppleManager.SecurityLib.ERR_SEC_SUCCESS;
@@ -84,53 +96,65 @@ class MockSecurityLib implements SecureStorageAppleManager.SecurityLib {
       byte[] accountName,
       int passwordLength,
       byte[] passwordData,
-      Pointer[] itemRef) {
+      Pointer[] itemRef)
+  {
     MockMacKeychainManager.addCredential(serviceName, accountName, passwordLength, passwordData);
     return SecureStorageAppleManager.SecurityLib.ERR_SEC_SUCCESS;
   }
 
   @Override
   public int SecKeychainItemModifyContent(
-      Pointer itemRef, Pointer attrList, int length, byte[] data) {
+      Pointer itemRef,
+      Pointer attrList,
+      int length,
+      byte[] data)
+  {
     MockMacKeychainManager.replaceCredential(itemRef, length, data);
     return SecureStorageAppleManager.SecurityLib.ERR_SEC_SUCCESS;
   }
 
   @Override
-  public int SecKeychainItemDelete(Pointer itemRef) {
+  public int SecKeychainItemDelete(Pointer itemRef)
+  {
     MockMacKeychainManager.deleteCredential(itemRef);
     return SecureStorageAppleManager.SecurityLib.ERR_SEC_SUCCESS;
   }
 
   @Override
-  public int SecKeychainItemFreeContent(Pointer[] attrList, Pointer data) {
+  public int SecKeychainItemFreeContent(Pointer[] attrList, Pointer data)
+  {
     // mock function
     return SecureStorageAppleManager.SecurityLib.ERR_SEC_SUCCESS;
   }
 }
 
-class MockWindowsCredentialManager {
+class MockWindowsCredentialManager
+{
   private static final Map<String, Pointer> credentialManager = new HashMap<>();
 
-  static void addCredential(SecureStorageWindowsManager.SecureStorageWindowsCredential cred) {
+  static void addCredential(SecureStorageWindowsManager.SecureStorageWindowsCredential cred)
+  {
     cred.write();
     credentialManager.put(cred.TargetName.toString(), cred.getPointer());
   }
 
-  static Pointer getCredential(String target) {
+  static Pointer getCredential(String target)
+  {
     return credentialManager.get(target);
   }
 
-  static void deleteCredential(String target) {
+  static void deleteCredential(String target)
+  {
     credentialManager.remove(target);
   }
 }
 
-class MockMacKeychainManager {
-  private static final Map<String, Map<String, MockMacKeychainItem>> keychainManager =
-      new HashMap<>();
+class MockMacKeychainManager
+{
+  private static final Map<String, Map<String, MockMacKeychainItem>> keychainManager = new HashMap<>();
 
-  static void addCredential(byte[] targetName, byte[] userName, int credLength, byte[] credData) {
+  static void addCredential(byte[] targetName, byte[] userName, int credLength, byte[] credData)
+  {
     String target = new String(targetName);
     String user = new String(userName);
 
@@ -140,16 +164,21 @@ class MockMacKeychainManager {
     currentTargetMap.put(user, buildMacKeychainItem(credLength, credData));
   }
 
-  static MockMacKeychainItem getCredential(byte[] targetName, byte[] userName) {
+  static MockMacKeychainItem getCredential(byte[] targetName, byte[] userName)
+  {
     Map<String, MockMacKeychainItem> targetMap = keychainManager.get(new String(targetName));
     return targetMap != null ? targetMap.get(new String(userName)) : null;
   }
 
-  static void replaceCredential(Pointer itemRef, int credLength, byte[] credData) {
-    for (Map.Entry<String, Map<String, MockMacKeychainItem>> elem : keychainManager.entrySet()) {
+  static void replaceCredential(Pointer itemRef, int credLength, byte[] credData)
+  {
+    for (Map.Entry<String, Map<String, MockMacKeychainItem>> elem : keychainManager.entrySet())
+    {
       Map<String, MockMacKeychainItem> targetMap = elem.getValue();
-      for (Map.Entry<String, MockMacKeychainItem> elem0 : targetMap.entrySet()) {
-        if (elem0.getValue().getPointer().toString().equals(itemRef.toString())) {
+      for (Map.Entry<String, MockMacKeychainItem> elem0 : targetMap.entrySet())
+      {
+        if (elem0.getValue().getPointer().toString().equals(itemRef.toString()))
+        {
           targetMap.put(elem0.getKey(), buildMacKeychainItem(credLength, credData));
           return;
         }
@@ -157,16 +186,18 @@ class MockMacKeychainManager {
     }
   }
 
-  static void deleteCredential(Pointer itemRef) {
-    Iterator<Map.Entry<String, Map<String, MockMacKeychainItem>>> targetIter =
-        keychainManager.entrySet().iterator();
-    while (targetIter.hasNext()) {
+  static void deleteCredential(Pointer itemRef)
+  {
+    Iterator<Map.Entry<String, Map<String, MockMacKeychainItem>>> targetIter = keychainManager.entrySet().iterator();
+    while (targetIter.hasNext())
+    {
       Map.Entry<String, Map<String, MockMacKeychainItem>> targetMap = targetIter.next();
-      Iterator<Map.Entry<String, MockMacKeychainItem>> userIter =
-          targetMap.getValue().entrySet().iterator();
-      while (userIter.hasNext()) {
+      Iterator<Map.Entry<String, MockMacKeychainItem>> userIter = targetMap.getValue().entrySet().iterator();
+      while (userIter.hasNext())
+      {
         Map.Entry<String, MockMacKeychainItem> cred = userIter.next();
-        if (cred.getValue().getPointer().toString().equals(itemRef.toString())) {
+        if (cred.getValue().getPointer().toString().equals(itemRef.toString()))
+        {
           userIter.remove();
           return;
         }
@@ -174,47 +205,56 @@ class MockMacKeychainManager {
     }
   }
 
-  static MockMacKeychainItem buildMacKeychainItem(int itemLength, byte[] itemData) {
+  static MockMacKeychainItem buildMacKeychainItem(int itemLength, byte[] itemData)
+  {
     Memory itemMem = new Memory(itemLength);
     itemMem.write(0, itemData, 0, itemLength);
     return new MockMacKeychainItem(itemLength, itemMem);
   }
 
-  static class MockMacKeychainItem {
+  static class MockMacKeychainItem
+  {
     private int length;
     private Pointer pointer;
 
-    MockMacKeychainItem(int length, Pointer pointer) {
+    MockMacKeychainItem(int length, Pointer pointer)
+    {
       this.length = length;
       this.pointer = pointer;
     }
 
-    void setLength(int length) {
+    void setLength(int length)
+    {
       this.length = length;
     }
 
-    int getLength() {
+    int getLength()
+    {
       return length;
     }
 
-    void setPointer(Pointer pointer) {
+    void setPointer(Pointer pointer)
+    {
       this.pointer = pointer;
     }
 
-    Pointer getPointer() {
+    Pointer getPointer()
+    {
       return pointer;
     }
   }
 }
 
-public class SecureStorageManagerTest {
+public class SecureStorageManagerTest
+{
   private static final String host = "fakeHost";
   private static final String user = "fakeUser";
   private static final String idToken = "fakeIdToken";
   private static final String idToken0 = "fakeIdToken0";
 
   @Test
-  public void testWindowsManager() {
+  public void testWindowsManager()
+  {
     SecureStorageWindowsManager.Advapi32LibManager.setInstance(new MockAdvapi32Lib());
     SecureStorageManager manager = SecureStorageWindowsManager.builder();
 
@@ -222,7 +262,8 @@ public class SecureStorageManagerTest {
   }
 
   @Test
-  public void testMacManager() {
+  public void testMacManager()
+  {
     SecureStorageAppleManager.SecurityLibManager.setInstance(new MockSecurityLib());
     SecureStorageManager manager = SecureStorageAppleManager.builder();
 
@@ -230,37 +271,31 @@ public class SecureStorageManagerTest {
   }
 
   @Test
-  public void testLinuxManager() {
+  public void testLinuxManager()
+  {
     SecureStorageManager manager = SecureStorageLinuxManager.builder();
 
     testBody(manager);
   }
 
-  private void testBody(SecureStorageManager manager) {
+  private void testBody(SecureStorageManager manager)
+  {
     // first delete possible old credential
-    assertThat(
-        manager.deleteCredential(host, user),
-        equalTo(SecureStorageManager.SecureStorageStatus.SUCCESS));
+    assertThat(manager.deleteCredential(host, user), equalTo(SecureStorageManager.SecureStorageStatus.SUCCESS));
 
     // ensure no old credential exists
     assertThat(manager.getCredential(host, user), is(nullValue()));
 
     // set token
-    assertThat(
-        manager.setCredential(host, user, idToken),
-        equalTo(SecureStorageManager.SecureStorageStatus.SUCCESS));
+    assertThat(manager.setCredential(host, user, idToken), equalTo(SecureStorageManager.SecureStorageStatus.SUCCESS));
     assertThat(manager.getCredential(host, user), equalTo(idToken));
 
     // update token
-    assertThat(
-        manager.setCredential(host, user, idToken0),
-        equalTo(SecureStorageManager.SecureStorageStatus.SUCCESS));
+    assertThat(manager.setCredential(host, user, idToken0), equalTo(SecureStorageManager.SecureStorageStatus.SUCCESS));
     assertThat(manager.getCredential(host, user), equalTo(idToken0));
 
     // delete token
-    assertThat(
-        manager.deleteCredential(host, user),
-        equalTo(SecureStorageManager.SecureStorageStatus.SUCCESS));
+    assertThat(manager.deleteCredential(host, user), equalTo(SecureStorageManager.SecureStorageStatus.SUCCESS));
     assertThat(manager.getCredential(host, user), is(nullValue()));
   }
 }

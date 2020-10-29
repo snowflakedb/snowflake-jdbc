@@ -4,32 +4,43 @@
 
 package net.snowflake.client.core;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
-
 import net.snowflake.client.jdbc.ErrorCode;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class SFSessionPropertyTest {
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+
+public class SFSessionPropertyTest
+{
   @Test
-  public void testCheckApplicationName() throws SFException {
-    String[] validApplicationName = {"test1234", "test_1234", "test-1234", "test.1234"};
+  public void testCheckApplicationName() throws SFException
+  {
+    String[] validApplicationName = {"test1234", "test_1234", "test-1234",
+                                     "test.1234"};
 
     String[] invalidApplicationName = {"1234test", "test$A", "test<script>"};
 
-    for (String valid : validApplicationName) {
-      Object value = SFSessionProperty.checkPropertyValue(SFSessionProperty.APPLICATION, valid);
+    for (String valid : validApplicationName)
+    {
+      Object value = SFSessionProperty.checkPropertyValue(
+          SFSessionProperty.APPLICATION, valid);
 
       assertThat((String) value, is(valid));
     }
 
-    for (String invalid : invalidApplicationName) {
-      try {
-        SFSessionProperty.checkPropertyValue(SFSessionProperty.APPLICATION, invalid);
+    for (String invalid : invalidApplicationName)
+    {
+      try
+      {
+        SFSessionProperty.checkPropertyValue(
+            SFSessionProperty.APPLICATION, invalid);
         Assert.fail();
-      } catch (SFException e) {
-        assertThat(e.getVendorCode(), is(ErrorCode.INVALID_PARAMETER_VALUE.getMessageCode()));
+      }
+      catch (SFException e)
+      {
+        assertThat(e.getVendorCode(),
+                   is(ErrorCode.INVALID_PARAMETER_VALUE.getMessageCode()));
       }
     }
   }

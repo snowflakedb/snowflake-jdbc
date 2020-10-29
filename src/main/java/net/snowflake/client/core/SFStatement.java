@@ -4,18 +4,7 @@
 
 package net.snowflake.client.core;
 
-import static net.snowflake.client.core.SessionUtil.*;
-import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
-
 import com.fasterxml.jackson.databind.JsonNode;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.*;
-import java.util.concurrent.Callable;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import net.snowflake.client.core.BasicEvent.QueryState;
 import net.snowflake.client.core.bind.BindException;
 import net.snowflake.client.core.bind.BindUploader;
@@ -30,9 +19,25 @@ import net.snowflake.client.util.SecretDetector;
 import net.snowflake.common.core.SqlState;
 import org.apache.http.client.methods.HttpRequestBase;
 
-/** Snowflake statement */
-public class SFStatement {
-  public enum CallingMethod {
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import static net.snowflake.client.core.SessionUtil.*;
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
+
+/**
+ * Snowflake statement
+ */
+public class SFStatement
+{
+  public enum CallingMethod
+  {
     EXECUTE,
     EXECUTE_UPDATE,
     EXECUTE_QUERY
@@ -66,12 +71,18 @@ public class SFStatement {
   // statement level parameters
   private final Map<String, Object> statementParametersMap = new HashMap<>();
 
-  private static final int MAX_STATEMENT_PARAMETERS = 1000;
+  final private static int MAX_STATEMENT_PARAMETERS = 1000;
 
-  private static final int MAX_BINDING_PARAMS_FOR_LOGGING = 1000;
+  final private static int MAX_BINDING_PARAMS_FOR_LOGGING = 1000;
 
-  /** id used in combine describe and execute */
+  /**
+   * id used in combine describe and execute
+   */
   private String describeJobUUID;
+
+  // when uploading binds to stage, we use a table scan which cannot parse times from ms
+  // so, if the user binds time values, we don't upload to stage
+  private boolean hasUnsupportedStageBind = false;
 
   // list of child result objects for queries called by the current query, if any
   private List<SFChildResult> childResults = null;
@@ -83,29 +94,35 @@ public class SFStatement {
 
   /**
    * Add a statement parameter
+   * <p>
+   * Make sure a property is not added more than once and the number of
+   * properties does not exceed limit.
    *
-   * <p>Make sure a property is not added more than once and the number of properties does not
-   * exceed limit.
-   *
-   * @param propertyName property name
+   * @param propertyName  property name
    * @param propertyValue property value
    * @throws SFException if too many parameters for a statement
    */
-  public void addProperty(String propertyName, Object propertyValue) throws SFException {
+  public void addProperty(String propertyName, Object propertyValue)
+  throws SFException
+  {
     statementParametersMap.put(propertyName, propertyValue);
 
     // for query timeout, we implement it on client side for now
-    if ("query_timeout".equalsIgnoreCase(propertyName)) {
+    if ("query_timeout".equalsIgnoreCase(propertyName))
+    {
       queryTimeout = (Integer) propertyValue;
     }
 
     // check if the number of session properties exceed limit
-    if (statementParametersMap.size() > MAX_STATEMENT_PARAMETERS) {
-      throw new SFException(ErrorCode.TOO_MANY_STATEMENT_PARAMETERS, MAX_STATEMENT_PARAMETERS);
+    if (statementParametersMap.size() > MAX_STATEMENT_PARAMETERS)
+    {
+      throw new SFException(
+          ErrorCode.TOO_MANY_STATEMENT_PARAMETERS, MAX_STATEMENT_PARAMETERS);
     }
   }
 
-  public SFStatement(SFSession session) {
+  public SFStatement(SFSession session)
+  {
     logger.debug(" public SFStatement(SFSession session)");
 
     this.session = session;
@@ -114,10 +131,12 @@ public class SFStatement {
     verifyArrowSupport();
   }
 
-  private void verifyArrowSupport() {
-    if (SnowflakeDriver.isDisableArrowResultFormat()) {
-      logger.debug(
-          "disable arrow support: {}", SnowflakeDriver.getDisableArrowResultFormatMessage());
+  private void verifyArrowSupport()
+  {
+    if (SnowflakeDriver.isDisableArrowResultFormat())
+    {
+      logger.debug("disable arrow support: {}",
+                   SnowflakeDriver.getDisableArrowResultFormatMessage());
       statementParametersMap.put("JDBC_QUERY_RESULT_FORMAT", "JSON");
     }
   }
@@ -128,21 +147,24 @@ public class SFStatement {
    * @param sql The SQL statement to check
    * @throws SQLException Will be thrown if sql is null or empty
    */
-  private void sanityCheckQuery(String sql) throws SQLException {
-    if (sql == null || sql.isEmpty()) {
-      throw new SnowflakeSQLException(
-          SqlState.SQL_STATEMENT_NOT_YET_COMPLETE, ErrorCode.INVALID_SQL.getMessageCode(), sql);
+  private void sanityCheckQuery(String sql) throws SQLException
+  {
+    if (sql == null || sql.isEmpty())
+    {
+      throw new SnowflakeSQLException(SqlState.SQL_STATEMENT_NOT_YET_COMPLETE,
+                                      ErrorCode.INVALID_SQL.getMessageCode(), sql);
+
     }
   }
 
   /**
    * Execute SQL query with an option for describe only
    *
-   * @param sql sql statement
+   * @param sql          sql statement
    * @param describeOnly true if describe only
    * @return query result set
    * @throws SQLException if connection is already closed
-   * @throws SFException if result set is null
+   * @throws SFException  if result set is null
    */
   private SFBaseResultSet executeQuery(
       String sql,
@@ -150,13 +172,15 @@ public class SFStatement {
       boolean describeOnly,
       boolean asyncExec,
       CallingMethod caller)
-      throws SQLException, SFException {
+  throws SQLException, SFException
+  {
     sanityCheckQuery(sql);
 
     String trimmedSql = sql.trim();
 
     // snowflake specific client side commands
-    if (isFileTransfer(trimmedSql)) {
+    if (isFileTransfer(trimmedSql))
+    {
       // PUT/GET command
       logger.debug("Executing file transfer locally: {}", sql);
 
@@ -170,7 +194,8 @@ public class SFStatement {
         describeOnly,
         describeOnly, // internal query if describeOnly is true
         asyncExec,
-        caller);
+        caller
+    );
   }
 
   /**
@@ -179,35 +204,34 @@ public class SFStatement {
    * @param sql statement
    * @return metadata of statement including result set metadata and binding information
    * @throws SQLException if connection is already closed
-   * @throws SFException if result set is null
+   * @throws SFException  if result set is null
    */
-  public SFStatementMetaData describe(String sql) throws SFException, SQLException {
+  public SFStatementMetaData describe(String sql) throws SFException, SQLException
+  {
     SFBaseResultSet baseResultSet = executeQuery(sql, null, true, false, null);
 
     describeJobUUID = baseResultSet.getQueryId();
 
-    return new SFStatementMetaData(
-        baseResultSet.getMetaData(),
-        baseResultSet.getStatementType(),
-        baseResultSet.getNumberOfBinds(),
-        baseResultSet.isArrayBindSupported(),
-        baseResultSet.getMetaDataOfBinds(),
-        true); // valid metadata
+    return new SFStatementMetaData(baseResultSet.getMetaData(),
+                                   baseResultSet.getStatementType(),
+                                   baseResultSet.getNumberOfBinds(),
+                                   baseResultSet.isArrayBindSupported(),
+                                   baseResultSet.getMetaDataOfBinds(),
+                                   true); // valid metadata
   }
 
   /**
    * Internal method for executing a query with bindings accepted.
-   *
    * <p>
    *
-   * @param sql sql statement
+   * @param sql               sql statement
    * @param parameterBindings binding information
-   * @param describeOnly true if just showing result set metadata
-   * @param internal true if internal command not showing up in the history
-   * @param caller the JDBC method that called this function, null if none
+   * @param describeOnly      true if just showing result set metadata
+   * @param internal          true if internal command not showing up in the history
+   * @param caller            the JDBC method that called this function, null if none
    * @return snowflake query result set
    * @throws SQLException if connection is already closed
-   * @throws SFException if result set is null
+   * @throws SFException  if result set is null
    */
   SFBaseResultSet executeQueryInternal(
       String sql,
@@ -216,25 +240,29 @@ public class SFStatement {
       boolean internal,
       boolean asyncExec,
       CallingMethod caller)
-      throws SQLException, SFException {
+  throws SQLException, SFException
+  {
     resetState();
 
-    logger.debug("executeQuery: {}", (ArgSupplier) () -> SecretDetector.maskSecrets(sql));
+    logger.debug("executeQuery: {}",
+                 (ArgSupplier) () -> SecretDetector.maskSecrets(sql));
 
-    if (session == null || session.isClosed()) {
+    if (session == null || session.isClosed())
+    {
       throw new SQLException("connection is closed");
     }
 
-    Object result =
-        executeHelper(
-            sql, StmtUtil.SF_MEDIA_TYPE, parameterBindings, describeOnly, internal, asyncExec);
+    Object result = executeHelper(sql,
+                                  StmtUtil.SF_MEDIA_TYPE,
+                                  parameterBindings,
+                                  describeOnly,
+                                  internal, asyncExec);
 
-    if (result == null) {
-      throw new SnowflakeSQLLoggedException(
-          session,
-          ErrorCode.INTERNAL_ERROR.getMessageCode(),
-          SqlState.INTERNAL_ERROR,
-          "got null result");
+    if (result == null)
+    {
+      throw new SnowflakeSQLLoggedException(SqlState.INTERNAL_ERROR,
+                                            ErrorCode.INTERNAL_ERROR.getMessageCode(), session,
+                                            "got null result");
     }
 
     /*
@@ -246,7 +274,8 @@ public class SFStatement {
 
     logger.debug("Creating result set");
 
-    try {
+    try
+    {
       JsonNode jsonResult = (JsonNode) result;
       resultSet = SFResultSetFactory.getResultSet(jsonResult, this, sortResult);
       childResults = ResultUtil.getChildResults(session, requestId, jsonResult);
@@ -254,40 +283,48 @@ public class SFStatement {
       // if child results are available, skip over this result set and set the
       // current result to the first child's result.
       // we still construct the first result set for its side effects.
-      if (!childResults.isEmpty()) {
+      if (!childResults.isEmpty())
+      {
         SFStatementType type = childResults.get(0).type;
 
         // ensure first query type matches the calling JDBC method, if exists
-        if (caller == CallingMethod.EXECUTE_QUERY && !type.isGenerateResultSet()) {
+        if (caller == CallingMethod.EXECUTE_QUERY && !type.isGenerateResultSet())
+        {
           throw new SnowflakeSQLLoggedException(
-              session, ErrorCode.QUERY_FIRST_RESULT_NOT_RESULT_SET);
-        } else if (caller == CallingMethod.EXECUTE_UPDATE && type.isGenerateResultSet()) {
+              ErrorCode.QUERY_FIRST_RESULT_NOT_RESULT_SET, session);
+        }
+        else if (caller == CallingMethod.EXECUTE_UPDATE && type.isGenerateResultSet())
+        {
           throw new SnowflakeSQLLoggedException(
-              session, ErrorCode.UPDATE_FIRST_RESULT_NOT_UPDATE_COUNT);
+              ErrorCode.UPDATE_FIRST_RESULT_NOT_UPDATE_COUNT, session);
         }
 
         // this will update resultSet to point to the first child result before we return it
         getMoreResults();
       }
-    } catch (SnowflakeSQLException | OutOfMemoryError ex) {
+    }
+    catch (SnowflakeSQLException | OutOfMemoryError ex)
+    {
       // snow-24428: no need to generate incident for exceptions we generate
       // snow-29403: or client OOM
       throw ex;
-    } catch (Throwable ex) {
+    }
+    catch (Throwable ex)
+    {
       // SNOW-22813 log exception
       logger.error("Exception creating result", ex);
 
-      throw (SFException)
-          IncidentUtil.generateIncidentV2WithException(
-              session,
-              new SFException(
-                  ErrorCode.INTERNAL_ERROR, IncidentUtil.oneLiner("exception creating result", ex)),
-              null,
-              null);
+      throw (SFException) IncidentUtil.generateIncidentV2WithException(
+          session,
+          new SFException(ErrorCode.INTERNAL_ERROR,
+                          IncidentUtil.oneLiner("exception creating result", ex)),
+          null,
+          null);
     }
     logger.debug("Done creating result set");
 
-    if (asyncExec) {
+    if (asyncExec)
+    {
       session.activeAsyncQueries.add(resultSet.getQueryId());
     }
     return resultSet;
@@ -298,69 +335,80 @@ public class SFStatement {
    *
    * @param executor object to execute statement cancel request
    */
-  private void setTimeBomb(ScheduledExecutorService executor) {
-    class TimeBombTask implements Callable<Void> {
+  private void setTimeBomb(ScheduledExecutorService executor)
+  {
+    class TimeBombTask implements Callable<Void>
+    {
 
       private final SFStatement statement;
 
-      private TimeBombTask(SFStatement statement) {
+      private TimeBombTask(SFStatement statement)
+      {
         this.statement = statement;
       }
 
       @Override
-      public Void call() throws SQLException {
-        try {
+      public Void call() throws SQLException
+      {
+        try
+        {
           statement.cancel();
-        } catch (SFException ex) {
-          throw new SnowflakeSQLLoggedException(
-              session, ex.getSqlState(), ex.getVendorCode(), ex, ex.getParams());
+        }
+        catch (SFException ex)
+        {
+          throw new SnowflakeSQLException(ex, ex.getSqlState(),
+                                          ex.getVendorCode(), ex.getParams());
         }
         return null;
       }
     }
 
-    executor.schedule(new TimeBombTask(this), this.queryTimeout, TimeUnit.SECONDS);
+    executor.schedule(new TimeBombTask(this), this.queryTimeout,
+                      TimeUnit.SECONDS);
   }
 
   /**
    * A helper method to build URL and submit the SQL to snowflake for exec
    *
-   * @param sql sql statement
-   * @param mediaType media type
-   * @param bindValues map of binding values
+   * @param sql          sql statement
+   * @param mediaType    media type
+   * @param bindValues   map of binding values
    * @param describeOnly whether only show the result set metadata
-   * @param internal run internal query not showing up in history
+   * @param internal     run internal query not showing up in history
    * @return raw json response
-   * @throws SFException if query is canceled
+   * @throws SFException           if query is canceled
    * @throws SnowflakeSQLException if query is already running
    */
-  public Object executeHelper(
-      String sql,
-      String mediaType,
-      Map<String, ParameterBindingDTO> bindValues,
-      boolean describeOnly,
-      boolean internal,
-      boolean asyncExec)
-      throws SnowflakeSQLException, SFException {
+  public Object executeHelper(String sql,
+                              String mediaType,
+                              Map<String, ParameterBindingDTO> bindValues,
+                              boolean describeOnly,
+                              boolean internal,
+                              boolean asyncExec)
+  throws SnowflakeSQLException, SFException
+  {
     ScheduledExecutorService executor = null;
 
-    try {
-      synchronized (this) {
-        if (isClosed) {
+    try
+    {
+      synchronized (this)
+      {
+        if (isClosed)
+        {
           throw new SFException(ErrorCode.STATEMENT_CLOSED);
         }
 
         // initialize a sequence id if not closed or not for aborting
-        if (canceling.get()) {
+        if (canceling.get())
+        {
           // nothing to do if canceled
           throw new SFException(ErrorCode.QUERY_CANCELED);
         }
 
-        if (this.requestId != null) {
-          throw new SnowflakeSQLLoggedException(
-              session,
-              ErrorCode.STATEMENT_ALREADY_RUNNING_QUERY.getMessageCode(),
-              SqlState.FEATURE_NOT_SUPPORTED);
+        if (this.requestId != null)
+        {
+          throw new SnowflakeSQLLoggedException(SqlState.FEATURE_NOT_SUPPORTED,
+                                                ErrorCode.STATEMENT_ALREADY_RUNNING_QUERY.getMessageCode(), session);
         }
 
         this.requestId = UUID.randomUUID().toString();
@@ -369,9 +417,8 @@ public class SFStatement {
         this.sqlText = sql;
       }
 
-      EventUtil.triggerStateTransition(
-          BasicEvent.QueryState.QUERY_STARTED,
-          String.format(QueryState.QUERY_STARTED.getArgString(), requestId));
+      EventUtil.triggerStateTransition(BasicEvent.QueryState.QUERY_STARTED,
+                                       String.format(QueryState.QUERY_STARTED.getArgString(), requestId));
 
       // if there are a large number of bind values, we should upload them to stage
       // instead of passing them in the payload (if enabled)
@@ -380,34 +427,37 @@ public class SFStatement {
       if (0 < session.getArrayBindStageThreshold()
           && session.getArrayBindStageThreshold() <= numBinds
           && !describeOnly
-          && BindUploader.isArrayBind(bindValues)) {
-        try (BindUploader uploader = BindUploader.newInstance(session, requestId)) {
+          && !hasUnsupportedStageBind
+          && BindUploader.isArrayBind(bindValues))
+      {
+        try (BindUploader uploader = BindUploader.newInstance(session, requestId))
+        {
           uploader.upload(bindValues);
           bindStagePath = uploader.getStagePath();
-        } catch (BindException ex) {
-          logger.debug(
-              "Exception encountered trying to upload binds to stage. Attaching binds in payload instead. ",
-              ex);
+        }
+        catch (BindException ex)
+        {
+          logger.debug("Exception encountered trying to upload binds to stage. Attaching binds in payload instead. ", ex);
           TelemetryData errorLog = TelemetryUtil.buildJobData(this.requestId, ex.type.field, 1);
           this.session.getTelemetryClient().addLogToBatch(errorLog);
           IncidentUtil.generateIncidentV2WithException(
               session,
-              new SFException(
-                  ErrorCode.NON_FATAL_ERROR,
-                  IncidentUtil.oneLiner("Failed to upload binds " + "to stage:", ex)),
+              new SFException(ErrorCode.NON_FATAL_ERROR,
+                              IncidentUtil.oneLiner("Failed to upload binds " +
+                                                    "to stage:", ex)),
               null,
               requestId);
         }
       }
 
-      if (session.isConservativeMemoryUsageEnabled()) {
+      if (session.isConservativeMemoryUsageEnabled())
+      {
         logger.debug("JDBC conservative memory usage is enabled.");
         calculateConservativeMemoryUsage();
       }
 
       StmtUtil.StmtInput stmtInput = new StmtUtil.StmtInput();
-      stmtInput
-          .setSql(sql)
+      stmtInput.setSql(sql)
           .setMediaType(mediaType)
           .setInternal(internal)
           .setDescribeOnly(describeOnly)
@@ -428,49 +478,65 @@ public class SFStatement {
           .setServiceName(session.getServiceName())
           .setOCSPMode(session.getOCSPMode());
 
-      if (bindStagePath != null) {
-        stmtInput.setBindValues(null).setBindStage(bindStagePath);
+      if (bindStagePath != null)
+      {
+        stmtInput.setBindValues(null)
+            .setBindStage(bindStagePath);
         // use the new SQL format for this query so dates/timestamps are parsed correctly
         setUseNewSqlFormat(true);
-      } else {
-        stmtInput.setBindValues(bindValues).setBindStage(null);
       }
-      if (numBinds > 0 && session.getPreparedStatementLogging()) {
-        if (numBinds > MAX_BINDING_PARAMS_FOR_LOGGING) {
-          logger.info(
-              "Number of binds exceeds logging limit. Printing off {} binding parameters.",
-              MAX_BINDING_PARAMS_FOR_LOGGING);
-        } else {
+      else
+      {
+        stmtInput.setBindValues(bindValues)
+            .setBindStage(null);
+      }
+      if (numBinds > 0 && session.getPreparedStatementLogging())
+      {
+        if (numBinds > MAX_BINDING_PARAMS_FOR_LOGGING)
+        {
+          logger.info("Number of binds exceeds logging limit. Printing off {} binding parameters.", MAX_BINDING_PARAMS_FOR_LOGGING);
+        }
+        else
+        {
           logger.info("Printing off {} binding parameters.", numBinds);
         }
         int counter = 0;
         // if it's an array bind, print off the first few rows from each column.
-        if (BindUploader.isArrayBind(bindValues)) {
+        if (BindUploader.isArrayBind(bindValues))
+        {
           int numRowsPrinted = MAX_BINDING_PARAMS_FOR_LOGGING / bindValues.size();
-          if (numRowsPrinted <= 0) {
+          if (numRowsPrinted <= 0)
+          {
             numRowsPrinted = 1;
           }
-          for (Map.Entry<String, ParameterBindingDTO> entry : bindValues.entrySet()) {
+          for (Map.Entry<String, ParameterBindingDTO> entry : bindValues.entrySet())
+          {
             List<String> bindRows = (List<String>) entry.getValue().getValue();
-            if (numRowsPrinted >= bindRows.size()) {
+            if (numRowsPrinted >= bindRows.size())
+            {
               numRowsPrinted = bindRows.size();
             }
             String rows = "[";
-            for (int i = 0; i < numRowsPrinted; i++) {
+            for (int i = 0; i < numRowsPrinted; i++)
+            {
               rows += bindRows.get(i) + ", ";
             }
             rows += "]";
             logger.info("Column {}: {}", entry.getKey(), rows);
             counter += numRowsPrinted;
-            if (counter >= MAX_BINDING_PARAMS_FOR_LOGGING) {
+            if (counter >= MAX_BINDING_PARAMS_FOR_LOGGING)
+            {
               break;
             }
           }
         }
         // not an array, just a bunch of columns
-        else {
-          for (Map.Entry<String, ParameterBindingDTO> entry : bindValues.entrySet()) {
-            if (counter >= MAX_BINDING_PARAMS_FOR_LOGGING) {
+        else
+        {
+          for (Map.Entry<String, ParameterBindingDTO> entry : bindValues.entrySet())
+          {
+            if (counter >= MAX_BINDING_PARAMS_FOR_LOGGING)
+            {
               break;
             }
             counter++;
@@ -479,7 +545,8 @@ public class SFStatement {
         }
       }
 
-      if (canceling.get()) {
+      if (canceling.get())
+      {
         logger.debug("Query cancelled");
 
         throw new SFException(ErrorCode.QUERY_CANCELED);
@@ -487,7 +554,8 @@ public class SFStatement {
 
       // if timeout is set, start a thread to cancel the request after timeout
       // reached.
-      if (this.queryTimeout > 0) {
+      if (this.queryTimeout > 0)
+      {
         executor = Executors.newScheduledThreadPool(1);
         setTimeBomb(executor);
       }
@@ -495,20 +563,31 @@ public class SFStatement {
       StmtUtil.StmtOutput stmtOutput = null;
       boolean sessionRenewed;
 
-      do {
+      do
+      {
         sessionRenewed = false;
-        try {
+        try
+        {
           stmtOutput = StmtUtil.execute(stmtInput);
           break;
-        } catch (SnowflakeSQLException ex) {
-          if (ex.getErrorCode() == Constants.SESSION_EXPIRED_GS_CODE) {
-            try {
+        }
+        catch (SnowflakeSQLException ex)
+        {
+          if (ex.getErrorCode() == Constants.SESSION_EXPIRED_GS_CODE)
+          {
+            try
+            {
               // renew the session
               session.renewSession(stmtInput.sessionToken);
-            } catch (SnowflakeReauthenticationRequest ex0) {
-              if (session.isExternalbrowserAuthenticator()) {
+            }
+            catch (SnowflakeReauthenticationRequest ex0)
+            {
+              if (session.isExternalbrowserAuthenticator())
+              {
                 reauthenticate();
-              } else {
+              }
+              else
+              {
                 throw ex0;
               }
             }
@@ -519,22 +598,27 @@ public class SFStatement {
             sessionRenewed = true;
 
             logger.debug("Session got renewed, will retry");
-          } else {
+          }
+          else
+          {
             throw ex;
           }
         }
-      } while (sessionRenewed && !canceling.get());
+      }
+      while (sessionRenewed && !canceling.get());
 
       // Debugging/Testing for incidents
-      if (Boolean.TRUE
-          .toString()
-          .equalsIgnoreCase(systemGetProperty("snowflake.enable_incident_test1"))) {
-        throw (SFException)
-            IncidentUtil.generateIncidentV2WithException(
-                session, new SFException(ErrorCode.STATEMENT_CLOSED), null, this.requestId);
+      if (Boolean.TRUE.toString().equalsIgnoreCase(systemGetProperty("snowflake.enable_incident_test1")))
+      {
+        throw (SFException) IncidentUtil.generateIncidentV2WithException(
+            session,
+            new SFException(ErrorCode.STATEMENT_CLOSED),
+            null,
+            this.requestId);
       }
 
-      synchronized (this) {
+      synchronized (this)
+      {
         /*
          * done with the remote execution of the query. set sequenceId to -1
          * and request id to null so that we don't try to abort it upon canceling.
@@ -543,7 +627,8 @@ public class SFStatement {
         this.requestId = null;
       }
 
-      if (canceling.get()) {
+      if (canceling.get())
+      {
         // If we are here, this is the context for the initial query that
         // is being canceled. Raise an exception anyway here even if
         // the server fails to abort it.
@@ -552,15 +637,21 @@ public class SFStatement {
 
       logger.debug("Returning from executeHelper");
 
-      if (stmtOutput != null) {
+      if (stmtOutput != null)
+      {
         return stmtOutput.getResult();
       }
       throw new SFException(ErrorCode.INTERNAL_ERROR);
-    } catch (SFException | SnowflakeSQLException ex) {
+    }
+    catch (SFException | SnowflakeSQLException ex)
+    {
       isClosed = true;
       throw ex;
-    } finally {
-      if (executor != null) {
+    }
+    finally
+    {
+      if (executor != null)
+      {
         executor.shutdownNow();
       }
       // if this query enabled the new SQL format, re-disable it now
@@ -571,60 +662,66 @@ public class SFStatement {
   /**
    * calculate conservative memory limit and the number of prefetch threads before query execution
    */
-  private void calculateConservativeMemoryUsage() {
+  private void calculateConservativeMemoryUsage()
+  {
     int clientMemoryLimit = session.getClientMemoryLimit();
     int clientPrefetchThread = session.getClientPrefetchThreads();
     int clientChunkSize = session.getClientResultChunkSize();
 
     long memoryLimitInBytes;
-    if (clientMemoryLimit == DEFAULT_CLIENT_MEMORY_LIMIT) {
+    if (clientMemoryLimit == DEFAULT_CLIENT_MEMORY_LIMIT)
+    {
       // this is all default scenario
       // only allows JDBC use at most 80% of free memory
       long freeMemoryToUse = Runtime.getRuntime().freeMemory() * 8 / 10;
-      memoryLimitInBytes =
-          Math.min(
-              (long) 2 * clientPrefetchThread * clientChunkSize * 1024 * 1024, freeMemoryToUse);
-    } else {
+      memoryLimitInBytes = Math.min((long) 2 * clientPrefetchThread * clientChunkSize * 1024 * 1024, freeMemoryToUse);
+    }
+    else
+    {
       memoryLimitInBytes = (long) clientMemoryLimit * 1024 * 1024;
     }
     conservativeMemoryLimit = memoryLimitInBytes;
-    reducePrefetchThreadsAndChunkSizeToFitMemoryLimit(
-        conservativeMemoryLimit, clientPrefetchThread, clientChunkSize);
+    reducePrefetchThreadsAndChunkSizeToFitMemoryLimit(conservativeMemoryLimit, clientPrefetchThread, clientChunkSize);
   }
 
-  private void updateConservativeResultChunkSize(int clientChunkSize) {
-    if (clientChunkSize != conservativeResultChunkSize) {
-      logger.debug(
-          "conservativeResultChunkSize changed from {} to {}",
-          conservativeResultChunkSize,
-          clientChunkSize);
+  private void updateConservativeResultChunkSize(int clientChunkSize)
+  {
+    if (clientChunkSize != conservativeResultChunkSize)
+    {
+      logger.debug("conservativeResultChunkSize changed from {} to {}", conservativeResultChunkSize,
+                   clientChunkSize);
       conservativeResultChunkSize = clientChunkSize;
       statementParametersMap.put("CLIENT_RESULT_CHUNK_SIZE", conservativeResultChunkSize);
     }
   }
 
-  private void reducePrefetchThreadsAndChunkSizeToFitMemoryLimit(
-      long clientMemoryLimit, int clientPrefetchThread, int clientChunkSize) {
-    if (clientPrefetchThread != DEFAULT_CLIENT_PREFETCH_THREADS) {
+  private void reducePrefetchThreadsAndChunkSizeToFitMemoryLimit(long clientMemoryLimit, int clientPrefetchThread,
+                                                                 int clientChunkSize)
+  {
+    if (clientPrefetchThread != DEFAULT_CLIENT_PREFETCH_THREADS)
+    {
       // prefetch threads are configured so only reduce chunk size
       conservativePrefetchThreads = clientPrefetchThread;
-      for (;
-          clientChunkSize >= MIN_CLIENT_CHUNK_SIZE;
-          clientChunkSize -= session.getConservativeMemoryAdjustStep()) {
-        if (clientMemoryLimit >= (long) 2 * clientPrefetchThread * clientChunkSize * 1024 * 1024) {
+      for (; clientChunkSize >= MIN_CLIENT_CHUNK_SIZE; clientChunkSize -= session.getConservativeMemoryAdjustStep())
+      {
+        if (clientMemoryLimit >= (long) 2 * clientPrefetchThread * clientChunkSize * 1024 * 1024)
+        {
           updateConservativeResultChunkSize(clientChunkSize);
           return;
         }
       }
       updateConservativeResultChunkSize(MIN_CLIENT_CHUNK_SIZE);
-    } else {
+    }
+    else
+    {
       // reduce both prefetch threads and chunk size
-      while (clientPrefetchThread > 1) {
-        for (clientChunkSize = MAX_CLIENT_CHUNK_SIZE;
-            clientChunkSize >= MIN_CLIENT_CHUNK_SIZE;
-            clientChunkSize -= session.getConservativeMemoryAdjustStep()) {
-          if (clientMemoryLimit
-              >= (long) 2 * clientPrefetchThread * clientChunkSize * 1024 * 1024) {
+      while (clientPrefetchThread > 1)
+      {
+        for (clientChunkSize = MAX_CLIENT_CHUNK_SIZE; clientChunkSize >= MIN_CLIENT_CHUNK_SIZE;
+             clientChunkSize -= session.getConservativeMemoryAdjustStep())
+        {
+          if (clientMemoryLimit >= (long) 2 * clientPrefetchThread * clientChunkSize * 1024 * 1024)
+          {
             conservativePrefetchThreads = clientPrefetchThread;
             updateConservativeResultChunkSize(clientChunkSize);
             return;
@@ -637,24 +734,30 @@ public class SFStatement {
     }
   }
 
-  /** @return conservative prefetch threads before fetching results */
-  public int getConservativePrefetchThreads() {
+  /**
+   * @return conservative prefetch threads before fetching results
+   */
+  public int getConservativePrefetchThreads()
+  {
     return conservativePrefetchThreads;
   }
 
-  /** @return conservative memory limit before fetching results */
-  public long getConservativeMemoryLimit() {
+  /**
+   * @return conservative memory limit before fetching results
+   */
+  public long getConservativeMemoryLimit()
+  {
     return conservativeMemoryLimit;
   }
 
-  private void reauthenticate() throws SFException, SnowflakeSQLException {
-    SFLoginInput input =
-        new SFLoginInput()
-            .setRole(session.getRole())
-            .setWarehouse(session.getWarehouse())
-            .setDatabaseName(session.getDatabase())
-            .setSchemaName(session.getSchema())
-            .setOCSPMode(session.getOCSPMode());
+  private void reauthenticate() throws SFException, SnowflakeSQLException
+  {
+    SFLoginInput input = new SFLoginInput()
+        .setRole(session.getRole())
+        .setWarehouse(session.getWarehouse())
+        .setDatabaseName(session.getDatabase())
+        .setSchemaName(session.getSchema())
+        .setOCSPMode(session.getOCSPMode());
 
     session.open();
   }
@@ -662,22 +765,25 @@ public class SFStatement {
   /**
    * A helper method to build URL and cancel the SQL for exec
    *
-   * @param sql sql statement
+   * @param sql       sql statement
    * @param mediaType media type
    * @throws SnowflakeSQLException if failed to cancel the statement
-   * @throws SFException if statement is already closed
+   * @throws SFException           if statement is already closed
    */
   private void cancelHelper(String sql, String mediaType)
-      throws SnowflakeSQLException, SFException {
-    synchronized (this) {
-      if (isClosed) {
-        throw new SFException(ErrorCode.INTERNAL_ERROR, "statement already closed");
+  throws SnowflakeSQLException, SFException
+  {
+    synchronized (this)
+    {
+      if (isClosed)
+      {
+        throw new SFException(ErrorCode.INTERNAL_ERROR,
+                              "statement already closed");
       }
     }
 
     StmtUtil.StmtInput stmtInput = new StmtUtil.StmtInput();
-    stmtInput
-        .setServerUrl(session.getServerUrl())
+    stmtInput.setServerUrl(session.getServerUrl())
         .setSql(sql)
         .setMediaType(mediaType)
         .setRequestId(requestId)
@@ -687,7 +793,8 @@ public class SFStatement {
 
     StmtUtil.cancel(stmtInput);
 
-    synchronized (this) {
+    synchronized (this)
+    {
       /*
        * done with the remote execution of the query. set sequenceId to -1
        * and request id to null so that we don't try to abort it again upon
@@ -699,57 +806,69 @@ public class SFStatement {
   }
 
   /**
-   * A method to check if a sql is file upload statement with consideration for potential comments
-   * in front of put keyword.
-   *
+   * A method to check if a sql is file upload statement with consideration for
+   * potential comments in front of put keyword.
    * <p>
    *
    * @param sql sql statement
    * @return true if the command is upload statement
    */
-  private boolean isFileTransfer(String sql) {
+  private boolean isFileTransfer(String sql)
+  {
     SFStatementType statementType = StmtUtil.checkStageManageCommand(sql);
-    return statementType == SFStatementType.PUT || statementType == SFStatementType.GET;
+    return statementType == SFStatementType.PUT ||
+           statementType == SFStatementType.GET;
   }
 
   /**
    * Execute sql
    *
-   * @param sql sql statement.
+   * @param sql               sql statement.
    * @param parametersBinding parameters to bind
-   * @param caller the JDBC interface method that called this method, if any
+   * @param caller            the JDBC interface method that called this method, if any
    * @return whether there is result set or not
    * @throws SQLException if failed to execute sql
-   * @throws SFException exception raised from Snowflake components
+   * @throws SFException  exception raised from Snowflake components
    * @throws SQLException if SQL error occurs
    */
-  public SFBaseResultSet execute(
-      String sql,
-      boolean asyncExec,
-      Map<String, ParameterBindingDTO> parametersBinding,
-      CallingMethod caller)
-      throws SQLException, SFException {
+  public SFBaseResultSet execute(String sql,
+                                 boolean asyncExec,
+                                 Map<String, ParameterBindingDTO>
+                                     parametersBinding,
+                                 CallingMethod caller)
+  throws SQLException, SFException
+  {
     TelemetryService.getInstance().updateContext(session.getSnowflakeConnectionString());
     sanityCheckQuery(sql);
 
     session.injectedDelay();
 
-    if (session.getPreparedStatementLogging()) {
-      logger.info("execute: {}", (ArgSupplier) () -> SecretDetector.maskSecrets(sql));
-    } else {
-      logger.debug("execute: {}", (ArgSupplier) () -> SecretDetector.maskSecrets(sql));
+    if (session.getPreparedStatementLogging())
+    {
+      logger.info("execute: {}",
+                  (ArgSupplier) () -> SecretDetector.maskSecrets(sql));
+    }
+    else
+    {
+      logger.debug("execute: {}",
+                   (ArgSupplier) () -> SecretDetector.maskSecrets(sql));
     }
 
     String trimmedSql = sql.trim();
 
-    if (trimmedSql.length() >= 20 && trimmedSql.toLowerCase().startsWith("set-sf-property")) {
+    if (trimmedSql.length() >= 20
+        && trimmedSql.toLowerCase().startsWith(
+        "set-sf-property"))
+    {
       executeSetProperty(sql);
       return null;
     }
     return executeQuery(sql, parametersBinding, false, asyncExec, caller);
   }
 
-  private SFBaseResultSet executeFileTransfer(String sql) throws SQLException, SFException {
+  private SFBaseResultSet executeFileTransfer(String sql) throws SQLException,
+                                                                 SFException
+  {
     session.injectedDelay();
 
     resetState();
@@ -759,7 +878,8 @@ public class SFStatement {
     isFileTransfer = true;
     transferAgent = new SnowflakeFileTransferAgent(sql, session, this);
 
-    try {
+    try
+    {
       transferAgent.execute();
 
       logger.debug("setting result set");
@@ -767,19 +887,24 @@ public class SFStatement {
       resultSet = (SFFixedViewResultSet) transferAgent.getResultSet();
       childResults = Collections.emptyList();
 
-      logger.debug("Number of cols: {}", resultSet.getMetaData().getColumnCount());
+      logger.debug("Number of cols: {}",
+                   resultSet.getMetaData().getColumnCount());
       logger.debug("Completed transferring data");
       return resultSet;
-    } catch (SQLException ex) {
+    }
+    catch (SQLException ex)
+    {
       logger.debug("Exception: {}", ex.getMessage());
       throw ex;
     }
   }
 
-  public void close() {
+  public void close()
+  {
     logger.debug("public void close()");
 
-    if (requestId != null) {
+    if (requestId != null)
+    {
       EventUtil.triggerStateTransition(
           BasicEvent.QueryState.QUERY_ENDED,
           String.format(QueryState.QUERY_ENDED.getArgString(), requestId));
@@ -789,7 +914,8 @@ public class SFStatement {
     childResults = null;
     isClosed = true;
 
-    if (httpRequest != null) {
+    if (httpRequest != null)
+    {
       logger.debug("releasing connection for the http request");
 
       httpRequest.releaseConnection();
@@ -802,25 +928,33 @@ public class SFStatement {
     transferAgent = null;
   }
 
-  public void cancel() throws SFException, SQLException {
+  public void cancel() throws SFException, SQLException
+  {
     logger.debug("public void cancel()");
 
-    if (canceling.get()) {
+    if (canceling.get())
+    {
       logger.debug("Query is already cancelled");
       return;
     }
 
     canceling.set(true);
 
-    if (isFileTransfer) {
-      if (transferAgent != null) {
+    if (isFileTransfer)
+    {
+      if (transferAgent != null)
+      {
         logger.debug("Cancel file transferring ... ");
         transferAgent.cancel();
       }
-    } else {
-      synchronized (this) {
+    }
+    else
+    {
+      synchronized (this)
+      {
         // the query hasn't been sent to GS yet, just mark the stmt closed
-        if (requestId == null) {
+        if (requestId == null)
+        {
           logger.debug("No remote query outstanding");
 
           return;
@@ -832,11 +966,13 @@ public class SFStatement {
     }
   }
 
-  private void resetState() {
+  private void resetState()
+  {
     resultSet = null;
     childResults = null;
 
-    if (httpRequest != null) {
+    if (httpRequest != null)
+    {
       httpRequest.releaseConnection();
       httpRequest = null;
     }
@@ -851,67 +987,90 @@ public class SFStatement {
     transferAgent = null;
   }
 
-  public void executeSetProperty(final String sql) {
+  public void executeSetProperty(final String sql)
+  {
     logger.debug("setting property");
 
     // tokenize the sql
     String[] tokens = sql.split("\\s+");
 
-    if (tokens.length < 2) {
+    if (tokens.length < 2)
+    {
       return;
     }
 
-    if ("sort".equalsIgnoreCase(tokens[1])) {
-      if (tokens.length >= 3 && "on".equalsIgnoreCase(tokens[2])) {
+    if ("sort".equalsIgnoreCase(tokens[1]))
+    {
+      if (tokens.length >= 3 && "on".equalsIgnoreCase(tokens[2]))
+      {
         logger.debug("setting sort on");
 
         this.session.setSFSessionProperty("sort", true);
-      } else {
+      }
+      else
+      {
         logger.debug("setting sort off");
         this.session.setSFSessionProperty("sort", false);
       }
     }
   }
 
-  protected SFSession getSession() {
+  protected SFSession getSession()
+  {
     return session;
   }
 
+  public void setHasUnsupportedStageBind(boolean hasUnsupportedStageBind)
+  {
+    this.hasUnsupportedStageBind = hasUnsupportedStageBind;
+  }
+
   // *NOTE* this new SQL format is incomplete. It should only be used under certain circumstances.
-  private void setUseNewSqlFormat(boolean useNewSqlFormat) throws SFException {
+  private void setUseNewSqlFormat(boolean useNewSqlFormat) throws SFException
+  {
     this.addProperty("NEW_SQL_FORMAT", useNewSqlFormat);
   }
 
-  public boolean getMoreResults() throws SQLException {
+  public boolean getMoreResults() throws SQLException
+  {
     return getMoreResults(Statement.CLOSE_CURRENT_RESULT);
   }
 
   /**
    * Sets the result set to the next one, if available.
    *
-   * @param current What to do with the current result. One of Statement.CLOSE_CURRENT_RESULT,
-   *     Statement.CLOSE_ALL_RESULTS, or Statement.KEEP_CURRENT_RESULT
-   * @return true if there is a next result and it's a result set false if there are no more
-   *     results, or there is a next result and it's an update count
+   * @param current What to do with the current result.
+   *                One of Statement.CLOSE_CURRENT_RESULT,
+   *                Statement.CLOSE_ALL_RESULTS, or
+   *                Statement.KEEP_CURRENT_RESULT
+   * @return true if there is a next result and it's a result set
+   * false if there are no more results, or there is a next result
+   * and it's an update count
    * @throws SQLException if something fails while getting the next result
    */
-  public boolean getMoreResults(int current) throws SQLException {
+  public boolean getMoreResults(int current) throws SQLException
+  {
     // clean up current result, if exists
-    if (resultSet != null
-        && (current == Statement.CLOSE_CURRENT_RESULT || current == Statement.CLOSE_ALL_RESULTS)) {
+    if (resultSet != null &&
+        (current == Statement.CLOSE_CURRENT_RESULT ||
+         current == Statement.CLOSE_ALL_RESULTS))
+    {
       resultSet.close();
     }
     resultSet = null;
 
     // verify if more results exist
-    if (childResults == null || childResults.isEmpty()) {
+    if (childResults == null || childResults.isEmpty())
+    {
       return false;
     }
 
     // fetch next result using the query id
     SFChildResult nextResult = childResults.remove(0);
-    try {
-      JsonNode result = StmtUtil.getQueryResultJSON(nextResult.getId(), session);
+    try
+    {
+      JsonNode result = StmtUtil.getQueryResultJSON(
+          nextResult.getId(), session);
       Object sortProperty = session.getSFSessionProperty("sort");
       boolean sortResult = sortProperty != null && (Boolean) sortProperty;
       resultSet = SFResultSetFactory.getResultSet(result, this, sortResult);
@@ -920,16 +1079,20 @@ public class SFStatement {
       resultSet.setStatementType(nextResult.getType());
 
       return nextResult.getType().isGenerateResultSet();
-    } catch (SFException ex) {
+    }
+    catch (SFException ex)
+    {
       throw new SnowflakeSQLException(ex);
     }
   }
 
-  public SFBaseResultSet getResultSet() {
+  public SFBaseResultSet getResultSet()
+  {
     return resultSet;
   }
 
-  public boolean hasChildren() {
+  public boolean hasChildren()
+  {
     return !childResults.isEmpty();
   }
 }

@@ -5,10 +5,13 @@
 package net.snowflake.client.core;
 
 /**
- * Interface for accessing Platform specific Local Secure Storage E.g. keychain on Mac credential
- * manager on Windows
+ * Interface for accessing Platform specific Local Secure Storage
+ * E.g.
+ * keychain on Mac
+ * credential manager on Windows
  */
-interface SecureStorageManager {
+interface SecureStorageManager
+{
   String DRIVER_NAME = "SNOWFLAKE-JDBC-DRIVER";
   int COLON_CHAR_LENGTH = 1;
 
@@ -18,10 +21,10 @@ interface SecureStorageManager {
 
   SecureStorageStatus deleteCredential(String host, String user);
 
-  static String convertTarget(String host, String user) {
+  static String convertTarget(String host, String user)
+  {
     StringBuilder target =
-        new StringBuilder(
-            host.length() + user.length() + DRIVER_NAME.length() + 2 * COLON_CHAR_LENGTH);
+        new StringBuilder(host.length() + user.length() + DRIVER_NAME.length() + 2 * COLON_CHAR_LENGTH);
 
     target.append(host.toUpperCase());
     target.append(":");
@@ -32,10 +35,12 @@ interface SecureStorageManager {
     return target.toString();
   }
 
-  enum SecureStorageStatus {
+  enum SecureStorageStatus
+  {
     NOT_FOUND,
     FAILURE,
     SUCCESS,
     UNSUPPORTED
   }
 }
+

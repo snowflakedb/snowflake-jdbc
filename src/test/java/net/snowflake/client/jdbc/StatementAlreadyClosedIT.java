@@ -3,28 +3,31 @@
  */
 package net.snowflake.client.jdbc;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.Statement;
 import net.snowflake.client.category.TestCategoryStatement;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.Statement;
+
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 @Category(TestCategoryStatement.class)
-public class StatementAlreadyClosedIT extends BaseJDBCTest {
+public class StatementAlreadyClosedIT extends BaseJDBCTest
+{
   @Test
-  public void testStatementAlreadyClosed() throws Throwable {
-    try (Connection connection = getConnection()) {
+  public void testStatementAlreadyClosed() throws Throwable
+  {
+    try (Connection connection = getConnection())
+    {
       Statement statement = connection.createStatement();
       assertFalse(statement.isClosed());
       statement.close();
       assertTrue(statement.isClosed());
 
-      expectStatementAlreadyClosedException(
-          () -> statement.execute("select 1", Statement.NO_GENERATED_KEYS));
+      expectStatementAlreadyClosedException(() -> statement.execute("select 1", Statement.NO_GENERATED_KEYS));
       expectStatementAlreadyClosedException(statement::executeBatch);
       expectStatementAlreadyClosedException(() -> statement.executeQuery("select 1"));
       expectStatementAlreadyClosedException(() -> statement.executeUpdate("update t set c1=1"));
@@ -42,8 +45,7 @@ public class StatementAlreadyClosedIT extends BaseJDBCTest {
       expectStatementAlreadyClosedException(statement::getUpdateCount);
       expectStatementAlreadyClosedException(statement::getWarnings);
       expectStatementAlreadyClosedException(() -> statement.setEscapeProcessing(true));
-      expectStatementAlreadyClosedException(
-          () -> statement.setFetchDirection(ResultSet.FETCH_FORWARD));
+      expectStatementAlreadyClosedException(() -> statement.setFetchDirection(ResultSet.FETCH_FORWARD));
       expectStatementAlreadyClosedException(() -> statement.setFetchSize(10));
       expectStatementAlreadyClosedException(() -> statement.setMaxRows(10));
       expectStatementAlreadyClosedException(statement::isPoolable);

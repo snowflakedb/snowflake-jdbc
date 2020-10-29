@@ -3,7 +3,8 @@ package net.snowflake.client.jdbc;
 import java.sql.SQLException;
 import java.util.List;
 
-public interface SnowflakeResultSetMetaData {
+public interface SnowflakeResultSetMetaData
+{
   String getQueryID() throws SQLException;
 
   List<String> getColumnNames() throws SQLException;
@@ -11,4 +12,5 @@ public interface SnowflakeResultSetMetaData {
   int getColumnIndex(String columnName) throws SQLException;
 
   int getInternalColumnType(int column) throws SQLException;
+
 }

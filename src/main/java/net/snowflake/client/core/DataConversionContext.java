@@ -3,45 +3,70 @@
  */
 package net.snowflake.client.core;
 
-import java.util.TimeZone;
 import net.snowflake.common.core.SFBinaryFormat;
 import net.snowflake.common.core.SnowflakeDateTimeFormat;
 
+import java.util.TimeZone;
+
 /**
- * This class contains formatter info about each data type and related flags etc. And it is scoped
- * to a single result set. a.k.a each result set object should have its own formatter info
+ * This class contains formatter info about each data type and related flags
+ * etc. And it is scoped to a single result set. a.k.a each result set object
+ * should have its own formatter info
  */
-public interface DataConversionContext {
-  /** timestamp_ltz formatter */
+public interface DataConversionContext
+{
+  /**
+   * timestamp_ltz formatter
+   */
   SnowflakeDateTimeFormat getTimestampLTZFormatter();
 
-  /** timestamp_ntz formatter */
+  /**
+   * timestamp_ntz formatter
+   */
   SnowflakeDateTimeFormat getTimestampNTZFormatter();
 
-  /** timestamp_tz formatter */
+  /**
+   * timestamp_tz formatter
+   */
   SnowflakeDateTimeFormat getTimestampTZFormatter();
 
-  /** date formatter */
+  /**
+   * date formatter
+   */
   SnowflakeDateTimeFormat getDateFormatter();
 
-  /** time formatter */
+  /**
+   * time formatter
+   */
   SnowflakeDateTimeFormat getTimeFormatter();
 
-  /** binary formatter */
+  /**
+   * binary formatter
+   */
   SFBinaryFormat getBinaryFormatter();
 
-  /** get scale from Snowflake metadata */
+  /**
+   * get scale from Snowflake metadata
+   */
   int getScale(int columnIndex);
 
-  /** @return current session */
+  /**
+   * @return current session
+   */
   SFSession getSession();
 
-  /** @return session time zone */
+  /**
+   * @return session time zone
+   */
   TimeZone getTimeZone();
 
-  /** @return whether to honor client time zone for timestamp_ntz */
+  /**
+   * @return whether to honor client time zone for timestamp_ntz
+   */
   boolean getHonorClientTZForTimestampNTZ();
 
-  /** @return result version */
+  /**
+   * @return result version
+   */
   long getResultVersion();
 }

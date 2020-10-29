@@ -3,10 +3,6 @@
  */
 package net.snowflake.client.core.arrow;
 
-import java.nio.ByteBuffer;
-import java.sql.Time;
-import java.sql.Timestamp;
-import java.util.TimeZone;
 import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.IncidentUtil;
 import net.snowflake.client.core.ResultUtil;
@@ -17,12 +13,18 @@ import net.snowflake.common.core.SFTime;
 import org.apache.arrow.vector.IntVector;
 import org.apache.arrow.vector.ValueVector;
 
-public class IntToTimeConverter extends AbstractArrowVectorConverter {
+import java.nio.ByteBuffer;
+import java.sql.Time;
+import java.sql.Timestamp;
+import java.util.TimeZone;
+
+public class IntToTimeConverter extends AbstractArrowVectorConverter
+{
   private IntVector intVector;
   private ByteBuffer byteBuf = ByteBuffer.allocate(IntVector.TYPE_WIDTH);
 
-  public IntToTimeConverter(
-      ValueVector fieldVector, int columnIndex, DataConversionContext context) {
+  public IntToTimeConverter(ValueVector fieldVector, int columnIndex, DataConversionContext context)
+  {
     super(SnowflakeType.TIME.name(), fieldVector, columnIndex, context);
     this.intVector = (IntVector) fieldVector;
   }
@@ -33,67 +35,81 @@ public class IntToTimeConverter extends AbstractArrowVectorConverter {
    * @param index
    * @return
    */
-  private SFTime toSFTime(int index) {
+  private SFTime toSFTime(int index)
+  {
     long val = intVector.getDataBuffer().getInt(index * IntVector.TYPE_WIDTH);
     return SFTime.fromFractionalSeconds(val, context.getScale(columnIndex));
   }
 
   @Override
-  public byte[] toBytes(int index) throws SFException {
-    if (isNull(index)) {
+  public byte[] toBytes(int index) throws SFException
+  {
+    if (isNull(index))
+    {
       return null;
-    } else {
+    }
+    else
+    {
       byteBuf.putInt(0, intVector.getDataBuffer().getInt(index * IntVector.TYPE_WIDTH));
       return byteBuf.array();
     }
   }
 
   @Override
-  public Time toTime(int index) throws SFException {
-    if (isNull(index)) {
+  public Time toTime(int index) throws SFException
+  {
+    if (isNull(index))
+    {
       return null;
-    } else {
+    }
+    else
+    {
       SFTime sfTime = toSFTime(index);
-      if (sfTime == null) {
+      if (sfTime == null)
+      {
         return null;
       }
-      return new Time(
-          sfTime.getFractionalSeconds(ResultUtil.DEFAULT_SCALE_OF_SFTIME_FRACTION_SECONDS));
+      return new Time(sfTime.getFractionalSeconds(ResultUtil.DEFAULT_SCALE_OF_SFTIME_FRACTION_SECONDS));
     }
   }
 
   @Override
-  public String toString(int index) throws SFException {
-    if (context.getTimeFormatter() == null) {
-      throw (SFException)
-          IncidentUtil.generateIncidentV2WithException(
-              context.getSession(),
-              new SFException(ErrorCode.INTERNAL_ERROR, "missing time formatter"),
-              null,
-              null);
+  public String toString(int index) throws SFException
+  {
+    if (context.getTimeFormatter() == null)
+    {
+      throw (SFException) IncidentUtil.generateIncidentV2WithException(
+          context.getSession(),
+          new SFException(ErrorCode.INTERNAL_ERROR,
+                          "missing time formatter"),
+          null,
+          null);
     }
-    return isNull(index)
-        ? null
-        : ResultUtil.getSFTimeAsString(
-            toSFTime(index), context.getScale(columnIndex), context.getTimeFormatter());
+    return isNull(index) ? null :
+           ResultUtil.getSFTimeAsString(toSFTime(index), context.getScale(columnIndex), context.getTimeFormatter());
   }
 
   @Override
-  public Object toObject(int index) throws SFException {
+  public Object toObject(int index) throws SFException
+  {
     return isNull(index) ? null : toTime(index);
   }
 
   @Override
-  public Timestamp toTimestamp(int index, TimeZone tz) throws SFException {
+  public Timestamp toTimestamp(int index, TimeZone tz) throws SFException
+  {
     return isNull(index) ? null : new Timestamp(toTime(index).getTime());
   }
 
   @Override
-  public boolean toBoolean(int index) throws SFException {
-    if (isNull(index)) {
+  public boolean toBoolean(int index) throws SFException
+  {
+    if (isNull(index))
+    {
       return false;
     }
     Time val = toTime(index);
-    throw new SFException(ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr, "Boolean", val);
+    throw new SFException(ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr,
+                          "Boolean", val);
   }
 }

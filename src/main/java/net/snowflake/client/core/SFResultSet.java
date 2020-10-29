@@ -4,13 +4,7 @@
 
 package net.snowflake.client.core;
 
-import static net.snowflake.client.core.StmtUtil.eventHandler;
-import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
-
 import com.fasterxml.jackson.databind.JsonNode;
-import java.sql.SQLException;
-import java.util.Arrays;
-import java.util.Comparator;
 import net.snowflake.client.core.BasicEvent.QueryState;
 import net.snowflake.client.jdbc.*;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
@@ -21,14 +15,21 @@ import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SqlState;
 
+import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.Comparator;
+
+import static net.snowflake.client.core.StmtUtil.eventHandler;
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
+
 /**
  * Snowflake ResultSet implementation
- *
  * <p>
  *
  * @author jhuang
  */
-public class SFResultSet extends SFJsonResultSet {
+public class SFResultSet extends SFJsonResultSet
+{
   static final SFLogger logger = SFLoggerFactory.getLogger(SFResultSet.class);
 
   private int columnCount = 0;
@@ -70,23 +71,22 @@ public class SFResultSet extends SFJsonResultSet {
   // instead of a local/session timezone, set to true
   private boolean treatNTZAsUTC;
 
-  private boolean formatDateWithTimezone;
-
   /**
-   * Constructor takes a result from the API response that we get from executing a SQL statement.
-   *
-   * <p>The constructor will initialize the ResultSetMetaData.
+   * Constructor takes a result from the API response that we get from
+   * executing a SQL statement.
+   * <p>
+   * The constructor will initialize the ResultSetMetaData.
    *
    * @param resultSetSerializable result data after parsing
-   * @param statement statement object
-   * @param sortResult true if sort results otherwise false
+   * @param statement             statement object
+   * @param sortResult            true if sort results otherwise false
    * @throws SQLException exception raised from general SQL layers
    */
-  public SFResultSet(
-      SnowflakeResultSetSerializableV1 resultSetSerializable,
-      SFStatement statement,
-      boolean sortResult)
-      throws SQLException {
+  public SFResultSet(SnowflakeResultSetSerializableV1 resultSetSerializable,
+                     SFStatement statement,
+                     boolean sortResult)
+  throws SQLException
+  {
     this(resultSetSerializable, statement.getSession().getTelemetryClient(), sortResult);
 
     this.statement = statement;
@@ -96,35 +96,34 @@ public class SFResultSet extends SFJsonResultSet {
     session.setRole(resultSetSerializable.getFinalRoleName());
     session.setWarehouse(resultSetSerializable.getFinalWarehouseName());
     this.treatNTZAsUTC = resultSetSerializable.getTreatNTZAsUTC();
-    this.formatDateWithTimezone = resultSetSerializable.getFormatDateWithTimeZone();
 
     // update the driver/session with common parameters from GS
     SessionUtil.updateSfDriverParamValues(this.parameters, statement.getSession());
 
     // if server gives a send time, log time it took to arrive
-    if (resultSetSerializable.getSendResultTime() != 0) {
+    if (resultSetSerializable.getSendResultTime() != 0)
+    {
       long timeConsumeFirstResult = this.firstChunkTime - resultSetSerializable.getSendResultTime();
       logMetric(TelemetryField.TIME_CONSUME_FIRST_RESULT, timeConsumeFirstResult);
     }
 
-    eventHandler.triggerStateTransition(
-        BasicEvent.QueryState.CONSUMING_RESULT,
-        String.format(QueryState.CONSUMING_RESULT.getArgString(), queryId, 0));
+    eventHandler.triggerStateTransition(BasicEvent.QueryState.CONSUMING_RESULT,
+                                        String.format(QueryState.CONSUMING_RESULT.getArgString(), queryId, 0));
   }
 
   /**
-   * This is a minimum initialization for SFResultSet. Mainly used for testing purpose. However,
-   * real prod constructor will call this constructor as well
+   * This is a minimum initialization for SFResultSet. Mainly used for testing
+   * purpose. However, real prod constructor will call this constructor as well
    *
    * @param resultSetSerializable data returned in query response
-   * @param telemetryClient telemetryClient
+   * @param telemetryClient       telemetryClient
    * @throws SQLException
    */
-  public SFResultSet(
-      SnowflakeResultSetSerializableV1 resultSetSerializable,
-      Telemetry telemetryClient,
-      boolean sortResult)
-      throws SQLException {
+  public SFResultSet(SnowflakeResultSetSerializableV1 resultSetSerializable,
+                     Telemetry telemetryClient,
+                     boolean sortResult)
+  throws SQLException
+  {
     this.resultSetSerializable = resultSetSerializable;
     this.columnCount = 0;
     this.sortResult = sortResult;
@@ -146,7 +145,8 @@ public class SFResultSet extends SFJsonResultSet {
     this.dateFormatter = resultSetSerializable.getDateFormatter();
     this.timeFormatter = resultSetSerializable.getTimeFormatter();
     this.timeZone = resultSetSerializable.getTimeZone();
-    this.honorClientTZForTimestampNTZ = resultSetSerializable.isHonorClientTZForTimestampNTZ();
+    this.honorClientTZForTimestampNTZ =
+        resultSetSerializable.isHonorClientTZForTimestampNTZ();
     this.binaryFormatter = resultSetSerializable.getBinaryFormatter();
     this.resultVersion = resultSetSerializable.getResultVersion();
     this.numberOfBinds = resultSetSerializable.getNumberOfBinds();
@@ -154,34 +154,39 @@ public class SFResultSet extends SFJsonResultSet {
     this.metaDataOfBinds = resultSetSerializable.getMetaDataOfBinds();
     this.resultSetMetaData = resultSetSerializable.getSFResultSetMetaData();
     this.treatNTZAsUTC = resultSetSerializable.getTreatNTZAsUTC();
-    this.formatDateWithTimezone = resultSetSerializable.getFormatDateWithTimeZone();
 
     // sort result set if needed
-    if (sortResult) {
+    if (sortResult)
+    {
       // we don't support sort result when there are offline chunks
-      if (chunkCount > 0) {
-        throw new SnowflakeSQLLoggedException(
-            session,
-            ErrorCode.CLIENT_SIDE_SORTING_NOT_SUPPORTED.getMessageCode(),
-            SqlState.FEATURE_NOT_SUPPORTED);
+      if (chunkCount > 0)
+      {
+        throw new SnowflakeSQLException(SqlState.FEATURE_NOT_SUPPORTED,
+                                        ErrorCode.CLIENT_SIDE_SORTING_NOT_SUPPORTED.getMessageCode());
       }
 
       sortResultSet();
     }
   }
 
-  private boolean fetchNextRow() throws SFException, SnowflakeSQLException {
-    if (sortResult) {
+  private boolean fetchNextRow() throws SFException, SnowflakeSQLException
+  {
+    if (sortResult)
+    {
       return fetchNextRowSorted();
-    } else {
+    }
+    else
+    {
       return fetchNextRowUnsorted();
     }
   }
 
-  private boolean fetchNextRowSorted() {
+  private boolean fetchNextRowSorted()
+  {
     currentChunkRowIndex++;
 
-    if (currentChunkRowIndex < currentChunkRowCount) {
+    if (currentChunkRowIndex < currentChunkRowCount)
+    {
       return true;
     }
 
@@ -192,29 +197,35 @@ public class SFResultSet extends SFJsonResultSet {
     return false;
   }
 
-  private boolean fetchNextRowUnsorted() throws SFException, SnowflakeSQLException {
+  private boolean fetchNextRowUnsorted() throws SFException, SnowflakeSQLException
+  {
     currentChunkRowIndex++;
 
-    if (currentChunkRowIndex < currentChunkRowCount) {
+    if (currentChunkRowIndex < currentChunkRowCount)
+    {
       return true;
     }
 
     // let GC collect first rowset
     firstChunkRowset = null;
 
-    if (nextChunkIndex < chunkCount) {
-      try {
+    if (nextChunkIndex < chunkCount)
+    {
+      try
+      {
         eventHandler.triggerStateTransition(
             BasicEvent.QueryState.CONSUMING_RESULT,
-            String.format(QueryState.CONSUMING_RESULT.getArgString(), queryId, nextChunkIndex));
+            String.format(QueryState.CONSUMING_RESULT.getArgString(),
+                          queryId,
+                          nextChunkIndex));
 
         SnowflakeResultChunk nextChunk = chunkDownloader.getNextChunkToConsume();
 
-        if (nextChunk == null) {
+        if (nextChunk == null)
+        {
           throw new SnowflakeSQLLoggedException(
-              session,
-              ErrorCode.INTERNAL_ERROR.getMessageCode(),
               SqlState.INTERNAL_ERROR,
+              ErrorCode.INTERNAL_ERROR.getMessageCode(), session,
               "Expect chunk but got null for chunk index " + nextChunkIndex);
         }
 
@@ -222,40 +233,53 @@ public class SFResultSet extends SFJsonResultSet {
         currentChunkRowCount = nextChunk.getRowCount();
         currentChunk = (JsonResultChunk) nextChunk;
 
-        logger.debug(
-            "Moving to chunk index {}, row count={}", nextChunkIndex, currentChunkRowCount);
+        logger.debug("Moving to chunk index {}, row count={}",
+                     nextChunkIndex, currentChunkRowCount);
 
         nextChunkIndex++;
 
         return true;
-      } catch (InterruptedException ex) {
-        throw new SnowflakeSQLLoggedException(
-            session, ErrorCode.INTERRUPTED.getMessageCode(), SqlState.QUERY_CANCELED);
       }
-    } else if (chunkCount > 0) {
-      try {
+      catch (InterruptedException ex)
+      {
+        throw new SnowflakeSQLException(SqlState.QUERY_CANCELED,
+                                        ErrorCode.INTERRUPTED.getMessageCode());
+      }
+    }
+    else if (chunkCount > 0)
+    {
+      try
+      {
         logger.debug("End of chunks");
         DownloaderMetrics metrics = chunkDownloader.terminate();
         logChunkDownloaderMetrics(metrics);
-      } catch (InterruptedException ex) {
-        throw new SnowflakeSQLLoggedException(
-            session, ErrorCode.INTERRUPTED.getMessageCode(), SqlState.QUERY_CANCELED);
+      }
+      catch (InterruptedException ex)
+      {
+        throw new SnowflakeSQLException(SqlState.QUERY_CANCELED,
+                                        ErrorCode.INTERRUPTED.getMessageCode());
       }
     }
 
     return false;
   }
 
-  private void logMetric(TelemetryField field, long value) {
+  private void logMetric(TelemetryField field, long value)
+  {
     TelemetryData data = TelemetryUtil.buildJobData(this.queryId, field, value);
     this.telemetryClient.addLogToBatch(data);
   }
 
-  private void logChunkDownloaderMetrics(DownloaderMetrics metrics) {
-    if (metrics != null) {
-      logMetric(TelemetryField.TIME_WAITING_FOR_CHUNKS, metrics.getMillisWaiting());
-      logMetric(TelemetryField.TIME_DOWNLOADING_CHUNKS, metrics.getMillisDownloading());
-      logMetric(TelemetryField.TIME_PARSING_CHUNKS, metrics.getMillisParsing());
+  private void logChunkDownloaderMetrics(DownloaderMetrics metrics)
+  {
+    if (metrics != null)
+    {
+      logMetric(TelemetryField.TIME_WAITING_FOR_CHUNKS,
+                metrics.getMillisWaiting());
+      logMetric(TelemetryField.TIME_DOWNLOADING_CHUNKS,
+                metrics.getMillisDownloading());
+      logMetric(TelemetryField.TIME_PARSING_CHUNKS,
+                metrics.getMillisParsing());
     }
   }
 
@@ -265,33 +289,40 @@ public class SFResultSet extends SFJsonResultSet {
    * @return true if next row exists, false otherwise
    */
   @Override
-  public boolean next() throws SFException, SnowflakeSQLException {
-    if (isClosed()) {
+  public boolean next() throws SFException, SnowflakeSQLException
+  {
+    if (isClosed())
+    {
       return false;
     }
 
     // otherwise try to fetch again
-    if (fetchNextRow()) {
+    if (fetchNextRow())
+    {
       row++;
-      if (isLast()) {
+      if (isLast())
+      {
         long timeConsumeLastResult = System.currentTimeMillis() - this.firstChunkTime;
         logMetric(TelemetryField.TIME_CONSUME_LAST_RESULT, timeConsumeLastResult);
       }
       return true;
-    } else {
+    }
+    else
+    {
       logger.debug("end of result");
 
       /*
        * Here we check if the result has been truncated and throw exception if
        * so.
        */
-      if (totalRowCountTruncated
-          || Boolean.TRUE
-              .toString()
-              .equalsIgnoreCase(systemGetProperty("snowflake.enable_incident_test2"))) {
-        throw (SFException)
-            IncidentUtil.generateIncidentV2WithException(
-                session, new SFException(ErrorCode.MAX_RESULT_LIMIT_EXCEEDED), queryId, null);
+      if (totalRowCountTruncated ||
+          Boolean.TRUE.toString().equalsIgnoreCase(systemGetProperty("snowflake.enable_incident_test2")))
+      {
+        throw (SFException) IncidentUtil.generateIncidentV2WithException(
+            session,
+            new SFException(ErrorCode.MAX_RESULT_LIMIT_EXCEEDED),
+            queryId,
+            null);
       }
 
       // mark end of result
@@ -300,121 +331,155 @@ public class SFResultSet extends SFJsonResultSet {
   }
 
   @Override
-  protected Object getObjectInternal(int columnIndex) throws SFException {
-    if (columnIndex <= 0 || columnIndex > resultSetMetaData.getColumnCount()) {
+  protected Object getObjectInternal(int columnIndex) throws SFException
+  {
+    if (columnIndex <= 0 || columnIndex > resultSetMetaData.getColumnCount())
+    {
       throw new SFException(ErrorCode.COLUMN_DOES_NOT_EXIST, columnIndex);
     }
 
     final int internalColumnIndex = columnIndex - 1;
     Object retValue;
-    if (sortResult) {
-      retValue = firstChunkSortedRowSet[currentChunkRowIndex][internalColumnIndex];
-    } else if (firstChunkRowset != null) {
-      retValue =
-          JsonResultChunk.extractCell(firstChunkRowset, currentChunkRowIndex, internalColumnIndex);
-    } else if (currentChunk != null) {
+    if (sortResult)
+    {
+      retValue = firstChunkSortedRowSet[
+          currentChunkRowIndex][internalColumnIndex];
+    }
+    else if (firstChunkRowset != null)
+    {
+      retValue = JsonResultChunk.extractCell(firstChunkRowset,
+                                             currentChunkRowIndex,
+                                             internalColumnIndex);
+    }
+    else if (currentChunk != null)
+    {
       retValue = currentChunk.getCell(currentChunkRowIndex, internalColumnIndex);
-    } else {
+    }
+    else
+    {
       throw new SFException(ErrorCode.COLUMN_DOES_NOT_EXIST, columnIndex);
     }
     wasNull = retValue == null;
     return retValue;
   }
 
-  private void sortResultSet() {
+  private void sortResultSet()
+  {
     // first fetch rows into firstChunkSortedRowSet
     firstChunkSortedRowSet = new Object[currentChunkRowCount][];
 
-    for (int rowIdx = 0; rowIdx < currentChunkRowCount; rowIdx++) {
+    for (int rowIdx = 0; rowIdx < currentChunkRowCount; rowIdx++)
+    {
       firstChunkSortedRowSet[rowIdx] = new Object[columnCount];
-      for (int colIdx = 0; colIdx < columnCount; colIdx++) {
+      for (int colIdx = 0; colIdx < columnCount; colIdx++)
+      {
         firstChunkSortedRowSet[rowIdx][colIdx] =
             JsonResultChunk.extractCell(firstChunkRowset, rowIdx, colIdx);
       }
     }
 
     // now sort it
-    Arrays.sort(
-        firstChunkSortedRowSet,
-        new Comparator<Object[]>() {
-          public int compare(Object[] a, Object[] b) {
-            int numCols = a.length;
+    Arrays.sort(firstChunkSortedRowSet,
+                new Comparator<Object[]>()
+                {
+                  public int compare(Object[] a, Object[] b)
+                  {
+                    int numCols = a.length;
 
-            for (int colIdx = 0; colIdx < numCols; colIdx++) {
-              if (a[colIdx] == null && b[colIdx] == null) {
-                continue;
-              }
+                    for (int colIdx = 0; colIdx < numCols; colIdx++)
+                    {
+                      if (a[colIdx] == null && b[colIdx] == null)
+                      {
+                        continue;
+                      }
 
-              // null is considered bigger than all values
-              if (a[colIdx] == null) {
-                return 1;
-              }
+                      // null is considered bigger than all values
+                      if (a[colIdx] == null)
+                      {
+                        return 1;
+                      }
 
-              if (b[colIdx] == null) {
-                return -1;
-              }
+                      if (b[colIdx] == null)
+                      {
+                        return -1;
+                      }
 
-              int res = a[colIdx].toString().compareTo(b[colIdx].toString());
+                      int res
+                          = a[colIdx].toString().compareTo(b[colIdx].toString());
 
-              // continue to next column if no difference
-              if (res == 0) {
-                continue;
-              }
+                      // continue to next column if no difference
+                      if (res == 0)
+                      {
+                        continue;
+                      }
 
-              return res;
-            }
+                      return res;
+                    }
 
-            // all columns are the same
-            return 0;
-          }
-        });
+                    // all columns are the same
+                    return 0;
+                  }
+                });
   }
 
   @Override
-  public boolean isLast() {
-    return nextChunkIndex == chunkCount && currentChunkRowIndex + 1 == currentChunkRowCount;
+  public boolean isLast()
+  {
+    return nextChunkIndex == chunkCount &&
+           currentChunkRowIndex + 1 == currentChunkRowCount;
   }
 
   @Override
-  public boolean isAfterLast() {
-    return nextChunkIndex == chunkCount && currentChunkRowIndex >= currentChunkRowCount;
+  public boolean isAfterLast()
+  {
+    return nextChunkIndex == chunkCount &&
+           currentChunkRowIndex >= currentChunkRowCount;
   }
 
   @Override
-  public void close() throws SnowflakeSQLException {
+  public void close() throws SnowflakeSQLException
+  {
     super.close();
 
-    try {
-      if (chunkDownloader != null) {
+    try
+    {
+      if (chunkDownloader != null)
+      {
         DownloaderMetrics metrics = chunkDownloader.terminate();
         logChunkDownloaderMetrics(metrics);
         firstChunkSortedRowSet = null;
         firstChunkRowset = null;
         currentChunk = null;
       }
-    } catch (InterruptedException ex) {
-      throw new SnowflakeSQLLoggedException(
-          session, ErrorCode.INTERRUPTED.getMessageCode(), SqlState.QUERY_CANCELED);
+    }
+    catch (InterruptedException ex)
+    {
+      throw new SnowflakeSQLException(SqlState.QUERY_CANCELED,
+                                      ErrorCode.INTERRUPTED.getMessageCode());
     }
   }
 
   @Override
-  public SFStatementType getStatementType() {
+  public SFStatementType getStatementType()
+  {
     return statementType;
   }
 
   @Override
-  public void setStatementType(SFStatementType statementType) {
+  public void setStatementType(SFStatementType statementType)
+  {
     this.statementType = statementType;
   }
 
   @Override
-  public boolean isArrayBindSupported() {
+  public boolean isArrayBindSupported()
+  {
     return this.arrayBindSupported;
   }
 
   @Override
-  public String getQueryId() {
+  public String getQueryId()
+  {
     return queryId;
   }
 }

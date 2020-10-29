@@ -1,12 +1,6 @@
 package net.snowflake.client.jdbc.telemetryOOB;
 
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.fail;
 
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.concurrent.TimeUnit;
 import net.snowflake.client.category.TestCategoryCore;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.jdbc.BaseJDBCTest;
@@ -20,14 +14,26 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-/** Standalone test cases for the out of band telemetry service */
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.concurrent.TimeUnit;
+
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.fail;
+
+/**
+ * Standalone test cases for the out of band telemetry service
+ */
 @Category(TestCategoryCore.class)
-public class TelemetryServiceIT extends BaseJDBCTest {
+public class TelemetryServiceIT extends BaseJDBCTest
+{
   private static final int WAIT_FOR_TELEMETRY_REPORT_IN_MILLISECS = 5000;
   private boolean defaultState;
 
   @Before
-  public void setUp() {
+  public void setUp()
+  {
     TelemetryService service = TelemetryService.getInstance();
     service.updateContextForIT(getConnectionParameters());
     defaultState = service.isEnabled();
@@ -35,13 +41,17 @@ public class TelemetryServiceIT extends BaseJDBCTest {
   }
 
   @After
-  public void tearDown() throws InterruptedException {
+  public void tearDown() throws InterruptedException
+  {
     // wait 5 seconds while the service is flushing
     TimeUnit.SECONDS.sleep(5);
     TelemetryService service = TelemetryService.getInstance();
-    if (defaultState) {
+    if (defaultState)
+    {
       service.enable();
-    } else {
+    }
+    else
+    {
       service.disable();
     }
   }
@@ -49,42 +59,59 @@ public class TelemetryServiceIT extends BaseJDBCTest {
   @SuppressWarnings("divzero")
   @Ignore
   @Test
-  public void testCreateException() {
+  public void testCreateException()
+  {
     TelemetryService service = TelemetryService.getInstance();
-    try {
+    try
+    {
       int a = 10 / 0;
-    } catch (Exception ex) {
+    }
+    catch (Exception ex)
+    {
       // example for an exception log
       // this log will be delivered to snowflake
       TelemetryEvent.LogBuilder logBuilder = new TelemetryEvent.LogBuilder();
-      TelemetryEvent log = logBuilder.withException(ex).build();
+      TelemetryEvent log = logBuilder
+          .withException(ex)
+          .build();
       System.out.println(log);
       service.report(log);
 
       // example for an exception metric
       // this metric will be delivered to snowflake and wavefront
-      TelemetryEvent.MetricBuilder mBuilder = new TelemetryEvent.MetricBuilder();
-      TelemetryEvent metric = mBuilder.withException(ex).withTag("domain", "test").build();
+      TelemetryEvent.MetricBuilder mBuilder =
+          new TelemetryEvent.MetricBuilder();
+      TelemetryEvent metric = mBuilder
+          .withException(ex)
+          .withTag("domain", "test")
+          .build();
       System.out.println(metric);
       service.report(metric);
     }
   }
 
-  /** test wrong server url. */
+  /**
+   * test wrong server url.
+   */
   @Ignore
   @Test
-  public void testWrongServerURL() throws InterruptedException {
+  public void testWrongServerURL() throws InterruptedException
+  {
     TelemetryService service = TelemetryService.getInstance();
     TelemetryEvent.LogBuilder logBuilder = new TelemetryEvent.LogBuilder();
-    TelemetryEvent log =
-        logBuilder.withName("ExampleLog").withValue("This is an example log").build();
+    TelemetryEvent log = logBuilder
+        .withName("ExampleLog")
+        .withValue("This is an example log")
+        .build();
     int count = service.getEventCount();
     service.report(log);
     // wait for at most 30 seconds
     int i = 6;
-    while (i-- > 0) {
+    while (i-- > 0)
+    {
       TimeUnit.SECONDS.sleep(5);
-      if (service.getEventCount() > count) {
+      if (service.getEventCount() > count)
+      {
         break;
       }
     }
@@ -93,40 +120,45 @@ public class TelemetryServiceIT extends BaseJDBCTest {
 
   @Ignore
   @Test
-  public void testCreateLog() {
+  public void testCreateLog()
+  {
     // this log will be delivered to snowflake
     TelemetryService service = TelemetryService.getInstance();
     TelemetryEvent.LogBuilder logBuilder = new TelemetryEvent.LogBuilder();
-    TelemetryEvent log =
-        logBuilder.withName("ExampleLog").withValue("This is an example log").build();
-    assertThat("check log value", log.get("Value").equals("This is an example log"));
+    TelemetryEvent log = logBuilder
+        .withName("ExampleLog")
+        .withValue("This is an example log")
+        .build();
+    assertThat("check log value",
+               log.get("Value").equals("This is an example log"));
     service.report(log);
   }
 
   @Ignore
   @Test
-  public void testCreateLogWithAWSSecret() {
+  public void testCreateLogWithAWSSecret()
+  {
     // this log will be delivered to snowflake
     TelemetryService service = TelemetryService.getInstance();
     TelemetryEvent.LogBuilder logBuilder = new TelemetryEvent.LogBuilder();
-    TelemetryEvent log =
-        logBuilder
-            .withName("ExampleLog")
-            .withValue(
-                "This is an example log: credentials=(\n"
-                    + "  aws_key_id='xxdsdfsafds'\n"
-                    + "  aws_secret_key='safas+asfsad+safasf')\n")
-            .build();
+    TelemetryEvent log = logBuilder
+        .withName("ExampleLog")
+        .withValue("This is an example log: credentials=(\n" +
+                   "  aws_key_id='xxdsdfsafds'\n" +
+                   "  aws_secret_key='safas+asfsad+safasf')\n")
+        .build();
     String marked = service.exportQueueToString(log);
 
     assertThat("marked aws_key_id", !marked.contains("xxdsdfsafds"));
-    assertThat("marked aws_secret_key", !marked.contains("safas+asfsad+safasf"));
+    assertThat("marked aws_secret_key",
+               !marked.contains("safas+asfsad+safasf"));
     service.report(log);
   }
 
   @Ignore
   @Test
-  public void stressTestCreateLog() {
+  public void stressTestCreateLog()
+  {
     // this log will be delivered to snowflake
     TelemetryService service = TelemetryService.getInstance();
     // send one http request for each event
@@ -135,14 +167,15 @@ public class TelemetryServiceIT extends BaseJDBCTest {
     int rate = 50;
     int sent = 0;
     int duration = 60;
-    while (sw.getTime() < duration * 1000) {
+    while (sw.getTime() < duration * 1000)
+    {
       int toSend = (int) (sw.getTime() / 1000) * rate - sent;
-      for (int i = 0; i < toSend; i++) {
-        TelemetryEvent log =
-            new TelemetryEvent.LogBuilder()
-                .withName("StressTestLog")
-                .withValue("This is an example log for stress test " + sent)
-                .build();
+      for (int i = 0; i < toSend; i++)
+      {
+        TelemetryEvent log = new TelemetryEvent.LogBuilder()
+            .withName("StressTestLog")
+            .withValue("This is an example log for stress test " + sent)
+            .build();
         System.out.println("stress test: " + sent++ + " sent.");
         service.report(log);
       }
@@ -152,30 +185,38 @@ public class TelemetryServiceIT extends BaseJDBCTest {
 
   @Ignore
   @Test
-  public void testCreateLogInBlackList() {
+  public void testCreateLogInBlackList()
+  {
     // this log will be delivered to snowflake
     TelemetryService service = TelemetryService.getInstance();
     TelemetryEvent.LogBuilder logBuilder = new TelemetryEvent.LogBuilder();
-    TelemetryEvent log =
-        logBuilder.withName("unknown").withValue("This is a log in blacklist").build();
+    TelemetryEvent log = logBuilder
+        .withName("unknown")
+        .withValue("This is a log in blacklist")
+        .build();
     service.report(log);
   }
 
   @Ignore
   @Test
-  public void testCreateUrgentEvent() {
+  public void testCreateUrgentEvent()
+  {
     // this log will be delivered to snowflake
     TelemetryService service = TelemetryService.getInstance();
     TelemetryEvent.LogBuilder logBuilder = new TelemetryEvent.LogBuilder();
-    TelemetryEvent log =
-        logBuilder.withName("UrgentLog").withValue("This is an example urgent log").build();
-    assertThat("check log value", log.get("Value").equals("This is an example urgent log"));
+    TelemetryEvent log = logBuilder
+        .withName("UrgentLog")
+        .withValue("This is an example urgent log")
+        .build();
+    assertThat("check log value",
+               log.get("Value").equals("This is an example urgent log"));
     service.report(log);
   }
 
   @Ignore
   @Test
-  public void stressTestCreateUrgentEvent() {
+  public void stressTestCreateUrgentEvent()
+  {
     // this log will be delivered to snowflake
     TelemetryService service = TelemetryService.getInstance();
     // send one http request for each event
@@ -184,14 +225,15 @@ public class TelemetryServiceIT extends BaseJDBCTest {
     int rate = 1;
     int sent = 0;
     int duration = 5;
-    while (sw.getTime() < duration * 1000) {
+    while (sw.getTime() < duration * 1000)
+    {
       int toSend = (int) (sw.getTime() / 1000) * rate - sent;
-      for (int i = 0; i < toSend; i++) {
-        TelemetryEvent log =
-            new TelemetryEvent.LogBuilder()
-                .withName("StressUrgentTestLog")
-                .withValue("This is an example urgent log for stress test " + sent)
-                .build();
+      for (int i = 0; i < toSend; i++)
+      {
+        TelemetryEvent log = new TelemetryEvent.LogBuilder()
+            .withName("StressUrgentTestLog")
+            .withValue("This is an example urgent log for stress test " + sent)
+            .build();
         System.out.println("stress test: " + sent++ + " sent.");
         service.report(log);
       }
@@ -199,8 +241,8 @@ public class TelemetryServiceIT extends BaseJDBCTest {
     sw.stop();
   }
 
-  private void generateDummyException(int vendorCode, SFSession session)
-      throws SnowflakeSQLLoggedException {
+  private void generateDummyException(int vendorCode, SFSession session) throws SnowflakeSQLLoggedException
+  {
     String queryID = "01234567-1234-1234-1234-00001abcdefg";
     String reason = "This is a test exception.";
     String sqlState = SqlState.NO_DATA;
@@ -208,54 +250,61 @@ public class TelemetryServiceIT extends BaseJDBCTest {
   }
 
   /**
-   * Test case for checking telemetry message for SnowflakeSQLExceptions. Assert that telemetry OOB
-   * endpoint is reached after a SnowflakeSQLLoggedException is thrown.
+   * Test case for checking telemetry message for SnowflakeSQLExceptions. Assert that telemetry OOB endpoint is reached
+   * after a SnowflakeSQLLoggedException is thrown.
    *
    * @throws SQLException
    */
   @Test
-  public void testSnowflakeSQLLoggedExceptionOOBTelemetry()
-      throws SQLException, InterruptedException {
+  public void testSnowflakeSQLLoggedExceptionOOBTelemetry() throws SQLException, InterruptedException
+  {
     // make a connection to initialize telemetry instance
     Connection con = getConnection();
     int fakeVendorCode = 27;
-    try {
+    try
+    {
       generateDummyException(fakeVendorCode, null);
       fail();
-    } catch (SnowflakeSQLLoggedException e) {
+    }
+    catch (SnowflakeSQLLoggedException e)
+    {
       // The error response has the same code as the the fakeErrorCode
-      assertThat("Communication error", e.getErrorCode(), equalTo(fakeVendorCode));
+      assertThat("Communication error", e.getErrorCode(),
+                 equalTo(fakeVendorCode));
 
       // since it returns normal response,
       // the telemetry does not create new event
       Thread.sleep(WAIT_FOR_TELEMETRY_REPORT_IN_MILLISECS);
-      if (TelemetryService.getInstance().isDeploymentEnabled()) {
-        assertThat(
-            "Telemetry event has not been reported successfully. Error: "
-                + TelemetryService.getInstance().getLastClientError(),
-            TelemetryService.getInstance().getClientFailureCount(),
-            equalTo(0));
+      if (TelemetryService.getInstance().isDeploymentEnabled())
+      {
+        assertThat("Telemetry event has not been reported successfully. Error: " +
+                   TelemetryService.getInstance().getLastClientError(),
+                   TelemetryService.getInstance().getClientFailureCount(), equalTo(0));
       }
     }
   }
 
   /**
-   * Test case for checking telemetry message for SnowflakeSQLExceptions. In-band telemetry should
-   * be used.
+   * Test case for checking telemetry message for SnowflakeSQLExceptions. In-band telemetry should be used.
    *
    * @throws SQLException
    */
   @Test
-  public void testSnowflakeSQLLoggedExceptionIBTelemetry() throws SQLException {
+  public void testSnowflakeSQLLoggedExceptionIBTelemetry() throws SQLException
+  {
     // make a connection to initialize telemetry instance
     Connection con = getConnection();
     int fakeErrorCode = 27;
-    try {
+    try
+    {
       generateDummyException(fakeErrorCode, con.unwrap(SnowflakeConnectionV1.class).getSfSession());
       fail();
-    } catch (SnowflakeSQLLoggedException e) {
+    }
+    catch (SnowflakeSQLLoggedException e)
+    {
       // The error response has the same code as the fakeErrorCode
-      assertThat("Communication error", e.getErrorCode(), equalTo(fakeErrorCode));
+      assertThat("Communication error", e.getErrorCode(),
+                 equalTo(fakeErrorCode));
     }
   }
 }

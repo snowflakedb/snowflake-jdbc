@@ -8,9 +8,6 @@ import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.Appender;
 import ch.qos.logback.core.AppenderBase;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
 import net.snowflake.client.category.TestCategoryCore;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -19,54 +16,75 @@ import org.junit.BeforeClass;
 import org.junit.experimental.categories.Category;
 import org.slf4j.LoggerFactory;
 
-/** A class for testing {@link SLF4JLogger} */
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+
+/**
+ * A class for testing {@link SLF4JLogger}
+ */
 @Category(TestCategoryCore.class)
-public class SLF4JLoggerIT extends AbstractLoggerIT {
-  /** {@link SLF4JLogger} instance that will be tested in this class */
-  private static final SLF4JLogger LOGGER = new SLF4JLogger(SLF4JLoggerIT.class);
+public class SLF4JLoggerIT extends AbstractLoggerIT
+{
+  /**
+   * {@link SLF4JLogger} instance that will be tested in this class
+   */
+  private static final SLF4JLogger LOGGER =
+      new SLF4JLogger(SLF4JLoggerIT.class);
 
   /**
-   * Used for storing the log level set on the logger instance before starting the tests. Once the
-   * tests are run, this log level will be restored.
+   * Used for storing the log level set on the logger instance before starting
+   * the tests. Once the tests are run, this log level will be restored.
    */
   private static Level logLevelToRestore;
 
   /**
-   * This is the logger instance internally used by the SLF4JLogger instance. LoggerFactory returns
-   * the cached instance if an instance by the same name was created before. The name used for
-   * creating SLF4JLogger instance is also used here to get the same internal logger instance.
-   *
-   * <p>SLF4JLogger doesn't expose methods to set logging level and other configurations, hence
-   * direct access to the internal logger is required.
+   * This is the logger instance internally used by the SLF4JLogger instance.
+   * LoggerFactory returns the cached instance if an instance by the same name
+   * was created before. The name used for creating SLF4JLogger instance is also
+   * used here to get the same internal logger instance.
+   * <p>
+   * SLF4JLogger doesn't expose methods to set logging level and other
+   * configurations, hence direct access to the internal logger is required.
    */
-  private static final Logger internalLogger =
-      (Logger) LoggerFactory.getLogger(SLF4JLoggerIT.class);
+  private static final Logger internalLogger = (Logger) LoggerFactory.getLogger(
+      SLF4JLoggerIT.class);
 
   /**
-   * Used for storing whether additive property was set on the logger instance before starting the
-   * tests. Once the tests are run, additivity will be restored if it was previously enabled.
-   *
-   * <p>If additivity is enabled, {@link Appender}s in the parent loggers are also invoked.
+   * Used for storing whether additive property was set on the logger instance
+   * before starting the tests. Once the tests are run, additivity will be
+   * restored if it was previously enabled.
+   * <p>
+   * If additivity is enabled, {@link Appender}s in the parent loggers are also
+   * invoked.
    */
   private static boolean additivityToRestore = true;
 
   /**
-   * Used for storing any appenders present in the internal logger before starting the tests. They
-   * will be restored after running the tests.
+   * Used for storing any appenders present in the internal logger before
+   * starting the tests. They will be restored after running the tests.
    */
-  private static final List<Appender<ILoggingEvent>> appendersToRestore = new ArrayList<>();
+  private static final List<Appender<ILoggingEvent>> appendersToRestore =
+      new ArrayList<>();
 
-  /** This appender will be added to the internal logger to get logged messages. */
+  /**
+   * This appender will be added to the internal logger to get logged messages.
+   */
   private final Appender<ILoggingEvent> testAppender = new TestAppender();
 
-  /** Message last logged using SLF4JLogger. */
+  /**
+   * Message last logged using SLF4JLogger.
+   */
   private String lastLogMessage = null;
 
-  /** Level at which last message was logged using SLF4JLogger. */
+  /**
+   * Level at which last message was logged using SLF4JLogger.
+   */
   private Level lastLogMessageLevel = null;
 
   @BeforeClass
-  public static void oneTimeSetUp() {
+  public static void oneTimeSetUp()
+  {
     logLevelToRestore = internalLogger.getLevel();
     additivityToRestore = internalLogger.isAdditive();
 
@@ -74,7 +92,8 @@ public class SLF4JLoggerIT extends AbstractLoggerIT {
 
     // Get all existing appenders and restore them once testing is done.
     Iterator<Appender<ILoggingEvent>> itr = internalLogger.iteratorForAppenders();
-    while (itr.hasNext()) {
+    while (itr.hasNext())
+    {
       appendersToRestore.add(itr.next());
     }
 
@@ -86,7 +105,8 @@ public class SLF4JLoggerIT extends AbstractLoggerIT {
   }
 
   @AfterClass
-  public static void oneTimeTearDown() {
+  public static void oneTimeTearDown()
+  {
     // Restore original configuration
     internalLogger.setLevel(logLevelToRestore);
     internalLogger.setAdditive(additivityToRestore);
@@ -97,10 +117,12 @@ public class SLF4JLoggerIT extends AbstractLoggerIT {
   }
 
   @Before
-  public void setUp() {
+  public void setUp()
+  {
     super.setUp();
 
-    if (!testAppender.isStarted()) {
+    if (!testAppender.isStarted())
+    {
       testAppender.start();
     }
 
@@ -108,13 +130,16 @@ public class SLF4JLoggerIT extends AbstractLoggerIT {
   }
 
   @After
-  public void tearDown() {
+  public void tearDown()
+  {
     internalLogger.detachAppender(testAppender);
   }
 
   @Override
-  void logMessage(LogLevel level, String message, Object... args) {
-    switch (level) {
+  void logMessage(LogLevel level, String message, Object... args)
+  {
+    switch (level)
+    {
       case ERROR:
         LOGGER.error(message, args);
         break;
@@ -134,29 +159,38 @@ public class SLF4JLoggerIT extends AbstractLoggerIT {
   }
 
   @Override
-  void setLogLevel(LogLevel level) {
+  void setLogLevel(LogLevel level)
+  {
     internalLogger.setLevel(toLogBackLevel(level));
   }
 
   @Override
-  String getLoggedMessage() {
+  String getLoggedMessage()
+  {
     return this.lastLogMessage;
   }
 
   @Override
-  LogLevel getLoggedMessageLevel() {
+  LogLevel getLoggedMessageLevel()
+  {
     return fromLogBackLevel(this.lastLogMessageLevel);
   }
 
   @Override
-  void clearLastLoggedMessageAndLevel() {
+  void clearLastLoggedMessageAndLevel()
+  {
     this.lastLogMessage = null;
     this.lastLogMessageLevel = null;
   }
 
-  /** Converts log levels in {@link LogLevel} to appropriate levels in {@link Level}. */
-  private Level toLogBackLevel(LogLevel level) {
-    switch (level) {
+  /**
+   * Converts log levels in {@link LogLevel} to appropriate levels in
+   * {@link Level}.
+   */
+  private Level toLogBackLevel(LogLevel level)
+  {
+    switch (level)
+    {
       case ERROR:
         return Level.ERROR;
       case WARNING:
@@ -172,32 +206,46 @@ public class SLF4JLoggerIT extends AbstractLoggerIT {
     return Level.TRACE;
   }
 
-  /** Converts log levels in {@link Level} to appropriate levels in {@link LogLevel}. */
-  private LogLevel fromLogBackLevel(Level level) {
-    if (Level.ERROR.equals(level)) {
+  /**
+   * Converts log levels in {@link Level} to appropriate levels in
+   * {@link LogLevel}.
+   */
+  private LogLevel fromLogBackLevel(Level level)
+  {
+    if (Level.ERROR.equals(level))
+    {
       return LogLevel.ERROR;
     }
-    if (Level.WARN.equals(level)) {
+    if (Level.WARN.equals(level))
+    {
       return LogLevel.WARNING;
     }
-    if (Level.INFO.equals(level)) {
+    if (Level.INFO.equals(level))
+    {
       return LogLevel.INFO;
     }
-    if (Level.DEBUG.equals(level)) {
+    if (Level.DEBUG.equals(level))
+    {
       return LogLevel.DEBUG;
     }
-    if (Level.TRACE.equals(level) || Level.ALL.equals(level)) {
+    if (Level.TRACE.equals(level) || Level.ALL.equals(level))
+    {
       return LogLevel.TRACE;
     }
 
-    throw new IllegalArgumentException(
-        String.format("Specified log level '%s' not supported", level.toString()));
+    throw new IllegalArgumentException(String.format(
+        "Specified log level '%s' not supported", level.toString()));
   }
 
-  /** An appender that will be used for getting messages logged by a {@link Logger} instance */
-  private class TestAppender extends AppenderBase<ILoggingEvent> {
+  /**
+   * An appender that will be used for getting messages logged by a
+   * {@link Logger} instance
+   */
+  private class TestAppender extends AppenderBase<ILoggingEvent>
+  {
     @Override
-    public void append(ILoggingEvent event) {
+    public void append(ILoggingEvent event)
+    {
       // Assign the log message and it's level to the outer class instance
       // variables so that it can see the messages logged
       lastLogMessage = event.getFormattedMessage();

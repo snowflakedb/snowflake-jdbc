@@ -1,27 +1,33 @@
 package net.snowflake.client.core;
 
-class KeyUpdSSD {
+class KeyUpdSSD
+{
   private String issuer;
   private String keyUpdDirective;
 
-  KeyUpdSSD() {
+  KeyUpdSSD()
+  {
     this.issuer = null;
     this.keyUpdDirective = null;
   }
 
-  String getIssuer() {
+  String getIssuer()
+  {
     return this.issuer;
   }
 
-  String getKeyUpdDirective() {
+  String getKeyUpdDirective()
+  {
     return this.keyUpdDirective;
   }
 
-  void setIssuer(String issuer) {
+  void setIssuer(String issuer)
+  {
     this.issuer = issuer;
   }
 
-  void setKeyUpdDirective(String ssd) {
+  void setKeyUpdDirective(String ssd)
+  {
     this.keyUpdDirective = ssd;
   }
 }

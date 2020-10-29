@@ -1,25 +1,30 @@
 package net.snowflake.client.jdbc;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.nullValue;
-import static org.hamcrest.MatcherAssert.assertThat;
+import net.snowflake.client.category.TestCategoryStatement;
+import org.junit.Assert;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import net.snowflake.client.category.TestCategoryStatement;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.CoreMatchers.is;
+
 
 @Category(TestCategoryStatement.class)
-public class PreparedMultiStmtIT extends BaseJDBCTest {
+public class PreparedMultiStmtIT extends BaseJDBCTest
+{
 
   protected static String queryResultFormat = "json";
 
-  public static Connection getConnection() throws SQLException {
+  public static Connection getConnection()
+  throws SQLException
+  {
     Connection conn = BaseJDBCTest.getConnection();
     Statement stmt = conn.createStatement();
     stmt.execute("alter session set jdbc_query_result_format = '" + queryResultFormat + "'");
@@ -28,18 +33,19 @@ public class PreparedMultiStmtIT extends BaseJDBCTest {
   }
 
   @Test
-  public void testExecuteUpdateCount() throws Exception {
+  public void testExecuteUpdateCount() throws Exception
+  {
     SnowflakeConnectionV1 connection = (SnowflakeConnectionV1) getConnection();
     Statement statement = connection.createStatement();
     statement.execute("alter session set MULTI_STATEMENT_COUNT=0");
     statement.execute("create or replace table test_multi_bind(c1 number)");
 
-    PreparedStatement preparedStatement =
-        connection.prepareStatement(
-            "insert into test_multi_bind(c1) values(?); insert into "
-                + "test_multi_bind values (?), (?)");
+    PreparedStatement preparedStatement = connection.prepareStatement(
+        "insert into test_multi_bind(c1) values(?); insert into " +
+        "test_multi_bind values (?), (?)");
 
-    assertThat(preparedStatement.getParameterMetaData().getParameterCount(), is(3));
+    assertThat(preparedStatement.getParameterMetaData().getParameterCount(),
+               is(3));
 
     preparedStatement.setInt(1, 20);
     preparedStatement.setInt(2, 30);
@@ -55,7 +61,8 @@ public class PreparedMultiStmtIT extends BaseJDBCTest {
     assertThat(preparedStatement.getMoreResults(), is(false));
     assertThat(preparedStatement.getUpdateCount(), is(2));
 
-    ResultSet resultSet = statement.executeQuery("select c1 from test_multi_bind order by c1 asc");
+    ResultSet resultSet = statement.executeQuery(
+        "select c1 from test_multi_bind order by c1 asc");
     resultSet.next();
     assertThat(resultSet.getInt(1), is(20));
     resultSet.next();
@@ -69,29 +76,35 @@ public class PreparedMultiStmtIT extends BaseJDBCTest {
     connection.close();
   }
 
-  /** Less bindings than expected in statement */
+  /**
+   * Less bindings than expected in statement
+   */
   @Test
-  public void testExecuteLessBindings() throws Exception {
+  public void testExecuteLessBindings() throws Exception
+  {
     SnowflakeConnectionV1 connection = (SnowflakeConnectionV1) getConnection();
     Statement statement = connection.createStatement();
     statement.execute("alter session set MULTI_STATEMENT_COUNT=0");
     statement.execute("create or replace table test_multi_bind(c1 number)");
 
-    PreparedStatement preparedStatement =
-        connection.prepareStatement(
-            "insert into test_multi_bind(c1) values(?); insert into "
-                + "test_multi_bind values (?), (?)");
+    PreparedStatement preparedStatement = connection.prepareStatement(
+        "insert into test_multi_bind(c1) values(?); insert into " +
+        "test_multi_bind values (?), (?)");
 
-    assertThat(preparedStatement.getParameterMetaData().getParameterCount(), is(3));
+    assertThat(preparedStatement.getParameterMetaData().getParameterCount(),
+               is(3));
 
     preparedStatement.setInt(1, 20);
     preparedStatement.setInt(2, 30);
 
     // first statement
-    try {
+    try
+    {
       preparedStatement.executeUpdate();
       Assert.fail();
-    } catch (SQLException e) {
+    }
+    catch (SQLException e)
+    {
       // error code comes from xp, which is js execution failed.
       assertThat(e.getErrorCode(), is(100132));
     }
@@ -102,18 +115,19 @@ public class PreparedMultiStmtIT extends BaseJDBCTest {
   }
 
   @Test
-  public void testExecuteMoreBindings() throws Exception {
+  public void testExecuteMoreBindings() throws Exception
+  {
     SnowflakeConnectionV1 connection = (SnowflakeConnectionV1) getConnection();
     Statement statement = connection.createStatement();
     statement.execute("alter session set MULTI_STATEMENT_COUNT=0");
     statement.execute("create or replace table test_multi_bind(c1 number)");
 
-    PreparedStatement preparedStatement =
-        connection.prepareStatement(
-            "insert into test_multi_bind(c1) values(?); insert into "
-                + "test_multi_bind values (?), (?)");
+    PreparedStatement preparedStatement = connection.prepareStatement(
+        "insert into test_multi_bind(c1) values(?); insert into " +
+        "test_multi_bind values (?), (?)");
 
-    assertThat(preparedStatement.getParameterMetaData().getParameterCount(), is(3));
+    assertThat(preparedStatement.getParameterMetaData().getParameterCount(),
+               is(3));
 
     preparedStatement.setInt(1, 20);
     preparedStatement.setInt(2, 30);
@@ -131,7 +145,8 @@ public class PreparedMultiStmtIT extends BaseJDBCTest {
     assertThat(preparedStatement.getMoreResults(), is(false));
     assertThat(preparedStatement.getUpdateCount(), is(2));
 
-    ResultSet resultSet = statement.executeQuery("select c1 from test_multi_bind order by c1 asc");
+    ResultSet resultSet = statement.executeQuery(
+        "select c1 from test_multi_bind order by c1 asc");
     resultSet.next();
     assertThat(resultSet.getInt(1), is(20));
     resultSet.next();
@@ -146,15 +161,17 @@ public class PreparedMultiStmtIT extends BaseJDBCTest {
   }
 
   @Test
-  public void testExecuteQueryBindings() throws Exception {
+  public void testExecuteQueryBindings() throws Exception
+  {
     SnowflakeConnectionV1 connection = (SnowflakeConnectionV1) getConnection();
     Statement statement = connection.createStatement();
     statement.execute("alter session set MULTI_STATEMENT_COUNT=0");
 
-    PreparedStatement preparedStatement =
-        connection.prepareStatement("select ?; select ?, ?; select ?, ?, ?");
+    PreparedStatement preparedStatement = connection.prepareStatement(
+        "select ?; select ?, ?; select ?, ?, ?");
 
-    assertThat(preparedStatement.getParameterMetaData().getParameterCount(), is(6));
+    assertThat(preparedStatement.getParameterMetaData().getParameterCount(),
+               is(6));
 
     preparedStatement.setInt(1, 10);
     preparedStatement.setInt(2, 20);
@@ -188,15 +205,17 @@ public class PreparedMultiStmtIT extends BaseJDBCTest {
   }
 
   @Test
-  public void testExecuteQueryNoBindings() throws Exception {
+  public void testExecuteQueryNoBindings() throws Exception
+  {
     SnowflakeConnectionV1 connection = (SnowflakeConnectionV1) getConnection();
     Statement statement = connection.createStatement();
     statement.execute("alter session set MULTI_STATEMENT_COUNT=0");
 
-    PreparedStatement preparedStatement =
-        connection.prepareStatement("select 10; select 20, 30; select 40, 50, 60");
+    PreparedStatement preparedStatement = connection.prepareStatement(
+        "select 10; select 20, 30; select 40, 50, 60");
 
-    assertThat(preparedStatement.getParameterMetaData().getParameterCount(), is(0));
+    assertThat(preparedStatement.getParameterMetaData().getParameterCount(),
+               is(0));
 
     // first statement
     ResultSet resultSet = preparedStatement.executeQuery();

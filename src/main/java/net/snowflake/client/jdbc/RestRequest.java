@@ -4,10 +4,6 @@
 
 package net.snowflake.client.jdbc;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.util.UUID;
-import java.util.concurrent.atomic.AtomicBoolean;
 import net.snowflake.client.core.Event;
 import net.snowflake.client.core.EventUtil;
 import net.snowflake.client.core.HttpUtil;
@@ -24,15 +20,22 @@ import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
+
 /**
  * This is an abstraction on top of http client.
- *
- * <p>Currently it only has one method for retrying http request execution so that the same logic
- * doesn't have to be replicated at difference places where retry is needed.
+ * <p>
+ * Currently it only has one method for retrying http request execution so that
+ * the same logic doesn't have to be replicated at difference places where retry
+ * is needed.
  *
  * @author jhuang
  */
-public class RestRequest {
+public class RestRequest
+{
   private static final SFLogger logger = SFLoggerFactory.getLogger(RestRequest.class);
 
   // Request guid per HTTP request
@@ -51,20 +54,22 @@ public class RestRequest {
   /**
    * Execute an http request with retry logic.
    *
-   * @param httpClient client object used to communicate with other machine
-   * @param httpRequest request object contains all the request information
-   * @param retryTimeout : retry timeout (in seconds)
-   * @param injectSocketTimeout : simulate socket timeout
-   * @param canceling canceling flag
-   * @param withoutCookies whether the cookie spec should be set to IGNORE or not
-   * @param includeRetryParameters whether to include retry parameters in retried requests
-   * @param includeRequestGuid whether to include request_guid parameter
-   * @param retryHTTP403 whether to retry on HTTP 403 or not
+   * @param httpClient             client object used to communicate with other machine
+   * @param httpRequest            request object contains all the request information
+   * @param retryTimeout           : retry timeout (in seconds)
+   * @param injectSocketTimeout    : simulate socket timeout
+   * @param canceling              canceling flag
+   * @param withoutCookies         whether the cookie spec should be set to IGNORE
+   *                               or not
+   * @param includeRetryParameters whether to include retry parameters in retried
+   *                               requests
+   * @param includeRequestGuid     whether to include request_guid parameter
+   * @param retryHTTP403           whether to retry on HTTP 403 or not
    * @return HttpResponse Object get from server
-   * @throws net.snowflake.client.jdbc.SnowflakeSQLException Request timeout Exception or Illegal
-   *     State Exception i.e. connection is already shutdown etc
+   * @throws net.snowflake.client.jdbc.SnowflakeSQLException Request timeout Exception or Illegal State Exception i.e.
+   *                                                         connection is already shutdown etc
    */
-  public static CloseableHttpResponse execute(
+  static public CloseableHttpResponse execute(
       CloseableHttpClient httpClient,
       HttpRequestBase httpRequest,
       long retryTimeout,
@@ -73,11 +78,12 @@ public class RestRequest {
       boolean withoutCookies,
       boolean includeRetryParameters,
       boolean includeRequestGuid,
-      boolean retryHTTP403)
-      throws SnowflakeSQLException {
+      boolean retryHTTP403) throws SnowflakeSQLException
+  {
     CloseableHttpResponse response = null;
 
-    String requestInfoScrubbed = SecretDetector.maskSASToken(httpRequest.toString());
+    String requestInfoScrubbed = SecretDetector.maskSASToken(
+        httpRequest.toString());
 
     // time the client started attempting to submit request
     final long startTime = System.currentTimeMillis();
@@ -98,8 +104,8 @@ public class RestRequest {
     // amount of time to wait for backing off before retry
     long backoffInMilli = minBackoffInMilli;
 
-    DecorrelatedJitterBackoff backoff =
-        new DecorrelatedJitterBackoff(backoffInMilli, maxBackoffInMilli);
+    DecorrelatedJitterBackoff backoff = new DecorrelatedJitterBackoff(
+        backoffInMilli, maxBackoffInMilli);
 
     int retryCount = 0;
 
@@ -111,24 +117,27 @@ public class RestRequest {
     String breakRetryReason = "";
 
     // try request till we get a good response or retry timeout
-    while (true) {
+    while (true)
+    {
       logger.debug("Retry count: {}", retryCount);
 
-      try {
+      try
+      {
         // update start time
         startTimePerRequest = System.currentTimeMillis();
 
-        if (withoutCookies) {
+        if (withoutCookies)
+        {
           httpRequest.setConfig(HttpUtil.getRequestConfigWithoutCookies());
         }
 
         // for first call, simulate a socket timeout by setting socket timeout
         // to the injected socket timeout value
-        if (injectSocketTimeout != 0 && retryCount == 0) {
+        if (injectSocketTimeout != 0 && retryCount == 0)
+        {
           // test code path
-          logger.debug(
-              "Injecting socket timeout by setting " + "socket timeout to {} millisecond ",
-              injectSocketTimeout);
+          logger.debug("Injecting socket timeout by setting " +
+                       "socket timeout to {} millisecond ", injectSocketTimeout);
           httpRequest.setConfig(
               HttpUtil.getDefaultRequestConfigWithSocketTimeout(
                   injectSocketTimeout, withoutCookies));
@@ -143,14 +152,19 @@ public class RestRequest {
          * overhead of looking up in metadata database.
          */
         URIBuilder builder = new URIBuilder(httpRequest.getURI());
-        if (retryCount > 0) {
-          builder.setParameter("retryCount", String.valueOf(retryCount));
-          if (includeRetryParameters) {
-            builder.setParameter("clientStartTime", String.valueOf(startTime));
+        if (retryCount > 0)
+        {
+          builder.setParameter(
+              "retryCount", String.valueOf(retryCount));
+          if (includeRetryParameters)
+          {
+            builder.setParameter(
+                "clientStartTime", String.valueOf(startTime));
           }
         }
 
-        if (includeRequestGuid) {
+        if (includeRequestGuid)
+        {
           // Add request_guid for better tracing
           builder.setParameter(SF_REQUEST_GUID, UUID.randomUUID().toString());
         }
@@ -158,34 +172,40 @@ public class RestRequest {
         httpRequest.setURI(builder.build());
 
         response = httpClient.execute(httpRequest);
-      } catch (Exception ex) {
+      }
+      catch (Exception ex)
+      {
         // if exception is caused by illegal state, e.g shutdown of http client
         // because of closing of connection, stop retrying
-        if (ex instanceof IllegalStateException) {
-          throw new SnowflakeSQLLoggedException(
-              null, ErrorCode.INVALID_STATE, ex, /* session = */ ex.getMessage());
+        if (ex instanceof IllegalStateException)
+        {
+          throw new SnowflakeSQLException(ex, ErrorCode.INVALID_STATE, ex.getMessage());
         }
         savedEx = ex;
+
         // if the request took more than 5 min (socket timeout) log an error
-        if ((System.currentTimeMillis() - startTimePerRequest) > 300000) {
-          logger.error(
-              "HTTP request took longer than 5 min: {} sec",
-              (System.currentTimeMillis() - startTimePerRequest) / 1000);
+        if ((System.currentTimeMillis() - startTimePerRequest) > 300000)
+        {
+          logger.error("HTTP request took longer than 5 min: {} sec",
+                       (System.currentTimeMillis() - startTimePerRequest) / 1000);
         }
         StringWriter sw = new StringWriter();
         savedEx.printStackTrace(new PrintWriter(sw));
-        logger.debug(
-            "Exception encountered for: {}, {}, {}",
-            requestInfoScrubbed,
-            ex.getLocalizedMessage(),
-            (ArgSupplier) sw::toString);
-      } finally {
+        logger.debug("Exception encountered for: {}, {}, {}",
+                     requestInfoScrubbed,
+                     ex.getLocalizedMessage(),
+                     (ArgSupplier) sw::toString);
+      }
+      finally
+      {
         // Reset the socket timeout to its original value if it is not the
         // very first iteration.
-        if (injectSocketTimeout != 0 && retryCount == 0) {
+        if (injectSocketTimeout != 0 && retryCount == 0)
+        {
           // test code path
           httpRequest.setConfig(
-              HttpUtil.getDefaultRequestConfigWithSocketTimeout(origSocketTimeout, withoutCookies));
+              HttpUtil.getDefaultRequestConfigWithSocketTimeout(
+                  origSocketTimeout, withoutCookies));
         }
       }
 
@@ -193,41 +213,50 @@ public class RestRequest {
        * If we got a response and the status code is not one of those
        * transient failures, no more retry
        */
-      if (isCertificateRevoked(savedEx) || isRetryableHTTPCode(response, retryHTTP403)) {
+      if (isCertificateRevoked(savedEx) || isRetryableHTTPCode(response, retryHTTP403))
+      {
         String msg = "Unknown cause";
-        if (response != null) {
-          logger.debug("HTTP response code: {}", response.getStatusLine().getStatusCode());
-          msg =
-              "StatusCode: "
-                  + response.getStatusLine().getStatusCode()
-                  + ", Reason: "
-                  + response.getStatusLine().getReasonPhrase();
-        } else if (savedEx != null) // may be null.
+        if (response != null)
+        {
+          logger.debug("HTTP response code: {}",
+                       response.getStatusLine().getStatusCode());
+          msg = "StatusCode: " + response.getStatusLine().getStatusCode() +
+                ", Reason: " + response.getStatusLine().getReasonPhrase();
+        }
+        else if (savedEx != null) // may be null.
         {
           Throwable rootCause = getRootCause(savedEx);
           msg = rootCause.getMessage();
         }
 
-        if (response == null || response.getStatusLine().getStatusCode() != 200) {
-          logger.debug(
-              "Error response not retryable, " + msg + ", request: {}", requestInfoScrubbed);
+        if (response == null || response.getStatusLine().getStatusCode() != 200)
+        {
+          logger.debug("Error response not retryable, " + msg + ", request: {}",
+                       requestInfoScrubbed);
           EventUtil.triggerBasicEvent(
-              Event.EventType.NETWORK_ERROR, msg + ", Request: " + httpRequest.toString(), false);
+              Event.EventType.NETWORK_ERROR, msg + ", Request: " + httpRequest.toString(),
+              false);
         }
         breakRetryReason = "status code does not need retry";
         break;
-      } else {
-        if (response != null) {
+      }
+      else
+      {
+        if (response != null)
+        {
           logger.debug(
               "HTTP response not ok: status code: {}, request: {}",
               response.getStatusLine().getStatusCode(),
               requestInfoScrubbed);
-        } else if (savedEx != null) {
-          logger.debug(
-              "Null response for cause: {}, request: {}",
-              getRootCause(savedEx).getMessage(),
-              requestInfoScrubbed);
-        } else {
+        }
+        else if (savedEx != null)
+        {
+          logger.debug("Null response for cause: {}, request: {}",
+                       getRootCause(savedEx).getMessage(),
+                       requestInfoScrubbed);
+        }
+        else
+        {
           logger.debug("Null response for request: {}", requestInfoScrubbed);
         }
 
@@ -235,53 +264,57 @@ public class RestRequest {
         // elapsed in millisecond for last call, used for calculating the
         // remaining amount of time to sleep:
         // (backoffInMilli - elapsedMilliForLastCall)
-        long elapsedMilliForLastCall = System.currentTimeMillis() - startTimePerRequest;
+        long elapsedMilliForLastCall =
+            System.currentTimeMillis() - startTimePerRequest;
 
         // check canceling flag
-        if (canceling != null && canceling.get()) {
+        if (canceling != null && canceling.get())
+        {
           logger.debug("Stop retrying since canceling is requested");
           breakRetryReason = "canceling is requested";
           break;
         }
 
-        if (retryTimeoutInMilliseconds > 0) {
+        if (retryTimeoutInMilliseconds > 0)
+        {
           // increment total elapsed due to transient issues
           elapsedMilliForTransientIssues += elapsedMilliForLastCall;
 
           // check if the total elapsed time for transient issues has exceeded
           // the retry timeout and we retry at least the min, if so, we will not
           // retry
-          if (elapsedMilliForTransientIssues > retryTimeoutInMilliseconds
-              && retryCount >= MIN_RETRY_COUNT) {
+          if (elapsedMilliForTransientIssues > retryTimeoutInMilliseconds &&
+              retryCount >= MIN_RETRY_COUNT)
+          {
             logger.error(
-                "Stop retrying since elapsed time due to network "
-                    + "issues has reached timeout. "
-                    + "Elapsed: {}(ms), timeout: {}(ms)",
-                elapsedMilliForTransientIssues,
-                retryTimeoutInMilliseconds);
+                "Stop retrying since elapsed time due to network " +
+                "issues has reached timeout. " +
+                "Elapsed: {}(ms), timeout: {}(ms)",
+                elapsedMilliForTransientIssues, retryTimeoutInMilliseconds);
             breakRetryReason = "retry timeout";
-            TelemetryService.getInstance()
-                .logHttpRequestTelemetryEvent(
-                    "HttpRequestRetryTimeout",
-                    httpRequest,
-                    injectSocketTimeout,
-                    canceling,
-                    withoutCookies,
-                    includeRetryParameters,
-                    includeRequestGuid,
-                    response,
-                    savedEx,
-                    breakRetryReason,
-                    retryTimeout,
-                    retryCount,
-                    SqlState.IO_ERROR,
-                    ErrorCode.NETWORK_ERROR.getMessageCode());
+            TelemetryService.getInstance().logHttpRequestTelemetryEvent(
+                "HttpRequestRetryTimeout",
+                httpRequest,
+                injectSocketTimeout,
+                canceling,
+                withoutCookies,
+                includeRetryParameters,
+                includeRequestGuid,
+                response,
+                savedEx,
+                breakRetryReason,
+                retryTimeout,
+                retryCount,
+                SqlState.IO_ERROR,
+                ErrorCode.NETWORK_ERROR.getMessageCode()
+            );
             // rethrow the timeout exception
-            if (response == null && savedEx != null) {
-              throw new SnowflakeSQLException(
-                  savedEx,
-                  ErrorCode.NETWORK_ERROR,
-                  "Exception encountered for HTTP request: " + savedEx.getMessage());
+            if (response == null && savedEx != null)
+            {
+              throw new SnowflakeSQLException(savedEx,
+                                              ErrorCode.NETWORK_ERROR,
+                                              "Exception encountered for HTTP request: " +
+                                              savedEx.getMessage());
             }
             // no more retry
             break;
@@ -291,75 +324,28 @@ public class RestRequest {
         logger.debug("Retrying request: {}", requestInfoScrubbed);
 
         // sleep for backoff - elapsed amount of time
-        if (backoffInMilli > elapsedMilliForLastCall) {
-          try {
+        if (backoffInMilli > elapsedMilliForLastCall)
+        {
+          try
+          {
             logger.debug("sleeping in {}(ms)", backoffInMilli);
             Thread.sleep(backoffInMilli);
             elapsedMilliForTransientIssues += backoffInMilli;
             backoffInMilli = backoff.nextSleepTime(backoffInMilli);
-          } catch (InterruptedException ex1) {
-            logger.debug("Backoff sleep before retrying login got interrupted");
+          }
+          catch (InterruptedException ex1)
+          {
+            logger.debug(
+                "Backoff sleep before retrying login got interrupted");
           }
         }
 
         retryCount++;
-        int numOfRetryToTriggerTelemetry =
-            TelemetryService.getInstance().getNumOfRetryToTriggerTelemetry();
-        if (retryCount == numOfRetryToTriggerTelemetry) {
-          TelemetryService.getInstance()
-              .logHttpRequestTelemetryEvent(
-                  String.format("HttpRequestRetry%dTimes", numOfRetryToTriggerTelemetry),
-                  httpRequest,
-                  injectSocketTimeout,
-                  canceling,
-                  withoutCookies,
-                  includeRetryParameters,
-                  includeRequestGuid,
-                  response,
-                  savedEx,
-                  breakRetryReason,
-                  retryTimeout,
-                  retryCount,
-                  SqlState.IO_ERROR,
-                  ErrorCode.NETWORK_ERROR.getMessageCode());
-        }
-        savedEx = null;
-
-        // release connection before retry
-        httpRequest.releaseConnection();
-      }
-    }
-
-    if (response == null) {
-      if (savedEx != null) {
-        logger.error(
-            "Returning null response: cause: {}, request: {}",
-            getRootCause(savedEx),
-            requestInfoScrubbed);
-      } else {
-        logger.error("Returning null response for request: {}", requestInfoScrubbed);
-      }
-    } else if (response.getStatusLine().getStatusCode() != 200) {
-      logger.error(
-          "Error response: HTTP Response code: {}, request: {}",
-          response.getStatusLine().getStatusCode(),
-          requestInfoScrubbed);
-    }
-    if ((response == null || response.getStatusLine().getStatusCode() != 200)) {
-
-      String eventName;
-      if (response == null) {
-        eventName = "NullResponseHttpError";
-      } else {
-        if (response.getStatusLine() == null) {
-          eventName = "NullResponseStatusLine";
-        } else {
-          eventName = String.format("HttpError%d", response.getStatusLine().getStatusCode());
-        }
-      }
-      TelemetryService.getInstance()
-          .logHttpRequestTelemetryEvent(
-              eventName,
+        int numOfRetryToTriggerTelemetry = TelemetryService.getInstance().getNumOfRetryToTriggerTelemetry();
+        if (retryCount == numOfRetryToTriggerTelemetry)
+        {
+          TelemetryService.getInstance().logHttpRequestTelemetryEvent(
+              String.format("HttpRequestRetry%dTimes", numOfRetryToTriggerTelemetry),
               httpRequest,
               injectSocketTimeout,
               canceling,
@@ -371,47 +357,112 @@ public class RestRequest {
               breakRetryReason,
               retryTimeout,
               retryCount,
-              null,
-              0);
+              SqlState.IO_ERROR,
+              ErrorCode.NETWORK_ERROR.getMessageCode()
+          );
+        }
+        savedEx = null;
+
+        // release connection before retry
+        httpRequest.releaseConnection();
+      }
+    }
+
+    if (response == null)
+    {
+      if (savedEx != null)
+      {
+        logger.error("Returning null response: cause: {}, request: {}",
+                     getRootCause(savedEx), requestInfoScrubbed);
+      }
+      else
+      {
+        logger.error("Returning null response for request: {}", requestInfoScrubbed);
+      }
+    }
+    else if (response.getStatusLine().getStatusCode() != 200)
+    {
+      logger.error(
+          "Error response: HTTP Response code: {}, request: {}",
+          response.getStatusLine().getStatusCode(), requestInfoScrubbed);
+    }
+    if ((response == null ||
+         response.getStatusLine().getStatusCode() != 200))
+    {
+
+      String eventName;
+      if (response == null)
+      {
+        eventName = "NullResponseHttpError";
+      }
+      else
+      {
+        if (response.getStatusLine() == null)
+        {
+          eventName = "NullResponseStatusLine";
+        }
+        else
+        {
+          eventName = String.format("HttpError%d", response.getStatusLine().getStatusCode());
+        }
+      }
+      TelemetryService.getInstance().logHttpRequestTelemetryEvent(
+          eventName,
+          httpRequest,
+          injectSocketTimeout,
+          canceling,
+          withoutCookies,
+          includeRetryParameters,
+          includeRequestGuid,
+          response,
+          savedEx, breakRetryReason,
+          retryTimeout,
+          retryCount,
+          null,
+          0);
 
       // rethrow the timeout exception
-      if (response == null && savedEx != null) {
-        throw new SnowflakeSQLException(
-            savedEx,
-            ErrorCode.NETWORK_ERROR,
-            "Exception encountered for HTTP request: " + savedEx.getMessage());
+      if (response == null && savedEx != null)
+      {
+        throw new SnowflakeSQLException(savedEx,
+                                        ErrorCode.NETWORK_ERROR,
+                                        "Exception encountered for HTTP request: " +
+                                        savedEx.getMessage());
       }
     }
 
     return response;
   }
 
-  static boolean isRetryableHTTPCode(CloseableHttpResponse response, boolean retryHTTP403) {
-    return response != null
-        && (response.getStatusLine().getStatusCode() < 500
-            || // service unavailable
-            response.getStatusLine().getStatusCode() >= 600)
-        && // gateway timeout
-        response.getStatusLine().getStatusCode() != 408
-        && // request timeout
-        (retryHTTP403 || response.getStatusLine().getStatusCode() != 403);
+  static boolean isRetryableHTTPCode(CloseableHttpResponse response, boolean retryHTTP403)
+  {
+    return response != null &&
+           (response.getStatusLine().getStatusCode() < 500 || // service unavailable
+            response.getStatusLine().getStatusCode() >= 600) && // gateway timeout
+           response.getStatusLine().getStatusCode() != 408 && // request timeout
+           (retryHTTP403 || response.getStatusLine().getStatusCode() != 403);
   }
 
-  private static boolean isCertificateRevoked(Exception ex) {
-    if (ex == null) {
+  private static boolean isCertificateRevoked(Exception ex)
+  {
+    if (ex == null)
+    {
       return false;
     }
     Throwable ex0 = getRootCause(ex);
-    if (!(ex0 instanceof SFOCSPException)) {
+    if (!(ex0 instanceof SFOCSPException))
+    {
       return false;
     }
     SFOCSPException cause = (SFOCSPException) ex0;
     return cause.getErrorCode() == OCSPErrorCode.CERTIFICATE_STATUS_REVOKED;
   }
 
-  private static Throwable getRootCause(Throwable ex) {
+  private static Throwable getRootCause(Throwable ex)
+  {
     Throwable ex0 = ex;
-    while (ex0.getCause() != null) {
+    while (ex0.getCause() != null)
+    {
       ex0 = ex0.getCause();
     }
     return ex0;

@@ -6,67 +6,57 @@ package net.snowflake.client.jdbc;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.TimeZone;
-import org.junit.After;
-import org.junit.Before;
 
-abstract class ResultSetArrowForce0MultiTimeZone extends BaseJDBCTest {
-  static List<Object[]> testData() {
-    String[] timeZones = new String[] {"UTC", "America/New_York", "MEZ"};
-    String[] queryFormats = new String[] {"json", "arrow"};
-    List<Object[]> ret = new ArrayList<>();
-    for (String queryFormat : queryFormats) {
-      for (String timeZone : timeZones) {
-        ret.add(new Object[] {queryFormat, timeZone});
-      }
-    }
-    return ret;
+abstract class ResultSetArrowForce0MultiTimeZone extends BaseJDBCTest
+{
+  static Object[][] testData()
+  {
+    // all tests in this class need to run for both query result formats json and arrow
+    return new Object[][]{
+        {"json", "UTC"},
+        {"json", "America/New_York"},
+        {"json", "MEZ"},
+        {"arrow_force", "UTC"},
+        {"arrow_force", "America/Los_Angeles"},
+        {"arrow_force", "MEZ"},
+        };
   }
 
-  protected final String queryResultFormat;
-  protected final String tz;
-  private TimeZone origTz;
+  protected String queryResultFormat;
+  protected String tz;
 
-  ResultSetArrowForce0MultiTimeZone(String queryResultFormat, String timeZone) {
+  ResultSetArrowForce0MultiTimeZone(String queryResultFormat, String timeZone)
+  {
     this.queryResultFormat = queryResultFormat;
+    System.setProperty("user.timezone", timeZone);
     this.tz = timeZone;
   }
 
-  @Before
-  public void setUp() {
-    origTz = TimeZone.getDefault();
-    TimeZone.setDefault(TimeZone.getTimeZone(this.tz));
-  }
-
-  @After
-  public void tearDown() {
-    TimeZone.setDefault(origTz);
-  }
-
-  Connection init(String table, String column, String values) throws SQLException {
+  Connection init(String table, String column, String values) throws SQLException
+  {
     Connection con = BaseJDBCTest.getConnection();
 
-    try (Statement statement = con.createStatement()) {
+    try (Statement statement = con.createStatement())
+    {
       statement.execute(
-          "alter session set "
-              + "TIMEZONE='America/Los_Angeles',"
-              + "TIMESTAMP_TYPE_MAPPING='TIMESTAMP_LTZ',"
-              + "TIMESTAMP_OUTPUT_FORMAT='DY, DD MON YYYY HH24:MI:SS TZHTZM',"
-              + "TIMESTAMP_TZ_OUTPUT_FORMAT='DY, DD MON YYYY HH24:MI:SS TZHTZM',"
-              + "TIMESTAMP_LTZ_OUTPUT_FORMAT='DY, DD MON YYYY HH24:MI:SS TZHTZM',"
-              + "TIMESTAMP_NTZ_OUTPUT_FORMAT='DY, DD MON YYYY HH24:MI:SS TZHTZM'");
+          "alter session set " +
+          "TIMEZONE='America/Los_Angeles'," +
+          "TIMESTAMP_TYPE_MAPPING='TIMESTAMP_LTZ'," +
+          "TIMESTAMP_OUTPUT_FORMAT='DY, DD MON YYYY HH24:MI:SS TZHTZM'," +
+          "TIMESTAMP_TZ_OUTPUT_FORMAT='DY, DD MON YYYY HH24:MI:SS TZHTZM'," +
+          "TIMESTAMP_LTZ_OUTPUT_FORMAT='DY, DD MON YYYY HH24:MI:SS TZHTZM'," +
+          "TIMESTAMP_NTZ_OUTPUT_FORMAT='DY, DD MON YYYY HH24:MI:SS TZHTZM'");
     }
 
-    con.createStatement()
-        .execute("alter session set jdbc_query_result_format" + " = '" + queryResultFormat + "'");
+    con.createStatement().execute("alter session set jdbc_query_result_format" +
+                                  " = '" + queryResultFormat + "'");
     con.createStatement().execute("create or replace table " + table + " " + column);
     con.createStatement().execute("insert into " + table + " values " + values);
     return con;
   }
 
-  protected void finish(String table, Connection con) throws SQLException {
+  protected void finish(String table, Connection con) throws SQLException
+  {
     con.createStatement().execute("drop table " + table);
     con.close();
     System.clearProperty("user.timezone");

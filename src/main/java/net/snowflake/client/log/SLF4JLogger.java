@@ -10,196 +10,244 @@ import org.slf4j.helpers.FormattingTuple;
 import org.slf4j.helpers.MessageFormatter;
 import org.slf4j.spi.LocationAwareLogger;
 
-/** Created by hyu on 11/17/16. */
-public class SLF4JLogger implements SFLogger {
+/**
+ * Created by hyu on 11/17/16.
+ */
+public class SLF4JLogger implements SFLogger
+{
   private Logger slf4jLogger;
 
   private boolean isLocationAwareLogger;
 
   private static final String FQCN = SLF4JLogger.class.getName();
 
-  public SLF4JLogger(Class<?> clazz) {
+  public SLF4JLogger(Class<?> clazz)
+  {
     slf4jLogger = LoggerFactory.getLogger(clazz);
     isLocationAwareLogger = slf4jLogger instanceof LocationAwareLogger;
   }
 
-  public SLF4JLogger(String name) {
+  public SLF4JLogger(String name)
+  {
     slf4jLogger = LoggerFactory.getLogger(name);
     isLocationAwareLogger = slf4jLogger instanceof LocationAwareLogger;
   }
 
-  public boolean isDebugEnabled() {
+  public boolean isDebugEnabled()
+  {
     return this.slf4jLogger.isDebugEnabled();
   }
 
-  public boolean isErrorEnabled() {
+  public boolean isErrorEnabled()
+  {
     return this.slf4jLogger.isErrorEnabled();
   }
 
-  public boolean isInfoEnabled() {
+  public boolean isInfoEnabled()
+  {
     return this.slf4jLogger.isInfoEnabled();
   }
 
-  public boolean isTraceEnabled() {
+  public boolean isTraceEnabled()
+  {
     return this.slf4jLogger.isTraceEnabled();
   }
 
-  public boolean isWarnEnabled() {
+  public boolean isWarnEnabled()
+  {
     return this.slf4jLogger.isWarnEnabled();
   }
 
-  public void debug(String msg) {
+  public void debug(String msg)
+  {
     msg = SecretDetector.maskSecrets(msg);
-    if (isLocationAwareLogger) {
-      ((LocationAwareLogger) slf4jLogger)
-          .log(null, FQCN, LocationAwareLogger.DEBUG_INT, msg, null, null);
-    } else {
+    if (isLocationAwareLogger)
+    {
+      ((LocationAwareLogger) slf4jLogger).log(null, FQCN, LocationAwareLogger.DEBUG_INT, msg, null, null);
+    }
+    else
+    {
       slf4jLogger.debug(msg);
     }
   }
 
-  // This function is used to display unmasked, potentially sensitive log information for internal
-  // regression testing purposes. Do not use otherwise
-  public void debugNoMask(String msg) {
-    if (isLocationAwareLogger) {
-      ((LocationAwareLogger) slf4jLogger)
-          .log(null, FQCN, LocationAwareLogger.DEBUG_INT, msg, null, null);
-    } else {
-      slf4jLogger.debug(msg);
-    }
-  }
-
-  public void debug(String msg, Object... arguments) {
+  public void debug(String msg, Object... arguments)
+  {
     // use this as format example for JDK14Logger.
-    if (isDebugEnabled()) {
-      FormattingTuple ft = MessageFormatter.arrayFormat(msg, evaluateLambdaArgs(arguments));
+    if (isDebugEnabled())
+    {
+      FormattingTuple ft = MessageFormatter.arrayFormat(
+          msg, evaluateLambdaArgs(arguments));
       this.debug(SecretDetector.maskSecrets(ft.getMessage()));
     }
   }
 
-  public void debug(String msg, Throwable t) {
+  public void debug(String msg, Throwable t)
+  {
     msg = SecretDetector.maskSecrets(msg);
-    if (isLocationAwareLogger) {
-      ((LocationAwareLogger) slf4jLogger)
-          .log(null, FQCN, LocationAwareLogger.DEBUG_INT, msg, null, t);
-    } else {
+    if (isLocationAwareLogger)
+    {
+      ((LocationAwareLogger) slf4jLogger).log(null, FQCN, LocationAwareLogger.DEBUG_INT, msg, null, t);
+    }
+    else
+    {
       slf4jLogger.debug(msg, t);
     }
   }
 
-  public void error(String msg) {
+  public void error(String msg)
+  {
     msg = SecretDetector.maskSecrets(msg);
-    if (isLocationAwareLogger) {
-      ((LocationAwareLogger) slf4jLogger)
-          .log(null, FQCN, LocationAwareLogger.ERROR_INT, msg, null, null);
-    } else {
+    if (isLocationAwareLogger)
+    {
+      ((LocationAwareLogger) slf4jLogger).log(null, FQCN, LocationAwareLogger.ERROR_INT, msg, null, null);
+    }
+    else
+    {
       slf4jLogger.error(msg);
     }
   }
 
-  public void error(String msg, Object... arguments) {
-    if (isErrorEnabled()) {
-      FormattingTuple ft = MessageFormatter.arrayFormat(msg, evaluateLambdaArgs(arguments));
+  public void error(String msg, Object... arguments)
+  {
+    if (isErrorEnabled())
+    {
+      FormattingTuple ft = MessageFormatter.arrayFormat(
+          msg, evaluateLambdaArgs(arguments));
       this.error(SecretDetector.maskSecrets(ft.getMessage()));
     }
   }
 
-  public void error(String msg, Throwable t) {
+  public void error(String msg, Throwable t)
+  {
     msg = SecretDetector.maskSecrets(msg);
-    if (isLocationAwareLogger) {
-      ((LocationAwareLogger) slf4jLogger)
-          .log(null, FQCN, LocationAwareLogger.ERROR_INT, msg, null, t);
-    } else {
+    if (isLocationAwareLogger)
+    {
+      ((LocationAwareLogger) slf4jLogger).log(null, FQCN, LocationAwareLogger.ERROR_INT, msg, null, t);
+    }
+    else
+    {
       slf4jLogger.error(msg, t);
     }
   }
 
-  public void info(String msg) {
+  public void info(String msg)
+  {
     msg = SecretDetector.maskSecrets(msg);
-    if (isLocationAwareLogger) {
-      ((LocationAwareLogger) slf4jLogger)
-          .log(null, FQCN, LocationAwareLogger.INFO_INT, msg, null, null);
-    } else {
+    if (isLocationAwareLogger)
+    {
+      ((LocationAwareLogger) slf4jLogger).log(null, FQCN, LocationAwareLogger.INFO_INT, msg, null, null);
+    }
+    else
+    {
       slf4jLogger.info(msg);
     }
   }
 
-  public void info(String msg, Object... arguments) {
-    if (isInfoEnabled()) {
-      FormattingTuple ft = MessageFormatter.arrayFormat(msg, evaluateLambdaArgs(arguments));
+  public void info(String msg, Object... arguments)
+  {
+    if (isInfoEnabled())
+    {
+      FormattingTuple ft = MessageFormatter.arrayFormat(
+          msg, evaluateLambdaArgs(arguments));
       this.info(SecretDetector.maskSecrets(ft.getMessage()));
     }
   }
 
-  public void info(String msg, Throwable t) {
+  public void info(String msg, Throwable t)
+  {
     msg = SecretDetector.maskSecrets(msg);
-    if (isLocationAwareLogger) {
-      ((LocationAwareLogger) slf4jLogger)
-          .log(null, FQCN, LocationAwareLogger.INFO_INT, msg, null, t);
-    } else {
+    if (isLocationAwareLogger)
+    {
+      ((LocationAwareLogger) slf4jLogger).log(null, FQCN, LocationAwareLogger.INFO_INT, msg, null, t);
+    }
+    else
+    {
       slf4jLogger.error(msg, t);
     }
   }
 
-  public void trace(String msg) {
+  public void trace(String msg)
+  {
     msg = SecretDetector.maskSecrets(msg);
-    if (isLocationAwareLogger) {
-      ((LocationAwareLogger) slf4jLogger)
-          .log(null, FQCN, LocationAwareLogger.TRACE_INT, msg, null, null);
-    } else {
+    if (isLocationAwareLogger)
+    {
+      ((LocationAwareLogger) slf4jLogger).log(null, FQCN, LocationAwareLogger.TRACE_INT, msg, null, null);
+    }
+    else
+    {
       slf4jLogger.trace(msg);
     }
   }
 
-  public void trace(String msg, Object... arguments) {
-    if (isTraceEnabled()) {
-      FormattingTuple ft = MessageFormatter.arrayFormat(msg, evaluateLambdaArgs(arguments));
+  public void trace(String msg, Object... arguments)
+  {
+    if (isTraceEnabled())
+    {
+      FormattingTuple ft = MessageFormatter.arrayFormat(
+          msg, evaluateLambdaArgs(arguments));
       this.trace(SecretDetector.maskSecrets(ft.getMessage()));
     }
   }
 
-  public void trace(String msg, Throwable t) {
+  public void trace(String msg, Throwable t)
+  {
     msg = SecretDetector.maskSecrets(msg);
-    if (isLocationAwareLogger) {
-      ((LocationAwareLogger) slf4jLogger)
-          .log(null, FQCN, LocationAwareLogger.TRACE_INT, msg, null, t);
-    } else {
+    if (isLocationAwareLogger)
+    {
+      ((LocationAwareLogger) slf4jLogger).log(null, FQCN, LocationAwareLogger.TRACE_INT, msg, null, t);
+    }
+    else
+    {
       slf4jLogger.trace(msg, t);
     }
   }
 
-  public void warn(String msg) {
+  public void warn(String msg)
+  {
     msg = SecretDetector.maskSecrets(msg);
-    if (isLocationAwareLogger) {
-      ((LocationAwareLogger) slf4jLogger)
-          .log(null, FQCN, LocationAwareLogger.WARN_INT, msg, null, null);
-    } else {
+    if (isLocationAwareLogger)
+    {
+      ((LocationAwareLogger) slf4jLogger).log(null, FQCN, LocationAwareLogger.WARN_INT, msg, null, null);
+    }
+    else
+    {
       slf4jLogger.error(msg);
     }
   }
 
-  public void warn(String msg, Object... arguments) {
-    if (isWarnEnabled()) {
-      FormattingTuple ft = MessageFormatter.arrayFormat(msg, evaluateLambdaArgs(arguments));
+  public void warn(String msg, Object... arguments)
+  {
+    if (isWarnEnabled())
+    {
+      FormattingTuple ft = MessageFormatter.arrayFormat(
+          msg, evaluateLambdaArgs(arguments));
       this.warn(SecretDetector.maskSecrets(ft.getMessage()));
     }
   }
 
-  public void warn(String msg, Throwable t) {
+  public void warn(String msg, Throwable t)
+  {
     msg = SecretDetector.maskSecrets(msg);
-    if (isLocationAwareLogger) {
-      ((LocationAwareLogger) slf4jLogger)
-          .log(null, FQCN, LocationAwareLogger.WARN_INT, msg, null, t);
-    } else {
+    if (isLocationAwareLogger)
+    {
+      ((LocationAwareLogger) slf4jLogger).log(null, FQCN, LocationAwareLogger.WARN_INT, msg, null, t);
+    }
+    else
+    {
       slf4jLogger.error(msg, t);
     }
   }
 
-  private static Object[] evaluateLambdaArgs(Object... args) {
+  private static Object[] evaluateLambdaArgs(Object... args)
+  {
     final Object[] result = new Object[args.length];
 
-    for (int i = 0; i < args.length; i++) {
-      result[i] = args[i] instanceof ArgSupplier ? ((ArgSupplier) args[i]).get() : args[i];
+    for (int i = 0; i < args.length; i++)
+    {
+      result[i] = args[i] instanceof ArgSupplier
+                  ? ((ArgSupplier) args[i]).get()
+                  : args[i];
     }
 
     return result;

@@ -1,14 +1,5 @@
 package net.snowflake.client.jdbc.telemetryOOB;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.security.cert.CertificateException;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Properties;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import net.minidev.json.JSONArray;
 import net.minidev.json.JSONObject;
 import net.snowflake.client.jdbc.SnowflakeConnectString;
@@ -24,125 +15,171 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.security.cert.CertificateException;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Properties;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+
 /**
  * Copyright (c) 2018-2019 Snowflake Computing Inc. All rights reserved.
- *
- * <p>Out of Band Telemetry Service This is a thread safe singleton queue containing telemetry
- * messages
+ * <p>
+ * Out of Band Telemetry Service
+ * This is a thread safe singleton queue containing telemetry messages
  */
-public class TelemetryService {
-  private static final SFLogger logger = SFLoggerFactory.getLogger(TelemetryService.class);
+public class TelemetryService
+{
+  private static final SFLogger logger =
+      SFLoggerFactory.getLogger(TelemetryService.class);
 
   private static ThreadLocal<TelemetryService> _threadLocal =
-      new ThreadLocal<TelemetryService>() {
+      new ThreadLocal<TelemetryService>()
+      {
         @Override
-        protected TelemetryService initialValue() {
+        protected TelemetryService initialValue()
+        {
           return new TelemetryService();
         }
       };
 
   // Global parameters:
-  private static final String TELEMETRY_SERVER_URL_PATTERN =
-      "https://(sfcdev\\.|sfctest\\.|)client-telemetry\\.snowflakecomputing\\" + ".com/enqueue";
+  private static final String TELEMETRY_SERVER_URL_PATTERN
+      =
+      "https://(sfcdev\\.|sfctest\\.|)client-telemetry\\.snowflakecomputing\\" +
+      ".com/enqueue";
 
   /**
-   * control which deployments are enabled: the service skips all events for the disabled
-   * deployments
+   * control which deployments are enabled:
+   * the service skips all events for the disabled deployments
    */
-  private static HashSet<String> ENABLED_DEPLOYMENT =
-      new HashSet<>(
-          Arrays.asList(
-              TELEMETRY_SERVER_DEPLOYMENT.DEV.name,
-              TELEMETRY_SERVER_DEPLOYMENT.REG.name,
-              TELEMETRY_SERVER_DEPLOYMENT.QA1.name,
-              TELEMETRY_SERVER_DEPLOYMENT.PREPROD3.name,
-              TELEMETRY_SERVER_DEPLOYMENT.PROD.name));
+  private static HashSet<String> ENABLED_DEPLOYMENT
+      = new HashSet<>(Arrays.asList(
+      TELEMETRY_SERVER_DEPLOYMENT.DEV.name,
+      TELEMETRY_SERVER_DEPLOYMENT.REG.name,
+      TELEMETRY_SERVER_DEPLOYMENT.QA1.name,
+      TELEMETRY_SERVER_DEPLOYMENT.PREPROD3.name,
+      TELEMETRY_SERVER_DEPLOYMENT.PROD.name
+  ));
 
   // connection string for current connection
   private String connStr = "";
   // current snowflake connection string
   private SnowflakeConnectString sfConnStr;
 
-  /** @return return thread local instance */
-  public static TelemetryService getInstance() {
+  /**
+   * @return return thread local instance
+   */
+  public static TelemetryService getInstance()
+  {
     return _threadLocal.get();
   }
 
   private static final int DEFAULT_NUM_OF_RETRY_TO_TRIGGER_TELEMETRY = 10;
 
-  /** the number of retry to trigger the HTTP timeout telemetry event */
-  private int numOfRetryToTriggerTelemetry = DEFAULT_NUM_OF_RETRY_TO_TRIGGER_TELEMETRY;
+  /**
+   * the number of retry to trigger the HTTP timeout telemetry event
+   */
+  private int numOfRetryToTriggerTelemetry =
+      DEFAULT_NUM_OF_RETRY_TO_TRIGGER_TELEMETRY;
   // local parameters
-  /** the context (e.g., connection properties) to be included in the telemetry events */
+  /**
+   * the context (e.g., connection properties) to be included
+   * in the telemetry events
+   */
   private JSONObject context;
 
-  public void resetNumOfRetryToTriggerTelemetry() {
+  public void resetNumOfRetryToTriggerTelemetry()
+  {
     numOfRetryToTriggerTelemetry = DEFAULT_NUM_OF_RETRY_TO_TRIGGER_TELEMETRY;
   }
 
-  public int getNumOfRetryToTriggerTelemetry() {
+  public int getNumOfRetryToTriggerTelemetry()
+  {
     return numOfRetryToTriggerTelemetry;
   }
 
-  public void setNumOfRetryToTriggerTelemetry(int num) {
+  public void setNumOfRetryToTriggerTelemetry(int num)
+  {
     numOfRetryToTriggerTelemetry = num;
   }
 
   private TELEMETRY_SERVER_DEPLOYMENT serverDeployment;
 
   /**
-   * control enable/disable the whole service: disabled service will skip added events and uploading
-   * to the server
+   * control enable/disable the whole service:
+   * disabled service will skip added events and uploading to the server
    */
   private static boolean enabled = true;
 
   private static final Object enableLock = new Object();
 
-  public static void enable() {
-    synchronized (enableLock) {
+  public static void enable()
+  {
+    synchronized (enableLock)
+    {
       enabled = true;
     }
+
   }
 
-  public static void disable() {
-    synchronized (enableLock) {
+  public static void disable()
+  {
+    synchronized (enableLock)
+    {
       enabled = false;
     }
   }
 
-  public boolean isEnabled() {
-    synchronized (enableLock) {
+  public boolean isEnabled()
+  {
+    synchronized (enableLock)
+    {
       return enabled;
     }
   }
 
-  public JSONObject getContext() {
+  public JSONObject getContext()
+  {
     return context;
   }
 
-  /** Note: Only used for IT */
-  public void updateContextForIT(Map<String, String> params) {
+  /**
+   * Note: Only used for IT
+   */
+  public void updateContextForIT(Map<String, String> params)
+  {
     Properties info = new Properties();
-    for (String key : params.keySet()) {
+    for (String key : params.keySet())
+    {
       Object val = params.get(key);
-      if (val != null) {
+      if (val != null)
+      {
         info.put(key, val);
       }
     }
-    SnowflakeConnectString conStr = SnowflakeConnectString.parse(params.get("uri"), info);
+    SnowflakeConnectString conStr =
+        SnowflakeConnectString.parse(params.get("uri"), info);
     this.updateContext(conStr);
   }
 
-  public void updateContext(SnowflakeConnectString conStr) {
-    if (conStr != null) {
+  public void updateContext(SnowflakeConnectString conStr)
+  {
+    if (conStr != null)
+    {
       sfConnStr = conStr;
       configureDeployment(conStr);
       context = new JSONObject();
 
-      for (Map.Entry<String, Object> entry : conStr.getParameters().entrySet()) {
+      for (Map.Entry<String, Object> entry : conStr.getParameters().entrySet())
+      {
         String k = entry.getKey();
         Object v = entry.getValue();
-        if (!SecretDetector.isSensitive(k)) {
+        if (!SecretDetector.isSensitive(k))
+        {
           context.put(k, v);
         }
       }
@@ -150,13 +187,16 @@ public class TelemetryService {
   }
 
   /**
-   * configure telemetry deployment based on connection url and info Note: it is not thread-safe
-   * while connecting to different deployments simultaneously.
+   * configure telemetry deployment based on connection url and info
+   * Note: it is not thread-safe while connecting to different deployments
+   * simultaneously.
    *
    * @param conStr Connect String
    */
-  private void configureDeployment(SnowflakeConnectString conStr) {
-    if (!conStr.isValid()) {
+  private void configureDeployment(SnowflakeConnectString conStr)
+  {
+    if (!conStr.isValid())
+    {
       return;
     }
     connStr = conStr.toString();
@@ -164,43 +204,52 @@ public class TelemetryService {
     int port = conStr.getPort();
     // default value
     TELEMETRY_SERVER_DEPLOYMENT deployment = TELEMETRY_SERVER_DEPLOYMENT.PROD;
-    if (conStr.getHost().contains("reg") || conStr.getHost().contains("local")) {
+    if (conStr.getHost().contains("reg") || conStr.getHost().contains("local"))
+    {
       deployment = TELEMETRY_SERVER_DEPLOYMENT.REG;
-      if (port == 8080) {
+      if (port == 8080)
+      {
         deployment = TELEMETRY_SERVER_DEPLOYMENT.DEV;
       }
-    } else if (conStr.getHost().contains("qa1") || account.contains("qa1")) {
+    }
+    else if (conStr.getHost().contains("qa1") || account.contains("qa1"))
+    {
       deployment = TELEMETRY_SERVER_DEPLOYMENT.QA1;
-    } else if (conStr.getHost().contains("preprod3")) {
+    }
+    else if (conStr.getHost().contains("preprod3"))
+    {
       deployment = TELEMETRY_SERVER_DEPLOYMENT.PREPROD3;
     }
 
     this.setDeployment(deployment);
   }
 
-  /** whether the telemetry service is enabled for current deployment */
-  public boolean isDeploymentEnabled() {
+  /**
+   * whether the telemetry service is enabled for current deployment
+   */
+  public boolean isDeploymentEnabled()
+  {
     return ENABLED_DEPLOYMENT.contains(this.serverDeployment.name);
   }
 
-  public String getDriverConnectionString() {
+  public String getDriverConnectionString()
+  {
     return this.connStr;
   }
 
-  public SnowflakeConnectString getSnowflakeConnectionString() {
+  public SnowflakeConnectString getSnowflakeConnectionString()
+  {
     return sfConnStr;
   }
 
-  private enum TELEMETRY_API {
-    SFCTEST(
-        "https://sfctest.client-telemetry.snowflakecomputing.com/enqueue",
-        "rRNY3EPNsB4U89XYuqsZKa7TSxb9QVX93yNM4tS6"),
-    SFCDEV(
-        "https://sfcdev.client-telemetry.snowflakecomputing.com/enqueue",
-        "kyTKLWpEZSaJnrzTZ63I96QXZHKsgfqbaGmAaIWf"),
-    PROD(
-        "https://client-telemetry.snowflakecomputing.com/enqueue",
-        "wLpEKqnLOW9tGNwTjab5N611YQApOb3t9xOnE1rX");
+  private enum TELEMETRY_API
+  {
+    SFCTEST("https://sfctest.client-telemetry.snowflakecomputing.com/enqueue",
+            "rRNY3EPNsB4U89XYuqsZKa7TSxb9QVX93yNM4tS6"),
+    SFCDEV("https://sfcdev.client-telemetry.snowflakecomputing.com/enqueue",
+           "kyTKLWpEZSaJnrzTZ63I96QXZHKsgfqbaGmAaIWf"),
+    PROD("https://client-telemetry.snowflakecomputing.com/enqueue",
+         "wLpEKqnLOW9tGNwTjab5N611YQApOb3t9xOnE1rX");
 
     private final String url;
 
@@ -208,13 +257,15 @@ public class TelemetryService {
     // throttling
     private final String apiKey;
 
-    TELEMETRY_API(String host, String key) {
+    TELEMETRY_API(String host, String key)
+    {
       this.url = host;
       this.apiKey = key;
     }
   }
 
-  public enum TELEMETRY_SERVER_DEPLOYMENT {
+  public enum TELEMETRY_SERVER_DEPLOYMENT
+  {
     DEV("dev", TELEMETRY_API.SFCTEST),
     REG("reg", TELEMETRY_API.SFCTEST),
     QA1("qa1", TELEMETRY_API.SFCDEV),
@@ -225,34 +276,41 @@ public class TelemetryService {
     private String url;
     private final String apiKey;
 
-    TELEMETRY_SERVER_DEPLOYMENT(String name, TELEMETRY_API api) {
+    TELEMETRY_SERVER_DEPLOYMENT(String name, TELEMETRY_API api)
+    {
       this.name = name;
       this.url = api.url;
       this.apiKey = api.apiKey;
     }
 
-    public String getURL() {
+    public String getURL()
+    {
       return url;
     }
 
-    public String getName() {
+    public String getName()
+    {
       return name;
     }
 
-    public String getApiKey() {
+    public String getApiKey()
+    {
       return apiKey;
     }
 
-    public void setURL(String url) {
+    public void setURL(String url)
+    {
       this.url = url;
     }
   }
 
-  public void setDeployment(TELEMETRY_SERVER_DEPLOYMENT deployment) {
+  public void setDeployment(TELEMETRY_SERVER_DEPLOYMENT deployment)
+  {
     serverDeployment = deployment;
   }
 
-  public String getServerDeploymentName() {
+  public String getServerDeploymentName()
+  {
     return serverDeployment.name;
   }
 
@@ -264,92 +322,109 @@ public class TelemetryService {
 
   private String lastClientError = "";
 
-  /** @return the number of events successfully reported by this service */
-  public int getEventCount() {
+  /**
+   * @return the number of events successfully reported by this service
+   */
+  public int getEventCount()
+  {
     return eventCnt.get();
   }
 
   /**
-   * @return the number of times an event was attempted to be reported but failed due to a
-   *     client-side error
+   * @return the number of times an event was attempted to be reported but failed
+   * due to a client-side error
    */
-  public int getClientFailureCount() {
+  public int getClientFailureCount()
+  {
     return clientFailureCnt.get();
   }
 
   /**
-   * @return the number of times an event was attempted to be reported but failed due to a
-   *     server-side error
+   * @return the number of times an event was attempted to be reported but failed
+   * due to a server-side error
    */
-  public int getServerFailureCount() {
+  public int getServerFailureCount()
+  {
     return serverFailureCnt.get();
   }
 
-  /** @return the string containing the most recent failed response */
-  public String getLastClientError() {
+  /**
+   * @return the string containing the most recent failed response
+   */
+  public String getLastClientError()
+  {
     return this.lastClientError;
   }
 
-  /** Count one more successfully reported events */
-  public void count() {
+  /**
+   * Count one more successfully reported events
+   */
+  public void count()
+  {
     eventCnt.incrementAndGet();
   }
 
-  /** Report the event to the telemetry server in a new thread */
-  public void report(TelemetryEvent event) {
-    if (!enabled || event == null || event.isEmpty()) {
+  /**
+   * Report the event to the telemetry server in a new thread
+   */
+  public void report(TelemetryEvent event)
+  {
+    if (!enabled || event == null || event.isEmpty())
+    {
       return;
     }
 
     // Start a new thread to upload without blocking the current thread
     Runnable runUpload =
-        new TelemetryUploader(this, exportQueueToString(event), exportQueueToLogString(event));
+        new TelemetryUploader(this, exportQueueToString(event));
     TelemetryThreadPool.getInstance().execute(runUpload);
   }
 
-  /** Convert an event to a payload in string */
-  public String exportQueueToString(TelemetryEvent event) {
+  /**
+   * Convert an event to a payload in string
+   */
+  public String exportQueueToString(TelemetryEvent event)
+  {
     JSONArray logs = new JSONArray();
     logs.add(event);
     return logs.toString();
   }
 
-  public String exportQueueToLogString(TelemetryEvent event) {
-    JSONArray logs = new JSONArray();
-    logs.add(event);
-    return JSONArray.toJSONString(logs, new SecretDetector.SecretDetectorJSONStyle());
-  }
-
-  static class TelemetryUploader implements Runnable {
+  static class TelemetryUploader implements Runnable
+  {
     private TelemetryService instance;
     private String payload;
-    private String payloadLogStr;
-    private static final int TIMEOUT = 5000; // 5 second timeout limit
-    private static final RequestConfig config =
-        RequestConfig.custom()
-            .setConnectionRequestTimeout(TIMEOUT)
-            .setConnectionRequestTimeout(TIMEOUT)
-            .setSocketTimeout(TIMEOUT)
-            .build();
+    private static final int TIMEOUT = 3000; // 3 second timeout limit
+    private static final RequestConfig config = RequestConfig.custom()
+        .setConnectionRequestTimeout(TIMEOUT)
+        .setConnectionRequestTimeout(TIMEOUT)
+        .setSocketTimeout(TIMEOUT)
+        .build();
 
-    public TelemetryUploader(TelemetryService _instance, String _payload, String _payloadLogStr) {
+    public TelemetryUploader(TelemetryService _instance, String _payload)
+    {
       instance = _instance;
       payload = _payload;
-      payloadLogStr = _payloadLogStr;
     }
 
-    public void run() {
-      if (!instance.enabled) {
+    public void run()
+    {
+      if (!instance.enabled)
+      {
         return;
       }
 
-      if (!instance.isDeploymentEnabled()) {
+      if (!instance.isDeploymentEnabled())
+      {
         // skip the disabled deployment
-        logger.debug("skip the disabled deployment: ", instance.serverDeployment.name);
+        logger.debug("skip the disabled deployment: ",
+                     instance.serverDeployment.name);
         return;
       }
 
-      if (!instance.serverDeployment.url.matches(TELEMETRY_SERVER_URL_PATTERN)) {
+      if (!instance.serverDeployment.url
+          .matches(TELEMETRY_SERVER_URL_PATTERN))
+      {
         // skip the disabled deployment
         logger.debug("ignore invalid url: ", instance.serverDeployment.url);
         return;
@@ -358,29 +433,39 @@ public class TelemetryService {
       uploadPayload();
     }
 
-    private void uploadPayload() {
-      logger.debugNoMask("Running telemetry uploader. The payload is: " + payloadLogStr);
+    private void uploadPayload()
+    {
+      logger.debug("running telemetry uploader");
       CloseableHttpResponse response = null;
       boolean success = true;
 
-      try {
+      try
+      {
         HttpPost post = new HttpPost(instance.serverDeployment.url);
         post.setEntity(new StringEntity(payload));
         post.setHeader("Content-type", "application/json");
         post.setHeader("x-api-key", instance.serverDeployment.getApiKey());
 
         try (CloseableHttpClient httpClient =
-            HttpClientBuilder.create().setDefaultRequestConfig(config).build()) {
+                 HttpClientBuilder.create()
+                     .setDefaultRequestConfig(config)
+                     .build())
+        {
           response = httpClient.execute(post);
           int statusCode = response.getStatusLine().getStatusCode();
 
-          if (statusCode == 200) {
+          if (statusCode == 200)
+          {
             logger.debug("telemetry server request success: " + response);
             instance.count();
-          } else if (statusCode == 429) {
+          }
+          else if (statusCode == 429)
+          {
             logger.debug("telemetry server request hit server cap on response: " + response);
             instance.serverFailureCnt.incrementAndGet();
-          } else {
+          }
+          else
+          {
             logger.debug("telemetry server request error: " + response);
             instance.lastClientError = response.toString();
             instance.clientFailureCnt.incrementAndGet();
@@ -389,50 +474,63 @@ public class TelemetryService {
           logger.debug(EntityUtils.toString(response.getEntity(), "UTF-8"));
           response.close();
         }
-      } catch (Exception e) {
+      }
+      catch (Exception e)
+      {
         // exception from here is always captured
         logger.debug(
-            "Telemetry request failed, Exception" + "response: {}, exception: {}",
-            response,
-            e.getMessage());
+            "Telemetry request failed, Exception" +
+            "response: {}, exception: {}", response, e.getMessage());
         String res = "null";
-        if (response != null) {
+        if (response != null)
+        {
           res = response.toString();
         }
         instance.lastClientError = "Response: " + res + "; Error: " + e.getMessage();
         instance.clientFailureCnt.incrementAndGet();
         success = false;
-      } finally {
-        logger.debug("Telemetry request success={} " + "and clean the current queue", success);
+      }
+      finally
+      {
+        logger.debug("Telemetry request success={} " +
+                     "and clean the current queue", success);
       }
     }
   }
 
-  /** log OCSP exception to telemetry */
+  /**
+   * log OCSP exception to telemetry
+   */
   public void logOCSPExceptionTelemetryEvent(
-      String eventType, JSONObject telemetryData, CertificateException ex) {
-    if (enabled) {
+      String eventType,
+      JSONObject telemetryData,
+      CertificateException ex)
+  {
+    if (enabled)
+    {
       String eventName = "OCSPException";
       TelemetryEvent.LogBuilder logBuilder = new TelemetryEvent.LogBuilder();
 
-      if (ex != null) {
+      if (ex != null)
+      {
         telemetryData.put("exceptionMessage", ex.getLocalizedMessage());
         StringWriter sw = new StringWriter();
         ex.printStackTrace(new PrintWriter(sw));
         telemetryData.put("exceptionStackTrace", sw.toString());
       }
 
-      TelemetryEvent log =
-          logBuilder
-              .withName(eventName)
-              .withValue(telemetryData)
-              .withTag("eventType", eventType)
-              .build();
+      TelemetryEvent log = logBuilder
+          .withName(eventName)
+          .withValue(telemetryData)
+          .withTag("eventType", eventType)
+          .build();
       this.report(log);
     }
   }
 
-  /** log error http response to telemetry */
+  /**
+   * log error http response to telemetry
+   */
   public void logHttpRequestTelemetryEvent(
       String eventName,
       HttpRequestBase request,
@@ -447,8 +545,10 @@ public class TelemetryService {
       long retryTimeout,
       int retryCount,
       String sqlState,
-      int errorCode) {
-    if (enabled) {
+      int errorCode)
+  {
+    if (enabled)
+    {
       TelemetryEvent.LogBuilder logBuilder = new TelemetryEvent.LogBuilder();
       JSONObject value = new JSONObject();
       value.put("request", request.toString());
@@ -463,30 +563,34 @@ public class TelemetryService {
       value.put("sqlState", sqlState);
       value.put("errorCode", errorCode);
       int responseStatusCode = -1;
-      if (response != null) {
+      if (response != null)
+      {
         value.put("response", response.toString());
         value.put("responseStatusLine", response.getStatusLine().toString());
-        if (response.getStatusLine() != null) {
+        if (response.getStatusLine() != null)
+        {
           responseStatusCode = response.getStatusLine().getStatusCode();
           value.put("responseStatusCode", responseStatusCode);
         }
-      } else {
+      }
+      else
+      {
         value.put("response", null);
       }
-      if (savedEx != null) {
+      if (savedEx != null)
+      {
         value.put("exceptionMessage", savedEx.getLocalizedMessage());
         StringWriter sw = new StringWriter();
         savedEx.printStackTrace(new PrintWriter(sw));
         value.put("exceptionStackTrace", sw.toString());
       }
-      TelemetryEvent log =
-          logBuilder
-              .withName(eventName)
-              .withValue(value)
-              .withTag("sqlState", sqlState)
-              .withTag("errorCode", errorCode)
-              .withTag("responseStatusCode", responseStatusCode)
-              .build();
+      TelemetryEvent log = logBuilder
+          .withName(eventName)
+          .withValue(value)
+          .withTag("sqlState", sqlState)
+          .withTag("errorCode", errorCode)
+          .withTag("responseStatusCode", responseStatusCode)
+          .build();
       this.report(log);
     }
   }

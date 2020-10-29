@@ -3,30 +3,31 @@
  */
 package net.snowflake.client.log;
 
-import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
-
 import org.apache.commons.logging.LogFactory;
 
-public class SFLoggerUtil {
-  public static void initializeSnowflakeLogger() {
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
+
+public class SFLoggerUtil
+{
+  public static void initializeSnowflakeLogger()
+  {
     String logger = systemGetProperty("net.snowflake.jdbc.loggerImpl");
     SFLoggerFactory.LoggerImpl loggerImplementation = SFLoggerFactory.LoggerImpl.fromString(logger);
-    if (loggerImplementation == null) {
+    if (loggerImplementation == null)
+    {
       loggerImplementation = SFLoggerFactory.LoggerImpl.JDK14LOGGER;
     }
 
-    System.setProperty(
-        "org.apache.commons.logging.LogFactory", "org.apache.commons.logging.impl.LogFactoryImpl");
+    System.setProperty("org.apache.commons.logging.LogFactory", "org.apache.commons.logging.impl.LogFactoryImpl");
     LogFactory logFactory = LogFactory.getFactory();
-    switch (loggerImplementation) {
+    switch (loggerImplementation)
+    {
       case SLF4JLOGGER:
-        logFactory.setAttribute(
-            "org.apache.commons.logging.Log", "net.snowflake.client.log.SLF4JJCLWrapper");
+        logFactory.setAttribute("org.apache.commons.logging.Log", "net.snowflake.client.log.SLF4JJCLWrapper");
         break;
       case JDK14LOGGER:
       default:
-        logFactory.setAttribute(
-            "org.apache.commons.logging.Log", "net.snowflake.client.log.JDK14JCLWrapper");
+        logFactory.setAttribute("org.apache.commons.logging.Log", "net.snowflake.client.log.JDK14JCLWrapper");
     }
   }
 }

@@ -6,10 +6,14 @@ package net.snowflake.client.jdbc;
 import net.snowflake.client.category.TestCategoryArrow;
 import org.junit.experimental.categories.Category;
 
-/** Test PreparedStatement in ARROW format 2/2 */
+/**
+ * Test PreparedStatement in ARROW format 2/2
+ */
 @Category(TestCategoryArrow.class)
-public class PreparedStatementArrow2IT extends PreparedStatement2IT {
-  public PreparedStatementArrow2IT() {
+public class PreparedStatementArrow2IT extends PreparedStatement2IT
+{
+  public PreparedStatementArrow2IT()
+  {
     super("arrow");
   }
 }

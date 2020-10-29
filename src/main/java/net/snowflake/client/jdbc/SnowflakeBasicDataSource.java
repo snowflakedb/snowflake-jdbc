@@ -1,6 +1,11 @@
 package net.snowflake.client.jdbc;
 
 import com.google.common.base.Strings;
+import net.snowflake.client.log.ArgSupplier;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
+
+import javax.sql.DataSource;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -12,16 +17,15 @@ import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.util.Properties;
 import java.util.logging.Logger;
-import javax.sql.DataSource;
-import net.snowflake.client.log.ArgSupplier;
-import net.snowflake.client.log.SFLogger;
-import net.snowflake.client.log.SFLoggerFactory;
 
-/** Created by hyu on 5/11/17. */
-public class SnowflakeBasicDataSource implements DataSource, Serializable {
+/**
+ * Created by hyu on 5/11/17.
+ */
+public class SnowflakeBasicDataSource implements DataSource, Serializable
+{
   private static final long serialversionUID = 1L;
-  private static final String AUTHENTICATOR_SNOWFLAKE_JWT = "SNOWFLAKE_JWT";
-  private static final String AUTHENTICATOR_OAUTH = "OAUTH";
+  private final static String AUTHENTICATOR_SNOWFLAKE_JWT = "SNOWFLAKE_JWT";
+  private final static String AUTHENTICATOR_OAUTH = "OAUTH";
   private String url;
 
   private String serverName;
@@ -36,22 +40,26 @@ public class SnowflakeBasicDataSource implements DataSource, Serializable {
 
   private Properties properties = new Properties();
 
-  static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeBasicDataSource.class);
+  static final
+  SFLogger logger = SFLoggerFactory.getLogger(SnowflakeBasicDataSource.class);
 
-  static {
-    try {
+  static
+  {
+    try
+    {
       Class.forName("net.snowflake.client.jdbc.SnowflakeDriver");
-    } catch (ClassNotFoundException e) {
-      throw new IllegalStateException(
-          "Unable to load "
-              + "net.snowflake.client.jdbc.SnowflakeDriver. "
-              + "Please check if you have proper Snowflake JDBC "
-              + "Driver jar on the classpath",
-          e);
+    }
+    catch (ClassNotFoundException e)
+    {
+      throw new IllegalStateException("Unable to load " +
+                                      "net.snowflake.client.jdbc.SnowflakeDriver. " +
+                                      "Please check if you have proper Snowflake JDBC " +
+                                      "Driver jar on the classpath", e);
     }
   }
 
-  private void writeObjectHelper(ObjectOutputStream out) throws IOException {
+  private void writeObjectHelper(ObjectOutputStream out) throws IOException
+  {
     out.writeObject(url);
     out.writeObject(serverName);
     out.writeObject(user);
@@ -61,7 +69,9 @@ public class SnowflakeBasicDataSource implements DataSource, Serializable {
     out.writeObject(properties);
   }
 
-  private void readObjectHelper(ObjectInputStream in) throws IOException, ClassNotFoundException {
+  private void readObjectHelper(ObjectInputStream in) throws IOException,
+                                                             ClassNotFoundException
+  {
     url = (String) in.readObject();
     serverName = (String) in.readObject();
     user = (String) in.readObject();
@@ -71,141 +81,181 @@ public class SnowflakeBasicDataSource implements DataSource, Serializable {
     properties = (Properties) in.readObject();
   }
 
-  private void writeObject(ObjectOutputStream out) throws IOException {
+  private void writeObject(ObjectOutputStream out) throws IOException
+  {
     writeObjectHelper(out);
   }
 
-  private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
+  private void readObject(ObjectInputStream in) throws IOException,
+                                                       ClassNotFoundException
+  {
     readObjectHelper(in);
   }
 
   @Override
-  public Connection getConnection() throws SQLException {
+  public Connection getConnection() throws SQLException
+  {
     return getConnection(user, password);
   }
 
   @Override
-  public Connection getConnection(String username, String password) throws SQLException {
-    if (!AUTHENTICATOR_OAUTH.equalsIgnoreCase(
-        authenticator)) { // For OAuth, no username is required
+  public Connection getConnection(String username, String password)
+  throws SQLException
+  {
+    if (!AUTHENTICATOR_OAUTH.equalsIgnoreCase(authenticator))
+    { // For OAuth, no username is required
       properties.put("user", username);
-      if (!AUTHENTICATOR_SNOWFLAKE_JWT.equalsIgnoreCase(authenticator)) {
+      if (!AUTHENTICATOR_SNOWFLAKE_JWT.equalsIgnoreCase(authenticator))
+      {
         properties.put("password", password);
       }
     }
 
-    try {
+    try
+    {
       Connection con = SnowflakeDriver.INSTANCE.connect(getUrl(), properties);
-      logger.trace("Created a connection for {} at {}", user, (ArgSupplier) this::getUrl);
+      logger.trace("Created a connection for {} at {}",
+                   user, (ArgSupplier) this::getUrl);
       return con;
-    } catch (SQLException e) {
-      logger.error("Failed to create a connection for {} at {}: {}", user, getUrl(), e);
+    }
+    catch (SQLException e)
+    {
+      logger.error("Failed to create a connection for {} at {}: {}",
+                   user, getUrl(), e);
       throw e;
     }
   }
 
   @Override
-  public PrintWriter getLogWriter() throws SQLException {
+  public PrintWriter getLogWriter() throws SQLException
+  {
     throw new SQLFeatureNotSupportedException();
   }
 
   @Override
-  public void setLogWriter(PrintWriter out) throws SQLException {
+  public void setLogWriter(PrintWriter out) throws SQLException
+  {
     throw new SQLFeatureNotSupportedException();
   }
 
   @Override
-  public int getLoginTimeout() throws SQLException {
-    try {
+  public int getLoginTimeout() throws SQLException
+  {
+    try
+    {
       return Integer.parseInt(properties.getProperty("loginTimeout"));
-    } catch (NumberFormatException e) {
+    }
+    catch (NumberFormatException e)
+    {
       return 0;
     }
   }
 
   @Override
-  public void setLoginTimeout(int seconds) throws SQLException {
+  public void setLoginTimeout(int seconds) throws SQLException
+  {
     properties.put("loginTimeout", Integer.toString(seconds));
   }
 
   @Override
-  public Logger getParentLogger() throws SQLFeatureNotSupportedException {
+  public Logger getParentLogger() throws SQLFeatureNotSupportedException
+  {
     throw new SQLFeatureNotSupportedException();
   }
 
   @Override
-  public boolean isWrapperFor(Class<?> iface) {
+  public boolean isWrapperFor(Class<?> iface)
+  {
     return false;
   }
 
   @Override
-  public <T> T unwrap(Class<T> iface) {
+  public <T> T unwrap(Class<T> iface)
+  {
     return null;
   }
 
-  public void setUrl(String url) {
+  public void setUrl(String url)
+  {
     this.url = url;
   }
 
-  public void setDatabaseName(String databaseName) {
+  public void setDatabaseName(String databaseName)
+  {
     properties.put("db", databaseName);
   }
 
-  public void setSchema(String schema) {
+  public void setSchema(String schema)
+  {
     properties.put("schema", schema);
   }
 
-  public void setWarehouse(String warehouse) {
+  public void setWarehouse(String warehouse)
+  {
     properties.put("warehouse", warehouse);
   }
 
-  public void setRole(String role) {
+  public void setRole(String role)
+  {
     properties.put("role", role);
   }
 
-  public void setUser(String user) {
+  public void setUser(String user)
+  {
     this.user = user;
   }
 
-  public void setServerName(String serverName) {
+  public void setServerName(String serverName)
+  {
     this.serverName = serverName;
   }
 
-  public void setPassword(String password) {
+  public void setPassword(String password)
+  {
     this.password = password;
   }
 
-  public void setPortNumber(int portNumber) {
+  public void setPortNumber(int portNumber)
+  {
     this.portNumber = portNumber;
   }
 
-  public void setAccount(String account) {
+  public void setAccount(String account)
+  {
     this.properties.put("account", account);
   }
 
-  public void setSsl(boolean ssl) {
+  public void setSsl(boolean ssl)
+  {
     this.properties.put("ssl", String.valueOf(ssl));
   }
 
-  public void setAuthenticator(String authenticator) {
+  public void setAuthenticator(String authenticator)
+  {
     this.authenticator = authenticator;
     this.properties.put("authenticator", authenticator);
   }
 
-  public void setOauthToken(String oauthToken) {
+  public void setOauthToken(String oauthToken)
+  {
     this.setAuthenticator(AUTHENTICATOR_OAUTH);
     this.properties.put("token", oauthToken);
   }
 
-  public String getUrl() {
-    if (url != null) {
+  public String getUrl()
+  {
+    if (url != null)
+    {
       return url;
-    } else {
+    }
+    else
+    {
       // generate url;
       StringBuilder url = new StringBuilder(100);
       url.append("jdbc:snowflake://");
       url.append(serverName);
-      if (portNumber != 0) {
+      if (portNumber != 0)
+      {
         url.append(":").append(portNumber);
       }
 
@@ -213,20 +263,24 @@ public class SnowflakeBasicDataSource implements DataSource, Serializable {
     }
   }
 
-  public void setPrivateKey(PrivateKey privateKey) {
+  public void setPrivateKey(PrivateKey privateKey)
+  {
     this.setAuthenticator(AUTHENTICATOR_SNOWFLAKE_JWT);
     this.properties.put("privateKey", privateKey);
   }
 
-  public void setPrivateKeyFile(String location, String password) {
+  public void setPrivateKeyFile(String location, String password)
+  {
     this.setAuthenticator(AUTHENTICATOR_SNOWFLAKE_JWT);
     this.properties.put("private_key_file", location);
-    if (!Strings.isNullOrEmpty(password)) {
+    if (!Strings.isNullOrEmpty(password))
+    {
       this.properties.put("private_key_file_pwd", password);
     }
   }
 
-  public void setTracing(String tracing) {
+  public void setTracing(String tracing)
+  {
     this.properties.put("tracing", tracing);
   }
 }

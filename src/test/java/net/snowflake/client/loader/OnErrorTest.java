@@ -3,14 +3,16 @@
  */
 package net.snowflake.client.loader;
 
+import org.junit.Test;
+
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 
-import org.junit.Test;
-
-public class OnErrorTest {
+public class OnErrorTest
+{
   @Test
-  public void testValidate() {
+  public void testValidate()
+  {
     // positive
     assertThat(OnError.validate("ABORT_STATEMENT"), is(Boolean.TRUE));
     assertThat(OnError.validate("ABORT_STATeMENT"), is(Boolean.TRUE));

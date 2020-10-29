@@ -3,6 +3,9 @@
  */
 package net.snowflake.client.pooling;
 
+import net.snowflake.client.jdbc.ErrorCode;
+import net.snowflake.client.jdbc.SnowflakeSQLException;
+
 import java.sql.Array;
 import java.sql.Blob;
 import java.sql.CallableStatement;
@@ -20,132 +23,175 @@ import java.sql.Statement;
 import java.sql.Struct;
 import java.util.Properties;
 import java.util.concurrent.Executor;
-import net.snowflake.client.jdbc.ErrorCode;
-import net.snowflake.client.jdbc.SnowflakeSQLException;
 
 /**
- * Logical connection is wrapper class on top of SnowflakeConnectionV1 Every method call will be
- * delegated to SnowflakeConnectionV1 except for close method
+ * Logical connection is wrapper class on top of SnowflakeConnectionV1
+ * Every method call will be delegated to SnowflakeConnectionV1 except for
+ * close method
  */
-class LogicalConnection implements Connection {
-  /** physical connection to snowflake, instance SnowflakeConnectionV1 */
+class LogicalConnection implements Connection
+{
+  /**
+   * physical connection to snowflake, instance SnowflakeConnectionV1
+   */
   private final Connection physicalConnection;
 
-  /** Pooled connection object that create this logical connection */
+  /**
+   * Pooled connection object that create this logical connection
+   */
   private final SnowflakePooledConnection pooledConnection;
 
   /**
-   * flags indicating whether this logical connection is closed or not Note: This is different from
-   * physical connection's state of whether closed or not
-   */
+   * flags indicating whether this logical connection is closed or not
+   * Note: This is different from physical connection's state of whether
+   * closed or not
+   **/
   private boolean isClosed;
 
-  LogicalConnection(SnowflakePooledConnection pooledConnection) throws SQLException {
+  LogicalConnection(SnowflakePooledConnection pooledConnection) throws SQLException
+  {
     this.physicalConnection = pooledConnection.getPhysicalConnection();
     this.pooledConnection = pooledConnection;
     this.isClosed = physicalConnection.isClosed();
   }
 
   @Override
-  public Statement createStatement() throws SQLException {
+  public Statement createStatement() throws SQLException
+  {
     throwExceptionIfClosed();
 
-    try {
+    try
+    {
       return physicalConnection.createStatement();
-    } catch (SQLException e) {
+    }
+    catch (SQLException e)
+    {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
     }
   }
 
   @Override
-  public PreparedStatement prepareStatement(String sql) throws SQLException {
+  public PreparedStatement prepareStatement(String sql)
+  throws SQLException
+  {
     throwExceptionIfClosed();
 
-    try {
+    try
+    {
       return physicalConnection.prepareStatement(sql);
-    } catch (SQLException e) {
+    }
+    catch (SQLException e)
+    {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
     }
   }
 
   @Override
-  public CallableStatement prepareCall(String sql) throws SQLException {
+  public CallableStatement prepareCall(String sql) throws SQLException
+  {
     throwExceptionIfClosed();
 
-    try {
+    try
+    {
       return physicalConnection.prepareCall(sql);
-    } catch (SQLException e) {
+    }
+    catch (SQLException e)
+    {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
     }
   }
 
   @Override
-  public String nativeSQL(String sql) throws SQLException {
+  public String nativeSQL(String sql) throws SQLException
+  {
     throwExceptionIfClosed();
 
-    try {
+    try
+    {
       return physicalConnection.nativeSQL(sql);
-    } catch (SQLException e) {
+    }
+    catch (SQLException e)
+    {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
     }
   }
 
   @Override
-  public void setAutoCommit(boolean autoCommit) throws SQLException {
+  public void setAutoCommit(boolean autoCommit) throws SQLException
+  {
     throwExceptionIfClosed();
 
-    try {
+    try
+    {
       physicalConnection.setAutoCommit(autoCommit);
-    } catch (SQLException e) {
+    }
+    catch (SQLException e)
+    {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
     }
   }
 
   @Override
-  public boolean getAutoCommit() throws SQLException {
+  public boolean getAutoCommit() throws SQLException
+  {
     throwExceptionIfClosed();
 
-    try {
+    try
+    {
       return physicalConnection.getAutoCommit();
-    } catch (SQLException e) {
+    }
+    catch (SQLException e)
+    {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
     }
   }
 
   @Override
-  public void commit() throws SQLException {
+  public void commit() throws SQLException
+  {
     throwExceptionIfClosed();
 
-    try {
+    try
+    {
       physicalConnection.commit();
-    } catch (SQLException e) {
+    }
+    catch (SQLException e)
+    {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
     }
   }
 
   @Override
-  public void rollback() throws SQLException {
+  public void rollback() throws SQLException
+  {
     throwExceptionIfClosed();
 
-    try {
+    try
+    {
       physicalConnection.rollback();
-    } catch (SQLException e) {
+    }
+    catch (SQLException e)
+    {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
     }
   }
 
-  /** Logical connection will not close physical connection, but fire events */
+  /**
+   * Logical connection will not close physical connection, but fire events
+   */
   @Override
-  public void close() throws SQLException {
-    if (isClosed) {
+  public void close() throws SQLException
+  {
+    if (isClosed)
+    {
       return;
     }
     pooledConnection.fireConnectionCloseEvent();
@@ -153,113 +199,150 @@ class LogicalConnection implements Connection {
   }
 
   @Override
-  public boolean isClosed() throws SQLException {
+  public boolean isClosed() throws SQLException
+  {
     return isClosed;
   }
 
   @Override
-  public DatabaseMetaData getMetaData() throws SQLException {
+  public DatabaseMetaData getMetaData() throws SQLException
+  {
     throwExceptionIfClosed();
 
-    try {
+    try
+    {
       return physicalConnection.getMetaData();
-    } catch (SQLException e) {
+    }
+    catch (SQLException e)
+    {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
     }
   }
 
   @Override
-  public void setReadOnly(boolean readOnly) throws SQLException {
+  public void setReadOnly(boolean readOnly) throws SQLException
+  {
     throwExceptionIfClosed();
 
-    try {
+    try
+    {
       physicalConnection.setReadOnly(readOnly);
-    } catch (SQLException e) {
+    }
+    catch (SQLException e)
+    {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
     }
   }
 
   @Override
-  public boolean isReadOnly() throws SQLException {
+  public boolean isReadOnly() throws SQLException
+  {
     throwExceptionIfClosed();
 
-    try {
+    try
+    {
       return physicalConnection.isReadOnly();
-    } catch (SQLException e) {
+    }
+    catch (SQLException e)
+    {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
     }
   }
 
   @Override
-  public void setCatalog(String catalog) throws SQLException {
+  public void setCatalog(String catalog) throws SQLException
+  {
     throwExceptionIfClosed();
 
-    try {
+    try
+    {
       physicalConnection.setCatalog(catalog);
-    } catch (SQLException e) {
+    }
+    catch (SQLException e)
+    {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
     }
   }
 
   @Override
-  public String getCatalog() throws SQLException {
+  public String getCatalog() throws SQLException
+  {
     throwExceptionIfClosed();
 
-    try {
+    try
+    {
       return physicalConnection.getCatalog();
-    } catch (SQLException e) {
+    }
+    catch (SQLException e)
+    {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
     }
   }
 
   @Override
-  public void setTransactionIsolation(int level) throws SQLException {
+  public void setTransactionIsolation(int level) throws SQLException
+  {
     throwExceptionIfClosed();
 
-    try {
+    try
+    {
       physicalConnection.setTransactionIsolation(level);
-    } catch (SQLException e) {
+    }
+    catch (SQLException e)
+    {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
     }
   }
 
   @Override
-  public int getTransactionIsolation() throws SQLException {
+  public int getTransactionIsolation() throws SQLException
+  {
     throwExceptionIfClosed();
 
-    try {
+    try
+    {
       return physicalConnection.getTransactionIsolation();
-    } catch (SQLException e) {
+    }
+    catch (SQLException e)
+    {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
     }
   }
 
   @Override
-  public SQLWarning getWarnings() throws SQLException {
+  public SQLWarning getWarnings() throws SQLException
+  {
     throwExceptionIfClosed();
 
-    try {
+    try
+    {
       return physicalConnection.getWarnings();
-    } catch (SQLException e) {
+    }
+    catch (SQLException e)
+    {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
     }
   }
 
   @Override
-  public void clearWarnings() throws SQLException {
+  public void clearWarnings() throws SQLException
+  {
     throwExceptionIfClosed();
 
-    try {
+    try
+    {
       physicalConnection.clearWarnings();
-    } catch (SQLException e) {
+    }
+    catch (SQLException e)
+    {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
     }
@@ -267,423 +350,580 @@ class LogicalConnection implements Connection {
 
   @Override
   public Statement createStatement(int resultSetType, int resultSetConcurrency)
-      throws SQLException {
+  throws SQLException
+  {
     throwExceptionIfClosed();
 
-    try {
-      return physicalConnection.createStatement(resultSetType, resultSetConcurrency);
-    } catch (SQLException e) {
+    try
+    {
+      return physicalConnection.createStatement(resultSetType,
+                                                resultSetConcurrency);
+    }
+    catch (SQLException e)
+    {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
     }
   }
 
   @Override
-  public PreparedStatement prepareStatement(String sql, int resultSetType, int resultSetConcurrency)
-      throws SQLException {
+  public PreparedStatement prepareStatement(String sql, int resultSetType,
+                                            int resultSetConcurrency)
+  throws SQLException
+  {
     throwExceptionIfClosed();
 
-    try {
-      return physicalConnection.prepareStatement(sql, resultSetType, resultSetConcurrency);
-    } catch (SQLException e) {
+    try
+    {
+      return physicalConnection.prepareStatement(sql, resultSetType,
+                                                 resultSetConcurrency);
+    }
+    catch (SQLException e)
+    {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
     }
   }
 
   @Override
-  public CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency)
-      throws SQLException {
+  public CallableStatement prepareCall(String sql, int resultSetType,
+                                       int resultSetConcurrency) throws SQLException
+  {
     throwExceptionIfClosed();
 
-    try {
-      return physicalConnection.prepareCall(sql, resultSetType, resultSetConcurrency);
-    } catch (SQLException e) {
+    try
+    {
+      return physicalConnection.prepareCall(sql, resultSetType,
+                                            resultSetConcurrency);
+    }
+    catch (SQLException e)
+    {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
     }
   }
 
   @Override
-  public java.util.Map<String, Class<?>> getTypeMap() throws SQLException {
+  public java.util.Map<String, Class<?>> getTypeMap() throws SQLException
+  {
     throwExceptionIfClosed();
 
-    try {
+    try
+    {
       return physicalConnection.getTypeMap();
-    } catch (SQLException e) {
+    }
+    catch (SQLException e)
+    {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
     }
   }
 
   @Override
-  public void setTypeMap(java.util.Map<String, Class<?>> map) throws SQLException {
+  public void setTypeMap(java.util.Map<String, Class<?>> map) throws SQLException
+  {
     throwExceptionIfClosed();
 
-    try {
+    try
+    {
       physicalConnection.setTypeMap(map);
-    } catch (SQLException e) {
+    }
+    catch (SQLException e)
+    {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
     }
   }
 
   @Override
-  public void setHoldability(int holdability) throws SQLException {
+  public void setHoldability(int holdability) throws SQLException
+  {
     throwExceptionIfClosed();
 
-    try {
+    try
+    {
       physicalConnection.setHoldability(holdability);
-    } catch (SQLException e) {
+    }
+    catch (SQLException e)
+    {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
     }
   }
 
   @Override
-  public int getHoldability() throws SQLException {
+  public int getHoldability() throws SQLException
+  {
     throwExceptionIfClosed();
 
-    try {
+    try
+    {
       return physicalConnection.getHoldability();
-    } catch (SQLException e) {
+    }
+    catch (SQLException e)
+    {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
     }
   }
 
   @Override
-  public Savepoint setSavepoint() throws SQLException {
+  public Savepoint setSavepoint() throws SQLException
+  {
     throwExceptionIfClosed();
 
-    try {
+    try
+    {
       return physicalConnection.setSavepoint();
-    } catch (SQLException e) {
+    }
+    catch (SQLException e)
+    {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
     }
   }
 
   @Override
-  public Savepoint setSavepoint(String name) throws SQLException {
+  public Savepoint setSavepoint(String name) throws SQLException
+  {
     throwExceptionIfClosed();
 
-    try {
+    try
+    {
       return physicalConnection.setSavepoint(name);
-    } catch (SQLException e) {
+    }
+    catch (SQLException e)
+    {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
     }
   }
 
   @Override
-  public void rollback(Savepoint savepoint) throws SQLException {
+  public void rollback(Savepoint savepoint) throws SQLException
+  {
     throwExceptionIfClosed();
 
-    try {
+    try
+    {
       physicalConnection.rollback(savepoint);
-    } catch (SQLException e) {
+    }
+    catch (SQLException e)
+    {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
     }
   }
 
   @Override
-  public void releaseSavepoint(Savepoint savepoint) throws SQLException {
+  public void releaseSavepoint(Savepoint savepoint) throws SQLException
+  {
     throwExceptionIfClosed();
 
-    try {
+    try
+    {
       physicalConnection.releaseSavepoint(savepoint);
-    } catch (SQLException e) {
+    }
+    catch (SQLException e)
+    {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
     }
   }
 
   @Override
-  public Statement createStatement(
-      int resultSetType, int resultSetConcurrency, int resultSetHoldability) throws SQLException {
+  public Statement createStatement(int resultSetType, int resultSetConcurrency,
+                                   int resultSetHoldability) throws SQLException
+  {
     throwExceptionIfClosed();
 
-    try {
-      return physicalConnection.createStatement(
-          resultSetType, resultSetConcurrency, resultSetHoldability);
-    } catch (SQLException e) {
+    try
+    {
+      return physicalConnection.createStatement(resultSetType,
+                                                resultSetConcurrency,
+                                                resultSetHoldability);
+    }
+    catch (SQLException e)
+    {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
     }
   }
 
   @Override
-  public PreparedStatement prepareStatement(
-      String sql, int resultSetType, int resultSetConcurrency, int resultSetHoldability)
-      throws SQLException {
+  public PreparedStatement prepareStatement(String sql, int resultSetType,
+                                            int resultSetConcurrency, int resultSetHoldability)
+  throws SQLException
+  {
     throwExceptionIfClosed();
 
-    try {
-      return physicalConnection.prepareStatement(
-          sql, resultSetType, resultSetConcurrency, resultSetHoldability);
-    } catch (SQLException e) {
+    try
+    {
+      return physicalConnection.prepareStatement(sql, resultSetType,
+                                                 resultSetConcurrency,
+                                                 resultSetHoldability);
+    }
+    catch (SQLException e)
+    {
+      pooledConnection.fireConnectionErrorEvent(e);
+      throw e;
+    }
+
+  }
+
+  @Override
+  public CallableStatement prepareCall(String sql, int resultSetType,
+                                       int resultSetConcurrency,
+                                       int resultSetHoldability) throws SQLException
+  {
+    throwExceptionIfClosed();
+
+    try
+    {
+      return physicalConnection.prepareCall(sql, resultSetType,
+                                            resultSetConcurrency,
+                                            resultSetHoldability);
+    }
+    catch (SQLException e)
+    {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
     }
   }
 
   @Override
-  public CallableStatement prepareCall(
-      String sql, int resultSetType, int resultSetConcurrency, int resultSetHoldability)
-      throws SQLException {
+  public PreparedStatement prepareStatement(String sql, int autoGeneratedKeys)
+  throws SQLException
+  {
     throwExceptionIfClosed();
 
-    try {
-      return physicalConnection.prepareCall(
-          sql, resultSetType, resultSetConcurrency, resultSetHoldability);
-    } catch (SQLException e) {
-      pooledConnection.fireConnectionErrorEvent(e);
-      throw e;
-    }
-  }
-
-  @Override
-  public PreparedStatement prepareStatement(String sql, int autoGeneratedKeys) throws SQLException {
-    throwExceptionIfClosed();
-
-    try {
+    try
+    {
       return physicalConnection.prepareStatement(sql, autoGeneratedKeys);
-    } catch (SQLException e) {
+    }
+    catch (SQLException e)
+    {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
     }
   }
 
   @Override
-  public PreparedStatement prepareStatement(String sql, int columnIndexes[]) throws SQLException {
+  public PreparedStatement prepareStatement(String sql, int columnIndexes[])
+  throws SQLException
+  {
     throwExceptionIfClosed();
 
-    try {
+    try
+    {
       return physicalConnection.prepareStatement(sql, columnIndexes);
-    } catch (SQLException e) {
+    }
+    catch (SQLException e)
+    {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
     }
   }
 
   @Override
-  public PreparedStatement prepareStatement(String sql, String columnNames[]) throws SQLException {
+  public PreparedStatement prepareStatement(String sql, String columnNames[])
+  throws SQLException
+  {
     throwExceptionIfClosed();
 
-    try {
+    try
+    {
       return physicalConnection.prepareStatement(sql, columnNames);
-    } catch (SQLException e) {
+    }
+    catch (SQLException e)
+    {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
     }
   }
 
   @Override
-  public Clob createClob() throws SQLException {
+  public Clob createClob() throws SQLException
+  {
     throwExceptionIfClosed();
 
-    try {
+    try
+    {
       return physicalConnection.createClob();
-    } catch (SQLException e) {
+    }
+    catch (SQLException e)
+    {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
     }
   }
 
   @Override
-  public Blob createBlob() throws SQLException {
+  public Blob createBlob() throws SQLException
+  {
     throwExceptionIfClosed();
 
-    try {
+    try
+    {
       return physicalConnection.createBlob();
-    } catch (SQLException e) {
+    }
+    catch (SQLException e)
+    {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
     }
   }
 
   @Override
-  public NClob createNClob() throws SQLException {
+  public NClob createNClob() throws SQLException
+  {
     throwExceptionIfClosed();
 
-    try {
+    try
+    {
       return physicalConnection.createNClob();
-    } catch (SQLException e) {
+    }
+    catch (SQLException e)
+    {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
     }
   }
 
   @Override
-  public SQLXML createSQLXML() throws SQLException {
+  public SQLXML createSQLXML() throws SQLException
+  {
     throwExceptionIfClosed();
 
-    try {
+    try
+    {
       return physicalConnection.createSQLXML();
-    } catch (SQLException e) {
+    }
+    catch (SQLException e)
+    {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
     }
   }
 
   @Override
-  public boolean isValid(int timeout) throws SQLException {
-    try {
+  public boolean isValid(int timeout) throws SQLException
+  {
+    try
+    {
       return !isClosed && physicalConnection.isValid(timeout);
-    } catch (SQLException e) {
+    }
+    catch (SQLException e)
+    {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
     }
   }
 
   @Override
-  public void setClientInfo(String name, String value) throws SQLClientInfoException {
-    try {
+  public void setClientInfo(String name, String value)
+  throws SQLClientInfoException
+  {
+    try
+    {
       physicalConnection.setClientInfo(name, value);
-    } catch (SQLException e) {
+    }
+    catch (SQLException e)
+    {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
     }
   }
 
   @Override
-  public void setClientInfo(Properties properties) throws SQLClientInfoException {
-    try {
+  public void setClientInfo(Properties properties)
+  throws SQLClientInfoException
+  {
+    try
+    {
       physicalConnection.setClientInfo(properties);
-    } catch (SQLException e) {
+    }
+    catch (SQLException e)
+    {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
     }
   }
 
   @Override
-  public String getClientInfo(String name) throws SQLException {
-    try {
+  public String getClientInfo(String name) throws SQLException
+  {
+    try
+    {
       return physicalConnection.getClientInfo(name);
-    } catch (SQLException e) {
+    }
+    catch (SQLException e)
+    {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
     }
   }
 
   @Override
-  public Properties getClientInfo() throws SQLException {
+  public Properties getClientInfo() throws SQLException
+  {
     throwExceptionIfClosed();
 
-    try {
+    try
+    {
       return physicalConnection.getClientInfo();
-    } catch (SQLException e) {
+    }
+    catch (SQLException e)
+    {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
     }
   }
 
   @Override
-  public Array createArrayOf(String typeName, Object[] elements) throws SQLException {
+  public Array createArrayOf(String typeName, Object[] elements) throws
+                                                                 SQLException
+  {
     throwExceptionIfClosed();
 
-    try {
+    try
+    {
       return createArrayOf(typeName, elements);
-    } catch (SQLException e) {
+    }
+    catch (SQLException e)
+    {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
     }
   }
 
   @Override
-  public Struct createStruct(String typeName, Object[] attributes) throws SQLException {
+  public Struct createStruct(String typeName, Object[] attributes)
+  throws SQLException
+  {
     throwExceptionIfClosed();
 
-    try {
+    try
+    {
       return physicalConnection.createStruct(typeName, attributes);
-    } catch (SQLException e) {
+    }
+    catch (SQLException e)
+    {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
     }
   }
 
   @Override
-  public void setSchema(String schema) throws SQLException {
+  public void setSchema(String schema) throws SQLException
+  {
     throwExceptionIfClosed();
 
-    try {
+    try
+    {
       physicalConnection.setSchema(schema);
-    } catch (SQLException e) {
+    }
+    catch (SQLException e)
+    {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
     }
   }
 
   @Override
-  public String getSchema() throws SQLException {
+  public String getSchema() throws SQLException
+  {
     throwExceptionIfClosed();
 
-    try {
+    try
+    {
       return physicalConnection.getSchema();
-    } catch (SQLException e) {
+    }
+    catch (SQLException e)
+    {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
     }
   }
 
   @Override
-  public void abort(Executor executor) throws SQLException {
-    try {
+  public void abort(Executor executor) throws SQLException
+  {
+    try
+    {
       physicalConnection.abort(executor);
-    } catch (SQLException e) {
+    }
+    catch (SQLException e)
+    {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
     }
   }
 
   @Override
-  public void setNetworkTimeout(Executor executor, int milliseconds) throws SQLException {
+  public void setNetworkTimeout(Executor executor, int milliseconds) throws SQLException
+  {
     throwExceptionIfClosed();
 
-    try {
+    try
+    {
       physicalConnection.setNetworkTimeout(executor, milliseconds);
-    } catch (SQLException e) {
+    }
+    catch (SQLException e)
+    {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
     }
   }
 
   @Override
-  public int getNetworkTimeout() throws SQLException {
+  public int getNetworkTimeout() throws SQLException
+  {
     throwExceptionIfClosed();
 
-    try {
+    try
+    {
       return physicalConnection.getNetworkTimeout();
-    } catch (SQLException e) {
+    }
+    catch (SQLException e)
+    {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
     }
   }
 
   @Override
-  public boolean isWrapperFor(Class<?> iface) throws SQLException {
-    try {
+  public boolean isWrapperFor(Class<?> iface) throws SQLException
+  {
+    try
+    {
       return physicalConnection.isWrapperFor(iface);
-    } catch (SQLException e) {
+    }
+    catch (SQLException e)
+    {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
     }
   }
 
   @Override
-  public <T> T unwrap(Class<T> iface) throws SQLException {
-    try {
+  public <T> T unwrap(Class<T> iface) throws SQLException
+  {
+    try
+    {
       return physicalConnection.unwrap(iface);
-    } catch (SQLException e) {
+    }
+    catch (SQLException e)
+    {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
     }
   }
 
-  private void throwExceptionIfClosed() throws SQLException {
-    if (isClosed) {
+  private void throwExceptionIfClosed() throws SQLException
+  {
+    if (isClosed)
+    {
       throw new SnowflakeSQLException(ErrorCode.CONNECTION_CLOSED);
     }
   }

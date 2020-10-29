@@ -778,26 +778,6 @@
         </plugins>
       </build>
     </profile>
-    <!-- Run mvn -P check-style verify -->
-    <profile>
-      <id>check-style</id>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>com.coveo</groupId>
-            <artifactId>fmt-maven-plugin</artifactId>
-            <version>2.10</version>
-            <executions>
-              <execution>
-                <goals>
-                  <goal>check</goal>
-                </goals>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
     <profile>
       <id>jenkinsIT</id>
       <activation>

@@ -7,8 +7,11 @@ package net.snowflake.client.core;
 import java.security.PrivateKey;
 import java.util.Map;
 
-/** A class for holding all information required for login */
-public class SFLoginInput {
+/**
+ * A class for holding all information required for login
+ */
+public class SFLoginInput
+{
   private static int DEFAULT_HTTP_CLIENT_CONNECTION_TIMEOUT = 60000; // millisec
   private static int DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT = 300000; // millisec
 
@@ -42,277 +45,340 @@ public class SFLoginInput {
   private String privateKeyFile;
   private String privateKeyFilePwd;
 
-  SFLoginInput() {}
+  SFLoginInput()
+  {
+  }
 
-  public String getServerUrl() {
+  public String getServerUrl()
+  {
     return serverUrl;
   }
 
-  SFLoginInput setServerUrl(String serverUrl) {
+  SFLoginInput setServerUrl(String serverUrl)
+  {
     this.serverUrl = serverUrl;
     return this;
   }
 
-  String getDatabaseName() {
+  String getDatabaseName()
+  {
     return databaseName;
   }
 
-  SFLoginInput setDatabaseName(String databaseName) {
+  SFLoginInput setDatabaseName(String databaseName)
+  {
     this.databaseName = databaseName;
     return this;
   }
 
-  public String getSchemaName() {
+  public String getSchemaName()
+  {
     return schemaName;
   }
 
-  public SFLoginInput setSchemaName(String schemaName) {
+  public SFLoginInput setSchemaName(String schemaName)
+  {
     this.schemaName = schemaName;
     return this;
   }
 
-  public String getWarehouse() {
+  public String getWarehouse()
+  {
     return warehouse;
   }
 
-  public SFLoginInput setWarehouse(String warehouse) {
+  public SFLoginInput setWarehouse(String warehouse)
+  {
     this.warehouse = warehouse;
     return this;
   }
 
-  public String getRole() {
+  public String getRole()
+  {
     return role;
   }
 
-  public SFLoginInput setRole(String role) {
+  public SFLoginInput setRole(String role)
+  {
     this.role = role;
     return this;
   }
 
-  public boolean isValidateDefaultParameters() {
+  public boolean isValidateDefaultParameters()
+  {
     return validateDefaultParameters;
   }
 
-  public SFLoginInput setValidateDefaultParameters(Object v) {
+  public SFLoginInput setValidateDefaultParameters(Object v)
+  {
     validateDefaultParameters = getBooleanValue(v);
     return this;
   }
 
-  public String getAuthenticator() {
+  public String getAuthenticator()
+  {
     return authenticator;
   }
 
-  public SFLoginInput setAuthenticator(String authenticator) {
+  public SFLoginInput setAuthenticator(String authenticator)
+  {
     this.authenticator = authenticator;
     return this;
   }
 
-  public String getOKTAUserName() {
+  public String getOKTAUserName()
+  {
     return oktaUserName;
   }
 
-  public SFLoginInput setOKTAUserName(String oktaUserName) {
+  public SFLoginInput setOKTAUserName(String oktaUserName)
+  {
     this.oktaUserName = oktaUserName;
     return this;
   }
 
-  public String getAccountName() {
+  public String getAccountName()
+  {
     return accountName;
   }
 
-  public SFLoginInput setAccountName(String accountName) {
+  public SFLoginInput setAccountName(String accountName)
+  {
     this.accountName = accountName;
     return this;
   }
 
-  int getLoginTimeout() {
+  int getLoginTimeout()
+  {
     return loginTimeout;
   }
 
-  SFLoginInput setLoginTimeout(int loginTimeout) {
+  SFLoginInput setLoginTimeout(int loginTimeout)
+  {
     this.loginTimeout = loginTimeout;
     return this;
   }
 
-  public String getUserName() {
+  public String getUserName()
+  {
     return userName;
   }
 
-  SFLoginInput setUserName(String userName) {
+  SFLoginInput setUserName(String userName)
+  {
     this.userName = userName;
     return this;
   }
 
-  public String getPassword() {
+  public String getPassword()
+  {
     return password;
   }
 
-  public SFLoginInput setPassword(String password) {
+  public SFLoginInput setPassword(String password)
+  {
     this.password = password;
     return this;
   }
 
-  String getPasscode() {
+  String getPasscode()
+  {
     return passcode;
   }
 
-  SFLoginInput setPasscode(String passcode) {
+  SFLoginInput setPasscode(String passcode)
+  {
     this.passcode = passcode;
     return this;
   }
 
-  public String getToken() {
+  public String getToken()
+  {
     return token;
   }
 
-  public SFLoginInput setToken(String token) {
+  public SFLoginInput setToken(String token)
+  {
     this.token = token;
     return this;
   }
 
-  int getConnectionTimeout() {
+  int getConnectionTimeout()
+  {
     return connectionTimeout;
   }
 
-  SFLoginInput setConnectionTimeout(int connectionTimeout) {
+  SFLoginInput setConnectionTimeout(int connectionTimeout)
+  {
     this.connectionTimeout = connectionTimeout;
     return this;
   }
 
-  int getSocketTimeout() {
+  int getSocketTimeout()
+  {
     return socketTimeout;
   }
 
-  SFLoginInput setSocketTimeout(int socketTimeout) {
+  SFLoginInput setSocketTimeout(int socketTimeout)
+  {
     this.socketTimeout = socketTimeout;
     return this;
   }
 
-  boolean isPasscodeInPassword() {
+  boolean isPasscodeInPassword()
+  {
     return passcodeInPassword;
   }
 
-  SFLoginInput setPasscodeInPassword(boolean passcodeInPassword) {
+  SFLoginInput setPasscodeInPassword(boolean passcodeInPassword)
+  {
     this.passcodeInPassword = passcodeInPassword;
     return this;
   }
 
-  String getAppId() {
+  String getAppId()
+  {
     return appId;
   }
 
-  SFLoginInput setAppId(String appId) {
+  SFLoginInput setAppId(String appId)
+  {
     this.appId = appId;
     return this;
   }
 
-  String getAppVersion() {
+  String getAppVersion()
+  {
     return appVersion;
   }
 
-  SFLoginInput setAppVersion(String appVersion) {
+  SFLoginInput setAppVersion(String appVersion)
+  {
     this.appVersion = appVersion;
     return this;
   }
 
-  public String getSessionToken() {
+  public String getSessionToken()
+  {
     return sessionToken;
   }
 
-  public SFLoginInput setSessionToken(String sessionToken) {
+  public SFLoginInput setSessionToken(String sessionToken)
+  {
     this.sessionToken = sessionToken;
     return this;
   }
 
-  String getMasterToken() {
+  String getMasterToken()
+  {
     return masterToken;
   }
 
-  SFLoginInput setMasterToken(String masterToken) {
+  SFLoginInput setMasterToken(String masterToken)
+  {
     this.masterToken = masterToken;
     return this;
   }
 
-  String getIdToken() {
+  String getIdToken()
+  {
     return idToken;
   }
 
-  SFLoginInput setIdToken(String idToken) {
+  SFLoginInput setIdToken(String idToken)
+  {
     this.idToken = idToken;
     return this;
   }
 
-  Map<String, Object> getSessionParameters() {
+  Map<String, Object> getSessionParameters()
+  {
     return sessionParameters;
   }
 
-  SFLoginInput setSessionParameters(Map<String, Object> sessionParameters) {
+  SFLoginInput setSessionParameters(Map<String, Object> sessionParameters)
+  {
     this.sessionParameters = sessionParameters;
     return this;
   }
 
-  PrivateKey getPrivateKey() {
+  PrivateKey getPrivateKey()
+  {
     return privateKey;
   }
 
-  SFLoginInput setPrivateKey(PrivateKey privateKey) {
+  SFLoginInput setPrivateKey(PrivateKey privateKey)
+  {
     this.privateKey = privateKey;
     return this;
   }
 
-  SFLoginInput setPrivateKeyFile(String privateKeyFile) {
+  SFLoginInput setPrivateKeyFile(String privateKeyFile)
+  {
     this.privateKeyFile = privateKeyFile;
     return this;
   }
 
-  SFLoginInput setPrivateKeyFilePwd(String privateKeyFilePwd) {
+  SFLoginInput setPrivateKeyFilePwd(String privateKeyFilePwd)
+  {
     this.privateKeyFilePwd = privateKeyFilePwd;
     return this;
   }
 
-  String getPrivateKeyFile() {
+  String getPrivateKeyFile()
+  {
     return privateKeyFile;
   }
 
-  String getPrivateKeyFilePwd() {
+  String getPrivateKeyFilePwd()
+  {
     return privateKeyFilePwd;
   }
 
-  public String getApplication() {
+
+  public String getApplication()
+  {
     return application;
   }
 
-  public SFLoginInput setApplication(String application) {
+  public SFLoginInput setApplication(String application)
+  {
     this.application = application;
     return this;
   }
 
-  String getServiceName() {
+  String getServiceName()
+  {
     return serviceName;
   }
 
-  SFLoginInput setServiceName(String serviceName) {
+  SFLoginInput setServiceName(String serviceName)
+  {
     this.serviceName = serviceName;
     return this;
   }
 
-  OCSPMode getOCSPMode() {
+  OCSPMode getOCSPMode()
+  {
     return ocspMode;
   }
 
-  SFLoginInput setOCSPMode(OCSPMode ocspMode) {
+  SFLoginInput setOCSPMode(OCSPMode ocspMode)
+  {
     this.ocspMode = ocspMode;
     return this;
   }
 
-  static boolean getBooleanValue(Object v) {
-    if (v instanceof Boolean) {
+  static boolean getBooleanValue(Object v)
+  {
+    if (v instanceof Boolean)
+    {
       return (Boolean) v;
-    } else if (v instanceof String) {
-      return !Boolean.FALSE.toString().equalsIgnoreCase((String) v)
-          && !"off".equalsIgnoreCase((String) v)
-          && (Boolean.TRUE.toString().equalsIgnoreCase((String) v)
-              || "on".equalsIgnoreCase((String) v));
+    }
+    else if (v instanceof String)
+    {
+      return !Boolean.FALSE.toString().equalsIgnoreCase((String) v) && !"off".equalsIgnoreCase((String) v) &&
+             (Boolean.TRUE.toString().equalsIgnoreCase((String) v) || "on".equalsIgnoreCase((String) v));
     }
     return false;
   }

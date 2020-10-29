@@ -4,37 +4,48 @@
 
 package net.snowflake.client.loader;
 
-/** Callback API for processing errors and statistics of upload operation */
-public interface LoadResultListener {
+/**
+ * Callback API for processing errors and statistics of upload operation
+ */
+public interface LoadResultListener
+{
 
-  /** @return this result listener needs to listen to the provided records */
+  /**
+   * @return this result listener needs to listen to the provided records
+   */
   boolean needSuccessRecords();
 
   /**
-   * @param op Operation requested
+   * @param op     Operation requested
    * @param record Data submitted for processing
    */
   void recordProvided(Operation op, Object[] record);
 
   /**
    * @param op Operation requested
-   * @param i number of rows that had been processed
+   * @param i  number of rows that had been processed
    */
   void addProcessedRecordCount(Operation op, int i);
 
   /**
    * @param op Operation requested
-   * @param i number of rows that had been affected by a given operation
+   * @param i  number of rows that had been affected by a given operation
    */
   void addOperationRecordCount(Operation op, int i);
 
-  /** @return whether this result listener needs to listen to error records */
+  /**
+   * @return whether this result listener needs to listen to error records
+   */
   boolean needErrors();
 
-  /** @param error information about error that was encountered */
+  /**
+   * @param error information about error that was encountered
+   */
   void addError(LoadingError error);
 
-  /** @return Whether to throw an exception upon encountering error */
+  /**
+   * @return Whether to throw an exception upon encountering error
+   */
   boolean throwOnError();
 
   /**
@@ -44,7 +55,9 @@ public interface LoadResultListener {
    */
   void addErrorCount(int number);
 
-  /** Method to reset the error count back to zero */
+  /**
+   * Method to reset the error count back to zero
+   */
   void resetErrorCount();
 
   /**
@@ -54,6 +67,7 @@ public interface LoadResultListener {
    */
   int getErrorCount();
 
+
   /**
    * Method to add to the the error record count for a listener
    *
@@ -61,7 +75,9 @@ public interface LoadResultListener {
    */
   void addErrorRecordCount(int number);
 
-  /** Method to reset the errorRecordCount back to zero */
+  /**
+   * Method to reset the errorRecordCount back to zero
+   */
   void resetErrorRecordCount();
 
   /**
@@ -71,7 +87,9 @@ public interface LoadResultListener {
    */
   int getErrorRecordCount();
 
-  /** Resets submitted row count */
+  /**
+   * Resets submitted row count
+   */
   void resetSubmittedRowCount();
 
   /**
