@@ -5,7 +5,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -22,8 +21,6 @@ public class TelemetryServiceTest {
 
   @After
   public void tearDown() throws InterruptedException {
-    // wait 5 seconds while the service is flushing
-    TimeUnit.SECONDS.sleep(5);
     TelemetryService service = TelemetryService.getInstance();
     if (defaultState) {
       service.enable();
