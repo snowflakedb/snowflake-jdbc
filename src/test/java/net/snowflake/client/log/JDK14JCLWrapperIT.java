@@ -1,15 +1,14 @@
 package net.snowflake.client.log;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import static org.junit.Assert.*;
 
 import java.util.logging.Formatter;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
-
-import static org.junit.Assert.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 public class JDK14JCLWrapperIT {
   JDK14JCLWrapper wrapper = new JDK14JCLWrapper(JDK14JCLWrapperIT.class.getName());
