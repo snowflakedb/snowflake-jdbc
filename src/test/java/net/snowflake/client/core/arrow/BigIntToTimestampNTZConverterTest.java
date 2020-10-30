@@ -67,10 +67,17 @@ public class BigIntToTimestampNTZConverterTest extends BaseConverterTest {
     testTimestampNTZ(null);
   }
 
+  @Test
   public void testTimestampNTZ() throws SFException {
     testTimestampNTZ(TimeZone.getDefault());
   }
 
+  /**
+   * Helper function for 2 tests above- can be tested with or without a timezone.
+   *
+   * @param timezone the timezone to be used for testing
+   * @throws SFException
+   */
   private void testTimestampNTZ(TimeZone timezone) throws SFException {
     // test old and new dates
     long[] testTimestampsInt64 = {

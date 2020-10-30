@@ -16,7 +16,7 @@ public class JDK14JCLWrapper implements Log {
     this.logger = new JDK14Logger(className);
   }
 
-  public SFLogger getLogger() {
+  SFLogger getLogger() {
     return logger;
   }
 
