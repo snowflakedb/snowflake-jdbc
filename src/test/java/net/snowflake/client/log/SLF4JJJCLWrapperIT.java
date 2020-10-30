@@ -1,7 +1,5 @@
 package net.snowflake.client.log;
 
-import static org.junit.Assert.*;
-
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
@@ -10,6 +8,8 @@ import ch.qos.logback.core.AppenderBase;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+
+import static org.junit.Assert.*;
 
 public class SLF4JJJCLWrapperIT {
 
