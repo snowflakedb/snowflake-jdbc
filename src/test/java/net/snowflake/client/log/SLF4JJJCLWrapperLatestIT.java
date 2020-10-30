@@ -11,11 +11,12 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-public class SLF4JJJCLWrapperIT {
+public class SLF4JJJCLWrapperLatestIT {
 
   /** Message last logged using SLF4JLogger. */
   private String lastLogMessage = null;
 
+  /** Level of logging to restore at the end of testing. Most likely null. */
   private Level levelToRestore = null;
 
   /** An appender that will be used for getting messages logged by a {@link Logger} instance */
@@ -41,7 +42,7 @@ public class SLF4JJJCLWrapperIT {
     TRACE
   }
 
-  SLF4JJCLWrapper wrapper = new SLF4JJCLWrapper(SLF4JJJCLWrapperIT.class.getName());
+  SLF4JJCLWrapper wrapper = new SLF4JJCLWrapper(SLF4JJJCLWrapperLatestIT.class.getName());
   Logger logger = (Logger) wrapper.getLogger();
   private final Appender<ILoggingEvent> testAppender = new TestAppender();
 

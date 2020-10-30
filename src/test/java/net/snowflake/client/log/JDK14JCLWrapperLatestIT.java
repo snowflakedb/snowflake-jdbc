@@ -10,8 +10,8 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-public class JDK14JCLWrapperIT {
-  JDK14JCLWrapper wrapper = new JDK14JCLWrapper(JDK14JCLWrapperIT.class.getName());
+public class JDK14JCLWrapperLatestIT {
+  JDK14JCLWrapper wrapper = new JDK14JCLWrapper(JDK14JCLWrapperLatestIT.class.getName());
   JDK14Logger logger = (JDK14Logger) wrapper.getLogger();
 
   /** Message last logged using JDK14Logger. */
