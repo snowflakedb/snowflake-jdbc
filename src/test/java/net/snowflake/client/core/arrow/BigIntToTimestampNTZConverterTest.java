@@ -62,7 +62,23 @@ public class BigIntToTimestampNTZConverterTest extends BaseConverterTest {
     testTimestampNTZ();
   }
 
+  @Test
+  public void testWithNullTimezone() throws SFException {
+    testTimestampNTZ(null);
+  }
+
+  @Test
   public void testTimestampNTZ() throws SFException {
+    testTimestampNTZ(TimeZone.getDefault());
+  }
+
+  /**
+   * Helper function for 2 tests above- can be tested with or without a timezone.
+   *
+   * @param timezone the timezone to be used for testing
+   * @throws SFException
+   */
+  private void testTimestampNTZ(TimeZone timezone) throws SFException {
     // test old and new dates
     long[] testTimestampsInt64 = {
       1546391837,
@@ -105,7 +121,7 @@ public class BigIntToTimestampNTZConverterTest extends BaseConverterTest {
     j = 0;
     this.setScale(testScales[i]);
     while (j < rowCount) {
-      Timestamp ts = converter.toTimestamp(j, TimeZone.getDefault());
+      Timestamp ts = createTimestampObject(converter, j, timezone);
       Date date = converter.toDate(j, getTimeZone(), false);
       Time time = converter.toTime(j);
       String tsStr = converter.toString(j);
@@ -165,5 +181,10 @@ public class BigIntToTimestampNTZConverterTest extends BaseConverterTest {
       j++;
     }
     vector.clear();
+  }
+
+  private Timestamp createTimestampObject(ArrowVectorConverter converter, int j, TimeZone zone)
+      throws SFException {
+    return converter.toTimestamp(j, zone);
   }
 }
