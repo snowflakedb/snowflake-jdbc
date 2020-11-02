@@ -13,7 +13,9 @@ import com.sun.jna.ptr.PointerByReference;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import org.junit.Ignore;
+import net.snowflake.client.ConditionalIgnoreRule;
+import net.snowflake.client.RunningNotOnWinMac;
+import org.junit.Rule;
 import org.junit.Test;
 
 class MockAdvapi32Lib implements SecureStorageWindowsManager.Advapi32Lib {
@@ -207,13 +209,16 @@ class MockMacKeychainManager {
 }
 
 public class SecureStorageManagerTest {
+  // This required to use ConditionalIgnore annotation
+  @Rule public ConditionalIgnoreRule rule = new ConditionalIgnoreRule();
+
   private static final String host = "fakeHost";
   private static final String user = "fakeUser";
   private static final String idToken = "fakeIdToken";
   private static final String idToken0 = "fakeIdToken0";
 
-  @Ignore("This test won't run until we setup Mac & Windows testing env.")
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningNotOnWinMac.class)
   public void testLoadNativeLibrary() {
     // Make sure the loading of native platform library won't break.
     if (Constants.getOS() == Constants.OS.MAC) {
