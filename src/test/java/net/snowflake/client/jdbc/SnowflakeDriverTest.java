@@ -442,4 +442,10 @@ public class SnowflakeDriverTest {
     String[] args = {"--version"};
     snowflakeDriver.main(args);
   }
+
+  @Test
+  public void testSuppressIllegalReflectiveAccessWarning() {
+    // Just to make sure this function won't break anything
+    SnowflakeDriver.disableIllegalReflectiveAccessWarning();
+  }
 }
