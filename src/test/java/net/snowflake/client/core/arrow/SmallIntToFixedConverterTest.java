@@ -5,7 +5,7 @@ package net.snowflake.client.core.arrow;
 
 import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
@@ -63,6 +63,11 @@ public class SmallIntToFixedConverterTest extends BaseConverterTest {
       short shortVal = converter.toShort(i);
       Object longObject = converter.toObject(i); // the logical type is long
       String shortString = converter.toString(i);
+      if (shortString != null) {
+        assertFalse(converter.isNull(i));
+      } else {
+        assertTrue(converter.isNull(i));
+      }
 
       if (nullValIndex.contains(i)) {
         assertThat(shortVal, is((short) 0));
@@ -223,6 +228,10 @@ public class SmallIntToFixedConverterTest extends BaseConverterTest {
     assertThat(false, is(converter.toBoolean(0)));
     assertThat(true, is(converter.toBoolean(1)));
     assertThat(false, is(converter.toBoolean(2)));
+    assertFalse(converter.isNull(0));
+    assertFalse(converter.isNull(1));
+    assertTrue(converter.isNull(2));
+    assertFalse(converter.isNull(3));
     TestUtil.assertSFException(invalidConversionErrorCode, () -> converter.toBoolean(3));
 
     vector.close();

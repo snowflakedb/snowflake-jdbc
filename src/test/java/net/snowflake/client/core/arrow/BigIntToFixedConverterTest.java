@@ -5,6 +5,8 @@ package net.snowflake.client.core.arrow;
 
 import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
@@ -61,6 +63,12 @@ public class BigIntToFixedConverterTest extends BaseConverterTest {
       long longVal = converter.toLong(i);
       Object longObject = converter.toObject(i);
       String longString = converter.toString(i);
+
+      if (longString != null) {
+        assertFalse(converter.isNull(i));
+      } else {
+        assertTrue(converter.isNull(i));
+      }
 
       if (nullValIndex.contains(i)) {
         assertThat(longVal, is(0L));
