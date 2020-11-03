@@ -64,7 +64,7 @@ public class SnowflakeDriver implements Driver {
     disableIllegalReflectiveAccessWarning();
   }
 
-  private static void disableIllegalReflectiveAccessWarning() {
+  static void disableIllegalReflectiveAccessWarning() {
     // The netty dependency of arrow will cause an illegal reflective access warning
     // This function try to eliminate the warning by setting
     // jdk.internal.module.IllegalAccessLogger's logger as null
