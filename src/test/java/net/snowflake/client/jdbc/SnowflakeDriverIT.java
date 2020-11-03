@@ -1089,7 +1089,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
 
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testSQLErrorsDisableFix63095() throws SQLException {
+  public void testSQLError42S02() throws SQLException {
     Connection connection = null;
     Statement statement = null;
     ResultSet resultSet = null;
@@ -1099,51 +1099,16 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
 
       statement = connection.createStatement();
 
-      // test exception
       // execute a bad query
       try {
-        statement.execute("alter session set ENABLE_FIX_63095 = false;");
         resultSet = statement.executeQuery("SELECT * FROM nonexistence");
 
         fail("SQL exception not raised");
-      } catch (SQLException ex1) {
-        // assert the sqlstate "02000" which means NO_DATA
-        assertEquals("sqlstate mismatch", "02000", ex1.getSQLState());
-      }
-    } finally {
-      if (statement != null) {
-        statement.execute("alter session set ENABLE_FIX_63095 = default;");
-      }
-      closeSQLObjects(resultSet, statement, connection);
-    }
-  }
-
-  @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testSQLErrorsEnableFix63095() throws SQLException {
-    Connection connection = null;
-    Statement statement = null;
-    ResultSet resultSet = null;
-
-    try {
-      connection = getConnection();
-
-      statement = connection.createStatement();
-
-      // execute a bad query
-      try {
-        statement.execute("alter session set ENABLE_FIX_63095 = true;");
-        resultSet = statement.executeQuery("SELECT * FROM nonexistence");
-
-        // failfail("SQL exception not raised");
       } catch (SQLException ex1) {
         // assert the sqlstate "42S02" which means BASE_TABLE_OR_VIEW_NOT_FOUND
         assertEquals("sqlstate mismatch", "42S02", ex1.getSQLState());
       }
     } finally {
-      if (statement != null) {
-        statement.execute("alter session set ENABLE_FIX_63095 = default;");
-      }
       closeSQLObjects(resultSet, statement, connection);
     }
   }
