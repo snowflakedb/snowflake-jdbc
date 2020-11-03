@@ -20,14 +20,6 @@ import net.snowflake.client.log.SFLoggerFactory;
 
 /** Search for credentials in sql and/or other text */
 public class SecretDetector {
-  // We look for long base64 encoded (and perhaps also URL encoded - hence the
-  // '%' character in the regex) strings.
-  // This will match some things that it shouldn't. The minimum number of
-  // characters is essentially a random choice - long enough to not mask other
-  // strings but not so long that it might miss things.
-  private static final Pattern GENERIC_CREDS_PATTERN =
-      Pattern.compile("([a-z0-9+/%]{18,})", Pattern.CASE_INSENSITIVE);
-
   // "\\s*" refers to >= 0 spaces, "[^']" refers to chars other than `'`
   private static final Pattern AWS_KEY_PATTERN =
       Pattern.compile(
@@ -144,17 +136,6 @@ public class SecretDetector {
 
     if (matcher.find()) {
       return matcher.replaceAll("$1$2'****'");
-    }
-    return text;
-  }
-
-  private static String filterGenericSecret(String text) {
-    Matcher matcher =
-        GENERIC_CREDS_PATTERN.matcher(
-            text.length() <= MAX_LENGTH ? text : text.substring(0, MAX_LENGTH));
-
-    if (matcher.find()) {
-      return matcher.replaceAll("****");
     }
     return text;
   }
