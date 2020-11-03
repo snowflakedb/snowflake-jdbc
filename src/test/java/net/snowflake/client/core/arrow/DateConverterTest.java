@@ -3,6 +3,8 @@ package net.snowflake.client.core.arrow;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.sql.Date;
 import java.util.*;
@@ -86,6 +88,11 @@ public class DateConverterTest extends BaseConverterTest {
       int intVal = converter.toInt(j);
       String strVal = converter.toString(j);
       Object obj = converter.toObject(j);
+      if (strVal != null) {
+        assertFalse(converter.isNull(j));
+      } else {
+        assertTrue(converter.isNull(j));
+      }
       Object oldObj = ArrowResultUtil.getDate(intVal, TimeZone.getDefault(), TimeZone.getDefault());
       if (nullValIndex.contains(j)) {
         assertThat(intVal, is(0));

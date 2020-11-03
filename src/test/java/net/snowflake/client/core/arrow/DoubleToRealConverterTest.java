@@ -6,6 +6,8 @@ package net.snowflake.client.core.arrow;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -68,6 +70,11 @@ public class DoubleToRealConverterTest extends BaseConverterTest {
       float floatVal = converter.toFloat(i);
       Object doubleObject = converter.toObject(i);
       String doubleString = converter.toString(i);
+      if (doubleObject != null) {
+        assertFalse(converter.isNull(i));
+      } else {
+        assertTrue(converter.isNull(i));
+      }
 
       if (nullValIndex.contains(i)) {
         assertThat(doubleVal, is((double) 0));
