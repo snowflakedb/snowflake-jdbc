@@ -6,6 +6,8 @@ package net.snowflake.client.core.arrow;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
 import java.util.Base64;
@@ -63,6 +65,11 @@ public class VarBinaryToBinaryConverterTest extends BaseConverterTest {
       String stringVal = converter.toString(i);
       Object objectVal = converter.toObject(i);
       byte[] bytesVal = converter.toBytes(i);
+      if (stringVal != null) {
+        assertFalse(converter.isNull(i));
+      } else {
+        assertTrue(converter.isNull(i));
+      }
 
       if (nullValIndex.contains(i)) {
         assertThat(stringVal, is(nullValue()));

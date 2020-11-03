@@ -8,6 +8,8 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.nio.ByteBuffer;
 import java.sql.Time;
@@ -98,6 +100,11 @@ public class IntToTimeConverterTest extends BaseConverterTest {
           new Time(
               ResultUtil.getSFTime(testTimesJson[i], scale, new SFSession())
                   .getFractionalSeconds(ResultUtil.DEFAULT_SCALE_OF_SFTIME_FRACTION_SECONDS));
+      if (strVal != null) {
+        assertFalse(converter.isNull(j));
+      } else {
+        assertTrue(converter.isNull(j));
+      }
       if (nullValIndex.contains(j)) {
         assertThat(obj, is(nullValue()));
         assertThat(strVal, is(nullValue()));

@@ -6,7 +6,7 @@ package net.snowflake.client.core.arrow;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 import java.math.BigDecimal;
 import java.util.*;
@@ -226,11 +226,15 @@ public class TinyIntToFixedConverterTest extends BaseConverterTest {
 
     final ArrowVectorConverter converter = new TinyIntToScaledFixedConverter(vector, 0, this, 3);
 
-    assertThat(false, is(converter.toBoolean(0)));
+    assertFalse(converter.toBoolean(0));
     TestUtil.assertSFException(invalidConversionErrorCode, () -> converter.toBoolean(3));
-    assertThat(false, is(converter.toBoolean(2)));
+    assertFalse(converter.toBoolean(2));
     TestUtil.assertSFException(invalidConversionErrorCode, () -> converter.toBoolean(3));
 
+    assertFalse(converter.isNull(0));
+    assertFalse(converter.isNull(1));
+    assertTrue(converter.isNull(2));
+    assertFalse(converter.isNull(3));
     vector.close();
   }
 }
