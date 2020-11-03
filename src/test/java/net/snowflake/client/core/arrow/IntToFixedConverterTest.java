@@ -5,7 +5,7 @@ package net.snowflake.client.core.arrow;
 
 import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
@@ -62,6 +62,11 @@ public class IntToFixedConverterTest extends BaseConverterTest {
       int intVal = converter.toInt(i);
       Object longObj = converter.toObject(i);
       String intString = converter.toString(i);
+      if (intString != null) {
+        assertFalse(converter.isNull(i));
+      } else {
+        assertTrue(converter.isNull(i));
+      }
 
       if (nullValIndex.contains(i)) {
         assertThat(intVal, is(0));

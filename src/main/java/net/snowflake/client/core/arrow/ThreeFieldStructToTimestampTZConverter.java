@@ -38,6 +38,11 @@ public class ThreeFieldStructToTimestampTZConverter extends AbstractArrowVectorC
   }
 
   @Override
+  public boolean isNull(int index) {
+    return epochs.isNull(index);
+  }
+
+  @Override
   public String toString(int index) throws SFException {
     if (context.getTimestampTZFormatter() == null) {
       throw (SFException)
