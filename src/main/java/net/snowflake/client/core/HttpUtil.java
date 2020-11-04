@@ -61,12 +61,13 @@ public class HttpUtil {
   static final int DEFAULT_MAX_CONNECTIONS_PER_ROUTE = 300;
   public static final int DEFAULT_CONNECTION_TIMEOUT = 15000;
   public static final int DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT = 60000; // ms
-  static final int DEFAULT_TTL = -1; // secs
+  public static final int DEFAULT_TTL = -1; // secs
   static final int DEFAULT_IDLE_CONNECTION_TIMEOUT = 5; // secs
   static final int DEFAULT_DOWNLOADED_CONDITION_TIMEOUT = 3600; // secs
 
   public static final String JDBC_SOCKET_TIMEOUT_JVM = "net.snowflake.jdbc.socketTimeout";
   public static final String JDBC_CONNECTION_TIMEOUT_JVM = "net.snowflake.jdbc.connectionTimeout";
+  public static final String JDBC_TTL_JVM = "net.snowflake.jdbc.ttlTimeout";
 
   /** The unique httpClient shared by all connections. This will benefit long- lived clients */
   private static Map<OCSPMode, CloseableHttpClient> httpClient = new ConcurrentHashMap<>();
@@ -179,8 +180,10 @@ public class HttpUtil {
     // Setup the default configuration for all requests on this client
     String socketTimeoutSystemProperty = System.getProperty(JDBC_SOCKET_TIMEOUT_JVM);
     String connectionTimeoutSystemProperty = System.getProperty(JDBC_CONNECTION_TIMEOUT_JVM);
+    String ttlSystemProperty = System.getProperty(JDBC_TTL_JVM);
     int socketTimeout = DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT;
     int connectionTimeout = DEFAULT_CONNECTION_TIMEOUT;
+    int timeToLive = DEFAULT_TTL;
     if (socketTimeoutSystemProperty != null) {
       try {
         socketTimeout = Integer.parseInt(socketTimeoutSystemProperty);
@@ -201,8 +204,16 @@ public class HttpUtil {
             connectionTimeoutSystemProperty);
       }
     }
+    if (ttlSystemProperty != null) {
+      try {
+        timeToLive = Integer.parseInt(ttlSystemProperty);
+      } catch (NumberFormatException ex) {
+        logger.info("Failed to parse the system parameter {}", JDBC_TTL_JVM, ttlSystemProperty);
+      }
+    }
     logger.debug("socket timeout: {}", socketTimeout);
     logger.debug("connection timeout: {}", connectionTimeout);
+    logger.debug("time to live in connection pooling manager: {}", timeToLive);
     if (DefaultRequestConfig == null) {
       DefaultRequestConfig =
           RequestConfig.custom()
@@ -241,7 +252,7 @@ public class HttpUtil {
       // Build a connection manager with enough connections
       connectionManager =
           new PoolingHttpClientConnectionManager(
-              registry, null, null, null, DEFAULT_TTL, TimeUnit.SECONDS);
+              registry, null, null, null, timeToLive, TimeUnit.SECONDS);
       connectionManager.setMaxTotal(DEFAULT_MAX_CONNECTIONS);
       connectionManager.setDefaultMaxPerRoute(DEFAULT_MAX_CONNECTIONS_PER_ROUTE);
 
