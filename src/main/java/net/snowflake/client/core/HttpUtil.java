@@ -12,11 +12,7 @@ import com.amazonaws.http.apache.SdkProxyRoutePlanner;
 import com.google.common.base.Strings;
 import com.microsoft.azure.storage.OperationContext;
 import com.snowflake.client.jdbc.SnowflakeDriver;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.PrintWriter;
-import java.io.StringWriter;
+import java.io.*;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.Socket;
@@ -63,11 +59,14 @@ public class HttpUtil {
 
   static final int DEFAULT_MAX_CONNECTIONS = 300;
   static final int DEFAULT_MAX_CONNECTIONS_PER_ROUTE = 300;
-  static final int DEFAULT_CONNECTION_TIMEOUT = 60000;
-  static final int DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT = 300000; // ms
+  public static final int DEFAULT_CONNECTION_TIMEOUT = 15000;
+  public static final int DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT = 60000; // ms
   static final int DEFAULT_TTL = -1; // secs
   static final int DEFAULT_IDLE_CONNECTION_TIMEOUT = 5; // secs
   static final int DEFAULT_DOWNLOADED_CONDITION_TIMEOUT = 3600; // secs
+
+  public static final String JDBC_SOCKET_TIMEOUT_JVM = "net.snowflake.jdbc.socketTimeout";
+  public static final String JDBC_CONNECTION_TIMEOUT_JVM = "net.snowflake.jdbc.connectionTimeout";
 
   /** The unique httpClient shared by all connections. This will benefit long- lived clients */
   private static Map<OCSPMode, CloseableHttpClient> httpClient = new ConcurrentHashMap<>();
@@ -178,12 +177,38 @@ public class HttpUtil {
       OCSPMode ocspMode, File ocspCacheFile, boolean downloadCompressed) {
     // set timeout so that we don't wait forever.
     // Setup the default configuration for all requests on this client
+    String socketTimeoutSystemProperty = System.getProperty(JDBC_SOCKET_TIMEOUT_JVM);
+    String connectionTimeoutSystemProperty = System.getProperty(JDBC_CONNECTION_TIMEOUT_JVM);
+    int socketTimeout = DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT;
+    int connectionTimeout = DEFAULT_CONNECTION_TIMEOUT;
+    if (socketTimeoutSystemProperty != null) {
+      try {
+        socketTimeout = Integer.parseInt(socketTimeoutSystemProperty);
+      } catch (NumberFormatException ex) {
+        logger.info(
+            "Failed to parse the system parameter {}",
+            JDBC_SOCKET_TIMEOUT_JVM,
+            socketTimeoutSystemProperty);
+      }
+    }
+    if (connectionTimeoutSystemProperty != null) {
+      try {
+        connectionTimeout = Integer.parseInt(connectionTimeoutSystemProperty);
+      } catch (NumberFormatException ex) {
+        logger.info(
+            "Failed to parse the system parameter {}",
+            JDBC_CONNECTION_TIMEOUT_JVM,
+            connectionTimeoutSystemProperty);
+      }
+    }
+    logger.debug("socket timeout: {}", socketTimeout);
+    logger.debug("connection timeout: {}", connectionTimeout);
     if (DefaultRequestConfig == null) {
       DefaultRequestConfig =
           RequestConfig.custom()
-              .setConnectTimeout(DEFAULT_CONNECTION_TIMEOUT)
-              .setConnectionRequestTimeout(DEFAULT_CONNECTION_TIMEOUT)
-              .setSocketTimeout(DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT)
+              .setConnectTimeout(connectionTimeout)
+              .setConnectionRequestTimeout(connectionTimeout)
+              .setSocketTimeout(socketTimeout)
               .build();
     }
 
