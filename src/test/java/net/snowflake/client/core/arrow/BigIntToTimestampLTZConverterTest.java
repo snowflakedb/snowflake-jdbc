@@ -6,6 +6,8 @@ package net.snowflake.client.core.arrow;
 
 import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.sql.Date;
 import java.sql.Time;
@@ -99,6 +101,12 @@ public class BigIntToTimestampLTZConverterTest extends BaseConverterTest {
       Date date = converter.toDate(j, getTimeZone(), false);
       Time time = converter.toTime(j);
       String tsStr = converter.toString(j);
+
+      if (tsStr != null) {
+        assertFalse(converter.isNull(j));
+      } else {
+        assertTrue(converter.isNull(j));
+      }
 
       if (nullValIndex.contains(j)) {
         assertThat(ts, is(nullValue()));
