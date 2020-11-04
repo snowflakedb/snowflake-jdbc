@@ -4,29 +4,11 @@
 
 package net.snowflake.client.core;
 
-import static org.apache.http.client.config.CookieSpecs.DEFAULT;
-import static org.apache.http.client.config.CookieSpecs.IGNORE_COOKIES;
-
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.http.apache.SdkProxyRoutePlanner;
 import com.google.common.base.Strings;
 import com.microsoft.azure.storage.OperationContext;
 import com.snowflake.client.jdbc.SnowflakeDriver;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.net.InetSocketAddress;
-import java.net.Proxy;
-import java.net.Socket;
-import java.security.KeyManagementException;
-import java.security.NoSuchAlgorithmException;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import javax.net.ssl.TrustManager;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.RestRequest;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
@@ -58,13 +40,28 @@ import org.apache.http.protocol.HttpContext;
 import org.apache.http.ssl.SSLInitializationException;
 import org.apache.http.util.EntityUtils;
 
+import javax.net.ssl.TrustManager;
+import java.io.*;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
+import java.net.Socket;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import static org.apache.http.client.config.CookieSpecs.DEFAULT;
+import static org.apache.http.client.config.CookieSpecs.IGNORE_COOKIES;
+
 public class HttpUtil {
   static final SFLogger logger = SFLoggerFactory.getLogger(HttpUtil.class);
 
   static final int DEFAULT_MAX_CONNECTIONS = 300;
   static final int DEFAULT_MAX_CONNECTIONS_PER_ROUTE = 300;
-  static final int DEFAULT_CONNECTION_TIMEOUT = 60000;
-  static final int DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT = 300000; // ms
+  public static final int DEFAULT_CONNECTION_TIMEOUT = 15000;
+  public static final int DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT = 100000; // ms
   static final int DEFAULT_TTL = -1; // secs
   static final int DEFAULT_IDLE_CONNECTION_TIMEOUT = 5; // secs
   static final int DEFAULT_DOWNLOADED_CONDITION_TIMEOUT = 3600; // secs
