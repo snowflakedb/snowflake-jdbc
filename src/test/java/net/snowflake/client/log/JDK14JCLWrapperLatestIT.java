@@ -63,10 +63,12 @@ public class JDK14JCLWrapperLatestIT {
     // Set debug level to lowest so that all possible messages can be sent.
     logger.setLevel(Level.FINEST);
     logger.addHandler(this.handler);
+    logger.setUseParentHandlers(false);
   }
 
   @After
   public void tearDown() {
+    logger.setUseParentHandlers(true);
     logger.setLevel(logLevelToRestore);
     logger.removeHandler(this.handler);
   }
