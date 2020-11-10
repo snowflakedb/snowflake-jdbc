@@ -327,5 +327,4 @@ public class SSOConnectionTest {
       // we won't get a new id_token here
       assertThat("idToken", sfcon.getSfSession().getIdToken(), equalTo(MOCK_ID_TOKEN));
     }
-  // }
 }
