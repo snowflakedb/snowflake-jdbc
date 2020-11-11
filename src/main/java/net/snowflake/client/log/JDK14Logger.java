@@ -155,6 +155,11 @@ public class JDK14Logger implements SFLogger {
     snowflakeLogger.removeHandler(handler);
   }
 
+  public static void setUseParentHandlers(boolean value) {
+    Logger snowflakeLogger = Logger.getLogger(SFFormatter.CLASS_NAME_PREFIX);
+    snowflakeLogger.setUseParentHandlers(value);
+  }
+
   public static void setLevel(Level level) {
     Logger snowflakeLogger = Logger.getLogger(SFFormatter.CLASS_NAME_PREFIX);
     snowflakeLogger.setLevel(level);
