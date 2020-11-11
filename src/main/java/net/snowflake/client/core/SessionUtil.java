@@ -725,7 +725,7 @@ public class SessionUtil {
             commonParams);
 
     if (consentCacheIdToken) {
-      CredentialManager.getInstance().writeTemporaryCredential(loginInput, ret);
+      CredentialManager.getInstance().writeIdToken(loginInput, ret);
     }
 
     if (asBoolean(loginInput.getSessionParameters().get(CLIENT_REQUEST_MFA_TOKEN))) {
