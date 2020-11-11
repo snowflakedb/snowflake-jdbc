@@ -19,14 +19,12 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Properties;
-import net.snowflake.client.category.TestCategoryConnection;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.OCSPMode;
 import net.snowflake.client.core.ObjectMapperFactory;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.client.methods.HttpPost;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
@@ -38,7 +36,6 @@ class Buddy {
   }
 }
 
-@Category(TestCategoryConnection.class)
 public class SnowflakeMFACacheTest {
   private static final ObjectMapper mapper = ObjectMapperFactory.getObjectMapper();
   private static final String[] mockedMfaToken = {"mockedMfaToken0", "mockedMfaToken1"};

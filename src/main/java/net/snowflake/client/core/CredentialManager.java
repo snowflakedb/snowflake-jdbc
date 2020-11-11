@@ -44,18 +44,8 @@ public class CredentialManager {
    *
    * @param loginInput login input to attach id token
    */
-  synchronized void fillCachedIdToken(SFLoginInput loginInput) throws SFException {
-    String idToken =
-        secureStorageManager.getCredential(
-            extractHostFromServerUrl(loginInput.getServerUrl()),
-            loginInput.getUserName(),
-            ID_TOKEN);
-
-    if (idToken == null) {
-      logger.debug("retrieved idToken is null");
-    }
-    loginInput.setIdToken(idToken); // idToken can be null
-    return;
+  void fillCachedIdToken(SFLoginInput loginInput) throws SFException {
+    fillCachedCredential(loginInput, ID_TOKEN);
   }
 
   /**
@@ -63,54 +53,77 @@ public class CredentialManager {
    *
    * @param loginInput login input to attach mfa token
    */
-  synchronized void fillCachedMfaToken(SFLoginInput loginInput) throws SFException {
-    String mfaToken =
+  void fillCachedMfaToken(SFLoginInput loginInput) throws SFException {
+    fillCachedCredential(loginInput, MFA_TOKEN);
+  }
+
+  /**
+   * Reuse the cached token stored locally
+   *
+   * @param loginInput login input to attach token
+   * @param credType credential type to retrieve
+   */
+  synchronized void fillCachedCredential(SFLoginInput loginInput, String credType)
+      throws SFException {
+    String cred =
         secureStorageManager.getCredential(
             extractHostFromServerUrl(loginInput.getServerUrl()),
             loginInput.getUserName(),
-            MFA_TOKEN);
-
-    if (mfaToken == null) {
-      logger.debug("retrieved mfaToken is null");
+            credType);
+    if (cred == null) {
+      logger.debug("retrieved %s is null", credType);
     }
-    loginInput.setMfaToken(mfaToken); // mfaToken can be null
+
+    // cred can be null
+    if (credType == ID_TOKEN) {
+      loginInput.setIdToken(cred);
+    } else if (credType == MFA_TOKEN) {
+      loginInput.setMfaToken(cred);
+    } else {
+      logger.debug("unrecognized type %s for local cached credential", credType);
+    }
     return;
+  }
+
+  /**
+   * Store ID Token
+   *
+   * @param loginInput loginInput to denote to the cache
+   * @param loginOutput loginOutput to denote to the cache
+   */
+  void writeIdToken(SFLoginInput loginInput, SFLoginOutput loginOutput) throws SFException {
+    writeTemporaryCredential(loginInput, loginOutput.getIdToken(), ID_TOKEN);
+  }
+
+  /**
+   * Store MFA Token
+   *
+   * @param loginInput loginInput to denote to the cache
+   * @param loginOutput loginOutput to denote to the cache
+   */
+  void writeMfaToken(SFLoginInput loginInput, SFLoginOutput loginOutput) throws SFException {
+    writeTemporaryCredential(loginInput, loginOutput.getMfaToken(), MFA_TOKEN);
   }
 
   /**
    * Store the temporary credential
    *
    * @param loginInput loginInput to denote to the cache
-   * @param loginOutput loginOutput to denote to the cache
+   * @param cred the credential
+   * @param credType type of the credential
    */
-  synchronized void writeTemporaryCredential(SFLoginInput loginInput, SFLoginOutput loginOutput)
+  synchronized void writeTemporaryCredential(SFLoginInput loginInput, String cred, String credType)
       throws SFException {
-    String idToken = loginOutput.getIdToken();
-    if (Strings.isNullOrEmpty(idToken)) {
-      logger.debug("no idToken is given.");
-      return; // no idToken
+    if (Strings.isNullOrEmpty(cred)) {
+      logger.debug("no %s is given.", credType);
+      return; // no credential
     }
 
     secureStorageManager.setCredential(
         extractHostFromServerUrl(loginInput.getServerUrl()),
         loginInput.getUserName(),
-        ID_TOKEN,
-        idToken);
-  }
-
-  synchronized void writeMfaToken(SFLoginInput loginInput, SFLoginOutput loginOutput)
-      throws SFException {
-    String mfaToken = loginOutput.getMfaToken();
-    if (Strings.isNullOrEmpty(mfaToken)) {
-      logger.debug("no username_pwd_mfa token is given.");
-      return; // no mfa token
-    }
-
-    secureStorageManager.setCredential(
-        extractHostFromServerUrl(loginInput.getServerUrl()),
-        loginInput.getUserName(),
-        MFA_TOKEN,
-        mfaToken);
+        credType,
+        cred);
   }
 
   /** Delete the id token cache */
