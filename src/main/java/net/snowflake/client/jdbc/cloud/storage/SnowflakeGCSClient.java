@@ -888,7 +888,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
         }
 
         if (se.getCode() == 401 && session != null && command != null) {
-          // A 403 indicates that the access token has expired,
+          // A 401 indicates that the access token has expired,
           // we need to refresh the GCS client with the new token
           SnowflakeFileTransferAgent.renewExpiredToken(session, command, this);
         }
@@ -1022,9 +1022,8 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
       String accessToken = (String) stage.getCredentials().get("GCS_ACCESS_TOKEN");
       if (accessToken != null) {
         // Using GoogleCredential with access token will cause IllegalStateException when the token
-        // is
-        // expired and trying to refresh, which cause error cannot be caught. Instead, set a header
-        // so we can caught the error code.
+        // is expired and trying to refresh, which cause error cannot be caught. Instead, set a
+        // header so we can caught the error code.
 
         // We are authenticated with an oauth access token.
         this.gcsClient =
