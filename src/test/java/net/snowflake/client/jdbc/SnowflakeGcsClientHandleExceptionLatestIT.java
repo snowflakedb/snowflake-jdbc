@@ -8,6 +8,8 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Properties;
 import net.snowflake.client.AbstractDriverIT;
+import net.snowflake.client.ConditionalIgnoreRule;
+import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryOthers;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.core.SFStatement;
@@ -19,6 +21,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.Mockito;
 
+/** Test for SnowflakeGcsClient handle exception function, only work with latest driver */
 @Category(TestCategoryOthers.class)
 public class SnowflakeGcsClientHandleExceptionLatestIT extends AbstractDriverIT {
 
@@ -51,6 +54,7 @@ public class SnowflakeGcsClientHandleExceptionLatestIT extends AbstractDriverIT 
   }
 
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void error401RenewExpired() throws SQLException, InterruptedException {
     // Unauthenticated, renew is called.
     spyingClient.handleStorageException(
@@ -92,12 +96,14 @@ public class SnowflakeGcsClientHandleExceptionLatestIT extends AbstractDriverIT 
   }
 
   @Test(expected = SnowflakeSQLException.class)
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void error401OverMaxRetryThrow() throws SQLException {
     spyingClient.handleStorageException(
         new StorageException(401, "Unauthenticated"), overMaxRetry, "upload", sfSession, command);
   }
 
   @Test(expected = SnowflakeSQLException.class)
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void errorInvalidKey() throws SQLException {
     // Unauthenticated, renew is called.
     spyingClient.handleStorageException(
@@ -105,6 +111,7 @@ public class SnowflakeGcsClientHandleExceptionLatestIT extends AbstractDriverIT 
   }
 
   @Test(expected = SnowflakeSQLException.class)
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void errorInterruptedException() throws SQLException {
     // Can still retry, no error thrown
     try {
@@ -119,6 +126,7 @@ public class SnowflakeGcsClientHandleExceptionLatestIT extends AbstractDriverIT 
   }
 
   @Test(expected = SnowflakeSQLException.class)
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void errorSocketTimeoutException() throws SQLException {
     // Can still retry, no error thrown
     try {
@@ -133,6 +141,7 @@ public class SnowflakeGcsClientHandleExceptionLatestIT extends AbstractDriverIT 
   }
 
   @Test(expected = SnowflakeSQLException.class)
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void errorUnknownException() throws SQLException {
     // Unauthenticated, renew is called.
     spyingClient.handleStorageException(new Exception(), 0, "upload", sfSession, command);
