@@ -2204,6 +2204,10 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView {
         } catch (Exception ex) {
           logger.debug("Listing objects for filtering encountered exception: {}", ex.getMessage());
 
+          // Need to unwrap StorageProviderException since handleStorageException only handle base cause.
+          if (ex instanceof StorageProviderException) {
+            ex = (Exception) ex.getCause(); // Cause of StorageProviderException is always an Exception
+          }
           storageClient.handleStorageException(ex, ++retryCount, "listObjects", session, command);
         }
       } while (retryCount <= storageClient.getMaxRetries());

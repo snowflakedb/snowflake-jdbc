@@ -11,8 +11,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.gax.paging.Page;
-import com.google.auth.oauth2.AccessToken;
-import com.google.auth.oauth2.GoogleCredentials;
+import com.google.api.gax.rpc.FixedHeaderProvider;
 import com.google.cloud.storage.*;
 import com.google.cloud.storage.Storage.BlobListOption;
 import com.google.common.base.Strings;
@@ -20,10 +19,7 @@ import java.io.*;
 import java.net.SocketTimeoutException;
 import java.net.URISyntaxException;
 import java.security.InvalidKeyException;
-import java.util.AbstractMap;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.OCSPMode;
@@ -857,13 +853,6 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
 
     if (ex instanceof StorageException) {
       StorageException se = (StorageException) ex;
-
-      if (se.getCode() == 403 && session != null && command != null) {
-        // A 403 indicates that the access token has expired,
-        // we need to refresh the GCS client with the new token
-        SnowflakeFileTransferAgent.renewExpiredToken(session, command, this);
-      }
-
       // If we have exceeded the max number of retries, propagate the error
       if (retryCount > getMaxRetries()) {
         throw new SnowflakeSQLLoggedException(
@@ -898,38 +887,37 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
           // ignore
         }
 
-        if (se.getCode() == 403 && session != null && command != null) {
+        if (se.getCode() == 401 && session != null && command != null) {
           // A 403 indicates that the access token has expired,
           // we need to refresh the GCS client with the new token
           SnowflakeFileTransferAgent.renewExpiredToken(session, command, this);
         }
       }
-    } else {
-      if (ex instanceof InterruptedException
+    } else if (ex instanceof InterruptedException
           || SnowflakeUtil.getRootCause(ex) instanceof SocketTimeoutException) {
-        if (retryCount > getMaxRetries()) {
-          throw new SnowflakeSQLLoggedException(
-              session,
-              SqlState.SYSTEM_ERROR,
-              ErrorCode.IO_ERROR.getMessageCode(),
-              ex,
-              "Encountered exception during " + operation + ": " + ex.getMessage());
-        } else {
-          logger.debug(
-              "Encountered exception ({}) during {}, retry count: {}",
-              ex.getMessage(),
-              operation,
-              retryCount);
-        }
-      } else {
+      if (retryCount > getMaxRetries()) {
         throw new SnowflakeSQLLoggedException(
             session,
             SqlState.SYSTEM_ERROR,
             ErrorCode.IO_ERROR.getMessageCode(),
             ex,
             "Encountered exception during " + operation + ": " + ex.getMessage());
+      } else {
+        logger.debug(
+            "Encountered exception ({}) during {}, retry count: {}",
+            ex.getMessage(),
+            operation,
+            retryCount);
       }
+    } else {
+      throw new SnowflakeSQLLoggedException(
+          session,
+          SqlState.SYSTEM_ERROR,
+          ErrorCode.IO_ERROR.getMessageCode(),
+          ex,
+          "Encountered exception during " + operation + ": " + ex.getMessage());
     }
+
   }
 
   /** Returns the material descriptor key */
@@ -1033,14 +1021,16 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
 
     try {
       String accessToken = (String) stage.getCredentials().get("GCS_ACCESS_TOKEN");
-      GoogleCredentials googleCreds;
       if (accessToken != null) {
-        AccessToken googleAccessToken = new AccessToken(accessToken, null);
+        // Using GoogleCredential with access token will cause IllegalStateException when the token is
+        // expired and trying to refresh, which cause error cannot be caught. Instead, set a header
+        // so we can caught the error code.
 
-        googleCreds = GoogleCredentials.create(googleAccessToken);
         // We are authenticated with an oauth access token.
         this.gcsClient =
-            StorageOptions.newBuilder().setCredentials(googleCreds).build().getService();
+            StorageOptions.newBuilder().setHeaderProvider(
+                    FixedHeaderProvider.create("Authorization",  "Bearer " + accessToken)
+            ).build().getService();
       } else {
         // Use anonymous authentication.
         this.gcsClient = StorageOptions.getUnauthenticatedInstance().getService();
