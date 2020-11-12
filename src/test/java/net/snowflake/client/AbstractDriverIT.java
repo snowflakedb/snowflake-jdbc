@@ -57,7 +57,7 @@ public class AbstractDriverIT {
       // If developer needs to run in Intellij, you can set this env as ".dev.local"
       String deployment = TestUtil.systemGetEnv("SNOWFLAKE_TEST_DEPLOYMENT");
       if (Strings.isNullOrEmpty(deployment)) {
-        deployment = ".reg.local";
+        deployment = ".dev.local";
       }
       host = accountName.trim() + deployment;
     }
@@ -163,6 +163,18 @@ public class AbstractDriverIT {
    */
   public static Connection getConnection(String accountName) throws SQLException {
     return getConnection(DONT_INJECT_SOCKET_TIMEOUT, null, false, false, accountName);
+  }
+
+  /**
+   * Gets a connection with custom account name and some property set, useful for testing property
+   * on specific account
+   *
+   * @return Connection a database connection
+   * @throws SQLException raised if any error occurs
+   */
+  public static Connection getConnection(String accountName, Properties paramProperties)
+      throws SQLException {
+    return getConnection(DONT_INJECT_SOCKET_TIMEOUT, paramProperties, false, false, accountName);
   }
 
   /**

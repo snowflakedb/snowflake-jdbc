@@ -117,7 +117,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
    */
   @Override
   public boolean requirePresignedUrl() {
-    return true;
+    return !stageInfo.getCredentials().containsKey("GCS_ACCESS_TOKEN");
   }
 
   @Override

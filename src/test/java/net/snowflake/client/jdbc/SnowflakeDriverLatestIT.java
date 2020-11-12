@@ -7,11 +7,9 @@ import static net.snowflake.client.jdbc.SnowflakeDriverIT.findFile;
 import static org.junit.Assert.*;
 
 import java.io.*;
+import java.nio.channels.FileChannel;
 import java.sql.*;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Properties;
-import java.util.UUID;
+import java.util.*;
 import java.util.zip.GZIPInputStream;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
@@ -342,6 +340,12 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
     }
   }
 
+  /**
+   * Tests put with overwrite set to false. Require SNOW-206907 to be merged to pass tests for gcp
+   * account
+   *
+   * @throws Throwable
+   */
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testPutOverwriteFalseNoDigest() throws Throwable {
@@ -366,10 +370,13 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
     String destFolderCanonicalPath = destFolder.getCanonicalPath();
     String destFolderCanonicalPathWithSeparator = destFolderCanonicalPath + File.separator;
 
+    Properties paramProperties = new Properties();
+    paramProperties.put("GCS_USE_DOWNSCOPED_CREDENTIAL", true);
+
     List<String> accounts = Arrays.asList(null, "s3testaccount", "azureaccount", "gcpaccount");
     for (int i = 0; i < accounts.size(); i++) {
       try {
-        connection = getConnection(accounts.get(i));
+        connection = getConnection(accounts.get(i), paramProperties);
 
         statement = connection.createStatement();
 
@@ -734,5 +741,168 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
         resultSet.close();
       }
     }
+  }
+  /**
+   * Tests that upload and download small file to gcs stage. Require SNOW-206907 to be merged (still
+   * pass when not merge, but will use presigned url instead of GoogleCredential)
+   *
+   * @throws Throwable
+   */
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testPutGetGcsDownscopedCredential() throws Throwable {
+    Connection connection = null;
+    Statement statement = null;
+    Properties paramProperties = new Properties();
+    paramProperties.put("GCS_USE_DOWNSCOPED_CREDENTIAL", true);
+    try {
+      connection = getConnection("gcpaccount", paramProperties);
+
+      statement = connection.createStatement();
+
+      String sourceFilePath = getFullPathFileInResource(TEST_DATA_FILE);
+
+      File destFolder = tmpFolder.newFolder();
+      String destFolderCanonicalPath = destFolder.getCanonicalPath();
+      String destFolderCanonicalPathWithSeparator = destFolderCanonicalPath + File.separator;
+
+      try {
+        statement.execute("CREATE OR REPLACE STAGE testPutGet_stage");
+
+        assertTrue(
+            "Failed to put a file",
+            statement.execute("PUT file://" + sourceFilePath + " @testPutGet_stage"));
+
+        findFile(statement, "ls @testPutGet_stage/");
+
+        // download the file we just uploaded to stage
+        assertTrue(
+            "Failed to get a file",
+            statement.execute(
+                "GET @testPutGet_stage 'file://" + destFolderCanonicalPath + "' parallel=8"));
+
+        // Make sure that the downloaded file exists, it should be gzip compressed
+        File downloaded = new File(destFolderCanonicalPathWithSeparator + TEST_DATA_FILE + ".gz");
+        assert (downloaded.exists());
+
+        Process p =
+            Runtime.getRuntime()
+                .exec("gzip -d " + destFolderCanonicalPathWithSeparator + TEST_DATA_FILE + ".gz");
+        p.waitFor();
+
+        File original = new File(sourceFilePath);
+        File unzipped = new File(destFolderCanonicalPathWithSeparator + TEST_DATA_FILE);
+        assert (original.length() == unzipped.length());
+      } finally {
+        statement.execute("DROP STAGE IF EXISTS testGetPut_stage");
+        statement.close();
+      }
+    } finally {
+      closeSQLObjects(null, statement, connection);
+    }
+  }
+
+  /**
+   * Tests that upload and download big file to gcs stage. Require SNOW-206907 to be merged (still
+   * pass when not merge, but will use presigned url instead of GoogleCredential)
+   *
+   * @throws Throwable
+   */
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testPutGetLargeFileGCPDownscopedCredential() throws Throwable {
+    Properties paramProperties = new Properties();
+    paramProperties.put("GCS_USE_DOWNSCOPED_CREDENTIAL", true);
+    Connection connection = getConnection("gcpaccount", paramProperties);
+    Statement statement = connection.createStatement();
+
+    File destFolder = tmpFolder.newFolder();
+    String destFolderCanonicalPath = destFolder.getCanonicalPath();
+    String destFolderCanonicalPathWithSeparator = destFolderCanonicalPath + File.separator;
+
+    File largeTempFile = tmpFolder.newFile("largeFile.csv");
+    BufferedWriter bw = new BufferedWriter(new FileWriter(largeTempFile));
+    bw.write("Creating large test file for GCP PUT/GET test");
+    bw.write(System.lineSeparator());
+    bw.write("Creating large test file for GCP PUT/GET test");
+    bw.write(System.lineSeparator());
+    bw.close();
+    File largeTempFile2 = tmpFolder.newFile("largeFile2.csv");
+
+    String sourceFilePath = largeTempFile.getCanonicalPath();
+
+    try {
+      // copy info from 1 file to another and continue doubling file size until we reach ~1.5GB,
+      // which is a large file
+      for (int i = 0; i < 12; i++) {
+        copyContentFrom(largeTempFile, largeTempFile2);
+        copyContentFrom(largeTempFile2, largeTempFile);
+      }
+
+      // create a stage to put the file in
+      statement.execute("CREATE OR REPLACE STAGE largefile_stage");
+      assertTrue(
+          "Failed to put a file",
+          statement.execute("PUT file://" + sourceFilePath + " @largefile_stage"));
+
+      // check that file exists in stage after PUT
+      findFile(statement, "ls @largefile_stage/");
+
+      // create a new table with columns matching CSV file
+      statement.execute("create or replace table large_table (colA string)");
+      // copy rows from file into table
+      statement.execute("copy into large_table from @largefile_stage/largeFile.csv.gz");
+      // copy back from table into different stage
+      statement.execute("create or replace stage extra_stage");
+      statement.execute("copy into @extra_stage/bigFile.csv.gz from large_table single=true");
+
+      // get file from new stage
+      assertTrue(
+          "Failed to get files",
+          statement.execute(
+              "GET @extra_stage 'file://" + destFolderCanonicalPath + "' parallel=8"));
+
+      // Make sure that the downloaded file exists; it should be gzip compressed
+      File downloaded = new File(destFolderCanonicalPathWithSeparator + "bigFile.csv.gz");
+      assert (downloaded.exists());
+
+      // unzip the file
+      Process p =
+          Runtime.getRuntime()
+              .exec("gzip -d " + destFolderCanonicalPathWithSeparator + "bigFile.csv.gz");
+      p.waitFor();
+
+      // compare the original file with the file that's been uploaded, copied into a table, copied
+      // back into a stage,
+      // downloaded, and unzipped
+      File unzipped = new File(destFolderCanonicalPathWithSeparator + "bigFile.csv");
+      assert (largeTempFile.length() == unzipped.length());
+      assert (FileUtils.contentEquals(largeTempFile, unzipped));
+    } finally {
+      statement.execute("DROP STAGE IF EXISTS largefile_stage");
+      statement.execute("DROP STAGE IF EXISTS extra_stage");
+      statement.execute("DROP TABLE IF EXISTS large_table");
+      statement.close();
+      connection.close();
+    }
+  }
+
+  /**
+   * helper function for creating large file in Java. Copies info from 1 file to another
+   *
+   * @param file1 file with info to be copied
+   * @param file2 file to be copied into
+   * @throws Exception
+   */
+  private void copyContentFrom(File file1, File file2) throws Exception {
+    FileInputStream inputStream = new FileInputStream(file1);
+    FileOutputStream outputStream = new FileOutputStream(file2);
+    FileChannel fIn = inputStream.getChannel();
+    FileChannel fOut = outputStream.getChannel();
+    fOut.transferFrom(fIn, 0, fIn.size());
+    fIn.position(0);
+    fOut.transferFrom(fIn, fIn.size(), fIn.size());
+    fOut.close();
+    fIn.close();
   }
 }
