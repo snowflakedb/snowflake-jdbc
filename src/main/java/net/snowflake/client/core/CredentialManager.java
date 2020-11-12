@@ -25,7 +25,7 @@ public class CredentialManager {
     } else if (Constants.getOS() == Constants.OS.WINDOWS) {
       secureStorageManager = SecureStorageWindowsManager.builder();
     } else if (Constants.getOS() == Constants.OS.LINUX) {
-      secureStorageManager = SecureStorageLinuxManager.builder();
+      secureStorageManager = SecureStorageLinuxManager.getInstance();
     } else {
       logger.error("Unsupported Operating System. Expected: OSX, Windows, Linux");
     }

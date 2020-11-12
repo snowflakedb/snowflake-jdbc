@@ -209,14 +209,18 @@ class MockMacKeychainManager {
 }
 
 public class SecureStorageManagerTest {
-  // This required to use ConditionalIgnore annotation
+  // This is required to use ConditionalIgnore annotation
   @Rule public ConditionalIgnoreRule rule = new ConditionalIgnoreRule();
 
   private static final String host = "fakeHost";
   private static final String user = "fakeUser";
   private static final String idToken = "fakeIdToken";
   private static final String idToken0 = "fakeIdToken0";
+
+  private static final String mfaToken = "fakeMfaToken";
+
   private static final String ID_TOKEN = "ID_TOKEN";
+  private static final String MFA_TOKEN = "MFATOKEN";
 
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningNotOnWinMac.class)
@@ -249,9 +253,10 @@ public class SecureStorageManagerTest {
 
   @Test
   public void testLinuxManager() {
-    SecureStorageManager manager = SecureStorageLinuxManager.builder();
+    SecureStorageManager manager = SecureStorageLinuxManager.getInstance();
 
     testBody(manager);
+    testDeleteLinux(manager);
   }
 
   private void testBody(SecureStorageManager manager) {
@@ -280,5 +285,34 @@ public class SecureStorageManagerTest {
         manager.deleteCredential(host, user, ID_TOKEN),
         equalTo(SecureStorageManager.SecureStorageStatus.SUCCESS));
     assertThat(manager.getCredential(host, user, ID_TOKEN), is(nullValue()));
+  }
+
+  private void testDeleteLinux(SecureStorageManager manager) {
+    // The old delete api of local file cache on Linux was to remove the whole file, where we can't
+    // partially remove some credentials
+    // This test aims to test the new delete api
+
+    // first create two credentials
+    assertThat(
+        manager.setCredential(host, user, ID_TOKEN, idToken),
+        equalTo(SecureStorageManager.SecureStorageStatus.SUCCESS));
+    assertThat(
+        manager.setCredential(host, user, MFA_TOKEN, mfaToken),
+        equalTo(SecureStorageManager.SecureStorageStatus.SUCCESS));
+    assertThat(manager.getCredential(host, user, ID_TOKEN), equalTo(idToken));
+    assertThat(manager.getCredential(host, user, MFA_TOKEN), equalTo(mfaToken));
+
+    // delete one of them
+    assertThat(
+        manager.deleteCredential(host, user, ID_TOKEN),
+        equalTo(SecureStorageManager.SecureStorageStatus.SUCCESS));
+    assertThat(manager.getCredential(host, user, ID_TOKEN), equalTo(null));
+
+    // check another one
+    assertThat(manager.getCredential(host, user, MFA_TOKEN), equalTo(mfaToken));
+
+    assertThat(
+        manager.deleteCredential(host, user, MFA_TOKEN),
+        equalTo(SecureStorageManager.SecureStorageStatus.SUCCESS));
   }
 }

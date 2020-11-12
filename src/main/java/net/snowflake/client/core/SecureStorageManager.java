@@ -14,7 +14,7 @@ interface SecureStorageManager {
 
   SecureStorageStatus setCredential(String host, String user, String type, String token);
 
-  public String getCredential(String host, String user, String type);
+  String getCredential(String host, String user, String type);
 
   SecureStorageStatus deleteCredential(String host, String user, String type);
 
