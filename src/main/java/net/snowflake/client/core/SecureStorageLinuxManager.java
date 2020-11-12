@@ -100,8 +100,8 @@ public class SecureStorageLinuxManager implements SecureStorageManager {
     Map<String, String> hostMap = localCredCache.get(host.toUpperCase());
     if (hostMap != null) {
       hostMap.remove(buildCredName(user, type));
-      fileCacheManager.writeCacheFile(localCacheToJson());
     }
+    fileCacheManager.writeCacheFile(localCacheToJson());
     return SecureStorageStatus.SUCCESS;
   }
 

@@ -24,7 +24,6 @@ import net.snowflake.client.core.*;
 import net.snowflake.common.core.ClientAuthnDTO;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.client.methods.HttpPost;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
@@ -115,11 +114,6 @@ public class SSOConnectionTest {
   private static final String MOCK_NEW_MASTER_TOKEN = "MOCK_NEW_MASTER_TOKEN";
   private static final String ID_TOKEN_AUTHENTICATOR = "ID_TOKEN";
   private static ObjectMapper mapper = new ObjectMapper();
-
-  @BeforeClass
-  public static void setUpClass() throws Throwable {
-    Class.forName("net.snowflake.client.jdbc.SnowflakeDriver");
-  }
 
   class HttpUtilResponseDataSSODTO {
     public String proofKey;
