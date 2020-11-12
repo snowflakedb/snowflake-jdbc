@@ -35,11 +35,13 @@ import net.snowflake.common.core.SqlState;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.Header;
 import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpResponseException;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.InputStreamEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.util.EntityUtils;
 
 /**
  * Encapsulates the GCS Storage client and all GCS operations and logic
@@ -267,6 +269,12 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
               logger.debug("Download unsuccessful {}", ex);
               handleStorageException(ex, ++retryCount, "download", session, command);
             }
+          } else {
+            Exception ex =
+                new HttpResponseException(
+                    response.getStatusLine().getStatusCode(),
+                    EntityUtils.toString(response.getEntity()));
+            handleStorageException(ex, ++retryCount, "download", session, command);
           }
         } else {
           BlobId blobId = BlobId.of(remoteStorageLocation, stageFilePath);
@@ -415,6 +423,12 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
               logger.debug("Download unsuccessful {}", ex);
               handleStorageException(ex, ++retryCount, "download", session, command);
             }
+          } else {
+            Exception ex =
+                new HttpResponseException(
+                    response.getStatusLine().getStatusCode(),
+                    EntityUtils.toString(response.getEntity()));
+            handleStorageException(ex, ++retryCount, "download", session, command);
           }
         } else {
           BlobId blobId = BlobId.of(remoteStorageLocation, stageFilePath);
@@ -728,6 +742,14 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
       logger.debug(
           "Call returned for URL: {}",
           (ArgSupplier) () -> scrubPresignedUrl(this.stageInfo.getPresignedUrl()));
+
+      if (response.getStatusLine().getStatusCode() != 200) {
+        Exception ex =
+            new HttpResponseException(
+                response.getStatusLine().getStatusCode(),
+                EntityUtils.toString(response.getEntity()));
+        handleStorageException(ex, 0, "upload", session, null);
+      }
     } catch (URISyntaxException e) {
       throw new SnowflakeSQLLoggedException(
           session,
