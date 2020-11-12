@@ -894,7 +894,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
         }
       }
     } else if (ex instanceof InterruptedException
-          || SnowflakeUtil.getRootCause(ex) instanceof SocketTimeoutException) {
+        || SnowflakeUtil.getRootCause(ex) instanceof SocketTimeoutException) {
       if (retryCount > getMaxRetries()) {
         throw new SnowflakeSQLLoggedException(
             session,
@@ -917,7 +917,6 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
           ex,
           "Encountered exception during " + operation + ": " + ex.getMessage());
     }
-
   }
 
   /** Returns the material descriptor key */
@@ -1022,15 +1021,18 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
     try {
       String accessToken = (String) stage.getCredentials().get("GCS_ACCESS_TOKEN");
       if (accessToken != null) {
-        // Using GoogleCredential with access token will cause IllegalStateException when the token is
+        // Using GoogleCredential with access token will cause IllegalStateException when the token
+        // is
         // expired and trying to refresh, which cause error cannot be caught. Instead, set a header
         // so we can caught the error code.
 
         // We are authenticated with an oauth access token.
         this.gcsClient =
-            StorageOptions.newBuilder().setHeaderProvider(
-                    FixedHeaderProvider.create("Authorization",  "Bearer " + accessToken)
-            ).build().getService();
+            StorageOptions.newBuilder()
+                .setHeaderProvider(
+                    FixedHeaderProvider.create("Authorization", "Bearer " + accessToken))
+                .build()
+                .getService();
       } else {
         // Use anonymous authentication.
         this.gcsClient = StorageOptions.getUnauthenticatedInstance().getService();
