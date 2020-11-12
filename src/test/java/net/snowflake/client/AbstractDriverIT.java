@@ -57,7 +57,7 @@ public class AbstractDriverIT {
       // If developer needs to run in Intellij, you can set this env as ".dev.local"
       String deployment = TestUtil.systemGetEnv("SNOWFLAKE_TEST_DEPLOYMENT");
       if (Strings.isNullOrEmpty(deployment)) {
-        deployment = ".dev.local";
+        deployment = ".reg.local";
       }
       host = accountName.trim() + deployment;
     }

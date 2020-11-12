@@ -810,7 +810,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
    */
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testPutGetLargeFileGCPDownscopedCredential() throws Throwable {
+  public void testPutGetLargeFileGCSDownscopedCredential() throws Throwable {
     Properties paramProperties = new Properties();
     paramProperties.put("GCS_USE_DOWNSCOPED_CREDENTIAL", true);
     Connection connection = getConnection("gcpaccount", paramProperties);
