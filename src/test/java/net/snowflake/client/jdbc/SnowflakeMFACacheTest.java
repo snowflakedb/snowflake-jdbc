@@ -4,7 +4,8 @@
 
 package net.snowflake.client.jdbc;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 
@@ -112,6 +113,7 @@ public class SnowflakeMFACacheTest {
                   final Object[] args = invocation.getArguments();
 
                   if (callCount == 0) {
+                    // First connection request
                     jsonNode = parseRequest((HttpPost) args[0]);
                     assertTrue(
                         jsonNode
@@ -119,10 +121,13 @@ public class SnowflakeMFACacheTest {
                             .path("SESSION_PARAMETERS")
                             .path("CLIENT_REQUEST_MFA_TOKEN")
                             .asBoolean());
+                    // return first mfa token
                     res = getNormalMockedHttpResponse(true, 0).toString();
                   } else if (callCount == 1) {
+                    // First close() request
                     res = getNormalMockedHttpResponse(true, -1).toString();
                   } else if (callCount == 2) {
+                    // Second connection request
                     jsonNode = parseRequest((HttpPost) args[0]);
                     assertTrue(
                         jsonNode
@@ -131,10 +136,16 @@ public class SnowflakeMFACacheTest {
                             .path("CLIENT_REQUEST_MFA_TOKEN")
                             .asBoolean());
                     assertEquals(jsonNode.path("data").path("TOKEN").asText(), mockedMfaToken[0]);
+                    // Normally backend won't send a new mfa token in this case. For testing
+                    // purpose, we issue a new token to test whether the mfa token can be refreshed
+                    // when receiving a new one from server.
                     res = getNormalMockedHttpResponse(true, 1).toString();
                   } else if (callCount == 3) {
+                    // Second close() request
                     res = getNormalMockedHttpResponse(true, -1).toString();
                   } else if (callCount == 4) {
+                    // Third connection request
+                    // Check for the new mfa token
                     jsonNode = parseRequest((HttpPost) args[0]);
                     assertTrue(
                         jsonNode
@@ -145,6 +156,7 @@ public class SnowflakeMFACacheTest {
                     assertEquals(jsonNode.path("data").path("TOKEN").asText(), mockedMfaToken[1]);
                     res = getNormalMockedHttpResponse(true, -1).toString();
                   } else if (callCount == 5) {
+                    // Third close() request
                     res = getNormalMockedHttpResponse(true, -1).toString();
                   } else {
                     res = getNormalMockedHttpResponse(false, -1).toString();
@@ -159,10 +171,17 @@ public class SnowflakeMFACacheTest {
 
       // connect url
       String url = "jdbc:snowflake://testaccount.snowflakecomputing.com";
+
+      // The first connection contains no mfa token. After the connection, a mfa token will be saved
       Connection con = DriverManager.getConnection(url, prop);
       con.close();
+
+      // The second connection is expected to include the mfa token issued for the first connection
+      // and a new mfa token is issued
       Connection con1 = DriverManager.getConnection(url, prop);
       con1.close();
+
+      //  The third connection is expected to include the new mfa token.
       Connection con2 = DriverManager.getConnection(url, prop);
       con2.close();
     }
