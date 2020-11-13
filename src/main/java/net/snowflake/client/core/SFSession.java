@@ -590,8 +590,6 @@ public class SFSession {
         .setUserName((String) connectionPropertiesMap.get(SFSessionProperty.USER))
         .setPassword((String) connectionPropertiesMap.get(SFSessionProperty.PASSWORD))
         .setToken((String) connectionPropertiesMap.get(SFSessionProperty.TOKEN))
-        .setIdToken((String) connectionPropertiesMap.get(SFSessionProperty.ID_TOKEN))
-        .setMfaToken((String) connectionPropertiesMap.get(SFSessionProperty.MFA_TOKEN))
         .setPasscodeInPassword(passcodeInPassword)
         .setPasscode((String) connectionPropertiesMap.get(SFSessionProperty.PASSCODE))
         .setConnectionTimeout(httpClientConnectionTimeout)
