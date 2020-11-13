@@ -26,7 +26,6 @@ public class SecureStorageLinuxManager implements SecureStorageManager {
   private static final String CACHE_FILE_NAME = "temporary_credential.json";
   private static final String CACHE_DIR_PROP = "net.snowflake.jdbc.temporaryCredentialCacheDir";
   private static final String CACHE_DIR_ENV = "SF_TEMPORARY_CREDENTIAL_CACHE_DIR";
-  private static final String DRIVER_NAME = "SNOWFLAKE-JDBC-DRIVER";
   private static final long CACHE_EXPIRATION_IN_SECONDS = 86400L;
   private static final long CACHE_FILE_LOCK_EXPIRATION_IN_SECONDS = 60L;
   private FileCacheManager fileCacheManager;
@@ -76,7 +75,7 @@ public class SecureStorageLinuxManager implements SecureStorageManager {
     localCredCache.computeIfAbsent(host.toUpperCase(), newMap -> new HashMap<>());
 
     Map<String, String> hostMap = localCredCache.get(host.toUpperCase());
-    hostMap.put(buildCredName(user, type), token);
+    hostMap.put(SecureStorageManager.convertTarget(host, user, type), token);
 
     fileCacheManager.writeCacheFile(localCacheToJson());
     return SecureStorageStatus.SUCCESS;
@@ -92,14 +91,14 @@ public class SecureStorageLinuxManager implements SecureStorageManager {
       return null;
     }
 
-    return hostMap.get(buildCredName(user, type));
+    return hostMap.get(SecureStorageManager.convertTarget(host, user, type));
   }
 
   /** May delete credentials which doesn't belong to this process */
   public synchronized SecureStorageStatus deleteCredential(String host, String user, String type) {
     Map<String, String> hostMap = localCredCache.get(host.toUpperCase());
     if (hostMap != null) {
-      hostMap.remove(buildCredName(user, type));
+      hostMap.remove(SecureStorageManager.convertTarget(host, user, type));
     }
     fileCacheManager.writeCacheFile(localCacheToJson());
     return SecureStorageStatus.SUCCESS;
@@ -122,9 +121,5 @@ public class SecureStorageLinuxManager implements SecureStorageManager {
         localCredCache.get(host).put(userMap.getKey(), userMap.getValue().asText());
       }
     }
-  }
-
-  private String buildCredName(String user, String type) {
-    return user.toUpperCase() + ":" + DRIVER_NAME + ":" + type.toUpperCase();
   }
 }
