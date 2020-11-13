@@ -19,6 +19,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Properties;
+import net.snowflake.client.core.CredentialManager;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.OCSPMode;
 import net.snowflake.client.core.ObjectMapperFactory;
@@ -30,15 +31,15 @@ import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
-class Buddy {
-  static String name() {
-    return "John";
-  }
-}
-
 public class SnowflakeMFACacheTest {
   private static final ObjectMapper mapper = ObjectMapperFactory.getObjectMapper();
   private static final String[] mockedMfaToken = {"mockedMfaToken0", "mockedMfaToken1"};
+  private static final String host = "TESTACCOUNT.SNOWFLAKECOMPUTING.COM";
+  private static final String account = "testaccount";
+  private static final String user = "testuser";
+  private static final String pwd = "testpassword";
+  private static final String authenticator = "username_password_mfa";
+  private static final boolean client_request_mfa_token = true;
 
   private ObjectNode getNormalMockedHttpResponse(boolean success, int mfaTokenIdx) {
     ObjectNode respNode = mapper.createObjectNode();
@@ -83,43 +84,18 @@ public class SnowflakeMFACacheTest {
 
   private Properties getBaseProp() {
     Properties prop = new Properties();
-    prop.put("account", "testaccount");
-    prop.put("user", "testuser");
-    prop.put("password", "testpassword");
-    prop.put("authenticator", "username_password_mfa");
-    prop.put("CLIENT_REQUEST_MFA_TOKEN", true);
+    prop.put("account", account);
+    prop.put("user", user);
+    prop.put("password", pwd);
+    prop.put("authenticator", authenticator);
+    prop.put("CLIENT_REQUEST_MFA_TOKEN", client_request_mfa_token);
     return prop;
-  }
-
-  // Sample code for how to use mockito static mocking feature.
-  @Test
-  public void testMockitoStaticMockSample() throws SQLException, IOException {
-    String ret = getNormalMockedHttpResponse(true, 0).toString();
-    assertTrue(Buddy.name() == "John");
-    try (MockedStatic<HttpUtil> theMock = Mockito.mockStatic(HttpUtil.class);
-        MockedStatic<Buddy> mockBuddy = Mockito.mockStatic(Buddy.class)) {
-      theMock
-          .when(
-              () ->
-                  HttpUtil.executeGeneralRequest(
-                      any(HttpPost.class), anyInt(), any(OCSPMode.class)))
-          .thenReturn(ret);
-      mockBuddy.when(Buddy::name).thenReturn("Daddy");
-      assertTrue(Buddy.name() == "Daddy");
-
-      Properties prop = getBaseProp();
-      String url = "jdbc:snowflake://testaccount.snowflakecomputing.com";
-      Connection con = DriverManager.getConnection(url, prop);
-      assertFalse(con.isClosed());
-      con.close();
-      assertTrue(con.isClosed());
-      assertFalse(Buddy.name() == "John");
-    }
   }
 
   @Test
   public void testMFAFunctionality() throws SQLException {
-    try (MockedStatic<HttpUtil> mockedHttpUtil = Mockito.mockStatic(HttpUtil.class); ) {
+    CredentialManager.getInstance().deleteMfaTokenCache(host, user);
+    try (MockedStatic<HttpUtil> mockedHttpUtil = Mockito.mockStatic(HttpUtil.class)) {
       mockedHttpUtil
           .when(
               () ->
@@ -190,5 +166,6 @@ public class SnowflakeMFACacheTest {
       Connection con2 = DriverManager.getConnection(url, prop);
       con2.close();
     }
+    CredentialManager.getInstance().deleteMfaTokenCache(host, user);
   }
 }

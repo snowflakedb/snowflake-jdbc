@@ -132,7 +132,7 @@ public class CredentialManager {
   }
 
   /** Delete the mfa token cache */
-  void deleteMfaTokenCache(String host, String user) {
+  public void deleteMfaTokenCache(String host, String user) {
     secureStorageManager.deleteCredential(host, user, MFA_TOKEN);
   }
 
