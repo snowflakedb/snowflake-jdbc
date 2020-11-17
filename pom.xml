@@ -68,8 +68,7 @@
     </dependencies>
   </dependencyManagement>
   <dependencies>
-    <!-- https://mvnrepository.com/artifact/commons-codec/commons-codec -->
-    <dependency>
+    <dependency> <!-- commons-codec is not a direct dependency. Used by arrow-vector, httpclient, google-client-api -->
       <groupId>commons-codec</groupId>
       <artifactId>commons-codec</artifactId>
       <version>1.14</version>
@@ -130,12 +129,11 @@
       <version>${httpclient.version}</version>
       <type>jar</type>
       <exclusions>
-        <exclusion>  <!-- declare the exclusion here -->
+        <exclusion>  <!-- exclude earlier version of commons-codec to avoid whitesource vulnerability -->
           <groupId>commons-codec</groupId>
           <artifactId>commons-codec</artifactId>
         </exclusion>
       </exclusions>
-
     </dependency>
     <dependency>
       <groupId>commons-io</groupId>
@@ -181,11 +179,6 @@
       <version>1.2</version>
       <type>jar</type>
       <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>commons-codec</groupId>
-      <artifactId>commons-codec</artifactId>
-      <version>1.15</version>
     </dependency>
     <dependency>
       <groupId>org.apache.commons</groupId>
@@ -282,7 +275,7 @@
       <artifactId>arrow-vector</artifactId>
       <version>${arrow.version}</version>
       <exclusions>
-        <exclusion>  <!-- declare the exclusion here -->
+        <exclusion>  <!-- Exclude early version of commons-codec to avoid whitesource vulnerability -->
           <groupId>commons-codec</groupId>
           <artifactId>commons-codec</artifactId>
         </exclusion>
