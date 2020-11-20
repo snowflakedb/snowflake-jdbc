@@ -5,14 +5,15 @@ package net.snowflake.client.jdbc;
 
 import static java.sql.DatabaseMetaData.procedureReturnsResult;
 import static java.sql.ResultSetMetaData.columnNullableUnknown;
-import static net.snowflake.client.jdbc.SnowflakeDatabaseMetaData.*;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.junit.Assert.*;
 
 import com.google.common.base.Strings;
 import java.sql.*;
-import java.util.*;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import net.snowflake.client.ConditionalIgnoreRule;
@@ -188,103 +189,6 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
       assertEquals(2, types.size());
       assertTrue(types.contains("TABLE"));
       assertTrue(types.contains("VIEW"));
-    }
-  }
-
-  @Test
-  public void testUseConnectionCtx() throws SQLException {
-    try (Connection connection = getConnection()) {
-      connection
-          .createStatement()
-          .execute("alter SESSION set CLIENT_METADATA_REQUEST_USE_CONNECTION_CTX=true");
-      String schema = connection.getSchema();
-      DatabaseMetaData databaseMetaData = connection.getMetaData();
-
-      // create tables within current schema.
-      connection.createStatement().execute("create or replace schema TEST_CTX");
-      connection
-          .createStatement()
-          .execute(
-              "create or replace table CTX_TBL_A (colA string, colB decimal, "
-                  + "colC number PRIMARY KEY);");
-      connection
-          .createStatement()
-          .execute(
-              "create or replace table CTX_TBL_B (colA string, colB decimal, "
-                  + "colC number FOREIGN KEY REFERENCES CTX_TBL_A (colC));");
-      connection
-          .createStatement()
-          .execute(
-              "create or replace table CTX_TBL_C (colA string, colB decimal, "
-                  + "colC number, colD int, colE timestamp, colF string, colG number);");
-      // now create more tables under current schema
-      connection.createStatement().execute("use schema " + schema);
-      connection
-          .createStatement()
-          .execute(
-              "create or replace table CTX_TBL_D (colA string, colB decimal, "
-                  + "colC number PRIMARY KEY);");
-      connection
-          .createStatement()
-          .execute(
-              "create or replace table CTX_TBL_E (colA string, colB decimal, "
-                  + "colC number FOREIGN KEY REFERENCES CTX_TBL_D (colC));");
-      connection
-          .createStatement()
-          .execute(
-              "create or replace table CTX_TBL_F (colA string, colB decimal, "
-                  + "colC number, colD int, colE timestamp, colF string, colG number);");
-
-      // this should only return TEST_CTX schema and tables
-      connection.createStatement().execute("use schema TEST_CTX");
-
-      ResultSet resultSet = databaseMetaData.getSchemas(null, null);
-      assertEquals(1, getSizeOfResultSet(resultSet));
-
-      resultSet = databaseMetaData.getTables(null, null, null, null);
-      assertEquals(3, getSizeOfResultSet(resultSet));
-
-      resultSet = databaseMetaData.getColumns(null, null, null, null);
-      assertEquals(13, getSizeOfResultSet(resultSet));
-
-      resultSet = databaseMetaData.getPrimaryKeys(null, null, null);
-      assertEquals(1, getSizeOfResultSet(resultSet));
-
-      resultSet = databaseMetaData.getImportedKeys(null, null, null);
-      assertEquals(1, getSizeOfResultSet(resultSet));
-
-      resultSet = databaseMetaData.getExportedKeys(null, null, null);
-      assertEquals(1, getSizeOfResultSet(resultSet));
-
-      resultSet = databaseMetaData.getCrossReference(null, null, null, null, null, null);
-      assertEquals(1, getSizeOfResultSet(resultSet));
-
-      // Now compare results to setting client metadata to false.
-      connection
-          .createStatement()
-          .execute("alter SESSION set CLIENT_METADATA_REQUEST_USE_CONNECTION_CTX=false");
-      databaseMetaData = connection.getMetaData();
-
-      resultSet = databaseMetaData.getSchemas(null, null);
-      assertThat(getSizeOfResultSet(resultSet), greaterThanOrEqualTo(2));
-
-      resultSet = databaseMetaData.getTables(null, null, null, null);
-      assertThat(getSizeOfResultSet(resultSet), greaterThanOrEqualTo(6));
-
-      resultSet = databaseMetaData.getColumns(null, null, null, null);
-      assertThat(getSizeOfResultSet(resultSet), greaterThanOrEqualTo(26));
-
-      resultSet = databaseMetaData.getPrimaryKeys(null, null, null);
-      assertThat(getSizeOfResultSet(resultSet), greaterThanOrEqualTo(2));
-
-      resultSet = databaseMetaData.getImportedKeys(null, null, null);
-      assertThat(getSizeOfResultSet(resultSet), greaterThanOrEqualTo(2));
-
-      resultSet = databaseMetaData.getExportedKeys(null, null, null);
-      assertThat(getSizeOfResultSet(resultSet), greaterThanOrEqualTo(2));
-
-      resultSet = databaseMetaData.getCrossReference(null, null, null, null, null, null);
-      assertThat(getSizeOfResultSet(resultSet), greaterThanOrEqualTo(2));
     }
   }
 
