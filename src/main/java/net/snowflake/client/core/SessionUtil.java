@@ -443,6 +443,8 @@ public class SessionUtil {
         data.put(ClientAuthnParameter.AUTHENTICATOR.name(), authenticatorType.name());
         data.put(ClientAuthnParameter.TOKEN.name(), loginInput.getToken());
       } else if (authenticatorType == ClientAuthnDTO.AuthenticatorType.USERNAME_PASSWORD_MFA) {
+        // No authenticator name should be added here, since this will be treated as snowflake
+        // default authenticator by backend
         data.put(ClientAuthnParameter.PASSWORD.name(), loginInput.getPassword());
         if (loginInput.getMfaToken() != null) {
           data.put(ClientAuthnParameter.TOKEN.name(), loginInput.getMfaToken());
@@ -586,19 +588,16 @@ public class SessionUtil {
         if (errorCode == Constants.ID_TOKEN_INVALID_LOGIN_REQUEST_GS_CODE) {
           // clean id_token first
           loginInput.setIdToken(null);
-          try {
-            URL url = new URL(loginInput.getServerUrl());
-            String host = url.getHost();
-            logger.debug("HOST: {}", host);
-            deleteIdTokenCache(host, loginInput.getUserName());
-          } catch (IOException ex) {
-            throw new SFException(ex, ErrorCode.INTERNAL_ERROR, "unexpected URL syntax exception");
-          }
+          deleteIdTokenCache(loginInput.getHostFromServerUrl(), loginInput.getUserName());
 
           logger.debug(
               "ID Token Expired / Not Applicable. Reauthenticating without ID Token...: {}",
               errorCode);
           SnowflakeUtil.checkErrorAndThrowExceptionIncludingReauth(jsonNode);
+        }
+
+        if (authenticatorType == ClientAuthnDTO.AuthenticatorType.USERNAME_PASSWORD_MFA) {
+          deleteMfaTokenCache(loginInput.getHostFromServerUrl(), loginInput.getUserName());
         }
 
         throw new SnowflakeSQLException(
@@ -752,6 +751,10 @@ public class SessionUtil {
   /** Delete the id token cache */
   public static void deleteIdTokenCache(String host, String user) {
     CredentialManager.getInstance().deleteIdTokenCache(host, user);
+  }
+
+  public static void deleteMfaTokenCache(String host, String user) {
+    CredentialManager.getInstance().deleteMfaTokenCache(host, user);
   }
 
   /**

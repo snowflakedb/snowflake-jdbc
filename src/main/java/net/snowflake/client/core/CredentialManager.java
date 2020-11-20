@@ -5,9 +5,6 @@
 package net.snowflake.client.core;
 
 import com.google.common.base.Strings;
-import java.net.MalformedURLException;
-import java.net.URL;
-import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 
@@ -67,9 +64,7 @@ public class CredentialManager {
       throws SFException {
     String cred =
         secureStorageManager.getCredential(
-            extractHostFromServerUrl(loginInput.getServerUrl()),
-            loginInput.getUserName(),
-            credType);
+            loginInput.getHostFromServerUrl(), loginInput.getUserName(), credType);
     if (cred == null) {
       logger.debug("retrieved %s is null", credType);
     }
@@ -120,10 +115,7 @@ public class CredentialManager {
     }
 
     secureStorageManager.setCredential(
-        extractHostFromServerUrl(loginInput.getServerUrl()),
-        loginInput.getUserName(),
-        credType,
-        cred);
+        loginInput.getHostFromServerUrl(), loginInput.getUserName(), credType, cred);
   }
 
   /** Delete the id token cache */
@@ -132,22 +124,7 @@ public class CredentialManager {
   }
 
   /** Delete the mfa token cache */
-  public void deleteMfaTokenCache(String host, String user) {
+  void deleteMfaTokenCache(String host, String user) {
     secureStorageManager.deleteCredential(host, user, MFA_TOKEN);
-  }
-
-  /**
-   * Used to extract host name from a well formated internal serverUrl, e.g., serverUrl in
-   * SFLoginInput.
-   */
-  private String extractHostFromServerUrl(String serverUrl) throws SFException {
-    URL url = null;
-    try {
-      url = new URL(serverUrl);
-    } catch (MalformedURLException e) {
-      logger.error("Invalid serverUrl for retrieving host name");
-      throw new SFException(ErrorCode.INTERNAL_ERROR, "Invalid serverUrl for retrieving host name");
-    }
-    return url.getHost();
   }
 }

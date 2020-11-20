@@ -20,12 +20,13 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Properties;
-import net.snowflake.client.core.CredentialManager;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.OCSPMode;
 import net.snowflake.client.core.ObjectMapperFactory;
+import net.snowflake.client.core.SessionUtil;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.client.methods.HttpPost;
+import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
@@ -95,7 +96,7 @@ public class SnowflakeMFACacheTest {
 
   @Test
   public void testMFAFunctionality() throws SQLException {
-    CredentialManager.getInstance().deleteMfaTokenCache(host, user);
+    SessionUtil.deleteMfaTokenCache(host, user);
     try (MockedStatic<HttpUtil> mockedHttpUtil = Mockito.mockStatic(HttpUtil.class)) {
       mockedHttpUtil
           .when(
@@ -135,7 +136,7 @@ public class SnowflakeMFACacheTest {
                             .path("SESSION_PARAMETERS")
                             .path("CLIENT_REQUEST_MFA_TOKEN")
                             .asBoolean());
-                    assertEquals(jsonNode.path("data").path("TOKEN").asText(), mockedMfaToken[0]);
+                    assertEquals(mockedMfaToken[0], jsonNode.path("data").path("TOKEN").asText());
                     // Normally backend won't send a new mfa token in this case. For testing
                     // purpose, we issue a new token to test whether the mfa token can be refreshed
                     // when receiving a new one from server.
@@ -153,12 +154,30 @@ public class SnowflakeMFACacheTest {
                             .path("SESSION_PARAMETERS")
                             .path("CLIENT_REQUEST_MFA_TOKEN")
                             .asBoolean());
-                    assertEquals(jsonNode.path("data").path("TOKEN").asText(), mockedMfaToken[1]);
+                    assertEquals(mockedMfaToken[1], jsonNode.path("data").path("TOKEN").asText());
                     res = getNormalMockedHttpResponse(true, -1).toString();
                   } else if (callCount == 5) {
                     // Third close() request
                     res = getNormalMockedHttpResponse(true, -1).toString();
+                  } else if (callCount == 6) {
+                    // test if failed log in response can delete the cached mfa token
+                    res = getNormalMockedHttpResponse(false, -1).toString();
+                  } else if (callCount == 7) {
+                    jsonNode = parseRequest((HttpPost) args[0]);
+                    assertTrue(
+                        jsonNode
+                            .path("data")
+                            .path("SESSION_PARAMETERS")
+                            .path("CLIENT_REQUEST_MFA_TOKEN")
+                            .asBoolean());
+                    // no token should be included this time.
+                    assertEquals("", jsonNode.path("data").path("TOKEN").asText());
+                    res = getNormalMockedHttpResponse(true, -1).toString();
+                  } else if (callCount == 8) {
+                    // final close()
+                    res = getNormalMockedHttpResponse(true, -1).toString();
                   } else {
+                    // unexpected request
                     res = getNormalMockedHttpResponse(false, -1).toString();
                   }
 
@@ -181,10 +200,21 @@ public class SnowflakeMFACacheTest {
       Connection con1 = DriverManager.getConnection(url, prop);
       con1.close();
 
-      //  The third connection is expected to include the new mfa token.
+      // The third connection is expected to include the new mfa token.
       Connection con2 = DriverManager.getConnection(url, prop);
       con2.close();
+
+      // This connection would receive an exception and then should clean up the mfa cache
+      try {
+        Connection con3 = DriverManager.getConnection(url, prop);
+        Assert.fail();
+      } catch (SnowflakeSQLException ex) {
+        // An exception is forced to happen by mocking. Do nothing.
+      }
+      // This connect request should not contain mfa cached token
+      Connection con4 = DriverManager.getConnection(url, prop);
+      con4.close();
     }
-    CredentialManager.getInstance().deleteMfaTokenCache(host, user);
+    SessionUtil.deleteMfaTokenCache(host, user);
   }
 }
