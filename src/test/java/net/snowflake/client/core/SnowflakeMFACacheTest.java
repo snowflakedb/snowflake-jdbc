@@ -2,7 +2,7 @@
  * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
  */
 
-package net.snowflake.client.jdbc;
+package net.snowflake.client.core;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -13,6 +13,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.sun.jna.Pointer;
+import com.sun.jna.ptr.PointerByReference;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
@@ -20,10 +22,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Properties;
-import net.snowflake.client.core.HttpUtil;
-import net.snowflake.client.core.OCSPMode;
-import net.snowflake.client.core.ObjectMapperFactory;
-import net.snowflake.client.core.SessionUtil;
+import net.snowflake.client.jdbc.SnowflakeSQLException;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.client.methods.HttpPost;
 import org.junit.Assert;
@@ -216,5 +215,106 @@ public class SnowflakeMFACacheTest {
       con4.close();
     }
     SessionUtil.deleteMfaTokenCache(host, user);
+  }
+
+  class MockUnavailableAdvapi32Lib implements SecureStorageWindowsManager.Advapi32Lib {
+    @Override
+    public boolean CredReadW(String targetName, int type, int flags, PointerByReference pcred) {
+      return false;
+    }
+
+    @Override
+    public boolean CredWriteW(
+        SecureStorageWindowsManager.SecureStorageWindowsCredential cred, int flags) {
+      return false;
+    }
+
+    @Override
+    public boolean CredDeleteW(String targetName, int type, int flags) {
+      return false;
+    }
+
+    @Override
+    public void CredFree(Pointer cred) {}
+  }
+
+  private void unavailableLSSWindowsTestBody() throws SQLException {
+    SessionUtil.deleteMfaTokenCache(host, user);
+    try (MockedStatic<HttpUtil> mockedHttpUtil = Mockito.mockStatic(HttpUtil.class)) {
+      mockedHttpUtil
+          .when(
+              () ->
+                  HttpUtil.executeGeneralRequest(
+                      any(HttpPost.class), anyInt(), any(OCSPMode.class)))
+          .thenAnswer(
+              new Answer<String>() {
+                int callCount = 0;
+
+                private String validationHelper(Object[] args) throws IOException {
+                  JsonNode node = parseRequest((HttpPost) args[0]);
+                  assertTrue(
+                      node.path("data")
+                          .path("SESSION_PARAMETERS")
+                          .path("CLIENT_REQUEST_MFA_TOKEN")
+                          .asBoolean());
+                  // no token should be included.
+                  assertEquals("", node.path("data").path("TOKEN").asText());
+                  return getNormalMockedHttpResponse(true, 0).toString();
+                }
+
+                @Override
+                public String answer(InvocationOnMock invocation) throws Throwable {
+                  String res = "";
+                  final Object[] args = invocation.getArguments();
+
+                  if (callCount == 0) {
+                    // First connection request
+                    res = validationHelper(args);
+                  } else if (callCount == 1) {
+                    // First close() request
+                    res = getNormalMockedHttpResponse(true, -1).toString();
+                  } else if (callCount == 2) {
+                    // Second connection request
+                    res = validationHelper(args);
+                  } else if (callCount == 3) {
+                    // Second close() request
+                    res = getNormalMockedHttpResponse(true, -1).toString();
+                  }
+                  callCount += 1; // this will be incremented on both connecting and closing
+                  return res;
+                }
+              });
+
+      Properties prop = getBaseProp();
+      String url = "jdbc:snowflake://testaccount.snowflakecomputing.com";
+
+      // Both of below two connections will try to use unavailable secure local storage to store mfa
+      // cache. We need to make sure this situation won't break.
+      Connection con = DriverManager.getConnection(url, prop);
+      con.close();
+      Connection con1 = DriverManager.getConnection(url, prop);
+      con1.close();
+    }
+    SessionUtil.deleteMfaTokenCache(host, user);
+  }
+
+  private void testUnavailableLSSWindowsHelper() throws SQLException {
+    try {
+      SecureStorageWindowsManager.Advapi32LibManager.setInstance(new MockUnavailableAdvapi32Lib());
+      SecureStorageWindowsManager manager = SecureStorageWindowsManager.builder();
+      CredentialManager.getInstance().injectSecureStorageManager(manager);
+      unavailableLSSWindowsTestBody();
+    } finally {
+      SecureStorageWindowsManager.Advapi32LibManager.resetInstance();
+    }
+  }
+
+  @Test
+  public void testUnavailableLocalSecureStorage() throws SQLException {
+    try {
+      testUnavailableLSSWindowsHelper();
+    } finally {
+      CredentialManager.getInstance().resetSecureStorageManager();
+    }
   }
 }
