@@ -65,9 +65,11 @@ public class HttpUtil
   static final int DEFAULT_MAX_CONNECTIONS_PER_ROUTE = 300;
   static final int DEFAULT_CONNECTION_TIMEOUT = 60000;
   static final int DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT = 300000; // ms
-  static final int DEFAULT_TTL = -1; // secs
+  public static int DEFAULT_TTL = 60; // secs
   static final int DEFAULT_IDLE_CONNECTION_TIMEOUT = 5; // secs
   static final int DEFAULT_DOWNLOADED_CONDITION_TIMEOUT = 3600; // secs
+
+  public static final String JDBC_TTL_JVM = "net.snowflake.jdbc.ttlTimeout";
 
   /**
    * The unique httpClient shared by all connections. This will benefit long-
@@ -193,8 +195,19 @@ public class HttpUtil
                         new SFConnectionSocketFactory())
               .build();
 
+      String ttlSystemProperty = System.getProperty(JDBC_TTL_JVM);
+      int timeToLive = DEFAULT_TTL;
+      if (ttlSystemProperty != null) {
+        try {
+          timeToLive = Integer.parseInt(ttlSystemProperty);
+        } catch (NumberFormatException ex) {
+          logger.info("Failed to parse the system parameter {}", JDBC_TTL_JVM, ttlSystemProperty);
+        }
+      }
+      logger.debug("TimetoLive in connection pooling manager: {}", timeToLive);
+
       // Build a connection manager with enough connections
-      connectionManager = new PoolingHttpClientConnectionManager(registry, null, null, null, DEFAULT_TTL,
+      connectionManager = new PoolingHttpClientConnectionManager(registry, null, null, null, timeToLive,
                                                                  TimeUnit.SECONDS);
       connectionManager.setMaxTotal(DEFAULT_MAX_CONNECTIONS);
       connectionManager.setDefaultMaxPerRoute(DEFAULT_MAX_CONNECTIONS_PER_ROUTE);
