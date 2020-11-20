@@ -202,6 +202,13 @@ public class SecureStorageAppleManager implements SecureStorageManager {
     public static void setInstance(SecurityLib instance) {
       INSTANCE = instance;
     }
+
+    /** This function is a helper function for testing */
+    public static void resetInstance() {
+      if (Constants.getOS() == Constants.OS.MAC) {
+        INSTANCE = ResourceHolder.INSTANCE;
+      }
+    }
   }
 
   /** the java mapping of OS X Security Library */

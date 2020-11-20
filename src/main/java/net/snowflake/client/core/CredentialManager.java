@@ -17,6 +17,10 @@ public class CredentialManager {
   private static final String MFA_TOKEN = "MFATOKEN";
 
   private CredentialManager() {
+    initSecureStorageManager();
+  }
+
+  private void initSecureStorageManager() {
     if (Constants.getOS() == Constants.OS.MAC) {
       secureStorageManager = SecureStorageAppleManager.builder();
     } else if (Constants.getOS() == Constants.OS.WINDOWS) {
@@ -26,6 +30,20 @@ public class CredentialManager {
     } else {
       logger.error("Unsupported Operating System. Expected: OSX, Windows, Linux");
     }
+  }
+
+  /** Helper function for tests to go back to normal settings. */
+  void resetSecureStorageManager() {
+    initSecureStorageManager();
+  }
+
+  /**
+   * Testing purpose. Inject a mock manager.
+   *
+   * @param manager
+   */
+  void injectSecureStorageManager(SecureStorageManager manager) {
+    secureStorageManager = manager;
   }
 
   private static class CredentialManagerHolder {

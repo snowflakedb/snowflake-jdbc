@@ -14,6 +14,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import net.snowflake.client.ConditionalIgnoreRule;
+import net.snowflake.client.RunningNotOnLinux;
 import net.snowflake.client.RunningNotOnWinMac;
 import org.junit.Rule;
 import org.junit.Test;
@@ -241,6 +242,7 @@ public class SecureStorageManagerTest {
     SecureStorageManager manager = SecureStorageWindowsManager.builder();
 
     testBody(manager);
+    SecureStorageWindowsManager.Advapi32LibManager.resetInstance();
   }
 
   @Test
@@ -249,9 +251,11 @@ public class SecureStorageManagerTest {
     SecureStorageManager manager = SecureStorageAppleManager.builder();
 
     testBody(manager);
+    SecureStorageAppleManager.SecurityLibManager.resetInstance();
   }
 
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningNotOnLinux.class)
   public void testLinuxManager() {
     SecureStorageManager manager = SecureStorageLinuxManager.getInstance();
 
