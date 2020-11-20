@@ -4,8 +4,11 @@
 
 package net.snowflake.client.core;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.security.PrivateKey;
 import java.util.Map;
+import net.snowflake.client.jdbc.ErrorCode;
 
 /** A class for holding all information required for login */
 public class SFLoginInput {
@@ -325,5 +328,16 @@ public class SFLoginInput {
               || "on".equalsIgnoreCase((String) v));
     }
     return false;
+  }
+
+  String getHostFromServerUrl() throws SFException {
+    URL url;
+    try {
+      url = new URL(serverUrl);
+    } catch (MalformedURLException e) {
+      throw new SFException(
+          e, ErrorCode.INTERNAL_ERROR, "Invalid serverUrl for retrieving host name");
+    }
+    return url.getHost();
   }
 }
