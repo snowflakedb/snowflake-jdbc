@@ -268,11 +268,6 @@ public class SessionUtil {
     if (authenticator.equals(ClientAuthnDTO.AuthenticatorType.USERNAME_PASSWORD_MFA)) {
       if (Constants.getOS() == Constants.OS.MAC || Constants.getOS() == Constants.OS.WINDOWS) {
         loginInput.getSessionParameters().put(CLIENT_REQUEST_MFA_TOKEN, true);
-      } else {
-        if (!loginInput.getSessionParameters().containsKey(CLIENT_REQUEST_MFA_TOKEN)) {
-          // for testing purpose
-          loginInput.getSessionParameters().put(CLIENT_REQUEST_MFA_TOKEN, false);
-        }
       }
     }
 
