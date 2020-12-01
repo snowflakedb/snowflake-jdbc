@@ -410,7 +410,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
   public void rollback(Savepoint savepoint) throws SQLException {
     logger.debug("void rollback(Savepoint savepoint)");
 
-    throw new SQLFeatureNotSupportedException();
+    throw new SnowflakeLoggedFeatureNotSupportedException(sfSession);
   }
 
   @Override
@@ -418,7 +418,8 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
     logger.debug("void setReadOnly(boolean readOnly)");
     raiseSQLExceptionIfConnectionIsClosed();
     if (readOnly) {
-      throw new SQLFeatureNotSupportedException();
+
+      throw new SnowflakeLoggedFeatureNotSupportedException(sfSession);
     }
   }
 
@@ -526,21 +527,21 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
       return prepareStatement(sql);
     }
 
-    throw new SQLFeatureNotSupportedException();
+    throw new SnowflakeLoggedFeatureNotSupportedException(sfSession);
   }
 
   @Override
   public PreparedStatement prepareStatement(String sql, int[] columnIndexes) throws SQLException {
     logger.debug("PreparedStatement prepareStatement(String sql, " + "int[] columnIndexes)");
 
-    throw new SQLFeatureNotSupportedException();
+    throw new SnowflakeLoggedFeatureNotSupportedException(sfSession);
   }
 
   @Override
   public PreparedStatement prepareStatement(String sql, String[] columnNames) throws SQLException {
     logger.debug("PreparedStatement prepareStatement(String sql, " + "String[] columnNames)");
 
-    throw new SQLFeatureNotSupportedException();
+    throw new SnowflakeLoggedFeatureNotSupportedException(sfSession);
   }
 
   @Override
@@ -591,12 +592,14 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
 
   @Override
   public void setTypeMap(Map<String, Class<?>> map) throws SQLException {
-    throw new SQLFeatureNotSupportedException();
+
+    throw new SnowflakeLoggedFeatureNotSupportedException(sfSession);
   }
 
   @Override
   public void setHoldability(int holdability) throws SQLException {
-    throw new SQLFeatureNotSupportedException();
+
+    throw new SnowflakeLoggedFeatureNotSupportedException(sfSession);
   }
 
   @Override
@@ -607,22 +610,26 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
 
   @Override
   public Savepoint setSavepoint() throws SQLException {
-    throw new SQLFeatureNotSupportedException();
+
+    throw new SnowflakeLoggedFeatureNotSupportedException(sfSession);
   }
 
   @Override
   public Savepoint setSavepoint(String name) throws SQLException {
-    throw new SQLFeatureNotSupportedException();
+
+    throw new SnowflakeLoggedFeatureNotSupportedException(sfSession);
   }
 
   @Override
   public void releaseSavepoint(Savepoint savepoint) throws SQLException {
-    throw new SQLFeatureNotSupportedException();
+
+    throw new SnowflakeLoggedFeatureNotSupportedException(sfSession);
   }
 
   @Override
   public Blob createBlob() throws SQLException {
-    throw new SQLFeatureNotSupportedException();
+
+    throw new SnowflakeLoggedFeatureNotSupportedException(sfSession);
   }
 
   @Override
@@ -633,12 +640,14 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
 
   @Override
   public NClob createNClob() throws SQLException {
-    throw new SQLFeatureNotSupportedException();
+
+    throw new SnowflakeLoggedFeatureNotSupportedException(sfSession);
   }
 
   @Override
   public SQLXML createSQLXML() throws SQLException {
-    throw new SQLFeatureNotSupportedException();
+
+    throw new SnowflakeLoggedFeatureNotSupportedException(sfSession);
   }
 
   @Override
@@ -706,14 +715,14 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
   public Array createArrayOf(String typeName, Object[] elements) throws SQLException {
     logger.debug("Array createArrayOf(String typeName, Object[] " + "elements)");
 
-    throw new SQLFeatureNotSupportedException();
+    throw new SnowflakeLoggedFeatureNotSupportedException(sfSession);
   }
 
   @Override
   public Struct createStruct(String typeName, Object[] attributes) throws SQLException {
     logger.debug("Struct createStruct(String typeName, Object[] " + "attributes)");
 
-    throw new SQLFeatureNotSupportedException();
+    throw new SnowflakeLoggedFeatureNotSupportedException(sfSession);
   }
 
   @Override

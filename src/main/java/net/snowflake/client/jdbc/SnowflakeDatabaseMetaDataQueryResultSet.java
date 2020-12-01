@@ -5,7 +5,6 @@ package net.snowflake.client.jdbc;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.SQLFeatureNotSupportedException;
 import java.sql.Statement;
 
 /** Database Metadata query based result set. */
@@ -31,7 +30,7 @@ class SnowflakeDatabaseMetaDataQueryResultSet extends SnowflakeDatabaseMetaDataR
   @Override
   public boolean isLast() throws SQLException {
     raiseSQLExceptionIfResultSetIsClosed();
-    throw new SQLFeatureNotSupportedException();
+    throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   /**
@@ -43,6 +42,6 @@ class SnowflakeDatabaseMetaDataQueryResultSet extends SnowflakeDatabaseMetaDataR
   @Override
   public boolean isAfterLast() throws SQLException {
     raiseSQLExceptionIfResultSetIsClosed();
-    throw new SQLFeatureNotSupportedException();
+    throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 }

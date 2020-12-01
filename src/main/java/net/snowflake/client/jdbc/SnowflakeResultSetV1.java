@@ -54,7 +54,7 @@ class SnowflakeResultSetV1 extends SnowflakeBaseResultSet implements SnowflakeRe
    * @throws SQLFeatureNotSupportedException
    */
   public QueryStatus getStatus() throws SQLException {
-    throw new SQLFeatureNotSupportedException();
+    throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   /**

@@ -6,11 +6,14 @@ import static org.junit.Assert.fail;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
+import java.sql.Statement;
 import java.util.concurrent.TimeUnit;
 import net.snowflake.client.category.TestCategoryCore;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.jdbc.BaseJDBCTest;
 import net.snowflake.client.jdbc.SnowflakeConnectionV1;
+import net.snowflake.client.jdbc.SnowflakeLoggedFeatureNotSupportedException;
 import net.snowflake.client.jdbc.SnowflakeSQLLoggedException;
 import net.snowflake.common.core.SqlState;
 import org.apache.commons.lang3.time.StopWatch;
@@ -207,6 +210,10 @@ public class TelemetryServiceIT extends BaseJDBCTest {
     throw new SnowflakeSQLLoggedException(session, reason, sqlState, vendorCode, queryID);
   }
 
+  private int generateSQLFeatureNotSupportedException() throws SQLFeatureNotSupportedException {
+    throw new SnowflakeLoggedFeatureNotSupportedException(null);
+  }
+
   /**
    * Test case for checking telemetry message for SnowflakeSQLExceptions. Assert that telemetry OOB
    * endpoint is reached after a SnowflakeSQLLoggedException is thrown.
@@ -217,7 +224,6 @@ public class TelemetryServiceIT extends BaseJDBCTest {
   public void testSnowflakeSQLLoggedExceptionOOBTelemetry()
       throws SQLException, InterruptedException {
     // make a connection to initialize telemetry instance
-    Connection con = getConnection();
     int fakeVendorCode = 27;
     try {
       generateDummyException(fakeVendorCode, null);
@@ -240,6 +246,35 @@ public class TelemetryServiceIT extends BaseJDBCTest {
   }
 
   /**
+   * Test case for checking telemetry message for SqlFeatureNotSupportedExceptions. Assert that
+   * telemetry OOB endpoint is reached after a SnowflakeSQLLoggedException is thrown.
+   *
+   * <p>After running test, check for result in client_telemetry_oob table with type
+   * client_sql_exception.
+   *
+   * @throws SQLException
+   */
+  @Test
+  public void testSQLFeatureNotSupportedOOBTelemetry() throws InterruptedException {
+    // with null session, OOB telemetry will be thrown
+    try {
+      generateSQLFeatureNotSupportedException();
+      fail("SqlFeatureNotSupportedException failed to throw.");
+    } catch (SQLFeatureNotSupportedException e) {
+      // since it returns normal response,
+      // the telemetry does not create new event
+      Thread.sleep(WAIT_FOR_TELEMETRY_REPORT_IN_MILLISECS);
+      if (TelemetryService.getInstance().isDeploymentEnabled()) {
+        assertThat(
+            "Telemetry event has not been reported successfully. Error: "
+                + TelemetryService.getInstance().getLastClientError(),
+            TelemetryService.getInstance().getClientFailureCount(),
+            equalTo(0));
+      }
+    }
+  }
+
+  /**
    * Test case for checking telemetry message for SnowflakeSQLExceptions. In-band telemetry should
    * be used.
    *
@@ -248,14 +283,34 @@ public class TelemetryServiceIT extends BaseJDBCTest {
   @Test
   public void testSnowflakeSQLLoggedExceptionIBTelemetry() throws SQLException {
     // make a connection to initialize telemetry instance
-    Connection con = getConnection();
-    int fakeErrorCode = 27;
-    try {
-      generateDummyException(fakeErrorCode, con.unwrap(SnowflakeConnectionV1.class).getSfSession());
-      fail();
-    } catch (SnowflakeSQLLoggedException e) {
-      // The error response has the same code as the fakeErrorCode
-      assertThat("Communication error", e.getErrorCode(), equalTo(fakeErrorCode));
+    try (Connection con = getConnection()) {
+      int fakeErrorCode = 27;
+      try {
+        generateDummyException(
+            fakeErrorCode, con.unwrap(SnowflakeConnectionV1.class).getSfSession());
+        fail();
+      } catch (SnowflakeSQLLoggedException e) {
+        // The error response has the same code as the fakeErrorCode
+        assertThat("Communication error", e.getErrorCode(), equalTo(fakeErrorCode));
+      }
+    }
+  }
+
+  /**
+   * Test case for checking telemetry message for SnowflakeFeatureNotSupporteExceptions. In-band
+   * telemetry should be used.
+   *
+   * <p>After running test, check for telemetry message in client_telemetry_v table.
+   *
+   * @throws SQLException
+   */
+  @Test(expected = SQLFeatureNotSupportedException.class)
+  public void testSqlFeatureNotSupportedExceptionIBTelemetry() throws SQLException {
+    // make a connection to initialize telemetry instance
+    try (Connection con = getConnection()) {
+      Statement statement = con.createStatement();
+      // try to execute a statement that throws a SQLFeatureNotSupportedException
+      statement.execute("select 1", new int[] {});
     }
   }
 }
