@@ -130,7 +130,8 @@ public class TelemetryEvent extends JSONObject {
         for (String key : context.keySet()) {
           Object val = context.get(key);
           if (val != null) {
-            withTag("ctx_" + key.toLowerCase(), val.toString());
+            withTag(
+                "ctx_" + key.toLowerCase(), SecretDetector.maskParameterValue(key, val.toString()));
           }
         }
       }

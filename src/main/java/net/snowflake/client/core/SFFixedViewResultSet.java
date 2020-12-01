@@ -5,13 +5,9 @@
 package net.snowflake.client.core;
 
 import java.sql.SQLException;
-import java.sql.SQLFeatureNotSupportedException;
 import java.util.List;
-import net.snowflake.client.jdbc.ErrorCode;
+import net.snowflake.client.jdbc.*;
 import net.snowflake.client.jdbc.SnowflakeFileTransferAgent.CommandType;
-import net.snowflake.client.jdbc.SnowflakeFixedView;
-import net.snowflake.client.jdbc.SnowflakeSQLException;
-import net.snowflake.client.jdbc.SnowflakeSQLLoggedException;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SqlState;
@@ -129,7 +125,7 @@ public class SFFixedViewResultSet extends SFJsonResultSet {
 
   @Override
   public void setStatementType(SFStatementType statementType) throws SQLException {
-    throw new SQLFeatureNotSupportedException();
+    throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override

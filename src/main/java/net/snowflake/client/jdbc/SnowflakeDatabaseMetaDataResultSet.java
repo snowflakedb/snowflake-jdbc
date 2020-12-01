@@ -528,7 +528,7 @@ class SnowflakeDatabaseMetaDataResultSet extends SnowflakeBaseResultSet {
         return getBoolean(columnIndex);
 
       default:
-        throw new SQLFeatureNotSupportedException();
+        throw new SnowflakeLoggedFeatureNotSupportedException(session);
     }
   }
 }
