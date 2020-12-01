@@ -1,11 +1,7 @@
 package net.snowflake.client.jdbc;
 
 import com.google.common.base.Strings;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.PrintWriter;
-import java.io.Serializable;
+import java.io.*;
 import java.security.PrivateKey;
 import java.sql.Connection;
 import java.sql.SQLException;

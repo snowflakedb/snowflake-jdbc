@@ -338,18 +338,18 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
 
   @Override
   public void setAsciiStream(int parameterIndex, InputStream x, int length) throws SQLException {
-    throw new SQLFeatureNotSupportedException();
+    throw new SnowflakeLoggedFeatureNotSupportedException(connection.getSfSession());
   }
 
   @Override
   @Deprecated
   public void setUnicodeStream(int parameterIndex, InputStream x, int length) throws SQLException {
-    throw new SQLFeatureNotSupportedException();
+    throw new SnowflakeLoggedFeatureNotSupportedException(connection.getSfSession());
   }
 
   @Override
   public void setBinaryStream(int parameterIndex, InputStream x, int length) throws SQLException {
-    throw new SQLFeatureNotSupportedException();
+    throw new SnowflakeLoggedFeatureNotSupportedException(connection.getSfSession());
   }
 
   @Override
@@ -504,17 +504,17 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
   @Override
   public void setCharacterStream(int parameterIndex, Reader reader, int length)
       throws SQLException {
-    throw new SQLFeatureNotSupportedException();
+    throw new SnowflakeLoggedFeatureNotSupportedException(connection.getSfSession());
   }
 
   @Override
   public void setRef(int parameterIndex, Ref x) throws SQLException {
-    throw new SQLFeatureNotSupportedException();
+    throw new SnowflakeLoggedFeatureNotSupportedException(connection.getSfSession());
   }
 
   @Override
   public void setBlob(int parameterIndex, Blob x) throws SQLException {
-    throw new SQLFeatureNotSupportedException();
+    throw new SnowflakeLoggedFeatureNotSupportedException(connection.getSfSession());
   }
 
   @Override
@@ -524,7 +524,7 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
 
   @Override
   public void setArray(int parameterIndex, Array x) throws SQLException {
-    throw new SQLFeatureNotSupportedException();
+    throw new SnowflakeLoggedFeatureNotSupportedException(connection.getSfSession());
   }
 
   @Override
@@ -616,55 +616,55 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
 
   @Override
   public void setURL(int parameterIndex, URL x) throws SQLException {
-    throw new SQLFeatureNotSupportedException();
+    throw new SnowflakeLoggedFeatureNotSupportedException(connection.getSfSession());
   }
 
   @Override
   public ParameterMetaData getParameterMetaData() throws SQLException {
     describeSqlIfNotTried();
-    return new SnowflakeParameterMetadata(statementMetaData);
+    return new SnowflakeParameterMetadata(statementMetaData, connection.getSfSession());
   }
 
   @Override
   public void setRowId(int parameterIndex, RowId x) throws SQLException {
-    throw new SQLFeatureNotSupportedException();
+    throw new SnowflakeLoggedFeatureNotSupportedException(connection.getSfSession());
   }
 
   @Override
   public void setNString(int parameterIndex, String value) throws SQLException {
-    throw new SQLFeatureNotSupportedException();
+    throw new SnowflakeLoggedFeatureNotSupportedException(connection.getSfSession());
   }
 
   @Override
   public void setNCharacterStream(int parameterIndex, Reader value, long length)
       throws SQLException {
-    throw new SQLFeatureNotSupportedException();
+    throw new SnowflakeLoggedFeatureNotSupportedException(connection.getSfSession());
   }
 
   @Override
   public void setNClob(int parameterIndex, NClob value) throws SQLException {
-    throw new SQLFeatureNotSupportedException();
+    throw new SnowflakeLoggedFeatureNotSupportedException(connection.getSfSession());
   }
 
   @Override
   public void setClob(int parameterIndex, Reader reader, long length) throws SQLException {
-    throw new SQLFeatureNotSupportedException();
+    throw new SnowflakeLoggedFeatureNotSupportedException(connection.getSfSession());
   }
 
   @Override
   public void setBlob(int parameterIndex, InputStream inputStream, long length)
       throws SQLException {
-    throw new SQLFeatureNotSupportedException();
+    throw new SnowflakeLoggedFeatureNotSupportedException(connection.getSfSession());
   }
 
   @Override
   public void setNClob(int parameterIndex, Reader reader, long length) throws SQLException {
-    throw new SQLFeatureNotSupportedException();
+    throw new SnowflakeLoggedFeatureNotSupportedException(connection.getSfSession());
   }
 
   @Override
   public void setSQLXML(int parameterIndex, SQLXML xmlObject) throws SQLException {
-    throw new SQLFeatureNotSupportedException();
+    throw new SnowflakeLoggedFeatureNotSupportedException(connection.getSfSession());
   }
 
   @Override
@@ -686,53 +686,53 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
 
   @Override
   public void setAsciiStream(int parameterIndex, InputStream x, long length) throws SQLException {
-    throw new SQLFeatureNotSupportedException();
+    throw new SnowflakeLoggedFeatureNotSupportedException(connection.getSfSession());
   }
 
   @Override
   public void setBinaryStream(int parameterIndex, InputStream x, long length) throws SQLException {
-    throw new SQLFeatureNotSupportedException();
+    throw new SnowflakeLoggedFeatureNotSupportedException(connection.getSfSession());
   }
 
   @Override
   public void setCharacterStream(int parameterIndex, Reader reader, long length)
       throws SQLException {
-    throw new SQLFeatureNotSupportedException();
+    throw new SnowflakeLoggedFeatureNotSupportedException(connection.getSfSession());
   }
 
   @Override
   public void setAsciiStream(int parameterIndex, InputStream x) throws SQLException {
-    throw new SQLFeatureNotSupportedException();
+    throw new SnowflakeLoggedFeatureNotSupportedException(connection.getSfSession());
   }
 
   @Override
   public void setBinaryStream(int parameterIndex, InputStream x) throws SQLException {
-    throw new SQLFeatureNotSupportedException();
+    throw new SnowflakeLoggedFeatureNotSupportedException(connection.getSfSession());
   }
 
   @Override
   public void setCharacterStream(int parameterIndex, Reader reader) throws SQLException {
-    throw new SQLFeatureNotSupportedException();
+    throw new SnowflakeLoggedFeatureNotSupportedException(connection.getSfSession());
   }
 
   @Override
   public void setNCharacterStream(int parameterIndex, Reader value) throws SQLException {
-    throw new SQLFeatureNotSupportedException();
+    throw new SnowflakeLoggedFeatureNotSupportedException(connection.getSfSession());
   }
 
   @Override
   public void setClob(int parameterIndex, Reader reader) throws SQLException {
-    throw new SQLFeatureNotSupportedException();
+    throw new SnowflakeLoggedFeatureNotSupportedException(connection.getSfSession());
   }
 
   @Override
   public void setBlob(int parameterIndex, InputStream inputStream) throws SQLException {
-    throw new SQLFeatureNotSupportedException();
+    throw new SnowflakeLoggedFeatureNotSupportedException(connection.getSfSession());
   }
 
   @Override
   public void setNClob(int parameterIndex, Reader reader) throws SQLException {
-    throw new SQLFeatureNotSupportedException();
+    throw new SnowflakeLoggedFeatureNotSupportedException(connection.getSfSession());
   }
 
   @Override
@@ -808,32 +808,32 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
 
   @Override
   public int executeUpdate(String sql, int autoGeneratedKeys) throws SQLException {
-    throw new SQLFeatureNotSupportedException();
+    throw new SnowflakeLoggedFeatureNotSupportedException(connection.getSfSession());
   }
 
   @Override
   public int executeUpdate(String sql, int[] columnIndexes) throws SQLException {
-    throw new SQLFeatureNotSupportedException();
+    throw new SnowflakeLoggedFeatureNotSupportedException(connection.getSfSession());
   }
 
   @Override
   public int executeUpdate(String sql, String[] columnNames) throws SQLException {
-    throw new SQLFeatureNotSupportedException();
+    throw new SnowflakeLoggedFeatureNotSupportedException(connection.getSfSession());
   }
 
   @Override
   public boolean execute(String sql, int autoGeneratedKeys) throws SQLException {
-    throw new SQLFeatureNotSupportedException();
+    throw new SnowflakeLoggedFeatureNotSupportedException(connection.getSfSession());
   }
 
   @Override
   public boolean execute(String sql, int[] columnIndexes) throws SQLException {
-    throw new SQLFeatureNotSupportedException();
+    throw new SnowflakeLoggedFeatureNotSupportedException(connection.getSfSession());
   }
 
   @Override
   public boolean execute(String sql, String[] columnNames) throws SQLException {
-    throw new SQLFeatureNotSupportedException();
+    throw new SnowflakeLoggedFeatureNotSupportedException(connection.getSfSession());
   }
 
   // For testing use only

@@ -357,6 +357,6 @@ class SFAsyncResultSet extends SnowflakeBaseResultSet implements SnowflakeResult
   public List<SnowflakeResultSetSerializable> getResultSetSerializables(long maxSizeInBytes)
       throws SQLException {
     raiseSQLExceptionIfResultSetIsClosed();
-    throw new SQLFeatureNotSupportedException();
+    throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 }
