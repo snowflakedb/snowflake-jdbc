@@ -125,7 +125,7 @@ public class SecretDetector {
    */
   public static String maskParameterValue(String key, String value) {
     if (isSensitiveParameter(key)) {
-      return "****";
+      return "*******";
     }
     return value;
   }
