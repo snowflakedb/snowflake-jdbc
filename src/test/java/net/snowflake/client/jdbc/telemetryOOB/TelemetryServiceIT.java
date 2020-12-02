@@ -9,6 +9,8 @@ import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.sql.Statement;
 import java.util.concurrent.TimeUnit;
+import net.snowflake.client.ConditionalIgnoreRule;
+import net.snowflake.client.RunningNotOnTestaccount;
 import net.snowflake.client.category.TestCategoryCore;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.jdbc.BaseJDBCTest;
@@ -221,6 +223,7 @@ public class TelemetryServiceIT extends BaseJDBCTest {
    * @throws SQLException
    */
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningNotOnTestaccount.class)
   public void testSnowflakeSQLLoggedExceptionOOBTelemetry()
       throws SQLException, InterruptedException {
     // make a connection to initialize telemetry instance
@@ -255,6 +258,7 @@ public class TelemetryServiceIT extends BaseJDBCTest {
    * @throws SQLException
    */
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningNotOnTestaccount.class)
   public void testSQLFeatureNotSupportedOOBTelemetry() throws InterruptedException {
     // with null session, OOB telemetry will be thrown
     try {
