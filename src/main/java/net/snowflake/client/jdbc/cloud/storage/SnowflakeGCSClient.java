@@ -874,6 +874,10 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
     }
 
     if (ex instanceof StorageException) {
+      // NOTE: this code path only handle Access token based operation,
+      // presigned URL is not covered. Presigned Url do not raise
+      // StorageException
+
       StorageException se = (StorageException) ex;
       // If we have exceeded the max number of retries, propagate the error
       if (retryCount > getMaxRetries()) {
