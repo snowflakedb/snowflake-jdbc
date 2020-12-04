@@ -11,7 +11,8 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.gax.paging.Page;
-import com.google.api.gax.rpc.FixedHeaderProvider;
+import com.google.auth.oauth2.AccessToken;
+import com.google.auth.oauth2.GoogleCredentials;
 import com.google.cloud.storage.*;
 import com.google.cloud.storage.Storage.BlobListOption;
 import com.google.common.base.Strings;
@@ -19,7 +20,10 @@ import java.io.*;
 import java.net.SocketTimeoutException;
 import java.net.URISyntaxException;
 import java.security.InvalidKeyException;
-import java.util.*;
+import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.OCSPMode;
@@ -35,13 +39,11 @@ import net.snowflake.common.core.SqlState;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.Header;
 import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpResponseException;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.InputStreamEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.util.EntityUtils;
 
 /**
  * Encapsulates the GCS Storage client and all GCS operations and logic
@@ -115,8 +117,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
    */
   @Override
   public boolean requirePresignedUrl() {
-    Map<?, ?> credentialsMap = stageInfo.getCredentials();
-    return !(credentialsMap != null && credentialsMap.containsKey("GCS_ACCESS_TOKEN"));
+    return true;
   }
 
   @Override
@@ -269,12 +270,6 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
               logger.debug("Download unsuccessful {}", ex);
               handleStorageException(ex, ++retryCount, "download", session, command);
             }
-          } else {
-            Exception ex =
-                new HttpResponseException(
-                    response.getStatusLine().getStatusCode(),
-                    EntityUtils.toString(response.getEntity()));
-            handleStorageException(ex, ++retryCount, "download", session, command);
           }
         } else {
           BlobId blobId = BlobId.of(remoteStorageLocation, stageFilePath);
@@ -423,12 +418,6 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
               logger.debug("Download unsuccessful {}", ex);
               handleStorageException(ex, ++retryCount, "download", session, command);
             }
-          } else {
-            Exception ex =
-                new HttpResponseException(
-                    response.getStatusLine().getStatusCode(),
-                    EntityUtils.toString(response.getEntity()));
-            handleStorageException(ex, ++retryCount, "download", session, command);
           }
         } else {
           BlobId blobId = BlobId.of(remoteStorageLocation, stageFilePath);
@@ -742,14 +731,6 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
       logger.debug(
           "Call returned for URL: {}",
           (ArgSupplier) () -> scrubPresignedUrl(this.stageInfo.getPresignedUrl()));
-
-      if (response.getStatusLine().getStatusCode() != 200) {
-        Exception ex =
-            new HttpResponseException(
-                response.getStatusLine().getStatusCode(),
-                EntityUtils.toString(response.getEntity()));
-        handleStorageException(ex, 0, "upload", session, null);
-      }
     } catch (URISyntaxException e) {
       throw new SnowflakeSQLLoggedException(
           session,
@@ -874,11 +855,14 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
     }
 
     if (ex instanceof StorageException) {
-      // NOTE: this code path only handle Access token based operation,
-      // presigned URL is not covered. Presigned Url do not raise
-      // StorageException
-
       StorageException se = (StorageException) ex;
+
+      if (se.getCode() == 403 && session != null && command != null) {
+        // A 403 indicates that the access token has expired,
+        // we need to refresh the GCS client with the new token
+        SnowflakeFileTransferAgent.renewExpiredToken(session, command, this);
+      }
+
       // If we have exceeded the max number of retries, propagate the error
       if (retryCount > getMaxRetries()) {
         throw new SnowflakeSQLLoggedException(
@@ -913,35 +897,37 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
           // ignore
         }
 
-        if (se.getCode() == 401 && session != null && command != null) {
-          // A 401 indicates that the access token has expired,
+        if (se.getCode() == 403 && session != null && command != null) {
+          // A 403 indicates that the access token has expired,
           // we need to refresh the GCS client with the new token
           SnowflakeFileTransferAgent.renewExpiredToken(session, command, this);
         }
       }
-    } else if (ex instanceof InterruptedException
-        || SnowflakeUtil.getRootCause(ex) instanceof SocketTimeoutException) {
-      if (retryCount > getMaxRetries()) {
+    } else {
+      if (ex instanceof InterruptedException
+          || SnowflakeUtil.getRootCause(ex) instanceof SocketTimeoutException) {
+        if (retryCount > getMaxRetries()) {
+          throw new SnowflakeSQLLoggedException(
+              session,
+              SqlState.SYSTEM_ERROR,
+              ErrorCode.IO_ERROR.getMessageCode(),
+              ex,
+              "Encountered exception during " + operation + ": " + ex.getMessage());
+        } else {
+          logger.debug(
+              "Encountered exception ({}) during {}, retry count: {}",
+              ex.getMessage(),
+              operation,
+              retryCount);
+        }
+      } else {
         throw new SnowflakeSQLLoggedException(
             session,
             SqlState.SYSTEM_ERROR,
             ErrorCode.IO_ERROR.getMessageCode(),
             ex,
             "Encountered exception during " + operation + ": " + ex.getMessage());
-      } else {
-        logger.debug(
-            "Encountered exception ({}) during {}, retry count: {}",
-            ex.getMessage(),
-            operation,
-            retryCount);
       }
-    } else {
-      throw new SnowflakeSQLLoggedException(
-          session,
-          SqlState.SYSTEM_ERROR,
-          ErrorCode.IO_ERROR.getMessageCode(),
-          ex,
-          "Encountered exception during " + operation + ": " + ex.getMessage());
     }
   }
 
@@ -1046,18 +1032,14 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
 
     try {
       String accessToken = (String) stage.getCredentials().get("GCS_ACCESS_TOKEN");
+      GoogleCredentials googleCreds;
       if (accessToken != null) {
-        // Using GoogleCredential with access token will cause IllegalStateException when the token
-        // is expired and trying to refresh, which cause error cannot be caught. Instead, set a
-        // header so we can caught the error code.
+        AccessToken googleAccessToken = new AccessToken(accessToken, null);
 
+        googleCreds = GoogleCredentials.create(googleAccessToken);
         // We are authenticated with an oauth access token.
         this.gcsClient =
-            StorageOptions.newBuilder()
-                .setHeaderProvider(
-                    FixedHeaderProvider.create("Authorization", "Bearer " + accessToken))
-                .build()
-                .getService();
+            StorageOptions.newBuilder().setCredentials(googleCreds).build().getService();
       } else {
         // Use anonymous authentication.
         this.gcsClient = StorageOptions.getUnauthenticatedInstance().getService();
