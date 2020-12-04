@@ -166,6 +166,18 @@ public class AbstractDriverIT {
   }
 
   /**
+   * Gets a connection with custom account name and some property set, useful for testing property
+   * on specific account
+   *
+   * @return Connection a database connection
+   * @throws SQLException raised if any error occurs
+   */
+  public static Connection getConnection(String accountName, Properties paramProperties)
+      throws SQLException {
+    return getConnection(DONT_INJECT_SOCKET_TIMEOUT, paramProperties, false, false, accountName);
+  }
+
+  /**
    * Gets a connection with default settings
    *
    * @return Connection a database connection
