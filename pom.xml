@@ -684,10 +684,6 @@
                        <pattern>google.iam</pattern>
                        <shadedPattern>${shadeBase}.google.iam</shadedPattern>
                      </relocation>
-                     <relocation>
-                       <pattern>storage</pattern>
-                       <shadedPattern>${shadeBase}.storage</shadedPattern>
-                     </relocation>
                       <relocation>
                        <pattern>io.opencensus</pattern>
                        <shadedPattern>${shadeBase}.opencensus</shadedPattern>
@@ -745,6 +741,7 @@
                             <exclude>.netbeans_automatic_build</exclude>
                             <exclude>git.properties</exclude>
                             <exclude>google-http-client.properties</exclude>
+                            <exclude>storage.v1.json</exclude> <!-- This is just a documentation file, not needed-->
                          </excludes>
                       </filter>
                       <filter>
@@ -763,6 +760,7 @@
                           <include>com/google/common/collect/**</include>
                           <include>com/google/common/graph/**</include>
                           <include>com/google/common/math/**</include>
+                          <include>com/google/common/util/concurrent/**</include>
                         </includes>
                       </filter>
                       <filter>
