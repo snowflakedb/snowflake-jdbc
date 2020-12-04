@@ -1284,8 +1284,9 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView {
       }
 
       // Filter out files that are already existing in the destination.
-      // GCS may or may not use presigned URL
-      if (!overwrite && !storageClient.requirePresignedUrl()) {
+      // GCS doesn't have permission to list in the presigned url, so we'll
+      // always overwrite.
+      if (!overwrite && stageInfo.getStageType() != StageInfo.StageType.GCS) {
         logger.debug("Start filtering");
 
         filterExistingFiles();
@@ -2204,13 +2205,6 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView {
         } catch (Exception ex) {
           logger.debug("Listing objects for filtering encountered exception: {}", ex.getMessage());
 
-          // Need to unwrap StorageProviderException since handleStorageException only handle base
-          // cause.
-          if (ex instanceof StorageProviderException) {
-            ex =
-                (Exception)
-                    ex.getCause(); // Cause of StorageProviderException is always an Exception
-          }
           storageClient.handleStorageException(ex, ++retryCount, "listObjects", session, command);
         }
       } while (retryCount <= storageClient.getMaxRetries());
