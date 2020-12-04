@@ -65,7 +65,7 @@ public class HttpUtil {
   static final int DEFAULT_IDLE_CONNECTION_TIMEOUT = 5; // secs
   static final int DEFAULT_DOWNLOADED_CONDITION_TIMEOUT = 3600; // secs
 
-  public static final String JDBC_TTL_JVM = "net.snowflake.jdbc.ttl";
+  public static final String JDBC_TTL = "net.snowflake.jdbc.ttl";
 
   /** The unique httpClient shared by all connections. This will benefit long- lived clients */
   private static Map<OCSPMode, CloseableHttpClient> httpClient = new ConcurrentHashMap<>();
@@ -177,13 +177,13 @@ public class HttpUtil {
     // set timeout so that we don't wait forever.
     // Setup the default configuration for all requests on this client
 
-    String ttlSystemProperty = System.getProperty(JDBC_TTL_JVM);
+    String ttlSystemProperty = System.getProperty(JDBC_TTL);
     int timeToLive = DEFAULT_TTL;
     if (ttlSystemProperty != null) {
       try {
         timeToLive = Integer.parseInt(ttlSystemProperty);
       } catch (NumberFormatException ex) {
-        logger.info("Failed to parse the system parameter {}", JDBC_TTL_JVM, ttlSystemProperty);
+        logger.info("Failed to parse the system parameter {}", JDBC_TTL, ttlSystemProperty);
       }
     }
     logger.debug("time to live in connection pooling manager: {}", timeToLive);
