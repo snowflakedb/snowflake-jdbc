@@ -1286,8 +1286,8 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView {
       // Filter out files that are already existing in the destination.
       // GCS may or may not use presigned URL
       if (!overwrite
-          && stageInfo.getStageType() != StageInfo.StageType.GCS
-          && !storageClient.requirePresignedUrl()) {
+          && (stageInfo.getStageType() != StageInfo.StageType.GCS
+              || !storageClient.requirePresignedUrl())) {
         logger.debug("Start filtering");
 
         filterExistingFiles();
