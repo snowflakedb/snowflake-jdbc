@@ -25,13 +25,13 @@ public class SecureStorageAppleManager implements SecureStorageManager {
     return new SecureStorageAppleManager();
   }
 
-  public SecureStorageStatus setCredential(String host, String user, String cred) {
+  public SecureStorageStatus setCredential(String host, String user, String type, String cred) {
     if (Strings.isNullOrEmpty(cred)) {
       logger.info("No credential provided");
       return SecureStorageStatus.SUCCESS;
     }
 
-    String target = SecureStorageManager.convertTarget(host, user);
+    String target = SecureStorageManager.convertTarget(host, user, type);
     byte[] targetBytes = target.getBytes(StandardCharsets.UTF_8);
     byte[] userBytes = user.toUpperCase().getBytes(StandardCharsets.UTF_8);
     byte[] credBytes = cred.getBytes(StandardCharsets.UTF_8);
@@ -90,8 +90,8 @@ public class SecureStorageAppleManager implements SecureStorageManager {
     return SecureStorageStatus.SUCCESS;
   }
 
-  public String getCredential(String host, String user) {
-    String target = SecureStorageManager.convertTarget(host, user);
+  public String getCredential(String host, String user, String type) {
+    String target = SecureStorageManager.convertTarget(host, user, type);
     byte[] targetBytes = target.getBytes(StandardCharsets.UTF_8);
     byte[] userBytes = user.toUpperCase().getBytes(StandardCharsets.UTF_8);
 
@@ -139,8 +139,8 @@ public class SecureStorageAppleManager implements SecureStorageManager {
     }
   }
 
-  public SecureStorageStatus deleteCredential(String host, String user) {
-    String target = SecureStorageManager.convertTarget(host, user);
+  public SecureStorageStatus deleteCredential(String host, String user, String type) {
+    String target = SecureStorageManager.convertTarget(host, user, type);
     byte[] targetBytes = target.getBytes(StandardCharsets.UTF_8);
     byte[] userBytes = user.toUpperCase().getBytes(StandardCharsets.UTF_8);
 
@@ -201,6 +201,13 @@ public class SecureStorageAppleManager implements SecureStorageManager {
     /** This function is used only for unit test */
     public static void setInstance(SecurityLib instance) {
       INSTANCE = instance;
+    }
+
+    /** This function is a helper function for testing */
+    public static void resetInstance() {
+      if (Constants.getOS() == Constants.OS.MAC) {
+        INSTANCE = ResourceHolder.INSTANCE;
+      }
     }
   }
 

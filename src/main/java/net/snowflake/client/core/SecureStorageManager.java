@@ -12,22 +12,28 @@ interface SecureStorageManager {
   String DRIVER_NAME = "SNOWFLAKE-JDBC-DRIVER";
   int COLON_CHAR_LENGTH = 1;
 
-  SecureStorageStatus setCredential(String host, String user, String token);
+  SecureStorageStatus setCredential(String host, String user, String type, String token);
 
-  public String getCredential(String host, String user);
+  String getCredential(String host, String user, String type);
 
-  SecureStorageStatus deleteCredential(String host, String user);
+  SecureStorageStatus deleteCredential(String host, String user, String type);
 
-  static String convertTarget(String host, String user) {
+  static String convertTarget(String host, String user, String type) {
     StringBuilder target =
         new StringBuilder(
-            host.length() + user.length() + DRIVER_NAME.length() + 2 * COLON_CHAR_LENGTH);
+            host.length()
+                + user.length()
+                + DRIVER_NAME.length()
+                + type.length()
+                + 3 * COLON_CHAR_LENGTH);
 
     target.append(host.toUpperCase());
     target.append(":");
     target.append(user.toUpperCase());
     target.append(":");
     target.append(DRIVER_NAME);
+    target.append(":");
+    target.append(type.toUpperCase());
 
     return target.toString();
   }
