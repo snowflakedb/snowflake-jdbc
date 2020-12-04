@@ -238,7 +238,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
           logger.debug(
               "Call returned for URL: {}",
               (ArgSupplier) () -> scrubPresignedUrl(this.stageInfo.getPresignedUrl()));
-          if (response.getStatusLine().getStatusCode() == 200) {
+          if (isSuccessStatusCode(response.getStatusLine().getStatusCode())) {
             try {
               InputStream bodyStream = response.getEntity().getContent();
               byte[] buffer = new byte[8 * 1024];
@@ -400,7 +400,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
           logger.debug(
               "Call returned for URL: {}",
               (ArgSupplier) () -> scrubPresignedUrl(this.stageInfo.getPresignedUrl()));
-          if (response.getStatusLine().getStatusCode() == 200) {
+          if (isSuccessStatusCode(response.getStatusLine().getStatusCode())) {
             try {
               inputStream = response.getEntity().getContent();
 
@@ -743,7 +743,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
           "Call returned for URL: {}",
           (ArgSupplier) () -> scrubPresignedUrl(this.stageInfo.getPresignedUrl()));
 
-      if (response.getStatusLine().getStatusCode() != 200) {
+      if (!isSuccessStatusCode(response.getStatusLine().getStatusCode())) {
         Exception ex =
             new HttpResponseException(
                 response.getStatusLine().getStatusCode(),
@@ -1078,5 +1078,9 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
     } catch (Exception ex) {
       throw new IllegalArgumentException("invalid_gcs_credentials");
     }
+  }
+
+  private static boolean isSuccessStatusCode(int code) {
+    return code < 300 && code >= 200;
   }
 }
