@@ -5,45 +5,26 @@
 package net.snowflake.client.core;
 
 import com.google.common.base.Strings;
+import java.net.MalformedURLException;
+import java.net.URL;
+import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 
 public class CredentialManager {
   private static final SFLogger logger = SFLoggerFactory.getLogger(CredentialManager.class);
-
   private SecureStorageManager secureStorageManager;
 
-  private static final String ID_TOKEN = "ID_TOKEN";
-  private static final String MFA_TOKEN = "MFATOKEN";
-
   private CredentialManager() {
-    initSecureStorageManager();
-  }
-
-  private void initSecureStorageManager() {
     if (Constants.getOS() == Constants.OS.MAC) {
       secureStorageManager = SecureStorageAppleManager.builder();
     } else if (Constants.getOS() == Constants.OS.WINDOWS) {
       secureStorageManager = SecureStorageWindowsManager.builder();
     } else if (Constants.getOS() == Constants.OS.LINUX) {
-      secureStorageManager = SecureStorageLinuxManager.getInstance();
+      secureStorageManager = SecureStorageLinuxManager.builder();
     } else {
       logger.error("Unsupported Operating System. Expected: OSX, Windows, Linux");
     }
-  }
-
-  /** Helper function for tests to go back to normal settings. */
-  void resetSecureStorageManager() {
-    initSecureStorageManager();
-  }
-
-  /**
-   * Testing purpose. Inject a mock manager.
-   *
-   * @param manager
-   */
-  void injectSecureStorageManager(SecureStorageManager manager) {
-    secureStorageManager = manager;
   }
 
   private static class CredentialManagerHolder {
@@ -59,90 +40,53 @@ public class CredentialManager {
    *
    * @param loginInput login input to attach id token
    */
-  void fillCachedIdToken(SFLoginInput loginInput) throws SFException {
-    fillCachedCredential(loginInput, ID_TOKEN);
-  }
-
-  /**
-   * Reuse the cached mfa token stored locally
-   *
-   * @param loginInput login input to attach mfa token
-   */
-  void fillCachedMfaToken(SFLoginInput loginInput) throws SFException {
-    fillCachedCredential(loginInput, MFA_TOKEN);
-  }
-
-  /**
-   * Reuse the cached token stored locally
-   *
-   * @param loginInput login input to attach token
-   * @param credType credential type to retrieve
-   */
-  synchronized void fillCachedCredential(SFLoginInput loginInput, String credType)
-      throws SFException {
-    String cred =
+  synchronized void fillCachedIdToken(SFLoginInput loginInput) throws SFException {
+    String idToken =
         secureStorageManager.getCredential(
-            loginInput.getHostFromServerUrl(), loginInput.getUserName(), credType);
-    if (cred == null) {
-      logger.debug("retrieved %s is null", credType);
-    }
+            extractHostFromServerUrl(loginInput.getServerUrl()), loginInput.getUserName());
 
-    // cred can be null
-    if (credType == ID_TOKEN) {
-      loginInput.setIdToken(cred);
-    } else if (credType == MFA_TOKEN) {
-      loginInput.setMfaToken(cred);
-    } else {
-      logger.debug("unrecognized type %s for local cached credential", credType);
+    if (idToken == null) {
+      logger.debug("retrieved idToken is null");
     }
+    loginInput.setIdToken(idToken); // idToken can be null
     return;
-  }
-
-  /**
-   * Store ID Token
-   *
-   * @param loginInput loginInput to denote to the cache
-   * @param loginOutput loginOutput to denote to the cache
-   */
-  void writeIdToken(SFLoginInput loginInput, SFLoginOutput loginOutput) throws SFException {
-    writeTemporaryCredential(loginInput, loginOutput.getIdToken(), ID_TOKEN);
-  }
-
-  /**
-   * Store MFA Token
-   *
-   * @param loginInput loginInput to denote to the cache
-   * @param loginOutput loginOutput to denote to the cache
-   */
-  void writeMfaToken(SFLoginInput loginInput, SFLoginOutput loginOutput) throws SFException {
-    writeTemporaryCredential(loginInput, loginOutput.getMfaToken(), MFA_TOKEN);
   }
 
   /**
    * Store the temporary credential
    *
    * @param loginInput loginInput to denote to the cache
-   * @param cred the credential
-   * @param credType type of the credential
+   * @param loginOutput loginOutput to denote to the cache
    */
-  synchronized void writeTemporaryCredential(SFLoginInput loginInput, String cred, String credType)
+  synchronized void writeTemporaryCredential(SFLoginInput loginInput, SFLoginOutput loginOutput)
       throws SFException {
-    if (Strings.isNullOrEmpty(cred)) {
-      logger.debug("no %s is given.", credType);
-      return; // no credential
+    String idToken = loginOutput.getIdToken();
+    if (Strings.isNullOrEmpty(idToken)) {
+      logger.debug("no idToken is given.");
+      return; // no idToken
     }
 
     secureStorageManager.setCredential(
-        loginInput.getHostFromServerUrl(), loginInput.getUserName(), credType, cred);
+        extractHostFromServerUrl(loginInput.getServerUrl()), loginInput.getUserName(), idToken);
   }
 
   /** Delete the id token cache */
   void deleteIdTokenCache(String host, String user) {
-    secureStorageManager.deleteCredential(host, user, ID_TOKEN);
+    secureStorageManager.deleteCredential(host, user);
   }
 
-  /** Delete the mfa token cache */
-  void deleteMfaTokenCache(String host, String user) {
-    secureStorageManager.deleteCredential(host, user, MFA_TOKEN);
+  /**
+   * Used to extract host name from a well formated internal serverUrl, e.g., serverUrl in
+   * SFLoginInput.
+   */
+  private String extractHostFromServerUrl(String serverUrl) throws SFException {
+    URL url = null;
+    try {
+      url = new URL(serverUrl);
+    } catch (MalformedURLException e) {
+      logger.error("Invalid serverUrl for retrieving host name");
+      throw new SFException(ErrorCode.INTERNAL_ERROR, "Invalid serverUrl for retrieving host name");
+    }
+    return url.getHost();
   }
 }

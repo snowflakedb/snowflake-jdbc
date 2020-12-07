@@ -65,7 +65,6 @@ public class SessionUtil {
   private static final String SF_HEADER_TOKEN_TAG = "Token";
   private static final String CLIENT_STORE_TEMPORARY_CREDENTIAL =
       "CLIENT_STORE_TEMPORARY_CREDENTIAL";
-  private static final String CLIENT_REQUEST_MFA_TOKEN = "CLIENT_REQUEST_MFA_TOKEN";
   private static final String SERVICE_NAME = "SERVICE_NAME";
   private static final String CLIENT_IN_BAND_TELEMETRY_ENABLED = "CLIENT_TELEMETRY_ENABLED";
   private static final String CLIENT_OUT_OF_BAND_TELEMETRY_ENABLED =
@@ -160,7 +159,6 @@ public class SessionUtil {
               CLIENT_IN_BAND_TELEMETRY_ENABLED,
               CLIENT_OUT_OF_BAND_TELEMETRY_ENABLED,
               CLIENT_STORE_TEMPORARY_CREDENTIAL,
-              CLIENT_REQUEST_MFA_TOKEN,
               "JDBC_USE_JSON_PARSER",
               "AUTOCOMMIT",
               "JDBC_EFFICIENT_CHUNK_STORAGE",
@@ -197,10 +195,6 @@ public class SessionUtil {
           .getAuthenticator()
           .equalsIgnoreCase(ClientAuthnDTO.AuthenticatorType.SNOWFLAKE_JWT.name())) {
         return ClientAuthnDTO.AuthenticatorType.SNOWFLAKE_JWT;
-      } else if (loginInput
-          .getAuthenticator()
-          .equalsIgnoreCase(ClientAuthnDTO.AuthenticatorType.USERNAME_PASSWORD_MFA.name())) {
-        return ClientAuthnDTO.AuthenticatorType.USERNAME_PASSWORD_MFA;
       } else if (!loginInput
           .getAuthenticator()
           .equalsIgnoreCase(ClientAuthnDTO.AuthenticatorType.SNOWFLAKE.name())) {
@@ -265,13 +259,11 @@ public class SessionUtil {
       }
     }
 
-    if (authenticator.equals(ClientAuthnDTO.AuthenticatorType.USERNAME_PASSWORD_MFA)) {
-      if (Constants.getOS() == Constants.OS.MAC || Constants.getOS() == Constants.OS.WINDOWS) {
-        loginInput.getSessionParameters().put(CLIENT_REQUEST_MFA_TOKEN, true);
-      }
+    boolean isClientStoreTemporaryCredential =
+        asBoolean(loginInput.getSessionParameters().get(CLIENT_STORE_TEMPORARY_CREDENTIAL));
+    if (isClientStoreTemporaryCredential) {
+      CredentialManager.getInstance().fillCachedIdToken(loginInput);
     }
-
-    preNewSession(loginInput);
 
     try {
       return newSession(loginInput, connectionPropertiesMap, tracingLevel);
@@ -279,16 +271,6 @@ public class SessionUtil {
       // Id Token expired. We run newSession again with id_token cache cleared
       logger.debug("ID Token being used has expired. Reauthenticating with ID Token cleared...");
       return newSession(loginInput, connectionPropertiesMap, tracingLevel);
-    }
-  }
-
-  private static void preNewSession(SFLoginInput loginInput) throws SFException {
-    if (asBoolean(loginInput.getSessionParameters().get(CLIENT_STORE_TEMPORARY_CREDENTIAL))) {
-      CredentialManager.getInstance().fillCachedIdToken(loginInput);
-    }
-
-    if (asBoolean(loginInput.getSessionParameters().get(CLIENT_REQUEST_MFA_TOKEN))) {
-      CredentialManager.getInstance().fillCachedMfaToken(loginInput);
     }
   }
 
@@ -326,7 +308,6 @@ public class SessionUtil {
     String sessionId;
     long masterTokenValidityInSeconds;
     String idToken;
-    String mfaToken;
     String databaseVersion = null;
     int databaseMajorVersion = 0;
     int databaseMinorVersion = 0;
@@ -437,13 +418,6 @@ public class SessionUtil {
           || authenticatorType == ClientAuthnDTO.AuthenticatorType.SNOWFLAKE_JWT) {
         data.put(ClientAuthnParameter.AUTHENTICATOR.name(), authenticatorType.name());
         data.put(ClientAuthnParameter.TOKEN.name(), loginInput.getToken());
-      } else if (authenticatorType == ClientAuthnDTO.AuthenticatorType.USERNAME_PASSWORD_MFA) {
-        // No authenticator name should be added here, since this will be treated as snowflake
-        // default authenticator by backend
-        data.put(ClientAuthnParameter.PASSWORD.name(), loginInput.getPassword());
-        if (loginInput.getMfaToken() != null) {
-          data.put(ClientAuthnParameter.TOKEN.name(), loginInput.getMfaToken());
-        }
       }
 
       // map of client environment parameters, including connection parameters
@@ -583,16 +557,19 @@ public class SessionUtil {
         if (errorCode == Constants.ID_TOKEN_INVALID_LOGIN_REQUEST_GS_CODE) {
           // clean id_token first
           loginInput.setIdToken(null);
-          deleteIdTokenCache(loginInput.getHostFromServerUrl(), loginInput.getUserName());
+          try {
+            URL url = new URL(loginInput.getServerUrl());
+            String host = url.getHost();
+            logger.debug("HOST: {}", host);
+            deleteIdTokenCache(host, loginInput.getUserName());
+          } catch (IOException ex) {
+            throw new SFException(ex, ErrorCode.INTERNAL_ERROR, "unexpected URL syntax exception");
+          }
 
           logger.debug(
               "ID Token Expired / Not Applicable. Reauthenticating without ID Token...: {}",
               errorCode);
           SnowflakeUtil.checkErrorAndThrowExceptionIncludingReauth(jsonNode);
-        }
-
-        if (authenticatorType == ClientAuthnDTO.AuthenticatorType.USERNAME_PASSWORD_MFA) {
-          deleteMfaTokenCache(loginInput.getHostFromServerUrl(), loginInput.getUserName());
         }
 
         throw new SnowflakeSQLException(
@@ -606,7 +583,6 @@ public class SessionUtil {
       sessionToken = jsonNode.path("data").path("token").asText();
       masterToken = jsonNode.path("data").path("masterToken").asText();
       idToken = nullStringAsEmptyString(jsonNode.path("data").path("idToken").asText());
-      mfaToken = nullStringAsEmptyString(jsonNode.path("data").path("mfaToken").asText());
       masterTokenValidityInSeconds = jsonNode.path("data").path("masterValidityInSeconds").asLong();
       String serverVersion = jsonNode.path("data").path("serverVersion").asText();
       sessionId = jsonNode.path("data").path("sessionId").asText();
@@ -706,7 +682,6 @@ public class SessionUtil {
             masterToken,
             masterTokenValidityInSeconds,
             idToken,
-            mfaToken,
             databaseVersion,
             databaseMajorVersion,
             databaseMinorVersion,
@@ -719,13 +694,8 @@ public class SessionUtil {
             commonParams);
 
     if (consentCacheIdToken) {
-      CredentialManager.getInstance().writeIdToken(loginInput, ret);
+      CredentialManager.getInstance().writeTemporaryCredential(loginInput, ret);
     }
-
-    if (asBoolean(loginInput.getSessionParameters().get(CLIENT_REQUEST_MFA_TOKEN))) {
-      CredentialManager.getInstance().writeMfaToken(loginInput, ret);
-    }
-
     return ret;
   }
 
@@ -746,10 +716,6 @@ public class SessionUtil {
   /** Delete the id token cache */
   public static void deleteIdTokenCache(String host, String user) {
     CredentialManager.getInstance().deleteIdTokenCache(host, user);
-  }
-
-  public static void deleteMfaTokenCache(String host, String user) {
-    CredentialManager.getInstance().deleteMfaTokenCache(host, user);
   }
 
   /**
@@ -825,10 +791,11 @@ public class SessionUtil {
       setServiceNameHeader(loginInput, postRequest);
 
       logger.debug(
-          "request type: {}, old session token: {}, " + "master token: {}",
+          "request type: {}, old session token: {}, " + "master token: {}, id token: {}",
           requestType.value,
           (ArgSupplier) () -> loginInput.getSessionToken() != null ? "******" : null,
-          (ArgSupplier) () -> loginInput.getMasterToken() != null ? "******" : null);
+          (ArgSupplier) () -> loginInput.getMasterToken() != null ? "******" : null,
+          (ArgSupplier) () -> loginInput.getIdToken() != null ? "******" : null);
 
       String theString =
           HttpUtil.executeGeneralRequest(

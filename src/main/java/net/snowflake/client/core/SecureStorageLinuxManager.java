@@ -30,7 +30,7 @@ public class SecureStorageLinuxManager implements SecureStorageManager {
   private static final long CACHE_FILE_LOCK_EXPIRATION_IN_SECONDS = 60L;
   private FileCacheManager fileCacheManager;
 
-  private final Map<String, Map<String, String>> localCredCache = new HashMap<>();
+  private final Map<String, Map<String, String>> idTokenCache = new HashMap<>();
 
   private SecureStorageLinuxManager() {
     fileCacheManager =
@@ -43,67 +43,58 @@ public class SecureStorageLinuxManager implements SecureStorageManager {
             .build();
   }
 
-  private static class SecureStorageLinuxManagerHolder {
-    private static final SecureStorageLinuxManager INSTANCE = new SecureStorageLinuxManager();
+  public static SecureStorageLinuxManager builder() {
+    return new SecureStorageLinuxManager();
   }
 
-  public static SecureStorageLinuxManager getInstance() {
-    return SecureStorageLinuxManagerHolder.INSTANCE;
-  }
-
-  private ObjectNode localCacheToJson() {
-    ObjectNode res = mapper.createObjectNode();
-    for (Map.Entry<String, Map<String, String>> elem : localCredCache.entrySet()) {
-      String elemHost = elem.getKey();
-      Map<String, String> hostMap = elem.getValue();
-      ObjectNode hostNode = mapper.createObjectNode();
-      for (Map.Entry<String, String> elem0 : hostMap.entrySet()) {
-        hostNode.put(elem0.getKey(), elem0.getValue());
-      }
-      res.set(elemHost, hostNode);
-    }
-    return res;
-  }
-
-  public synchronized SecureStorageStatus setCredential(
-      String host, String user, String type, String token) {
+  public SecureStorageStatus setCredential(String host, String user, String token) {
     if (Strings.isNullOrEmpty(token)) {
       logger.info("No token provided");
       return SecureStorageStatus.SUCCESS;
     }
 
-    localCredCache.computeIfAbsent(host.toUpperCase(), newMap -> new HashMap<>());
+    idTokenCache.computeIfAbsent(host.toUpperCase(), newMap -> new HashMap<>());
 
-    Map<String, String> hostMap = localCredCache.get(host.toUpperCase());
-    hostMap.put(SecureStorageManager.convertTarget(host, user, type), token);
+    Map<String, String> currentUserMap = idTokenCache.get(host.toUpperCase());
+    currentUserMap.put(user.toUpperCase(), token);
 
-    fileCacheManager.writeCacheFile(localCacheToJson());
+    ObjectNode out = mapper.createObjectNode();
+    for (Map.Entry<String, Map<String, String>> elem : idTokenCache.entrySet()) {
+      String elemHost = elem.getKey();
+      Map<String, String> userMap = elem.getValue();
+      ObjectNode userNode = mapper.createObjectNode();
+      for (Map.Entry<String, String> elem0 : userMap.entrySet()) {
+        userNode.put(elem0.getKey(), elem0.getValue());
+      }
+      out.set(elemHost, userNode);
+    }
+    fileCacheManager.writeCacheFile(out);
+
     return SecureStorageStatus.SUCCESS;
   }
 
-  public synchronized String getCredential(String host, String user, String type) {
+  public String getCredential(String host, String user) {
     JsonNode res = fileCacheManager.readCacheFile();
     readJsonStoreCache(res);
 
-    Map<String, String> hostMap = localCredCache.get(host.toUpperCase());
+    Map<String, String> userMap = idTokenCache.get(host.toUpperCase());
 
-    if (hostMap == null) {
+    if (userMap == null) {
       return null;
     }
 
-    return hostMap.get(SecureStorageManager.convertTarget(host, user, type));
+    return userMap.get(user.toUpperCase());
   }
 
-  /** May delete credentials which doesn't belong to this process */
-  public synchronized SecureStorageStatus deleteCredential(String host, String user, String type) {
-    Map<String, String> hostMap = localCredCache.get(host.toUpperCase());
-    if (hostMap != null) {
-      hostMap.remove(SecureStorageManager.convertTarget(host, user, type));
-      if (hostMap.isEmpty()) {
-        localCredCache.remove(host.toUpperCase());
-      }
-    }
-    fileCacheManager.writeCacheFile(localCacheToJson());
+  /**
+   * Since Linux doesn't have secure local storage right now, this function's input parameters are
+   * only here to be consistent with Mac/Win platform. We don't really use these parameters. If in
+   * the future, deletion for a specific credential is needed, we can change this function to
+   * satisfy it."
+   */
+  public SecureStorageStatus deleteCredential(String host, String user) {
+    fileCacheManager.deleteCacheFile();
+    idTokenCache.clear();
     return SecureStorageStatus.SUCCESS;
   }
 
@@ -115,13 +106,13 @@ public class SecureStorageLinuxManager implements SecureStorageManager {
     for (Iterator<Map.Entry<String, JsonNode>> itr = m.fields(); itr.hasNext(); ) {
       Map.Entry<String, JsonNode> hostMap = itr.next();
       String host = hostMap.getKey();
-      if (!localCredCache.containsKey(host)) {
-        localCredCache.put(host, new HashMap<>());
+      if (!idTokenCache.containsKey(host)) {
+        idTokenCache.put(host, new HashMap<>());
       }
       JsonNode userJsonNode = hostMap.getValue();
       for (Iterator<Map.Entry<String, JsonNode>> itr0 = userJsonNode.fields(); itr0.hasNext(); ) {
         Map.Entry<String, JsonNode> userMap = itr0.next();
-        localCredCache.get(host).put(userMap.getKey(), userMap.getValue().asText());
+        idTokenCache.get(host).put(userMap.getKey(), userMap.getValue().asText());
       }
     }
   }
