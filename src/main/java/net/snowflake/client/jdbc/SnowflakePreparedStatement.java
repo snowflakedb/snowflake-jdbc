@@ -14,4 +14,10 @@ public interface SnowflakePreparedStatement {
    * @throws SQLException
    */
   ResultSet executeAsyncQuery() throws SQLException;
+
+  /**
+   * Set variant type
+   * @param x
+   */
+  void setVariant(int parameterIndex, String x);
 }

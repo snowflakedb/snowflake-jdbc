@@ -3,59 +3,33 @@
  */
 package net.snowflake.client.jdbc;
 
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.*;
-import java.math.BigDecimal;
-import java.nio.channels.FileChannel;
-import java.sql.Connection;
-import java.sql.DatabaseMetaData;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.sql.Time;
-import java.sql.Timestamp;
-import java.sql.Types;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.List;
-import java.util.Properties;
-import java.util.TimeZone;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.UUID;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import net.snowflake.client.AbstractDriverIT;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryOthers;
 import net.snowflake.common.core.SqlState;
 import org.apache.commons.io.FileUtils;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.TemporaryFolder;
+
+import java.io.*;
+import java.math.BigDecimal;
+import java.nio.channels.FileChannel;
+import java.sql.*;
+import java.text.SimpleDateFormat;
+import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.*;
 
 /** General integration tests */
 @Category(TestCategoryOthers.class)
@@ -2657,6 +2631,19 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
 
       closeSQLObjects(resultSet, preparedStatement, connection);
     }
+  }
+
+  @Test
+  public void testVariantBinding() throws SQLException
+  {
+    Connection con = getConnection();
+    Statement statement = con.createStatement();
+    statement.execute("alter session set TYPESYSTEM_CAST_STRING_TO_VARIANT=true");
+    statement.execute("create or replace table v (col1 variant)");
+    PreparedStatement prepSt = con.prepareStatement("insert into v values (?)");
+    prepSt.unwrap(SnowflakePreparedStatement.class).setVariant(1, "{ \"a\": 1, \"b\": \"foo\" }");
+    prepSt.addBatch();
+    prepSt.execute();
   }
 
   @Test

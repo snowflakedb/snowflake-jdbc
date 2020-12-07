@@ -4,18 +4,19 @@
 
 package net.snowflake.client.jdbc;
 
-import java.io.InputStream;
-import java.io.Reader;
-import java.math.BigDecimal;
-import java.net.URL;
-import java.sql.*;
-import java.sql.Date;
-import java.util.*;
 import net.snowflake.client.core.*;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SFBinary;
 import net.snowflake.common.core.SqlState;
+
+import java.io.InputStream;
+import java.io.Reader;
+import java.math.BigDecimal;
+import java.net.URL;
+import java.sql.Date;
+import java.sql.*;
+import java.util.*;
 
 class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
     implements PreparedStatement, SnowflakePreparedStatement {
@@ -249,6 +250,13 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
   }
 
   @Override
+  public void setVariant(int parameterIndex, String x)
+  {
+    ParameterBindingDTO binding = new ParameterBindingDTO(SnowflakeType.VARIANT.name(), x);
+    parameterBindings.put(String.valueOf(parameterIndex), binding);
+  }
+
+  @Override
   public void setString(int parameterIndex, String x) throws SQLException {
     logger.debug("setString(parameterIndex: {}, String x)", parameterIndex);
 
@@ -257,6 +265,8 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
             SnowflakeUtil.javaTypeToSFTypeString(Types.VARCHAR, connection.getSfSession()), x);
     parameterBindings.put(String.valueOf(parameterIndex), binding);
   }
+
+
 
   @Override
   public void setBytes(int parameterIndex, byte[] x) throws SQLException {
