@@ -169,7 +169,7 @@
     <dependency>
       <groupId>net.snowflake</groupId>
       <artifactId>snowflake-common</artifactId>
-      <version>5.1.0</version>
+      <version>4.0.1</version>
       <type>jar</type>
       <scope>compile</scope>
     </dependency>

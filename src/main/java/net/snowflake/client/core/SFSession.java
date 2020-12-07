@@ -66,7 +66,6 @@ public class SFSession {
   private String sessionId;
 
   private String idToken;
-  private String mfaToken;
   private String privateKeyFileLocation;
   private String privateKeyPassword;
   private PrivateKey privateKey;
@@ -500,18 +499,6 @@ public class SFSession {
   }
 
   /**
-   * Returns true if authenticator is UsernamePasswordMFA native
-   *
-   * @return true or false
-   */
-  boolean isUsernamePasswordMFAAuthenticator() {
-    String authenticator = (String) connectionPropertiesMap.get(SFSessionProperty.AUTHENTICATOR);
-    return ClientAuthnDTO.AuthenticatorType.USERNAME_PASSWORD_MFA
-        .name()
-        .equalsIgnoreCase(authenticator);
-  }
-
-  /**
    * Open a new database session
    *
    * @throws SFException this is a runtime exception
@@ -590,6 +577,7 @@ public class SFSession {
         .setUserName((String) connectionPropertiesMap.get(SFSessionProperty.USER))
         .setPassword((String) connectionPropertiesMap.get(SFSessionProperty.PASSWORD))
         .setToken((String) connectionPropertiesMap.get(SFSessionProperty.TOKEN))
+        .setIdToken((String) connectionPropertiesMap.get(SFSessionProperty.ID_TOKEN))
         .setPasscodeInPassword(passcodeInPassword)
         .setPasscode((String) connectionPropertiesMap.get(SFSessionProperty.PASSCODE))
         .setConnectionTimeout(httpClientConnectionTimeout)
@@ -614,7 +602,6 @@ public class SFSession {
     sessionToken = loginOutput.getSessionToken();
     masterToken = loginOutput.getMasterToken();
     idToken = loginOutput.getIdToken();
-    mfaToken = loginOutput.getMfaToken();
     databaseVersion = loginOutput.getDatabaseVersion();
     databaseMajorVersion = loginOutput.getDatabaseMajorVersion();
     databaseMinorVersion = loginOutput.getDatabaseMinorVersion();
@@ -709,9 +696,7 @@ public class SFSession {
       }
     }
 
-    if (isSnowflakeAuthenticator()
-        || isOKTAAuthenticator()
-        || isUsernamePasswordMFAAuthenticator()) {
+    if (isSnowflakeAuthenticator() || isOKTAAuthenticator()) {
       // userName and password are expected for both Snowflake and Okta.
       String userName = (String) connectionPropertiesMap.get(SFSessionProperty.USER);
       if (Strings.isNullOrEmpty(userName)) {
@@ -821,7 +806,6 @@ public class SFSession {
         .setSessionToken(sessionToken)
         .setMasterToken(masterToken)
         .setIdToken(idToken)
-        .setMfaToken(mfaToken)
         .setLoginTimeout(loginTimeout)
         .setDatabaseName(this.getDatabase())
         .setSchemaName(this.getSchema())
@@ -1286,10 +1270,6 @@ public class SFSession {
 
   public String getIdToken() {
     return idToken;
-  }
-
-  public String getMfaToken() {
-    return mfaToken;
   }
 
   public boolean isStoreTemporaryCredential() {

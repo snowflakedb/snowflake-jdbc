@@ -24,6 +24,7 @@ import net.snowflake.client.core.*;
 import net.snowflake.common.core.ClientAuthnDTO;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.client.methods.HttpPost;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
@@ -114,6 +115,11 @@ public class SSOConnectionTest {
   private static final String MOCK_NEW_MASTER_TOKEN = "MOCK_NEW_MASTER_TOKEN";
   private static final String ID_TOKEN_AUTHENTICATOR = "ID_TOKEN";
   private static ObjectMapper mapper = new ObjectMapper();
+
+  @BeforeClass
+  public static void setUpClass() throws Throwable {
+    Class.forName("net.snowflake.client.jdbc.SnowflakeDriver");
+  }
 
   class HttpUtilResponseDataSSODTO {
     public String proofKey;
@@ -312,6 +318,7 @@ public class SSOConnectionTest {
       assertThat("token", sfcon.getSfSession().getSessionToken(), equalTo(MOCK_SESSION_TOKEN));
       assertThat("idToken", sfcon.getSfSession().getIdToken(), equalTo(MOCK_ID_TOKEN));
 
+      // To be changed
       // second connection reads the cache and use the id token to get the
       // session token.
       Connection conSecond = DriverManager.getConnection(url, properties);
@@ -322,4 +329,5 @@ public class SSOConnectionTest {
       assertThat("idToken", sfcon.getSfSession().getIdToken(), equalTo(MOCK_ID_TOKEN));
     }
   }
+  // }
 }

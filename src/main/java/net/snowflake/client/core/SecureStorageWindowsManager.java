@@ -5,7 +5,11 @@
 package net.snowflake.client.core;
 
 import com.google.common.base.Strings;
-import com.sun.jna.*;
+import com.sun.jna.Memory;
+import com.sun.jna.Native;
+import com.sun.jna.Pointer;
+import com.sun.jna.Structure;
+import com.sun.jna.WString;
 import com.sun.jna.platform.win32.WinBase.FILETIME;
 import com.sun.jna.ptr.PointerByReference;
 import com.sun.jna.win32.StdCallLibrary;
@@ -32,7 +36,7 @@ public class SecureStorageWindowsManager implements SecureStorageManager {
     return new SecureStorageWindowsManager();
   }
 
-  public SecureStorageStatus setCredential(String host, String user, String type, String token) {
+  public SecureStorageStatus setCredential(String host, String user, String token) {
     if (Strings.isNullOrEmpty(token)) {
       logger.info("No token provided");
       return SecureStorageStatus.SUCCESS;
@@ -42,7 +46,7 @@ public class SecureStorageWindowsManager implements SecureStorageManager {
     Memory credBlobMem = new Memory(credBlob.length);
     credBlobMem.write(0, credBlob, 0, credBlob.length);
 
-    String target = SecureStorageManager.convertTarget(host, user, type);
+    String target = SecureStorageManager.convertTarget(host, user);
 
     SecureStorageWindowsCredential cred = new SecureStorageWindowsCredential();
     cred.Type = SecureStorageWindowsCredentialType.CRED_TYPE_GENERIC.getType();
@@ -69,9 +73,9 @@ public class SecureStorageWindowsManager implements SecureStorageManager {
     return SecureStorageStatus.SUCCESS;
   }
 
-  public String getCredential(String host, String user, String type) {
+  public String getCredential(String host, String user) {
     PointerByReference pCredential = new PointerByReference();
-    String target = SecureStorageManager.convertTarget(host, user, type);
+    String target = SecureStorageManager.convertTarget(host, user);
 
     try {
       boolean ret = false;
@@ -121,8 +125,8 @@ public class SecureStorageWindowsManager implements SecureStorageManager {
     }
   }
 
-  public SecureStorageStatus deleteCredential(String host, String user, String type) {
-    String target = SecureStorageManager.convertTarget(host, user, type);
+  public SecureStorageStatus deleteCredential(String host, String user) {
+    String target = SecureStorageManager.convertTarget(host, user);
 
     boolean ret = false;
     synchronized (advapi32Lib) {
@@ -205,7 +209,7 @@ public class SecureStorageWindowsManager implements SecureStorageManager {
     private static Map<Integer, SecureStorageWindowsCredentialType> map =
         new HashMap<Integer, SecureStorageWindowsCredentialType>();
 
-    SecureStorageWindowsCredentialType(int type) {
+    private SecureStorageWindowsCredentialType(int type) {
       this.type = type;
     }
 
@@ -235,7 +239,7 @@ public class SecureStorageWindowsManager implements SecureStorageManager {
     private static Map<Integer, SecureStorageWindowsCredentialPersistType> map =
         new HashMap<Integer, SecureStorageWindowsCredentialPersistType>();
 
-    SecureStorageWindowsCredentialPersistType(int type) {
+    private SecureStorageWindowsCredentialPersistType(int type) {
       this.type = type;
     }
 
@@ -255,7 +259,6 @@ public class SecureStorageWindowsManager implements SecureStorageManager {
     private static Advapi32Lib INSTANCE = null;
 
     private static class ResourceHolder {
-      // map Windows advapi32.dll to Interface Advapi32Lib
       private static final Advapi32Lib INSTANCE =
           (Advapi32Lib)
               Native.loadLibrary("advapi32", Advapi32Lib.class, W32APIOptions.UNICODE_OPTIONS);
@@ -272,16 +275,14 @@ public class SecureStorageWindowsManager implements SecureStorageManager {
     public static void setInstance(Advapi32Lib instance) {
       INSTANCE = instance;
     }
-
-    /** This function is a helper function for testing */
-    public static void resetInstance() {
-      if (Constants.getOS() == Constants.OS.WINDOWS) {
-        INSTANCE = ResourceHolder.INSTANCE;
-      }
-    }
   }
 
   interface Advapi32Lib extends StdCallLibrary {
+    // map Windows advapi32.dll to Interface Advapi32Lib
+    // Advapi32Lib INSTANCE =
+    //   (Advapi32Lib) Native.loadLibrary("advapi32", Advapi32Lib.class,
+    // W32APIOptions.UNICODE_OPTIONS);
+
     /** BOOL CredReadW( LPCWSTR TargetName, DWORD Type, DWORD Flags, PCREDENTIALW *Credential ); */
     boolean CredReadW(String targetName, int type, int flags, PointerByReference pcred);
 
