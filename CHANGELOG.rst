@@ -1,3 +1,8 @@
+**JDBC Driver 3.12.16**
+
+- \| SNOW-206907 | Add GCS downscope credential (can be used instead of presigned URL).
+- \| SNOW-175899 | Support MFA Token Cache.
+
 **JDBC Driver 3.12.15**
 
 - \| SNOW-207061 | Fixed a problem with null checking when converting to timestamp values.
