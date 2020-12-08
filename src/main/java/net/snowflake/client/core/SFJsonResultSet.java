@@ -407,14 +407,10 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
       if (sfTime == null) {
         return null;
       }
-      if (resultSetSerializable.getUseSessionTimezone()) {
-        return new SnowflakeTimeWithSessionTimezone(
-            sfTime.getFractionalSeconds(ResultUtil.DEFAULT_SCALE_OF_SFTIME_FRACTION_SECONDS),
-            sfTime.getNanosecondsWithinSecond(),
-            resultSetSerializable.getUseSessionTimezone());
-      }
-      return new Time(
-          sfTime.getFractionalSeconds(ResultUtil.DEFAULT_SCALE_OF_SFTIME_FRACTION_SECONDS));
+      return new SnowflakeTimeWithSessionTimezone(
+          sfTime.getFractionalSeconds(ResultUtil.DEFAULT_SCALE_OF_SFTIME_FRACTION_SECONDS),
+          sfTime.getNanosecondsWithinSecond(),
+          resultSetSerializable.getUseSessionTimezone());
     } else if (Types.TIMESTAMP == columnType) {
       Timestamp ts = getTimestamp(columnIndex);
       if (ts == null) {
