@@ -168,6 +168,22 @@ public class CredentialManager {
 
   /** Delete the id token cache */
   void deleteIdTokenCache(String host, String user) {
+    deleteTemporaryCredential(host, user, ID_TOKEN);
+  }
+
+  /** Delete the mfa token cache */
+  void deleteMfaTokenCache(String host, String user) {
+    deleteTemporaryCredential(host, user, MFA_TOKEN);
+  }
+
+  /**
+   * Delete the temporary credential
+   *
+   * @param host host name
+   * @param user user name
+   * @param credType type of the credential
+   */
+  synchronized void deleteTemporaryCredential(String host, String user, String credType) {
     if (secureStorageManager == null) {
       logger.info(
           "JNA jar files are needed for Secure Local Storage service. Please follow the Snowflake JDBC instruction for Secure Local Storage feature. Fall back to normal process.");
@@ -175,15 +191,10 @@ public class CredentialManager {
     }
 
     try {
-      secureStorageManager.deleteCredential(host, user, ID_TOKEN);
+      secureStorageManager.deleteCredential(host, user, credType);
     } catch (NoClassDefFoundError error) {
       logger.info(
           "JNA jar files are needed for Secure Local Storage service. Please follow the Snowflake JDBC instruction for Secure Local Storage feature. Fall back to normal process.");
     }
-  }
-
-  /** Delete the mfa token cache */
-  void deleteMfaTokenCache(String host, String user) {
-    secureStorageManager.deleteCredential(host, user, MFA_TOKEN);
   }
 }
