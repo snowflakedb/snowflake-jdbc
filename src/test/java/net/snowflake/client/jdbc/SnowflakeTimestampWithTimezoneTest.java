@@ -3,11 +3,7 @@
  */
 package net.snowflake.client.jdbc;
 
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import static org.junit.Assert.assertEquals;
 
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -15,12 +11,15 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.TimeZone;
-
-import static org.junit.Assert.assertEquals;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 /**
- * Tests SnowflakeTimestampWithTimezone to ensure the output is not impacted by Day Light Saving Time.
- * Not this test case is not thread safe, because TimeZone.setDefault is called.
+ * Tests SnowflakeTimestampWithTimezone to ensure the output is not impacted by Day Light Saving
+ * Time. Not this test case is not thread safe, because TimeZone.setDefault is called.
  */
 @RunWith(Parameterized.class)
 public class SnowflakeTimestampWithTimezoneTest extends BaseJDBCTest {

@@ -19,8 +19,7 @@ public class SnowflakeDateWithTimezone extends Date {
   TimeZone timezone = TimeZone.getDefault();
   boolean useSessionTimezone = false;
 
-  public SnowflakeDateWithTimezone(
-      long date, TimeZone timezone, boolean useSessionTimezone) {
+  public SnowflakeDateWithTimezone(long date, TimeZone timezone, boolean useSessionTimezone) {
     super(date);
     this.timezone = timezone;
     this.useSessionTimezone = useSessionTimezone;

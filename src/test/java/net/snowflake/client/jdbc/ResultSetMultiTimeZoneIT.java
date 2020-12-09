@@ -43,7 +43,7 @@ public class ResultSetMultiTimeZoneIT extends BaseJDBCTest {
 
   public ResultSetMultiTimeZoneIT(String queryResultFormat, String timeZone) {
     this.queryResultFormat = queryResultFormat;
-    TimeZone.setDefault(TimeZone.getTimeZone(timeZone));
+    System.setProperty("user.timezone", timeZone);
   }
 
   public Connection init() throws SQLException {

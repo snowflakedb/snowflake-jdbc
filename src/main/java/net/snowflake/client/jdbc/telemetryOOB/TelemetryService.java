@@ -1,5 +1,14 @@
 package net.snowflake.client.jdbc.telemetryOOB;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.security.cert.CertificateException;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Properties;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import net.minidev.json.JSONArray;
 import net.minidev.json.JSONObject;
 import net.snowflake.client.jdbc.SnowflakeConnectString;
@@ -14,16 +23,6 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
-
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.security.cert.CertificateException;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Properties;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Copyright (c) 2018-2019 Snowflake Computing Inc. All rights reserved.
