@@ -14,12 +14,12 @@ import java.util.TimeZone;
  * timestamp objects fetched as dates. Normal date objects do not have a timezone associated with
  * them.
  */
-public class SnowflakeDateWithSessionTimezone extends Date {
+public class SnowflakeDateWithTimezone extends Date {
 
   TimeZone timezone = TimeZone.getDefault();
   boolean useSessionTimezone = false;
 
-  public SnowflakeDateWithSessionTimezone(
+  public SnowflakeDateWithTimezone(
       long date, TimeZone timezone, boolean useSessionTimezone) {
     super(date);
     this.timezone = timezone;

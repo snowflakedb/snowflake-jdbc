@@ -115,7 +115,7 @@ public class ThreeFieldStructToTimestampTZConverter extends AbstractArrowVectorC
     // ts can be null when Java's timestamp is overflow.
     return ts == null
         ? null
-        : new SnowflakeDateWithSessionTimezone(ts.getTime(), sessionTimeZone, useSessionTimezone);
+        : new SnowflakeDateWithTimezone(ts.getTime(), sessionTimeZone, useSessionTimezone);
   }
 
   @Override
@@ -123,7 +123,7 @@ public class ThreeFieldStructToTimestampTZConverter extends AbstractArrowVectorC
     Timestamp ts = toTimestamp(index, TimeZone.getDefault());
     return ts == null
         ? null
-        : new SnowflakeTimeWithSessionTimezone(ts, sessionTimeZone, useSessionTimezone);
+        : new SnowflakeTimeWithTimezone(ts, sessionTimeZone, useSessionTimezone);
   }
 
   @Override

@@ -15,22 +15,22 @@ import java.util.TimeZone;
  * Timestamp with toString() overridden to display timestamp in session timezone. The default
  * timezone is UTC if no timezone is specified.
  */
-public class SnowflakeTimestampWithSessionTimezone extends Timestamp {
+public class SnowflakeTimestampWithTimezone extends Timestamp {
   private static final long serialVersionUID = 1L;
 
   private TimeZone timezone = TimeZone.getTimeZone("UTC");
 
-  public SnowflakeTimestampWithSessionTimezone(long seconds, int nanoseconds, TimeZone timezone) {
+  public SnowflakeTimestampWithTimezone(long seconds, int nanoseconds, TimeZone timezone) {
     super(seconds);
     this.setNanos(nanoseconds);
     this.timezone = timezone;
   }
 
-  public SnowflakeTimestampWithSessionTimezone(Timestamp ts, TimeZone timezone) {
+  public SnowflakeTimestampWithTimezone(Timestamp ts, TimeZone timezone) {
     this(ts.getTime(), ts.getNanos(), timezone);
   }
 
-  public SnowflakeTimestampWithSessionTimezone(Timestamp ts) {
+  public SnowflakeTimestampWithTimezone(Timestamp ts) {
     this(ts.getTime(), ts.getNanos(), TimeZone.getTimeZone("UTC"));
   }
 

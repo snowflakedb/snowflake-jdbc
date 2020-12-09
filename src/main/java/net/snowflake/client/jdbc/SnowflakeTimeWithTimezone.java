@@ -17,35 +17,35 @@ import java.util.TimeZone;
  * timestamp objects fetched as times. Normal time objects do not have a timezone associated with
  * them.
  */
-public class SnowflakeTimeWithSessionTimezone extends Time {
+public class SnowflakeTimeWithTimezone extends Time {
 
   int nanos = 0;
-  boolean useWallclockTime = false;
+  boolean useSessionTimeZone = false;
   ZoneOffset offset = ZoneOffset.UTC;
 
-  public SnowflakeTimeWithSessionTimezone(long time, int nanos, boolean useWallclockTime) {
+  public SnowflakeTimeWithTimezone(long time, int nanos, boolean useSessionTimeZone) {
     super(time);
     this.nanos = nanos;
-    this.useWallclockTime = useWallclockTime;
+    this.useSessionTimeZone = useSessionTimeZone;
   }
 
-  public SnowflakeTimeWithSessionTimezone(
-      Timestamp ts, TimeZone sessionTimeZone, boolean useWallclockTime) {
+  public SnowflakeTimeWithTimezone(
+      Timestamp ts, TimeZone sessionTimeZone, boolean useSessionTimeZone) {
     super(ts.getTime());
     this.nanos = ts.getNanos();
-    this.useWallclockTime = useWallclockTime;
+    this.useSessionTimeZone = useSessionTimeZone;
     if (sessionTimeZone != null) {
       this.offset = ZoneId.of(sessionTimeZone.getID()).getRules().getOffset(ts.toInstant());
     }
   }
 
   /**
-   * Returns a string representation in UTC so as to display "wallclock time"
+   * Returns a string representation in session's timezone so as to display "wallclock time"
    *
    * @return a string representation of the object
    */
   public synchronized String toString() {
-    if (!useWallclockTime) {
+    if (!useSessionTimeZone) {
       return super.toString();
     }
     DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm:ss");

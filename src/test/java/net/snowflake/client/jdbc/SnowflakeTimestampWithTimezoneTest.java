@@ -3,7 +3,11 @@
  */
 package net.snowflake.client.jdbc;
 
-import static org.junit.Assert.assertEquals;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -11,25 +15,22 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.TimeZone;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+
+import static org.junit.Assert.assertEquals;
 
 /**
- * Tests SnowflakeTimestampNTZAsUTC to ensure the output is not impacted by Day Light Saving Time.
+ * Tests SnowflakeTimestampWithTimezone to ensure the output is not impacted by Day Light Saving Time.
  * Not this test case is not thread safe, because TimeZone.setDefault is called.
  */
 @RunWith(Parameterized.class)
-public class SnowflakeTimestampNTZAsUTCTest extends BaseJDBCTest {
+public class SnowflakeTimestampWithTimezoneTest extends BaseJDBCTest {
   private static TimeZone orgTimeZone;
 
   private final String timeZone;
   private final String inputTimestamp;
   private final String outputTimestamp;
 
-  public SnowflakeTimestampNTZAsUTCTest(
+  public SnowflakeTimestampWithTimezoneTest(
       String timeZone, String inputTimestamp, String outputTimestamp) {
     this.timeZone = timeZone;
     this.inputTimestamp = inputTimestamp;
@@ -79,8 +80,8 @@ public class SnowflakeTimestampNTZAsUTCTest extends BaseJDBCTest {
   public void testTimestampNTZ() throws Throwable {
     TimeZone.setDefault(TimeZone.getTimeZone(timeZone));
     LocalDateTime dt = parseTimestampNTZ(this.inputTimestamp);
-    SnowflakeTimestampWithSessionTimezone stn =
-        new SnowflakeTimestampWithSessionTimezone(
+    SnowflakeTimestampWithTimezone stn =
+        new SnowflakeTimestampWithTimezone(
             dt.toEpochSecond(ZoneOffset.UTC) * 1000, dt.getNano(), TimeZone.getTimeZone("UTC"));
     assertEquals(this.outputTimestamp, stn.toString());
   }

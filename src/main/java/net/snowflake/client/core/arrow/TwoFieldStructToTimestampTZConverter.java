@@ -12,7 +12,7 @@ import net.snowflake.client.core.IncidentUtil;
 import net.snowflake.client.core.ResultUtil;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.jdbc.ErrorCode;
-import net.snowflake.client.jdbc.SnowflakeTimeWithSessionTimezone;
+import net.snowflake.client.jdbc.SnowflakeTimeWithTimezone;
 import net.snowflake.client.jdbc.SnowflakeType;
 import net.snowflake.client.jdbc.SnowflakeUtil;
 import net.snowflake.common.core.SFTimestamp;
@@ -100,7 +100,7 @@ public class TwoFieldStructToTimestampTZConverter extends AbstractArrowVectorCon
     Timestamp ts = toTimestamp(index, TimeZone.getDefault());
     return ts == null
         ? null
-        : new SnowflakeTimeWithSessionTimezone(ts.getTime(), ts.getNanos(), useSessionTimezone);
+        : new SnowflakeTimeWithTimezone(ts.getTime(), ts.getNanos(), useSessionTimezone);
   }
 
   @Override

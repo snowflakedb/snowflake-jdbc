@@ -407,7 +407,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
       if (sfTime == null) {
         return null;
       }
-      return new SnowflakeTimeWithSessionTimezone(
+      return new SnowflakeTimeWithTimezone(
           sfTime.getFractionalSeconds(ResultUtil.DEFAULT_SCALE_OF_SFTIME_FRACTION_SECONDS),
           sfTime.getNanosecondsWithinSecond(),
           resultSetSerializable.getUseSessionTimezone());
@@ -418,7 +418,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
       }
       if (resultSetSerializable.getUseSessionTimezone()) {
         ts = getTimestamp(columnIndex, resultSetSerializable.getTimeZone());
-        return new SnowflakeTimeWithSessionTimezone(
+        return new SnowflakeTimeWithTimezone(
             ts, resultSetSerializable.getTimeZone(), resultSetSerializable.getUseSessionTimezone());
       }
       return new Time(ts.getTime());
@@ -453,16 +453,16 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
       if (resultSetSerializable.getUseSessionTimezone()) {
         if (subType == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_LTZ
             || subType == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_TZ) {
-          res = new SnowflakeTimestampWithSessionTimezone(res, resultSetSerializable.getTimeZone());
+          res = new SnowflakeTimestampWithTimezone(res, resultSetSerializable.getTimeZone());
         } else {
-          res = new SnowflakeTimestampWithSessionTimezone(res);
+          res = new SnowflakeTimestampWithTimezone(res);
         }
       }
       // If timestamp type is NTZ and JDBC_TREAT_TIMESTAMP_NTZ_AS_UTC=true, keep
       // timezone in UTC to avoid daylight savings errors
       else if (resultSetSerializable.getTreatNTZAsUTC()
           && resultSetMetaData.getInternalColumnType(columnIndex) == Types.TIMESTAMP) {
-        res = new SnowflakeTimestampWithSessionTimezone(res);
+        res = new SnowflakeTimestampWithTimezone(res);
       }
       // If JDBC_TREAT_TIMESTAMP_NTZ_AS_UTC=false, default behavior is to honor
       // client timezone for NTZ time. Move NTZ timestamp offset to correspond to
@@ -488,7 +488,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
       }
       if (resultSetSerializable.getUseSessionTimezone()) {
         SFTime sfTime = getSFTime(columnIndex);
-        return new SnowflakeTimestampWithSessionTimezone(
+        return new SnowflakeTimestampWithTimezone(
             sfTime.getFractionalSeconds(ResultUtil.DEFAULT_SCALE_OF_SFTIME_FRACTION_SECONDS),
             sfTime.getNanosecondsWithinSecond(),
             TimeZone.getTimeZone("UTC"));
@@ -661,7 +661,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
       int subType = resultSetMetaData.getInternalColumnType(columnIndex);
       if (subType == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_TZ
           || subType == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_LTZ) {
-        return new SnowflakeDateWithSessionTimezone(
+        return new SnowflakeDateWithTimezone(
             getTimestamp(columnIndex, tz).getTime(),
             timeZone,
             resultSetSerializable.getUseSessionTimezone());

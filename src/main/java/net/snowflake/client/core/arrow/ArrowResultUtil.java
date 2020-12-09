@@ -13,7 +13,7 @@ import net.snowflake.client.core.IncidentUtil;
 import net.snowflake.client.core.ResultUtil;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.jdbc.ErrorCode;
-import net.snowflake.client.jdbc.SnowflakeTimestampWithSessionTimezone;
+import net.snowflake.client.jdbc.SnowflakeTimestampWithTimezone;
 import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -195,7 +195,7 @@ public class ArrowResultUtil {
     // timestamp object. This will avoid moving the timezone and creating
     // daylight savings offset errors.
     if (useSessionTz) {
-      return new SnowflakeTimestampWithSessionTimezone(
+      return new SnowflakeTimestampWithTimezone(
           seconds * ArrowResultUtil.powerOfTen(3), fraction, timezone);
     }
     Timestamp ts = new Timestamp(seconds * ArrowResultUtil.powerOfTen(3));

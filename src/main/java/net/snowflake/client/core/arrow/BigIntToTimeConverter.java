@@ -46,7 +46,7 @@ public class BigIntToTimeConverter extends AbstractArrowVectorConverter {
       if (sfTime == null) {
         return null;
       }
-      return new SnowflakeTimeWithSessionTimezone(
+      return new SnowflakeTimeWithTimezone(
           sfTime.getFractionalSeconds(ResultUtil.DEFAULT_SCALE_OF_SFTIME_FRACTION_SECONDS),
           sfTime.getNanosecondsWithinSecond(),
           useSessionTimezone);
@@ -81,7 +81,7 @@ public class BigIntToTimeConverter extends AbstractArrowVectorConverter {
     }
     if (useSessionTimezone) {
       SFTime sfTime = toSFTime(index);
-      return new SnowflakeTimestampWithSessionTimezone(
+      return new SnowflakeTimestampWithTimezone(
           sfTime.getFractionalSeconds(ResultUtil.DEFAULT_SCALE_OF_SFTIME_FRACTION_SECONDS),
           sfTime.getNanosecondsWithinSecond(),
           TimeZone.getTimeZone("UTC"));
