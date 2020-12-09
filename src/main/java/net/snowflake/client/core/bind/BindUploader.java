@@ -4,7 +4,12 @@
 
 package net.snowflake.client.core.bind;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
+import net.snowflake.client.core.*;
+import net.snowflake.client.jdbc.*;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
+import net.snowflake.client.util.SFPair;
+import net.snowflake.common.core.SqlState;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -16,12 +21,8 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.zip.GZIPOutputStream;
-import net.snowflake.client.core.*;
-import net.snowflake.client.jdbc.SnowflakeFileTransferAgent;
-import net.snowflake.client.jdbc.SnowflakeType;
-import net.snowflake.client.log.SFLogger;
-import net.snowflake.client.log.SFLoggerFactory;
-import net.snowflake.client.util.SFPair;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class BindUploader implements Closeable {
   private static final SFLogger logger = SFLoggerFactory.getLogger(BindUploader.class);
@@ -194,6 +195,107 @@ public class BindUploader implements Closeable {
       serializeBinds(bindValues);
       putBinds();
     }
+  }
+
+  public void upload2(Map<String, ParameterBindingDTO> bindValues) throws BindException
+  {
+    if (!closed) {
+      List<ColumnTypeDataPair> columns = getColumnValues(bindValues);
+      List<String[]> rows = buildRows(columns);
+      int numBytes;
+      int rowNum = 0;
+      int fileCount = 0;
+
+
+      while (rowNum < rows.size()) {
+        byte[] csv = createCSVRecord(rows.get(rowNum));
+        numBytes += csv.length;
+        ByteArrayInputStream inputStream = new ByteArrayInputStream(csv);
+        // do the upload
+        rowNum++;
+      }
+    }
+  }
+
+  /**
+   * Method to put data from a stream at a stage location. The data will be uploaded as one file. No
+   * splitting is done in this method.
+   *
+   * <p>Stream size must match the total size of data in the input stream unless compressData
+   * parameter is set to true.
+   *
+   * <p>caller is responsible for passing the correct size for the data in the stream and releasing
+   * the inputStream after the method is called.
+   *
+   * @param stageName stage name: e.g. ~ or table name or stage name
+   * @param destPrefix path prefix under which the data should be uploaded on the stage
+   * @param inputStream input stream from which the data will be uploaded
+   * @param destFileName destination file name to use
+   * @param compressData whether compression is requested fore uploading data
+   * @throws SQLException raises if any error occurs
+   */
+  private void uploadStreamInternal(
+          String stageName,
+          String destPrefix,
+          InputStream inputStream,
+          String destFileName,
+          boolean compressData)
+          throws SQLException {
+    logger.debug(
+            "upload data from stream: stageName={}" + ", destPrefix={}, destFileName={}",
+            stageName,
+            destPrefix,
+            destFileName);
+
+    if (stageName == null) {
+      throw new SnowflakeSQLLoggedException(
+              session,
+              ErrorCode.INTERNAL_ERROR.getMessageCode(),
+              SqlState.INTERNAL_ERROR,
+              "stage name is null");
+    }
+
+    if (destFileName == null) {
+      throw new SnowflakeSQLLoggedException(
+              session,
+              ErrorCode.INTERNAL_ERROR.getMessageCode(),
+              SqlState.INTERNAL_ERROR,
+              "stage name is null");
+    }
+
+    SFStatement stmt = new SFStatement(session);
+
+    StringBuilder putCommand = new StringBuilder();
+
+    // use a placeholder for source file
+    putCommand.append("put file:///tmp/placeholder ");
+
+    // add stage name
+    if (!(stageName.startsWith("@") || stageName.startsWith("'@") || stageName.startsWith("$$@"))) {
+      putCommand.append("@");
+    }
+    putCommand.append(stageName);
+
+    // add dest prefix
+    if (destPrefix != null) {
+      if (!destPrefix.startsWith("/")) {
+        putCommand.append("/");
+      }
+      putCommand.append(destPrefix);
+    }
+
+    putCommand.append(" overwrite=true");
+
+    SnowflakeFileTransferAgent transferAgent;
+    transferAgent =
+            new SnowflakeFileTransferAgent(putCommand.toString(), session, stmt);
+
+    transferAgent.setSourceStream(inputStream);
+    transferAgent.setDestFileNameForStreamSource(destFileName);
+    transferAgent.setCompressSourceFromStream(compressData);
+    transferAgent.execute();
+
+    stmt.close();
   }
 
   /**
