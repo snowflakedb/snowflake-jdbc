@@ -34,6 +34,8 @@ abstract class AbstractArrowVectorConverter implements ArrowVectorConverter {
 
   protected boolean treatNTZasUTC;
 
+  protected boolean useSessionTimezone;
+
   protected TimeZone sessionTimeZone;
 
   /** Field names of the struct vectors used by timestamp */
@@ -147,6 +149,11 @@ abstract class AbstractArrowVectorConverter implements ArrowVectorConverter {
   @Override
   public void setTreatNTZAsUTC(boolean isUTC) {
     this.treatNTZasUTC = isUTC;
+  }
+
+  @Override
+  public void setUseSessionTimezone(boolean useSessionTimezone) {
+    this.useSessionTimezone = useSessionTimezone;
   }
 
   @Override

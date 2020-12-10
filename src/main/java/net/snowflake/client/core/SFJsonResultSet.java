@@ -13,9 +13,7 @@ import java.sql.Timestamp;
 import java.sql.Types;
 import java.util.TimeZone;
 import net.snowflake.client.core.arrow.ArrowResultUtil;
-import net.snowflake.client.jdbc.ErrorCode;
-import net.snowflake.client.jdbc.SnowflakeTimestampNTZAsUTC;
-import net.snowflake.client.jdbc.SnowflakeUtil;
+import net.snowflake.client.jdbc.*;
 import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -409,12 +407,19 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
       if (sfTime == null) {
         return null;
       }
-      return new Time(
-          sfTime.getFractionalSeconds(ResultUtil.DEFAULT_SCALE_OF_SFTIME_FRACTION_SECONDS));
+      return new SnowflakeTimeWithTimezone(
+          sfTime.getFractionalSeconds(ResultUtil.DEFAULT_SCALE_OF_SFTIME_FRACTION_SECONDS),
+          sfTime.getNanosecondsWithinSecond(),
+          resultSetSerializable.getUseSessionTimezone());
     } else if (Types.TIMESTAMP == columnType) {
       Timestamp ts = getTimestamp(columnIndex);
       if (ts == null) {
         return null;
+      }
+      if (resultSetSerializable.getUseSessionTimezone()) {
+        ts = getTimestamp(columnIndex, resultSetSerializable.getTimeZone());
+        return new SnowflakeTimeWithTimezone(
+            ts, resultSetSerializable.getTimeZone(), resultSetSerializable.getUseSessionTimezone());
       }
       return new Time(ts.getTime());
     } else {
@@ -442,19 +447,29 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
       if (res == null) {
         return null;
       }
-
+      int subType = resultSetMetaData.getInternalColumnType(columnIndex);
+      // If we want to display format with no session offset, we have to use session timezone for
+      // ltz and tz types but UTC timezone for ntz type.
+      if (resultSetSerializable.getUseSessionTimezone()) {
+        if (subType == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_LTZ
+            || subType == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_TZ) {
+          res = new SnowflakeTimestampWithTimezone(res, resultSetSerializable.getTimeZone());
+        } else {
+          res = new SnowflakeTimestampWithTimezone(res);
+        }
+      }
       // If timestamp type is NTZ and JDBC_TREAT_TIMESTAMP_NTZ_AS_UTC=true, keep
       // timezone in UTC to avoid daylight savings errors
-      if (resultSetSerializable.getTreatNTZAsUTC()
+      else if (resultSetSerializable.getTreatNTZAsUTC()
           && resultSetMetaData.getInternalColumnType(columnIndex) == Types.TIMESTAMP) {
-        res = new SnowflakeTimestampNTZAsUTC(res);
+        res = new SnowflakeTimestampWithTimezone(res);
       }
       // If JDBC_TREAT_TIMESTAMP_NTZ_AS_UTC=false, default behavior is to honor
       // client timezone for NTZ time. Move NTZ timestamp offset to correspond to
-      // client's timezone
-      if (!resultSetSerializable.getTreatNTZAsUTC()
-          && honorClientTZForTimestampNTZ
-          && resultSetMetaData.getInternalColumnType(columnIndex) == Types.TIMESTAMP) {
+      // client's timezone. JDBC_USE_SESSION_TIMEZONE overrides other params.
+      if (resultSetMetaData.getInternalColumnType(columnIndex) == Types.TIMESTAMP
+          && ((!resultSetSerializable.getTreatNTZAsUTC() && honorClientTZForTimestampNTZ)
+              || resultSetSerializable.getUseSessionTimezone())) {
         res = sfTS.moveToTimeZone(tz).getTimestamp();
       }
       // Adjust time if date happens before year 1582 for difference between
@@ -470,6 +485,13 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
       Time t = getTime(columnIndex);
       if (t == null) {
         return null;
+      }
+      if (resultSetSerializable.getUseSessionTimezone()) {
+        SFTime sfTime = getSFTime(columnIndex);
+        return new SnowflakeTimestampWithTimezone(
+            sfTime.getFractionalSeconds(ResultUtil.DEFAULT_SCALE_OF_SFTIME_FRACTION_SECONDS),
+            sfTime.getNanosecondsWithinSecond(),
+            TimeZone.getTimeZone("UTC"));
       }
       return new Timestamp(t.getTime());
     } else {
@@ -636,7 +658,16 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
       if (tz == null) {
         tz = TimeZone.getDefault();
       }
+      int subType = resultSetMetaData.getInternalColumnType(columnIndex);
+      if (subType == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_TZ
+          || subType == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_LTZ) {
+        return new SnowflakeDateWithTimezone(
+            getTimestamp(columnIndex, tz).getTime(),
+            timeZone,
+            resultSetSerializable.getUseSessionTimezone());
+      }
       return new Date(getTimestamp(columnIndex, tz).getTime());
+
     } else if (Types.DATE == columnType) {
       if (tz == null || !resultSetSerializable.getFormatDateWithTimeZone()) {
         return ArrowResultUtil.getDate(Integer.parseInt((String) obj));

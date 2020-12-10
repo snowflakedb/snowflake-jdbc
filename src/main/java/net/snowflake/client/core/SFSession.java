@@ -178,6 +178,9 @@ public class SFSession {
   // parameter to guard against behavior change to getDate() with Calendar timezone
   private boolean formatDateWithTimezone = false;
 
+  // parameter to guard against behavior change to getTime()
+  private boolean useSessionTimezone = false;
+
   private SnowflakeType timestampMappedType = SnowflakeType.TIMESTAMP_LTZ;
 
   private boolean jdbcTreatDecimalAsInt = true;
@@ -1174,6 +1177,14 @@ public class SFSession {
 
   public boolean getFormatDateWithTimezone() {
     return this.formatDateWithTimezone;
+  }
+
+  public void setUseSessionTimezone(boolean useSessionTimezone) {
+    this.useSessionTimezone = useSessionTimezone;
+  }
+
+  public boolean getUseSessionTimezone() {
+    return this.useSessionTimezone;
   }
 
   public boolean getTreatNTZAsUTC() {

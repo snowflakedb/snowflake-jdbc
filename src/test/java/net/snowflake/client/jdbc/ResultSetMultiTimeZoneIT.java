@@ -137,8 +137,6 @@ public class ResultSetMultiTimeZoneIT extends BaseJDBCTest {
 
     prepStatement.execute();
 
-    TimeZone gmt = TimeZone.getTimeZone("GMT");
-    Calendar cal = Calendar.getInstance(gmt);
     ResultSet resultSet = statement.executeQuery("select * from datetime");
     resultSet.next();
     assertEquals(date, resultSet.getDate(1));
