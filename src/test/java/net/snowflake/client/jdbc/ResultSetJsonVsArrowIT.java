@@ -1524,6 +1524,7 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
       Statement st = con.createStatement();
       for (String timeZone : timeZones) {
         TimeZone.setDefault(TimeZone.getTimeZone(timeZone));
+        st.execute("alter session set JDBC_USE_SESSION_TIMEZONE=false");
         st.execute("alter session set JDBC_TREAT_TIMESTAMP_NTZ_AS_UTC=true");
         st.execute("alter session set TIMEZONE='" + timeZone + "'");
         st.execute(
