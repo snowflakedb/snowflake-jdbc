@@ -4,6 +4,7 @@
 
 package net.snowflake.client.core;
 
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 import static org.apache.http.client.config.CookieSpecs.DEFAULT;
 import static org.apache.http.client.config.CookieSpecs.IGNORE_COOKIES;
 
@@ -139,14 +140,9 @@ public class HttpUtil {
     builder.append(SnowflakeDriver.implementVersion);
     builder.append(" (");
     // Generate OS platform and version from system properties
-    String osPlatform =
-        (SnowflakeUtil.systemGetProperty("os.name") != null)
-            ? SnowflakeUtil.systemGetProperty("os.name")
-            : "";
+    String osPlatform = (systemGetProperty("os.name") != null) ? systemGetProperty("os.name") : "";
     String osVersion =
-        (SnowflakeUtil.systemGetProperty("os.version") != null)
-            ? SnowflakeUtil.systemGetProperty("os.version")
-            : "";
+        (systemGetProperty("os.version") != null) ? systemGetProperty("os.version") : "";
     // Append OS platform and version separated by a space
     builder.append(osPlatform);
     builder.append(" ");
@@ -155,9 +151,7 @@ public class HttpUtil {
     builder.append(") JAVA/");
     // Generate string for language version from system properties and append it
     String languageVersion =
-        (SnowflakeUtil.systemGetProperty("java.version") != null)
-            ? SnowflakeUtil.systemGetProperty("java.version")
-            : "";
+        (systemGetProperty("java.version") != null) ? systemGetProperty("java.version") : "";
     builder.append(languageVersion);
     String userAgent = builder.toString();
     return userAgent;
@@ -177,7 +171,7 @@ public class HttpUtil {
     // set timeout so that we don't wait forever.
     // Setup the default configuration for all requests on this client
 
-    String ttlSystemProperty = System.getProperty(JDBC_TTL);
+    String ttlSystemProperty = systemGetProperty(JDBC_TTL);
     int timeToLive = DEFAULT_TTL;
     if (ttlSystemProperty != null) {
       try {
