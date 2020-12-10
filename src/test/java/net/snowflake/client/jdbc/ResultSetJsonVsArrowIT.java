@@ -1517,6 +1517,7 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
   }
 
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void TestTimestampNTZWithDLS() throws SQLException {
     TimeZone origTz = TimeZone.getDefault();
     String[] timeZones = new String[] {"America/New_York", "America/Los_Angeles"};
