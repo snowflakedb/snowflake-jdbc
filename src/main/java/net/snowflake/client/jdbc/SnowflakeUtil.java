@@ -560,4 +560,23 @@ public class SnowflakeUtil {
       }
     }
   }
+
+  /**
+   * Round the time value from milliseconds to seconds so the seconds can be used to create
+   * SimpleDateFormatter. Negative values have to be rounded to the next negative value, while
+   * positive values should be cut off with no rounding.
+   *
+   * @param millis
+   * @return
+   */
+  public static long getSecondsFromMillis(long millis) {
+    long returnVal;
+    if (millis < 0) {
+      returnVal = (long) Math.ceil((double) Math.abs(millis) / 1000);
+      returnVal *= -1;
+    } else {
+      returnVal = millis / 1000;
+    }
+    return returnVal;
+  }
 }

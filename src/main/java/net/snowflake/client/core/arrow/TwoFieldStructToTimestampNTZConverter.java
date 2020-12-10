@@ -12,6 +12,7 @@ import net.snowflake.client.core.IncidentUtil;
 import net.snowflake.client.core.ResultUtil;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.jdbc.ErrorCode;
+import net.snowflake.client.jdbc.SnowflakeTimeWithTimezone;
 import net.snowflake.client.jdbc.SnowflakeType;
 import net.snowflake.client.jdbc.SnowflakeUtil;
 import org.apache.arrow.vector.BigIntVector;
@@ -87,13 +88,20 @@ public class TwoFieldStructToTimestampNTZConverter extends AbstractArrowVectorCo
         return null;
       }
     }
-    Timestamp ts = ArrowResultUtil.createTimestamp(epoch, fraction, this.treatNTZasUTC);
+    Timestamp ts;
+    if (this.treatNTZasUTC || !this.useSessionTimezone) {
+      ts = ArrowResultUtil.createTimestamp(epoch, fraction, TimeZone.getTimeZone("UTC"), true);
+    } else {
+      ts = ArrowResultUtil.createTimestamp(epoch, fraction, sessionTimeZone, false);
+    }
 
-    // Note: honorClientTZForTimestampNTZ is not enabled for toString method
+    // Note: honorClientTZForTimestampNTZ is not enabled for toString method.
     // If JDBC_TREAT_TIMESTAMP_NTZ_AS_UTC=false, default behavior is to honor
     // client timezone for NTZ time. Move NTZ timestamp offset to correspond to
-    // client's timezone
-    if (!this.treatNTZasUTC && !fromToString && context.getHonorClientTZForTimestampNTZ()) {
+    // client's timezone. UseSessionTimezone overrides treatNTZasUTC.
+    if (!fromToString
+        && ((context.getHonorClientTZForTimestampNTZ() && !this.treatNTZasUTC)
+            || this.useSessionTimezone)) {
       ts = ArrowResultUtil.moveToTimeZone(ts, NTZ, tz);
     }
     Timestamp adjustedTimestamp = ResultUtil.adjustTimestamp(ts);
@@ -118,8 +126,13 @@ public class TwoFieldStructToTimestampNTZConverter extends AbstractArrowVectorCo
 
   @Override
   public Time toTime(int index) throws SFException {
-    Timestamp ts = toTimestamp(index, TimeZone.getDefault());
-    return ts == null ? null : new Time(ts.getTime());
+    Timestamp ts = toTimestamp(index, null);
+    if (useSessionTimezone) {
+      ts = toTimestamp(index, sessionTimeZone);
+    }
+    return ts == null
+        ? null
+        : new SnowflakeTimeWithTimezone(ts, sessionTimeZone, useSessionTimezone);
   }
 
   @Override

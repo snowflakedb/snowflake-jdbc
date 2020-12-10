@@ -138,6 +138,7 @@ public class SnowflakeResultSetSerializableV1
   QueryResultFormat queryResultFormat;
   boolean treatNTZAsUTC;
   boolean formatDateWithTimezone;
+  boolean useSessionTimezone;
 
   // Below fields are transient, they are generated from parameters
   transient TimeZone timeZone;
@@ -189,6 +190,7 @@ public class SnowflakeResultSetSerializableV1
     this.resultSetHoldability = toCopy.resultSetHoldability;
     this.treatNTZAsUTC = toCopy.treatNTZAsUTC;
     this.formatDateWithTimezone = toCopy.formatDateWithTimezone;
+    this.useSessionTimezone = toCopy.useSessionTimezone;
 
     // Below are some metadata fields parsed from the result JSON node
     this.queryId = toCopy.queryId;
@@ -425,6 +427,10 @@ public class SnowflakeResultSetSerializableV1
     return formatDateWithTimezone;
   }
 
+  public boolean getUseSessionTimezone() {
+    return useSessionTimezone;
+  }
+
   public Optional<SFSession> getSession() {
     return possibleSession;
   }
@@ -572,6 +578,7 @@ public class SnowflakeResultSetSerializableV1
     resultSetSerializable.isResultColumnCaseInsensitive = sfSession.isResultColumnCaseInsensitive();
     resultSetSerializable.treatNTZAsUTC = sfSession.getTreatNTZAsUTC();
     resultSetSerializable.formatDateWithTimezone = sfSession.getFormatDateWithTimezone();
+    resultSetSerializable.useSessionTimezone = sfSession.getUseSessionTimezone();
 
     // setup transient fields from parameter
     resultSetSerializable.setupFieldsFromParameters();

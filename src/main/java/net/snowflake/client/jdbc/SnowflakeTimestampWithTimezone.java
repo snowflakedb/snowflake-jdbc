@@ -6,20 +6,32 @@ package net.snowflake.client.jdbc;
 
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.util.TimeZone;
 
-/** Timestamp with toString in UTC timezone. */
-public class SnowflakeTimestampNTZAsUTC extends Timestamp {
+/**
+ * Timestamp with toString() overridden to display timestamp in session timezone. The default
+ * timezone is UTC if no timezone is specified.
+ */
+public class SnowflakeTimestampWithTimezone extends Timestamp {
   private static final long serialVersionUID = 1L;
 
-  public SnowflakeTimestampNTZAsUTC(long seconds, int nanoseconds) {
+  private TimeZone timezone = TimeZone.getTimeZone("UTC");
+
+  public SnowflakeTimestampWithTimezone(long seconds, int nanoseconds, TimeZone timezone) {
     super(seconds);
     this.setNanos(nanoseconds);
+    this.timezone = timezone;
   }
 
-  public SnowflakeTimestampNTZAsUTC(Timestamp ts) {
-    this(ts.getTime(), ts.getNanos());
+  public SnowflakeTimestampWithTimezone(Timestamp ts, TimeZone timezone) {
+    this(ts.getTime(), ts.getNanos(), timezone);
+  }
+
+  public SnowflakeTimestampWithTimezone(Timestamp ts) {
+    this(ts.getTime(), ts.getNanos(), TimeZone.getTimeZone("UTC"));
   }
 
   /**
@@ -46,8 +58,10 @@ public class SnowflakeTimestampNTZAsUTC extends Timestamp {
     }
     DateTimeFormatter formatter = DateTimeFormatter.ofPattern(buf.toString());
 
+    ZoneOffset offset = ZoneId.of(timezone.getID()).getRules().getOffset(this.toInstant());
     LocalDateTime ldt =
-        LocalDateTime.ofEpochSecond(this.getTime() / 1000, this.getNanos(), ZoneOffset.UTC);
+        LocalDateTime.ofEpochSecond(
+            SnowflakeUtil.getSecondsFromMillis(this.getTime()), this.getNanos(), offset);
     return ldt.format(formatter);
   }
 }
