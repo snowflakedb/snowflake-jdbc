@@ -1429,6 +1429,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
   }
 
   @Test
+  @Ignore
   public void testBind() throws Throwable {
     Connection connection = null;
     PreparedStatement preparedStatement = null;
