@@ -5,13 +5,17 @@
 package net.snowflake.client.core.bind;
 
 import net.snowflake.client.core.*;
-import net.snowflake.client.jdbc.*;
+import net.snowflake.client.jdbc.ErrorCode;
+import net.snowflake.client.jdbc.SnowflakeFileTransferAgent;
+import net.snowflake.client.jdbc.SnowflakeSQLLoggedException;
+import net.snowflake.client.jdbc.SnowflakeType;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.util.SFPair;
 import net.snowflake.common.core.SqlState;
 
 import java.io.*;
+import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.SQLException;
@@ -64,6 +68,9 @@ public class BindUploader implements Closeable {
 
   // size (bytes) per file in upload, 100MB default
   private long fileSize = 100 * 1024 * 1024;
+
+  // size (bytes) of max input stream
+  private long inputStreamBufferSize = 8 * 1024;
 
   private final DateFormat timestampFormat;
   private final DateFormat dateFormat;
@@ -200,24 +207,36 @@ public class BindUploader implements Closeable {
   public void upload2(Map<String, ParameterBindingDTO> bindValues) throws BindException, SQLException {
     if (!closed) {
       List<ColumnTypeDataPair> columns = getColumnValues(bindValues);
-      List<String[]> rows = buildRows(columns);
+      List<byte[]> csvRows = buildRowsAsBytes(columns);
+      int startIndex = 0;
       int numBytes = 0;
       int rowNum = 0;
       int fileCount = 0;
 
-      while (rowNum < rows.size()) {
-        byte[] csv = createCSVRecord(rows.get(rowNum));
-        numBytes += csv.length;
-        ByteArrayInputStream inputStream = new ByteArrayInputStream(csv);
+      while (rowNum < csvRows.size()) {
+        // create a list of byte arrays
+        while (numBytes < inputStreamBufferSize && rowNum < csvRows.size())
+        {
+          numBytes += csvRows.get(rowNum).length;
+          rowNum++;
+        }
+        // concatenate all byte arrays into 1 and put into input stream
+        ByteBuffer bb = ByteBuffer.allocate(numBytes);
+        for (int i = startIndex; i < (startIndex + rowNum); i++)
+        {
+          bb.put(csvRows.get(i));
+        }
+        startIndex += rowNum;
+        byte[] finalBytearray = bb.array();
+        ByteArrayInputStream inputStream = new ByteArrayInputStream(finalBytearray);
         // do the upload
         String fileName = Integer.toString(++fileCount);
-        uploadStreamInternal(null, inputStream, fileName, false);
+        uploadStreamInternal(inputStream, fileName, true);
         try {
           inputStream.close();
         } catch (IOException e) {
           e.printStackTrace();
         }
-        rowNum++;
       }
     }
   }
@@ -232,25 +251,21 @@ public class BindUploader implements Closeable {
    * <p>caller is responsible for passing the correct size for the data in the stream and releasing
    * the inputStream after the method is called.
    *
-   * @param destPrefix path prefix under which the data should be uploaded on the stage
    * @param inputStream input stream from which the data will be uploaded
    * @param destFileName destination file name to use
    * @param compressData whether compression is requested fore uploading data
    * @throws SQLException raises if any error occurs
    */
   private void uploadStreamInternal(
-          String destPrefix,
           InputStream inputStream,
           String destFileName,
           boolean compressData)
           throws SQLException, BindException {
 
     createStageIfNeeded();
-    String stageName = session.getArrayBindStage();
+    String stageName = stagePath;
     logger.debug(
-            "upload data from stream: stageName={}" + ", destPrefix={}, destFileName={}",
-            stageName,
-            destPrefix,
+            "upload data from stream: stageName={}" + ", destFileName={}",
             destFileName);
 
     if (stageName == null) {
@@ -277,18 +292,12 @@ public class BindUploader implements Closeable {
     putCommand.append("put file:///tmp/placeholder ");
 
     // add stage name
+    putCommand.append("'");
     if (!(stageName.startsWith("@") || stageName.startsWith("'@") || stageName.startsWith("$$@"))) {
       putCommand.append("@");
     }
     putCommand.append(stageName);
-
-    // add dest prefix
-    if (destPrefix != null) {
-      if (!destPrefix.startsWith("/")) {
-        putCommand.append("/");
-      }
-      putCommand.append(destPrefix);
-    }
+    putCommand.append("'");
 
     putCommand.append(" overwrite=true");
 
@@ -408,6 +417,38 @@ public class BindUploader implements Closeable {
     return rows;
   }
 
+  private List<byte[]> buildRowsAsBytes(List<ColumnTypeDataPair> columns) throws BindException {
+    List<byte[]> rows = new ArrayList<>();
+    int numColumns = columns.size();
+    // columns should have binds
+    if (columns.get(0).data.isEmpty()) {
+      throw new BindException("No binds found in first column", BindException.Type.SERIALIZATION);
+    }
+
+    int numRows = columns.get(0).data.size();
+    // every column should have the same number of binds
+    for (int i = 0; i < numColumns; i++) {
+      int iNumRows = columns.get(i).data.size();
+      if (columns.get(i).data.size() != numRows) {
+        throw new BindException(
+                String.format(
+                        "Column %d has a different number of binds (%d) than column 1 (%d)",
+                        i, iNumRows, numRows),
+                BindException.Type.SERIALIZATION);
+      }
+    }
+
+    for (int rowIdx = 0; rowIdx < numRows; rowIdx++) {
+      String[] row = new String[numColumns];
+      for (int colIdx = 0; colIdx < numColumns; colIdx++) {
+        row[colIdx] = columns.get(colIdx).data.get(rowIdx);
+      }
+      rows.add(createCSVRecord(row));
+    }
+
+    return rows;
+  }
+
   /**
    * Write the list of rows to compressed CSV files in the temporary directory
    *
@@ -438,6 +479,7 @@ public class BindUploader implements Closeable {
       }
     }
   }
+
 
   /**
    * Create a File object for the given fileNum under the temporary directory
