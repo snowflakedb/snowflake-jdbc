@@ -4,23 +4,13 @@
 
 package net.snowflake.client.core;
 
-import static net.snowflake.client.core.SessionUtil.*;
-import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
-
 import com.fasterxml.jackson.databind.JsonNode;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.*;
-import java.util.concurrent.Callable;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import net.snowflake.client.core.BasicEvent.QueryState;
 import net.snowflake.client.core.bind.BindException;
 import net.snowflake.client.core.bind.BindUploader;
 import net.snowflake.client.jdbc.*;
 import net.snowflake.client.jdbc.telemetry.TelemetryData;
+import net.snowflake.client.jdbc.telemetry.TelemetryField;
 import net.snowflake.client.jdbc.telemetry.TelemetryUtil;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.client.log.ArgSupplier;
@@ -29,6 +19,18 @@ import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.util.SecretDetector;
 import net.snowflake.common.core.SqlState;
 import org.apache.http.client.methods.HttpRequestBase;
+
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import static net.snowflake.client.core.SessionUtil.*;
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
 /** Snowflake statement */
 public class SFStatement {
@@ -382,7 +384,7 @@ public class SFStatement {
           && !describeOnly
           && BindUploader.isArrayBind(bindValues)) {
         try (BindUploader uploader = BindUploader.newInstance(session, requestId)) {
-          uploader.upload(bindValues);
+          uploader.upload2(bindValues);
           bindStagePath = uploader.getStagePath();
         } catch (BindException ex) {
           logger.debug(
@@ -397,6 +399,22 @@ public class SFStatement {
                   IncidentUtil.oneLiner("Failed to upload binds " + "to stage:", ex)),
               null,
               requestId);
+        }
+        catch (SQLException ex)
+        {
+          logger.debug(
+                  "Exception encountered trying to upload binds to stage. Attaching binds in payload instead. ",
+                  ex);
+          TelemetryData errorLog =
+              TelemetryUtil.buildJobData(this.requestId, TelemetryField.FAILED_BIND_UPLOAD, 1);
+          this.session.getTelemetryClient().addLogToBatch(errorLog);
+          IncidentUtil.generateIncidentV2WithException(
+                  session,
+                  new SFException(
+                          ErrorCode.NON_FATAL_ERROR,
+                          IncidentUtil.oneLiner("Failed to upload binds " + "to stage:", ex)),
+                  null,
+                  requestId);
         }
       }
 

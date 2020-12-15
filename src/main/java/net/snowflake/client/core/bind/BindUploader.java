@@ -197,21 +197,26 @@ public class BindUploader implements Closeable {
     }
   }
 
-  public void upload2(Map<String, ParameterBindingDTO> bindValues) throws BindException
-  {
+  public void upload2(Map<String, ParameterBindingDTO> bindValues) throws BindException, SQLException {
     if (!closed) {
       List<ColumnTypeDataPair> columns = getColumnValues(bindValues);
       List<String[]> rows = buildRows(columns);
-      int numBytes;
+      int numBytes = 0;
       int rowNum = 0;
       int fileCount = 0;
-
 
       while (rowNum < rows.size()) {
         byte[] csv = createCSVRecord(rows.get(rowNum));
         numBytes += csv.length;
         ByteArrayInputStream inputStream = new ByteArrayInputStream(csv);
         // do the upload
+        String fileName = Integer.toString(++fileCount);
+        uploadStreamInternal(null, inputStream, fileName, false);
+        try {
+          inputStream.close();
+        } catch (IOException e) {
+          e.printStackTrace();
+        }
         rowNum++;
       }
     }
@@ -227,7 +232,6 @@ public class BindUploader implements Closeable {
    * <p>caller is responsible for passing the correct size for the data in the stream and releasing
    * the inputStream after the method is called.
    *
-   * @param stageName stage name: e.g. ~ or table name or stage name
    * @param destPrefix path prefix under which the data should be uploaded on the stage
    * @param inputStream input stream from which the data will be uploaded
    * @param destFileName destination file name to use
@@ -235,12 +239,14 @@ public class BindUploader implements Closeable {
    * @throws SQLException raises if any error occurs
    */
   private void uploadStreamInternal(
-          String stageName,
           String destPrefix,
           InputStream inputStream,
           String destFileName,
           boolean compressData)
-          throws SQLException {
+          throws SQLException, BindException {
+
+    createStageIfNeeded();
+    String stageName = session.getArrayBindStage();
     logger.debug(
             "upload data from stream: stageName={}" + ", destPrefix={}, destFileName={}",
             stageName,
