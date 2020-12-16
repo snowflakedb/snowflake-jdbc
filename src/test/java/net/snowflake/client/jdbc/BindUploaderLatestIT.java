@@ -3,8 +3,11 @@
  */
 package net.snowflake.client.jdbc;
 
-import static net.snowflake.client.jdbc.BindUploaderIT.*;
-import static org.junit.Assert.*;
+import net.snowflake.client.category.TestCategoryOthers;
+import net.snowflake.client.core.SFSession;
+import net.snowflake.client.core.bind.BindUploader;
+import org.junit.*;
+import org.junit.experimental.categories.Category;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -19,11 +22,9 @@ import java.sql.Statement;
 import java.util.Arrays;
 import java.util.TimeZone;
 import java.util.zip.GZIPInputStream;
-import net.snowflake.client.category.TestCategoryOthers;
-import net.snowflake.client.core.SFSession;
-import net.snowflake.client.core.bind.BindUploader;
-import org.junit.*;
-import org.junit.experimental.categories.Category;
+
+import static net.snowflake.client.jdbc.BindUploaderIT.*;
+import static org.junit.Assert.*;
 
 /**
  * Bind Uploader tests for the latest JDBC driver. This doesn't work for the oldest supported
@@ -169,10 +170,6 @@ public class BindUploaderLatestIT extends BaseJDBCTest {
     ResultSet rs = stmt.executeQuery(SELECT_FROM_STAGE);
     rs.next();
     assertEquals(csv1, parseRow(rs));
-    rs.next();
-    assertEquals(csv1, parseRow(rs));
-    rs.next();
-    assertEquals(csv2, parseRow(rs));
     rs.next();
     assertEquals(csv2, parseRow(rs));
     assertFalse(rs.next());
