@@ -34,11 +34,10 @@ public class BindUploaderIT extends BaseJDBCTest {
       "create or replace table test_binduploader(col1 INTEGER, "
           + "col2 INTEGER, col3 DOUBLE, col4 DOUBLE, col5 DOUBLE, col6 VARCHAR, col7 BINARY, "
           + "col8 DATE, col9 TIME, col10 TIMESTAMP)";
-  private static final String dummyInsert =
-      "insert into test_binduploader VALUES(?,?,?,?,?,?,?,?,?,?)";
+  static final String dummyInsert = "insert into test_binduploader VALUES(?,?,?,?,?,?,?,?,?,?)";
   private static final String deleteTableSQL = "drop table if exists test_binduploader";
 
-  private static final Object[] row1 = {
+  static final Object[] row1 = {
     42,
     1234L,
     12.34f,

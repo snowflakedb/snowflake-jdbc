@@ -3,11 +3,8 @@
  */
 package net.snowflake.client.jdbc;
 
-import net.snowflake.client.category.TestCategoryOthers;
-import net.snowflake.client.core.SFSession;
-import net.snowflake.client.core.bind.BindUploader;
-import org.junit.*;
-import org.junit.experimental.categories.Category;
+import static net.snowflake.client.jdbc.BindUploaderIT.*;
+import static org.junit.Assert.*;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -20,11 +17,15 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Arrays;
+import java.util.Map;
 import java.util.TimeZone;
 import java.util.zip.GZIPInputStream;
-
-import static net.snowflake.client.jdbc.BindUploaderIT.*;
-import static org.junit.Assert.*;
+import net.snowflake.client.category.TestCategoryOthers;
+import net.snowflake.client.core.ParameterBindingDTO;
+import net.snowflake.client.core.SFSession;
+import net.snowflake.client.core.bind.BindUploader;
+import org.junit.*;
+import org.junit.experimental.categories.Category;
 
 /**
  * Bind Uploader tests for the latest JDBC driver. This doesn't work for the oldest supported
@@ -71,7 +72,7 @@ public class BindUploaderLatestIT extends BaseJDBCTest {
     // after each write, the size will exceed 1 byte, so there should be 2 files
     bindUploader.setFileSize(1);
 
-    bindUploader.upload(getBindings(conn));
+    bindUploader.uploadDeprecated(getBindings(conn));
 
     // CSV should exist in bind directory until the uploader is closed
     Path p = bindUploader.getBindDir();
@@ -109,7 +110,7 @@ public class BindUploaderLatestIT extends BaseJDBCTest {
     // after each write, the size will exceed 1 byte, so there should be 2 files
     bindUploader.setFileSize(1);
 
-    bindUploader.upload(getBindings(conn));
+    bindUploader.uploadDeprecated(getBindings(conn));
 
     Statement stmt = conn.createStatement();
     ResultSet rs = stmt.executeQuery(SELECT_FROM_STAGE);
@@ -137,7 +138,7 @@ public class BindUploaderLatestIT extends BaseJDBCTest {
   // Test csv correctness, and deletion after close
   @Test
   public void testSerializeCSVSimple() throws Exception {
-    bindUploader.upload(getBindings(conn));
+    bindUploader.uploadDeprecated(getBindings(conn));
 
     // CSV should exist in bind directory until the uploader is closed
     Path p = bindUploader.getBindDir();
@@ -164,14 +165,18 @@ public class BindUploaderLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  public void testBindUploaderUploadStream() throws Exception {
-    bindUploader.upload2(getBindings(conn));
-    Statement stmt = conn.createStatement();
+  public void testUploadStreamLargeBatch() throws Exception {
+    // create large batch so total bytes transferred are about 10 times the size of input stream
+    // buffer
+    int batchSize = 10000;
+    SnowflakePreparedStatementV1 stmt =
+        (SnowflakePreparedStatementV1) conn.prepareStatement(dummyInsert);
+    for (int i = 0; i < batchSize; i++) {
+      bind(stmt, row1);
+    }
+    Map<String, ParameterBindingDTO> parameterBindings = stmt.getBatchParameterBindings();
+    bindUploader.upload(parameterBindings);
     ResultSet rs = stmt.executeQuery(SELECT_FROM_STAGE);
-    rs.next();
-    assertEquals(csv1, parseRow(rs));
-    rs.next();
-    assertEquals(csv2, parseRow(rs));
-    assertFalse(rs.next());
+    assertEquals(batchSize, getSizeOfResultSet(rs));
   }
 }
