@@ -204,6 +204,14 @@ public class BindUploader implements Closeable {
     }
   }
 
+  /**
+   * Upload bind parameters via streaming. This replaces previous function upload function where
+   * binds were written to a file which was then uploaded with a PUT statement.
+   *
+   * @param bindValues the bind map to upload
+   * @throws BindException if the bind map could not be serialized or upload fails
+   * @throws SQLException if the upload fails
+   */
   public void upload(Map<String, ParameterBindingDTO> bindValues)
       throws BindException, SQLException {
     if (!closed) {
@@ -243,7 +251,7 @@ public class BindUploader implements Closeable {
 
   /**
    * Method to put data from a stream at a stage location. The data will be uploaded as one file. No
-   * splitting is done in this method.
+   * splitting is done in this method. Similar to uploadStreamInternal() in SnowflakeConnectionV1.
    *
    * <p>Stream size must match the total size of data in the input stream unless compressData
    * parameter is set to true.
