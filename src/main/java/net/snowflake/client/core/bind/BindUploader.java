@@ -4,15 +4,7 @@
 
 package net.snowflake.client.core.bind;
 
-import net.snowflake.client.core.*;
-import net.snowflake.client.jdbc.ErrorCode;
-import net.snowflake.client.jdbc.SnowflakeFileTransferAgent;
-import net.snowflake.client.jdbc.SnowflakeSQLLoggedException;
-import net.snowflake.client.jdbc.SnowflakeType;
-import net.snowflake.client.log.SFLogger;
-import net.snowflake.client.log.SFLoggerFactory;
-import net.snowflake.client.util.SFPair;
-import net.snowflake.common.core.SqlState;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.io.*;
 import java.nio.ByteBuffer;
@@ -24,9 +16,18 @@ import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.zip.GZIPOutputStream;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
+import net.snowflake.client.core.ParameterBindingDTO;
+import net.snowflake.client.core.SFException;
+import net.snowflake.client.core.SFSession;
+import net.snowflake.client.core.SFStatement;
+import net.snowflake.client.jdbc.ErrorCode;
+import net.snowflake.client.jdbc.SnowflakeFileTransferAgent;
+import net.snowflake.client.jdbc.SnowflakeSQLLoggedException;
+import net.snowflake.client.jdbc.SnowflakeType;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
+import net.snowflake.client.util.SFPair;
+import net.snowflake.common.core.SqlState;
 
 public class BindUploader implements Closeable {
   private static final SFLogger logger = SFLoggerFactory.getLogger(BindUploader.class);
@@ -197,14 +198,8 @@ public class BindUploader implements Closeable {
    * @param bindValues the bind map to upload
    * @throws BindException if the bind map could not be serialized or upload fails
    */
-  public void upload(Map<String, ParameterBindingDTO> bindValues) throws BindException {
-    if (!closed) {
-      serializeBinds(bindValues);
-      putBinds();
-    }
-  }
-
-  public void upload2(Map<String, ParameterBindingDTO> bindValues) throws BindException, SQLException {
+  public void upload(Map<String, ParameterBindingDTO> bindValues)
+      throws BindException, SQLException {
     if (!closed) {
       List<ColumnTypeDataPair> columns = getColumnValues(bindValues);
       List<byte[]> csvRows = buildRowsAsBytes(columns);
@@ -215,23 +210,23 @@ public class BindUploader implements Closeable {
 
       while (rowNum < csvRows.size()) {
         // create a list of byte arrays
-        while (numBytes < inputStreamBufferSize && rowNum < csvRows.size())
-        {
+        while (numBytes < inputStreamBufferSize && rowNum < csvRows.size()) {
           numBytes += csvRows.get(rowNum).length;
           rowNum++;
         }
         // concatenate all byte arrays into 1 and put into input stream
         ByteBuffer bb = ByteBuffer.allocate(numBytes);
-        for (int i = startIndex; i < (startIndex + rowNum); i++)
-        {
+        for (int i = startIndex; i < rowNum; i++) {
           bb.put(csvRows.get(i));
         }
-        startIndex += rowNum;
         byte[] finalBytearray = bb.array();
         ByteArrayInputStream inputStream = new ByteArrayInputStream(finalBytearray);
         // do the upload
         String fileName = Integer.toString(++fileCount);
         uploadStreamInternal(inputStream, fileName, true);
+        // reset for next round. StartIndex leaves off from byte array. NumBytes = 0.
+        startIndex = rowNum;
+        numBytes = 0;
         try {
           inputStream.close();
         } catch (IOException e) {
@@ -257,31 +252,27 @@ public class BindUploader implements Closeable {
    * @throws SQLException raises if any error occurs
    */
   private void uploadStreamInternal(
-          InputStream inputStream,
-          String destFileName,
-          boolean compressData)
-          throws SQLException, BindException {
+      InputStream inputStream, String destFileName, boolean compressData)
+      throws SQLException, BindException {
 
     createStageIfNeeded();
     String stageName = stagePath;
-    logger.debug(
-            "upload data from stream: stageName={}" + ", destFileName={}",
-            destFileName);
+    logger.debug("upload data from stream: stageName={}" + ", destFileName={}", destFileName);
 
     if (stageName == null) {
       throw new SnowflakeSQLLoggedException(
-              session,
-              ErrorCode.INTERNAL_ERROR.getMessageCode(),
-              SqlState.INTERNAL_ERROR,
-              "stage name is null");
+          session,
+          ErrorCode.INTERNAL_ERROR.getMessageCode(),
+          SqlState.INTERNAL_ERROR,
+          "stage name is null");
     }
 
     if (destFileName == null) {
       throw new SnowflakeSQLLoggedException(
-              session,
-              ErrorCode.INTERNAL_ERROR.getMessageCode(),
-              SqlState.INTERNAL_ERROR,
-              "stage name is null");
+          session,
+          ErrorCode.INTERNAL_ERROR.getMessageCode(),
+          SqlState.INTERNAL_ERROR,
+          "stage name is null");
     }
 
     SFStatement stmt = new SFStatement(session);
@@ -302,8 +293,7 @@ public class BindUploader implements Closeable {
     putCommand.append(" overwrite=true");
 
     SnowflakeFileTransferAgent transferAgent;
-    transferAgent =
-            new SnowflakeFileTransferAgent(putCommand.toString(), session, stmt);
+    transferAgent = new SnowflakeFileTransferAgent(putCommand.toString(), session, stmt);
 
     transferAgent.setSourceStream(inputStream);
     transferAgent.setDestFileNameForStreamSource(destFileName);
@@ -311,18 +301,6 @@ public class BindUploader implements Closeable {
     transferAgent.execute();
 
     stmt.close();
-  }
-
-  /**
-   * Save the binds to disk
-   *
-   * @param bindValues the bind map to serialize
-   * @throws BindException if bind map improperly formed or writing binds fails
-   */
-  private void serializeBinds(Map<String, ParameterBindingDTO> bindValues) throws BindException {
-    List<ColumnTypeDataPair> columns = getColumnValues(bindValues);
-    List<String[]> rows = buildRows(columns);
-    writeRowsToCSV(rows);
   }
 
   /**
@@ -378,15 +356,14 @@ public class BindUploader implements Closeable {
   }
 
   /**
-   * Transpose a list of columns and their values to a list of rows
+   * Transpose a list of columns and their values to a list of rows in bytes
    *
    * @param columns the list of columns to transpose
    * @return list of rows
    * @throws BindException if columns improperly formed
    */
-  private List<String[]> buildRows(List<ColumnTypeDataPair> columns) throws BindException {
-    List<String[]> rows = new ArrayList<>();
-
+  private List<byte[]> buildRowsAsBytes(List<ColumnTypeDataPair> columns) throws BindException {
+    List<byte[]> rows = new ArrayList<>();
     int numColumns = columns.size();
     // columns should have binds
     if (columns.get(0).data.isEmpty()) {
@@ -411,101 +388,10 @@ public class BindUploader implements Closeable {
       for (int colIdx = 0; colIdx < numColumns; colIdx++) {
         row[colIdx] = columns.get(colIdx).data.get(rowIdx);
       }
-      rows.add(row);
-    }
-
-    return rows;
-  }
-
-  private List<byte[]> buildRowsAsBytes(List<ColumnTypeDataPair> columns) throws BindException {
-    List<byte[]> rows = new ArrayList<>();
-    int numColumns = columns.size();
-    // columns should have binds
-    if (columns.get(0).data.isEmpty()) {
-      throw new BindException("No binds found in first column", BindException.Type.SERIALIZATION);
-    }
-
-    int numRows = columns.get(0).data.size();
-    // every column should have the same number of binds
-    for (int i = 0; i < numColumns; i++) {
-      int iNumRows = columns.get(i).data.size();
-      if (columns.get(i).data.size() != numRows) {
-        throw new BindException(
-                String.format(
-                        "Column %d has a different number of binds (%d) than column 1 (%d)",
-                        i, iNumRows, numRows),
-                BindException.Type.SERIALIZATION);
-      }
-    }
-
-    for (int rowIdx = 0; rowIdx < numRows; rowIdx++) {
-      String[] row = new String[numColumns];
-      for (int colIdx = 0; colIdx < numColumns; colIdx++) {
-        row[colIdx] = columns.get(colIdx).data.get(rowIdx);
-      }
       rows.add(createCSVRecord(row));
     }
 
     return rows;
-  }
-
-  /**
-   * Write the list of rows to compressed CSV files in the temporary directory
-   *
-   * @param rows the list of rows to write out to a file
-   * @throws BindException if exception occurs while writing rows out
-   */
-  private void writeRowsToCSV(List<String[]> rows) throws BindException {
-    int numBytes;
-    int rowNum = 0;
-    int fileCount = 0;
-
-    while (rowNum < rows.size()) {
-      File file = getFile(++fileCount);
-
-      try (OutputStream out = openFile(file)) {
-        // until we reach the last row or the file is too big, write to the file
-        numBytes = 0;
-        while (numBytes < fileSize && rowNum < rows.size()) {
-          byte[] csv = createCSVRecord(rows.get(rowNum));
-          numBytes += csv.length;
-          out.write(csv);
-          rowNum++;
-        }
-      } catch (IOException ex) {
-        throw new BindException(
-            String.format("Exception encountered while writing to file: %s", ex.getMessage()),
-            BindException.Type.SERIALIZATION);
-      }
-    }
-  }
-
-
-  /**
-   * Create a File object for the given fileNum under the temporary directory
-   *
-   * @param fileNum the number to use as the file name
-   * @return a File object to upload to the stage
-   */
-  private File getFile(int fileNum) {
-    return bindDir.resolve(Integer.toString(fileNum)).toFile();
-  }
-
-  /**
-   * Create a new output stream for the given file
-   *
-   * @param file the file to write out to
-   * @return output stream
-   * @throws BindException raises if it fails to create an output file.
-   */
-  private OutputStream openFile(File file) throws BindException {
-    try {
-      return new GZIPOutputStream(new FileOutputStream(file));
-    } catch (IOException ex) {
-      throw new BindException(
-          String.format("Failed to create output file %s: %s", file.toString(), ex.getMessage()),
-          BindException.Type.SERIALIZATION);
-    }
   }
 
   /**
@@ -525,55 +411,6 @@ public class BindUploader implements Closeable {
     }
     sb.append('\n');
     return sb.toString().getBytes(UTF_8);
-  }
-
-  /**
-   * Build PUT statement string. Handle filesystem differences and escaping backslashes.
-   *
-   * @param bindDir the local directory which contains files with binds
-   * @param stagePath the stage path to upload to
-   * @return put statement for files in bindDir to stagePath
-   */
-  private String getPutStmt(String bindDir, String stagePath) {
-    return String.format(PUT_STMT, bindDir, File.separator, stagePath)
-        .replaceAll("\\\\", "\\\\\\\\");
-  }
-
-  /**
-   * Upload binds from local file to stage
-   *
-   * @throws BindException if uploading the binds fails
-   */
-  private void putBinds() throws BindException {
-    createStageIfNeeded();
-
-    String putStatement = getPutStmt(bindDir.toString(), stagePath);
-
-    for (int i = 0; i < PUT_RETRY_COUNT; i++) {
-      try {
-        SFStatement statement = new SFStatement(session);
-        SFBaseResultSet putResult = statement.execute(putStatement, false, null, null);
-        putResult.next();
-
-        // metadata is 0-based, result set is 1-based
-        int column =
-            putResult
-                    .getMetaData()
-                    .getColumnIndex(SnowflakeFileTransferAgent.UploadColumns.status.name())
-                + 1;
-        String status = putResult.getString(column);
-
-        if (SnowflakeFileTransferAgent.ResultStatus.UPLOADED.name().equals(status)) {
-          return; // success!
-        }
-        logger.debug("PUT statement failed. The response had status %s.", status);
-      } catch (SFException | SQLException ex) {
-        logger.debug("Exception encountered during PUT operation. ", ex);
-      }
-    }
-
-    // if we haven't returned (on success), throw exception
-    throw new BindException("Failed to PUT files to stage.", BindException.Type.UPLOAD);
   }
 
   /**

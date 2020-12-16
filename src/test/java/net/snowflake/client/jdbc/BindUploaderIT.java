@@ -109,6 +109,8 @@ public class BindUploaderIT extends BaseJDBCTest {
         (SnowflakePreparedStatementV1) conn.prepareStatement(dummyInsert);
     bind(stmt, row1);
     bind(stmt, row2);
+    bind(stmt, row1);
+    bind(stmt, row2);
     return stmt.getBatchParameterBindings();
   }
 
