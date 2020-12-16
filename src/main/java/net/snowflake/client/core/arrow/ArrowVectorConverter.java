@@ -12,6 +12,14 @@ import net.snowflake.client.core.SFException;
 
 /** Interface to convert from arrow vector values into java data types. */
 public interface ArrowVectorConverter {
+
+  /**
+   * Set to true when time value should be displayed in wallclock time (no timezone offset)
+   *
+   * @param useSessionTimezone
+   */
+  void setUseSessionTimezone(boolean useSessionTimezone);
+
   void setSessionTimeZone(TimeZone tz);
 
   /**

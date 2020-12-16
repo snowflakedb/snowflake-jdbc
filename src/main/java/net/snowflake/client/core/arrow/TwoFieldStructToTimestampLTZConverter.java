@@ -11,9 +11,7 @@ import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.IncidentUtil;
 import net.snowflake.client.core.ResultUtil;
 import net.snowflake.client.core.SFException;
-import net.snowflake.client.jdbc.ErrorCode;
-import net.snowflake.client.jdbc.SnowflakeType;
-import net.snowflake.client.jdbc.SnowflakeUtil;
+import net.snowflake.client.jdbc.*;
 import org.apache.arrow.vector.BigIntVector;
 import org.apache.arrow.vector.IntVector;
 import org.apache.arrow.vector.ValueVector;
@@ -84,7 +82,8 @@ public class TwoFieldStructToTimestampLTZConverter extends AbstractArrowVectorCo
       }
     }
 
-    Timestamp ts = ArrowResultUtil.createTimestamp(epoch, fraction, false);
+    Timestamp ts =
+        ArrowResultUtil.createTimestamp(epoch, fraction, sessionTimeZone, useSessionTimezone);
 
     Timestamp adjustedTimestamp = ResultUtil.adjustTimestamp(ts);
 
@@ -107,13 +106,17 @@ public class TwoFieldStructToTimestampLTZConverter extends AbstractArrowVectorCo
     }
     Timestamp ts = getTimestamp(index, TimeZone.getDefault(), false);
     // ts can be null when Java's timestamp is overflow.
-    return ts == null ? null : new Date(ts.getTime());
+    return ts == null
+        ? null
+        : new SnowflakeDateWithTimezone(ts.getTime(), sessionTimeZone, useSessionTimezone);
   }
 
   @Override
   public Time toTime(int index) throws SFException {
     Timestamp ts = toTimestamp(index, TimeZone.getDefault());
-    return ts == null ? null : new Time(ts.getTime());
+    return ts == null
+        ? null
+        : new SnowflakeTimeWithTimezone(ts, sessionTimeZone, useSessionTimezone);
   }
 
   @Override

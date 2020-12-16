@@ -4,6 +4,7 @@
 
 package net.snowflake.client.core;
 
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 import static org.apache.http.client.config.CookieSpecs.DEFAULT;
 import static org.apache.http.client.config.CookieSpecs.IGNORE_COOKIES;
 
@@ -12,11 +13,7 @@ import com.amazonaws.http.apache.SdkProxyRoutePlanner;
 import com.google.common.base.Strings;
 import com.microsoft.azure.storage.OperationContext;
 import com.snowflake.client.jdbc.SnowflakeDriver;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.PrintWriter;
-import java.io.StringWriter;
+import java.io.*;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.Socket;
@@ -68,6 +65,8 @@ public class HttpUtil {
   static final int DEFAULT_TTL = -1; // secs
   static final int DEFAULT_IDLE_CONNECTION_TIMEOUT = 5; // secs
   static final int DEFAULT_DOWNLOADED_CONDITION_TIMEOUT = 3600; // secs
+
+  public static final String JDBC_TTL = "net.snowflake.jdbc.ttl";
 
   /** The unique httpClient shared by all connections. This will benefit long- lived clients */
   private static Map<OCSPMode, CloseableHttpClient> httpClient = new ConcurrentHashMap<>();
@@ -141,14 +140,9 @@ public class HttpUtil {
     builder.append(SnowflakeDriver.implementVersion);
     builder.append(" (");
     // Generate OS platform and version from system properties
-    String osPlatform =
-        (SnowflakeUtil.systemGetProperty("os.name") != null)
-            ? SnowflakeUtil.systemGetProperty("os.name")
-            : "";
+    String osPlatform = (systemGetProperty("os.name") != null) ? systemGetProperty("os.name") : "";
     String osVersion =
-        (SnowflakeUtil.systemGetProperty("os.version") != null)
-            ? SnowflakeUtil.systemGetProperty("os.version")
-            : "";
+        (systemGetProperty("os.version") != null) ? systemGetProperty("os.version") : "";
     // Append OS platform and version separated by a space
     builder.append(osPlatform);
     builder.append(" ");
@@ -157,9 +151,7 @@ public class HttpUtil {
     builder.append(") JAVA/");
     // Generate string for language version from system properties and append it
     String languageVersion =
-        (SnowflakeUtil.systemGetProperty("java.version") != null)
-            ? SnowflakeUtil.systemGetProperty("java.version")
-            : "";
+        (systemGetProperty("java.version") != null) ? systemGetProperty("java.version") : "";
     builder.append(languageVersion);
     String userAgent = builder.toString();
     return userAgent;
@@ -178,6 +170,17 @@ public class HttpUtil {
       OCSPMode ocspMode, File ocspCacheFile, boolean downloadCompressed) {
     // set timeout so that we don't wait forever.
     // Setup the default configuration for all requests on this client
+
+    String ttlSystemProperty = systemGetProperty(JDBC_TTL);
+    int timeToLive = DEFAULT_TTL;
+    if (ttlSystemProperty != null) {
+      try {
+        timeToLive = Integer.parseInt(ttlSystemProperty);
+      } catch (NumberFormatException ex) {
+        logger.info("Failed to parse the system parameter {}", JDBC_TTL, ttlSystemProperty);
+      }
+    }
+    logger.debug("time to live in connection pooling manager: {}", timeToLive);
     if (DefaultRequestConfig == null) {
       DefaultRequestConfig =
           RequestConfig.custom()
@@ -216,7 +219,7 @@ public class HttpUtil {
       // Build a connection manager with enough connections
       connectionManager =
           new PoolingHttpClientConnectionManager(
-              registry, null, null, null, DEFAULT_TTL, TimeUnit.SECONDS);
+              registry, null, null, null, timeToLive, TimeUnit.SECONDS);
       connectionManager.setMaxTotal(DEFAULT_MAX_CONNECTIONS);
       connectionManager.setDefaultMaxPerRoute(DEFAULT_MAX_CONNECTIONS_PER_ROUTE);
 
