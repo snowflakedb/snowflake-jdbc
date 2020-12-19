@@ -4,7 +4,15 @@
 
 package net.snowflake.client.core.bind;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
+import net.snowflake.client.core.*;
+import net.snowflake.client.jdbc.ErrorCode;
+import net.snowflake.client.jdbc.SnowflakeFileTransferAgent;
+import net.snowflake.client.jdbc.SnowflakeSQLLoggedException;
+import net.snowflake.client.jdbc.SnowflakeType;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
+import net.snowflake.client.util.SFPair;
+import net.snowflake.common.core.SqlState;
 
 import java.io.*;
 import java.nio.ByteBuffer;
@@ -17,15 +25,8 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.zip.GZIPOutputStream;
-import net.snowflake.client.core.*;
-import net.snowflake.client.jdbc.ErrorCode;
-import net.snowflake.client.jdbc.SnowflakeFileTransferAgent;
-import net.snowflake.client.jdbc.SnowflakeSQLLoggedException;
-import net.snowflake.client.jdbc.SnowflakeType;
-import net.snowflake.client.log.SFLogger;
-import net.snowflake.client.log.SFLoggerFactory;
-import net.snowflake.client.util.SFPair;
-import net.snowflake.common.core.SqlState;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class BindUploader implements Closeable {
   private static final SFLogger logger = SFLoggerFactory.getLogger(BindUploader.class);
@@ -68,8 +69,8 @@ public class BindUploader implements Closeable {
   // size (bytes) per file in upload, 100MB default
   private long fileSize = 100 * 1024 * 1024;
 
-  // size (bytes) of max input stream
-  private long inputStreamBufferSize = 12 * 1024;
+  // size (bytes) of max input stream (1MB default)
+  private long inputStreamBufferSize = 1024 * 1024;
 
   private final DateFormat timestampFormat;
   private final DateFormat dateFormat;
@@ -188,6 +189,20 @@ public class BindUploader implements Closeable {
           String.format("Failed to create temporary directory: %s", ex.getMessage()),
           BindException.Type.OTHER);
     }
+  }
+
+  /**
+   * Create a new BindUploader which will upload to the given stage path Ensure temporary directory
+   * for file writing exists
+   *
+   * @param session the session to use for uploading binds
+   * @param stageDir the stage path to upload to
+   * @return BindUploader instance
+   * @throws BindException if temporary directory could not be created
+   */
+  public static synchronized BindUploader newInstanceWithoutDirectory(SFSession session, String stageDir)
+  {
+      return new BindUploader(session, stageDir, null);
   }
 
   /**
