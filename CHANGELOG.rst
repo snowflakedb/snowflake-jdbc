@@ -1,8 +1,6 @@
 **JDBC Driver 3.12.15**
 
 - \| SNOW-207061 | Fixed a problem with null checking when converting to timestamp values.
-- \      
-
 **JDBC Driver 3.12.14**
 
 - \| SNOW-150601 | Suppressed a warning about Illegal reflective access.
