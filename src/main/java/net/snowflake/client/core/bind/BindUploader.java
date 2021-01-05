@@ -198,7 +198,6 @@ public class BindUploader implements Closeable {
    * @param session the session to use for uploading binds
    * @param stageDir the stage path to upload to
    * @return BindUploader instance
-   * @throws BindException if temporary directory could not be created
    */
   public static synchronized BindUploader newInstanceWithoutDirectory(
       SFSession session, String stageDir) {
