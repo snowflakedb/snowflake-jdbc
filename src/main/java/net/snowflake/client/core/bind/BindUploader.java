@@ -224,8 +224,8 @@ public class BindUploader implements Closeable {
    * binds were written to a file which was then uploaded with a PUT statement.
    *
    * @param bindValues the bind map to upload
-   * @throws BindException if the bind map could not be serialized or upload fails
-   * @throws SQLException if the upload fails
+   * @throws BindException
+   * @throws SQLException
    */
   public void upload(Map<String, ParameterBindingDTO> bindValues)
       throws BindException, SQLException {
