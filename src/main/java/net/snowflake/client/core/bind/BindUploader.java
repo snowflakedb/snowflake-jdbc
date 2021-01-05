@@ -173,6 +173,9 @@ public class BindUploader implements Closeable {
    * Create a new BindUploader which will upload to the given stage path Ensure temporary directory
    * for file writing exists
    *
+   * <p>Deprecated now that streaming uploads are used instead of temporary file uploads. BindDir is
+   * not initialized anymore.
+   *
    * @param session the session to use for uploading binds
    * @param stageDir the stage path to upload to
    * @return BindUploader instance
@@ -334,6 +337,7 @@ public class BindUploader implements Closeable {
    * @param bindValues the bind map to serialize
    * @throws BindException if bind map improperly formed or writing binds fails
    */
+  @Deprecated
   private void serializeBinds(Map<String, ParameterBindingDTO> bindValues) throws BindException {
     List<ColumnTypeDataPair> columns = getColumnValues(bindValues);
     List<String[]> rows = buildRows(columns);
@@ -477,6 +481,7 @@ public class BindUploader implements Closeable {
    * @param rows the list of rows to write out to a file
    * @throws BindException if exception occurs while writing rows out
    */
+  @Deprecated
   private void writeRowsToCSV(List<String[]> rows) throws BindException {
     int numBytes;
     int rowNum = 0;
@@ -505,9 +510,12 @@ public class BindUploader implements Closeable {
   /**
    * Create a File object for the given fileNum under the temporary directory
    *
+   * <p>With new streaming implementation, bindDir does not exist.
+   *
    * @param fileNum the number to use as the file name
    * @return a File object to upload to the stage
    */
+  @Deprecated
   private File getFile(int fileNum) {
     return bindDir.resolve(Integer.toString(fileNum)).toFile();
   }
@@ -563,8 +571,11 @@ public class BindUploader implements Closeable {
   /**
    * Upload binds from local file to stage
    *
+   * <p>With new streaming implementation, bindDir does not exist.
+   *
    * @throws BindException if uploading the binds fails
    */
+  @Deprecated
   private void putBinds() throws BindException {
     createStageIfNeeded();
 
@@ -636,14 +647,16 @@ public class BindUploader implements Closeable {
   public void close() {
     if (!closed) {
       try {
-        if (Files.isDirectory(bindDir)) {
-          String[] dir = bindDir.toFile().list();
-          if (dir != null) {
-            for (String fileName : dir) {
-              Files.delete(bindDir.resolve(fileName));
+        if (bindDir != null) {
+          if (Files.isDirectory(bindDir)) {
+            String[] dir = bindDir.toFile().list();
+            if (dir != null) {
+              for (String fileName : dir) {
+                Files.delete(bindDir.resolve(fileName));
+              }
             }
+            Files.delete(bindDir);
           }
-          Files.delete(bindDir);
         }
       } catch (IOException ex) {
         logger.debug("Exception encountered while trying to clean local directory. ", ex);
@@ -674,8 +687,11 @@ public class BindUploader implements Closeable {
   /**
    * Return the local path to which binds are serialized
    *
+   * <p>With new streaming implementation, bindDir does not exist.
+   *
    * @return the local path
    */
+  @Deprecated
   public Path getBindDir() {
     return this.bindDir;
   }
