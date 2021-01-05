@@ -3,12 +3,8 @@
  */
 package net.snowflake.client.jdbc;
 
-import net.snowflake.client.category.TestCategoryOthers;
-import net.snowflake.client.core.ParameterBindingDTO;
-import net.snowflake.client.core.SFSession;
-import net.snowflake.client.core.bind.BindUploader;
-import org.junit.*;
-import org.junit.experimental.categories.Category;
+import static net.snowflake.client.jdbc.BindUploaderIT.*;
+import static org.junit.Assert.*;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -24,9 +20,12 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.TimeZone;
 import java.util.zip.GZIPInputStream;
-
-import static net.snowflake.client.jdbc.BindUploaderIT.*;
-import static org.junit.Assert.*;
+import net.snowflake.client.category.TestCategoryOthers;
+import net.snowflake.client.core.ParameterBindingDTO;
+import net.snowflake.client.core.SFSession;
+import net.snowflake.client.core.bind.BindUploader;
+import org.junit.*;
+import org.junit.experimental.categories.Category;
 
 /**
  * Bind Uploader tests for the latest JDBC driver. This doesn't work for the oldest supported
@@ -169,20 +168,15 @@ public class BindUploaderLatestIT extends BaseJDBCTest {
   public void testUploadStreamLargeBatch() throws Exception {
     // create large batch so total bytes transferred are about 10 times the size of input stream
     // buffer
-    for (int j = 0; j < 100; j++) {
-      int batchSize = 200000;
-      SnowflakePreparedStatementV1 stmt =
-          (SnowflakePreparedStatementV1) conn.prepareStatement(dummyInsert);
-      for (int i = 0; i < batchSize; i++) {
-        bind(stmt, row1);
-      }
-      Map<String, ParameterBindingDTO> parameterBindings = stmt.getBatchParameterBindings();
-      long startTime = System.currentTimeMillis();
-      bindUploader.uploadDeprecated(parameterBindings);
-      long endTime = System.currentTimeMillis();
-      System.out.println(endTime - startTime);
-      ResultSet rs = stmt.executeQuery(SELECT_FROM_STAGE);
-      assertEquals(batchSize, getSizeOfResultSet(rs));
+    int batchSize = 1024 * 1024;
+    SnowflakePreparedStatementV1 stmt =
+        (SnowflakePreparedStatementV1) conn.prepareStatement(dummyInsert);
+    for (int i = 0; i < batchSize; i++) {
+      bind(stmt, row1);
     }
-    }
+    Map<String, ParameterBindingDTO> parameterBindings = stmt.getBatchParameterBindings();
+    bindUploader.upload(parameterBindings);
+    ResultSet rs = stmt.executeQuery(SELECT_FROM_STAGE);
+    assertEquals(batchSize, getSizeOfResultSet(rs));
+  }
 }

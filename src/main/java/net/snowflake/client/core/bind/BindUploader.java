@@ -4,15 +4,7 @@
 
 package net.snowflake.client.core.bind;
 
-import net.snowflake.client.core.*;
-import net.snowflake.client.jdbc.ErrorCode;
-import net.snowflake.client.jdbc.SnowflakeFileTransferAgent;
-import net.snowflake.client.jdbc.SnowflakeSQLLoggedException;
-import net.snowflake.client.jdbc.SnowflakeType;
-import net.snowflake.client.log.SFLogger;
-import net.snowflake.client.log.SFLoggerFactory;
-import net.snowflake.client.util.SFPair;
-import net.snowflake.common.core.SqlState;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.io.*;
 import java.nio.ByteBuffer;
@@ -25,8 +17,15 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.zip.GZIPOutputStream;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
+import net.snowflake.client.core.*;
+import net.snowflake.client.jdbc.ErrorCode;
+import net.snowflake.client.jdbc.SnowflakeFileTransferAgent;
+import net.snowflake.client.jdbc.SnowflakeSQLLoggedException;
+import net.snowflake.client.jdbc.SnowflakeType;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
+import net.snowflake.client.util.SFPair;
+import net.snowflake.common.core.SqlState;
 
 public class BindUploader implements Closeable {
   private static final SFLogger logger = SFLoggerFactory.getLogger(BindUploader.class);
@@ -69,8 +68,8 @@ public class BindUploader implements Closeable {
   // size (bytes) per file in upload, 100MB default
   private long fileSize = 100 * 1024 * 1024;
 
-  // size (bytes) of max input stream (1MB default)
-  private long inputStreamBufferSize = 1024 * 1024;
+  // size (bytes) of max input stream (10MB default)
+  private long inputStreamBufferSize = 1024 * 1024 * 10;
 
   private final DateFormat timestampFormat;
   private final DateFormat dateFormat;
@@ -179,6 +178,7 @@ public class BindUploader implements Closeable {
    * @return BindUploader instance
    * @throws BindException if temporary directory could not be created
    */
+  @Deprecated
   public static synchronized BindUploader newInstance(SFSession session, String stageDir)
       throws BindException {
     try {
@@ -200,9 +200,9 @@ public class BindUploader implements Closeable {
    * @return BindUploader instance
    * @throws BindException if temporary directory could not be created
    */
-  public static synchronized BindUploader newInstanceWithoutDirectory(SFSession session, String stageDir)
-  {
-      return new BindUploader(session, stageDir, null);
+  public static synchronized BindUploader newInstanceWithoutDirectory(
+      SFSession session, String stageDir) {
+    return new BindUploader(session, stageDir, null);
   }
 
   /**
@@ -285,7 +285,8 @@ public class BindUploader implements Closeable {
 
     createStageIfNeeded();
     String stageName = stagePath;
-    logger.debug("upload data from stream: stageName={}" + ", destFileName={}", destFileName);
+    logger.debug(
+        "upload data from stream: stageName={}" + ", destFileName={}", stageName, destFileName);
 
     if (stageName == null) {
       throw new SnowflakeSQLLoggedException(
@@ -310,11 +311,8 @@ public class BindUploader implements Closeable {
     // use a placeholder for source file
     putCommand.append("put file:///tmp/placeholder ");
 
-    // add stage name
+    // add stage name surrounded by quotations in case special chars are used in directory name
     putCommand.append("'");
-    if (!(stageName.startsWith("@") || stageName.startsWith("'@") || stageName.startsWith("$$@"))) {
-      putCommand.append("@");
-    }
     putCommand.append(stageName);
     putCommand.append("'");
 
