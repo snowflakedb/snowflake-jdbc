@@ -1,7 +1,6 @@
 **JDBC Driver 3.12.16**
 
 - \| SNOW-206907 | Added support for downscoping GCS credentials (which can be used instead of presigned URLs).
-- \| SNOW-175899 | Added support for MFA token caching.
 
 **JDBC Driver 3.12.15**
 
