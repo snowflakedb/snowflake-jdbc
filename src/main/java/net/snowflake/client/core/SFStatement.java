@@ -382,7 +382,7 @@ public class SFStatement {
           && session.getArrayBindStageThreshold() <= numBinds
           && !describeOnly
           && BindUploader.isArrayBind(bindValues)) {
-        try (BindUploader uploader = BindUploader.newInstanceWithoutDirectory(session, requestId)) {
+        try (BindUploader uploader = BindUploader.newInstance(session, requestId)) {
           uploader.upload(bindValues);
           bindStagePath = uploader.getStagePath();
         } catch (BindException ex) {
