@@ -2938,7 +2938,6 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
         String destFolderCanonicalPathWithSeparator = destFolderCanonicalPath + File.separator;
 
         try {
-          statement.execute("alter session set CLIENT_MULTIPART_UPLOAD_THRESHOLD_IN_PUT=5");
           statement.execute("CREATE OR REPLACE STAGE testPutGet_stage");
 
           assertTrue(
