@@ -7,7 +7,6 @@ package net.snowflake.client.jdbc;
 import static org.junit.Assert.*;
 
 import java.math.BigDecimal;
-import java.nio.file.Files;
 import java.sql.*;
 import java.sql.Date;
 import java.util.*;
@@ -34,11 +33,10 @@ public class BindUploaderIT extends BaseJDBCTest {
       "create or replace table test_binduploader(col1 INTEGER, "
           + "col2 INTEGER, col3 DOUBLE, col4 DOUBLE, col5 DOUBLE, col6 VARCHAR, col7 BINARY, "
           + "col8 DATE, col9 TIME, col10 TIMESTAMP)";
-  private static final String dummyInsert =
-      "insert into test_binduploader VALUES(?,?,?,?,?,?,?,?,?,?)";
+  static final String dummyInsert = "insert into test_binduploader VALUES(?,?,?,?,?,?,?,?,?,?)";
   private static final String deleteTableSQL = "drop table if exists test_binduploader";
 
-  private static final Object[] row1 = {
+  static final Object[] row1 = {
     42,
     1234L,
     12.34f,
@@ -124,13 +122,6 @@ public class BindUploaderIT extends BaseJDBCTest {
     stmt.setTime(9, (Time) row[8]);
     stmt.setTimestamp(10, (Timestamp) row[9]);
     stmt.addBatch();
-  }
-
-  // BindUploader expects tempDir to exist on instantiation
-  @Test
-  public void testTempDirCreated() {
-    assertTrue(Files.exists(bindUploader.getBindDir()));
-    assertTrue(Files.isDirectory(bindUploader.getBindDir()));
   }
 
   static String parseRow(ResultSet rs) throws Exception {
