@@ -14,6 +14,13 @@ timestamps {
         |$WORKSPACE/ci/build.sh
       '''.stripMargin()
     }
+
+	publishCoverage(
+		failUnhealthy: true,
+		calculateDiffForChangeRequests: true,
+		failNoReports: true
+	)
+
     params = [
       string(name: 'client_git_branch', value: scmInfo.GIT_BRANCH),
       string(name: 'client_git_commit', value: scmInfo.GIT_COMMIT),
