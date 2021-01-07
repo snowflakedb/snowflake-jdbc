@@ -5,39 +5,16 @@ package net.snowflake.client.jdbc;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.*;
 import java.math.BigDecimal;
 import java.nio.channels.FileChannel;
-import java.sql.Connection;
-import java.sql.DatabaseMetaData;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.sql.Time;
-import java.sql.Timestamp;
-import java.sql.Types;
+import java.sql.*;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.List;
-import java.util.Properties;
-import java.util.TimeZone;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -47,13 +24,11 @@ import net.snowflake.client.AbstractDriverIT;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryOthers;
+import net.snowflake.client.core.SFSession;
+import net.snowflake.client.core.SFStatement;
 import net.snowflake.common.core.SqlState;
 import org.apache.commons.io.FileUtils;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.TemporaryFolder;
 
@@ -908,6 +883,32 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
       statement.execute("DROP TABLE IF EXISTS large_table");
       statement.close();
       connection.close();
+    }
+  }
+
+  @Test
+  public void testPutThreshold() throws SQLException {
+    try (Connection connection = getConnection()) {
+      // assert that setting threshold via session parameter sets the big file threshold
+      // appropriately
+      SFSession sfSession = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
+      Statement statement = connection.createStatement();
+      SFStatement sfStatement = statement.unwrap(SnowflakeStatementV1.class).getSfStatement();
+      statement.execute("alter session set CLIENT_MULTIPART_UPLOAD_THRESHOLD_IN_PUT=50");
+      statement.execute("CREATE OR REPLACE STAGE PUTTHRESHOLDSTAGE");
+      String command =
+          "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE) + " @PUTTHRESHOLDSTAGE";
+      SnowflakeFileTransferAgent agent =
+          new SnowflakeFileTransferAgent(command, sfSession, sfStatement);
+      assertEquals(50 * 1024 * 1024, agent.getBigFileThreshold());
+      // assert that setting threshold via put statement directly sets the big file threshold
+      // appropriately
+      String commandWithPut = command + " threshold=300";
+      agent = new SnowflakeFileTransferAgent(commandWithPut, sfSession, sfStatement);
+      assertEquals(300 * 1024 * 1024, agent.getBigFileThreshold());
+      statement.close();
+    } catch (SQLException ex) {
+      throw ex;
     }
   }
 
@@ -2937,6 +2938,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
         String destFolderCanonicalPathWithSeparator = destFolderCanonicalPath + File.separator;
 
         try {
+          statement.execute("alter session set CLIENT_MULTIPART_UPLOAD_THRESHOLD_IN_PUT=5");
           statement.execute("CREATE OR REPLACE STAGE testPutGet_stage");
 
           assertTrue(

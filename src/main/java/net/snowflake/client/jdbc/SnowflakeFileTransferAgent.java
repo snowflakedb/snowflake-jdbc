@@ -108,6 +108,15 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView {
     return this.stageInfo;
   }
 
+  /**
+   * Get value of big file threshold. For testing purposes.
+   *
+   * @return integer value in bytes of threshold
+   */
+  int getBigFileThreshold() {
+    return this.bigFileThreshold;
+  }
+
   // Encryption material
   private List<RemoteStoreFileEncryptionMaterial> encryptionMaterial;
 
