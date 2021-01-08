@@ -50,7 +50,7 @@ public class BindUploader implements Closeable {
   private static final int PUT_RETRY_COUNT = 3;
 
   // session of the uploader
-  private final SFSession session;
+  private final SFSessionImpl session;
 
   // fully-qualified stage path to upload binds to
   private final String stagePath;
@@ -86,7 +86,7 @@ public class BindUploader implements Closeable {
    * @param stageDir the stage path to upload to
    * @param bindDir the local directory to serialize binds to
    */
-  private BindUploader(SFSession session, String stageDir, Path bindDir) {
+  private BindUploader(SFSessionImpl session, String stageDir, Path bindDir) {
     this.session = session;
     this.stagePath = "@" + STAGE_NAME + "/" + stageDir;
     this.bindDir = bindDir;
@@ -171,7 +171,7 @@ public class BindUploader implements Closeable {
    * @return BindUploader instance
    * @throws BindException if temporary directory could not be created
    */
-  public static synchronized BindUploader newInstance(SFSession session, String stageDir)
+  public static synchronized BindUploader newInstance(SFSessionImpl session, String stageDir)
       throws BindException {
     try {
       Path bindDir = Files.createTempDirectory(PREFIX);
@@ -401,7 +401,7 @@ public class BindUploader implements Closeable {
 
     for (int i = 0; i < PUT_RETRY_COUNT; i++) {
       try {
-        SFStatement statement = new SFStatement(session);
+        SFStatement statement = new SFStatementImpl(session);
         SFBaseResultSet putResult = statement.execute(putStatement, false, null, null);
         putResult.next();
 
@@ -439,7 +439,7 @@ public class BindUploader implements Closeable {
       // another thread may have created the session by the time we enter this block
       if (session.getArrayBindStage() == null) {
         try {
-          SFStatement statement = new SFStatement(session);
+          SFStatement statement = new SFStatementImpl(session);
           statement.execute(CREATE_STAGE_STMT, false, null, null);
           session.setArrayBindStage(STAGE_NAME);
         } catch (SFException | SQLException ex) {

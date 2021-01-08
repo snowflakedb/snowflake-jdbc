@@ -111,7 +111,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
     this.resultSetConcurrency = resultSetConcurrency;
     this.resultSetHoldability = resultSetHoldability;
 
-    sfStatement = (connection != null) ? new SFStatement(connection.getSfSession()) : null;
+    sfStatement = (connection != null) ? connection.getConnectionImpl().createSFStatement() : null;
   }
 
   protected void raiseSQLExceptionIfStatementIsClosed() throws SQLException {

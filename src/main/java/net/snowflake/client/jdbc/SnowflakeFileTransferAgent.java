@@ -1828,7 +1828,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView {
         String localFilePath = getLocalFilePathFromCommand(command, false);
         String commandWithExactPath = command.replace(localFilePath, origDestFileName);
         // then hand that to GS to get the actual presigned URL we'll use
-        SFStatement statement = new SFStatement(session);
+        SFStatementImpl statement = new SFStatementImpl(session);
         JsonNode jsonNode = parseCommandInGS(statement, commandWithExactPath);
 
         if (!jsonNode.path("data").path("stageInfo").path("presignedUrl").isMissingNode()) {
@@ -2070,7 +2070,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView {
   public static void renewExpiredToken(
       SFSession session, String command, SnowflakeStorageClient client)
       throws SnowflakeSQLException {
-    SFStatement statement = new SFStatement(session);
+    SFStatementImpl statement = new SFStatementImpl(session);
     JsonNode jsonNode = parseCommandInGS(statement, command);
     Map<?, ?> stageCredentials = extractStageCreds(jsonNode);
 
