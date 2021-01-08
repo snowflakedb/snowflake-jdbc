@@ -72,6 +72,19 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
   /** Refer to all created and open statements from this connection */
   private final Set<Statement> openStatements = ConcurrentHashMap.newKeySet();
 
+  /** The SnowflakeConnectionImpl that provides the underlying physical-layer implementation */
+  private SnowflakeConnectionImpl connectionImpl;
+
+  /**
+   * Instantiates a SnowflakeConnectionV1 with the passed-in SnowflakeConnectionImpl.
+   *
+   * @param connectionImpl The SnowflakeConnectionImpl.
+   */
+  public SnowflakeConnectionV1(SnowflakeConnectionImpl connectionImpl) throws SQLException {
+    this.connectionImpl = connectionImpl;
+    initConnectionWithImpl();
+  }
+
   /**
    * A connection will establish a session token from snowflake
    *
@@ -95,8 +108,9 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
       throw new SnowflakeSQLException(
           SqlState.CONNECTION_EXCEPTION, INVALID_CONNECT_STRING.getMessageCode(), url);
     }
-    sfSession = new SFSession();
-    sfSession.setSnowflakeConnectionString(conStr);
+    connectionImpl = new DefaultConnectionImpl(conStr);
+    initConnectionWithImpl();
+
     try {
       initSessionProperties(conStr);
       missingProperties = sfSession.checkProperties();
@@ -112,13 +126,18 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
     return missingProperties;
   }
 
+  private void initConnectionWithImpl() throws SQLException {
+      sfSession = connectionImpl.getSFSession();
+  }
+
   private void initialize(SnowflakeConnectString conStr) throws SQLException {
     logger.debug(
         "Trying to establish session, JDBC driver version: {}", SnowflakeDriver.implementVersion);
     TelemetryService.getInstance().updateContext(conStr);
+
+    connectionImpl = new DefaultConnectionImpl(conStr);
     // open connection to GS
-    sfSession = new SFSession();
-    sfSession.setSnowflakeConnectionString(conStr);
+    initConnectionWithImpl();
 
     try {
       // pass the parameters to sfSession
@@ -796,6 +815,11 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
 
   String getDatabaseVersion() {
     return databaseVersion;
+  }
+
+  @Override
+  public SnowflakeConnectionImpl getConnectionImpl() {
+    return connectionImpl;
   }
 
   /**
