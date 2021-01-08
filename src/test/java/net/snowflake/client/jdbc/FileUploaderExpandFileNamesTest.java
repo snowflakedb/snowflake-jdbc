@@ -31,7 +31,7 @@ public class FileUploaderExpandFileNamesTest {
       folderName + "/Tes*Fil*A", folderName + "/TestFil?B", "~/TestFileC", "TestFileD"
     };
 
-    Set<String> files = SnowflakeFileTransferAgent.expandFileNames(locations);
+    Set<String> files = SnowflakeFileTransferAgentImpl.expandFileNames(locations);
 
     assertTrue(files.contains(folderName + "/TestFileA"));
     assertTrue(files.contains(folderName + "/TestFileB"));

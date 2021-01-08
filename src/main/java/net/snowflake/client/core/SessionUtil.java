@@ -383,7 +383,7 @@ public class SessionUtil {
         loginInput.setToken(s.issueJwtToken());
       }
 
-      uriBuilder.addParameter(SFSession.SF_QUERY_REQUEST_ID, UUID.randomUUID().toString());
+      uriBuilder.addParameter(SFSessionImpl.SF_QUERY_REQUEST_ID, UUID.randomUUID().toString());
 
       uriBuilder.setPath(SF_PATH_LOGIN_REQUEST);
       loginURI = uriBuilder.build();
@@ -795,7 +795,7 @@ public class SessionUtil {
       uriBuilder = new URIBuilder(loginInput.getServerUrl());
       uriBuilder.setPath(SF_PATH_TOKEN_REQUEST);
 
-      uriBuilder.addParameter(SFSession.SF_QUERY_REQUEST_ID, UUID.randomUUID().toString());
+      uriBuilder.addParameter(SFSessionImpl.SF_QUERY_REQUEST_ID, UUID.randomUUID().toString());
 
       postRequest = new HttpPost(uriBuilder.build());
     } catch (URISyntaxException ex) {
@@ -899,7 +899,7 @@ public class SessionUtil {
       uriBuilder = new URIBuilder(loginInput.getServerUrl());
 
       uriBuilder.addParameter(SF_QUERY_SESSION_DELETE, Boolean.TRUE.toString());
-      uriBuilder.addParameter(SFSession.SF_QUERY_REQUEST_ID, UUID.randomUUID().toString());
+      uriBuilder.addParameter(SFSessionImpl.SF_QUERY_REQUEST_ID, UUID.randomUUID().toString());
 
       uriBuilder.setPath(SF_PATH_SESSION);
 
@@ -1271,7 +1271,7 @@ public class SessionUtil {
     return parameters;
   }
 
-  static void updateSfDriverParamValues(Map<String, Object> parameters, SFSession session) {
+  static void updateSfDriverParamValues(Map<String, Object> parameters, SFSessionImpl session) {
     for (Map.Entry<String, Object> entry : parameters.entrySet()) {
       logger.debug("processing parameter {}", entry.getKey());
 

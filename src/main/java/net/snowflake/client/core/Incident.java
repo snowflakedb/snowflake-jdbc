@@ -51,7 +51,7 @@ public class Incident extends Event {
    * @param jobId job id String
    * @param requestId request id string
    */
-  public Incident(SFSession session, Throwable exc, String jobId, String requestId) {
+  public Incident(SFSessionImpl session, Throwable exc, String jobId, String requestId) {
     this(
         session,
         jobId,
@@ -94,7 +94,7 @@ public class Incident extends Event {
    * @param raiser string representation of top of stack trace
    */
   Incident(
-      SFSession session,
+      SFSessionImpl session,
       String jobId,
       String requestId,
       String errorMessage,
@@ -186,10 +186,10 @@ public class Incident extends Event {
 
     HttpPost postRequest = new HttpPost(incidentURI);
     postRequest.setHeader(
-        SFSession.SF_HEADER_AUTHORIZATION,
-        SFSession.SF_HEADER_SNOWFLAKE_AUTHTYPE
+        SFSessionImpl.SF_HEADER_AUTHORIZATION,
+        SFSessionImpl.SF_HEADER_SNOWFLAKE_AUTHTYPE
             + " "
-            + SFSession.SF_HEADER_TOKEN_TAG
+            + SFSessionImpl.SF_HEADER_TOKEN_TAG
             + "=\""
             + this.sessionToken
             + "\"");

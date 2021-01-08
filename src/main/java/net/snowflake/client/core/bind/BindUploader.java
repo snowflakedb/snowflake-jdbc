@@ -18,6 +18,7 @@ import java.util.*;
 import java.util.zip.GZIPOutputStream;
 import net.snowflake.client.core.*;
 import net.snowflake.client.jdbc.SnowflakeFileTransferAgent;
+import net.snowflake.client.jdbc.SnowflakeFileTransferAgentImpl;
 import net.snowflake.client.jdbc.SnowflakeType;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -409,11 +410,11 @@ public class BindUploader implements Closeable {
         int column =
             putResult
                     .getMetaData()
-                    .getColumnIndex(SnowflakeFileTransferAgent.UploadColumns.status.name())
+                    .getColumnIndex(SnowflakeFileTransferAgentImpl.UploadColumns.status.name())
                 + 1;
         String status = putResult.getString(column);
 
-        if (SnowflakeFileTransferAgent.ResultStatus.UPLOADED.name().equals(status)) {
+        if (SnowflakeFileTransferAgentImpl.ResultStatus.UPLOADED.name().equals(status)) {
           return; // success!
         }
         logger.debug("PUT statement failed. The response had status %s.", status);

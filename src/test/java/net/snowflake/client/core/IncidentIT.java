@@ -48,7 +48,7 @@ public class IncidentIT extends BaseIncidentTest {
     String errorMessage = "error Message";
     String errorStackTrace = "this is a stack element\nthis is another " + "element";
     Incident incident =
-        new Incident(new SFSession(), jobId, requestId, errorMessage, errorStackTrace, raiser);
+        new Incident(new SFSessionImpl(), jobId, requestId, errorMessage, errorStackTrace, raiser);
     Assert.assertEquals(jobId, incident.jobId);
     Assert.assertEquals(requestId, incident.requestId);
     Assert.assertTrue(incident.signature.startsWith(errorMessage + " at " + raiser));
@@ -71,7 +71,7 @@ public class IncidentIT extends BaseIncidentTest {
 
     ErrorCode ec = ErrorCode.INTERNAL_ERROR;
     SFException exc = new SFException(ec, errorMessage);
-    Incident incident = new Incident(new SFSession(), exc, jobId, requestId);
+    Incident incident = new Incident(new SFSessionImpl(), exc, jobId, requestId);
     Assert.assertEquals("jdbc", incident.driverName);
     Assert.assertNotNull(incident.driverVersion);
     Assert.assertNotNull(incident.signature);
@@ -98,8 +98,8 @@ public class IncidentIT extends BaseIncidentTest {
     String errorMessage = "This is a test exception";
 
     SFException exc = new SFException(ErrorCode.INTERNAL_ERROR, errorMessage);
-    Incident incident1 = new Incident(new SFSession(), exc, jobId, requestId);
-    Incident incident2 = new Incident(new SFSession(), exc, jobId, requestId);
+    Incident incident1 = new Incident(new SFSessionImpl(), exc, jobId, requestId);
+    Incident incident2 = new Incident(new SFSessionImpl(), exc, jobId, requestId);
     Assert.assertNotEquals(incident1.uuid, incident2.uuid);
   }
 
@@ -118,7 +118,7 @@ public class IncidentIT extends BaseIncidentTest {
 
     Incident incident =
         new Incident(
-            connection.unwrap(SnowflakeConnectionV1.class).getSfSession(), exc, jobId, requestId);
+                (SFSessionImpl) connection.unwrap( SnowflakeConnectionV1.class).getSfSession(), exc, jobId, requestId);
     incident.trigger();
     verifyIncidentRegisteredInGS(expected_signature, 1);
     connection.close();
@@ -132,7 +132,7 @@ public class IncidentIT extends BaseIncidentTest {
     Connection connection = getConnection();
     Incident incident =
         new Incident(
-            connection.unwrap(SnowflakeConnectionV1.class).getSfSession(), exc, "ji", "ri");
+                (SFSessionImpl) connection.unwrap(SnowflakeConnectionV1.class).getSfSession(), exc, "ji", "ri");
     incident.trigger();
     String dumpFile = findDmpFile(incident.signature);
     File file = new File(dumpFile);
@@ -191,7 +191,7 @@ public class IncidentIT extends BaseIncidentTest {
             ErrorCode.IO_ERROR,
             "Mark Screwed something up again" + RandomStringUtils.randomAlphabetic(3));
     Connection connection = getConnection();
-    SFSession session = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
+    SFSessionImpl session = (SFSessionImpl) connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
     Incident incident = new Incident(session, exc, null, null);
     String signature = incident.signature;
     try {
