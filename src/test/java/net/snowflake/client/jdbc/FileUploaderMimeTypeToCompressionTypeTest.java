@@ -52,7 +52,7 @@ public class FileUploaderMimeTypeToCompressionTypeTest {
   @Test
   public void testMimeTypeToCompressionType() throws Throwable {
     Optional<FileCompressionType> foundCompType =
-        SnowflakeFileTransferAgent.mimeTypeToCompressionType(mimeType);
+        SnowflakeFileTransferAgentImpl.mimeTypeToCompressionType(mimeType);
     if (foundCompType.isPresent()) {
       assertEquals(mimeSubType, foundCompType.get());
     } else {

@@ -134,5 +134,13 @@ public interface SFSession {
 
   boolean isResultColumnCaseInsensitive();
 
+  String getServerUrl();
+
+  String getSessionToken();
+
+  String getServiceName();
+
+  String getIdToken();
+
   SnowflakeType getTimestampMappedType();
 }

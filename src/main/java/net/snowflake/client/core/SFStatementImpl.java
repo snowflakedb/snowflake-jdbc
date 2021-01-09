@@ -56,7 +56,7 @@ public class SFStatementImpl implements SFStatement {
 
   private boolean isFileTransfer = false;
 
-  private SnowflakeFileTransferAgent transferAgent = null;
+  private SnowflakeFileTransferAgentImpl transferAgent = null;
 
   // statement level parameters
   private final Map<String, Object> statementParametersMap = new HashMap<>();
@@ -752,7 +752,7 @@ public class SFStatementImpl implements SFStatement {
     logger.debug("Entering executeFileTransfer");
 
     isFileTransfer = true;
-    transferAgent = new SnowflakeFileTransferAgent(sql, session, this);
+    transferAgent = new SnowflakeFileTransferAgentImpl(sql, session, this);
 
     try {
       transferAgent.execute();

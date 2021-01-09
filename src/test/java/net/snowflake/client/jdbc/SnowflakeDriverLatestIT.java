@@ -14,9 +14,7 @@ import java.util.zip.GZIPInputStream;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryOthers;
-import net.snowflake.client.core.OCSPMode;
-import net.snowflake.client.core.SFSession;
-import net.snowflake.client.core.SFStatement;
+import net.snowflake.client.core.*;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.junit.Rule;
@@ -83,12 +81,12 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
       // create a stage to put the file in
       statement.execute("CREATE OR REPLACE STAGE " + testStageName);
 
-      SFSession sfSession = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
+      SFSessionImpl sfSession = (SFSessionImpl) connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
 
       // Test put file with internal compression
       String putCommand1 = "put file:///dummy/path/file1.gz @" + testStageName;
-      SnowflakeFileTransferAgent sfAgent1 =
-          new SnowflakeFileTransferAgent(putCommand1, sfSession, new SFStatement(sfSession));
+      SnowflakeFileTransferAgentImpl sfAgent1 =
+          new SnowflakeFileTransferAgentImpl(putCommand1, sfSession, new SFStatementImpl(sfSession));
       List<SnowflakeFileTransferMetadata> metadatas1 = sfAgent1.getFileTransferMetadatas();
 
       String srcPath1 = getFullPathFileInResource(TEST_DATA_FILE);
@@ -96,7 +94,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
         InputStream inputStream = new FileInputStream(srcPath1);
 
         assert (oneMetadata.isForOneFile());
-        SnowflakeFileTransferAgent.uploadWithoutConnection(
+        SnowflakeFileTransferAgentImpl.uploadWithoutConnection(
             SnowflakeFileTransferConfig.Builder.newInstance()
                 .setSnowflakeFileTransferMetadata(oneMetadata)
                 .setUploadStream(inputStream)
@@ -108,8 +106,8 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
 
       // Test Put file with external compression
       String putCommand2 = "put file:///dummy/path/file2.gz @" + testStageName;
-      SnowflakeFileTransferAgent sfAgent2 =
-          new SnowflakeFileTransferAgent(putCommand2, sfSession, new SFStatement(sfSession));
+      SnowflakeFileTransferAgentImpl sfAgent2 =
+          new SnowflakeFileTransferAgentImpl(putCommand2, sfSession, new SFStatementImpl(sfSession));
       List<SnowflakeFileTransferMetadata> metadatas2 = sfAgent2.getFileTransferMetadatas();
 
       String srcPath2 = getFullPathFileInResource(TEST_DATA_FILE_2);
@@ -124,7 +122,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
 
         InputStream gzInputStream = new FileInputStream(gzfilePath);
         assert (oneMetadata.isForOneFile());
-        SnowflakeFileTransferAgent.uploadWithoutConnection(
+        SnowflakeFileTransferAgentImpl.uploadWithoutConnection(
             SnowflakeFileTransferConfig.Builder.newInstance()
                 .setSnowflakeFileTransferMetadata(oneMetadata)
                 .setUploadStream(gzInputStream)
@@ -169,19 +167,19 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
         // create a stage to put the file in
         statement.execute("CREATE OR REPLACE STAGE " + testStageName);
 
-        SFSession sfSession = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
+        SFSessionImpl sfSession = (SFSessionImpl) connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
 
         // Test put file with internal compression
         String putCommand1 = "put file:///dummy/path/file1.gz @" + testStageName;
-        SnowflakeFileTransferAgent sfAgent1 =
-            new SnowflakeFileTransferAgent(putCommand1, sfSession, new SFStatement(sfSession));
+        SnowflakeFileTransferAgentImpl sfAgent1 =
+            new SnowflakeFileTransferAgentImpl(putCommand1, sfSession, new SFStatementImpl(sfSession));
         List<SnowflakeFileTransferMetadata> metadatas1 = sfAgent1.getFileTransferMetadatas();
 
         String srcPath1 = getFullPathFileInResource(TEST_DATA_FILE);
         for (SnowflakeFileTransferMetadata oneMetadata : metadatas1) {
           InputStream inputStream = new FileInputStream(srcPath1);
 
-          SnowflakeFileTransferAgent.uploadWithoutConnection(
+          SnowflakeFileTransferAgentImpl.uploadWithoutConnection(
               SnowflakeFileTransferConfig.Builder.newInstance()
                   .setSnowflakeFileTransferMetadata(oneMetadata)
                   .setUploadStream(inputStream)
@@ -195,8 +193,8 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
 
         // Test Put file with external compression
         String putCommand2 = "put file:///dummy/path/file2.gz @" + testStageName;
-        SnowflakeFileTransferAgent sfAgent2 =
-            new SnowflakeFileTransferAgent(putCommand2, sfSession, new SFStatement(sfSession));
+        SnowflakeFileTransferAgentImpl sfAgent2 =
+            new SnowflakeFileTransferAgentImpl(putCommand2, sfSession, new SFStatementImpl(sfSession));
         List<SnowflakeFileTransferMetadata> metadatas2 = sfAgent2.getFileTransferMetadatas();
 
         String srcPath2 = getFullPathFileInResource(TEST_DATA_FILE_2);
@@ -211,7 +209,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
 
           InputStream gzInputStream = new FileInputStream(gzfilePath);
 
-          SnowflakeFileTransferAgent.uploadWithoutConnection(
+          SnowflakeFileTransferAgentImpl.uploadWithoutConnection(
               SnowflakeFileTransferConfig.Builder.newInstance()
                   .setSnowflakeFileTransferMetadata(oneMetadata)
                   .setUploadStream(gzInputStream)
@@ -260,7 +258,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
       String srcPath = getFullPathFileInResource(TEST_DATA_FILE);
       statement.execute("put file://" + srcPath + " @" + testStageName);
 
-      SFSession sfSession = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
+      SFSessionImpl sfSession = (SFSessionImpl) connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
 
       File destFolder = tmpFolder.newFolder();
       String destFolderCanonicalPath = destFolder.getCanonicalPath();
@@ -271,8 +269,8 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
       statement.execute(getCommand);
 
       // Start negative test for GET.
-      SnowflakeFileTransferAgent sfAgent =
-          new SnowflakeFileTransferAgent(getCommand, sfSession, new SFStatement(sfSession));
+      SnowflakeFileTransferAgentImpl sfAgent =
+          new SnowflakeFileTransferAgentImpl(getCommand, sfSession, new SFStatementImpl(sfSession));
 
       // Below function call should fail.
       actualExceptionCount = 0;

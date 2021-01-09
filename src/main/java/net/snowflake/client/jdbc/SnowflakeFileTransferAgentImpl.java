@@ -49,7 +49,7 @@ import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
  *
  * @author jhuang
  */
-public class SnowflakeFileTransferAgentImpl implements SnowflakeFixedView {
+public class SnowflakeFileTransferAgentImpl implements SnowflakeFileTransferAgent, SnowflakeFixedView {
   static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeFileTransferAgentImpl.class);
 
   static final StorageClientFactory storageFactory = StorageClientFactory.getFactory();
@@ -1389,7 +1389,7 @@ public class SnowflakeFileTransferAgentImpl implements SnowflakeFixedView {
   }
 
   /** Download a file from remote, and return an input stream */
-  InputStream downloadStream(String fileName) throws SnowflakeSQLException {
+  public InputStream downloadStream(String fileName) throws SnowflakeSQLException {
     if (stageInfo.getStageType() == StageInfo.StageType.LOCAL_FS) {
       logger.error("downloadStream function doesn't support local file system");
 

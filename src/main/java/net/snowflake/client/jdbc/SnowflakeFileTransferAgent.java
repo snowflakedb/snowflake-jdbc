@@ -5,6 +5,7 @@
 package net.snowflake.client.jdbc;
 
 import java.io.InputStream;
+import java.sql.SQLException;
 
 /**
  * Class for uploading/downloading files
@@ -18,7 +19,9 @@ public interface SnowflakeFileTransferAgent extends SnowflakeFixedView {
 
   void setCompressSourceFromStream(boolean compressSourceFromStream);
 
-  void execute();
+  boolean execute() throws SQLException;
+
+  InputStream downloadStream(String fileName) throws SnowflakeSQLException;
 
   enum CommandType {
     UPLOAD,
