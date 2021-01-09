@@ -76,6 +76,10 @@ public class SFStatementImpl implements SFStatement {
   private int conservativeResultChunkSize;
   private long conservativeMemoryLimit; // in bytes
 
+  // Enable response capture for test purposes
+  private boolean captureJsonResponse;
+  private JsonNode capturedResponse;
+
   /**
    * Add a statement parameter
    *
@@ -243,6 +247,11 @@ public class SFStatementImpl implements SFStatement {
 
     try {
       JsonNode jsonResult = (JsonNode) result;
+
+      if (captureJsonResponse) {
+        capturedResponse = jsonResult;
+      }
+
       resultSet = SFResultSetFactory.getResultSet(jsonResult, this, sortResult);
       childResults = ResultUtil.getChildResults(session, requestId, jsonResult);
 
@@ -927,5 +936,17 @@ public class SFStatementImpl implements SFStatement {
 
   public boolean hasChildren() {
     return !childResults.isEmpty();
+  }
+
+  public void enableJsonResponseCapture() {
+    this.captureJsonResponse = true;
+  }
+
+  public void disableJsonResponseCapture() {
+    this.captureJsonResponse = false;
+  }
+
+  public JsonNode getCapturedResponse() {
+    return capturedResponse;
   }
 }

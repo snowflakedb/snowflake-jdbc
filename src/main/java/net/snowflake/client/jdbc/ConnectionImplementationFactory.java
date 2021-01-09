@@ -3,6 +3,7 @@ package net.snowflake.client.jdbc;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.core.SFStatement;
 
+import java.sql.SQLException;
 import java.sql.SQLNonTransientConnectionException;
 
 /**
@@ -13,7 +14,7 @@ import java.sql.SQLNonTransientConnectionException;
 public interface ConnectionImplementationFactory {
   SFSession getSFSession();
 
-  SFStatement createSFStatement();
+  SFStatement createSFStatement() throws SQLException;
 
   SnowflakeFileTransferAgent getFileTransferAgent(String command, SFStatement statement)
       throws SQLNonTransientConnectionException, SnowflakeSQLException;
