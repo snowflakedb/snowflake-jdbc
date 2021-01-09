@@ -7,7 +7,7 @@ import net.snowflake.client.core.SFStatementImpl;
 
 import java.sql.SQLNonTransientConnectionException;
 
-public class DefaultConnectionImpl implements SnowflakeConnectionImpl {
+public class DefaultConnectionImpl implements ConnectionImplementationFactory {
 
   private SFSessionImpl sfSession;
 

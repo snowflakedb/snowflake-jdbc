@@ -65,5 +65,5 @@ public interface SnowflakeConnection {
   /**
    * Returns the SnowflakeConnectionImpl from the connection object.
    */
-  SnowflakeConnectionImpl getConnectionImpl();
+  ConnectionImplementationFactory getConnectionImpl();
 }
