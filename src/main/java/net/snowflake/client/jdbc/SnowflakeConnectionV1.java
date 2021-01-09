@@ -74,14 +74,14 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
   private final Set<Statement> openStatements = ConcurrentHashMap.newKeySet();
 
   /** The SnowflakeConnectionImpl that provides the underlying physical-layer implementation */
-  private SnowflakeConnectionImpl connectionImpl;
+  private ConnectionImplementationFactory connectionImpl;
 
   /**
    * Instantiates a SnowflakeConnectionV1 with the passed-in SnowflakeConnectionImpl.
    *
    * @param connectionImpl The SnowflakeConnectionImpl.
    */
-  public SnowflakeConnectionV1(SnowflakeConnectionImpl connectionImpl) throws SQLException {
+  public SnowflakeConnectionV1(ConnectionImplementationFactory connectionImpl) throws SQLException {
     this.connectionImpl = connectionImpl;
     initConnectionWithImpl();
   }
@@ -819,7 +819,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
   }
 
   @Override
-  public SnowflakeConnectionImpl getConnectionImpl() {
+  public ConnectionImplementationFactory getConnectionImpl() {
     return connectionImpl;
   }
 

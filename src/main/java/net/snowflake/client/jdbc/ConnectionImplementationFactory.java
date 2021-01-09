@@ -10,8 +10,11 @@ import java.sql.SQLNonTransientConnectionException;
  * alternate definitions of SFSession, SFStatement, and SFResultSet, (representing the 'physical'
  * implementation layer) that can share high-level code.
  */
-public interface SnowflakeConnectionImpl {
+public interface ConnectionImplementationFactory {
   SFSession getSFSession();
+
   SFStatement createSFStatement();
-  SnowflakeFileTransferAgent getFileTransferAgent(String command, SFStatement statement) throws SQLNonTransientConnectionException, SnowflakeSQLException;
+
+  SnowflakeFileTransferAgent getFileTransferAgent(String command, SFStatement statement)
+      throws SQLNonTransientConnectionException, SnowflakeSQLException;
 }
