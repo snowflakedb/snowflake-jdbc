@@ -4,21 +4,7 @@
 
 package net.snowflake.client.jdbc;
 
-import static net.snowflake.client.core.SessionUtil.CLIENT_SFSQL;
-import static net.snowflake.client.core.SessionUtil.JVM_PARAMS_TO_PARAMS;
-import static net.snowflake.client.jdbc.ErrorCode.FEATURE_UNSUPPORTED;
-import static net.snowflake.client.jdbc.ErrorCode.INVALID_CONNECT_STRING;
-import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
-
 import com.google.common.base.Strings;
-import java.io.IOException;
-import java.io.InputStream;
-import java.sql.*;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executor;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.zip.GZIPInputStream;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.core.SFSessionProperty;
@@ -28,6 +14,21 @@ import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.log.SFLoggerUtil;
 import net.snowflake.common.core.LoginInfoDTO;
 import net.snowflake.common.core.SqlState;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.sql.*;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.zip.GZIPInputStream;
+
+import static net.snowflake.client.core.SessionUtil.CLIENT_SFSQL;
+import static net.snowflake.client.core.SessionUtil.JVM_PARAMS_TO_PARAMS;
+import static net.snowflake.client.jdbc.ErrorCode.FEATURE_UNSUPPORTED;
+import static net.snowflake.client.jdbc.ErrorCode.INVALID_CONNECT_STRING;
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
 /** Snowflake connection implementation */
 public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
@@ -967,9 +968,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
     putCommand.append(" overwrite=true");
 
     SnowflakeFileTransferAgent transferAgent;
-    transferAgent =
-        new SnowflakeFileTransferAgent(putCommand.toString(), sfSession, stmt.getSfStatement());
-
+    transferAgent = connectionImpl.getFileTransferAgent(putCommand.toString(), stmt.getSfStatement());
     transferAgent.setSourceStream(inputStream);
     transferAgent.setDestFileNameForStreamSource(destFileName);
     transferAgent.setCompressSourceFromStream(compressData);
@@ -1039,7 +1038,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
     getCommand.append(" file:///tmp/ /*jdbc download stream*/");
 
     SnowflakeFileTransferAgent transferAgent =
-        new SnowflakeFileTransferAgent(getCommand.toString(), sfSession, stmt.getSfStatement());
+        connectionImpl.getFileTransferAgent(getCommand.toString(), stmt.getSfStatement());
 
     InputStream stream = transferAgent.downloadStream(sourceFileName);
 

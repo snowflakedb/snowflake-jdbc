@@ -6,6 +6,7 @@ package net.snowflake.client.core.arrow;
 import java.util.TimeZone;
 import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.SFSession;
+import net.snowflake.client.core.SFSessionImpl;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.common.core.SFBinaryFormat;
 import net.snowflake.common.core.SnowflakeDateTimeFormat;
@@ -22,7 +23,7 @@ public class BaseConverterTest implements DataConversionContext {
   private SnowflakeDateTimeFormat timestampTZFormat =
       SnowflakeDateTimeFormat.fromSqlFormat("DY, DD MON YYYY HH24:MI:SS TZHTZM");
 
-  private SFSession session = new SFSession();
+  private SFSession session = new SFSessionImpl();
   private int testScale = 9;
   private boolean honorClientTZForTimestampNTZ;
   protected final int invalidConversionErrorCode = ErrorCode.INVALID_VALUE_CONVERT.getMessageCode();

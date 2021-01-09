@@ -47,6 +47,7 @@ import net.snowflake.client.AbstractDriverIT;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryOthers;
+import net.snowflake.client.core.SFSessionImpl;
 import net.snowflake.common.core.SqlState;
 import org.apache.commons.io.FileUtils;
 import org.junit.AfterClass;
@@ -1413,9 +1414,9 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
             + "timestampadd(day, seq8(), '1970-01-13 00:00:00'::timestamp_ntz)\n"
             + "from table(generator(rowcount=>20))");
 
-    connection
+    ((SFSessionImpl)connection
         .unwrap(SnowflakeConnectionV1.class)
-        .getSfSession()
+        .getSfSession())
         .setTimestampMappedType(SnowflakeType.TIMESTAMP_NTZ);
     Timestamp ts = buildTimestamp(1970, 0, 15, 10, 14, 30, 0);
     PreparedStatement preparedStatement =

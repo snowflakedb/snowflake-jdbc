@@ -12,6 +12,7 @@ import java.util.TimeZone;
 import net.snowflake.client.core.ResultUtil;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SFSession;
+import net.snowflake.client.core.SFSessionImpl;
 import org.junit.After;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -44,7 +45,7 @@ public class ArrowResultUtilTest {
     Random random = new Random();
     int dateBound = 50000;
     int times = 100000;
-    SFSession session = new SFSession();
+    SFSession session = new SFSessionImpl();
     long start = System.currentTimeMillis();
     TimeZone tz = TimeZone.getDefault();
     int[] days = new int[times];

@@ -456,7 +456,7 @@ public class SFSessionImpl implements SFSession {
     return sessionParametersMap.containsKey(key);
   }
 
-  protected String getServerUrl() {
+  public String getServerUrl() {
     if (connectionPropertiesMap.containsKey(SFSessionProperty.SERVER_URL)) {
       return (String) connectionPropertiesMap.get(SFSessionProperty.SERVER_URL);
     }

@@ -33,6 +33,7 @@ import java.util.Map;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.SFSession;
+import net.snowflake.client.core.SFSessionImpl;
 import net.snowflake.client.jdbc.*;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -270,7 +271,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
    */
   @Override
   public void download(
-      SFSession session,
+      SFSessionImpl session,
       String command,
       String localLocation,
       String destFileName,
@@ -352,7 +353,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
    */
   @Override
   public InputStream downloadToStream(
-      SFSession session,
+      SFSessionImpl session,
       String command,
       int parallelism,
       String remoteStorageLocation,
@@ -433,7 +434,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
    */
   @Override
   public void upload(
-      SFSession session,
+      SFSessionImpl session,
       String command,
       int parallelism,
       boolean uploadFromStream,
@@ -536,7 +537,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
    */
   @Override
   public void handleStorageException(
-      Exception ex, int retryCount, String operation, SFSession session, String command)
+      Exception ex, int retryCount, String operation, SFSessionImpl session, String command)
       throws SnowflakeSQLException {
     handleAzureException(ex, retryCount, operation, session, command, this);
   }
@@ -640,7 +641,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
       Exception ex,
       int retryCount,
       String operation,
-      SFSession session,
+      SFSessionImpl session,
       String command,
       SnowflakeAzureClient azClient)
       throws SnowflakeSQLException {
@@ -649,7 +650,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
     if (ex.getCause() instanceof InvalidKeyException) {
       // Most likely cause is that the unlimited strength policy files are not installed
       // Log the error and throw a message that explains the cause
-      SnowflakeFileTransferAgent.throwJCEMissingError(operation, ex);
+      SnowflakeFileTransferAgentImpl.throwJCEMissingError(operation, ex);
     }
 
     if (ex instanceof StorageException) {
@@ -658,7 +659,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
       if (((StorageException) ex).getHttpStatusCode() == 403) {
         // A 403 indicates that the SAS token has expired,
         // we need to refresh the Azure client with the new token
-        SnowflakeFileTransferAgent.renewExpiredToken(session, command, azClient);
+        SnowflakeFileTransferAgentImpl.renewExpiredToken(session, command, azClient);
       }
       // If we have exceeded the max number of retries, propagate the error
       if (retryCount > azClient.getMaxRetries()) {
@@ -698,7 +699,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
         if (se.getHttpStatusCode() == 403) {
           // A 403 indicates that the SAS token has expired,
           // we need to refresh the Azure client with the new token
-          SnowflakeFileTransferAgent.renewExpiredToken(session, command, azClient);
+          SnowflakeFileTransferAgentImpl.renewExpiredToken(session, command, azClient);
         }
       }
     } else {

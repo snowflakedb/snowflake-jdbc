@@ -40,6 +40,7 @@ import javax.crypto.spec.SecretKeySpec;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.SFSSLConnectionSocketFactory;
 import net.snowflake.client.core.SFSession;
+import net.snowflake.client.core.SFSessionImpl;
 import net.snowflake.client.jdbc.*;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -274,7 +275,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
    */
   @Override
   public void download(
-      SFSession session,
+      SFSessionImpl session,
       String command,
       String localLocation,
       String destFileName,
@@ -370,7 +371,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
    */
   @Override
   public InputStream downloadToStream(
-      SFSession session,
+      SFSessionImpl session,
       String command,
       int parallelism,
       String remoteStorageLocation,
@@ -443,7 +444,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
    */
   @Override
   public void upload(
-      SFSession session,
+      SFSessionImpl session,
       String command,
       int parallelism,
       boolean uploadFromStream,
@@ -645,7 +646,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
 
   @Override
   public void handleStorageException(
-      Exception ex, int retryCount, String operation, SFSession session, String command)
+      Exception ex, int retryCount, String operation, SFSessionImpl session, String command)
       throws SnowflakeSQLException {
     handleS3Exception(ex, retryCount, operation, session, command, this);
   }
@@ -654,7 +655,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
       Exception ex,
       int retryCount,
       String operation,
-      SFSession session,
+      SFSessionImpl session,
       String command,
       SnowflakeS3Client s3Client)
       throws SnowflakeSQLException {
@@ -662,7 +663,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
     if (ex.getCause() instanceof InvalidKeyException) {
       // Most likely cause is that the unlimited strength policy files are not installed
       // Log the error and throw a message that explains the cause
-      SnowflakeFileTransferAgent.throwJCEMissingError(operation, ex);
+      SnowflakeFileTransferAgentImpl.throwJCEMissingError(operation, ex);
     }
 
     if (ex instanceof AmazonClientException) {
@@ -724,7 +725,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
         if (ex instanceof AmazonS3Exception) {
           AmazonS3Exception s3ex = (AmazonS3Exception) ex;
           if (s3ex.getErrorCode().equalsIgnoreCase(EXPIRED_AWS_TOKEN_ERROR_CODE)) {
-            SnowflakeFileTransferAgent.renewExpiredToken(session, command, s3Client);
+            SnowflakeFileTransferAgentImpl.renewExpiredToken(session, command, s3Client);
           }
         }
       }
