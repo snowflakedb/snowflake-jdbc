@@ -4,15 +4,16 @@
 
 package net.snowflake.client.jdbc;
 
+import net.snowflake.client.core.SFSession;
+import net.snowflake.common.core.SFBinary;
+import net.snowflake.common.core.SqlState;
+
 import java.math.BigDecimal;
 import java.sql.*;
 import java.text.DateFormat;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
-import net.snowflake.client.core.SFSession;
-import net.snowflake.common.core.SFBinary;
-import net.snowflake.common.core.SqlState;
 
 /** Type converters */
 public enum SnowflakeType {

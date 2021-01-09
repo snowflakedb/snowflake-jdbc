@@ -250,9 +250,9 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
   }
 
   @Override
-  public void setVariant(int parameterIndex, String x)
+  public void setVariant(int parameterIndex, String x) throws SQLException
   {
-    ParameterBindingDTO binding = new ParameterBindingDTO(SnowflakeType.VARIANT.name(), x);
+    ParameterBindingDTO binding = new ParameterBindingDTO(SnowflakeUtil.javaTypeToSFTypeString(Types.VARCHAR, connection.getSfSession()), x);
     parameterBindings.put(String.valueOf(parameterIndex), binding);
   }
 

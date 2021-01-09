@@ -19,5 +19,5 @@ public interface SnowflakePreparedStatement {
    * Set variant type
    * @param x
    */
-  void setVariant(int parameterIndex, String x);
+  void setVariant(int parameterIndex, String x) throws SQLException;
 }

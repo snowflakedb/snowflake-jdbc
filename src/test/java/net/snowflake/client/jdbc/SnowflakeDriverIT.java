@@ -2638,12 +2638,15 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
   {
     Connection con = getConnection();
     Statement statement = con.createStatement();
-    statement.execute("alter session set TYPESYSTEM_CAST_STRING_TO_VARIANT=true");
+    statement.execute("alter session set ENABLE_FIX_52370=true");
     statement.execute("create or replace table v (col1 variant)");
     PreparedStatement prepSt = con.prepareStatement("insert into v values (?)");
-    prepSt.unwrap(SnowflakePreparedStatement.class).setVariant(1, "{ \"a\": 1, \"b\": \"foo\" }");
+    prepSt.setString(1, "{ \"a\": 1, \"b\": \"foo\" }");
     prepSt.addBatch();
     prepSt.execute();
+    ResultSet rs = statement.executeQuery("select * from v");
+    rs.next();
+    System.out.println(rs.getString(1));
   }
 
   @Test
