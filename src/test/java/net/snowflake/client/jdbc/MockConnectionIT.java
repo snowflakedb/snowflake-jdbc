@@ -1,6 +1,9 @@
 package net.snowflake.client.jdbc;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import net.snowflake.client.category.TestCategoryConnection;
 import net.snowflake.client.core.*;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
@@ -13,8 +16,7 @@ import org.junit.experimental.categories.Category;
 import java.sql.*;
 import java.util.*;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
  * IT test for testing the "pluggable" implementation of SnowflakeConnection, SnowflakeStatement,
@@ -138,7 +140,8 @@ public class MockConnectionIT extends BaseJDBCTest {
     MockSnowflakeConnectionImpl mockImpl = new MockSnowflakeConnectionImpl(rawResponse);
     Connection mockConnection = initMockConnection(mockImpl);
 
-    ResultSet fakeResultSet = mockConnection.prepareStatement("blah").executeQuery();
+    ResultSet fakeResultSet =
+        mockConnection.prepareStatement("select count(*) from " + testTableName).executeQuery();
     fakeResultSet.next();
     int secondCount = fakeResultSet.getInt(1);
     assertEquals("row-count was not what was expected", secondCount, count);
@@ -147,11 +150,163 @@ public class MockConnectionIT extends BaseJDBCTest {
     mockConnection.close();
   }
 
+  /**
+   * Fabricates fake JSON responses with some int data, and asserts the correct results via
+   * retrieval from MockJsonResultSet
+   */
+  @Test
+  public void testMockedResponseWithInts() throws SQLException {
+    List<Integer> row1 = Arrays.asList(1, 2, 3);
+    List<Integer> row2 = Arrays.asList(4, 5, 6);
+    List<List<Integer>> intsToTest = Arrays.asList(row1, row2);
+
+    JsonNode responseWithRows = createDummyResponseWithIntRows(intsToTest);
+
+    MockSnowflakeConnectionImpl mockImpl = new MockSnowflakeConnectionImpl(responseWithRows);
+    Connection mockConnection = initMockConnection(mockImpl);
+
+    ResultSet fakeResultSet =
+        mockConnection.prepareStatement("select * from fakeIntTable").executeQuery();
+    compareResultSets(fakeResultSet, intsToTest);
+
+    mockConnection.close();
+  }
+
   @After
   public void tearDown() throws SQLException {
     Connection con = initStandardConnection();
     con.createStatement().execute("drop table if exists " + testTableName);
     con.close();
+  }
+
+  private JsonNode createDummyResponseWithIntRows(List<List<Integer>> integerRows) {
+    ObjectMapper mapper = new ObjectMapper();
+    ObjectNode rootNode = mapper.createObjectNode();
+    ObjectNode dataNode = rootNode.putObject("data");
+
+    createResultSetMetadataResponse(
+        dataNode, integerRows == null || integerRows.isEmpty() ? 0 : integerRows.get(0).size());
+    createRowsetJson(dataNode, integerRows);
+
+    return rootNode;
+  }
+
+  /**
+   * Creates the metadata portion of the response, i.e.,
+   *
+   * <p>parameters: [time format, date format, timestamp format, timestamp_ltz format, timestamp_tz
+   * format, timestamp_ntz format, ] queryId rowType
+   *
+   * @param dataNode ObjectNode representing the "data" portion of the JSON response
+   */
+  private void createResultSetMetadataResponse(ObjectNode dataNode, int numColumns) {
+    ArrayNode parameters = dataNode.putArray("parameters");
+
+    parameters.add(createParameterJson("TIME_OUTPUT_FORMAT", "HH24:MI:SS"));
+    parameters.add(createParameterJson("DATE_OUTPUT_FORMAT", "YYYY-MM-DD"));
+    parameters.add(
+        createParameterJson("TIMESTAMP_OUTPUT_FORMAT", "DY, DD MON YYYY HH24:MI:SS TZHTZM"));
+    parameters.add(createParameterJson("TIMESTAMP_LTZ_OUTPUT_FORMAT", ""));
+    parameters.add(createParameterJson("TIMESTAMP_NTZ_OUTPUT_FORMAT", ""));
+    parameters.add(createParameterJson("TIMESTAMP_TZ_OUTPUT_FORMAT", ""));
+
+    dataNode.put("queryId", "81998ae8-01e5-e08d-0000-10140001201a");
+
+    ArrayNode rowType = dataNode.putArray("rowtype");
+
+    ObjectMapper mapper = new ObjectMapper();
+    ObjectNode intRowType = mapper.createObjectNode();
+
+    intRowType.put("name", "someColumn");
+    intRowType.put("database", "");
+    intRowType.put("schema", "");
+    intRowType.put("table", "");
+    intRowType.put("scale", 0);
+    intRowType.put("precision", 18);
+    intRowType.put("type", "fixed");
+    intRowType.put("length", (Integer) null);
+    intRowType.put("byteLength", (Integer) null);
+    intRowType.put("nullable", false);
+    intRowType.put("collation", (String) null);
+
+    for (int i = 0; i < numColumns; i++) {
+      rowType.add(intRowType);
+    }
+  }
+
+  /**
+   * Creates a parameter key-value pairing in JSON, with name and value
+   *
+   * @return an ObjectNode with the parameter name and value
+   */
+  private ObjectNode createParameterJson(String parameterName, String parameterValue) {
+    ObjectMapper mapper = new ObjectMapper();
+    ObjectNode parameterObject = mapper.createObjectNode();
+    parameterObject.put("name", parameterName);
+    parameterObject.put("value", parameterValue);
+
+    return parameterObject;
+  }
+
+  /**
+   * Adds the data portion of the mocked response JSON
+   *
+   * @param dataNode The ObjectNode representing the "data" portion of the JSON response
+   * @param integerRows The rows to add to the rowset.
+   */
+  private void createRowsetJson(ObjectNode dataNode, List<List<Integer>> integerRows) {
+    ArrayNode rowsetNode = dataNode.putArray("rowset");
+
+    if (integerRows == null || integerRows.isEmpty()) {
+      return;
+    }
+
+    for (List<Integer> integerRow : integerRows) {
+      Iterator<Integer> rowData = integerRow.iterator();
+      ArrayNode row = rowsetNode.addArray();
+      while (rowData.hasNext()) {
+        row.add(rowData.next());
+      }
+    }
+  }
+
+  /**
+   * Utility method to check that the integer result set is equivalent to the given list of list of
+   * ints
+   */
+  private void compareResultSets(ResultSet resultSet, List<List<Integer>> expectedInts)
+      throws SQLException {
+    if (expectedInts == null || expectedInts.size() == 0) {
+      assertFalse(resultSet.next());
+      return;
+    }
+
+    int numRows = expectedInts.size();
+    int numColumns = expectedInts.get(0).size();
+
+    int resultSetRows = 0;
+
+    Iterator<List<Integer>> rowIterator = expectedInts.iterator();
+
+    while (resultSet.next() && rowIterator.hasNext()) {
+      List<Integer> expectedRow = rowIterator.next();
+      int columnIdx = 0;
+      while (columnIdx < numColumns) {
+        int expected = expectedRow.get(columnIdx);
+        columnIdx++;
+        int actual = resultSet.getInt(columnIdx);
+        assertEquals(expected, actual);
+      }
+
+      resultSetRows++;
+    }
+
+    // If the result set has more rows than expected, finish the count
+    while (resultSet.next()) {
+      resultSetRows++;
+    }
+
+    assertEquals("row-count was not what was expected", numRows, resultSetRows);
   }
 
   private static class MockedSFStatement implements SFStatement {
