@@ -4,15 +4,14 @@ import com.fasterxml.jackson.databind.JsonNode;
 import net.snowflake.client.category.TestCategoryConnection;
 import net.snowflake.client.core.*;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
+import net.snowflake.common.core.SnowflakeDateTimeFormat;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 import java.sql.*;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -27,20 +26,148 @@ public class MockConnectionIT extends BaseJDBCTest {
 
   private static final String testTableName = "test_custom_conn_table";
 
-  private static class MockedSFStatement implements SFStatement {
-    SFResultSetMetaData rsmd;
-    JsonNode mockedResponse;
+  private static SFResultSetMetaData getRSMDFromResponse(JsonNode rootNode, SFSession sfSession)
+      throws SnowflakeSQLException {
 
-    MockedSFStatement(SFResultSetMetaData rsmd, JsonNode mockedResponse) throws SQLException {
-      this.rsmd = rsmd;
+    String queryId = rootNode.path("data").path("queryId").asText();
+
+    Map<String, Object> parameters =
+        SessionUtil.getCommonParams(rootNode.path("data").path("parameters"));
+
+    String sqlTimestampFormat =
+        (String) ResultUtil.effectiveParamValue(parameters, "TIMESTAMP_OUTPUT_FORMAT");
+
+    // Special handling of specialized formatters, use a helper function
+    SnowflakeDateTimeFormat ntzFormat =
+        ResultUtil.specializedFormatter(
+            parameters, "timestamp_ntz", "TIMESTAMP_NTZ_OUTPUT_FORMAT", sqlTimestampFormat);
+
+    SnowflakeDateTimeFormat ltzFormat =
+        ResultUtil.specializedFormatter(
+            parameters, "timestamp_ltz", "TIMESTAMP_LTZ_OUTPUT_FORMAT", sqlTimestampFormat);
+
+    SnowflakeDateTimeFormat tzFormat =
+        ResultUtil.specializedFormatter(
+            parameters, "timestamp_tz", "TIMESTAMP_TZ_OUTPUT_FORMAT", sqlTimestampFormat);
+
+    String sqlDateFormat =
+        (String) ResultUtil.effectiveParamValue(parameters, "DATE_OUTPUT_FORMAT");
+
+    SnowflakeDateTimeFormat dateFormatter =
+        SnowflakeDateTimeFormat.fromSqlFormat(Objects.requireNonNull(sqlDateFormat));
+
+    String sqlTimeFormat =
+        (String) ResultUtil.effectiveParamValue(parameters, "TIME_OUTPUT_FORMAT");
+
+    SnowflakeDateTimeFormat timeFormatter =
+        SnowflakeDateTimeFormat.fromSqlFormat(Objects.requireNonNull(sqlTimeFormat));
+
+    List<SnowflakeColumnMetadata> resultColumnMetadata = new ArrayList<>();
+    int columnCount = rootNode.path("data").path("rowtype").size();
+    for (int i = 0; i < columnCount; i++) {
+      JsonNode colNode = rootNode.path("data").path("rowtype").path(i);
+
+      SnowflakeColumnMetadata columnMetadata =
+          SnowflakeUtil.extractColumnMetadata(
+              colNode, sfSession.isJdbcTreatDecimalAsInt(), sfSession);
+
+      resultColumnMetadata.add(columnMetadata);
+    }
+
+    return new SFResultSetMetaData(
+        resultColumnMetadata,
+        queryId,
+        sfSession,
+        false,
+        ntzFormat,
+        ltzFormat,
+        tzFormat,
+        dateFormatter,
+        timeFormatter);
+  }
+
+  public Connection initStandardConnection() throws SQLException {
+    Connection conn = BaseJDBCTest.getConnection(BaseJDBCTest.DONT_INJECT_SOCKET_TIMEOUT);
+    conn.createStatement().execute("alter session set jdbc_query_result_format = json");
+    return conn;
+  }
+
+  public Connection initMockConnection(ConnectionImplementationFactory implementation)
+      throws SQLException {
+    return new SnowflakeConnectionV1(implementation);
+  }
+
+  @Before
+  public void setUp() throws SQLException {
+    Connection con = initStandardConnection();
+
+    con.createStatement().execute("alter session set jdbc_query_result_format = json");
+
+    // Create a table of two rows containing a varchar column and an int column
+    con.createStatement()
+        .execute("create or replace table " + testTableName + " (colA string, colB int)");
+    con.createStatement().execute("insert into " + testTableName + " values('rowOne', 1)");
+    con.createStatement().execute("insert into " + testTableName + " values('rowTwo', 2)");
+
+    con.close();
+  }
+
+  /**
+   * Test running some queries, and plugging in the raw JSON response from those queries into a
+   * MockConnection. The results retrieved from the MockConnection should be the same as those from
+   * the original connection.
+   */
+  @Test
+  public void testReuseResponse() throws SQLException {
+    Connection con = initStandardConnection();
+    Statement stmt = con.createStatement();
+
+    assertTrue(stmt instanceof SnowflakeStatementV1);
+    SFStatementImpl sfStatement = (SFStatementImpl) ((SnowflakeStatementV1) stmt).getSfStatement();
+    sfStatement.enableJsonResponseCapture();
+
+    ResultSet result = stmt.executeQuery("select count(*) from " + testTableName);
+    assertTrue(result instanceof SnowflakeResultSetV1);
+
+    JsonNode rawResponse = sfStatement.getCapturedResponse();
+
+    result.next();
+    int count = result.getInt(1);
+    assertEquals("row-count was not what was expected", 2, count);
+
+    MockSnowflakeConnectionImpl mockImpl = new MockSnowflakeConnectionImpl(rawResponse);
+    Connection mockConnection = initMockConnection(mockImpl);
+
+    ResultSet fakeResultSet = mockConnection.prepareStatement("blah").executeQuery();
+    fakeResultSet.next();
+    int secondCount = fakeResultSet.getInt(1);
+    assertEquals("row-count was not what was expected", secondCount, count);
+
+    con.close();
+    mockConnection.close();
+  }
+
+  @After
+  public void tearDown() throws SQLException {
+    Connection con = initStandardConnection();
+    con.createStatement().execute("drop table if exists " + testTableName);
+    con.close();
+  }
+
+  private static class MockedSFStatement implements SFStatement {
+    JsonNode mockedResponse;
+    MockSnowflakeSession sfSession;
+
+    MockedSFStatement(JsonNode mockedResponse, MockSnowflakeSession session) {
       this.mockedResponse = mockedResponse;
+      this.sfSession = session;
     }
 
     @Override
-    public void addProperty(String propertyName, Object propertyValue) throws SFException {}
+    public void addProperty(String propertyName, Object propertyValue) {}
 
     @Override
-    public SFStatementMetaData describe(String sql) throws SFException, SQLException {
+    public SFStatementMetaData describe(String sql) {
       return null;
     }
 
@@ -51,8 +178,7 @@ public class MockConnectionIT extends BaseJDBCTest {
         Map<String, ParameterBindingDTO> bindValues,
         boolean describeOnly,
         boolean internal,
-        boolean asyncExec)
-        throws SnowflakeSQLException, SFException {
+        boolean asyncExec) {
       return null;
     }
 
@@ -72,26 +198,26 @@ public class MockConnectionIT extends BaseJDBCTest {
         boolean asyncExec,
         Map<String, ParameterBindingDTO> parametersBinding,
         CallingMethod caller)
-        throws SQLException, SFException {
-      return new MockJsonResultSet(mockedResponse, rsmd);
+        throws SQLException {
+      return new MockJsonResultSet(mockedResponse, sfSession);
     }
 
     @Override
     public void close() {}
 
     @Override
-    public void cancel() throws SFException, SQLException {}
+    public void cancel() {}
 
     @Override
     public void executeSetProperty(String sql) {}
 
     @Override
     public SFSession getSession() {
-      return null;
+      return sfSession;
     }
 
     @Override
-    public boolean getMoreResults(int current) throws SQLException {
+    public boolean getMoreResults(int current) {
       return false;
     }
 
@@ -112,9 +238,11 @@ public class MockConnectionIT extends BaseJDBCTest {
     int currentRowIdx = -1;
     int rowCount;
 
-    public MockJsonResultSet(JsonNode mockedJsonResponse, SFResultSetMetaData rsmd) {
+    public MockJsonResultSet(JsonNode mockedJsonResponse, MockSnowflakeSession sfSession)
+        throws SnowflakeSQLException {
+      setSession(sfSession);
       this.resultJson = mockedJsonResponse.path("data").path("rowset");
-      this.resultSetMetaData = rsmd;
+      this.resultSetMetaData = MockConnectionIT.getRSMDFromResponse(mockedJsonResponse, session);
       this.rowCount = resultJson.size();
     }
 
@@ -161,16 +289,15 @@ public class MockConnectionIT extends BaseJDBCTest {
     }
 
     @Override
-    public QueryStatus getQueryStatus(String queryID) throws SQLException {
+    public QueryStatus getQueryStatus(String queryID) {
       return null;
     }
 
     @Override
-    public void addProperty(SFSessionProperty sfSessionProperty, Object propertyValue)
-        throws SFException {}
+    public void addProperty(SFSessionProperty sfSessionProperty, Object propertyValue) {}
 
     @Override
-    public void addProperty(String propertyName, Object propertyValue) throws SFException {}
+    public void addProperty(String propertyName, Object propertyValue) {}
 
     @Override
     public boolean containProperty(String key) {
@@ -188,7 +315,7 @@ public class MockConnectionIT extends BaseJDBCTest {
     }
 
     @Override
-    public void open() throws SFException, SnowflakeSQLException {}
+    public void open() {}
 
     @Override
     public List<DriverPropertyInfo> checkProperties() {
@@ -216,7 +343,7 @@ public class MockConnectionIT extends BaseJDBCTest {
     }
 
     @Override
-    public void close() throws SFException, SnowflakeSQLException {}
+    public void close() {}
 
     @Override
     public Properties getClientInfo() {
@@ -317,9 +444,6 @@ public class MockConnectionIT extends BaseJDBCTest {
     }
 
     @Override
-    public void setSfSQLMode(boolean booleanV) {}
-
-    @Override
     public void clearSqlWarnings() {}
 
     @Override
@@ -332,6 +456,9 @@ public class MockConnectionIT extends BaseJDBCTest {
     public boolean isSfSQLMode() {
       return false;
     }
+
+    @Override
+    public void setSfSQLMode(boolean booleanV) {}
 
     @Override
     public boolean isResultColumnCaseInsensitive() {
@@ -367,101 +494,26 @@ public class MockConnectionIT extends BaseJDBCTest {
   private static class MockSnowflakeConnectionImpl implements ConnectionImplementationFactory {
 
     JsonNode jsonResponse;
-    SFResultSetMetaData resultSetMetaData;
+    MockSnowflakeSession session;
 
-    public MockSnowflakeConnectionImpl(JsonNode jsonResponse, SFResultSetMetaData rsmd) {
-      this.resultSetMetaData = rsmd;
+    public MockSnowflakeConnectionImpl(JsonNode jsonResponse) {
       this.jsonResponse = jsonResponse;
+      this.session = new MockSnowflakeSession();
     }
 
     @Override
     public SFSession getSFSession() {
-      return new MockSnowflakeSession();
+      return session;
     }
 
     @Override
-    public SFStatement createSFStatement() throws SQLException {
-      return new MockedSFStatement(resultSetMetaData, jsonResponse);
+    public SFStatement createSFStatement() {
+      return new MockedSFStatement(jsonResponse, session);
     }
 
     @Override
-    public SnowflakeFileTransferAgent getFileTransferAgent(String command, SFStatement statement)
-        throws SQLNonTransientConnectionException, SnowflakeSQLException {
+    public SnowflakeFileTransferAgent getFileTransferAgent(String command, SFStatement statement) {
       return null;
     }
-  }
-
-  public Connection initStandardConnection() throws SQLException {
-    Connection conn = BaseJDBCTest.getConnection(BaseJDBCTest.DONT_INJECT_SOCKET_TIMEOUT);
-    conn.createStatement().execute("alter session set jdbc_query_result_format = json");
-    return conn;
-  }
-
-  public Connection initMockConnection(ConnectionImplementationFactory implementation)
-      throws SQLException {
-    return new SnowflakeConnectionV1(implementation);
-  }
-
-  @Before
-  public void setUp() throws SQLException {
-    Connection con = initStandardConnection();
-
-    con.createStatement().execute("alter session set jdbc_query_result_format = json");
-
-    // Create a table of two rows containing a varchar column and an int column
-    con.createStatement()
-        .execute("create or replace table " + testTableName + " (colA string, colB int)");
-    con.createStatement().execute("insert into " + testTableName + " values('rowOne', 1)");
-    con.createStatement().execute("insert into " + testTableName + " values('rowTwo', 2)");
-
-    con.close();
-  }
-
-  /**
-   * Test running some queries, and plugging in the raw JSON response from those queries into a
-   * MockConnection. The results retrieved from the MockConnection should be the same as those from
-   * the original connection.
-   *
-   * @throws SQLException
-   * @throws SFException
-   */
-  @Test
-  public void testReuseResponse() throws SQLException, SFException {
-    Connection con = initStandardConnection();
-    Statement stmt = con.createStatement();
-
-    assertTrue(stmt instanceof SnowflakeStatementV1);
-    SFStatementImpl sfStatement = (SFStatementImpl) ((SnowflakeStatementV1) stmt).getSfStatement();
-    sfStatement.enableJsonResponseCapture();
-
-    ResultSet result = stmt.executeQuery("select count(*) from " + testTableName);
-    assertTrue(result instanceof SnowflakeResultSetV1);
-
-    SFResultSetMetaData resultSetMetaData =
-        ((SnowflakeResultSetV1) result).getSfBaseResultSet().getMetaData();
-    JsonNode rawResponse = sfStatement.getCapturedResponse();
-
-    result.next();
-    int count = result.getInt(1);
-    assertEquals("row-count was not what was expected", 2, count);
-
-    MockSnowflakeConnectionImpl mockImpl =
-        new MockSnowflakeConnectionImpl(rawResponse, resultSetMetaData);
-    Connection mockConnection = initMockConnection(mockImpl);
-
-    ResultSet fakeResultSet = mockConnection.prepareStatement("blah").executeQuery();
-    fakeResultSet.next();
-    int secondCount = fakeResultSet.getInt(1);
-    assertEquals("row-count was not what was expected", secondCount, count);
-
-    con.close();
-    mockConnection.close();
-  }
-
-  @After
-  public void tearDown() throws SQLException {
-    Connection con = initStandardConnection();
-    con.createStatement().execute("drop table if exists " + testTableName);
-    con.close();
   }
 }
