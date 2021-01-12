@@ -3,6 +3,21 @@
  */
 package net.snowflake.client.jdbc;
 
+import static net.snowflake.client.core.SessionUtil.CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.*;
+
+import java.io.*;
+import java.security.*;
+import java.sql.*;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.Map;
+import java.util.Properties;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import net.snowflake.client.ConditionalIgnoreRule.ConditionalIgnore;
 import net.snowflake.client.RunningNotOnTestaccount;
 import net.snowflake.client.RunningOnGithubAction;
@@ -16,22 +31,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.TemporaryFolder;
-
-import java.io.*;
-import java.security.*;
-import java.sql.*;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.Map;
-import java.util.Properties;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-
-import static net.snowflake.client.core.SessionUtil.CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY;
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.*;
 
 /** Connection integration tests */
 @Category(TestCategoryConnection.class)
@@ -58,26 +57,6 @@ public class ConnectionIT extends BaseJDBCTest {
     con.close();
     assertTrue(con.isClosed());
     con.close(); // ensure no exception
-  }
-
-  @Test
-  public void testIntegerOverflow() throws SQLException
-  {
-    Connection con = getConnection();
-    Statement statement = con.createStatement();
-    // create large table
-    /** ALREADY DONE
-    statement.execute("create or replace table largeTable (c1 number) as select seq1() from table(generator(rowcount => 3000000000))");
-    //statement.execute("create or replace stage teststage");
-    // copy data into file
-    statement.execute("copy into @~/largedata.gz from largeTable\n" +
-            "  single = true\n" +
-            "  MAX_FILE_SIZE = 5368709120");
-     **/
-    statement.execute("create or replace table secondaryTable (c1 number)");
-    ResultSet rs = statement.executeQuery("copy into secondaryTable (c1) from (select $1 from @~/) ON_ERROR=CONTINUE;");
-    rs.next();
-    System.out.println(rs.getString(1));
   }
 
   @Test
