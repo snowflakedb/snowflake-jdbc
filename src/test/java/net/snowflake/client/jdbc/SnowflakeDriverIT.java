@@ -24,8 +24,6 @@ import net.snowflake.client.AbstractDriverIT;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryOthers;
-import net.snowflake.client.core.SFSession;
-import net.snowflake.client.core.SFStatement;
 import net.snowflake.common.core.SqlState;
 import org.apache.commons.io.FileUtils;
 import org.junit.*;
@@ -887,32 +885,6 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
   }
 
   @Test
-  public void testPutThreshold() throws SQLException {
-    try (Connection connection = getConnection()) {
-      // assert that setting threshold via session parameter sets the big file threshold
-      // appropriately
-      SFSession sfSession = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
-      Statement statement = connection.createStatement();
-      SFStatement sfStatement = statement.unwrap(SnowflakeStatementV1.class).getSfStatement();
-      statement.execute("alter session set CLIENT_MULTIPART_UPLOAD_THRESHOLD_IN_PUT=50");
-      statement.execute("CREATE OR REPLACE STAGE PUTTHRESHOLDSTAGE");
-      String command =
-          "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE) + " @PUTTHRESHOLDSTAGE";
-      SnowflakeFileTransferAgent agent =
-          new SnowflakeFileTransferAgent(command, sfSession, sfStatement);
-      assertEquals(50 * 1024 * 1024, agent.getBigFileThreshold());
-      // assert that setting threshold via put statement directly sets the big file threshold
-      // appropriately
-      String commandWithPut = command + " threshold=300";
-      agent = new SnowflakeFileTransferAgent(commandWithPut, sfSession, sfStatement);
-      assertEquals(300 * 1024 * 1024, agent.getBigFileThreshold());
-      statement.close();
-    } catch (SQLException ex) {
-      throw ex;
-    }
-  }
-
-  @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testPutOverwrite() throws Throwable {
     Connection connection = null;
@@ -998,6 +970,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
         connection = getConnection(accounts.get(i));
 
         statement = connection.createStatement();
+        // statement.execute("alter session set CLIENT_MULTIPART_UPLOAD_THRESHOLD_IN_PUT=1");
 
         // load file test
         // create a unique data file name by using current timestamp in millis
