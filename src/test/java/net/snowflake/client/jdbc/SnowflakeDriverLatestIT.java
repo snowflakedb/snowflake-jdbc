@@ -9,7 +9,10 @@ import static org.junit.Assert.*;
 import java.io.*;
 import java.nio.channels.FileChannel;
 import java.sql.*;
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Properties;
+import java.util.UUID;
 import java.util.zip.GZIPInputStream;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
@@ -67,6 +70,38 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
     ResultSet rset = statement.executeQuery("select current_session()");
     rset.next();
     assertEquals(sessionID, rset.getString(1));
+  }
+
+  @Test
+  public void testPutThreshold() throws SQLException {
+    try (Connection connection = getConnection()) {
+      // assert that setting threshold via session parameter sets the big file threshold
+      // appropriately
+      SFSession sfSession = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
+      Statement statement = connection.createStatement();
+      SFStatement sfStatement = statement.unwrap(SnowflakeStatementV1.class).getSfStatement();
+      statement.execute("alter session set CLIENT_MULTIPART_UPLOAD_THRESHOLD_IN_PUT=50");
+      statement.execute("CREATE OR REPLACE STAGE PUTTHRESHOLDSTAGE");
+      String command =
+          "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE) + " @PUTTHRESHOLDSTAGE";
+      SnowflakeFileTransferAgent agent =
+          new SnowflakeFileTransferAgent(command, sfSession, sfStatement);
+      assertEquals(50 * 1024 * 1024, agent.getBigFileThreshold());
+      // assert that setting threshold via put statement directly sets the big file threshold
+      // appropriately
+      String commandWithPut = command + " threshold=300";
+      agent = new SnowflakeFileTransferAgent(commandWithPut, sfSession, sfStatement);
+      assertEquals(300 * 1024 * 1024, agent.getBigFileThreshold());
+      // assert that after put statement, threshold goes back to previous session threshold
+      agent = new SnowflakeFileTransferAgent(command, sfSession, sfStatement);
+      assertEquals(50 * 1024 * 1024, agent.getBigFileThreshold());
+      statement.execute("alter session unset CLIENT_MULTIPART_UPLOAD_THRESHOLD_IN_PUT");
+      agent = new SnowflakeFileTransferAgent(command, sfSession, sfStatement);
+      assertEquals(200 * 1024 * 1024, agent.getBigFileThreshold());
+      statement.close();
+    } catch (SQLException ex) {
+      throw ex;
+    }
   }
 
   /** Test API for Spark connector for FileTransferMetadata */
