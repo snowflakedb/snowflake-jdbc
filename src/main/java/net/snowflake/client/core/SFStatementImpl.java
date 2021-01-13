@@ -21,6 +21,7 @@ import net.snowflake.client.core.bind.BindException;
 import net.snowflake.client.core.bind.BindUploader;
 import net.snowflake.client.jdbc.*;
 import net.snowflake.client.jdbc.telemetry.TelemetryData;
+import net.snowflake.client.jdbc.telemetry.TelemetryField;
 import net.snowflake.client.jdbc.telemetry.TelemetryUtil;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.client.log.ArgSupplier;
@@ -101,7 +102,7 @@ public class SFStatementImpl implements SFStatement {
   }
 
   public SFStatementImpl(SFSessionImpl session) {
-    logger.debug(" public SFStatement(SFSession session)");
+    logger.debug(" public SFStatementImpl(SFSession session)");
 
     this.session = session;
     Integer queryTimeout = session == null ? null : session.getQueryTimeout();
@@ -243,7 +244,6 @@ public class SFStatementImpl implements SFStatement {
 
     try {
       JsonNode jsonResult = (JsonNode) result;
-
       resultSet = SFResultSetFactory.getResultSet(jsonResult, this, sortResult);
       childResults = ResultUtil.getChildResults(session, requestId, jsonResult);
 
@@ -382,9 +382,23 @@ public class SFStatementImpl implements SFStatement {
           bindStagePath = uploader.getStagePath();
         } catch (BindException ex) {
           logger.debug(
-              "Exception encountered trying to upload binds to stage. Attaching binds in payload instead. ",
+              "Exception encountered trying to upload binds to stage with input stream. Attaching binds in payload instead. ",
               ex);
           TelemetryData errorLog = TelemetryUtil.buildJobData(this.requestId, ex.type.field, 1);
+          this.session.getTelemetryClient().addLogToBatch(errorLog);
+          IncidentUtil.generateIncidentV2WithException(
+              session,
+              new SFException(
+                  ErrorCode.NON_FATAL_ERROR,
+                  IncidentUtil.oneLiner("Failed to upload binds " + "to stage:", ex)),
+              null,
+              requestId);
+        } catch (SQLException ex) {
+          logger.debug(
+              "Exception encountered trying to upload binds to stage with input stream. Attaching binds in payload instead. ",
+              ex);
+          TelemetryData errorLog =
+              TelemetryUtil.buildJobData(this.requestId, TelemetryField.FAILED_BIND_UPLOAD, 1);
           this.session.getTelemetryClient().addLogToBatch(errorLog);
           IncidentUtil.generateIncidentV2WithException(
               session,
@@ -869,7 +883,6 @@ public class SFStatementImpl implements SFStatement {
     }
   }
 
-  @Override
   public SFSession getSession() {
     return session;
   }
