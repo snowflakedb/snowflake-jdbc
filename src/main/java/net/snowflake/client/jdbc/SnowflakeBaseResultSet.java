@@ -302,7 +302,8 @@ abstract class SnowflakeBaseResultSet implements ResultSet {
   public Reader getCharacterStream(int columnIndex) throws SQLException {
     logger.debug("public Reader getCharacterStream(int columnIndex)");
     raiseSQLExceptionIfResultSetIsClosed();
-    return new StringReader(getString(columnIndex));
+    String streamData = getString(columnIndex);
+    return (streamData == null) ? null : new StringReader(streamData);
   }
 
   @Override
