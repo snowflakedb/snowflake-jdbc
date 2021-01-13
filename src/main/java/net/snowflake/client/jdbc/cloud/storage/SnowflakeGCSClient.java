@@ -21,7 +21,6 @@ import java.net.URISyntaxException;
 import java.security.InvalidKeyException;
 import java.util.*;
 import java.util.Map.Entry;
-
 import net.snowflake.client.core.*;
 import net.snowflake.client.jdbc.*;
 import net.snowflake.client.log.ArgSupplier;

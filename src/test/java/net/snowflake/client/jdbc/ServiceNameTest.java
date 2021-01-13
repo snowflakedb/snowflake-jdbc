@@ -10,7 +10,6 @@ import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.OCSPMode;
-import net.snowflake.client.core.SFSessionImpl;
 import net.snowflake.client.core.SFSessionProperty;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.junit.Test;

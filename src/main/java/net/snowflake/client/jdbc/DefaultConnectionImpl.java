@@ -1,11 +1,10 @@
 package net.snowflake.client.jdbc;
 
+import java.sql.SQLNonTransientConnectionException;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.core.SFSessionImpl;
 import net.snowflake.client.core.SFStatement;
 import net.snowflake.client.core.SFStatementImpl;
-
-import java.sql.SQLNonTransientConnectionException;
 
 public class DefaultConnectionImpl implements ConnectionImplementationFactory {
 

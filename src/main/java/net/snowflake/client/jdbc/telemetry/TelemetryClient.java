@@ -93,7 +93,8 @@ public class TelemetryClient implements Telemetry {
    */
   public static Telemetry createTelemetry(Connection conn, int flushSize) {
     try {
-      return createTelemetry((SFSessionImpl) conn.unwrap(SnowflakeConnectionV1.class).getSfSession(), flushSize);
+      return createTelemetry(
+          (SFSessionImpl) conn.unwrap(SnowflakeConnectionV1.class).getSfSession(), flushSize);
     } catch (SQLException ex) {
       logger.debug("input connection is not a SnowflakeConnection");
       return null;

@@ -12,7 +12,6 @@ import java.sql.Date;
 import java.util.*;
 import net.snowflake.client.category.TestCategoryOthers;
 import net.snowflake.client.core.ParameterBindingDTO;
-import net.snowflake.client.core.SFSession;
 import net.snowflake.client.core.SFSessionImpl;
 import net.snowflake.client.core.bind.BindUploader;
 import org.junit.*;

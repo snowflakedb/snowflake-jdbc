@@ -4,10 +4,9 @@
 
 package net.snowflake.client.core;
 
-import net.snowflake.client.jdbc.SnowflakeSQLException;
-
 import java.sql.SQLException;
 import java.util.Map;
+import net.snowflake.client.jdbc.SnowflakeSQLException;
 
 /** Snowflake statement */
 public interface SFStatement {

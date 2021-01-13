@@ -15,7 +15,6 @@ import java.util.Map;
 import java.util.TimeZone;
 import net.snowflake.client.category.TestCategoryOthers;
 import net.snowflake.client.core.ParameterBindingDTO;
-import net.snowflake.client.core.SFSession;
 import net.snowflake.client.core.SFSessionImpl;
 import net.snowflake.client.core.bind.BindUploader;
 import org.junit.*;

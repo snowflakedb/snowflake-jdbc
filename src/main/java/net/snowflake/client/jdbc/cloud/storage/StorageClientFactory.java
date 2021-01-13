@@ -50,7 +50,10 @@ public class StorageClientFactory {
    * @throws SnowflakeSQLException if any error occurs
    */
   public SnowflakeStorageClient createClient(
-      StageInfo stage, int parallel, RemoteStoreFileEncryptionMaterial encMat, SFSessionImpl session)
+      StageInfo stage,
+      int parallel,
+      RemoteStoreFileEncryptionMaterial encMat,
+      SFSessionImpl session)
       throws SnowflakeSQLException {
     logger.debug("createClient client type={}", stage.getStageType().name());
 

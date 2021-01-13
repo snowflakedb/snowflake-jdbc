@@ -22,10 +22,11 @@ class SFResultSetFactory {
    * @param sortResult true if sort first chunk
    * @return result set object
    */
-  static SFBaseResultSet getResultSet(JsonNode result, SFStatementImpl statement, boolean sortResult)
-      throws SQLException {
+  static SFBaseResultSet getResultSet(
+      JsonNode result, SFStatementImpl statement, boolean sortResult) throws SQLException {
     SnowflakeResultSetSerializableV1 resultSetSerializable =
-        SnowflakeResultSetSerializableV1.create(result, (SFSessionImpl) statement.getSession(), statement);
+        SnowflakeResultSetSerializableV1.create(
+            result, (SFSessionImpl) statement.getSession(), statement);
 
     switch (resultSetSerializable.getQueryResultFormat()) {
       case ARROW:

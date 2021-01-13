@@ -7,7 +7,6 @@ package net.snowflake.client.jdbc;
 import java.io.InputStream;
 import java.util.Properties;
 import net.snowflake.client.core.OCSPMode;
-import net.snowflake.client.core.SFSession;
 import net.snowflake.client.core.SFSessionImpl;
 
 /**

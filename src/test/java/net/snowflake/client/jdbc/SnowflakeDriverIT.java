@@ -1414,9 +1414,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
             + "timestampadd(day, seq8(), '1970-01-13 00:00:00'::timestamp_ntz)\n"
             + "from table(generator(rowcount=>20))");
 
-    ((SFSessionImpl)connection
-        .unwrap(SnowflakeConnectionV1.class)
-        .getSfSession())
+    ((SFSessionImpl) connection.unwrap(SnowflakeConnectionV1.class).getSfSession())
         .setTimestampMappedType(SnowflakeType.TIMESTAMP_NTZ);
     Timestamp ts = buildTimestamp(1970, 0, 15, 10, 14, 30, 0);
     PreparedStatement preparedStatement =
