@@ -104,6 +104,25 @@ public class ResultSetLatestIT extends ResultSet0IT {
   }
 
   /**
+   * Test that there is no nullptr exception thrown when null value is retrieved from character
+   * stream
+   *
+   * @throws SQLException
+   */
+  @Test
+  public void testGetCharacterStreamNull() throws SQLException {
+    Connection connection = init();
+    Statement statement = connection.createStatement();
+    statement.execute("create or replace table JDBC_NULL_CHARSTREAM (col1 varchar(16))");
+    statement.execute("insert into JDBC_NULL_CHARSTREAM values(NULL)");
+    ResultSet rs = statement.executeQuery("select * from JDBC_NULL_CHARSTREAM");
+    rs.next();
+    assertNull(rs.getCharacterStream(1));
+    rs.close();
+    connection.close();
+  }
+
+  /**
    * Large result chunk metrics tests. The old driver didn't collect metrics.
    *
    * @throws SQLException arises if any exception occurs
