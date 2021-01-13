@@ -3,10 +3,14 @@
  */
 package net.snowflake.client.jdbc;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.*;
-
 import com.fasterxml.jackson.databind.JsonNode;
+import net.snowflake.client.category.TestCategoryResultSet;
+import net.snowflake.client.jdbc.telemetry.*;
+import net.snowflake.common.core.SFBinary;
+import org.apache.arrow.vector.Float8Vector;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.sql.*;
@@ -14,12 +18,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
-import net.snowflake.client.category.TestCategoryResultSet;
-import net.snowflake.client.jdbc.telemetry.*;
-import net.snowflake.common.core.SFBinary;
-import org.apache.arrow.vector.Float8Vector;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.*;
 
 /**
  * ResultSet integration tests for the latest JDBC driver. This doesn't work for the oldest
@@ -101,6 +102,25 @@ public class ResultSetLatestIT extends ResultSet0IT {
     assertEquals(parameterValues.get("schema").textValue(), schema);
     assertNull(parameterValues.get("general_name_pattern").textValue());
     assertNull(parameterValues.get("specific_name_pattern").textValue());
+  }
+
+  /**
+   * Test that there is no nullptr exception thrown when null value is retrieved from character
+   * stream
+   *
+   * @throws SQLException
+   */
+  @Test
+  public void testGetCharacterStreamNull() throws SQLException {
+    Connection connection = init();
+    Statement statement = connection.createStatement();
+    statement.execute("create or replace table JDBC_NULL_CHARSTREAM (col1 varchar(16))");
+    statement.execute("insert into JDBC_NULL_CHARSTREAM values(NULL)");
+    ResultSet rs = statement.executeQuery("select * from JDBC_NULL_CHARSTREAM");
+    rs.next();
+    assertNull(rs.getCharacterStream(1));
+    rs.close();
+    connection.close();
   }
 
   /**
