@@ -4,6 +4,8 @@
 
 package net.snowflake.client.jdbc;
 
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
+
 import com.amazonaws.util.Base64;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -12,6 +14,19 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.CountingOutputStream;
+import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.security.DigestOutputStream;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.sql.SQLException;
+import java.util.*;
+import java.util.Map.Entry;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.zip.GZIPOutputStream;
 import net.snowflake.client.core.*;
 import net.snowflake.client.jdbc.cloud.storage.*;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
@@ -28,28 +43,13 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.filefilter.WildcardFileFilter;
 
-import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.security.DigestOutputStream;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.sql.SQLException;
-import java.util.*;
-import java.util.Map.Entry;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.TimeUnit;
-import java.util.zip.GZIPOutputStream;
-
-import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
-
 /**
  * Class for uploading/downloading files
  *
  * @author jhuang
  */
-public class SnowflakeFileTransferAgentImpl implements SnowflakeFileTransferAgent, SnowflakeFixedView {
+public class SnowflakeFileTransferAgentImpl
+    implements SnowflakeFileTransferAgent, SnowflakeFixedView {
   static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeFileTransferAgentImpl.class);
 
   static final StorageClientFactory storageFactory = StorageClientFactory.getFactory();
@@ -141,7 +141,8 @@ public class SnowflakeFileTransferAgentImpl implements SnowflakeFileTransferAgen
     return stageInfo.getLocation();
   }
 
-  private void initEncryptionMaterial(SnowflakeFileTransferAgent.CommandType commandType, JsonNode jsonNode)
+  private void initEncryptionMaterial(
+      SnowflakeFileTransferAgent.CommandType commandType, JsonNode jsonNode)
       throws SnowflakeSQLException, JsonProcessingException {
     encryptionMaterial = new ArrayList<>();
     JsonNode rootNode = jsonNode.path("data").path("encryptionMaterial");
@@ -164,7 +165,8 @@ public class SnowflakeFileTransferAgentImpl implements SnowflakeFileTransferAgen
     }
   }
 
-  private void initPresignedUrls(SnowflakeFileTransferAgent.CommandType commandType, JsonNode jsonNode)
+  private void initPresignedUrls(
+      SnowflakeFileTransferAgent.CommandType commandType, JsonNode jsonNode)
       throws SnowflakeSQLException, JsonProcessingException, IOException {
     presignedUrls = new ArrayList<>();
     JsonNode rootNode = jsonNode.path("data").path("presignedUrls");
@@ -177,7 +179,8 @@ public class SnowflakeFileTransferAgentImpl implements SnowflakeFileTransferAgen
     }
   }
 
-  private SnowflakeFileTransferAgent.CommandType commandType = SnowflakeFileTransferAgent.CommandType.UPLOAD;
+  private SnowflakeFileTransferAgent.CommandType commandType =
+      SnowflakeFileTransferAgent.CommandType.UPLOAD;
 
   private boolean autoCompress = true;
 
@@ -812,7 +815,8 @@ public class SnowflakeFileTransferAgentImpl implements SnowflakeFileTransferAgen
     };
   }
 
-  public SnowflakeFileTransferAgentImpl(String command, SFSessionImpl session, SFStatementImpl statement)
+  public SnowflakeFileTransferAgentImpl(
+      String command, SFSessionImpl session, SFStatementImpl statement)
       throws SnowflakeSQLException {
     this.command = command;
     this.session = session;
@@ -850,7 +854,9 @@ public class SnowflakeFileTransferAgentImpl implements SnowflakeFileTransferAgen
 
     // get command type
     if (!jsonNode.path("data").path("command").isMissingNode()) {
-      commandType = SnowflakeFileTransferAgent.CommandType.valueOf(jsonNode.path("data").path("command").asText());
+      commandType =
+          SnowflakeFileTransferAgent.CommandType.valueOf(
+              jsonNode.path("data").path("command").asText());
     }
 
     // get source file locations as array (apply to both upload and download)
@@ -2238,9 +2244,12 @@ public class SnowflakeFileTransferAgentImpl implements SnowflakeFileTransferAgen
 
         try {
           localFile =
-              (commandType == SnowflakeFileTransferAgent.CommandType.UPLOAD) ? mappedSrcFile : (localLocation + objFileName);
+              (commandType == SnowflakeFileTransferAgent.CommandType.UPLOAD)
+                  ? mappedSrcFile
+                  : (localLocation + objFileName);
 
-          if (commandType == SnowflakeFileTransferAgent.CommandType.DOWNLOAD && !(new File(localFile)).exists()) {
+          if (commandType == SnowflakeFileTransferAgent.CommandType.DOWNLOAD
+              && !(new File(localFile)).exists()) {
             logger.debug("File does not exist locally, will download {}", mappedSrcFile);
             continue;
           }

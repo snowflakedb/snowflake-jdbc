@@ -4,14 +4,13 @@
 
 package net.snowflake.client.core;
 
-import net.snowflake.client.jdbc.SnowflakeSQLException;
-import net.snowflake.client.jdbc.SnowflakeType;
-import net.snowflake.client.jdbc.telemetry.Telemetry;
-
 import java.sql.DriverPropertyInfo;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Properties;
+import net.snowflake.client.jdbc.SnowflakeSQLException;
+import net.snowflake.client.jdbc.SnowflakeType;
+import net.snowflake.client.jdbc.telemetry.Telemetry;
 
 /** Snowflake session implementation */
 public interface SFSession {

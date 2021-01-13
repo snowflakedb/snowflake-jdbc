@@ -8,7 +8,6 @@ import java.io.File;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import net.snowflake.client.jdbc.SnowflakeConnectionV1;
-import net.snowflake.client.jdbc.SnowflakeFileTransferAgent;
 import net.snowflake.client.jdbc.SnowflakeFileTransferAgentImpl;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;

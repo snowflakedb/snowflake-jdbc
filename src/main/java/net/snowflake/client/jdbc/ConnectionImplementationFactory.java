@@ -1,10 +1,9 @@
 package net.snowflake.client.jdbc;
 
-import net.snowflake.client.core.SFSession;
-import net.snowflake.client.core.SFStatement;
-
 import java.sql.SQLException;
 import java.sql.SQLNonTransientConnectionException;
+import net.snowflake.client.core.SFSession;
+import net.snowflake.client.core.SFStatement;
 
 /**
  * Factory class that presents the implementation of a Snowflake Connection. This allows for

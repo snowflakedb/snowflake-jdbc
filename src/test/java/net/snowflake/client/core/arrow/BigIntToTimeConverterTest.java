@@ -19,7 +19,6 @@ import java.util.Set;
 import net.snowflake.client.TestUtil;
 import net.snowflake.client.core.ResultUtil;
 import net.snowflake.client.core.SFException;
-import net.snowflake.client.core.SFSession;
 import net.snowflake.client.core.SFSessionImpl;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.memory.RootAllocator;
