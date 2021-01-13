@@ -1,5 +1,6 @@
 package net.snowflake.client.jdbc;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -13,10 +14,14 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.DriverPropertyInfo;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.*;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 /**
  * IT test for testing the "pluggable" implementation of SnowflakeConnection, SnowflakeStatement,
@@ -88,6 +93,40 @@ public class MockConnectionIT extends BaseJDBCTest {
         timeFormatter);
   }
 
+  private static ObjectNode getJsonFromDataType(DataType dataType) {
+
+    ObjectMapper mapper = new ObjectMapper();
+    ObjectNode type = mapper.createObjectNode();
+
+    if (dataType == DataType.INT) {
+      type.put("name", "someIntColumn");
+      type.put("database", "");
+      type.put("schema", "");
+      type.put("table", "");
+      type.put("scale", 0);
+      type.put("precision", 18);
+      type.put("type", "fixed");
+      type.put("length", (Integer) null);
+      type.put("byteLength", (Integer) null);
+      type.put("nullable", true);
+      type.put("collation", (String) null);
+    } else if (dataType == DataType.STRING) {
+      type.put("name", "someStringColumn");
+      type.put("database", "");
+      type.put("schema", "");
+      type.put("table", "");
+      type.put("scale", (Integer) null);
+      type.put("precision", (Integer) null);
+      type.put("length", 16777216);
+      type.put("type", "text");
+      type.put("byteLength", 16777216);
+      type.put("nullable", true);
+      type.put("collation", (String) null);
+    }
+
+    return type;
+  }
+
   public Connection initStandardConnection() throws SQLException {
     Connection conn = BaseJDBCTest.getConnection(BaseJDBCTest.DONT_INJECT_SOCKET_TIMEOUT);
     conn.createStatement().execute("alter session set jdbc_query_result_format = json");
@@ -120,22 +159,239 @@ public class MockConnectionIT extends BaseJDBCTest {
    * the original connection.
    */
   @Test
-  public void testReuseResponse() throws SQLException {
-    Connection con = initStandardConnection();
-    Statement stmt = con.createStatement();
-
-    assertTrue(stmt instanceof SnowflakeStatementV1);
-    SFStatementImpl sfStatement = (SFStatementImpl) ((SnowflakeStatementV1) stmt).getSfStatement();
-    sfStatement.enableJsonResponseCapture();
-
-    ResultSet result = stmt.executeQuery("select count(*) from " + testTableName);
-    assertTrue(result instanceof SnowflakeResultSetV1);
-
-    JsonNode rawResponse = sfStatement.getCapturedResponse();
-
-    result.next();
-    int count = result.getInt(1);
-    assertEquals("row-count was not what was expected", 2, count);
+  public void testMockResponse() throws SQLException, JsonProcessingException {
+    ObjectMapper mapper = new ObjectMapper();
+    JsonNode rawResponse =
+        mapper.readTree(
+            "{\n"
+                + "   \"data\":{\n"
+                + "      \"parameters\":[\n"
+                + "         {\n"
+                + "            \"name\":\"TIMESTAMP_OUTPUT_FORMAT\",\n"
+                + "            \"value\":\"DY, DD MON YYYY HH24:MI:SS TZHTZM\"\n"
+                + "         },\n"
+                + "         {\n"
+                + "            \"name\":\"CLIENT_PREFETCH_THREADS\",\n"
+                + "            \"value\":4\n"
+                + "         },\n"
+                + "         {\n"
+                + "            \"name\":\"TIME_OUTPUT_FORMAT\",\n"
+                + "            \"value\":\"HH24:MI:SS\"\n"
+                + "         },\n"
+                + "         {\n"
+                + "            \"name\":\"JDBC_USE_SESSION_TIMEZONE\",\n"
+                + "            \"value\":true\n"
+                + "         },\n"
+                + "         {\n"
+                + "            \"name\":\"JDBC_TREAT_TIMESTAMP_NTZ_AS_UTC\",\n"
+                + "            \"value\":false\n"
+                + "         },\n"
+                + "         {\n"
+                + "            \"name\":\"JDBC_EXECUTE_RETURN_COUNT_FOR_DML\",\n"
+                + "            \"value\":false\n"
+                + "         },\n"
+                + "         {\n"
+                + "            \"name\":\"TIMESTAMP_TZ_OUTPUT_FORMAT\",\n"
+                + "            \"value\":\"\"\n"
+                + "         },\n"
+                + "         {\n"
+                + "            \"name\":\"CLIENT_RESULT_CHUNK_SIZE\",\n"
+                + "            \"value\":48\n"
+                + "         },\n"
+                + "         {\n"
+                + "            \"name\":\"CLIENT_SESSION_KEEP_ALIVE\",\n"
+                + "            \"value\":false\n"
+                + "         },\n"
+                + "         {\n"
+                + "            \"name\":\"JDBC_RS_COLUMN_CASE_INSENSITIVE\",\n"
+                + "            \"value\":false\n"
+                + "         },\n"
+                + "         {\n"
+                + "            \"name\":\"CLIENT_CONSERVATIVE_MEMORY_ADJUST_STEP\",\n"
+                + "            \"value\":64\n"
+                + "         },\n"
+                + "         {\n"
+                + "            \"name\":\"CLIENT_OUT_OF_BAND_TELEMETRY_ENABLED\",\n"
+                + "            \"value\":false\n"
+                + "         },\n"
+                + "         {\n"
+                + "            \"name\":\"CLIENT_METADATA_USE_SESSION_DATABASE\",\n"
+                + "            \"value\":false\n"
+                + "         },\n"
+                + "         {\n"
+                + "            \"name\":\"JDBC_ENABLE_COMBINED_DESCRIBE\",\n"
+                + "            \"value\":true\n"
+                + "         },\n"
+                + "         {\n"
+                + "            \"name\":\"CLIENT_RESULT_PREFETCH_THREADS\",\n"
+                + "            \"value\":1\n"
+                + "         },\n"
+                + "         {\n"
+                + "            \"name\":\"TIMESTAMP_NTZ_OUTPUT_FORMAT\",\n"
+                + "            \"value\":\"\"\n"
+                + "         },\n"
+                + "         {\n"
+                + "            \"name\":\"JDBC_TREAT_DECIMAL_AS_INT\",\n"
+                + "            \"value\":true\n"
+                + "         },\n"
+                + "         {\n"
+                + "            \"name\":\"CLIENT_METADATA_REQUEST_USE_CONNECTION_CTX\",\n"
+                + "            \"value\":false\n"
+                + "         },\n"
+                + "         {\n"
+                + "            \"name\":\"CLIENT_HONOR_CLIENT_TZ_FOR_TIMESTAMP_NTZ\",\n"
+                + "            \"value\":true\n"
+                + "         },\n"
+                + "         {\n"
+                + "            \"name\":\"CLIENT_MEMORY_LIMIT\",\n"
+                + "            \"value\":1536\n"
+                + "         },\n"
+                + "         {\n"
+                + "            \"name\":\"CLIENT_TIMESTAMP_TYPE_MAPPING\",\n"
+                + "            \"value\":\"TIMESTAMP_LTZ\"\n"
+                + "         },\n"
+                + "         {\n"
+                + "            \"name\":\"JDBC_EFFICIENT_CHUNK_STORAGE\",\n"
+                + "            \"value\":true\n"
+                + "         },\n"
+                + "         {\n"
+                + "            \"name\":\"TIMEZONE\",\n"
+                + "            \"value\":\"America/Los_Angeles\"\n"
+                + "         },\n"
+                + "         {\n"
+                + "            \"name\":\"SERVICE_NAME\",\n"
+                + "            \"value\":\"\"\n"
+                + "         },\n"
+                + "         {\n"
+                + "            \"name\":\"CLIENT_RESULT_PREFETCH_SLOTS\",\n"
+                + "            \"value\":2\n"
+                + "         },\n"
+                + "         {\n"
+                + "            \"name\":\"CLIENT_TELEMETRY_ENABLED\",\n"
+                + "            \"value\":true\n"
+                + "         },\n"
+                + "         {\n"
+                + "            \"name\":\"CLIENT_USE_V1_QUERY_API\",\n"
+                + "            \"value\":true\n"
+                + "         },\n"
+                + "         {\n"
+                + "            \"name\":\"CLIENT_DISABLE_INCIDENTS\",\n"
+                + "            \"value\":true\n"
+                + "         },\n"
+                + "         {\n"
+                + "            \"name\":\"CLIENT_RESULT_COLUMN_CASE_INSENSITIVE\",\n"
+                + "            \"value\":false\n"
+                + "         },\n"
+                + "         {\n"
+                + "            \"name\":\"CLIENT_ENABLE_CONSERVATIVE_MEMORY_USAGE\",\n"
+                + "            \"value\":true\n"
+                + "         },\n"
+                + "         {\n"
+                + "            \"name\":\"BINARY_OUTPUT_FORMAT\",\n"
+                + "            \"value\":\"HEX\"\n"
+                + "         },\n"
+                + "         {\n"
+                + "            \"name\":\"CLIENT_ENABLE_LOG_INFO_STATEMENT_PARAMETERS\",\n"
+                + "            \"value\":false\n"
+                + "         },\n"
+                + "         {\n"
+                + "            \"name\":\"CLIENT_CONSENT_CACHE_ID_TOKEN\",\n"
+                + "            \"value\":false\n"
+                + "         },\n"
+                + "         {\n"
+                + "            \"name\":\"JDBC_FORMAT_DATE_WITH_TIMEZONE\",\n"
+                + "            \"value\":true\n"
+                + "         },\n"
+                + "         {\n"
+                + "            \"name\":\"DATE_OUTPUT_FORMAT\",\n"
+                + "            \"value\":\"YYYY-MM-DD\"\n"
+                + "         },\n"
+                + "         {\n"
+                + "            \"name\":\"CLIENT_FORCE_PROTECT_ID_TOKEN\",\n"
+                + "            \"value\":true\n"
+                + "         },\n"
+                + "         {\n"
+                + "            \"name\":\"CLIENT_STAGE_ARRAY_BINDING_THRESHOLD\",\n"
+                + "            \"value\":65280\n"
+                + "         },\n"
+                + "         {\n"
+                + "            \"name\":\"JDBC_USE_JSON_PARSER\",\n"
+                + "            \"value\":true\n"
+                + "         },\n"
+                + "         {\n"
+                + "            \"name\":\"CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY\",\n"
+                + "            \"value\":3600\n"
+                + "         },\n"
+                + "         {\n"
+                + "            \"name\":\"CLIENT_SESSION_CLONE\",\n"
+                + "            \"value\":false\n"
+                + "         },\n"
+                + "         {\n"
+                + "            \"name\":\"AUTOCOMMIT\",\n"
+                + "            \"value\":true\n"
+                + "         },\n"
+                + "         {\n"
+                + "            \"name\":\"TIMESTAMP_LTZ_OUTPUT_FORMAT\",\n"
+                + "            \"value\":\"\"\n"
+                + "         }\n"
+                + "      ],\n"
+                + "      \"rowtype\":[\n"
+                + "         {\n"
+                + "            \"name\":\"COLA\",\n"
+                + "            \"database\":\"TESTDB\",\n"
+                + "            \"schema\":\"TESTSCHEMA\",\n"
+                + "            \"table\":\"TEST_CUSTOM_CONN_TABLE\",\n"
+                + "            \"scale\":null,\n"
+                + "            \"precision\":null,\n"
+                + "            \"length\":16777216,\n"
+                + "            \"type\":\"text\",\n"
+                + "            \"byteLength\":16777216,\n"
+                + "            \"nullable\":true,\n"
+                + "            \"collation\":null\n"
+                + "         },\n"
+                + "         {\n"
+                + "            \"name\":\"COLB\",\n"
+                + "            \"database\":\"TESTDB\",\n"
+                + "            \"schema\":\"TESTSCHEMA\",\n"
+                + "            \"table\":\"TEST_CUSTOM_CONN_TABLE\",\n"
+                + "            \"scale\":0,\n"
+                + "            \"precision\":38,\n"
+                + "            \"length\":null,\n"
+                + "            \"type\":\"fixed\",\n"
+                + "            \"byteLength\":null,\n"
+                + "            \"nullable\":true,\n"
+                + "            \"collation\":null\n"
+                + "         }\n"
+                + "      ],\n"
+                + "      \"rowset\":[\n"
+                + "         [\n"
+                + "            \"rowOne\",\n"
+                + "            \"1\"\n"
+                + "         ],\n"
+                + "         [\n"
+                + "            \"rowTwo\",\n"
+                + "            \"2\"\n"
+                + "         ]\n"
+                + "      ],\n"
+                + "      \"total\":2,\n"
+                + "      \"returned\":2,\n"
+                + "      \"queryId\":\"0199922f-015a-7715-0000-0014000123ca\",\n"
+                + "      \"databaseProvider\":null,\n"
+                + "      \"finalDatabaseName\":\"TESTDB\",\n"
+                + "      \"finalSchemaName\":\"TESTSCHEMA\",\n"
+                + "      \"finalWarehouseName\":\"DEV\",\n"
+                + "      \"finalRoleName\":\"SYSADMIN\",\n"
+                + "      \"numberOfBinds\":0,\n"
+                + "      \"arrayBindSupported\":false,\n"
+                + "      \"statementTypeId\":4096,\n"
+                + "      \"version\":1,\n"
+                + "      \"sendResultTime\":1610498856446,\n"
+                + "      \"queryResultFormat\":\"json\"\n"
+                + "   },\n"
+                + "   \"code\":null,\n"
+                + "   \"message\":null,\n"
+                + "   \"success\":true\n"
+                + "}");
 
     MockSnowflakeConnectionImpl mockImpl = new MockSnowflakeConnectionImpl(rawResponse);
     Connection mockConnection = initMockConnection(mockImpl);
@@ -143,10 +399,9 @@ public class MockConnectionIT extends BaseJDBCTest {
     ResultSet fakeResultSet =
         mockConnection.prepareStatement("select count(*) from " + testTableName).executeQuery();
     fakeResultSet.next();
-    int secondCount = fakeResultSet.getInt(1);
-    assertEquals("row-count was not what was expected", secondCount, count);
+    String val = fakeResultSet.getString(1);
+    assertEquals("colA value from the mock connection was not what was expected", "rowOne", val);
 
-    con.close();
     mockConnection.close();
   }
 
@@ -155,19 +410,55 @@ public class MockConnectionIT extends BaseJDBCTest {
    * retrieval from MockJsonResultSet
    */
   @Test
-  public void testMockedResponseWithInts() throws SQLException {
-    List<Integer> row1 = Arrays.asList(1, 2, 3);
-    List<Integer> row2 = Arrays.asList(4, 5, 6);
-    List<List<Integer>> intsToTest = Arrays.asList(row1, row2);
+  public void testMockedResponseWithRows() throws SQLException {
+    // Test with some ints
+    List<DataType> dataTypes = Arrays.asList(DataType.INT, DataType.INT, DataType.INT);
+    List<Object> row1 = Arrays.asList(1, 2, null);
+    List<Object> row2 = Arrays.asList(4, null, 6);
+    List<List<Object>> rowsToTest = Arrays.asList(row1, row2);
 
-    JsonNode responseWithRows = createDummyResponseWithIntRows(intsToTest);
+    JsonNode responseWithRows = createDummyResponseWithRows(rowsToTest, dataTypes);
 
     MockSnowflakeConnectionImpl mockImpl = new MockSnowflakeConnectionImpl(responseWithRows);
     Connection mockConnection = initMockConnection(mockImpl);
 
     ResultSet fakeResultSet =
-        mockConnection.prepareStatement("select * from fakeIntTable").executeQuery();
-    compareResultSets(fakeResultSet, intsToTest);
+        mockConnection.prepareStatement("select * from fakeTable").executeQuery();
+    compareResultSets(fakeResultSet, rowsToTest, dataTypes);
+
+    mockConnection.close();
+
+    // Now test with some strings
+    dataTypes = Arrays.asList(DataType.STRING, DataType.STRING);
+    row1 = Arrays.asList("hi", "bye");
+    row2 = Arrays.asList(null, "snowflake");
+    List<Object> row3 = Arrays.asList("is", "great");
+    rowsToTest = Arrays.asList(row1, row2, row3);
+
+    responseWithRows = createDummyResponseWithRows(rowsToTest, dataTypes);
+
+    mockImpl = new MockSnowflakeConnectionImpl(responseWithRows);
+    mockConnection = initMockConnection(mockImpl);
+
+    fakeResultSet = mockConnection.prepareStatement("select * from fakeTable").executeQuery();
+    compareResultSets(fakeResultSet, rowsToTest, dataTypes);
+
+    mockConnection.close();
+
+    // Mixed data
+    dataTypes = Arrays.asList(DataType.STRING, DataType.INT);
+    row1 = Arrays.asList("foo", 2);
+    row2 = Arrays.asList("bar", 4);
+    row3 = Arrays.asList("baz", null);
+    rowsToTest = Arrays.asList(row1, row2, row3);
+
+    responseWithRows = createDummyResponseWithRows(rowsToTest, dataTypes);
+
+    mockImpl = new MockSnowflakeConnectionImpl(responseWithRows);
+    mockConnection = initMockConnection(mockImpl);
+
+    fakeResultSet = mockConnection.prepareStatement("select * from fakeTable").executeQuery();
+    compareResultSets(fakeResultSet, rowsToTest, dataTypes);
 
     mockConnection.close();
   }
@@ -179,14 +470,13 @@ public class MockConnectionIT extends BaseJDBCTest {
     con.close();
   }
 
-  private JsonNode createDummyResponseWithIntRows(List<List<Integer>> integerRows) {
+  private JsonNode createDummyResponseWithRows(List<List<Object>> rows, List<DataType> dataTypes) {
     ObjectMapper mapper = new ObjectMapper();
     ObjectNode rootNode = mapper.createObjectNode();
     ObjectNode dataNode = rootNode.putObject("data");
 
-    createResultSetMetadataResponse(
-        dataNode, integerRows == null || integerRows.isEmpty() ? 0 : integerRows.get(0).size());
-    createRowsetJson(dataNode, integerRows);
+    createResultSetMetadataResponse(dataNode, dataTypes);
+    createRowsetJson(dataNode, rows, dataTypes);
 
     return rootNode;
   }
@@ -198,8 +488,9 @@ public class MockConnectionIT extends BaseJDBCTest {
    * format, timestamp_ntz format, ] queryId rowType
    *
    * @param dataNode ObjectNode representing the "data" portion of the JSON response
+   * @param dataTypes datatypes of the rows used in the generated response
    */
-  private void createResultSetMetadataResponse(ObjectNode dataNode, int numColumns) {
+  private void createResultSetMetadataResponse(ObjectNode dataNode, List<DataType> dataTypes) {
     ArrayNode parameters = dataNode.putArray("parameters");
 
     parameters.add(createParameterJson("TIME_OUTPUT_FORMAT", "HH24:MI:SS"));
@@ -214,23 +505,8 @@ public class MockConnectionIT extends BaseJDBCTest {
 
     ArrayNode rowType = dataNode.putArray("rowtype");
 
-    ObjectMapper mapper = new ObjectMapper();
-    ObjectNode intRowType = mapper.createObjectNode();
-
-    intRowType.put("name", "someColumn");
-    intRowType.put("database", "");
-    intRowType.put("schema", "");
-    intRowType.put("table", "");
-    intRowType.put("scale", 0);
-    intRowType.put("precision", 18);
-    intRowType.put("type", "fixed");
-    intRowType.put("length", (Integer) null);
-    intRowType.put("byteLength", (Integer) null);
-    intRowType.put("nullable", false);
-    intRowType.put("collation", (String) null);
-
-    for (int i = 0; i < numColumns; i++) {
-      rowType.add(intRowType);
+    for (DataType type : dataTypes) {
+      rowType.add(getJsonFromDataType(type));
     }
   }
 
@@ -252,20 +528,26 @@ public class MockConnectionIT extends BaseJDBCTest {
    * Adds the data portion of the mocked response JSON
    *
    * @param dataNode The ObjectNode representing the "data" portion of the JSON response
-   * @param integerRows The rows to add to the rowset.
+   * @param rows The rows to add to the rowset.
+   * @param dataTypes datatypes of the provided set of rows
    */
-  private void createRowsetJson(ObjectNode dataNode, List<List<Integer>> integerRows) {
+  private void createRowsetJson(
+      ObjectNode dataNode, List<List<Object>> rows, List<DataType> dataTypes) {
     ArrayNode rowsetNode = dataNode.putArray("rowset");
 
-    if (integerRows == null || integerRows.isEmpty()) {
+    if (rows == null || rows.isEmpty()) {
       return;
     }
 
-    for (List<Integer> integerRow : integerRows) {
-      Iterator<Integer> rowData = integerRow.iterator();
-      ArrayNode row = rowsetNode.addArray();
-      while (rowData.hasNext()) {
-        row.add(rowData.next());
+    for (List<Object> row : rows) {
+      Iterator<Object> rowData = row.iterator();
+      ArrayNode rowJson = rowsetNode.addArray();
+      for (DataType type : dataTypes) {
+        if (type == DataType.INT) {
+          rowJson.add((Integer) rowData.next());
+        } else if (type == DataType.STRING) {
+          rowJson.add((String) rowData.next());
+        }
       }
     }
   }
@@ -274,28 +556,36 @@ public class MockConnectionIT extends BaseJDBCTest {
    * Utility method to check that the integer result set is equivalent to the given list of list of
    * ints
    */
-  private void compareResultSets(ResultSet resultSet, List<List<Integer>> expectedInts)
+  private void compareResultSets(
+      ResultSet resultSet, List<List<Object>> expectedRows, List<DataType> dataTypes)
       throws SQLException {
-    if (expectedInts == null || expectedInts.size() == 0) {
+    if (expectedRows == null || expectedRows.size() == 0) {
       assertFalse(resultSet.next());
       return;
     }
 
-    int numRows = expectedInts.size();
-    int numColumns = expectedInts.get(0).size();
+    int numRows = expectedRows.size();
 
     int resultSetRows = 0;
 
-    Iterator<List<Integer>> rowIterator = expectedInts.iterator();
+    Iterator<List<Object>> rowIterator = expectedRows.iterator();
 
     while (resultSet.next() && rowIterator.hasNext()) {
-      List<Integer> expectedRow = rowIterator.next();
+      List<Object> expectedRow = rowIterator.next();
       int columnIdx = 0;
-      while (columnIdx < numColumns) {
-        int expected = expectedRow.get(columnIdx);
+      for (DataType type : dataTypes) {
+        Object expected = expectedRow.get(columnIdx);
         columnIdx++;
-        int actual = resultSet.getInt(columnIdx);
-        assertEquals(expected, actual);
+        if (type == DataType.INT) {
+          if (expected == null) {
+            expected = 0;
+          }
+          int actual = resultSet.getInt(columnIdx);
+          assertEquals(expected, actual);
+        } else if (type == DataType.STRING) {
+          String actual = resultSet.getString(columnIdx);
+          assertEquals(expected, actual);
+        }
       }
 
       resultSetRows++;
@@ -307,6 +597,13 @@ public class MockConnectionIT extends BaseJDBCTest {
     }
 
     assertEquals("row-count was not what was expected", numRows, resultSetRows);
+  }
+
+  // DataTypes supported with mock responses in test:
+  // Currently only String and Integer are supported
+  private enum DataType {
+    INT,
+    STRING
   }
 
   private static class MockedSFStatement implements SFStatement {
