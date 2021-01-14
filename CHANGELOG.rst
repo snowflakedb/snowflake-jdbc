@@ -1,3 +1,9 @@
+**JDBC Driver 3.12.17**
+
+- \| SNOW-174428 | Change bulk array binds to be uploaded with streaming PUT instead of local file creation + PUT.
+- \| SNOW-213443 | Add configurable TimeToLive command line parameter
+- \| SNOW-257198 | Updated google guava library from 28.0 to 30.0 to address vulnerability.
+
 **JDBC Driver 3.12.16**
 
 - \| SNOW-206907 | Added support for downscoping GCS credentials (which can be used instead of presigned URLs).
