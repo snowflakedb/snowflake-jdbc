@@ -132,7 +132,7 @@ public class MockConnectionIT extends BaseJDBCTest {
     return conn;
   }
 
-  public Connection initMockConnection(ConnectionImplementationFactory implementation)
+  public Connection initMockConnection(ConnectionImplementation implementation)
       throws SQLException {
     return new SnowflakeConnectionV1(implementation);
   }
@@ -942,7 +942,7 @@ public class MockConnectionIT extends BaseJDBCTest {
     }
   }
 
-  private static class MockSnowflakeConnectionImpl implements ConnectionImplementationFactory {
+  private static class MockSnowflakeConnectionImpl implements ConnectionImplementation {
 
     JsonNode jsonResponse;
     MockSnowflakeSession session;
@@ -958,7 +958,7 @@ public class MockConnectionIT extends BaseJDBCTest {
     }
 
     @Override
-    public SFStatementInterface createSFStatement() {
+    public SFStatementInterface getSFStatement() {
       return new MockedSFStatement(jsonResponse, session);
     }
 

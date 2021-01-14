@@ -63,5 +63,5 @@ public interface SnowflakeConnection {
   ResultSet createResultSet(String queryID) throws SQLException;
 
   /** Returns the SnowflakeConnectionImpl from the connection object. */
-  ConnectionImplementationFactory getConnectionImpl();
+  ConnectionImplementation getConnectionImpl();
 }
