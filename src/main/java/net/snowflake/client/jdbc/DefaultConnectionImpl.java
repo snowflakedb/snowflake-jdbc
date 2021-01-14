@@ -6,9 +6,9 @@ import net.snowflake.client.core.SFSession;
 import net.snowflake.client.core.SFStatementInterface;
 import net.snowflake.client.core.SFStatement;
 
-public class DefaultConnectionImpl implements ConnectionImplementationFactory {
+public class DefaultConnectionImpl implements ConnectionImplementation {
 
-  private SFSession sfSession;
+  private final SFSession sfSession;
 
   public DefaultConnectionImpl(SnowflakeConnectString conStr) {
     this.sfSession = new SFSession();
@@ -21,7 +21,7 @@ public class DefaultConnectionImpl implements ConnectionImplementationFactory {
   }
 
   @Override
-  public SFStatementInterface createSFStatement() {
+  public SFStatementInterface getSFStatement() {
     return new SFStatement(sfSession);
   }
 

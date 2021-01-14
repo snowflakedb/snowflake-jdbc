@@ -73,14 +73,14 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
   private final Set<Statement> openStatements = ConcurrentHashMap.newKeySet();
 
   /** The SnowflakeConnectionImpl that provides the underlying physical-layer implementation */
-  private ConnectionImplementationFactory connectionImpl;
+  private final ConnectionImplementation connectionImpl;
 
   /**
    * Instantiates a SnowflakeConnectionV1 with the passed-in SnowflakeConnectionImpl.
    *
    * @param connectionImpl The SnowflakeConnectionImpl.
    */
-  public SnowflakeConnectionV1(ConnectionImplementationFactory connectionImpl) throws SQLException {
+  public SnowflakeConnectionV1(ConnectionImplementation connectionImpl) throws SQLException {
     this.connectionImpl = connectionImpl;
     initConnectionWithImpl();
   }
@@ -98,6 +98,9 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
     if (!conStr.isValid()) {
       throw new SnowflakeSQLException(INVALID_CONNECT_STRING, url);
     }
+
+    connectionImpl = new DefaultConnectionImpl(conStr);
+    initConnectionWithImpl();
     initialize(conStr);
   }
 
@@ -135,7 +138,6 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
         "Trying to establish session, JDBC driver version: {}", SnowflakeDriver.implementVersion);
     TelemetryService.getInstance().updateContext(conStr);
 
-    connectionImpl = new DefaultConnectionImpl(conStr);
     // open connection to GS
     initConnectionWithImpl();
 
@@ -818,7 +820,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
   }
 
   @Override
-  public ConnectionImplementationFactory getConnectionImpl() {
+  public ConnectionImplementation getConnectionImpl() {
     return connectionImpl;
   }
 
