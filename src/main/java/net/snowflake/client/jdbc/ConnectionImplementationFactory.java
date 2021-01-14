@@ -2,8 +2,8 @@ package net.snowflake.client.jdbc;
 
 import java.sql.SQLException;
 import java.sql.SQLNonTransientConnectionException;
-import net.snowflake.client.core.SFSession;
-import net.snowflake.client.core.SFStatement;
+import net.snowflake.client.core.SFSessionInterface;
+import net.snowflake.client.core.SFStatementInterface;
 
 /**
  * Factory class that presents the implementation of a Snowflake Connection. This allows for
@@ -11,10 +11,10 @@ import net.snowflake.client.core.SFStatement;
  * implementation layer) that can share high-level code.
  */
 public interface ConnectionImplementationFactory {
-  SFSession getSFSession();
+  SFSessionInterface getSFSession();
 
-  SFStatement createSFStatement() throws SQLException;
+  SFStatementInterface createSFStatement() throws SQLException;
 
-  SnowflakeFileTransferAgent getFileTransferAgent(String command, SFStatement statement)
+  SnowflakeFileTransferAgentInterface getFileTransferAgent(String command, SFStatementInterface statement)
       throws SQLNonTransientConnectionException, SnowflakeSQLException;
 }

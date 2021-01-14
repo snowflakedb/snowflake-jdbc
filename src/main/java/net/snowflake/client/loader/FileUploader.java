@@ -8,7 +8,7 @@ import java.io.File;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import net.snowflake.client.jdbc.SnowflakeConnectionV1;
-import net.snowflake.client.jdbc.SnowflakeFileTransferAgentImpl;
+import net.snowflake.client.jdbc.SnowflakeFileTransferAgent;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 
@@ -123,14 +123,14 @@ public class FileUploader implements Runnable {
 
           String file =
               localSeparator(
-                  putResult.getString(SnowflakeFileTransferAgentImpl.UploadColumns.source.name()));
+                  putResult.getString(SnowflakeFileTransferAgent.UploadColumns.source.name()));
           String status =
-              putResult.getString(SnowflakeFileTransferAgentImpl.UploadColumns.status.name());
+              putResult.getString(SnowflakeFileTransferAgent.UploadColumns.status.name());
           String message =
-              putResult.getString(SnowflakeFileTransferAgentImpl.UploadColumns.message.name());
+              putResult.getString(SnowflakeFileTransferAgent.UploadColumns.message.name());
 
           if (status != null
-              && status.equals(SnowflakeFileTransferAgentImpl.ResultStatus.UPLOADED.name())) {
+              && status.equals(SnowflakeFileTransferAgent.ResultStatus.UPLOADED.name())) {
             // UPLOAD is success
             _file.delete();
             break;

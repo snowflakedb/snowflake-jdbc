@@ -20,7 +20,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.GZIPInputStream;
 import net.snowflake.client.core.SFException;
-import net.snowflake.client.core.SFSession;
+import net.snowflake.client.core.SFSessionInterface;
 import net.snowflake.client.core.SFSessionProperty;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.client.log.SFLogger;
@@ -67,7 +67,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
    */
   private int transactionIsolation = Connection.TRANSACTION_NONE;
 
-  private SFSession sfSession;
+  private SFSessionInterface sfSession;
 
   /** Refer to all created and open statements from this connection */
   private final Set<Statement> openStatements = ConcurrentHashMap.newKeySet();
@@ -966,7 +966,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
 
     putCommand.append(" overwrite=true");
 
-    SnowflakeFileTransferAgent transferAgent;
+    SnowflakeFileTransferAgentInterface transferAgent;
     transferAgent =
         connectionImpl.getFileTransferAgent(putCommand.toString(), stmt.getSfStatement());
     transferAgent.setSourceStream(inputStream);
@@ -1037,7 +1037,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
     // no file will be downloaded to this location
     getCommand.append(" file:///tmp/ /*jdbc download stream*/");
 
-    SnowflakeFileTransferAgent transferAgent =
+    SnowflakeFileTransferAgentInterface transferAgent =
         connectionImpl.getFileTransferAgent(getCommand.toString(), stmt.getSfStatement());
 
     InputStream stream = transferAgent.downloadStream(sourceFileName);
@@ -1083,7 +1083,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
     sfSession.setInjectFileUploadFailure(fileToFail);
   }
 
-  public SFSession getSfSession() {
+  public SFSessionInterface getSfSession() {
     return sfSession;
   }
 

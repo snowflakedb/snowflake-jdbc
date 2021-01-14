@@ -43,7 +43,7 @@ public class HeartbeatBackground implements Runnable {
    * for it. This is to take care of the case when some application does not close session before it
    * goes out of scope.
    */
-  WeakHashMap<SFSessionImpl, Boolean> sessions = new WeakHashMap<>();
+  WeakHashMap<SFSession, Boolean> sessions = new WeakHashMap<>();
 
   // When is the last time heartbeat started
   private long lastHeartbeatStartTimeInSecs = 0;
@@ -69,7 +69,7 @@ public class HeartbeatBackground implements Runnable {
    *     master token with server
    */
   protected synchronized void addSession(
-      SFSessionImpl session, long masterTokenValidityInSecs, int heartbeatFrequencyInSecs) {
+          SFSession session, long masterTokenValidityInSecs, int heartbeatFrequencyInSecs) {
     boolean requireReschedule = false;
 
     long oldHeartBeatIntervalInSecs = this.heartBeatIntervalInSecs;
@@ -138,7 +138,7 @@ public class HeartbeatBackground implements Runnable {
    *
    * @param session the session will be removed
    */
-  protected synchronized void removeSession(SFSession session) {
+  protected synchronized void removeSession(SFSessionInterface session) {
     sessions.remove(session);
   }
 
@@ -179,7 +179,7 @@ public class HeartbeatBackground implements Runnable {
      */
     this.lastHeartbeatStartTimeInSecs = System.currentTimeMillis() / 1000;
 
-    Set<SFSessionImpl> sessionsToHeartbeat = new HashSet<SFSessionImpl>();
+    Set<SFSession> sessionsToHeartbeat = new HashSet<SFSession>();
 
     // synchronously get a copy of the sessions from the global list
     synchronized (this) {
@@ -187,7 +187,7 @@ public class HeartbeatBackground implements Runnable {
     }
 
     // heartbeat every session.
-    for (SFSessionImpl session : sessionsToHeartbeat) {
+    for (SFSession session : sessionsToHeartbeat) {
       try {
         session.heartbeat();
       } catch (Throwable ex) {

@@ -589,7 +589,7 @@ public class StmtUtil {
    * @throws SFException exception raised from Snowflake components
    * @throws SnowflakeSQLException exception raised from Snowflake components
    */
-  protected static JsonNode getQueryResultJSON(String queryId, SFSessionImpl session)
+  protected static JsonNode getQueryResultJSON(String queryId, SFSession session)
       throws SFException, SnowflakeSQLException {
     String getResultPath = String.format(SF_PATH_QUERY_RESULT, queryId);
     StmtInput stmtInput =

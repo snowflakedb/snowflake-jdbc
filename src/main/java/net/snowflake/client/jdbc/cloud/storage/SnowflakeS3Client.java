@@ -39,8 +39,8 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.SFSSLConnectionSocketFactory;
+import net.snowflake.client.core.SFSessionInterface;
 import net.snowflake.client.core.SFSession;
-import net.snowflake.client.core.SFSessionImpl;
 import net.snowflake.client.jdbc.*;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -72,7 +72,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
   private ClientConfiguration clientConfig = null;
   private String stageRegion = null;
   private String stageEndPoint = null; // FIPS endpoint, if needed
-  private SFSession session = null;
+  private SFSessionInterface session = null;
   private boolean isClientSideEncrypted = true;
 
   // socket factory used by s3 client's http client.
@@ -85,7 +85,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
       String stageRegion,
       String stageEndPoint,
       boolean isClientSideEncrypted,
-      SFSession session)
+      SFSessionInterface session)
       throws SnowflakeSQLException {
     this.session = session;
     setupSnowflakeS3Client(
@@ -105,7 +105,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
       String stageRegion,
       String stageEndPoint,
       boolean isClientSideEncrypted,
-      SFSession session)
+      SFSessionInterface session)
       throws SnowflakeSQLException {
     // Save the client creation parameters so that we can reuse them,
     // to reset the AWS client. We won't save the awsCredentials since
@@ -275,7 +275,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
    */
   @Override
   public void download(
-      SFSessionImpl session,
+      SFSession session,
       String command,
       String localLocation,
       String destFileName,
@@ -371,7 +371,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
    */
   @Override
   public InputStream downloadToStream(
-      SFSessionImpl session,
+      SFSession session,
       String command,
       int parallelism,
       String remoteStorageLocation,
@@ -444,7 +444,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
    */
   @Override
   public void upload(
-      SFSessionImpl session,
+      SFSession session,
       String command,
       int parallelism,
       boolean uploadFromStream,
@@ -646,7 +646,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
 
   @Override
   public void handleStorageException(
-      Exception ex, int retryCount, String operation, SFSessionImpl session, String command)
+          Exception ex, int retryCount, String operation, SFSession session, String command)
       throws SnowflakeSQLException {
     handleS3Exception(ex, retryCount, operation, session, command, this);
   }
@@ -655,7 +655,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
       Exception ex,
       int retryCount,
       String operation,
-      SFSessionImpl session,
+      SFSession session,
       String command,
       SnowflakeS3Client s3Client)
       throws SnowflakeSQLException {
@@ -663,7 +663,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
     if (ex.getCause() instanceof InvalidKeyException) {
       // Most likely cause is that the unlimited strength policy files are not installed
       // Log the error and throw a message that explains the cause
-      SnowflakeFileTransferAgentImpl.throwJCEMissingError(operation, ex);
+      SnowflakeFileTransferAgent.throwJCEMissingError(operation, ex);
     }
 
     if (ex instanceof AmazonClientException) {
@@ -725,7 +725,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
         if (ex instanceof AmazonS3Exception) {
           AmazonS3Exception s3ex = (AmazonS3Exception) ex;
           if (s3ex.getErrorCode().equalsIgnoreCase(EXPIRED_AWS_TOKEN_ERROR_CODE)) {
-            SnowflakeFileTransferAgentImpl.renewExpiredToken(session, command, s3Client);
+            SnowflakeFileTransferAgent.renewExpiredToken(session, command, s3Client);
           }
         }
       }

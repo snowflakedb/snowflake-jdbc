@@ -54,7 +54,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
   private StageInfo stageInfo;
   private RemoteStoreFileEncryptionMaterial encMat;
   private Storage gcsClient = null;
-  private SFSessionImpl session = null;
+  private SFSession session = null;
 
   private static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeGCSClient.class);
 
@@ -67,7 +67,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
    *                required to decrypt/encrypt content in stage
    */
   public static SnowflakeGCSClient createSnowflakeGCSClient(
-      StageInfo stage, RemoteStoreFileEncryptionMaterial encMat, SFSessionImpl session)
+      StageInfo stage, RemoteStoreFileEncryptionMaterial encMat, SFSession session)
       throws SnowflakeSQLException {
     SnowflakeGCSClient sfGcsClient = new SnowflakeGCSClient();
     sfGcsClient.setupGCSClient(stage, encMat, session);
@@ -188,7 +188,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
    */
   @Override
   public void download(
-      SFSessionImpl session,
+      SFSession session,
       String command,
       String localLocation,
       String destFileName,
@@ -353,7 +353,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
    */
   @Override
   public InputStream downloadToStream(
-      SFSessionImpl session,
+      SFSession session,
       String command,
       int parallelism,
       String remoteStorageLocation,
@@ -574,7 +574,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
    */
   @Override
   public void upload(
-      SFSessionImpl session,
+      SFSession session,
       String command,
       int parallelism,
       boolean uploadFromStream,
@@ -861,13 +861,13 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
 
   @Override
   public void handleStorageException(
-      Exception ex, int retryCount, String operation, SFSessionImpl session, String command)
+          Exception ex, int retryCount, String operation, SFSession session, String command)
       throws SnowflakeSQLException {
     // no need to retry if it is invalid key exception
     if (ex.getCause() instanceof InvalidKeyException) {
       // Most likely cause is that the unlimited strength policy files are not installed
       // Log the error and throw a message that explains the cause
-      SnowflakeFileTransferAgentImpl.throwJCEMissingError(operation, ex);
+      SnowflakeFileTransferAgent.throwJCEMissingError(operation, ex);
     }
 
     if (ex instanceof StorageException) {
@@ -913,7 +913,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
         if (se.getCode() == 401 && session != null && command != null) {
           // A 401 indicates that the access token has expired,
           // we need to refresh the GCS client with the new token
-          SnowflakeFileTransferAgentImpl.renewExpiredToken(session, command, this);
+          SnowflakeFileTransferAgent.renewExpiredToken(session, command, this);
         }
       }
     } else if (ex instanceof InterruptedException
@@ -1031,7 +1031,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
    * @throws IllegalArgumentException when invalid credentials are used
    */
   private void setupGCSClient(
-      StageInfo stage, RemoteStoreFileEncryptionMaterial encMat, SFSessionImpl session)
+      StageInfo stage, RemoteStoreFileEncryptionMaterial encMat, SFSession session)
       throws IllegalArgumentException, SnowflakeSQLException {
     // Save the client creation parameters so that we can reuse them,
     // to reset the GCS client.

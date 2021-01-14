@@ -12,7 +12,7 @@ import java.util.regex.Pattern;
 import net.snowflake.client.core.QueryStatus;
 import net.snowflake.client.core.SFBaseResultSet;
 import net.snowflake.client.core.SFException;
-import net.snowflake.client.core.SFSession;
+import net.snowflake.client.core.SFSessionInterface;
 import net.snowflake.common.core.SqlState;
 
 /** SFAsyncResultSet implementation */
@@ -21,7 +21,7 @@ class SFAsyncResultSet extends SnowflakeBaseResultSet implements SnowflakeResult
   private ResultSet resultSetForNext = new SnowflakeResultSetV1.EmptyResultSet();
   private boolean resultSetForNextInitialized = false;
   private String queryID;
-  private SFSession session;
+  private SFSessionInterface session;
   private Statement extraStatement;
 
   /**
@@ -196,7 +196,7 @@ class SFAsyncResultSet extends SnowflakeBaseResultSet implements SnowflakeResult
     return resultSetForNext.getString(columnIndex);
   }
 
-  public void setSession(SFSession session) {
+  public void setSession(SFSessionInterface session) {
     this.session = session;
   }
 

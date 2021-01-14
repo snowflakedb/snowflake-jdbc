@@ -11,8 +11,8 @@ import net.snowflake.client.AbstractDriverIT;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryOthers;
-import net.snowflake.client.core.SFSessionImpl;
-import net.snowflake.client.core.SFStatementImpl;
+import net.snowflake.client.core.SFSession;
+import net.snowflake.client.core.SFStatement;
 import net.snowflake.client.jdbc.cloud.storage.SnowflakeGCSClient;
 import org.junit.After;
 import org.junit.Assert;
@@ -26,8 +26,8 @@ import org.mockito.Mockito;
 public class SnowflakeGcsClientHandleExceptionLatestIT extends AbstractDriverIT {
 
   private Connection connection;
-  private SFStatementImpl sfStatement;
-  private SFSessionImpl sfSession;
+  private SFStatement sfStatement;
+  private SFSession sfSession;
   private String command;
   private SnowflakeGCSClient spyingClient;
   private int overMaxRetry;
@@ -38,13 +38,13 @@ public class SnowflakeGcsClientHandleExceptionLatestIT extends AbstractDriverIT 
     Properties paramProperties = new Properties();
     paramProperties.put("GCS_USE_DOWNSCOPED_CREDENTIAL", true);
     connection = getConnection("gcpaccount", paramProperties);
-    sfSession = (SFSessionImpl) connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
+    sfSession = (SFSession) connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
     Statement statement = connection.createStatement();
-    sfStatement = (SFStatementImpl) statement.unwrap(SnowflakeStatementV1.class).getSfStatement();
+    sfStatement = (SFStatement) statement.unwrap(SnowflakeStatementV1.class).getSfStatement();
     statement.execute("CREATE OR REPLACE STAGE testPutGet_stage");
     command = "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE) + " @testPutGet_stage";
-    SnowflakeFileTransferAgentImpl agent =
-        new SnowflakeFileTransferAgentImpl(command, sfSession, sfStatement);
+    SnowflakeFileTransferAgent agent =
+        new SnowflakeFileTransferAgent(command, sfSession, sfStatement);
     SnowflakeGCSClient client =
         SnowflakeGCSClient.createSnowflakeGCSClient(
             agent.getStageInfo(), agent.getEncryptionMaterial().get(0), sfSession);

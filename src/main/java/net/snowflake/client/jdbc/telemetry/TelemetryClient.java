@@ -14,8 +14,8 @@ import java.util.LinkedList;
 import java.util.concurrent.Future;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.ObjectMapperFactory;
+import net.snowflake.client.core.SFSessionInterface;
 import net.snowflake.client.core.SFSession;
-import net.snowflake.client.core.SFSessionImpl;
 import net.snowflake.client.jdbc.SnowflakeConnectionV1;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryThreadPool;
@@ -30,7 +30,7 @@ import org.apache.http.entity.StringEntity;
  * <p>Telemetry Service Interface
  */
 public class TelemetryClient implements Telemetry {
-  private static final SFLogger logger = SFLoggerFactory.getLogger(SFSession.class);
+  private static final SFLogger logger = SFLoggerFactory.getLogger(SFSessionInterface.class);
 
   private static final String SF_PATH_TELEMETRY = "/telemetry/send";
 
@@ -43,7 +43,7 @@ public class TelemetryClient implements Telemetry {
   private final String serverUrl;
   private final String telemetryUrl;
 
-  private final SFSessionImpl session;
+  private final SFSession session;
   private LinkedList<TelemetryData> logBatch;
   private static final ObjectMapper mapper = ObjectMapperFactory.getObjectMapper();
 
@@ -54,7 +54,7 @@ public class TelemetryClient implements Telemetry {
   // false if meet any error when sending metrics
   private boolean isTelemetryServiceAvailable = true;
 
-  private TelemetryClient(SFSessionImpl session, int flushSize) {
+  private TelemetryClient(SFSession session, int flushSize) {
     this.session = session;
     this.serverUrl = session.getUrl();
 
@@ -94,7 +94,7 @@ public class TelemetryClient implements Telemetry {
   public static Telemetry createTelemetry(Connection conn, int flushSize) {
     try {
       return createTelemetry(
-          (SFSessionImpl) conn.unwrap(SnowflakeConnectionV1.class).getSfSession(), flushSize);
+          (SFSession) conn.unwrap(SnowflakeConnectionV1.class).getSfSession(), flushSize);
     } catch (SQLException ex) {
       logger.debug("input connection is not a SnowflakeConnection");
       return null;
@@ -117,7 +117,7 @@ public class TelemetryClient implements Telemetry {
    * @param session session to use for telemetry dumps
    * @return a telemetry connector
    */
-  public static Telemetry createTelemetry(SFSessionImpl session) {
+  public static Telemetry createTelemetry(SFSession session) {
     return createTelemetry(session, DEFAULT_FORCE_FLUSH_SIZE);
   }
 
@@ -128,7 +128,7 @@ public class TelemetryClient implements Telemetry {
    * @param flushSize maximum size of telemetry batch before flush
    * @return a telemetry connector
    */
-  public static Telemetry createTelemetry(SFSessionImpl session, int flushSize) {
+  public static Telemetry createTelemetry(SFSession session, int flushSize) {
     return new TelemetryClient(session, flushSize);
   }
 

@@ -320,7 +320,7 @@ public class SSOConnectionTest {
           "token", sfconSecond.getSfSession().getSessionToken(), equalTo(MOCK_NEW_SESSION_TOKEN));
       // we won't get a new id_token here
       assertThat(
-          "idToken", ((SFSessionImpl) sfcon.getSfSession()).getIdToken(), equalTo(MOCK_ID_TOKEN));
+          "idToken", ((SFSession) sfcon.getSfSession()).getIdToken(), equalTo(MOCK_ID_TOKEN));
     }
   }
 }

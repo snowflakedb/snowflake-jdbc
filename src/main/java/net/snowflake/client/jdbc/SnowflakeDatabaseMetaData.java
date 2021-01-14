@@ -15,7 +15,7 @@ import java.sql.*;
 import java.util.*;
 import java.util.regex.Pattern;
 import net.snowflake.client.core.ObjectMapperFactory;
-import net.snowflake.client.core.SFSession;
+import net.snowflake.client.core.SFSessionInterface;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
 import net.snowflake.client.jdbc.telemetry.TelemetryData;
 import net.snowflake.client.jdbc.telemetry.TelemetryField;
@@ -95,7 +95,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
 
   private final Connection connection;
 
-  private final SFSession session;
+  private final SFSessionInterface session;
 
   private Telemetry ibInstance;
 
