@@ -5,12 +5,6 @@
 package net.snowflake.client.core;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import java.math.BigDecimal;
-import java.sql.Date;
-import java.sql.SQLException;
-import java.sql.Timestamp;
-import java.sql.Types;
-import java.util.*;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeUtil;
 import net.snowflake.client.log.ArgSupplier;
@@ -20,6 +14,13 @@ import net.snowflake.common.core.SFTime;
 import net.snowflake.common.core.SFTimestamp;
 import net.snowflake.common.core.SnowflakeDateTimeFormat;
 import net.snowflake.common.util.TimeUtil;
+
+import java.math.BigDecimal;
+import java.sql.Date;
+import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.sql.Types;
+import java.util.*;
 
 public class ResultUtil {
   static final SFLogger logger = SFLoggerFactory.getLogger(ResultUtil.class);
@@ -326,7 +327,7 @@ public class ResultUtil {
    * @return date in string
    */
   public static String getDateAsString(Date date, SnowflakeDateTimeFormat dateFormatter) {
-    return dateFormatter.format(date, timeZoneUTC);
+    return dateFormatter.format(date, TimeZone.getDefault());
   }
 
   /**
