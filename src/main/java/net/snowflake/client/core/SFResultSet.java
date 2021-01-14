@@ -60,7 +60,7 @@ public class SFResultSet extends SFJsonResultSet {
 
   private ChunkDownloader chunkDownloader;
 
-  protected SFStatement statement;
+  protected SFStatementInterface statement;
 
   private final boolean arrayBindSupported;
 
@@ -84,13 +84,13 @@ public class SFResultSet extends SFJsonResultSet {
    */
   public SFResultSet(
       SnowflakeResultSetSerializableV1 resultSetSerializable,
-      SFStatementImpl statement,
+      SFStatement statement,
       boolean sortResult)
       throws SQLException {
     this(resultSetSerializable, statement.getSession().getTelemetryClient(), sortResult);
 
     this.statement = statement;
-    SFSession session = this.statement.getSession();
+    SFSessionInterface session = this.statement.getSession();
     session.setDatabase(resultSetSerializable.getFinalDatabaseName());
     session.setSchema(resultSetSerializable.getFinalSchemaName());
     session.setRole(resultSetSerializable.getFinalRoleName());
@@ -99,7 +99,7 @@ public class SFResultSet extends SFJsonResultSet {
     this.formatDateWithTimezone = resultSetSerializable.getFormatDateWithTimeZone();
 
     // update the driver/session with common parameters from GS
-    SessionUtil.updateSfDriverParamValues(this.parameters, (SFSessionImpl) statement.getSession());
+    SessionUtil.updateSfDriverParamValues(this.parameters, (SFSession) statement.getSession());
 
     // if server gives a send time, log time it took to arrive
     if (resultSetSerializable.getSendResultTime() != 0) {

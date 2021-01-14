@@ -49,7 +49,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
   private boolean sortResult;
 
   /** statement generate current result set */
-  protected SFStatement statement;
+  protected SFStatementInterface statement;
 
   /** is array bind supported */
   private final boolean arrayBindSupported;
@@ -105,14 +105,14 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
    */
   SFArrowResultSet(
       SnowflakeResultSetSerializableV1 resultSetSerializable,
-      SFStatementImpl statement,
+      SFStatement statement,
       boolean sortResult)
       throws SQLException {
     this(resultSetSerializable, statement.getSession().getTelemetryClient(), sortResult);
 
     // update the session db/schema/wh/role etc
     this.statement = statement;
-    SFSession session = this.statement.getSession();
+    SFSessionInterface session = this.statement.getSession();
     session.setDatabase(resultSetSerializable.getFinalDatabaseName());
     session.setSchema(resultSetSerializable.getFinalSchemaName());
     session.setRole(resultSetSerializable.getFinalRoleName());
@@ -122,7 +122,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     useSessionTimezone = resultSetSerializable.getUseSessionTimezone();
 
     // update the driver/session with common parameters from GS
-    SessionUtil.updateSfDriverParamValues(this.parameters, (SFSessionImpl) statement.getSession());
+    SessionUtil.updateSfDriverParamValues(this.parameters, (SFSession) statement.getSession());
 
     // if server gives a send time, log time it took to arrive
     if (resultSetSerializable.getSendResultTime() != 0) {

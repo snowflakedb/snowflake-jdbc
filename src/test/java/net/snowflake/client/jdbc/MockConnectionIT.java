@@ -32,7 +32,7 @@ public class MockConnectionIT extends BaseJDBCTest {
 
   private static final String testTableName = "test_custom_conn_table";
 
-  private static SFResultSetMetaData getRSMDFromResponse(JsonNode rootNode, SFSession sfSession)
+  private static SFResultSetMetaData getRSMDFromResponse(JsonNode rootNode, SFSessionInterface sfSession)
       throws SnowflakeSQLException {
 
     String queryId = rootNode.path("data").path("queryId").asText();
@@ -605,7 +605,7 @@ public class MockConnectionIT extends BaseJDBCTest {
     STRING
   }
 
-  private static class MockedSFStatement implements SFStatement {
+  private static class MockedSFStatement implements SFStatementInterface {
     JsonNode mockedResponse;
     MockSnowflakeSession sfSession;
 
@@ -663,7 +663,7 @@ public class MockConnectionIT extends BaseJDBCTest {
     public void executeSetProperty(String sql) {}
 
     @Override
-    public SFSession getSession() {
+    public SFSessionInterface getSession() {
       return sfSession;
     }
 
@@ -732,7 +732,7 @@ public class MockConnectionIT extends BaseJDBCTest {
     }
   }
 
-  private static class MockSnowflakeSession implements SFSession {
+  private static class MockSnowflakeSession implements SFSessionInterface {
 
     @Override
     public boolean isSafeToClose() {
@@ -953,17 +953,17 @@ public class MockConnectionIT extends BaseJDBCTest {
     }
 
     @Override
-    public SFSession getSFSession() {
+    public SFSessionInterface getSFSession() {
       return session;
     }
 
     @Override
-    public SFStatement createSFStatement() {
+    public SFStatementInterface createSFStatement() {
       return new MockedSFStatement(jsonResponse, session);
     }
 
     @Override
-    public SnowflakeFileTransferAgent getFileTransferAgent(String command, SFStatement statement) {
+    public SnowflakeFileTransferAgentInterface getFileTransferAgent(String command, SFStatementInterface statement) {
       return null;
     }
   }

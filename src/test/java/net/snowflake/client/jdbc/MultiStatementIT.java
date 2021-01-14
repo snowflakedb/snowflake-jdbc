@@ -19,7 +19,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryStatement;
-import net.snowflake.client.core.SFSession;
+import net.snowflake.client.core.SFSessionInterface;
 import net.snowflake.common.core.SqlState;
 import org.junit.Assert;
 import org.junit.Test;
@@ -408,7 +408,7 @@ public class MultiStatementIT extends BaseJDBCTest {
     Connection connection = getConnection();
     Statement statement = connection.createStatement();
 
-    SFSession session =
+    SFSessionInterface session =
         statement.getConnection().unwrap(SnowflakeConnectionV1.class).getSfSession();
 
     String originalSchema = session.getSchema();
@@ -443,7 +443,7 @@ public class MultiStatementIT extends BaseJDBCTest {
     Connection connection = getConnection();
     Statement statement = connection.createStatement();
 
-    SFSession session =
+    SFSessionInterface session =
         statement.getConnection().unwrap(SnowflakeConnectionV1.class).getSfSession();
 
     // we need an arbitrary parameter which is updated by the client after each query for this test

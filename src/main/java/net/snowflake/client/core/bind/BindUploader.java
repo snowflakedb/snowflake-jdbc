@@ -19,8 +19,8 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import net.snowflake.client.core.*;
 import net.snowflake.client.jdbc.ErrorCode;
+import net.snowflake.client.jdbc.SnowflakeFileTransferAgentInterface;
 import net.snowflake.client.jdbc.SnowflakeFileTransferAgent;
-import net.snowflake.client.jdbc.SnowflakeFileTransferAgentImpl;
 import net.snowflake.client.jdbc.SnowflakeSQLLoggedException;
 import net.snowflake.client.jdbc.SnowflakeType;
 import net.snowflake.client.log.SFLogger;
@@ -42,7 +42,7 @@ public class BindUploader implements Closeable {
           + ")";
 
   // session of the uploader
-  private final SFSessionImpl session;
+  private final SFSession session;
 
   // fully-qualified stage path to upload binds to
   private final String stagePath;
@@ -76,7 +76,7 @@ public class BindUploader implements Closeable {
    * @param session the session to use for uploading binds
    * @param stageDir the stage path to upload to
    */
-  private BindUploader(SFSessionImpl session, String stageDir) {
+  private BindUploader(SFSession session, String stageDir) {
     this.session = session;
     this.stagePath = "@" + STAGE_NAME + "/" + stageDir;
     Calendar calendarUTC = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
@@ -159,7 +159,7 @@ public class BindUploader implements Closeable {
    * @param stageDir the stage path to upload to
    * @return BindUploader instance
    */
-  public static synchronized BindUploader newInstance(SFSessionImpl session, String stageDir) {
+  public static synchronized BindUploader newInstance(SFSession session, String stageDir) {
     return new BindUploader(session, stageDir);
   }
 
@@ -249,7 +249,7 @@ public class BindUploader implements Closeable {
           "stage name is null");
     }
 
-    SFStatementImpl stmt = new SFStatementImpl(session);
+    SFStatement stmt = new SFStatement(session);
 
     StringBuilder putCommand = new StringBuilder();
 
@@ -263,8 +263,8 @@ public class BindUploader implements Closeable {
 
     putCommand.append(" overwrite=true");
 
-    SnowflakeFileTransferAgent transferAgent;
-    transferAgent = new SnowflakeFileTransferAgentImpl(putCommand.toString(), session, stmt);
+    SnowflakeFileTransferAgentInterface transferAgent;
+    transferAgent = new SnowflakeFileTransferAgent(putCommand.toString(), session, stmt);
 
     transferAgent.setSourceStream(inputStream);
     transferAgent.setDestFileNameForStreamSource(destFileName);
@@ -397,7 +397,7 @@ public class BindUploader implements Closeable {
       // another thread may have created the session by the time we enter this block
       if (session.getArrayBindStage() == null) {
         try {
-          SFStatement statement = new SFStatementImpl(session);
+          SFStatementInterface statement = new SFStatement(session);
           statement.execute(CREATE_STAGE_STMT, false, null, null);
           session.setArrayBindStage(STAGE_NAME);
         } catch (SFException | SQLException ex) {

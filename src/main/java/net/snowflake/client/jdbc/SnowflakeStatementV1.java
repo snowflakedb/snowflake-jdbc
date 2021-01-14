@@ -52,7 +52,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
   // max field size limited to 16MB
   private final int maxFieldSize = 16777216;
 
-  SFStatement sfStatement;
+  SFStatementInterface sfStatement;
 
   private boolean poolable;
 
@@ -187,7 +187,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
     try {
       sfResultSet =
           sfStatement.execute(
-              sql, false, parameterBindings, SFStatement.CallingMethod.EXECUTE_UPDATE);
+              sql, false, parameterBindings, SFStatementInterface.CallingMethod.EXECUTE_UPDATE);
       sfResultSet.setSession(this.connection.getSfSession());
       updateCount = ResultUtil.calculateUpdateCount(sfResultSet);
       queryID = sfResultSet.getQueryId();
@@ -227,7 +227,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
     try {
       sfResultSet =
           sfStatement.execute(
-              sql, asyncExec, parameterBindings, SFStatement.CallingMethod.EXECUTE_QUERY);
+              sql, asyncExec, parameterBindings, SFStatementInterface.CallingMethod.EXECUTE_QUERY);
       sfResultSet.setSession(this.connection.getSfSession());
     } catch (SFException ex) {
       throw new SnowflakeSQLException(
@@ -273,7 +273,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
     SFBaseResultSet sfResultSet;
     try {
       sfResultSet =
-          sfStatement.execute(sql, false, parameterBindings, SFStatement.CallingMethod.EXECUTE);
+          sfStatement.execute(sql, false, parameterBindings, SFStatementInterface.CallingMethod.EXECUTE);
       sfResultSet.setSession(this.connection.getSfSession());
       if (resultSet != null) {
         openResultSets.add(resultSet);
@@ -890,7 +890,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
     }
   }
 
-  public SFStatement getSfStatement() throws SQLException {
+  public SFStatementInterface getSfStatement() throws SQLException {
     return sfStatement;
   }
 
@@ -1216,7 +1216,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
     public void clearBatch() throws SQLException {}
 
     @Override
-    public SFStatement getSfStatement() throws SQLException {
+    public SFStatementInterface getSfStatement() throws SQLException {
       throwExceptionAnyway();
       return null;
     }

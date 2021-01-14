@@ -1,36 +1,36 @@
 package net.snowflake.client.jdbc;
 
 import java.sql.SQLNonTransientConnectionException;
+import net.snowflake.client.core.SFSessionInterface;
 import net.snowflake.client.core.SFSession;
-import net.snowflake.client.core.SFSessionImpl;
+import net.snowflake.client.core.SFStatementInterface;
 import net.snowflake.client.core.SFStatement;
-import net.snowflake.client.core.SFStatementImpl;
 
 public class DefaultConnectionImpl implements ConnectionImplementationFactory {
 
-  private SFSessionImpl sfSession;
+  private SFSession sfSession;
 
   public DefaultConnectionImpl(SnowflakeConnectString conStr) {
-    this.sfSession = new SFSessionImpl();
+    this.sfSession = new SFSession();
     sfSession.setSnowflakeConnectionString(conStr);
   }
 
   @Override
-  public SFSession getSFSession() {
+  public SFSessionInterface getSFSession() {
     return sfSession;
   }
 
   @Override
-  public SFStatement createSFStatement() {
-    return new SFStatementImpl(sfSession);
+  public SFStatementInterface createSFStatement() {
+    return new SFStatement(sfSession);
   }
 
   @Override
-  public SnowflakeFileTransferAgent getFileTransferAgent(String command, SFStatement statement)
+  public SnowflakeFileTransferAgentInterface getFileTransferAgent(String command, SFStatementInterface statement)
       throws SQLNonTransientConnectionException, SnowflakeSQLException {
-    if (!(statement instanceof SFStatementImpl)) {
+    if (!(statement instanceof SFStatement)) {
       throw new SQLNonTransientConnectionException("Internal error: Invalid SFStatement type.");
     }
-    return new SnowflakeFileTransferAgentImpl(command, sfSession, (SFStatementImpl) statement);
+    return new SnowflakeFileTransferAgent(command, sfSession, (SFStatement) statement);
   }
 }

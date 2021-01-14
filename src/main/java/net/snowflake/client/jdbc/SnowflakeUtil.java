@@ -13,7 +13,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import net.snowflake.client.core.HttpUtil;
-import net.snowflake.client.core.SFSession;
+import net.snowflake.client.core.SFSessionInterface;
 import net.snowflake.client.core.SFSessionProperty;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -125,7 +125,7 @@ public class SnowflakeUtil {
   }
 
   public static SnowflakeColumnMetadata extractColumnMetadata(
-      JsonNode colNode, boolean jdbcTreatDecimalAsInt, SFSession session)
+      JsonNode colNode, boolean jdbcTreatDecimalAsInt, SFSessionInterface session)
       throws SnowflakeSQLException {
     String colName = colNode.path("name").asText();
     String internalColTypeName = colNode.path("type").asText();
@@ -266,12 +266,12 @@ public class SnowflakeUtil {
         colSrcTable);
   }
 
-  static String javaTypeToSFTypeString(int javaType, SFSession session)
+  static String javaTypeToSFTypeString(int javaType, SFSessionInterface session)
       throws SnowflakeSQLException {
     return SnowflakeType.javaTypeToSFType(javaType, session).name();
   }
 
-  static SnowflakeType javaTypeToSFType(int javaType, SFSession session)
+  static SnowflakeType javaTypeToSFType(int javaType, SFSessionInterface session)
       throws SnowflakeSQLException {
     return SnowflakeType.javaTypeToSFType(javaType, session);
   }
@@ -327,7 +327,7 @@ public class SnowflakeUtil {
     return greatestCommonPrefix.toString();
   }
 
-  static List<SnowflakeColumnMetadata> describeFixedViewColumns(Class<?> clazz, SFSession session)
+  static List<SnowflakeColumnMetadata> describeFixedViewColumns(Class<?> clazz, SFSessionInterface session)
       throws SnowflakeSQLException {
     Field[] columns = ClassUtil.getAnnotatedDeclaredFields(clazz, FixedViewColumn.class, true);
 

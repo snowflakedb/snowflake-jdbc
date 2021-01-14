@@ -23,10 +23,10 @@ class SFResultSetFactory {
    * @return result set object
    */
   static SFBaseResultSet getResultSet(
-      JsonNode result, SFStatementImpl statement, boolean sortResult) throws SQLException {
+          JsonNode result, SFStatement statement, boolean sortResult) throws SQLException {
     SnowflakeResultSetSerializableV1 resultSetSerializable =
         SnowflakeResultSetSerializableV1.create(
-            result, (SFSessionImpl) statement.getSession(), statement);
+            result, (SFSession) statement.getSession(), statement);
 
     switch (resultSetSerializable.getQueryResultFormat()) {
       case ARROW:

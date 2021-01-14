@@ -7,7 +7,7 @@ import java.io.File;
 import java.io.InputStream;
 import java.util.Map;
 import net.snowflake.client.core.OCSPMode;
-import net.snowflake.client.core.SFSessionImpl;
+import net.snowflake.client.core.SFSession;
 import net.snowflake.client.jdbc.*;
 import net.snowflake.common.core.SqlState;
 
@@ -94,7 +94,7 @@ public interface SnowflakeStorageClient {
    * @throws SnowflakeSQLException download failure
    */
   void download(
-      SFSessionImpl connection,
+      SFSession connection,
       String command,
       String localLocation,
       String destFileName,
@@ -119,7 +119,7 @@ public interface SnowflakeStorageClient {
    * @throws SnowflakeSQLException when download failure
    */
   InputStream downloadToStream(
-      SFSessionImpl connection,
+      SFSession connection,
       String command,
       int parallelism,
       String remoteStorageLocation,
@@ -146,7 +146,7 @@ public interface SnowflakeStorageClient {
    * @throws SnowflakeSQLException if upload failed even after retry
    */
   void upload(
-      SFSessionImpl connection,
+      SFSession connection,
       String command,
       int parallelism,
       boolean uploadFromStream,
@@ -216,7 +216,7 @@ public interface SnowflakeStorageClient {
    *     policy allows, are propagated
    */
   void handleStorageException(
-      Exception ex, int retryCount, String operation, SFSessionImpl connection, String command)
+          Exception ex, int retryCount, String operation, SFSession connection, String command)
       throws SnowflakeSQLException;
 
   /**

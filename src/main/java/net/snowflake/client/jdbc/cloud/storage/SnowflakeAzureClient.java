@@ -32,8 +32,8 @@ import java.util.List;
 import java.util.Map;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.ObjectMapperFactory;
+import net.snowflake.client.core.SFSessionInterface;
 import net.snowflake.client.core.SFSession;
-import net.snowflake.client.core.SFSessionImpl;
 import net.snowflake.client.jdbc.*;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -58,7 +58,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
   private CloudBlobClient azStorageClient;
   private static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeAzureClient.class);
   private OperationContext opContext = null;
-  private SFSession session;
+  private SFSessionInterface session;
 
   private SnowflakeAzureClient() {}
   ;
@@ -70,7 +70,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
    *                required to decrypt/encrypt content in stage
    */
   public static SnowflakeAzureClient createSnowflakeAzureClient(
-      StageInfo stage, RemoteStoreFileEncryptionMaterial encMat, SFSession sfSession)
+      StageInfo stage, RemoteStoreFileEncryptionMaterial encMat, SFSessionInterface sfSession)
       throws SnowflakeSQLException {
     SnowflakeAzureClient azureClient = new SnowflakeAzureClient();
     azureClient.setupAzureClient(stage, encMat, sfSession);
@@ -89,7 +89,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
    * @throws IllegalArgumentException when invalid credentials are used
    */
   private void setupAzureClient(
-      StageInfo stage, RemoteStoreFileEncryptionMaterial encMat, SFSession sfSession)
+      StageInfo stage, RemoteStoreFileEncryptionMaterial encMat, SFSessionInterface sfSession)
       throws IllegalArgumentException, SnowflakeSQLException {
     // Save the client creation parameters so that we can reuse them,
     // to reset the Azure client.
@@ -271,7 +271,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
    */
   @Override
   public void download(
-      SFSessionImpl session,
+      SFSession session,
       String command,
       String localLocation,
       String destFileName,
@@ -353,7 +353,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
    */
   @Override
   public InputStream downloadToStream(
-      SFSessionImpl session,
+      SFSession session,
       String command,
       int parallelism,
       String remoteStorageLocation,
@@ -434,7 +434,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
    */
   @Override
   public void upload(
-      SFSessionImpl session,
+      SFSession session,
       String command,
       int parallelism,
       boolean uploadFromStream,
@@ -537,7 +537,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
    */
   @Override
   public void handleStorageException(
-      Exception ex, int retryCount, String operation, SFSessionImpl session, String command)
+          Exception ex, int retryCount, String operation, SFSession session, String command)
       throws SnowflakeSQLException {
     handleAzureException(ex, retryCount, operation, session, command, this);
   }
@@ -641,7 +641,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
       Exception ex,
       int retryCount,
       String operation,
-      SFSessionImpl session,
+      SFSession session,
       String command,
       SnowflakeAzureClient azClient)
       throws SnowflakeSQLException {
@@ -650,7 +650,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
     if (ex.getCause() instanceof InvalidKeyException) {
       // Most likely cause is that the unlimited strength policy files are not installed
       // Log the error and throw a message that explains the cause
-      SnowflakeFileTransferAgentImpl.throwJCEMissingError(operation, ex);
+      SnowflakeFileTransferAgent.throwJCEMissingError(operation, ex);
     }
 
     if (ex instanceof StorageException) {
@@ -659,7 +659,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
       if (((StorageException) ex).getHttpStatusCode() == 403) {
         // A 403 indicates that the SAS token has expired,
         // we need to refresh the Azure client with the new token
-        SnowflakeFileTransferAgentImpl.renewExpiredToken(session, command, azClient);
+        SnowflakeFileTransferAgent.renewExpiredToken(session, command, azClient);
       }
       // If we have exceeded the max number of retries, propagate the error
       if (retryCount > azClient.getMaxRetries()) {
@@ -699,7 +699,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
         if (se.getHttpStatusCode() == 403) {
           // A 403 indicates that the SAS token has expired,
           // we need to refresh the Azure client with the new token
-          SnowflakeFileTransferAgentImpl.renewExpiredToken(session, command, azClient);
+          SnowflakeFileTransferAgent.renewExpiredToken(session, command, azClient);
         }
       }
     } else {

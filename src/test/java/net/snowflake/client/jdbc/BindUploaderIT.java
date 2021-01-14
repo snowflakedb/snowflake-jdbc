@@ -12,7 +12,7 @@ import java.sql.Date;
 import java.util.*;
 import net.snowflake.client.category.TestCategoryOthers;
 import net.snowflake.client.core.ParameterBindingDTO;
-import net.snowflake.client.core.SFSessionImpl;
+import net.snowflake.client.core.SFSession;
 import net.snowflake.client.core.bind.BindUploader;
 import org.junit.*;
 import org.junit.experimental.categories.Category;
@@ -21,7 +21,7 @@ import org.junit.experimental.categories.Category;
 public class BindUploaderIT extends BaseJDBCTest {
   BindUploader bindUploader;
   Connection conn;
-  SFSessionImpl session;
+  SFSession session;
 
   TimeZone prevTimeZone; // store last time zone and restore after tests
 
@@ -89,7 +89,7 @@ public class BindUploaderIT extends BaseJDBCTest {
   @Before
   public void setUp() throws Exception {
     conn = getConnection();
-    session = (SFSessionImpl) conn.unwrap(SnowflakeConnectionV1.class).getSfSession();
+    session = (SFSession) conn.unwrap(SnowflakeConnectionV1.class).getSfSession();
     bindUploader = BindUploader.newInstance(session, STAGE_DIR);
     prevTimeZone = TimeZone.getDefault();
     TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
