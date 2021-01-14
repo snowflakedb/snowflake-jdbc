@@ -22,8 +22,8 @@ class SFResultSetFactory {
    * @param sortResult true if sort first chunk
    * @return result set object
    */
-  static SFBaseResultSet getResultSet(
-          JsonNode result, SFStatement statement, boolean sortResult) throws SQLException {
+  static SFBaseResultSet getResultSet(JsonNode result, SFStatement statement, boolean sortResult)
+      throws SQLException {
     SnowflakeResultSetSerializableV1 resultSetSerializable =
         SnowflakeResultSetSerializableV1.create(
             result, (SFSession) statement.getSession(), statement);

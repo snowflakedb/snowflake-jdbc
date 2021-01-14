@@ -216,7 +216,7 @@ public interface SnowflakeStorageClient {
    *     policy allows, are propagated
    */
   void handleStorageException(
-          Exception ex, int retryCount, String operation, SFSession connection, String command)
+      Exception ex, int retryCount, String operation, SFSession connection, String command)
       throws SnowflakeSQLException;
 
   /**

@@ -6,8 +6,8 @@ package net.snowflake.client.jdbc.cloud.storage;
 import com.amazonaws.ClientConfiguration;
 import java.util.Map;
 import net.snowflake.client.core.HttpUtil;
-import net.snowflake.client.core.SFSessionInterface;
 import net.snowflake.client.core.SFSession;
+import net.snowflake.client.core.SFSessionInterface;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -50,10 +50,7 @@ public class StorageClientFactory {
    * @throws SnowflakeSQLException if any error occurs
    */
   public SnowflakeStorageClient createClient(
-      StageInfo stage,
-      int parallel,
-      RemoteStoreFileEncryptionMaterial encMat,
-      SFSession session)
+      StageInfo stage, int parallel, RemoteStoreFileEncryptionMaterial encMat, SFSession session)
       throws SnowflakeSQLException {
     logger.debug("createClient client type={}", stage.getStageType().name());
 

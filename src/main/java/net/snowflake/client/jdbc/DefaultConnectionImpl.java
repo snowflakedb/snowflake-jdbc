@@ -1,10 +1,10 @@
 package net.snowflake.client.jdbc;
 
 import java.sql.SQLNonTransientConnectionException;
-import net.snowflake.client.core.SFSessionInterface;
 import net.snowflake.client.core.SFSession;
-import net.snowflake.client.core.SFStatementInterface;
+import net.snowflake.client.core.SFSessionInterface;
 import net.snowflake.client.core.SFStatement;
+import net.snowflake.client.core.SFStatementInterface;
 
 public class DefaultConnectionImpl implements ConnectionImplementation {
 
@@ -26,7 +26,8 @@ public class DefaultConnectionImpl implements ConnectionImplementation {
   }
 
   @Override
-  public SnowflakeFileTransferAgentInterface getFileTransferAgent(String command, SFStatementInterface statement)
+  public SnowflakeFileTransferAgentInterface getFileTransferAgent(
+      String command, SFStatementInterface statement)
       throws SQLNonTransientConnectionException, SnowflakeSQLException {
     if (!(statement instanceof SFStatement)) {
       throw new SQLNonTransientConnectionException("Internal error: Invalid SFStatement type.");

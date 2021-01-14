@@ -445,7 +445,7 @@ public class SnowflakeResultSetSerializableV1
    * @throws SnowflakeSQLException if failed to parse the result JSON node
    */
   public static SnowflakeResultSetSerializableV1 create(
-          JsonNode rootNode, SFSession sfSession, SFStatementInterface sfStatement)
+      JsonNode rootNode, SFSession sfSession, SFStatementInterface sfStatement)
       throws SnowflakeSQLException {
     SnowflakeResultSetSerializableV1 resultSetSerializable = new SnowflakeResultSetSerializableV1();
     logger.debug("Entering create()");

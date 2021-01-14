@@ -142,7 +142,7 @@ public class SnowflakeFileTransferAgent
   }
 
   private void initEncryptionMaterial(
-          SnowflakeFileTransferAgentInterface.CommandType commandType, JsonNode jsonNode)
+      SnowflakeFileTransferAgentInterface.CommandType commandType, JsonNode jsonNode)
       throws SnowflakeSQLException, JsonProcessingException {
     encryptionMaterial = new ArrayList<>();
     JsonNode rootNode = jsonNode.path("data").path("encryptionMaterial");
@@ -166,7 +166,7 @@ public class SnowflakeFileTransferAgent
   }
 
   private void initPresignedUrls(
-          SnowflakeFileTransferAgentInterface.CommandType commandType, JsonNode jsonNode)
+      SnowflakeFileTransferAgentInterface.CommandType commandType, JsonNode jsonNode)
       throws SnowflakeSQLException, JsonProcessingException, IOException {
     presignedUrls = new ArrayList<>();
     JsonNode rootNode = jsonNode.path("data").path("presignedUrls");
@@ -815,8 +815,7 @@ public class SnowflakeFileTransferAgent
     };
   }
 
-  public SnowflakeFileTransferAgent(
-          String command, SFSession session, SFStatement statement)
+  public SnowflakeFileTransferAgent(String command, SFSession session, SFStatement statement)
       throws SnowflakeSQLException {
     this.command = command;
     this.session = session;
@@ -2070,7 +2069,7 @@ public class SnowflakeFileTransferAgent
    * @throws SnowflakeSQLException if any error occurs
    */
   public static void renewExpiredToken(
-          SFSession session, String command, SnowflakeStorageClient client)
+      SFSession session, String command, SnowflakeStorageClient client)
       throws SnowflakeSQLException {
     SFStatement statement = new SFStatement(session);
     JsonNode jsonNode = parseCommandInGS(statement, command);
@@ -2827,7 +2826,8 @@ public class SnowflakeFileTransferAgent
    * @throws Exception failed to construct list
    */
   @Override
-  public List<SnowflakeColumnMetadata> describeColumns(SFSessionInterface session) throws Exception {
+  public List<SnowflakeColumnMetadata> describeColumns(SFSessionInterface session)
+      throws Exception {
     return SnowflakeUtil.describeFixedViewColumns(
         commandType == SnowflakeFileTransferAgentInterface.CommandType.UPLOAD
             ? (showEncryptionParameter

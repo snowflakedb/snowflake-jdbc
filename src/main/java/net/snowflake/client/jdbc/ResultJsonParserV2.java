@@ -89,7 +89,8 @@ public class ResultJsonParserV2 {
    * @param in readOnly byteBuffer backed by an array (the data to be reed is from position to
    *     limit)
    */
-  public void continueParsing(ByteBuffer in, SFSessionInterface session) throws SnowflakeSQLException {
+  public void continueParsing(ByteBuffer in, SFSessionInterface session)
+      throws SnowflakeSQLException {
     if (state == State.UNINITIALIZED) {
       throw new SnowflakeSQLLoggedException(
           session,

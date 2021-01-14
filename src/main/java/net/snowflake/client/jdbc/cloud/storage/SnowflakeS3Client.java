@@ -39,8 +39,8 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.SFSSLConnectionSocketFactory;
-import net.snowflake.client.core.SFSessionInterface;
 import net.snowflake.client.core.SFSession;
+import net.snowflake.client.core.SFSessionInterface;
 import net.snowflake.client.jdbc.*;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -646,7 +646,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
 
   @Override
   public void handleStorageException(
-          Exception ex, int retryCount, String operation, SFSession session, String command)
+      Exception ex, int retryCount, String operation, SFSession session, String command)
       throws SnowflakeSQLException {
     handleS3Exception(ex, retryCount, operation, session, command, this);
   }

@@ -32,8 +32,8 @@ import java.util.List;
 import java.util.Map;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.ObjectMapperFactory;
-import net.snowflake.client.core.SFSessionInterface;
 import net.snowflake.client.core.SFSession;
+import net.snowflake.client.core.SFSessionInterface;
 import net.snowflake.client.jdbc.*;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -537,7 +537,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
    */
   @Override
   public void handleStorageException(
-          Exception ex, int retryCount, String operation, SFSession session, String command)
+      Exception ex, int retryCount, String operation, SFSession session, String command)
       throws SnowflakeSQLException {
     handleAzureException(ex, retryCount, operation, session, command, this);
   }

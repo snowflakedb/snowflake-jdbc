@@ -267,7 +267,8 @@ public class JsonResultChunk extends SnowflakeResultChunk {
    * offsets and bitmaps. This design can save half of the memory usage compared to the original one
    */
   private static class BlockResultChunkDataV2 implements ResultChunkData {
-    BlockResultChunkDataV2(int totalLength, int rowCount, int colCount, SFSessionInterface session) {
+    BlockResultChunkDataV2(
+        int totalLength, int rowCount, int colCount, SFSessionInterface session) {
       this.blockCount = getBlock(totalLength - 1) + 1;
       this.rowCount = rowCount;
       this.colCount = colCount;
