@@ -861,7 +861,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
 
   @Override
   public void handleStorageException(
-          Exception ex, int retryCount, String operation, SFSession session, String command)
+      Exception ex, int retryCount, String operation, SFSession session, String command)
       throws SnowflakeSQLException {
     // no need to retry if it is invalid key exception
     if (ex.getCause() instanceof InvalidKeyException) {

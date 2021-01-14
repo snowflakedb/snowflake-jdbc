@@ -273,7 +273,8 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
     SFBaseResultSet sfResultSet;
     try {
       sfResultSet =
-          sfStatement.execute(sql, false, parameterBindings, SFStatementInterface.CallingMethod.EXECUTE);
+          sfStatement.execute(
+              sql, false, parameterBindings, SFStatementInterface.CallingMethod.EXECUTE);
       sfResultSet.setSession(this.connection.getSfSession());
       if (resultSet != null) {
         openResultSets.add(resultSet);

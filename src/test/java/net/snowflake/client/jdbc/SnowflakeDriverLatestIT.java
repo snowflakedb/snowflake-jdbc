@@ -87,8 +87,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
       // Test put file with internal compression
       String putCommand1 = "put file:///dummy/path/file1.gz @" + testStageName;
       SnowflakeFileTransferAgent sfAgent1 =
-          new SnowflakeFileTransferAgent(
-              putCommand1, sfSession, new SFStatement(sfSession));
+          new SnowflakeFileTransferAgent(putCommand1, sfSession, new SFStatement(sfSession));
       List<SnowflakeFileTransferMetadata> metadatas1 = sfAgent1.getFileTransferMetadatas();
 
       String srcPath1 = getFullPathFileInResource(TEST_DATA_FILE);
@@ -109,8 +108,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
       // Test Put file with external compression
       String putCommand2 = "put file:///dummy/path/file2.gz @" + testStageName;
       SnowflakeFileTransferAgent sfAgent2 =
-          new SnowflakeFileTransferAgent(
-              putCommand2, sfSession, new SFStatement(sfSession));
+          new SnowflakeFileTransferAgent(putCommand2, sfSession, new SFStatement(sfSession));
       List<SnowflakeFileTransferMetadata> metadatas2 = sfAgent2.getFileTransferMetadatas();
 
       String srcPath2 = getFullPathFileInResource(TEST_DATA_FILE_2);
@@ -176,8 +174,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
         // Test put file with internal compression
         String putCommand1 = "put file:///dummy/path/file1.gz @" + testStageName;
         SnowflakeFileTransferAgent sfAgent1 =
-            new SnowflakeFileTransferAgent(
-                putCommand1, sfSession, new SFStatement(sfSession));
+            new SnowflakeFileTransferAgent(putCommand1, sfSession, new SFStatement(sfSession));
         List<SnowflakeFileTransferMetadata> metadatas1 = sfAgent1.getFileTransferMetadatas();
 
         String srcPath1 = getFullPathFileInResource(TEST_DATA_FILE);
@@ -199,8 +196,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
         // Test Put file with external compression
         String putCommand2 = "put file:///dummy/path/file2.gz @" + testStageName;
         SnowflakeFileTransferAgent sfAgent2 =
-            new SnowflakeFileTransferAgent(
-                putCommand2, sfSession, new SFStatement(sfSession));
+            new SnowflakeFileTransferAgent(putCommand2, sfSession, new SFStatement(sfSession));
         List<SnowflakeFileTransferMetadata> metadatas2 = sfAgent2.getFileTransferMetadatas();
 
         String srcPath2 = getFullPathFileInResource(TEST_DATA_FILE_2);

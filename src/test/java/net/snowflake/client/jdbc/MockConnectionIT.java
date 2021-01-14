@@ -32,8 +32,8 @@ public class MockConnectionIT extends BaseJDBCTest {
 
   private static final String testTableName = "test_custom_conn_table";
 
-  private static SFResultSetMetaData getRSMDFromResponse(JsonNode rootNode, SFSessionInterface sfSession)
-      throws SnowflakeSQLException {
+  private static SFResultSetMetaData getRSMDFromResponse(
+      JsonNode rootNode, SFSessionInterface sfSession) throws SnowflakeSQLException {
 
     String queryId = rootNode.path("data").path("queryId").asText();
 
@@ -963,7 +963,8 @@ public class MockConnectionIT extends BaseJDBCTest {
     }
 
     @Override
-    public SnowflakeFileTransferAgentInterface getFileTransferAgent(String command, SFStatementInterface statement) {
+    public SnowflakeFileTransferAgentInterface getFileTransferAgent(
+        String command, SFStatementInterface statement) {
       return null;
     }
   }

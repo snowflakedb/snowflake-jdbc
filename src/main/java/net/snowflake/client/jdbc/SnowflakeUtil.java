@@ -327,8 +327,8 @@ public class SnowflakeUtil {
     return greatestCommonPrefix.toString();
   }
 
-  static List<SnowflakeColumnMetadata> describeFixedViewColumns(Class<?> clazz, SFSessionInterface session)
-      throws SnowflakeSQLException {
+  static List<SnowflakeColumnMetadata> describeFixedViewColumns(
+      Class<?> clazz, SFSessionInterface session) throws SnowflakeSQLException {
     Field[] columns = ClassUtil.getAnnotatedDeclaredFields(clazz, FixedViewColumn.class, true);
 
     Arrays.sort(columns, new FixedViewColumn.OrdinalComparatorForFields());

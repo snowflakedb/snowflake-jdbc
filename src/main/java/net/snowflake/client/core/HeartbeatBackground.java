@@ -69,7 +69,7 @@ public class HeartbeatBackground implements Runnable {
    *     master token with server
    */
   protected synchronized void addSession(
-          SFSession session, long masterTokenValidityInSecs, int heartbeatFrequencyInSecs) {
+      SFSession session, long masterTokenValidityInSecs, int heartbeatFrequencyInSecs) {
     boolean requireReschedule = false;
 
     long oldHeartBeatIntervalInSecs = this.heartBeatIntervalInSecs;

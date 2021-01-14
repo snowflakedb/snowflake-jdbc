@@ -224,7 +224,8 @@ public class ResultUtil {
    * @return snowflake time object
    * @throws SFException if time is invalid
    */
-  public static SFTime getSFTime(String obj, int scale, SFSessionInterface session) throws SFException {
+  public static SFTime getSFTime(String obj, int scale, SFSessionInterface session)
+      throws SFException {
     try {
       return TimeUtil.getSFTime(obj, scale);
     } catch (IllegalArgumentException ex) {
@@ -356,7 +357,8 @@ public class ResultUtil {
    * @throws SFException if date is invalid
    */
   @Deprecated
-  public static Date getDate(String str, TimeZone tz, SFSessionInterface session) throws SFException {
+  public static Date getDate(String str, TimeZone tz, SFSessionInterface session)
+      throws SFException {
     try {
       long milliSecsSinceEpoch = Long.valueOf(str) * MILLIS_IN_ONE_DAY;
 
@@ -506,7 +508,7 @@ public class ResultUtil {
    * @throws SFException if the number of child IDs does not match child statement types
    */
   public static List<SFChildResult> getChildResults(
-          SFSessionInterface session, String requestId, JsonNode result) throws SFException {
+      SFSessionInterface session, String requestId, JsonNode result) throws SFException {
     List<String> ids = getResultIds(result);
     List<SFStatementType> types = getResultTypes(result);
 
