@@ -1,26 +1,25 @@
 package net.snowflake.client.jdbc;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import net.snowflake.client.category.TestCategoryConnection;
+import net.snowflake.client.core.*;
+import net.snowflake.client.jdbc.telemetry.Telemetry;
+import net.snowflake.common.core.SnowflakeDateTimeFormat;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+
 import java.sql.Connection;
 import java.sql.DriverPropertyInfo;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
-import net.snowflake.client.category.TestCategoryConnection;
-import net.snowflake.client.core.*;
-import net.snowflake.client.jdbc.telemetry.Telemetry;
-import net.snowflake.common.core.SnowflakeDateTimeFormat;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 /**
  * IT test for testing the "pluggable" implementation of SnowflakeConnection, SnowflakeStatement,
@@ -126,30 +125,9 @@ public class MockConnectionIT extends BaseJDBCTest {
     return type;
   }
 
-  public Connection initStandardConnection() throws SQLException {
-    Connection conn = BaseJDBCTest.getConnection(BaseJDBCTest.DONT_INJECT_SOCKET_TIMEOUT);
-    conn.createStatement().execute("alter session set jdbc_query_result_format = json");
-    return conn;
-  }
-
   public Connection initMockConnection(ConnectionImplementation implementation)
       throws SQLException {
     return new SnowflakeConnectionV1(implementation);
-  }
-
-  @Before
-  public void setUp() throws SQLException {
-    Connection con = initStandardConnection();
-
-    con.createStatement().execute("alter session set jdbc_query_result_format = json");
-
-    // Create a table of two rows containing a varchar column and an int column
-    con.createStatement()
-        .execute("create or replace table " + testTableName + " (colA string, colB int)");
-    con.createStatement().execute("insert into " + testTableName + " values('rowOne', 1)");
-    con.createStatement().execute("insert into " + testTableName + " values('rowTwo', 2)");
-
-    con.close();
   }
 
   /**
@@ -170,164 +148,20 @@ public class MockConnectionIT extends BaseJDBCTest {
                 + "            \"value\":\"DY, DD MON YYYY HH24:MI:SS TZHTZM\"\n"
                 + "         },\n"
                 + "         {\n"
-                + "            \"name\":\"CLIENT_PREFETCH_THREADS\",\n"
-                + "            \"value\":4\n"
-                + "         },\n"
-                + "         {\n"
                 + "            \"name\":\"TIME_OUTPUT_FORMAT\",\n"
                 + "            \"value\":\"HH24:MI:SS\"\n"
-                + "         },\n"
-                + "         {\n"
-                + "            \"name\":\"JDBC_USE_SESSION_TIMEZONE\",\n"
-                + "            \"value\":true\n"
-                + "         },\n"
-                + "         {\n"
-                + "            \"name\":\"JDBC_TREAT_TIMESTAMP_NTZ_AS_UTC\",\n"
-                + "            \"value\":false\n"
-                + "         },\n"
-                + "         {\n"
-                + "            \"name\":\"JDBC_EXECUTE_RETURN_COUNT_FOR_DML\",\n"
-                + "            \"value\":false\n"
                 + "         },\n"
                 + "         {\n"
                 + "            \"name\":\"TIMESTAMP_TZ_OUTPUT_FORMAT\",\n"
                 + "            \"value\":\"\"\n"
                 + "         },\n"
                 + "         {\n"
-                + "            \"name\":\"CLIENT_RESULT_CHUNK_SIZE\",\n"
-                + "            \"value\":48\n"
-                + "         },\n"
-                + "         {\n"
-                + "            \"name\":\"CLIENT_SESSION_KEEP_ALIVE\",\n"
-                + "            \"value\":false\n"
-                + "         },\n"
-                + "         {\n"
-                + "            \"name\":\"JDBC_RS_COLUMN_CASE_INSENSITIVE\",\n"
-                + "            \"value\":false\n"
-                + "         },\n"
-                + "         {\n"
-                + "            \"name\":\"CLIENT_CONSERVATIVE_MEMORY_ADJUST_STEP\",\n"
-                + "            \"value\":64\n"
-                + "         },\n"
-                + "         {\n"
-                + "            \"name\":\"CLIENT_OUT_OF_BAND_TELEMETRY_ENABLED\",\n"
-                + "            \"value\":false\n"
-                + "         },\n"
-                + "         {\n"
-                + "            \"name\":\"CLIENT_METADATA_USE_SESSION_DATABASE\",\n"
-                + "            \"value\":false\n"
-                + "         },\n"
-                + "         {\n"
-                + "            \"name\":\"JDBC_ENABLE_COMBINED_DESCRIBE\",\n"
-                + "            \"value\":true\n"
-                + "         },\n"
-                + "         {\n"
-                + "            \"name\":\"CLIENT_RESULT_PREFETCH_THREADS\",\n"
-                + "            \"value\":1\n"
-                + "         },\n"
-                + "         {\n"
                 + "            \"name\":\"TIMESTAMP_NTZ_OUTPUT_FORMAT\",\n"
                 + "            \"value\":\"\"\n"
                 + "         },\n"
                 + "         {\n"
-                + "            \"name\":\"JDBC_TREAT_DECIMAL_AS_INT\",\n"
-                + "            \"value\":true\n"
-                + "         },\n"
-                + "         {\n"
-                + "            \"name\":\"CLIENT_METADATA_REQUEST_USE_CONNECTION_CTX\",\n"
-                + "            \"value\":false\n"
-                + "         },\n"
-                + "         {\n"
-                + "            \"name\":\"CLIENT_HONOR_CLIENT_TZ_FOR_TIMESTAMP_NTZ\",\n"
-                + "            \"value\":true\n"
-                + "         },\n"
-                + "         {\n"
-                + "            \"name\":\"CLIENT_MEMORY_LIMIT\",\n"
-                + "            \"value\":1536\n"
-                + "         },\n"
-                + "         {\n"
-                + "            \"name\":\"CLIENT_TIMESTAMP_TYPE_MAPPING\",\n"
-                + "            \"value\":\"TIMESTAMP_LTZ\"\n"
-                + "         },\n"
-                + "         {\n"
-                + "            \"name\":\"JDBC_EFFICIENT_CHUNK_STORAGE\",\n"
-                + "            \"value\":true\n"
-                + "         },\n"
-                + "         {\n"
-                + "            \"name\":\"TIMEZONE\",\n"
-                + "            \"value\":\"America/Los_Angeles\"\n"
-                + "         },\n"
-                + "         {\n"
-                + "            \"name\":\"SERVICE_NAME\",\n"
-                + "            \"value\":\"\"\n"
-                + "         },\n"
-                + "         {\n"
-                + "            \"name\":\"CLIENT_RESULT_PREFETCH_SLOTS\",\n"
-                + "            \"value\":2\n"
-                + "         },\n"
-                + "         {\n"
-                + "            \"name\":\"CLIENT_TELEMETRY_ENABLED\",\n"
-                + "            \"value\":true\n"
-                + "         },\n"
-                + "         {\n"
-                + "            \"name\":\"CLIENT_USE_V1_QUERY_API\",\n"
-                + "            \"value\":true\n"
-                + "         },\n"
-                + "         {\n"
-                + "            \"name\":\"CLIENT_DISABLE_INCIDENTS\",\n"
-                + "            \"value\":true\n"
-                + "         },\n"
-                + "         {\n"
-                + "            \"name\":\"CLIENT_RESULT_COLUMN_CASE_INSENSITIVE\",\n"
-                + "            \"value\":false\n"
-                + "         },\n"
-                + "         {\n"
-                + "            \"name\":\"CLIENT_ENABLE_CONSERVATIVE_MEMORY_USAGE\",\n"
-                + "            \"value\":true\n"
-                + "         },\n"
-                + "         {\n"
-                + "            \"name\":\"BINARY_OUTPUT_FORMAT\",\n"
-                + "            \"value\":\"HEX\"\n"
-                + "         },\n"
-                + "         {\n"
-                + "            \"name\":\"CLIENT_ENABLE_LOG_INFO_STATEMENT_PARAMETERS\",\n"
-                + "            \"value\":false\n"
-                + "         },\n"
-                + "         {\n"
-                + "            \"name\":\"CLIENT_CONSENT_CACHE_ID_TOKEN\",\n"
-                + "            \"value\":false\n"
-                + "         },\n"
-                + "         {\n"
-                + "            \"name\":\"JDBC_FORMAT_DATE_WITH_TIMEZONE\",\n"
-                + "            \"value\":true\n"
-                + "         },\n"
-                + "         {\n"
                 + "            \"name\":\"DATE_OUTPUT_FORMAT\",\n"
                 + "            \"value\":\"YYYY-MM-DD\"\n"
-                + "         },\n"
-                + "         {\n"
-                + "            \"name\":\"CLIENT_FORCE_PROTECT_ID_TOKEN\",\n"
-                + "            \"value\":true\n"
-                + "         },\n"
-                + "         {\n"
-                + "            \"name\":\"CLIENT_STAGE_ARRAY_BINDING_THRESHOLD\",\n"
-                + "            \"value\":65280\n"
-                + "         },\n"
-                + "         {\n"
-                + "            \"name\":\"JDBC_USE_JSON_PARSER\",\n"
-                + "            \"value\":true\n"
-                + "         },\n"
-                + "         {\n"
-                + "            \"name\":\"CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY\",\n"
-                + "            \"value\":3600\n"
-                + "         },\n"
-                + "         {\n"
-                + "            \"name\":\"CLIENT_SESSION_CLONE\",\n"
-                + "            \"value\":false\n"
-                + "         },\n"
-                + "         {\n"
-                + "            \"name\":\"AUTOCOMMIT\",\n"
-                + "            \"value\":true\n"
                 + "         },\n"
                 + "         {\n"
                 + "            \"name\":\"TIMESTAMP_LTZ_OUTPUT_FORMAT\",\n"
@@ -460,13 +294,6 @@ public class MockConnectionIT extends BaseJDBCTest {
     compareResultSets(fakeResultSet, rowsToTest, dataTypes);
 
     mockConnection.close();
-  }
-
-  @After
-  public void tearDown() throws SQLException {
-    Connection con = initStandardConnection();
-    con.createStatement().execute("drop table if exists " + testTableName);
-    con.close();
   }
 
   private JsonNode createDummyResponseWithRows(List<List<Object>> rows, List<DataType> dataTypes) {
