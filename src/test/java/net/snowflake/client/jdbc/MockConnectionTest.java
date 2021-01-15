@@ -1,10 +1,18 @@
 package net.snowflake.client.jdbc;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import java.sql.Connection;
+import java.sql.DriverPropertyInfo;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.*;
 import net.snowflake.client.category.TestCategoryConnection;
 import net.snowflake.client.core.*;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
@@ -12,22 +20,13 @@ import net.snowflake.common.core.SnowflakeDateTimeFormat;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-import java.sql.Connection;
-import java.sql.DriverPropertyInfo;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.*;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-
 /**
  * IT test for testing the "pluggable" implementation of SnowflakeConnection, SnowflakeStatement,
  * and ResultSet. These tests will query Snowflake normally, retrieve the JSON result, and replay it
  * back using a custom implementation of these objects that simply echoes a given JSON response.
  */
 @Category(TestCategoryConnection.class)
-public class MockConnectionIT extends BaseJDBCTest {
+public class MockConnectionTest extends BaseJDBCTest {
 
   private static final String testTableName = "test_custom_conn_table";
 
@@ -520,7 +519,7 @@ public class MockConnectionIT extends BaseJDBCTest {
         throws SnowflakeSQLException {
       setSession(sfSession);
       this.resultJson = mockedJsonResponse.path("data").path("rowset");
-      this.resultSetMetaData = MockConnectionIT.getRSMDFromResponse(mockedJsonResponse, session);
+      this.resultSetMetaData = MockConnectionTest.getRSMDFromResponse(mockedJsonResponse, session);
       this.rowCount = resultJson.size();
     }
 
