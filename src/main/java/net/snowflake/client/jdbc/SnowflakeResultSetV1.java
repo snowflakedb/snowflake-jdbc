@@ -1429,8 +1429,4 @@ class SnowflakeResultSetV1 extends SnowflakeBaseResultSet implements SnowflakeRe
       return false;
     }
   }
-
-  public SFBaseResultSet getSfBaseResultSet() {
-    return sfBaseResultSet;
-  }
 }
