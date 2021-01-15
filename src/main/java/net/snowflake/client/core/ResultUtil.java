@@ -420,7 +420,7 @@ public class ResultUtil {
           SFResultSetMetaData resultSetMetaData = resultSet.getMetaData();
 
           int columnIndex = resultSetMetaData.getColumnIndex("rows_loaded");
-          updateCount += columnIndex == -1 ? 0 : resultSet.getInt(columnIndex + 1);
+          updateCount += columnIndex == -1 ? 0 : resultSet.getLong(columnIndex + 1);
         } else if (statementType == SFStatementType.INSERT
             || statementType == SFStatementType.UPDATE
             || statementType == SFStatementType.DELETE

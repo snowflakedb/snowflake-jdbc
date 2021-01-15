@@ -4,6 +4,8 @@
 
 package net.snowflake.client.loader;
 
+import static java.lang.Math.toIntExact;
+
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -89,8 +91,8 @@ public class ProcessQueue implements Runnable {
           }
           // Create a temporary table to hold all uploaded data
 
-          int loaded = 0;
-          int parsed = 0;
+          long loaded = 0;
+          long parsed = 0;
           int errorCount = 0;
           String lastErrorRow = "";
 
@@ -144,12 +146,12 @@ public class ProcessQueue implements Runnable {
 
           while (rs.next()) {
             // Get the number of rows actually loaded
-            loaded += rs.getInt("rows_loaded");
+            loaded += rs.getLong("rows_loaded");
             // Get the number of rows parsed
-            parsed += rs.getInt("rows_parsed");
+            parsed += rs.getLong("rows_parsed");
           }
 
-          int errorRecordCount = parsed - loaded;
+          int errorRecordCount = toIntExact(parsed - loaded);
           LOGGER.debug(
               "errorRecordCount=[{}]," + " parsed=[{}]," + " loaded=[{}]",
               errorRecordCount,
