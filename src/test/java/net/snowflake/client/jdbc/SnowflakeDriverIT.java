@@ -970,7 +970,6 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
         connection = getConnection(accounts.get(i));
 
         statement = connection.createStatement();
-        // statement.execute("alter session set CLIENT_MULTIPART_UPLOAD_THRESHOLD_IN_PUT=1");
 
         // load file test
         // create a unique data file name by using current timestamp in millis
