@@ -3,11 +3,9 @@
  */
 package net.snowflake.client.jdbc;
 
-import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningOnGithubAction;
-import net.snowflake.client.category.TestCategoryResultSet;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import static org.hamcrest.CoreMatchers.*;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.*;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -16,11 +14,11 @@ import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.sql.*;
 import java.util.Properties;
-import java.util.TimeZone;
-
-import static org.hamcrest.CoreMatchers.*;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.*;
+import net.snowflake.client.ConditionalIgnoreRule;
+import net.snowflake.client.RunningOnGithubAction;
+import net.snowflake.client.category.TestCategoryResultSet;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 /** Test ResultSet */
 @Category(TestCategoryResultSet.class)
@@ -72,18 +70,6 @@ public class ResultSetIT extends ResultSet0IT {
     statement.execute("drop table if exists bintable");
     statement.close();
     connection.close();
-  }
-
-  @Test
-  public void testGetString() throws SQLException {
-    TimeZone.setDefault(TimeZone.getTimeZone("Asia/Singapore"));
-    //System.setProperty("user.timezone", "Europe/Stockholm");
-    Connection connection = getConnection();
-    Statement statement = connection.createStatement();
-    ResultSet resultSet = statement.executeQuery("SELECT '2020-08-01'::DATE as D1");
-    resultSet.next();
-    String s = resultSet.getString(1);
-    System.out.println("Expected: 2020-08-01\nActual: " + s);
   }
 
   @Test
