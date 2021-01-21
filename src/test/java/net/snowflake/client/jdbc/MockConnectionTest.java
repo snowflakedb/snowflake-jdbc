@@ -31,7 +31,7 @@ public class MockConnectionTest extends BaseJDBCTest {
   private static final String testTableName = "test_custom_conn_table";
 
   private static SFResultSetMetaData getRSMDFromResponse(
-      JsonNode rootNode, SFSessionInterface sfSession) throws SnowflakeSQLException {
+      JsonNode rootNode, SessionHandler sfSession) throws SnowflakeSQLException {
 
     String queryId = rootNode.path("data").path("queryId").asText();
 
@@ -124,7 +124,7 @@ public class MockConnectionTest extends BaseJDBCTest {
     return type;
   }
 
-  public Connection initMockConnection(ConnectionImplementation implementation)
+  public Connection initMockConnection(ConnectionHandler implementation)
       throws SQLException {
     return new SnowflakeConnectionV1(implementation);
   }
@@ -431,11 +431,11 @@ public class MockConnectionTest extends BaseJDBCTest {
     STRING
   }
 
-  private static class MockedSFStatement implements SFStatementInterface {
+  private static class MockedStatement implements StatementHandler {
     JsonNode mockedResponse;
     MockSnowflakeSession sfSession;
 
-    MockedSFStatement(JsonNode mockedResponse, MockSnowflakeSession session) {
+    MockedStatement(JsonNode mockedResponse, MockSnowflakeSession session) {
       this.mockedResponse = mockedResponse;
       this.sfSession = session;
     }
@@ -489,7 +489,7 @@ public class MockConnectionTest extends BaseJDBCTest {
     public void executeSetProperty(String sql) {}
 
     @Override
-    public SFSessionInterface getSession() {
+    public SessionHandler getSession() {
       return sfSession;
     }
 
@@ -558,7 +558,7 @@ public class MockConnectionTest extends BaseJDBCTest {
     }
   }
 
-  private static class MockSnowflakeSession implements SFSessionInterface {
+  private static class MockSnowflakeSession implements SessionHandler {
 
     @Override
     public boolean isSafeToClose() {
@@ -768,7 +768,7 @@ public class MockConnectionTest extends BaseJDBCTest {
     }
   }
 
-  private static class MockSnowflakeConnectionImpl implements ConnectionImplementation {
+  private static class MockSnowflakeConnectionImpl implements ConnectionHandler {
 
     JsonNode jsonResponse;
     MockSnowflakeSession session;
@@ -779,18 +779,18 @@ public class MockConnectionTest extends BaseJDBCTest {
     }
 
     @Override
-    public SFSessionInterface getSFSession() {
+    public SessionHandler getSessionHandler() {
       return session;
     }
 
     @Override
-    public SFStatementInterface getSFStatement() {
-      return new MockedSFStatement(jsonResponse, session);
+    public StatementHandler getStatementHandler() {
+      return new MockedStatement(jsonResponse, session);
     }
 
     @Override
-    public SnowflakeFileTransferAgentInterface getFileTransferAgent(
-        String command, SFStatementInterface statement) {
+    public FileTransferHandler getFileTransferHandler(
+        String command, StatementHandler statement) {
       return null;
     }
   }

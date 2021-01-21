@@ -20,7 +20,7 @@ import java.util.*;
 import net.snowflake.client.core.*;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeFileTransferAgent;
-import net.snowflake.client.jdbc.SnowflakeFileTransferAgentInterface;
+import net.snowflake.client.jdbc.FileTransferHandler;
 import net.snowflake.client.jdbc.SnowflakeSQLLoggedException;
 import net.snowflake.client.jdbc.SnowflakeType;
 import net.snowflake.client.log.SFLogger;
@@ -263,7 +263,7 @@ public class BindUploader implements Closeable {
 
     putCommand.append(" overwrite=true");
 
-    SnowflakeFileTransferAgentInterface transferAgent;
+    FileTransferHandler transferAgent;
     transferAgent = new SnowflakeFileTransferAgent(putCommand.toString(), session, stmt);
 
     transferAgent.setSourceStream(inputStream);
@@ -397,7 +397,7 @@ public class BindUploader implements Closeable {
       // another thread may have created the session by the time we enter this block
       if (session.getArrayBindStage() == null) {
         try {
-          SFStatementInterface statement = new SFStatement(session);
+          SFStatement statement = new SFStatement(session);
           statement.execute(CREATE_STAGE_STMT, false, null, null);
           session.setArrayBindStage(STAGE_NAME);
         } catch (SFException | SQLException ex) {

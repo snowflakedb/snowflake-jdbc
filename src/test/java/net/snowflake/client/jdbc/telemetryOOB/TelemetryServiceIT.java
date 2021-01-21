@@ -12,7 +12,7 @@ import java.util.concurrent.TimeUnit;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningNotOnTestaccount;
 import net.snowflake.client.category.TestCategoryCore;
-import net.snowflake.client.core.SFSessionInterface;
+import net.snowflake.client.core.SessionHandler;
 import net.snowflake.client.jdbc.BaseJDBCTest;
 import net.snowflake.client.jdbc.SnowflakeConnectionV1;
 import net.snowflake.client.jdbc.SnowflakeLoggedFeatureNotSupportedException;
@@ -204,7 +204,7 @@ public class TelemetryServiceIT extends BaseJDBCTest {
     sw.stop();
   }
 
-  private void generateDummyException(int vendorCode, SFSessionInterface session)
+  private void generateDummyException(int vendorCode, SessionHandler session)
       throws SnowflakeSQLLoggedException {
     String queryID = "01234567-1234-1234-1234-00001abcdefg";
     String reason = "This is a test exception.";
@@ -291,7 +291,7 @@ public class TelemetryServiceIT extends BaseJDBCTest {
       int fakeErrorCode = 27;
       try {
         generateDummyException(
-            fakeErrorCode, con.unwrap(SnowflakeConnectionV1.class).getSfSession());
+            fakeErrorCode, con.unwrap(SnowflakeConnectionV1.class).getSessionHandler());
         fail();
       } catch (SnowflakeSQLLoggedException e) {
         // The error response has the same code as the fakeErrorCode

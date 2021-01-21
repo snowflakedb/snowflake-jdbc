@@ -60,7 +60,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
   private final OCSPMode ocspMode;
 
   // Session object, used solely for throwing exceptions. CAUTION: MAY BE NULL!
-  private SFSessionInterface session;
+  private SessionHandler session;
 
   private JsonResultChunk.ResultChunkDataCache chunkDataCache =
       new JsonResultChunk.ResultChunkDataCache();
@@ -762,7 +762,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
       final int chunkIndex,
       final Map<String, String> chunkHeadersMap,
       final int networkTimeoutInMilli,
-      final SFSessionInterface session) {
+      final SessionHandler session) {
     return new Callable<Void>() {
       /**
        * Step 1. use chunk url to get the input stream

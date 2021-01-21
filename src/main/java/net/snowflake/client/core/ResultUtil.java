@@ -178,7 +178,7 @@ public class ResultUtil {
       int internalColumnType,
       long resultVersion,
       TimeZone sessionTZ,
-      SFSessionInterface session)
+      SessionHandler session)
       throws SFException {
     logger.debug("public Timestamp getTimestamp(int columnIndex)");
 
@@ -224,7 +224,7 @@ public class ResultUtil {
    * @return snowflake time object
    * @throws SFException if time is invalid
    */
-  public static SFTime getSFTime(String obj, int scale, SFSessionInterface session)
+  public static SFTime getSFTime(String obj, int scale, SessionHandler session)
       throws SFException {
     try {
       return TimeUtil.getSFTime(obj, scale);
@@ -281,7 +281,7 @@ public class ResultUtil {
       SnowflakeDateTimeFormat timestampNTZFormatter,
       SnowflakeDateTimeFormat timestampLTZFormatter,
       SnowflakeDateTimeFormat timestampTZFormatter,
-      SFSessionInterface session)
+      SessionHandler session)
       throws SFException {
     // Derive the timestamp formatter to use
     SnowflakeDateTimeFormat formatter;
@@ -357,7 +357,7 @@ public class ResultUtil {
    * @throws SFException if date is invalid
    */
   @Deprecated
-  public static Date getDate(String str, TimeZone tz, SFSessionInterface session)
+  public static Date getDate(String str, TimeZone tz, SessionHandler session)
       throws SFException {
     try {
       long milliSecsSinceEpoch = Long.valueOf(str) * MILLIS_IN_ONE_DAY;
@@ -508,7 +508,7 @@ public class ResultUtil {
    * @throws SFException if the number of child IDs does not match child statement types
    */
   public static List<SFChildResult> getChildResults(
-      SFSessionInterface session, String requestId, JsonNode result) throws SFException {
+          SessionHandler session, String requestId, JsonNode result) throws SFException {
     List<String> ids = getResultIds(result);
     List<SFStatementType> types = getResultTypes(result);
 

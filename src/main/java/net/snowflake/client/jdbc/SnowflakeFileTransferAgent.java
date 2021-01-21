@@ -49,7 +49,7 @@ import org.apache.commons.io.filefilter.WildcardFileFilter;
  * @author jhuang
  */
 public class SnowflakeFileTransferAgent
-    implements SnowflakeFileTransferAgentInterface, SnowflakeFixedView {
+    implements FileTransferHandler, SnowflakeFixedView {
   static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeFileTransferAgent.class);
 
   static final StorageClientFactory storageFactory = StorageClientFactory.getFactory();
@@ -142,11 +142,11 @@ public class SnowflakeFileTransferAgent
   }
 
   private void initEncryptionMaterial(
-      SnowflakeFileTransferAgentInterface.CommandType commandType, JsonNode jsonNode)
+          FileTransferHandler.CommandType commandType, JsonNode jsonNode)
       throws SnowflakeSQLException, JsonProcessingException {
     encryptionMaterial = new ArrayList<>();
     JsonNode rootNode = jsonNode.path("data").path("encryptionMaterial");
-    if (commandType == SnowflakeFileTransferAgentInterface.CommandType.UPLOAD) {
+    if (commandType == FileTransferHandler.CommandType.UPLOAD) {
       logger.debug("initEncryptionMaterial: UPLOAD");
 
       RemoteStoreFileEncryptionMaterial encMat = null;
@@ -166,11 +166,11 @@ public class SnowflakeFileTransferAgent
   }
 
   private void initPresignedUrls(
-      SnowflakeFileTransferAgentInterface.CommandType commandType, JsonNode jsonNode)
+          FileTransferHandler.CommandType commandType, JsonNode jsonNode)
       throws SnowflakeSQLException, JsonProcessingException, IOException {
     presignedUrls = new ArrayList<>();
     JsonNode rootNode = jsonNode.path("data").path("presignedUrls");
-    if (commandType == SnowflakeFileTransferAgentInterface.CommandType.DOWNLOAD) {
+    if (commandType == FileTransferHandler.CommandType.DOWNLOAD) {
       logger.debug("initEncryptionMaterial: DOWNLOAD");
 
       if (!rootNode.isMissingNode() && !rootNode.isNull()) {
@@ -179,8 +179,8 @@ public class SnowflakeFileTransferAgent
     }
   }
 
-  private SnowflakeFileTransferAgentInterface.CommandType commandType =
-      SnowflakeFileTransferAgentInterface.CommandType.UPLOAD;
+  private FileTransferHandler.CommandType commandType =
+      FileTransferHandler.CommandType.UPLOAD;
 
   private boolean autoCompress = true;
 
@@ -393,7 +393,7 @@ public class SnowflakeFileTransferAgent
    * @throws SnowflakeSQLException if encountered exception when compressing
    */
   private static InputStreamWithMetadata compressStreamWithGZIP(
-      InputStream inputStream, SFSessionInterface session) throws SnowflakeSQLException {
+      InputStream inputStream, SessionHandler session) throws SnowflakeSQLException {
     FileBackedOutputStream tempStream = new FileBackedOutputStream(MAX_BUFFER_SIZE, true);
 
     try {
@@ -444,7 +444,7 @@ public class SnowflakeFileTransferAgent
    */
   @Deprecated
   private static InputStreamWithMetadata compressStreamWithGZIPNoDigest(
-      InputStream inputStream, SFSessionInterface session) throws SnowflakeSQLException {
+      InputStream inputStream, SessionHandler session) throws SnowflakeSQLException {
     try {
       FileBackedOutputStream tempStream = new FileBackedOutputStream(MAX_BUFFER_SIZE, true);
 
@@ -854,7 +854,7 @@ public class SnowflakeFileTransferAgent
     // get command type
     if (!jsonNode.path("data").path("command").isMissingNode()) {
       commandType =
-          SnowflakeFileTransferAgentInterface.CommandType.valueOf(
+          FileTransferHandler.CommandType.valueOf(
               jsonNode.path("data").path("command").asText());
     }
 
@@ -883,7 +883,7 @@ public class SnowflakeFileTransferAgent
     String localFilePathFromGS = null;
 
     // do upload command specific parsing
-    if (commandType == SnowflakeFileTransferAgentInterface.CommandType.UPLOAD) {
+    if (commandType == FileTransferHandler.CommandType.UPLOAD) {
       if (src_locations.length > 0) {
         localFilePathFromGS = src_locations[0];
       }
@@ -1029,7 +1029,7 @@ public class SnowflakeFileTransferAgent
     if (logger.isDebugEnabled()) {
       logger.debug("Command type: {}", commandType);
 
-      if (commandType == SnowflakeFileTransferAgentInterface.CommandType.UPLOAD) {
+      if (commandType == FileTransferHandler.CommandType.UPLOAD) {
         logger.debug("autoCompress: {}", autoCompress);
 
         logger.debug("source compression: {}", sourceCompression);
@@ -1173,7 +1173,7 @@ public class SnowflakeFileTransferAgent
    * @return JSON doc containing the command options returned by GS
    * @throws SnowflakeSQLException Will be thrown if parsing the command by GS fails
    */
-  private static JsonNode parseCommandInGS(SFStatementInterface statement, String command)
+  private static JsonNode parseCommandInGS(StatementHandler statement, String command)
       throws SnowflakeSQLException {
     Object result = null;
     // send the command to GS
@@ -1246,7 +1246,7 @@ public class SnowflakeFileTransferAgent
           "This API only supports S3/AZURE/GCS");
     }
 
-    if (commandType != SnowflakeFileTransferAgentInterface.CommandType.UPLOAD) {
+    if (commandType != FileTransferHandler.CommandType.UPLOAD) {
       throw new SnowflakeSQLLoggedException(
           session,
           ErrorCode.INTERNAL_ERROR.getMessageCode(),
@@ -1280,7 +1280,7 @@ public class SnowflakeFileTransferAgent
       logger.debug("Start checking file types");
 
       // check file compression type
-      if (commandType == SnowflakeFileTransferAgentInterface.CommandType.UPLOAD) {
+      if (commandType == FileTransferHandler.CommandType.UPLOAD) {
         processFileCompressionTypes();
       }
 
@@ -1303,7 +1303,7 @@ public class SnowflakeFileTransferAgent
       }
 
       // create target directory for download command
-      if (commandType == SnowflakeFileTransferAgentInterface.CommandType.DOWNLOAD) {
+      if (commandType == FileTransferHandler.CommandType.DOWNLOAD) {
         File dir = new File(localLocation);
         if (!dir.exists()) {
           boolean created = dir.mkdirs();
@@ -1354,7 +1354,7 @@ public class SnowflakeFileTransferAgent
       threadExecutor = SnowflakeUtil.createDefaultExecutorService("sf-stream-upload-worker-", 1);
 
       RemoteStoreFileEncryptionMaterial encMat = encryptionMaterial.get(0);
-      if (commandType == SnowflakeFileTransferAgentInterface.CommandType.UPLOAD) {
+      if (commandType == FileTransferHandler.CommandType.UPLOAD) {
         threadExecutor.submit(
             getUploadFileCallable(
                 stageInfo,
@@ -1370,7 +1370,7 @@ public class SnowflakeFileTransferAgent
                 parallel,
                 null,
                 encMat));
-      } else if (commandType == SnowflakeFileTransferAgentInterface.CommandType.DOWNLOAD) {
+      } else if (commandType == FileTransferHandler.CommandType.DOWNLOAD) {
         throw new SnowflakeSQLLoggedException(
             session, ErrorCode.INTERNAL_ERROR.getMessageCode(), SqlState.INTERNAL_ERROR);
       }
@@ -1719,7 +1719,7 @@ public class SnowflakeFileTransferAgent
       String destFileName,
       InputStream inputStream,
       FileBackedOutputStream fileBackedOutStr,
-      SFSessionInterface session)
+      SessionHandler session)
       throws SQLException {
 
     // replace ~ with user home
@@ -1755,7 +1755,7 @@ public class SnowflakeFileTransferAgent
       String filePath,
       String destLocation,
       String destFileName,
-      SFSessionInterface session)
+      SessionHandler session)
       throws SQLException {
     try {
       logger.debug(
@@ -2168,7 +2168,7 @@ public class SnowflakeFileTransferAgent
     // with local files
     String[] stageFileNames;
 
-    if (commandType == SnowflakeFileTransferAgentInterface.CommandType.UPLOAD) {
+    if (commandType == FileTransferHandler.CommandType.UPLOAD) {
       stageFileNames = destFileNameToSrcFileMap.keySet().toArray(new String[0]);
     } else {
       stageFileNames = destFileNameToSrcFileMap.values().toArray(new String[0]);
@@ -2243,11 +2243,11 @@ public class SnowflakeFileTransferAgent
 
         try {
           localFile =
-              (commandType == SnowflakeFileTransferAgentInterface.CommandType.UPLOAD)
+              (commandType == FileTransferHandler.CommandType.UPLOAD)
                   ? mappedSrcFile
                   : (localLocation + objFileName);
 
-          if (commandType == SnowflakeFileTransferAgentInterface.CommandType.DOWNLOAD
+          if (commandType == FileTransferHandler.CommandType.DOWNLOAD
               && !(new File(localFile)).exists()) {
             logger.debug("File does not exist locally, will download {}", mappedSrcFile);
             continue;
@@ -2255,7 +2255,7 @@ public class SnowflakeFileTransferAgent
 
           // if it's an upload and there's already a file existing remotely with the same name, skip
           // uploading it
-          if (commandType == SnowflakeFileTransferAgentInterface.CommandType.UPLOAD
+          if (commandType == FileTransferHandler.CommandType.UPLOAD
               && objFileName.equals(fileMetadataMap.get(mappedSrcFile).destFileName)) {
             skipFile(mappedSrcFile, objFileName);
             continue;
@@ -2398,16 +2398,16 @@ public class SnowflakeFileTransferAgent
         }
 
         String mappedSrcFile =
-            (commandType == SnowflakeFileTransferAgentInterface.CommandType.UPLOAD)
+            (commandType == FileTransferHandler.CommandType.UPLOAD)
                 ? destFileNameToSrcFileMap.get(stageFileName)
                 : stageFileName;
 
         String localFile =
-            (commandType == SnowflakeFileTransferAgentInterface.CommandType.UPLOAD)
+            (commandType == FileTransferHandler.CommandType.UPLOAD)
                 ? mappedSrcFile
                 : (localLocation + fileMetadataMap.get(mappedSrcFile).destFileName);
 
-        if (commandType == SnowflakeFileTransferAgentInterface.CommandType.UPLOAD
+        if (commandType == FileTransferHandler.CommandType.UPLOAD
             && stageFileName.equals(fileMetadataMap.get(mappedSrcFile).destFileName)) {
           skipFile(mappedSrcFile, stageFileName);
           continue;
@@ -2538,7 +2538,7 @@ public class SnowflakeFileTransferAgent
     // for upload command and stage file names for download command)
     fileMetadataMap = new HashMap<String, FileMetadata>(sourceFiles.size());
 
-    if (commandType == SnowflakeFileTransferAgentInterface.CommandType.UPLOAD) {
+    if (commandType == FileTransferHandler.CommandType.UPLOAD) {
       if (sourceFromStream) {
         FileMetadata fileMetadata = new FileMetadata();
         fileMetadataMap.put(SRC_FILE_NAME_FOR_STREAM, fileMetadata);
@@ -2571,7 +2571,7 @@ public class SnowflakeFileTransferAgent
           }
         }
       }
-    } else if (commandType == SnowflakeFileTransferAgentInterface.CommandType.DOWNLOAD) {
+    } else if (commandType == FileTransferHandler.CommandType.DOWNLOAD) {
       for (String sourceFile : sourceFiles) {
         FileMetadata fileMetadata = new FileMetadata();
         fileMetadataMap.put(sourceFile, fileMetadata);
@@ -2826,10 +2826,10 @@ public class SnowflakeFileTransferAgent
    * @throws Exception failed to construct list
    */
   @Override
-  public List<SnowflakeColumnMetadata> describeColumns(SFSessionInterface session)
+  public List<SnowflakeColumnMetadata> describeColumns(SessionHandler session)
       throws Exception {
     return SnowflakeUtil.describeFixedViewColumns(
-        commandType == SnowflakeFileTransferAgentInterface.CommandType.UPLOAD
+        commandType == FileTransferHandler.CommandType.UPLOAD
             ? (showEncryptionParameter
                 ? UploadCommandEncryptionFacade.class
                 : UploadCommandFacade.class)
@@ -2843,7 +2843,7 @@ public class SnowflakeFileTransferAgent
   public List<Object> getNextRow() throws Exception {
     if (currentRowIndex < statusRows.size()) {
       return ClassUtil.getFixedViewObjectAsRow(
-          commandType == SnowflakeFileTransferAgentInterface.CommandType.UPLOAD
+          commandType == FileTransferHandler.CommandType.UPLOAD
               ? (showEncryptionParameter
                   ? UploadCommandEncryptionFacade.class
                   : UploadCommandFacade.class)
@@ -2861,7 +2861,7 @@ public class SnowflakeFileTransferAgent
     for (Entry<String, FileMetadata> entry : fileMetadataMap.entrySet()) {
       FileMetadata fileMetadata = entry.getValue();
 
-      if (commandType == SnowflakeFileTransferAgentInterface.CommandType.UPLOAD) {
+      if (commandType == FileTransferHandler.CommandType.UPLOAD) {
         statusRows.add(
             showEncryptionParameter
                 ? new UploadCommandEncryptionFacade(
@@ -2891,7 +2891,7 @@ public class SnowflakeFileTransferAgent
                     (fileMetadata.destCompressionType == null)
                         ? "NONE"
                         : fileMetadata.destCompressionType.name()));
-      } else if (commandType == SnowflakeFileTransferAgentInterface.CommandType.DOWNLOAD) {
+      } else if (commandType == FileTransferHandler.CommandType.DOWNLOAD) {
         statusRows.add(
             showEncryptionParameter
                 ? new DownloadCommandEncryptionFacade(
@@ -2922,7 +2922,7 @@ public class SnowflakeFileTransferAgent
 
     if (sortResult) {
       Comparator<Object> comparator =
-          (commandType == SnowflakeFileTransferAgentInterface.CommandType.UPLOAD)
+          (commandType == FileTransferHandler.CommandType.UPLOAD)
               ? new Comparator<Object>() {
                 public int compare(Object a, Object b) {
                   String srcFileNameA = ((UploadCommandFacade) a).srcFile;
@@ -2949,7 +2949,7 @@ public class SnowflakeFileTransferAgent
     return new SFFixedViewResultSet(this, this.commandType);
   }
 
-  public SnowflakeFileTransferAgentInterface.CommandType getCommandType() {
+  public FileTransferHandler.CommandType getCommandType() {
     return commandType;
   }
 

@@ -33,7 +33,7 @@ import java.util.Map;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.SFSession;
-import net.snowflake.client.core.SFSessionInterface;
+import net.snowflake.client.core.SessionHandler;
 import net.snowflake.client.jdbc.*;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -58,7 +58,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
   private CloudBlobClient azStorageClient;
   private static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeAzureClient.class);
   private OperationContext opContext = null;
-  private SFSessionInterface session;
+  private SessionHandler session;
 
   private SnowflakeAzureClient() {}
   ;
@@ -70,7 +70,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
    *                required to decrypt/encrypt content in stage
    */
   public static SnowflakeAzureClient createSnowflakeAzureClient(
-      StageInfo stage, RemoteStoreFileEncryptionMaterial encMat, SFSessionInterface sfSession)
+      StageInfo stage, RemoteStoreFileEncryptionMaterial encMat, SessionHandler sfSession)
       throws SnowflakeSQLException {
     SnowflakeAzureClient azureClient = new SnowflakeAzureClient();
     azureClient.setupAzureClient(stage, encMat, sfSession);
@@ -89,7 +89,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
    * @throws IllegalArgumentException when invalid credentials are used
    */
   private void setupAzureClient(
-      StageInfo stage, RemoteStoreFileEncryptionMaterial encMat, SFSessionInterface sfSession)
+      StageInfo stage, RemoteStoreFileEncryptionMaterial encMat, SessionHandler sfSession)
       throws IllegalArgumentException, SnowflakeSQLException {
     // Save the client creation parameters so that we can reuse them,
     // to reset the Azure client.

@@ -2,27 +2,27 @@ package net.snowflake.client.jdbc;
 
 import java.sql.SQLNonTransientConnectionException;
 import net.snowflake.client.core.SFSession;
-import net.snowflake.client.core.SFSessionInterface;
+import net.snowflake.client.core.SessionHandler;
 import net.snowflake.client.core.SFStatement;
-import net.snowflake.client.core.SFStatementInterface;
+import net.snowflake.client.core.StatementHandler;
 
 /**
- * The default ConnectionImplementation used by SnowflakeConnectionV(x).
- * Unless a separate implementation is provided, a DefaultConnectionImpl will
+ * The default ConnectionHandler used by SnowflakeConnectionV(x).
+ * Unless a separate implementation is provided, a DefaultConnectionHandler will
  * be constructed automatically by the Connection class.
  */
-public class DefaultConnectionImpl implements ConnectionImplementation {
+public class DefaultConnectionHandler implements ConnectionHandler {
 
   private final SFSession sfSession;
 
   /**
-   * Constructs a DefaultConnectionImpl using a SnowflakeConnectString.
+   * Constructs a DefaultConnectionHandler using a SnowflakeConnectString.
    * This can be done by using SnowflakeConnectString.parse(url, info), where
    * url is a connection url and info is a java.util.Properties
    *
    * @param conStr A SnowflakeConnectString object
    */
-  public DefaultConnectionImpl(SnowflakeConnectString conStr) {
+  public DefaultConnectionHandler(SnowflakeConnectString conStr) {
     this.sfSession = new SFSession();
     sfSession.setSnowflakeConnectionString(conStr);
   }
@@ -31,7 +31,7 @@ public class DefaultConnectionImpl implements ConnectionImplementation {
    * Returns the default SFSession client implementation.
    */
   @Override
-  public SFSessionInterface getSFSession() {
+  public SessionHandler getSessionHandler() {
     return sfSession;
   }
 
@@ -39,7 +39,7 @@ public class DefaultConnectionImpl implements ConnectionImplementation {
    * Returns the default SFStatement client implementation.
    */
   @Override
-  public SFStatementInterface getSFStatement() {
+  public StatementHandler getStatementHandler() {
     return new SFStatement(sfSession);
   }
 
@@ -50,8 +50,8 @@ public class DefaultConnectionImpl implements ConnectionImplementation {
    * @param statement The statement to use for this file transfer
    */
   @Override
-  public SnowflakeFileTransferAgentInterface getFileTransferAgent(
-      String command, SFStatementInterface statement)
+  public FileTransferHandler getFileTransferHandler(
+      String command, StatementHandler statement)
       throws SQLNonTransientConnectionException, SnowflakeSQLException {
     if (!(statement instanceof SFStatement)) {
       throw new SQLNonTransientConnectionException("Internal error: Invalid SFStatement type.");

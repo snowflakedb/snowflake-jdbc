@@ -5,11 +5,14 @@
 package net.snowflake.client.core;
 
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.Map;
-import net.snowflake.client.jdbc.SnowflakeSQLException;
 
-/** Snowflake statement */
-public interface SFStatementInterface {
+import net.snowflake.client.jdbc.SnowflakeBaseResultSet;
+
+public interface StatementHandler {
+
+  SnowflakeBaseResultSet createResultSet(SFBaseResultSet resultSet, Statement statement) throws SQLException;
 
   /**
    * Add a statement parameter
@@ -34,33 +37,6 @@ public interface SFStatementInterface {
   SFStatementMetaData describe(String sql) throws SFException, SQLException;
 
   /**
-   * A helper method to build URL and submit the SQL to snowflake for exec
-   *
-   * @param sql sql statement
-   * @param mediaType media type
-   * @param bindValues map of binding values
-   * @param describeOnly whether only show the result set metadata
-   * @param internal run internal query not showing up in history
-   * @return raw json response
-   * @throws SFException if query is canceled
-   * @throws SnowflakeSQLException if query is already running
-   */
-  Object executeHelper(
-      String sql,
-      String mediaType,
-      Map<String, ParameterBindingDTO> bindValues,
-      boolean describeOnly,
-      boolean internal,
-      boolean asyncExec)
-      throws SnowflakeSQLException, SFException;
-
-  /** @return conservative prefetch threads before fetching results */
-  int getConservativePrefetchThreads();
-
-  /** @return conservative memory limit before fetching results */
-  long getConservativeMemoryLimit();
-
-  /**
    * Execute sql
    *
    * @param sql sql statement.
@@ -73,7 +49,6 @@ public interface SFStatementInterface {
    */
   SFBaseResultSet execute(
       String sql,
-      boolean asyncExec,
       Map<String, ParameterBindingDTO> parametersBinding,
       CallingMethod caller)
       throws SQLException, SFException;
@@ -82,9 +57,7 @@ public interface SFStatementInterface {
 
   void cancel() throws SFException, SQLException;
 
-  void executeSetProperty(final String sql);
-
-  SFSessionInterface getSession();
+  SessionHandler getSession();
 
   /**
    * Sets the result set to the next one, if available.
@@ -98,8 +71,6 @@ public interface SFStatementInterface {
   boolean getMoreResults(int current) throws SQLException;
 
   SFBaseResultSet getResultSet();
-
-  boolean hasChildren();
 
   enum CallingMethod {
     EXECUTE,

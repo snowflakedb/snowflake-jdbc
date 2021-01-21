@@ -7,7 +7,7 @@ import com.amazonaws.ClientConfiguration;
 import java.util.Map;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.SFSession;
-import net.snowflake.client.core.SFSessionInterface;
+import net.snowflake.client.core.SessionHandler;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -100,7 +100,7 @@ public class StorageClientFactory {
       String stageRegion,
       String stageEndPoint,
       boolean isClientSideEncrypted,
-      SFSessionInterface session)
+      SessionHandler session)
       throws SnowflakeSQLException {
     final int S3_TRANSFER_MAX_RETRIES = 3;
 
@@ -175,7 +175,7 @@ public class StorageClientFactory {
    * @return the SnowflakeS3Client instance created
    */
   private SnowflakeAzureClient createAzureClient(
-      StageInfo stage, RemoteStoreFileEncryptionMaterial encMat, SFSessionInterface session)
+      StageInfo stage, RemoteStoreFileEncryptionMaterial encMat, SessionHandler session)
       throws SnowflakeSQLException {
     logger.debug("createAzureClient encryption={}", (encMat == null ? "no" : "yes"));
 

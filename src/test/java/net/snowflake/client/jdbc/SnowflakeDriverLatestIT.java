@@ -82,7 +82,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
       statement.execute("CREATE OR REPLACE STAGE " + testStageName);
 
       SFSession sfSession =
-          (SFSession) connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
+          (SFSession) connection.unwrap(SnowflakeConnectionV1.class).getSessionHandler();
 
       // Test put file with internal compression
       String putCommand1 = "put file:///dummy/path/file1.gz @" + testStageName;
@@ -169,7 +169,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
         statement.execute("CREATE OR REPLACE STAGE " + testStageName);
 
         SFSession sfSession =
-            (SFSession) connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
+            (SFSession) connection.unwrap(SnowflakeConnectionV1.class).getSessionHandler();
 
         // Test put file with internal compression
         String putCommand1 = "put file:///dummy/path/file1.gz @" + testStageName;
@@ -261,7 +261,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
       statement.execute("put file://" + srcPath + " @" + testStageName);
 
       SFSession sfSession =
-          (SFSession) connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
+          (SFSession) connection.unwrap(SnowflakeConnectionV1.class).getSessionHandler();
 
       File destFolder = tmpFolder.newFolder();
       String destFolderCanonicalPath = destFolder.getCanonicalPath();

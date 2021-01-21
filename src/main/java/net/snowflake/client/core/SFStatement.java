@@ -4,18 +4,7 @@
 
 package net.snowflake.client.core;
 
-import static net.snowflake.client.core.SessionUtil.*;
-import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
-
 import com.fasterxml.jackson.databind.JsonNode;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.*;
-import java.util.concurrent.Callable;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import net.snowflake.client.core.BasicEvent.QueryState;
 import net.snowflake.client.core.bind.BindException;
 import net.snowflake.client.core.bind.BindUploader;
@@ -31,8 +20,20 @@ import net.snowflake.client.util.SecretDetector;
 import net.snowflake.common.core.SqlState;
 import org.apache.http.client.methods.HttpRequestBase;
 
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import static net.snowflake.client.core.SessionUtil.*;
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
+
 /** Snowflake statement */
-public class SFStatement implements SFStatementInterface {
+public class SFStatement implements AsyncStatementHandler {
 
   static final SFLogger logger = SFLoggerFactory.getLogger(SFStatement.class);
 
@@ -76,6 +77,11 @@ public class SFStatement implements SFStatementInterface {
   private int conservativePrefetchThreads;
   private int conservativeResultChunkSize;
   private long conservativeMemoryLimit; // in bytes
+
+  @Override
+  public SnowflakeBaseResultSet createResultSet(SFBaseResultSet resultSet, Statement statement) throws SQLException {
+    return new SnowflakeResultSetV1(resultSet, statement);
+  }
 
   /**
    * Add a statement parameter
@@ -657,6 +663,13 @@ public class SFStatement implements SFStatementInterface {
     return conservativeMemoryLimit;
   }
 
+  @Override
+  public SFBaseResultSet execute(
+      String sql, Map<String, ParameterBindingDTO> parametersBinding, CallingMethod caller)
+      throws SQLException, SFException {
+    return null;
+  }
+
   private void reauthenticate() throws SFException, SnowflakeSQLException {
     SFLoginInput input =
         new SFLoginInput()
@@ -883,7 +896,7 @@ public class SFStatement implements SFStatementInterface {
     }
   }
 
-  public SFSessionInterface getSession() {
+  public SessionHandler getSession() {
     return session;
   }
 
@@ -941,5 +954,18 @@ public class SFStatement implements SFStatementInterface {
 
   public boolean hasChildren() {
     return !childResults.isEmpty();
+  }
+
+  @Override
+  public SFBaseResultSet asyncExecute(
+      String sql, Map<String, ParameterBindingDTO> parametersBinding, CallingMethod caller)
+      throws SQLException, SFException {
+    return execute(sql, true, parametersBinding, caller);
+  }
+
+  @Override
+  public SnowflakeBaseResultSet createAsyncResultSet(SFBaseResultSet resultSet, Statement statement)
+      throws SQLException {
+    return new SFAsyncResultSet(resultSet, session, statement);
   }
 }

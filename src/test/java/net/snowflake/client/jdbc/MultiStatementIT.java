@@ -19,7 +19,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryStatement;
-import net.snowflake.client.core.SFSessionInterface;
+import net.snowflake.client.core.SessionHandler;
 import net.snowflake.common.core.SqlState;
 import org.junit.Assert;
 import org.junit.Test;
@@ -408,8 +408,8 @@ public class MultiStatementIT extends BaseJDBCTest {
     Connection connection = getConnection();
     Statement statement = connection.createStatement();
 
-    SFSessionInterface session =
-        statement.getConnection().unwrap(SnowflakeConnectionV1.class).getSfSession();
+    SessionHandler session =
+        statement.getConnection().unwrap(SnowflakeConnectionV1.class).getSessionHandler();
 
     String originalSchema = session.getSchema();
 
@@ -427,7 +427,7 @@ public class MultiStatementIT extends BaseJDBCTest {
     statement.execute(String.format("use schema %s; select 1", originalSchema));
     // current schema change should persist outside of the above statement
 
-    session = statement.getConnection().unwrap(SnowflakeConnectionV1.class).getSfSession();
+    session = statement.getConnection().unwrap(SnowflakeConnectionV1.class).getSessionHandler();
     assertEquals(originalSchema, session.getSchema());
     statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 1);
     rs = statement.executeQuery("select current_schema()");
@@ -443,8 +443,8 @@ public class MultiStatementIT extends BaseJDBCTest {
     Connection connection = getConnection();
     Statement statement = connection.createStatement();
 
-    SFSessionInterface session =
-        statement.getConnection().unwrap(SnowflakeConnectionV1.class).getSfSession();
+    SessionHandler session =
+        statement.getConnection().unwrap(SnowflakeConnectionV1.class).getSessionHandler();
 
     // we need an arbitrary parameter which is updated by the client after each query for this test
     String param = "AUTOCOMMIT";
