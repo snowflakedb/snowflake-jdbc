@@ -2,7 +2,7 @@ package net.snowflake.client.jdbc;
 
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
-import net.snowflake.client.core.SFSessionInterface;
+import net.snowflake.client.core.SessionHandler;
 import net.snowflake.common.core.SqlState;
 
 /**
@@ -37,7 +37,7 @@ public class ResultJsonParserV2 {
   //  private int currentRow;
   private JsonResultChunk resultChunk;
 
-  public void startParsing(JsonResultChunk resultChunk, SFSessionInterface session)
+  public void startParsing(JsonResultChunk resultChunk, SessionHandler session)
       throws SnowflakeSQLException {
     this.resultChunk = resultChunk;
     if (state != State.UNINITIALIZED) {
@@ -65,7 +65,7 @@ public class ResultJsonParserV2 {
    * Check if the chunk has been parsed correctly. After calling this it is safe to acquire the
    * output data
    */
-  public void endParsing(SFSessionInterface session) throws SnowflakeSQLException {
+  public void endParsing(SessionHandler session) throws SnowflakeSQLException {
     if (((Buffer) partialEscapedUnicode).position() > 0) {
       ((Buffer) partialEscapedUnicode).flip();
       continueParsingInternal(partialEscapedUnicode, true, session);
@@ -89,7 +89,7 @@ public class ResultJsonParserV2 {
    * @param in readOnly byteBuffer backed by an array (the data to be reed is from position to
    *     limit)
    */
-  public void continueParsing(ByteBuffer in, SFSessionInterface session)
+  public void continueParsing(ByteBuffer in, SessionHandler session)
       throws SnowflakeSQLException {
     if (state == State.UNINITIALIZED) {
       throw new SnowflakeSQLLoggedException(
@@ -143,7 +143,7 @@ public class ResultJsonParserV2 {
    * @param lastData If true, this signifies this is the last data in parsing
    * @throws SnowflakeSQLException Will be thrown if parsing the chunk data fails
    */
-  private void continueParsingInternal(ByteBuffer in, boolean lastData, SFSessionInterface session)
+  private void continueParsingInternal(ByteBuffer in, boolean lastData, SessionHandler session)
       throws SnowflakeSQLException {
     /*
      * This function parses a Snowflake result chunk json, copies the data

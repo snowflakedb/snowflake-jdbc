@@ -32,7 +32,7 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
 
 /** Snowflake session implementation */
-public class SFSession implements SFSessionInterface {
+public class SFSession implements SessionHandler {
   private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.getObjectMapper();
 
   static final SFLogger logger = SFLoggerFactory.getLogger(SFSession.class);

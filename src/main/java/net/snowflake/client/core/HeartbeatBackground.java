@@ -138,7 +138,7 @@ public class HeartbeatBackground implements Runnable {
    *
    * @param session the session will be removed
    */
-  protected synchronized void removeSession(SFSessionInterface session) {
+  protected synchronized void removeSession(SessionHandler session) {
     sessions.remove(session);
   }
 

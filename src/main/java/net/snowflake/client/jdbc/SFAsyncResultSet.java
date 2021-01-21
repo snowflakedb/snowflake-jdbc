@@ -9,19 +9,17 @@ import java.sql.*;
 import java.util.List;
 import java.util.TimeZone;
 import java.util.regex.Pattern;
-import net.snowflake.client.core.QueryStatus;
-import net.snowflake.client.core.SFBaseResultSet;
-import net.snowflake.client.core.SFException;
-import net.snowflake.client.core.SFSessionInterface;
+
+import net.snowflake.client.core.*;
 import net.snowflake.common.core.SqlState;
 
 /** SFAsyncResultSet implementation */
-class SFAsyncResultSet extends SnowflakeBaseResultSet implements SnowflakeResultSet, ResultSet {
+public class SFAsyncResultSet extends SnowflakeBaseResultSet implements SnowflakeResultSet, ResultSet {
   private final SFBaseResultSet sfBaseResultSet;
   private ResultSet resultSetForNext = new SnowflakeResultSetV1.EmptyResultSet();
   private boolean resultSetForNextInitialized = false;
   private String queryID;
-  private SFSessionInterface session;
+  private SFSession session;
   private Statement extraStatement;
 
   /**
@@ -32,14 +30,15 @@ class SFAsyncResultSet extends SnowflakeBaseResultSet implements SnowflakeResult
    * ResultSetMetaData.
    *
    * @param sfBaseResultSet snowflake core base result rest object
+   * @param sfSession snowflake core base result rest object
    * @param statement query statement that generates this result set
    * @throws SQLException if failed to construct snowflake result set metadata
    */
-  SFAsyncResultSet(SFBaseResultSet sfBaseResultSet, Statement statement) throws SQLException {
+  public SFAsyncResultSet(SFBaseResultSet sfBaseResultSet, SFSession sfSession, Statement statement) throws SQLException {
     super(statement);
     this.sfBaseResultSet = sfBaseResultSet;
     this.queryID = sfBaseResultSet.getQueryId();
-    this.session = sfBaseResultSet.getSession();
+    this.session = session;
     this.extraStatement = statement;
     try {
       this.resultSetMetaData = new SnowflakeResultSetMetaDataV1(sfBaseResultSet.getMetaData());
@@ -196,7 +195,7 @@ class SFAsyncResultSet extends SnowflakeBaseResultSet implements SnowflakeResult
     return resultSetForNext.getString(columnIndex);
   }
 
-  public void setSession(SFSessionInterface session) {
+  public void setSession(SFSession session) {
     this.session = session;
   }
 

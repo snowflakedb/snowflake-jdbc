@@ -89,7 +89,7 @@ public class BindUploaderIT extends BaseJDBCTest {
   @Before
   public void setUp() throws Exception {
     conn = getConnection();
-    session = (SFSession) conn.unwrap(SnowflakeConnectionV1.class).getSfSession();
+    session = (SFSession) conn.unwrap(SnowflakeConnectionV1.class).getSessionHandler();
     bindUploader = BindUploader.newInstance(session, STAGE_DIR);
     prevTimeZone = TimeZone.getDefault();
     TimeZone.setDefault(TimeZone.getTimeZone("UTC"));

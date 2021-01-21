@@ -7,7 +7,7 @@ package net.snowflake.client.core;
 import java.sql.SQLException;
 import java.util.List;
 import net.snowflake.client.jdbc.*;
-import net.snowflake.client.jdbc.SnowflakeFileTransferAgentInterface.CommandType;
+import net.snowflake.client.jdbc.FileTransferHandler.CommandType;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SqlState;

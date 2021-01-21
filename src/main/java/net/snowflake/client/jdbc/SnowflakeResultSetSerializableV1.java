@@ -142,7 +142,7 @@ public class SnowflakeResultSetSerializableV1
 
   // Below fields are transient, they are generated from parameters
   transient TimeZone timeZone;
-  transient Optional<SFSessionInterface> possibleSession = Optional.empty();
+  transient Optional<SessionHandler> possibleSession = Optional.empty();
   transient boolean honorClientTZForTimestampNTZ;
   transient SnowflakeDateTimeFormat timestampNTZFormatter;
   transient SnowflakeDateTimeFormat timestampLTZFormatter;
@@ -431,7 +431,7 @@ public class SnowflakeResultSetSerializableV1
     return useSessionTimezone;
   }
 
-  public Optional<SFSessionInterface> getSession() {
+  public Optional<SessionHandler> getSession() {
     return possibleSession;
   }
 
@@ -445,7 +445,7 @@ public class SnowflakeResultSetSerializableV1
    * @throws SnowflakeSQLException if failed to parse the result JSON node
    */
   public static SnowflakeResultSetSerializableV1 create(
-      JsonNode rootNode, SFSession sfSession, SFStatementInterface sfStatement)
+      JsonNode rootNode, SFSession sfSession, StatementHandler sfStatement)
       throws SnowflakeSQLException {
     SnowflakeResultSetSerializableV1 resultSetSerializable = new SnowflakeResultSetSerializableV1();
     logger.debug("Entering create()");
@@ -668,7 +668,7 @@ public class SnowflakeResultSetSerializableV1
    * @param rootNode result JSON node received from GS
    * @param sfStatement the snowflake statement
    */
-  private void parseChunkFiles(JsonNode rootNode, SFStatementInterface sfStatement) {
+  private void parseChunkFiles(JsonNode rootNode, StatementHandler sfStatement) {
     JsonNode chunksNode = rootNode.path("data").path("chunks");
 
     if (!chunksNode.isMissingNode()) {
@@ -722,7 +722,7 @@ public class SnowflakeResultSetSerializableV1
     }
   }
 
-  private void adjustMemorySettings(SFStatementInterface sfStatement) {
+  private void adjustMemorySettings(StatementHandler sfStatement) {
     this.resultPrefetchThreads = DEFAULT_CLIENT_PREFETCH_THREADS;
     if (this.statementType.isSelect()
         && this.parameters.containsKey(CLIENT_ENABLE_CONSERVATIVE_MEMORY_USAGE)

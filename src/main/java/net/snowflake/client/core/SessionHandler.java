@@ -13,7 +13,7 @@ import net.snowflake.client.jdbc.SnowflakeType;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
 
 /** Snowflake session implementation */
-public interface SFSessionInterface {
+public interface SessionHandler {
   /**
    * Function that checks if the active session can be closed when the connection is closed. If
    * there are active asynchronous queries running, the session should stay open even if the

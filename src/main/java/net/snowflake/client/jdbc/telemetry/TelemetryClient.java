@@ -15,7 +15,7 @@ import java.util.concurrent.Future;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.SFSession;
-import net.snowflake.client.core.SFSessionInterface;
+import net.snowflake.client.core.SessionHandler;
 import net.snowflake.client.jdbc.SnowflakeConnectionV1;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryThreadPool;
@@ -30,7 +30,7 @@ import org.apache.http.entity.StringEntity;
  * <p>Telemetry Service Interface
  */
 public class TelemetryClient implements Telemetry {
-  private static final SFLogger logger = SFLoggerFactory.getLogger(SFSessionInterface.class);
+  private static final SFLogger logger = SFLoggerFactory.getLogger(SessionHandler.class);
 
   private static final String SF_PATH_TELEMETRY = "/telemetry/send";
 
@@ -94,7 +94,7 @@ public class TelemetryClient implements Telemetry {
   public static Telemetry createTelemetry(Connection conn, int flushSize) {
     try {
       return createTelemetry(
-          (SFSession) conn.unwrap(SnowflakeConnectionV1.class).getSfSession(), flushSize);
+          (SFSession) conn.unwrap(SnowflakeConnectionV1.class).getSessionHandler(), flushSize);
     } catch (SQLException ex) {
       logger.debug("input connection is not a SnowflakeConnection");
       return null;

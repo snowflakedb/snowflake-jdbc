@@ -38,9 +38,9 @@ public class SnowflakeGcsClientHandleExceptionLatestIT extends AbstractDriverIT 
     Properties paramProperties = new Properties();
     paramProperties.put("GCS_USE_DOWNSCOPED_CREDENTIAL", true);
     connection = getConnection("gcpaccount", paramProperties);
-    sfSession = (SFSession) connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
+    sfSession = (SFSession) connection.unwrap(SnowflakeConnectionV1.class).getSessionHandler();
     Statement statement = connection.createStatement();
-    sfStatement = (SFStatement) statement.unwrap(SnowflakeStatementV1.class).getSfStatement();
+    sfStatement = (SFStatement) statement.unwrap(SnowflakeStatementV1.class).getStatementHandler();
     statement.execute("CREATE OR REPLACE STAGE testPutGet_stage");
     command = "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE) + " @testPutGet_stage";
     SnowflakeFileTransferAgent agent =

@@ -11,7 +11,7 @@ import java.sql.*;
 import java.util.List;
 import java.util.TimeZone;
 import net.snowflake.client.core.SFResultSetMetaData;
-import net.snowflake.client.core.SFSessionInterface;
+import net.snowflake.client.core.SessionHandler;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SqlState;
@@ -48,8 +48,8 @@ class SnowflakeDatabaseMetaDataResultSet extends SnowflakeBaseResultSet {
     super(statement);
     this.showObjectResultSet = showObjectResultSet;
 
-    SFSessionInterface session =
-        statement.getConnection().unwrap(SnowflakeConnectionV1.class).getSfSession();
+    SessionHandler session =
+        statement.getConnection().unwrap(SnowflakeConnectionV1.class).getSessionHandler();
 
     SFResultSetMetaData sfset =
         new SFResultSetMetaData(
@@ -80,8 +80,8 @@ class SnowflakeDatabaseMetaDataResultSet extends SnowflakeBaseResultSet {
     super(statement);
     this.rows = rows;
 
-    SFSessionInterface session =
-        statement.getConnection().unwrap(SnowflakeConnectionV1.class).getSfSession();
+    SessionHandler session =
+        statement.getConnection().unwrap(SnowflakeConnectionV1.class).getSessionHandler();
 
     SFResultSetMetaData sfset =
         new SFResultSetMetaData(

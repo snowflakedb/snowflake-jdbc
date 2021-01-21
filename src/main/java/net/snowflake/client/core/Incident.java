@@ -51,7 +51,7 @@ public class Incident extends Event {
    * @param jobId job id String
    * @param requestId request id string
    */
-  public Incident(SFSessionInterface session, Throwable exc, String jobId, String requestId) {
+  public Incident(SessionHandler session, Throwable exc, String jobId, String requestId) {
     this(
         session,
         jobId,
@@ -94,7 +94,7 @@ public class Incident extends Event {
    * @param raiser string representation of top of stack trace
    */
   Incident(
-      SFSessionInterface session,
+      SessionHandler session,
       String jobId,
       String requestId,
       String errorMessage,

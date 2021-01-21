@@ -60,7 +60,7 @@ public class SFResultSet extends SFJsonResultSet {
 
   private ChunkDownloader chunkDownloader;
 
-  protected SFStatementInterface statement;
+  protected StatementHandler statement;
 
   private final boolean arrayBindSupported;
 
@@ -90,7 +90,7 @@ public class SFResultSet extends SFJsonResultSet {
     this(resultSetSerializable, statement.getSession().getTelemetryClient(), sortResult);
 
     this.statement = statement;
-    SFSessionInterface session = this.statement.getSession();
+    SessionHandler session = this.statement.getSession();
     session.setDatabase(resultSetSerializable.getFinalDatabaseName());
     session.setSchema(resultSetSerializable.getFinalSchemaName());
     session.setRole(resultSetSerializable.getFinalRoleName());
