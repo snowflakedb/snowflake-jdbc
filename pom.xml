@@ -311,17 +311,17 @@
       <artifactId>google-http-client</artifactId>
       <version>${google.http.client.version}</version>
     </dependency>
-    <!-- http://mvnrepository.com/artifact/net.java.dev.jna/jna -->
     <dependency>
       <groupId>net.java.dev.jna</groupId>
       <artifactId>jna</artifactId>
       <version>${jna.version}</version>
+      <scope>provided</scope>
     </dependency>
-    <!-- http://mvnrepository.com/artifact/net.java.dev.jna/jna-platform -->
     <dependency>
       <groupId>net.java.dev.jna</groupId>
       <artifactId>jna-platform</artifactId>
       <version>${jna.version}</version>
+      <scope>provided</scope>
     </dependency>
   </dependencies>
 

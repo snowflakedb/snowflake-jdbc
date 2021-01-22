@@ -31,6 +31,10 @@
       <url>http://github.com/snowflakedb/snowflake-jdbc/tree/master</url>
     </scm>
 
+    <properties>
+      <jna.version>5.5.0</jna.version>
+    </properties>
+
     <dependencies>
       <dependency>
         <groupId>org.bouncycastle</groupId>
@@ -43,6 +47,18 @@
         <artifactId>bcpkix-fips</artifactId>
         <version>1.0.3</version>
         <scope>runtime</scope>
+      </dependency>
+      <dependency>
+        <groupId>net.java.dev.jna</groupId>
+        <artifactId>jna</artifactId>
+        <version>${jna.version}</version>
+        <optional>true</optional>
+      </dependency>
+      <dependency>
+        <groupId>net.java.dev.jna</groupId>
+        <artifactId>jna-platform</artifactId>
+        <version>${jna.version}</version>
+        <optional>true</optional>
       </dependency>
     </dependencies>
 </project>
