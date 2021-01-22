@@ -720,7 +720,8 @@ public class SessionUtil {
             sessionId,
             commonParams);
 
-    if (consentCacheIdToken) {
+    if (consentCacheIdToken
+        && asBoolean(loginInput.getSessionParameters().get(CLIENT_STORE_TEMPORARY_CREDENTIAL))) {
       CredentialManager.getInstance().writeIdToken(loginInput, ret);
     }
 
