@@ -21,14 +21,19 @@ public class CredentialManager {
   }
 
   private void initSecureStorageManager() {
-    if (Constants.getOS() == Constants.OS.MAC) {
-      secureStorageManager = SecureStorageAppleManager.builder();
-    } else if (Constants.getOS() == Constants.OS.WINDOWS) {
-      secureStorageManager = SecureStorageWindowsManager.builder();
-    } else if (Constants.getOS() == Constants.OS.LINUX) {
-      secureStorageManager = SecureStorageLinuxManager.getInstance();
-    } else {
-      logger.error("Unsupported Operating System. Expected: OSX, Windows, Linux");
+    try {
+      if (Constants.getOS() == Constants.OS.MAC) {
+        secureStorageManager = SecureStorageAppleManager.builder();
+      } else if (Constants.getOS() == Constants.OS.WINDOWS) {
+        secureStorageManager = SecureStorageWindowsManager.builder();
+      } else if (Constants.getOS() == Constants.OS.LINUX) {
+        secureStorageManager = SecureStorageLinuxManager.getInstance();
+      } else {
+        logger.error("Unsupported Operating System. Expected: OSX, Windows, Linux");
+      }
+    } catch (NoClassDefFoundError error) {
+      logger.info(
+          "JNA jar files are needed for Secure Local Storage service. Please follow the Snowflake JDBC instruction for Secure Local Storage feature. Fall back to normal process.");
     }
   }
 
@@ -80,9 +85,23 @@ public class CredentialManager {
    */
   synchronized void fillCachedCredential(SFLoginInput loginInput, String credType)
       throws SFException {
-    String cred =
-        secureStorageManager.getCredential(
-            loginInput.getHostFromServerUrl(), loginInput.getUserName(), credType);
+    if (secureStorageManager == null) {
+      logger.info(
+          "JNA jar files are needed for Secure Local Storage service. Please follow the Snowflake JDBC instruction for Secure Local Storage feature. Fall back to normal process.");
+      return;
+    }
+
+    String cred = null;
+    try {
+      cred =
+          secureStorageManager.getCredential(
+              loginInput.getHostFromServerUrl(), loginInput.getUserName(), credType);
+    } catch (NoClassDefFoundError error) {
+      logger.info(
+          "JNA jar files are needed for Secure Local Storage service. Please follow the Snowflake JDBC instruction for Secure Local Storage feature. Fall back to normal process.");
+      return;
+    }
+
     if (cred == null) {
       logger.debug("retrieved %s is null", credType);
     }
@@ -132,17 +151,50 @@ public class CredentialManager {
       return; // no credential
     }
 
-    secureStorageManager.setCredential(
-        loginInput.getHostFromServerUrl(), loginInput.getUserName(), credType, cred);
+    if (secureStorageManager == null) {
+      logger.info(
+          "JNA jar files are needed for Secure Local Storage service. Please follow the Snowflake JDBC instruction for Secure Local Storage feature. Fall back to normal process.");
+      return;
+    }
+
+    try {
+      secureStorageManager.setCredential(
+          loginInput.getHostFromServerUrl(), loginInput.getUserName(), credType, cred);
+    } catch (NoClassDefFoundError error) {
+      logger.info(
+          "JNA jar files are needed for Secure Local Storage service. Please follow the Snowflake JDBC instruction for Secure Local Storage feature. Fall back to normal process.");
+    }
   }
 
   /** Delete the id token cache */
   void deleteIdTokenCache(String host, String user) {
-    secureStorageManager.deleteCredential(host, user, ID_TOKEN);
+    deleteTemporaryCredential(host, user, ID_TOKEN);
   }
 
   /** Delete the mfa token cache */
   void deleteMfaTokenCache(String host, String user) {
-    secureStorageManager.deleteCredential(host, user, MFA_TOKEN);
+    deleteTemporaryCredential(host, user, MFA_TOKEN);
+  }
+
+  /**
+   * Delete the temporary credential
+   *
+   * @param host host name
+   * @param user user name
+   * @param credType type of the credential
+   */
+  synchronized void deleteTemporaryCredential(String host, String user, String credType) {
+    if (secureStorageManager == null) {
+      logger.info(
+          "JNA jar files are needed for Secure Local Storage service. Please follow the Snowflake JDBC instruction for Secure Local Storage feature. Fall back to normal process.");
+      return;
+    }
+
+    try {
+      secureStorageManager.deleteCredential(host, user, credType);
+    } catch (NoClassDefFoundError error) {
+      logger.info(
+          "JNA jar files are needed for Secure Local Storage service. Please follow the Snowflake JDBC instruction for Secure Local Storage feature. Fall back to normal process.");
+    }
   }
 }
