@@ -805,7 +805,9 @@ public class SFSession implements SessionHandler {
   }
 
   @Override
-  public void raiseErrorInSession() {}
+  public void raiseError(Throwable exc, String jobId, String requestId) {
+    new Incident(this, exc, jobId, requestId).trigger();
+  }
 
   public void setSFSessionProperty(String propertyName, boolean propertyValue) {
     this.sfSessionProperties.put(propertyName, propertyValue);

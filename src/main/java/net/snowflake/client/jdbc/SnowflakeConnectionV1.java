@@ -5,13 +5,11 @@
 package net.snowflake.client.jdbc;
 
 import com.google.common.base.Strings;
-import net.snowflake.client.core.SFConnectionProperty;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SessionHandler;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.log.SFLoggerUtil;
-import net.snowflake.common.core.LoginInfoDTO;
 import net.snowflake.common.core.SqlState;
 
 import java.io.IOException;
@@ -23,11 +21,8 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.GZIPInputStream;
 
-import static net.snowflake.client.core.SessionUtil.CLIENT_SFSQL;
-import static net.snowflake.client.core.SessionUtil.JVM_PARAMS_TO_PARAMS;
 import static net.snowflake.client.jdbc.ErrorCode.FEATURE_UNSUPPORTED;
 import static net.snowflake.client.jdbc.ErrorCode.INVALID_CONNECT_STRING;
-import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
 /** Snowflake connection implementation */
 public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
@@ -44,7 +39,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
   private SQLWarning sqlWarnings = null;
   // Injected delay for the purpose of connection timeout testing
   // Any statement execution will sleep for the specified number of milliseconds
-  private AtomicInteger _injectedDelay = new AtomicInteger(0);
+  private final AtomicInteger _injectedDelay = new AtomicInteger(0);
   private List<DriverPropertyInfo> missingProperties = null;
   /**
    * Amount of milliseconds a user is willing to tolerate for network related issues (e.g. HTTP
@@ -62,15 +57,14 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
   private int transactionIsolation = Connection.TRANSACTION_NONE;
   private SessionHandler sessionHandler;
   /** The SnowflakeConnectionImpl that provides the underlying physical-layer implementation */
-  private ConnectionHandlerV1 connectionHandler;
+  private ConnectionHandler connectionHandler;
 
   /**
    * Instantiates a SnowflakeConnectionV1 with the passed-in SnowflakeConnectionImpl.
    *
    * @param connectionHandler The SnowflakeConnectionImpl.
    */
-  public SnowflakeConnectionV1(ConnectionHandlerV1 connectionHandler)
-          throws SQLException {
+  public SnowflakeConnectionV1(ConnectionHandler connectionHandler) throws SQLException {
     initConnectionWithImpl(connectionHandler, null, null);
   }
 
@@ -79,7 +73,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
    *
    * @param connectionHandler The SnowflakeConnectionImpl.
    */
-  public SnowflakeConnectionV1(ConnectionHandlerV1 connectionHandler, String url, Properties info)
+  public SnowflakeConnectionV1(ConnectionHandler connectionHandler, String url, Properties info)
       throws SQLException {
     initConnectionWithImpl(connectionHandler, url, info);
   }
@@ -98,7 +92,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
       throw new SnowflakeSQLException(INVALID_CONNECT_STRING, url);
     }
 
-    initConnectionWithImpl(new DefaultConnectionHandlerV1(conStr, logger), url, info);
+    initConnectionWithImpl(new DefaultConnectionHandler(conStr, logger), url, info);
     appendWarnings(sessionHandler.getSqlWarnings());
     isClosed = false;
   }
@@ -111,12 +105,12 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
           SqlState.CONNECTION_EXCEPTION, INVALID_CONNECT_STRING.getMessageCode(), url);
     }
 
-    initConnectionWithImpl(new DefaultConnectionHandlerV1(conStr, logger, true), url, info);
+    initConnectionWithImpl(new DefaultConnectionHandler(conStr, logger, true), url, info);
     isClosed = false;
   }
 
   private void initConnectionWithImpl(
-      ConnectionHandlerV1 connectionHandler, String url, Properties info) throws SQLException {
+          ConnectionHandler connectionHandler, String url, Properties info) throws SQLException {
     this.connectionHandler = connectionHandler;
     connectionHandler.initializeConnection(url, info);
     this.sessionHandler = connectionHandler.getSessionHandler();
@@ -706,19 +700,19 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
   }
 
   int getDatabaseMajorVersion() {
-      return sessionHandler.sessionProperties().getDatabaseMajorVersion();
+    return sessionHandler.sessionProperties().getDatabaseMajorVersion();
   }
 
   int getDatabaseMinorVersion() {
-      return sessionHandler.sessionProperties().getDatabaseMinorVersion();
+    return sessionHandler.sessionProperties().getDatabaseMinorVersion();
   }
 
   String getDatabaseVersion() {
-      return sessionHandler.sessionProperties().getDatabaseVersion();
+    return sessionHandler.sessionProperties().getDatabaseVersion();
   }
 
   @Override
-  public ConnectionHandlerV1 getConnectionHandler() {
+  public ConnectionHandler getConnectionHandler() {
     return connectionHandler;
   }
 
@@ -1002,7 +996,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
   }
 
   public boolean getShowStatementParameters() {
-      return sessionHandler.sessionProperties().isShowStatementParameters();
+    return sessionHandler.sessionProperties().isShowStatementParameters();
   }
 
   void removeClosedStatement(Statement stmt) {

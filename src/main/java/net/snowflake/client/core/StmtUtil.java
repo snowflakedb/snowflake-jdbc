@@ -594,12 +594,12 @@ public class StmtUtil {
     String getResultPath = String.format(SF_PATH_QUERY_RESULT, queryId);
     StmtInput stmtInput =
         new StmtInput()
-            .setServerUrl(session.getServerUrl())
+            .setServerUrl(session.sessionProperties().getServerUrl())
             .setSessionToken(session.getSessionToken())
             .setNetworkTimeoutInMillis(session.getNetworkTimeoutInMilli())
             .setMediaType(SF_MEDIA_TYPE)
             .setServiceName(session.getServiceName())
-            .setOCSPMode(session.getOCSPMode());
+            .setOCSPMode(session.sessionProperties().getOCSPMode());
 
     String resultAsString = getQueryResult(getResultPath, stmtInput);
 

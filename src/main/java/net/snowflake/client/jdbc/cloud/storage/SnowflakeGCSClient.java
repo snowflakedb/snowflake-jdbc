@@ -216,7 +216,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
           logger.debug("Fetching result: {}", scrubPresignedUrl(presignedUrl));
 
           CloseableHttpClient httpClient =
-              HttpUtil.getHttpClientWithoutDecompression(session.getOCSPMode());
+              HttpUtil.getHttpClientWithoutDecompression(session.sessionProperties().getOCSPMode());
 
           // Put the file on storage using the presigned url
           HttpResponse response =
@@ -378,7 +378,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
           logger.debug("Fetching result: {}", scrubPresignedUrl(presignedUrl));
 
           CloseableHttpClient httpClient =
-              HttpUtil.getHttpClientWithoutDecompression(session.getOCSPMode());
+              HttpUtil.getHttpClientWithoutDecompression(session.sessionProperties().getOCSPMode());
 
           // Put the file on storage using the presigned url
           HttpResponse response =
@@ -612,7 +612,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
           meta.getUserMetadata(),
           uploadStreamInfo.left,
           presignedUrl,
-          session.getOCSPMode());
+          session.sessionProperties().getOCSPMode());
       logger.debug("Upload successful");
 
       // close any open streams in the "toClose" list and return

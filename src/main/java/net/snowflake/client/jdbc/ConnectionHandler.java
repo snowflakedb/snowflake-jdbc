@@ -14,7 +14,7 @@ import java.util.Properties;
  * alternate definitions of SFSession, SFStatement, and SFResultSet, (representing the 'physical'
  * implementation layer) that can share high-level code.
  */
-public interface ConnectionHandlerV1 {
+public interface ConnectionHandler {
 
   /** Initializes the SnowflakeConnection */
   void initializeConnection(String url, Properties info) throws SQLException;

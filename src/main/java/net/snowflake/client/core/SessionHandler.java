@@ -21,7 +21,7 @@ public interface SessionHandler {
    */
   boolean isSafeToClose();
 
-  public List<DriverPropertyInfo> checkProperties();
+  List<DriverPropertyInfo> checkProperties();
 
   SessionProperties sessionProperties();
 
@@ -42,7 +42,7 @@ public interface SessionHandler {
 
   String getClientInfo(String name);
 
-  void raiseErrorInSession();
+  void raiseError(Throwable exc, String jobId, String requestId);
 
   boolean getAutoCommit();
 
