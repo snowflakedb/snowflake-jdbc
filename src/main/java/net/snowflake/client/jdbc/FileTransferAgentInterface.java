@@ -7,7 +7,7 @@ package net.snowflake.client.jdbc;
 import java.io.InputStream;
 import java.sql.SQLException;
 
-public interface FileTransferHandler extends SnowflakeFixedView {
+public interface FileTransferAgentInterface extends SnowflakeFixedView {
   void setSourceStream(InputStream sourceStream);
 
   void setDestFileNameForStreamSource(String destFileNameForStreamSource);

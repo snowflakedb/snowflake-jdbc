@@ -19,10 +19,10 @@ public interface ConnectionHandler {
   void initializeConnection(String url, Properties info) throws SQLException;
 
   /** Gets the SFSession implementation for this connection implementation */
-  SFSessionInterface getSessionHandler();
+  SFSessionInterface getSFSession();
 
   /** Returns the SFStatement implementation for this connection implementation */
-  SFStatementInterface getStatementHandler() throws SQLException;
+  SFStatementInterface getSFStatement() throws SQLException;
 
   ResultSet createResultSet(String queryID, Connection connection) throws SQLException;
 
@@ -30,6 +30,6 @@ public interface ConnectionHandler {
    * @param command The command to parse for this file transfer (e.g., PUT/GET)
    * @param statement The statement to use for this file transfer
    */
-  FileTransferHandler getFileTransferHandler(String command, SFStatementInterface statement)
+  FileTransferAgentInterface getFileTransferAgent(String command, SFStatementInterface statement)
       throws SQLNonTransientConnectionException, SnowflakeSQLException;
 }

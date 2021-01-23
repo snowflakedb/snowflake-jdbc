@@ -80,13 +80,13 @@ public class DefaultConnectionHandler implements ConnectionHandler {
 
   /** Returns the default SFSession client implementation. */
   @Override
-  public SFSessionInterface getSessionHandler() {
+  public SFSessionInterface getSFSession() {
     return sfSession;
   }
 
   /** Returns the default SFStatement client implementation. */
   @Override
-  public SFStatementInterface getStatementHandler() {
+  public SFStatementInterface getSFStatement() {
     return new SFStatement(sfSession);
   }
 
@@ -97,7 +97,8 @@ public class DefaultConnectionHandler implements ConnectionHandler {
    * @param statement The statement to use for this file transfer
    */
   @Override
-  public FileTransferHandler getFileTransferHandler(String command, SFStatementInterface statement)
+  public FileTransferAgentInterface getFileTransferAgent(
+      String command, SFStatementInterface statement)
       throws SQLNonTransientConnectionException, SnowflakeSQLException {
     if (!(statement instanceof SFStatement)) {
       throw new SQLNonTransientConnectionException("Internal error: Invalid SFStatement type.");

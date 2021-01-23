@@ -112,7 +112,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
       ConnectionHandler connectionHandler, String url, Properties info) throws SQLException {
     this.connectionHandler = connectionHandler;
     connectionHandler.initializeConnection(url, info);
-    this.SFSessionInterface = connectionHandler.getSessionHandler();
+    this.SFSessionInterface = connectionHandler.getSFSession();
     missingProperties = SFSessionInterface.checkProperties();
   }
 
@@ -859,9 +859,9 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
 
     putCommand.append(" overwrite=true");
 
-    FileTransferHandler transferAgent;
+    FileTransferAgentInterface transferAgent;
     transferAgent =
-        connectionHandler.getFileTransferHandler(putCommand.toString(), stmt.getStatementHandler());
+        connectionHandler.getFileTransferAgent(putCommand.toString(), stmt.getStatementHandler());
     transferAgent.setSourceStream(inputStream);
     transferAgent.setDestFileNameForStreamSource(destFileName);
     transferAgent.setCompressSourceFromStream(compressData);
@@ -930,8 +930,8 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
     // no file will be downloaded to this location
     getCommand.append(" file:///tmp/ /*jdbc download stream*/");
 
-    FileTransferHandler transferAgent =
-        connectionHandler.getFileTransferHandler(getCommand.toString(), stmt.getStatementHandler());
+    FileTransferAgentInterface transferAgent =
+        connectionHandler.getFileTransferAgent(getCommand.toString(), stmt.getStatementHandler());
 
     InputStream stream = transferAgent.downloadStream(sourceFileName);
 
