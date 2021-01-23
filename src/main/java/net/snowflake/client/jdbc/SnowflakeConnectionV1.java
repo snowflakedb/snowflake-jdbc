@@ -91,7 +91,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
       throw new SnowflakeSQLException(INVALID_CONNECT_STRING, url);
     }
 
-    initConnectionWithImpl(new DefaultConnectionHandler(conStr, logger), url, info);
+    initConnectionWithImpl(new DefaultConnectionHandler(conStr), url, info);
     appendWarnings(sfSession.getSqlWarnings());
     isClosed = false;
   }
@@ -104,7 +104,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
           SqlState.CONNECTION_EXCEPTION, INVALID_CONNECT_STRING.getMessageCode(), url);
     }
 
-    initConnectionWithImpl(new DefaultConnectionHandler(conStr, logger, true), url, info);
+    initConnectionWithImpl(new DefaultConnectionHandler(conStr, true), url, info);
     isClosed = false;
   }
 

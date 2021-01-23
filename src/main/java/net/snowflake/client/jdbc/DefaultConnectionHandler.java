@@ -10,6 +10,7 @@ import java.util.Properties;
 import net.snowflake.client.core.*;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.LoginInfoDTO;
 
 /**
@@ -19,10 +20,11 @@ import net.snowflake.common.core.LoginInfoDTO;
  */
 public class DefaultConnectionHandler implements ConnectionHandler {
 
+  private static final SFLogger logger = SFLoggerFactory.getLogger(DefaultConnectionHandler.class);
+
   private final SFSession sfSession;
-  private final SFLogger logger;
-  private SnowflakeConnectString conStr;
-  private boolean skipOpen;
+  private final SnowflakeConnectString conStr;
+  private final boolean skipOpen;
 
   /**
    * Constructs a DefaultConnectionHandler using a SnowflakeConnectString. This can be done by using
@@ -31,8 +33,8 @@ public class DefaultConnectionHandler implements ConnectionHandler {
    *
    * @param conStr A SnowflakeConnectString object
    */
-  public DefaultConnectionHandler(SnowflakeConnectString conStr, SFLogger logger) {
-    this(conStr, logger, false);
+  public DefaultConnectionHandler(SnowflakeConnectString conStr) {
+    this(conStr, false);
   }
 
   /**
@@ -42,11 +44,9 @@ public class DefaultConnectionHandler implements ConnectionHandler {
    *
    * @param conStr A SnowflakeConnectString object
    */
-  public DefaultConnectionHandler(
-      SnowflakeConnectString conStr, SFLogger logger, boolean skipOpen) {
+  public DefaultConnectionHandler(SnowflakeConnectString conStr, boolean skipOpen) {
     this.sfSession = new SFSession();
     this.conStr = conStr;
-    this.logger = logger;
     this.skipOpen = skipOpen;
     sfSession.setSnowflakeConnectionString(conStr);
   }
