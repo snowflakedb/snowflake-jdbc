@@ -124,12 +124,12 @@ public class ServiceNameTest {
       SnowflakeConnectionV1 con =
           new SnowflakeConnectionV1(
               "jdbc:snowflake://http://fakeaccount.snowflakecomputing.com", props);
-      assertThat(((SFSession) con.getSessionHandler()).getServiceName(), is(INITIAL_SERVICE_NAME));
+      assertThat(((SFSession) con.getSFSession()).getServiceName(), is(INITIAL_SERVICE_NAME));
 
       SnowflakeStatementV1 stmt = (SnowflakeStatementV1) con.createStatement();
       stmt.execute("SELECT 1");
       assertThat(
-          ((SFSession) stmt.getConnection().unwrap(SnowflakeConnectionV1.class).getSessionHandler())
+          ((SFSession) stmt.getConnection().unwrap(SnowflakeConnectionV1.class).getSFSession())
               .getServiceName(),
           is(NEW_SERVICE_NAME));
     }
