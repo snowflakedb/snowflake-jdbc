@@ -19,7 +19,8 @@ public class SFConnectionPropertyTest {
     String[] invalidApplicationName = {"1234test", "test$A", "test<script>"};
 
     for (String valid : validApplicationName) {
-      Object value = SFConnectionProperty.checkPropertyValue(SFConnectionProperty.APPLICATION, valid);
+      Object value =
+          SFConnectionProperty.checkPropertyValue(SFConnectionProperty.APPLICATION, valid);
 
       assertThat((String) value, is(valid));
     }

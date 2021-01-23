@@ -362,8 +362,8 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
         waitingTime += jitter;
         if (logger.isDebugEnabled()) {
           logger.debug(
-              "Thread {} waiting for {}s: currentMemoryUsage in MB: {}, neededChunkMemory in MB: {}, "
-                  + "nextChunkToDownload: {}, nextChunkToConsume: {} ",
+              "Thread {} waiting for {}s: currentMemoryUsage in MB: {}, neededChunkMemory in MB:"
+                  + " {}, nextChunkToDownload: {}, nextChunkToConsume: {} ",
               (ArgSupplier) () -> Thread.currentThread().getId(),
               waitingTime / 1000.0,
               curMem / MB,
@@ -652,9 +652,10 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
             + "Several suggestions to try to resolve the OOM issue:\n"
             + "1. increase the JVM heap size if you have more space; or \n"
             + "2. use CLIENT_MEMORY_LIMIT to reduce the memory usage by the JDBC driver "
-            + "(https://docs.snowflake.net/manuals/sql-reference/parameters.html#client-memory-limit)"
-            + "3. please make sure 2 * CLIENT_PREFETCH_THREADS * CLIENT_RESULT_CHUNK_SIZE < CLIENT_MEMORY_LIMIT. "
-            + "If not, please reduce CLIENT_PREFETCH_THREADS and CLIENT_RESULT_CHUNK_SIZE too.",
+            + "(https://docs.snowflake.net/manuals/sql-reference/parameters.html#client-memory-limit)3."
+            + " please make sure 2 * CLIENT_PREFETCH_THREADS * CLIENT_RESULT_CHUNK_SIZE <"
+            + " CLIENT_MEMORY_LIMIT. If not, please reduce CLIENT_PREFETCH_THREADS and"
+            + " CLIENT_RESULT_CHUNK_SIZE too.",
         numberMillisWaitingForChunks,
         Runtime.getRuntime().totalMemory(),
         Runtime.getRuntime().maxMemory(),

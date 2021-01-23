@@ -91,7 +91,8 @@ public class SnowflakeSQLLoggedException extends SnowflakeSQLException {
   static String maskStacktrace(String stackTrace) {
     Pattern STACKTRACE_BEGINNING =
         Pattern.compile(
-            "(com|net)(\\.snowflake\\.client\\.jdbc\\.Snowflake)(SQLLogged|LoggedFeatureNotSupported|SQL)(Exception)([\\s\\S]*?)(\\n\\t?at\\snet|com\\.)",
+            "(com|net)(\\.snowflake\\.client\\.jdbc\\.Snowflake)(SQLLogged|LoggedFeatureNotSupported|SQL)(Exception)([\\s\\S]*?)(\\n"
+                + "\\t?at\\snet|com\\.)",
             Pattern.MULTILINE | Pattern.CASE_INSENSITIVE);
     Matcher matcher = STACKTRACE_BEGINNING.matcher(stackTrace);
     // Remove the reason from after the stack trace (in group #5 of regex pattern)
@@ -207,7 +208,7 @@ public class SnowflakeSQLLoggedException extends SnowflakeSQLException {
   }
 
   public SnowflakeSQLLoggedException(
-          SFSessionInterface session, String reason, String SQLState, int vendorCode, String queryId) {
+      SFSessionInterface session, String reason, String SQLState, int vendorCode, String queryId) {
     super(queryId, reason, SQLState, vendorCode);
     sendTelemetryData(queryId, SQLState, vendorCode, session, this);
   }
@@ -223,7 +224,7 @@ public class SnowflakeSQLLoggedException extends SnowflakeSQLException {
   }
 
   public SnowflakeSQLLoggedException(
-          SFSessionInterface session, int vendorCode, String SQLState, Object... params) {
+      SFSessionInterface session, int vendorCode, String SQLState, Object... params) {
     super(SQLState, vendorCode, params);
     String reason =
         errorResourceBundleManager.getLocalizedMessage(String.valueOf(vendorCode), params);
@@ -231,14 +232,14 @@ public class SnowflakeSQLLoggedException extends SnowflakeSQLException {
   }
 
   public SnowflakeSQLLoggedException(
-          SFSessionInterface session, ErrorCode errorCode, Throwable ex, Object... params) {
+      SFSessionInterface session, ErrorCode errorCode, Throwable ex, Object... params) {
     super(ex, errorCode, params);
     // add telemetry
     sendTelemetryData(null, errorCode.getSqlState(), errorCode.getMessageCode(), session, this);
   }
 
   public SnowflakeSQLLoggedException(
-          SFSessionInterface session, String SQLState, int vendorCode, Throwable ex, Object... params) {
+      SFSessionInterface session, String SQLState, int vendorCode, Throwable ex, Object... params) {
     super(ex, SQLState, vendorCode, params);
     // add telemetry
     String reason =
@@ -247,7 +248,7 @@ public class SnowflakeSQLLoggedException extends SnowflakeSQLException {
   }
 
   public SnowflakeSQLLoggedException(
-          SFSessionInterface session, ErrorCode errorCode, Object... params) {
+      SFSessionInterface session, ErrorCode errorCode, Object... params) {
     super(errorCode, params);
     // add telemetry
     String reason =

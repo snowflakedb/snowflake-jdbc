@@ -82,7 +82,8 @@ public enum SFConnectionProperty {
     return valueType;
   }
 
-  SFConnectionProperty(String propertyKey, boolean required, Class<?> valueType, String... aliases) {
+  SFConnectionProperty(
+      String propertyKey, boolean required, Class<?> valueType, String... aliases) {
     this.propertyKey = propertyKey;
     this.required = required;
     this.valueType = valueType;

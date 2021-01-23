@@ -13,8 +13,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import net.snowflake.client.core.HttpUtil;
-import net.snowflake.client.core.SFSessionInterface;
 import net.snowflake.client.core.SFConnectionProperty;
+import net.snowflake.client.core.SFSessionInterface;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SqlState;
@@ -537,13 +537,16 @@ public class SnowflakeUtil {
 
         // set up other proxy related values.
         String propValue = null;
-        if ((propValue = info.getProperty(SFConnectionProperty.PROXY_HOST.getPropertyKey())) != null) {
+        if ((propValue = info.getProperty(SFConnectionProperty.PROXY_HOST.getPropertyKey()))
+            != null) {
           connectionPropertiesMap.put(SFConnectionProperty.PROXY_HOST, propValue);
         }
-        if ((propValue = info.getProperty(SFConnectionProperty.PROXY_PORT.getPropertyKey())) != null) {
+        if ((propValue = info.getProperty(SFConnectionProperty.PROXY_PORT.getPropertyKey()))
+            != null) {
           connectionPropertiesMap.put(SFConnectionProperty.PROXY_PORT, propValue);
         }
-        if ((propValue = info.getProperty(SFConnectionProperty.PROXY_USER.getPropertyKey())) != null) {
+        if ((propValue = info.getProperty(SFConnectionProperty.PROXY_USER.getPropertyKey()))
+            != null) {
           connectionPropertiesMap.put(SFConnectionProperty.PROXY_USER, propValue);
         }
         if ((propValue = info.getProperty(SFConnectionProperty.PROXY_PASSWORD.getPropertyKey()))

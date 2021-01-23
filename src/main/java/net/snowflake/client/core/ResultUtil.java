@@ -508,7 +508,7 @@ public class ResultUtil {
    * @throws SFException if the number of child IDs does not match child statement types
    */
   public static List<SFChildResult> getChildResults(
-          SFSessionInterface session, String requestId, JsonNode result) throws SFException {
+      SFSessionInterface session, String requestId, JsonNode result) throws SFException {
     List<String> ids = getResultIds(result);
     List<SFStatementType> types = getResultTypes(result);
 

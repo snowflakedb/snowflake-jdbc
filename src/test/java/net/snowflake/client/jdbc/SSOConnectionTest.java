@@ -309,15 +309,21 @@ public class SSOConnectionTest {
       // initial connection getting id token and storing in the cache file.
       Connection con = DriverManager.getConnection(url, properties);
       SnowflakeConnectionV1 sfcon = (SnowflakeConnectionV1) con;
-      assertThat("token", ((SFSession) sfcon.getSessionHandler()).getSessionToken(), equalTo(MOCK_SESSION_TOKEN));
-      assertThat("idToken", ((SFSession) sfcon.getSessionHandler()).getIdToken(), equalTo(MOCK_ID_TOKEN));
+      assertThat(
+          "token",
+          ((SFSession) sfcon.getSessionHandler()).getSessionToken(),
+          equalTo(MOCK_SESSION_TOKEN));
+      assertThat(
+          "idToken", ((SFSession) sfcon.getSessionHandler()).getIdToken(), equalTo(MOCK_ID_TOKEN));
 
       // second connection reads the cache and use the id token to get the
       // session token.
       Connection conSecond = DriverManager.getConnection(url, properties);
       SnowflakeConnectionV1 sfconSecond = (SnowflakeConnectionV1) conSecond;
       assertThat(
-          "token", ((SFSession) sfconSecond.getSessionHandler()).getSessionToken(), equalTo(MOCK_NEW_SESSION_TOKEN));
+          "token",
+          ((SFSession) sfconSecond.getSessionHandler()).getSessionToken(),
+          equalTo(MOCK_NEW_SESSION_TOKEN));
       // we won't get a new id_token here
       assertThat(
           "idToken", ((SFSession) sfcon.getSessionHandler()).getIdToken(), equalTo(MOCK_ID_TOKEN));

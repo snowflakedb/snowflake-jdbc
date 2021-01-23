@@ -136,7 +136,8 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
       connection
           .createStatement()
           .execute(
-              "create or replace table testBindNull(cola date, colb time, colc timestamp, cold number)");
+              "create or replace table testBindNull(cola date, colb time, colc timestamp, cold"
+                  + " number)");
 
       try (PreparedStatement prepStatement =
           connection.prepareStatement("insert into testBindNull values (?, ?, ?, ?)")) {

@@ -4,6 +4,11 @@
 
 package net.snowflake.client.jdbc;
 
+import static net.snowflake.client.jdbc.ErrorCode.FEATURE_UNSUPPORTED;
+
+import java.sql.*;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import net.snowflake.client.core.*;
 import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
@@ -11,12 +16,6 @@ import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.util.SecretDetector;
 import net.snowflake.client.util.VariableTypeArray;
 import net.snowflake.common.core.SqlState;
-
-import java.sql.*;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-
-import static net.snowflake.client.jdbc.ErrorCode.FEATURE_UNSUPPORTED;
 
 /** Snowflake statement */
 class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
@@ -235,7 +234,8 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
         }
         sfResultSet =
             ((AsyncSFStatementInterface) sfStatementInterface)
-                .asyncExecute(sql, parameterBindings, SFStatementInterface.CallingMethod.EXECUTE_QUERY);
+                .asyncExecute(
+                    sql, parameterBindings, SFStatementInterface.CallingMethod.EXECUTE_QUERY);
       } else {
         sfResultSet =
             sfStatementInterface.execute(
@@ -254,7 +254,8 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
 
     if (asyncExec) {
       resultSet =
-          ((AsyncSFStatementInterface) sfStatementInterface).createAsyncResultSet(sfResultSet, this);
+          ((AsyncSFStatementInterface) sfStatementInterface)
+              .createAsyncResultSet(sfResultSet, this);
     } else {
       resultSet = sfStatementInterface.createResultSet(sfResultSet, this);
     }
@@ -288,7 +289,8 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
     SFBaseResultSet sfResultSet;
     try {
       sfResultSet =
-          sfStatementInterface.execute(sql, parameterBindings, SFStatementInterface.CallingMethod.EXECUTE);
+          sfStatementInterface.execute(
+              sql, parameterBindings, SFStatementInterface.CallingMethod.EXECUTE);
       sfResultSet.setSession(this.connection.getSessionHandler());
       if (resultSet != null) {
         openResultSets.add(resultSet);
@@ -301,7 +303,8 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
       // if CLIENT_SFSQL is not set, or if a statement
       // is multi-statement
       if (!sfResultSet.getStatementType().isGenerateResultSet()
-          && (!connection.getSessionHandler().sessionProperties().isSfSQLMode() || sfStatementInterface.hasChildren())) {
+          && (!connection.getSessionHandler().sessionProperties().isSfSQLMode()
+              || sfStatementInterface.hasChildren())) {
         updateCount = ResultUtil.calculateUpdateCount(sfResultSet);
         if (resultSet != null) {
           openResultSets.add(resultSet);

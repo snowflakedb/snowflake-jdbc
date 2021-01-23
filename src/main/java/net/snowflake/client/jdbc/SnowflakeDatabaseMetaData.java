@@ -110,8 +110,10 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
 
     this.connection = connection;
     this.session = connection.unwrap(SnowflakeConnectionV1.class).getSessionHandler();
-    this.metadataRequestUseConnectionCtx = session.sessionProperties().getMetadataRequestUseConnectionCtx();
-    this.metadataRequestUseSessionDatabase = session.sessionProperties().getMetadataRequestUseSessionDatabase();
+    this.metadataRequestUseConnectionCtx =
+        session.sessionProperties().getMetadataRequestUseConnectionCtx();
+    this.metadataRequestUseSessionDatabase =
+        session.sessionProperties().getMetadataRequestUseSessionDatabase();
     this.stringsQuoted = session.sessionProperties().isStringQuoted();
     this.ibInstance = session.getTelemetryClient();
   }

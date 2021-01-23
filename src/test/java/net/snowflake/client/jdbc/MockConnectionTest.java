@@ -1,22 +1,21 @@
 package net.snowflake.client.jdbc;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import java.sql.*;
+import java.util.*;
 import net.snowflake.client.category.TestCategoryConnection;
 import net.snowflake.client.core.*;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
 import net.snowflake.common.core.SnowflakeDateTimeFormat;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-
-import java.sql.*;
-import java.util.*;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 
 /**
  * IT test for testing the "pluggable" implementation of SnowflakeConnection, SnowflakeStatement,
@@ -576,9 +575,7 @@ public class MockConnectionTest extends BaseJDBCTest {
     }
 
     @Override
-    public void raiseError(Throwable exc, String jobId, String requestId) {
-
-    }
+    public void raiseError(Throwable exc, String jobId, String requestId) {}
 
     @Override
     public boolean getAutoCommit() {
@@ -673,7 +670,8 @@ public class MockConnectionTest extends BaseJDBCTest {
     }
 
     @Override
-    public FileTransferHandler getFileTransferHandler(String command, SFStatementInterface statement) {
+    public FileTransferHandler getFileTransferHandler(
+        String command, SFStatementInterface statement) {
       return null;
     }
   }

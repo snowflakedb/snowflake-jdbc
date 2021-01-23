@@ -48,8 +48,7 @@ import org.apache.commons.io.filefilter.WildcardFileFilter;
  *
  * @author jhuang
  */
-public class SnowflakeFileTransferAgent
-    implements FileTransferHandler, SnowflakeFixedView {
+public class SnowflakeFileTransferAgent implements FileTransferHandler, SnowflakeFixedView {
   static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeFileTransferAgent.class);
 
   static final StorageClientFactory storageFactory = StorageClientFactory.getFactory();
@@ -142,7 +141,7 @@ public class SnowflakeFileTransferAgent
   }
 
   private void initEncryptionMaterial(
-          FileTransferHandler.CommandType commandType, JsonNode jsonNode)
+      FileTransferHandler.CommandType commandType, JsonNode jsonNode)
       throws SnowflakeSQLException, JsonProcessingException {
     encryptionMaterial = new ArrayList<>();
     JsonNode rootNode = jsonNode.path("data").path("encryptionMaterial");
@@ -165,8 +164,7 @@ public class SnowflakeFileTransferAgent
     }
   }
 
-  private void initPresignedUrls(
-          FileTransferHandler.CommandType commandType, JsonNode jsonNode)
+  private void initPresignedUrls(FileTransferHandler.CommandType commandType, JsonNode jsonNode)
       throws SnowflakeSQLException, JsonProcessingException, IOException {
     presignedUrls = new ArrayList<>();
     JsonNode rootNode = jsonNode.path("data").path("presignedUrls");
@@ -179,8 +177,7 @@ public class SnowflakeFileTransferAgent
     }
   }
 
-  private FileTransferHandler.CommandType commandType =
-      FileTransferHandler.CommandType.UPLOAD;
+  private FileTransferHandler.CommandType commandType = FileTransferHandler.CommandType.UPLOAD;
 
   private boolean autoCompress = true;
 
@@ -854,8 +851,7 @@ public class SnowflakeFileTransferAgent
     // get command type
     if (!jsonNode.path("data").path("command").isMissingNode()) {
       commandType =
-          FileTransferHandler.CommandType.valueOf(
-              jsonNode.path("data").path("command").asText());
+          FileTransferHandler.CommandType.valueOf(jsonNode.path("data").path("command").asText());
     }
 
     // get source file locations as array (apply to both upload and download)

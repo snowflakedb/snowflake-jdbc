@@ -390,7 +390,8 @@ public class MultiStatementIT extends BaseJDBCTest {
     String entry = "success";
     statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 2);
     statement.execute(
-        "create or replace temporary table test_multi (cola string); insert into test_multi values ('"
+        "create or replace temporary table test_multi (cola string); insert into test_multi values"
+            + " ('"
             + entry
             + "')");
     // temporary table should persist outside of the above statement
@@ -482,7 +483,8 @@ public class MultiStatementIT extends BaseJDBCTest {
 
     statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 2);
     statement.execute(
-        "create or replace temporary table \"test_multi\" (cola string); select * from \"test_multi\"");
+        "create or replace temporary table \"test_multi\" (cola string); select * from"
+            + " \"test_multi\"");
     statement.execute(
         "create or replace temporary table `test_multi` (cola string); select * from `test_multi`");
     statement.execute("select 'str'; select 'str2'");

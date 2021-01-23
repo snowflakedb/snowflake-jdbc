@@ -51,13 +51,14 @@ public class DatabaseMetaDataInternalLatestIT extends BaseJDBCTest {
     // statement.execute("create or replace table JDBC_TBL111(colA string, colB decimal, colC
     // timestamp)");
     statement.execute(
-        "create or replace function JDBC_DB1.JDBC_SCHEMA11.FUNC112 "
-            + "() RETURNS TABLE(colA string, colB decimal, bin2 binary, sharedCol decimal) COMMENT= 'returns "
-            + "table of 4 columns'"
-            + " as 'select JDBC_DB1.JDBC_SCHEMA11.JDBC_TBL111.colA, JDBC_DB1.JDBC_SCHEMA11.JDBC_TBL111.colB, "
-            + "JDBC_DB1.JDBC_SCHEMA11.BIN_TABLE.bin2, JDBC_DB1.JDBC_SCHEMA11.BIN_TABLE.sharedCol from JDBC_DB1"
-            + ".JDBC_SCHEMA11.JDBC_TBL111 inner join JDBC_DB1.JDBC_SCHEMA11.BIN_TABLE on JDBC_DB1.JDBC_SCHEMA11"
-            + ".JDBC_TBL111.colB = JDBC_DB1.JDBC_SCHEMA11.BIN_TABLE.sharedCol'");
+        "create or replace function JDBC_DB1.JDBC_SCHEMA11.FUNC112 () RETURNS TABLE(colA string,"
+            + " colB decimal, bin2 binary, sharedCol decimal) COMMENT= 'returns table of 4"
+            + " columns' as 'select JDBC_DB1.JDBC_SCHEMA11.JDBC_TBL111.colA,"
+            + " JDBC_DB1.JDBC_SCHEMA11.JDBC_TBL111.colB, JDBC_DB1.JDBC_SCHEMA11.BIN_TABLE.bin2,"
+            + " JDBC_DB1.JDBC_SCHEMA11.BIN_TABLE.sharedCol from JDBC_DB1.JDBC_SCHEMA11.JDBC_TBL111"
+            + " inner join JDBC_DB1.JDBC_SCHEMA11.BIN_TABLE on"
+            + " JDBC_DB1.JDBC_SCHEMA11.JDBC_TBL111.colB ="
+            + " JDBC_DB1.JDBC_SCHEMA11.BIN_TABLE.sharedCol'");
     DatabaseMetaData databaseMetaData = connection.getMetaData();
     // test each column return the right value
     ResultSet resultSet =

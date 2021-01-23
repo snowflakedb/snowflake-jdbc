@@ -87,7 +87,8 @@ public class SecureStorageWindowsManager implements SecureStorageManager {
       if (!ret) {
         logger.info(
             String.format(
-                "Failed to read target or could not find it in Windows Credential Manager. Error code = %d",
+                "Failed to read target or could not find it in Windows Credential Manager. Error"
+                    + " code = %d",
                 Native.getLastError()));
         return null;
       }

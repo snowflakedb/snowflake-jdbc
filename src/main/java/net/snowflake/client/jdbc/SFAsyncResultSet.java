@@ -9,12 +9,12 @@ import java.sql.*;
 import java.util.List;
 import java.util.TimeZone;
 import java.util.regex.Pattern;
-
 import net.snowflake.client.core.*;
 import net.snowflake.common.core.SqlState;
 
 /** SFAsyncResultSet implementation */
-public class SFAsyncResultSet extends SnowflakeBaseResultSet implements SnowflakeResultSet, ResultSet {
+public class SFAsyncResultSet extends SnowflakeBaseResultSet
+    implements SnowflakeResultSet, ResultSet {
   private final SFBaseResultSet sfBaseResultSet;
   private ResultSet resultSetForNext = new SnowflakeResultSetV1.EmptyResultSet();
   private boolean resultSetForNextInitialized = false;
@@ -34,7 +34,8 @@ public class SFAsyncResultSet extends SnowflakeBaseResultSet implements Snowflak
    * @param statement query statement that generates this result set
    * @throws SQLException if failed to construct snowflake result set metadata
    */
-  public SFAsyncResultSet(SFBaseResultSet sfBaseResultSet, SFSession sfSession, Statement statement) throws SQLException {
+  public SFAsyncResultSet(SFBaseResultSet sfBaseResultSet, SFSession sfSession, Statement statement)
+      throws SQLException {
     super(statement);
     this.sfBaseResultSet = sfBaseResultSet;
     this.queryID = sfBaseResultSet.getQueryId();
@@ -131,7 +132,8 @@ public class SFAsyncResultSet extends SnowflakeBaseResultSet implements Snowflak
           noDataRetry++;
           if (noDataRetry >= noDataMaxRetries) {
             throw new SQLException(
-                "Cannot retrieve data on the status of this query. No information returned from server for queryID={}.",
+                "Cannot retrieve data on the status of this query. No information returned from"
+                    + " server for queryID={}.",
                 this.queryID);
           }
         }
