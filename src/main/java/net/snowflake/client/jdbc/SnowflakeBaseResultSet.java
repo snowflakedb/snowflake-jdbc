@@ -20,7 +20,7 @@ import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SqlState;
 
 /** Base class for query result set and metadata result set */
-public abstract class SnowflakeBaseResultSet implements ResultSet {
+abstract class SnowflakeBaseResultSet implements ResultSet {
   static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeBaseResultSet.class);
   private final int resultSetType;
   private final int resultSetConcurrency;
@@ -54,7 +54,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
    * @param resultSetSerializable The result set serializable object which includes all metadata to
    *     create the result set
    */
-  public SnowflakeBaseResultSet(SnowflakeResultSetSerializableV1 resultSetSerializable)
+  SnowflakeBaseResultSet(SnowflakeResultSetSerializableV1 resultSetSerializable)
       throws SQLException {
     // This is a sessionless result set, so there is no actual statement for it.
     this.statement = new SnowflakeStatementV1.NoOpSnowflakeStatementV1();

@@ -1,10 +1,8 @@
 package net.snowflake.client.jdbc;
 
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.SQLNonTransientConnectionException;
+import java.sql.*;
 import java.util.Properties;
+import net.snowflake.client.core.SFBaseResultSet;
 import net.snowflake.client.core.SFSessionInterface;
 import net.snowflake.client.core.SFStatementInterface;
 
@@ -14,6 +12,8 @@ import net.snowflake.client.core.SFStatementInterface;
  * implementation layer) that can share high-level code.
  */
 public interface ConnectionHandler {
+
+  boolean supportsAsyncQuery();
 
   /** Initializes the SnowflakeConnection */
   void initializeConnection(String url, Properties info) throws SQLException;
@@ -25,6 +25,12 @@ public interface ConnectionHandler {
   SFStatementInterface getSFStatement() throws SQLException;
 
   ResultSet createResultSet(String queryID, Connection connection) throws SQLException;
+
+  SnowflakeBaseResultSet createResultSet(SFBaseResultSet resultSet, Statement statement)
+      throws SQLException;
+
+  SnowflakeBaseResultSet createAsyncResultSet(SFBaseResultSet resultSet, Statement statement)
+      throws SQLException;
 
   /**
    * @param command The command to parse for this file transfer (e.g., PUT/GET)
