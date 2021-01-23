@@ -228,14 +228,13 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
 
     try {
       if (asyncExec) {
-        if (!(sfStatementInterface instanceof AsyncSFStatementInterface)) {
+        if (!connection.getConnectionHandler().supportsAsyncQuery()) {
           throw new SQLFeatureNotSupportedException(
               "Async execution not supported in current context.");
         }
         sfResultSet =
-            ((AsyncSFStatementInterface) sfStatementInterface)
-                .asyncExecute(
-                    sql, parameterBindings, SFStatementInterface.CallingMethod.EXECUTE_QUERY);
+            sfStatementInterface.asyncExecute(
+                sql, parameterBindings, SFStatementInterface.CallingMethod.EXECUTE_QUERY);
       } else {
         sfResultSet =
             sfStatementInterface.execute(
@@ -253,11 +252,9 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
     }
 
     if (asyncExec) {
-      resultSet =
-          ((AsyncSFStatementInterface) sfStatementInterface)
-              .createAsyncResultSet(sfResultSet, this);
+      resultSet = connection.getConnectionHandler().createAsyncResultSet(sfResultSet, this);
     } else {
-      resultSet = sfStatementInterface.createResultSet(sfResultSet, this);
+      resultSet = connection.getConnectionHandler().createResultSet(sfResultSet, this);
     }
 
     return getResultSet();

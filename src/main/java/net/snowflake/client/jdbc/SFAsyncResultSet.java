@@ -13,8 +13,7 @@ import net.snowflake.client.core.*;
 import net.snowflake.common.core.SqlState;
 
 /** SFAsyncResultSet implementation */
-public class SFAsyncResultSet extends SnowflakeBaseResultSet
-    implements SnowflakeResultSet, ResultSet {
+class SFAsyncResultSet extends SnowflakeBaseResultSet implements SnowflakeResultSet, ResultSet {
   private final SFBaseResultSet sfBaseResultSet;
   private ResultSet resultSetForNext = new SnowflakeResultSetV1.EmptyResultSet();
   private boolean resultSetForNextInitialized = false;
@@ -34,7 +33,7 @@ public class SFAsyncResultSet extends SnowflakeBaseResultSet
    * @param statement query statement that generates this result set
    * @throws SQLException if failed to construct snowflake result set metadata
    */
-  public SFAsyncResultSet(SFBaseResultSet sfBaseResultSet, SFSession sfSession, Statement statement)
+  SFAsyncResultSet(SFBaseResultSet sfBaseResultSet, SFSession sfSession, Statement statement)
       throws SQLException {
     super(statement);
     this.sfBaseResultSet = sfBaseResultSet;

@@ -4,16 +4,11 @@
 
 package net.snowflake.client.core;
 
+
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.Map;
-import net.snowflake.client.jdbc.SnowflakeBaseResultSet;
 
 public interface SFStatementInterface {
-
-  SnowflakeBaseResultSet createResultSet(SFBaseResultSet resultSet, Statement statement)
-      throws SQLException;
-
   /**
    * Add a statement parameter
    *
@@ -48,6 +43,21 @@ public interface SFStatementInterface {
    * @throws SQLException if SQL error occurs
    */
   SFBaseResultSet execute(
+      String sql, Map<String, ParameterBindingDTO> parametersBinding, CallingMethod caller)
+      throws SQLException, SFException;
+
+  /**
+   * Execute sql asynchronously
+   *
+   * @param sql sql statement.
+   * @param parametersBinding parameters to bind
+   * @param caller the JDBC interface method that called this method, if any
+   * @return whether there is result set or not
+   * @throws SQLException if failed to execute sql
+   * @throws SFException exception raised from Snowflake components
+   * @throws SQLException if SQL error occurs
+   */
+  SFBaseResultSet asyncExecute(
       String sql, Map<String, ParameterBindingDTO> parametersBinding, CallingMethod caller)
       throws SQLException, SFException;
 

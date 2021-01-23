@@ -32,7 +32,7 @@ import net.snowflake.common.core.SqlState;
 import org.apache.http.client.methods.HttpRequestBase;
 
 /** Snowflake statement */
-public class SFStatement implements AsyncSFStatementInterface {
+public class SFStatement implements SFStatementInterface {
 
   static final SFLogger logger = SFLoggerFactory.getLogger(SFStatement.class);
 
@@ -76,12 +76,6 @@ public class SFStatement implements AsyncSFStatementInterface {
   private int conservativePrefetchThreads;
   private int conservativeResultChunkSize;
   private long conservativeMemoryLimit; // in bytes
-
-  @Override
-  public SnowflakeBaseResultSet createResultSet(SFBaseResultSet resultSet, Statement statement)
-      throws SQLException {
-    return new SnowflakeResultSetV1(resultSet, statement);
-  }
 
   /**
    * Add a statement parameter
@@ -963,11 +957,5 @@ public class SFStatement implements AsyncSFStatementInterface {
       String sql, Map<String, ParameterBindingDTO> parametersBinding, CallingMethod caller)
       throws SQLException, SFException {
     return execute(sql, true, parametersBinding, caller);
-  }
-
-  @Override
-  public SnowflakeBaseResultSet createAsyncResultSet(SFBaseResultSet resultSet, Statement statement)
-      throws SQLException {
-    return new SFAsyncResultSet(resultSet, session, statement);
   }
 }

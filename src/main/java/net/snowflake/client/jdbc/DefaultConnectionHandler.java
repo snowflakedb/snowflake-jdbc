@@ -4,10 +4,7 @@ import static net.snowflake.client.core.SessionUtil.CLIENT_SFSQL;
 import static net.snowflake.client.core.SessionUtil.JVM_PARAMS_TO_PARAMS;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.SQLNonTransientConnectionException;
+import java.sql.*;
 import java.util.Map;
 import java.util.Properties;
 import net.snowflake.client.core.*;
@@ -71,6 +68,11 @@ public class DefaultConnectionHandler implements ConnectionHandler {
             "SERVERURL",
             conStr.getScheme() + "://" + conStr.getHost() + ":" + conStr.getPort() + "/");
     return conStr.getParameters();
+  }
+
+  @Override
+  public boolean supportsAsyncQuery() {
+    return true;
   }
 
   @Override
@@ -187,5 +189,17 @@ public class DefaultConnectionHandler implements ConnectionHandler {
     rs.setSession(sfSession);
     rs.setStatement(connection.createStatement());
     return rs;
+  }
+
+  @Override
+  public SnowflakeBaseResultSet createResultSet(SFBaseResultSet resultSet, Statement statement)
+      throws SQLException {
+    return new SnowflakeResultSetV1(resultSet, statement);
+  }
+
+  @Override
+  public SnowflakeBaseResultSet createAsyncResultSet(SFBaseResultSet resultSet, Statement statement)
+      throws SQLException {
+    return new SFAsyncResultSet(resultSet, sfSession, statement);
   }
 }
