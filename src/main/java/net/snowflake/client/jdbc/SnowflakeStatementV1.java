@@ -111,8 +111,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
     this.resultSetConcurrency = resultSetConcurrency;
     this.resultSetHoldability = resultSetHoldability;
 
-    sfStatementInterface =
-        (connection != null) ? connection.getConnectionHandler().getSFStatement() : null;
+    sfStatementInterface = (connection != null) ? connection.getHandler().getSFStatement() : null;
   }
 
   protected void raiseSQLExceptionIfStatementIsClosed() throws SQLException {
@@ -228,7 +227,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
 
     try {
       if (asyncExec) {
-        if (!connection.getConnectionHandler().supportsAsyncQuery()) {
+        if (!connection.getHandler().supportsAsyncQuery()) {
           throw new SQLFeatureNotSupportedException(
               "Async execution not supported in current context.");
         }
@@ -252,9 +251,9 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
     }
 
     if (asyncExec) {
-      resultSet = connection.getConnectionHandler().createAsyncResultSet(sfResultSet, this);
+      resultSet = connection.getHandler().createAsyncResultSet(sfResultSet, this);
     } else {
-      resultSet = connection.getConnectionHandler().createResultSet(sfResultSet, this);
+      resultSet = connection.getHandler().createResultSet(sfResultSet, this);
     }
 
     return getResultSet();

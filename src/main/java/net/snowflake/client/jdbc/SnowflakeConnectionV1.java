@@ -711,7 +711,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
   }
 
   @Override
-  public ConnectionHandler getConnectionHandler() {
+  public ConnectionHandler getHandler() {
     return connectionHandler;
   }
 
