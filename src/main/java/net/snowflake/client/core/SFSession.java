@@ -33,7 +33,7 @@ import static net.snowflake.client.core.QueryStatus.getStatusFromString;
 import static net.snowflake.client.core.QueryStatus.isAnError;
 
 /** Snowflake session implementation */
-public class SFSession implements SessionHandler {
+public class SFSession implements SFSessionInterface {
   public static final String SF_QUERY_REQUEST_ID = "requestId";
   public static final String SF_HEADER_AUTHORIZATION = HttpHeaders.AUTHORIZATION;
   public static final String SF_HEADER_SNOWFLAKE_AUTHTYPE = "Snowflake";

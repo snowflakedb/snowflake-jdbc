@@ -7,7 +7,7 @@ import java.sql.Statement;
 import java.util.Map;
 
 /** Interface for StatementHandlers that support async query execution. */
-public interface AsyncStatementHandler extends StatementHandler {
+public interface AsyncSFStatementInterface extends SFStatementInterface {
   /**
    * Execute sql asynchronously
    *

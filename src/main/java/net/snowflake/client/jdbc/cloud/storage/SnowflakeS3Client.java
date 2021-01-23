@@ -40,7 +40,7 @@ import javax.crypto.spec.SecretKeySpec;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.SFSSLConnectionSocketFactory;
 import net.snowflake.client.core.SFSession;
-import net.snowflake.client.core.SessionHandler;
+import net.snowflake.client.core.SFSessionInterface;
 import net.snowflake.client.jdbc.*;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -72,7 +72,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
   private ClientConfiguration clientConfig = null;
   private String stageRegion = null;
   private String stageEndPoint = null; // FIPS endpoint, if needed
-  private SessionHandler session = null;
+  private SFSessionInterface session = null;
   private boolean isClientSideEncrypted = true;
 
   // socket factory used by s3 client's http client.
@@ -85,7 +85,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
       String stageRegion,
       String stageEndPoint,
       boolean isClientSideEncrypted,
-      SessionHandler session)
+      SFSessionInterface session)
       throws SnowflakeSQLException {
     this.session = session;
     setupSnowflakeS3Client(
@@ -105,7 +105,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
       String stageRegion,
       String stageEndPoint,
       boolean isClientSideEncrypted,
-      SessionHandler session)
+      SFSessionInterface session)
       throws SnowflakeSQLException {
     // Save the client creation parameters so that we can reuse them,
     // to reset the AWS client. We won't save the awsCredentials since

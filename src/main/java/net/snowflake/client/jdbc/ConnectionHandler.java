@@ -1,7 +1,7 @@
 package net.snowflake.client.jdbc;
 
-import net.snowflake.client.core.SessionHandler;
-import net.snowflake.client.core.StatementHandler;
+import net.snowflake.client.core.SFSessionInterface;
+import net.snowflake.client.core.SFStatementInterface;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -20,10 +20,10 @@ public interface ConnectionHandler {
   void initializeConnection(String url, Properties info) throws SQLException;
 
   /** Gets the SFSession implementation for this connection implementation */
-  SessionHandler getSessionHandler();
+  SFSessionInterface getSessionHandler();
 
   /** Returns the SFStatement implementation for this connection implementation */
-  StatementHandler getStatementHandler() throws SQLException;
+  SFStatementInterface getStatementHandler() throws SQLException;
 
   ResultSet createResultSet(String queryID, Connection connection) throws SQLException;
 
@@ -31,6 +31,6 @@ public interface ConnectionHandler {
    * @param command The command to parse for this file transfer (e.g., PUT/GET)
    * @param statement The statement to use for this file transfer
    */
-  FileTransferHandler getFileTransferHandler(String command, StatementHandler statement)
+  FileTransferHandler getFileTransferHandler(String command, SFStatementInterface statement)
       throws SQLNonTransientConnectionException, SnowflakeSQLException;
 }

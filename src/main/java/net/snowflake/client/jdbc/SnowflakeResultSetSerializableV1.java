@@ -142,7 +142,7 @@ public class SnowflakeResultSetSerializableV1
 
   // Below fields are transient, they are generated from parameters
   transient TimeZone timeZone;
-  transient Optional<SessionHandler> possibleSession = Optional.empty();
+  transient Optional<SFSessionInterface> possibleSession = Optional.empty();
   transient boolean honorClientTZForTimestampNTZ;
   transient SnowflakeDateTimeFormat timestampNTZFormatter;
   transient SnowflakeDateTimeFormat timestampLTZFormatter;
@@ -431,7 +431,7 @@ public class SnowflakeResultSetSerializableV1
     return useSessionTimezone;
   }
 
-  public Optional<SessionHandler> getSession() {
+  public Optional<SFSessionInterface> getSession() {
     return possibleSession;
   }
 

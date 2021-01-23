@@ -393,7 +393,7 @@ public class SnowflakeFileTransferAgent
    * @throws SnowflakeSQLException if encountered exception when compressing
    */
   private static InputStreamWithMetadata compressStreamWithGZIP(
-      InputStream inputStream, SessionHandler session) throws SnowflakeSQLException {
+      InputStream inputStream, SFSessionInterface session) throws SnowflakeSQLException {
     FileBackedOutputStream tempStream = new FileBackedOutputStream(MAX_BUFFER_SIZE, true);
 
     try {
@@ -444,7 +444,7 @@ public class SnowflakeFileTransferAgent
    */
   @Deprecated
   private static InputStreamWithMetadata compressStreamWithGZIPNoDigest(
-      InputStream inputStream, SessionHandler session) throws SnowflakeSQLException {
+      InputStream inputStream, SFSessionInterface session) throws SnowflakeSQLException {
     try {
       FileBackedOutputStream tempStream = new FileBackedOutputStream(MAX_BUFFER_SIZE, true);
 
@@ -1719,7 +1719,7 @@ public class SnowflakeFileTransferAgent
       String destFileName,
       InputStream inputStream,
       FileBackedOutputStream fileBackedOutStr,
-      SessionHandler session)
+      SFSessionInterface session)
       throws SQLException {
 
     // replace ~ with user home
@@ -1755,7 +1755,7 @@ public class SnowflakeFileTransferAgent
       String filePath,
       String destLocation,
       String destFileName,
-      SessionHandler session)
+      SFSessionInterface session)
       throws SQLException {
     try {
       logger.debug(
@@ -2826,7 +2826,7 @@ public class SnowflakeFileTransferAgent
    * @throws Exception failed to construct list
    */
   @Override
-  public List<SnowflakeColumnMetadata> describeColumns(SessionHandler session)
+  public List<SnowflakeColumnMetadata> describeColumns(SFSessionInterface session)
       throws Exception {
     return SnowflakeUtil.describeFixedViewColumns(
         commandType == FileTransferHandler.CommandType.UPLOAD

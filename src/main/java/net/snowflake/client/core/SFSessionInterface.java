@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Properties;
 
 /** Snowflake session implementation */
-public interface SessionHandler {
+public interface SFSessionInterface {
   /**
    * Function that checks if the active session can be closed when the connection is closed. Called
    * by SnowflakeConnectionV1.

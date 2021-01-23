@@ -5,7 +5,7 @@
 package net.snowflake.client.jdbc;
 
 import java.util.List;
-import net.snowflake.client.core.SessionHandler;
+import net.snowflake.client.core.SFSessionInterface;
 
 /**
  * An interface to use for returning query results from any java class
@@ -13,7 +13,7 @@ import net.snowflake.client.core.SessionHandler;
  * @author jhuang
  */
 public interface SnowflakeFixedView {
-  List<SnowflakeColumnMetadata> describeColumns(SessionHandler session) throws Exception;
+  List<SnowflakeColumnMetadata> describeColumns(SFSessionInterface session) throws Exception;
 
   List<Object> getNextRow() throws Exception;
 

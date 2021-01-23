@@ -49,7 +49,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
   private boolean sortResult;
 
   /** statement generate current result set */
-  protected StatementHandler statement;
+  protected SFStatementInterface statement;
 
   /** is array bind supported */
   private final boolean arrayBindSupported;
@@ -112,7 +112,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
 
     // update the session db/schema/wh/role etc
     this.statement = statement;
-    SessionHandler session = this.statement.getSession();
+    SFSessionInterface session = this.statement.getSession();
     session.setDatabase(resultSetSerializable.getFinalDatabaseName());
     session.setSchema(resultSetSerializable.getFinalSchemaName());
     session.setRole(resultSetSerializable.getFinalRoleName());

@@ -10,7 +10,7 @@ import java.util.Map;
 
 import net.snowflake.client.jdbc.SnowflakeBaseResultSet;
 
-public interface StatementHandler {
+public interface SFStatementInterface {
 
   SnowflakeBaseResultSet createResultSet(SFBaseResultSet resultSet, Statement statement) throws SQLException;
 
@@ -61,7 +61,7 @@ public interface StatementHandler {
 
   boolean hasChildren();
 
-  SessionHandler getSession();
+  SFSessionInterface getSession();
 
   /**
    * Sets the result set to the next one, if available.

@@ -8,7 +8,7 @@ import static org.junit.Assert.assertNull;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-import net.snowflake.client.core.SessionHandler;
+import net.snowflake.client.core.SFSessionInterface;
 import org.apache.commons.text.StringEscapeUtils;
 import org.junit.Test;
 
@@ -16,7 +16,7 @@ import org.junit.Test;
 public class ResultJsonParserV2Test {
   @Test
   public void simpleTest() throws SnowflakeSQLException {
-    SessionHandler session = null;
+    SFSessionInterface session = null;
     String simple =
         "[\"1\", \"1.01\"],"
             + "[null, null],"
@@ -54,7 +54,7 @@ public class ResultJsonParserV2Test {
 
   @Test
   public void simpleStreamingTest() throws SnowflakeSQLException {
-    SessionHandler session = null;
+    SFSessionInterface session = null;
     String simple =
         "[\"1\", \"1.01\"],"
             + "[null, null],"
@@ -104,7 +104,7 @@ public class ResultJsonParserV2Test {
    */
   @Test
   public void LargestColumnTest() throws SnowflakeSQLException {
-    SessionHandler session = null;
+    SFSessionInterface session = null;
     StringBuilder sb = new StringBuilder();
     StringBuilder a = new StringBuilder();
     for (int i = 0; i < 16 * 1024 * 1024; i++) {

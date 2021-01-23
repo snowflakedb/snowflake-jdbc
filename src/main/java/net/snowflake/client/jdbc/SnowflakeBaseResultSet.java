@@ -14,7 +14,7 @@ import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TimeZone;
-import net.snowflake.client.core.SessionHandler;
+import net.snowflake.client.core.SFSessionInterface;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SqlState;
@@ -31,7 +31,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
   protected SnowflakeResultSetMetaDataV1 resultSetMetaData = null;
   protected Map<String, Object> parameters = new HashMap<>();
   private int fetchSize = 0;
-  protected SessionHandler session = null;
+  protected SFSessionInterface session = null;
 
   SnowflakeBaseResultSet(Statement statement) throws SQLException {
     this.statement = statement;

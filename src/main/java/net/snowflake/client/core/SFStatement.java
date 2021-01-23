@@ -33,7 +33,7 @@ import static net.snowflake.client.core.SessionUtil.*;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
 /** Snowflake statement */
-public class SFStatement implements AsyncStatementHandler {
+public class SFStatement implements AsyncSFStatementInterface {
 
   static final SFLogger logger = SFLoggerFactory.getLogger(SFStatement.class);
 
@@ -896,7 +896,7 @@ public class SFStatement implements AsyncStatementHandler {
     }
   }
 
-  public SessionHandler getSession() {
+  public SFSessionInterface getSession() {
     return session;
   }
 
