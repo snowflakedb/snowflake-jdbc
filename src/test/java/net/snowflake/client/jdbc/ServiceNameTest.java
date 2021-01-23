@@ -11,6 +11,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.OCSPMode;
 import net.snowflake.client.core.SFConnectionProperty;
+import net.snowflake.client.core.SFSession;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.junit.Test;
 import org.mockito.MockedStatic;
@@ -122,12 +123,12 @@ public class ServiceNameTest {
       SnowflakeConnectionV1 con =
           new SnowflakeConnectionV1(
               "jdbc:snowflake://http://fakeaccount.snowflakecomputing.com", props);
-      assertThat(con.getSessionHandler().getServiceName(), is(INITIAL_SERVICE_NAME));
+      assertThat(((SFSession) con.getSessionHandler()).getServiceName(), is(INITIAL_SERVICE_NAME));
 
       SnowflakeStatementV1 stmt = (SnowflakeStatementV1) con.createStatement();
       stmt.execute("SELECT 1");
       assertThat(
-          stmt.getConnection().unwrap(SnowflakeConnectionV1.class).getSessionHandler().getServiceName(),
+              ((SFSession) stmt.getConnection().unwrap(SnowflakeConnectionV1.class).getSessionHandler()).getServiceName(),
           is(NEW_SERVICE_NAME));
     }
   }

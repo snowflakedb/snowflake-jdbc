@@ -242,7 +242,7 @@ public class IncidentUtil {
           SessionHandler session, Throwable exc, String jobId, String requestId) {
     // Generate an incident only if the session exists.
     if (session != null) {
-      new Incident(session, exc, jobId, requestId).trigger();
+      session.raiseError(exc, jobId, requestId);
     }
     return exc;
   }

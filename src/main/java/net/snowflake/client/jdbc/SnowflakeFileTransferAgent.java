@@ -1173,7 +1173,7 @@ public class SnowflakeFileTransferAgent
    * @return JSON doc containing the command options returned by GS
    * @throws SnowflakeSQLException Will be thrown if parsing the command by GS fails
    */
-  private static JsonNode parseCommandInGS(StatementHandler statement, String command)
+  private static JsonNode parseCommandInGS(SFStatement statement, String command)
       throws SnowflakeSQLException {
     Object result = null;
     // send the command to GS

@@ -21,7 +21,7 @@ import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
  * is provided, a DefaultConnectionHandler will be constructed automatically by the Connection
  * class.
  */
-public class DefaultConnectionHandlerV1 implements ConnectionHandlerV1 {
+public class DefaultConnectionHandler implements ConnectionHandler {
 
   private final SFSession sfSession;
   private final SFLogger logger;
@@ -35,7 +35,7 @@ public class DefaultConnectionHandlerV1 implements ConnectionHandlerV1 {
    *
    * @param conStr A SnowflakeConnectString object
    */
-  public DefaultConnectionHandlerV1(SnowflakeConnectString conStr, SFLogger logger) {
+  public DefaultConnectionHandler(SnowflakeConnectString conStr, SFLogger logger) {
     this(conStr, logger, false);
   }
 
@@ -46,7 +46,7 @@ public class DefaultConnectionHandlerV1 implements ConnectionHandlerV1 {
    *
    * @param conStr A SnowflakeConnectString object
    */
-  public DefaultConnectionHandlerV1(
+  public DefaultConnectionHandler(
       SnowflakeConnectString conStr, SFLogger logger, boolean skipOpen) {
     this.sfSession = new SFSession();
     this.conStr = conStr;
@@ -55,6 +55,24 @@ public class DefaultConnectionHandlerV1 implements ConnectionHandlerV1 {
     sfSession.setSnowflakeConnectionString(conStr);
   }
 
+  /**
+   * Processes parameters given in the connection string. This extracts accountName, databaseName,
+   * schemaName from the URL if it is specified there, where the URL is of the form:
+   *
+   * <p>jdbc:snowflake://host:port/?user=v&password=v&account=v&
+   * db=v&schema=v&ssl=v&[passcode=v|passcodeInPassword=on]
+   *
+   * @param conStr Connection string object
+   */
+  public static Map<String, Object> mergeProperties(SnowflakeConnectString conStr) {
+    conStr.getParameters().remove("SSL");
+    conStr
+        .getParameters()
+        .put(
+            "SERVERURL",
+            conStr.getScheme() + "://" + conStr.getHost() + ":" + conStr.getPort() + "/");
+    return conStr.getParameters();
+  }
 
   @Override
   public void initializeConnection(String url, Properties info) throws SQLException {
@@ -140,8 +158,12 @@ public class DefaultConnectionHandlerV1 implements ConnectionHandlerV1 {
     }
 
     // populate app id and version
-    sfSession.sessionProperties().addProperty(SFConnectionProperty.APP_ID, LoginInfoDTO.SF_JDBC_APP_ID);
-    sfSession.sessionProperties().addProperty(SFConnectionProperty.APP_VERSION, SnowflakeDriver.implementVersion);
+    sfSession
+        .sessionProperties()
+        .addProperty(SFConnectionProperty.APP_ID, LoginInfoDTO.SF_JDBC_APP_ID);
+    sfSession
+        .sessionProperties()
+        .addProperty(SFConnectionProperty.APP_VERSION, SnowflakeDriver.implementVersion);
 
     // Set the corresponding session parameters to the JVM properties
     for (Map.Entry<String, String> entry : JVM_PARAMS_TO_PARAMS.entrySet()) {
@@ -151,28 +173,6 @@ public class DefaultConnectionHandlerV1 implements ConnectionHandlerV1 {
       }
     }
   }
-
-
-  /**
-   * Processes parameters given in the connection string. This extracts accountName, databaseName,
-   * schemaName from the URL if it is specified there, where the URL is of the form:
-   *
-   * <p>jdbc:snowflake://host:port/?user=v&password=v&account=v&
-   * db=v&schema=v&ssl=v&[passcode=v|passcodeInPassword=on]
-   *
-   * @param conStr Connection string object
-   */
-  static Map<String, Object> mergeProperties(SnowflakeConnectString conStr) {
-    conStr.getParameters().remove("SSL");
-    conStr
-            .getParameters()
-            .put(
-                    "SERVERURL",
-                    conStr.getScheme() + "://" + conStr.getHost() + ":" + conStr.getPort() + "/");
-    return conStr.getParameters();
-  }
-
-  /** For test-use only. */
 
   /**
    * Get an instance of a ResultSet object

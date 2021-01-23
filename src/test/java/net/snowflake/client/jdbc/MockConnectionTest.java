@@ -122,7 +122,7 @@ public class MockConnectionTest extends BaseJDBCTest {
     return type;
   }
 
-  public Connection initMockConnection(ConnectionHandlerV1 implementation) throws SQLException {
+  public Connection initMockConnection(ConnectionHandler implementation) throws SQLException {
     return new SnowflakeConnectionV1(implementation);
   }
 
@@ -222,7 +222,7 @@ public class MockConnectionTest extends BaseJDBCTest {
                 + "   \"success\":true\n"
                 + "}");
 
-    MockSnowflakeConnectionImplV1 mockImpl = new MockSnowflakeConnectionImplV1(rawResponse);
+    MockSnowflakeConnectionImpl mockImpl = new MockSnowflakeConnectionImpl(rawResponse);
     Connection mockConnection = initMockConnection(mockImpl);
 
     ResultSet fakeResultSet =
@@ -248,7 +248,7 @@ public class MockConnectionTest extends BaseJDBCTest {
 
     JsonNode responseWithRows = createDummyResponseWithRows(rowsToTest, dataTypes);
 
-    MockSnowflakeConnectionImplV1 mockImpl = new MockSnowflakeConnectionImplV1(responseWithRows);
+    MockSnowflakeConnectionImpl mockImpl = new MockSnowflakeConnectionImpl(responseWithRows);
     Connection mockConnection = initMockConnection(mockImpl);
 
     ResultSet fakeResultSet =
@@ -266,7 +266,7 @@ public class MockConnectionTest extends BaseJDBCTest {
 
     responseWithRows = createDummyResponseWithRows(rowsToTest, dataTypes);
 
-    mockImpl = new MockSnowflakeConnectionImplV1(responseWithRows);
+    mockImpl = new MockSnowflakeConnectionImpl(responseWithRows);
     mockConnection = initMockConnection(mockImpl);
 
     fakeResultSet = mockConnection.prepareStatement("select * from fakeTable").executeQuery();
@@ -283,7 +283,7 @@ public class MockConnectionTest extends BaseJDBCTest {
 
     responseWithRows = createDummyResponseWithRows(rowsToTest, dataTypes);
 
-    mockImpl = new MockSnowflakeConnectionImplV1(responseWithRows);
+    mockImpl = new MockSnowflakeConnectionImpl(responseWithRows);
     mockConnection = initMockConnection(mockImpl);
 
     fakeResultSet = mockConnection.prepareStatement("select * from fakeTable").executeQuery();
@@ -576,7 +576,9 @@ public class MockConnectionTest extends BaseJDBCTest {
     }
 
     @Override
-    public void raiseErrorInSession() {}
+    public void raiseError(Throwable exc, String jobId, String requestId) {
+
+    }
 
     @Override
     public boolean getAutoCommit() {
@@ -642,12 +644,12 @@ public class MockConnectionTest extends BaseJDBCTest {
     public void clearSqlWarnings() {}
   }
 
-  private static class MockSnowflakeConnectionImplV1 implements ConnectionHandlerV1 {
+  private static class MockSnowflakeConnectionImpl implements ConnectionHandler {
 
     JsonNode jsonResponse;
     MockSnowflakeSession session;
 
-    public MockSnowflakeConnectionImplV1(JsonNode jsonResponse) {
+    public MockSnowflakeConnectionImpl(JsonNode jsonResponse) {
       this.jsonResponse = jsonResponse;
       this.session = new MockSnowflakeSession();
     }
