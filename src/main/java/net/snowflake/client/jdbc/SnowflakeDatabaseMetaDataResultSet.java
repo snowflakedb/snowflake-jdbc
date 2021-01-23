@@ -49,7 +49,7 @@ class SnowflakeDatabaseMetaDataResultSet extends SnowflakeBaseResultSet {
     this.showObjectResultSet = showObjectResultSet;
 
     SFSessionInterface session =
-        statement.getConnection().unwrap(SnowflakeConnectionV1.class).getSessionHandler();
+        statement.getConnection().unwrap(SnowflakeConnectionV1.class).getSFSession();
 
     SFResultSetMetaData sfset =
         new SFResultSetMetaData(
@@ -81,7 +81,7 @@ class SnowflakeDatabaseMetaDataResultSet extends SnowflakeBaseResultSet {
     this.rows = rows;
 
     SFSessionInterface session =
-        statement.getConnection().unwrap(SnowflakeConnectionV1.class).getSessionHandler();
+        statement.getConnection().unwrap(SnowflakeConnectionV1.class).getSFSession();
 
     SFResultSetMetaData sfset =
         new SFResultSetMetaData(

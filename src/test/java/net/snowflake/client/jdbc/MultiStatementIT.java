@@ -410,7 +410,7 @@ public class MultiStatementIT extends BaseJDBCTest {
     Statement statement = connection.createStatement();
 
     SFSessionInterface session =
-        statement.getConnection().unwrap(SnowflakeConnectionV1.class).getSessionHandler();
+        statement.getConnection().unwrap(SnowflakeConnectionV1.class).getSFSession();
 
     String originalSchema = session.getSchema();
 
@@ -428,7 +428,7 @@ public class MultiStatementIT extends BaseJDBCTest {
     statement.execute(String.format("use schema %s; select 1", originalSchema));
     // current schema change should persist outside of the above statement
 
-    session = statement.getConnection().unwrap(SnowflakeConnectionV1.class).getSessionHandler();
+    session = statement.getConnection().unwrap(SnowflakeConnectionV1.class).getSFSession();
     assertEquals(originalSchema, session.getSchema());
     statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 1);
     rs = statement.executeQuery("select current_schema()");
@@ -445,7 +445,7 @@ public class MultiStatementIT extends BaseJDBCTest {
     Statement statement = connection.createStatement();
 
     SFSessionInterface session =
-        statement.getConnection().unwrap(SnowflakeConnectionV1.class).getSessionHandler();
+        statement.getConnection().unwrap(SnowflakeConnectionV1.class).getSFSession();
 
     // we need an arbitrary parameter which is updated by the client after each query for this test
     String param = "AUTOCOMMIT";

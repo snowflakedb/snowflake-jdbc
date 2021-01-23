@@ -65,7 +65,7 @@ public class BaseIncidentTest extends AbstractDriverIT {
     if (silenceIncidents) {
       connection.createStatement().execute("alter session set SUPPRESS_INCIDENT_DUMPS=true");
     }
-    SFSessionInterface session = connection.unwrap(SnowflakeConnectionV1.class).getSessionHandler();
+    SFSessionInterface session = connection.unwrap(SnowflakeConnectionV1.class).getSFSession();
     IncidentUtil.generateIncidentV2WithException(
         session, new SFException(ErrorCode.NON_FATAL_ERROR, signature), null, null);
     connection.close();

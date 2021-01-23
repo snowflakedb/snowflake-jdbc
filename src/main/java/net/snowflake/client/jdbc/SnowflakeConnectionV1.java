@@ -54,7 +54,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
    * setTransactionIsolation doesn't do anything.
    */
   private int transactionIsolation = Connection.TRANSACTION_NONE;
-  private SFSessionInterface SFSessionInterface;
+  private SFSessionInterface sfSession;
   /** The SnowflakeConnectionImpl that provides the underlying physical-layer implementation */
   private ConnectionHandler connectionHandler;
 
@@ -92,7 +92,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
     }
 
     initConnectionWithImpl(new DefaultConnectionHandler(conStr, logger), url, info);
-    appendWarnings(SFSessionInterface.getSqlWarnings());
+    appendWarnings(sfSession.getSqlWarnings());
     isClosed = false;
   }
 
@@ -112,8 +112,8 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
       ConnectionHandler connectionHandler, String url, Properties info) throws SQLException {
     this.connectionHandler = connectionHandler;
     connectionHandler.initializeConnection(url, info);
-    this.SFSessionInterface = connectionHandler.getSFSession();
-    missingProperties = SFSessionInterface.checkProperties();
+    this.sfSession = connectionHandler.getSFSession();
+    missingProperties = sfSession.checkProperties();
   }
 
   public List<DriverPropertyInfo> returnMissingProperties() {
@@ -183,9 +183,9 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
 
     isClosed = true;
     try {
-      if (SFSessionInterface != null && SFSessionInterface.isSafeToClose()) {
-        SFSessionInterface.close();
-        SFSessionInterface = null;
+      if (sfSession != null && sfSession.isSafeToClose()) {
+        sfSession.close();
+        sfSession = null;
       }
       // make sure to close all created statements
       for (Statement stmt : openStatements) {
@@ -201,7 +201,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
 
     } catch (SFException ex) {
       throw new SnowflakeSQLLoggedException(
-          SFSessionInterface, ex.getSqlState(), ex.getVendorCode(), ex.getCause(), ex.getParams());
+          sfSession, ex.getSqlState(), ex.getVendorCode(), ex.getCause(), ex.getParams());
     }
   }
 
@@ -209,7 +209,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
     if (isClosed) {
       raiseSQLExceptionIfConnectionIsClosed();
     }
-    return SFSessionInterface.getSessionId();
+    return sfSession.getSessionId();
   }
 
   @Override
@@ -291,7 +291,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
   public boolean getAutoCommit() throws SQLException {
     logger.debug("boolean getAutoCommit()");
     raiseSQLExceptionIfConnectionIsClosed();
-    return SFSessionInterface.getAutoCommit();
+    return sfSession.getAutoCommit();
   }
 
   @Override
@@ -299,7 +299,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
     logger.debug("void setAutoCommit(boolean isAutoCommit)");
     boolean currentAutoCommit = this.getAutoCommit();
     if (isAutoCommit != currentAutoCommit) {
-      SFSessionInterface.setAutoCommit(isAutoCommit);
+      sfSession.setAutoCommit(isAutoCommit);
       this.executeImmediate(
           "alter session /* JDBC:SnowflakeConnectionV1.setAutoCommit*/ set autocommit="
               + isAutoCommit);
@@ -322,7 +322,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
   public void rollback(Savepoint savepoint) throws SQLException {
     logger.debug("void rollback(Savepoint savepoint)");
 
-    throw new SnowflakeLoggedFeatureNotSupportedException(SFSessionInterface);
+    throw new SnowflakeLoggedFeatureNotSupportedException(sfSession);
   }
 
   @Override
@@ -338,14 +338,14 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
     raiseSQLExceptionIfConnectionIsClosed();
     if (readOnly) {
 
-      throw new SnowflakeLoggedFeatureNotSupportedException(SFSessionInterface);
+      throw new SnowflakeLoggedFeatureNotSupportedException(sfSession);
     }
   }
 
   @Override
   public String getCatalog() throws SQLException {
     raiseSQLExceptionIfConnectionIsClosed();
-    return SFSessionInterface.getDatabase();
+    return sfSession.getDatabase();
   }
 
   @Override
@@ -394,7 +394,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
   public void clearWarnings() throws SQLException {
     logger.debug("void clearWarnings()");
     raiseSQLExceptionIfConnectionIsClosed();
-    SFSessionInterface.clearSqlWarnings();
+    sfSession.clearSqlWarnings();
     sqlWarnings = null;
   }
 
@@ -439,21 +439,21 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
       return prepareStatement(sql);
     }
 
-    throw new SnowflakeLoggedFeatureNotSupportedException(SFSessionInterface);
+    throw new SnowflakeLoggedFeatureNotSupportedException(sfSession);
   }
 
   @Override
   public PreparedStatement prepareStatement(String sql, int[] columnIndexes) throws SQLException {
     logger.debug("PreparedStatement prepareStatement(String sql, " + "int[] columnIndexes)");
 
-    throw new SnowflakeLoggedFeatureNotSupportedException(SFSessionInterface);
+    throw new SnowflakeLoggedFeatureNotSupportedException(sfSession);
   }
 
   @Override
   public PreparedStatement prepareStatement(String sql, String[] columnNames) throws SQLException {
     logger.debug("PreparedStatement prepareStatement(String sql, " + "String[] columnNames)");
 
-    throw new SnowflakeLoggedFeatureNotSupportedException(SFSessionInterface);
+    throw new SnowflakeLoggedFeatureNotSupportedException(sfSession);
   }
 
   @Override
@@ -505,7 +505,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
   @Override
   public void setTypeMap(Map<String, Class<?>> map) throws SQLException {
 
-    throw new SnowflakeLoggedFeatureNotSupportedException(SFSessionInterface);
+    throw new SnowflakeLoggedFeatureNotSupportedException(sfSession);
   }
 
   @Override
@@ -517,31 +517,31 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
   @Override
   public void setHoldability(int holdability) throws SQLException {
 
-    throw new SnowflakeLoggedFeatureNotSupportedException(SFSessionInterface);
+    throw new SnowflakeLoggedFeatureNotSupportedException(sfSession);
   }
 
   @Override
   public Savepoint setSavepoint() throws SQLException {
 
-    throw new SnowflakeLoggedFeatureNotSupportedException(SFSessionInterface);
+    throw new SnowflakeLoggedFeatureNotSupportedException(sfSession);
   }
 
   @Override
   public Savepoint setSavepoint(String name) throws SQLException {
 
-    throw new SnowflakeLoggedFeatureNotSupportedException(SFSessionInterface);
+    throw new SnowflakeLoggedFeatureNotSupportedException(sfSession);
   }
 
   @Override
   public void releaseSavepoint(Savepoint savepoint) throws SQLException {
 
-    throw new SnowflakeLoggedFeatureNotSupportedException(SFSessionInterface);
+    throw new SnowflakeLoggedFeatureNotSupportedException(sfSession);
   }
 
   @Override
   public Blob createBlob() throws SQLException {
 
-    throw new SnowflakeLoggedFeatureNotSupportedException(SFSessionInterface);
+    throw new SnowflakeLoggedFeatureNotSupportedException(sfSession);
   }
 
   @Override
@@ -553,13 +553,13 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
   @Override
   public NClob createNClob() throws SQLException {
 
-    throw new SnowflakeLoggedFeatureNotSupportedException(SFSessionInterface);
+    throw new SnowflakeLoggedFeatureNotSupportedException(sfSession);
   }
 
   @Override
   public SQLXML createSQLXML() throws SQLException {
 
-    throw new SnowflakeLoggedFeatureNotSupportedException(SFSessionInterface);
+    throw new SnowflakeLoggedFeatureNotSupportedException(sfSession);
   }
 
   @Override
@@ -600,7 +600,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
     logger.debug("Properties getClientInfo()");
     raiseSQLExceptionIfConnectionIsClosed();
     // sfSession must not be null if the connection is not closed.
-    return SFSessionInterface.getClientInfo();
+    return sfSession.getClientInfo();
   }
 
   @Override
@@ -620,27 +620,27 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
 
     raiseSQLExceptionIfConnectionIsClosed();
     // sfSession must not be null if the connection is not closed.
-    return SFSessionInterface.getClientInfo(name);
+    return sfSession.getClientInfo(name);
   }
 
   @Override
   public Array createArrayOf(String typeName, Object[] elements) throws SQLException {
     logger.debug("Array createArrayOf(String typeName, Object[] " + "elements)");
 
-    throw new SnowflakeLoggedFeatureNotSupportedException(SFSessionInterface);
+    throw new SnowflakeLoggedFeatureNotSupportedException(sfSession);
   }
 
   @Override
   public Struct createStruct(String typeName, Object[] attributes) throws SQLException {
     logger.debug("Struct createStruct(String typeName, Object[] " + "attributes)");
 
-    throw new SnowflakeLoggedFeatureNotSupportedException(SFSessionInterface);
+    throw new SnowflakeLoggedFeatureNotSupportedException(sfSession);
   }
 
   @Override
   public String getSchema() throws SQLException {
     raiseSQLExceptionIfConnectionIsClosed();
-    return SFSessionInterface.getSchema();
+    return sfSession.getSchema();
   }
 
   @Override
@@ -699,15 +699,15 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
   }
 
   int getDatabaseMajorVersion() {
-    return SFSessionInterface.sessionProperties().getDatabaseMajorVersion();
+    return sfSession.sessionProperties().getDatabaseMajorVersion();
   }
 
   int getDatabaseMinorVersion() {
-    return SFSessionInterface.sessionProperties().getDatabaseMinorVersion();
+    return sfSession.sessionProperties().getDatabaseMinorVersion();
   }
 
   String getDatabaseVersion() {
-    return SFSessionInterface.sessionProperties().getDatabaseVersion();
+    return sfSession.sessionProperties().getDatabaseVersion();
   }
 
   @Override
@@ -822,7 +822,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
 
     if (stageName == null) {
       throw new SnowflakeSQLLoggedException(
-          SFSessionInterface,
+          sfSession,
           ErrorCode.INTERNAL_ERROR.getMessageCode(),
           SqlState.INTERNAL_ERROR,
           "stage name is null");
@@ -830,7 +830,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
 
     if (destFileName == null) {
       throw new SnowflakeSQLLoggedException(
-          SFSessionInterface,
+          sfSession,
           ErrorCode.INTERNAL_ERROR.getMessageCode(),
           SqlState.INTERNAL_ERROR,
           "stage name is null");
@@ -887,7 +887,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
 
     if (Strings.isNullOrEmpty(stageName)) {
       throw new SnowflakeSQLLoggedException(
-          SFSessionInterface,
+          sfSession,
           ErrorCode.INTERNAL_ERROR.getMessageCode(),
           SqlState.INTERNAL_ERROR,
           "stage name is null or empty");
@@ -895,7 +895,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
 
     if (Strings.isNullOrEmpty(sourceFileName)) {
       throw new SnowflakeSQLLoggedException(
-          SFSessionInterface,
+          sfSession,
           ErrorCode.INTERNAL_ERROR.getMessageCode(),
           SqlState.INTERNAL_ERROR,
           "source file name is null or empty");
@@ -940,7 +940,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
         return new GZIPInputStream(stream);
       } catch (IOException ex) {
         throw new SnowflakeSQLLoggedException(
-            SFSessionInterface,
+            sfSession,
             ErrorCode.INTERNAL_ERROR.getMessageCode(),
             SqlState.INTERNAL_ERROR,
             ex.getMessage());
@@ -952,7 +952,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
 
   public void setInjectedDelay(int delay) throws SQLException {
     raiseSQLExceptionIfConnectionIsClosed();
-    SFSessionInterface.sessionProperties().setInjectedDelay(delay);
+    sfSession.sessionProperties().setInjectedDelay(delay);
   }
 
   void injectedDelay() throws SQLException {
@@ -973,11 +973,11 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
 
   public void setInjectFileUploadFailure(String fileToFail) throws SQLException {
     raiseSQLExceptionIfConnectionIsClosed();
-    SFSessionInterface.sessionProperties().setInjectFileUploadFailure(fileToFail);
+    sfSession.sessionProperties().setInjectFileUploadFailure(fileToFail);
   }
 
-  public SFSessionInterface getSessionHandler() {
-    return SFSessionInterface;
+  public SFSessionInterface getSFSession() {
+    return sfSession;
   }
 
   private void appendWarning(SQLWarning w) {
@@ -995,7 +995,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
   }
 
   public boolean getShowStatementParameters() {
-    return SFSessionInterface.sessionProperties().isShowStatementParameters();
+    return sfSession.sessionProperties().isShowStatementParameters();
   }
 
   void removeClosedStatement(Statement stmt) {

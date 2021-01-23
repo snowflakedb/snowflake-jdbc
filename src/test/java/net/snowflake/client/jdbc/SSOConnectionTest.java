@@ -311,10 +311,10 @@ public class SSOConnectionTest {
       SnowflakeConnectionV1 sfcon = (SnowflakeConnectionV1) con;
       assertThat(
           "token",
-          ((SFSession) sfcon.getSessionHandler()).getSessionToken(),
+          ((SFSession) sfcon.getSFSession()).getSessionToken(),
           equalTo(MOCK_SESSION_TOKEN));
       assertThat(
-          "idToken", ((SFSession) sfcon.getSessionHandler()).getIdToken(), equalTo(MOCK_ID_TOKEN));
+          "idToken", ((SFSession) sfcon.getSFSession()).getIdToken(), equalTo(MOCK_ID_TOKEN));
 
       // second connection reads the cache and use the id token to get the
       // session token.
@@ -322,11 +322,11 @@ public class SSOConnectionTest {
       SnowflakeConnectionV1 sfconSecond = (SnowflakeConnectionV1) conSecond;
       assertThat(
           "token",
-          ((SFSession) sfconSecond.getSessionHandler()).getSessionToken(),
+          ((SFSession) sfconSecond.getSFSession()).getSessionToken(),
           equalTo(MOCK_NEW_SESSION_TOKEN));
       // we won't get a new id_token here
       assertThat(
-          "idToken", ((SFSession) sfcon.getSessionHandler()).getIdToken(), equalTo(MOCK_ID_TOKEN));
+          "idToken", ((SFSession) sfcon.getSFSession()).getIdToken(), equalTo(MOCK_ID_TOKEN));
     }
   }
 }
