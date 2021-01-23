@@ -1,5 +1,6 @@
 package net.snowflake.client.core;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import net.snowflake.client.jdbc.ErrorCode;
@@ -36,7 +37,7 @@ public class SessionProperties {
   // DatabaseMetadata.getSchemas), whether to search using multiple schemas with
   // session database
   private boolean metadataRequestUseSessionDatabase = false;
-  private Map<SFConnectionProperty, Object> connectionPropertiesMap;
+  private Map<SFConnectionProperty, Object> connectionPropertiesMap = new HashMap<>();
 
   public String getDatabaseVersion() {
     return databaseVersion;
