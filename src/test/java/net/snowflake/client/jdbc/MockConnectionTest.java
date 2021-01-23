@@ -1,21 +1,22 @@
 package net.snowflake.client.jdbc;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import java.sql.*;
-import java.util.*;
 import net.snowflake.client.category.TestCategoryConnection;
 import net.snowflake.client.core.*;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
 import net.snowflake.common.core.SnowflakeDateTimeFormat;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+
+import java.sql.*;
+import java.util.*;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 /**
  * IT test for testing the "pluggable" implementation of SnowflakeConnection, SnowflakeStatement,
@@ -439,7 +440,7 @@ public class MockConnectionTest extends BaseJDBCTest {
     @Override
     public SnowflakeBaseResultSet createResultSet(SFBaseResultSet resultSet, Statement statement)
         throws SQLException {
-      return null;
+      return new SnowflakeResultSetV1(resultSet, statement);
     }
 
     @Override
@@ -538,6 +539,8 @@ public class MockConnectionTest extends BaseJDBCTest {
 
   private static class MockSnowflakeSFSession implements SFSessionInterface {
 
+    SessionProperties sessionProperties = new SessionProperties();
+
     @Override
     public boolean isSafeToClose() {
       return false;
@@ -553,7 +556,7 @@ public class MockConnectionTest extends BaseJDBCTest {
 
     @Override
     public SessionProperties sessionProperties() {
-      return null;
+      return sessionProperties;
     }
 
     @Override
