@@ -39,7 +39,7 @@ public class SFAsyncResultSet extends SnowflakeBaseResultSet
     super(statement);
     this.sfBaseResultSet = sfBaseResultSet;
     this.queryID = sfBaseResultSet.getQueryId();
-    this.session = session;
+    this.session = sfSession;
     this.extraStatement = statement;
     try {
       this.resultSetMetaData = new SnowflakeResultSetMetaDataV1(sfBaseResultSet.getMetaData());
