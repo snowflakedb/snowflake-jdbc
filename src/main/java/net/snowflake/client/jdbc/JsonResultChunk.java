@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.LinkedList;
 import java.util.List;
-import net.snowflake.client.core.SessionHandler;
+import net.snowflake.client.core.SFSessionInterface;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SqlState;
@@ -25,10 +25,10 @@ public class JsonResultChunk extends SnowflakeResultChunk {
 
   private int currentRow;
 
-  private SessionHandler session;
+  private SFSessionInterface session;
 
   public JsonResultChunk(
-      String url, int rowCount, int colCount, int uncompressedSize, SessionHandler session) {
+      String url, int rowCount, int colCount, int uncompressedSize, SFSessionInterface session) {
     super(url, rowCount, colCount, uncompressedSize);
     data = new BlockResultChunkDataV2(computeCharactersNeeded(), rowCount, colCount, session);
     this.session = session;
@@ -268,7 +268,7 @@ public class JsonResultChunk extends SnowflakeResultChunk {
    */
   private static class BlockResultChunkDataV2 implements ResultChunkData {
     BlockResultChunkDataV2(
-        int totalLength, int rowCount, int colCount, SessionHandler session) {
+        int totalLength, int rowCount, int colCount, SFSessionInterface session) {
       this.blockCount = getBlock(totalLength - 1) + 1;
       this.rowCount = rowCount;
       this.colCount = colCount;
@@ -452,7 +452,7 @@ public class JsonResultChunk extends SnowflakeResultChunk {
     private static final int blockLengthBits = 23;
     private static int blockLength = 1 << blockLengthBits;
     private final ArrayList<byte[]> data = new ArrayList<>();
-    SessionHandler session;
+    SFSessionInterface session;
 
     // blocks for storing offsets and lengths
     int metaBlockCount;

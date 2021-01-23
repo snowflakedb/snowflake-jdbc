@@ -34,7 +34,7 @@ public interface DataConversionContext {
   int getScale(int columnIndex);
 
   /** @return current session */
-  SessionHandler getSession();
+  SFSessionInterface getSession();
 
   /** @return session time zone */
   TimeZone getTimeZone();

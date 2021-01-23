@@ -49,7 +49,7 @@ public abstract class SFBaseResultSet {
   protected List<MetaDataOfBinds> metaDataOfBinds = new ArrayList<>();
 
   // For creating incidents
-  protected SessionHandler session;
+  protected SFSessionInterface session;
 
   // indicate whether the result set has been closed or not.
   protected boolean isClosed;
@@ -100,11 +100,11 @@ public abstract class SFBaseResultSet {
 
   public abstract String getQueryId();
 
-  public void setSession(SessionHandler session) {
+  public void setSession(SFSessionInterface session) {
     this.session = session;
   }
 
-  public SessionHandler getSession() {
+  public SFSessionInterface getSession() {
     return this.session;
   }
 

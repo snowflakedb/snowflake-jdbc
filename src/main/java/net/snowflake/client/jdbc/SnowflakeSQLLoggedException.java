@@ -19,7 +19,7 @@ import java.util.regex.Pattern;
 import net.minidev.json.JSONObject;
 import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.SFException;
-import net.snowflake.client.core.SessionHandler;
+import net.snowflake.client.core.SFSessionInterface;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
 import net.snowflake.client.jdbc.telemetry.TelemetryField;
 import net.snowflake.client.jdbc.telemetry.TelemetryUtil;
@@ -166,7 +166,7 @@ public class SnowflakeSQLLoggedException extends SnowflakeSQLException {
       String queryId,
       String SQLState,
       int vendorCode,
-      SessionHandler session,
+      SFSessionInterface session,
       SQLException ex) {
     Telemetry ibInstance = null;
     // if session is not null, try sending data using in-band telemetry
@@ -207,23 +207,23 @@ public class SnowflakeSQLLoggedException extends SnowflakeSQLException {
   }
 
   public SnowflakeSQLLoggedException(
-          SessionHandler session, String reason, String SQLState, int vendorCode, String queryId) {
+          SFSessionInterface session, String reason, String SQLState, int vendorCode, String queryId) {
     super(queryId, reason, SQLState, vendorCode);
     sendTelemetryData(queryId, SQLState, vendorCode, session, this);
   }
 
-  public SnowflakeSQLLoggedException(SessionHandler session, int vendorCode, String SQLState) {
+  public SnowflakeSQLLoggedException(SFSessionInterface session, int vendorCode, String SQLState) {
     super(SQLState, vendorCode);
     sendTelemetryData(null, SQLState, vendorCode, session, this);
   }
 
-  public SnowflakeSQLLoggedException(SessionHandler session, String SQLState, String reason) {
+  public SnowflakeSQLLoggedException(SFSessionInterface session, String SQLState, String reason) {
     super(reason, SQLState);
     sendTelemetryData(null, SQLState, -1, session, this);
   }
 
   public SnowflakeSQLLoggedException(
-          SessionHandler session, int vendorCode, String SQLState, Object... params) {
+          SFSessionInterface session, int vendorCode, String SQLState, Object... params) {
     super(SQLState, vendorCode, params);
     String reason =
         errorResourceBundleManager.getLocalizedMessage(String.valueOf(vendorCode), params);
@@ -231,14 +231,14 @@ public class SnowflakeSQLLoggedException extends SnowflakeSQLException {
   }
 
   public SnowflakeSQLLoggedException(
-          SessionHandler session, ErrorCode errorCode, Throwable ex, Object... params) {
+          SFSessionInterface session, ErrorCode errorCode, Throwable ex, Object... params) {
     super(ex, errorCode, params);
     // add telemetry
     sendTelemetryData(null, errorCode.getSqlState(), errorCode.getMessageCode(), session, this);
   }
 
   public SnowflakeSQLLoggedException(
-          SessionHandler session, String SQLState, int vendorCode, Throwable ex, Object... params) {
+          SFSessionInterface session, String SQLState, int vendorCode, Throwable ex, Object... params) {
     super(ex, SQLState, vendorCode, params);
     // add telemetry
     String reason =
@@ -247,7 +247,7 @@ public class SnowflakeSQLLoggedException extends SnowflakeSQLException {
   }
 
   public SnowflakeSQLLoggedException(
-          SessionHandler session, ErrorCode errorCode, Object... params) {
+          SFSessionInterface session, ErrorCode errorCode, Object... params) {
     super(errorCode, params);
     // add telemetry
     String reason =
@@ -256,13 +256,13 @@ public class SnowflakeSQLLoggedException extends SnowflakeSQLException {
     sendTelemetryData(null, null, -1, session, this);
   }
 
-  public SnowflakeSQLLoggedException(SessionHandler session, SFException e) {
+  public SnowflakeSQLLoggedException(SFSessionInterface session, SFException e) {
     super(e);
     // add telemetry
     sendTelemetryData(null, null, -1, session, this);
   }
 
-  public SnowflakeSQLLoggedException(SessionHandler session, String reason) {
+  public SnowflakeSQLLoggedException(SFSessionInterface session, String reason) {
     super(reason);
     sendTelemetryData(null, null, -1, session, this);
   }

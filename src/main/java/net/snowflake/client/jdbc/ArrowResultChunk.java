@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Map;
 import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.SFException;
-import net.snowflake.client.core.SessionHandler;
+import net.snowflake.client.core.SFSessionInterface;
 import net.snowflake.client.core.arrow.*;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -42,7 +42,7 @@ public class ArrowResultChunk extends SnowflakeResultChunk {
   private boolean enableSortFirstResultChunk;
   private IntVector firstResultChunkSortedIndices;
   private VectorSchemaRoot root;
-  private static SessionHandler session;
+  private static SFSessionInterface session;
 
   public ArrowResultChunk(
       String url,
@@ -50,7 +50,7 @@ public class ArrowResultChunk extends SnowflakeResultChunk {
       int colCount,
       int uncompressedSize,
       RootAllocator rootAllocator,
-      SessionHandler session) {
+      SFSessionInterface session) {
     super(url, rowCount, colCount, uncompressedSize);
     this.batchOfVectors = new ArrayList<>();
     this.rootAllocator = rootAllocator;

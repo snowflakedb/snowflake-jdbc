@@ -93,7 +93,7 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
   private void describeSqlIfNotTried() throws SQLException {
     if (!alreadyDescribed) {
       try {
-        this.statementMetaData = statementHandler.describe(sql);
+        this.statementMetaData = sfStatementInterface.describe(sql);
       } catch (SFException e) {
         throw new SnowflakeSQLLoggedException(connection.getSessionHandler(), e);
       } catch (SnowflakeSQLException e) {
