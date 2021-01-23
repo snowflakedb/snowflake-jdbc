@@ -655,12 +655,12 @@ public class MockConnectionTest extends BaseJDBCTest {
     public void initializeConnection(String url, Properties info) throws SQLException {}
 
     @Override
-    public SFSessionInterface getSessionHandler() {
+    public SFSessionInterface getSFSession() {
       return session;
     }
 
     @Override
-    public SFStatementInterface getStatementHandler() {
+    public SFStatementInterface getSFStatement() {
       return new MockedSFStatement(jsonResponse, session);
     }
 
@@ -670,7 +670,7 @@ public class MockConnectionTest extends BaseJDBCTest {
     }
 
     @Override
-    public FileTransferHandler getFileTransferHandler(
+    public FileTransferAgentInterface getFileTransferAgent(
         String command, SFStatementInterface statement) {
       return null;
     }

@@ -112,7 +112,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
     this.resultSetHoldability = resultSetHoldability;
 
     sfStatementInterface =
-        (connection != null) ? connection.getConnectionHandler().getStatementHandler() : null;
+        (connection != null) ? connection.getConnectionHandler().getSFStatement() : null;
   }
 
   protected void raiseSQLExceptionIfStatementIsClosed() throws SQLException {
