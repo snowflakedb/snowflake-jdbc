@@ -1,10 +1,9 @@
 package net.snowflake.client.core;
 
-import net.snowflake.client.jdbc.SnowflakeBaseResultSet;
-
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Map;
+import net.snowflake.client.jdbc.SnowflakeBaseResultSet;
 
 /** Interface for StatementHandlers that support async query execution. */
 public interface AsyncSFStatementInterface extends SFStatementInterface {
@@ -23,5 +22,6 @@ public interface AsyncSFStatementInterface extends SFStatementInterface {
       String sql, Map<String, ParameterBindingDTO> parametersBinding, CallingMethod caller)
       throws SQLException, SFException;
 
-  SnowflakeBaseResultSet createAsyncResultSet(SFBaseResultSet resultSet, Statement statement) throws SQLException;
+  SnowflakeBaseResultSet createAsyncResultSet(SFBaseResultSet resultSet, Statement statement)
+      throws SQLException;
 }

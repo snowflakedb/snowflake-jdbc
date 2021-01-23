@@ -197,7 +197,8 @@ public class IncidentIT extends BaseIncidentTest {
             ErrorCode.IO_ERROR,
             "Mark Screwed something up again" + RandomStringUtils.randomAlphabetic(3));
     Connection connection = getConnection();
-    SFSession session = (SFSession) connection.unwrap(SnowflakeConnectionV1.class).getSessionHandler();
+    SFSession session =
+        (SFSession) connection.unwrap(SnowflakeConnectionV1.class).getSessionHandler();
     Incident incident = new Incident(session, exc, null, null);
     String signature = incident.signature;
     try {

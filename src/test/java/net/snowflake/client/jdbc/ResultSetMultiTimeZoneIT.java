@@ -147,7 +147,8 @@ public class ResultSetMultiTimeZoneIT extends BaseJDBCTest {
     assertEquals(tm, resultSet.getTime("COLC"));
 
     statement.execute(
-        "create or replace table datetime(colA timestamp_ltz, colB timestamp_ntz, colC timestamp_tz)");
+        "create or replace table datetime(colA timestamp_ltz, colB timestamp_ntz, colC"
+            + " timestamp_tz)");
     statement.execute(
         "insert into dateTime values ('2019-01-01 17:17:17', '2019-01-01 17:17:17', '2019-01-01 "
             + "17:17:17')");

@@ -272,11 +272,9 @@ public class SnowflakeDriverTest {
     expectedParameters.put("retryQuery", "on");
     testCases.add(
         new TestCase(
-            "jdbc:snowflake://snowflake.reg.local:8082/"
-                + "?account=testaccount"
+            "jdbc:snowflake://snowflake.reg.local:8082/?account=testaccount"
                 + "&authenticator=https://snowflakecomputing.okta.com/app/template_saml_2_0/ky7gy61iAOAMLLSOZSVX/sso/saml"
-                + "&user=qa&ssl=off"
-                + "&schema=testschema&db=testdb&networkTimeout=3600&retryQuery=on",
+                + "&user=qa&ssl=off&schema=testschema&db=testdb&networkTimeout=3600&retryQuery=on",
             "http",
             "snowflake.reg.local",
             8082,

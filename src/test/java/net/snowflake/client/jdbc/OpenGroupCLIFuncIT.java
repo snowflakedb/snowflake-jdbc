@@ -119,8 +119,8 @@ public class OpenGroupCLIFuncIT extends BaseJDBCTest {
           "Thu, 25 May 2017 12:34:56 -0700");
       testFunction(
           connection,
-          "select {fn TIMESTAMPDIFF(SQL_TSI_SECOND, "
-              + "to_timestamp('2016-5-25 12:34:56.789789'), to_timestamp('2016-5-25 12:34:57.789789'))}",
+          "select {fn TIMESTAMPDIFF(SQL_TSI_SECOND, to_timestamp('2016-5-25 12:34:56.789789'),"
+              + " to_timestamp('2016-5-25 12:34:57.789789'))}",
           "1");
       testFunction(connection, "select {fn WEEK(to_timestamp('2016-5-25 12:34:56.789789'))}", "21");
       testFunction(

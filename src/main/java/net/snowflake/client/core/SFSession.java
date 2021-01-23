@@ -4,9 +4,20 @@
 
 package net.snowflake.client.core;
 
+import static net.snowflake.client.core.QueryStatus.getStatusFromString;
+import static net.snowflake.client.core.QueryStatus.isAnError;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
+import java.security.PrivateKey;
+import java.sql.DriverPropertyInfo;
+import java.sql.SQLException;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
 import net.snowflake.client.jdbc.*;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
 import net.snowflake.client.jdbc.telemetry.TelemetryClient;
@@ -19,18 +30,6 @@ import org.apache.http.HttpHeaders;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
-
-import java.security.PrivateKey;
-import java.sql.DriverPropertyInfo;
-import java.sql.SQLException;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Level;
-
-import static net.snowflake.client.core.QueryStatus.getStatusFromString;
-import static net.snowflake.client.core.QueryStatus.isAnError;
 
 /** Snowflake session implementation */
 public class SFSession implements SFSessionInterface {
@@ -87,6 +86,7 @@ public class SFSession implements SFSessionInterface {
    * <p>Default: 0
    */
   private int networkTimeoutInMilli = 0; // in milliseconds
+
   private boolean enableCombineDescribe = false;
   private Map<String, Object> sfSessionProperties = new HashMap<>(1);
 
@@ -385,13 +385,13 @@ public class SFSession implements SFSessionInterface {
     HttpUtil.configureCustomProxyProperties(connectionPropertiesMap);
 
     logger.debug(
-        "input: server={}, account={}, user={}, password={}, role={}, "
-            + "database={}, schema={}, warehouse={}, validate_default_parameters={}, authenticator={}, ocsp_mode={}, "
-            + "passcode_in_password={}, passcode={}, private_key={}, "
-            + "use_proxy={}, proxy_host={}, proxy_port={}, proxy_user={}, proxy_password={}, disable_socks_proxy={}, "
-            + "application={}, app_id={}, app_version={}, "
-            + "login_timeout={}, network_timeout={}, query_timeout={}, tracing={}, private_key_file={}, private_key_file_pwd={}. "
-            + "session_parameters: client_store_temporary_credential={}",
+        "input: server={}, account={}, user={}, password={}, role={}, database={}, schema={},"
+            + " warehouse={}, validate_default_parameters={}, authenticator={}, ocsp_mode={},"
+            + " passcode_in_password={}, passcode={}, private_key={}, use_proxy={}, proxy_host={},"
+            + " proxy_port={}, proxy_user={}, proxy_password={}, disable_socks_proxy={},"
+            + " application={}, app_id={}, app_version={}, login_timeout={}, network_timeout={},"
+            + " query_timeout={}, tracing={}, private_key_file={}, private_key_file_pwd={}."
+            + " session_parameters: client_store_temporary_credential={}",
         connectionPropertiesMap.get(SFConnectionProperty.SERVER_URL),
         connectionPropertiesMap.get(SFConnectionProperty.ACCOUNT),
         connectionPropertiesMap.get(SFConnectionProperty.USER),

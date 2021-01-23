@@ -625,7 +625,8 @@ public class HttpUtil {
       proxyHost = (String) connectionPropertiesMap.get(SFConnectionProperty.PROXY_HOST);
       try {
         proxyPort =
-            Integer.parseInt(connectionPropertiesMap.get(SFConnectionProperty.PROXY_PORT).toString());
+            Integer.parseInt(
+                connectionPropertiesMap.get(SFConnectionProperty.PROXY_PORT).toString());
       } catch (NumberFormatException | NullPointerException e) {
         throw new SnowflakeSQLException(
             ErrorCode.INVALID_PROXY_PROPERTIES, "Could not parse port number");

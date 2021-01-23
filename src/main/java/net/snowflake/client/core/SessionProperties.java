@@ -1,10 +1,9 @@
 package net.snowflake.client.core;
 
-import net.snowflake.client.jdbc.ErrorCode;
-import net.snowflake.client.jdbc.SnowflakeType;
-
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import net.snowflake.client.jdbc.ErrorCode;
+import net.snowflake.client.jdbc.SnowflakeType;
 
 public class SessionProperties {
   private String databaseVersion;

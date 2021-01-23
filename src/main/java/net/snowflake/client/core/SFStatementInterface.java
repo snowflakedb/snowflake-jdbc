@@ -7,12 +7,12 @@ package net.snowflake.client.core;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Map;
-
 import net.snowflake.client.jdbc.SnowflakeBaseResultSet;
 
 public interface SFStatementInterface {
 
-  SnowflakeBaseResultSet createResultSet(SFBaseResultSet resultSet, Statement statement) throws SQLException;
+  SnowflakeBaseResultSet createResultSet(SFBaseResultSet resultSet, Statement statement)
+      throws SQLException;
 
   /**
    * Add a statement parameter
@@ -48,9 +48,7 @@ public interface SFStatementInterface {
    * @throws SQLException if SQL error occurs
    */
   SFBaseResultSet execute(
-      String sql,
-      Map<String, ParameterBindingDTO> parametersBinding,
-      CallingMethod caller)
+      String sql, Map<String, ParameterBindingDTO> parametersBinding, CallingMethod caller)
       throws SQLException, SFException;
 
   void close();

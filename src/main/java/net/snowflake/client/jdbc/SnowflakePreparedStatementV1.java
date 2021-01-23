@@ -554,7 +554,8 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
 
       ParameterBindingDTO binding =
           new ParameterBindingDTO(
-              SnowflakeUtil.javaTypeToSFTypeString(Types.DATE, connection.getSessionHandler()), value);
+              SnowflakeUtil.javaTypeToSFTypeString(Types.DATE, connection.getSessionHandler()),
+              value);
       parameterBindings.put(String.valueOf(parameterIndex), binding);
     }
   }

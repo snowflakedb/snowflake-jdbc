@@ -27,7 +27,6 @@ import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.util.SecretDetector;
 import net.snowflake.common.core.ClientAuthnDTO;
 import net.snowflake.common.core.ClientAuthnParameter;
-import net.snowflake.common.core.LoginInfoDTO;
 import net.snowflake.common.core.SqlState;
 import org.apache.http.HttpHeaders;
 import org.apache.http.client.config.RequestConfig;
@@ -1410,5 +1409,4 @@ public class SessionUtil {
       resetOCSPResponseCacherServerURL(ocspCacheServerUrl);
     }
   }
-
 }

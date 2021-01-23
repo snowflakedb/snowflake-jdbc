@@ -4,14 +4,10 @@
 
 package net.snowflake.client.jdbc;
 
-import com.google.common.base.Strings;
-import net.snowflake.client.core.SFException;
-import net.snowflake.client.core.SFSessionInterface;
-import net.snowflake.client.log.SFLogger;
-import net.snowflake.client.log.SFLoggerFactory;
-import net.snowflake.client.log.SFLoggerUtil;
-import net.snowflake.common.core.SqlState;
+import static net.snowflake.client.jdbc.ErrorCode.FEATURE_UNSUPPORTED;
+import static net.snowflake.client.jdbc.ErrorCode.INVALID_CONNECT_STRING;
 
+import com.google.common.base.Strings;
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.*;
@@ -20,9 +16,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.GZIPInputStream;
-
-import static net.snowflake.client.jdbc.ErrorCode.FEATURE_UNSUPPORTED;
-import static net.snowflake.client.jdbc.ErrorCode.INVALID_CONNECT_STRING;
+import net.snowflake.client.core.SFException;
+import net.snowflake.client.core.SFSessionInterface;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
+import net.snowflake.client.log.SFLoggerUtil;
+import net.snowflake.common.core.SqlState;
 
 /** Snowflake connection implementation */
 public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
@@ -110,7 +109,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
   }
 
   private void initConnectionWithImpl(
-          ConnectionHandler connectionHandler, String url, Properties info) throws SQLException {
+      ConnectionHandler connectionHandler, String url, Properties info) throws SQLException {
     this.connectionHandler = connectionHandler;
     connectionHandler.initializeConnection(url, info);
     this.SFSessionInterface = connectionHandler.getSessionHandler();
@@ -202,7 +201,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
 
     } catch (SFException ex) {
       throw new SnowflakeSQLLoggedException(
-              SFSessionInterface, ex.getSqlState(), ex.getVendorCode(), ex.getCause(), ex.getParams());
+          SFSessionInterface, ex.getSqlState(), ex.getVendorCode(), ex.getCause(), ex.getParams());
     }
   }
 
@@ -823,7 +822,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
 
     if (stageName == null) {
       throw new SnowflakeSQLLoggedException(
-              SFSessionInterface,
+          SFSessionInterface,
           ErrorCode.INTERNAL_ERROR.getMessageCode(),
           SqlState.INTERNAL_ERROR,
           "stage name is null");
@@ -831,7 +830,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
 
     if (destFileName == null) {
       throw new SnowflakeSQLLoggedException(
-              SFSessionInterface,
+          SFSessionInterface,
           ErrorCode.INTERNAL_ERROR.getMessageCode(),
           SqlState.INTERNAL_ERROR,
           "stage name is null");
@@ -888,7 +887,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
 
     if (Strings.isNullOrEmpty(stageName)) {
       throw new SnowflakeSQLLoggedException(
-              SFSessionInterface,
+          SFSessionInterface,
           ErrorCode.INTERNAL_ERROR.getMessageCode(),
           SqlState.INTERNAL_ERROR,
           "stage name is null or empty");
@@ -896,7 +895,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
 
     if (Strings.isNullOrEmpty(sourceFileName)) {
       throw new SnowflakeSQLLoggedException(
-              SFSessionInterface,
+          SFSessionInterface,
           ErrorCode.INTERNAL_ERROR.getMessageCode(),
           SqlState.INTERNAL_ERROR,
           "source file name is null or empty");
@@ -941,7 +940,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
         return new GZIPInputStream(stream);
       } catch (IOException ex) {
         throw new SnowflakeSQLLoggedException(
-                SFSessionInterface,
+            SFSessionInterface,
             ErrorCode.INTERNAL_ERROR.getMessageCode(),
             SqlState.INTERNAL_ERROR,
             ex.getMessage());

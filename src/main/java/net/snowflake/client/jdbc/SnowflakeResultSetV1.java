@@ -18,7 +18,8 @@ import net.snowflake.client.core.SFBaseResultSet;
 import net.snowflake.client.core.SFException;
 
 /** Snowflake ResultSet implementation */
-public class SnowflakeResultSetV1 extends SnowflakeBaseResultSet implements SnowflakeResultSet, ResultSet {
+public class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
+    implements SnowflakeResultSet, ResultSet {
   private final SFBaseResultSet sfBaseResultSet;
 
   /**
@@ -32,7 +33,8 @@ public class SnowflakeResultSetV1 extends SnowflakeBaseResultSet implements Snow
    * @param statement query statement that generates this result set
    * @throws SQLException if failed to construct snowflake result set metadata
    */
-  public SnowflakeResultSetV1(SFBaseResultSet sfBaseResultSet, Statement statement) throws SQLException {
+  public SnowflakeResultSetV1(SFBaseResultSet sfBaseResultSet, Statement statement)
+      throws SQLException {
     super(statement);
     this.sfBaseResultSet = sfBaseResultSet;
     try {
