@@ -291,7 +291,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
       if (resultSet != null) {
         openResultSets.add(resultSet);
       }
-      resultSet = new SnowflakeResultSetV1(sfResultSet, this);
+      resultSet = connection.getHandler().createResultSet(sfResultSet, this);
       queryID = sfResultSet.getQueryId();
 
       // Legacy behavior treats update counts as result sets for single-
@@ -580,7 +580,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
       if (resultSet != null) {
         openResultSets.add(resultSet);
       }
-      resultSet = new SnowflakeResultSetV1(sfResultSet, this);
+      resultSet = connection.getHandler().createResultSet(sfResultSet, this);
       updateCount = NO_UPDATES;
       return true;
     } else if (sfResultSet != null) // update count returned
