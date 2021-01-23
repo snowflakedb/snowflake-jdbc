@@ -57,6 +57,10 @@ public interface StatementHandler {
 
   void cancel() throws SFException, SQLException;
 
+  void executeSetProperty(String sql);
+
+  boolean hasChildren();
+
   SessionHandler getSession();
 
   /**
