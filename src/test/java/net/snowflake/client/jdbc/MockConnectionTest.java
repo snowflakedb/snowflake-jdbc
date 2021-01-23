@@ -1,24 +1,22 @@
 package net.snowflake.client.jdbc;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import java.sql.Connection;
-import java.sql.DriverPropertyInfo;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.*;
 import net.snowflake.client.category.TestCategoryConnection;
 import net.snowflake.client.core.*;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
 import net.snowflake.common.core.SnowflakeDateTimeFormat;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+
+import java.sql.*;
+import java.util.*;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 /**
  * IT test for testing the "pluggable" implementation of SnowflakeConnection, SnowflakeStatement,
@@ -73,7 +71,7 @@ public class MockConnectionTest extends BaseJDBCTest {
 
       SnowflakeColumnMetadata columnMetadata =
           SnowflakeUtil.extractColumnMetadata(
-              colNode, sfSession.isJdbcTreatDecimalAsInt(), sfSession);
+              colNode, sfSession.sessionProperties().isJdbcTreatDecimalAsInt(), sfSession);
 
       resultColumnMetadata.add(columnMetadata);
     }
@@ -124,8 +122,7 @@ public class MockConnectionTest extends BaseJDBCTest {
     return type;
   }
 
-  public Connection initMockConnection(ConnectionHandler implementation)
-      throws SQLException {
+  public Connection initMockConnection(ConnectionHandlerV1 implementation) throws SQLException {
     return new SnowflakeConnectionV1(implementation);
   }
 
@@ -225,7 +222,7 @@ public class MockConnectionTest extends BaseJDBCTest {
                 + "   \"success\":true\n"
                 + "}");
 
-    MockSnowflakeConnectionImpl mockImpl = new MockSnowflakeConnectionImpl(rawResponse);
+    MockSnowflakeConnectionImplV1 mockImpl = new MockSnowflakeConnectionImplV1(rawResponse);
     Connection mockConnection = initMockConnection(mockImpl);
 
     ResultSet fakeResultSet =
@@ -251,7 +248,7 @@ public class MockConnectionTest extends BaseJDBCTest {
 
     JsonNode responseWithRows = createDummyResponseWithRows(rowsToTest, dataTypes);
 
-    MockSnowflakeConnectionImpl mockImpl = new MockSnowflakeConnectionImpl(responseWithRows);
+    MockSnowflakeConnectionImplV1 mockImpl = new MockSnowflakeConnectionImplV1(responseWithRows);
     Connection mockConnection = initMockConnection(mockImpl);
 
     ResultSet fakeResultSet =
@@ -269,7 +266,7 @@ public class MockConnectionTest extends BaseJDBCTest {
 
     responseWithRows = createDummyResponseWithRows(rowsToTest, dataTypes);
 
-    mockImpl = new MockSnowflakeConnectionImpl(responseWithRows);
+    mockImpl = new MockSnowflakeConnectionImplV1(responseWithRows);
     mockConnection = initMockConnection(mockImpl);
 
     fakeResultSet = mockConnection.prepareStatement("select * from fakeTable").executeQuery();
@@ -286,7 +283,7 @@ public class MockConnectionTest extends BaseJDBCTest {
 
     responseWithRows = createDummyResponseWithRows(rowsToTest, dataTypes);
 
-    mockImpl = new MockSnowflakeConnectionImpl(responseWithRows);
+    mockImpl = new MockSnowflakeConnectionImplV1(responseWithRows);
     mockConnection = initMockConnection(mockImpl);
 
     fakeResultSet = mockConnection.prepareStatement("select * from fakeTable").executeQuery();
@@ -441,6 +438,12 @@ public class MockConnectionTest extends BaseJDBCTest {
     }
 
     @Override
+    public SnowflakeBaseResultSet createResultSet(SFBaseResultSet resultSet, Statement statement)
+        throws SQLException {
+      return null;
+    }
+
+    @Override
     public void addProperty(String propertyName, Object propertyValue) {}
 
     @Override
@@ -449,33 +452,9 @@ public class MockConnectionTest extends BaseJDBCTest {
     }
 
     @Override
-    public Object executeHelper(
-        String sql,
-        String mediaType,
-        Map<String, ParameterBindingDTO> bindValues,
-        boolean describeOnly,
-        boolean internal,
-        boolean asyncExec) {
-      return null;
-    }
-
-    @Override
-    public int getConservativePrefetchThreads() {
-      return 0;
-    }
-
-    @Override
-    public long getConservativeMemoryLimit() {
-      return 0;
-    }
-
-    @Override
     public SFBaseResultSet execute(
-        String sql,
-        boolean asyncExec,
-        Map<String, ParameterBindingDTO> parametersBinding,
-        CallingMethod caller)
-        throws SQLException {
+        String sql, Map<String, ParameterBindingDTO> parametersBinding, CallingMethod caller)
+        throws SQLException, SFException {
       return new MockJsonResultSet(mockedResponse, sfSession);
     }
 
@@ -487,6 +466,11 @@ public class MockConnectionTest extends BaseJDBCTest {
 
     @Override
     public void executeSetProperty(String sql) {}
+
+    @Override
+    public boolean hasChildren() {
+      return false;
+    }
 
     @Override
     public SessionHandler getSession() {
@@ -501,11 +485,6 @@ public class MockConnectionTest extends BaseJDBCTest {
     @Override
     public SFBaseResultSet getResultSet() {
       return null;
-    }
-
-    @Override
-    public boolean hasChildren() {
-      return false;
     }
   }
 
@@ -566,32 +545,6 @@ public class MockConnectionTest extends BaseJDBCTest {
     }
 
     @Override
-    public QueryStatus getQueryStatus(String queryID) {
-      return null;
-    }
-
-    @Override
-    public void addProperty(SFSessionProperty sfSessionProperty, Object propertyValue) {}
-
-    @Override
-    public void addProperty(String propertyName, Object propertyValue) {}
-
-    @Override
-    public boolean containProperty(String key) {
-      return false;
-    }
-
-    @Override
-    public boolean isStringQuoted() {
-      return false;
-    }
-
-    @Override
-    public boolean isJdbcTreatDecimalAsInt() {
-      return false;
-    }
-
-    @Override
     public void open() {}
 
     @Override
@@ -600,18 +553,8 @@ public class MockConnectionTest extends BaseJDBCTest {
     }
 
     @Override
-    public String getDatabaseVersion() {
+    public SessionProperties sessionProperties() {
       return null;
-    }
-
-    @Override
-    public int getDatabaseMajorVersion() {
-      return 0;
-    }
-
-    @Override
-    public int getDatabaseMinorVersion() {
-      return 0;
     }
 
     @Override
@@ -633,17 +576,7 @@ public class MockConnectionTest extends BaseJDBCTest {
     }
 
     @Override
-    public void setSFSessionProperty(String propertyName, boolean propertyValue) {}
-
-    @Override
-    public Object getSFSessionProperty(String propertyName) {
-      return null;
-    }
-
-    @Override
-    public boolean isClosed() {
-      return false;
-    }
+    public void raiseErrorInSession() {}
 
     @Override
     public boolean getAutoCommit() {
@@ -701,82 +634,26 @@ public class MockConnectionTest extends BaseJDBCTest {
     }
 
     @Override
-    public boolean getMetadataRequestUseConnectionCtx() {
-      return false;
-    }
-
-    @Override
-    public boolean getMetadataRequestUseSessionDatabase() {
-      return false;
-    }
-
-    @Override
-    public boolean getPreparedStatementLogging() {
-      return false;
-    }
-
-    @Override
     public List<SFException> getSqlWarnings() {
       return null;
     }
 
     @Override
     public void clearSqlWarnings() {}
-
-    @Override
-    public void setInjectFileUploadFailure(String fileToFail) {}
-
-    @Override
-    public void setInjectedDelay(int delay) {}
-
-    @Override
-    public boolean isSfSQLMode() {
-      return false;
-    }
-
-    @Override
-    public void setSfSQLMode(boolean booleanV) {}
-
-    @Override
-    public boolean isResultColumnCaseInsensitive() {
-      return false;
-    }
-
-    @Override
-    public String getServerUrl() {
-      return null;
-    }
-
-    @Override
-    public String getSessionToken() {
-      return null;
-    }
-
-    @Override
-    public String getServiceName() {
-      return null;
-    }
-
-    @Override
-    public String getIdToken() {
-      return null;
-    }
-
-    @Override
-    public SnowflakeType getTimestampMappedType() {
-      return null;
-    }
   }
 
-  private static class MockSnowflakeConnectionImpl implements ConnectionHandler {
+  private static class MockSnowflakeConnectionImplV1 implements ConnectionHandlerV1 {
 
     JsonNode jsonResponse;
     MockSnowflakeSession session;
 
-    public MockSnowflakeConnectionImpl(JsonNode jsonResponse) {
+    public MockSnowflakeConnectionImplV1(JsonNode jsonResponse) {
       this.jsonResponse = jsonResponse;
       this.session = new MockSnowflakeSession();
     }
+
+    @Override
+    public void initializeConnection(String url, Properties info) throws SQLException {}
 
     @Override
     public SessionHandler getSessionHandler() {
@@ -789,8 +666,12 @@ public class MockConnectionTest extends BaseJDBCTest {
     }
 
     @Override
-    public FileTransferHandler getFileTransferHandler(
-        String command, StatementHandler statement) {
+    public ResultSet createResultSet(String queryID, Connection connection) throws SQLException {
+      return null;
+    }
+
+    @Override
+    public FileTransferHandler getFileTransferHandler(String command, StatementHandler statement) {
       return null;
     }
   }

@@ -110,9 +110,9 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
 
     this.connection = connection;
     this.session = connection.unwrap(SnowflakeConnectionV1.class).getSessionHandler();
-    this.metadataRequestUseConnectionCtx = session.getMetadataRequestUseConnectionCtx();
-    this.metadataRequestUseSessionDatabase = session.getMetadataRequestUseSessionDatabase();
-    this.stringsQuoted = session.isStringQuoted();
+    this.metadataRequestUseConnectionCtx = session.sessionProperties().getMetadataRequestUseConnectionCtx();
+    this.metadataRequestUseSessionDatabase = session.sessionProperties().getMetadataRequestUseSessionDatabase();
+    this.stringsQuoted = session.sessionProperties().isStringQuoted();
     this.ibInstance = session.getTelemetryClient();
   }
 
@@ -1652,7 +1652,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
 
             SnowflakeColumnMetadata columnMetadata =
                 SnowflakeUtil.extractColumnMetadata(
-                    jsonNode, session.isJdbcTreatDecimalAsInt(), session);
+                    jsonNode, session.sessionProperties().isJdbcTreatDecimalAsInt(), session);
 
             logger.debug("nullable: {}", columnMetadata.isNullable());
 

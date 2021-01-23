@@ -428,7 +428,7 @@ public class SFStatement implements AsyncStatementHandler {
           .setInternal(internal)
           .setDescribeOnly(describeOnly)
           .setAsync(asyncExec)
-          .setServerUrl(session.getServerUrl())
+          .setServerUrl(session.sessionProperties().getServerUrl())
           .setRequestId(requestId)
           .setSequenceId(sequenceId)
           .setParametersMap(statementParametersMap)
@@ -442,7 +442,7 @@ public class SFStatement implements AsyncStatementHandler {
           .setCombineDescribe(session.getEnableCombineDescribe())
           .setQuerySubmissionTime(System.currentTimeMillis())
           .setServiceName(session.getServiceName())
-          .setOCSPMode(session.getOCSPMode());
+          .setOCSPMode(session.sessionProperties().getOCSPMode());
 
       if (bindStagePath != null) {
         stmtInput.setBindValues(null).setBindStage(bindStagePath);
@@ -677,7 +677,7 @@ public class SFStatement implements AsyncStatementHandler {
             .setWarehouse(session.getWarehouse())
             .setDatabaseName(session.getDatabase())
             .setSchemaName(session.getSchema())
-            .setOCSPMode(session.getOCSPMode());
+            .setOCSPMode(session.sessionProperties().getOCSPMode());
 
     session.open();
   }
@@ -700,13 +700,13 @@ public class SFStatement implements AsyncStatementHandler {
 
     StmtUtil.StmtInput stmtInput = new StmtUtil.StmtInput();
     stmtInput
-        .setServerUrl(session.getServerUrl())
+        .setServerUrl(session.sessionProperties().getServerUrl())
         .setSql(sql)
         .setMediaType(mediaType)
         .setRequestId(requestId)
         .setSessionToken(session.getSessionToken())
         .setServiceName(session.getServiceName())
-        .setOCSPMode(session.getOCSPMode());
+        .setOCSPMode(session.sessionProperties().getOCSPMode());
 
     StmtUtil.cancel(stmtInput);
 
