@@ -102,7 +102,7 @@ public class SFStatement implements SFStatementInterface {
   }
 
   public SFStatement(SFSession session) {
-    logger.debug(" public SFStatementImpl(SFSession session)");
+    logger.debug(" public SFStatement(SFSession session)");
 
     this.session = session;
     Integer queryTimeout = session == null ? null : session.getQueryTimeout();
