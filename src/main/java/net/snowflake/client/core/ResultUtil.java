@@ -326,7 +326,7 @@ public class ResultUtil {
    * @return date in string
    */
   public static String getDateAsString(Date date, SnowflakeDateTimeFormat dateFormatter) {
-    return dateFormatter.format(date, timeZoneUTC);
+    return dateFormatter.format(date, TimeZone.getDefault());
   }
 
   /**

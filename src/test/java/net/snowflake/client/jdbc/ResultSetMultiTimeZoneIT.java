@@ -318,6 +318,20 @@ public class ResultSetMultiTimeZoneIT extends BaseJDBCTest {
   }
 
   @Test
+  public void testGetStringForDates() throws SQLException {
+    Connection connection = init();
+    Statement statement = connection.createStatement();
+    String expectedDate1 = "2020-08-01";
+    String expectedDate2 = "1920-11-11";
+    ResultSet rs = statement.executeQuery("SELECT '" + expectedDate1 + "'::DATE as D1");
+    rs.next();
+    assertEquals(expectedDate1, rs.getString(1));
+    rs = statement.executeQuery("SELECT '" + expectedDate2 + "'::DATE as D1");
+    rs.next();
+    assertEquals(expectedDate2, rs.getString(1));
+  }
+
+  @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testDateTimeRelatedTypeConversion() throws SQLException {
     Connection connection = init();
