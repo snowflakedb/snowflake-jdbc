@@ -111,10 +111,10 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
     this.connection = connection;
     this.session = connection.unwrap(SnowflakeConnectionV1.class).getSFSession();
     this.metadataRequestUseConnectionCtx =
-        session.sessionProperties().getMetadataRequestUseConnectionCtx();
+        session.getSessionProperties().getMetadataRequestUseConnectionCtx();
     this.metadataRequestUseSessionDatabase =
-        session.sessionProperties().getMetadataRequestUseSessionDatabase();
-    this.stringsQuoted = session.sessionProperties().isStringQuoted();
+        session.getSessionProperties().getMetadataRequestUseSessionDatabase();
+    this.stringsQuoted = session.getSessionProperties().isStringQuoted();
     this.ibInstance = session.getTelemetryClient();
   }
 
@@ -195,7 +195,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
   public String getURL() throws SQLException {
     logger.debug("public String getURL()");
     raiseSQLExceptionIfConnectionIsClosed();
-    String url = session.sessionProperties().getUrl();
+    String url = session.getSessionProperties().getUrl();
     return url.startsWith("http://")
         ? url.replace("http://", "jdbc:snowflake://")
         : url.replace("https://", "jdbc:snowflake://");
@@ -205,7 +205,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
   public String getUserName() throws SQLException {
     logger.debug("public String getUserName()");
     raiseSQLExceptionIfConnectionIsClosed();
-    return session.sessionProperties().getUser();
+    return session.getSessionProperties().getUser();
   }
 
   @Override
@@ -1242,15 +1242,15 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
     if (metadataRequestUseConnectionCtx) {
       // CLIENT_METADATA_USE_SESSION_DATABASE = TRUE
       if (catalog == null) {
-        catalog = session.sessionProperties().getDatabase();
+        catalog = session.getSessionProperties().getDatabase();
       }
       if (schemaPattern == null) {
-        schemaPattern = session.sessionProperties().getSchema();
+        schemaPattern = session.getSessionProperties().getSchema();
       }
     } else {
       if (metadataRequestUseSessionDatabase) {
         if (catalog == null) {
-          catalog = session.sessionProperties().getDatabase();
+          catalog = session.getSessionProperties().getDatabase();
         }
       }
     }
@@ -1654,7 +1654,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
 
             SnowflakeColumnMetadata columnMetadata =
                 SnowflakeUtil.extractColumnMetadata(
-                    jsonNode, session.sessionProperties().isJdbcTreatDecimalAsInt(), session);
+                    jsonNode, session.getSessionProperties().isJdbcTreatDecimalAsInt(), session);
 
             logger.debug("nullable: {}", columnMetadata.isNullable());
 

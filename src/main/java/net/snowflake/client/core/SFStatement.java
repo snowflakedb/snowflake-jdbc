@@ -105,7 +105,8 @@ public class SFStatement implements SFStatementInterface {
     logger.debug(" public SFStatement(SFSession session)");
 
     this.session = session;
-    Integer queryTimeout = session == null ? null : session.sessionProperties().getQueryTimeout();
+    Integer queryTimeout =
+        session == null ? null : session.getSessionProperties().getQueryTimeout();
     this.queryTimeout = queryTimeout != null ? queryTimeout : this.queryTimeout;
     verifyArrowSupport();
   }
@@ -373,8 +374,8 @@ public class SFStatement implements SFStatementInterface {
       // instead of passing them in the payload (if enabled)
       int numBinds = BindUploader.arrayBindValueCount(bindValues);
       String bindStagePath = null;
-      if (0 < session.sessionProperties().getArrayBindStageThreshold()
-          && session.sessionProperties().getArrayBindStageThreshold() <= numBinds
+      if (0 < session.getSessionProperties().getArrayBindStageThreshold()
+          && session.getSessionProperties().getArrayBindStageThreshold() <= numBinds
           && !describeOnly
           && BindUploader.isArrayBind(bindValues)) {
         try (BindUploader uploader = BindUploader.newInstance(session, requestId)) {
@@ -412,7 +413,7 @@ public class SFStatement implements SFStatementInterface {
         }
       }
 
-      if (session.sessionProperties().isConservativeMemoryUsageEnabled()) {
+      if (session.getSessionProperties().isConservativeMemoryUsageEnabled()) {
         logger.debug("JDBC conservative memory usage is enabled.");
         calculateConservativeMemoryUsage();
       }
@@ -424,7 +425,7 @@ public class SFStatement implements SFStatementInterface {
           .setInternal(internal)
           .setDescribeOnly(describeOnly)
           .setAsync(asyncExec)
-          .setServerUrl(session.sessionProperties().getServerUrl())
+          .setServerUrl(session.getSessionProperties().getServerUrl())
           .setRequestId(requestId)
           .setSequenceId(sequenceId)
           .setParametersMap(statementParametersMap)
@@ -437,8 +438,8 @@ public class SFStatement implements SFStatementInterface {
           .setDescribedJobId(describeJobUUID)
           .setCombineDescribe(session.getEnableCombineDescribe())
           .setQuerySubmissionTime(System.currentTimeMillis())
-          .setServiceName(session.sessionProperties().getServiceName())
-          .setOCSPMode(session.sessionProperties().getOCSPMode());
+          .setServiceName(session.getSessionProperties().getServiceName())
+          .setOCSPMode(session.getSessionProperties().getOCSPMode());
 
       if (bindStagePath != null) {
         stmtInput.setBindValues(null).setBindStage(bindStagePath);
@@ -447,7 +448,7 @@ public class SFStatement implements SFStatementInterface {
       } else {
         stmtInput.setBindValues(bindValues).setBindStage(null);
       }
-      if (numBinds > 0 && session.sessionProperties().getPreparedStatementLogging()) {
+      if (numBinds > 0 && session.getSessionProperties().getPreparedStatementLogging()) {
         if (numBinds > MAX_BINDING_PARAMS_FOR_LOGGING) {
           logger.info(
               "Number of binds exceeds logging limit. Printing off {} binding parameters.",
@@ -584,9 +585,9 @@ public class SFStatement implements SFStatementInterface {
    * calculate conservative memory limit and the number of prefetch threads before query execution
    */
   private void calculateConservativeMemoryUsage() {
-    int clientMemoryLimit = session.sessionProperties().getClientMemoryLimit();
-    int clientPrefetchThread = session.sessionProperties().getClientPrefetchThreads();
-    int clientChunkSize = session.sessionProperties().getClientResultChunkSize();
+    int clientMemoryLimit = session.getSessionProperties().getClientMemoryLimit();
+    int clientPrefetchThread = session.getSessionProperties().getClientPrefetchThreads();
+    int clientChunkSize = session.getSessionProperties().getClientResultChunkSize();
 
     long memoryLimitInBytes;
     if (clientMemoryLimit == DEFAULT_CLIENT_MEMORY_LIMIT) {
@@ -622,7 +623,7 @@ public class SFStatement implements SFStatementInterface {
       conservativePrefetchThreads = clientPrefetchThread;
       for (;
           clientChunkSize >= MIN_CLIENT_CHUNK_SIZE;
-          clientChunkSize -= session.sessionProperties().getConservativeMemoryAdjustStep()) {
+          clientChunkSize -= session.getSessionProperties().getConservativeMemoryAdjustStep()) {
         if (clientMemoryLimit >= (long) 2 * clientPrefetchThread * clientChunkSize * 1024 * 1024) {
           updateConservativeResultChunkSize(clientChunkSize);
           return;
@@ -634,7 +635,7 @@ public class SFStatement implements SFStatementInterface {
       while (clientPrefetchThread > 1) {
         for (clientChunkSize = MAX_CLIENT_CHUNK_SIZE;
             clientChunkSize >= MIN_CLIENT_CHUNK_SIZE;
-            clientChunkSize -= session.sessionProperties().getConservativeMemoryAdjustStep()) {
+            clientChunkSize -= session.getSessionProperties().getConservativeMemoryAdjustStep()) {
           if (clientMemoryLimit
               >= (long) 2 * clientPrefetchThread * clientChunkSize * 1024 * 1024) {
             conservativePrefetchThreads = clientPrefetchThread;
@@ -669,11 +670,11 @@ public class SFStatement implements SFStatementInterface {
   private void reauthenticate() throws SFException, SnowflakeSQLException {
     SFLoginInput input =
         new SFLoginInput()
-            .setRole(session.sessionProperties().getRole())
-            .setWarehouse(session.sessionProperties().getWarehouse())
-            .setDatabaseName(session.sessionProperties().getDatabase())
-            .setSchemaName(session.sessionProperties().getSchema())
-            .setOCSPMode(session.sessionProperties().getOCSPMode());
+            .setRole(session.getSessionProperties().getRole())
+            .setWarehouse(session.getSessionProperties().getWarehouse())
+            .setDatabaseName(session.getSessionProperties().getDatabase())
+            .setSchemaName(session.getSessionProperties().getSchema())
+            .setOCSPMode(session.getSessionProperties().getOCSPMode());
 
     session.open();
   }
@@ -696,13 +697,13 @@ public class SFStatement implements SFStatementInterface {
 
     StmtUtil.StmtInput stmtInput = new StmtUtil.StmtInput();
     stmtInput
-        .setServerUrl(session.sessionProperties().getServerUrl())
+        .setServerUrl(session.getSessionProperties().getServerUrl())
         .setSql(sql)
         .setMediaType(mediaType)
         .setRequestId(requestId)
         .setSessionToken(session.getSessionToken())
-        .setServiceName(session.sessionProperties().getServiceName())
-        .setOCSPMode(session.sessionProperties().getOCSPMode());
+        .setServiceName(session.getSessionProperties().getServiceName())
+        .setOCSPMode(session.getSessionProperties().getOCSPMode());
 
     StmtUtil.cancel(stmtInput);
 
@@ -753,7 +754,7 @@ public class SFStatement implements SFStatementInterface {
 
     session.injectedDelay();
 
-    if (session.sessionProperties().getPreparedStatementLogging()) {
+    if (session.getSessionProperties().getPreparedStatementLogging()) {
       logger.info("execute: {}", (ArgSupplier) () -> SecretDetector.maskSecrets(sql));
     } else {
       logger.debug("execute: {}", (ArgSupplier) () -> SecretDetector.maskSecrets(sql));

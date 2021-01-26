@@ -403,7 +403,7 @@ public class BindUploader implements Closeable {
         } catch (SFException | SQLException ex) {
           // to avoid repeated failures to create stage, disable array bind stage
           // optimization if we fail to create stage for some reason
-          session.sessionProperties().setArrayBindStageThreshold(0);
+          session.getSessionProperties().setArrayBindStageThreshold(0);
           throw new BindException(
               String.format(
                   "Failed to create temporary stage for array binds. %s", ex.getMessage()),

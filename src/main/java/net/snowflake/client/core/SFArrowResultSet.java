@@ -33,45 +33,32 @@ import org.apache.arrow.memory.RootAllocator;
 /** Arrow result set implementation */
 public class SFArrowResultSet extends SFBaseResultSet implements DataConversionContext {
   static final SFLogger logger = SFLoggerFactory.getLogger(SFArrowResultSet.class);
-
+  /** is array bind supported */
+  private final boolean arrayBindSupported;
+  /** total chunk count, not include first chunk */
+  private final long chunkCount;
+  /** time when first chunk arrived */
+  private final long firstChunkTime;
+  /** telemetry client to push stats to server */
+  private final Telemetry telemetryClient;
+  /** statement generate current result set */
+  protected SFStatement statement;
   /** iterator over current arrow result chunk */
   private ArrowChunkIterator currentChunkIterator;
-
   /** current query id */
   private String queryId;
-
   /** type of statement generate this result set */
   private SFStatementType statementType;
 
   private boolean totalRowCountTruncated;
-
   /** true if sort first chunk */
   private boolean sortResult;
-
-  /** statement generate current result set */
-  protected SFStatementInterface statement;
-
-  /** is array bind supported */
-  private final boolean arrayBindSupported;
-
   /** sesion timezone */
   private TimeZone timeZone;
-
   /** index of next chunk to consume */
   private long nextChunkIndex = 0;
-
-  /** total chunk count, not include first chunk */
-  private final long chunkCount;
-
   /** chunk downloader */
   private ChunkDownloader chunkDownloader;
-
-  /** time when first chunk arrived */
-  private final long firstChunkTime;
-
-  /** telemetry client to push stats to server */
-  private final Telemetry telemetryClient;
-
   /**
    * memory allocator for Arrow. Each SFArrowResultSet contains one rootAllocator. This
    * rootAllocactor will be cleared and closed when the resultSet is closed
@@ -114,10 +101,10 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
 
     // update the session db/schema/wh/role etc
     this.statement = statement;
-    session.sessionProperties().setDatabase(resultSetSerializable.getFinalDatabaseName());
-    session.sessionProperties().setSchema(resultSetSerializable.getFinalSchemaName());
-    session.sessionProperties().setRole(resultSetSerializable.getFinalRoleName());
-    session.sessionProperties().setWarehouse(resultSetSerializable.getFinalWarehouseName());
+    session.getSessionProperties().setDatabase(resultSetSerializable.getFinalDatabaseName());
+    session.getSessionProperties().setSchema(resultSetSerializable.getFinalSchemaName());
+    session.getSessionProperties().setRole(resultSetSerializable.getFinalRoleName());
+    session.getSessionProperties().setWarehouse(resultSetSerializable.getFinalWarehouseName());
     treatNTZAsUTC = resultSetSerializable.getTreatNTZAsUTC();
     formatDateWithTimezone = resultSetSerializable.getFormatDateWithTimeZone();
     useSessionTimezone = resultSetSerializable.getUseSessionTimezone();
@@ -200,6 +187,34 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
         this.currentChunkIterator =
             buildFirstChunk(resultSetSerializable.getFirstChunkStringData()).getIterator(this);
       }
+    }
+  }
+
+  public static void closeRootAllocator(RootAllocator rootAllocator) {
+    long rest = rootAllocator.getAllocatedMemory();
+    int count = 3;
+    try {
+      while (rest > 0 && count-- > 0) {
+        // this case should only happen when the resultSet is closed before consuming all chunks
+        // otherwise, the memory usage for each chunk will be cleared right after it has been fully
+        // consumed
+
+        // The reason is that it is possible that one downloading thread is pending to close when
+        // the main thread
+        // reaches here. A retry is to wait for the downloading thread to finish closing incoming
+        // streams and arrow
+        // resources.
+
+        Thread.sleep(10);
+        rest = rootAllocator.getAllocatedMemory();
+      }
+      if (rest == 0) {
+        rootAllocator.close();
+      }
+    } catch (InterruptedException ie) {
+      logger.debug("interrupted during closing root allocator");
+    } catch (Exception e) {
+      logger.debug("Exception happened when closing rootAllocator: ", e.getLocalizedMessage());
     }
   }
 
@@ -527,34 +542,6 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     } catch (InterruptedException ex) {
       throw new SnowflakeSQLLoggedException(
           session, ErrorCode.INTERRUPTED.getMessageCode(), SqlState.QUERY_CANCELED);
-    }
-  }
-
-  public static void closeRootAllocator(RootAllocator rootAllocator) {
-    long rest = rootAllocator.getAllocatedMemory();
-    int count = 3;
-    try {
-      while (rest > 0 && count-- > 0) {
-        // this case should only happen when the resultSet is closed before consuming all chunks
-        // otherwise, the memory usage for each chunk will be cleared right after it has been fully
-        // consumed
-
-        // The reason is that it is possible that one downloading thread is pending to close when
-        // the main thread
-        // reaches here. A retry is to wait for the downloading thread to finish closing incoming
-        // streams and arrow
-        // resources.
-
-        Thread.sleep(10);
-        rest = rootAllocator.getAllocatedMemory();
-      }
-      if (rest == 0) {
-        rootAllocator.close();
-      }
-    } catch (InterruptedException ie) {
-      logger.debug("interrupted during closing root allocator");
-    } catch (Exception e) {
-      logger.debug("Exception happened when closing rootAllocator: ", e.getLocalizedMessage());
     }
   }
 

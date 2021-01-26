@@ -70,7 +70,7 @@ public class MockConnectionTest extends BaseJDBCTest {
 
       SnowflakeColumnMetadata columnMetadata =
           SnowflakeUtil.extractColumnMetadata(
-              colNode, sfSession.sessionProperties().isJdbcTreatDecimalAsInt(), sfSession);
+              colNode, sfSession.getSessionProperties().isJdbcTreatDecimalAsInt(), sfSession);
 
       resultColumnMetadata.add(columnMetadata);
     }
@@ -555,27 +555,12 @@ public class MockConnectionTest extends BaseJDBCTest {
     }
 
     @Override
-    public SessionProperties sessionProperties() {
+    public SessionProperties getSessionProperties() {
       return sessionProperties;
     }
 
     @Override
-    public String getSessionId() {
-      return null;
-    }
-
-    @Override
     public void close() {}
-
-    @Override
-    public Properties getClientInfo() {
-      return null;
-    }
-
-    @Override
-    public String getClientInfo(String name) {
-      return null;
-    }
 
     @Override
     public void raiseError(Throwable exc, String jobId, String requestId) {}

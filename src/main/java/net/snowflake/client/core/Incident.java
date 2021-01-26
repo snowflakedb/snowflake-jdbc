@@ -101,7 +101,7 @@ public class Incident extends Event {
       String errorStackTrace,
       String raiser) {
     this(
-        session.sessionProperties().getServerUrl(),
+        session.getSessionProperties().getServerUrl(),
         session.getSessionToken(),
         jobId,
         requestId,

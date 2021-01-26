@@ -1279,98 +1279,100 @@ public class SessionUtil {
         SnowflakeDriver.setDisableIncidents((Boolean) entry.getValue());
       } else if ("CLIENT_SESSION_KEEP_ALIVE".equalsIgnoreCase(entry.getKey())) {
         if (session != null) {
-          session.sessionProperties().setEnableHeartbeat((Boolean) entry.getValue());
+          session.getSessionProperties().setEnableHeartbeat((Boolean) entry.getValue());
         }
       } else if ("CLIENT_ENABLE_LOG_INFO_STATEMENT_PARAMETERS".equalsIgnoreCase(entry.getKey())) {
         boolean enableLogging = (Boolean) entry.getValue();
         if (session != null
-            && session.sessionProperties().getPreparedStatementLogging() != enableLogging) {
-          session.sessionProperties().setPreparedStatementLogging(enableLogging);
+            && session.getSessionProperties().getPreparedStatementLogging() != enableLogging) {
+          session.getSessionProperties().setPreparedStatementLogging(enableLogging);
         }
       } else if ("AUTOCOMMIT".equalsIgnoreCase(entry.getKey())) {
         boolean autoCommit = (Boolean) entry.getValue();
-        if (session != null && session.sessionProperties().getAutoCommit() != autoCommit) {
-          session.sessionProperties().setAutoCommit(autoCommit);
+        if (session != null && session.getSessionProperties().getAutoCommit() != autoCommit) {
+          session.getSessionProperties().setAutoCommit(autoCommit);
         }
       } else if (JDBC_RS_COLUMN_CASE_INSENSITIVE.equalsIgnoreCase(entry.getKey())
           || CLIENT_RESULT_COLUMN_CASE_INSENSITIVE.equalsIgnoreCase(entry.getKey())) {
-        if (session != null && !session.sessionProperties().isResultColumnCaseInsensitive()) {
-          session.sessionProperties().setResultColumnCaseInsensitive((boolean) entry.getValue());
+        if (session != null && !session.getSessionProperties().isResultColumnCaseInsensitive()) {
+          session.getSessionProperties().setResultColumnCaseInsensitive((boolean) entry.getValue());
         }
       } else if (CLIENT_METADATA_REQUEST_USE_CONNECTION_CTX.equalsIgnoreCase(entry.getKey())) {
         if (session != null) {
           session
-              .sessionProperties()
+              .getSessionProperties()
               .setMetadataRequestUseConnectionCtx((boolean) entry.getValue());
         }
       } else if (CLIENT_METADATA_USE_SESSION_DATABASE.equalsIgnoreCase(entry.getKey())) {
         if (session != null) {
           session
-              .sessionProperties()
+              .getSessionProperties()
               .setMetadataRequestUseSessionDatabase((boolean) entry.getValue());
         }
       } else if (JDBC_TREAT_TIMESTAMP_NTZ_AS_UTC.equalsIgnoreCase(entry.getKey())) {
         if (session != null) {
-          session.sessionProperties().setTreatNTZAsUTC((boolean) entry.getValue());
+          session.getSessionProperties().setTreatNTZAsUTC((boolean) entry.getValue());
         }
       } else if (JDBC_FORMAT_DATE_WITH_TIMEZONE.equalsIgnoreCase(entry.getKey())) {
         if (session != null) {
-          session.sessionProperties().setFormatDateWithTimezone((boolean) entry.getValue());
+          session.getSessionProperties().setFormatDateWithTimezone((boolean) entry.getValue());
         }
       } else if (JDBC_USE_SESSION_TIMEZONE.equalsIgnoreCase(entry.getKey())) {
         if (session != null) {
-          session.sessionProperties().setUseSessionTimezone((boolean) entry.getValue());
+          session.getSessionProperties().setUseSessionTimezone((boolean) entry.getValue());
         }
       } else if ("CLIENT_TIMESTAMP_TYPE_MAPPING".equalsIgnoreCase(entry.getKey())) {
         if (session != null) {
           session
-              .sessionProperties()
+              .getSessionProperties()
               .setTimestampMappedType(
                   SnowflakeType.valueOf(((String) entry.getValue()).toUpperCase()));
         }
       } else if ("JDBC_TREAT_DECIMAL_AS_INT".equalsIgnoreCase(entry.getKey())) {
         if (session != null) {
-          session.sessionProperties().setJdbcTreatDecimalAsInt((boolean) entry.getValue());
+          session.getSessionProperties().setJdbcTreatDecimalAsInt((boolean) entry.getValue());
         }
       } else if ("JDBC_ENABLE_COMBINED_DESCRIBE".equalsIgnoreCase(entry.getKey())) {
         if (session != null) {
-          session.sessionProperties().setEnableCombineDescribe((boolean) entry.getValue());
+          session.getSessionProperties().setEnableCombineDescribe((boolean) entry.getValue());
         }
       } else if (CLIENT_IN_BAND_TELEMETRY_ENABLED.equalsIgnoreCase(entry.getKey())) {
         if (session != null) {
-          session.sessionProperties().setClientTelemetryEnabled((boolean) entry.getValue());
+          session.getSessionProperties().setClientTelemetryEnabled((boolean) entry.getValue());
         }
       } else if ("CLIENT_STAGE_ARRAY_BINDING_THRESHOLD".equalsIgnoreCase(entry.getKey())) {
         if (session != null) {
-          session.sessionProperties().setArrayBindStageThreshold((int) entry.getValue());
+          session.getSessionProperties().setArrayBindStageThreshold((int) entry.getValue());
         }
       } else if (CLIENT_STORE_TEMPORARY_CREDENTIAL.equalsIgnoreCase(entry.getKey())) {
         if (session != null) {
-          session.sessionProperties().setStoreTemporaryCredential((boolean) entry.getValue());
+          session.getSessionProperties().setStoreTemporaryCredential((boolean) entry.getValue());
         }
       } else if (SERVICE_NAME.equalsIgnoreCase(entry.getKey())) {
         if (session != null) {
-          session.sessionProperties().setServiceName((String) entry.getValue());
+          session.getSessionProperties().setServiceName((String) entry.getValue());
         }
       } else if (CLIENT_ENABLE_CONSERVATIVE_MEMORY_USAGE.equalsIgnoreCase(entry.getKey())) {
         if (session != null) {
-          session.sessionProperties().setEnableConservativeMemoryUsage((boolean) entry.getValue());
+          session
+              .getSessionProperties()
+              .setEnableConservativeMemoryUsage((boolean) entry.getValue());
         }
       } else if (CLIENT_CONSERVATIVE_MEMORY_ADJUST_STEP.equalsIgnoreCase(entry.getKey())) {
         if (session != null) {
-          session.sessionProperties().setConservativeMemoryAdjustStep((int) entry.getValue());
+          session.getSessionProperties().setConservativeMemoryAdjustStep((int) entry.getValue());
         }
       } else if (CLIENT_MEMORY_LIMIT.equalsIgnoreCase(entry.getKey())) {
         if (session != null) {
-          session.sessionProperties().setClientMemoryLimit((int) entry.getValue());
+          session.getSessionProperties().setClientMemoryLimit((int) entry.getValue());
         }
       } else if (CLIENT_RESULT_CHUNK_SIZE.equalsIgnoreCase(entry.getKey())) {
         if (session != null) {
-          session.sessionProperties().setClientResultChunkSize((int) entry.getValue());
+          session.getSessionProperties().setClientResultChunkSize((int) entry.getValue());
         }
       } else if (CLIENT_PREFETCH_THREADS.equalsIgnoreCase(entry.getKey())) {
         if (session != null) {
-          session.sessionProperties().setClientPrefetchThreads((int) entry.getValue());
+          session.getSessionProperties().setClientPrefetchThreads((int) entry.getValue());
         }
       } else if (CLIENT_OUT_OF_BAND_TELEMETRY_ENABLED.equalsIgnoreCase(entry.getKey())) {
         if ((boolean) entry.getValue() && session != null && session.isTelemetryEnabled()) {
@@ -1381,7 +1383,7 @@ public class SessionUtil {
       } else if (CLIENT_VALIDATE_DEFAULT_PARAMETERS.equalsIgnoreCase(entry.getKey())) {
         if (session != null) {
           session
-              .sessionProperties()
+              .getSessionProperties()
               .setValidateDefaultParameters(SFLoginInput.getBooleanValue(entry.getValue()));
         }
       }

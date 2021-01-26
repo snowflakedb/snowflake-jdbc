@@ -94,10 +94,10 @@ public class SFResultSet extends SFJsonResultSet {
 
     this.statement = statement;
     SFSessionInterface session = this.statement.getSession();
-    session.sessionProperties().setDatabase(resultSetSerializable.getFinalDatabaseName());
-    session.sessionProperties().setSchema(resultSetSerializable.getFinalSchemaName());
-    session.sessionProperties().setRole(resultSetSerializable.getFinalRoleName());
-    session.sessionProperties().setWarehouse(resultSetSerializable.getFinalWarehouseName());
+    session.getSessionProperties().setDatabase(resultSetSerializable.getFinalDatabaseName());
+    session.getSessionProperties().setSchema(resultSetSerializable.getFinalSchemaName());
+    session.getSessionProperties().setRole(resultSetSerializable.getFinalRoleName());
+    session.getSessionProperties().setWarehouse(resultSetSerializable.getFinalWarehouseName());
     this.treatNTZAsUTC = resultSetSerializable.getTreatNTZAsUTC();
     this.formatDateWithTimezone = resultSetSerializable.getFormatDateWithTimeZone();
 
