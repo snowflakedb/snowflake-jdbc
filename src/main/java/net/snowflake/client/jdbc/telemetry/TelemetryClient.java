@@ -76,7 +76,8 @@ public class TelemetryClient implements Telemetry {
    * @return whether client is enabled
    */
   public boolean isTelemetryEnabled() {
-    return this.session.sessionProperties().isClientTelemetryEnabled() && this.isTelemetryServiceAvailable;
+    return this.session.sessionProperties().isClientTelemetryEnabled()
+        && this.isTelemetryServiceAvailable;
   }
 
   /** Disable any use of the client to add/send metrics */

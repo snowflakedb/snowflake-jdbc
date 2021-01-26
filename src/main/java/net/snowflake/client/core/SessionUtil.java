@@ -1283,7 +1283,8 @@ public class SessionUtil {
         }
       } else if ("CLIENT_ENABLE_LOG_INFO_STATEMENT_PARAMETERS".equalsIgnoreCase(entry.getKey())) {
         boolean enableLogging = (Boolean) entry.getValue();
-        if (session != null && session.sessionProperties().getPreparedStatementLogging() != enableLogging) {
+        if (session != null
+            && session.sessionProperties().getPreparedStatementLogging() != enableLogging) {
           session.sessionProperties().setPreparedStatementLogging(enableLogging);
         }
       } else if ("AUTOCOMMIT".equalsIgnoreCase(entry.getKey())) {
@@ -1298,11 +1299,15 @@ public class SessionUtil {
         }
       } else if (CLIENT_METADATA_REQUEST_USE_CONNECTION_CTX.equalsIgnoreCase(entry.getKey())) {
         if (session != null) {
-          session.sessionProperties().setMetadataRequestUseConnectionCtx((boolean) entry.getValue());
+          session
+              .sessionProperties()
+              .setMetadataRequestUseConnectionCtx((boolean) entry.getValue());
         }
       } else if (CLIENT_METADATA_USE_SESSION_DATABASE.equalsIgnoreCase(entry.getKey())) {
         if (session != null) {
-          session.sessionProperties().setMetadataRequestUseSessionDatabase((boolean) entry.getValue());
+          session
+              .sessionProperties()
+              .setMetadataRequestUseSessionDatabase((boolean) entry.getValue());
         }
       } else if (JDBC_TREAT_TIMESTAMP_NTZ_AS_UTC.equalsIgnoreCase(entry.getKey())) {
         if (session != null) {
@@ -1318,8 +1323,10 @@ public class SessionUtil {
         }
       } else if ("CLIENT_TIMESTAMP_TYPE_MAPPING".equalsIgnoreCase(entry.getKey())) {
         if (session != null) {
-          session.sessionProperties().setTimestampMappedType(
-              SnowflakeType.valueOf(((String) entry.getValue()).toUpperCase()));
+          session
+              .sessionProperties()
+              .setTimestampMappedType(
+                  SnowflakeType.valueOf(((String) entry.getValue()).toUpperCase()));
         }
       } else if ("JDBC_TREAT_DECIMAL_AS_INT".equalsIgnoreCase(entry.getKey())) {
         if (session != null) {
@@ -1373,7 +1380,9 @@ public class SessionUtil {
         }
       } else if (CLIENT_VALIDATE_DEFAULT_PARAMETERS.equalsIgnoreCase(entry.getKey())) {
         if (session != null) {
-          session.sessionProperties().setValidateDefaultParameters(SFLoginInput.getBooleanValue(entry.getValue()));
+          session
+              .sessionProperties()
+              .setValidateDefaultParameters(SFLoginInput.getBooleanValue(entry.getValue()));
         }
       }
     }
