@@ -291,7 +291,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
   public boolean getAutoCommit() throws SQLException {
     logger.debug("boolean getAutoCommit()");
     raiseSQLExceptionIfConnectionIsClosed();
-    return sfSession.getAutoCommit();
+    return sfSession.sessionProperties().getAutoCommit();
   }
 
   @Override
@@ -299,7 +299,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
     logger.debug("void setAutoCommit(boolean isAutoCommit)");
     boolean currentAutoCommit = this.getAutoCommit();
     if (isAutoCommit != currentAutoCommit) {
-      sfSession.setAutoCommit(isAutoCommit);
+      sfSession.sessionProperties().setAutoCommit(isAutoCommit);
       this.executeImmediate(
           "alter session /* JDBC:SnowflakeConnectionV1.setAutoCommit*/ set autocommit="
               + isAutoCommit);
@@ -345,7 +345,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
   @Override
   public String getCatalog() throws SQLException {
     raiseSQLExceptionIfConnectionIsClosed();
-    return sfSession.getDatabase();
+    return sfSession.sessionProperties().getDatabase();
   }
 
   @Override
@@ -640,7 +640,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
   @Override
   public String getSchema() throws SQLException {
     raiseSQLExceptionIfConnectionIsClosed();
-    return sfSession.getSchema();
+    return sfSession.sessionProperties().getSchema();
   }
 
   @Override

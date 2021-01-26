@@ -598,7 +598,7 @@ public class StmtUtil {
             .setSessionToken(session.getSessionToken())
             .setNetworkTimeoutInMillis(session.getNetworkTimeoutInMilli())
             .setMediaType(SF_MEDIA_TYPE)
-            .setServiceName(session.getServiceName())
+            .setServiceName(session.sessionProperties().getServiceName())
             .setOCSPMode(session.sessionProperties().getOCSPMode());
 
     String resultAsString = getQueryResult(getResultPath, stmtInput);

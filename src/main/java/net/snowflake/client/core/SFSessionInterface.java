@@ -24,8 +24,6 @@ public interface SFSessionInterface {
 
   SessionProperties sessionProperties();
 
-  Telemetry getTelemetryClient();
-
   String getSessionId();
 
   void open() throws SFException, SnowflakeSQLException;
@@ -43,31 +41,11 @@ public interface SFSessionInterface {
 
   void raiseError(Throwable exc, String jobId, String requestId);
 
-  boolean getAutoCommit();
-
-  void setAutoCommit(boolean autoCommit);
-
-  String getDatabase();
-
-  void setDatabase(String database);
-
-  String getSchema();
-
-  void setSchema(String schema);
-
-  String getRole();
-
-  void setRole(String role);
-
-  String getUser();
-
-  String getUrl();
-
-  String getWarehouse();
-
-  void setWarehouse(String warehouse);
-
   List<SFException> getSqlWarnings();
 
   void clearSqlWarnings();
+
+  Telemetry getTelemetryClient();
+
+  boolean isTelemetryEnabled();
 }

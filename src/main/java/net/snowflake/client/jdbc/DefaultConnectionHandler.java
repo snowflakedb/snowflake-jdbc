@@ -154,7 +154,7 @@ public class DefaultConnectionHandler implements ConnectionHandler {
       } else if (CLIENT_SFSQL.equals(property.getKey())) {
         Object v0 = property.getValue();
         boolean booleanV = v0 instanceof Boolean ? (Boolean) v0 : Boolean.parseBoolean((String) v0);
-        sfSession.setSfSQLMode(booleanV);
+        sfSession.sessionProperties().setSfSQLMode(booleanV);
       }
       sfSession.addProperty(property.getKey(), property.getValue());
     }

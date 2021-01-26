@@ -581,58 +581,13 @@ public class MockConnectionTest extends BaseJDBCTest {
     public void raiseError(Throwable exc, String jobId, String requestId) {}
 
     @Override
-    public boolean getAutoCommit() {
-      return false;
-    }
-
-    @Override
-    public void setAutoCommit(boolean autoCommit) {}
-
-    @Override
-    public String getDatabase() {
-      return null;
-    }
-
-    @Override
-    public void setDatabase(String database) {}
-
-    @Override
-    public String getSchema() {
-      return null;
-    }
-
-    @Override
-    public void setSchema(String schema) {}
-
-    @Override
-    public String getRole() {
-      return null;
-    }
-
-    @Override
-    public void setRole(String role) {}
-
-    @Override
-    public String getUser() {
-      return null;
-    }
-
-    @Override
-    public String getUrl() {
-      return null;
-    }
-
-    @Override
-    public String getWarehouse() {
-      return null;
-    }
-
-    @Override
-    public void setWarehouse(String warehouse) {}
-
-    @Override
     public Telemetry getTelemetryClient() {
       return null;
+    }
+
+    @Override
+    public boolean isTelemetryEnabled() {
+      return false;
     }
 
     @Override

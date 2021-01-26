@@ -65,9 +65,6 @@ public class SFSession implements SFSessionInterface {
   private String privateKeyFileLocation;
   private String privateKeyPassword;
   private PrivateKey privateKey;
-  private String databaseVersion = null;
-  private int databaseMajorVersion = 0;
-  private int databaseMinorVersion = 0;
   private AtomicInteger sequenceId = new AtomicInteger(0);
   private List<DriverPropertyInfo> missingProperties = new ArrayList<>();
   /**
@@ -103,62 +100,15 @@ public class SFSession implements SFSessionInterface {
   // session parameters
   private Map<String, Object> sessionParametersMap = new HashMap<>();
   private boolean passcodeInPassword = false;
-  private boolean sfSQLMode = false;
-  private boolean enableHeartbeat = false;
   private int heartbeatFrequency = 3600;
-  private AtomicBoolean autoCommit = new AtomicBoolean(true);
-  private boolean preparedStatementLogging = false;
-  // database that current session is on
-  private String database;
-  // schema that current session is on
-  private String schema;
-  // role that current session is on
-  private String role;
-  // warehouse on the current session
-  private String warehouse;
-  // For Metadata request(i.e. DatabaseMetadata.getTables or
-  // DatabaseMetadata.getSchemas,), whether to use connection ctx to
-  // improve the request time
-  private boolean metadataRequestUseConnectionCtx = false;
-  // For Metadata request(i.e. DatabaseMetadata.getTables or
-  // DatabaseMetadata.getSchemas), whether to search using multiple schemas with
-  // session database
-  private boolean metadataRequestUseSessionDatabase = false;
-  // If customer wants Timestamp_NTZ values to be stored in UTC time
-  // instead of a local/session timezone, set to true
-  private boolean treatNTZAsUTC = false;
-  // parameter to guard against behavior change to getDate() with Calendar timezone
-  private boolean formatDateWithTimezone = false;
-  // parameter to guard against behavior change to getTime()
-  private boolean useSessionTimezone = false;
-  private SnowflakeType timestampMappedType = SnowflakeType.TIMESTAMP_LTZ;
-  private boolean jdbcTreatDecimalAsInt = true;
+
   // deprecated
   private Level tracingLevel = Level.INFO;
   private List<SFException> sqlWarnings = new ArrayList<>();
   // client to log session metrics to telemetry in GS
   private Telemetry telemetryClient;
-  // default value is false will be updated when login
-  private boolean clientTelemetryEnabled = false;
-  // The server can read array binds from a stage instead of query payload.
-  // When there as many bind values as this threshold, we should upload them to a stage.
-  private int arrayBindStageThreshold = 0;
   // name of temporary stage to upload array binds to; null if none has been created yet
   private String arrayBindStage = null;
-  // store the temporary credential
-  private boolean storeTemporaryCredential = false;
-  // service name for multi clustering support
-  private String serviceName;
-  // whether to enable conservative memory usage mode
-  private boolean enableConservativeMemoryUsage;
-  // the step in MB to adjust memory usage
-  private int conservativeMemoryAdjustStep = 64;
-  // parameters used for conservative memory usage
-  private int clientMemoryLimit;
-  private int clientResultChunkSize;
-  private int clientPrefetchThreads;
-  // validate the default parameters by GS?
-  private boolean validateDefaultParameters;
   private SnowflakeConnectString sfConnStr;
 
   /**
@@ -202,7 +152,7 @@ public class SFSession implements SFSessionInterface {
   public QueryStatus getQueryStatus(String queryID) throws SQLException {
     // create the URL to check the query monitoring endpoint
     String statusUrl = "";
-    String sessionUrl = getUrl();
+    String sessionUrl = sessionProperties.getUrl();
     if (sessionUrl.endsWith("/")) {
       statusUrl =
           sessionUrl.substring(0, sessionUrl.length() - 1) + SF_PATH_QUERY_MONITOR + queryID;
@@ -332,7 +282,7 @@ public class SFSession implements SFSessionInterface {
 
         case VALIDATE_DEFAULT_PARAMETERS:
           if (propertyValue != null) {
-            validateDefaultParameters = SFLoginInput.getBooleanValue(propertyValue);
+            sessionProperties.setValidateDefaultParameters(SFLoginInput.getBooleanValue(propertyValue));
           }
           break;
 
@@ -465,7 +415,7 @@ public class SFSession implements SFSessionInterface {
         .setPrivateKeyFilePwd(
             (String) connectionPropertiesMap.get(SFConnectionProperty.PRIVATE_KEY_FILE_PWD))
         .setApplication((String) connectionPropertiesMap.get(SFConnectionProperty.APPLICATION))
-        .setServiceName(this.getServiceName())
+        .setServiceName(this.sessionProperties().getServiceName())
         .setOCSPMode(sessionProperties.getOCSPMode());
 
     // propagate OCSP mode to SFTrustManager. Note OCSP setting is global on JVM.
@@ -483,12 +433,12 @@ public class SFSession implements SFSessionInterface {
     sessionProperties.setDatabaseMinorVersion(loginOutput.getDatabaseMinorVersion());
     httpClientSocketTimeout = loginOutput.getHttpClientSocketTimeout();
     masterTokenValidityInSeconds = loginOutput.getMasterTokenValidityInSeconds();
-    database = loginOutput.getSessionDatabase();
-    schema = loginOutput.getSessionSchema();
-    role = loginOutput.getSessionRole();
-    warehouse = loginOutput.getSessionWarehouse();
+    sessionProperties.setDatabase(loginOutput.getSessionDatabase());
+    sessionProperties.setSchema(loginOutput.getSessionSchema());
+    sessionProperties.setRole(loginOutput.getSessionRole());
+    sessionProperties.setWarehouse(loginOutput.getSessionWarehouse());
     sessionId = loginOutput.getSessionId();
-    autoCommit.set(loginOutput.getAutoCommit());
+    sessionProperties.setAutoCommit(loginOutput.getAutoCommit());
 
     // Update common parameter values for this session
     SessionUtil.updateSfDriverParamValues(loginOutput.getCommonParams(), this);
@@ -498,37 +448,37 @@ public class SFSession implements SFSessionInterface {
     String loginRole = (String) connectionPropertiesMap.get(SFConnectionProperty.ROLE);
     String loginWarehouse = (String) connectionPropertiesMap.get(SFConnectionProperty.WAREHOUSE);
 
-    if (loginDatabaseName != null && !loginDatabaseName.equalsIgnoreCase(database)) {
+    if (loginDatabaseName != null && !loginDatabaseName.equalsIgnoreCase(sessionProperties.getDatabase())) {
       sqlWarnings.add(
           new SFException(
               ErrorCode.CONNECTION_ESTABLISHED_WITH_DIFFERENT_PROP,
               "Database",
               loginDatabaseName,
-              database));
+              sessionProperties.getDatabase()));
     }
 
-    if (loginSchemaName != null && !loginSchemaName.equalsIgnoreCase(schema)) {
+    if (loginSchemaName != null && !loginSchemaName.equalsIgnoreCase(sessionProperties.getSchema())) {
       sqlWarnings.add(
           new SFException(
               ErrorCode.CONNECTION_ESTABLISHED_WITH_DIFFERENT_PROP,
               "Schema",
               loginSchemaName,
-              schema));
+              sessionProperties.getSchema()));
     }
 
-    if (loginRole != null && !loginRole.equalsIgnoreCase(role)) {
+    if (loginRole != null && !loginRole.equalsIgnoreCase(sessionProperties.getRole())) {
       sqlWarnings.add(
           new SFException(
-              ErrorCode.CONNECTION_ESTABLISHED_WITH_DIFFERENT_PROP, "Role", loginRole, role));
+              ErrorCode.CONNECTION_ESTABLISHED_WITH_DIFFERENT_PROP, "Role", loginRole, sessionProperties.getRole()));
     }
 
-    if (loginWarehouse != null && !loginWarehouse.equalsIgnoreCase(warehouse)) {
+    if (loginWarehouse != null && !loginWarehouse.equalsIgnoreCase(sessionProperties.getWarehouse())) {
       sqlWarnings.add(
           new SFException(
               ErrorCode.CONNECTION_ESTABLISHED_WITH_DIFFERENT_PROP,
               "Warehouse",
               loginWarehouse,
-              warehouse));
+              sessionProperties.getWarehouse()));
     }
 
     // start heartbeat for this session so that the master token will not expire
@@ -588,18 +538,6 @@ public class SFSession implements SFSessionInterface {
         .equalsIgnoreCase(authenticator);
   }
 
-  public String getDatabaseVersion() {
-    return sessionProperties.getDatabaseVersion();
-  }
-
-  public int getDatabaseMajorVersion() {
-    return databaseMajorVersion;
-  }
-
-  public int getDatabaseMinorVersion() {
-    return databaseMinorVersion;
-  }
-
   public String getSessionId() {
     return sessionId;
   }
@@ -620,16 +558,16 @@ public class SFSession implements SFSessionInterface {
 
     SFLoginInput loginInput = new SFLoginInput();
     loginInput
-        .setServerUrl((String) sessionProperties.getServerUrl())
+        .setServerUrl(sessionProperties.getServerUrl())
         .setSessionToken(sessionToken)
         .setMasterToken(masterToken)
         .setIdToken(idToken)
         .setMfaToken(mfaToken)
         .setLoginTimeout(loginTimeout)
-        .setDatabaseName(this.getDatabase())
-        .setSchemaName(this.getSchema())
-        .setRole(this.getRole())
-        .setWarehouse(this.getWarehouse())
+        .setDatabaseName(sessionProperties.getDatabase())
+        .setSchemaName(sessionProperties.getSchema())
+        .setRole(sessionProperties.getRole())
+        .setWarehouse(sessionProperties.getWarehouse())
         .setOCSPMode(sessionProperties.getOCSPMode());
 
     SFLoginOutput loginOutput = SessionUtil.renewSession(loginInput);
@@ -665,7 +603,7 @@ public class SFSession implements SFSessionInterface {
 
     SFLoginInput loginInput = new SFLoginInput();
     loginInput
-        .setServerUrl((String) sessionProperties.getServerUrl())
+        .setServerUrl(sessionProperties.getServerUrl())
         .setSessionToken(sessionToken)
         .setLoginTimeout(loginTimeout)
         .setOCSPMode(sessionProperties.getOCSPMode());
@@ -678,7 +616,7 @@ public class SFSession implements SFSessionInterface {
 
   /** Start heartbeat for this session */
   protected void startHeartbeatForThisSession() {
-    if (enableHeartbeat && !Strings.isNullOrEmpty(masterToken)) {
+    if (sessionProperties.getEnableHeartbeat() && !Strings.isNullOrEmpty(masterToken)) {
       logger.debug("start heartbeat, master token validity: " + masterTokenValidityInSeconds);
 
       HeartbeatBackground.getInstance()
@@ -690,7 +628,7 @@ public class SFSession implements SFSessionInterface {
 
   /** Stop heartbeat for this session */
   protected void stopHeartbeatForThisSession() {
-    if (enableHeartbeat && !Strings.isNullOrEmpty(masterToken)) {
+    if (sessionProperties.getEnableHeartbeat() && !Strings.isNullOrEmpty(masterToken)) {
       logger.debug("stop heartbeat");
 
       HeartbeatBackground.getInstance().removeSession(this);
@@ -723,7 +661,7 @@ public class SFSession implements SFSessionInterface {
       try {
         URIBuilder uriBuilder;
 
-        uriBuilder = new URIBuilder((String) sessionProperties.getServerUrl());
+        uriBuilder = new URIBuilder(sessionProperties.getServerUrl());
 
         uriBuilder.addParameter(SFSession.SF_QUERY_REQUEST_ID, requestId);
 
@@ -841,14 +779,6 @@ public class SFSession implements SFSessionInterface {
     this.injectSocketTimeout = injectSocketTimeout;
   }
 
-  public String getInjectFileUploadFailure() {
-    return this.sessionProperties.getInjectFileUploadFailure();
-  }
-
-  public void setInjectFileUploadFailure(String fileToFail) {
-    this.sessionProperties.setInjectFileUploadFailure(fileToFail);
-  }
-
   public int getNetworkTimeoutInMilli() {
     return networkTimeoutInMilli;
   }
@@ -865,152 +795,8 @@ public class SFSession implements SFSessionInterface {
     this.injectClientPause = injectClientPause;
   }
 
-  protected int getHttpClientConnectionTimeout() {
-    return httpClientConnectionTimeout;
-  }
-
-  protected int getHttpClientSocketTimeout() {
-    return httpClientSocketTimeout;
-  }
-
   protected int getAndIncrementSequenceId() {
     return sequenceId.getAndIncrement();
-  }
-
-  public boolean isSfSQLMode() {
-    return this.sfSQLMode;
-  }
-
-  public void setSfSQLMode(boolean sfSQLMode) {
-    this.sessionProperties.setSfSQLMode(sfSQLMode);
-  }
-
-  public boolean isEnableHeartbeat() {
-    return enableHeartbeat;
-  }
-
-  public void setEnableHeartbeat(boolean enableHeartbeat) {
-    this.enableHeartbeat = enableHeartbeat;
-  }
-
-  public long getHeartbeatFrequency() {
-    return this.heartbeatFrequency;
-  }
-
-  public void setHeartbeatFrequency(int frequency) {
-    this.heartbeatFrequency = frequency;
-  }
-
-  public boolean getAutoCommit() {
-    return autoCommit.get();
-  }
-
-  public void setAutoCommit(boolean autoCommit) {
-    this.autoCommit.set(autoCommit);
-  }
-
-  public boolean getPreparedStatementLogging() {
-    return this.sessionProperties.getPreparedStatementLogging();
-  }
-
-  public void setPreparedStatementLogging(boolean value) {
-    this.sessionProperties.setPreparedStatementLogging(value);
-  }
-
-  public boolean isResultColumnCaseInsensitive() {
-    return this.sessionProperties.isResultColumnCaseInsensitive();
-  }
-
-  public void setResultColumnCaseInsensitive(boolean resultColumnCaseInsensitive) {
-    this.sessionProperties.setResultColumnCaseInsensitive(resultColumnCaseInsensitive);
-  }
-
-  public String getDatabase() {
-    return this.database;
-  }
-
-  public void setDatabase(String database) {
-    this.database = database;
-  }
-
-  public String getSchema() {
-    return this.schema;
-  }
-
-  public void setSchema(String schema) {
-    this.schema = schema;
-  }
-
-  public String getRole() {
-    return role;
-  }
-
-  public void setRole(String role) {
-    this.role = role;
-  }
-
-  public String getWarehouse() {
-    return warehouse;
-  }
-
-  public void setWarehouse(String warehouse) {
-    this.warehouse = warehouse;
-  }
-
-  public boolean getMetadataRequestUseConnectionCtx() {
-    return this.sessionProperties.getMetadataRequestUseConnectionCtx();
-  }
-
-  public void setMetadataRequestUseConnectionCtx(boolean enabled) {
-    this.sessionProperties.setMetadataRequestUseConnectionCtx(enabled);
-  }
-
-  public boolean getFormatDateWithTimezone() {
-    return this.formatDateWithTimezone;
-  }
-
-  public void setFormatDateWithTimezone(boolean useTimezone) {
-    this.formatDateWithTimezone = useTimezone;
-  }
-
-  public boolean getUseSessionTimezone() {
-    return this.useSessionTimezone;
-  }
-
-  public void setUseSessionTimezone(boolean useSessionTimezone) {
-    this.useSessionTimezone = useSessionTimezone;
-  }
-
-  public boolean getTreatNTZAsUTC() {
-    return this.treatNTZAsUTC;
-  }
-
-  public void setTreatNTZAsUTC(boolean enabled) {
-    this.treatNTZAsUTC = enabled;
-  }
-
-  public boolean getMetadataRequestUseSessionDatabase() {
-    return this.metadataRequestUseSessionDatabase;
-  }
-
-  public void setMetadataRequestUseSessionDatabase(boolean enabled) {
-    this.sessionProperties.setMetadataRequestUseSessionDatabase(enabled);
-  }
-
-  public SnowflakeType getTimestampMappedType() {
-    return this.sessionProperties.getTimestampMappedType();
-  }
-
-  public void setTimestampMappedType(SnowflakeType timestampMappedType) {
-    this.sessionProperties.setTimestampMappedType(timestampMappedType);
-  }
-
-  public boolean isJdbcTreatDecimalAsInt() {
-    return jdbcTreatDecimalAsInt;
-  }
-
-  public void setJdbcTreatDecimalAsInt(boolean jdbcTreatDecimalAsInt) {
-    this.jdbcTreatDecimalAsInt = jdbcTreatDecimalAsInt;
   }
 
   public boolean getEnableCombineDescribe() {
@@ -1019,22 +805,6 @@ public class SFSession implements SFSessionInterface {
 
   public void setEnableCombineDescribe(boolean enable) {
     this.enableCombineDescribe = enable;
-  }
-
-  public Integer getQueryTimeout() {
-    return this.sessionProperties.getQueryTimeout();
-  }
-
-  public String getUser() {
-    return sessionProperties.getUser();
-  }
-
-  public String getUrl() {
-    return sessionProperties.getUrl();
-  }
-
-  public int getInjectWaitInPut() {
-    return sessionProperties.getInjectWaitInPut();
   }
 
   public List<SFException> getSqlWarnings() {
@@ -1049,7 +819,7 @@ public class SFSession implements SFSessionInterface {
     // initialize for the first time. this should only be done after session
     // properties have been set, else the client won't properly resolve the URL.
     if (telemetryClient == null) {
-      if (getUrl() == null) {
+      if (sessionProperties.getUrl() == null) {
         logger.error("Telemetry client created before session properties set.");
         return null;
       }
@@ -1058,26 +828,15 @@ public class SFSession implements SFSessionInterface {
     return telemetryClient;
   }
 
+  @Override
+  public boolean isTelemetryEnabled() {
+    return true;
+  }
+
   public void closeTelemetryClient() {
     if (telemetryClient != null) {
       telemetryClient.close();
     }
-  }
-
-  public boolean isClientTelemetryEnabled() {
-    return this.clientTelemetryEnabled;
-  }
-
-  public void setClientTelemetryEnabled(boolean clientTelemetryEnabled) {
-    this.clientTelemetryEnabled = clientTelemetryEnabled;
-  }
-
-  public int getArrayBindStageThreshold() {
-    return arrayBindStageThreshold;
-  }
-
-  public void setArrayBindStageThreshold(int arrayBindStageThreshold) {
-    this.arrayBindStageThreshold = arrayBindStageThreshold;
   }
 
   public String getArrayBindStage() {
@@ -1086,7 +845,7 @@ public class SFSession implements SFSessionInterface {
 
   public void setArrayBindStage(String arrayBindStage) {
     this.arrayBindStage =
-        String.format("%s.%s.%s", this.getDatabase(), this.getSchema(), arrayBindStage);
+        String.format("%s.%s.%s", sessionProperties.getDatabase(), sessionProperties.getSchema(), arrayBindStage);
   }
 
   public String getIdToken() {
@@ -1095,32 +854,6 @@ public class SFSession implements SFSessionInterface {
 
   public String getMfaToken() {
     return mfaToken;
-  }
-
-  public boolean isStoreTemporaryCredential() {
-    return this.storeTemporaryCredential;
-  }
-
-  public void setStoreTemporaryCredential(boolean storeTemporaryCredential) {
-    this.storeTemporaryCredential = storeTemporaryCredential;
-  }
-
-  /**
-   * Gets the service name provided from GS.
-   *
-   * @return the service name
-   */
-  public String getServiceName() {
-    return serviceName;
-  }
-
-  /**
-   * Sets the service name provided from GS.
-   *
-   * @param serviceName service name
-   */
-  public void setServiceName(String serviceName) {
-    this.serviceName = serviceName;
   }
 
   /**
@@ -1141,10 +874,10 @@ public class SFSession implements SFSessionInterface {
     SFBaseResultSet result = runInternalCommand("SELECT ?", "1");
 
     // refresh the current objects
-    loginOutput.setSessionDatabase(this.database);
-    loginOutput.setSessionSchema(this.schema);
-    loginOutput.setSessionWarehouse(this.warehouse);
-    loginOutput.setSessionRole(this.role);
+    loginOutput.setSessionDatabase(sessionProperties.getDatabase());
+    loginOutput.setSessionSchema(sessionProperties.getSchema());
+    loginOutput.setSessionWarehouse(sessionProperties.getWarehouse());
+    loginOutput.setSessionRole(sessionProperties.getRole());
     loginOutput.setIdToken(loginInput.getIdToken());
 
     // no common parameter is updated.
@@ -1174,54 +907,6 @@ public class SFSession implements SFSessionInterface {
       logger.debug("Failed to run a command: {}, err={}", sql, ex);
     }
     return null;
-  }
-
-  public boolean isConservativeMemoryUsageEnabled() {
-    return enableConservativeMemoryUsage;
-  }
-
-  public void setEnableConservativeMemoryUsage(boolean value) {
-    enableConservativeMemoryUsage = value;
-  }
-
-  public int getConservativeMemoryAdjustStep() {
-    return conservativeMemoryAdjustStep;
-  }
-
-  public void setConservativeMemoryAdjustStep(int step) {
-    conservativeMemoryAdjustStep = step;
-  }
-
-  public int getClientMemoryLimit() {
-    return clientMemoryLimit;
-  }
-
-  public void setClientMemoryLimit(int clientMemoryLimit) {
-    this.clientMemoryLimit = clientMemoryLimit;
-  }
-
-  public int getClientResultChunkSize() {
-    return clientResultChunkSize;
-  }
-
-  public void setClientResultChunkSize(int clientResultChunkSize) {
-    this.clientResultChunkSize = clientResultChunkSize;
-  }
-
-  public int getClientPrefetchThreads() {
-    return clientPrefetchThreads;
-  }
-
-  public void setClientPrefetchThreads(int clientPrefetchThreads) {
-    this.clientPrefetchThreads = clientPrefetchThreads;
-  }
-
-  public boolean isValidateDefaultParameters() {
-    return validateDefaultParameters;
-  }
-
-  public void setValidateDefaultParameters(boolean v) {
-    validateDefaultParameters = v;
   }
 
   public SnowflakeConnectString getSnowflakeConnectionString() {
