@@ -412,13 +412,13 @@ public class MultiStatementIT extends BaseJDBCTest {
     SFSessionInterface session =
         statement.getConnection().unwrap(SnowflakeConnectionV1.class).getSFSession();
 
-    String originalSchema = session.getSchema();
+    String originalSchema = session.sessionProperties().getSchema();
 
     statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 2);
     statement.execute("use schema public; select 1");
     // current schema change should persist outside of the above statement
 
-    assertEquals("PUBLIC", session.getSchema());
+    assertEquals("PUBLIC", session.sessionProperties().getSchema());
     statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 1);
     ResultSet rs = statement.executeQuery("select current_schema()");
     rs.next();
@@ -429,7 +429,7 @@ public class MultiStatementIT extends BaseJDBCTest {
     // current schema change should persist outside of the above statement
 
     session = statement.getConnection().unwrap(SnowflakeConnectionV1.class).getSFSession();
-    assertEquals(originalSchema, session.getSchema());
+    assertEquals(originalSchema, session.sessionProperties().getSchema());
     statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 1);
     rs = statement.executeQuery("select current_schema()");
     rs.next();
@@ -451,10 +451,10 @@ public class MultiStatementIT extends BaseJDBCTest {
     String param = "AUTOCOMMIT";
     statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 2);
     statement.execute("alter session set " + param + "=false; select 1");
-    assertFalse(session.getAutoCommit());
+    assertFalse(session.sessionProperties().getAutoCommit());
     statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 2);
     statement.execute("alter session set " + param + "=true; select 1");
-    assertTrue(session.getAutoCommit());
+    assertTrue(session.sessionProperties().getAutoCommit());
 
     statement.close();
     connection.close();

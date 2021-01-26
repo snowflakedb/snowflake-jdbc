@@ -4,10 +4,11 @@
 package net.snowflake.client.core;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import java.sql.SQLException;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeResultSetSerializableV1;
 import net.snowflake.client.jdbc.SnowflakeSQLLoggedException;
+
+import java.sql.SQLException;
 
 /**
  * Factory class to create SFBaseResultSet class. Depending on result format, different instance
@@ -24,13 +25,15 @@ class SFResultSetFactory {
    */
   static SFBaseResultSet getResultSet(JsonNode result, SFStatement statement, boolean sortResult)
       throws SQLException {
+
+    // This should only be invoked from an SFSession connection
+    SFSession session = (SFSession) statement.getSession();
     SnowflakeResultSetSerializableV1 resultSetSerializable =
-        SnowflakeResultSetSerializableV1.create(
-            result, (SFSession) statement.getSession(), statement);
+        SnowflakeResultSetSerializableV1.create(result, session, statement);
 
     switch (resultSetSerializable.getQueryResultFormat()) {
       case ARROW:
-        return new SFArrowResultSet(resultSetSerializable, statement, sortResult);
+        return new SFArrowResultSet(resultSetSerializable, session, statement, sortResult);
       case JSON:
         return new SFResultSet(resultSetSerializable, statement, sortResult);
       default:

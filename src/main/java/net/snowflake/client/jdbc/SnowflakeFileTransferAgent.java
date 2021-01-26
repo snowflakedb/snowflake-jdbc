@@ -634,8 +634,8 @@ public class SnowflakeFileTransferAgent implements FileTransferAgentInterface, S
               uploadSize);
 
           // Simulated failure code.
-          if (session.getInjectFileUploadFailure() != null
-              && srcFilePath.endsWith((session).getInjectFileUploadFailure())) {
+          if (session.sessionProperties().getInjectFileUploadFailure() != null
+              && srcFilePath.endsWith((session).sessionProperties().getInjectFileUploadFailure())) {
             throw new SnowflakeSimulatedUploadFailure(
                 srcFile != null ? srcFile.getName() : "Unknown");
           }
@@ -1538,7 +1538,7 @@ public class SnowflakeFileTransferAgent implements FileTransferAgentInterface, S
          */
         File srcFileObj = new File(srcFile);
         // PUT delay goes here!!
-        int delay = session.getInjectWaitInPut();
+        int delay = session.sessionProperties().getInjectWaitInPut();
         setUploadDelay(delay);
 
         threadExecutor.submit(

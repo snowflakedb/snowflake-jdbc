@@ -195,7 +195,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
   public String getURL() throws SQLException {
     logger.debug("public String getURL()");
     raiseSQLExceptionIfConnectionIsClosed();
-    String url = session.getUrl();
+    String url = session.sessionProperties().getUrl();
     return url.startsWith("http://")
         ? url.replace("http://", "jdbc:snowflake://")
         : url.replace("https://", "jdbc:snowflake://");
@@ -205,7 +205,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
   public String getUserName() throws SQLException {
     logger.debug("public String getUserName()");
     raiseSQLExceptionIfConnectionIsClosed();
-    return session.getUser();
+    return session.sessionProperties().getUser();
   }
 
   @Override
@@ -1242,15 +1242,15 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
     if (metadataRequestUseConnectionCtx) {
       // CLIENT_METADATA_USE_SESSION_DATABASE = TRUE
       if (catalog == null) {
-        catalog = session.getDatabase();
+        catalog = session.sessionProperties().getDatabase();
       }
       if (schemaPattern == null) {
-        schemaPattern = session.getSchema();
+        schemaPattern = session.sessionProperties().getSchema();
       }
     } else {
       if (metadataRequestUseSessionDatabase) {
         if (catalog == null) {
-          catalog = session.getDatabase();
+          catalog = session.sessionProperties().getDatabase();
         }
       }
     }

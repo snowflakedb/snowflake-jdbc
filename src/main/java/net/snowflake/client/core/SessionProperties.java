@@ -2,20 +2,47 @@ package net.snowflake.client.core;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeType;
 
 public class SessionProperties {
-  private String databaseVersion;
-  private int databaseMajorVersion;
-  private int databaseMinorVersion;
+  private String databaseVersion = null;
+  private int databaseMajorVersion = 0;
+  private int databaseMinorVersion = 0;
   private boolean showStatementParameters;
   private SnowflakeType timestampMappedType;
   private boolean isResultColumnCaseInsensitive;
   private boolean isJdbcTreatDecimalAsInt;
   private String injectFileUploadFailure;
   private boolean preparedStatementLogging = false;
+  private boolean treatNTZAsUTC;
+  private boolean enableHeartbeat;
+  private AtomicBoolean autoCommit;
+  private boolean formatDateWithTimezone;
+  private boolean enableCombineDescribe;
+  private boolean clientTelemetryEnabled;
+  private boolean useSessionTimezone;
+  // The server can read array binds from a stage instead of query payload.
+  // When there as many bind values as this threshold, we should upload them to a stage.
+  private int arrayBindStageThreshold;
+  private boolean storeTemporaryCredential;
+  private String serviceName;
+  // whether to enable conservative memory usage mode
+  private boolean enableConservativeMemoryUsage;
+  // the step in MB to adjust memory usage
+  private int conservativeMemoryAdjustStep = 64;
+  private int clientMemoryLimit;
+  private int clientResultChunkSize;
+  private int clientPrefetchThreads;
+
+  // validate the default parameters by GS?
+  private boolean validateDefaultParameters;
+  private String database;
+  private String schema;
+  private String role;
+  private String warehouse;
 
   public boolean isSfSQLMode() {
     return sfSQLMode;
@@ -224,5 +251,166 @@ public class SessionProperties {
 
   AtomicInteger injectedDelay() {
     return _injectedDelay;
+  }
+
+
+  public void setTreatNTZAsUTC(boolean treatNTZAsUTC) {
+    this.treatNTZAsUTC = treatNTZAsUTC;
+  }
+
+  public boolean getTreatNTZAsUTC() {
+    return treatNTZAsUTC;
+  }
+
+  public void setEnableHeartbeat(boolean enableHeartbeat) {
+    this.enableHeartbeat = enableHeartbeat;
+  }
+
+  public boolean getEnableHeartbeat() {
+    return enableHeartbeat;
+  }
+
+  public void setAutoCommit(boolean autoCommit) {
+    this.autoCommit.set(autoCommit);
+  }
+
+  public boolean getAutoCommit() {
+    return autoCommit.get();
+  }
+
+  public void setFormatDateWithTimezone(boolean formatDateWithTimezone) {
+    this.formatDateWithTimezone = formatDateWithTimezone;
+  }
+
+  public boolean getFormatDateWithTimezone() {
+    return formatDateWithTimezone;
+  }
+
+  public void setUseSessionTimezone(boolean useSessionTimezone) {
+    this.useSessionTimezone = useSessionTimezone;
+  }
+
+  public boolean getUseSessionTimezone() {
+    return useSessionTimezone;
+  }
+
+  public void setEnableCombineDescribe(boolean enableCombineDescribe) {
+    this.enableCombineDescribe = enableCombineDescribe;
+  }
+
+  public boolean getEnableCombineDescribe() {
+    return enableCombineDescribe;
+  }
+
+  public void setClientTelemetryEnabled(boolean clientTelemetryEnabled) {
+    this.clientTelemetryEnabled = clientTelemetryEnabled;
+  }
+
+  public boolean isClientTelemetryEnabled() {
+    return clientTelemetryEnabled;
+  }
+
+  public void setArrayBindStageThreshold(int arrayBindStageThreshold) {
+    this.arrayBindStageThreshold = arrayBindStageThreshold;
+  }
+
+  public int getArrayBindStageThreshold() {
+    return arrayBindStageThreshold;
+  }
+
+  public void setStoreTemporaryCredential(boolean storeTemporaryCredential) {
+    this.storeTemporaryCredential = storeTemporaryCredential;
+  }
+
+  public boolean getStoreTemporaryCredential() {
+    return storeTemporaryCredential;
+  }
+
+  public void setServiceName(String serviceName) {
+    this.serviceName = serviceName;
+  }
+
+  public String getServiceName() {
+    return serviceName;
+  }
+
+  public void setEnableConservativeMemoryUsage(boolean enableConservativeMemoryUsage) {
+    this.enableConservativeMemoryUsage = enableConservativeMemoryUsage;
+  }
+
+  public boolean isConservativeMemoryUsageEnabled() {
+    return enableConservativeMemoryUsage;
+  }
+
+  public void setConservativeMemoryAdjustStep(int conservativeMemoryAdjustStep) {
+    this.conservativeMemoryAdjustStep = conservativeMemoryAdjustStep;
+  }
+
+  public int getConservativeMemoryAdjustStep() {
+    return conservativeMemoryAdjustStep;
+  }
+
+  public void setClientMemoryLimit(int clientMemoryLimit) {
+    this.clientMemoryLimit = clientMemoryLimit;
+  }
+
+  public int getClientMemoryLimit() {
+    return clientMemoryLimit;
+  }
+
+  public void setClientResultChunkSize(int clientResultChunkSize) {
+    this.clientResultChunkSize = clientResultChunkSize;
+  }
+
+  public int getClientResultChunkSize() {
+    return clientResultChunkSize;
+  }
+
+  public void setClientPrefetchThreads(int clientPrefetchThreads) {
+    this.clientPrefetchThreads = clientPrefetchThreads;
+  }
+
+  public int getClientPrefetchThreads() {
+    return clientPrefetchThreads;
+  }
+
+  public void setValidateDefaultParameters(boolean validateDefaultParameters) {
+    this.validateDefaultParameters = validateDefaultParameters;
+  }
+
+  public boolean getValidateDefaultParameters() {
+    return validateDefaultParameters;
+  }
+
+  public void setDatabase(String database) {
+    this.database = database;
+  }
+
+  public String getDatabase() {
+    return database;
+  }
+
+  public void setSchema(String schema) {
+    this.schema = schema;
+  }
+
+  public String getSchema() {
+    return schema;
+  }
+
+  public void setRole(String role) {
+    this.role = role;
+  }
+
+  public String getRole() {
+    return role;
+  }
+
+  public void setWarehouse(String warehouse) {
+    this.warehouse = warehouse;
+  }
+
+  public String getWarehouse() {
+    return warehouse;
   }
 }

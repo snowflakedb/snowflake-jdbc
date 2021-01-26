@@ -87,14 +87,14 @@ public class SFResultSet extends SFJsonResultSet {
       SFStatement statement,
       boolean sortResult)
       throws SQLException {
-    this(resultSetSerializable, statement.getSession().getTelemetryClient(), sortResult);
+    this(resultSetSerializable, ((SFSession) statement.getSession()).getTelemetryClient(), sortResult);
 
     this.statement = statement;
     SFSessionInterface session = this.statement.getSession();
-    session.setDatabase(resultSetSerializable.getFinalDatabaseName());
-    session.setSchema(resultSetSerializable.getFinalSchemaName());
-    session.setRole(resultSetSerializable.getFinalRoleName());
-    session.setWarehouse(resultSetSerializable.getFinalWarehouseName());
+    session.sessionProperties().setDatabase(resultSetSerializable.getFinalDatabaseName());
+    session.sessionProperties().setSchema(resultSetSerializable.getFinalSchemaName());
+    session.sessionProperties().setRole(resultSetSerializable.getFinalRoleName());
+    session.sessionProperties().setWarehouse(resultSetSerializable.getFinalWarehouseName());
     this.treatNTZAsUTC = resultSetSerializable.getTreatNTZAsUTC();
     this.formatDateWithTimezone = resultSetSerializable.getFormatDateWithTimeZone();
 

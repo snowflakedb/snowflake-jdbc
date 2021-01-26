@@ -56,7 +56,7 @@ public class TelemetryClient implements Telemetry {
 
   private TelemetryClient(SFSession session, int flushSize) {
     this.session = session;
-    this.serverUrl = session.getUrl();
+    this.serverUrl = session.sessionProperties().getUrl();
 
     if (this.serverUrl.endsWith("/")) {
       this.telemetryUrl =
@@ -76,7 +76,7 @@ public class TelemetryClient implements Telemetry {
    * @return whether client is enabled
    */
   public boolean isTelemetryEnabled() {
-    return this.session.isClientTelemetryEnabled() && this.isTelemetryServiceAvailable;
+    return this.session.sessionProperties().isClientTelemetryEnabled() && this.isTelemetryServiceAvailable;
   }
 
   /** Disable any use of the client to add/send metrics */
