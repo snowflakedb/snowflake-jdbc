@@ -2,12 +2,14 @@ package net.snowflake.client.core;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeType;
 
 public class SessionProperties {
+  private final Properties clientInfo = new Properties();
   private String databaseVersion = null;
   private int databaseMajorVersion = 0;
   private int databaseMinorVersion = 0;
@@ -19,7 +21,7 @@ public class SessionProperties {
   private boolean preparedStatementLogging = false;
   private boolean treatNTZAsUTC;
   private boolean enableHeartbeat;
-  private AtomicBoolean autoCommit;
+  private final AtomicBoolean autoCommit = new AtomicBoolean(true);
   private boolean formatDateWithTimezone;
   private boolean enableCombineDescribe;
   private boolean clientTelemetryEnabled;
@@ -36,26 +38,17 @@ public class SessionProperties {
   private int clientMemoryLimit;
   private int clientResultChunkSize;
   private int clientPrefetchThreads;
-
   // validate the default parameters by GS?
   private boolean validateDefaultParameters;
   private String database;
   private String schema;
   private String role;
   private String warehouse;
-
-  public boolean isSfSQLMode() {
-    return sfSQLMode;
-  }
-
-  public void setSfSQLMode(boolean sfSQLMode) {
-    this.sfSQLMode = sfSQLMode;
-  }
-
+  private String sessionId;
   private boolean sfSQLMode;
   // Injected delay for the purpose of connection timeout testing
   // Any statement execution will sleep for the specified number of milliseconds
-  private AtomicInteger _injectedDelay = new AtomicInteger(0);
+  private final AtomicInteger _injectedDelay = new AtomicInteger(0);
   // For Metadata request(i.e. DatabaseMetadata.getTables or
   // DatabaseMetadata.getSchemas,), whether to use connection ctx to
   // improve the request time
@@ -64,7 +57,35 @@ public class SessionProperties {
   // DatabaseMetadata.getSchemas), whether to search using multiple schemas with
   // session database
   private boolean metadataRequestUseSessionDatabase = false;
-  private Map<SFConnectionProperty, Object> connectionPropertiesMap = new HashMap<>();
+  private final Map<SFConnectionProperty, Object> connectionPropertiesMap = new HashMap<>();
+
+  public Properties getClientInfo() {
+    // defensive copy to avoid client from changing the properties
+    // directly w/o going through the API
+    Properties copy = new Properties();
+    copy.putAll(this.clientInfo);
+    return copy;
+  }
+
+  public String getClientInfo(String name) {
+    return this.clientInfo.getProperty(name);
+  }
+
+  public String getSessionId() {
+    return sessionId;
+  }
+
+  public void setSessionId(String sessionId) {
+    this.sessionId = sessionId;
+  }
+
+  public boolean isSfSQLMode() {
+    return sfSQLMode;
+  }
+
+  public void setSfSQLMode(boolean sfSQLMode) {
+    this.sfSQLMode = sfSQLMode;
+  }
 
   public String getDatabaseVersion() {
     return databaseVersion;
@@ -253,84 +274,84 @@ public class SessionProperties {
     return _injectedDelay;
   }
 
-  public void setTreatNTZAsUTC(boolean treatNTZAsUTC) {
-    this.treatNTZAsUTC = treatNTZAsUTC;
-  }
-
   public boolean getTreatNTZAsUTC() {
     return treatNTZAsUTC;
   }
 
-  public void setEnableHeartbeat(boolean enableHeartbeat) {
-    this.enableHeartbeat = enableHeartbeat;
+  public void setTreatNTZAsUTC(boolean treatNTZAsUTC) {
+    this.treatNTZAsUTC = treatNTZAsUTC;
   }
 
   public boolean getEnableHeartbeat() {
     return enableHeartbeat;
   }
 
-  public void setAutoCommit(boolean autoCommit) {
-    this.autoCommit.set(autoCommit);
+  public void setEnableHeartbeat(boolean enableHeartbeat) {
+    this.enableHeartbeat = enableHeartbeat;
   }
 
   public boolean getAutoCommit() {
     return autoCommit.get();
   }
 
-  public void setFormatDateWithTimezone(boolean formatDateWithTimezone) {
-    this.formatDateWithTimezone = formatDateWithTimezone;
+  public void setAutoCommit(boolean autoCommit) {
+    this.autoCommit.set(autoCommit);
   }
 
   public boolean getFormatDateWithTimezone() {
     return formatDateWithTimezone;
   }
 
-  public void setUseSessionTimezone(boolean useSessionTimezone) {
-    this.useSessionTimezone = useSessionTimezone;
+  public void setFormatDateWithTimezone(boolean formatDateWithTimezone) {
+    this.formatDateWithTimezone = formatDateWithTimezone;
   }
 
   public boolean getUseSessionTimezone() {
     return useSessionTimezone;
   }
 
-  public void setEnableCombineDescribe(boolean enableCombineDescribe) {
-    this.enableCombineDescribe = enableCombineDescribe;
+  public void setUseSessionTimezone(boolean useSessionTimezone) {
+    this.useSessionTimezone = useSessionTimezone;
   }
 
   public boolean getEnableCombineDescribe() {
     return enableCombineDescribe;
   }
 
-  public void setClientTelemetryEnabled(boolean clientTelemetryEnabled) {
-    this.clientTelemetryEnabled = clientTelemetryEnabled;
+  public void setEnableCombineDescribe(boolean enableCombineDescribe) {
+    this.enableCombineDescribe = enableCombineDescribe;
   }
 
   public boolean isClientTelemetryEnabled() {
     return clientTelemetryEnabled;
   }
 
-  public void setArrayBindStageThreshold(int arrayBindStageThreshold) {
-    this.arrayBindStageThreshold = arrayBindStageThreshold;
+  public void setClientTelemetryEnabled(boolean clientTelemetryEnabled) {
+    this.clientTelemetryEnabled = clientTelemetryEnabled;
   }
 
   public int getArrayBindStageThreshold() {
     return arrayBindStageThreshold;
   }
 
-  public void setStoreTemporaryCredential(boolean storeTemporaryCredential) {
-    this.storeTemporaryCredential = storeTemporaryCredential;
+  public void setArrayBindStageThreshold(int arrayBindStageThreshold) {
+    this.arrayBindStageThreshold = arrayBindStageThreshold;
   }
 
   public boolean getStoreTemporaryCredential() {
     return storeTemporaryCredential;
   }
 
-  public void setServiceName(String serviceName) {
-    this.serviceName = serviceName;
+  public void setStoreTemporaryCredential(boolean storeTemporaryCredential) {
+    this.storeTemporaryCredential = storeTemporaryCredential;
   }
 
   public String getServiceName() {
     return serviceName;
+  }
+
+  public void setServiceName(String serviceName) {
+    this.serviceName = serviceName;
   }
 
   public void setEnableConservativeMemoryUsage(boolean enableConservativeMemoryUsage) {
@@ -341,75 +362,75 @@ public class SessionProperties {
     return enableConservativeMemoryUsage;
   }
 
-  public void setConservativeMemoryAdjustStep(int conservativeMemoryAdjustStep) {
-    this.conservativeMemoryAdjustStep = conservativeMemoryAdjustStep;
-  }
-
   public int getConservativeMemoryAdjustStep() {
     return conservativeMemoryAdjustStep;
   }
 
-  public void setClientMemoryLimit(int clientMemoryLimit) {
-    this.clientMemoryLimit = clientMemoryLimit;
+  public void setConservativeMemoryAdjustStep(int conservativeMemoryAdjustStep) {
+    this.conservativeMemoryAdjustStep = conservativeMemoryAdjustStep;
   }
 
   public int getClientMemoryLimit() {
     return clientMemoryLimit;
   }
 
-  public void setClientResultChunkSize(int clientResultChunkSize) {
-    this.clientResultChunkSize = clientResultChunkSize;
+  public void setClientMemoryLimit(int clientMemoryLimit) {
+    this.clientMemoryLimit = clientMemoryLimit;
   }
 
   public int getClientResultChunkSize() {
     return clientResultChunkSize;
   }
 
-  public void setClientPrefetchThreads(int clientPrefetchThreads) {
-    this.clientPrefetchThreads = clientPrefetchThreads;
+  public void setClientResultChunkSize(int clientResultChunkSize) {
+    this.clientResultChunkSize = clientResultChunkSize;
   }
 
   public int getClientPrefetchThreads() {
     return clientPrefetchThreads;
   }
 
-  public void setValidateDefaultParameters(boolean validateDefaultParameters) {
-    this.validateDefaultParameters = validateDefaultParameters;
+  public void setClientPrefetchThreads(int clientPrefetchThreads) {
+    this.clientPrefetchThreads = clientPrefetchThreads;
   }
 
   public boolean getValidateDefaultParameters() {
     return validateDefaultParameters;
   }
 
-  public void setDatabase(String database) {
-    this.database = database;
+  public void setValidateDefaultParameters(boolean validateDefaultParameters) {
+    this.validateDefaultParameters = validateDefaultParameters;
   }
 
   public String getDatabase() {
     return database;
   }
 
-  public void setSchema(String schema) {
-    this.schema = schema;
+  public void setDatabase(String database) {
+    this.database = database;
   }
 
   public String getSchema() {
     return schema;
   }
 
-  public void setRole(String role) {
-    this.role = role;
+  public void setSchema(String schema) {
+    this.schema = schema;
   }
 
   public String getRole() {
     return role;
   }
 
-  public void setWarehouse(String warehouse) {
-    this.warehouse = warehouse;
+  public void setRole(String role) {
+    this.role = role;
   }
 
   public String getWarehouse() {
     return warehouse;
+  }
+
+  public void setWarehouse(String warehouse) {
+    this.warehouse = warehouse;
   }
 }

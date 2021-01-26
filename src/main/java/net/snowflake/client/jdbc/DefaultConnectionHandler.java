@@ -154,17 +154,17 @@ public class DefaultConnectionHandler implements ConnectionHandler {
       } else if (CLIENT_SFSQL.equals(property.getKey())) {
         Object v0 = property.getValue();
         boolean booleanV = v0 instanceof Boolean ? (Boolean) v0 : Boolean.parseBoolean((String) v0);
-        sfSession.sessionProperties().setSfSQLMode(booleanV);
+        sfSession.getSessionProperties().setSfSQLMode(booleanV);
       }
       sfSession.addProperty(property.getKey(), property.getValue());
     }
 
     // populate app id and version
     sfSession
-        .sessionProperties()
+        .getSessionProperties()
         .addProperty(SFConnectionProperty.APP_ID, LoginInfoDTO.SF_JDBC_APP_ID);
     sfSession
-        .sessionProperties()
+        .getSessionProperties()
         .addProperty(SFConnectionProperty.APP_VERSION, SnowflakeDriver.implementVersion);
 
     // Set the corresponding session parameters to the JVM properties

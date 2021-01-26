@@ -209,7 +209,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
     if (isClosed) {
       raiseSQLExceptionIfConnectionIsClosed();
     }
-    return sfSession.getSessionId();
+    return sfSession.getSessionProperties().getSessionId();
   }
 
   @Override
@@ -291,7 +291,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
   public boolean getAutoCommit() throws SQLException {
     logger.debug("boolean getAutoCommit()");
     raiseSQLExceptionIfConnectionIsClosed();
-    return sfSession.sessionProperties().getAutoCommit();
+    return sfSession.getSessionProperties().getAutoCommit();
   }
 
   @Override
@@ -299,7 +299,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
     logger.debug("void setAutoCommit(boolean isAutoCommit)");
     boolean currentAutoCommit = this.getAutoCommit();
     if (isAutoCommit != currentAutoCommit) {
-      sfSession.sessionProperties().setAutoCommit(isAutoCommit);
+      sfSession.getSessionProperties().setAutoCommit(isAutoCommit);
       this.executeImmediate(
           "alter session /* JDBC:SnowflakeConnectionV1.setAutoCommit*/ set autocommit="
               + isAutoCommit);
@@ -345,7 +345,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
   @Override
   public String getCatalog() throws SQLException {
     raiseSQLExceptionIfConnectionIsClosed();
-    return sfSession.sessionProperties().getDatabase();
+    return sfSession.getSessionProperties().getDatabase();
   }
 
   @Override
@@ -600,7 +600,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
     logger.debug("Properties getClientInfo()");
     raiseSQLExceptionIfConnectionIsClosed();
     // sfSession must not be null if the connection is not closed.
-    return sfSession.getClientInfo();
+    return sfSession.getSessionProperties().getClientInfo();
   }
 
   @Override
@@ -620,7 +620,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
 
     raiseSQLExceptionIfConnectionIsClosed();
     // sfSession must not be null if the connection is not closed.
-    return sfSession.getClientInfo(name);
+    return sfSession.getSessionProperties().getClientInfo(name);
   }
 
   @Override
@@ -640,7 +640,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
   @Override
   public String getSchema() throws SQLException {
     raiseSQLExceptionIfConnectionIsClosed();
-    return sfSession.sessionProperties().getSchema();
+    return sfSession.getSessionProperties().getSchema();
   }
 
   @Override
@@ -699,15 +699,15 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
   }
 
   int getDatabaseMajorVersion() {
-    return sfSession.sessionProperties().getDatabaseMajorVersion();
+    return sfSession.getSessionProperties().getDatabaseMajorVersion();
   }
 
   int getDatabaseMinorVersion() {
-    return sfSession.sessionProperties().getDatabaseMinorVersion();
+    return sfSession.getSessionProperties().getDatabaseMinorVersion();
   }
 
   String getDatabaseVersion() {
-    return sfSession.sessionProperties().getDatabaseVersion();
+    return sfSession.getSessionProperties().getDatabaseVersion();
   }
 
   @Override
@@ -952,7 +952,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
 
   public void setInjectedDelay(int delay) throws SQLException {
     raiseSQLExceptionIfConnectionIsClosed();
-    sfSession.sessionProperties().setInjectedDelay(delay);
+    sfSession.getSessionProperties().setInjectedDelay(delay);
   }
 
   void injectedDelay() throws SQLException {
@@ -973,7 +973,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
 
   public void setInjectFileUploadFailure(String fileToFail) throws SQLException {
     raiseSQLExceptionIfConnectionIsClosed();
-    sfSession.sessionProperties().setInjectFileUploadFailure(fileToFail);
+    sfSession.getSessionProperties().setInjectFileUploadFailure(fileToFail);
   }
 
   public SFSessionInterface getSFSession() {
@@ -995,7 +995,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
   }
 
   public boolean getShowStatementParameters() {
-    return sfSession.sessionProperties().isShowStatementParameters();
+    return sfSession.getSessionProperties().isShowStatementParameters();
   }
 
   void removeClosedStatement(Statement stmt) {

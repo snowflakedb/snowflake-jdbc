@@ -6,7 +6,6 @@ package net.snowflake.client.core;
 
 import java.sql.DriverPropertyInfo;
 import java.util.List;
-import java.util.Properties;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
 
@@ -22,9 +21,7 @@ public interface SFSessionInterface {
 
   List<DriverPropertyInfo> checkProperties();
 
-  SessionProperties sessionProperties();
-
-  String getSessionId();
+  SessionProperties getSessionProperties();
 
   void open() throws SFException, SnowflakeSQLException;
   /**
@@ -34,10 +31,6 @@ public interface SFSessionInterface {
    * @throws SFException if failed to close the connection
    */
   void close() throws SFException, SnowflakeSQLException;
-
-  Properties getClientInfo();
-
-  String getClientInfo(String name);
 
   void raiseError(Throwable exc, String jobId, String requestId);
 

@@ -56,7 +56,7 @@ public class TelemetryClient implements Telemetry {
 
   private TelemetryClient(SFSession session, int flushSize) {
     this.session = session;
-    this.serverUrl = session.sessionProperties().getUrl();
+    this.serverUrl = session.getSessionProperties().getUrl();
 
     if (this.serverUrl.endsWith("/")) {
       this.telemetryUrl =
@@ -76,7 +76,7 @@ public class TelemetryClient implements Telemetry {
    * @return whether client is enabled
    */
   public boolean isTelemetryEnabled() {
-    return this.session.sessionProperties().isClientTelemetryEnabled()
+    return this.session.getSessionProperties().isClientTelemetryEnabled()
         && this.isTelemetryServiceAvailable;
   }
 
@@ -251,7 +251,7 @@ public class TelemetryClient implements Telemetry {
       try {
         response =
             HttpUtil.executeGeneralRequest(
-                post, 1000, this.session.sessionProperties().getOCSPMode());
+                post, 1000, this.session.getSessionProperties().getOCSPMode());
       } catch (SnowflakeSQLException e) {
         disableTelemetry(); // when got error like 404 or bad request, disable telemetry in this
         // telemetry instance

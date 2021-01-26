@@ -494,7 +494,7 @@ public class SnowflakeResultSetSerializableV1
 
       SnowflakeColumnMetadata columnMetadata =
           SnowflakeUtil.extractColumnMetadata(
-              colNode, sfSession.sessionProperties().isJdbcTreatDecimalAsInt(), sfSession);
+              colNode, sfSession.getSessionProperties().isJdbcTreatDecimalAsInt(), sfSession);
 
       resultSetSerializable.resultColumnMetadata.add(columnMetadata);
 
@@ -572,16 +572,16 @@ public class SnowflakeResultSetSerializableV1
     }
 
     // setup fields from sessions.
-    resultSetSerializable.ocspMode = sfSession.sessionProperties().getOCSPMode();
+    resultSetSerializable.ocspMode = sfSession.getSessionProperties().getOCSPMode();
     resultSetSerializable.snowflakeConnectionString = sfSession.getSnowflakeConnectionString();
     resultSetSerializable.networkTimeoutInMilli = sfSession.getNetworkTimeoutInMilli();
     resultSetSerializable.isResultColumnCaseInsensitive =
-        sfSession.sessionProperties().isResultColumnCaseInsensitive();
-    resultSetSerializable.treatNTZAsUTC = sfSession.sessionProperties().getTreatNTZAsUTC();
+        sfSession.getSessionProperties().isResultColumnCaseInsensitive();
+    resultSetSerializable.treatNTZAsUTC = sfSession.getSessionProperties().getTreatNTZAsUTC();
     resultSetSerializable.formatDateWithTimezone =
-        sfSession.sessionProperties().getFormatDateWithTimezone();
+        sfSession.getSessionProperties().getFormatDateWithTimezone();
     resultSetSerializable.useSessionTimezone =
-        sfSession.sessionProperties().getUseSessionTimezone();
+        sfSession.getSessionProperties().getUseSessionTimezone();
 
     // setup transient fields from parameter
     resultSetSerializable.setupFieldsFromParameters();

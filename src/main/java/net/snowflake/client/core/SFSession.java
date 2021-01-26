@@ -46,11 +46,9 @@ public class SFSession implements SFSessionInterface {
       "CLIENT_STORE_TEMPORARY_CREDENTIAL";
   private static final ObjectMapper mapper = ObjectMapperFactory.getObjectMapper();
   private static final int MAX_SESSION_PARAMETERS = 1000;
-  // increase heartbeat timeout from 60 sec to 300 sec
-  // per https://support-snowflake.zendesk.com/agent/tickets/6629
-  private static int SF_HEARTBEAT_TIMEOUT = 300;
-  private static int DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT = 300000; // millisec
-  private final Properties clientInfo = new Properties();
+  private static final int DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT = 300000; // millisec
+  private final AtomicInteger sequenceId = new AtomicInteger(0);
+  private final List<DriverPropertyInfo> missingProperties = new ArrayList<>();
   // list of active asynchronous queries. Used to see if session should be closed when connection
   // closes
   protected Set<String> activeAsyncQueries = ConcurrentHashMap.newKeySet();
@@ -58,14 +56,11 @@ public class SFSession implements SFSessionInterface {
   private String sessionToken;
   private String masterToken;
   private long masterTokenValidityInSeconds;
-  private String sessionId;
   private String idToken;
   private String mfaToken;
   private String privateKeyFileLocation;
   private String privateKeyPassword;
   private PrivateKey privateKey;
-  private AtomicInteger sequenceId = new AtomicInteger(0);
-  private List<DriverPropertyInfo> missingProperties = new ArrayList<>();
   /**
    * Amount of seconds a user is willing to tolerate for establishing the connection with database.
    * In our case, it means the first login request to get authorization token.
@@ -139,7 +134,7 @@ public class SFSession implements SFSessionInterface {
   }
 
   @Override
-  public SessionProperties sessionProperties() {
+  public SessionProperties getSessionProperties() {
     return this.sessionProperties;
   }
 
@@ -437,7 +432,7 @@ public class SFSession implements SFSessionInterface {
     sessionProperties.setSchema(loginOutput.getSessionSchema());
     sessionProperties.setRole(loginOutput.getSessionRole());
     sessionProperties.setWarehouse(loginOutput.getSessionWarehouse());
-    sessionId = loginOutput.getSessionId();
+    sessionProperties.setSessionId(loginOutput.getSessionId());
     sessionProperties.setAutoCommit(loginOutput.getAutoCommit());
 
     // Update common parameter values for this session
@@ -544,10 +539,6 @@ public class SFSession implements SFSessionInterface {
         .equalsIgnoreCase(authenticator);
   }
 
-  public String getSessionId() {
-    return sessionId;
-  }
-
   /**
    * A helper function to call global service and renew session.
    *
@@ -616,7 +607,7 @@ public class SFSession implements SFSessionInterface {
 
     SessionUtil.closeSession(loginInput);
     closeTelemetryClient();
-    clientInfo.clear();
+    sessionProperties.getClientInfo().clear();
     isClosed = true;
   }
 
@@ -691,6 +682,9 @@ public class SFSession implements SFSessionInterface {
         logger.debug("Executing heartbeat request: {}", postRequest.toString());
 
         // the following will retry transient network issues
+        // increase heartbeat timeout from 60 sec to 300 sec
+        // per https://support-snowflake.zendesk.com/agent/tickets/6629
+        int SF_HEARTBEAT_TIMEOUT = 300;
         String theResponse =
             HttpUtil.executeGeneralRequest(
                 postRequest, SF_HEARTBEAT_TIMEOUT, sessionProperties.getOCSPMode());
@@ -731,21 +725,6 @@ public class SFSession implements SFSessionInterface {
                 requestId);
       }
     } while (retry);
-  }
-
-  public Properties getClientInfo() {
-    logger.debug(" public Properties getClientInfo()");
-
-    // defensive copy to avoid client from changing the properties
-    // directly w/o going through the API
-    Properties copy = new Properties();
-    copy.putAll(this.clientInfo);
-    return copy;
-  }
-
-  public String getClientInfo(String name) {
-    logger.debug(" public String getClientInfo(String name)");
-    return this.clientInfo.getProperty(name);
   }
 
   @Override

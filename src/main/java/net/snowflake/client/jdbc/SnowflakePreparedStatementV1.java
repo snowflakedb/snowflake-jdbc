@@ -329,7 +329,7 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
         SnowflakeUtil.javaTypeToSFType(Types.TIMESTAMP, connection.getSFSession());
 
     if (sfType == SnowflakeType.TIMESTAMP) {
-      sfType = connection.getSFSession().sessionProperties().getTimestampMappedType();
+      sfType = connection.getSFSession().getSessionProperties().getTimestampMappedType();
     }
 
     ParameterBindingDTO binding = new ParameterBindingDTO(sfType.name(), value);
@@ -579,7 +579,7 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
       long milliSecSinceEpoch = x.getTime();
 
       if (sfType == SnowflakeType.TIMESTAMP) {
-        sfType = connection.getSFSession().sessionProperties().getTimestampMappedType();
+        sfType = connection.getSFSession().getSessionProperties().getTimestampMappedType();
       }
       // if type is timestamp_tz, keep the offset and the time value separate.
       // store the offset, in minutes, as amount it's off from UTC

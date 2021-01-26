@@ -299,7 +299,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
       // if CLIENT_SFSQL is not set, or if a statement
       // is multi-statement
       if (!sfResultSet.getStatementType().isGenerateResultSet()
-          && (!connection.getSFSession().sessionProperties().isSfSQLMode()
+          && (!connection.getSFSession().getSessionProperties().isSfSQLMode()
               || sfStatementInterface.hasChildren())) {
         updateCount = ResultUtil.calculateUpdateCount(sfResultSet);
         if (resultSet != null) {

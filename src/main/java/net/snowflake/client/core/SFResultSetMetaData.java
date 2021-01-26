@@ -102,7 +102,7 @@ public class SFResultSetMetaData {
         columnMetadata,
         "none",
         session,
-        (session != null) && session.sessionProperties().isResultColumnCaseInsensitive(),
+        (session != null) && session.getSessionProperties().isResultColumnCaseInsensitive(),
         timestampNTZFormatter,
         timestampLTZFormatter,
         timestampTZFormatter,
