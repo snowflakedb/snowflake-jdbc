@@ -616,25 +616,24 @@ public class HttpUtil {
 
   /** configure custom proxy properties from connectionPropertiesMap */
   public static void configureCustomProxyProperties(
-      Map<SFConnectionProperty, Object> connectionPropertiesMap) throws SnowflakeSQLException {
-    if (connectionPropertiesMap.containsKey(SFConnectionProperty.USE_PROXY)) {
-      useProxy = (boolean) connectionPropertiesMap.get(SFConnectionProperty.USE_PROXY);
+      Map<SFSessionProperty, Object> connectionPropertiesMap) throws SnowflakeSQLException {
+    if (connectionPropertiesMap.containsKey(SFSessionProperty.USE_PROXY)) {
+      useProxy = (boolean) connectionPropertiesMap.get(SFSessionProperty.USE_PROXY);
     }
 
     if (useProxy) {
-      proxyHost = (String) connectionPropertiesMap.get(SFConnectionProperty.PROXY_HOST);
+      proxyHost = (String) connectionPropertiesMap.get(SFSessionProperty.PROXY_HOST);
       try {
         proxyPort =
-            Integer.parseInt(
-                connectionPropertiesMap.get(SFConnectionProperty.PROXY_PORT).toString());
+            Integer.parseInt(connectionPropertiesMap.get(SFSessionProperty.PROXY_PORT).toString());
       } catch (NumberFormatException | NullPointerException e) {
         throw new SnowflakeSQLException(
             ErrorCode.INVALID_PROXY_PROPERTIES, "Could not parse port number");
       }
 
-      proxyUser = (String) connectionPropertiesMap.get(SFConnectionProperty.PROXY_USER);
-      proxyPassword = (String) connectionPropertiesMap.get(SFConnectionProperty.PROXY_PASSWORD);
-      nonProxyHosts = (String) connectionPropertiesMap.get(SFConnectionProperty.NON_PROXY_HOSTS);
+      proxyUser = (String) connectionPropertiesMap.get(SFSessionProperty.PROXY_USER);
+      proxyPassword = (String) connectionPropertiesMap.get(SFSessionProperty.PROXY_PASSWORD);
+      nonProxyHosts = (String) connectionPropertiesMap.get(SFSessionProperty.NON_PROXY_HOSTS);
     }
   }
 }

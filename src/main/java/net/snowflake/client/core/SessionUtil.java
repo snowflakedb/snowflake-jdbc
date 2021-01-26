@@ -229,7 +229,7 @@ public class SessionUtil {
    */
   static SFLoginOutput openSession(
       SFLoginInput loginInput,
-      Map<SFConnectionProperty, Object> connectionPropertiesMap,
+      Map<SFSessionProperty, Object> connectionPropertiesMap,
       String tracingLevel)
       throws SFException, SnowflakeSQLException {
     AssertUtil.assertTrue(
@@ -309,7 +309,7 @@ public class SessionUtil {
 
   private static SFLoginOutput newSession(
       SFLoginInput loginInput,
-      Map<SFConnectionProperty, Object> connectionPropertiesMap,
+      Map<SFSessionProperty, Object> connectionPropertiesMap,
       String tracingLevel)
       throws SFException, SnowflakeSQLException {
     // build URL for login request
@@ -504,11 +504,11 @@ public class SessionUtil {
        * connection string. Includes username, password, serverUrl, timeout values, etc
       */
 
-      for (Map.Entry<SFConnectionProperty, Object> entry : connectionPropertiesMap.entrySet()) {
+      for (Map.Entry<SFSessionProperty, Object> entry : connectionPropertiesMap.entrySet()) {
         // exclude client parameters already covered by other runtime parameters that have been
         // added to clientEnv
-        if (entry.getKey().equals(SFConnectionProperty.APP_ID)
-            || entry.getKey().equals(SFConnectionProperty.APP_VERSION)) {
+        if (entry.getKey().equals(SFSessionProperty.APP_ID)
+            || entry.getKey().equals(SFSessionProperty.APP_VERSION)) {
           continue;
         }
         String propKey = entry.getKey().getPropertyKey();
@@ -518,8 +518,8 @@ public class SessionUtil {
       }
       // if map does not contain the tracing property, the default is set. Add
       // this default value to the map.
-      if (!connectionPropertiesMap.containsKey(SFConnectionProperty.TRACING)) {
-        clientEnv.put(SFConnectionProperty.TRACING.getPropertyKey(), tracingLevel);
+      if (!connectionPropertiesMap.containsKey(SFSessionProperty.TRACING)) {
+        clientEnv.put(SFSessionProperty.TRACING.getPropertyKey(), tracingLevel);
       }
 
       data.put(ClientAuthnParameter.CLIENT_ENVIRONMENT.name(), clientEnv);

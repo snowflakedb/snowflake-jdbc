@@ -14,7 +14,7 @@ import net.snowflake.client.jdbc.ErrorCode;
  * @author jhuang
  *     <p>Created on 11/3/15
  */
-public enum SFConnectionProperty {
+public enum SFSessionProperty {
   SERVER_URL("serverURL", true, String.class),
   USER("user", false, String.class),
   PASSWORD("password", false, String.class),
@@ -82,16 +82,15 @@ public enum SFConnectionProperty {
     return valueType;
   }
 
-  SFConnectionProperty(
-      String propertyKey, boolean required, Class<?> valueType, String... aliases) {
+  SFSessionProperty(String propertyKey, boolean required, Class<?> valueType, String... aliases) {
     this.propertyKey = propertyKey;
     this.required = required;
     this.valueType = valueType;
     this.aliases = aliases;
   }
 
-  static SFConnectionProperty lookupByKey(String propertyKey) {
-    for (SFConnectionProperty property : SFConnectionProperty.values()) {
+  static SFSessionProperty lookupByKey(String propertyKey) {
+    for (SFSessionProperty property : SFSessionProperty.values()) {
       if (property.propertyKey.equalsIgnoreCase(propertyKey)) {
         return property;
       } else {
@@ -113,7 +112,7 @@ public enum SFConnectionProperty {
    * @return The checked property value
    * @throws SFException Will be thrown if an invalid property value is passed in
    */
-  static Object checkPropertyValue(SFConnectionProperty property, Object propertyValue)
+  static Object checkPropertyValue(SFSessionProperty property, Object propertyValue)
       throws SFException {
     if (propertyValue == null) {
       return null;

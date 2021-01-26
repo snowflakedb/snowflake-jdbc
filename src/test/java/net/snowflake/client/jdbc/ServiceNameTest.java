@@ -10,7 +10,7 @@ import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.OCSPMode;
-import net.snowflake.client.core.SFConnectionProperty;
+import net.snowflake.client.core.SFSessionProperty;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.junit.Test;
 import org.mockito.MockedStatic;
@@ -115,11 +115,10 @@ public class ServiceNameTest {
           .thenReturn(responseQuery());
 
       Properties props = new Properties();
-      props.setProperty(SFConnectionProperty.ACCOUNT.getPropertyKey(), "fakeaccount");
-      props.setProperty(SFConnectionProperty.USER.getPropertyKey(), "fakeuser");
-      props.setProperty(SFConnectionProperty.PASSWORD.getPropertyKey(), "fakepassword");
-      props.setProperty(
-          SFConnectionProperty.INSECURE_MODE.getPropertyKey(), Boolean.TRUE.toString());
+      props.setProperty(SFSessionProperty.ACCOUNT.getPropertyKey(), "fakeaccount");
+      props.setProperty(SFSessionProperty.USER.getPropertyKey(), "fakeuser");
+      props.setProperty(SFSessionProperty.PASSWORD.getPropertyKey(), "fakepassword");
+      props.setProperty(SFSessionProperty.INSECURE_MODE.getPropertyKey(), Boolean.TRUE.toString());
       SnowflakeConnectionV1 con =
           new SnowflakeConnectionV1(
               "jdbc:snowflake://http://fakeaccount.snowflakecomputing.com", props);

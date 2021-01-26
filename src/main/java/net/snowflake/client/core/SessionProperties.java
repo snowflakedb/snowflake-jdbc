@@ -15,7 +15,7 @@ public class SessionProperties {
   // Any statement execution will sleep for the specified number of milliseconds
   private final AtomicInteger _injectedDelay = new AtomicInteger(0);
   // Connection properties map
-  private final Map<SFConnectionProperty, Object> connectionPropertiesMap = new HashMap<>();
+  private final Map<SFSessionProperty, Object> connectionPropertiesMap = new HashMap<>();
   // Custom key-value map for other options values
   private Map<String, Object> customSessionProperties = new HashMap<>(1);
   // Unique Session ID
@@ -163,32 +163,32 @@ public class SessionProperties {
   }
 
   public String getServerUrl() {
-    if (connectionPropertiesMap.containsKey(SFConnectionProperty.SERVER_URL)) {
-      return (String) connectionPropertiesMap.get(SFConnectionProperty.SERVER_URL);
+    if (connectionPropertiesMap.containsKey(SFSessionProperty.SERVER_URL)) {
+      return (String) connectionPropertiesMap.get(SFSessionProperty.SERVER_URL);
     }
     return null;
   }
 
   public boolean isStringQuoted() {
-    if (connectionPropertiesMap.containsKey(SFConnectionProperty.STRINGS_QUOTED)) {
-      return (Boolean) connectionPropertiesMap.get(SFConnectionProperty.STRINGS_QUOTED);
+    if (connectionPropertiesMap.containsKey(SFSessionProperty.STRINGS_QUOTED)) {
+      return (Boolean) connectionPropertiesMap.get(SFSessionProperty.STRINGS_QUOTED);
     }
     return false;
   }
 
-  public void addProperty(SFConnectionProperty sfConnectionProperty, Object propertyValue)
+  public void addProperty(SFSessionProperty sfSessionProperty, Object propertyValue)
       throws SFException {
-    addProperty(sfConnectionProperty.getPropertyKey(), propertyValue);
+    addProperty(sfSessionProperty.getPropertyKey(), propertyValue);
   }
 
   public void addProperty(String propertyName, Object propertyValue) throws SFException {
-    SFConnectionProperty connectionProperty = SFConnectionProperty.lookupByKey(propertyName);
+    SFSessionProperty connectionProperty = SFSessionProperty.lookupByKey(propertyName);
     // check if the value type is as expected
-    propertyValue = SFConnectionProperty.checkPropertyValue(connectionProperty, propertyValue);
+    propertyValue = SFSessionProperty.checkPropertyValue(connectionProperty, propertyValue);
 
     if (connectionPropertiesMap.containsKey(connectionProperty)) {
       throw new SFException(ErrorCode.DUPLICATE_CONNECTION_PROPERTY_SPECIFIED, propertyName);
-    } else if (propertyValue != null && connectionProperty == SFConnectionProperty.AUTHENTICATOR) {
+    } else if (propertyValue != null && connectionProperty == SFSessionProperty.AUTHENTICATOR) {
       String[] authenticatorWithParams = propertyValue.toString().split(";");
       if (authenticatorWithParams.length == 1) {
         connectionPropertiesMap.put(connectionProperty, propertyValue);
@@ -196,7 +196,7 @@ public class SessionProperties {
         String[] oktaUserKeyPair = authenticatorWithParams[1].split("=");
         if (oktaUserKeyPair.length == 2) {
           connectionPropertiesMap.put(connectionProperty, authenticatorWithParams[0]);
-          connectionPropertiesMap.put(SFConnectionProperty.OKTA_USERNAME, oktaUserKeyPair[1]);
+          connectionPropertiesMap.put(SFSessionProperty.OKTA_USERNAME, oktaUserKeyPair[1]);
         } else {
           throw new SFException(ErrorCode.INVALID_OKTA_USERNAME, propertyName);
         }
@@ -206,20 +206,19 @@ public class SessionProperties {
     }
   }
 
-  public Map<SFConnectionProperty, Object> getConnectionPropertiesMap() {
+  public Map<SFSessionProperty, Object> getConnectionPropertiesMap() {
     return connectionPropertiesMap;
   }
 
   public OCSPMode getOCSPMode() {
     OCSPMode ret;
 
-    Boolean insecureMode =
-        (Boolean) connectionPropertiesMap.get(SFConnectionProperty.INSECURE_MODE);
+    Boolean insecureMode = (Boolean) connectionPropertiesMap.get(SFSessionProperty.INSECURE_MODE);
     if (insecureMode != null && insecureMode) {
       // skip OCSP checks
       ret = OCSPMode.INSECURE;
-    } else if (!connectionPropertiesMap.containsKey(SFConnectionProperty.OCSP_FAIL_OPEN)
-        || (boolean) connectionPropertiesMap.get(SFConnectionProperty.OCSP_FAIL_OPEN)) {
+    } else if (!connectionPropertiesMap.containsKey(SFSessionProperty.OCSP_FAIL_OPEN)
+        || (boolean) connectionPropertiesMap.get(SFSessionProperty.OCSP_FAIL_OPEN)) {
       // fail open (by default, not set)
       ret = OCSPMode.FAIL_OPEN;
     } else {
@@ -230,19 +229,19 @@ public class SessionProperties {
   }
 
   public Integer getQueryTimeout() {
-    return (Integer) this.connectionPropertiesMap.get(SFConnectionProperty.QUERY_TIMEOUT);
+    return (Integer) this.connectionPropertiesMap.get(SFSessionProperty.QUERY_TIMEOUT);
   }
 
   public String getUser() {
-    return (String) this.connectionPropertiesMap.get(SFConnectionProperty.USER);
+    return (String) this.connectionPropertiesMap.get(SFSessionProperty.USER);
   }
 
   public String getUrl() {
-    return (String) this.connectionPropertiesMap.get(SFConnectionProperty.SERVER_URL);
+    return (String) this.connectionPropertiesMap.get(SFSessionProperty.SERVER_URL);
   }
 
   public int getInjectWaitInPut() {
-    Object retVal = this.connectionPropertiesMap.get(SFConnectionProperty.INJECT_WAIT_IN_PUT);
+    Object retVal = this.connectionPropertiesMap.get(SFSessionProperty.INJECT_WAIT_IN_PUT);
     if (retVal != null) {
       try {
         return (int) retVal;
