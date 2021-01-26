@@ -110,7 +110,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     useSessionTimezone = resultSetSerializable.getUseSessionTimezone();
 
     // update the driver/session with common parameters from GS
-    SessionUtil.updateSfDriverParamValues(this.parameters, (SFSession) statement.getSession());
+    SessionUtil.updateSfDriverParamValues(this.parameters, statement.getSession());
 
     // if server gives a send time, log time it took to arrive
     if (resultSetSerializable.getSendResultTime() != 0) {
