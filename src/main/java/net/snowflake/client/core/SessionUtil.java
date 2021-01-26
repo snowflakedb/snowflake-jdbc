@@ -1271,7 +1271,8 @@ public class SessionUtil {
     return parameters;
   }
 
-  static void updateSfDriverParamValues(Map<String, Object> parameters, SFSession session) {
+  static void updateSfDriverParamValues(
+      Map<String, Object> parameters, SFSessionInterface session) {
     for (Map.Entry<String, Object> entry : parameters.entrySet()) {
       logger.debug("processing parameter {}", entry.getKey());
 
