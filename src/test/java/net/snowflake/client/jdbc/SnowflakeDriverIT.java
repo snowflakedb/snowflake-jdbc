@@ -1415,7 +1415,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
 
     connection
         .unwrap(SnowflakeConnectionV1.class)
-        .getSFSession()
+        .getSfSession()
         .getSessionProperties()
         .setTimestampMappedType(SnowflakeType.TIMESTAMP_NTZ);
     Timestamp ts = buildTimestamp(1970, 0, 15, 10, 14, 30, 0);

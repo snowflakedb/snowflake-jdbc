@@ -291,7 +291,7 @@ public class TelemetryServiceIT extends BaseJDBCTest {
       int fakeErrorCode = 27;
       try {
         generateDummyException(
-            fakeErrorCode, con.unwrap(SnowflakeConnectionV1.class).getSFSession());
+            fakeErrorCode, con.unwrap(SnowflakeConnectionV1.class).getSfSession());
         fail();
       } catch (SnowflakeSQLLoggedException e) {
         // The error response has the same code as the fakeErrorCode
