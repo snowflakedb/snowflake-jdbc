@@ -17,9 +17,4 @@ public interface FileTransferAgentInterface extends SnowflakeFixedView {
   boolean execute() throws SQLException;
 
   InputStream downloadStream(String fileName) throws SnowflakeSQLException;
-
-  enum CommandType {
-    UPLOAD,
-    DOWNLOAD
-  }
 }

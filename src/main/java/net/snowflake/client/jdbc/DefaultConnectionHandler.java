@@ -92,22 +92,6 @@ public class DefaultConnectionHandler implements ConnectionHandler {
     return new SFStatement(sfSession);
   }
 
-  /**
-   * Returns the default SnowflakeFileTransferAgent implementation for the client.
-   *
-   * @param command The command to parse for this file transfer (e.g., PUT/GET)
-   * @param statement The statement to use for this file transfer
-   */
-  @Override
-  public FileTransferAgentInterface getFileTransferAgent(
-      String command, SFStatementInterface statement)
-      throws SQLNonTransientConnectionException, SnowflakeSQLException {
-    if (!(statement instanceof SFStatement)) {
-      throw new SQLNonTransientConnectionException("Internal error: Invalid SFStatement type.");
-    }
-    return new SnowflakeFileTransferAgent(command, sfSession, (SFStatement) statement);
-  }
-
   private void initialize(SnowflakeConnectString conStr) throws SQLException {
     logger.debug(
         "Trying to establish session, JDBC driver version: {}", SnowflakeDriver.implementVersion);

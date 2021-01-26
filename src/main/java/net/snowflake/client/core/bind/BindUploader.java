@@ -19,7 +19,6 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import net.snowflake.client.core.*;
 import net.snowflake.client.jdbc.ErrorCode;
-import net.snowflake.client.jdbc.FileTransferAgentInterface;
 import net.snowflake.client.jdbc.SnowflakeFileTransferAgent;
 import net.snowflake.client.jdbc.SnowflakeSQLLoggedException;
 import net.snowflake.client.jdbc.SnowflakeType;
@@ -263,8 +262,8 @@ public class BindUploader implements Closeable {
 
     putCommand.append(" overwrite=true");
 
-    FileTransferAgentInterface transferAgent;
-    transferAgent = new SnowflakeFileTransferAgent(putCommand.toString(), session, stmt);
+    SnowflakeFileTransferAgent transferAgent =
+        new SnowflakeFileTransferAgent(putCommand.toString(), session, stmt);
 
     transferAgent.setSourceStream(inputStream);
     transferAgent.setDestFileNameForStreamSource(destFileName);

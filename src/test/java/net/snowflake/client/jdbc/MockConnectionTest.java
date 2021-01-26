@@ -628,11 +628,5 @@ public class MockConnectionTest extends BaseJDBCTest {
         SFBaseResultSet resultSet, Statement statement) throws SQLException {
       return null;
     }
-
-    @Override
-    public FileTransferAgentInterface getFileTransferAgent(
-        String command, SFStatementInterface statement) {
-      return null;
-    }
   }
 }
