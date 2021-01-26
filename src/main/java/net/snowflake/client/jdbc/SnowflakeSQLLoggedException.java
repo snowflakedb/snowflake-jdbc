@@ -78,6 +78,12 @@ public class SnowflakeSQLLoggedException extends SnowflakeSQLException {
     String stackTrace = maskStacktrace(sw.toString());
     value.put("Stacktrace", stackTrace);
     value.put("Exception", ex.getClass().getSimpleName());
+    String reason = "";
+    StackTraceElement[] stackTraceArray = ex.getStackTrace();
+    if (stackTraceArray.length >= 1) {
+      reason = ex.getStackTrace()[0].toString();
+    }
+    value.put("reason", reason);
     ibInstance.addLogToBatch(TelemetryUtil.buildJobData(value));
     return ibInstance.sendBatchAsync();
   }
