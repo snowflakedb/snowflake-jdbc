@@ -132,7 +132,8 @@ class SFAsyncResultSet extends SnowflakeBaseResultSet implements SnowflakeResult
           noDataRetry++;
           if (noDataRetry >= noDataMaxRetries) {
             throw new SQLException(
-                "Cannot retrieve data on the status of this query. No information returned from server for queryID={}.",
+                "Cannot retrieve data on the status of this query. No information returned from"
+                    + " server for queryID={}.",
                 this.queryID);
           }
         }

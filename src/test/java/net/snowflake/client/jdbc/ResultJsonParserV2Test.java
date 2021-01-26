@@ -18,14 +18,11 @@ public class ResultJsonParserV2Test {
   public void simpleTest() throws SnowflakeSQLException {
     SFSession session = null;
     String simple =
-        "[\"1\", \"1.01\"],"
-            + "[null, null],"
-            + "[\"2\", \"0.13\"],"
-            + "[\"\", \"\"],"
-            + "[\"\\\"escape\\\"\", \"\\\"escape\\\"\"],"
-            + "[\"\\u2605\", \"\\u263A\\u263A\"],"
-            + "[\"\\ud841\\udf0e\", \"\\ud841\\udf31\\ud841\\udf79\"],"
-            + "[\"{\\\"date\\\" : \\\"2017-04-28\\\",\\\"dealership\\\" : \\\"Tindel Toyota\\\"}\", \"[1,2,3,4,5]\"]";
+        "[\"1\", \"1.01\"],[null, null],[\"2\", \"0.13\"],[\"\", \"\"],[\"\\\"escape\\\"\","
+            + " \"\\\"escape\\\"\"],[\"\\u2605\", \"\\u263A\\u263A\"],[\"\\ud841\\udf0e\","
+            + " \"\\ud841\\udf31\\ud841\\udf79\"],[\"{\\\"date\\\" :"
+            + " \\\"2017-04-28\\\",\\\"dealership\\\" : \\\"Tindel Toyota\\\"}\","
+            + " \"[1,2,3,4,5]\"]";
     byte[] data = simple.getBytes(StandardCharsets.UTF_8);
     JsonResultChunk chunk = new JsonResultChunk("", 8, 2, data.length, session);
     ResultJsonParserV2 jp = new ResultJsonParserV2();
@@ -56,14 +53,11 @@ public class ResultJsonParserV2Test {
   public void simpleStreamingTest() throws SnowflakeSQLException {
     SFSession session = null;
     String simple =
-        "[\"1\", \"1.01\"],"
-            + "[null, null],"
-            + "[\"2\", \"0.13\"],"
-            + "[\"\", \"\"],"
-            + "[\"\\\"escape\\\"\", \"\\\"escape\\\"\"],"
-            + "[\"☺☺\", \"☺☺☺\"], "
-            + "[\"\\ud841\\udf0e\", \"\\ud841\\udf31\\ud841\\udf79\"],"
-            + "[\"{\\\"date\\\" : \\\"2017-04-28\\\",\\\"dealership\\\" : \\\"Tindel Toyota\\\"}\", \"[1,2,3,4,5]\"]";
+        "[\"1\", \"1.01\"],[null, null],[\"2\", \"0.13\"],[\"\", \"\"],[\"\\\"escape\\\"\","
+            + " \"\\\"escape\\\"\"],[\"☺☺\", \"☺☺☺\"], [\"\\ud841\\udf0e\","
+            + " \"\\ud841\\udf31\\ud841\\udf79\"],[\"{\\\"date\\\" :"
+            + " \\\"2017-04-28\\\",\\\"dealership\\\" : \\\"Tindel Toyota\\\"}\","
+            + " \"[1,2,3,4,5]\"]";
     byte[] data = simple.getBytes(StandardCharsets.UTF_8);
     JsonResultChunk chunk = new JsonResultChunk("", 8, 2, data.length, session);
     ResultJsonParserV2 jp = new ResultJsonParserV2();

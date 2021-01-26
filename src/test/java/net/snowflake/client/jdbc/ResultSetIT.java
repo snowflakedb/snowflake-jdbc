@@ -626,12 +626,12 @@ public class ResultSetIT extends ResultSet0IT {
             + "c5 boolean, c6 float, c7 binary, c8 date, c9 datetime, c10 time, c11 timestamp_ltz, "
             + "c12 timestamp_tz)");
     statement.execute(
-        "insert into test_types values (null, null, null, null, null, null, null, null, null, null, "
-            + "null, null)");
+        "insert into test_types values (null, null, null, null, null, null, null, null, null,"
+            + " null, null, null)");
     statement.execute(
-        "insert into test_types (c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12) values(1, 1, '1',"
-            + "'1', true, 1.0, '48454C4C4F', '1994-12-27', "
-            + "'1994-12-27 05:05:05', '05:05:05', '1994-12-27 05:05:05 +00:05', '1994-12-27 05:05:05')");
+        "insert into test_types (c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12) values(1, 1,"
+            + " '1','1', true, 1.0, '48454C4C4F', '1994-12-27', '1994-12-27 05:05:05', '05:05:05',"
+            + " '1994-12-27 05:05:05 +00:05', '1994-12-27 05:05:05')");
     statement.execute("insert into test_types (c1, c2, c3, c4) values(2, 3, '4', '5')");
     resultSet = statement.executeQuery("select * from test_types");
 
@@ -731,7 +731,8 @@ public class ResultSetIT extends ResultSet0IT {
     final long initialMemoryUsage = SnowflakeChunkDownloader.getCurrentMemoryUsage();
 
     statement.executeQuery(
-        "select current_date(), true,2345234, 2343.0, 'testrgint\\n\\t' from table(generator(rowcount=>1000000))");
+        "select current_date(), true,2345234, 2343.0, 'testrgint\\n"
+            + "\\t' from table(generator(rowcount=>1000000))");
 
     assertThat(
         "hold memory usage for the resultSet before close",

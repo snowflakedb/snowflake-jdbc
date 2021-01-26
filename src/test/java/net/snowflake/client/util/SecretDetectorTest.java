@@ -254,7 +254,8 @@ public class SecretDetectorTest {
     final String connStr =
         "https://snowflake.fakehostname.local:fakeport?LOGINTIMEOUT=20&ACCOUNT=fakeaccount&PASSWORD=fakepassword&USER=fakeuser";
     final String maskedConnStr =
-        "https://snowflake.fakehostname.local:fakeport?LOGINTIMEOUT=20&ACCOUNT=fakeaccount&PASSWORD=**** ";
+        "https://snowflake.fakehostname.local:fakeport?LOGINTIMEOUT=20&ACCOUNT=fakeaccount&PASSWORD=****"
+            + " ";
 
     JSONObject obj = generateJsonObject();
     obj.put("connStr", connStr);
@@ -281,7 +282,8 @@ public class SecretDetectorTest {
     final String connStr =
         "https://snowflake.fakehostname.local:fakeport?LOGINTIMEOUT=20&ACCOUNT=fakeaccount&PASSWORD=fakepassword&USER=fakeuser";
     final String maskedConnStr =
-        "https://snowflake.fakehostname.local:fakeport?LOGINTIMEOUT=20&ACCOUNT=fakeaccount&PASSWORD=**** ";
+        "https://snowflake.fakehostname.local:fakeport?LOGINTIMEOUT=20&ACCOUNT=fakeaccount&PASSWORD=****"
+            + " ";
     final String pwdStr = "password=ThisShouldBeMasked";
     final String maskedPwdStr = "password=****";
 
@@ -345,7 +347,8 @@ public class SecretDetectorTest {
     objNode1.set("testNested", objNodeNested);
 
     String maskedObjNestedStr =
-        "{\"testInfo\":\"pwd=**** \",\"testNested\":{\"dummy\":\"dummy\",\"testInfo2\":\"sig=****\"}}";
+        "{\"testInfo\":\"pwd=****"
+            + " \",\"testNested\":{\"dummy\":\"dummy\",\"testInfo2\":\"sig=****\"}}";
     assertThat(
         "Nested Jackson ObjectNode is not masked successfully",
         maskedObjNestedStr.equals(SecretDetector.maskJacksonNode(objNode1).toString()));
@@ -373,7 +376,8 @@ public class SecretDetectorTest {
     objNode4.put("password", "password = HelloWorld!");
 
     String maskedNestedArrayStr =
-        "{\"testArrayNode\":[{\"testInfo\":\"\\\"privateKeyData\\\": \\\"XXXX\\\"\"}],\"hello\":\"world\",\"password\":\"password = **** \"}";
+        "{\"testArrayNode\":[{\"testInfo\":\"\\\"privateKeyData\\\":"
+            + " \\\"XXXX\\\"\"}],\"hello\":\"world\",\"password\":\"password = **** \"}";
     SecretDetector.maskJacksonNode(objNode4);
     assertThat(
         "Nested Jackson array node is not masked successfully",
