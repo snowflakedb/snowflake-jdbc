@@ -34,7 +34,7 @@ class SFResultSetFactory {
       case ARROW:
         return new SFArrowResultSet(resultSetSerializable, session, statement, sortResult);
       case JSON:
-        return new SFResultSet(resultSetSerializable, statement, sortResult);
+        return new SFResultSet(resultSetSerializable, session, statement, sortResult);
       default:
         throw new SnowflakeSQLLoggedException(
             statement.getSession(),
