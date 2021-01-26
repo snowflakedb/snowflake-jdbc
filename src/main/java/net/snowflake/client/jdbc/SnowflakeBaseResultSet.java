@@ -39,7 +39,7 @@ abstract class SnowflakeBaseResultSet implements ResultSet {
     this.resultSetConcurrency = statement.getResultSetConcurrency();
     this.resultSetHoldability = statement.getResultSetHoldability();
     try {
-      this.session = statement.unwrap(SnowflakeStatementV1.class).connection.getSFSession();
+      this.session = statement.unwrap(SnowflakeStatementV1.class).connection.getSfSession();
     } catch (SQLException e) {
       // This exception shouldn't be hit. Statement class should be able to be unwrapped.
       logger.error(

@@ -109,7 +109,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
     logger.debug("public SnowflakeDatabaseMetaData(SnowflakeConnection connection)");
 
     this.connection = connection;
-    this.session = connection.unwrap(SnowflakeConnectionV1.class).getSFSession();
+    this.session = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
     this.metadataRequestUseConnectionCtx =
         session.getSessionProperties().getMetadataRequestUseConnectionCtx();
     this.metadataRequestUseSessionDatabase =

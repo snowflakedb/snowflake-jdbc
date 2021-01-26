@@ -979,7 +979,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
     sfSession.getSessionProperties().setInjectFileUploadFailure(fileToFail);
   }
 
-  public SFSessionInterface getSFSession() {
+  public SFSessionInterface getSfSession() {
     return sfSession;
   }
 

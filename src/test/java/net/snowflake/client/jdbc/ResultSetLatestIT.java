@@ -47,7 +47,7 @@ public class ResultSetLatestIT extends ResultSet0IT {
   public void testMetadataAPIMetricCollection() throws SQLException {
     Connection con = init();
     Telemetry telemetry =
-        con.unwrap(SnowflakeConnectionV1.class).getSFSession().getTelemetryClient();
+        con.unwrap(SnowflakeConnectionV1.class).getSfSession().getTelemetryClient();
     DatabaseMetaData metadata = con.getMetaData();
     // Call one of the DatabaseMetadata API functions but for simplicity, ensure returned ResultSet
     // is empty
@@ -123,7 +123,7 @@ public class ResultSetLatestIT extends ResultSet0IT {
     }
     assertTrue(cnt >= 0);
     Telemetry telemetry =
-        con.unwrap(SnowflakeConnectionV1.class).getSFSession().getTelemetryClient();
+        con.unwrap(SnowflakeConnectionV1.class).getSfSession().getTelemetryClient();
     LinkedList<TelemetryData> logs = ((TelemetryClient) telemetry).logBuffer();
 
     // there should be a log for each of the following fields

@@ -633,7 +633,7 @@ public class StatementIT extends BaseJDBCTest {
     rs.close();
 
     Telemetry telemetryClient =
-        ((SnowflakeStatementV1) statement).connection.getSFSession().getTelemetryClient();
+        ((SnowflakeStatementV1) statement).connection.getSfSession().getTelemetryClient();
 
     // there should be logs ready to be sent
     assertTrue(((TelemetryClient) telemetryClient).bufferSize() > 0);
