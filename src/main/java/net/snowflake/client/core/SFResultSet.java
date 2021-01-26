@@ -30,40 +30,23 @@ import net.snowflake.common.core.SqlState;
  */
 public class SFResultSet extends SFJsonResultSet {
   static final SFLogger logger = SFLoggerFactory.getLogger(SFResultSet.class);
-
-  private int columnCount = 0;
-
-  private int currentChunkRowCount = 0;
-
-  private int currentChunkRowIndex = -1;
-
-  private JsonNode firstChunkRowset = null;
-
-  private JsonResultChunk currentChunk = null;
-
-  private String queryId;
-
-  private SFStatementType statementType;
-
-  private boolean totalRowCountTruncated;
-
-  private boolean sortResult = false;
-
-  private Object[][] firstChunkSortedRowSet;
-
   // time the first chunk is consumed at (timestamp taken at object creation)
   private final long firstChunkTime;
-
-  private long chunkCount = 0;
-
-  private long nextChunkIndex = 0;
-
-  private ChunkDownloader chunkDownloader;
-
-  protected SFStatementInterface statement;
-
   private final boolean arrayBindSupported;
-
+  protected SFStatementInterface statement;
+  private int columnCount = 0;
+  private int currentChunkRowCount = 0;
+  private int currentChunkRowIndex = -1;
+  private JsonNode firstChunkRowset = null;
+  private JsonResultChunk currentChunk = null;
+  private String queryId;
+  private SFStatementType statementType;
+  private boolean totalRowCountTruncated;
+  private boolean sortResult = false;
+  private Object[][] firstChunkSortedRowSet;
+  private long chunkCount = 0;
+  private long nextChunkIndex = 0;
+  private ChunkDownloader chunkDownloader;
   private Telemetry telemetryClient;
 
   // If customer wants Timestamp_NTZ values to be stored in UTC time
@@ -84,16 +67,13 @@ public class SFResultSet extends SFJsonResultSet {
    */
   public SFResultSet(
       SnowflakeResultSetSerializableV1 resultSetSerializable,
+      SFSession session,
       SFStatement statement,
       boolean sortResult)
       throws SQLException {
-    this(
-        resultSetSerializable,
-        ((SFSession) statement.getSession()).getTelemetryClient(),
-        sortResult);
+    this(resultSetSerializable, session.getTelemetryClient(), sortResult);
 
     this.statement = statement;
-    SFSessionInterface session = this.statement.getSession();
     session.getSessionProperties().setDatabase(resultSetSerializable.getFinalDatabaseName());
     session.getSessionProperties().setSchema(resultSetSerializable.getFinalSchemaName());
     session.getSessionProperties().setRole(resultSetSerializable.getFinalRoleName());
