@@ -49,6 +49,7 @@ public class SFSession implements SFSessionInterface {
   private static final int DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT = 300000; // millisec
   private final AtomicInteger sequenceId = new AtomicInteger(0);
   private final List<DriverPropertyInfo> missingProperties = new ArrayList<>();
+  private final SessionProperties sessionProperties = new SessionProperties();
   // list of active asynchronous queries. Used to see if session should be closed when connection
   // closes
   protected Set<String> activeAsyncQueries = ConcurrentHashMap.newKeySet();
@@ -79,8 +80,6 @@ public class SFSession implements SFSessionInterface {
   private int networkTimeoutInMilli = 0; // in milliseconds
 
   private boolean enableCombineDescribe = false;
-  private Map<String, Object> sfSessionProperties = new HashMap<>(1);
-
   // --- Simulated failures for testing
   private int httpClientConnectionTimeout = 60000; // milliseconds
   private int httpClientSocketTimeout = DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT; // milliseconds
@@ -90,7 +89,6 @@ public class SFSession implements SFSessionInterface {
   // simulate client pause after initial execute and before first get-result
   // call ( a default value of 0 means no pause). The value is in seconds
   private int injectClientPause = 0;
-  private SessionProperties sessionProperties = new SessionProperties();
   // session parameters
   private Map<String, Object> sessionParametersMap = new HashMap<>();
   private boolean passcodeInPassword = false;
@@ -732,17 +730,9 @@ public class SFSession implements SFSessionInterface {
     new Incident(this, exc, jobId, requestId).trigger();
   }
 
-  public void setSFSessionProperty(String propertyName, boolean propertyValue) {
-    this.sfSessionProperties.put(propertyName, propertyValue);
-  }
-
-  public Object getSFSessionProperty(String propertyName) {
-    return this.sfSessionProperties.get(propertyName);
-  }
-
   void injectedDelay() {
 
-    AtomicInteger injectedDelay = this.sessionProperties.injectedDelay();
+    AtomicInteger injectedDelay = sessionProperties.injectedDelay();
     int d = injectedDelay.get();
 
     if (d != 0) {
