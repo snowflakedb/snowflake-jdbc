@@ -219,12 +219,12 @@ public class SFSession implements SFSessionInterface {
    * @throws SFException exception raised from Snowflake components
    */
   public void addProperty(String propertyName, Object propertyValue) throws SFException {
-    SFConnectionProperty connectionProperty = SFConnectionProperty.lookupByKey(propertyName);
+    SFSessionProperty connectionProperty = SFSessionProperty.lookupByKey(propertyName);
 
     if (connectionProperty != null) {
       sessionProperties.addProperty(propertyName, propertyValue);
       // check if the value type is as expected
-      propertyValue = SFConnectionProperty.checkPropertyValue(connectionProperty, propertyValue);
+      propertyValue = SFSessionProperty.checkPropertyValue(connectionProperty, propertyValue);
 
       switch (connectionProperty) {
         case LOGIN_TIMEOUT:
@@ -322,7 +322,7 @@ public class SFSession implements SFSessionInterface {
    */
   public synchronized void open() throws SFException, SnowflakeSQLException {
     performSanityCheckOnProperties();
-    Map<SFConnectionProperty, Object> connectionPropertiesMap =
+    Map<SFSessionProperty, Object> connectionPropertiesMap =
         sessionProperties.getConnectionPropertiesMap();
 
     HttpUtil.configureCustomProxyProperties(connectionPropertiesMap);
@@ -335,45 +335,45 @@ public class SFSession implements SFSessionInterface {
             + " application={}, app_id={}, app_version={}, login_timeout={}, network_timeout={},"
             + " query_timeout={}, tracing={}, private_key_file={}, private_key_file_pwd={}."
             + " session_parameters: client_store_temporary_credential={}",
-        connectionPropertiesMap.get(SFConnectionProperty.SERVER_URL),
-        connectionPropertiesMap.get(SFConnectionProperty.ACCOUNT),
-        connectionPropertiesMap.get(SFConnectionProperty.USER),
-        !Strings.isNullOrEmpty((String) connectionPropertiesMap.get(SFConnectionProperty.PASSWORD))
+        connectionPropertiesMap.get(SFSessionProperty.SERVER_URL),
+        connectionPropertiesMap.get(SFSessionProperty.ACCOUNT),
+        connectionPropertiesMap.get(SFSessionProperty.USER),
+        !Strings.isNullOrEmpty((String) connectionPropertiesMap.get(SFSessionProperty.PASSWORD))
             ? "***"
             : "(empty)",
-        connectionPropertiesMap.get(SFConnectionProperty.ROLE),
-        connectionPropertiesMap.get(SFConnectionProperty.DATABASE),
-        connectionPropertiesMap.get(SFConnectionProperty.SCHEMA),
-        connectionPropertiesMap.get(SFConnectionProperty.WAREHOUSE),
-        connectionPropertiesMap.get(SFConnectionProperty.VALIDATE_DEFAULT_PARAMETERS),
-        connectionPropertiesMap.get(SFConnectionProperty.AUTHENTICATOR),
+        connectionPropertiesMap.get(SFSessionProperty.ROLE),
+        connectionPropertiesMap.get(SFSessionProperty.DATABASE),
+        connectionPropertiesMap.get(SFSessionProperty.SCHEMA),
+        connectionPropertiesMap.get(SFSessionProperty.WAREHOUSE),
+        connectionPropertiesMap.get(SFSessionProperty.VALIDATE_DEFAULT_PARAMETERS),
+        connectionPropertiesMap.get(SFSessionProperty.AUTHENTICATOR),
         sessionProperties.getOCSPMode().name(),
-        connectionPropertiesMap.get(SFConnectionProperty.PASSCODE_IN_PASSWORD),
-        !Strings.isNullOrEmpty((String) connectionPropertiesMap.get(SFConnectionProperty.PASSCODE))
+        connectionPropertiesMap.get(SFSessionProperty.PASSCODE_IN_PASSWORD),
+        !Strings.isNullOrEmpty((String) connectionPropertiesMap.get(SFSessionProperty.PASSCODE))
             ? "***"
             : "(empty)",
-        connectionPropertiesMap.get(SFConnectionProperty.PRIVATE_KEY) != null
+        connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY) != null
             ? "(not null)"
             : "(null)",
-        connectionPropertiesMap.get(SFConnectionProperty.USE_PROXY),
-        connectionPropertiesMap.get(SFConnectionProperty.PROXY_HOST),
-        connectionPropertiesMap.get(SFConnectionProperty.PROXY_PORT),
-        connectionPropertiesMap.get(SFConnectionProperty.PROXY_USER),
+        connectionPropertiesMap.get(SFSessionProperty.USE_PROXY),
+        connectionPropertiesMap.get(SFSessionProperty.PROXY_HOST),
+        connectionPropertiesMap.get(SFSessionProperty.PROXY_PORT),
+        connectionPropertiesMap.get(SFSessionProperty.PROXY_USER),
         !Strings.isNullOrEmpty(
-                (String) connectionPropertiesMap.get(SFConnectionProperty.PROXY_PASSWORD))
+                (String) connectionPropertiesMap.get(SFSessionProperty.PROXY_PASSWORD))
             ? "***"
             : "(empty)",
-        connectionPropertiesMap.get(SFConnectionProperty.DISABLE_SOCKS_PROXY),
-        connectionPropertiesMap.get(SFConnectionProperty.APPLICATION),
-        connectionPropertiesMap.get(SFConnectionProperty.APP_ID),
-        connectionPropertiesMap.get(SFConnectionProperty.APP_VERSION),
-        connectionPropertiesMap.get(SFConnectionProperty.LOGIN_TIMEOUT),
-        connectionPropertiesMap.get(SFConnectionProperty.NETWORK_TIMEOUT),
-        connectionPropertiesMap.get(SFConnectionProperty.QUERY_TIMEOUT),
-        connectionPropertiesMap.get(SFConnectionProperty.TRACING),
-        connectionPropertiesMap.get(SFConnectionProperty.PRIVATE_KEY_FILE),
+        connectionPropertiesMap.get(SFSessionProperty.DISABLE_SOCKS_PROXY),
+        connectionPropertiesMap.get(SFSessionProperty.APPLICATION),
+        connectionPropertiesMap.get(SFSessionProperty.APP_ID),
+        connectionPropertiesMap.get(SFSessionProperty.APP_VERSION),
+        connectionPropertiesMap.get(SFSessionProperty.LOGIN_TIMEOUT),
+        connectionPropertiesMap.get(SFSessionProperty.NETWORK_TIMEOUT),
+        connectionPropertiesMap.get(SFSessionProperty.QUERY_TIMEOUT),
+        connectionPropertiesMap.get(SFSessionProperty.TRACING),
+        connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_FILE),
         !Strings.isNullOrEmpty(
-                (String) connectionPropertiesMap.get(SFConnectionProperty.PRIVATE_KEY_FILE_PWD))
+                (String) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_FILE_PWD))
             ? "***"
             : "(empty)",
         sessionParametersMap.get(CLIENT_STORE_TEMPORARY_CREDENTIAL));
@@ -381,33 +381,32 @@ public class SFSession implements SFSessionInterface {
     SFLoginInput loginInput = new SFLoginInput();
 
     loginInput
-        .setServerUrl((String) connectionPropertiesMap.get(SFConnectionProperty.SERVER_URL))
-        .setDatabaseName((String) connectionPropertiesMap.get(SFConnectionProperty.DATABASE))
-        .setSchemaName((String) connectionPropertiesMap.get(SFConnectionProperty.SCHEMA))
-        .setWarehouse((String) connectionPropertiesMap.get(SFConnectionProperty.WAREHOUSE))
-        .setRole((String) connectionPropertiesMap.get(SFConnectionProperty.ROLE))
+        .setServerUrl((String) connectionPropertiesMap.get(SFSessionProperty.SERVER_URL))
+        .setDatabaseName((String) connectionPropertiesMap.get(SFSessionProperty.DATABASE))
+        .setSchemaName((String) connectionPropertiesMap.get(SFSessionProperty.SCHEMA))
+        .setWarehouse((String) connectionPropertiesMap.get(SFSessionProperty.WAREHOUSE))
+        .setRole((String) connectionPropertiesMap.get(SFSessionProperty.ROLE))
         .setValidateDefaultParameters(
-            connectionPropertiesMap.get(SFConnectionProperty.VALIDATE_DEFAULT_PARAMETERS))
-        .setAuthenticator((String) connectionPropertiesMap.get(SFConnectionProperty.AUTHENTICATOR))
-        .setOKTAUserName((String) connectionPropertiesMap.get(SFConnectionProperty.OKTA_USERNAME))
-        .setAccountName((String) connectionPropertiesMap.get(SFConnectionProperty.ACCOUNT))
+            connectionPropertiesMap.get(SFSessionProperty.VALIDATE_DEFAULT_PARAMETERS))
+        .setAuthenticator((String) connectionPropertiesMap.get(SFSessionProperty.AUTHENTICATOR))
+        .setOKTAUserName((String) connectionPropertiesMap.get(SFSessionProperty.OKTA_USERNAME))
+        .setAccountName((String) connectionPropertiesMap.get(SFSessionProperty.ACCOUNT))
         .setLoginTimeout(loginTimeout)
-        .setUserName((String) connectionPropertiesMap.get(SFConnectionProperty.USER))
-        .setPassword((String) connectionPropertiesMap.get(SFConnectionProperty.PASSWORD))
-        .setToken((String) connectionPropertiesMap.get(SFConnectionProperty.TOKEN))
+        .setUserName((String) connectionPropertiesMap.get(SFSessionProperty.USER))
+        .setPassword((String) connectionPropertiesMap.get(SFSessionProperty.PASSWORD))
+        .setToken((String) connectionPropertiesMap.get(SFSessionProperty.TOKEN))
         .setPasscodeInPassword(passcodeInPassword)
-        .setPasscode((String) connectionPropertiesMap.get(SFConnectionProperty.PASSCODE))
+        .setPasscode((String) connectionPropertiesMap.get(SFSessionProperty.PASSCODE))
         .setConnectionTimeout(httpClientConnectionTimeout)
         .setSocketTimeout(httpClientSocketTimeout)
-        .setAppId((String) connectionPropertiesMap.get(SFConnectionProperty.APP_ID))
-        .setAppVersion((String) connectionPropertiesMap.get(SFConnectionProperty.APP_VERSION))
+        .setAppId((String) connectionPropertiesMap.get(SFSessionProperty.APP_ID))
+        .setAppVersion((String) connectionPropertiesMap.get(SFSessionProperty.APP_VERSION))
         .setSessionParameters(sessionParametersMap)
-        .setPrivateKey((PrivateKey) connectionPropertiesMap.get(SFConnectionProperty.PRIVATE_KEY))
-        .setPrivateKeyFile(
-            (String) connectionPropertiesMap.get(SFConnectionProperty.PRIVATE_KEY_FILE))
+        .setPrivateKey((PrivateKey) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY))
+        .setPrivateKeyFile((String) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_FILE))
         .setPrivateKeyFilePwd(
-            (String) connectionPropertiesMap.get(SFConnectionProperty.PRIVATE_KEY_FILE_PWD))
-        .setApplication((String) connectionPropertiesMap.get(SFConnectionProperty.APPLICATION))
+            (String) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_FILE_PWD))
+        .setApplication((String) connectionPropertiesMap.get(SFSessionProperty.APPLICATION))
         .setServiceName(sessionProperties.getServiceName())
         .setOCSPMode(sessionProperties.getOCSPMode());
 
@@ -436,10 +435,10 @@ public class SFSession implements SFSessionInterface {
     // Update common parameter values for this session
     SessionUtil.updateSfDriverParamValues(loginOutput.getCommonParams(), this);
 
-    String loginDatabaseName = (String) connectionPropertiesMap.get(SFConnectionProperty.DATABASE);
-    String loginSchemaName = (String) connectionPropertiesMap.get(SFConnectionProperty.SCHEMA);
-    String loginRole = (String) connectionPropertiesMap.get(SFConnectionProperty.ROLE);
-    String loginWarehouse = (String) connectionPropertiesMap.get(SFConnectionProperty.WAREHOUSE);
+    String loginDatabaseName = (String) connectionPropertiesMap.get(SFSessionProperty.DATABASE);
+    String loginSchemaName = (String) connectionPropertiesMap.get(SFSessionProperty.SCHEMA);
+    String loginRole = (String) connectionPropertiesMap.get(SFSessionProperty.ROLE);
+    String loginWarehouse = (String) connectionPropertiesMap.get(SFSessionProperty.WAREHOUSE);
 
     if (loginDatabaseName != null
         && !loginDatabaseName.equalsIgnoreCase(sessionProperties.getDatabase())) {
@@ -490,11 +489,10 @@ public class SFSession implements SFSessionInterface {
    * @return true if authenticator type is SNOWFLAKE (meaning password)
    */
   private boolean isSnowflakeAuthenticator() {
-    Map<SFConnectionProperty, Object> connectionPropertiesMap =
+    Map<SFSessionProperty, Object> connectionPropertiesMap =
         sessionProperties.getConnectionPropertiesMap();
-    String authenticator = (String) connectionPropertiesMap.get(SFConnectionProperty.AUTHENTICATOR);
-    PrivateKey privateKey =
-        (PrivateKey) connectionPropertiesMap.get(SFConnectionProperty.PRIVATE_KEY);
+    String authenticator = (String) connectionPropertiesMap.get(SFSessionProperty.AUTHENTICATOR);
+    PrivateKey privateKey = (PrivateKey) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY);
     return (authenticator == null && privateKey == null && privateKeyFileLocation == null)
         || ClientAuthnDTO.AuthenticatorType.SNOWFLAKE.name().equalsIgnoreCase(authenticator);
   }
@@ -505,9 +503,9 @@ public class SFSession implements SFSessionInterface {
    * @return true if authenticator type is EXTERNALBROWSER
    */
   boolean isExternalbrowserAuthenticator() {
-    Map<SFConnectionProperty, Object> connectionPropertiesMap =
+    Map<SFSessionProperty, Object> connectionPropertiesMap =
         sessionProperties.getConnectionPropertiesMap();
-    String authenticator = (String) connectionPropertiesMap.get(SFConnectionProperty.AUTHENTICATOR);
+    String authenticator = (String) connectionPropertiesMap.get(SFSessionProperty.AUTHENTICATOR);
     return ClientAuthnDTO.AuthenticatorType.EXTERNALBROWSER.name().equalsIgnoreCase(authenticator);
   }
 
@@ -517,9 +515,9 @@ public class SFSession implements SFSessionInterface {
    * @return true or false
    */
   boolean isOKTAAuthenticator() {
-    Map<SFConnectionProperty, Object> connectionPropertiesMap =
+    Map<SFSessionProperty, Object> connectionPropertiesMap =
         sessionProperties.getConnectionPropertiesMap();
-    String authenticator = (String) connectionPropertiesMap.get(SFConnectionProperty.AUTHENTICATOR);
+    String authenticator = (String) connectionPropertiesMap.get(SFSessionProperty.AUTHENTICATOR);
     return !Strings.isNullOrEmpty(authenticator) && authenticator.startsWith("https://");
   }
 
@@ -529,9 +527,9 @@ public class SFSession implements SFSessionInterface {
    * @return true or false
    */
   boolean isUsernamePasswordMFAAuthenticator() {
-    Map<SFConnectionProperty, Object> connectionPropertiesMap =
+    Map<SFSessionProperty, Object> connectionPropertiesMap =
         sessionProperties.getConnectionPropertiesMap();
-    String authenticator = (String) connectionPropertiesMap.get(SFConnectionProperty.AUTHENTICATOR);
+    String authenticator = (String) connectionPropertiesMap.get(SFSessionProperty.AUTHENTICATOR);
     return ClientAuthnDTO.AuthenticatorType.USERNAME_PASSWORD_MFA
         .name()
         .equalsIgnoreCase(authenticator);
@@ -901,10 +899,10 @@ public class SFSession implements SFSessionInterface {
    * @throws SFException Will be thrown if any of the necessary properties are missing
    */
   private void performSanityCheckOnProperties() throws SFException {
-    Map<SFConnectionProperty, Object> connectionPropertiesMap =
+    Map<SFSessionProperty, Object> connectionPropertiesMap =
         sessionProperties.getConnectionPropertiesMap();
 
-    for (SFConnectionProperty property : SFConnectionProperty.values()) {
+    for (SFSessionProperty property : SFSessionProperty.values()) {
       if (property.isRequired() && !connectionPropertiesMap.containsKey(property)) {
         switch (property) {
           case SERVER_URL:
@@ -920,12 +918,12 @@ public class SFSession implements SFSessionInterface {
         || isOKTAAuthenticator()
         || isUsernamePasswordMFAAuthenticator()) {
       // userName and password are expected for both Snowflake and Okta.
-      String userName = (String) connectionPropertiesMap.get(SFConnectionProperty.USER);
+      String userName = (String) connectionPropertiesMap.get(SFSessionProperty.USER);
       if (Strings.isNullOrEmpty(userName)) {
         throw new SFException(ErrorCode.MISSING_USERNAME);
       }
 
-      String password = (String) connectionPropertiesMap.get(SFConnectionProperty.PASSWORD);
+      String password = (String) connectionPropertiesMap.get(SFSessionProperty.PASSWORD);
       if (Strings.isNullOrEmpty(password)) {
 
         throw new SFException(ErrorCode.MISSING_PASSWORD);
@@ -934,13 +932,13 @@ public class SFSession implements SFSessionInterface {
 
     // perform sanity check on proxy settings
     boolean useProxy =
-        (boolean) connectionPropertiesMap.getOrDefault(SFConnectionProperty.USE_PROXY, false);
+        (boolean) connectionPropertiesMap.getOrDefault(SFSessionProperty.USE_PROXY, false);
     if (useProxy) {
-      if (!connectionPropertiesMap.containsKey(SFConnectionProperty.PROXY_HOST)
-          || connectionPropertiesMap.get(SFConnectionProperty.PROXY_HOST) == null
-          || ((String) connectionPropertiesMap.get(SFConnectionProperty.PROXY_HOST)).isEmpty()
-          || !connectionPropertiesMap.containsKey(SFConnectionProperty.PROXY_PORT)
-          || connectionPropertiesMap.get(SFConnectionProperty.PROXY_HOST) == null) {
+      if (!connectionPropertiesMap.containsKey(SFSessionProperty.PROXY_HOST)
+          || connectionPropertiesMap.get(SFSessionProperty.PROXY_HOST) == null
+          || ((String) connectionPropertiesMap.get(SFSessionProperty.PROXY_HOST)).isEmpty()
+          || !connectionPropertiesMap.containsKey(SFSessionProperty.PROXY_PORT)
+          || connectionPropertiesMap.get(SFSessionProperty.PROXY_HOST) == null) {
         throw new SFException(
             ErrorCode.INVALID_PROXY_PROPERTIES, "Both proxy host and port values are needed.");
       }
@@ -948,42 +946,40 @@ public class SFSession implements SFSessionInterface {
   }
 
   public List<DriverPropertyInfo> checkProperties() {
-    Map<SFConnectionProperty, Object> connectionPropertiesMap =
+    Map<SFSessionProperty, Object> connectionPropertiesMap =
         sessionProperties.getConnectionPropertiesMap();
-    for (SFConnectionProperty property : SFConnectionProperty.values()) {
+    for (SFSessionProperty property : SFSessionProperty.values()) {
       if (property.isRequired() && !connectionPropertiesMap.containsKey(property)) {
         missingProperties.add(addNewDriverProperty(property.getPropertyKey(), null));
       }
     }
     if (isSnowflakeAuthenticator() || isOKTAAuthenticator()) {
       // userName and password are expected for both Snowflake and Okta.
-      String userName = (String) connectionPropertiesMap.get(SFConnectionProperty.USER);
+      String userName = (String) connectionPropertiesMap.get(SFSessionProperty.USER);
       if (Strings.isNullOrEmpty(userName)) {
         missingProperties.add(
-            addNewDriverProperty(
-                SFConnectionProperty.USER.getPropertyKey(), "username for account"));
+            addNewDriverProperty(SFSessionProperty.USER.getPropertyKey(), "username for account"));
       }
 
-      String password = (String) connectionPropertiesMap.get(SFConnectionProperty.PASSWORD);
+      String password = (String) connectionPropertiesMap.get(SFSessionProperty.PASSWORD);
       if (Strings.isNullOrEmpty(password)) {
         missingProperties.add(
             addNewDriverProperty(
-                SFConnectionProperty.PASSWORD.getPropertyKey(), "password for " + "account"));
+                SFSessionProperty.PASSWORD.getPropertyKey(), "password for " + "account"));
       }
     }
 
     boolean useProxy =
-        (boolean) connectionPropertiesMap.getOrDefault(SFConnectionProperty.USE_PROXY, false);
+        (boolean) connectionPropertiesMap.getOrDefault(SFSessionProperty.USE_PROXY, false);
     if (useProxy) {
-      if (!connectionPropertiesMap.containsKey(SFConnectionProperty.PROXY_HOST)) {
+      if (!connectionPropertiesMap.containsKey(SFSessionProperty.PROXY_HOST)) {
         missingProperties.add(
-            addNewDriverProperty(
-                SFConnectionProperty.PROXY_HOST.getPropertyKey(), "proxy host name"));
+            addNewDriverProperty(SFSessionProperty.PROXY_HOST.getPropertyKey(), "proxy host name"));
       }
-      if (!connectionPropertiesMap.containsKey(SFConnectionProperty.PROXY_PORT)) {
+      if (!connectionPropertiesMap.containsKey(SFSessionProperty.PROXY_PORT)) {
         missingProperties.add(
             addNewDriverProperty(
-                SFConnectionProperty.PROXY_PORT.getPropertyKey(),
+                SFSessionProperty.PROXY_PORT.getPropertyKey(),
                 "proxy port; " + "should be an integer"));
       }
     }

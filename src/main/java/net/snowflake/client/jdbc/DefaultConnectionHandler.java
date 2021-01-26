@@ -162,10 +162,10 @@ public class DefaultConnectionHandler implements ConnectionHandler {
     // populate app id and version
     sfSession
         .getSessionProperties()
-        .addProperty(SFConnectionProperty.APP_ID, LoginInfoDTO.SF_JDBC_APP_ID);
+        .addProperty(SFSessionProperty.APP_ID, LoginInfoDTO.SF_JDBC_APP_ID);
     sfSession
         .getSessionProperties()
-        .addProperty(SFConnectionProperty.APP_VERSION, SnowflakeDriver.implementVersion);
+        .addProperty(SFSessionProperty.APP_VERSION, SnowflakeDriver.implementVersion);
 
     // Set the corresponding session parameters to the JVM properties
     for (Map.Entry<String, String> entry : JVM_PARAMS_TO_PARAMS.entrySet()) {
