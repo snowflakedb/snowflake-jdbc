@@ -253,7 +253,6 @@ public class SessionProperties {
     return _injectedDelay;
   }
 
-
   public void setTreatNTZAsUTC(boolean treatNTZAsUTC) {
     this.treatNTZAsUTC = treatNTZAsUTC;
   }

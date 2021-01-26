@@ -575,10 +575,13 @@ public class SnowflakeResultSetSerializableV1
     resultSetSerializable.ocspMode = sfSession.sessionProperties().getOCSPMode();
     resultSetSerializable.snowflakeConnectionString = sfSession.getSnowflakeConnectionString();
     resultSetSerializable.networkTimeoutInMilli = sfSession.getNetworkTimeoutInMilli();
-    resultSetSerializable.isResultColumnCaseInsensitive = sfSession.sessionProperties().isResultColumnCaseInsensitive();
+    resultSetSerializable.isResultColumnCaseInsensitive =
+        sfSession.sessionProperties().isResultColumnCaseInsensitive();
     resultSetSerializable.treatNTZAsUTC = sfSession.sessionProperties().getTreatNTZAsUTC();
-    resultSetSerializable.formatDateWithTimezone = sfSession.sessionProperties().getFormatDateWithTimezone();
-    resultSetSerializable.useSessionTimezone = sfSession.sessionProperties().getUseSessionTimezone();
+    resultSetSerializable.formatDateWithTimezone =
+        sfSession.sessionProperties().getFormatDateWithTimezone();
+    resultSetSerializable.useSessionTimezone =
+        sfSession.sessionProperties().getUseSessionTimezone();
 
     // setup transient fields from parameter
     resultSetSerializable.setupFieldsFromParameters();

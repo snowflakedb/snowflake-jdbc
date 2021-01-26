@@ -87,7 +87,10 @@ public class SFResultSet extends SFJsonResultSet {
       SFStatement statement,
       boolean sortResult)
       throws SQLException {
-    this(resultSetSerializable, ((SFSession) statement.getSession()).getTelemetryClient(), sortResult);
+    this(
+        resultSetSerializable,
+        ((SFSession) statement.getSession()).getTelemetryClient(),
+        sortResult);
 
     this.statement = statement;
     SFSessionInterface session = this.statement.getSession();

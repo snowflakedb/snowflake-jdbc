@@ -15,7 +15,6 @@ import java.sql.DriverPropertyInfo;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import net.snowflake.client.jdbc.*;
@@ -282,7 +281,8 @@ public class SFSession implements SFSessionInterface {
 
         case VALIDATE_DEFAULT_PARAMETERS:
           if (propertyValue != null) {
-            sessionProperties.setValidateDefaultParameters(SFLoginInput.getBooleanValue(propertyValue));
+            sessionProperties.setValidateDefaultParameters(
+                SFLoginInput.getBooleanValue(propertyValue));
           }
           break;
 
@@ -415,7 +415,7 @@ public class SFSession implements SFSessionInterface {
         .setPrivateKeyFilePwd(
             (String) connectionPropertiesMap.get(SFConnectionProperty.PRIVATE_KEY_FILE_PWD))
         .setApplication((String) connectionPropertiesMap.get(SFConnectionProperty.APPLICATION))
-        .setServiceName(this.sessionProperties().getServiceName())
+        .setServiceName(sessionProperties.getServiceName())
         .setOCSPMode(sessionProperties.getOCSPMode());
 
     // propagate OCSP mode to SFTrustManager. Note OCSP setting is global on JVM.
@@ -448,7 +448,8 @@ public class SFSession implements SFSessionInterface {
     String loginRole = (String) connectionPropertiesMap.get(SFConnectionProperty.ROLE);
     String loginWarehouse = (String) connectionPropertiesMap.get(SFConnectionProperty.WAREHOUSE);
 
-    if (loginDatabaseName != null && !loginDatabaseName.equalsIgnoreCase(sessionProperties.getDatabase())) {
+    if (loginDatabaseName != null
+        && !loginDatabaseName.equalsIgnoreCase(sessionProperties.getDatabase())) {
       sqlWarnings.add(
           new SFException(
               ErrorCode.CONNECTION_ESTABLISHED_WITH_DIFFERENT_PROP,
@@ -457,7 +458,8 @@ public class SFSession implements SFSessionInterface {
               sessionProperties.getDatabase()));
     }
 
-    if (loginSchemaName != null && !loginSchemaName.equalsIgnoreCase(sessionProperties.getSchema())) {
+    if (loginSchemaName != null
+        && !loginSchemaName.equalsIgnoreCase(sessionProperties.getSchema())) {
       sqlWarnings.add(
           new SFException(
               ErrorCode.CONNECTION_ESTABLISHED_WITH_DIFFERENT_PROP,
@@ -469,10 +471,14 @@ public class SFSession implements SFSessionInterface {
     if (loginRole != null && !loginRole.equalsIgnoreCase(sessionProperties.getRole())) {
       sqlWarnings.add(
           new SFException(
-              ErrorCode.CONNECTION_ESTABLISHED_WITH_DIFFERENT_PROP, "Role", loginRole, sessionProperties.getRole()));
+              ErrorCode.CONNECTION_ESTABLISHED_WITH_DIFFERENT_PROP,
+              "Role",
+              loginRole,
+              sessionProperties.getRole()));
     }
 
-    if (loginWarehouse != null && !loginWarehouse.equalsIgnoreCase(sessionProperties.getWarehouse())) {
+    if (loginWarehouse != null
+        && !loginWarehouse.equalsIgnoreCase(sessionProperties.getWarehouse())) {
       sqlWarnings.add(
           new SFException(
               ErrorCode.CONNECTION_ESTABLISHED_WITH_DIFFERENT_PROP,
@@ -845,7 +851,9 @@ public class SFSession implements SFSessionInterface {
 
   public void setArrayBindStage(String arrayBindStage) {
     this.arrayBindStage =
-        String.format("%s.%s.%s", sessionProperties.getDatabase(), sessionProperties.getSchema(), arrayBindStage);
+        String.format(
+            "%s.%s.%s",
+            sessionProperties.getDatabase(), sessionProperties.getSchema(), arrayBindStage);
   }
 
   public String getIdToken() {
