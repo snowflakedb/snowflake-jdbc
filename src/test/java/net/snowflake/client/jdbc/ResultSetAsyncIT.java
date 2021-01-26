@@ -216,7 +216,9 @@ public class ResultSetAsyncIT extends BaseJDBCTest {
     clob.setString(1, "hello world");
     Statement statement = connection.createStatement();
     statement.execute(
-        "create or replace table test_get(colA integer, colB number, colC number, colD string, colE double, colF float, colG boolean, colH text, colI binary(3), colJ number(38,9), colK int, colL date, colM time, colN timestamp_ltz)");
+        "create or replace table test_get(colA integer, colB number, colC number, colD string,"
+            + " colE double, colF float, colG boolean, colH text, colI binary(3), colJ"
+            + " number(38,9), colK int, colL date, colM time, colN timestamp_ltz)");
 
     PreparedStatement prepStatement = connection.prepareStatement(prepInsertString);
     prepStatement.setInt(1, bigInt);
@@ -304,7 +306,8 @@ public class ResultSetAsyncIT extends BaseJDBCTest {
     try {
       resultSet.unwrap(SnowflakeResultSet.class).getResultSetSerializables(500);
       fail(
-          "SFAsyncResultSet.getResultSetSerializables should return SQLFeatureNotSupportedException");
+          "SFAsyncResultSet.getResultSetSerializables should return"
+              + " SQLFeatureNotSupportedException");
     } catch (SQLFeatureNotSupportedException e) {
       // Do nothing. Test passes if we catch this exception.
     }

@@ -33,7 +33,9 @@ public class CredentialManager {
       }
     } catch (NoClassDefFoundError error) {
       logger.info(
-          "JNA jar files are needed for Secure Local Storage service. Please follow the Snowflake JDBC instruction for Secure Local Storage feature. Fall back to normal process.");
+          "JNA jar files are needed for Secure Local Storage service. Please follow the Snowflake"
+              + " JDBC instruction for Secure Local Storage feature. Fall back to normal"
+              + " process.");
     }
   }
 
@@ -87,7 +89,9 @@ public class CredentialManager {
       throws SFException {
     if (secureStorageManager == null) {
       logger.info(
-          "JNA jar files are needed for Secure Local Storage service. Please follow the Snowflake JDBC instruction for Secure Local Storage feature. Fall back to normal process.");
+          "JNA jar files are needed for Secure Local Storage service. Please follow the Snowflake"
+              + " JDBC instruction for Secure Local Storage feature. Fall back to normal"
+              + " process.");
       return;
     }
 
@@ -98,7 +102,9 @@ public class CredentialManager {
               loginInput.getHostFromServerUrl(), loginInput.getUserName(), credType);
     } catch (NoClassDefFoundError error) {
       logger.info(
-          "JNA jar files are needed for Secure Local Storage service. Please follow the Snowflake JDBC instruction for Secure Local Storage feature. Fall back to normal process.");
+          "JNA jar files are needed for Secure Local Storage service. Please follow the Snowflake"
+              + " JDBC instruction for Secure Local Storage feature. Fall back to normal"
+              + " process.");
       return;
     }
 
@@ -153,7 +159,9 @@ public class CredentialManager {
 
     if (secureStorageManager == null) {
       logger.info(
-          "JNA jar files are needed for Secure Local Storage service. Please follow the Snowflake JDBC instruction for Secure Local Storage feature. Fall back to normal process.");
+          "JNA jar files are needed for Secure Local Storage service. Please follow the Snowflake"
+              + " JDBC instruction for Secure Local Storage feature. Fall back to normal"
+              + " process.");
       return;
     }
 
@@ -162,7 +170,9 @@ public class CredentialManager {
           loginInput.getHostFromServerUrl(), loginInput.getUserName(), credType, cred);
     } catch (NoClassDefFoundError error) {
       logger.info(
-          "JNA jar files are needed for Secure Local Storage service. Please follow the Snowflake JDBC instruction for Secure Local Storage feature. Fall back to normal process.");
+          "JNA jar files are needed for Secure Local Storage service. Please follow the Snowflake"
+              + " JDBC instruction for Secure Local Storage feature. Fall back to normal"
+              + " process.");
     }
   }
 
@@ -186,7 +196,9 @@ public class CredentialManager {
   synchronized void deleteTemporaryCredential(String host, String user, String credType) {
     if (secureStorageManager == null) {
       logger.info(
-          "JNA jar files are needed for Secure Local Storage service. Please follow the Snowflake JDBC instruction for Secure Local Storage feature. Fall back to normal process.");
+          "JNA jar files are needed for Secure Local Storage service. Please follow the Snowflake"
+              + " JDBC instruction for Secure Local Storage feature. Fall back to normal"
+              + " process.");
       return;
     }
 
@@ -194,7 +206,9 @@ public class CredentialManager {
       secureStorageManager.deleteCredential(host, user, credType);
     } catch (NoClassDefFoundError error) {
       logger.info(
-          "JNA jar files are needed for Secure Local Storage service. Please follow the Snowflake JDBC instruction for Secure Local Storage feature. Fall back to normal process.");
+          "JNA jar files are needed for Secure Local Storage service. Please follow the Snowflake"
+              + " JDBC instruction for Secure Local Storage feature. Fall back to normal"
+              + " process.");
     }
   }
 }

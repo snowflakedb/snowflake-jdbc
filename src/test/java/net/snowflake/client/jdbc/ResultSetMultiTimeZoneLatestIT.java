@@ -161,7 +161,8 @@ public class ResultSetMultiTimeZoneLatestIT extends BaseJDBCTest {
     Statement statement = connection.createStatement();
     // create table with all timestamp types, time, and date
     statement.execute(
-        "create or replace table datetimetypes(colA timestamp_ltz, colB timestamp_ntz, colC timestamp_tz, colD time, colE date)");
+        "create or replace table datetimetypes(colA timestamp_ltz, colB timestamp_ntz, colC"
+            + " timestamp_tz, colD time, colE date)");
     if (useSessionTimezone) {
       statement.execute("alter session set JDBC_USE_SESSION_TIMEZONE=true");
     } else {

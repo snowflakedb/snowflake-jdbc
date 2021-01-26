@@ -387,7 +387,8 @@ public class SFStatement {
           bindStagePath = uploader.getStagePath();
         } catch (BindException ex) {
           logger.debug(
-              "Exception encountered trying to upload binds to stage with input stream. Attaching binds in payload instead. ",
+              "Exception encountered trying to upload binds to stage with input stream. Attaching"
+                  + " binds in payload instead. ",
               ex);
           TelemetryData errorLog = TelemetryUtil.buildJobData(this.requestId, ex.type.field, 1);
           this.session.getTelemetryClient().addLogToBatch(errorLog);
@@ -400,7 +401,8 @@ public class SFStatement {
               requestId);
         } catch (SQLException ex) {
           logger.debug(
-              "Exception encountered trying to upload binds to stage with input stream. Attaching binds in payload instead. ",
+              "Exception encountered trying to upload binds to stage with input stream. Attaching"
+                  + " binds in payload instead. ",
               ex);
           TelemetryData errorLog =
               TelemetryUtil.buildJobData(this.requestId, TelemetryField.FAILED_BIND_UPLOAD, 1);
