@@ -35,37 +35,22 @@ import org.apache.http.client.methods.HttpRequestBase;
 public class SFStatement implements SFStatementInterface {
 
   static final SFLogger logger = SFLoggerFactory.getLogger(SFStatement.class);
-
-  private SFSession session;
-
-  private SFBaseResultSet resultSet = null;
-
-  private HttpRequestBase httpRequest;
-
-  private Boolean isClosed = false;
-
-  private Integer sequenceId = -1;
-
-  private String requestId = null;
-
-  private String sqlText = null;
-
+  private static final int MAX_STATEMENT_PARAMETERS = 1000;
+  private static final int MAX_BINDING_PARAMS_FOR_LOGGING = 1000;
   private final AtomicBoolean canceling = new AtomicBoolean(false);
-
-  // timeout in seconds
-  private int queryTimeout = 0;
-
-  private boolean isFileTransfer = false;
-
-  private SnowflakeFileTransferAgent transferAgent = null;
-
   // statement level parameters
   private final Map<String, Object> statementParametersMap = new HashMap<>();
-
-  private static final int MAX_STATEMENT_PARAMETERS = 1000;
-
-  private static final int MAX_BINDING_PARAMS_FOR_LOGGING = 1000;
-
+  private SFSession session;
+  private SFBaseResultSet resultSet = null;
+  private HttpRequestBase httpRequest;
+  private Boolean isClosed = false;
+  private Integer sequenceId = -1;
+  private String requestId = null;
+  private String sqlText = null;
+  // timeout in seconds
+  private int queryTimeout = 0;
+  private boolean isFileTransfer = false;
+  private SnowflakeFileTransferAgent transferAgent = null;
   /** id used in combine describe and execute */
   private String describeJobUUID;
 
@@ -76,6 +61,16 @@ public class SFStatement implements SFStatementInterface {
   private int conservativePrefetchThreads;
   private int conservativeResultChunkSize;
   private long conservativeMemoryLimit; // in bytes
+
+  public SFStatement(SFSession session) {
+    logger.debug(" public SFStatement(SFSession session)");
+
+    this.session = session;
+    Integer queryTimeout =
+        session == null ? null : session.getSessionProperties().getQueryTimeout();
+    this.queryTimeout = queryTimeout != null ? queryTimeout : this.queryTimeout;
+    verifyArrowSupport();
+  }
 
   /**
    * Add a statement parameter
@@ -99,16 +94,6 @@ public class SFStatement implements SFStatementInterface {
     if (statementParametersMap.size() > MAX_STATEMENT_PARAMETERS) {
       throw new SFException(ErrorCode.TOO_MANY_STATEMENT_PARAMETERS, MAX_STATEMENT_PARAMETERS);
     }
-  }
-
-  public SFStatement(SFSession session) {
-    logger.debug(" public SFStatement(SFSession session)");
-
-    this.session = session;
-    Integer queryTimeout =
-        session == null ? null : session.getSessionProperties().getQueryTimeout();
-    this.queryTimeout = queryTimeout != null ? queryTimeout : this.queryTimeout;
-    verifyArrowSupport();
   }
 
   private void verifyArrowSupport() {
@@ -664,7 +649,7 @@ public class SFStatement implements SFStatementInterface {
   public SFBaseResultSet execute(
       String sql, Map<String, ParameterBindingDTO> parametersBinding, CallingMethod caller)
       throws SQLException, SFException {
-    return null;
+    return execute(sql, false, parametersBinding, caller);
   }
 
   private void reauthenticate() throws SFException, SnowflakeSQLException {
