@@ -10,27 +10,39 @@ import net.snowflake.client.jdbc.SnowflakeType;
 
 public class SessionProperties {
   private final Properties clientInfo = new Properties();
+  private final AtomicBoolean autoCommit = new AtomicBoolean(true);
+  // Injected delay for the purpose of connection timeout testing
+  // Any statement execution will sleep for the specified number of milliseconds
+  private final AtomicInteger _injectedDelay = new AtomicInteger(0);
+  // Connection properties map
+  private final Map<SFConnectionProperty, Object> connectionPropertiesMap = new HashMap<>();
+  // Custom key-value map for other options values
+  private Map<String, Object> customSessionProperties = new HashMap<>(1);
+  // Unique Session ID
+  private String sessionId;
+  // Database versions
   private String databaseVersion = null;
   private int databaseMajorVersion = 0;
   private int databaseMinorVersion = 0;
-  private boolean showStatementParameters;
-  private SnowflakeType timestampMappedType;
+  // Used for parsing results
+  private SnowflakeType timestampMappedType = SnowflakeType.TIMESTAMP_LTZ;
   private boolean isResultColumnCaseInsensitive;
-  private boolean isJdbcTreatDecimalAsInt;
-  private String injectFileUploadFailure;
-  private boolean preparedStatementLogging = false;
+  private boolean isJdbcTreatDecimalAsInt = true;
   private boolean treatNTZAsUTC;
+  private boolean preparedStatementLogging = false;
+  // Inject failure for testing
+  private String injectFileUploadFailure;
   private boolean enableHeartbeat;
-  private final AtomicBoolean autoCommit = new AtomicBoolean(true);
   private boolean formatDateWithTimezone;
   private boolean enableCombineDescribe;
-  private boolean clientTelemetryEnabled;
+  private boolean clientTelemetryEnabled = false;
   private boolean useSessionTimezone;
   // The server can read array binds from a stage instead of query payload.
   // When there as many bind values as this threshold, we should upload them to a stage.
-  private int arrayBindStageThreshold;
+  private int arrayBindStageThreshold = 0;
   private boolean storeTemporaryCredential;
   private String serviceName;
+  private boolean sfSQLMode;
   // whether to enable conservative memory usage mode
   private boolean enableConservativeMemoryUsage;
   // the step in MB to adjust memory usage
@@ -40,15 +52,11 @@ public class SessionProperties {
   private int clientPrefetchThreads;
   // validate the default parameters by GS?
   private boolean validateDefaultParameters;
+  // Current session context w/ re to database, schema, role, warehouse
   private String database;
   private String schema;
   private String role;
   private String warehouse;
-  private String sessionId;
-  private boolean sfSQLMode;
-  // Injected delay for the purpose of connection timeout testing
-  // Any statement execution will sleep for the specified number of milliseconds
-  private final AtomicInteger _injectedDelay = new AtomicInteger(0);
   // For Metadata request(i.e. DatabaseMetadata.getTables or
   // DatabaseMetadata.getSchemas,), whether to use connection ctx to
   // improve the request time
@@ -57,7 +65,6 @@ public class SessionProperties {
   // DatabaseMetadata.getSchemas), whether to search using multiple schemas with
   // session database
   private boolean metadataRequestUseSessionDatabase = false;
-  private final Map<SFConnectionProperty, Object> connectionPropertiesMap = new HashMap<>();
 
   public Properties getClientInfo() {
     // defensive copy to avoid client from changing the properties
@@ -109,14 +116,6 @@ public class SessionProperties {
 
   public void setDatabaseMinorVersion(int databaseMinorVersion) {
     this.databaseMinorVersion = databaseMinorVersion;
-  }
-
-  public boolean isShowStatementParameters() {
-    return showStatementParameters;
-  }
-
-  public void setShowStatementParameters(boolean showStatementParameters) {
-    this.showStatementParameters = showStatementParameters;
   }
 
   public boolean getPreparedStatementLogging() {
@@ -432,5 +431,13 @@ public class SessionProperties {
 
   public void setWarehouse(String warehouse) {
     this.warehouse = warehouse;
+  }
+
+  public void setSessionPropertyByKey(String propertyName, boolean propertyValue) {
+    this.customSessionProperties.put(propertyName, propertyValue);
+  }
+
+  public Object getSessionPropertyByKey(String propertyName) {
+    return this.customSessionProperties.get(propertyName);
   }
 }

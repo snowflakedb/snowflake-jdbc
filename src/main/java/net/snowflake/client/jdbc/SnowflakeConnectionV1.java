@@ -58,6 +58,8 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
   /** The SnowflakeConnectionImpl that provides the underlying physical-layer implementation */
   private ConnectionHandler connectionHandler;
 
+  private boolean showStatementParameters;
+
   /**
    * Instantiates a SnowflakeConnectionV1 with the passed-in SnowflakeConnectionImpl.
    *
@@ -114,6 +116,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
     connectionHandler.initializeConnection(url, info);
     this.sfSession = connectionHandler.getSFSession();
     missingProperties = sfSession.checkProperties();
+    this.showStatementParameters = sfSession.getSessionProperties().getPreparedStatementLogging();
   }
 
   public List<DriverPropertyInfo> returnMissingProperties() {
@@ -995,7 +998,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
   }
 
   public boolean getShowStatementParameters() {
-    return sfSession.getSessionProperties().isShowStatementParameters();
+    return showStatementParameters;
   }
 
   void removeClosedStatement(Statement stmt) {

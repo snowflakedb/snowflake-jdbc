@@ -237,7 +237,7 @@ public class SFStatement implements SFStatementInterface {
     /*
      * we sort the result if the connection is in sorting mode
      */
-    Object sortProperty = session.getSFSessionProperty("sort");
+    Object sortProperty = session.getSessionProperties().getSessionPropertyByKey("sort");
 
     boolean sortResult = sortProperty != null && (Boolean) sortProperty;
 
@@ -885,10 +885,10 @@ public class SFStatement implements SFStatementInterface {
       if (tokens.length >= 3 && "on".equalsIgnoreCase(tokens[2])) {
         logger.debug("setting sort on");
 
-        this.session.setSFSessionProperty("sort", true);
+        this.session.getSessionProperties().setSessionPropertyByKey("sort", true);
       } else {
         logger.debug("setting sort off");
-        this.session.setSFSessionProperty("sort", false);
+        this.session.getSessionProperties().setSessionPropertyByKey("sort", false);
       }
     }
   }
@@ -932,7 +932,7 @@ public class SFStatement implements SFStatementInterface {
     SFChildResult nextResult = childResults.remove(0);
     try {
       JsonNode result = StmtUtil.getQueryResultJSON(nextResult.getId(), session);
-      Object sortProperty = session.getSFSessionProperty("sort");
+      Object sortProperty = session.getSessionProperties().getSessionPropertyByKey("sort");
       boolean sortResult = sortProperty != null && (Boolean) sortProperty;
       resultSet = SFResultSetFactory.getResultSet(result, this, sortResult);
       // override statement type so we can treat the result set like a result of

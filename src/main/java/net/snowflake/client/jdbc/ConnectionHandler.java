@@ -13,22 +13,34 @@ import net.snowflake.client.core.SFStatementInterface;
  */
 public interface ConnectionHandler {
 
+  /**
+   * Whether this Connection supports asynchronous queries. If yes, createAsyncResultSet may be
+   * called.
+   */
   boolean supportsAsyncQuery();
 
   /** Initializes the SnowflakeConnection */
   void initializeConnection(String url, Properties info) throws SQLException;
 
-  /** Gets the SFSession implementation for this connection implementation */
+  /** Gets the SFSessionInterface implementation for this connection implementation */
   SFSessionInterface getSFSession();
 
-  /** Returns the SFStatement implementation for this connection implementation */
+  /** Returns the SFStatementInterface implementation for this connection implementation */
   SFStatementInterface getSFStatement() throws SQLException;
 
+  /** Creates a result set from a query id. */
   ResultSet createResultSet(String queryID, Connection connection) throws SQLException;
 
+  /**
+   * Creates a SnowflakeResultSet from a base SFBaseResultSet for this connection implementation.
+   */
   SnowflakeBaseResultSet createResultSet(SFBaseResultSet resultSet, Statement statement)
       throws SQLException;
 
+  /**
+   * Creates an asynchronous result set from a base SFBaseResultSet for this connection
+   * implementation.
+   */
   SnowflakeBaseResultSet createAsyncResultSet(SFBaseResultSet resultSet, Statement statement)
       throws SQLException;
 

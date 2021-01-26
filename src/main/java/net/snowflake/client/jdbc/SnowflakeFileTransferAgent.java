@@ -2916,7 +2916,7 @@ public class SnowflakeFileTransferAgent implements FileTransferAgentInterface, S
      */
     Object sortProperty = null;
 
-    sortProperty = session.getSFSessionProperty("sort");
+    sortProperty = session.getSessionProperties().getSessionPropertyByKey("sort");
 
     boolean sortResult = sortProperty != null && (Boolean) sortProperty;
 
