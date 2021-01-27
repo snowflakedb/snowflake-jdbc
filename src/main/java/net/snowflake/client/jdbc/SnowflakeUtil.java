@@ -501,6 +501,21 @@ public class SnowflakeUtil {
   }
 
   /**
+   * System.setProperty wrapper. If System.setProperty raises any kind of exception, it is logged
+   * and ignored.
+   *
+   * @param property the property name
+   * @param value the property value
+   */
+  public static void systemSetProperty(String property, String value) {
+    try {
+      System.setProperty(property, value);
+    } catch (Exception ex) {
+      logger.debug("Exception raised: {}", ex.getMessage());
+    }
+  }
+
+  /**
    * System.getenv wrapper. If System.getenv raises an SecurityException, it is ignored and returns
    * null.
    *
