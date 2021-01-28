@@ -26,6 +26,7 @@ import net.snowflake.client.jdbc.telemetry.TelemetryUtil;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryEvent;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.common.core.LoginInfoDTO;
+import net.snowflake.common.core.SqlState;
 
 /**
  * @author USER
@@ -78,6 +79,16 @@ public class SnowflakeSQLLoggedException extends SnowflakeSQLException {
     String stackTrace = maskStacktrace(sw.toString());
     value.put("Stacktrace", stackTrace);
     value.put("Exception", ex.getClass().getSimpleName());
+    // For SQLFeatureNotSupportedExceptions, add in reason for failure as "<function name> not
+    // supported"
+    if (value.get("SQLState").toString().contains(SqlState.FEATURE_NOT_SUPPORTED)) {
+      String reason = "";
+      StackTraceElement[] stackTraceArray = ex.getStackTrace();
+      if (stackTraceArray.length >= 1) {
+        reason = ex.getStackTrace()[0].getMethodName() + " not supported";
+      }
+      value.put("reason", reason);
+    }
     ibInstance.addLogToBatch(TelemetryUtil.buildJobData(value));
     return ibInstance.sendBatchAsync();
   }
