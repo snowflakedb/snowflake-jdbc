@@ -9,7 +9,10 @@ import static org.junit.Assert.*;
 import java.io.*;
 import java.nio.channels.FileChannel;
 import java.sql.*;
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Properties;
+import java.util.UUID;
 import java.util.zip.GZIPInputStream;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
@@ -17,6 +20,7 @@ import net.snowflake.client.category.TestCategoryOthers;
 import net.snowflake.client.core.OCSPMode;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.core.SFStatement;
+import net.snowflake.common.core.SqlState;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.junit.Rule;
@@ -67,6 +71,43 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
     ResultSet rset = statement.executeQuery("select current_session()");
     rset.next();
     assertEquals(sessionID, rset.getString(1));
+  }
+
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testPutThreshold() throws SQLException {
+    try (Connection connection = getConnection()) {
+      // assert that threshold equals default 200 from server side
+      SFSession sfSession = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
+      Statement statement = connection.createStatement();
+      SFStatement sfStatement = statement.unwrap(SnowflakeStatementV1.class).getSfStatement();
+      statement.execute("CREATE OR REPLACE STAGE PUTTHRESHOLDSTAGE");
+      String command =
+          "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE) + " @PUTTHRESHOLDSTAGE";
+      SnowflakeFileTransferAgent agent =
+          new SnowflakeFileTransferAgent(command, sfSession, sfStatement);
+      assertEquals(200 * 1024 * 1024, agent.getBigFileThreshold());
+      // assert that setting threshold via put statement directly sets the big file threshold
+      // appropriately
+      String commandWithPut = command + " threshold=314572800";
+      agent = new SnowflakeFileTransferAgent(commandWithPut, sfSession, sfStatement);
+      assertEquals(314572800, agent.getBigFileThreshold());
+      // assert that after put statement, threshold goes back to previous session threshold
+      agent = new SnowflakeFileTransferAgent(command, sfSession, sfStatement);
+      assertEquals(200 * 1024 * 1024, agent.getBigFileThreshold());
+      // Attempt to set threshold to an invalid value such as a negative number
+      String commandWithInvalidThreshold = command + " threshold=-1";
+      try {
+        agent = new SnowflakeFileTransferAgent(commandWithInvalidThreshold, sfSession, sfStatement);
+      }
+      // assert invalid value causes exception to be thrown of type INVALID_PARAMETER_VALUE
+      catch (SQLException e) {
+        assertEquals(SqlState.INVALID_PARAMETER_VALUE, e.getSQLState());
+      }
+      statement.close();
+    } catch (SQLException ex) {
+      throw ex;
+    }
   }
 
   /** Test API for Spark connector for FileTransferMetadata */

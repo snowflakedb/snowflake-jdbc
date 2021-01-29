@@ -80,7 +80,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView {
   private Set<String> smallSourceFiles;
 
   // Threshold for splitting a file to upload multiple parts in parallel
-  private static final int BIG_FILE_THRESHOLD = 64 * 1024 * 1024;
+  private int bigFileThreshold = 200 * 1024 * 1024;
 
   private Map<String, FileMetadata> fileMetadataMap;
 
@@ -106,6 +106,15 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView {
 
   public StageInfo getStageInfo() {
     return this.stageInfo;
+  }
+
+  /**
+   * Get value of big file threshold. For testing purposes.
+   *
+   * @return integer value in bytes of threshold
+   */
+  int getBigFileThreshold() {
+    return this.bigFileThreshold;
   }
 
   // Encryption material
@@ -879,6 +888,15 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView {
     showEncryptionParameter =
         jsonNode.path("data").path("clientShowEncryptionParameter").asBoolean();
 
+    JsonNode thresholdNode = jsonNode.path("data").path("threshold");
+    int threshold = thresholdNode.asInt();
+    // if value is <= 0, this means an error was made in parsing the threshold or the threshold is
+    // invalid.
+    // Only use the threshold value if it is valid.
+    if (threshold > 0) {
+      bigFileThreshold = threshold;
+    }
+
     String localFilePathFromGS = null;
 
     // do upload command specific parsing
@@ -1584,7 +1602,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView {
 
   private void segregateFilesBySize() {
     for (String srcFile : sourceFiles) {
-      if ((new File(srcFile)).length() > BIG_FILE_THRESHOLD) {
+      if ((new File(srcFile)).length() > bigFileThreshold) {
         if (bigSourceFiles == null) {
           bigSourceFiles = new HashSet<String>(sourceFiles.size());
         }
