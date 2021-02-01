@@ -82,6 +82,15 @@ public class SFStatement {
   private int conservativeResultChunkSize;
   private long conservativeMemoryLimit; // in bytes
 
+  public SFStatement(SFSession session) {
+    logger.debug(" public SFStatement(SFSession session)");
+
+    this.session = session;
+    Integer queryTimeout = session == null ? null : session.getQueryTimeout();
+    this.queryTimeout = queryTimeout != null ? queryTimeout : this.queryTimeout;
+    verifyArrowSupport();
+  }
+
   /**
    * Add a statement parameter
    *
@@ -104,15 +113,6 @@ public class SFStatement {
     if (statementParametersMap.size() > MAX_STATEMENT_PARAMETERS) {
       throw new SFException(ErrorCode.TOO_MANY_STATEMENT_PARAMETERS, MAX_STATEMENT_PARAMETERS);
     }
-  }
-
-  public SFStatement(SFSession session) {
-    logger.debug(" public SFStatement(SFSession session)");
-
-    this.session = session;
-    Integer queryTimeout = session == null ? null : session.getQueryTimeout();
-    this.queryTimeout = queryTimeout != null ? queryTimeout : this.queryTimeout;
-    verifyArrowSupport();
   }
 
   private void verifyArrowSupport() {
@@ -241,7 +241,7 @@ public class SFStatement {
     /*
      * we sort the result if the connection is in sorting mode
      */
-    Object sortProperty = session.getSFSessionProperty("sort");
+    Object sortProperty = session.getSessionPropertyByKey("sort");
 
     boolean sortResult = sortProperty != null && (Boolean) sortProperty;
 
@@ -387,7 +387,8 @@ public class SFStatement {
           bindStagePath = uploader.getStagePath();
         } catch (BindException ex) {
           logger.debug(
-              "Exception encountered trying to upload binds to stage with input stream. Attaching binds in payload instead. ",
+              "Exception encountered trying to upload binds to stage with input stream. Attaching"
+                  + " binds in payload instead. ",
               ex);
           TelemetryData errorLog = TelemetryUtil.buildJobData(this.requestId, ex.type.field, 1);
           this.session.getTelemetryClient().addLogToBatch(errorLog);
@@ -400,7 +401,8 @@ public class SFStatement {
               requestId);
         } catch (SQLException ex) {
           logger.debug(
-              "Exception encountered trying to upload binds to stage with input stream. Attaching binds in payload instead. ",
+              "Exception encountered trying to upload binds to stage with input stream. Attaching"
+                  + " binds in payload instead. ",
               ex);
           TelemetryData errorLog =
               TelemetryUtil.buildJobData(this.requestId, TelemetryField.FAILED_BIND_UPLOAD, 1);
@@ -880,15 +882,15 @@ public class SFStatement {
       if (tokens.length >= 3 && "on".equalsIgnoreCase(tokens[2])) {
         logger.debug("setting sort on");
 
-        this.session.setSFSessionProperty("sort", true);
+        this.session.setSessionPropertyByKey("sort", true);
       } else {
         logger.debug("setting sort off");
-        this.session.setSFSessionProperty("sort", false);
+        this.session.setSessionPropertyByKey("sort", false);
       }
     }
   }
 
-  protected SFSession getSession() {
+  public SFBaseSession getSession() {
     return session;
   }
 
@@ -927,7 +929,7 @@ public class SFStatement {
     SFChildResult nextResult = childResults.remove(0);
     try {
       JsonNode result = StmtUtil.getQueryResultJSON(nextResult.getId(), session);
-      Object sortProperty = session.getSFSessionProperty("sort");
+      Object sortProperty = session.getSessionPropertyByKey("sort");
       boolean sortResult = sortProperty != null && (Boolean) sortProperty;
       resultSet = SFResultSetFactory.getResultSet(result, this, sortResult);
       // override statement type so we can treat the result set like a result of
@@ -946,5 +948,11 @@ public class SFStatement {
 
   public boolean hasChildren() {
     return !childResults.isEmpty();
+  }
+
+  public SFBaseResultSet asyncExecute(
+      String sql, Map<String, ParameterBindingDTO> parametersBinding, CallingMethod caller)
+      throws SQLException, SFException {
+    return execute(sql, true, parametersBinding, caller);
   }
 }

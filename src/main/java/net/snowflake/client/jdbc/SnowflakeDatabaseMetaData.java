@@ -15,7 +15,7 @@ import java.sql.*;
 import java.util.*;
 import java.util.regex.Pattern;
 import net.snowflake.client.core.ObjectMapperFactory;
-import net.snowflake.client.core.SFSession;
+import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
 import net.snowflake.client.jdbc.telemetry.TelemetryData;
 import net.snowflake.client.jdbc.telemetry.TelemetryField;
@@ -95,7 +95,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
 
   private final Connection connection;
 
-  private final SFSession session;
+  private final SFBaseSession session;
 
   private Telemetry ibInstance;
 
@@ -109,7 +109,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
     logger.debug("public SnowflakeDatabaseMetaData(SnowflakeConnection connection)");
 
     this.connection = connection;
-    this.session = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
+    this.session = connection.unwrap(SnowflakeConnectionV1.class).getSFBaseSession();
     this.metadataRequestUseConnectionCtx = session.getMetadataRequestUseConnectionCtx();
     this.metadataRequestUseSessionDatabase = session.getMetadataRequestUseSessionDatabase();
     this.stringsQuoted = session.isStringQuoted();
