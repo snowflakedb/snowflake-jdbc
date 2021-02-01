@@ -265,8 +265,8 @@ public class BindUploader implements Closeable {
 
     putCommand.append(" overwrite=true");
 
-    SnowflakeFileTransferAgent transferAgent;
-    transferAgent = new SnowflakeFileTransferAgent(putCommand.toString(), session, stmt);
+    SnowflakeFileTransferAgent transferAgent =
+        new SnowflakeFileTransferAgent(putCommand.toString(), session, stmt);
 
     transferAgent.setSourceStream(inputStream);
     transferAgent.setDestFileNameForStreamSource(destFileName);

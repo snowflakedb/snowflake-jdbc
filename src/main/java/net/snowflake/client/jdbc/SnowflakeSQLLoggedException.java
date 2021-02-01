@@ -18,8 +18,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import net.minidev.json.JSONObject;
 import net.snowflake.client.core.ObjectMapperFactory;
+import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFException;
-import net.snowflake.client.core.SFSession;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
 import net.snowflake.client.jdbc.telemetry.TelemetryField;
 import net.snowflake.client.jdbc.telemetry.TelemetryUtil;
@@ -174,7 +174,7 @@ public class SnowflakeSQLLoggedException extends SnowflakeSQLException {
    * @param ex Exception object
    */
   public static void sendTelemetryData(
-      String queryId, String SQLState, int vendorCode, SFSession session, SQLException ex) {
+      String queryId, String SQLState, int vendorCode, SFBaseSession session, SQLException ex) {
     Telemetry ibInstance = null;
     // if session is not null, try sending data using in-band telemetry
     if (session != null) {
@@ -214,23 +214,23 @@ public class SnowflakeSQLLoggedException extends SnowflakeSQLException {
   }
 
   public SnowflakeSQLLoggedException(
-      SFSession session, String reason, String SQLState, int vendorCode, String queryId) {
+      SFBaseSession session, String reason, String SQLState, int vendorCode, String queryId) {
     super(queryId, reason, SQLState, vendorCode);
     sendTelemetryData(queryId, SQLState, vendorCode, session, this);
   }
 
-  public SnowflakeSQLLoggedException(SFSession session, int vendorCode, String SQLState) {
+  public SnowflakeSQLLoggedException(SFBaseSession session, int vendorCode, String SQLState) {
     super(SQLState, vendorCode);
     sendTelemetryData(null, SQLState, vendorCode, session, this);
   }
 
-  public SnowflakeSQLLoggedException(SFSession session, String SQLState, String reason) {
+  public SnowflakeSQLLoggedException(SFBaseSession session, String SQLState, String reason) {
     super(reason, SQLState);
     sendTelemetryData(null, SQLState, -1, session, this);
   }
 
   public SnowflakeSQLLoggedException(
-      SFSession session, int vendorCode, String SQLState, Object... params) {
+      SFBaseSession session, int vendorCode, String SQLState, Object... params) {
     super(SQLState, vendorCode, params);
     String reason =
         errorResourceBundleManager.getLocalizedMessage(String.valueOf(vendorCode), params);
@@ -238,14 +238,14 @@ public class SnowflakeSQLLoggedException extends SnowflakeSQLException {
   }
 
   public SnowflakeSQLLoggedException(
-      SFSession session, ErrorCode errorCode, Throwable ex, Object... params) {
+      SFBaseSession session, ErrorCode errorCode, Throwable ex, Object... params) {
     super(ex, errorCode, params);
     // add telemetry
     sendTelemetryData(null, errorCode.getSqlState(), errorCode.getMessageCode(), session, this);
   }
 
   public SnowflakeSQLLoggedException(
-      SFSession session, String SQLState, int vendorCode, Throwable ex, Object... params) {
+      SFBaseSession session, String SQLState, int vendorCode, Throwable ex, Object... params) {
     super(ex, SQLState, vendorCode, params);
     // add telemetry
     String reason =
@@ -253,7 +253,7 @@ public class SnowflakeSQLLoggedException extends SnowflakeSQLException {
     sendTelemetryData(null, SQLState, vendorCode, session, this);
   }
 
-  public SnowflakeSQLLoggedException(SFSession session, ErrorCode errorCode, Object... params) {
+  public SnowflakeSQLLoggedException(SFBaseSession session, ErrorCode errorCode, Object... params) {
     super(errorCode, params);
     // add telemetry
     String reason =
@@ -262,13 +262,13 @@ public class SnowflakeSQLLoggedException extends SnowflakeSQLException {
     sendTelemetryData(null, null, -1, session, this);
   }
 
-  public SnowflakeSQLLoggedException(SFSession session, SFException e) {
+  public SnowflakeSQLLoggedException(SFBaseSession session, SFException e) {
     super(e);
     // add telemetry
     sendTelemetryData(null, null, -1, session, this);
   }
 
-  public SnowflakeSQLLoggedException(SFSession session, String reason) {
+  public SnowflakeSQLLoggedException(SFBaseSession session, String reason) {
     super(reason);
     sendTelemetryData(null, null, -1, session, this);
   }
