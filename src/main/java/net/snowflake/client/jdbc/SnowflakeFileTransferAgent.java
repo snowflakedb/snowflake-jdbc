@@ -403,7 +403,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView {
    * @throws SnowflakeSQLException if encountered exception when compressing
    */
   private static InputStreamWithMetadata compressStreamWithGZIP(
-      InputStream inputStream, SFSession session) throws SnowflakeSQLException {
+      InputStream inputStream, SFBaseSession session) throws SnowflakeSQLException {
     FileBackedOutputStream tempStream = new FileBackedOutputStream(MAX_BUFFER_SIZE, true);
 
     try {
@@ -454,7 +454,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView {
    */
   @Deprecated
   private static InputStreamWithMetadata compressStreamWithGZIPNoDigest(
-      InputStream inputStream, SFSession session) throws SnowflakeSQLException {
+      InputStream inputStream, SFBaseSession session) throws SnowflakeSQLException {
     try {
       FileBackedOutputStream tempStream = new FileBackedOutputStream(MAX_BUFFER_SIZE, true);
 
@@ -1736,7 +1736,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView {
       String destFileName,
       InputStream inputStream,
       FileBackedOutputStream fileBackedOutStr,
-      SFSession session)
+      SFBaseSession session)
       throws SQLException {
 
     // replace ~ with user home
@@ -1772,7 +1772,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView {
       String filePath,
       String destLocation,
       String destFileName,
-      SFSession session)
+      SFBaseSession session)
       throws SQLException {
     try {
       logger.debug(
@@ -2840,7 +2840,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView {
    * @throws Exception failed to construct list
    */
   @Override
-  public List<SnowflakeColumnMetadata> describeColumns(SFSession session) throws Exception {
+  public List<SnowflakeColumnMetadata> describeColumns(SFBaseSession session) throws Exception {
     return SnowflakeUtil.describeFixedViewColumns(
         commandType == CommandType.UPLOAD
             ? (showEncryptionParameter
@@ -2929,7 +2929,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView {
      */
     Object sortProperty = null;
 
-    sortProperty = session.getSFSessionProperty("sort");
+    sortProperty = session.getSessionPropertyByKey("sort");
 
     boolean sortResult = sortProperty != null && (Boolean) sortProperty;
 

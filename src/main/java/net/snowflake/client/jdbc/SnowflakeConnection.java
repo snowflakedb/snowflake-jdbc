@@ -61,4 +61,7 @@ public interface SnowflakeConnection {
    * @throws SQLException
    */
   ResultSet createResultSet(String queryID) throws SQLException;
+
+  /** Returns the SnowflakeConnectionImpl from the connection object. */
+  SFConnectionHandler getHandler();
 }

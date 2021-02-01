@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.LinkedList;
 import java.util.List;
-import net.snowflake.client.core.SFSession;
+import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SqlState;
@@ -25,10 +25,10 @@ public class JsonResultChunk extends SnowflakeResultChunk {
 
   private int currentRow;
 
-  private SFSession session;
+  private SFBaseSession session;
 
   public JsonResultChunk(
-      String url, int rowCount, int colCount, int uncompressedSize, SFSession session) {
+      String url, int rowCount, int colCount, int uncompressedSize, SFBaseSession session) {
     super(url, rowCount, colCount, uncompressedSize);
     data = new BlockResultChunkDataV2(computeCharactersNeeded(), rowCount, colCount, session);
     this.session = session;
@@ -267,7 +267,7 @@ public class JsonResultChunk extends SnowflakeResultChunk {
    * offsets and bitmaps. This design can save half of the memory usage compared to the original one
    */
   private static class BlockResultChunkDataV2 implements ResultChunkData {
-    BlockResultChunkDataV2(int totalLength, int rowCount, int colCount, SFSession session) {
+    BlockResultChunkDataV2(int totalLength, int rowCount, int colCount, SFBaseSession session) {
       this.blockCount = getBlock(totalLength - 1) + 1;
       this.rowCount = rowCount;
       this.colCount = colCount;
@@ -451,7 +451,7 @@ public class JsonResultChunk extends SnowflakeResultChunk {
     private static final int blockLengthBits = 23;
     private static int blockLength = 1 << blockLengthBits;
     private final ArrayList<byte[]> data = new ArrayList<>();
-    SFSession session;
+    SFBaseSession session;
 
     // blocks for storing offsets and lengths
     int metaBlockCount;
