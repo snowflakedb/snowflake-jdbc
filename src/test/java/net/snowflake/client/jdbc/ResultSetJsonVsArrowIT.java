@@ -24,7 +24,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
-/** Completely compare json and arrow resultSet behaviors */
+/** Completely compare json and arrow resultSet behaviors. */
 @RunWith(Parameterized.class)
 @Category(TestCategoryArrow.class)
 public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
