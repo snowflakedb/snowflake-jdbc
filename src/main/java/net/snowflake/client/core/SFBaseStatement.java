@@ -11,12 +11,19 @@ import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 
+/**
+ * Base abstract class for an SFStatement implementation. Statements are used in both executing
+ * queries, both in standard and prepared forms. They are accessed by users via the public API
+ * class, SnowflakeStatementV(x).
+ */
 public abstract class SFBaseStatement {
+  // maximum number of parameters for the statement; if this threshold is exceeded,
+  // we throw an exception
   protected static final int MAX_STATEMENT_PARAMETERS = 1000;
   static final SFLogger logger = SFLoggerFactory.getLogger(SFBaseStatement.class);
-  // statement level parameters
+  // statement level parameters; just a string-key, object-value map.
   protected final Map<String, Object> statementParametersMap = new HashMap<>();
-  // timeout in seconds
+  // timeout in seconds for queries
   protected int queryTimeout = 0;
 
   /**
@@ -44,19 +51,20 @@ public abstract class SFBaseStatement {
   }
 
   /**
-   * Describe a statement
+   * Describe a statement. This is invoked when prepareStatement() occurs. SFStatementMetadata
+   * should be returned by this action, which contains metadata such as the schema of the result.
    *
-   * @param sql statement
-   * @return metadata of statement including result set metadata and binding information
+   * @param sql The SQL string of the query/statement.
+   * @return metadata of statement including resultset metadata and binding information
    * @throws SQLException if connection is already closed
    * @throws SFException if result set is null
    */
   public abstract SFStatementMetaData describe(String sql) throws SFException, SQLException;
 
   /**
-   * Execute sql
+   * Executes the given SQL string.
    *
-   * @param sql sql statement.
+   * @param sql The SQL string to execute, synchronously.
    * @param parametersBinding parameters to bind
    * @param caller the JDBC interface method that called this method, if any
    * @return whether there is result set or not
@@ -69,7 +77,10 @@ public abstract class SFBaseStatement {
       throws SQLException, SFException;
 
   /**
-   * Execute sql asynchronously
+   * Execute sql asynchronously. Note that at a minimum, this does not have to be supported; if
+   * executeAsyncQuery() is called from SnowflakeStatement and the SFConnectionHandler's
+   * supportsAsyncQuery() returns false, an exception is thrown. If this is un-implemented, then
+   * supportsAsyncQuery() should return false.
    *
    * @param sql sql statement.
    * @param parametersBinding parameters to bind
@@ -83,10 +94,25 @@ public abstract class SFBaseStatement {
       String sql, Map<String, ParameterBindingDTO> parametersBinding, CallingMethod caller)
       throws SQLException, SFException;
 
+  /**
+   * Closes the statement. Open result sets are closed, connections are terminated, state is
+   * cleared, etc.
+   */
   public abstract void close();
 
+  /**
+   * Aborts the statement.
+   *
+   * @throws SFException if the statement is already closed.
+   * @throws SQLException if there are server-side errors from trying to abort.
+   */
   public abstract void cancel() throws SFException, SQLException;
 
+  /**
+   * Sets a property within session properties, i.e., if the sql is using set-sf-property
+   *
+   * @param sql the set property sql
+   */
   public void executeSetProperty(final String sql) {
     logger.debug("setting property");
 
@@ -111,12 +137,27 @@ public abstract class SFBaseStatement {
 
   public abstract boolean hasChildren();
 
+  /** Returns the SFBaseSession associated with this SFBaseStatement. */
   public abstract SFBaseSession getSFBaseSession();
 
+  /**
+   * Retrieves the current result as a ResultSet, if any. This is invoked by SnowflakeStatement and
+   * should return an SFBaseResultSet, which is then wrapped in a SnowflakeResultSet.
+   */
   public abstract SFBaseResultSet getResultSet();
 
+  /**
+   * Sets the result set to the next one, if available.
+   *
+   * @param current What to do with the current result. One of Statement.CLOSE_CURRENT_RESULT,
+   *     Statement.CLOSE_ALL_RESULTS, or Statement.KEEP_CURRENT_RESULT
+   * @return true if there is a next result and it's a result set false if there are no more
+   *     results, or there is a next result and it's an update count
+   * @throws SQLException if something fails while getting the next result
+   */
   public abstract boolean getMoreResults(int current) throws SQLException;
 
+  /** The type of query that is being executed. Used internally by SnowflakeStatementV(x). */
   public enum CallingMethod {
     EXECUTE,
     EXECUTE_UPDATE,

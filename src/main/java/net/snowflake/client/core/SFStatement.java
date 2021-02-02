@@ -145,6 +145,7 @@ public class SFStatement extends SFBaseStatement {
    * @throws SQLException if connection is already closed
    * @throws SFException if result set is null
    */
+  @Override
   public SFStatementMetaData describe(String sql) throws SFException, SQLException {
     SFBaseResultSet baseResultSet = executeQuery(sql, null, true, false, null);
 
@@ -763,6 +764,7 @@ public class SFStatement extends SFBaseStatement {
     }
   }
 
+  @Override
   public void close() {
     logger.debug("public void close()");
 
@@ -789,6 +791,7 @@ public class SFStatement extends SFBaseStatement {
     transferAgent = null;
   }
 
+  @Override
   public void cancel() throws SFException, SQLException {
     logger.debug("public void cancel()");
 
@@ -838,6 +841,7 @@ public class SFStatement extends SFBaseStatement {
     transferAgent = null;
   }
 
+  @Override
   public SFBaseSession getSFBaseSession() {
     return session;
   }
@@ -851,15 +855,7 @@ public class SFStatement extends SFBaseStatement {
     return getMoreResults(Statement.CLOSE_CURRENT_RESULT);
   }
 
-  /**
-   * Sets the result set to the next one, if available.
-   *
-   * @param current What to do with the current result. One of Statement.CLOSE_CURRENT_RESULT,
-   *     Statement.CLOSE_ALL_RESULTS, or Statement.KEEP_CURRENT_RESULT
-   * @return true if there is a next result and it's a result set false if there are no more
-   *     results, or there is a next result and it's an update count
-   * @throws SQLException if something fails while getting the next result
-   */
+  @Override
   public boolean getMoreResults(int current) throws SQLException {
     // clean up current result, if exists
     if (resultSet != null
@@ -890,10 +886,12 @@ public class SFStatement extends SFBaseStatement {
     }
   }
 
+  @Override
   public SFBaseResultSet getResultSet() {
     return resultSet;
   }
 
+  @Override
   public boolean hasChildren() {
     return !childResults.isEmpty();
   }
