@@ -424,18 +424,14 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
   @Override
   public Statement createStatement(
       int resultSetType, int resultSetConcurrency, int resultSetHoldability) throws SQLException {
-    if (isUsingDefaultConnectionHandler) {
-      logger.debug(
-          "Statement createStatement(int resultSetType, "
-              + "int resultSetConcurrency, int resultSetHoldability");
+    logger.debug(
+        "Statement createStatement(int resultSetType, "
+            + "int resultSetConcurrency, int resultSetHoldability");
 
-      Statement stmt =
-          new SnowflakeStatementV1(this, resultSetType, resultSetConcurrency, resultSetHoldability);
-      openStatements.add(stmt);
-      return stmt;
-    } else {
-      throw new SnowflakeLoggedFeatureNotSupportedException(sfSession);
-    }
+    Statement stmt =
+        new SnowflakeStatementV1(this, resultSetType, resultSetConcurrency, resultSetHoldability);
+    openStatements.add(stmt);
+    return stmt;
   }
 
   @Override
@@ -488,36 +484,28 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
   public PreparedStatement prepareStatement(
       String sql, int resultSetType, int resultSetConcurrency, int resultSetHoldability)
       throws SQLException {
-    if (isUsingDefaultConnectionHandler) {
-      logger.debug("PreparedStatement prepareStatement(String sql, " + "int resultSetType,");
+    logger.debug("PreparedStatement prepareStatement(String sql, " + "int resultSetType,");
 
-      PreparedStatement stmt =
-          new SnowflakePreparedStatementV1(
-              this, sql, false, resultSetType, resultSetConcurrency, resultSetHoldability);
-      openStatements.add(stmt);
-      return stmt;
-    } else {
-      throw new SnowflakeLoggedFeatureNotSupportedException(sfSession);
-    }
+    PreparedStatement stmt =
+        new SnowflakePreparedStatementV1(
+            this, sql, false, resultSetType, resultSetConcurrency, resultSetHoldability);
+    openStatements.add(stmt);
+    return stmt;
   }
 
   public PreparedStatement prepareStatement(String sql, boolean skipParsing) throws SQLException {
-    if (isUsingDefaultConnectionHandler) {
-      logger.debug("PreparedStatement prepareStatement(String sql, boolean skipParsing)");
-      raiseSQLExceptionIfConnectionIsClosed();
-      PreparedStatement stmt =
-          new SnowflakePreparedStatementV1(
-              this,
-              sql,
-              skipParsing,
-              ResultSet.TYPE_FORWARD_ONLY,
-              ResultSet.CONCUR_READ_ONLY,
-              ResultSet.CLOSE_CURSORS_AT_COMMIT);
-      openStatements.add(stmt);
-      return stmt;
-    } else {
-      throw new SnowflakeLoggedFeatureNotSupportedException(sfSession);
-    }
+    logger.debug("PreparedStatement prepareStatement(String sql, boolean skipParsing)");
+    raiseSQLExceptionIfConnectionIsClosed();
+    PreparedStatement stmt =
+        new SnowflakePreparedStatementV1(
+            this,
+            sql,
+            skipParsing,
+            ResultSet.TYPE_FORWARD_ONLY,
+            ResultSet.CONCUR_READ_ONLY,
+            ResultSet.CLOSE_CURSORS_AT_COMMIT);
+    openStatements.add(stmt);
+    return stmt;
   }
 
   @Override
