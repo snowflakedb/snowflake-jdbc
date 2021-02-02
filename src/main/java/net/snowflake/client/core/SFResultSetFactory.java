@@ -26,7 +26,7 @@ class SFResultSetFactory {
       throws SQLException {
 
     // This should only be invoked from an SFSession connection
-    SFSession session = (SFSession) statement.getSession();
+    SFSession session = (SFSession) statement.getSFBaseSession();
     SnowflakeResultSetSerializableV1 resultSetSerializable =
         SnowflakeResultSetSerializableV1.create(result, session, statement);
 
@@ -37,7 +37,7 @@ class SFResultSetFactory {
         return new SFResultSet(resultSetSerializable, statement, sortResult);
       default:
         throw new SnowflakeSQLLoggedException(
-            statement.getSession(),
+            statement.getSFBaseSession(),
             ErrorCode.INTERNAL_ERROR,
             "Unsupported query result format: "
                 + resultSetSerializable.getQueryResultFormat().name());
