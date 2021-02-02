@@ -9,10 +9,7 @@ import java.sql.*;
 import java.util.List;
 import java.util.TimeZone;
 import java.util.regex.Pattern;
-import net.snowflake.client.core.QueryStatus;
-import net.snowflake.client.core.SFBaseResultSet;
-import net.snowflake.client.core.SFException;
-import net.snowflake.client.core.SFSession;
+import net.snowflake.client.core.*;
 import net.snowflake.common.core.SqlState;
 
 /** SFAsyncResultSet implementation */
@@ -39,7 +36,7 @@ class SFAsyncResultSet extends SnowflakeBaseResultSet implements SnowflakeResult
     super(statement);
     this.sfBaseResultSet = sfBaseResultSet;
     this.queryID = sfBaseResultSet.getQueryId();
-    this.session = sfBaseResultSet.getSession();
+    this.session = (SFSession) sfBaseResultSet.getSession();
     this.extraStatement = statement;
     try {
       this.resultSetMetaData = new SnowflakeResultSetMetaDataV1(sfBaseResultSet.getMetaData());

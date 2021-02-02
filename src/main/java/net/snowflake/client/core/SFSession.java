@@ -15,7 +15,6 @@ import java.sql.DriverPropertyInfo;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import net.snowflake.client.jdbc.*;
@@ -32,57 +31,36 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
 
 /** Snowflake session implementation */
-public class SFSession {
-  private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.getObjectMapper();
-
-  static final SFLogger logger = SFLoggerFactory.getLogger(SFSession.class);
-
-  private static final String SF_PATH_SESSION_HEARTBEAT = "/session/heartbeat";
-
-  private static final String SF_PATH_QUERY_MONITOR = "/monitoring/queries/";
-
+public class SFSession extends SFBaseSession {
   public static final String SF_QUERY_REQUEST_ID = "requestId";
-
   public static final String SF_HEADER_AUTHORIZATION = HttpHeaders.AUTHORIZATION;
-
   public static final String SF_HEADER_SNOWFLAKE_AUTHTYPE = "Snowflake";
-
   public static final String SF_HEADER_TOKEN_TAG = "Token";
-
+  static final SFLogger logger = SFLoggerFactory.getLogger(SFSession.class);
+  private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.getObjectMapper();
+  private static final String SF_PATH_SESSION_HEARTBEAT = "/session/heartbeat";
+  private static final String SF_PATH_QUERY_MONITOR = "/monitoring/queries/";
   // temporarily have this variable to avoid hardcode.
   // Need to be removed when a better way to organize session parameter is introduced.
   private static final String CLIENT_STORE_TEMPORARY_CREDENTIAL =
       "CLIENT_STORE_TEMPORARY_CREDENTIAL";
-
-  // increase heartbeat timeout from 60 sec to 300 sec
-  // per https://support-snowflake.zendesk.com/agent/tickets/6629
-  private static int SF_HEARTBEAT_TIMEOUT = 300;
-
+  private static final ObjectMapper mapper = ObjectMapperFactory.getObjectMapper();
+  private static final int MAX_SESSION_PARAMETERS = 1000;
+  private static final int DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT = 300000; // millisec
+  private final AtomicInteger sequenceId = new AtomicInteger(0);
+  private final List<DriverPropertyInfo> missingProperties = new ArrayList<>();
+  // list of active asynchronous queries. Used to see if session should be closed when connection
+  // closes
+  protected Set<String> activeAsyncQueries = ConcurrentHashMap.newKeySet();
   private boolean isClosed = true;
-
   private String sessionToken;
   private String masterToken;
   private long masterTokenValidityInSeconds;
-  private String sessionId;
-
   private String idToken;
   private String mfaToken;
   private String privateKeyFileLocation;
   private String privateKeyPassword;
   private PrivateKey privateKey;
-
-  // Injected delay for the purpose of connection timeout testing
-  // Any statement execution will sleep for the specified number of milliseconds
-  private AtomicInteger _injectedDelay = new AtomicInteger(0);
-
-  private String databaseVersion = null;
-  private int databaseMajorVersion = 0;
-  private int databaseMinorVersion = 0;
-
-  private AtomicInteger sequenceId = new AtomicInteger(0);
-
-  private List<DriverPropertyInfo> missingProperties = new ArrayList<>();
-
   /**
    * Amount of seconds a user is willing to tolerate for establishing the connection with database.
    * In our case, it means the first login request to get authorization token.
@@ -90,7 +68,6 @@ public class SFSession {
    * <p>Default:60 seconds
    */
   private int loginTimeout = 60;
-
   /**
    * Amount of milliseconds a user is willing to tolerate for network related issues (e.g. HTTP
    * 503/504) or database transient issues (e.g. GS not responding)
@@ -102,130 +79,26 @@ public class SFSession {
   private int networkTimeoutInMilli = 0; // in milliseconds
 
   private boolean enableCombineDescribe = false;
-
-  private Map<String, Object> sessionProperties = new HashMap<>(1);
-
-  private static final ObjectMapper mapper = ObjectMapperFactory.getObjectMapper();
-
-  private final Properties clientInfo = new Properties();
-
   private int httpClientConnectionTimeout = 60000; // milliseconds
-
-  private static int DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT = 300000; // millisec
-
   private int httpClientSocketTimeout = DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT; // milliseconds
-
-  // --- Simulated failures for testing
-
   // whether we try to simulate a socket timeout (a default value of 0 means
   // no simulation). The value is in milliseconds
   private int injectSocketTimeout = 0;
-
   // simulate client pause after initial execute and before first get-result
   // call ( a default value of 0 means no pause). The value is in seconds
   private int injectClientPause = 0;
-
-  // Generate exception while uploading file with a given name
-  private String injectFileUploadFailure = null;
-
-  private Map<SFSessionProperty, Object> connectionPropertiesMap = new HashMap<>();
-
   // session parameters
   private Map<String, Object> sessionParametersMap = new HashMap<>();
-
-  private static final int MAX_SESSION_PARAMETERS = 1000;
-
   private boolean passcodeInPassword = false;
-
-  private boolean sfSQLMode = false;
-
-  private boolean enableHeartbeat = false;
-
   private int heartbeatFrequency = 3600;
-
-  private AtomicBoolean autoCommit = new AtomicBoolean(true);
-
-  private boolean resultColumnCaseInsensitive = false;
-
-  private boolean preparedStatementLogging = false;
-
-  // database that current session is on
-  private String database;
-
-  // schema that current session is on
-  private String schema;
-
-  // role that current session is on
-  private String role;
-
-  // warehouse on the current session
-  private String warehouse;
-
-  // For Metadata request(i.e. DatabaseMetadata.getTables or
-  // DatabaseMetadata.getSchemas,), whether to use connection ctx to
-  // improve the request time
-  private boolean metadataRequestUseConnectionCtx = false;
-
-  // For Metadata request(i.e. DatabaseMetadata.getTables or
-  // DatabaseMetadata.getSchemas), whether to search using multiple schemas with
-  // session database
-  private boolean metadataRequestUseSessionDatabase = false;
-
-  // If customer wants Timestamp_NTZ values to be stored in UTC time
-  // instead of a local/session timezone, set to true
-  private boolean treatNTZAsUTC = false;
-
-  // parameter to guard against behavior change to getDate() with Calendar timezone
-  private boolean formatDateWithTimezone = false;
-
-  // parameter to guard against behavior change to getTime()
-  private boolean useSessionTimezone = false;
-
-  private SnowflakeType timestampMappedType = SnowflakeType.TIMESTAMP_LTZ;
-
-  private boolean jdbcTreatDecimalAsInt = true;
 
   // deprecated
   private Level tracingLevel = Level.INFO;
-
-  private List<SFException> sqlWarnings = new ArrayList<>();
-
   // client to log session metrics to telemetry in GS
   private Telemetry telemetryClient;
-
-  // default value is false will be updated when login
-  private boolean clientTelemetryEnabled = false;
-
-  // The server can read array binds from a stage instead of query payload.
-  // When there as many bind values as this threshold, we should upload them to a stage.
-  private int arrayBindStageThreshold = 0;
-
   // name of temporary stage to upload array binds to; null if none has been created yet
   private String arrayBindStage = null;
-
-  // store the temporary credential
-  private boolean storeTemporaryCredential = false;
-
-  // service name for multi clustering support
-  private String serviceName;
-
-  // whether to enable conservative memory usage mode
-  private boolean enableConservativeMemoryUsage;
-
-  // the step in MB to adjust memory usage
-  private int conservativeMemoryAdjustStep = 64;
-
-  // parameters used for conservative memory usage
-  private int clientMemoryLimit;
-  private int clientResultChunkSize;
-  private int clientPrefetchThreads;
-
-  // validate the default parameters by GS?
-  private boolean validateDefaultParameters;
-
-  // list of active asynchronous queries. Used to see if session should be closed when connection
-  // closes
-  protected Set<String> activeAsyncQueries = ConcurrentHashMap.newKeySet();
+  private SnowflakeConnectString sfConnStr;
 
   /**
    * Function that checks if the active session can be closed when the connection is closed. If
@@ -234,6 +107,7 @@ public class SFSession {
    *
    * @return true if it is safe to close this session, false if not
    */
+  @Override
   public boolean isSafeToClose() {
     boolean canClose = true;
     // if the set of asynchronous queries is empty, return true
@@ -326,11 +200,6 @@ public class SFSession {
     return result;
   }
 
-  public void addProperty(SFSessionProperty sfSessionProperty, Object propertyValue)
-      throws SFException {
-    addProperty(sfSessionProperty.getPropertyKey(), propertyValue);
-  }
-
   /**
    * Add a property If a property is known for connection, add it to connection properties If not,
    * add it as a dynamic session parameters
@@ -342,31 +211,13 @@ public class SFSession {
    * @param propertyValue property value
    * @throws SFException exception raised from Snowflake components
    */
-  public void addProperty(String propertyName, Object propertyValue) throws SFException {
+  public void addSFSessionProperty(String propertyName, Object propertyValue) throws SFException {
     SFSessionProperty connectionProperty = SFSessionProperty.lookupByKey(propertyName);
 
     if (connectionProperty != null) {
+      addProperty(propertyName, propertyValue);
       // check if the value type is as expected
       propertyValue = SFSessionProperty.checkPropertyValue(connectionProperty, propertyValue);
-
-      if (connectionPropertiesMap.containsKey(connectionProperty)) {
-        throw new SFException(ErrorCode.DUPLICATE_CONNECTION_PROPERTY_SPECIFIED, propertyName);
-      } else if (propertyValue != null && connectionProperty == SFSessionProperty.AUTHENTICATOR) {
-        String[] authenticatorWithParams = propertyValue.toString().split(";");
-        if (authenticatorWithParams.length == 1) {
-          connectionPropertiesMap.put(connectionProperty, propertyValue);
-        } else {
-          String[] oktaUserKeyPair = authenticatorWithParams[1].split("=");
-          if (oktaUserKeyPair.length == 2) {
-            connectionPropertiesMap.put(connectionProperty, authenticatorWithParams[0]);
-            connectionPropertiesMap.put(SFSessionProperty.OKTA_USERNAME, oktaUserKeyPair[1]);
-          } else {
-            throw new SFException(ErrorCode.INVALID_OKTA_USERNAME, propertyName);
-          }
-        }
-      } else {
-        connectionPropertiesMap.put(connectionProperty, propertyValue);
-      }
 
       switch (connectionProperty) {
         case LOGIN_TIMEOUT:
@@ -416,7 +267,7 @@ public class SFSession {
 
         case VALIDATE_DEFAULT_PARAMETERS:
           if (propertyValue != null) {
-            validateDefaultParameters = SFLoginInput.getBooleanValue(propertyValue);
+            setValidateDefaultParameters(SFLoginInput.getBooleanValue(propertyValue));
           }
           break;
 
@@ -455,65 +306,6 @@ public class SFSession {
     return sessionParametersMap.containsKey(key);
   }
 
-  protected String getServerUrl() {
-    if (connectionPropertiesMap.containsKey(SFSessionProperty.SERVER_URL)) {
-      return (String) connectionPropertiesMap.get(SFSessionProperty.SERVER_URL);
-    }
-    return null;
-  }
-
-  public boolean isStringQuoted() {
-    if (connectionPropertiesMap.containsKey(SFSessionProperty.STRINGS_QUOTED)) {
-      return (Boolean) connectionPropertiesMap.get(SFSessionProperty.STRINGS_QUOTED);
-    }
-    return false;
-  }
-
-  /**
-   * If authenticator is null and private key is specified, jdbc will assume key pair authentication
-   *
-   * @return true if authenticator type is SNOWFLAKE (meaning password)
-   */
-  private boolean isSnowflakeAuthenticator() {
-    String authenticator = (String) connectionPropertiesMap.get(SFSessionProperty.AUTHENTICATOR);
-
-    PrivateKey privateKey = (PrivateKey) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY);
-    return (authenticator == null && privateKey == null && privateKeyFileLocation == null)
-        || ClientAuthnDTO.AuthenticatorType.SNOWFLAKE.name().equalsIgnoreCase(authenticator);
-  }
-
-  /**
-   * Returns true If authenticator is EXTERNALBROWSER.
-   *
-   * @return true if authenticator type is EXTERNALBROWSER
-   */
-  boolean isExternalbrowserAuthenticator() {
-    String authenticator = (String) connectionPropertiesMap.get(SFSessionProperty.AUTHENTICATOR);
-    return ClientAuthnDTO.AuthenticatorType.EXTERNALBROWSER.name().equalsIgnoreCase(authenticator);
-  }
-
-  /**
-   * Returns true if authenticator is OKTA native
-   *
-   * @return true or false
-   */
-  boolean isOKTAAuthenticator() {
-    String authenticator = (String) connectionPropertiesMap.get(SFSessionProperty.AUTHENTICATOR);
-    return !Strings.isNullOrEmpty(authenticator) && authenticator.startsWith("https://");
-  }
-
-  /**
-   * Returns true if authenticator is UsernamePasswordMFA native
-   *
-   * @return true or false
-   */
-  boolean isUsernamePasswordMFAAuthenticator() {
-    String authenticator = (String) connectionPropertiesMap.get(SFSessionProperty.AUTHENTICATOR);
-    return ClientAuthnDTO.AuthenticatorType.USERNAME_PASSWORD_MFA
-        .name()
-        .equalsIgnoreCase(authenticator);
-  }
-
   /**
    * Open a new database session
    *
@@ -522,6 +314,7 @@ public class SFSession {
    */
   public synchronized void open() throws SFException, SnowflakeSQLException {
     performSanityCheckOnProperties();
+    Map<SFSessionProperty, Object> connectionPropertiesMap = getConnectionPropertiesMap();
 
     HttpUtil.configureCustomProxyProperties(connectionPropertiesMap);
 
@@ -605,7 +398,7 @@ public class SFSession {
         .setPrivateKeyFilePwd(
             (String) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_FILE_PWD))
         .setApplication((String) connectionPropertiesMap.get(SFSessionProperty.APPLICATION))
-        .setServiceName(this.getServiceName())
+        .setServiceName(getServiceName())
         .setOCSPMode(getOCSPMode());
 
     // propagate OCSP mode to SFTrustManager. Note OCSP setting is global on JVM.
@@ -618,17 +411,17 @@ public class SFSession {
     masterToken = loginOutput.getMasterToken();
     idToken = loginOutput.getIdToken();
     mfaToken = loginOutput.getMfaToken();
-    databaseVersion = loginOutput.getDatabaseVersion();
-    databaseMajorVersion = loginOutput.getDatabaseMajorVersion();
-    databaseMinorVersion = loginOutput.getDatabaseMinorVersion();
+    setDatabaseVersion(loginOutput.getDatabaseVersion());
+    setDatabaseMajorVersion(loginOutput.getDatabaseMajorVersion());
+    setDatabaseMinorVersion(loginOutput.getDatabaseMinorVersion());
     httpClientSocketTimeout = loginOutput.getHttpClientSocketTimeout();
     masterTokenValidityInSeconds = loginOutput.getMasterTokenValidityInSeconds();
-    database = loginOutput.getSessionDatabase();
-    schema = loginOutput.getSessionSchema();
-    role = loginOutput.getSessionRole();
-    warehouse = loginOutput.getSessionWarehouse();
-    sessionId = loginOutput.getSessionId();
-    autoCommit.set(loginOutput.getAutoCommit());
+    setDatabase(loginOutput.getSessionDatabase());
+    setSchema(loginOutput.getSessionSchema());
+    setRole(loginOutput.getSessionRole());
+    setWarehouse(loginOutput.getSessionWarehouse());
+    setSessionId(loginOutput.getSessionId());
+    setAutoCommit(loginOutput.getAutoCommit());
 
     // Update common parameter values for this session
     SessionUtil.updateSfDriverParamValues(loginOutput.getCommonParams(), this);
@@ -638,59 +431,430 @@ public class SFSession {
     String loginRole = (String) connectionPropertiesMap.get(SFSessionProperty.ROLE);
     String loginWarehouse = (String) connectionPropertiesMap.get(SFSessionProperty.WAREHOUSE);
 
-    if (loginDatabaseName != null && !loginDatabaseName.equalsIgnoreCase(database)) {
+    if (loginDatabaseName != null && !loginDatabaseName.equalsIgnoreCase(getDatabase())) {
       sqlWarnings.add(
           new SFException(
               ErrorCode.CONNECTION_ESTABLISHED_WITH_DIFFERENT_PROP,
               "Database",
               loginDatabaseName,
-              database));
+              getDatabase()));
     }
 
-    if (loginSchemaName != null && !loginSchemaName.equalsIgnoreCase(schema)) {
+    if (loginSchemaName != null && !loginSchemaName.equalsIgnoreCase(getSchema())) {
       sqlWarnings.add(
           new SFException(
               ErrorCode.CONNECTION_ESTABLISHED_WITH_DIFFERENT_PROP,
               "Schema",
               loginSchemaName,
-              schema));
+              getSchema()));
     }
 
-    if (loginRole != null && !loginRole.equalsIgnoreCase(role)) {
+    if (loginRole != null && !loginRole.equalsIgnoreCase(getRole())) {
       sqlWarnings.add(
           new SFException(
-              ErrorCode.CONNECTION_ESTABLISHED_WITH_DIFFERENT_PROP, "Role", loginRole, role));
+              ErrorCode.CONNECTION_ESTABLISHED_WITH_DIFFERENT_PROP, "Role", loginRole, getRole()));
     }
 
-    if (loginWarehouse != null && !loginWarehouse.equalsIgnoreCase(warehouse)) {
+    if (loginWarehouse != null && !loginWarehouse.equalsIgnoreCase(getWarehouse())) {
       sqlWarnings.add(
           new SFException(
               ErrorCode.CONNECTION_ESTABLISHED_WITH_DIFFERENT_PROP,
               "Warehouse",
               loginWarehouse,
-              warehouse));
+              getWarehouse()));
     }
 
     // start heartbeat for this session so that the master token will not expire
     startHeartbeatForThisSession();
   }
 
-  public OCSPMode getOCSPMode() {
-    OCSPMode ret;
+  /**
+   * If authenticator is null and private key is specified, jdbc will assume key pair authentication
+   *
+   * @return true if authenticator type is SNOWFLAKE (meaning password)
+   */
+  private boolean isSnowflakeAuthenticator() {
+    Map<SFSessionProperty, Object> connectionPropertiesMap = getConnectionPropertiesMap();
+    String authenticator = (String) connectionPropertiesMap.get(SFSessionProperty.AUTHENTICATOR);
+    PrivateKey privateKey = (PrivateKey) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY);
+    return (authenticator == null && privateKey == null && privateKeyFileLocation == null)
+        || ClientAuthnDTO.AuthenticatorType.SNOWFLAKE.name().equalsIgnoreCase(authenticator);
+  }
 
-    Boolean insecureMode = (Boolean) connectionPropertiesMap.get(SFSessionProperty.INSECURE_MODE);
-    if (insecureMode != null && insecureMode) {
-      // skip OCSP checks
-      ret = OCSPMode.INSECURE;
-    } else if (!connectionPropertiesMap.containsKey(SFSessionProperty.OCSP_FAIL_OPEN)
-        || (boolean) connectionPropertiesMap.get(SFSessionProperty.OCSP_FAIL_OPEN)) {
-      // fail open (by default, not set)
-      ret = OCSPMode.FAIL_OPEN;
-    } else {
-      // explicitly set ocspFailOpen=false
-      ret = OCSPMode.FAIL_CLOSED;
+  /**
+   * Returns true If authenticator is EXTERNALBROWSER.
+   *
+   * @return true if authenticator type is EXTERNALBROWSER
+   */
+  boolean isExternalbrowserAuthenticator() {
+    Map<SFSessionProperty, Object> connectionPropertiesMap = getConnectionPropertiesMap();
+    String authenticator = (String) connectionPropertiesMap.get(SFSessionProperty.AUTHENTICATOR);
+    return ClientAuthnDTO.AuthenticatorType.EXTERNALBROWSER.name().equalsIgnoreCase(authenticator);
+  }
+
+  /**
+   * Returns true if authenticator is OKTA native
+   *
+   * @return true or false
+   */
+  boolean isOKTAAuthenticator() {
+    Map<SFSessionProperty, Object> connectionPropertiesMap = getConnectionPropertiesMap();
+    String authenticator = (String) connectionPropertiesMap.get(SFSessionProperty.AUTHENTICATOR);
+    return !Strings.isNullOrEmpty(authenticator) && authenticator.startsWith("https://");
+  }
+
+  /**
+   * Returns true if authenticator is UsernamePasswordMFA native
+   *
+   * @return true or false
+   */
+  boolean isUsernamePasswordMFAAuthenticator() {
+    Map<SFSessionProperty, Object> connectionPropertiesMap = getConnectionPropertiesMap();
+    String authenticator = (String) connectionPropertiesMap.get(SFSessionProperty.AUTHENTICATOR);
+    return ClientAuthnDTO.AuthenticatorType.USERNAME_PASSWORD_MFA
+        .name()
+        .equalsIgnoreCase(authenticator);
+  }
+
+  /**
+   * A helper function to call global service and renew session.
+   *
+   * @param prevSessionToken the session token that has expired
+   * @throws SnowflakeSQLException if failed to renew the session
+   * @throws SFException if failed to renew the session
+   */
+  synchronized void renewSession(String prevSessionToken)
+      throws SFException, SnowflakeSQLException {
+    if (sessionToken != null && !sessionToken.equals(prevSessionToken)) {
+      logger.debug("not renew session because session token has not been updated.");
+      return;
     }
-    return ret;
+
+    SFLoginInput loginInput = new SFLoginInput();
+    loginInput
+        .setServerUrl(getServerUrl())
+        .setSessionToken(sessionToken)
+        .setMasterToken(masterToken)
+        .setIdToken(idToken)
+        .setMfaToken(mfaToken)
+        .setLoginTimeout(loginTimeout)
+        .setDatabaseName(getDatabase())
+        .setSchemaName(getSchema())
+        .setRole(getRole())
+        .setWarehouse(getWarehouse())
+        .setOCSPMode(getOCSPMode());
+
+    SFLoginOutput loginOutput = SessionUtil.renewSession(loginInput);
+
+    sessionToken = loginOutput.getSessionToken();
+    masterToken = loginOutput.getMasterToken();
+  }
+
+  /**
+   * get session token
+   *
+   * @return session token
+   */
+  public String getSessionToken() {
+    return sessionToken;
+  }
+
+  /**
+   * Close the connection
+   *
+   * @throws SnowflakeSQLException if failed to close the connection
+   * @throws SFException if failed to close the connection
+   */
+  @Override
+  public void close() throws SFException, SnowflakeSQLException {
+    logger.debug(" public void close()");
+
+    // stop heartbeat for this session
+    stopHeartbeatForThisSession();
+
+    if (isClosed) {
+      return;
+    }
+
+    SFLoginInput loginInput = new SFLoginInput();
+    loginInput
+        .setServerUrl(getServerUrl())
+        .setSessionToken(sessionToken)
+        .setLoginTimeout(loginTimeout)
+        .setOCSPMode(getOCSPMode());
+
+    SessionUtil.closeSession(loginInput);
+    closeTelemetryClient();
+    getClientInfo().clear();
+    isClosed = true;
+  }
+
+  /** Start heartbeat for this session */
+  protected void startHeartbeatForThisSession() {
+    if (getEnableHeartbeat() && !Strings.isNullOrEmpty(masterToken)) {
+      logger.debug("start heartbeat, master token validity: " + masterTokenValidityInSeconds);
+
+      HeartbeatBackground.getInstance()
+          .addSession(this, masterTokenValidityInSeconds, this.heartbeatFrequency);
+    } else {
+      logger.debug("heartbeat not enabled for the session");
+    }
+  }
+
+  /** Stop heartbeat for this session */
+  protected void stopHeartbeatForThisSession() {
+    if (getEnableHeartbeat() && !Strings.isNullOrEmpty(masterToken)) {
+      logger.debug("stop heartbeat");
+
+      HeartbeatBackground.getInstance().removeSession(this);
+    } else {
+      logger.debug("heartbeat not enabled for the session");
+    }
+  }
+
+  /**
+   * Send heartbeat for the session
+   *
+   * @throws SFException exception raised from Snowflake
+   * @throws SQLException exception raised from SQL generic layers
+   */
+  protected void heartbeat() throws SFException, SQLException {
+    logger.debug(" public void heartbeat()");
+
+    if (isClosed) {
+      return;
+    }
+
+    HttpPost postRequest = null;
+
+    String requestId = UUID.randomUUID().toString();
+
+    boolean retry = false;
+
+    // the loop for retrying if it runs into session expiration
+    do {
+      try {
+        URIBuilder uriBuilder;
+
+        uriBuilder = new URIBuilder(getServerUrl());
+
+        uriBuilder.addParameter(SFSession.SF_QUERY_REQUEST_ID, requestId);
+
+        uriBuilder.setPath(SF_PATH_SESSION_HEARTBEAT);
+
+        postRequest = new HttpPost(uriBuilder.build());
+
+        // remember the session token in case it expires we need to renew
+        // the session only when no other thread has renewed it
+        String prevSessionToken = sessionToken;
+
+        postRequest.setHeader(
+            SF_HEADER_AUTHORIZATION,
+            SF_HEADER_SNOWFLAKE_AUTHTYPE
+                + " "
+                + SF_HEADER_TOKEN_TAG
+                + "=\""
+                + prevSessionToken
+                + "\"");
+
+        logger.debug("Executing heartbeat request: {}", postRequest.toString());
+
+        // the following will retry transient network issues
+        // increase heartbeat timeout from 60 sec to 300 sec
+        // per https://support-snowflake.zendesk.com/agent/tickets/6629
+        int SF_HEARTBEAT_TIMEOUT = 300;
+        String theResponse =
+            HttpUtil.executeGeneralRequest(postRequest, SF_HEARTBEAT_TIMEOUT, getOCSPMode());
+
+        JsonNode rootNode;
+
+        logger.debug("connection heartbeat response: {}", theResponse);
+
+        rootNode = mapper.readTree(theResponse);
+
+        // check the response to see if it is session expiration response
+        if (rootNode != null
+            && (Constants.SESSION_EXPIRED_GS_CODE == rootNode.path("code").asInt())) {
+          logger.debug("renew session and retry");
+          this.renewSession(prevSessionToken);
+          retry = true;
+          continue;
+        }
+
+        SnowflakeUtil.checkErrorAndThrowException(rootNode);
+
+        // success
+        retry = false;
+      } catch (Throwable ex) {
+        // for snowflake exception, just rethrow it
+        if (ex instanceof SnowflakeSQLException) {
+          throw (SnowflakeSQLException) ex;
+        }
+
+        logger.error("unexpected exception", ex);
+
+        throw (SFException)
+            IncidentUtil.generateIncidentV2WithException(
+                this,
+                new SFException(
+                    ErrorCode.INTERNAL_ERROR, IncidentUtil.oneLiner("unexpected exception", ex)),
+                null,
+                requestId);
+      }
+    } while (retry);
+  }
+
+  @Override
+  public void raiseError(Throwable exc, String jobId, String requestId) {
+    new Incident(this, exc, jobId, requestId).trigger();
+  }
+
+  void injectedDelay() {
+
+    AtomicInteger injectedDelay = getInjectedDelay();
+    int d = injectedDelay.get();
+
+    if (d != 0) {
+      injectedDelay.set(0);
+      try {
+        logger.trace("delayed for {}", d);
+
+        Thread.sleep(d);
+      } catch (InterruptedException ex) {
+      }
+    }
+  }
+
+  public int getInjectSocketTimeout() {
+    return injectSocketTimeout;
+  }
+
+  public void setInjectSocketTimeout(int injectSocketTimeout) {
+    this.injectSocketTimeout = injectSocketTimeout;
+  }
+
+  public int getNetworkTimeoutInMilli() {
+    return networkTimeoutInMilli;
+  }
+
+  public boolean isClosed() {
+    return isClosed;
+  }
+
+  public int getInjectClientPause() {
+    return injectClientPause;
+  }
+
+  public void setInjectClientPause(int injectClientPause) {
+    this.injectClientPause = injectClientPause;
+  }
+
+  protected int getAndIncrementSequenceId() {
+    return sequenceId.getAndIncrement();
+  }
+
+  public boolean getEnableCombineDescribe() {
+    return this.enableCombineDescribe;
+  }
+
+  public void setEnableCombineDescribe(boolean enable) {
+    this.enableCombineDescribe = enable;
+  }
+
+  public synchronized Telemetry getTelemetryClient() {
+    // initialize for the first time. this should only be done after session
+    // properties have been set, else the client won't properly resolve the URL.
+    if (telemetryClient == null) {
+      if (getUrl() == null) {
+        logger.error("Telemetry client created before session properties set.");
+        return null;
+      }
+      telemetryClient = TelemetryClient.createTelemetry(this);
+    }
+    return telemetryClient;
+  }
+
+  public void closeTelemetryClient() {
+    if (telemetryClient != null) {
+      telemetryClient.close();
+    }
+  }
+
+  public String getArrayBindStage() {
+    return arrayBindStage;
+  }
+
+  public void setArrayBindStage(String arrayBindStage) {
+    this.arrayBindStage = String.format("%s.%s.%s", getDatabase(), getSchema(), arrayBindStage);
+  }
+
+  public String getIdToken() {
+    return idToken;
+  }
+
+  public String getMfaToken() {
+    return mfaToken;
+  }
+
+  /**
+   * Sets the current objects if the session is not up to date. It can happen if the session is
+   * created by the id token, which doesn't carry the current objects.
+   *
+   * @param loginInput The login input to use for this session
+   * @param loginOutput The login output to ose for this session
+   */
+  void setCurrentObjects(SFLoginInput loginInput, SFLoginOutput loginOutput) {
+    this.sessionToken = loginOutput.getSessionToken(); // used to run the commands.
+    runInternalCommand("USE ROLE IDENTIFIER(?)", loginInput.getRole());
+    runInternalCommand("USE WAREHOUSE IDENTIFIER(?)", loginInput.getWarehouse());
+    runInternalCommand("USE DATABASE IDENTIFIER(?)", loginInput.getDatabaseName());
+    runInternalCommand("USE SCHEMA IDENTIFIER(?)", loginInput.getSchemaName());
+    // This ensures the session returns the current objects and refresh
+    // the local cache.
+    SFBaseResultSet result = runInternalCommand("SELECT ?", "1");
+
+    // refresh the current objects
+    loginOutput.setSessionDatabase(getDatabase());
+    loginOutput.setSessionSchema(getSchema());
+    loginOutput.setSessionWarehouse(getWarehouse());
+    loginOutput.setSessionRole(getRole());
+    loginOutput.setIdToken(loginInput.getIdToken());
+
+    // no common parameter is updated.
+    if (result != null) {
+      loginOutput.setCommonParams(result.parameters);
+    }
+  }
+
+  private SFBaseResultSet runInternalCommand(String sql, String value) {
+    if (value == null) {
+      return null;
+    }
+
+    try {
+      Map<String, ParameterBindingDTO> bindValues = new HashMap<>();
+      bindValues.put("1", new ParameterBindingDTO("TEXT", value));
+      SFStatement statement = new SFStatement(this);
+      return statement.executeQueryInternal(
+          sql,
+          bindValues,
+          false, // not describe only
+          true, // internal
+          false, // asyncExec
+          null // caller isn't a JDBC interface method
+          );
+    } catch (SFException | SQLException ex) {
+      logger.debug("Failed to run a command: {}, err={}", sql, ex);
+    }
+    return null;
+  }
+
+  public SnowflakeConnectString getSnowflakeConnectionString() {
+    return sfConnStr;
+  }
+
+  public void setSnowflakeConnectionString(SnowflakeConnectString connStr) {
+    sfConnStr = connStr;
   }
 
   /**
@@ -700,6 +864,8 @@ public class SFSession {
    * @throws SFException Will be thrown if any of the necessary properties are missing
    */
   private void performSanityCheckOnProperties() throws SFException {
+    Map<SFSessionProperty, Object> connectionPropertiesMap = getConnectionPropertiesMap();
+
     for (SFSessionProperty property : SFSessionProperty.values()) {
       if (property.isRequired() && !connectionPropertiesMap.containsKey(property)) {
         switch (property) {
@@ -743,13 +909,9 @@ public class SFSession {
     }
   }
 
-  private DriverPropertyInfo addNewDriverProperty(String name, String description) {
-    DriverPropertyInfo info = new DriverPropertyInfo(name, null);
-    info.description = description;
-    return info;
-  }
-
+  @Override
   public List<DriverPropertyInfo> checkProperties() {
+    Map<SFSessionProperty, Object> connectionPropertiesMap = getConnectionPropertiesMap();
     for (SFSessionProperty property : SFSessionProperty.values()) {
       if (property.isRequired() && !connectionPropertiesMap.containsKey(property)) {
         missingProperties.add(addNewDriverProperty(property.getPropertyKey(), null));
@@ -788,655 +950,9 @@ public class SFSession {
     return missingProperties;
   }
 
-  public String getDatabaseVersion() {
-    return databaseVersion;
-  }
-
-  public int getDatabaseMajorVersion() {
-    return databaseMajorVersion;
-  }
-
-  public int getDatabaseMinorVersion() {
-    return databaseMinorVersion;
-  }
-
-  public String getSessionId() {
-    return sessionId;
-  }
-
-  /**
-   * A helper function to call global service and renew session.
-   *
-   * @param prevSessionToken the session token that has expired
-   * @throws SnowflakeSQLException if failed to renew the session
-   * @throws SFException if failed to renew the session
-   */
-  synchronized void renewSession(String prevSessionToken)
-      throws SFException, SnowflakeSQLException {
-    if (sessionToken != null && !sessionToken.equals(prevSessionToken)) {
-      logger.debug("not renew session because session token has not been updated.");
-      return;
-    }
-
-    SFLoginInput loginInput = new SFLoginInput();
-    loginInput
-        .setServerUrl((String) connectionPropertiesMap.get(SFSessionProperty.SERVER_URL))
-        .setSessionToken(sessionToken)
-        .setMasterToken(masterToken)
-        .setIdToken(idToken)
-        .setMfaToken(mfaToken)
-        .setLoginTimeout(loginTimeout)
-        .setDatabaseName(this.getDatabase())
-        .setSchemaName(this.getSchema())
-        .setRole(this.getRole())
-        .setWarehouse(this.getWarehouse())
-        .setOCSPMode(getOCSPMode());
-
-    SFLoginOutput loginOutput = SessionUtil.renewSession(loginInput);
-
-    sessionToken = loginOutput.getSessionToken();
-    masterToken = loginOutput.getMasterToken();
-  }
-
-  /**
-   * get session token
-   *
-   * @return session token
-   */
-  public String getSessionToken() {
-    return sessionToken;
-  }
-
-  /**
-   * Close the connection
-   *
-   * @throws SnowflakeSQLException if failed to close the connection
-   * @throws SFException if failed to close the connection
-   */
-  public void close() throws SFException, SnowflakeSQLException {
-    logger.debug(" public void close()");
-
-    // stop heartbeat for this session
-    stopHeartbeatForThisSession();
-
-    if (isClosed) {
-      return;
-    }
-
-    SFLoginInput loginInput = new SFLoginInput();
-    loginInput
-        .setServerUrl((String) connectionPropertiesMap.get(SFSessionProperty.SERVER_URL))
-        .setSessionToken(sessionToken)
-        .setLoginTimeout(loginTimeout)
-        .setOCSPMode(getOCSPMode());
-
-    SessionUtil.closeSession(loginInput);
-    closeTelemetryClient();
-    clientInfo.clear();
-    isClosed = true;
-  }
-
-  /** Start heartbeat for this session */
-  protected void startHeartbeatForThisSession() {
-    if (enableHeartbeat && !Strings.isNullOrEmpty(masterToken)) {
-      logger.debug("start heartbeat, master token validity: " + masterTokenValidityInSeconds);
-
-      HeartbeatBackground.getInstance()
-          .addSession(this, masterTokenValidityInSeconds, this.heartbeatFrequency);
-    } else {
-      logger.debug("heartbeat not enabled for the session");
-    }
-  }
-
-  /** Stop heartbeat for this session */
-  protected void stopHeartbeatForThisSession() {
-    if (enableHeartbeat && !Strings.isNullOrEmpty(masterToken)) {
-      logger.debug("stop heartbeat");
-
-      HeartbeatBackground.getInstance().removeSession(this);
-    } else {
-      logger.debug("heartbeat not enabled for the session");
-    }
-  }
-
-  /**
-   * Send heartbeat for the session
-   *
-   * @throws SFException exception raised from Snowflake
-   * @throws SQLException exception raised from SQL generic layers
-   */
-  protected void heartbeat() throws SFException, SQLException {
-    logger.debug(" public void heartbeat()");
-
-    if (isClosed) {
-      return;
-    }
-
-    HttpPost postRequest = null;
-
-    String requestId = UUID.randomUUID().toString();
-
-    boolean retry = false;
-
-    // the loop for retrying if it runs into session expiration
-    do {
-      try {
-        URIBuilder uriBuilder;
-
-        uriBuilder =
-            new URIBuilder((String) connectionPropertiesMap.get(SFSessionProperty.SERVER_URL));
-
-        uriBuilder.addParameter(SFSession.SF_QUERY_REQUEST_ID, requestId);
-
-        uriBuilder.setPath(SF_PATH_SESSION_HEARTBEAT);
-
-        postRequest = new HttpPost(uriBuilder.build());
-
-        // remember the session token in case it expires we need to renew
-        // the session only when no other thread has renewed it
-        String prevSessionToken = sessionToken;
-
-        postRequest.setHeader(
-            SF_HEADER_AUTHORIZATION,
-            SF_HEADER_SNOWFLAKE_AUTHTYPE
-                + " "
-                + SF_HEADER_TOKEN_TAG
-                + "=\""
-                + prevSessionToken
-                + "\"");
-
-        logger.debug("Executing heartbeat request: {}", postRequest.toString());
-
-        // the following will retry transient network issues
-        String theResponse =
-            HttpUtil.executeGeneralRequest(postRequest, SF_HEARTBEAT_TIMEOUT, getOCSPMode());
-
-        JsonNode rootNode;
-
-        logger.debug("connection heartbeat response: {}", theResponse);
-
-        rootNode = mapper.readTree(theResponse);
-
-        // check the response to see if it is session expiration response
-        if (rootNode != null
-            && (Constants.SESSION_EXPIRED_GS_CODE == rootNode.path("code").asInt())) {
-          logger.debug("renew session and retry");
-          this.renewSession(prevSessionToken);
-          retry = true;
-          continue;
-        }
-
-        SnowflakeUtil.checkErrorAndThrowException(rootNode);
-
-        // success
-        retry = false;
-      } catch (Throwable ex) {
-        // for snowflake exception, just rethrow it
-        if (ex instanceof SnowflakeSQLException) {
-          throw (SnowflakeSQLException) ex;
-        }
-
-        logger.error("unexpected exception", ex);
-
-        throw (SFException)
-            IncidentUtil.generateIncidentV2WithException(
-                this,
-                new SFException(
-                    ErrorCode.INTERNAL_ERROR, IncidentUtil.oneLiner("unexpected exception", ex)),
-                null,
-                requestId);
-      }
-    } while (retry);
-  }
-
-  public Properties getClientInfo() {
-    logger.debug(" public Properties getClientInfo()");
-
-    // defensive copy to avoid client from changing the properties
-    // directly w/o going through the API
-    Properties copy = new Properties();
-    copy.putAll(this.clientInfo);
-    return copy;
-  }
-
-  public String getClientInfo(String name) {
-    logger.debug(" public String getClientInfo(String name)");
-    return this.clientInfo.getProperty(name);
-  }
-
-  void setSFSessionProperty(String propertyName, boolean propertyValue) {
-    this.sessionProperties.put(propertyName, propertyValue);
-  }
-
-  public Object getSFSessionProperty(String propertyName) {
-    return this.sessionProperties.get(propertyName);
-  }
-
-  public void setInjectedDelay(int delay) {
-    this._injectedDelay.set(delay);
-  }
-
-  void injectedDelay() {
-
-    int d = _injectedDelay.get();
-
-    if (d != 0) {
-      _injectedDelay.set(0);
-      try {
-        logger.trace("delayed for {}", d);
-
-        Thread.sleep(d);
-      } catch (InterruptedException ex) {
-      }
-    }
-  }
-
-  public int getInjectSocketTimeout() {
-    return injectSocketTimeout;
-  }
-
-  public void setInjectSocketTimeout(int injectSocketTimeout) {
-    this.injectSocketTimeout = injectSocketTimeout;
-  }
-
-  public void setInjectFileUploadFailure(String fileToFail) {
-    this.injectFileUploadFailure = fileToFail;
-  }
-
-  public String getInjectFileUploadFailure() {
-    return this.injectFileUploadFailure;
-  }
-
-  public int getNetworkTimeoutInMilli() {
-    return networkTimeoutInMilli;
-  }
-
-  public boolean isClosed() {
-    return isClosed;
-  }
-
-  public int getInjectClientPause() {
-    return injectClientPause;
-  }
-
-  public void setInjectClientPause(int injectClientPause) {
-    this.injectClientPause = injectClientPause;
-  }
-
-  protected int getHttpClientConnectionTimeout() {
-    return httpClientConnectionTimeout;
-  }
-
-  protected int getHttpClientSocketTimeout() {
-    return httpClientSocketTimeout;
-  }
-
-  protected int getAndIncrementSequenceId() {
-    return sequenceId.getAndIncrement();
-  }
-
-  public void setSfSQLMode(boolean sfSQLMode) {
-    this.sfSQLMode = sfSQLMode;
-  }
-
-  public boolean isSfSQLMode() {
-    return this.sfSQLMode;
-  }
-
-  public boolean isEnableHeartbeat() {
-    return enableHeartbeat;
-  }
-
-  public void setEnableHeartbeat(boolean enableHeartbeat) {
-    this.enableHeartbeat = enableHeartbeat;
-  }
-
-  public void setHeartbeatFrequency(int frequency) {
-    this.heartbeatFrequency = frequency;
-  }
-
-  public long getHeartbeatFrequency() {
-    return this.heartbeatFrequency;
-  }
-
-  public boolean getAutoCommit() {
-    return autoCommit.get();
-  }
-
-  public void setAutoCommit(boolean autoCommit) {
-    this.autoCommit.set(autoCommit);
-  }
-
-  public boolean getPreparedStatementLogging() {
-    return this.preparedStatementLogging;
-  }
-
-  public void setPreparedStatementLogging(boolean value) {
-    this.preparedStatementLogging = value;
-  }
-
-  public void setResultColumnCaseInsensitive(boolean resultColumnCaseInsensitive) {
-    this.resultColumnCaseInsensitive = resultColumnCaseInsensitive;
-  }
-
-  public boolean isResultColumnCaseInsensitive() {
-    return this.resultColumnCaseInsensitive;
-  }
-
-  public String getDatabase() {
-    return this.database;
-  }
-
-  public void setDatabase(String database) {
-    this.database = database;
-  }
-
-  public String getSchema() {
-    return this.schema;
-  }
-
-  public void setSchema(String schema) {
-    this.schema = schema;
-  }
-
-  public String getRole() {
-    return role;
-  }
-
-  public void setRole(String role) {
-    this.role = role;
-  }
-
-  public String getWarehouse() {
-    return warehouse;
-  }
-
-  public void setWarehouse(String warehouse) {
-    this.warehouse = warehouse;
-  }
-
-  public void setMetadataRequestUseConnectionCtx(boolean enabled) {
-    this.metadataRequestUseConnectionCtx = enabled;
-  }
-
-  public void setMetadataRequestUseSessionDatabase(boolean enabled) {
-    this.metadataRequestUseSessionDatabase = enabled;
-  }
-
-  public boolean getMetadataRequestUseConnectionCtx() {
-    return this.metadataRequestUseConnectionCtx;
-  }
-
-  public void setTreatNTZAsUTC(boolean enabled) {
-    this.treatNTZAsUTC = enabled;
-  }
-
-  public void setFormatDateWithTimezone(boolean useTimezone) {
-    this.formatDateWithTimezone = useTimezone;
-  }
-
-  public boolean getFormatDateWithTimezone() {
-    return this.formatDateWithTimezone;
-  }
-
-  public void setUseSessionTimezone(boolean useSessionTimezone) {
-    this.useSessionTimezone = useSessionTimezone;
-  }
-
-  public boolean getUseSessionTimezone() {
-    return this.useSessionTimezone;
-  }
-
-  public boolean getTreatNTZAsUTC() {
-    return this.treatNTZAsUTC;
-  }
-
-  public boolean getMetadataRequestUseSessionDatabase() {
-    return this.metadataRequestUseSessionDatabase;
-  }
-
-  public SnowflakeType getTimestampMappedType() {
-    return timestampMappedType;
-  }
-
-  public void setTimestampMappedType(SnowflakeType timestampMappedType) {
-    this.timestampMappedType = timestampMappedType;
-  }
-
-  public boolean isJdbcTreatDecimalAsInt() {
-    return jdbcTreatDecimalAsInt;
-  }
-
-  public void setJdbcTreatDecimalAsInt(boolean jdbcTreatDecimalAsInt) {
-    this.jdbcTreatDecimalAsInt = jdbcTreatDecimalAsInt;
-  }
-
-  public void setEnableCombineDescribe(boolean enable) {
-    this.enableCombineDescribe = enable;
-  }
-
-  public boolean getEnableCombineDescribe() {
-    return this.enableCombineDescribe;
-  }
-
-  public Integer getQueryTimeout() {
-    return (Integer) this.connectionPropertiesMap.get(SFSessionProperty.QUERY_TIMEOUT);
-  }
-
-  public String getUser() {
-    return (String) this.connectionPropertiesMap.get(SFSessionProperty.USER);
-  }
-
-  public String getUrl() {
-    return (String) this.connectionPropertiesMap.get(SFSessionProperty.SERVER_URL);
-  }
-
-  public int getInjectWaitInPut() {
-    Object retVal = this.connectionPropertiesMap.get(SFSessionProperty.INJECT_WAIT_IN_PUT);
-    if (retVal != null) {
-      try {
-        return (int) retVal;
-      } catch (Exception e) {
-        return 0;
-      }
-    }
-    return 0;
-  }
-
-  public List<SFException> getSqlWarnings() {
-    return sqlWarnings;
-  }
-
-  public void clearSqlWarnings() {
-    sqlWarnings.clear();
-  }
-
-  public synchronized Telemetry getTelemetryClient() {
-    // initialize for the first time. this should only be done after session
-    // properties have been set, else the client won't properly resolve the URL.
-    if (telemetryClient == null) {
-      if (getUrl() == null) {
-        logger.error("Telemetry client created before session properties set.");
-        return null;
-      }
-      telemetryClient = TelemetryClient.createTelemetry(this);
-    }
-    return telemetryClient;
-  }
-
-  public void closeTelemetryClient() {
-    if (telemetryClient != null) {
-      telemetryClient.close();
-    }
-  }
-
-  public boolean isClientTelemetryEnabled() {
-    return this.clientTelemetryEnabled;
-  }
-
-  public void setClientTelemetryEnabled(boolean clientTelemetryEnabled) {
-    this.clientTelemetryEnabled = clientTelemetryEnabled;
-  }
-
-  public int getArrayBindStageThreshold() {
-    return arrayBindStageThreshold;
-  }
-
-  public void setArrayBindStageThreshold(int arrayBindStageThreshold) {
-    this.arrayBindStageThreshold = arrayBindStageThreshold;
-  }
-
-  public String getArrayBindStage() {
-    return arrayBindStage;
-  }
-
-  public void setArrayBindStage(String arrayBindStage) {
-    this.arrayBindStage =
-        String.format("%s.%s.%s", this.getDatabase(), this.getSchema(), arrayBindStage);
-  }
-
-  public String getIdToken() {
-    return idToken;
-  }
-
-  public String getMfaToken() {
-    return mfaToken;
-  }
-
-  public boolean isStoreTemporaryCredential() {
-    return this.storeTemporaryCredential;
-  }
-
-  public void setStoreTemporaryCredential(boolean storeTemporaryCredential) {
-    this.storeTemporaryCredential = storeTemporaryCredential;
-  }
-
-  /**
-   * Sets the service name provided from GS.
-   *
-   * @param serviceName service name
-   */
-  public void setServiceName(String serviceName) {
-    this.serviceName = serviceName;
-  }
-
-  /**
-   * Gets the service name provided from GS.
-   *
-   * @return the service name
-   */
-  public String getServiceName() {
-    return serviceName;
-  }
-
-  /**
-   * Sets the current objects if the session is not up to date. It can happen if the session is
-   * created by the id token, which doesn't carry the current objects.
-   *
-   * @param loginInput The login input to use for this session
-   * @param loginOutput The login output to ose for this session
-   */
-  void setCurrentObjects(SFLoginInput loginInput, SFLoginOutput loginOutput) {
-    this.sessionToken = loginOutput.getSessionToken(); // used to run the commands.
-    runInternalCommand("USE ROLE IDENTIFIER(?)", loginInput.getRole());
-    runInternalCommand("USE WAREHOUSE IDENTIFIER(?)", loginInput.getWarehouse());
-    runInternalCommand("USE DATABASE IDENTIFIER(?)", loginInput.getDatabaseName());
-    runInternalCommand("USE SCHEMA IDENTIFIER(?)", loginInput.getSchemaName());
-    // This ensures the session returns the current objects and refresh
-    // the local cache.
-    SFBaseResultSet result = runInternalCommand("SELECT ?", "1");
-
-    // refresh the current objects
-    loginOutput.setSessionDatabase(this.database);
-    loginOutput.setSessionSchema(this.schema);
-    loginOutput.setSessionWarehouse(this.warehouse);
-    loginOutput.setSessionRole(this.role);
-    loginOutput.setIdToken(loginInput.getIdToken());
-
-    // no common parameter is updated.
-    if (result != null) {
-      loginOutput.setCommonParams(result.parameters);
-    }
-  }
-
-  private SFBaseResultSet runInternalCommand(String sql, String value) {
-    if (value == null) {
-      return null;
-    }
-
-    try {
-      Map<String, ParameterBindingDTO> bindValues = new HashMap<>();
-      bindValues.put("1", new ParameterBindingDTO("TEXT", value));
-      SFStatement statement = new SFStatement(this);
-      return statement.executeQueryInternal(
-          sql,
-          bindValues,
-          false, // not describe only
-          true, // internal
-          false, // asyncExec
-          null // caller isn't a JDBC interface method
-          );
-    } catch (SFException | SQLException ex) {
-      logger.debug("Failed to run a command: {}, err={}", sql, ex);
-    }
-    return null;
-  }
-
-  public boolean isConservativeMemoryUsageEnabled() {
-    return enableConservativeMemoryUsage;
-  }
-
-  public void setEnableConservativeMemoryUsage(boolean value) {
-    enableConservativeMemoryUsage = value;
-  }
-
-  public void setConservativeMemoryAdjustStep(int step) {
-    conservativeMemoryAdjustStep = step;
-  }
-
-  public int getConservativeMemoryAdjustStep() {
-    return conservativeMemoryAdjustStep;
-  }
-
-  public void setClientMemoryLimit(int clientMemoryLimit) {
-    this.clientMemoryLimit = clientMemoryLimit;
-  }
-
-  public int getClientMemoryLimit() {
-    return clientMemoryLimit;
-  }
-
-  public void setClientResultChunkSize(int clientResultChunkSize) {
-    this.clientResultChunkSize = clientResultChunkSize;
-  }
-
-  public int getClientResultChunkSize() {
-    return clientResultChunkSize;
-  }
-
-  public void setClientPrefetchThreads(int clientPrefetchThreads) {
-    this.clientPrefetchThreads = clientPrefetchThreads;
-  }
-
-  public int getClientPrefetchThreads() {
-    return clientPrefetchThreads;
-  }
-
-  public boolean isValidateDefaultParameters() {
-    return validateDefaultParameters;
-  }
-
-  public void setValidateDefaultParameters(boolean v) {
-    validateDefaultParameters = v;
-  }
-
-  private SnowflakeConnectString sfConnStr;
-
-  public void setSnowflakeConnectionString(SnowflakeConnectString connStr) {
-    sfConnStr = connStr;
-  }
-
-  public SnowflakeConnectString getSnowflakeConnectionString() {
-    return sfConnStr;
+  private DriverPropertyInfo addNewDriverProperty(String name, String description) {
+    DriverPropertyInfo info = new DriverPropertyInfo(name, null);
+    info.description = description;
+    return info;
   }
 }

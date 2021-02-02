@@ -50,7 +50,7 @@ public class SFResultSetMetaData {
   private Map<String, Integer> columnNameUpperCasePositionMap = new HashMap<>();
 
   // For creating incidents
-  private SFSession session;
+  private SFBaseSession session;
 
   // Date time formatter for calculating the display size
   private SnowflakeDateTimeFormat timestampNTZFormatter;
@@ -82,7 +82,7 @@ public class SFResultSetMetaData {
       List<String> columnNames,
       List<String> columnTypeNames,
       List<Integer> columnTypes,
-      SFSession session) {
+      SFBaseSession session) {
     this.columnCount = columnCount;
     this.columnNames = columnNames;
     this.columnTypeNames = columnTypeNames;
@@ -92,7 +92,7 @@ public class SFResultSetMetaData {
 
   public SFResultSetMetaData(
       List<SnowflakeColumnMetadata> columnMetadata,
-      SFSession session,
+      SFBaseSession session,
       SnowflakeDateTimeFormat timestampNTZFormatter,
       SnowflakeDateTimeFormat timestampLTZFormatter,
       SnowflakeDateTimeFormat timestampTZFormatter,
@@ -113,7 +113,7 @@ public class SFResultSetMetaData {
   public SFResultSetMetaData(
       List<SnowflakeColumnMetadata> columnMetadata,
       String queryId,
-      SFSession session,
+      SFBaseSession session,
       boolean isResultColumnCaseInsensitive,
       SnowflakeDateTimeFormat timestampNTZFormatter,
       SnowflakeDateTimeFormat timestampLTZFormatter,
@@ -299,7 +299,7 @@ public class SFResultSetMetaData {
    *
    * @return session object
    */
-  public SFSession getSession() {
+  public SFBaseSession getSession() {
     return session;
   }
 

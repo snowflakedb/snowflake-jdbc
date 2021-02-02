@@ -10,7 +10,7 @@ import java.text.DateFormat;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
-import net.snowflake.client.core.SFSession;
+import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.common.core.SFBinary;
 import net.snowflake.common.core.SqlState;
 
@@ -384,7 +384,7 @@ public enum SnowflakeType {
     }
   }
 
-  public static SnowflakeType javaTypeToSFType(int javaType, SFSession session)
+  public static SnowflakeType javaTypeToSFType(int javaType, SFBaseSession session)
       throws SnowflakeSQLException {
 
     switch (javaType) {

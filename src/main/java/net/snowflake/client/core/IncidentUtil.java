@@ -239,10 +239,10 @@ public class IncidentUtil {
    * @return the given Throwable object
    */
   public static Throwable generateIncidentV2WithException(
-      SFSession session, Throwable exc, String jobId, String requestId) {
+      SFBaseSession session, Throwable exc, String jobId, String requestId) {
     // Generate an incident only if the session exists.
     if (session != null) {
-      new Incident(session, exc, jobId, requestId).trigger();
+      session.raiseError(exc, jobId, requestId);
     }
     return exc;
   }
