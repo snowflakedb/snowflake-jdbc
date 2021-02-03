@@ -7,9 +7,9 @@ package net.snowflake.client.jdbc;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.List;
+import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SFResultSetMetaData;
-import net.snowflake.client.core.SFSession;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 
@@ -26,7 +26,7 @@ class SnowflakeResultSetMetaDataV1 implements ResultSetMetaData, SnowflakeResult
   private SFResultSetMetaData resultSetMetaData;
   private String queryId;
   private QueryType queryType = QueryType.SYNC;
-  private SFSession session;
+  private SFBaseSession session;
 
   SnowflakeResultSetMetaDataV1(SFResultSetMetaData resultSetMetaData) throws SnowflakeSQLException {
     this.resultSetMetaData = resultSetMetaData;

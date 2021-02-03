@@ -90,7 +90,7 @@ public class SFResultSet extends SFJsonResultSet {
     this(resultSetSerializable, statement.getSession().getTelemetryClient(), sortResult);
 
     this.statement = statement;
-    SFSession session = this.statement.getSession();
+    SFSession session = (SFSession) statement.getSession();
     session.setDatabase(resultSetSerializable.getFinalDatabaseName());
     session.setSchema(resultSetSerializable.getFinalSchemaName());
     session.setRole(resultSetSerializable.getFinalRoleName());
