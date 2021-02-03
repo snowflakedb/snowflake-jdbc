@@ -901,7 +901,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
     }
   }
 
-  public SFBaseStatement getStatementHandler() throws SQLException {
+  public SFBaseStatement getSFBaseStatement() throws SQLException {
     return sfBaseStatement;
   }
 

@@ -12,9 +12,9 @@ import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 
 /**
- * Base abstract class for an SFStatement implementation. Statements are used in both executing
- * queries, both in standard and prepared forms. They are accessed by users via the public API
- * class, SnowflakeStatementV(x).
+ * Base abstract class for an SFStatement implementation. Statements are used in executing queries,
+ * both in standard and prepared forms. They are accessed by users via the public API class,
+ * SnowflakeStatementV(x).
  */
 public abstract class SFBaseStatement {
   // maximum number of parameters for the statement; if this threshold is exceeded,
