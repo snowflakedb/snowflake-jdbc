@@ -135,6 +135,7 @@ public abstract class SFBaseStatement {
     }
   }
 
+  /** If this is a multi-statement, i.e., has child results. */
   public abstract boolean hasChildren();
 
   /** Returns the SFBaseSession associated with this SFBaseStatement. */
