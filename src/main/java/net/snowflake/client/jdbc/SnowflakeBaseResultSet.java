@@ -14,7 +14,7 @@ import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TimeZone;
-import net.snowflake.client.core.SFSession;
+import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SqlState;
@@ -31,7 +31,7 @@ abstract class SnowflakeBaseResultSet implements ResultSet {
   protected SnowflakeResultSetMetaDataV1 resultSetMetaData = null;
   protected Map<String, Object> parameters = new HashMap<>();
   private int fetchSize = 0;
-  protected SFSession session = null;
+  protected SFBaseSession session = null;
 
   SnowflakeBaseResultSet(Statement statement) throws SQLException {
     this.statement = statement;
@@ -39,7 +39,7 @@ abstract class SnowflakeBaseResultSet implements ResultSet {
     this.resultSetConcurrency = statement.getResultSetConcurrency();
     this.resultSetHoldability = statement.getResultSetHoldability();
     try {
-      this.session = statement.unwrap(SnowflakeStatementV1.class).connection.getSfSession();
+      this.session = statement.unwrap(SnowflakeStatementV1.class).connection.getSFBaseSession();
     } catch (SQLException e) {
       // This exception shouldn't be hit. Statement class should be able to be unwrapped.
       logger.error(
