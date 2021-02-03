@@ -62,10 +62,8 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
         return getInt(columnIndex);
 
       case Types.DECIMAL:
-        return getBigDecimal(columnIndex);
-
       case Types.BIGINT:
-        return getLong(columnIndex);
+        return getBigDecimal(columnIndex);
 
       case Types.DOUBLE:
         return getDouble(columnIndex);
