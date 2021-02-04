@@ -599,7 +599,7 @@ public class MockConnectionTest extends BaseJDBCTest {
     }
 
     @Override
-    public ResultSet createResultSet(String queryID, Connection connection) throws SQLException {
+    public ResultSet createResultSet(String queryID, Statement statement) throws SQLException {
       return null;
     }
 

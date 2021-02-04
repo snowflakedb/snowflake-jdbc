@@ -29,7 +29,7 @@ public interface SFConnectionHandler {
   SFBaseStatement getSFStatement() throws SQLException;
 
   /** Creates a result set from a query id. */
-  ResultSet createResultSet(String queryID, Connection connection) throws SQLException;
+  ResultSet createResultSet(String queryID, Statement statement) throws SQLException;
 
   /**
    * Creates a SnowflakeResultSet from a base SFBaseResultSet for this connection implementation.

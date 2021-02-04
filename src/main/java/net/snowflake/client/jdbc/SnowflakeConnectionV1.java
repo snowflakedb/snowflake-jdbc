@@ -166,7 +166,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
    */
   public ResultSet createResultSet(String queryID) throws SQLException {
     raiseSQLExceptionIfConnectionIsClosed();
-    ResultSet rs = sfConnectionHandler.createResultSet(queryID, this);
+    ResultSet rs = sfConnectionHandler.createResultSet(queryID, createStatement());
     return rs;
   }
 
