@@ -32,12 +32,7 @@ import net.snowflake.common.core.SqlState;
 import org.apache.http.client.methods.HttpRequestBase;
 
 /** Snowflake statement */
-public class SFStatement {
-  public enum CallingMethod {
-    EXECUTE,
-    EXECUTE_UPDATE,
-    EXECUTE_QUERY
-  }
+public class SFStatement extends SFBaseStatement {
 
   static final SFLogger logger = SFLoggerFactory.getLogger(SFStatement.class);
 
@@ -57,17 +52,9 @@ public class SFStatement {
 
   private final AtomicBoolean canceling = new AtomicBoolean(false);
 
-  // timeout in seconds
-  private int queryTimeout = 0;
-
   private boolean isFileTransfer = false;
 
   private SnowflakeFileTransferAgent transferAgent = null;
-
-  // statement level parameters
-  private final Map<String, Object> statementParametersMap = new HashMap<>();
-
-  private static final int MAX_STATEMENT_PARAMETERS = 1000;
 
   private static final int MAX_BINDING_PARAMS_FOR_LOGGING = 1000;
 
@@ -89,30 +76,6 @@ public class SFStatement {
     Integer queryTimeout = session == null ? null : session.getQueryTimeout();
     this.queryTimeout = queryTimeout != null ? queryTimeout : this.queryTimeout;
     verifyArrowSupport();
-  }
-
-  /**
-   * Add a statement parameter
-   *
-   * <p>Make sure a property is not added more than once and the number of properties does not
-   * exceed limit.
-   *
-   * @param propertyName property name
-   * @param propertyValue property value
-   * @throws SFException if too many parameters for a statement
-   */
-  public void addProperty(String propertyName, Object propertyValue) throws SFException {
-    statementParametersMap.put(propertyName, propertyValue);
-
-    // for query timeout, we implement it on client side for now
-    if ("query_timeout".equalsIgnoreCase(propertyName)) {
-      queryTimeout = (Integer) propertyValue;
-    }
-
-    // check if the number of session properties exceed limit
-    if (statementParametersMap.size() > MAX_STATEMENT_PARAMETERS) {
-      throw new SFException(ErrorCode.TOO_MANY_STATEMENT_PARAMETERS, MAX_STATEMENT_PARAMETERS);
-    }
   }
 
   private void verifyArrowSupport() {
@@ -182,6 +145,7 @@ public class SFStatement {
    * @throws SQLException if connection is already closed
    * @throws SFException if result set is null
    */
+  @Override
   public SFStatementMetaData describe(String sql) throws SFException, SQLException {
     SFBaseResultSet baseResultSet = executeQuery(sql, null, true, false, null);
 
@@ -664,6 +628,13 @@ public class SFStatement {
     return conservativeMemoryLimit;
   }
 
+  @Override
+  public SFBaseResultSet execute(
+      String sql, Map<String, ParameterBindingDTO> parametersBinding, CallingMethod caller)
+      throws SQLException, SFException {
+    return execute(sql, false, parametersBinding, caller);
+  }
+
   private void reauthenticate() throws SFException, SnowflakeSQLException {
     SFLoginInput input =
         new SFLoginInput()
@@ -793,6 +764,7 @@ public class SFStatement {
     }
   }
 
+  @Override
   public void close() {
     logger.debug("public void close()");
 
@@ -819,6 +791,7 @@ public class SFStatement {
     transferAgent = null;
   }
 
+  @Override
   public void cancel() throws SFException, SQLException {
     logger.debug("public void cancel()");
 
@@ -868,29 +841,8 @@ public class SFStatement {
     transferAgent = null;
   }
 
-  public void executeSetProperty(final String sql) {
-    logger.debug("setting property");
-
-    // tokenize the sql
-    String[] tokens = sql.split("\\s+");
-
-    if (tokens.length < 2) {
-      return;
-    }
-
-    if ("sort".equalsIgnoreCase(tokens[1])) {
-      if (tokens.length >= 3 && "on".equalsIgnoreCase(tokens[2])) {
-        logger.debug("setting sort on");
-
-        this.session.setSessionPropertyByKey("sort", true);
-      } else {
-        logger.debug("setting sort off");
-        this.session.setSessionPropertyByKey("sort", false);
-      }
-    }
-  }
-
-  public SFBaseSession getSession() {
+  @Override
+  public SFBaseSession getSFBaseSession() {
     return session;
   }
 
@@ -903,15 +855,7 @@ public class SFStatement {
     return getMoreResults(Statement.CLOSE_CURRENT_RESULT);
   }
 
-  /**
-   * Sets the result set to the next one, if available.
-   *
-   * @param current What to do with the current result. One of Statement.CLOSE_CURRENT_RESULT,
-   *     Statement.CLOSE_ALL_RESULTS, or Statement.KEEP_CURRENT_RESULT
-   * @return true if there is a next result and it's a result set false if there are no more
-   *     results, or there is a next result and it's an update count
-   * @throws SQLException if something fails while getting the next result
-   */
+  @Override
   public boolean getMoreResults(int current) throws SQLException {
     // clean up current result, if exists
     if (resultSet != null
@@ -942,14 +886,17 @@ public class SFStatement {
     }
   }
 
+  @Override
   public SFBaseResultSet getResultSet() {
     return resultSet;
   }
 
+  @Override
   public boolean hasChildren() {
     return !childResults.isEmpty();
   }
 
+  @Override
   public SFBaseResultSet asyncExecute(
       String sql, Map<String, ParameterBindingDTO> parametersBinding, CallingMethod caller)
       throws SQLException, SFException {
