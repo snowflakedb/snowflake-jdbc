@@ -155,18 +155,11 @@ public class DefaultSFConnectionHandler implements SFConnectionHandler {
     }
   }
 
-  /**
-   * Get an instance of a ResultSet object
-   *
-   * @param queryID
-   * @return
-   * @throws SQLException
-   */
   @Override
-  public ResultSet createResultSet(String queryID, Connection connection) throws SQLException {
+  public ResultSet createResultSet(String queryID, Statement statement) throws SQLException {
     SFAsyncResultSet rs = new SFAsyncResultSet(queryID);
     rs.setSession(sfSession);
-    rs.setStatement(connection.createStatement());
+    rs.setStatement(statement);
     return rs;
   }
 
