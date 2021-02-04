@@ -29,7 +29,7 @@ public interface SFConnectionHandler {
   SFBaseStatement getSFStatement() throws SQLException;
 
   /** Creates a result set from a query id. */
-  ResultSet createResultSet(String queryID, Connection connection) throws SQLException;
+  ResultSet createResultSet(String queryID, Statement statement) throws SQLException;
 
   /**
    * Creates a SnowflakeResultSet from a base SFBaseResultSet for this connection implementation.
@@ -43,4 +43,11 @@ public interface SFConnectionHandler {
    */
   SnowflakeBaseResultSet createAsyncResultSet(SFBaseResultSet resultSet, Statement statement)
       throws SQLException;
+
+  /**
+   * @param command The command to parse for this file transfer (e.g., PUT/GET)
+   * @param statement The statement to use for this file transfer
+   */
+  SFBaseFileTransferAgent getFileTransferAgent(String command, SFBaseStatement statement)
+      throws SQLNonTransientConnectionException, SnowflakeSQLException;
 }
