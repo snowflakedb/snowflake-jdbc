@@ -614,5 +614,11 @@ public class MockConnectionTest extends BaseJDBCTest {
         SFBaseResultSet resultSet, Statement statement) throws SQLException {
       return null;
     }
+
+    @Override
+    public SFBaseFileTransferAgent getFileTransferAgent(String command, SFBaseStatement statement)
+        throws SQLNonTransientConnectionException, SnowflakeSQLException {
+      return null;
+    }
   }
 }
