@@ -62,8 +62,10 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
         return getInt(columnIndex);
 
       case Types.DECIMAL:
-      case Types.BIGINT:
         return getBigDecimal(columnIndex);
+
+      case Types.BIGINT:
+        return getBigInt(columnIndex);
 
       case Types.DOUBLE:
         return getDouble(columnIndex);
@@ -88,6 +90,24 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
                 null,
                 null);
     }
+  }
+
+  /**
+   * Sometimes large BIGINTS overflow the java Long type. In these cases, return a BigDecimal type
+   * instead.
+   *
+   * @param columnIndex the column index
+   * @return an object of type long or BigDecimal depending on number size
+   * @throws SFException
+   */
+  private Object getBigInt(int columnIndex) throws SFException {
+    BigDecimal bigNum = getBigDecimal(columnIndex);
+    BigDecimal MAX_LONG_VAL = new BigDecimal(Long.MAX_VALUE);
+    BigDecimal MIN_LONG_VAL = new BigDecimal(Long.MIN_VALUE);
+    if (bigNum.compareTo(MAX_LONG_VAL) == 1 || bigNum.compareTo(MIN_LONG_VAL) == -1) {
+      return bigNum;
+    }
+    return getLong(columnIndex);
   }
 
   @Override

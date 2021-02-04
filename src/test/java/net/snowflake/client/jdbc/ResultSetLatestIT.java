@@ -357,6 +357,7 @@ public class ResultSetLatestIT extends ResultSet0IT {
   public void testGetObjectWithBigInt() throws SQLException {
     Connection connection = init();
     Statement statement = connection.createStatement();
+    statement.execute("alter session set jdbc_query_result_format ='json'");
     // test with greatest possible number and greatest negative possible number
     String[] extremeNumbers = {
       "99999999999999999999999999999999999999", "-99999999999999999999999999999999999999"
