@@ -48,7 +48,7 @@ import org.apache.commons.io.filefilter.WildcardFileFilter;
  *
  * @author jhuang
  */
-public class SnowflakeFileTransferAgent implements SnowflakeFixedView {
+public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
   static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeFileTransferAgent.class);
 
   static final StorageClientFactory storageFactory = StorageClientFactory.getFactory();
@@ -62,10 +62,10 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView {
 
   private static final String FILE_PROTOCOL = "file://";
 
-  private static String localFSFileSep = systemGetProperty("file.separator");
-  private static int DEFAULT_PARALLEL = 10;
+  private static final String localFSFileSep = systemGetProperty("file.separator");
+  private static final int DEFAULT_PARALLEL = 10;
 
-  private String command;
+  private final String command;
 
   // list of files specified. Wildcard should be expanded already for uploading
   // For downloading, it the list of stage file names
@@ -97,12 +97,6 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView {
 
   private SFSession session;
   private SFStatement statement;
-
-  private InputStream sourceStream;
-  private boolean sourceFromStream;
-  private boolean compressSourceFromStream;
-
-  private String destFileNameForStreamSource;
 
   public StageInfo getStageInfo() {
     return this.stageInfo;
@@ -183,11 +177,6 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView {
         presignedUrls = Arrays.asList(mapper.readValue(rootNode.toString(), String[].class));
       }
     }
-  }
-
-  public enum CommandType {
-    UPLOAD,
-    DOWNLOAD
   }
 
   private CommandType commandType = CommandType.UPLOAD;
@@ -1287,6 +1276,7 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView {
     return result;
   }
 
+  @Override
   public boolean execute() throws SQLException {
     try {
       logger.debug("Start init metadata");
@@ -1411,7 +1401,8 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView {
   }
 
   /** Download a file from remote, and return an input stream */
-  InputStream downloadStream(String fileName) throws SnowflakeSQLException {
+  @Override
+  public InputStream downloadStream(String fileName) throws SnowflakeSQLException {
     if (stageInfo.getStageType() == StageInfo.StageType.LOCAL_FS) {
       logger.error("downloadStream function doesn't support local file system");
 
@@ -2964,19 +2955,6 @@ public class SnowflakeFileTransferAgent implements SnowflakeFixedView {
 
   public CommandType getCommandType() {
     return commandType;
-  }
-
-  public void setSourceStream(InputStream sourceStream) {
-    this.sourceStream = sourceStream;
-    this.sourceFromStream = true;
-  }
-
-  public void setDestFileNameForStreamSource(String destFileNameForStreamSource) {
-    this.destFileNameForStreamSource = destFileNameForStreamSource;
-  }
-
-  public void setCompressSourceFromStream(boolean compressSourceFromStream) {
-    this.compressSourceFromStream = compressSourceFromStream;
   }
 
   /*

@@ -4,10 +4,7 @@ import static net.snowflake.client.core.SessionUtil.CLIENT_SFSQL;
 import static net.snowflake.client.core.SessionUtil.JVM_PARAMS_TO_PARAMS;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 import java.util.Map;
 import java.util.Properties;
 import net.snowflake.client.core.*;
@@ -183,5 +180,15 @@ public class DefaultSFConnectionHandler implements SFConnectionHandler {
   public SnowflakeBaseResultSet createAsyncResultSet(SFBaseResultSet resultSet, Statement statement)
       throws SQLException {
     return new SFAsyncResultSet(resultSet, statement);
+  }
+
+  @Override
+  public SFBaseFileTransferAgent getFileTransferAgent(String command, SFBaseStatement statement)
+      throws SQLNonTransientConnectionException, SnowflakeSQLException {
+    if (!(statement instanceof SFStatement)) {
+      throw new SnowflakeSQLException(
+          "getFileTransferAgent() called with an incompatible SFBaseStatement type. Requires an SFStatement.");
+    }
+    return new SnowflakeFileTransferAgent(command, sfSession, (SFStatement) statement);
   }
 }
