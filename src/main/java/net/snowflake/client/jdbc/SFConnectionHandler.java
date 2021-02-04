@@ -43,4 +43,11 @@ public interface SFConnectionHandler {
    */
   SnowflakeBaseResultSet createAsyncResultSet(SFBaseResultSet resultSet, Statement statement)
       throws SQLException;
+
+  /**
+   * @param command The command to parse for this file transfer (e.g., PUT/GET)
+   * @param statement The statement to use for this file transfer
+   */
+  SFBaseFileTransferAgent getFileTransferAgent(String command, SFBaseStatement statement)
+      throws SQLNonTransientConnectionException, SnowflakeSQLException;
 }

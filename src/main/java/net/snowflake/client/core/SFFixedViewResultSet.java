@@ -7,7 +7,7 @@ package net.snowflake.client.core;
 import java.sql.SQLException;
 import java.util.List;
 import net.snowflake.client.jdbc.*;
-import net.snowflake.client.jdbc.SnowflakeFileTransferAgent.CommandType;
+import net.snowflake.client.jdbc.SFBaseFileTransferAgent.CommandType;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SqlState;
@@ -116,7 +116,7 @@ public class SFFixedViewResultSet extends SFJsonResultSet {
 
   @Override
   public SFStatementType getStatementType() {
-    if (this.commandType == CommandType.DOWNLOAD) {
+    if (this.commandType == SFBaseFileTransferAgent.CommandType.DOWNLOAD) {
       return SFStatementType.GET;
     } else {
       return SFStatementType.PUT;
