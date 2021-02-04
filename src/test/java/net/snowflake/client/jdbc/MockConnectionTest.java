@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import java.io.InputStream;
 import java.sql.*;
 import java.util.*;
 import net.snowflake.client.category.TestCategoryConnection;
@@ -568,6 +569,19 @@ public class MockConnectionTest extends BaseJDBCTest {
 
     @Override
     public void clearSqlWarnings() {}
+  }
+
+  private static class MockSFFileTransferAgent extends SFBaseFileTransferAgent {
+
+    @Override
+    public boolean execute() throws SQLException {
+      return false;
+    }
+
+    @Override
+    public InputStream downloadStream(String fileName) throws SnowflakeSQLException {
+      return null;
+    }
   }
 
   private static class MockSnowflakeConnectionImpl implements SFConnectionHandler {
