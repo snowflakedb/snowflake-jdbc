@@ -36,7 +36,6 @@ import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.FileCompressionType;
 import net.snowflake.common.core.RemoteStoreFileEncryptionMaterial;
 import net.snowflake.common.core.SqlState;
-import net.snowflake.common.util.ClassUtil;
 import net.snowflake.common.util.FixedViewColumn;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
@@ -89,8 +88,6 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
 
   // local location for where to download files to
   private String localLocation;
-
-  private boolean showEncryptionParameter;
 
   // default parallelism
   private int parallel = DEFAULT_PARALLEL;
@@ -179,13 +176,9 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
     }
   }
 
-  private CommandType commandType = CommandType.UPLOAD;
-
   private boolean autoCompress = true;
 
   private boolean overwrite = false;
-  private int currentRowIndex;
-  private List<Object> statusRows;
 
   private SnowflakeStorageClient storageClient = null;
 
@@ -819,7 +812,6 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
     this.command = command;
     this.session = session;
     this.statement = statement;
-    this.statusRows = new ArrayList<>();
 
     // parse the command
     logger.debug("Start parsing");
@@ -2824,42 +2816,6 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
     return new remoteLocation(location, path);
   }
 
-  /**
-   * Describe the metadata of a fixed view.
-   *
-   * @return list of column meta data
-   * @throws Exception failed to construct list
-   */
-  @Override
-  public List<SnowflakeColumnMetadata> describeColumns(SFBaseSession session) throws Exception {
-    return SnowflakeUtil.describeFixedViewColumns(
-        commandType == CommandType.UPLOAD
-            ? (showEncryptionParameter
-                ? UploadCommandEncryptionFacade.class
-                : UploadCommandFacade.class)
-            : (showEncryptionParameter
-                ? DownloadCommandEncryptionFacade.class
-                : DownloadCommandFacade.class),
-        session);
-  }
-
-  @Override
-  public List<Object> getNextRow() throws Exception {
-    if (currentRowIndex < statusRows.size()) {
-      return ClassUtil.getFixedViewObjectAsRow(
-          commandType == CommandType.UPLOAD
-              ? (showEncryptionParameter
-                  ? UploadCommandEncryptionFacade.class
-                  : UploadCommandFacade.class)
-              : (showEncryptionParameter
-                  ? DownloadCommandEncryptionFacade.class
-                  : DownloadCommandFacade.class),
-          statusRows.get(currentRowIndex++));
-    } else {
-      return null;
-    }
-  }
-
   /** Generate status rows for each file */
   private void populateStatusRows() {
     for (Map.Entry<String, FileMetadata> entry : fileMetadataMap.entrySet()) {
@@ -2986,10 +2942,5 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
     }
     throw new SnowflakeSQLException(
         ex, SqlState.SYSTEM_ERROR, ErrorCode.AWS_CLIENT_ERROR.getMessageCode(), operation, msg);
-  }
-
-  @Override
-  public int getTotalRows() {
-    return statusRows.size();
   }
 }
