@@ -87,10 +87,10 @@ public class SFResultSet extends SFJsonResultSet {
       SFStatement statement,
       boolean sortResult)
       throws SQLException {
-    this(resultSetSerializable, statement.getSession().getTelemetryClient(), sortResult);
+    this(resultSetSerializable, statement.getSFBaseSession().getTelemetryClient(), sortResult);
 
     this.statement = statement;
-    SFSession session = (SFSession) statement.getSession();
+    SFSession session = (SFSession) statement.getSFBaseSession();
     session.setDatabase(resultSetSerializable.getFinalDatabaseName());
     session.setSchema(resultSetSerializable.getFinalSchemaName());
     session.setRole(resultSetSerializable.getFinalRoleName());
@@ -99,7 +99,7 @@ public class SFResultSet extends SFJsonResultSet {
     this.formatDateWithTimezone = resultSetSerializable.getFormatDateWithTimeZone();
 
     // update the driver/session with common parameters from GS
-    SessionUtil.updateSfDriverParamValues(this.parameters, statement.getSession());
+    SessionUtil.updateSfDriverParamValues(this.parameters, statement.getSFBaseSession());
 
     // if server gives a send time, log time it took to arrive
     if (resultSetSerializable.getSendResultTime() != 0) {

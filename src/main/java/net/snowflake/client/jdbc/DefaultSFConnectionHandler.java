@@ -88,6 +88,12 @@ public class DefaultSFConnectionHandler implements SFConnectionHandler {
     return sfSession;
   }
 
+  /** Returns the default SFStatement client implementation. */
+  @Override
+  public SFBaseStatement getSFStatement() {
+    return new SFStatement(sfSession);
+  }
+
   private void initialize(SnowflakeConnectString conStr) throws SQLException {
     logger.debug(
         "Trying to establish session, JDBC driver version: {}", SnowflakeDriver.implementVersion);
