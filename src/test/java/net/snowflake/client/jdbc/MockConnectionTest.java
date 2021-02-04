@@ -224,7 +224,7 @@ public class MockConnectionTest extends BaseJDBCTest {
                 + "   \"success\":true\n"
                 + "}");
 
-    MockSnowflakeConnectionImpl mockImpl = new MockSnowflakeConnectionImpl(rawResponse);
+    SFConnectionHandler mockImpl = new MockSnowflakeConnectionImpl(rawResponse);
     Connection mockConnection = initMockConnection(mockImpl);
 
     ResultSet fakeResultSet =
@@ -250,7 +250,7 @@ public class MockConnectionTest extends BaseJDBCTest {
 
     JsonNode responseWithRows = createDummyResponseWithRows(rowsToTest, dataTypes);
 
-    MockSnowflakeConnectionImpl mockImpl = new MockSnowflakeConnectionImpl(responseWithRows);
+    SFConnectionHandler mockImpl = new MockSnowflakeConnectionImpl(responseWithRows);
     Connection mockConnection = initMockConnection(mockImpl);
 
     ResultSet fakeResultSet =
@@ -297,7 +297,7 @@ public class MockConnectionTest extends BaseJDBCTest {
   /** Tests the MockFileTransferInterface with PUT/GET on random byte arrays. */
   @Test
   public void testMockTransferAgent() throws SQLException, IOException {
-    MockSnowflakeConnectionImpl mockImpl = new MockSnowflakeConnectionImpl();
+    SFConnectionHandler mockImpl = new MockSnowflakeConnectionImpl();
     SnowflakeConnection mockConnection =
         initMockConnection(mockImpl).unwrap(SnowflakeConnectionV1.class);
 
