@@ -761,6 +761,7 @@ public class SFSession extends SFBaseSession {
     this.enableCombineDescribe = enable;
   }
 
+  @Override
   public synchronized Telemetry getTelemetryClient() {
     // initialize for the first time. this should only be done after session
     // properties have been set, else the client won't properly resolve the URL.

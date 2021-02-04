@@ -4,6 +4,7 @@ import java.sql.*;
 import java.util.Properties;
 import net.snowflake.client.core.SFBaseResultSet;
 import net.snowflake.client.core.SFBaseSession;
+import net.snowflake.client.core.SFBaseStatement;
 
 /**
  * Class that presents the implementation of a Snowflake Connection. This allows for alternate
@@ -21,8 +22,11 @@ public interface SFConnectionHandler {
   /** Initializes the SnowflakeConnection */
   void initializeConnection(String url, Properties info) throws SQLException;
 
-  /** Gets the SFSessionInterface implementation for this connection implementation */
+  /** Gets the SFBaseSession implementation for this connection implementation */
   SFBaseSession getSFSession();
+
+  /** Returns the SFStatementInterface implementation for this connection implementation */
+  SFBaseStatement getSFStatement() throws SQLException;
 
   /** Creates a result set from a query id. */
   ResultSet createResultSet(String queryID, Connection connection) throws SQLException;
