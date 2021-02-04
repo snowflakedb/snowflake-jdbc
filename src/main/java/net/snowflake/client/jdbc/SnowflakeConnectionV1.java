@@ -862,8 +862,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
 
     putCommand.append(" overwrite=true");
 
-    SFBaseFileTransferAgent transferAgent;
-    transferAgent =
+    SFBaseFileTransferAgent transferAgent =
         sfConnectionHandler.getFileTransferAgent(putCommand.toString(), stmt.getSFBaseStatement());
     transferAgent.setSourceStream(inputStream);
     transferAgent.setDestFileNameForStreamSource(destFileName);
