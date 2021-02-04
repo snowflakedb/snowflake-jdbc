@@ -688,8 +688,7 @@ public class MockConnectionTest extends BaseJDBCTest {
           command.substring(0, 3).equalsIgnoreCase("PUT")
               ? SFBaseFileTransferAgent.CommandType.UPLOAD
               : SFBaseFileTransferAgent.CommandType.DOWNLOAD;
-      String fileName = command.substring(4); // strip the PUT/GET
-      return new MockSFFileTransferAgent(fileMap, fileName, commandType);
+      return new MockSFFileTransferAgent(fileMap, "fileName", commandType);
     }
   }
 }
