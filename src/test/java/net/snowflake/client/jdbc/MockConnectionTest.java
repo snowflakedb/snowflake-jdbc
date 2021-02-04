@@ -1,13 +1,15 @@
 package net.snowflake.client.jdbc;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.*;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.sql.*;
 import java.util.*;
 import net.snowflake.client.category.TestCategoryConnection;
@@ -222,7 +224,7 @@ public class MockConnectionTest extends BaseJDBCTest {
                 + "   \"success\":true\n"
                 + "}");
 
-    MockSnowflakeConnectionImpl mockImpl = new MockSnowflakeConnectionImpl(rawResponse);
+    SFConnectionHandler mockImpl = new MockSnowflakeConnectionImpl(rawResponse);
     Connection mockConnection = initMockConnection(mockImpl);
 
     ResultSet fakeResultSet =
@@ -248,7 +250,7 @@ public class MockConnectionTest extends BaseJDBCTest {
 
     JsonNode responseWithRows = createDummyResponseWithRows(rowsToTest, dataTypes);
 
-    MockSnowflakeConnectionImpl mockImpl = new MockSnowflakeConnectionImpl(responseWithRows);
+    SFConnectionHandler mockImpl = new MockSnowflakeConnectionImpl(responseWithRows);
     Connection mockConnection = initMockConnection(mockImpl);
 
     ResultSet fakeResultSet =
@@ -290,6 +292,23 @@ public class MockConnectionTest extends BaseJDBCTest {
     compareResultSets(fakeResultSet, rowsToTest, dataTypes);
 
     mockConnection.close();
+  }
+
+  /** Tests the MockFileTransferInterface with PUT/GET on random byte arrays. */
+  @Test
+  public void testMockTransferAgent() throws SQLException, IOException {
+    SFConnectionHandler mockImpl = new MockSnowflakeConnectionImpl();
+    SnowflakeConnection mockConnection =
+        initMockConnection(mockImpl).unwrap(SnowflakeConnectionV1.class);
+
+    byte[] inputBytes1 = new byte[] {0, 1, 2};
+    InputStream uploadStream1 = new ByteArrayInputStream(inputBytes1);
+    mockConnection.uploadStream("@fakeStage", "", uploadStream1, "file1", false);
+
+    InputStream downloadStream1 = mockConnection.downloadStream("@fakeStage", "file1", false);
+    byte[] outputBytes1 = new byte[downloadStream1.available()];
+    downloadStream1.read(outputBytes1);
+    assertArrayEquals("downloaded bytes not what was expected", outputBytes1, inputBytes1);
   }
 
   private JsonNode createDummyResponseWithRows(List<List<Object>> rows, List<DataType> dataTypes) {
@@ -570,14 +589,61 @@ public class MockConnectionTest extends BaseJDBCTest {
     public void clearSqlWarnings() {}
   }
 
-  private static class MockSnowflakeConnectionImpl implements SFConnectionHandler {
+  private static class MockSFFileTransferAgent extends SFBaseFileTransferAgent {
 
+    private final String filePath;
+    private final Map<String, byte[]> fileMap;
+
+    // Takes the entire command, PUT and all, and encodes it in the file path
+    // We could strip the GET/PUT in front of things, but
+    public MockSFFileTransferAgent(
+        Map<String, byte[]> fileMap, String filePath, CommandType commandType) {
+      this.filePath = filePath;
+      this.fileMap = fileMap;
+      this.commandType = commandType;
+    }
+
+    @Override
+    public boolean execute() throws SQLException {
+      // Uploads a ByteArrayInputStream with available() bytes
+      // to the fake "file store" represented by the Map
+      if (commandType == CommandType.UPLOAD) {
+        try {
+          byte[] fileBytes = new byte[sourceStream.available()];
+          sourceStream.read(fileBytes);
+          // string-parsing logic skipped, so we use a dummy key for now
+          fileMap.put("fileName", fileBytes);
+        } catch (IOException e) {
+          e.printStackTrace();
+        }
+      }
+      return false;
+    }
+
+    @Override
+    public InputStream downloadStream(String fileName) throws SnowflakeSQLException {
+      if (commandType == CommandType.DOWNLOAD) {
+        // string-parsing logic skipped, so we use a dummy key for now
+        byte[] bytes = fileMap.get("fileName");
+        return new ByteArrayInputStream(bytes);
+      }
+      return null;
+    }
+  }
+
+  private static class MockSnowflakeConnectionImpl implements SFConnectionHandler {
     JsonNode jsonResponse;
     MockSnowflakeSFSession session;
+    // Map to store the bytes that are "uploaded"
+    private Map<String, byte[]> fileMap = new HashMap<>();
+
+    public MockSnowflakeConnectionImpl() {
+      this.session = new MockSnowflakeSFSession();
+    }
 
     public MockSnowflakeConnectionImpl(JsonNode jsonResponse) {
+      this();
       this.jsonResponse = jsonResponse;
-      this.session = new MockSnowflakeSFSession();
     }
 
     @Override
@@ -599,7 +665,7 @@ public class MockConnectionTest extends BaseJDBCTest {
     }
 
     @Override
-    public ResultSet createResultSet(String queryID, Connection connection) throws SQLException {
+    public ResultSet createResultSet(String queryID, Statement statement) throws SQLException {
       return null;
     }
 
@@ -613,6 +679,16 @@ public class MockConnectionTest extends BaseJDBCTest {
     public SnowflakeBaseResultSet createAsyncResultSet(
         SFBaseResultSet resultSet, Statement statement) throws SQLException {
       return null;
+    }
+
+    @Override
+    public SFBaseFileTransferAgent getFileTransferAgent(String command, SFBaseStatement statement)
+        throws SQLNonTransientConnectionException, SnowflakeSQLException {
+      SFBaseFileTransferAgent.CommandType commandType =
+          command.substring(0, 3).equalsIgnoreCase("PUT")
+              ? SFBaseFileTransferAgent.CommandType.UPLOAD
+              : SFBaseFileTransferAgent.CommandType.DOWNLOAD;
+      return new MockSFFileTransferAgent(fileMap, "fileName", commandType);
     }
   }
 }

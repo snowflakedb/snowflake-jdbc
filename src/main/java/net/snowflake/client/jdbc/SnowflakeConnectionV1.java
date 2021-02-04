@@ -61,12 +61,6 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
   private boolean showStatementParameters;
 
   /**
-   * Temporary boolean to detect whether we are using the DefaultConnectionHandler while different
-   * interfaces are in the process of being merged in.
-   */
-  private boolean isUsingDefaultConnectionHandler;
-
-  /**
    * Instantiates a SnowflakeConnectionV1 with the passed-in SnowflakeConnectionImpl.
    *
    * @param sfConnectionHandler The SnowflakeConnectionImpl.
@@ -118,9 +112,6 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
 
   private void initConnectionWithImpl(
       SFConnectionHandler sfConnectionHandler, String url, Properties info) throws SQLException {
-
-    this.isUsingDefaultConnectionHandler =
-        sfConnectionHandler instanceof DefaultSFConnectionHandler;
     this.sfConnectionHandler = sfConnectionHandler;
     sfConnectionHandler.initializeConnection(url, info);
     this.sfSession = sfConnectionHandler.getSFSession();
@@ -175,7 +166,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
    */
   public ResultSet createResultSet(String queryID) throws SQLException {
     raiseSQLExceptionIfConnectionIsClosed();
-    ResultSet rs = sfConnectionHandler.createResultSet(queryID, this);
+    ResultSet rs = sfConnectionHandler.createResultSet(queryID, createStatement());
     return rs;
   }
 
@@ -826,66 +817,59 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
       String destFileName,
       boolean compressData)
       throws SQLException {
-    if (isUsingDefaultConnectionHandler) {
-      logger.debug(
-          "upload data from stream: stageName={}" + ", destPrefix={}, destFileName={}",
-          stageName,
-          destPrefix,
-          destFileName);
+    logger.debug(
+        "upload data from stream: stageName={}" + ", destPrefix={}, destFileName={}",
+        stageName,
+        destPrefix,
+        destFileName);
 
-      if (stageName == null) {
-        throw new SnowflakeSQLLoggedException(
-            sfSession,
-            ErrorCode.INTERNAL_ERROR.getMessageCode(),
-            SqlState.INTERNAL_ERROR,
-            "stage name is null");
-      }
-
-      if (destFileName == null) {
-        throw new SnowflakeSQLLoggedException(
-            sfSession,
-            ErrorCode.INTERNAL_ERROR.getMessageCode(),
-            SqlState.INTERNAL_ERROR,
-            "stage name is null");
-      }
-
-      SnowflakeStatementV1 stmt = this.createStatement().unwrap(SnowflakeStatementV1.class);
-
-      StringBuilder putCommand = new StringBuilder();
-
-      // use a placeholder for source file
-      putCommand.append("put file:///tmp/placeholder ");
-
-      // add stage name
-      if (!(stageName.startsWith("@")
-          || stageName.startsWith("'@")
-          || stageName.startsWith("$$@"))) {
-        putCommand.append("@");
-      }
-      putCommand.append(stageName);
-
-      // add dest prefix
-      if (destPrefix != null) {
-        if (!destPrefix.startsWith("/")) {
-          putCommand.append("/");
-        }
-        putCommand.append(destPrefix);
-      }
-
-      putCommand.append(" overwrite=true");
-
-      SnowflakeFileTransferAgent transferAgent =
-          new SnowflakeFileTransferAgent(
-              putCommand.toString(), (SFSession) sfSession, stmt.getSfStatement());
-      transferAgent.setSourceStream(inputStream);
-      transferAgent.setDestFileNameForStreamSource(destFileName);
-      transferAgent.setCompressSourceFromStream(compressData);
-      transferAgent.execute();
-
-      stmt.close();
-    } else {
-      throw new SnowflakeLoggedFeatureNotSupportedException(sfSession);
+    if (stageName == null) {
+      throw new SnowflakeSQLLoggedException(
+          sfSession,
+          ErrorCode.INTERNAL_ERROR.getMessageCode(),
+          SqlState.INTERNAL_ERROR,
+          "stage name is null");
     }
+
+    if (destFileName == null) {
+      throw new SnowflakeSQLLoggedException(
+          sfSession,
+          ErrorCode.INTERNAL_ERROR.getMessageCode(),
+          SqlState.INTERNAL_ERROR,
+          "stage name is null");
+    }
+
+    SnowflakeStatementV1 stmt = this.createStatement().unwrap(SnowflakeStatementV1.class);
+
+    StringBuilder putCommand = new StringBuilder();
+
+    // use a placeholder for source file
+    putCommand.append("put file:///tmp/placeholder ");
+
+    // add stage name
+    if (!(stageName.startsWith("@") || stageName.startsWith("'@") || stageName.startsWith("$$@"))) {
+      putCommand.append("@");
+    }
+    putCommand.append(stageName);
+
+    // add dest prefix
+    if (destPrefix != null) {
+      if (!destPrefix.startsWith("/")) {
+        putCommand.append("/");
+      }
+      putCommand.append(destPrefix);
+    }
+
+    putCommand.append(" overwrite=true");
+
+    SFBaseFileTransferAgent transferAgent =
+        sfConnectionHandler.getFileTransferAgent(putCommand.toString(), stmt.getSFBaseStatement());
+    transferAgent.setSourceStream(inputStream);
+    transferAgent.setDestFileNameForStreamSource(destFileName);
+    transferAgent.setCompressSourceFromStream(compressData);
+    transferAgent.execute();
+
+    stmt.close();
   }
 
   /**
@@ -900,78 +884,71 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
   public InputStream downloadStream(String stageName, String sourceFileName, boolean decompress)
       throws SQLException {
 
-    if (isUsingDefaultConnectionHandler) {
-      logger.debug(
-          "download data to stream: stageName={}" + ", sourceFileName={}",
-          stageName,
-          sourceFileName);
+    logger.debug(
+        "download data to stream: stageName={}" + ", sourceFileName={}", stageName, sourceFileName);
 
-      if (Strings.isNullOrEmpty(stageName)) {
+    if (Strings.isNullOrEmpty(stageName)) {
+      throw new SnowflakeSQLLoggedException(
+          sfSession,
+          ErrorCode.INTERNAL_ERROR.getMessageCode(),
+          SqlState.INTERNAL_ERROR,
+          "stage name is null or empty");
+    }
+
+    if (Strings.isNullOrEmpty(sourceFileName)) {
+      throw new SnowflakeSQLLoggedException(
+          sfSession,
+          ErrorCode.INTERNAL_ERROR.getMessageCode(),
+          SqlState.INTERNAL_ERROR,
+          "source file name is null or empty");
+    }
+
+    SnowflakeStatementV1 stmt =
+        new SnowflakeStatementV1(
+            this,
+            ResultSet.TYPE_FORWARD_ONLY,
+            ResultSet.CONCUR_READ_ONLY,
+            ResultSet.CLOSE_CURSORS_AT_COMMIT);
+
+    StringBuilder getCommand = new StringBuilder();
+
+    getCommand.append("get ");
+
+    if (!stageName.startsWith("@")) {
+      getCommand.append("@");
+    }
+
+    getCommand.append(stageName);
+
+    getCommand.append("/");
+
+    if (sourceFileName.startsWith("/")) {
+      sourceFileName = sourceFileName.substring(1);
+    }
+
+    getCommand.append(sourceFileName);
+
+    // this is a fake path, used to form Get query and retrieve stage info,
+    // no file will be downloaded to this location
+    getCommand.append(" file:///tmp/ /*jdbc download stream*/");
+
+    SFBaseFileTransferAgent transferAgent =
+        sfConnectionHandler.getFileTransferAgent(getCommand.toString(), stmt.getSFBaseStatement());
+
+    InputStream stream = transferAgent.downloadStream(sourceFileName);
+
+    if (decompress) {
+      try {
+        return new GZIPInputStream(stream);
+      } catch (IOException ex) {
         throw new SnowflakeSQLLoggedException(
             sfSession,
             ErrorCode.INTERNAL_ERROR.getMessageCode(),
             SqlState.INTERNAL_ERROR,
-            "stage name is null or empty");
-      }
-
-      if (Strings.isNullOrEmpty(sourceFileName)) {
-        throw new SnowflakeSQLLoggedException(
-            sfSession,
-            ErrorCode.INTERNAL_ERROR.getMessageCode(),
-            SqlState.INTERNAL_ERROR,
-            "source file name is null or empty");
-      }
-
-      SnowflakeStatementV1 stmt =
-          new SnowflakeStatementV1(
-              this,
-              ResultSet.TYPE_FORWARD_ONLY,
-              ResultSet.CONCUR_READ_ONLY,
-              ResultSet.CLOSE_CURSORS_AT_COMMIT);
-
-      StringBuilder getCommand = new StringBuilder();
-
-      getCommand.append("get ");
-
-      if (!stageName.startsWith("@")) {
-        getCommand.append("@");
-      }
-
-      getCommand.append(stageName);
-
-      getCommand.append("/");
-
-      if (sourceFileName.startsWith("/")) {
-        sourceFileName = sourceFileName.substring(1);
-      }
-
-      getCommand.append(sourceFileName);
-
-      // this is a fake path, used to form Get query and retrieve stage info,
-      // no file will be downloaded to this location
-      getCommand.append(" file:///tmp/ /*jdbc download stream*/");
-
-      SnowflakeFileTransferAgent transferAgent =
-          new SnowflakeFileTransferAgent(
-              getCommand.toString(), (SFSession) sfSession, stmt.getSfStatement());
-
-      InputStream stream = transferAgent.downloadStream(sourceFileName);
-
-      if (decompress) {
-        try {
-          return new GZIPInputStream(stream);
-        } catch (IOException ex) {
-          throw new SnowflakeSQLLoggedException(
-              sfSession,
-              ErrorCode.INTERNAL_ERROR.getMessageCode(),
-              SqlState.INTERNAL_ERROR,
-              ex.getMessage());
-        }
-      } else {
-        return stream;
+            ex.getMessage());
       }
     } else {
-      throw new SnowflakeLoggedFeatureNotSupportedException(sfSession);
+      return stream;
     }
   }
 
