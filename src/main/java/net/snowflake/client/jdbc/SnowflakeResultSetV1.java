@@ -18,7 +18,8 @@ import net.snowflake.client.core.SFBaseResultSet;
 import net.snowflake.client.core.SFException;
 
 /** Snowflake ResultSet implementation */
-class SnowflakeResultSetV1 extends SnowflakeBaseResultSet implements SnowflakeResultSet, ResultSet {
+public class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
+    implements SnowflakeResultSet, ResultSet {
   private final SFBaseResultSet sfBaseResultSet;
 
   /**
