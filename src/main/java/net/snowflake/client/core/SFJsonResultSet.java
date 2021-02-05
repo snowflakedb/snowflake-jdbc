@@ -32,6 +32,12 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
 
   TimeZone timeZone;
 
+  // Precision of maximum long value in Java (2^63-1). Precision is 19
+  private static final int LONG_PRECISION = 19;
+
+  BigDecimal MAX_LONG_VAL = new BigDecimal(Long.MAX_VALUE);
+  BigDecimal MIN_LONG_VAL = new BigDecimal(Long.MIN_VALUE);
+
   /**
    * Given a column index, get current row's value as an object
    *
@@ -65,7 +71,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
         return getBigDecimal(columnIndex);
 
       case Types.BIGINT:
-        return getBigInt(columnIndex);
+        return getBigInt(columnIndex, obj);
 
       case Types.DOUBLE:
         return getDouble(columnIndex);
@@ -100,12 +106,15 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
    * @return an object of type long or BigDecimal depending on number size
    * @throws SFException
    */
-  private Object getBigInt(int columnIndex) throws SFException {
-    BigDecimal bigNum = getBigDecimal(columnIndex);
-    BigDecimal MAX_LONG_VAL = new BigDecimal(Long.MAX_VALUE);
-    BigDecimal MIN_LONG_VAL = new BigDecimal(Long.MIN_VALUE);
-    if (bigNum.compareTo(MAX_LONG_VAL) == 1 || bigNum.compareTo(MIN_LONG_VAL) == -1) {
-      return bigNum;
+  private Object getBigInt(int columnIndex, Object obj) throws SFException {
+    // If precision is < precision of max long precision, we can automatically convert to long.
+    // Otherwise, do a check to ensure it doesn't overflow max long value.
+    String numberAsString = obj.toString();
+    if (numberAsString.length() >= LONG_PRECISION) {
+      BigDecimal bigNum = getBigDecimal(columnIndex);
+      if (bigNum.compareTo(MAX_LONG_VAL) == 1 || bigNum.compareTo(MIN_LONG_VAL) == -1) {
+        return bigNum;
+      }
     }
     return getLong(columnIndex);
   }
