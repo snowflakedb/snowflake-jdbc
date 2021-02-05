@@ -35,8 +35,8 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
   // Precision of maximum long value in Java (2^63-1). Precision is 19
   private static final int LONG_PRECISION = 19;
 
-  BigDecimal MAX_LONG_VAL = new BigDecimal(Long.MAX_VALUE);
-  BigDecimal MIN_LONG_VAL = new BigDecimal(Long.MIN_VALUE);
+  private static final BigDecimal MAX_LONG_VAL = new BigDecimal(Long.MAX_VALUE);
+  private static final BigDecimal MIN_LONG_VAL = new BigDecimal(Long.MIN_VALUE);
 
   /**
    * Given a column index, get current row's value as an object
