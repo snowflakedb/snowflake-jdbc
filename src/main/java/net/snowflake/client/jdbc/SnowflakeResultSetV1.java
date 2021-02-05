@@ -33,7 +33,8 @@ public class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
    * @param statement query statement that generates this result set
    * @throws SQLException if failed to construct snowflake result set metadata
    */
-  SnowflakeResultSetV1(SFBaseResultSet sfBaseResultSet, Statement statement) throws SQLException {
+  public SnowflakeResultSetV1(SFBaseResultSet sfBaseResultSet, Statement statement)
+      throws SQLException {
     super(statement);
     this.sfBaseResultSet = sfBaseResultSet;
     try {
