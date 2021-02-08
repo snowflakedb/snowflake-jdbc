@@ -18,7 +18,8 @@ import net.snowflake.client.core.SFBaseResultSet;
 import net.snowflake.client.core.SFException;
 
 /** Snowflake ResultSet implementation */
-class SnowflakeResultSetV1 extends SnowflakeBaseResultSet implements SnowflakeResultSet, ResultSet {
+public class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
+    implements SnowflakeResultSet, ResultSet {
   private final SFBaseResultSet sfBaseResultSet;
 
   /**
@@ -32,7 +33,8 @@ class SnowflakeResultSetV1 extends SnowflakeBaseResultSet implements SnowflakeRe
    * @param statement query statement that generates this result set
    * @throws SQLException if failed to construct snowflake result set metadata
    */
-  SnowflakeResultSetV1(SFBaseResultSet sfBaseResultSet, Statement statement) throws SQLException {
+  public SnowflakeResultSetV1(SFBaseResultSet sfBaseResultSet, Statement statement)
+      throws SQLException {
     super(statement);
     this.sfBaseResultSet = sfBaseResultSet;
     try {
@@ -342,8 +344,8 @@ class SnowflakeResultSetV1 extends SnowflakeBaseResultSet implements SnowflakeRe
    *     less than it. But if user specifies a small value which may be smaller than the data size
    *     of one result chunk. So the definition can't be guaranteed completely. For this special
    *     case, one serializable object is used to wrap the data chunk.
-   * @return a list of ResultSetSerializables
-   * @throws if fails to get the ResultSetSerializable objects.
+   * @return a list of ResultSetSerializables.
+   * @throws SQLException If it fails to get the ResultSetSerializable objects.
    */
   @Override
   public List<SnowflakeResultSetSerializable> getResultSetSerializables(long maxSizeInBytes)
