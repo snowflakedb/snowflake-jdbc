@@ -344,8 +344,8 @@ public class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
    *     less than it. But if user specifies a small value which may be smaller than the data size
    *     of one result chunk. So the definition can't be guaranteed completely. For this special
    *     case, one serializable object is used to wrap the data chunk.
-   * @return a list of ResultSetSerializables
-   * @throws if fails to get the ResultSetSerializable objects.
+   * @return a list of ResultSetSerializables.
+   * @throws SQLException If it fails to get the ResultSetSerializable objects.
    */
   @Override
   public List<SnowflakeResultSetSerializable> getResultSetSerializables(long maxSizeInBytes)
