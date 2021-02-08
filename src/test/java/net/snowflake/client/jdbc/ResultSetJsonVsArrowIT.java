@@ -1061,18 +1061,7 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
       double val = Double.parseDouble(cases[i].toString());
       assertEquals(val, rs.getDouble(1), delta);
       assertEquals(new BigDecimal(rs.getString(1)), rs.getBigDecimal(1));
-      if (isJSON()) {
-        try {
-          rs.getObject(1);
-          fail();
-        } catch (Exception e) {
-          SQLException se = (SQLException) e;
-          assertEquals((int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), se.getErrorCode());
-          assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), se.getSQLState());
-        }
-      } else {
-        assertEquals(rs.getBigDecimal(1), rs.getObject(1));
-      }
+      assertEquals(rs.getBigDecimal(1), rs.getObject(1));
       try {
         rs.getByte(1);
         fail();
