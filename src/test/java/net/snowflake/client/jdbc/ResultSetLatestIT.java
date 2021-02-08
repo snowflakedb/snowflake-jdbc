@@ -7,6 +7,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.*;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.sql.*;
@@ -343,6 +344,30 @@ public class ResultSetLatestIT extends ResultSet0IT {
       SnowflakeChunkDownloader.setInjectedDownloaderException(null);
     }
 
+    statement.close();
+    connection.close();
+  }
+
+  /**
+   * SNOW-165204 Fix exception that resulted from fetching too large a number with getObject().
+   *
+   * @throws SQLException
+   */
+  @Test
+  public void testGetObjectWithBigInt() throws SQLException {
+    Connection connection = init();
+    Statement statement = connection.createStatement();
+    statement.execute("alter session set jdbc_query_result_format ='json'");
+    // test with greatest possible number and greatest negative possible number
+    String[] extremeNumbers = {
+      "99999999999999999999999999999999999999", "-99999999999999999999999999999999999999"
+    };
+    for (int i = 0; i < extremeNumbers.length; i++) {
+      ResultSet resultSet = statement.executeQuery("select " + extremeNumbers[i]);
+      resultSet.next();
+      assertEquals(Types.BIGINT, resultSet.getMetaData().getColumnType(1));
+      assertEquals(new BigDecimal(extremeNumbers[i]), resultSet.getObject(1));
+    }
     statement.close();
     connection.close();
   }
