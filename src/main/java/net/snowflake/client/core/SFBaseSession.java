@@ -4,14 +4,15 @@
 
 package net.snowflake.client.core;
 
-import java.sql.DriverPropertyInfo;
-import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.jdbc.SnowflakeType;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
+
+import java.sql.DriverPropertyInfo;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Snowflake session implementation base. The methods and fields contained within this class are
@@ -62,6 +63,7 @@ public abstract class SFBaseSession {
   private boolean enableCombineDescribe;
   private boolean clientTelemetryEnabled = false;
   private boolean useSessionTimezone;
+  private TimeZone sessionTimeZone = TimeZone.getDefault();
   // The server can read array binds from a stage instead of query payload.
   // When there as many bind values as this threshold, we should upload them to a stage.
   private int arrayBindStageThreshold = 0;
@@ -371,6 +373,14 @@ public abstract class SFBaseSession {
 
   public void setUseSessionTimezone(boolean useSessionTimezone) {
     this.useSessionTimezone = useSessionTimezone;
+  }
+
+  public TimeZone getSessionTimezone() {
+    return sessionTimeZone;
+  }
+
+  public void setSessionTimezone(String zoneId) {
+    this.sessionTimeZone = TimeZone.getTimeZone(zoneId);
   }
 
   public boolean getEnableCombineDescribe() {

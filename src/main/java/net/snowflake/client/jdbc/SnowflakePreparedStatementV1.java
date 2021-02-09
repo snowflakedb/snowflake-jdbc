@@ -4,18 +4,19 @@
 
 package net.snowflake.client.jdbc;
 
-import java.io.InputStream;
-import java.io.Reader;
-import java.math.BigDecimal;
-import java.net.URL;
-import java.sql.*;
-import java.sql.Date;
-import java.util.*;
 import net.snowflake.client.core.*;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SFBinary;
 import net.snowflake.common.core.SqlState;
+
+import java.io.InputStream;
+import java.io.Reader;
+import java.math.BigDecimal;
+import java.net.URL;
+import java.sql.Date;
+import java.sql.*;
+import java.util.*;
 
 class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
     implements PreparedStatement, SnowflakePreparedStatement {
@@ -315,6 +316,7 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
   @Override
   public void setTimestamp(int parameterIndex, Timestamp x) throws SQLException {
     logger.debug("setTimestamp(parameterIndex: {}, Timestamp x)", parameterIndex);
+    this.getParameterMetaData();
 
     // convert the timestamp from being in local time zone to be in UTC timezone
     String value =

@@ -4,21 +4,9 @@
 
 package net.snowflake.client.core;
 
-import static net.snowflake.client.core.SFTrustManager.resetOCSPResponseCacherServerURL;
-import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
-import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import net.snowflake.client.jdbc.*;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.client.log.ArgSupplier;
@@ -39,6 +27,19 @@ import org.apache.http.message.HeaderGroup;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
+
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static net.snowflake.client.core.SFTrustManager.resetOCSPResponseCacherServerURL;
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
 /** Low level session util */
 public class SessionUtil {
@@ -76,6 +77,7 @@ public class SessionUtil {
   private static final String JDBC_TREAT_TIMESTAMP_NTZ_AS_UTC = "JDBC_TREAT_TIMESTAMP_NTZ_AS_UTC";
   private static final String JDBC_FORMAT_DATE_WITH_TIMEZONE = "JDBC_FORMAT_DATE_WITH_TIMEZONE";
   private static final String JDBC_USE_SESSION_TIMEZONE = "JDBC_USE_SESSION_TIMEZONE";
+  private static final String TIMEZONE = "TIMEZONE";
   private static final String CLIENT_RESULT_CHUNK_SIZE_JVM =
       "net.snowflake.jdbc.clientResultChunkSize";
   public static final String CLIENT_RESULT_CHUNK_SIZE = "CLIENT_RESULT_CHUNK_SIZE";
@@ -132,7 +134,7 @@ public class SessionUtil {
   private static Set<String> STRING_PARAMS =
       new HashSet<>(
           Arrays.asList(
-              "TIMEZONE",
+              TIMEZONE,
               "TIMESTAMP_OUTPUT_FORMAT",
               "TIMESTAMP_NTZ_OUTPUT_FORMAT",
               "TIMESTAMP_LTZ_OUTPUT_FORMAT",
@@ -1316,6 +1318,10 @@ public class SessionUtil {
       } else if (JDBC_USE_SESSION_TIMEZONE.equalsIgnoreCase(entry.getKey())) {
         if (session != null) {
           session.setUseSessionTimezone((boolean) entry.getValue());
+        }
+      } else if (TIMEZONE.equalsIgnoreCase(entry.getKey())) {
+        if (session != null) {
+          session.setSessionTimezone((String) entry.getValue());
         }
       } else if ("CLIENT_TIMESTAMP_TYPE_MAPPING".equalsIgnoreCase(entry.getKey())) {
         if (session != null) {
