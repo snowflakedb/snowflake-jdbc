@@ -11,14 +11,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.microsoft.azure.storage.*;
-import com.microsoft.azure.storage.StorageCredentials;
-import com.microsoft.azure.storage.StorageCredentialsAnonymous;
-import com.microsoft.azure.storage.StorageCredentialsSharedAccessSignature;
-import com.microsoft.azure.storage.StorageException;
 import com.microsoft.azure.storage.blob.*;
-import com.microsoft.azure.storage.blob.CloudBlobClient;
-import com.microsoft.azure.storage.blob.CloudBlobContainer;
-import com.microsoft.azure.storage.blob.ListBlobItem;
 import java.io.*;
 import java.net.SocketTimeoutException;
 import java.net.URI;
@@ -26,10 +19,6 @@ import java.net.URISyntaxException;
 import java.security.InvalidKeyException;
 import java.util.*;
 import java.util.AbstractMap.SimpleEntry;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.SFBaseSession;
@@ -98,7 +87,6 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
     this.session = sfSession;
 
     logger.debug("Setting up the Azure client ");
-    opContext = new OperationContext();
 
     try {
       URI storageEndpoint =
@@ -127,8 +115,9 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
               encryptionKeySize);
         }
       }
-      HttpUtil.setProxyForAzure(opContext);
       this.azStorageClient = new CloudBlobClient(storageEndpoint, azCreds);
+      opContext = new OperationContext();
+      HttpUtil.setProxyForAzure(opContext);
     } catch (URISyntaxException ex) {
       throw new IllegalArgumentException("invalid_azure_credentials");
     }
@@ -202,8 +191,10 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
       Iterable<ListBlobItem> listBlobItemIterable =
           container.listBlobs(
               prefix, // List the BLOBs under this prefix
-              true // List the BLOBs as a flat list, i.e. do not list directories
-              );
+              true, // List the BLOBs as a flat list, i.e. do not list directories
+              EnumSet.noneOf(BlobListingDetails.class),
+              (BlobRequestOptions) null,
+              opContext);
       storageObjectSummaries = new StorageObjectSummaryCollection(listBlobItemIterable);
     } catch (URISyntaxException | StorageException ex) {
       logger.debug("Failed to list objects: {}", ex);
@@ -228,7 +219,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
       // Get a reference to the BLOB, to retrieve its metadata
       CloudBlobContainer container = azStorageClient.getContainerReference(remoteStorageLocation);
       CloudBlob blob = container.getBlockBlobReference(prefix);
-      blob.downloadAttributes();
+      blob.downloadAttributes(null, null, opContext);
 
       // Get the user-defined BLOB metadata
       Map<String, String> userDefinedMetadata = blob.getMetadata();
@@ -293,10 +284,10 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
         // where the user has control of block size and parallelism
         // we rely on Azure to handle the download, hence the "parallelism" parameter is ignored
         // in the Azure implementation of the method
-        blob.downloadToFile(localFilePath);
+        blob.downloadToFile(localFilePath, null, null, opContext);
 
         // Pull object metadata from Azure
-        blob.downloadAttributes();
+        blob.downloadAttributes(null, null, opContext);
 
         // Get the user-defined BLOB metadata
         Map<String, String> userDefinedMetadata = blob.getMetadata();
@@ -369,7 +360,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
 
         CloudBlob blob = container.getBlockBlobReference(stageFilePath);
 
-        InputStream stream = blob.openInputStream();
+        InputStream stream = blob.openInputStream(null, null, opContext);
 
         Map<String, String> userDefinedMetadata = blob.getMetadata();
 
@@ -481,11 +472,13 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
         // in the Azure implementation of the method
         blob.upload(
             fileInputStream, // input stream to upload from
-            -1 // -1 indicates an unknown stream length
-            );
+            -1, // -1 indicates an unknown stream length
+            null,
+            null,
+            opContext);
         logger.debug("Upload successful");
 
-        blob.uploadMetadata();
+        blob.uploadMetadata(null, null, opContext);
 
         // close any open streams in the "toClose" list and return
         for (FileInputStream is : toClose) IOUtils.closeQuietly(is);
