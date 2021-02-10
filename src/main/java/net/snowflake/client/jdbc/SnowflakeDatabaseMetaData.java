@@ -1009,7 +1009,8 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
   }
 
   @Override
-  public ResultSet getProcedures(String catalog, String schemaPattern, String procedureNamePattern)
+  public ResultSet getProcedures(
+      final String catalog, final String schemaPattern, final String procedureNamePattern)
       throws SQLException {
     raiseSQLExceptionIfConnectionIsClosed();
     Statement statement = connection.createStatement();
@@ -1069,7 +1070,10 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
 
   @Override
   public ResultSet getProcedureColumns(
-      String catalog, String schemaPattern, String procedureNamePattern, String columnNamePattern)
+      final String catalog,
+      final String schemaPattern,
+      final String procedureNamePattern,
+      final String columnNamePattern)
       throws SQLException {
     logger.debug(
         "public ResultSet getProcedureColumns(String catalog, "
@@ -1313,7 +1317,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
 
   @Override
   public ResultSet getTables(
-      String catalog, String schemaPattern, String tableNamePattern, String[] types)
+      String catalog, String schemaPattern, final String tableNamePattern, final String[] types)
       throws SQLException {
     logger.debug(
         "public ResultSet getTables(String catalog={}, String "
@@ -1507,7 +1511,10 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
 
   @Override
   public ResultSet getColumns(
-      String catalog, String schemaPattern, String tableNamePattern, String columnNamePattern)
+      String catalog,
+      String schemaPattern,
+      final String tableNamePattern,
+      final String columnNamePattern)
       throws SQLException {
     return getColumns(catalog, schemaPattern, tableNamePattern, columnNamePattern, false);
   }
@@ -1515,8 +1522,8 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
   public ResultSet getColumns(
       String catalog,
       String schemaPattern,
-      String tableNamePattern,
-      String columnNamePattern,
+      final String tableNamePattern,
+      final String columnNamePattern,
       final boolean extendedSet)
       throws SQLException {
     logger.debug(
@@ -1768,8 +1775,8 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
   }
 
   @Override
-  public ResultSet getTablePrivileges(String catalog, String schemaPattern, String tableNamePattern)
-      throws SQLException {
+  public ResultSet getTablePrivileges(
+      String catalog, String schemaPattern, final String tableNamePattern) throws SQLException {
     logger.debug(
         "public ResultSet getTablePrivileges(String catalog, "
             + "String schemaPattern,String tableNamePattern)");
@@ -2829,7 +2836,8 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
   }
 
   @Override
-  public ResultSet getFunctions(String catalog, String schemaPattern, String functionNamePattern)
+  public ResultSet getFunctions(
+      final String catalog, final String schemaPattern, final String functionNamePattern)
       throws SQLException {
     raiseSQLExceptionIfConnectionIsClosed();
     Statement statement = connection.createStatement();
