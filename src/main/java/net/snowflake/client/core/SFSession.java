@@ -321,8 +321,7 @@ public class SFSession extends SFBaseSession {
     logger.debug(
         "input: server={}, account={}, user={}, password={}, role={}, "
             + "database={}, schema={}, warehouse={}, validate_default_parameters={}, authenticator={}, ocsp_mode={}, "
-            + "passcode_in_password={}, passcode={}, private_key={}, "
-            + "use_proxy={}, proxy_host={}, proxy_port={}, proxy_user={}, proxy_password={}, disable_socks_proxy={}, "
+            + "passcode_in_password={}, passcode={}, private_key={}, disable_socks_proxy={}, "
             + "application={}, app_id={}, app_version={}, "
             + "login_timeout={}, network_timeout={}, query_timeout={}, tracing={}, private_key_file={}, private_key_file_pwd={}. "
             + "session_parameters: client_store_temporary_credential={}",
@@ -346,14 +345,6 @@ public class SFSession extends SFBaseSession {
         connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY) != null
             ? "(not null)"
             : "(null)",
-        connectionPropertiesMap.get(SFSessionProperty.USE_PROXY),
-        connectionPropertiesMap.get(SFSessionProperty.PROXY_HOST),
-        connectionPropertiesMap.get(SFSessionProperty.PROXY_PORT),
-        connectionPropertiesMap.get(SFSessionProperty.PROXY_USER),
-        !Strings.isNullOrEmpty(
-                (String) connectionPropertiesMap.get(SFSessionProperty.PROXY_PASSWORD))
-            ? "***"
-            : "(empty)",
         connectionPropertiesMap.get(SFSessionProperty.DISABLE_SOCKS_PROXY),
         connectionPropertiesMap.get(SFSessionProperty.APPLICATION),
         connectionPropertiesMap.get(SFSessionProperty.APP_ID),
