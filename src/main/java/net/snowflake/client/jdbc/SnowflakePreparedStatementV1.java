@@ -4,18 +4,19 @@
 
 package net.snowflake.client.jdbc;
 
-import java.io.InputStream;
-import java.io.Reader;
-import java.math.BigDecimal;
-import java.net.URL;
-import java.sql.*;
-import java.sql.Date;
-import java.util.*;
 import net.snowflake.client.core.*;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SFBinary;
 import net.snowflake.common.core.SqlState;
+
+import java.io.InputStream;
+import java.io.Reader;
+import java.math.BigDecimal;
+import java.net.URL;
+import java.sql.Date;
+import java.sql.*;
+import java.util.*;
 
 class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
     implements PreparedStatement, SnowflakePreparedStatement {
@@ -567,8 +568,16 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
     setTime(parameterIndex, x);
   }
 
+  public void setTimestampNTZ(int parameterIndex, Timestamp x, Calendar cal) throws SQLException {
+
+  }
+
   @Override
   public void setTimestamp(int parameterIndex, Timestamp x, Calendar cal) throws SQLException {
+
+  }
+
+  private void setTimestampHelper(int parameterIndex, Timestamp x, Calendar cal, String type) throws SQLException {
     logger.debug("setTimestamp(int parameterIndex, Timestamp x, Calendar cal)");
     raiseSQLExceptionIfStatementIsClosed();
 
