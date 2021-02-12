@@ -145,30 +145,45 @@ public class SFSession extends SFBaseSession {
       statusUrl = sessionUrl + SF_PATH_QUERY_MONITOR + queryID;
     }
     // Create a new HTTP GET object and set appropriate headers
+
     HttpGet get = new HttpGet(statusUrl);
-    get.setHeader("Content-type", "application/json");
-    get.setHeader("Authorization", "Snowflake Token=\"" + this.sessionToken + "\"");
     String response = null;
     JsonNode jsonNode = null;
-    try {
-      response = HttpUtil.executeGeneralRequest(get, loginTimeout, getOCSPMode());
-      jsonNode = OBJECT_MAPPER.readTree(response);
-    } catch (Exception e) {
-      throw new SnowflakeSQLLoggedException(
-          this, e.getMessage(), "No response or invalid response from GET request. Error: {}");
-    }
-    // Get response as JSON and parse it to get the query status
-    // check the success field first
-    if (!jsonNode.path("success").asBoolean()) {
-      logger.debug("response = {}", response);
+    boolean sessionRenewed;
+    do {
+      sessionRenewed = false;
+      try {
+        get.setHeader("Content-type", "application/json");
+        get.setHeader("Authorization", "Snowflake Token=\"" + this.sessionToken + "\"");
+        response = HttpUtil.executeGeneralRequest(get, loginTimeout, getOCSPMode());
+        jsonNode = OBJECT_MAPPER.readTree(response);
+      } catch (Exception e) {
+        throw new SnowflakeSQLLoggedException(
+            this, e.getMessage(), "No response or invalid response from GET request. Error: {}");
+      }
 
-      int errorCode = jsonNode.path("code").asInt();
-      throw new SnowflakeSQLException(
-          queryID,
-          jsonNode.path("message").asText(),
-          SqlState.SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION,
-          errorCode);
-    }
+      // Get response as JSON and parse it to get the query status
+      // check the success field first
+      if (!jsonNode.path("success").asBoolean()) {
+        logger.debug("response = {}", response);
+
+        int errorCode = jsonNode.path("code").asInt();
+        if (errorCode == Constants.SESSION_EXPIRED_GS_CODE) {
+          try {
+            this.renewSession(this.sessionToken);
+          } catch (SnowflakeReauthenticationRequest | SFException ex) {
+            throw new SnowflakeSQLException(ex.getMessage());
+          }
+          sessionRenewed = true;
+        } else {
+          throw new SnowflakeSQLException(
+              queryID,
+              jsonNode.path("message").asText(),
+              SqlState.SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION,
+              errorCode);
+        }
+      }
+    } while (sessionRenewed);
     JsonNode queryNode = jsonNode.path("data").path("queries");
     String queryStatus = "";
     String errorMessage = "";

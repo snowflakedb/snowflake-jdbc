@@ -5,16 +5,9 @@ package net.snowflake.client.jdbc;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.instanceOf;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -27,6 +20,7 @@ import net.snowflake.client.AbstractDriverIT;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryOthers;
+import net.snowflake.client.core.QueryStatus;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -118,6 +112,45 @@ public class HeartbeatIT extends AbstractDriverIT {
     }
   }
 
+  private void submitAsyncQuery(boolean useKeepAliveSession, int queryIdx)
+      throws SQLException, InterruptedException {
+    Connection connection = null;
+    ResultSet resultSet = null;
+    ResultSetMetaData resultSetMetaData;
+    try {
+      Properties sessionParams = new Properties();
+      sessionParams.put(
+          "CLIENT_SESSION_KEEP_ALIVE",
+          useKeepAliveSession ? Boolean.TRUE.toString() : Boolean.FALSE.toString());
+
+      connection = getConnection(sessionParams);
+
+      Statement stmt = connection.createStatement();
+      // resultSet = stmt.executeQuery("SELECT count(*) FROM TABLE(generator(timeLimit => 22))");
+      resultSet =
+          stmt.unwrap(SnowflakeStatement.class)
+              .executeAsyncQuery("SELECT count(*) FROM TABLE(generator(timeLimit => 22))");
+      System.out.println(resultSet.unwrap(SnowflakeResultSet.class).getQueryID());
+      Thread.sleep(23000); // sleep 23 seconds
+      QueryStatus qs = resultSet.unwrap(SnowflakeResultSet.class).getStatus();
+      // assert column count
+      assertEquals(QueryStatus.SUCCESS, qs);
+
+      // assert we get 1 row
+      assertTrue(resultSet.next());
+
+      logger.fine("Query " + queryIdx + " passed ");
+    } finally {
+      resultSet.close();
+      connection.close();
+    }
+  }
+
+  @Test
+  public void testTwo() throws SQLException, InterruptedException {
+    submitAsyncQuery(true, 1);
+  }
+
   /**
    * Test heartbeat by starting 10 threads. Each get a connection and wait for a time longer than
    * master token validity and issue a query to make sure the query succeeds.
@@ -137,7 +170,7 @@ public class HeartbeatIT extends AbstractDriverIT {
           executorService.submit(
               () -> {
                 try {
-                  submitQuery(true, queryIdx);
+                  submitAsyncQuery(true, queryIdx);
                 } catch (SQLException | InterruptedException e) {
                   throw new IllegalStateException("task interrupted", e);
                 }
