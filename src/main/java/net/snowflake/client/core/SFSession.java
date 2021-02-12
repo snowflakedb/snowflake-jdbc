@@ -90,7 +90,6 @@ public class SFSession extends SFBaseSession {
   // session parameters
   private Map<String, Object> sessionParametersMap = new HashMap<>();
   private boolean passcodeInPassword = false;
-  private int heartbeatFrequency = 3600;
 
   // deprecated
   private Level tracingLevel = Level.INFO;
@@ -601,7 +600,7 @@ public class SFSession extends SFBaseSession {
       logger.debug("start heartbeat, master token validity: " + masterTokenValidityInSeconds);
 
       HeartbeatBackground.getInstance()
-          .addSession(this, masterTokenValidityInSeconds, this.heartbeatFrequency);
+          .addSession(this, masterTokenValidityInSeconds, heartbeatFrequency);
     } else {
       logger.debug("heartbeat not enabled for the session");
     }

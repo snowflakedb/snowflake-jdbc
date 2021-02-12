@@ -58,6 +58,7 @@ public abstract class SFBaseSession {
   // Inject failure for testing
   private String injectFileUploadFailure;
   private boolean enableHeartbeat;
+  protected int heartbeatFrequency = 3600;
   private boolean formatDateWithTimezone;
   private boolean enableCombineDescribe;
   private boolean clientTelemetryEnabled = false;
@@ -347,6 +348,16 @@ public abstract class SFBaseSession {
 
   public void setEnableHeartbeat(boolean enableHeartbeat) {
     this.enableHeartbeat = enableHeartbeat;
+  }
+
+  public void setHeartbeatFrequency(int frequency) {
+    if (frequency < 900) {
+      this.heartbeatFrequency = 900;
+    } else if (frequency > 3600) {
+      this.heartbeatFrequency = 3600;
+    } else {
+      this.heartbeatFrequency = frequency;
+    }
   }
 
   public boolean getAutoCommit() {

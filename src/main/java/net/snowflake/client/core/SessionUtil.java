@@ -1282,6 +1282,10 @@ public class SessionUtil {
         if (session != null) {
           session.setEnableHeartbeat((Boolean) entry.getValue());
         }
+      } else if (CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY.equalsIgnoreCase(entry.getKey())) {
+        if (session != null) {
+          session.setHeartbeatFrequency((int) entry.getValue());
+        }
       } else if ("CLIENT_ENABLE_LOG_INFO_STATEMENT_PARAMETERS".equalsIgnoreCase(entry.getKey())) {
         boolean enableLogging = (Boolean) entry.getValue();
         if (session != null && session.getPreparedStatementLogging() != enableLogging) {
