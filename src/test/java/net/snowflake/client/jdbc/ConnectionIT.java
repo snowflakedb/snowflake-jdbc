@@ -3,11 +3,20 @@
  */
 package net.snowflake.client.jdbc;
 
-import static net.snowflake.client.core.SessionUtil.CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY;
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.*;
+import net.snowflake.client.ConditionalIgnoreRule.ConditionalIgnore;
+import net.snowflake.client.RunningNotOnTestaccount;
+import net.snowflake.client.RunningOnGithubAction;
+import net.snowflake.client.TestUtil;
+import net.snowflake.client.category.TestCategoryConnection;
+import net.snowflake.client.core.SFSession;
+import net.snowflake.common.core.SqlState;
+import org.apache.commons.codec.binary.Base64;
+import org.junit.Assert;
+import org.junit.Ignore;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.rules.TemporaryFolder;
 
 import java.io.*;
 import java.security.*;
@@ -18,19 +27,12 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import net.snowflake.client.ConditionalIgnoreRule.ConditionalIgnore;
-import net.snowflake.client.RunningNotOnTestaccount;
-import net.snowflake.client.RunningOnGithubAction;
-import net.snowflake.client.TestUtil;
-import net.snowflake.client.category.TestCategoryConnection;
-import net.snowflake.common.core.SqlState;
-import org.apache.commons.codec.binary.Base64;
-import org.junit.Assert;
-import org.junit.Ignore;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.rules.TemporaryFolder;
+
+import static net.snowflake.client.core.SessionUtil.CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.*;
 
 /** Connection integration tests */
 @Category(TestCategoryConnection.class)
@@ -666,6 +668,9 @@ public class ConnectionIT extends BaseJDBCTest {
 
       assertThat(key, value, equalTo("900"));
     }
+
+    SFSession session = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
+    assertEquals(900, session.getHeartbeatFrequency());
   }
 
   /**
@@ -691,6 +696,8 @@ public class ConnectionIT extends BaseJDBCTest {
 
       assertThat(key, value, equalTo("3600"));
     }
+    SFSession session = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
+    assertEquals(3600, session.getHeartbeatFrequency());
   }
 
   /**
@@ -715,6 +722,25 @@ public class ConnectionIT extends BaseJDBCTest {
       String value = rs.getString("value");
 
       assertThat(key, value, equalTo(paramProperties.get(key).toString()));
+    }
+  }
+
+  @Test
+  public void testHeartbeatFrequencySessionParameter() throws SQLException {
+    try (Connection connection = getConnection()) {
+      Statement statement = connection.createStatement();
+      statement.execute("alter session set CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY=2000");
+      SFSession session = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
+      assertEquals(2000, session.getHeartbeatFrequency());
+      // assert that invalid value throws exception on GS side
+      try {
+        statement.execute("alter session set CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY=10");
+        fail();
+      }
+      catch (SnowflakeSQLException e)
+      {
+        assertEquals(SqlState.INVALID_PARAMETER_VALUE, e.getSQLState());
+      }
     }
   }
 

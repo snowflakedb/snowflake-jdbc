@@ -4,14 +4,15 @@
 
 package net.snowflake.client.core;
 
-import java.sql.DriverPropertyInfo;
-import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.jdbc.SnowflakeType;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
+
+import java.sql.DriverPropertyInfo;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Snowflake session implementation base. The methods and fields contained within this class are
@@ -358,6 +359,10 @@ public abstract class SFBaseSession {
     } else {
       this.heartbeatFrequency = frequency;
     }
+  }
+
+  public int getHeartbeatFrequency() {
+    return this.heartbeatFrequency;
   }
 
   public boolean getAutoCommit() {
