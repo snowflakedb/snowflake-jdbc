@@ -3,6 +3,21 @@
  */
 package net.snowflake.client.jdbc;
 
+import static net.snowflake.client.core.SessionUtil.CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.*;
+
+import java.io.*;
+import java.security.*;
+import java.sql.*;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.Map;
+import java.util.Properties;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import net.snowflake.client.ConditionalIgnoreRule.ConditionalIgnore;
 import net.snowflake.client.RunningNotOnTestaccount;
 import net.snowflake.client.RunningOnGithubAction;
@@ -17,22 +32,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.TemporaryFolder;
-
-import java.io.*;
-import java.security.*;
-import java.sql.*;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.Map;
-import java.util.Properties;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-
-import static net.snowflake.client.core.SessionUtil.CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY;
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.*;
 
 /** Connection integration tests */
 @Category(TestCategoryConnection.class)
@@ -723,25 +722,8 @@ public class ConnectionIT extends BaseJDBCTest {
 
       assertThat(key, value, equalTo(paramProperties.get(key).toString()));
     }
-  }
-
-  @Test
-  public void testHeartbeatFrequencySessionParameter() throws SQLException {
-    try (Connection connection = getConnection()) {
-      Statement statement = connection.createStatement();
-      statement.execute("alter session set CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY=2000");
-      SFSession session = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
-      assertEquals(2000, session.getHeartbeatFrequency());
-      // assert that invalid value throws exception on GS side
-      try {
-        statement.execute("alter session set CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY=10");
-        fail();
-      }
-      catch (SnowflakeSQLException e)
-      {
-        assertEquals(SqlState.INVALID_PARAMETER_VALUE, e.getSQLState());
-      }
-    }
+    SFSession session = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
+    assertEquals(1800, session.getHeartbeatFrequency());
   }
 
   @Test

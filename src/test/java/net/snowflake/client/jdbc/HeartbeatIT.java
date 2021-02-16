@@ -3,9 +3,15 @@
  */
 package net.snowflake.client.jdbc;
 
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.instanceOf;
-import static org.junit.Assert.*;
+import net.snowflake.client.AbstractDriverIT;
+import net.snowflake.client.ConditionalIgnoreRule;
+import net.snowflake.client.RunningOnGithubAction;
+import net.snowflake.client.category.TestCategoryOthers;
+import net.snowflake.client.core.QueryStatus;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -16,15 +22,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.logging.Logger;
-import net.snowflake.client.AbstractDriverIT;
-import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningOnGithubAction;
-import net.snowflake.client.category.TestCategoryOthers;
-import net.snowflake.client.core.QueryStatus;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.junit.Assert.*;
 
 /** This test assumes that GS has been set up */
 @Category(TestCategoryOthers.class)
@@ -112,11 +113,18 @@ public class HeartbeatIT extends AbstractDriverIT {
     }
   }
 
+  /**
+   * create a new connection with or without keep alive sessionsubmit an asynchronous query that
+   * will take longer than the master token validity.
+   *
+   * @param useKeepAliveSession Enables/disables client session keep alive
+   * @param queryIdx The query index
+   * @throws SQLException Will be thrown if any of the driver calls fail
+   */
   private void submitAsyncQuery(boolean useKeepAliveSession, int queryIdx)
       throws SQLException, InterruptedException {
     Connection connection = null;
     ResultSet resultSet = null;
-    ResultSetMetaData resultSetMetaData;
     try {
       Properties sessionParams = new Properties();
       sessionParams.put(
@@ -126,18 +134,18 @@ public class HeartbeatIT extends AbstractDriverIT {
       connection = getConnection(sessionParams);
 
       Statement stmt = connection.createStatement();
-      // resultSet = stmt.executeQuery("SELECT count(*) FROM TABLE(generator(timeLimit => 22))");
+      // Query will take 30 seconds to run, but ResultSet will be returned immediately
       resultSet =
           stmt.unwrap(SnowflakeStatement.class)
-              .executeAsyncQuery("SELECT count(*) FROM TABLE(generator(timeLimit => 22))");
-      System.out.println(resultSet.unwrap(SnowflakeResultSet.class).getQueryID());
-      Thread.sleep(23000); // sleep 23 seconds
+              .executeAsyncQuery("SELECT count(*) FROM TABLE(generator(timeLimit => 30))");
+      Thread.sleep(61000); // sleep 61 seconds to await original session expiration time
       QueryStatus qs = resultSet.unwrap(SnowflakeResultSet.class).getStatus();
-      // assert column count
+      // Ensure query succeeded
       assertEquals(QueryStatus.SUCCESS, qs);
 
       // assert we get 1 row
       assertTrue(resultSet.next());
+      assertFalse(resultSet.next());
 
       logger.fine("Query " + queryIdx + " passed ");
     } finally {
@@ -146,19 +154,12 @@ public class HeartbeatIT extends AbstractDriverIT {
     }
   }
 
-  @Test
-  public void testTwo() throws SQLException, InterruptedException {
-    submitAsyncQuery(true, 1);
-  }
-
   /**
    * Test heartbeat by starting 10 threads. Each get a connection and wait for a time longer than
    * master token validity and issue a query to make sure the query succeeds.
    */
-  @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testSuccess() throws Exception {
-    int concurrency = 5;
+  private void testSuccess(boolean isAsync) throws Exception {
+    int concurrency = 10;
     ExecutorService executorService = Executors.newFixedThreadPool(10);
     List<Future<?>> futures = new ArrayList<>();
     // create 10 threads, each open a connection and submit a query
@@ -170,7 +171,11 @@ public class HeartbeatIT extends AbstractDriverIT {
           executorService.submit(
               () -> {
                 try {
-                  submitAsyncQuery(true, queryIdx);
+                  if (isAsync) {
+                    submitAsyncQuery(true, queryIdx);
+                  } else {
+                    submitQuery(true, queryIdx);
+                  }
                 } catch (SQLException | InterruptedException e) {
                   throw new IllegalStateException("task interrupted", e);
                 }
@@ -184,9 +189,7 @@ public class HeartbeatIT extends AbstractDriverIT {
    * Test no heartbeat by starting 1 thread. It gets a connection and wait for a time longer than
    * master token validity and issue a query to make sure the query fails.
    */
-  @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testFailure() throws Exception {
+  private void testFailure(boolean isAsync) throws Exception {
     ExecutorService executorService = Executors.newFixedThreadPool(1);
 
     try {
@@ -194,7 +197,11 @@ public class HeartbeatIT extends AbstractDriverIT {
           executorService.submit(
               () -> {
                 try {
-                  submitQuery(false, 0);
+                  if (isAsync) {
+                    submitAsyncQuery(false, 0);
+                  } else {
+                    submitQuery(false, 0);
+                  }
                 } catch (SQLException e) {
                   throw new RuntimeSQLException("SQLException", e);
                 } catch (InterruptedException e) {
@@ -213,6 +220,30 @@ public class HeartbeatIT extends AbstractDriverIT {
       assertThat("Root cause class", rootCause, instanceOf(SnowflakeSQLException.class));
       assertThat("Error code", ((SnowflakeSQLException) rootCause).getErrorCode(), equalTo(390114));
     }
+  }
+
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testSynchronousQuerySuccess() throws Exception {
+    testSuccess(false);
+  }
+
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testAsynchronousQuerySuccess() throws Exception {
+    testSuccess(true);
+  }
+
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testSynchronousQueryFailure() throws Exception {
+    testFailure(false);
+  }
+
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testAsynchronousQueryFailure() throws Exception {
+    testFailure(true);
   }
 
   class RuntimeSQLException extends RuntimeException {

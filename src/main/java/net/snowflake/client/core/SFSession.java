@@ -121,7 +121,7 @@ public class SFSession extends SFBaseSession {
         if (QueryStatus.isStillRunning(qStatus)) {
           canClose = false;
         }
-      } catch (SQLException e) {
+      } catch (SQLException | SFException e) {
         logger.error(e.getMessage());
       }
     }
@@ -133,7 +133,7 @@ public class SFSession extends SFBaseSession {
    * @return enum of type QueryStatus indicating the query's status
    * @throws SQLException
    */
-  public QueryStatus getQueryStatus(String queryID) throws SQLException {
+  public QueryStatus getQueryStatus(String queryID) throws SQLException, SFException {
     // create the URL to check the query monitoring endpoint
     String statusUrl = "";
     String sessionUrl = getUrl();
@@ -171,6 +171,12 @@ public class SFSession extends SFBaseSession {
           try {
             this.renewSession(this.sessionToken);
           } catch (SnowflakeReauthenticationRequest | SFException ex) {
+            if (ex instanceof SnowflakeReauthenticationRequest
+                && this.isExternalbrowserAuthenticator()) {
+              this.open();
+            } else {
+              throw ex;
+            }
             throw new SnowflakeSQLException(ex.getMessage());
           }
           sessionRenewed = true;
