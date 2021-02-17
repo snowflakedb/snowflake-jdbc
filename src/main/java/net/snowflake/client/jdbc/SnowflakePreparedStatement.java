@@ -18,4 +18,6 @@ public interface SnowflakePreparedStatement {
   ResultSet executeAsyncQuery() throws SQLException;
 
   void setTimestampNTZ(int parameterIndex, Timestamp x, Calendar cal) throws SQLException;
+
+  void setTimestampNTZ(int parameterIndex, Timestamp x) throws SQLException;
 }

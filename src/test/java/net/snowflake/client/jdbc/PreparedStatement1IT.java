@@ -3,12 +3,10 @@
  */
 package net.snowflake.client.jdbc;
 
-import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningOnGithubAction;
-import net.snowflake.client.category.TestCategoryStatement;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import static net.snowflake.client.jdbc.ErrorCode.NUMERIC_VALUE_OUT_OF_RANGE;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.*;
 
 import java.sql.*;
 import java.time.LocalDateTime;
@@ -17,11 +15,12 @@ import java.util.Calendar;
 import java.util.Map;
 import java.util.Properties;
 import java.util.TimeZone;
-
-import static net.snowflake.client.jdbc.ErrorCode.NUMERIC_VALUE_OUT_OF_RANGE;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.*;
+import net.snowflake.client.ConditionalIgnoreRule;
+import net.snowflake.client.RunningOnGithubAction;
+import net.snowflake.client.category.TestCategoryStatement;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 @Category(TestCategoryStatement.class)
 public class PreparedStatement1IT extends PreparedStatement0IT {
@@ -436,8 +435,7 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
 
   @Test
   public void testTimestampNTZBind() throws SQLException {
-    try (Connection connection = init())
-    {
+    try (Connection connection = init()) {
       String myDate = "2014-01-01 16:00:00";
       Timestamp testStamp = Timestamp.valueOf(myDate);
       Statement statement = connection.createStatement();
@@ -446,15 +444,18 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
       statement.execute("ALTER SESSION SET TIMESTAMP_TYPE_MAPPING = TIMESTAMP_NTZ");
       statement.execute("CREATE OR REPLACE TABLE test_prepst_ts (tz TIMESTAMP)");
       statement.execute("ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = 0");
-      PreparedStatement prepst = connection.prepareStatement("INSERT INTO test_prepst_ts(tz) VALUES(?)");
-      prepst.setTimestamp(1, testStamp, Calendar.getInstance(TimeZone.getTimeZone(ZoneId.of("UTC"))));
+      PreparedStatement prepst =
+          connection.prepareStatement("INSERT INTO test_prepst_ts(tz) VALUES(?)");
+      prepst.setTimestamp(
+          1, testStamp, Calendar.getInstance(TimeZone.getTimeZone(ZoneId.of("UTC"))));
       prepst.addBatch();
       prepst.executeBatch();
       ResultSet rs = statement.executeQuery("select * from test_prepst_ts");
       rs.next();
       System.out.println(rs.getTimestamp(1));
       statement.execute("ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = 1");
-      prepst.setTimestamp(1, testStamp, Calendar.getInstance(TimeZone.getTimeZone(ZoneId.of("UTC"))));
+      prepst.setTimestamp(
+          1, testStamp, Calendar.getInstance(TimeZone.getTimeZone(ZoneId.of("UTC"))));
       prepst.addBatch();
       prepst.executeBatch();
       rs = statement.executeQuery("select * from test_prepst_ts");
@@ -465,7 +466,7 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
 
   @Test
   public void testScript() throws SQLException {
-    //TimeZone.setDefault(TimeZone.getTimeZone("Asia/Tokyo"));
+    // TimeZone.setDefault(TimeZone.getTimeZone("Asia/Tokyo"));
     Connection conn = getConnection();
     Statement stmt = conn.createStatement();
     String query = "create or replace table public.t1 (c1 timestamp_ltz)";
@@ -474,14 +475,22 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
     String qry = "insert into t1 values (?)";
 
     LocalDateTime ldt = LocalDateTime.now();
-    System.out.println(ldt.toInstant(ZoneId.systemDefault().getRules().getOffset(ldt)).getEpochSecond());
+    System.out.println(
+        ldt.toInstant(ZoneId.systemDefault().getRules().getOffset(ldt)).getEpochSecond());
 
     // Normal binding
     conn = getConnection();
     PreparedStatement psNormal = conn.prepareStatement(qry);
-    //psNormal.unwrap(SnowflakePreparedStatement.class).setTimestampNTZ(1, Timestamp.from(ldt.toInstant(ZoneId.systemDefault().getRules().getOffset(ldt))),Calendar.getInstance(TimeZone.getDefault()));
-    psNormal.setTimestamp(1, Timestamp.from(ldt.toInstant(ZoneId.systemDefault().getRules().getOffset(ldt))),Calendar.getInstance(TimeZone.getDefault()));
-            //Calendar.getInstance(TimeZone.getTimeZone(ZoneId.of("UTC"))));
+    psNormal.setTimestamp(
+        1,
+        Timestamp.from(
+            ldt.toInstant(
+                ZoneId.systemDefault()
+                    .getRules()
+                    .getOffset(ldt)))); // Calendar.getInstance(TimeZone.getDefault()));
+    // psNormal.setTimestamp(1,
+    // Timestamp.from(ldt.toInstant(ZoneId.systemDefault().getRules().getOffset(ldt))));
+    // Calendar.getInstance(TimeZone.getTimeZone(ZoneId.of("UTC"))));
     psNormal.addBatch();
     psNormal.executeBatch();
 
@@ -489,9 +498,10 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
     conn = getConnection();
     PreparedStatement psBulkArray = conn.prepareStatement(qry);
     for (int i = 0; i < 1000000; i++) {
-      psBulkArray.setTimestamp(1, Timestamp.from(ldt.toInstant(ZoneId.systemDefault().getRules().getOffset(ldt))),
-              Calendar.getInstance(TimeZone.getDefault()));
-              //Calendar.getInstance(TimeZone.getTimeZone(ZoneId.of("UTC"))));
+      psBulkArray.setTimestamp(
+          1, Timestamp.from(ldt.toInstant(ZoneId.systemDefault().getRules().getOffset(ldt))));
+      // Calendar.getInstance(TimeZone.getDefault()));
+      // Calendar.getInstance(TimeZone.getTimeZone(ZoneId.of("UTC"))));
       psBulkArray.addBatch();
     }
     psBulkArray.executeBatch();

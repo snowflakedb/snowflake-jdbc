@@ -4,18 +4,7 @@
 
 package net.snowflake.client.core.bind;
 
-import net.snowflake.client.core.ParameterBindingDTO;
-import net.snowflake.client.core.SFException;
-import net.snowflake.client.core.SFSession;
-import net.snowflake.client.core.SFStatement;
-import net.snowflake.client.jdbc.ErrorCode;
-import net.snowflake.client.jdbc.SnowflakeFileTransferAgent;
-import net.snowflake.client.jdbc.SnowflakeSQLLoggedException;
-import net.snowflake.client.jdbc.SnowflakeType;
-import net.snowflake.client.log.SFLogger;
-import net.snowflake.client.log.SFLoggerFactory;
-import net.snowflake.client.util.SFPair;
-import net.snowflake.common.core.SqlState;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.io.ByteArrayInputStream;
 import java.io.Closeable;
@@ -28,8 +17,18 @@ import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
+import net.snowflake.client.core.ParameterBindingDTO;
+import net.snowflake.client.core.SFException;
+import net.snowflake.client.core.SFSession;
+import net.snowflake.client.core.SFStatement;
+import net.snowflake.client.jdbc.ErrorCode;
+import net.snowflake.client.jdbc.SnowflakeFileTransferAgent;
+import net.snowflake.client.jdbc.SnowflakeSQLLoggedException;
+import net.snowflake.client.jdbc.SnowflakeType;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
+import net.snowflake.client.util.SFPair;
+import net.snowflake.common.core.SqlState;
 
 public class BindUploader implements Closeable {
   private static final SFLogger logger = SFLoggerFactory.getLogger(BindUploader.class);
@@ -83,7 +82,7 @@ public class BindUploader implements Closeable {
   private BindUploader(SFSession session, String stageDir) {
     this.session = session;
     this.stagePath = "@" + STAGE_NAME + "/" + stageDir;
-    Calendar calendarUTC = new GregorianCalendar(session.getSessionTimezone());
+    Calendar calendarUTC = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
     calendarUTC.clear();
     Calendar calendarSession = new GregorianCalendar(session.getSessionTimezone());
     calendarSession.clear();
@@ -155,8 +154,7 @@ public class BindUploader implements Closeable {
     int nano = times.right;
 
     Timestamp v1 = new Timestamp(sec * 1000);
-    if (type.equalsIgnoreCase("TIMESTAMP_NTZ"))
-    {
+    if (type.equalsIgnoreCase("TIMESTAMP_NTZ")) {
       return timestampNTZFormat.format(v1) + String.format("%09d", nano) + " +00:00";
     }
     return timestampFormat.format(v1) + String.format("%09d", nano) + " +00:00";
