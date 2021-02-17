@@ -4,6 +4,7 @@
 
 package net.snowflake.client.core;
 
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetEnv;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 import static org.apache.http.client.config.CookieSpecs.DEFAULT;
 import static org.apache.http.client.config.CookieSpecs.IGNORE_COOKIES;
@@ -88,6 +89,8 @@ public class HttpUtil {
 
   /** customized proxy properties */
   static boolean useProxy = false;
+
+  static boolean httpUseProxy = false;
 
   static String proxyHost;
   static int proxyPort;
@@ -635,5 +638,35 @@ public class HttpUtil {
       proxyPassword = (String) connectionPropertiesMap.get(SFSessionProperty.PROXY_PASSWORD);
       nonProxyHosts = (String) connectionPropertiesMap.get(SFSessionProperty.NON_PROXY_HOSTS);
     }
+
+    // parse JVM proxy settings. Print them out if JVM proxy is in usage.
+    httpUseProxy = Boolean.parseBoolean(systemGetProperty("http.useProxy"));
+    if (httpUseProxy) {
+      String httpProxyHost = systemGetProperty("http.proxyHost");
+      String httpProxyPort = systemGetProperty("http.proxyPort");
+      String httpsProxyHost = systemGetProperty("https.proxyHost");
+      String httpsProxyPort = systemGetProperty("https.proxyPort");
+      String noProxy = systemGetEnv("NO_PROXY");
+      logger.debug(
+          "http.useProxy={}, http.proxyHost={}, http.proxyPort={}, https.proxyHost={}, https.proxyPort={}, NO_PROXY={}",
+          httpUseProxy,
+          httpProxyHost,
+          httpProxyPort,
+          httpsProxyHost,
+          httpsProxyPort,
+          noProxy);
+    } else {
+      logger.debug("http.useProxy={}. JVM proxy not used.", httpUseProxy);
+    }
+    // Always print off connection string proxy parameters. These override JVM proxy parameters if
+    // use_proxy=true.
+    logger.debug(
+        "connection proxy parameters: use_proxy={}, proxy_host={}, proxy_port={}, proxy_user={}, proxy_password={}, non_proxy_hosts={}",
+        useProxy,
+        proxyHost,
+        proxyPort,
+        proxyUser,
+        !Strings.isNullOrEmpty(proxyPassword) ? "***" : "(empty)",
+        nonProxyHosts);
   }
 }

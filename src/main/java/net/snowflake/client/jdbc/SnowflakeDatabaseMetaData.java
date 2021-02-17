@@ -1009,7 +1009,8 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
   }
 
   @Override
-  public ResultSet getProcedures(String catalog, String schemaPattern, String procedureNamePattern)
+  public ResultSet getProcedures(
+      final String catalog, final String schemaPattern, final String procedureNamePattern)
       throws SQLException {
     raiseSQLExceptionIfConnectionIsClosed();
     Statement statement = connection.createStatement();
@@ -1069,7 +1070,10 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
 
   @Override
   public ResultSet getProcedureColumns(
-      String catalog, String schemaPattern, String procedureNamePattern, String columnNamePattern)
+      final String catalog,
+      final String schemaPattern,
+      final String procedureNamePattern,
+      final String columnNamePattern)
       throws SQLException {
     logger.debug(
         "public ResultSet getProcedureColumns(String catalog, "
@@ -1313,13 +1317,16 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
 
   @Override
   public ResultSet getTables(
-      String catalog, String schemaPattern, String tableNamePattern, String[] types)
+      String originalCatalog,
+      String originalSchemaPattern,
+      final String tableNamePattern,
+      final String[] types)
       throws SQLException {
     logger.debug(
         "public ResultSet getTables(String catalog={}, String "
             + "schemaPattern={}, String tableNamePattern={}, String[] types={})",
-        catalog,
-        schemaPattern,
+        originalCatalog,
+        originalSchemaPattern,
         tableNamePattern,
         (ArgSupplier) () -> Arrays.toString(types));
 
@@ -1351,9 +1358,9 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
       return SnowflakeDatabaseMetaDataResultSet.getEmptyResultSet(GET_TABLES, statement);
     }
 
-    SFPair<String, String> resPair = applySessionContext(catalog, schemaPattern);
-    catalog = resPair.left;
-    schemaPattern = resPair.right;
+    SFPair<String, String> resPair = applySessionContext(originalCatalog, originalSchemaPattern);
+    final String catalog = resPair.left;
+    final String schemaPattern = resPair.right;
 
     final Pattern compiledSchemaPattern = Wildcard.toRegexPattern(schemaPattern, true);
     final Pattern compiledTablePattern = Wildcard.toRegexPattern(tableNamePattern, true);
@@ -1393,8 +1400,8 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
       } else if (schemaPattern.isEmpty()) {
         return SnowflakeDatabaseMetaDataResultSet.getEmptyResultSet(GET_TABLES, statement);
       } else {
-        schemaPattern = unescapeChars(schemaPattern);
-        showCommand += " in schema \"" + catalog + "\".\"" + schemaPattern + "\"";
+        String schemaUnescaped = unescapeChars(schemaPattern);
+        showCommand += " in schema \"" + catalog + "\".\"" + schemaUnescaped + "\"";
       }
     }
 
@@ -1507,23 +1514,26 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
 
   @Override
   public ResultSet getColumns(
-      String catalog, String schemaPattern, String tableNamePattern, String columnNamePattern)
+      String catalog,
+      String schemaPattern,
+      final String tableNamePattern,
+      final String columnNamePattern)
       throws SQLException {
     return getColumns(catalog, schemaPattern, tableNamePattern, columnNamePattern, false);
   }
 
   public ResultSet getColumns(
-      String catalog,
-      String schemaPattern,
-      String tableNamePattern,
-      String columnNamePattern,
+      String originalCatalog,
+      String originalSchemaPattern,
+      final String tableNamePattern,
+      final String columnNamePattern,
       final boolean extendedSet)
       throws SQLException {
     logger.debug(
         "public ResultSet getColumns(String catalog={}, String schemaPattern={}"
             + "String tableNamePattern={}, String columnNamePattern={}, boolean extendedSet={}",
-        catalog,
-        schemaPattern,
+        originalCatalog,
+        originalSchemaPattern,
         tableNamePattern,
         columnNamePattern,
         extendedSet);
@@ -1531,9 +1541,9 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
     Statement statement = connection.createStatement();
 
     // apply session context when catalog is unspecified
-    SFPair<String, String> resPair = applySessionContext(catalog, schemaPattern);
-    catalog = resPair.left;
-    schemaPattern = resPair.right;
+    SFPair<String, String> resPair = applySessionContext(originalCatalog, originalSchemaPattern);
+    final String catalog = resPair.left;
+    final String schemaPattern = resPair.right;
 
     final Pattern compiledSchemaPattern = Wildcard.toRegexPattern(schemaPattern, true);
     final Pattern compiledTablePattern = Wildcard.toRegexPattern(tableNamePattern, true);
@@ -1560,21 +1570,21 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
         return SnowflakeDatabaseMetaDataResultSet.getEmptyResultSet(
             extendedSet ? GET_COLUMNS_EXTENDED_SET : GET_COLUMNS, statement);
       } else {
-        schemaPattern = unescapeChars(schemaPattern);
+        String schemaUnescaped = unescapeChars(schemaPattern);
         if (tableNamePattern == null || Wildcard.isWildcardPatternStr(tableNamePattern)) {
-          showColumnCommand += " in schema \"" + catalog + "\".\"" + schemaPattern + "\"";
+          showColumnCommand += " in schema \"" + catalog + "\".\"" + schemaUnescaped + "\"";
         } else if (tableNamePattern.isEmpty()) {
           return SnowflakeDatabaseMetaDataResultSet.getEmptyResultSet(
               extendedSet ? GET_COLUMNS_EXTENDED_SET : GET_COLUMNS, statement);
         } else {
-          tableNamePattern = unescapeChars(tableNamePattern);
+          String tableNameUnescaped = unescapeChars(tableNamePattern);
           showColumnCommand +=
               " in table \""
                   + catalog
                   + "\".\""
-                  + schemaPattern
+                  + schemaUnescaped
                   + "\".\""
-                  + tableNamePattern
+                  + tableNameUnescaped
                   + "\"";
         }
       }
@@ -1768,7 +1778,8 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
   }
 
   @Override
-  public ResultSet getTablePrivileges(String catalog, String schemaPattern, String tableNamePattern)
+  public ResultSet getTablePrivileges(
+      String originalCatalog, String originalSchemaPattern, final String tableNamePattern)
       throws SQLException {
     logger.debug(
         "public ResultSet getTablePrivileges(String catalog, "
@@ -1781,9 +1792,9 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
       return SnowflakeDatabaseMetaDataResultSet.getEmptyResultSet(GET_TABLE_PRIVILEGES, statement);
     }
     // apply session context when catalog is unspecified
-    SFPair<String, String> resPair = applySessionContext(catalog, schemaPattern);
-    catalog = resPair.left;
-    schemaPattern = resPair.right;
+    SFPair<String, String> resPair = applySessionContext(originalCatalog, originalSchemaPattern);
+    final String catalog = resPair.left;
+    final String schemaPattern = resPair.right;
 
     String showView = "select * from ";
 
@@ -1880,22 +1891,22 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
   }
 
   @Override
-  public ResultSet getPrimaryKeys(String catalog, String schema, final String table)
+  public ResultSet getPrimaryKeys(String originalCatalog, String originalSchema, final String table)
       throws SQLException {
     logger.debug(
         "public ResultSet getPrimaryKeys(String catalog={}, "
             + "String schema={}, String table={})",
-        catalog,
-        schema,
+        originalCatalog,
+        originalSchema,
         table);
     raiseSQLExceptionIfConnectionIsClosed();
     Statement statement = connection.createStatement();
     String showPKCommand = "show /* JDBC:DatabaseMetaData.getPrimaryKeys() */ primary keys in ";
 
     // apply session context when catalog is unspecified
-    SFPair<String, String> resPair = applySessionContext(catalog, schema);
-    catalog = resPair.left;
-    schema = resPair.right;
+    SFPair<String, String> resPair = applySessionContext(originalCatalog, originalSchema);
+    final String catalog = resPair.left;
+    final String schema = resPair.right;
 
     if (catalog == null) {
       showPKCommand += "account";
@@ -1974,8 +1985,8 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
    */
   private ResultSet getForeignKeys(
       final String client,
-      String parentCatalog,
-      String parentSchema,
+      String originalParentCatalog,
+      String originalParentSchema,
       final String parentTable,
       final String foreignCatalog,
       final String foreignSchema,
@@ -1986,9 +1997,11 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
     StringBuilder commandBuilder = new StringBuilder();
 
     // apply session context when catalog is unspecified
-    SFPair<String, String> resPair = applySessionContext(parentCatalog, parentSchema);
-    parentCatalog = resPair.left;
-    parentSchema = resPair.right;
+    // apply session context when catalog is unspecified
+    SFPair<String, String> resPair =
+        applySessionContext(originalParentCatalog, originalParentSchema);
+    final String parentCatalog = resPair.left;
+    final String parentSchema = resPair.right;
 
     if (client.equals("export") || client.equals("cross")) {
       commandBuilder.append(
@@ -2158,19 +2171,19 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
   }
 
   @Override
-  public ResultSet getImportedKeys(String catalog, String schema, String table)
+  public ResultSet getImportedKeys(String originalCatalog, String originalSchema, String table)
       throws SQLException {
     logger.debug(
         "public ResultSet getImportedKeys(String catalog={}, "
             + "String schema={}, String table={})",
-        catalog,
-        schema,
+        originalCatalog,
+        originalSchema,
         table);
 
     // apply session context when catalog is unspecified
-    SFPair<String, String> resPair = applySessionContext(catalog, schema);
-    catalog = resPair.left;
-    schema = resPair.right;
+    SFPair<String, String> resPair = applySessionContext(originalCatalog, originalSchema);
+    final String catalog = resPair.left;
+    final String schema = resPair.right;
 
     return getForeignKeys("import", catalog, schema, table, null, null, null);
   }
@@ -2744,17 +2757,17 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
   }
 
   @Override
-  public ResultSet getSchemas(String catalog, String schemaPattern) throws SQLException {
+  public ResultSet getSchemas(String originalCatalog, String originalSchema) throws SQLException {
     logger.debug(
         "public ResultSet getSchemas(String catalog={}, String " + "schemaPattern={})",
-        catalog,
-        schemaPattern);
+        originalCatalog,
+        originalSchema);
     raiseSQLExceptionIfConnectionIsClosed();
 
     // apply session context when catalog is unspecified
-    SFPair<String, String> resPair = applySessionContext(catalog, schemaPattern);
-    catalog = resPair.left;
-    schemaPattern = resPair.right;
+    SFPair<String, String> resPair = applySessionContext(originalCatalog, originalSchema);
+    final String catalog = resPair.left;
+    final String schemaPattern = resPair.right;
 
     final Pattern compiledSchemaPattern = Wildcard.toRegexPattern(schemaPattern, true);
 
@@ -2829,7 +2842,8 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
   }
 
   @Override
-  public ResultSet getFunctions(String catalog, String schemaPattern, String functionNamePattern)
+  public ResultSet getFunctions(
+      final String catalog, final String schemaPattern, final String functionNamePattern)
       throws SQLException {
     raiseSQLExceptionIfConnectionIsClosed();
     Statement statement = connection.createStatement();
