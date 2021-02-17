@@ -144,7 +144,7 @@ public class BindUploader implements Closeable {
     return SFPair.of(sec, nano);
   }
 
-  private synchronized String synchronizedTimestampFormat(String o) {
+  private synchronized String synchronizedTimestampFormat(String o, String type) {
     if (o == null) {
       return null;
     }
@@ -155,23 +155,11 @@ public class BindUploader implements Closeable {
     int nano = times.right;
 
     Timestamp v1 = new Timestamp(sec * 1000);
-
+    if (type.equalsIgnoreCase("TIMESTAMP_NTZ"))
+    {
+      return timestampNTZFormat.format(v1) + String.format("%09d", nano) + " +00:00";
+    }
     return timestampFormat.format(v1) + String.format("%09d", nano) + " +00:00";
-  }
-
-  private synchronized String synchronizedTimestampNTZFormat(String o) {
-    if (o == null) {
-      return null;
-    }
-
-    boolean isNegative = o.length() > 0 && o.charAt(0) == '-';
-    SFPair<Long, Integer> times = getNanosAndSecs(o, isNegative);
-    long sec = times.left;
-    int nano = times.right;
-
-    Timestamp v1 = new Timestamp(sec * 1000);
-
-    return timestampNTZFormat.format(v1) + String.format("%09d", nano) + " +00:00";
   }
 
   /**
@@ -323,13 +311,9 @@ public class BindUploader implements Closeable {
         String type = value.getType();
         List<?> list = (List<?>) value.getValue();
         List<String> convertedList = new ArrayList<>(list.size());
-        if ("TIMESTAMP_LTZ".equals(type)) {
+        if ("TIMESTAMP_NTZ".equals(type) || "TIMESTAMP_LTZ".equals(type)) {
           for (Object e : list) {
-            convertedList.add(synchronizedTimestampFormat((String) e));
-          }
-        } else if ("TIMESTAMP_NTZ".equals(type)) {
-          for (Object e : list) {
-            convertedList.add(synchronizedTimestampNTZFormat((String) e));
+            convertedList.add(synchronizedTimestampFormat((String) e, type));
           }
         } else if ("DATE".equals(type)) {
           for (Object e : list) {

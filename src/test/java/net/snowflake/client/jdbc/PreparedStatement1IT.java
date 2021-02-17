@@ -479,8 +479,8 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
     // Normal binding
     conn = getConnection();
     PreparedStatement psNormal = conn.prepareStatement(qry);
-    psNormal.setTimestamp(1, Timestamp.from(ldt.toInstant(ZoneId.systemDefault().getRules().getOffset(ldt))),
-            Calendar.getInstance(TimeZone.getDefault()));
+    //psNormal.unwrap(SnowflakePreparedStatement.class).setTimestampNTZ(1, Timestamp.from(ldt.toInstant(ZoneId.systemDefault().getRules().getOffset(ldt))),Calendar.getInstance(TimeZone.getDefault()));
+    psNormal.setTimestamp(1, Timestamp.from(ldt.toInstant(ZoneId.systemDefault().getRules().getOffset(ldt))),Calendar.getInstance(TimeZone.getDefault()));
             //Calendar.getInstance(TimeZone.getTimeZone(ZoneId.of("UTC"))));
     psNormal.addBatch();
     psNormal.executeBatch();

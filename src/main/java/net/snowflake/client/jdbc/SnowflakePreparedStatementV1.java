@@ -569,8 +569,16 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
     setTime(parameterIndex, x);
   }
 
+  public void setTimestampNTZ(int parameterIndex, Timestamp x, Calendar cal) throws SQLException {
+    setTimestampHelper(parameterIndex, x, cal, SnowflakeType.TIMESTAMP_NTZ);
+  }
+
   @Override
   public void setTimestamp(int parameterIndex, Timestamp x, Calendar cal) throws SQLException {
+    setTimestampHelper(parameterIndex, x, cal, SnowflakeType.TIMESTAMP_LTZ);
+  }
+
+  public void setTimestampHelper(int parameterIndex, Timestamp x, Calendar cal, SnowflakeType type) throws SQLException {
     logger.debug("setTimestamp(int parameterIndex, Timestamp x, Calendar cal)");
     raiseSQLExceptionIfStatementIsClosed();
 
@@ -582,7 +590,7 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
       long milliSecSinceEpoch = x.getTime();
 
       if (sfType == SnowflakeType.TIMESTAMP) {
-        sfType = connection.getSFBaseSession().getTimestampMappedType();
+        sfType = type;
       }
       // if type is timestamp_tz, keep the offset and the time value separate.
       // store the offset, in minutes, as amount it's off from UTC
