@@ -77,8 +77,6 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     paramProperties.put(CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY, 1800);
     Connection connection = getConnection(paramProperties);
 
-    connection.getClientInfo(CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY);
-
     for (Enumeration<?> enums = paramProperties.propertyNames(); enums.hasMoreElements(); ) {
       String key = (String) enums.nextElement();
       ResultSet rs =
@@ -103,8 +101,6 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     Properties paramProperties = new Properties();
     paramProperties.put(CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY, 2);
     Connection connection = getConnection(paramProperties);
-
-    connection.getClientInfo(CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY);
 
     for (Enumeration<?> enums = paramProperties.propertyNames(); enums.hasMoreElements(); ) {
       String key = (String) enums.nextElement();
