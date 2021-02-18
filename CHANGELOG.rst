@@ -1,12 +1,12 @@
 **JDBC Driver 3.13.0**
 
-- \| SNOW-209530 | Connection string proxy parameters override JVM proxy settings and PUT/GET commands go through proxy when connecting to Azure.
-- \| SNOW-165204 | Fix number overflow exception that resulted from calling getObject() on a sql type BIGINT.
-- \| SNOW-136474 | Multi-part threshold value default changed from 64 to 200 and is read from server.
-- \| SNOW-251457 | ResultSet.getString() returns DATE objects in session timezone now instead of offsetting based on JVM timezone.
-- \| SNOW-250222 | Fix exception thrown by COPY INTO command when JDBC inserts more than INT_MAX records from a single file.
-- \| SNOW-255552 | Fix null pointer exception in ResultSet.getCharacterStream().
-- \| SNOW-180954 | Make JNA dependencies optional.
+- \| SNOW-209530 | Changed the handling of proxy settings. Proxy parameters in the connection string now override the JVM proxy settings. When connecting to Azure, PUT/GET commands now go through the specified proxy.
+- \| SNOW-165204 | Fixed a number overflow exception that resulted from calling getObject() on a SQL BIGINT value.
+- \| SNOW-136474 | Changed the default value of the multi-part threshold from 64 to 200, and changed the JDBC Driver to read this parameter from the server.
+- \| SNOW-251457 | Changed  the ResultSet.getString() method to return DATE objects in the session time zone (rather than use the offset from the JVM time zone).
+- \| SNOW-250222 | Fixed an exception thrown by the COPY INTO command when the JDBC Driver inserts more than INT_MAX records from a single file.
+- \| SNOW-255552 | Fixed a null pointer exception in ResultSet.getCharacterStream().
+- \| SNOW-180954 | Removed the JNA classes from the Snowflake JDBC Driver JAR file.
 
 **JDBC Driver 3.12.17**
 
