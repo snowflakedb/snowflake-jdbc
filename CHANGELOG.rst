@@ -1,3 +1,13 @@
+**JDBC Driver 3.13.0**
+
+- \| SNOW-209530 | Connection string proxy parameters override JVM proxy settings and PUT/GET commands go through proxy when connecting to Azure.
+- \| SNOW-165204 | Fix number overflow exception that resulted from calling getObject() on a sql type BIGINT.
+- \| SNOW-136474 | Multi-part threshold value default changed from 64 to 200 and is read from server.
+- \| SNOW-251457 | ResultSet.getString() returns DATE objects in session timezone now instead of offsetting based on JVM timezone.
+- \| SNOW-250222 | Fix exception thrown by COPY INTO command when JDBC inserts more than INT_MAX records from a single file.
+- \| SNOW-255552 | Fix null pointer exception in ResultSet.getCharacterStream().
+- \| SNOW-180954 | Make JNA dependencies optional.
+
 **JDBC Driver 3.12.17**
 
 - \| SNOW-174428 | Change bulk array binds to be uploaded with streaming PUT instead of local file creation + PUT.
