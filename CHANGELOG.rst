@@ -1,3 +1,13 @@
+**JDBC Driver 3.13.0**
+
+- \| SNOW-209530 | Changed the handling of proxy settings. Proxy parameters in the connection string now override the JVM proxy settings. When connecting to Azure, PUT/GET commands now go through the specified proxy.
+- \| SNOW-165204 | Fixed a number overflow exception that resulted from calling getObject() on a SQL BIGINT value.
+- \| SNOW-136474 | Changed the default value of the multi-part threshold from 64 to 200, and changed the JDBC Driver to read this parameter from the server.
+- \| SNOW-251457 | Changed  the ResultSet.getString() method to return DATE objects in the session time zone (rather than use the offset from the JVM time zone).
+- \| SNOW-250222 | Fixed an exception thrown by the COPY INTO command when the JDBC Driver inserts more than INT_MAX records from a single file.
+- \| SNOW-255552 | Fixed a null pointer exception in ResultSet.getCharacterStream().
+- \| SNOW-180954 | Removed the JNA classes from the Snowflake JDBC Driver JAR file.
+
 **JDBC Driver 3.12.17**
 
 - \| SNOW-174428 | Change bulk array binds to be uploaded with streaming PUT instead of local file creation + PUT.
@@ -11,7 +21,6 @@
 **JDBC Driver 3.12.15**
 
 - \| SNOW-207061 | Fixed a problem with null checking when converting to timestamp values.
-- \      
 
 **JDBC Driver 3.12.14**
 
@@ -27,51 +36,46 @@
 - \| SNOW-161733 | JDBC setString function performance is not satisfactory.
 - \| SNOW-195989 | Snowflake JDBC driver is unable to connect via Key-Pair authentication if they private key is encrypted and if the key is generated using OpenSSL 1.1.1g on Windows or Ubuntu.
 - \| SNOW-199080 | Yearly GPG key rotation.
-- \
 
 **JDBC Driver 3.12.12**
 
 - \| SNOW-180303 | Removed unnecessary log lines from the JDBC Driver log.
-- \
 
 **JDBC Driver 3.12.11**
 
 - \| SNOW-182450 | Added in-band telemetry metrics for the DatabaseMetaData get methods (e.g. getTables).
 - \| SNOW-176125 | When the log level is set to DEBUG, log the OOB telemetry entries that are sent to Snowflake.
-- \      
 
 **JDBC Driver 3.12.10**
 - \| SNOW-136193 | JDBC is adjusting DLS for some values that are towards the DLS switch, resulting in a wrong result
 - \| SNOW-164505 | Implement telemetry events in JDBC driver where needed
 - \| SNOW-170758 | SAML/SSO works in Snowflake UI but does not work with SnowSQL or JDBC when using ExternalBrowser
-- \
 
 **JDBC Driver 3.12.9**
 
 - \| SNOW-170944 | Enhance the way how JDBC masks sensitive data.
 - \| SNOW-171834 | Cut down on redundant parameters in ClientEnv field
-- \      
 
 **JDBC Driver 3.12.8**
 
 - \| SNOW-159743 | Unable to return query results on AIX using JDBC driver
+- \| SNOW-164084 | Reverted a fix that broke OOB telemetry for the driver.
 - \| SNOW-163938 | Resolve telemetry response failures in JDBC driver
 - \| SNOW-163587 | DatabaseMetaData getFunctionColumns(null, "%", "%", "%") throws SQL compilation error
 - \| SNOW-165718 | Add log of client parameter settings to be accessed in Snowhouse
 - \| SNOW-169174 | CVE-2020-14061, CVE-2020-14062, CVE-2020-14060, CVE-2020-14195 com.fasterxml.jackson.core:jackson-databind to version 2.9.10.5 or later
-- \      
 
 **JDBC Driver 3.12.7**
 
-- \| SNOW-164084 |  Revert a bug which break telemetry for JDBC driver
-- \
-- \      
+- \| N/A         | Version is not available for download; all fixes are available in 3.12.8 (and higher).
 
 **JDBC Driver 3.12.6**
 
-- \| SNOW-NNN1 | Will be added later
-- \
-- \      
+- \| SNOW-146005 | Fixed issue where using the Spring Data JDBC ``SimpleJdbcInsert`` class to execute a SQL statement threw an exception.
+- \| SNOW-150921 | Fixed issue where the connection was retrying the OCSP endpoint while using ``insecureMode``; updated the driver to use OCSP mode specified in the session config for OOB telemetry.
+- \| SNOW-152748 | Added new connection parameter, ``stringsQuotedForColumnDef``, to support changes to how the ``DatabaseMetaData.getColumns()`` and ``DatabaseMetaData.getProcedureColumns()`` methods return COLUMN_DEF string values with or without single quotes.
+- \| SNOW-157758 | Internal fix for pending feature.
+- \| SNOW-163080 | Performance improvements for calling ``ResultSet.next()`` after queries have completed.
 
 **JDBC Driver 3.12.5**
 
@@ -84,7 +88,6 @@
 - \| SNOW-156092 | Fix Spark/JDBC nullpointer error in getObject()
 - \| SNOW-158363 | Snowflake Authentication Token sneaking through secret detector in logs
 - \| SNOW-155630 | Fix some async query PrPr issues and add metadata retrieval
-- \      
 
 **JDBC Driver 3.12.4**
 
@@ -171,11 +174,11 @@
 
 **JDBC Driver 3.10.0**
 
-- \SNOW-94386 | Fix getShort, getInt, getLong, getBigDecimal, getFloat, getDouble, getBytes to be consistent between JSON and ARROW result sets
-- \SNOW-97598 | Fix special Characters in Table Name causes getColumns() to not return values
-- \SNOW-97684 | Async submit in-band telemetry data
-- \SNOW-97215 | Change Prepare statement to defer SQL syntax and binding value check to Execute to improve the latency
-- \SNOW-99630 | Fix CVE-2019-16335, CVE-2019-14540: com.fasterxml.jackson.core:jackson-databind
+- \| SNOW-94386 | Fix getShort, getInt, getLong, getBigDecimal, getFloat, getDouble, getBytes to be consistent between JSON and ARROW result sets
+- \| SNOW-97598 | Fix special Characters in Table Name causes getColumns() to not return values
+- \| SNOW-97684 | Async submit in-band telemetry data
+- \| SNOW-97215 | Change Prepare statement to defer SQL syntax and binding value check to Execute to improve the latency
+- \| SNOW-99630 | Fix CVE-2019-16335, CVE-2019-14540: com.fasterxml.jackson.core:jackson-databind
 
 **JDBC Driver 3.9.2**
 
