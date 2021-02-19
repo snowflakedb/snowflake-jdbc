@@ -121,7 +121,7 @@ public class SFSession extends SFBaseSession {
         if (QueryStatus.isStillRunning(qStatus)) {
           canClose = false;
         }
-      } catch (SQLException | SFException e) {
+      } catch (SQLException e) {
         logger.error(e.getMessage());
       }
     }
@@ -133,7 +133,7 @@ public class SFSession extends SFBaseSession {
    * @return enum of type QueryStatus indicating the query's status
    * @throws SQLException
    */
-  public QueryStatus getQueryStatus(String queryID) throws SQLException, SFException {
+  public QueryStatus getQueryStatus(String queryID) throws SQLException {
     // create the URL to check the query monitoring endpoint
     String statusUrl = "";
     String sessionUrl = getUrl();
@@ -149,6 +149,7 @@ public class SFSession extends SFBaseSession {
     String response = null;
     JsonNode jsonNode = null;
     boolean sessionRenewed;
+    // Do this while the session hasn't been renewed
     do {
       sessionRenewed = false;
       try {
@@ -167,19 +168,35 @@ public class SFSession extends SFBaseSession {
         logger.debug("response = {}", response);
 
         int errorCode = jsonNode.path("code").asInt();
+        // If the error is due to an expired session token, try renewing the session and trying
+        // again
         if (errorCode == Constants.SESSION_EXPIRED_GS_CODE) {
           try {
             this.renewSession(this.sessionToken);
           } catch (SnowflakeReauthenticationRequest | SFException ex) {
+            // If we fail to renew the session based on a re-authentication error, try to
+            // re-authenticate the session first
             if (ex instanceof SnowflakeReauthenticationRequest
                 && this.isExternalbrowserAuthenticator()) {
-              this.open();
-            } else {
-              throw ex;
+              try {
+                this.open();
+              } catch (SFException e) {
+                throw new SnowflakeSQLException(e);
+              }
+            }
+            // If we reach a re-authentication error but cannot re-authenticate, throw an exception
+            else if (ex instanceof SnowflakeReauthenticationRequest) {
+              throw (SnowflakeSQLException) ex;
+            }
+            // If trying to renew the session results in an error for any other reason, throw an
+            // exception
+            else if (ex instanceof SFException) {
+              throw new SnowflakeSQLException((SFException) ex);
             }
             throw new SnowflakeSQLException(ex.getMessage());
           }
           sessionRenewed = true;
+          // If the error code was not due to session renewal issues, throw an exception
         } else {
           throw new SnowflakeSQLException(
               queryID,

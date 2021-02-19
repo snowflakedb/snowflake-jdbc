@@ -78,7 +78,7 @@ public class HeartbeatIT extends AbstractDriverIT {
    * @param queryIdx The query index
    * @throws SQLException Will be thrown if any of the driver calls fail
    */
-  void submitQuery(boolean useKeepAliveSession, int queryIdx)
+  protected void submitQuery(boolean useKeepAliveSession, int queryIdx)
       throws SQLException, InterruptedException {
     Connection connection = null;
     Statement statement = null;

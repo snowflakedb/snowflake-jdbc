@@ -101,11 +101,7 @@ class SFAsyncResultSet extends SnowflakeBaseResultSet implements SnowflakeResult
     if (this.queryID == null) {
       throw new SQLException("QueryID unknown");
     }
-    try {
-      return session.getQueryStatus(this.queryID);
-    } catch (SFException e) {
-      throw new SQLException(e);
-    }
+    return session.getQueryStatus(this.queryID);
   }
 
   /**

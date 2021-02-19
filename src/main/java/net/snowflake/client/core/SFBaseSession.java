@@ -350,6 +350,12 @@ public abstract class SFBaseSession {
     this.enableHeartbeat = enableHeartbeat;
   }
 
+  /**
+   * Set the heartbeat frequency in seconds. This is the frequency with which the session token is
+   * refreshed.
+   *
+   * @param frequency heartbeat frequency in seconds
+   */
   public void setHeartbeatFrequency(int frequency) {
     if (frequency < 900) {
       this.heartbeatFrequency = 900;
@@ -360,6 +366,7 @@ public abstract class SFBaseSession {
     }
   }
 
+  /** Retrieve session heartbeat frequency in seconds */
   public int getHeartbeatFrequency() {
     return this.heartbeatFrequency;
   }
