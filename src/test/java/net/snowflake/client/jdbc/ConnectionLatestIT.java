@@ -3,6 +3,7 @@
  */
 package net.snowflake.client.jdbc;
 
+import static net.snowflake.client.core.SessionUtil.CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY;
 import static net.snowflake.client.jdbc.ConnectionIT.INVALID_CONNECTION_INFO_CODE;
 import static net.snowflake.client.jdbc.ConnectionIT.WAIT_FOR_TELEMETRY_REPORT_IN_MILLISECS;
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -13,6 +14,7 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.sql.*;
+import java.util.Enumeration;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
@@ -20,6 +22,7 @@ import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryConnection;
 import net.snowflake.client.core.QueryStatus;
+import net.snowflake.client.core.SFSession;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.common.core.SqlState;
 import org.junit.After;
@@ -62,6 +65,57 @@ public class ConnectionLatestIT extends BaseJDBCTest {
       TelemetryService.disable();
     }
     service.resetNumOfRetryToTriggerTelemetry();
+  }
+
+  /**
+   * Verify the passed heartbeat frequency matches the output value if the input is valid (between
+   * 900 and 3600).
+   */
+  @Test
+  public void testHeartbeatFrequencyValidValue() throws Exception {
+    Properties paramProperties = new Properties();
+    paramProperties.put(CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY, 1800);
+    Connection connection = getConnection(paramProperties);
+
+    for (Enumeration<?> enums = paramProperties.propertyNames(); enums.hasMoreElements(); ) {
+      String key = (String) enums.nextElement();
+      ResultSet rs =
+          connection
+              .createStatement()
+              .executeQuery(String.format("show parameters like '%s'", key));
+      rs.next();
+      String value = rs.getString("value");
+
+      assertThat(key, value, equalTo(paramProperties.get(key).toString()));
+    }
+    SFSession session = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
+    assertEquals(1800, session.getHeartbeatFrequency());
+  }
+
+  /**
+   * Verify the passed heartbeat frequency, which is too small, is changed to the smallest valid
+   * value.
+   */
+  @Test
+  public void testHeartbeatFrequencyTooSmall() throws Exception {
+    Properties paramProperties = new Properties();
+    paramProperties.put(CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY, 2);
+    Connection connection = getConnection(paramProperties);
+
+    for (Enumeration<?> enums = paramProperties.propertyNames(); enums.hasMoreElements(); ) {
+      String key = (String) enums.nextElement();
+      ResultSet rs =
+          connection
+              .createStatement()
+              .executeQuery(String.format("show parameters like '%s'", key));
+      rs.next();
+      String value = rs.getString("value");
+
+      assertThat(key, value, equalTo("900"));
+    }
+
+    SFSession session = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
+    assertEquals(900, session.getHeartbeatFrequency());
   }
 
   @Test
