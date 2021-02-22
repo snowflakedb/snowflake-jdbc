@@ -90,7 +90,6 @@ public class SFSession extends SFBaseSession {
   // session parameters
   private Map<String, Object> sessionParametersMap = new HashMap<>();
   private boolean passcodeInPassword = false;
-  private int heartbeatFrequency = 3600;
 
   // deprecated
   private Level tracingLevel = Level.INFO;
@@ -145,30 +144,68 @@ public class SFSession extends SFBaseSession {
       statusUrl = sessionUrl + SF_PATH_QUERY_MONITOR + queryID;
     }
     // Create a new HTTP GET object and set appropriate headers
+
     HttpGet get = new HttpGet(statusUrl);
-    get.setHeader("Content-type", "application/json");
-    get.setHeader("Authorization", "Snowflake Token=\"" + this.sessionToken + "\"");
     String response = null;
     JsonNode jsonNode = null;
-    try {
-      response = HttpUtil.executeGeneralRequest(get, loginTimeout, getOCSPMode());
-      jsonNode = OBJECT_MAPPER.readTree(response);
-    } catch (Exception e) {
-      throw new SnowflakeSQLLoggedException(
-          this, e.getMessage(), "No response or invalid response from GET request. Error: {}");
-    }
-    // Get response as JSON and parse it to get the query status
-    // check the success field first
-    if (!jsonNode.path("success").asBoolean()) {
-      logger.debug("response = {}", response);
+    boolean sessionRenewed;
+    // Do this while the session hasn't been renewed
+    do {
+      sessionRenewed = false;
+      try {
+        get.setHeader("Content-type", "application/json");
+        get.setHeader("Authorization", "Snowflake Token=\"" + this.sessionToken + "\"");
+        response = HttpUtil.executeGeneralRequest(get, loginTimeout, getOCSPMode());
+        jsonNode = OBJECT_MAPPER.readTree(response);
+      } catch (Exception e) {
+        throw new SnowflakeSQLLoggedException(
+            this, e.getMessage(), "No response or invalid response from GET request. Error: {}");
+      }
 
-      int errorCode = jsonNode.path("code").asInt();
-      throw new SnowflakeSQLException(
-          queryID,
-          jsonNode.path("message").asText(),
-          SqlState.SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION,
-          errorCode);
-    }
+      // Get response as JSON and parse it to get the query status
+      // check the success field first
+      if (!jsonNode.path("success").asBoolean()) {
+        logger.debug("response = {}", response);
+
+        int errorCode = jsonNode.path("code").asInt();
+        // If the error is due to an expired session token, try renewing the session and trying
+        // again
+        if (errorCode == Constants.SESSION_EXPIRED_GS_CODE) {
+          try {
+            this.renewSession(this.sessionToken);
+          } catch (SnowflakeReauthenticationRequest | SFException ex) {
+            // If we fail to renew the session based on a re-authentication error, try to
+            // re-authenticate the session first
+            if (ex instanceof SnowflakeReauthenticationRequest
+                && this.isExternalbrowserAuthenticator()) {
+              try {
+                this.open();
+              } catch (SFException e) {
+                throw new SnowflakeSQLException(e);
+              }
+            }
+            // If we reach a re-authentication error but cannot re-authenticate, throw an exception
+            else if (ex instanceof SnowflakeReauthenticationRequest) {
+              throw (SnowflakeSQLException) ex;
+            }
+            // If trying to renew the session results in an error for any other reason, throw an
+            // exception
+            else if (ex instanceof SFException) {
+              throw new SnowflakeSQLException((SFException) ex);
+            }
+            throw new SnowflakeSQLException(ex.getMessage());
+          }
+          sessionRenewed = true;
+          // If the error code was not due to session renewal issues, throw an exception
+        } else {
+          throw new SnowflakeSQLException(
+              queryID,
+              jsonNode.path("message").asText(),
+              SqlState.SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION,
+              errorCode);
+        }
+      }
+    } while (sessionRenewed);
     JsonNode queryNode = jsonNode.path("data").path("queries");
     String queryStatus = "";
     String errorMessage = "";
@@ -586,7 +623,7 @@ public class SFSession extends SFBaseSession {
       logger.debug("start heartbeat, master token validity: " + masterTokenValidityInSeconds);
 
       HeartbeatBackground.getInstance()
-          .addSession(this, masterTokenValidityInSeconds, this.heartbeatFrequency);
+          .addSession(this, masterTokenValidityInSeconds, heartbeatFrequency);
     } else {
       logger.debug("heartbeat not enabled for the session");
     }

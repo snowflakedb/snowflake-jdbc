@@ -23,6 +23,7 @@ import net.snowflake.client.RunningNotOnTestaccount;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.TestUtil;
 import net.snowflake.client.category.TestCategoryConnection;
+import net.snowflake.client.core.SFSession;
 import net.snowflake.common.core.SqlState;
 import org.apache.commons.codec.binary.Base64;
 import org.junit.Assert;
@@ -644,31 +645,6 @@ public class ConnectionIT extends BaseJDBCTest {
   }
 
   /**
-   * Verify the passed heartbeat frequency, which is too small, is changed to the smallest valid
-   * value.
-   */
-  @Test
-  public void testHeartbeatFrequencyTooSmall() throws Exception {
-    Properties paramProperties = new Properties();
-    paramProperties.put(CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY, 2);
-    Connection connection = getConnection(paramProperties);
-
-    connection.getClientInfo(CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY);
-
-    for (Enumeration<?> enums = paramProperties.propertyNames(); enums.hasMoreElements(); ) {
-      String key = (String) enums.nextElement();
-      ResultSet rs =
-          connection
-              .createStatement()
-              .executeQuery(String.format("show parameters like '%s'", key));
-      rs.next();
-      String value = rs.getString("value");
-
-      assertThat(key, value, equalTo("900"));
-    }
-  }
-
-  /**
    * Verify the passed heartbeat frequency, which is too large, is changed to the maximum valid
    * value.
    */
@@ -691,31 +667,8 @@ public class ConnectionIT extends BaseJDBCTest {
 
       assertThat(key, value, equalTo("3600"));
     }
-  }
-
-  /**
-   * Verify the passed heartbeat frequency matches the output value if the input is valid (between
-   * 900 and 3600).
-   */
-  @Test
-  public void testHeartbeatFrequencyValidValue() throws Exception {
-    Properties paramProperties = new Properties();
-    paramProperties.put(CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY, 1800);
-    Connection connection = getConnection(paramProperties);
-
-    connection.getClientInfo(CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY);
-
-    for (Enumeration<?> enums = paramProperties.propertyNames(); enums.hasMoreElements(); ) {
-      String key = (String) enums.nextElement();
-      ResultSet rs =
-          connection
-              .createStatement()
-              .executeQuery(String.format("show parameters like '%s'", key));
-      rs.next();
-      String value = rs.getString("value");
-
-      assertThat(key, value, equalTo(paramProperties.get(key).toString()));
-    }
+    SFSession session = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
+    assertEquals(3600, session.getHeartbeatFrequency());
   }
 
   @Test

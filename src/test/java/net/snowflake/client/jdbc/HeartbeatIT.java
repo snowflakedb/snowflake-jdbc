@@ -5,16 +5,9 @@ package net.snowflake.client.jdbc;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.instanceOf;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -85,7 +78,7 @@ public class HeartbeatIT extends AbstractDriverIT {
    * @param queryIdx The query index
    * @throws SQLException Will be thrown if any of the driver calls fail
    */
-  private void submitQuery(boolean useKeepAliveSession, int queryIdx)
+  protected void submitQuery(boolean useKeepAliveSession, int queryIdx)
       throws SQLException, InterruptedException {
     Connection connection = null;
     Statement statement = null;
@@ -125,7 +118,7 @@ public class HeartbeatIT extends AbstractDriverIT {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testSuccess() throws Exception {
-    int concurrency = 5;
+    int concurrency = 10;
     ExecutorService executorService = Executors.newFixedThreadPool(10);
     List<Future<?>> futures = new ArrayList<>();
     // create 10 threads, each open a connection and submit a query
@@ -155,7 +148,6 @@ public class HeartbeatIT extends AbstractDriverIT {
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testFailure() throws Exception {
     ExecutorService executorService = Executors.newFixedThreadPool(1);
-
     try {
       Future<?> future =
           executorService.submit(
