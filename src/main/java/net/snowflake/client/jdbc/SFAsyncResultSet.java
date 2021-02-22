@@ -9,7 +9,10 @@ import java.sql.*;
 import java.util.List;
 import java.util.TimeZone;
 import java.util.regex.Pattern;
-import net.snowflake.client.core.*;
+import net.snowflake.client.core.QueryStatus;
+import net.snowflake.client.core.SFBaseResultSet;
+import net.snowflake.client.core.SFException;
+import net.snowflake.client.core.SFSession;
 import net.snowflake.common.core.SqlState;
 
 /** SFAsyncResultSet implementation */
