@@ -31,6 +31,7 @@ import net.snowflake.common.util.ClassUtil;
  */
 public abstract class SFBaseFileTransferAgent implements SnowflakeFixedView {
   protected boolean compressSourceFromStream;
+  protected String destStagePath;
   protected String destFileNameForStreamSource;
   protected InputStream sourceStream;
   protected boolean sourceFromStream;
@@ -100,6 +101,15 @@ public abstract class SFBaseFileTransferAgent implements SnowflakeFixedView {
   public void setSourceStream(InputStream sourceStream) {
     this.sourceStream = sourceStream;
     this.sourceFromStream = true;
+  }
+
+  /**
+   * Sets the destination stage path
+   *
+   * @param destStagePath The target destination stage path.
+   */
+  public void setDestStagePath(String destStagePath) {
+    this.destStagePath = destStagePath;
   }
 
   /**

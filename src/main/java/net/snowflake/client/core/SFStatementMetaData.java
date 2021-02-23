@@ -33,7 +33,7 @@ public class SFStatementMetaData {
 
   private final boolean isValidMetaData;
 
-  SFStatementMetaData(
+  public SFStatementMetaData(
       SFResultSetMetaData resultSetMetaData,
       SFStatementType statementType,
       int numberOfBinds,
