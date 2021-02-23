@@ -4,19 +4,9 @@
 
 package net.snowflake.client.jdbc;
 
-import static net.snowflake.client.core.Constants.MB;
-
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.databind.MappingJsonFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.*;
-import java.net.URISyntaxException;
-import java.nio.ByteBuffer;
-import java.util.*;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.zip.GZIPInputStream;
 import net.snowflake.client.core.*;
 import net.snowflake.client.jdbc.SnowflakeResultChunk.DownloadState;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
@@ -32,6 +22,17 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
+
+import java.io.*;
+import java.net.URISyntaxException;
+import java.nio.ByteBuffer;
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.zip.GZIPInputStream;
+
+import static net.snowflake.client.core.Constants.MB;
 
 /**
  * Class for managing async download of offline result chunks
@@ -667,6 +668,10 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
         nextChunkToConsume);
   }
 
+  public void throwDummyException() throws InterruptedException {
+    throw new InterruptedException();
+  }
+
   /**
    * terminate the downloader
    *
@@ -675,15 +680,16 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
   @Override
   public DownloaderMetrics terminate() throws InterruptedException {
     if (!terminated.getAndSet(true)) {
+      try {
       if (executor != null) {
         if (!executor.isShutdown()) {
           // cancel running downloaders
           downloaderFutures.forEach((k, v) -> v.cancel(true));
           // shutdown executor
           executor.shutdown();
+          throwDummyException();
           if (!executor.awaitTermination(SHUTDOWN_TIME, TimeUnit.SECONDS)) {
             logger.debug("Executor did not terminate in the specified time.");
-
             List<Runnable> droppedTasks = executor.shutdownNow(); // optional **
             logger.debug(
                 "Executor was abruptly shut down. "
@@ -721,6 +727,10 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
           numberMillisWaitingForChunks,
           totalMillisDownloadingChunks.get(),
           totalMillisParsingChunks.get());
+      }
+      finally {
+        releaseAllChunkMemoryUsage();
+      }
     }
     return null;
   }
