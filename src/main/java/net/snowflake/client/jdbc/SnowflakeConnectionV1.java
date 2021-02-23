@@ -841,29 +841,31 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
 
     SnowflakeStatementV1 stmt = this.createStatement().unwrap(SnowflakeStatementV1.class);
 
-    StringBuilder putCommand = new StringBuilder();
-
-    // use a placeholder for source file
-    putCommand.append("put file:///tmp/placeholder ");
+    StringBuilder destStage = new StringBuilder();
 
     // add stage name
     if (!(stageName.startsWith("@") || stageName.startsWith("'@") || stageName.startsWith("$$@"))) {
-      putCommand.append("@");
+      destStage.append("@");
     }
-    putCommand.append(stageName);
+    destStage.append(stageName);
 
     // add dest prefix
     if (destPrefix != null) {
       if (!destPrefix.startsWith("/")) {
-        putCommand.append("/");
+        destStage.append("/");
       }
-      putCommand.append(destPrefix);
+      destStage.append(destPrefix);
     }
 
+    StringBuilder putCommand = new StringBuilder();
+    // use a placeholder for source file
+    putCommand.append("put file:///tmp/placeholder ");
+    putCommand.append(destStage.toString());
     putCommand.append(" overwrite=true");
 
     SFBaseFileTransferAgent transferAgent =
         sfConnectionHandler.getFileTransferAgent(putCommand.toString(), stmt.getSFBaseStatement());
+    transferAgent.setDestStagePath(destStage.toString());
     transferAgent.setSourceStream(inputStream);
     transferAgent.setDestFileNameForStreamSource(destFileName);
     transferAgent.setCompressSourceFromStream(compressData);
