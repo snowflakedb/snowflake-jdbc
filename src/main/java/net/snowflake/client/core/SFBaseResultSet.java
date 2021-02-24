@@ -148,11 +148,11 @@ public abstract class SFBaseResultSet {
     throw new SFException(ErrorCode.FEATURE_UNSUPPORTED, "seek to a previous row");
   }
 
-  protected int getNumberOfBinds() {
+  public int getNumberOfBinds() {
     return numberOfBinds;
   }
 
-  protected List<MetaDataOfBinds> getMetaDataOfBinds() {
+  public List<MetaDataOfBinds> getMetaDataOfBinds() {
     return metaDataOfBinds;
   }
 
