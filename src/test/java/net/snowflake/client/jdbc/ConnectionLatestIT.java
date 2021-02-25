@@ -3,6 +3,19 @@
  */
 package net.snowflake.client.jdbc;
 
+import static net.snowflake.client.core.SessionUtil.CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY;
+import static net.snowflake.client.jdbc.ConnectionIT.INVALID_CONNECTION_INFO_CODE;
+import static net.snowflake.client.jdbc.ConnectionIT.WAIT_FOR_TELEMETRY_REPORT_IN_MILLISECS;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.*;
+
+import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.sql.*;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryConnection;
@@ -16,20 +29,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.TemporaryFolder;
-
-import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.sql.*;
-import java.util.*;
-import java.util.concurrent.TimeUnit;
-
-import static net.snowflake.client.core.SessionUtil.CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY;
-import static net.snowflake.client.jdbc.ConnectionIT.INVALID_CONNECTION_INFO_CODE;
-import static net.snowflake.client.jdbc.ConnectionIT.WAIT_FOR_TELEMETRY_REPORT_IN_MILLISECS;
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.*;
 
 /**
  * Connection integration tests for the latest JDBC driver. This doesn't work for the oldest
@@ -79,27 +78,25 @@ public class ConnectionLatestIT extends BaseJDBCTest {
 
     try {
 
-    // now run a query for 120 seconds
-    // 10000 rows should be enough to force result into multiple chunks
-    resultSet =
-            statement.executeQuery(
-                    "select seq8(), randstr(1000, random()) from table(generator(rowcount => 10000))");
-    statement.close();
-    }
-    catch (SQLException ex)
-    {
-      System.out.println("Current memory usage: " + SnowflakeChunkDownloader.getCurrentMemoryUsage());
+      // now run a query for 120 seconds
+      // 10000 rows should be enough to force result into multiple chunks
+      resultSet =
+          statement.executeQuery(
+              "select seq8(), randstr(1000, random()) from table(generator(rowcount => 10000))");
+      statement.close();
+    } catch (SQLException ex) {
+      System.out.println(
+          "Current memory usage: " + SnowflakeChunkDownloader.getCurrentMemoryUsage());
       assertThat(
-              "closing statement didn't release memory allocated for result",
-              SnowflakeChunkDownloader.getCurrentMemoryUsage(),
-              equalTo(initialMemoryUsage));
+          "closing statement didn't release memory allocated for result",
+          SnowflakeChunkDownloader.getCurrentMemoryUsage(),
+          equalTo(initialMemoryUsage));
     }
     int cnt = 0;
     while (resultSet.next()) {
       ++cnt;
     }
     closeSQLObjects(resultSet, statement, connection);
-
   }
 
   /**
