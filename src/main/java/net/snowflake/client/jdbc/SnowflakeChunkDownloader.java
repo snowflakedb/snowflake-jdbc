@@ -682,6 +682,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
             downloaderFutures.forEach((k, v) -> v.cancel(true));
             // shutdown executor
             executor.shutdown();
+
             if (!executor.awaitTermination(SHUTDOWN_TIME, TimeUnit.SECONDS)) {
               logger.debug("Executor did not terminate in the specified time.");
               List<Runnable> droppedTasks = executor.shutdownNow(); // optional **
@@ -722,6 +723,11 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
             totalMillisDownloadingChunks.get(),
             totalMillisParsingChunks.get());
       } finally {
+        if (queryResultFormat == QueryResultFormat.ARROW) {
+          SFArrowResultSet.closeRootAllocator(rootAllocator);
+        } else {
+          chunkDataCache.clear();
+        }
         releaseAllChunkMemoryUsage();
       }
     }
