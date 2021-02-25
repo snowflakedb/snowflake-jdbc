@@ -692,12 +692,12 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
                       + " tasks will not be executed."); // optional **
             }
           }
+          // Normal flow will never hit here. This is only for testing purposes
+          if (SnowflakeChunkDownloader.injectedDownloaderException != null
+              && injectedDownloaderException instanceof InterruptedException) {
+            throw (InterruptedException) SnowflakeChunkDownloader.injectedDownloaderException;
+          }
         }
-        for (SnowflakeResultChunk chunk : chunks) {
-          // explicitly free each chunk since Arrow chunk may hold direct memory
-          chunk.freeData();
-        }
-
         logger.debug(
             "Total milliseconds waiting for chunks: {}, "
                 + "Total memory used: {}, total download time: {} millisec, "
@@ -708,19 +708,22 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
             totalMillisParsingChunks.get(),
             chunks.size());
 
-        chunks = null;
-
         return new DownloaderMetrics(
             numberMillisWaitingForChunks,
             totalMillisDownloadingChunks.get(),
             totalMillisParsingChunks.get());
       } finally {
+        for (SnowflakeResultChunk chunk : chunks) {
+          // explicitly free each chunk since Arrow chunk may hold direct memory
+          chunk.freeData();
+        }
         if (queryResultFormat == QueryResultFormat.ARROW) {
           SFArrowResultSet.closeRootAllocator(rootAllocator);
         } else {
           chunkDataCache.clear();
         }
         releaseAllChunkMemoryUsage();
+        chunks = null;
       }
     }
     return null;
