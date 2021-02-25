@@ -14,7 +14,9 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.sql.*;
-import java.util.*;
+import java.util.Enumeration;
+import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
@@ -63,40 +65,6 @@ public class ConnectionLatestIT extends BaseJDBCTest {
       TelemetryService.disable();
     }
     service.resetNumOfRetryToTriggerTelemetry();
-  }
-
-  @Test
-  public void testInterruptIssue() throws Throwable {
-    ResultSet resultSet = null;
-
-    final Connection connection = getConnection();
-
-    final Statement statement = connection.createStatement();
-    final long initialMemoryUsage = SnowflakeChunkDownloader.getCurrentMemoryUsage();
-    System.out.println(initialMemoryUsage);
-    statement.execute("alter session set jdbc_query_result_format ='json'");
-
-    try {
-
-      // now run a query for 120 seconds
-      // 10000 rows should be enough to force result into multiple chunks
-      resultSet =
-          statement.executeQuery(
-              "select seq8(), randstr(1000, random()) from table(generator(rowcount => 10000))");
-      statement.close();
-    } catch (SQLException ex) {
-      System.out.println(
-          "Current memory usage: " + SnowflakeChunkDownloader.getCurrentMemoryUsage());
-      assertThat(
-          "closing statement didn't release memory allocated for result",
-          SnowflakeChunkDownloader.getCurrentMemoryUsage(),
-          equalTo(initialMemoryUsage));
-    }
-    int cnt = 0;
-    while (resultSet.next()) {
-      ++cnt;
-    }
-    closeSQLObjects(resultSet, statement, connection);
   }
 
   /**
