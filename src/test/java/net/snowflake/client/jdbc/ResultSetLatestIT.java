@@ -3,6 +3,7 @@
  */
 package net.snowflake.client.jdbc;
 
+import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.*;
 
@@ -37,6 +38,44 @@ public class ResultSetLatestIT extends ResultSet0IT {
 
   ResultSetLatestIT(String queryResultFormat) {
     super(queryResultFormat);
+  }
+
+  /**
+   * Test that when closing of results is interrupted by Thread.Interrupt(), the memory is released
+   * safely before driver execution ends.
+   *
+   * @throws Throwable
+   */
+  @Test
+  public void testMemoryClearingAfterInterrupt() throws Throwable {
+    ResultSet resultSet = null;
+    final Connection connection = getConnection();
+    final Statement statement = connection.createStatement();
+    final long initialMemoryUsage = SnowflakeChunkDownloader.getCurrentMemoryUsage();
+    try {
+      // Inject an InterruptedException into the SnowflakeChunkDownloader.terminate() function
+      SnowflakeChunkDownloader.setInjectedDownloaderException(new InterruptedException());
+      // 10000 rows should be enough to force result into multiple chunks
+      resultSet =
+          statement.executeQuery(
+              "select seq8(), randstr(1000, random()) from table(generator(rowcount => 10000))");
+      assertThat(
+          "hold memory usage for the resultSet before close",
+          SnowflakeChunkDownloader.getCurrentMemoryUsage() - initialMemoryUsage >= 0);
+      // Result closure should catch InterruptedException and throw a SQLException after its caught
+      resultSet.close();
+      fail("Exception should have been thrown");
+    } catch (SQLException ex) {
+      assertEquals((int) ErrorCode.INTERRUPTED.getMessageCode(), ex.getErrorCode());
+      // Assert all memory was released
+      assertThat(
+          "closing statement didn't release memory allocated for result",
+          SnowflakeChunkDownloader.getCurrentMemoryUsage(),
+          equalTo(initialMemoryUsage));
+    }
+    // Unset the exception injection so statement and connection can close without exceptions
+    SnowflakeChunkDownloader.setInjectedDownloaderException(null);
+    closeSQLObjects(resultSet, statement, connection);
   }
 
   /**

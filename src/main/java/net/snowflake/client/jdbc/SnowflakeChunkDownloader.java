@@ -675,52 +675,56 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
   @Override
   public DownloaderMetrics terminate() throws InterruptedException {
     if (!terminated.getAndSet(true)) {
-      if (executor != null) {
-        if (!executor.isShutdown()) {
-          // cancel running downloaders
-          downloaderFutures.forEach((k, v) -> v.cancel(true));
-          // shutdown executor
-          executor.shutdown();
-          if (!executor.awaitTermination(SHUTDOWN_TIME, TimeUnit.SECONDS)) {
-            logger.debug("Executor did not terminate in the specified time.");
+      try {
+        if (executor != null) {
+          if (!executor.isShutdown()) {
+            // cancel running downloaders
+            downloaderFutures.forEach((k, v) -> v.cancel(true));
+            // shutdown executor
+            executor.shutdown();
 
-            List<Runnable> droppedTasks = executor.shutdownNow(); // optional **
-            logger.debug(
-                "Executor was abruptly shut down. "
-                    + droppedTasks.size()
-                    + " tasks will not be executed."); // optional **
+            if (!executor.awaitTermination(SHUTDOWN_TIME, TimeUnit.SECONDS)) {
+              logger.debug("Executor did not terminate in the specified time.");
+              List<Runnable> droppedTasks = executor.shutdownNow(); // optional **
+              logger.debug(
+                  "Executor was abruptly shut down. "
+                      + droppedTasks.size()
+                      + " tasks will not be executed."); // optional **
+            }
+          }
+          // Normal flow will never hit here. This is only for testing purposes
+          if (SnowflakeChunkDownloader.injectedDownloaderException != null
+              && injectedDownloaderException instanceof InterruptedException) {
+            throw (InterruptedException) SnowflakeChunkDownloader.injectedDownloaderException;
           }
         }
+        logger.debug(
+            "Total milliseconds waiting for chunks: {}, "
+                + "Total memory used: {}, total download time: {} millisec, "
+                + "total parsing time: {} milliseconds, total chunks: {}",
+            numberMillisWaitingForChunks,
+            Runtime.getRuntime().totalMemory(),
+            totalMillisDownloadingChunks.get(),
+            totalMillisParsingChunks.get(),
+            chunks.size());
+
+        return new DownloaderMetrics(
+            numberMillisWaitingForChunks,
+            totalMillisDownloadingChunks.get(),
+            totalMillisParsingChunks.get());
+      } finally {
+        for (SnowflakeResultChunk chunk : chunks) {
+          // explicitly free each chunk since Arrow chunk may hold direct memory
+          chunk.freeData();
+        }
+        if (queryResultFormat == QueryResultFormat.ARROW) {
+          SFArrowResultSet.closeRootAllocator(rootAllocator);
+        } else {
+          chunkDataCache.clear();
+        }
+        releaseAllChunkMemoryUsage();
+        chunks = null;
       }
-      for (SnowflakeResultChunk chunk : chunks) {
-        // explicitly free each chunk since Arrow chunk may hold direct memory
-        chunk.freeData();
-      }
-
-      if (queryResultFormat == QueryResultFormat.ARROW) {
-        SFArrowResultSet.closeRootAllocator(rootAllocator);
-      } else {
-        chunkDataCache.clear();
-      }
-
-      releaseAllChunkMemoryUsage();
-
-      logger.debug(
-          "Total milliseconds waiting for chunks: {}, "
-              + "Total memory used: {}, total download time: {} millisec, "
-              + "total parsing time: {} milliseconds, total chunks: {}",
-          numberMillisWaitingForChunks,
-          Runtime.getRuntime().totalMemory(),
-          totalMillisDownloadingChunks.get(),
-          totalMillisParsingChunks.get(),
-          chunks.size());
-
-      chunks = null;
-
-      return new DownloaderMetrics(
-          numberMillisWaitingForChunks,
-          totalMillisDownloadingChunks.get(),
-          totalMillisParsingChunks.get());
     }
     return null;
   }
