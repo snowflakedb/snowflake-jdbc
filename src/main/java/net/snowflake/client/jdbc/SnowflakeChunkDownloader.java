@@ -698,14 +698,6 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
           chunk.freeData();
         }
 
-        if (queryResultFormat == QueryResultFormat.ARROW) {
-          SFArrowResultSet.closeRootAllocator(rootAllocator);
-        } else {
-          chunkDataCache.clear();
-        }
-
-        releaseAllChunkMemoryUsage();
-
         logger.debug(
             "Total milliseconds waiting for chunks: {}, "
                 + "Total memory used: {}, total download time: {} millisec, "
