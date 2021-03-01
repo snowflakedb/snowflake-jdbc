@@ -1,3 +1,8 @@
+**JDBC Driver 3.13.1**
+
+- \| SNOW-258666 | Free up memory chunks after thread is interrupted.
+- \| SNOW-281822 | Fix session token expiry error and make heartbeat frequency adjustable.
+
 **JDBC Driver 3.13.0**
 
 - \| SNOW-209530 | Changed the handling of proxy settings. Proxy parameters in the connection string now override the JVM proxy settings. When connecting to Azure, PUT/GET commands now go through the specified proxy.
