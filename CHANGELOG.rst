@@ -1,7 +1,7 @@
 **JDBC Driver 3.13.1**
 
-- \| SNOW-258666 | Free up memory chunks after thread is interrupted.
-- \| SNOW-281822 | Fix session token expiry error and make heartbeat frequency adjustable.
+- \| SNOW-258666 | Changed the driver to free up memory chunks when a thread is interrupted.
+- \| SNOW-281822 | Fixed a session token expiry error and made the heartbeat frequency configurable.
 
 **JDBC Driver 3.13.0**
 
