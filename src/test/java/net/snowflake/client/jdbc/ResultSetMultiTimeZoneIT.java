@@ -3,14 +3,6 @@
  */
 package net.snowflake.client.jdbc;
 
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.*;
-
-import java.sql.*;
-import java.sql.Date;
-import java.text.SimpleDateFormat;
-import java.util.*;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryResultSet;
@@ -20,6 +12,15 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+
+import java.sql.Date;
+import java.sql.*;
+import java.text.SimpleDateFormat;
+import java.util.*;
+
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.*;
 
 /** Test ResultSet */
 @RunWith(Parameterized.class)
@@ -116,6 +117,22 @@ public class ResultSetMultiTimeZoneIT extends BaseJDBCTest {
     con.createStatement().execute("drop table if exists orders_jdbc");
     con.createStatement().execute("drop table if exists test_rs");
     con.close();
+  }
+
+  @Test
+  public void testTimestampError() throws SQLException {
+    Connection con = init();
+    Statement stmt = con.createStatement();
+    stmt.execute("alter session set TIMESTAMP_TYPE_MAPPING='TIMESTAMP_TZ'");
+    stmt.execute("alter session set JDBC_USE_SESSION_TIMEZONE=false");
+    stmt.execute("create or replace table time1 (t TIMESTAMP_tz)");
+    stmt.execute("insert into time1 values ('2020-12-09 16:00:00'::timestamp_tz)");
+    stmt.execute("insert into time1 values ('2020-12-09 16:00:00 +0100'::timestamp_tz)");
+    ResultSet rs = stmt.executeQuery("select * from time1");
+    rs.next();
+    System.out.println(rs.getTimestamp(1));
+    rs.next();
+    System.out.println(rs.getTimestamp(1));
   }
 
   @Test
