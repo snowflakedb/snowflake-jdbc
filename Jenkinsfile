@@ -22,8 +22,8 @@ timestamps {
       string(name: 'TARGET_DOCKER_TEST_IMAGE', value: 'jdbc-centos6-default'),
       string(name: 'parent_job', value: env.JOB_NAME),
       string(name: 'parent_build_number', value: env.BUILD_NUMBER),
-	  string(name: 'timeout_value', value: '420'),
-	  string(name: 'PR_Key', value: scmInfo.GIT_BRANCH.substring(3))
+      string(name: 'timeout_value', value: '420'),
+      string(name: 'PR_Key', value: scmInfo.GIT_BRANCH.substring(3))
     ]
     stage('Test') {
       parallel (
