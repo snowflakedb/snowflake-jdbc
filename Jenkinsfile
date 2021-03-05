@@ -21,7 +21,9 @@ timestamps {
       string(name: 'branch', value: 'master'),
       string(name: 'TARGET_DOCKER_TEST_IMAGE', value: 'jdbc-centos6-default'),
       string(name: 'parent_job', value: env.JOB_NAME),
-      string(name: 'parent_build_number', value: env.BUILD_NUMBER)
+      string(name: 'parent_build_number', value: env.BUILD_NUMBER),
+      string(name: 'timeout_value', value: '420'),
+      string(name: 'PR_Key', value: scmInfo.GIT_BRANCH.substring(3))
     ]
     stage('Test') {
       parallel (
@@ -32,6 +34,8 @@ timestamps {
         'Test JDBC 3': { build job: 'RT-LanguageJDBC3-PC',parameters: params
             },
         'Test JDBC 4': { build job: 'RT-LanguageJDBC4-PC',parameters: params
+            },
+        'CodeCoverage JDBC': { build job: 'RT-LanguageJDBC-CodeCoverage-PC',parameters: params
             }
       )
     }
