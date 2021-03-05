@@ -525,6 +525,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
   }
 
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testCancelQueryBySystemFunction() throws Throwable {
     Statement statement = null;
     ResultSet resultSet = null;
