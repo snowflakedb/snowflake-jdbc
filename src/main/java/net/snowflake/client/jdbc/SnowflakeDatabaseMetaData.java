@@ -4,16 +4,10 @@
 
 package net.snowflake.client.jdbc;
 
-import static net.snowflake.client.jdbc.DBMetadataResultSetMetadata.*;
-import static net.snowflake.client.jdbc.SnowflakeType.convertStringToType;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Strings;
-import java.sql.*;
-import java.util.*;
-import java.util.regex.Pattern;
 import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
@@ -26,6 +20,13 @@ import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.util.SFPair;
 import net.snowflake.common.core.SqlState;
 import net.snowflake.common.util.Wildcard;
+
+import java.sql.*;
+import java.util.*;
+import java.util.regex.Pattern;
+
+import static net.snowflake.client.jdbc.DBMetadataResultSetMetadata.*;
+import static net.snowflake.client.jdbc.SnowflakeType.convertStringToType;
 
 public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
 
@@ -140,7 +141,9 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
       String catalog,
       String schema,
       String generalNamePattern,
-      String specificNamePattern) {
+      String specificNamePattern,
+      String sessionCatalog,
+      String sessionSchema) {
     String queryId = "";
     try {
       if (resultSet.isWrapperFor(SnowflakeResultSet.class)) {
@@ -161,6 +164,9 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
     ibValue.with("function_parameters").put("schema", schema);
     ibValue.with("function_parameters").put("general_name_pattern", generalNamePattern);
     ibValue.with("function_parameters").put("specific_name_pattern", specificNamePattern);
+    ibValue.put("use_connection_context", metadataRequestUseConnectionCtx ? "true": "false");
+    ibValue.put("session_database_name", sessionCatalog);
+    ibValue.put("session_schema_name", sessionSchema);
     TelemetryData data = TelemetryUtil.buildJobData(ibValue);
     ibInstance.addLogToBatch(data);
   }
@@ -1099,13 +1105,16 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
     ResultSet resultSetStepOne =
         executeAndReturnEmptyResultIfNotFound(
             statement, showProcedureCommand, GET_PROCEDURE_COLUMNS);
+    SFPair<String, String> resPair = applySessionContext(catalog, schemaPattern);
     sendInBandTelemetryMetadataMetrics(
         resultSetStepOne,
         "getProcedureColumns",
         catalog,
         schemaPattern,
         procedureNamePattern,
-        columnNamePattern);
+        columnNamePattern,
+        resPair.left,
+        resPair.right);
     ArrayList<Object[]> rows = new ArrayList<Object[]>();
     while (resultSetStepOne.next()) {
       String procedureNameUnparsed = resultSetStepOne.getString("arguments").trim();
@@ -1409,7 +1418,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
 
     resultSet = executeAndReturnEmptyResultIfNotFound(statement, showCommand, GET_TABLES);
     sendInBandTelemetryMetadataMetrics(
-        resultSet, "getTables", catalog, schemaPattern, tableNamePattern, Arrays.toString(types));
+        resultSet, "getTables", originalCatalog, originalSchemaPattern, tableNamePattern, Arrays.toString(types), catalog, schemaPattern);
 
     return new SnowflakeDatabaseMetaDataQueryResultSet(GET_TABLES, resultSet, statement) {
       @Override
@@ -1596,7 +1605,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
         executeAndReturnEmptyResultIfNotFound(
             statement, showColumnCommand, extendedSet ? GET_COLUMNS_EXTENDED_SET : GET_COLUMNS);
     sendInBandTelemetryMetadataMetrics(
-        resultSet, "getColumns", catalog, schemaPattern, tableNamePattern, columnNamePattern);
+        resultSet, "getColumns", originalCatalog, originalSchemaPattern, tableNamePattern, columnNamePattern, catalog, schemaPattern);
 
     return new SnowflakeDatabaseMetaDataQueryResultSet(
         extendedSet ? GET_COLUMNS_EXTENDED_SET : GET_COLUMNS, resultSet, statement) {
@@ -1832,7 +1841,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
     ResultSet resultSet =
         executeAndReturnEmptyResultIfNotFound(statement, showView, GET_TABLE_PRIVILEGES);
     sendInBandTelemetryMetadataMetrics(
-        resultSet, "getTablePrivileges", catalog, schemaPattern, tableNamePattern, "none");
+        resultSet, "getTablePrivileges", originalCatalog, originalSchemaPattern, tableNamePattern, "none", catalog, schemaPattern);
     return new SnowflakeDatabaseMetaDataQueryResultSet(GET_TABLE_PRIVILEGES, resultSet, statement) {
       @Override
       public boolean next() throws SQLException {
@@ -1935,7 +1944,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
     logger.debug("sql command to get primary key metadata: {}", showPKCommand);
     ResultSet resultSet =
         executeAndReturnEmptyResultIfNotFound(statement, showPKCommand, GET_PRIMARY_KEYS);
-    sendInBandTelemetryMetadataMetrics(resultSet, "getPrimaryKeys", catalog, schema, table, "none");
+    sendInBandTelemetryMetadataMetrics(resultSet, "getPrimaryKeys", originalCatalog, originalSchema, table, "none", catalog, schema);
     // Return empty result set since we don't have primary keys yet
     return new SnowflakeDatabaseMetaDataQueryResultSet(GET_PRIMARY_KEYS, resultSet, statement) {
       @Override
@@ -1975,8 +1984,8 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
    * Retrieves the foreign keys
    *
    * @param client type of foreign key
-   * @param parentCatalog database name
-   * @param parentSchema schema name
+   * @param originalParentCatalog database name
+   * @param originalParentSchema schema name
    * @param parentTable table name
    * @param foreignCatalog other database name
    * @param foreignSchema other schema name
@@ -2040,7 +2049,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
     ResultSet resultSet =
         executeAndReturnEmptyResultIfNotFound(statement, command, GET_FOREIGN_KEYS);
     sendInBandTelemetryMetadataMetrics(
-        resultSet, "getForeignKeys", parentCatalog, parentSchema, parentTable, "none");
+        resultSet, "getForeignKeys", originalParentCatalog, originalParentSchema, parentTable, "none", parentCatalog, parentSchema);
 
     return new SnowflakeDatabaseMetaDataQueryResultSet(GET_FOREIGN_KEYS, resultSet, statement) {
       @Override
