@@ -4,16 +4,10 @@
 
 package net.snowflake.client.jdbc;
 
-import static net.snowflake.client.jdbc.DBMetadataResultSetMetadata.*;
-import static net.snowflake.client.jdbc.SnowflakeType.convertStringToType;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Strings;
-import java.sql.*;
-import java.util.*;
-import java.util.regex.Pattern;
 import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
@@ -26,6 +20,13 @@ import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.util.SFPair;
 import net.snowflake.common.core.SqlState;
 import net.snowflake.common.util.Wildcard;
+
+import java.sql.*;
+import java.util.*;
+import java.util.regex.Pattern;
+
+import static net.snowflake.client.jdbc.DBMetadataResultSetMetadata.*;
+import static net.snowflake.client.jdbc.SnowflakeType.convertStringToType;
 
 public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
 
@@ -101,6 +102,8 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
 
   private final boolean metadataRequestUseConnectionCtx;
 
+  private boolean useSessionSchema =false;
+
   private final boolean metadataRequestUseSessionDatabase;
 
   private boolean stringsQuoted = false;
@@ -173,6 +176,10 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
     unescapedString = unescapedString.replace("\\%", "%");
     unescapedString = unescapedString.replace("\\\\", "\\");
     return unescapedString;
+  }
+
+  private boolean isWildcardPattern(String inputString) {
+    return useSessionSchema ? false : Wildcard.isWildcardPatternStr(inputString);
   }
 
   @Override
@@ -1248,6 +1255,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
       }
       if (schemaPattern == null) {
         schemaPattern = session.getSchema();
+        useSessionSchema = true;
       }
     } else {
       if (metadataRequestUseSessionDatabase) {
@@ -1279,7 +1287,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
     } else if (catalog.isEmpty()) {
       return "";
     } else {
-      if (schemaPattern == null || Wildcard.isWildcardPatternStr(schemaPattern)) {
+      if (schemaPattern == null || isWildcardPattern(schemaPattern)) {
         showProcedureCommand += " in database \"" + catalog + "\"";
       } else if (schemaPattern.isEmpty()) {
         return "";
@@ -1395,7 +1403,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
       // in the show command. This is necessary for us to see any tables in
       // a schema if the current schema a user is connected to is different
       // given that we don't support show tables without a known schema.
-      if (schemaPattern == null || Wildcard.isWildcardPatternStr(schemaPattern)) {
+      if (schemaPattern == null || isWildcardPattern(schemaPattern)) {
         showCommand += " in database \"" + catalog + "\"";
       } else if (schemaPattern.isEmpty()) {
         return SnowflakeDatabaseMetaDataResultSet.getEmptyResultSet(GET_TABLES, statement);
@@ -1564,7 +1572,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
       return SnowflakeDatabaseMetaDataResultSet.getEmptyResultSet(
           extendedSet ? GET_COLUMNS_EXTENDED_SET : GET_COLUMNS, statement);
     } else {
-      if (schemaPattern == null || Wildcard.isWildcardPatternStr(schemaPattern)) {
+      if (schemaPattern == null || isWildcardPattern(schemaPattern)) {
         showColumnCommand += " in database \"" + catalog + "\"";
       } else if (schemaPattern.isEmpty()) {
         return SnowflakeDatabaseMetaDataResultSet.getEmptyResultSet(
