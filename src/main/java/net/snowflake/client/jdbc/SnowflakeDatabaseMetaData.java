@@ -109,6 +109,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
 
   private String showCommand;
 
+  // Package-private function for displaying show command (for testing only)
   String getShowCommand() {
     return showCommand;
   }
@@ -184,6 +185,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
   }
 
   private boolean isWildcardPattern(String inputString) {
+    // if session schema contains wildcard, don't treat it as wildcard; treat as just a schema name
     return useSessionSchema ? false : Wildcard.isWildcardPatternStr(inputString);
   }
 
