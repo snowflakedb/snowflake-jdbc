@@ -107,6 +107,12 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
 
   private boolean stringsQuoted = false;
 
+  private String showCommand;
+
+  String getShowCommand() {
+    return showCommand;
+  }
+
   SnowflakeDatabaseMetaData(Connection connection) throws SQLException {
     logger.debug("public SnowflakeDatabaseMetaData(SnowflakeConnection connection)");
 
@@ -1372,7 +1378,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
     final Pattern compiledSchemaPattern = Wildcard.toRegexPattern(schemaPattern, true);
     final Pattern compiledTablePattern = Wildcard.toRegexPattern(tableNamePattern, true);
 
-    String showCommand = null;
+    showCommand = null;
     final boolean viewOnly =
         inputValidTableTypes.size() == 1 && "VIEW".equalsIgnoreCase(inputValidTableTypes.get(0));
     final boolean tableOnly =
@@ -1556,36 +1562,36 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
     final Pattern compiledTablePattern = Wildcard.toRegexPattern(tableNamePattern, true);
     final Pattern compiledColumnPattern = Wildcard.toRegexPattern(columnNamePattern, true);
 
-    String showColumnCommand = "show /* JDBC:DatabaseMetaData.getColumns() */ columns";
+    showCommand = "show /* JDBC:DatabaseMetaData.getColumns() */ columns";
 
     if (columnNamePattern != null
         && !columnNamePattern.isEmpty()
         && !columnNamePattern.trim().equals("%")
         && !columnNamePattern.trim().equals(".*")) {
-      showColumnCommand += " like '" + columnNamePattern + "'";
+      showCommand += " like '" + columnNamePattern + "'";
     }
 
     if (catalog == null) {
-      showColumnCommand += " in account";
+      showCommand += " in account";
     } else if (catalog.isEmpty()) {
       return SnowflakeDatabaseMetaDataResultSet.getEmptyResultSet(
           extendedSet ? GET_COLUMNS_EXTENDED_SET : GET_COLUMNS, statement);
     } else {
       if (schemaPattern == null || isWildcardPattern(schemaPattern)) {
-        showColumnCommand += " in database \"" + catalog + "\"";
+        showCommand += " in database \"" + catalog + "\"";
       } else if (schemaPattern.isEmpty()) {
         return SnowflakeDatabaseMetaDataResultSet.getEmptyResultSet(
             extendedSet ? GET_COLUMNS_EXTENDED_SET : GET_COLUMNS, statement);
       } else {
         String schemaUnescaped = unescapeChars(schemaPattern);
         if (tableNamePattern == null || Wildcard.isWildcardPatternStr(tableNamePattern)) {
-          showColumnCommand += " in schema \"" + catalog + "\".\"" + schemaUnescaped + "\"";
+          showCommand += " in schema \"" + catalog + "\".\"" + schemaUnescaped + "\"";
         } else if (tableNamePattern.isEmpty()) {
           return SnowflakeDatabaseMetaDataResultSet.getEmptyResultSet(
               extendedSet ? GET_COLUMNS_EXTENDED_SET : GET_COLUMNS, statement);
         } else {
           String tableNameUnescaped = unescapeChars(tableNamePattern);
-          showColumnCommand +=
+          showCommand +=
               " in table \""
                   + catalog
                   + "\".\""
@@ -1597,11 +1603,11 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
       }
     }
 
-    logger.debug("sql command to get column metadata: {}", showColumnCommand);
+    logger.debug("sql command to get column metadata: {}", showCommand);
 
     ResultSet resultSet =
         executeAndReturnEmptyResultIfNotFound(
-            statement, showColumnCommand, extendedSet ? GET_COLUMNS_EXTENDED_SET : GET_COLUMNS);
+            statement, showCommand, extendedSet ? GET_COLUMNS_EXTENDED_SET : GET_COLUMNS);
     sendInBandTelemetryMetadataMetrics(
         resultSet, "getColumns", catalog, schemaPattern, tableNamePattern, columnNamePattern);
 
@@ -3088,11 +3094,16 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
+  // unchecked
   @Override
   public <T> T unwrap(Class<T> iface) throws SQLException {
-    logger.debug("public <T> T unwrap(Class<T> iface)");
+    logger.debug("<T> T unwrap(Class<T> iface)");
 
-    throw new SnowflakeLoggedFeatureNotSupportedException(session);
+    if (!iface.isInstance(this)) {
+      throw new SQLException(
+          this.getClass().getName() + " not unwrappable from " + iface.getName());
+    }
+    return (T) this;
   }
 
   @Override
