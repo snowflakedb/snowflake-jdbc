@@ -184,7 +184,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
     return unescapedString;
   }
 
-  private boolean isWildcardPattern(String inputString) {
+  private boolean isSchemaNameWildcardPattern(String inputString) {
     // if session schema contains wildcard, don't treat it as wildcard; treat as just a schema name
     return useSessionSchema ? false : Wildcard.isWildcardPatternStr(inputString);
   }
@@ -1294,7 +1294,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
     } else if (catalog.isEmpty()) {
       return "";
     } else {
-      if (schemaPattern == null || isWildcardPattern(schemaPattern)) {
+      if (schemaPattern == null || isSchemaNameWildcardPattern(schemaPattern)) {
         showProcedureCommand += " in database \"" + catalog + "\"";
       } else if (schemaPattern.isEmpty()) {
         return "";
@@ -1410,7 +1410,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
       // in the show command. This is necessary for us to see any tables in
       // a schema if the current schema a user is connected to is different
       // given that we don't support show tables without a known schema.
-      if (schemaPattern == null || isWildcardPattern(schemaPattern)) {
+      if (schemaPattern == null || isSchemaNameWildcardPattern(schemaPattern)) {
         showCommand += " in database \"" + catalog + "\"";
       } else if (schemaPattern.isEmpty()) {
         return SnowflakeDatabaseMetaDataResultSet.getEmptyResultSet(GET_TABLES, statement);
@@ -1579,7 +1579,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
       return SnowflakeDatabaseMetaDataResultSet.getEmptyResultSet(
           extendedSet ? GET_COLUMNS_EXTENDED_SET : GET_COLUMNS, statement);
     } else {
-      if (schemaPattern == null || isWildcardPattern(schemaPattern)) {
+      if (schemaPattern == null || isSchemaNameWildcardPattern(schemaPattern)) {
         showCommand += " in database \"" + catalog + "\"";
       } else if (schemaPattern.isEmpty()) {
         return SnowflakeDatabaseMetaDataResultSet.getEmptyResultSet(
