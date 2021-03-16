@@ -1334,7 +1334,6 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
       expectFeatureNotSupportedException(metaData::getClientInfoProperties);
       expectFeatureNotSupportedException(() -> metaData.getPseudoColumns(null, null, null, null));
       expectFeatureNotSupportedException(metaData::generatedKeyAlwaysReturned);
-      expectFeatureNotSupportedException(() -> metaData.unwrap(SnowflakeDatabaseMetaData.class));
       expectFeatureNotSupportedException(
           () -> metaData.isWrapperFor(SnowflakeDatabaseMetaData.class));
     }
