@@ -39,6 +39,36 @@ public class DatabaseMetaDataInternalLatestIT extends BaseJDBCTest {
 
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testGetMetaDataUseConnectionCtx() throws SQLException {
+    Connection connection = getConnection();
+    Statement statement = connection.createStatement();
+
+    // setup: reset session db and schema, enable the parameter
+    statement.execute("use database JDBC_DB1");
+    statement.execute("use schema JDBC_SCHEMA11");
+    statement.execute("alter SESSION set CLIENT_METADATA_REQUEST_USE_CONNECTION_CTX=true");
+
+    DatabaseMetaData databaseMetaData = connection.getMetaData();
+
+    // Searches for tables only in database JDBC_DB1 and schema JDBC_SCHEMA11
+    ResultSet resultSet = databaseMetaData.getTables(null, null, null, null);
+    // Assert the show command scopes to schema level
+    assertEquals(
+        "show /* JDBC:DatabaseMetaData.getTables() */ objects in schema \"JDBC_DB1\".\"JDBC_SCHEMA11\"",
+        databaseMetaData.unwrap(SnowflakeDatabaseMetaData.class).getShowCommand());
+    assertEquals(1, getSizeOfResultSet(resultSet));
+
+    // Searches for tables only in database JDBC_DB1 and schema JDBC_SCHEMA11
+    resultSet = databaseMetaData.getColumns(null, null, null, null);
+    // Assert the show command scopes to schema level
+    assertEquals(
+        "show /* JDBC:DatabaseMetaData.getColumns() */ columns in schema \"JDBC_DB1\".\"JDBC_SCHEMA11\"",
+        databaseMetaData.unwrap(SnowflakeDatabaseMetaData.class).getShowCommand());
+    assertEquals(3, getSizeOfResultSet(resultSet));
+  }
+
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testGetFunctionColumns() throws SQLException {
     Connection connection = getConnection();
     Statement statement = connection.createStatement();
