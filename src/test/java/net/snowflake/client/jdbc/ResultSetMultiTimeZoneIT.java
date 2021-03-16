@@ -127,7 +127,7 @@ public class ResultSetMultiTimeZoneIT extends BaseJDBCTest {
     stmt.execute("alter session set JDBC_USE_SESSION_TIMEZONE=false");
     stmt.execute("create or replace table time1 (t TIMESTAMP_tz)");
     stmt.execute("insert into time1 values ('2020-12-09 16:00:00'::timestamp_tz)");
-    stmt.execute("insert into time1 values ('2020-12-09 16:00:00 +0100'::timestamp_tz)");
+    stmt.execute("insert into time1 values ('2020-12-09 16:00:00 -0200'::timestamp_tz)");
     ResultSet rs = stmt.executeQuery("select * from time1");
     rs.next();
     System.out.println(rs.getTimestamp(1));
