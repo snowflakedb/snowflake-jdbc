@@ -3,10 +3,6 @@
  */
 package net.snowflake.client.core.arrow;
 
-import java.sql.Date;
-import java.sql.Time;
-import java.sql.Timestamp;
-import java.util.TimeZone;
 import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.IncidentUtil;
 import net.snowflake.client.core.ResultUtil;
@@ -17,6 +13,11 @@ import org.apache.arrow.vector.BigIntVector;
 import org.apache.arrow.vector.IntVector;
 import org.apache.arrow.vector.ValueVector;
 import org.apache.arrow.vector.complex.StructVector;
+
+import java.sql.Date;
+import java.sql.Time;
+import java.sql.Timestamp;
+import java.util.TimeZone;
 
 /** converter from three-field struct (including epoch, fraction, and timezone) to Timestamp_TZ */
 public class ThreeFieldStructToTimestampTZConverter extends AbstractArrowVectorConverter {
@@ -92,15 +93,23 @@ public class ThreeFieldStructToTimestampTZConverter extends AbstractArrowVectorC
         return null;
       }
     }
-    Timestamp ts =
-        ArrowResultUtil.createTimestamp(epoch, fraction, sessionTimeZone, useSessionTimezone);
 
     if (context.getResultVersion() > 0) {
       timeZone = SFTimestamp.convertTimezoneIndexToTimeZone(timeZoneIndex);
     } else {
       timeZone = TimeZone.getTimeZone("UTC");
     }
-
+    Timestamp ts;
+    if (timeZone.getRawOffset() != sessionTimeZone.getRawOffset())
+    {
+      ts =
+              ArrowResultUtil.createTimestamp(epoch, fraction, timeZone, useSessionTimezone);
+    }
+    else
+    {
+      ts =
+              ArrowResultUtil.createTimestamp(epoch, fraction, sessionTimeZone, useSessionTimezone);
+    }
     Timestamp adjustedTimestamp = ResultUtil.adjustTimestamp(ts);
 
     return adjustedTimestamp;
