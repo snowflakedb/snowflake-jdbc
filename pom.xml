@@ -43,7 +43,8 @@
     <tika.version>1.22</tika.version>
     <jackson.version>2.12.1</jackson.version>
     <jacksondatabind.version>2.12.1</jacksondatabind.version>
-    <httpclient.version>4.5.13</httpclient.version>
+    <!-- Caution: version 4.5.12 and onward of apache httpclient causes a regression in recognizing S3 certificates (SNOW-259063) -->
+    <httpclient.version>4.5.11</httpclient.version>
     <jacoco.version>0.8.4</jacoco.version>
     <jacoco.skip.instrument>true</jacoco.skip.instrument>
     <awssdk.version>1.11.364</awssdk.version>
