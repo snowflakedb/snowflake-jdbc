@@ -4,6 +4,14 @@
 
 package net.snowflake.client.core;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.nio.ByteBuffer;
+import java.sql.Date;
+import java.sql.Time;
+import java.sql.Timestamp;
+import java.sql.Types;
+import java.util.TimeZone;
 import net.snowflake.client.core.arrow.ArrowResultUtil;
 import net.snowflake.client.jdbc.*;
 import net.snowflake.client.log.ArgSupplier;
@@ -15,15 +23,6 @@ import net.snowflake.common.core.SFTime;
 import net.snowflake.common.core.SFTimestamp;
 import org.apache.arrow.vector.Float8Vector;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.nio.ByteBuffer;
-import java.sql.Date;
-import java.sql.Time;
-import java.sql.Timestamp;
-import java.sql.Types;
-import java.util.TimeZone;
-
 /** Abstract class used to represent snowflake result set in json format */
 public abstract class SFJsonResultSet extends SFBaseResultSet {
   private static final SFLogger logger = SFLoggerFactory.getLogger(SFJsonResultSet.class);
@@ -31,7 +30,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
   // Timezone used for TimestampNTZ
   private static final TimeZone timeZoneUTC = TimeZone.getTimeZone("UTC");
 
-  TimeZone timeZone;
+  TimeZone sessionTimeZone;
 
   // Precision of maximum long value in Java (2^63-1). Precision is 19
   private static final int LONG_PRECISION = 19;
@@ -407,18 +406,19 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
     return value;
   }
 
-  private TimeZone getTimeZoneOfTZ(int columnIndex) throws SFException
-  {
+  private TimeZone adjustTimezoneForTimestampTZ(int columnIndex) throws SFException {
+    // If the timestamp is of type timestamp_tz, use the associated offset timezone instead of the
+    // session timezone for formatting
     Object obj = getObjectInternal(columnIndex);
-    if (obj == null)
-    {
-      return TimeZone.getTimeZone("UTC");
+    int subType = resultSetMetaData.getInternalColumnType(columnIndex);
+    if (obj != null && subType == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_TZ && resultVersion > 0) {
+      String timestampStr = obj.toString();
+      int indexForSeparator = timestampStr.indexOf(' ');
+      String timezoneIndexStr = timestampStr.substring(indexForSeparator + 1);
+      return SFTimestamp.convertTimezoneIndexToTimeZone(Integer.parseInt(timezoneIndexStr));
     }
-    String timestampStr = obj.toString();
-    int indexForSeparator = timestampStr.indexOf(32);
-    String timezoneIndexStr = timestampStr.substring(indexForSeparator + 1);
-    TimeZone tz = SFTimestamp.convertTimezoneIndexToTimeZone(Integer.parseInt(timezoneIndexStr));
-    return tz;
+    // By default, return session timezone
+    return sessionTimeZone;
   }
 
   private SFTimestamp getSFTimestamp(int columnIndex) throws SFException {
@@ -435,7 +435,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
         resultSetMetaData.getScale(columnIndex),
         resultSetMetaData.getInternalColumnType(columnIndex),
         resultVersion,
-        timeZone,
+        sessionTimeZone,
         session);
   }
 
@@ -459,9 +459,10 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
         return null;
       }
       if (resultSetSerializable.getUseSessionTimezone()) {
-        ts = getTimestamp(columnIndex, resultSetSerializable.getTimeZone());
+        ts = getTimestamp(columnIndex, sessionTimeZone);
+        TimeZone sessionTimeZone = adjustTimezoneForTimestampTZ(columnIndex);
         return new SnowflakeTimeWithTimezone(
-            ts, resultSetSerializable.getTimeZone(), resultSetSerializable.getUseSessionTimezone());
+            ts, sessionTimeZone, resultSetSerializable.getUseSessionTimezone());
       }
       return new Time(ts.getTime());
     } else {
@@ -493,19 +494,10 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
       // If we want to display format with no session offset, we have to use session timezone for
       // ltz and tz types but UTC timezone for ntz type.
       if (resultSetSerializable.getUseSessionTimezone()) {
-        if (subType == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_LTZ) {
-          res = new SnowflakeTimestampWithTimezone(res, resultSetSerializable.getTimeZone());
-        } else if (subType == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_TZ)
-        {
-          TimeZone offsetTz = getTimeZoneOfTZ(columnIndex);
-          if (offsetTz.getRawOffset()  != resultSetSerializable.getTimeZone().getRawOffset())
-          {
-            res = new SnowflakeTimestampWithTimezone(res, offsetTz);
-          }
-          else
-          {
-            res = new SnowflakeTimestampWithTimezone(res, resultSetSerializable.getTimeZone());
-          }
+        if (subType == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_LTZ
+            || subType == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_TZ) {
+          TimeZone specificSessionTimezone = adjustTimezoneForTimestampTZ(columnIndex);
+          res = new SnowflakeTimestampWithTimezone(res, specificSessionTimezone);
         } else {
           res = new SnowflakeTimestampWithTimezone(res);
         }
@@ -713,9 +705,10 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
       int subType = resultSetMetaData.getInternalColumnType(columnIndex);
       if (subType == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_TZ
           || subType == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_LTZ) {
+        TimeZone specificSessionTimeZone = adjustTimezoneForTimestampTZ(columnIndex);
         return new SnowflakeDateWithTimezone(
             getTimestamp(columnIndex, tz).getTime(),
-            timeZone,
+            specificSessionTimeZone,
             resultSetSerializable.getUseSessionTimezone());
       }
       return new Date(getTimestamp(columnIndex, tz).getTime());
@@ -724,7 +717,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
       if (tz == null || !resultSetSerializable.getFormatDateWithTimeZone()) {
         return ArrowResultUtil.getDate(Integer.parseInt((String) obj));
       }
-      return ArrowResultUtil.getDate(Integer.parseInt((String) obj), tz, timeZone);
+      return ArrowResultUtil.getDate(Integer.parseInt((String) obj), tz, sessionTimeZone);
     }
     // for Types.TIME and all other type, throw user error
     else {

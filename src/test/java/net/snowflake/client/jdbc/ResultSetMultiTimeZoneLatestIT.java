@@ -1,11 +1,5 @@
 package net.snowflake.client.jdbc;
 
-import static org.junit.Assert.assertEquals;
-
-import java.sql.*;
-import java.sql.Date;
-import java.text.SimpleDateFormat;
-import java.util.*;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryResultSet;
@@ -13,6 +7,13 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+
+import java.sql.Date;
+import java.sql.*;
+import java.text.SimpleDateFormat;
+import java.util.*;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * ResultSet multi timezone tests for the latest JDBC driver. This cannot run for the old driver.
@@ -216,7 +217,11 @@ public class ResultSetMultiTimeZoneLatestIT extends BaseJDBCTest {
     // always true since timezone_ntz doesn't add time offset
     assertEquals(true, rs.getTimestamp("COLB").toString().equals(expectedTimestamp));
     assertEquals(useSessionTimezone, rs.getTimestamp("COLC").toString().equals(expectedTimestamp));
-    // Getting timestamp from Time column will default to epoch start date
+    // Getting timestamp from Time column will default to epoch start dateString timestampStr =
+    // obj.toString();
+    //      int indexForSeparator = timestampStr.indexOf(' ');
+    //      String timezoneIndexStr = timestampStr.substring(indexForSeparator + 1);
+    //      return SFTimestamp.convertTimezoneIndexToTimeZone(Integer.parseInt(timezoneIndexStr));
     assertEquals(true, rs.getTimestamp("COLD").toString().equals("1970-01-01 17:17:17.0"));
     // Getting timestamp from Date column will default to wallclock time of 0
     assertEquals(true, rs.getTimestamp("COLE").toString().equals("2019-01-01 00:00:00.0"));
@@ -255,6 +260,24 @@ public class ResultSetMultiTimeZoneLatestIT extends BaseJDBCTest {
     assertEquals(useSessionTimezone, rs.getTime("COLC").toString().equals(expectedTime2));
     assertEquals(true, rs.getTime("COLD").toString().equals(expectedTime2));
     // Cannot getTime() for Date column (colE)
+
+    // Test special case for timestamp_tz (offset added)
+    // create table with all timestamp types, time, and date
+    statement.execute("create or replace table tabletz (colA timestamp_tz)");
+    prepSt = connection.prepareStatement("insert into tabletz values(?), (?)");
+    prepSt.setString(1, expectedTimestamp + " +0500");
+    prepSt.setString(2, expectedTimestamp2 + " -0200");
+    prepSt.execute();
+
+    rs = statement.executeQuery("select * from tabletz");
+    rs.next();
+    assertEquals(useSessionTimezone, rs.getTimestamp("COLA").toString().equals(expectedTimestamp));
+    assertEquals(useSessionTimezone, rs.getTime("COLA").toString().equals(expectedTime));
+    assertEquals(true, rs.getDate("COLA").toString().equals(expectedDate));
+    rs.next();
+    assertEquals(useSessionTimezone, rs.getTimestamp("COLA").toString().equals(expectedTimestamp2));
+    assertEquals(useSessionTimezone, rs.getTime("COLA").toString().equals(expectedTime2));
+    assertEquals(true, rs.getDate("COLA").toString().equals(expectedDate2));
 
     // clean up
     statement.execute("alter session unset JDBC_TREAT_TIMESTAMP_NTZ_AS_UTC");

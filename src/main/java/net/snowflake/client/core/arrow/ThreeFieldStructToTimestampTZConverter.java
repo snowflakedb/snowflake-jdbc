@@ -3,6 +3,10 @@
  */
 package net.snowflake.client.core.arrow;
 
+import java.sql.Date;
+import java.sql.Time;
+import java.sql.Timestamp;
+import java.util.TimeZone;
 import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.IncidentUtil;
 import net.snowflake.client.core.ResultUtil;
@@ -13,11 +17,6 @@ import org.apache.arrow.vector.BigIntVector;
 import org.apache.arrow.vector.IntVector;
 import org.apache.arrow.vector.ValueVector;
 import org.apache.arrow.vector.complex.StructVector;
-
-import java.sql.Date;
-import java.sql.Time;
-import java.sql.Timestamp;
-import java.util.TimeZone;
 
 /** converter from three-field struct (including epoch, fraction, and timezone) to Timestamp_TZ */
 public class ThreeFieldStructToTimestampTZConverter extends AbstractArrowVectorConverter {
@@ -99,19 +98,8 @@ public class ThreeFieldStructToTimestampTZConverter extends AbstractArrowVectorC
     } else {
       timeZone = TimeZone.getTimeZone("UTC");
     }
-    Timestamp ts;
-    if (timeZone.getRawOffset() != sessionTimeZone.getRawOffset())
-    {
-      ts =
-              ArrowResultUtil.createTimestamp(epoch, fraction, timeZone, useSessionTimezone);
-    }
-    else
-    {
-      ts =
-              ArrowResultUtil.createTimestamp(epoch, fraction, sessionTimeZone, useSessionTimezone);
-    }
+    Timestamp ts = ArrowResultUtil.createTimestamp(epoch, fraction, timeZone, useSessionTimezone);
     Timestamp adjustedTimestamp = ResultUtil.adjustTimestamp(ts);
-
     return adjustedTimestamp;
   }
 
@@ -124,15 +112,13 @@ public class ThreeFieldStructToTimestampTZConverter extends AbstractArrowVectorC
     // ts can be null when Java's timestamp is overflow.
     return ts == null
         ? null
-        : new SnowflakeDateWithTimezone(ts.getTime(), sessionTimeZone, useSessionTimezone);
+        : new SnowflakeDateWithTimezone(ts.getTime(), timeZone, useSessionTimezone);
   }
 
   @Override
   public Time toTime(int index) throws SFException {
     Timestamp ts = toTimestamp(index, TimeZone.getDefault());
-    return ts == null
-        ? null
-        : new SnowflakeTimeWithTimezone(ts, sessionTimeZone, useSessionTimezone);
+    return ts == null ? null : new SnowflakeTimeWithTimezone(ts, timeZone, useSessionTimezone);
   }
 
   @Override
