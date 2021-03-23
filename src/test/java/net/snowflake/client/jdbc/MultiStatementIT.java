@@ -6,12 +6,7 @@ package net.snowflake.client.jdbc;
 import static net.snowflake.client.ConditionalIgnoreRule.ConditionalIgnore;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -49,8 +44,7 @@ public class MultiStatementIT extends BaseJDBCTest {
     statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 4);
     String multiStmtQuery =
         "begin;\n"
-            + "delete from test_multi_txn;\n"
-            + "insert into test_multi_txn values (1, 'a'), (2, 'b');\n"
+            + "delete from test_multi_txn;insert into test_multi_txn values (1, 'a'), (2, 'b');\n"
             + "commit";
 
     boolean hasResultSet = statement.execute(multiStmtQuery);
@@ -347,6 +341,7 @@ public class MultiStatementIT extends BaseJDBCTest {
       statement.execute("garbage text; set testvar = 2");
       fail("Expected a compiler error to be thrown");
     } catch (SQLException ex) {
+      ex.printStackTrace();
       assertEquals(SqlState.SYNTAX_ERROR_OR_ACCESS_RULE_VIOLATION, ex.getSQLState());
     }
 
