@@ -16,10 +16,6 @@ import org.junit.runners.Parameterized;
 import java.sql.Date;
 import java.sql.*;
 import java.text.SimpleDateFormat;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -127,23 +123,11 @@ public class ResultSetMultiTimeZoneIT extends BaseJDBCTest {
   public void testTimestampError() throws SQLException {
     Connection con = init();
     Statement stmt = con.createStatement();
-    stmt.execute("alter session set jdbc_query_result_format ='arrow'");
     stmt.execute("alter session set TIMESTAMP_TYPE_MAPPING='TIMESTAMP_TZ'");
-    stmt.execute("alter session set JDBC_USE_SESSION_TIMEZONE=true");
+    stmt.execute("alter session set JDBC_USE_SESSION_TIMEZONE=false");
     stmt.execute("create or replace table time1 (t TIMESTAMP_tz)");
+    stmt.execute("insert into time1 values ('2020-12-09 16:00:00'::timestamp_tz)");
     stmt.execute("insert into time1 values ('2020-12-09 16:00:00 +0100'::timestamp_tz)");
-    stmt.execute("insert into time1 values ('2020-12-09 16:00:00 -0200'::timestamp_tz)");
-    long epochVal = 1607536800000L;
-    Timestamp testTZ= new Timestamp(epochVal);
-    String baseFormat = "uuuu-MM-dd HH:mm:ss.S";
-    DateTimeFormatter formatter = DateTimeFormatter.ofPattern(baseFormat);
-    //ZoneOffset offset = ZoneOffset.UTC;
-    TimeZone timezone = TimeZone.getTimeZone("GMT-02:00");
-    ZoneOffset offset = ZoneId.of(timezone.getID()).getRules().getOffset(testTZ.toInstant());
-    LocalDateTime ldt =
-            LocalDateTime.ofEpochSecond(
-                    SnowflakeUtil.getSecondsFromMillis(testTZ.getTime()), testTZ.getNanos(), offset);
-    System.out.println(ldt.format(formatter));
     ResultSet rs = stmt.executeQuery("select * from time1");
     rs.next();
     System.out.println(rs.getTimestamp(1));
