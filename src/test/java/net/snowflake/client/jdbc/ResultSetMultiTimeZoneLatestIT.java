@@ -216,11 +216,7 @@ public class ResultSetMultiTimeZoneLatestIT extends BaseJDBCTest {
     // always true since timezone_ntz doesn't add time offset
     assertEquals(true, rs.getTimestamp("COLB").toString().equals(expectedTimestamp));
     assertEquals(useSessionTimezone, rs.getTimestamp("COLC").toString().equals(expectedTimestamp));
-    // Getting timestamp from Time column will default to epoch start dateString timestampStr =
-    // obj.toString();
-    //      int indexForSeparator = timestampStr.indexOf(' ');
-    //      String timezoneIndexStr = timestampStr.substring(indexForSeparator + 1);
-    //      return SFTimestamp.convertTimezoneIndexToTimeZone(Integer.parseInt(timezoneIndexStr));
+    // Getting timestamp from Time column will default to epoch start date
     assertEquals(true, rs.getTimestamp("COLD").toString().equals("1970-01-01 17:17:17.0"));
     // Getting timestamp from Date column will default to wallclock time of 0
     assertEquals(true, rs.getTimestamp("COLE").toString().equals("2019-01-01 00:00:00.0"));
@@ -261,19 +257,27 @@ public class ResultSetMultiTimeZoneLatestIT extends BaseJDBCTest {
     // Cannot getTime() for Date column (colE)
 
     // Test special case for timestamp_tz (offset added)
-    // create table with all timestamp types, time, and date
+    // create table with of type timestamp_tz
     statement.execute("create or replace table tabletz (colA timestamp_tz)");
     prepSt = connection.prepareStatement("insert into tabletz values(?), (?)");
-    prepSt.setString(1, expectedTimestamp + " +0500");
-    prepSt.setString(2, expectedTimestamp2 + " -0200");
+    // insert 2 timestamp values, but add an offset of a few hours on the end of each value
+    prepSt.setString(
+        1, expectedTimestamp + " +0500"); // inserted value is 2019-01-01 17:17:17.6 +0500
+    prepSt.setString(
+        2, expectedTimestamp2 + " -0200"); // inserted value is 1943-12-31 01:01:33.0 -0200
     prepSt.execute();
 
     rs = statement.executeQuery("select * from tabletz");
     rs.next();
+    // Assert timestamp is displayed with no offset when flag is true. Timestamp should look
+    // identical to inserted value
     assertEquals(useSessionTimezone, rs.getTimestamp("COLA").toString().equals(expectedTimestamp));
+    // Time value looks identical to the time portion of inserted timestamp_tz value
     assertEquals(useSessionTimezone, rs.getTime("COLA").toString().equals(expectedTime));
+    // Date value looks identical to the date portion of inserted timestamp_tz value
     assertEquals(true, rs.getDate("COLA").toString().equals(expectedDate));
     rs.next();
+    // Test that the same results occur for 2nd timestamp_tz value
     assertEquals(useSessionTimezone, rs.getTimestamp("COLA").toString().equals(expectedTimestamp2));
     assertEquals(useSessionTimezone, rs.getTime("COLA").toString().equals(expectedTime2));
     assertEquals(true, rs.getDate("COLA").toString().equals(expectedDate2));
