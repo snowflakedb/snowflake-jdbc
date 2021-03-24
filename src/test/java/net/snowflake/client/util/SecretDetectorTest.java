@@ -1,20 +1,56 @@
 package net.snowflake.client.util;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import java.util.HashMap;
-import java.util.Map;
 import net.minidev.json.JSONArray;
 import net.minidev.json.JSONObject;
 import net.snowflake.client.core.ObjectMapperFactory;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.Test;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertEquals;
+
 public class SecretDetectorTest {
+
+  private static final int MAX_LENGTH = 100 * 1000;
+
+  private static final Pattern MULTI_STATEMENT =
+          Pattern.compile(
+                  "(;\\s*\\S)",
+                  Pattern.CASE_INSENSITIVE);
+
+  private boolean isMultistatement(String text)
+  {
+    Matcher matcher =
+            MULTI_STATEMENT.matcher(text.length() <= MAX_LENGTH ? text : text.substring(0, MAX_LENGTH));
+    return matcher.find();
+  }
+
+  private static final Pattern STORED_PROC_OR_MULTISTMT =
+          Pattern.compile("(call\\s\\S|create\\sprocedure|;\\s*\\S)", Pattern.CASE_INSENSITIVE);
+
+  private boolean isStoredProcOrMultistmt(String text)
+  {
+    Matcher matcher =
+            STORED_PROC_OR_MULTISTMT.matcher(text.length() <= MAX_LENGTH ? text : text.substring(0, MAX_LENGTH));
+    return matcher.find();
+  }
+
+  @Test
+  public void testIsStoredProc()
+  {
+    String storedProc = "/** multiline comment here\n I have alot to say about \n my stored proc */ create table call1 (c1 int, c2 car); ";
+    System.out.println(isStoredProcOrMultistmt(storedProc));
+  }
+
+
   @Test
   public void testMaskAWSSecret() {
     String sql =
