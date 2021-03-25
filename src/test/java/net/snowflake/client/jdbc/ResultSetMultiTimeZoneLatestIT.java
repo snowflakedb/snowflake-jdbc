@@ -121,25 +121,15 @@ public class ResultSetMultiTimeZoneLatestIT extends BaseJDBCTest {
   }
 
   /**
-   * Tests current behavior (previous to adding JDBC_USE_SESSION_TIMEZONE)
-   *
-   * @throws SQLException
-   */
-  @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testSessionTimezoneSetToFalse() throws SQLException {
-    helperTestUseSessionTimeZone(false, true);
-  }
-
-  /**
-   * Tests that formats are correct when JDBC_USE_SESSION_TIMEZONE=true
+   * Tests that formats are correct when JDBC_USE_SESSION_TIMEZONE=true and other related time/date
+   * formatting parameters are at their default values
    *
    * @throws SQLException
    */
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testSessionTimezoneUsage() throws SQLException {
-    helperTestUseSessionTimeZone(true, true);
+    testUseSessionTimeZoneHelper(true);
   }
 
   /**
@@ -152,21 +142,32 @@ public class ResultSetMultiTimeZoneLatestIT extends BaseJDBCTest {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testUseSessionTimeZoneOverrides() throws SQLException {
-    helperTestUseSessionTimeZone(true, false);
+    testUseSessionTimeZoneHelper(false);
   }
 
-  private void helperTestUseSessionTimeZone(
-      boolean useSessionTimezone, boolean useDefaultParamSettings) throws SQLException {
+  /**
+   * Helper function to test behavior of parameter JDBC_USE_SESSION_TIMEZONE. When
+   * JDBC_USE_SESSION_TIMEZONE=true, time/date/timestamp values are displayed using the session
+   * timezone, not the JVM timezone. There should be no offset between the inserted value and the
+   * displayed value from ResultSet. For example, a timestamp value inserted as: 2019-01-01
+   * 17:17:17.6 +0500 will get displayed as so: ResultSet.getTimestamp(): 2019-01-01 17:17:17.6;
+   * ResultSet.getTime(): 17:17:17.6; ResultSet.getDate(): 2019-01-01
+   *
+   * <p>When JDBC_USE_SESSION_TIMEZONE=false, the displayed values will be different depending on
+   * the timezone offset between the session and JVM timezones.
+   *
+   * @param useDefaultParamSettings use default settings of other time/date session formatting
+   *     parameters
+   * @throws SQLException
+   */
+  private void testUseSessionTimeZoneHelper(boolean useDefaultParamSettings) throws SQLException {
     Connection connection = init();
     Statement statement = connection.createStatement();
     // create table with all timestamp types, time, and date
     statement.execute(
         "create or replace table datetimetypes(colA timestamp_ltz, colB timestamp_ntz, colC timestamp_tz, colD time, colE date)");
-    if (useSessionTimezone) {
-      statement.execute("alter session set JDBC_USE_SESSION_TIMEZONE=true");
-    } else {
-      statement.execute("alter session set JDBC_USE_SESSION_TIMEZONE=false");
-    }
+    // Enable session parameter JDBC_USE_SESSION_TIMEZONE
+    statement.execute("alter session set JDBC_USE_SESSION_TIMEZONE=true");
     if (!useDefaultParamSettings) {
       // these are 3 other session params that also alter the session display behavior
       statement.execute("alter session set JDBC_TREAT_TIMESTAMP_NTZ_AS_UTC=true");
@@ -202,59 +203,87 @@ public class ResultSetMultiTimeZoneLatestIT extends BaseJDBCTest {
     rs.next();
     // Assert date has no offset. When flag is false, timestamp_ltz and timestamp_ntz will show
     // offset.
-    assertEquals(useSessionTimezone, rs.getDate("COLA").toString().equals(expectedDate));
+    assertEquals(expectedDate, rs.getDate("COLA").toString());
     // always true since timezone_ntz doesn't add time offset
-    assertEquals(true, rs.getDate("COLB").toString().equals(expectedDate));
-    assertEquals(useSessionTimezone, rs.getDate("COLC").toString().equals(expectedDate));
+    assertEquals(expectedDate, rs.getDate("COLB").toString());
+    assertEquals(expectedDate, rs.getDate("COLC").toString());
     // cannot getDate() for Time column (ColD)
     // always true since Date objects don't have timezone offsets
-    assertEquals(true, rs.getDate("COLE").toString().equals(expectedDate));
+    assertEquals(expectedDate, rs.getDate("COLE").toString());
 
     // Assert timestamp has no offset. When flag is false, timestamp_ltz and timestamp_ntz will show
     // offset.
-    assertEquals(useSessionTimezone, rs.getTimestamp("COLA").toString().equals(expectedTimestamp));
+    assertEquals(expectedTimestamp, rs.getTimestamp("COLA").toString());
     // always true since timezone_ntz doesn't add time offset
-    assertEquals(true, rs.getTimestamp("COLB").toString().equals(expectedTimestamp));
-    assertEquals(useSessionTimezone, rs.getTimestamp("COLC").toString().equals(expectedTimestamp));
-    // Getting timestamp from Time column will default to epoch start date
-    assertEquals(true, rs.getTimestamp("COLD").toString().equals("1970-01-01 17:17:17.0"));
-    // Getting timestamp from Date column will default to wallclock time of 0
-    assertEquals(true, rs.getTimestamp("COLE").toString().equals("2019-01-01 00:00:00.0"));
+    assertEquals(expectedTimestamp, rs.getTimestamp("COLB").toString());
+    assertEquals(expectedTimestamp, rs.getTimestamp("COLC").toString());
+    // Getting timestamp from Time column will default to epoch start date so date portion is
+    // different than input date of the timestamp
+    assertEquals("1970-01-01 17:17:17.0", rs.getTimestamp("COLD").toString());
+    // Getting timestamp from Date column will default to wallclock time of 0 so time portion is
+    // different than input time of the timestamp
+    assertEquals("2019-01-01 00:00:00.0", rs.getTimestamp("COLE").toString());
 
     // Assert time has no offset. When flag is false, timestamp_ltz and timestamp_ntz will show
     // offset.
-    assertEquals(useSessionTimezone, rs.getTime("COLA").toString().equals(expectedTime));
-    assertEquals(true, rs.getTime("COLB").toString().equals(expectedTime));
-    assertEquals(useSessionTimezone, rs.getTime("COLC").toString().equals(expectedTime));
-    assertEquals(true, rs.getTime("COLD").toString().equals(expectedTime));
+    assertEquals(expectedTime, rs.getTime("COLA").toString());
+    assertEquals(expectedTime, rs.getTime("COLB").toString());
+    assertEquals(expectedTime, rs.getTime("COLC").toString());
+    assertEquals(expectedTime, rs.getTime("COLD").toString());
     // Cannot getTime() for Date column (colE)
 
     rs.next();
     // Assert date has no offset. Offset will never be seen regardless of flag because 01:01:33 is
     // too early for any timezone to round it to the next day.
-    assertEquals(true, rs.getDate("COLA").toString().equals(expectedDate2));
-    assertEquals(true, rs.getDate("COLB").toString().equals(expectedDate2));
-    assertEquals(true, rs.getDate("COLC").toString().equals(expectedDate2));
+    assertEquals(expectedDate2, rs.getDate("COLA").toString());
+    assertEquals(expectedDate2, rs.getDate("COLB").toString());
+    assertEquals(expectedDate2, rs.getDate("COLC").toString());
     // cannot getDate() for Time column (ColD)
-    assertEquals(true, rs.getDate("COLE").toString().equals(expectedDate2));
+    assertEquals(expectedDate2, rs.getDate("COLE").toString());
 
     // Assert timestamp has no offset. When flag is false, timestamp_ltz and timestamp_ntz will show
     // offset.
-    assertEquals(useSessionTimezone, rs.getTimestamp("COLA").toString().equals(expectedTimestamp2));
-    assertEquals(true, rs.getTimestamp("COLB").toString().equals(expectedTimestamp2));
-    assertEquals(useSessionTimezone, rs.getTimestamp("COLC").toString().equals(expectedTimestamp2));
+    assertEquals(expectedTimestamp2, rs.getTimestamp("COLA").toString());
+    assertEquals(expectedTimestamp2, rs.getTimestamp("COLB").toString());
+    assertEquals(expectedTimestamp2, rs.getTimestamp("COLC").toString());
     // Getting timestamp from Time column will default to epoch start date
-    assertEquals(true, rs.getTimestamp("COLD").toString().equals("1970-01-01 01:01:33.0"));
+    assertEquals("1970-01-01 01:01:33.0", rs.getTimestamp("COLD").toString());
     // Getting timestamp from Date column will default to wallclock time of 0
-    assertEquals(true, rs.getTimestamp("COLE").toString().equals("1943-12-31 00:00:00.0"));
+    assertEquals("1943-12-31 00:00:00.0", rs.getTimestamp("COLE").toString());
 
     // Assert time has no offset. When flag is false, timestamp_ltz and timestamp_ntz will show
     // offset.
-    assertEquals(useSessionTimezone, rs.getTime("COLA").toString().equals(expectedTime2));
-    assertEquals(true, rs.getTime("COLB").toString().equals(expectedTime2));
-    assertEquals(useSessionTimezone, rs.getTime("COLC").toString().equals(expectedTime2));
-    assertEquals(true, rs.getTime("COLD").toString().equals(expectedTime2));
+    assertEquals(expectedTime2, rs.getTime("COLA").toString());
+    assertEquals(expectedTime2, rs.getTime("COLB").toString());
+    assertEquals(expectedTime2, rs.getTime("COLC").toString());
+    assertEquals(expectedTime2, rs.getTime("COLD").toString());
     // Cannot getTime() for Date column (colE)
+
+    // Test special case for timestamp_tz (offset added)
+    // create table with of type timestamp_tz
+    statement.execute("create or replace table tabletz (colA timestamp_tz)");
+    prepSt = connection.prepareStatement("insert into tabletz values(?), (?)");
+    // insert 2 timestamp values, but add an offset of a few hours on the end of each value
+    prepSt.setString(
+        1, expectedTimestamp + " +0500"); // inserted value is 2019-01-01 17:17:17.6 +0500
+    prepSt.setString(
+        2, expectedTimestamp2 + " -0200"); // inserted value is 1943-12-31 01:01:33.0 -0200
+    prepSt.execute();
+
+    rs = statement.executeQuery("select * from tabletz");
+    rs.next();
+    // Assert timestamp is displayed with no offset when flag is true. Timestamp should look
+    // identical to inserted value
+    assertEquals(expectedTimestamp, rs.getTimestamp("COLA").toString());
+    // Time value looks identical to the time portion of inserted timestamp_tz value
+    assertEquals(expectedTime, rs.getTime("COLA").toString());
+    // Date value looks identical to the date portion of inserted timestamp_tz value
+    assertEquals(expectedDate, rs.getDate("COLA").toString());
+    rs.next();
+    // Test that the same results occur for 2nd timestamp_tz value
+    assertEquals(expectedTimestamp2, rs.getTimestamp("COLA").toString());
+    assertEquals(expectedTime2, rs.getTime("COLA").toString());
+    assertEquals(expectedDate2, rs.getDate("COLA").toString());
 
     // clean up
     statement.execute("alter session unset JDBC_TREAT_TIMESTAMP_NTZ_AS_UTC");
