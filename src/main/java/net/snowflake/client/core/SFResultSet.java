@@ -145,7 +145,7 @@ public class SFResultSet extends SFJsonResultSet {
     this.timestampTZFormatter = resultSetSerializable.getTimestampTZFormatter();
     this.dateFormatter = resultSetSerializable.getDateFormatter();
     this.timeFormatter = resultSetSerializable.getTimeFormatter();
-    this.timeZone = resultSetSerializable.getTimeZone();
+    this.sessionTimeZone = resultSetSerializable.getTimeZone();
     this.honorClientTZForTimestampNTZ = resultSetSerializable.isHonorClientTZForTimestampNTZ();
     this.binaryFormatter = resultSetSerializable.getBinaryFormatter();
     this.resultVersion = resultSetSerializable.getResultVersion();
