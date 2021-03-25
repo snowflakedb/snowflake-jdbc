@@ -1,11 +1,5 @@
 package net.snowflake.client.jdbc;
 
-import static org.junit.Assert.assertEquals;
-
-import java.sql.*;
-import java.sql.Date;
-import java.text.SimpleDateFormat;
-import java.util.*;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryResultSet;
@@ -13,6 +7,13 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+
+import java.sql.Date;
+import java.sql.*;
+import java.text.SimpleDateFormat;
+import java.util.*;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * ResultSet multi timezone tests for the latest JDBC driver. This cannot run for the old driver.
@@ -149,9 +150,12 @@ public class ResultSetMultiTimeZoneLatestIT extends BaseJDBCTest {
    * Helper function to test behavior of parameter JDBC_USE_SESSION_TIMEZONE. When
    * JDBC_USE_SESSION_TIMEZONE=true, time/date/timestamp values are displayed using the session
    * timezone, not the JVM timezone. There should be no offset between the inserted value and the
-   * displayed value from ResultSet. For example, a timestamp value inserted as: 2019-01-01
-   * 17:17:17.6 +0500 will get displayed as so: ResultSet.getTimestamp(): 2019-01-01 17:17:17.6
-   * ResultSet.getTime(): 17:17:17.6 ResultSet.getDate(): 2019-01-01
+   * displayed value from ResultSet. For example, a timestamp value inserted as:
+   * 2019-01-01 17:17:17.6 +0500
+   * will get displayed as so:
+   * ResultSet.getTimestamp(): 2019-01-01 17:17:17.6
+   * ResultSet.getTime(): 17:17:17.6
+   * ResultSet.getDate(): 2019-01-01
    *
    * <p>When JDBC_USE_SESSION_TIMEZONE=false, the displayed values will be different depending on
    * the timezone offset between the session and JVM timezones.
