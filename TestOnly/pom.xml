@@ -140,7 +140,7 @@
     <dependency>
        <groupId>com.google.guava</groupId>
        <artifactId>guava</artifactId>
-       <version>28.0-jre</version>
+       <version>29.0-jre</version>
     </dependency>
     <!-- http://mvnrepository.com/artifact/net.java.dev.jna/jna -->
     <dependency>
