@@ -1,3 +1,9 @@
+**JDBC Driver 3.13.2**
+
+- \| SNOW-285542 | Fixed an issue with the ResultSet.getTimestamp()/getTime()/getDate() methods when the JDBC_USE_SESSION_TIMEZONE parameter was set.
+- \| SNOW-297092 | Fixed an issue with scoping metadata requests to the schema in the session context.
+- \| SNOW-259063 | Downgraded the Apache httpclient version to 4.12.11 to avoid an S3 certificate error regression.
+
 **JDBC Driver 3.13.1**
 
 - \| SNOW-258666 | Changed the driver to free up memory chunks when a thread is interrupted.
