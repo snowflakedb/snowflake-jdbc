@@ -502,6 +502,14 @@ public class MockConnectionTest extends BaseJDBCTest {
       return false;
     }
 
+    public long getConservativeMemoryLimit() {
+      return 0;
+    }
+
+    public int getConservativePrefetchThreads() {
+      return 0;
+    }
+
     @Override
     public SFBaseResultSet getResultSet() {
       return null;
@@ -587,6 +595,14 @@ public class MockConnectionTest extends BaseJDBCTest {
 
     @Override
     public void clearSqlWarnings() {}
+
+    public int getNetworkTimeoutInMilli() {
+      return 0;
+    }
+
+    public SnowflakeConnectString getSnowflakeConnectionString() {
+      return null;
+    }
   }
 
   private static class MockSFFileTransferAgent extends SFBaseFileTransferAgent {
