@@ -164,4 +164,8 @@ public abstract class SFBaseStatement {
     EXECUTE_UPDATE,
     EXECUTE_QUERY
   }
+
+  public abstract long getConservativeMemoryLimit();
+
+  public abstract int getConservativePrefetchThreads();
 }

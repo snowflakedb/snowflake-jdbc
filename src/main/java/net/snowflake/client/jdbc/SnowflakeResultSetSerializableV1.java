@@ -445,7 +445,7 @@ public class SnowflakeResultSetSerializableV1
    * @throws SnowflakeSQLException if failed to parse the result JSON node
    */
   public static SnowflakeResultSetSerializableV1 create(
-      JsonNode rootNode, SFSession sfSession, SFStatement sfStatement)
+      JsonNode rootNode, SFBaseSession sfSession, SFBaseStatement sfStatement)
       throws SnowflakeSQLException {
     SnowflakeResultSetSerializableV1 resultSetSerializable = new SnowflakeResultSetSerializableV1();
     logger.debug("Entering create()");
@@ -668,7 +668,7 @@ public class SnowflakeResultSetSerializableV1
    * @param rootNode result JSON node received from GS
    * @param sfStatement the snowflake statement
    */
-  private void parseChunkFiles(JsonNode rootNode, SFStatement sfStatement) {
+  private void parseChunkFiles(JsonNode rootNode, SFBaseStatement sfStatement) {
     JsonNode chunksNode = rootNode.path("data").path("chunks");
 
     if (!chunksNode.isMissingNode()) {
@@ -722,7 +722,7 @@ public class SnowflakeResultSetSerializableV1
     }
   }
 
-  private void adjustMemorySettings(SFStatement sfStatement) {
+  private void adjustMemorySettings(SFBaseStatement sfStatement) {
     this.resultPrefetchThreads = DEFAULT_CLIENT_PREFETCH_THREADS;
     if (this.statementType.isSelect()
         && this.parameters.containsKey(CLIENT_ENABLE_CONSERVATIVE_MEMORY_USAGE)

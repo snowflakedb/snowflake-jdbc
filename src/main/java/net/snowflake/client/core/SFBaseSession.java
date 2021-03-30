@@ -9,6 +9,7 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import net.snowflake.client.jdbc.ErrorCode;
+import net.snowflake.client.jdbc.SnowflakeConnectString;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.jdbc.SnowflakeType;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
@@ -585,4 +586,8 @@ public abstract class SFBaseSession {
   public void clearSqlWarnings() {
     sqlWarnings.clear();
   }
+
+  public abstract int getNetworkTimeoutInMilli();
+
+  public abstract SnowflakeConnectString getSnowflakeConnectionString();
 }
