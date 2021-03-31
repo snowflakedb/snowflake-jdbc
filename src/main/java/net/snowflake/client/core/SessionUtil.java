@@ -103,6 +103,8 @@ public class SessionUtil {
       "CLIENT_METADATA_REQUEST_USE_CONNECTION_CTX";
   public static final String CLIENT_METADATA_USE_SESSION_DATABASE =
       "CLIENT_METADATA_USE_SESSION_DATABASE";
+  public static final String FORCE_REGIONAL_S3_ENDPOINTS_FOR_PRESIGNED_URLS =
+      "FORCE_REGIONAL_S3_ENDPOINTS_FOR_PRESIGNED_URLS";
 
   static final String SF_HEADER_SERVICE_NAME = "X-Snowflake-Service";
 
@@ -175,7 +177,8 @@ public class SessionUtil {
               "JDBC_TREAT_DECIMAL_AS_INT",
               "JDBC_ENABLE_COMBINED_DESCRIBE",
               CLIENT_ENABLE_CONSERVATIVE_MEMORY_USAGE,
-              CLIENT_VALIDATE_DEFAULT_PARAMETERS));
+              CLIENT_VALIDATE_DEFAULT_PARAMETERS,
+              FORCE_REGIONAL_S3_ENDPOINTS_FOR_PRESIGNED_URLS));
 
   /**
    * Returns Authenticator type
@@ -1379,6 +1382,10 @@ public class SessionUtil {
       } else if (CLIENT_VALIDATE_DEFAULT_PARAMETERS.equalsIgnoreCase(entry.getKey())) {
         if (session != null) {
           session.setValidateDefaultParameters(SFLoginInput.getBooleanValue(entry.getValue()));
+        }
+      } else if (FORCE_REGIONAL_S3_ENDPOINTS_FOR_PRESIGNED_URLS.equalsIgnoreCase((entry.getKey()))) {
+        if (session != null) {
+          session.setUseRegionalS3EndpointsForPresignedURL(SFLoginInput.getBooleanValue(entry.getValue()));
         }
       }
     }
