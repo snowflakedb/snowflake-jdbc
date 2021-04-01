@@ -43,10 +43,10 @@ public class HeartbeatAsyncLatestIT extends HeartbeatIT {
       connection = getConnection(sessionParams);
 
       Statement stmt = connection.createStatement();
-      // Query will take 10 seconds to run, but ResultSet will be returned immediately
+      // Query will take 30 seconds to run, but ResultSet will be returned immediately
       resultSet =
           stmt.unwrap(SnowflakeStatement.class)
-              .executeAsyncQuery("SELECT count(*) FROM TABLE(generator(timeLimit => 10))");
+              .executeAsyncQuery("SELECT count(*) FROM TABLE(generator(timeLimit => 30))");
       Thread.sleep(61000); // sleep 61 seconds to await original session expiration time
       QueryStatus qs = resultSet.unwrap(SnowflakeResultSet.class).getStatus();
       // Ensure query succeeded
