@@ -381,6 +381,7 @@ public class SessionUtil {
                 loginInput.getUserName());
 
         loginInput.setToken(s.issueJwtToken());
+        logger.debug("JWT token: {}", loginInput.getToken());
       }
 
       uriBuilder.addParameter(SFSession.SF_QUERY_REQUEST_ID, UUID.randomUUID().toString());
