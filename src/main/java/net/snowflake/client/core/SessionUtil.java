@@ -1380,6 +1380,10 @@ public class SessionUtil {
         if (session != null) {
           session.setValidateDefaultParameters(SFLoginInput.getBooleanValue(entry.getValue()));
         }
+      } else {
+        if (session != null) {
+          session.setOtherParameter(entry.getKey(), entry.getValue());
+        }
       }
     }
   }
