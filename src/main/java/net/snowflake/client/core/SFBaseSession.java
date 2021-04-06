@@ -93,7 +93,7 @@ public abstract class SFBaseSession {
   // session database
   private boolean metadataRequestUseSessionDatabase = false;
   // Forces to use regional s3 end point API to generate regional url for aws endpoints
-  private boolean useRegionalS3EndpointsForPresignedURL;
+  private boolean useRegionalS3EndpointsForPresignedURL = false;
 
   /**
    * Part of the JDBC API, where client applications may fetch a Map of Properties to set various
