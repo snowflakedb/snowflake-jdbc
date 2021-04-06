@@ -92,7 +92,7 @@ public abstract class SFBaseSession {
   // DatabaseMetadata.getSchemas), whether to search using multiple schemas with
   // session database
   private boolean metadataRequestUseSessionDatabase = false;
-  //Forces to use regional s3 end point API to generate regional url for aws endpoints
+  // Forces to use regional s3 end point API to generate regional url for aws endpoints
   private boolean useRegionalS3EndpointsForPresignedURL;
 
   /**
