@@ -1383,9 +1383,11 @@ public class SessionUtil {
         if (session != null) {
           session.setValidateDefaultParameters(SFLoginInput.getBooleanValue(entry.getValue()));
         }
-      } else if (FORCE_REGIONAL_S3_ENDPOINTS_FOR_PRESIGNED_URLS.equalsIgnoreCase((entry.getKey()))) {
+      } else if (FORCE_REGIONAL_S3_ENDPOINTS_FOR_PRESIGNED_URLS.equalsIgnoreCase(
+          (entry.getKey()))) {
         if (session != null) {
-          session.setUseRegionalS3EndpointsForPresignedURL(SFLoginInput.getBooleanValue(entry.getValue()));
+          session.setUseRegionalS3EndpointsForPresignedURL(
+              SFLoginInput.getBooleanValue(entry.getValue()));
         }
       }
     }

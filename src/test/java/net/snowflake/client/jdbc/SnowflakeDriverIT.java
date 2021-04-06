@@ -2898,7 +2898,8 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
     Connection connection = null;
     Statement statement = null;
     boolean testS3stageRegionalUrl = false;
-    List<String> accounts = Arrays.asList(null, "s3testaccount", "s3testaccount", "azureaccount", "gcpaccount");
+    List<String> accounts =
+        Arrays.asList(null, "s3testaccount", "s3testaccount", "azureaccount", "gcpaccount");
     for (int i = 0; i < accounts.size(); i++) {
       try {
         connection = getConnection(accounts.get(i));
@@ -2916,7 +2917,8 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
 
           if (!testS3stageRegionalUrl
               && accounts.get(i).compareToIgnoreCase("s3testaccount") == 0) {
-            statement.execute("alter session set FORCE_REGIONAL_S3_ENDPOINTS_FOR_PRESIGNED_URLS=true;");
+            statement.execute(
+                "alter session set FORCE_REGIONAL_S3_ENDPOINTS_FOR_PRESIGNED_URLS=true;");
             testS3stageRegionalUrl = true;
           }
 
