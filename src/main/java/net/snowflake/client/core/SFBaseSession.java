@@ -94,6 +94,8 @@ public abstract class SFBaseSession {
   private boolean metadataRequestUseSessionDatabase = false;
   // Forces to use regional s3 end point API to generate regional url for aws endpoints
   private boolean useRegionalS3EndpointsForPresignedURL = false;
+  // Stores other parameters sent by server
+  private final Map<String, Object> otherParameters = new HashMap<>();
 
   /**
    * Part of the JDBC API, where client applications may fetch a Map of Properties to set various
@@ -468,6 +470,14 @@ public abstract class SFBaseSession {
 
   public void setClientResultChunkSize(int clientResultChunkSize) {
     this.clientResultChunkSize = clientResultChunkSize;
+  }
+
+  public Object getOtherParameter(String key) {
+    return this.otherParameters.get(key);
+  }
+
+  public void setOtherParameter(String key, Object value) {
+    this.otherParameters.put(key, value);
   }
 
   public int getClientPrefetchThreads() {
