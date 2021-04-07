@@ -92,6 +92,8 @@ public abstract class SFBaseSession {
   // DatabaseMetadata.getSchemas), whether to search using multiple schemas with
   // session database
   private boolean metadataRequestUseSessionDatabase = false;
+  // Stores other parameters sent by server
+  private final Map<String, Object> otherParameters = new HashMap<>();
 
   /**
    * Part of the JDBC API, where client applications may fetch a Map of Properties to set various
@@ -466,6 +468,14 @@ public abstract class SFBaseSession {
 
   public void setClientResultChunkSize(int clientResultChunkSize) {
     this.clientResultChunkSize = clientResultChunkSize;
+  }
+
+  public Object getOtherParameter(String key) {
+    return this.otherParameters.get(key);
+  }
+
+  public void setOtherParameter(String key, Object value) {
+    this.otherParameters.put(key, value);
   }
 
   public int getClientPrefetchThreads() {
