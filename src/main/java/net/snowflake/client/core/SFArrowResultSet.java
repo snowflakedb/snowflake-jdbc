@@ -496,7 +496,8 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
 
   @Override
   public BigDecimal getBigDecimal(int columnIndex, int scale) throws SFException {
-    return getBigDecimal(columnIndex).setScale(scale, RoundingMode.HALF_UP);
+    BigDecimal bigDec = getBigDecimal(columnIndex);
+    return bigDec == null ? null : bigDec.setScale(scale, RoundingMode.HALF_UP);
   }
 
   @Override
