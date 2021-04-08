@@ -10,6 +10,7 @@ import static org.junit.Assert.*;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.math.RoundingMode;
 import java.nio.ByteBuffer;
 import java.sql.*;
 import java.util.LinkedList;
@@ -417,5 +418,34 @@ public class ResultSetLatestIT extends ResultSet0IT {
 
   private byte[] floatToByteArray(float i) {
     return ByteBuffer.allocate(Float8Vector.TYPE_WIDTH).putDouble(0, i).array();
+  }
+
+  /**
+   * Test getBigDecimal(int colIndex, int scale) works properly and doesn't throw any
+   * NullPointerExceptions (SNOW-334161)
+   *
+   * @throws SQLException
+   */
+  @Test
+  public void testGetBigDecimalWithScale() throws SQLException {
+    Connection connection = init();
+    Statement statement = connection.createStatement();
+    statement.execute("create or replace table test_get(colA number(38,9))");
+    PreparedStatement preparedStatement =
+        connection.prepareStatement("insert into test_get values(?)");
+    preparedStatement.setBigDecimal(1, null);
+    preparedStatement.addBatch();
+    BigDecimal bigDecimal = new BigDecimal("100000000.123456789");
+    preparedStatement.setBigDecimal(1, bigDecimal);
+    preparedStatement.addBatch();
+    preparedStatement.executeBatch();
+
+    ResultSet resultSet = statement.executeQuery("select * from test_get");
+    resultSet.next();
+    assertEquals(null, resultSet.getBigDecimal(1, 5));
+    assertEquals(null, resultSet.getBigDecimal("COLA", 5));
+    resultSet.next();
+    assertEquals(bigDecimal.setScale(5, RoundingMode.HALF_UP), resultSet.getBigDecimal(1, 5));
+    assertEquals(bigDecimal.setScale(5, RoundingMode.HALF_UP), resultSet.getBigDecimal("COLA", 5));
   }
 }
