@@ -13,6 +13,7 @@ import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.auth.BasicSessionCredentials;
+import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.client.builder.ExecutorFactory;
 import com.amazonaws.regions.Region;
 import com.amazonaws.regions.RegionUtils;
@@ -175,7 +176,13 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
     if (stageRegion != null) {
       Region region = RegionUtils.getRegion(stageRegion);
       if (region != null) {
-        amazonS3Builder.withRegion(region.getName());
+        if (session.getUseRegionalS3EndpointsForPresignedURL()) {
+          amazonS3Builder.withEndpointConfiguration(
+              new AwsClientBuilder.EndpointConfiguration(
+                  "s3." + region.getName() + ".amazonaws.com", region.getName()));
+        } else {
+          amazonS3Builder.withRegion(region.getName());
+        }
       }
     }
     // Explicitly force to use virtual address style
