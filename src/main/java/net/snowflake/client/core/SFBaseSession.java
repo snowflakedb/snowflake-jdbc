@@ -92,6 +92,8 @@ public abstract class SFBaseSession {
   // DatabaseMetadata.getSchemas), whether to search using multiple schemas with
   // session database
   private boolean metadataRequestUseSessionDatabase = false;
+  // Forces to use regional s3 end point API to generate regional url for aws endpoints
+  private boolean useRegionalS3EndpointsForPresignedURL = false;
   // Stores other parameters sent by server
   private final Map<String, Object> otherParameters = new HashMap<>();
 
@@ -524,6 +526,14 @@ public abstract class SFBaseSession {
 
   public void setWarehouse(String warehouse) {
     this.warehouse = warehouse;
+  }
+
+  public void setUseRegionalS3EndpointsForPresignedURL(boolean regionalS3Endpoint) {
+    this.useRegionalS3EndpointsForPresignedURL = regionalS3Endpoint;
+  }
+
+  public boolean getUseRegionalS3EndpointsForPresignedURL() {
+    return useRegionalS3EndpointsForPresignedURL;
   }
 
   /**
