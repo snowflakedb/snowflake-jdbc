@@ -2897,63 +2897,52 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
 
     Connection connection = null;
     Statement statement = null;
-    boolean[] privateLink = {false, true};
-
     List<String> accounts = Arrays.asList(null, "s3testaccount", "azureaccount", "gcpaccount");
-    for (boolean testS3stageRegionalUrl : privateLink) {
-      for (int i = 0; i < accounts.size(); i++) {
+    for (int i = 0; i < accounts.size(); i++) {
+      try {
+        connection = getConnection(accounts.get(i));
+
+        statement = connection.createStatement();
+
+        String sourceFilePath = getFullPathFileInResource(TEST_DATA_FILE);
+
+        File destFolder = tmpFolder.newFolder();
+        String destFolderCanonicalPath = destFolder.getCanonicalPath();
+        String destFolderCanonicalPathWithSeparator = destFolderCanonicalPath + File.separator;
+
         try {
-          connection = getConnection(accounts.get(i));
+          statement.execute("CREATE OR REPLACE STAGE testPutGet_stage");
 
-          statement = connection.createStatement();
+          assertTrue(
+              "Failed to put a file",
+              statement.execute("PUT file://" + sourceFilePath + " @testPutGet_stage"));
 
-          String sourceFilePath = getFullPathFileInResource(TEST_DATA_FILE);
+          findFile(statement, "ls @testPutGet_stage/");
 
-          File destFolder = tmpFolder.newFolder();
-          String destFolderCanonicalPath = destFolder.getCanonicalPath();
-          String destFolderCanonicalPathWithSeparator = destFolderCanonicalPath + File.separator;
-
-          try {
-            statement.execute("CREATE OR REPLACE STAGE testPutGet_stage");
-
-            if (testS3stageRegionalUrl) {
+          // download the file we just uploaded to stage
+          assertTrue(
+              "Failed to get a file",
               statement.execute(
-                  "alter session set FORCE_REGIONAL_S3_ENDPOINTS_FOR_PRESIGNED_URLS=true;");
-            }
+                  "GET @testPutGet_stage 'file://" + destFolderCanonicalPath + "' parallel=8"));
 
-            assertTrue(
-                "Failed to put a file",
-                statement.execute("PUT file://" + sourceFilePath + " @testPutGet_stage"));
+          // Make sure that the downloaded file exists, it should be gzip compressed
+          File downloaded = new File(destFolderCanonicalPathWithSeparator + TEST_DATA_FILE + ".gz");
+          assert (downloaded.exists());
 
-            findFile(statement, "ls @testPutGet_stage/");
+          Process p =
+              Runtime.getRuntime()
+                  .exec("gzip -d " + destFolderCanonicalPathWithSeparator + TEST_DATA_FILE + ".gz");
+          p.waitFor();
 
-            // download the file we just uploaded to stage
-            assertTrue(
-                "Failed to get a file",
-                statement.execute(
-                    "GET @testPutGet_stage 'file://" + destFolderCanonicalPath + "' parallel=8"));
-
-            // Make sure that the downloaded file exists, it should be gzip compressed
-            File downloaded =
-                new File(destFolderCanonicalPathWithSeparator + TEST_DATA_FILE + ".gz");
-            assert (downloaded.exists());
-
-            Process p =
-                Runtime.getRuntime()
-                    .exec(
-                        "gzip -d " + destFolderCanonicalPathWithSeparator + TEST_DATA_FILE + ".gz");
-            p.waitFor();
-
-            File original = new File(sourceFilePath);
-            File unzipped = new File(destFolderCanonicalPathWithSeparator + TEST_DATA_FILE);
-            assert (original.length() == unzipped.length());
-          } finally {
-            statement.execute("DROP STAGE IF EXISTS testGetPut_stage");
-            statement.close();
-          }
+          File original = new File(sourceFilePath);
+          File unzipped = new File(destFolderCanonicalPathWithSeparator + TEST_DATA_FILE);
+          assert (original.length() == unzipped.length());
         } finally {
-          closeSQLObjects(null, statement, connection);
+          statement.execute("DROP STAGE IF EXISTS testGetPut_stage");
+          statement.close();
         }
+      } finally {
+        closeSQLObjects(null, statement, connection);
       }
     }
   }
