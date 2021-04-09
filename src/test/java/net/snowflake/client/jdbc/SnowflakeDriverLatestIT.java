@@ -205,7 +205,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
         connection = getConnection(accountName);
         Statement statement = connection.createStatement();
 
-        if("s3testaccount".equalsIgnoreCase(accountName)) {
+        if ("s3testaccount".equalsIgnoreCase(accountName)) {
           statement.execute("alter account set ENABLE_STAGE_S3_PRIVATELINK_FOR_US_EAST_1 = true;");
         }
 
@@ -279,8 +279,10 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
       } finally {
         if (connection != null) {
           connection.createStatement().execute("DROP STAGE if exists " + testStageName);
-          if("s3testaccount".equalsIgnoreCase(accountName)) {
-            connection.createStatement().execute("alter account set ENABLE_STAGE_S3_PRIVATELINK_FOR_US_EAST_1 = false;");
+          if ("s3testaccount".equalsIgnoreCase(accountName)) {
+            connection
+                .createStatement()
+                .execute("alter account set ENABLE_STAGE_S3_PRIVATELINK_FOR_US_EAST_1 = false;");
           }
           connection.close();
         }
