@@ -50,24 +50,21 @@ public class HeartbeatAsyncLatestIT extends HeartbeatIT {
       Thread.sleep(61000); // sleep 61 seconds to await original session expiration time
       QueryStatus qs = resultSet.unwrap(SnowflakeResultSet.class).getStatus();
       int retry = 0;
-      int MAX_RETRY = 10;
+      int MAX_RETRY = 20;
       // Ensure query succeeded. Avoid flaky test failure by waiting until query is complete to
       // assert the query status is a success.
       while (QueryStatus.isStillRunning(qs) && retry < MAX_RETRY) {
-        Thread.sleep(1000);
+        Thread.sleep(3000);
         retry++;
         qs = resultSet.unwrap(SnowflakeResultSet.class).getStatus();
       }
-      if (retry < MAX_RETRY) {
-        assertEquals(QueryStatus.SUCCESS, qs);
+      // Query should succeed eventually. Assert this is the case.
+      assertEquals(QueryStatus.SUCCESS, qs);
 
-        // assert we get 1 row
-        assertTrue(resultSet.next());
-        assertFalse(resultSet.next());
-        logger.fine("Query " + queryIdx + " passed ");
-      } else {
-        logger.fine("Query took too long to complete. Aborting test.");
-      }
+      // assert we get 1 row
+      assertTrue(resultSet.next());
+      assertFalse(resultSet.next());
+      logger.fine("Query " + queryIdx + " passed ");
 
     } finally {
       resultSet.close();
