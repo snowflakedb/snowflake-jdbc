@@ -76,7 +76,7 @@ public class DefaultSFConnectionHandler implements SFConnectionHandler {
 
   @Override
   public void initializeConnection(String url, Properties info) throws SQLException {
-    initialize(conStr);
+    initialize(conStr, LoginInfoDTO.SF_JDBC_APP_ID, SnowflakeDriver.implementVersion);
   }
 
   /** Returns the default SFSession client implementation. */
@@ -91,14 +91,15 @@ public class DefaultSFConnectionHandler implements SFConnectionHandler {
     return new SFStatement(sfSession);
   }
 
-  private void initialize(SnowflakeConnectString conStr) throws SQLException {
+  protected void initialize(SnowflakeConnectString conStr, String appID, String appVersion)
+      throws SQLException {
     logger.debug(
         "Trying to establish session, JDBC driver version: {}", SnowflakeDriver.implementVersion);
     TelemetryService.getInstance().updateContext(conStr);
 
     try {
       // pass the parameters to sfSession
-      initSessionProperties(conStr);
+      initSessionProperties(conStr, appID, appVersion);
       if (!skipOpen) {
         sfSession.open();
       }
@@ -109,7 +110,8 @@ public class DefaultSFConnectionHandler implements SFConnectionHandler {
     }
   }
 
-  private void initSessionProperties(SnowflakeConnectString conStr) throws SFException {
+  private void initSessionProperties(SnowflakeConnectString conStr, String appID, String appVersion)
+      throws SFException {
     Map<String, Object> properties = mergeProperties(conStr);
 
     for (Map.Entry<String, Object> property : properties.entrySet()) {
@@ -143,8 +145,8 @@ public class DefaultSFConnectionHandler implements SFConnectionHandler {
     }
 
     // populate app id and version
-    sfSession.addProperty(SFSessionProperty.APP_ID, LoginInfoDTO.SF_JDBC_APP_ID);
-    sfSession.addProperty(SFSessionProperty.APP_VERSION, SnowflakeDriver.implementVersion);
+    sfSession.addProperty(SFSessionProperty.APP_ID, appID);
+    sfSession.addProperty(SFSessionProperty.APP_VERSION, appVersion);
 
     // Set the corresponding session parameters to the JVM properties
     for (Map.Entry<String, String> entry : JVM_PARAMS_TO_PARAMS.entrySet()) {
