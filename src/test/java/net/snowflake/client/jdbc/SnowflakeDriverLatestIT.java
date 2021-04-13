@@ -8,6 +8,7 @@ import static org.junit.Assert.*;
 
 import java.io.*;
 import java.nio.channels.FileChannel;
+import java.nio.charset.StandardCharsets;
 import java.sql.*;
 import java.util.Arrays;
 import java.util.List;
@@ -183,6 +184,111 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
       // they should be gzip compressed
       assert (isFileContentEqual(srcPath1, false, destFolderCanonicalPath + "/file1.gz", true));
       assert (isFileContentEqual(srcPath2, false, destFolderCanonicalPath + "/file2.gz", true));
+    } finally {
+      if (connection != null) {
+        connection.createStatement().execute("DROP STAGE if exists " + testStageName);
+        connection.close();
+      }
+    }
+  }
+
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testGCPFileTransferMetadataWithoutConnection_filenameNotFound() throws Throwable {
+    Connection connection = null;
+    final String fileName = "filename";
+
+    try {
+      connection = getConnection("gcpaccount");
+      Statement statement = connection.createStatement();
+
+      // create a stage to put the file in
+      statement.execute("CREATE OR REPLACE STAGE " + testStageName);
+
+      SFSession sfSession = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
+
+      // Test put file with internal compression
+      String putCommand1 = "PUT file:///tmp/dummy/path @" + testStageName;
+      SnowflakeFileTransferAgent sfAgent1 =
+              new SnowflakeFileTransferAgent(putCommand1, sfSession, new SFStatement(sfSession));
+      List<SnowflakeFileTransferMetadata> metadatas1 = sfAgent1.getFileTransferMetadatas();
+
+      String data = "test data";
+
+      // size of metadata will be 1
+      for (SnowflakeFileTransferMetadata oneMetadata : metadatas1) {
+        InputStream fis = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
+        ((SnowflakeFileTransferMetadataV1)oneMetadata).setPresignedUrlFileName(fileName);
+        assert (oneMetadata.isForOneFile());
+        SnowflakeFileTransferAgent.uploadWithoutConnection(
+                SnowflakeFileTransferConfig.Builder.newInstance()
+                        .setSnowflakeFileTransferMetadata(oneMetadata)
+                        .setUploadStream(fis)
+                        .setRequireCompress(true)
+                        .setNetworkTimeoutInMilli(0)
+                        .setOcspMode(OCSPMode.FAIL_OPEN)
+                        .build());
+      }
+
+      ResultSet resultSet  = statement.executeQuery("ls @" + testStageName);
+      assertTrue(resultSet.next());
+      final String returnFileNameFromList = resultSet.getString("name");
+      assertFalse(returnFileNameFromList.contains(fileName));
+      // Make sure that the downloaded files are EQUAL,
+      // they should be gzip compressed
+    } finally {
+      if (connection != null) {
+        connection.createStatement().execute("DROP STAGE if exists " + testStageName);
+        connection.close();
+      }
+    }
+  }
+
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testAWSFileTransferMetadataWithoutConnection_filenameFound() throws Throwable {
+    Connection connection = null;
+    final String fileName = "filename";
+
+    try {
+      connection = getConnection("s3testaccount");
+      Statement statement = connection.createStatement();
+
+      // create a stage to put the file in
+      statement.execute("CREATE OR REPLACE STAGE " + testStageName);
+
+      SFSession sfSession = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
+
+      // Test put file with internal compression
+      String putCommand1 = "PUT file:///tmp/dummy/path @" + testStageName;
+      SnowflakeFileTransferAgent sfAgent1 =
+              new SnowflakeFileTransferAgent(putCommand1, sfSession, new SFStatement(sfSession));
+      List<SnowflakeFileTransferMetadata> metadatas1 = sfAgent1.getFileTransferMetadatas();
+
+      String data = "test data";
+
+      // size of metadata will be 1
+      for (SnowflakeFileTransferMetadata oneMetadata : metadatas1) {
+        InputStream fis = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
+        ((SnowflakeFileTransferMetadataV1)oneMetadata).setPresignedUrlFileName(fileName);
+        // false for non gcp
+        assertFalse(oneMetadata.isForOneFile());
+        SnowflakeFileTransferAgent.uploadWithoutConnection(
+                SnowflakeFileTransferConfig.Builder.newInstance()
+                        .setSnowflakeFileTransferMetadata(oneMetadata)
+                        .setUploadStream(fis)
+                        .setRequireCompress(true)
+                        .setNetworkTimeoutInMilli(0)
+                        .setOcspMode(OCSPMode.FAIL_OPEN)
+                        .build());
+      }
+
+      ResultSet resultSet  = statement.executeQuery("ls @" + testStageName);
+      assertTrue(resultSet.next());
+      final String returnFileNameFromList = resultSet.getString("name");
+      assertTrue(returnFileNameFromList.contains(fileName));
+      // Make sure that the downloaded files are EQUAL,
+      // they should be gzip compressed
     } finally {
       if (connection != null) {
         connection.createStatement().execute("DROP STAGE if exists " + testStageName);
