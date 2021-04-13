@@ -143,7 +143,8 @@ public class SessionUtil {
               "TIME_OUTPUT_FORMAT",
               "BINARY_OUTPUT_FORMAT",
               "CLIENT_TIMESTAMP_TYPE_MAPPING",
-              SERVICE_NAME));
+              SERVICE_NAME,
+              "GEOGRAPHY_OUTPUT_FORMAT"));
   private static final Set<String> INT_PARAMS =
       new HashSet<>(
           Arrays.asList(
@@ -178,7 +179,8 @@ public class SessionUtil {
               "JDBC_ENABLE_COMBINED_DESCRIBE",
               CLIENT_ENABLE_CONSERVATIVE_MEMORY_USAGE,
               CLIENT_VALIDATE_DEFAULT_PARAMETERS,
-              ENABLE_STAGE_S3_PRIVATELINK_FOR_US_EAST_1));
+              ENABLE_STAGE_S3_PRIVATELINK_FOR_US_EAST_1,
+              "SNOWPARK_LAZY_ANALYSIS"));
 
   /**
    * Returns Authenticator type
