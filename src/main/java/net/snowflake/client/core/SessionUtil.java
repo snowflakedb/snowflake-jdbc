@@ -1385,8 +1385,7 @@ public class SessionUtil {
         if (session != null) {
           session.setValidateDefaultParameters(SFLoginInput.getBooleanValue(entry.getValue()));
         }
-      } else if (ENABLE_STAGE_S3_PRIVATELINK_FOR_US_EAST_1.equalsIgnoreCase(
-          (entry.getKey()))) {
+      } else if (ENABLE_STAGE_S3_PRIVATELINK_FOR_US_EAST_1.equalsIgnoreCase((entry.getKey()))) {
         if (session != null) {
           session.setUseRegionalS3EndpointsForPresignedURL(
               SFLoginInput.getBooleanValue(entry.getValue()));
