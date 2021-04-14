@@ -132,6 +132,64 @@ public class PreparedStatement1LatestIT extends PreparedStatement0IT {
   }
 
   /**
+   * Test that setObject() with additional NTZ and LTZ timestamp types gives same results for stage
+   * array bind and payload binding, regardless of CLIENT_TIMESTAMP_TYPE_MAPPING parameter value.
+   * For SNOW-259255
+   *
+   * <p>Ignored on GitHub Action because CLIENT_STAGE_ARRAY_BINDING_THRESHOLD parameter is not
+   * available to customers so cannot be set when running on Github Action
+   *
+   * @throws SQLException
+   */
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testSetObjectForTimestampTypes() throws SQLException {
+    try (Connection connection = init()) {
+      Statement statement = connection.createStatement();
+      // set timestamp mapping to default value
+      statement.execute("ALTER SESSION UNSET CLIENT_TIMESTAMP_TYPE_MAPPING");
+      statement.execute("create or replace table TS (ntz TIMESTAMP_NTZ, ltz TIMESTAMP_LTZ)");
+      PreparedStatement prepst = connection.prepareStatement("insert into TS values (?, ?)");
+      String date1 = "2014-01-01 16:00:00";
+      String date2 = "1945-11-12 5:25:00";
+      Timestamp[] testTzs = {Timestamp.valueOf(date1), Timestamp.valueOf(date2)};
+      for (int i = 0; i < testTzs.length; i++) {
+        // Disable stage array binding and insert the timestamp values
+        statement.execute(
+            "ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = 0"); // disable stage bind
+        prepst.setObject(1, testTzs[i], SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_NTZ);
+        prepst.setObject(2, testTzs[i], SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_LTZ);
+        prepst.addBatch();
+        prepst.executeBatch();
+        // Enable stage array binding and insert the same timestamp values as above
+        statement.execute(
+            "ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = 1"); // enable stage bind
+        prepst.setObject(1, testTzs[i], SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_NTZ);
+        prepst.setObject(2, testTzs[i], SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_LTZ);
+        prepst.addBatch();
+        prepst.executeBatch();
+      }
+      ResultSet rs = statement.executeQuery("select * from TS");
+      // Get results for each timestamp value tested
+      for (int i = 0; i < testTzs.length; i++) {
+        // Assert that the first row of inserts with payload binding matches the second row of
+        // inserts that used stage array binding
+        rs.next();
+        Timestamp expectedNTZTs = rs.getTimestamp(1);
+        Timestamp expectedLTZTs = rs.getTimestamp(2);
+        rs.next();
+        assertEquals(expectedNTZTs, rs.getTimestamp(1));
+        assertEquals(expectedLTZTs, rs.getTimestamp(2));
+      }
+
+      // clean up
+      statement.execute("ALTER SESSION UNSET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD;");
+      rs.close();
+      statement.close();
+    }
+  }
+
+  /**
    * Test to ensure when giving no input batch data, no exceptions will be thrown
    *
    * <p>Ignored on GitHub Action because CLIENT_STAGE_ARRAY_BINDING_THRESHOLD parameter is not
