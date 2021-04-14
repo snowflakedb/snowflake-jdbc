@@ -258,13 +258,15 @@ public class RestRequestTest {
             String.format(
                 "Result must be true but false: HTTP Code: %d, RetryHTTP403: %s",
                 t.statusCode, t.retryHTTP403),
-            RestRequest.isRetryableHTTPCode(anyStatusCodeResponse(t.statusCode), t.retryHTTP403));
+            RestRequest.isNonretryableHTTPCode(
+                anyStatusCodeResponse(t.statusCode), t.retryHTTP403));
       } else {
         assertFalse(
             String.format(
                 "Result must be false but true: HTTP Code: %d, RetryHTTP403: %s",
                 t.statusCode, t.retryHTTP403),
-            RestRequest.isRetryableHTTPCode(anyStatusCodeResponse(t.statusCode), t.retryHTTP403));
+            RestRequest.isNonretryableHTTPCode(
+                anyStatusCodeResponse(t.statusCode), t.retryHTTP403));
       }
     }
   }
