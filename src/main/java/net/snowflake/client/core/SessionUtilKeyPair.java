@@ -25,11 +25,16 @@ import javax.crypto.EncryptedPrivateKeyInfo;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 import net.snowflake.client.jdbc.ErrorCode;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
 import org.apache.commons.codec.binary.Base64;
 import org.bouncycastle.util.io.pem.PemReader;
 
 /** Class used to compute jwt token for key pair authentication Created by hyu on 1/16/18. */
 class SessionUtilKeyPair {
+
+  static final SFLogger logger = SFLoggerFactory.getLogger(SessionUtilKeyPair.class);
+
   // user name in upper case
   private final String userName;
 
@@ -178,7 +183,13 @@ class SessionUtilKeyPair {
     } catch (JOSEException e) {
       throw new SFException(e, ErrorCode.FAILED_TO_GENERATE_JWT);
     }
-
+    // Log the contents of the token, displaying expiration and issue time in epoch time
+    logger.debug(
+        "JWT:\n'{'\niss: {}\nsub: {}\niat: {}\nexp: {}\n'}'",
+        iss,
+        sub,
+        String.valueOf(iat.getTime() / 1000),
+        String.valueOf(exp.getTime() / 1000));
     return signedJWT.serialize();
   }
 
