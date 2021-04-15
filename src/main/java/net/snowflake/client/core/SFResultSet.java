@@ -60,7 +60,7 @@ public class SFResultSet extends SFJsonResultSet {
 
   private ChunkDownloader chunkDownloader;
 
-  protected SFStatement statement;
+  protected SFBaseStatement statement;
 
   private final boolean arrayBindSupported;
 
@@ -84,13 +84,13 @@ public class SFResultSet extends SFJsonResultSet {
    */
   public SFResultSet(
       SnowflakeResultSetSerializableV1 resultSetSerializable,
-      SFStatement statement,
+      SFBaseStatement statement,
       boolean sortResult)
       throws SQLException {
     this(resultSetSerializable, statement.getSFBaseSession().getTelemetryClient(), sortResult);
 
     this.statement = statement;
-    SFSession session = (SFSession) statement.getSFBaseSession();
+    SFBaseSession session = statement.getSFBaseSession();
     session.setDatabase(resultSetSerializable.getFinalDatabaseName());
     session.setSchema(resultSetSerializable.getFinalSchemaName());
     session.setRole(resultSetSerializable.getFinalRoleName());
