@@ -316,6 +316,11 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
   public void setTimestamp(int parameterIndex, Timestamp x) throws SQLException {
     logger.debug("setTimestamp(parameterIndex: {}, Timestamp x)", parameterIndex);
 
+    setTimestampWithType(parameterIndex, x, Types.TIMESTAMP);
+  }
+
+  private void setTimestampWithType(int parameterIndex, Timestamp x, int snowflakeType)
+      throws SQLException {
     // convert the timestamp from being in local time zone to be in UTC timezone
     String value =
         x == null
@@ -324,15 +329,20 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
                 BigDecimal.valueOf((x.getTime() - ResultUtil.msDiffJulianToGregorian(x)) / 1000)
                     .scaleByPowerOfTen(9)
                     .add(BigDecimal.valueOf(x.getNanos())));
-
-    SnowflakeType sfType =
-        SnowflakeUtil.javaTypeToSFType(Types.TIMESTAMP, connection.getSFBaseSession());
-
-    if (sfType == SnowflakeType.TIMESTAMP) {
-      sfType = connection.getSFBaseSession().getTimestampMappedType();
+    String bindingTypeName;
+    switch (snowflakeType) {
+      case SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_LTZ:
+        bindingTypeName = SnowflakeType.TIMESTAMP_LTZ.name();
+        break;
+      case SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_NTZ:
+        bindingTypeName = SnowflakeType.TIMESTAMP_NTZ.name();
+        break;
+      default:
+        bindingTypeName = connection.getSFBaseSession().getTimestampMappedType().name();
+        break;
     }
 
-    ParameterBindingDTO binding = new ParameterBindingDTO(sfType.name(), value);
+    ParameterBindingDTO binding = new ParameterBindingDTO(bindingTypeName, value);
     parameterBindings.put(String.valueOf(parameterIndex), binding);
   }
 
@@ -367,6 +377,9 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
       setTime(parameterIndex, (Time) x);
     } else if (targetSqlType == Types.TIMESTAMP) {
       setTimestamp(parameterIndex, (Timestamp) x);
+    } else if (targetSqlType == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_LTZ
+        || targetSqlType == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_NTZ) {
+      setTimestampWithType(parameterIndex, (Timestamp) x, targetSqlType);
     } else {
       logger.debug(
           "setObject(parameterIndex: {}, Object x, sqlType: {})",
