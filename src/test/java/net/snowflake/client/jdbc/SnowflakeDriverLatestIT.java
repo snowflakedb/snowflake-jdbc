@@ -205,10 +205,6 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
         connection = getConnection(accountName);
         Statement statement = connection.createStatement();
 
-        if ("s3testaccount".equalsIgnoreCase(accountName)) {
-          statement.execute("alter account set ENABLE_STAGE_S3_PRIVATELINK_FOR_US_EAST_1 = true;");
-        }
-
         // create a stage to put the file in
         statement.execute("CREATE OR REPLACE STAGE " + testStageName);
 
@@ -279,14 +275,90 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
       } finally {
         if (connection != null) {
           connection.createStatement().execute("DROP STAGE if exists " + testStageName);
-          if ("s3testaccount".equalsIgnoreCase(accountName)) {
-            connection
-                .createStatement()
-                .execute("alter account set ENABLE_STAGE_S3_PRIVATELINK_FOR_US_EAST_1 = false;");
-          }
           connection.close();
         }
       }
+    }
+  }
+
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testPutS3RegionalUrl() throws Throwable {
+    Connection connection = null;
+    Statement statement = null;
+    ResultSet resultSet = null;
+
+    try {
+      connection = getConnection(DONT_INJECT_SOCKET_TIMEOUT, null, true, false, "s3testaccount");
+
+      statement = connection.createStatement();
+
+      // load file test
+      // create a unique data file name by using current timestamp in millis
+      try {
+        // test external table load
+        statement.execute("CREATE OR REPLACE TABLE testLoadToLocalFS(a number)");
+
+        statement.execute("alter account set ENABLE_STAGE_S3_PRIVATELINK_FOR_US_EAST_1 = true;");
+
+        // put files
+        assertTrue(
+            "Failed to put a file",
+            statement.execute(
+                "PUT file://"
+                    + getFullPathFileInResource(TEST_DATA_FILE)
+                    + " @%testLoadToLocalFS/orders parallel=10"));
+
+        resultSet = statement.getResultSet();
+
+        ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
+
+        // assert column count
+        assertTrue(resultSetMetaData.getColumnCount() > 0);
+
+        assertTrue(resultSet.next()); // one row
+        assertFalse(resultSet.next());
+
+        findFile(
+            statement, "ls @%testLoadToLocalFS/ pattern='.*orders/" + TEST_DATA_FILE + ".g.*'");
+
+        // remove files
+        resultSet =
+            statement.executeQuery(
+                "rm @%testLoadToLocalFS/ pattern='.*orders/" + TEST_DATA_FILE + ".g.*'");
+
+        resultSetMetaData = resultSet.getMetaData();
+
+        // assert column count
+        assertTrue(resultSetMetaData.getColumnCount() >= 1);
+
+        // assert we get 1 row for the file we copied
+        assertTrue(resultSet.next());
+        assertNotNull(resultSet.getString(1));
+        assertFalse(resultSet.next());
+        try {
+          resultSet.getString(1); // no more row
+          fail("must fail");
+        } catch (SQLException ex) {
+          assertEquals((int) ErrorCode.COLUMN_DOES_NOT_EXIST.getMessageCode(), ex.getErrorCode());
+        }
+
+        Thread.sleep(100);
+
+        // show files again
+        resultSet = statement.executeQuery("ls @%testLoadToLocalFS/ pattern='.*orders/orders.*'");
+
+        // assert we get 0 row
+        assertFalse(resultSet.next());
+
+      } finally {
+        statement.execute("DROP TABLE IF EXISTS testLoadToLocalFS");
+        statement.execute("alter account set ENABLE_STAGE_S3_PRIVATELINK_FOR_US_EAST_1 = false;");
+        statement.close();
+      }
+
+    } finally {
+      closeSQLObjects(resultSet, statement, connection);
     }
   }
 
