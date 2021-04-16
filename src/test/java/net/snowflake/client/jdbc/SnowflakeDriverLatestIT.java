@@ -291,6 +291,8 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
     try {
       Properties paramProperties = new Properties();
       paramProperties.put("account", "s3testaccount");
+      paramProperties.put("user", "snowman");
+      paramProperties.put("password", "test");
       connection =
           getConnection(DONT_INJECT_SOCKET_TIMEOUT, paramProperties, true, false, "s3testaccount");
 
