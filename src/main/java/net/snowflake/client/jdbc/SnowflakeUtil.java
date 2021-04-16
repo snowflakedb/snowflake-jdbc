@@ -34,6 +34,8 @@ public class SnowflakeUtil {
 
   public static final int EXTRA_TYPES_TIMESTAMP_TZ = 50001;
 
+  public static final int EXTRA_TYPES_TIMESTAMP_NTZ = 50002;
+
   // reauthenticate
   private static final int ID_TOKEN_EXPIRED_GS_CODE = 390110;
   private static final int SESSION_NOT_EXIST_GS_CODE = 390111;
