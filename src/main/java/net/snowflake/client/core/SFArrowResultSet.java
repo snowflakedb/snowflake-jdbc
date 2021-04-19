@@ -49,7 +49,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
   private boolean sortResult;
 
   /** statement generate current result set */
-  protected SFStatement statement;
+  protected SFBaseStatement statement;
 
   /** is array bind supported */
   private final boolean arrayBindSupported;
@@ -99,15 +99,15 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
    * <p>The constructor will initialize the ResultSetMetaData.
    *
    * @param resultSetSerializable result data after parsing json
-   * @param session SFSession object
+   * @param session SFBaseSession object
    * @param statement statement object
    * @param sortResult true if sort results otherwise false
    * @throws SQLException exception raised from general SQL layers
    */
-  SFArrowResultSet(
+  public SFArrowResultSet(
       SnowflakeResultSetSerializableV1 resultSetSerializable,
-      SFSession session,
-      SFStatement statement,
+      SFBaseSession session,
+      SFBaseStatement statement,
       boolean sortResult)
       throws SQLException {
     this(resultSetSerializable, session.getTelemetryClient(), sortResult);
