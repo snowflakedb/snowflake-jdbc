@@ -3,8 +3,20 @@
  */
 package net.snowflake.client.jdbc;
 
-import static net.snowflake.client.jdbc.SnowflakeDriverIT.findFile;
-import static org.junit.Assert.*;
+import com.fasterxml.jackson.databind.JsonNode;
+import net.snowflake.client.ConditionalIgnoreRule;
+import net.snowflake.client.RunningOnGithubAction;
+import net.snowflake.client.category.TestCategoryOthers;
+import net.snowflake.client.core.OCSPMode;
+import net.snowflake.client.core.SFSession;
+import net.snowflake.client.core.SFStatement;
+import net.snowflake.common.core.SqlState;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.rules.TemporaryFolder;
 
 import java.io.*;
 import java.nio.channels.FileChannel;
@@ -14,17 +26,10 @@ import java.util.List;
 import java.util.Properties;
 import java.util.UUID;
 import java.util.zip.GZIPInputStream;
-import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningOnGithubAction;
-import net.snowflake.client.category.TestCategoryOthers;
-import net.snowflake.client.core.*;
-import net.snowflake.common.core.SqlState;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.rules.TemporaryFolder;
+
+import static net.snowflake.client.jdbc.SnowflakeDriverIT.findFile;
+import static net.snowflake.client.jdbc.SnowflakeResultSetSerializableV1.mapper;
+import static org.junit.Assert.*;
 
 /**
  * General JDBC tests for the latest JDBC driver. This doesn't work for the oldest supported driver.
@@ -58,6 +63,38 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
     } finally {
       inputStream1.close();
       inputStream2.close();
+    }
+  }
+
+  @Test
+  public void testClientInfoConnectionProperty() throws Throwable {
+    Connection connection = null;
+    Statement statement = null;
+    ResultSet res = null;
+
+    try {
+      Properties props = new Properties();
+      props.put(
+          "snowflakeClientInfo",
+          "{\\\"sparkVersion\\\":\\\"1.2.0\\\", \\\"sparkApp\\\":\\\"mySparkApp\\\"}");
+      connection = getConnection(DONT_INJECT_SOCKET_TIMEOUT, props, false, false);
+
+      statement = connection.createStatement();
+
+      res = statement.executeQuery("select current_session_client_info()");
+
+      assertTrue("result expected", res.next());
+
+      String clientInfoJSONStr = res.getString(1);
+
+      JsonNode clientInfoJSON = mapper.readTree(clientInfoJSONStr);
+
+      // assert that spart version and spark app are found
+      assertEquals("spark version mismatch", "1.2.0", clientInfoJSON.get("sparkVersion").asText());
+
+      assertEquals("spark app mismatch", "mySparkApp", clientInfoJSON.get("sparkApp").asText());
+    } finally {
+      closeSQLObjects(res, statement, connection);
     }
   }
 
