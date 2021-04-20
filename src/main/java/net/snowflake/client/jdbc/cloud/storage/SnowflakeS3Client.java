@@ -75,6 +75,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
   private String stageEndPoint = null; // FIPS endpoint, if needed
   private SFBaseSession session = null;
   private boolean isClientSideEncrypted = true;
+  private boolean isUseS3RegionalUrl = false;
 
   // socket factory used by s3 client's http client.
   private static SSLConnectionSocketFactory s3ConnectionSocketFactory = null;
@@ -86,9 +87,11 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
       String stageRegion,
       String stageEndPoint,
       boolean isClientSideEncrypted,
-      SFBaseSession session)
+      SFBaseSession session,
+      boolean useS3RegionalUrl)
       throws SnowflakeSQLException {
     this.session = session;
+    this.isUseS3RegionalUrl = useS3RegionalUrl;
     setupSnowflakeS3Client(
         stageCredentials,
         clientConfig,
@@ -176,7 +179,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
     if (stageRegion != null) {
       Region region = RegionUtils.getRegion(stageRegion);
       if (region != null) {
-        if (session.getUseRegionalS3EndpointsForPresignedURL()) {
+        if (this.isUseS3RegionalUrl) {
           amazonS3Builder.withEndpointConfiguration(
               new AwsClientBuilder.EndpointConfiguration(
                   "s3." + region.getName() + ".amazonaws.com", region.getName()));
