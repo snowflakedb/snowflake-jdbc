@@ -231,6 +231,34 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
                   .setCommand(putCommand1)
                   .build());
         }
+        for (SnowflakeFileTransferMetadata oneMetadata : metadatas1) {
+          InputStream inputStream = new FileInputStream(srcPath1);
+          SnowflakeFileTransferAgent.uploadWithoutConnection(
+              SnowflakeFileTransferConfig.Builder.newInstance()
+                  .setSnowflakeFileTransferMetadata(oneMetadata)
+                  .setUploadStream(inputStream)
+                  .setRequireCompress(true)
+                  .setNetworkTimeoutInMilli(0)
+                  .setOcspMode(OCSPMode.FAIL_OPEN)
+                  .setSFSession(sfSession)
+                  .setCommand(putCommand1)
+                  .setUseS3RegionalUrl(false)
+                  .build());
+        }
+        for (SnowflakeFileTransferMetadata oneMetadata : metadatas1) {
+          InputStream inputStream = new FileInputStream(srcPath1);
+          SnowflakeFileTransferAgent.uploadWithoutConnection(
+              SnowflakeFileTransferConfig.Builder.newInstance()
+                  .setSnowflakeFileTransferMetadata(oneMetadata)
+                  .setUploadStream(inputStream)
+                  .setRequireCompress(true)
+                  .setNetworkTimeoutInMilli(0)
+                  .setOcspMode(OCSPMode.FAIL_OPEN)
+                  .setSFSession(sfSession)
+                  .setCommand(putCommand1)
+                  .setUseS3RegionalUrl(true)
+                  .build());
+        }
 
         // Test Put file with external compression
         String putCommand2 = "put file:///dummy/path/file2.gz @" + testStageName;

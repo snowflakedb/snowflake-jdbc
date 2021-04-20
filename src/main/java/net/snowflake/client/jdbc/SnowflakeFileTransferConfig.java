@@ -23,6 +23,7 @@ public class SnowflakeFileTransferConfig {
   private String destFileName;
   private SFSession session; // Optional, added for S3 and Azure
   private String command; // Optional, added for S3 and Azure
+  private boolean useS3RegionalUrl; // only for S3 us-east-1 private link deployments
 
   public SnowflakeFileTransferConfig(Builder builder) {
     this.metadata = builder.metadata;
@@ -35,6 +36,7 @@ public class SnowflakeFileTransferConfig {
     this.destFileName = builder.destFileName;
     this.session = builder.session;
     this.command = builder.command;
+    this.useS3RegionalUrl = builder.useS3RegionalUrl;
   }
 
   public SnowflakeFileTransferMetadata getSnowflakeFileTransferMetadata() {
@@ -77,6 +79,10 @@ public class SnowflakeFileTransferConfig {
     return command;
   }
 
+  public boolean getUseS3RegionalUrl() {
+    return useS3RegionalUrl;
+  }
+
   // Builder class
   public static class Builder {
     private SnowflakeFileTransferMetadata metadata = null;
@@ -89,6 +95,7 @@ public class SnowflakeFileTransferConfig {
     private String destFileName = null;
     private SFSession session = null;
     private String command = null;
+    private boolean useS3RegionalUrl = false; // only for S3 us-east-1 private link deployments
 
     public static Builder newInstance() {
       return new Builder();
@@ -161,6 +168,11 @@ public class SnowflakeFileTransferConfig {
 
     public Builder setCommand(String command) {
       this.command = command;
+      return this;
+    }
+
+    public Builder setUseS3RegionalUrl(boolean useS3RegUrl) {
+      this.useS3RegionalUrl = useS3RegUrl;
       return this;
     }
   }

@@ -56,6 +56,9 @@ public class StorageClientFactory {
 
     switch (stage.getStageType()) {
       case S3:
+        boolean useS3RegionalUrl =
+            (stage.getUseS3RegionalUrl()
+                || (session != null && session.getUseRegionalS3EndpointsForPresignedURL()));
         return createS3Client(
             stage.getCredentials(),
             parallel,
@@ -63,7 +66,8 @@ public class StorageClientFactory {
             stage.getRegion(),
             stage.getEndPoint(),
             stage.getIsClientSideEncrypted(),
-            session);
+            session,
+            useS3RegionalUrl);
 
       case AZURE:
         return createAzureClient(stage, encMat, session);
@@ -90,6 +94,7 @@ public class StorageClientFactory {
    * @param stageEndPoint the FIPS endpoint for the stage, if needed
    * @param isClientSideEncrypted whether client-side encryption should be used
    * @param session the active session
+   * @param useS3RegionalUrl
    * @return the SnowflakeS3Client instance created
    * @throws SnowflakeSQLException failure to create the S3 client
    */
@@ -100,7 +105,8 @@ public class StorageClientFactory {
       String stageRegion,
       String stageEndPoint,
       boolean isClientSideEncrypted,
-      SFBaseSession session)
+      SFBaseSession session,
+      boolean useS3RegionalUrl)
       throws SnowflakeSQLException {
     final int S3_TRANSFER_MAX_RETRIES = 3;
 
@@ -130,7 +136,8 @@ public class StorageClientFactory {
               stageRegion,
               stageEndPoint,
               isClientSideEncrypted,
-              session);
+              session,
+              useS3RegionalUrl);
     } catch (Exception ex) {
       logger.debug("Exception creating s3 client", ex);
       throw ex;
