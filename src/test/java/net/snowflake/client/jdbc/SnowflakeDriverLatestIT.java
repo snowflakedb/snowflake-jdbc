@@ -3,7 +3,19 @@
  */
 package net.snowflake.client.jdbc;
 
+import static net.snowflake.client.jdbc.SnowflakeDriverIT.findFile;
+import static net.snowflake.client.jdbc.SnowflakeResultSetSerializableV1.mapper;
+import static org.junit.Assert.*;
+
 import com.fasterxml.jackson.databind.JsonNode;
+import java.io.*;
+import java.nio.channels.FileChannel;
+import java.sql.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Properties;
+import java.util.UUID;
+import java.util.zip.GZIPInputStream;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryOthers;
@@ -17,19 +29,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.TemporaryFolder;
-
-import java.io.*;
-import java.nio.channels.FileChannel;
-import java.sql.*;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Properties;
-import java.util.UUID;
-import java.util.zip.GZIPInputStream;
-
-import static net.snowflake.client.jdbc.SnowflakeDriverIT.findFile;
-import static net.snowflake.client.jdbc.SnowflakeResultSetSerializableV1.mapper;
-import static org.junit.Assert.*;
 
 /**
  * General JDBC tests for the latest JDBC driver. This doesn't work for the oldest supported driver.
