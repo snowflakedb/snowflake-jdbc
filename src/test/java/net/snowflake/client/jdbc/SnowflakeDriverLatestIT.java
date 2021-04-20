@@ -231,34 +231,6 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
                   .setCommand(putCommand1)
                   .build());
         }
-        for (SnowflakeFileTransferMetadata oneMetadata : metadatas1) {
-          InputStream inputStream = new FileInputStream(srcPath1);
-          SnowflakeFileTransferAgent.uploadWithoutConnection(
-              SnowflakeFileTransferConfig.Builder.newInstance()
-                  .setSnowflakeFileTransferMetadata(oneMetadata)
-                  .setUploadStream(inputStream)
-                  .setRequireCompress(true)
-                  .setNetworkTimeoutInMilli(0)
-                  .setOcspMode(OCSPMode.FAIL_OPEN)
-                  .setSFSession(sfSession)
-                  .setCommand(putCommand1)
-                  .setUseS3RegionalUrl(false)
-                  .build());
-        }
-        for (SnowflakeFileTransferMetadata oneMetadata : metadatas1) {
-          InputStream inputStream = new FileInputStream(srcPath1);
-          SnowflakeFileTransferAgent.uploadWithoutConnection(
-              SnowflakeFileTransferConfig.Builder.newInstance()
-                  .setSnowflakeFileTransferMetadata(oneMetadata)
-                  .setUploadStream(inputStream)
-                  .setRequireCompress(true)
-                  .setNetworkTimeoutInMilli(0)
-                  .setOcspMode(OCSPMode.FAIL_OPEN)
-                  .setSFSession(sfSession)
-                  .setCommand(putCommand1)
-                  .setUseS3RegionalUrl(true)
-                  .build());
-        }
 
         // Test Put file with external compression
         String putCommand2 = "put file:///dummy/path/file2.gz @" + testStageName;
@@ -977,86 +949,104 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testPutS3RegionalUrl() throws Throwable {
     Connection connection = null;
-    Statement statement = null;
-    ResultSet resultSet = null;
+    File destFolder = tmpFolder.newFolder();
+    String destFolderCanonicalPath = destFolder.getCanonicalPath();
 
-    try {
-      Properties paramProperties = new Properties();
-      paramProperties.put("account", "s3testaccount");
-      paramProperties.put("user", "snowman");
-      paramProperties.put("password", "test");
-      paramProperties.put("role", "accountadmin");
-      connection =
-          getConnection(DONT_INJECT_SOCKET_TIMEOUT, paramProperties, true, false, "s3testaccount");
-
-      statement = connection.createStatement();
-
-      // load file test
-      // create a unique data file name by using current timestamp in millis
+    List<String> supportedAaccounts = Arrays.asList("s3testaccount", "azureaccount");
+    for (String accountName : supportedAaccounts) {
       try {
-        // test external table load
-        statement.execute("CREATE OR REPLACE TABLE testLoadToLocalFS(a number)");
+        connection = getConnection(accountName);
+        Statement statement = connection.createStatement();
 
-        statement.execute("alter account set ENABLE_STAGE_S3_PRIVATELINK_FOR_US_EAST_1 = true;");
+        // create a stage to put the file in
+        statement.execute("CREATE OR REPLACE STAGE " + testStageName);
 
-        // put files
-        assertTrue(
-            "Failed to put a file",
-            statement.execute(
-                "PUT file://"
-                    + getFullPathFileInResource(TEST_DATA_FILE)
-                    + " @%testLoadToLocalFS/orders parallel=10"));
+        SFSession sfSession = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
 
-        resultSet = statement.getResultSet();
+        // Test put file with internal compression
+        String putCommand1 = "put file:///dummy/path/file1.gz @" + testStageName;
+        SnowflakeFileTransferAgent sfAgent1 =
+            new SnowflakeFileTransferAgent(putCommand1, sfSession, new SFStatement(sfSession));
+        List<SnowflakeFileTransferMetadata> metadatas1 = sfAgent1.getFileTransferMetadatas();
 
-        ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
+        String srcPath1 = getFullPathFileInResource(TEST_DATA_FILE);
 
-        // assert column count
-        assertTrue(resultSetMetaData.getColumnCount() > 0);
-
-        assertTrue(resultSet.next()); // one row
-        assertFalse(resultSet.next());
-
-        findFile(
-            statement, "ls @%testLoadToLocalFS/ pattern='.*orders/" + TEST_DATA_FILE + ".g.*'");
-
-        // remove files
-        resultSet =
-            statement.executeQuery(
-                "rm @%testLoadToLocalFS/ pattern='.*orders/" + TEST_DATA_FILE + ".g.*'");
-
-        resultSetMetaData = resultSet.getMetaData();
-
-        // assert column count
-        assertTrue(resultSetMetaData.getColumnCount() >= 1);
-
-        // assert we get 1 row for the file we copied
-        assertTrue(resultSet.next());
-        assertNotNull(resultSet.getString(1));
-        assertFalse(resultSet.next());
-        try {
-          resultSet.getString(1); // no more row
-          fail("must fail");
-        } catch (SQLException ex) {
-          assertEquals((int) ErrorCode.COLUMN_DOES_NOT_EXIST.getMessageCode(), ex.getErrorCode());
+        for (SnowflakeFileTransferMetadata oneMetadata : metadatas1) {
+          InputStream inputStream = new FileInputStream(srcPath1);
+          SnowflakeFileTransferAgent.uploadWithoutConnection(
+              SnowflakeFileTransferConfig.Builder.newInstance()
+                  .setSnowflakeFileTransferMetadata(oneMetadata)
+                  .setUploadStream(inputStream)
+                  .setRequireCompress(true)
+                  .setNetworkTimeoutInMilli(0)
+                  .setOcspMode(OCSPMode.FAIL_OPEN)
+                  .setSFSession(sfSession)
+                  .setCommand(putCommand1)
+                  .setUseS3RegionalUrl(false)
+                  .build());
         }
 
-        Thread.sleep(100);
+        for (SnowflakeFileTransferMetadata oneMetadata : metadatas1) {
+          InputStream inputStream = new FileInputStream(srcPath1);
+          SnowflakeFileTransferAgent.uploadWithoutConnection(
+              SnowflakeFileTransferConfig.Builder.newInstance()
+                  .setSnowflakeFileTransferMetadata(oneMetadata)
+                  .setUploadStream(inputStream)
+                  .setRequireCompress(true)
+                  .setNetworkTimeoutInMilli(0)
+                  .setOcspMode(OCSPMode.FAIL_OPEN)
+                  .setSFSession(sfSession)
+                  .setCommand(putCommand1)
+                  .setUseS3RegionalUrl(true)
+                  .build());
+        }
 
-        // show files again
-        resultSet = statement.executeQuery("ls @%testLoadToLocalFS/ pattern='.*orders/orders.*'");
+        // Test Put file with external compression
+        String putCommand2 = "put file:///dummy/path/file2.gz @" + testStageName;
+        SnowflakeFileTransferAgent sfAgent2 =
+            new SnowflakeFileTransferAgent(putCommand2, sfSession, new SFStatement(sfSession));
+        List<SnowflakeFileTransferMetadata> metadatas2 = sfAgent2.getFileTransferMetadatas();
 
-        // assert we get 0 row
-        assertFalse(resultSet.next());
+        String srcPath2 = getFullPathFileInResource(TEST_DATA_FILE_2);
+        for (SnowflakeFileTransferMetadata oneMetadata : metadatas2) {
+          String gzfilePath = destFolderCanonicalPath + "/tmp_compress.gz";
+          Process p =
+              Runtime.getRuntime()
+                  .exec("cp -fr " + srcPath2 + " " + destFolderCanonicalPath + "/tmp_compress");
+          p.waitFor();
+          p = Runtime.getRuntime().exec("gzip " + destFolderCanonicalPath + "/tmp_compress");
+          p.waitFor();
 
+          InputStream gzInputStream = new FileInputStream(gzfilePath);
+
+          SnowflakeFileTransferAgent.uploadWithoutConnection(
+              SnowflakeFileTransferConfig.Builder.newInstance()
+                  .setSnowflakeFileTransferMetadata(oneMetadata)
+                  .setUploadStream(gzInputStream)
+                  .setRequireCompress(false)
+                  .setNetworkTimeoutInMilli(0)
+                  .setOcspMode(OCSPMode.FAIL_OPEN)
+                  .setSFSession(sfSession)
+                  .setCommand(putCommand2)
+                  .build());
+        }
+
+        // Download two files and verify their content.
+        assertTrue(
+            "Failed to get files",
+            statement.execute(
+                "GET @" + testStageName + " 'file://" + destFolderCanonicalPath + "/' parallel=8"));
+
+        // Make sure that the downloaded files are EQUAL,
+        // they should be gzip compressed
+        assert (isFileContentEqual(srcPath1, false, destFolderCanonicalPath + "/file1.gz", true));
+        assert (isFileContentEqual(srcPath2, false, destFolderCanonicalPath + "/file2.gz", true));
       } finally {
-        statement.execute("DROP TABLE IF EXISTS testLoadToLocalFS");
-        statement.execute("alter account set ENABLE_STAGE_S3_PRIVATELINK_FOR_US_EAST_1 = false;");
-        statement.close();
+        if (connection != null) {
+          connection.createStatement().execute("DROP STAGE if exists " + testStageName);
+          connection.close();
+        }
       }
-
-    } finally {
-      closeSQLObjects(resultSet, statement, connection);
     }
   }
 }

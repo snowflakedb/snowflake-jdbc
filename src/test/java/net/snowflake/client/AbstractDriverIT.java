@@ -308,10 +308,6 @@ public class AbstractDriverIT {
         properties.put(entry.getKey(), entry.getValue());
       }
     }
-    for (Map.Entry<?, ?> entry : properties.entrySet()) {
-      System.out.printf("%s:%s\n", entry.getKey(), entry.getValue());
-    }
-    System.out.printf("Uri is %s\n", params.get("uri"));
     return DriverManager.getConnection(params.get("uri"), properties);
   }
 
