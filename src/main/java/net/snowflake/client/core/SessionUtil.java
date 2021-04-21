@@ -482,7 +482,14 @@ public class SessionUtil {
       }
 
       // SNOW-20103: track additional client info in session
-      String clientInfoJSONStr = systemGetProperty("snowflake.client.info");
+      String clientInfoJSONStr;
+      if (connectionPropertiesMap.containsKey(SFSessionProperty.CLIENT_INFO)) {
+        clientInfoJSONStr = (String) connectionPropertiesMap.get(SFSessionProperty.CLIENT_INFO);
+      }
+      // if connection property is not set, check session property
+      else {
+        clientInfoJSONStr = systemGetProperty("snowflake.client.info");
+      }
       if (clientInfoJSONStr != null) {
         JsonNode clientInfoJSON = null;
 
