@@ -103,6 +103,8 @@ public class SessionUtil {
       "CLIENT_METADATA_REQUEST_USE_CONNECTION_CTX";
   public static final String CLIENT_METADATA_USE_SESSION_DATABASE =
       "CLIENT_METADATA_USE_SESSION_DATABASE";
+  public static final String ENABLE_STAGE_S3_PRIVATELINK_FOR_US_EAST_1 =
+      "ENABLE_STAGE_S3_PRIVATELINK_FOR_US_EAST_1";
 
   static final String SF_HEADER_SERVICE_NAME = "X-Snowflake-Service";
 
@@ -177,6 +179,7 @@ public class SessionUtil {
               "JDBC_ENABLE_COMBINED_DESCRIBE",
               CLIENT_ENABLE_CONSERVATIVE_MEMORY_USAGE,
               CLIENT_VALIDATE_DEFAULT_PARAMETERS,
+              ENABLE_STAGE_S3_PRIVATELINK_FOR_US_EAST_1,
               "SNOWPARK_LAZY_ANALYSIS"));
 
   /**
@@ -1382,9 +1385,14 @@ public class SessionUtil {
         if (session != null) {
           session.setValidateDefaultParameters(SFLoginInput.getBooleanValue(entry.getValue()));
         }
-      } else {
+      } else if (ENABLE_STAGE_S3_PRIVATELINK_FOR_US_EAST_1.equalsIgnoreCase((entry.getKey()))) {
         if (session != null) {
-          session.setOtherParameter(entry.getKey(), entry.getValue());
+          session.setUseRegionalS3EndpointsForPresignedURL(
+              SFLoginInput.getBooleanValue(entry.getValue()));
+        } else {
+          if (session != null) {
+            session.setOtherParameter(entry.getKey(), entry.getValue());
+          }
         }
       }
     }

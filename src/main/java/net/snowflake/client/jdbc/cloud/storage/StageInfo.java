@@ -21,6 +21,7 @@ public class StageInfo implements Serializable {
   private String storageAccount; // The Azure Storage account (Azure only)
   private String presignedUrl; // GCS gives us back a presigned URL instead of a cred
   private boolean isClientSideEncrypted; // whether to encrypt/decrypt files on the stage
+  private boolean useS3RegionalUrl; // whether to use s3 regional URL (AWS Only)
 
   /*
    * Creates a StageInfo object
@@ -153,6 +154,14 @@ public class StageInfo implements Serializable {
 
   public boolean getIsClientSideEncrypted() {
     return isClientSideEncrypted;
+  }
+
+  public void setUseS3RegionalUrl(boolean useS3RegionalUrl) {
+    this.useS3RegionalUrl = useS3RegionalUrl;
+  }
+
+  public boolean getUseS3RegionalUrl() {
+    return useS3RegionalUrl;
   }
 
   private static boolean isSpecified(String arg) {
