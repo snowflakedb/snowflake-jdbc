@@ -108,6 +108,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
           clientInfoJSON.get("spark.app.name").asText());
 
     } finally {
+      System.clearProperty("snowflake.client.info");
       closeSQLObjects(res, statement, connection);
     }
   }
