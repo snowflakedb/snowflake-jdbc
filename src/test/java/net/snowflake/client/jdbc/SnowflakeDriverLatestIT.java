@@ -4,8 +4,10 @@
 package net.snowflake.client.jdbc;
 
 import static net.snowflake.client.jdbc.SnowflakeDriverIT.findFile;
+import static net.snowflake.client.jdbc.SnowflakeResultSetSerializableV1.mapper;
 import static org.junit.Assert.*;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.io.*;
 import java.nio.channels.FileChannel;
 import java.sql.*;
@@ -17,7 +19,9 @@ import java.util.zip.GZIPInputStream;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryOthers;
-import net.snowflake.client.core.*;
+import net.snowflake.client.core.OCSPMode;
+import net.snowflake.client.core.SFSession;
+import net.snowflake.client.core.SFStatement;
 import net.snowflake.common.core.SqlState;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -58,6 +62,53 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
     } finally {
       inputStream1.close();
       inputStream2.close();
+    }
+  }
+
+  @Test
+  public void testClientInfoConnectionProperty() throws Throwable {
+    Connection connection = null;
+    Statement statement = null;
+    ResultSet res = null;
+
+    try {
+      Properties props = new Properties();
+      props.put(
+          "snowflakeClientInfo",
+          "{\"spark.version\":\"3.0.0\", \"spark.snowflakedb.version\":\"2.8.5\", \"spark.app.name\":\"SnowflakeSourceSuite\", \"scala.version\":\"2.12.11\", \"java.version\":\"1.8.0_221\", \"snowflakedb.jdbc.version\":\"3.13.2\"}");
+      connection = getConnection(DONT_INJECT_SOCKET_TIMEOUT, props, false, false);
+      statement = connection.createStatement();
+      res = statement.executeQuery("select current_session_client_info()");
+      assertTrue(res.next());
+      String clientInfoJSONStr = res.getString(1);
+      JsonNode clientInfoJSON = mapper.readTree(clientInfoJSONStr);
+      // assert that spart version and spark app are found
+      assertEquals("spark version mismatch", "3.0.0", clientInfoJSON.get("spark.version").asText());
+      assertEquals(
+          "spark app mismatch",
+          "SnowflakeSourceSuite",
+          clientInfoJSON.get("spark.app.name").asText());
+      connection.close();
+
+      // Test that when session property is set, connection parameter overrides it
+      System.setProperty(
+          "snowflake.client.info",
+          "{\"spark.version\":\"fake\", \"spark.snowflakedb.version\":\"fake\", \"spark.app.name\":\"fake\", \"scala.version\":\"fake\", \"java.version\":\"fake\", \"snowflakedb.jdbc.version\":\"fake\"}");
+      connection = getConnection(DONT_INJECT_SOCKET_TIMEOUT, props, false, false);
+      statement = connection.createStatement();
+      res = statement.executeQuery("select current_session_client_info()");
+      assertTrue(res.next());
+      clientInfoJSONStr = res.getString(1);
+      clientInfoJSON = mapper.readTree(clientInfoJSONStr);
+      // assert that spart version and spark app are found
+      assertEquals("spark version mismatch", "3.0.0", clientInfoJSON.get("spark.version").asText());
+      assertEquals(
+          "spark app mismatch",
+          "SnowflakeSourceSuite",
+          clientInfoJSON.get("spark.app.name").asText());
+
+    } finally {
+      closeSQLObjects(res, statement, connection);
     }
   }
 

@@ -2641,7 +2641,8 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
 
     try {
       System.setProperty(
-          "snowflake.client.info", "{\"sparkVersion\":\"1.2.0\", \"sparkApp\":\"mySparkApp\"}");
+          "snowflake.client.info",
+          "{\"spark.version\":\"3.0.0\", \"spark.snowflakedb.version\":\"2.8.5\", \"spark.app.name\":\"SnowflakeSourceSuite\", \"scala.version\":\"2.12.11\", \"java.version\":\"1.8.0_221\", \"snowflakedb.jdbc.version\":\"3.13.2\"}");
 
       connection = getConnection();
 
@@ -2655,10 +2656,17 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
 
       JsonNode clientInfoJSON = mapper.readTree(clientInfoJSONStr);
 
-      // assert that spart version and spark app are found
-      assertEquals("spark version mismatch", "1.2.0", clientInfoJSON.get("sparkVersion").asText());
+      // assert that spark version and spark app are found
+      assertEquals("spark version mismatch", "3.0.0", clientInfoJSON.get("spark.version").asText());
+      assertEquals(
+          "snowflakedb version mismatch",
+          "2.8.5",
+          clientInfoJSON.get("spark.snowflakedb.version").asText());
+      assertEquals(
+          "spark app mismatch",
+          "SnowflakeSourceSuite",
+          clientInfoJSON.get("spark.app.name").asText());
 
-      assertEquals("spark app mismatch", "mySparkApp", clientInfoJSON.get("sparkApp").asText());
     } finally {
       closeSQLObjects(res, statement, connection);
     }
