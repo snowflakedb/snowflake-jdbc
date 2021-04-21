@@ -73,9 +73,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
 
     try {
       Properties props = new Properties();
-      props.put(
-          "snowflakeClientInfo",
-          "{\\\"sparkVersion\\\":\\\"1.2.0\\\", \\\"sparkApp\\\":\\\"mySparkApp\\\"}");
+      props.put("snowflakeClientInfo", "{\"sparkVersion\":\"1.2.0\", \"sparkApp\":\"mySparkApp\"}");
       connection = getConnection(DONT_INJECT_SOCKET_TIMEOUT, props, false, false);
 
       statement = connection.createStatement();
