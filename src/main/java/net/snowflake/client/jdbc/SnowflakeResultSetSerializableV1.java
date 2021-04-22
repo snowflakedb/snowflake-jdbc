@@ -157,6 +157,7 @@ public class SnowflakeResultSetSerializableV1
   transient ChunkDownloader chunkDownloader = null;
   transient RootAllocator rootAllocator = null; // only used for ARROW result
   transient SFResultSetMetaData resultSetMetaData = null;
+  transient ResultStreamProvider resultStreamProvider = new DefaultResultStreamProvider();
 
   /** Default constructor. */
   public SnowflakeResultSetSerializableV1() {}
@@ -227,6 +228,7 @@ public class SnowflakeResultSetSerializableV1
     this.chunkDownloader = toCopy.chunkDownloader;
     this.rootAllocator = toCopy.rootAllocator;
     this.resultSetMetaData = toCopy.resultSetMetaData;
+    this.resultStreamProvider = toCopy.resultStreamProvider;
   }
 
   public void setRootAllocator(RootAllocator rootAllocator) {
@@ -247,6 +249,14 @@ public class SnowflakeResultSetSerializableV1
 
   public void setChunkDownloader(ChunkDownloader chunkDownloader) {
     this.chunkDownloader = chunkDownloader;
+  }
+
+  public void setResultStreamProvider(ResultStreamProvider resultStreamProvider) {
+    this.resultStreamProvider = resultStreamProvider;
+  }
+
+  public ResultStreamProvider getResultStreamProvider() {
+    return resultStreamProvider;
   }
 
   public SFResultSetMetaData getSFResultSetMetaData() {
@@ -436,7 +446,8 @@ public class SnowflakeResultSetSerializableV1
   }
 
   /**
-   * A factory function to create SnowflakeResultSetSerializable object from result JSON node.
+   * A factory function to create SnowflakeResultSetSerializable object from result JSON node, using the
+   * DefaultResultStreamProvider.
    *
    * @param rootNode result JSON node received from GS
    * @param sfSession the Snowflake session
@@ -446,6 +457,27 @@ public class SnowflakeResultSetSerializableV1
    */
   public static SnowflakeResultSetSerializableV1 create(
       JsonNode rootNode, SFBaseSession sfSession, SFBaseStatement sfStatement)
+      throws SnowflakeSQLException {
+    return create(rootNode, sfSession, sfStatement, new DefaultResultStreamProvider());
+  }
+
+  /**
+   * A factory function to create SnowflakeResultSetSerializable object from result JSON node, with
+   * an overrideable ResultStreamProvider.
+   *
+   * @param rootNode result JSON node received from GS
+   * @param sfSession the Snowflake session
+   * @param sfStatement the Snowflake statement
+   * @param resultStreamProvider a ResultStreamProvider for computing a custom data source for
+   *     result-file streams
+   * @return processed ResultSetSerializable object
+   * @throws SnowflakeSQLException if failed to parse the result JSON node
+   */
+  public static SnowflakeResultSetSerializableV1 create(
+      JsonNode rootNode,
+      SFBaseSession sfSession,
+      SFBaseStatement sfStatement,
+      ResultStreamProvider resultStreamProvider)
       throws SnowflakeSQLException {
     SnowflakeResultSetSerializableV1 resultSetSerializable = new SnowflakeResultSetSerializableV1();
     logger.debug("Entering create()");
@@ -500,6 +532,8 @@ public class SnowflakeResultSetSerializableV1
 
       logger.debug("Get column metadata: {}", (ArgSupplier) () -> columnMetadata.toString());
     }
+
+    resultSetSerializable.resultStreamProvider = resultStreamProvider;
 
     // process the content of first chunk.
     if (resultSetSerializable.queryResultFormat == QueryResultFormat.ARROW) {
@@ -799,6 +833,8 @@ public class SnowflakeResultSetSerializableV1
 
     // Setup memory limitation from parameters and System Runtime.
     this.memoryLimit = initMemoryLimit(this.parameters);
+
+    this.resultStreamProvider = new DefaultResultStreamProvider();
 
     // Create below transient fields on the fly.
     if (QueryResultFormat.ARROW.equals(this.queryResultFormat)) {
