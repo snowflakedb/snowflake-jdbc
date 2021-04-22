@@ -887,6 +887,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
           try {
             logger.debug("get lock to set chunk download error");
             resultChunk.setDownloadState(DownloadState.FAILURE);
+            downloader.releaseCurrentMemoryUsage(chunkIndex, Optional.empty());
             StringWriter errors = new StringWriter();
             th.printStackTrace(new PrintWriter(errors));
             resultChunk.setDownloadError(errors.toString());
