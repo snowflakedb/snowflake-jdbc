@@ -446,8 +446,8 @@ public class SnowflakeResultSetSerializableV1
   }
 
   /**
-   * A factory function to create SnowflakeResultSetSerializable object from result JSON node, using the
-   * DefaultResultStreamProvider.
+   * A factory function to create SnowflakeResultSetSerializable object from result JSON node, using
+   * the DefaultResultStreamProvider.
    *
    * @param rootNode result JSON node received from GS
    * @param sfSession the Snowflake session
