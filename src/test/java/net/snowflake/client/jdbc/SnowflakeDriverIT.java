@@ -23,6 +23,7 @@ import java.util.logging.Logger;
 import net.snowflake.client.AbstractDriverIT;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
+import net.snowflake.client.RunningOnTestaccount;
 import net.snowflake.client.category.TestCategoryOthers;
 import net.snowflake.common.core.SqlState;
 import org.apache.commons.io.FileUtils;
@@ -2634,6 +2635,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
   }
 
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTestaccount.class)
   public void testClientInfo() throws Throwable {
     Connection connection = null;
     Statement statement = null;
@@ -2668,6 +2670,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
           clientInfoJSON.get("spark.app.name").asText());
 
     } finally {
+      System.clearProperty("snowflake.client.info");
       closeSQLObjects(res, statement, connection);
     }
   }
