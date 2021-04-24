@@ -2071,6 +2071,8 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
   public static void renewExpiredToken(
       SFSession session, String command, SnowflakeStorageClient client)
       throws SnowflakeSQLException {
+    logger.debug(
+        "Trying to renew token for Client:{}, command:{}", client.getClass().getName(), command);
     SFStatement statement = new SFStatement(session);
     JsonNode jsonNode = parseCommandInGS(statement, command);
     Map<?, ?> stageCredentials = extractStageCreds(jsonNode);
