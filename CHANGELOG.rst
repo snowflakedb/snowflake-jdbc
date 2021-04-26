@@ -1,3 +1,13 @@
+**JDBC Driver 3.13.3**
+
+- \| SNOW-346424 | Add snowflakeClientInfo connection parameter for use with Spark connector.
+- \| SNOW-299374 | In case of private link, have JDBC driver invoke different API to get regional storage link for AWS us-east-1 deployments.
+- \| SNOW-332390 | Fix misleading function name isRetryableHTTPCode()
+- \| SNOW-299137 | Add log line to show JWT token info.
+- \| SNOW-259255 | Add ability to set TIMESTAMP_NTZ and TIMESTAMP_LTZ types with PreparedStatement.setObject() function.
+- \| SNOW-334974 | Update json-smart library from 2.3.x to 2.4.2 to remove security vulnerability.
+- \| SNOW-344455 | Update commons-io library from 2.2 to 2.8.0 to remove security vulnerability.
+
 **JDBC Driver 3.13.2**
 
 - \| SNOW-285542 | Fixed an issue with the ResultSet.getTimestamp()/getTime()/getDate() methods when the JDBC_USE_SESSION_TIMEZONE parameter was set.
