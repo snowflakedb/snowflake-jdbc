@@ -1287,6 +1287,15 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
     return result;
   }
 
+  /**
+   * This is API function to parse the File Transfer Metadatas from a supplied PUT call response.
+   *
+   * <p>NOTE: It only supports PUT on S3/AZURE/GCS
+   *
+   * @param jsonNode JSON doc returned by GS from PUT call
+   * @return The file transfer metadatas for to-be-transferred files.
+   * @throws SnowflakeSQLException if any error occurs
+   */
   public static List<SnowflakeFileTransferMetadata> getFileTransferMetadatas(JsonNode jsonNode)
       throws SnowflakeSQLException {
     CommandType commandType = CommandType.UPLOAD;
@@ -1295,10 +1304,10 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
     }
 
     if (commandType != CommandType.UPLOAD) {
-      throw new SnowflakeSQLLoggedException(
-          null, // TODO: should be session,
-          ErrorCode.INTERNAL_ERROR.getMessageCode(),
+      throw new SnowflakeSQLException(
+          new Exception(),
           SqlState.INTERNAL_ERROR,
+          ErrorCode.INTERNAL_ERROR.getMessageCode(),
           "This API only supports PUT command");
     }
 
@@ -1333,7 +1342,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
         && stageInfo.getStageType() != StageInfo.StageType.AZURE
         && stageInfo.getStageType() != StageInfo.StageType.S3) {
       throw new SnowflakeSQLException(
-          new Exception(), // session,
+          new Exception(),
           SqlState.INTERNAL_ERROR,
           ErrorCode.INTERNAL_ERROR.getMessageCode(),
           "This API only supports S3/AZURE/GCS");

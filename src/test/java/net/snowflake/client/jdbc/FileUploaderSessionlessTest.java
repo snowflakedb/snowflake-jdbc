@@ -5,6 +5,7 @@ package net.snowflake.client.jdbc;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.util.*;
 import net.snowflake.client.jdbc.cloud.storage.StageInfo;
 import net.snowflake.common.core.RemoteStoreFileEncryptionMaterial;
@@ -123,5 +124,86 @@ public class FileUploaderSessionlessTest {
     Assert.assertEquals(null, stageInfo.getEndPoint());
     Assert.assertEquals(null, stageInfo.getStorageAccount());
     Assert.assertEquals(true, stageInfo.getIsClientSideEncrypted());
+  }
+
+  @Test
+  public void testGetFileTransferMetadatas() throws Exception {
+    List<SnowflakeFileTransferMetadata> metadataList =
+        SnowflakeFileTransferAgent.getFileTransferMetadatas(exampleJsonNode);
+    Assert.assertEquals(1, metadataList.size());
+
+    SnowflakeFileTransferMetadataV1 metadata =
+        (SnowflakeFileTransferMetadataV1) metadataList.get(0);
+
+    // StageInfo check
+    StageInfo stageInfo = metadata.getStageInfo();
+
+    Map<String, String> expectedCreds = new HashMap<>();
+    expectedCreds.put("AWS_ID", "EXAMPLE_AWS_ID");
+    expectedCreds.put("AWS_KEY", "EXAMPLE_AWS_KEY");
+    expectedCreds.put("AWS_KEY_ID", "EXAMPLE_AWS_KEY_ID");
+    expectedCreds.put("AWS_SECRET_KEY", "EXAMPLE_AWS_SECRET_KEY");
+    expectedCreds.put("AWS_TOKEN", "EXAMPLE_AWS_TOKEN");
+
+    Assert.assertEquals(StageInfo.StageType.S3, stageInfo.getStageType());
+    Assert.assertEquals("stage/location/foo/", stageInfo.getLocation());
+    Assert.assertEquals(expectedCreds, stageInfo.getCredentials());
+    Assert.assertEquals("us-west-2", stageInfo.getRegion());
+    Assert.assertEquals(null, stageInfo.getEndPoint());
+    Assert.assertEquals(null, stageInfo.getStorageAccount());
+    Assert.assertEquals(true, stageInfo.getIsClientSideEncrypted());
+
+    // EncryptionMaterial check
+    Assert.assertEquals("EXAMPLE_QUERY_ID", metadata.getEncryptionMaterial().getQueryId());
+    Assert.assertEquals(
+        "EXAMPLE_QUERY_STAGE_MASTER_KEY",
+        metadata.getEncryptionMaterial().getQueryStageMasterKey());
+    Assert.assertEquals(123L, (long) metadata.getEncryptionMaterial().getSmkId());
+
+    // Misc check
+    Assert.assertEquals(SFBaseFileTransferAgent.CommandType.UPLOAD, metadata.getCommandType());
+    Assert.assertNull(metadata.getPresignedUrl());
+    Assert.assertEquals("orders_100.csv", metadata.getPresignedUrlFileName());
+  }
+
+  @Test
+  public void testGetFileTransferMetadatasUploadError() throws Exception {
+    JsonNode downloadNode = mapper.readTree("{\"data\": {\"command\": \"DOWNLOAD\"}}");
+    try {
+      SnowflakeFileTransferAgent.getFileTransferMetadatas(downloadNode);
+      Assert.assertTrue(false);
+    } catch (SnowflakeSQLException err) {
+      Assert.assertEquals((long) ErrorCode.INTERNAL_ERROR.getMessageCode(), err.getErrorCode());
+      Assert.assertEquals(
+          "JDBC driver internal error: This API only supports PUT command.", err.getMessage());
+    }
+  }
+
+  @Test
+  public void testGetFileTransferMetadatasEncryptionMaterialError() throws Exception {
+    JsonNode garbageNode = mapper.readTree("{\"data\": {\"src_locations\": [1, 2]}}");
+    try {
+      SnowflakeFileTransferAgent.getFileTransferMetadatas(garbageNode);
+      Assert.assertTrue(false);
+    } catch (SnowflakeSQLException err) {
+      Assert.assertEquals((long) ErrorCode.INTERNAL_ERROR.getMessageCode(), err.getErrorCode());
+      Assert.assertTrue(
+          err.getMessage().contains("JDBC driver internal error: Failed to parse the credentials"));
+    }
+  }
+
+  @Test
+  public void testGetFileTransferMetadatasUnsupportedLocationError() throws Exception {
+    JsonNode modifiedNode = exampleJsonNode.deepCopy();
+    ObjectNode foo = (ObjectNode) modifiedNode.path("data").path("stageInfo");
+    foo.put("locationType", "LOCAL_FS");
+    try {
+      SnowflakeFileTransferAgent.getFileTransferMetadatas(modifiedNode);
+      Assert.assertTrue(false);
+    } catch (SnowflakeSQLException err) {
+      Assert.assertEquals((long) ErrorCode.INTERNAL_ERROR.getMessageCode(), err.getErrorCode());
+      Assert.assertTrue(
+          err.getMessage().contains("JDBC driver internal error: This API only supports"));
+    }
   }
 }
