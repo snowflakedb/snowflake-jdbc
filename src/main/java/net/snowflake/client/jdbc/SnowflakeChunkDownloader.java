@@ -10,28 +10,19 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.databind.MappingJsonFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.*;
-import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.zip.GZIPInputStream;
 import net.snowflake.client.core.*;
 import net.snowflake.client.jdbc.SnowflakeResultChunk.DownloadState;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
-import net.snowflake.client.util.SecretDetector;
 import net.snowflake.common.core.SqlState;
 import org.apache.arrow.memory.RootAllocator;
-import org.apache.http.Header;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.utils.URIBuilder;
-import org.apache.http.impl.client.CloseableHttpClient;
 
 /**
  * Class for managing async download of offline result chunks
@@ -39,14 +30,6 @@ import org.apache.http.impl.client.CloseableHttpClient;
  * <p>Created by jhuang on 11/12/14.
  */
 public class SnowflakeChunkDownloader implements ChunkDownloader {
-  // SSE-C algorithm header
-  private static final String SSE_C_ALGORITHM = "x-amz-server-side-encryption-customer-algorithm";
-
-  // SSE-C customer key header
-  private static final String SSE_C_KEY = "x-amz-server-side-encryption-customer-key";
-
-  // SSE-C algorithm value
-  private static final String SSE_C_AES = "AES256";
 
   // object mapper for deserialize JSON
   private static final ObjectMapper mapper = ObjectMapperFactory.getObjectMapper();
@@ -125,6 +108,9 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
   private long MAX_WAITING_MS = 30 * 1000;
   // the default jitter ratio 10%
   private long WAITING_JITTER_RATIO = 10;
+
+  private final ResultStreamProvider resultStreamProvider;
+
   /** Timeout that the main thread waits for downloading the current chunk */
   private static final long downloadedConditionTimeoutInSeconds =
       HttpUtil.getDownloadedConditionTimeoutInSeconds();
@@ -141,6 +127,10 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
 
   public OCSPMode getOCSPMode() {
     return ocspMode;
+  }
+
+  public ResultStreamProvider getResultStreamProvider() {
+    return resultStreamProvider;
   }
 
   /**
@@ -176,7 +166,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
   }
 
   /**
-   * Constructor to initialize downloader
+   * Constructor to initialize downloader, which uses the default stream provider
    *
    * @param resultSetSerializable the result set serializable object which includes required
    *     metadata to start chunk downloader
@@ -200,6 +190,8 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
 
     // create the chunks array
     this.chunks = new ArrayList<>(resultSetSerializable.getChunkFileCount());
+
+    this.resultStreamProvider = resultSetSerializable.getResultStreamProvider();
 
     if (resultSetSerializable.getChunkFileCount() < 1) {
       throw new SnowflakeSQLLoggedException(
@@ -767,102 +759,17 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
       final Map<String, String> chunkHeadersMap,
       final int networkTimeoutInMilli,
       final SFBaseSession session) {
+    ChunkDownloadContext downloadContext =
+        new ChunkDownloadContext(
+            downloader,
+            resultChunk,
+            qrmk,
+            chunkIndex,
+            chunkHeadersMap,
+            networkTimeoutInMilli,
+            session);
+
     return new Callable<Void>() {
-      /**
-       * Step 1. use chunk url to get the input stream
-       *
-       * @return
-       * @throws SnowflakeSQLException
-       */
-      private InputStream getInputStream() throws SnowflakeSQLException {
-        HttpResponse response;
-        try {
-          response = getResultChunk(resultChunk.getUrl());
-        } catch (URISyntaxException | IOException ex) {
-          throw new SnowflakeSQLLoggedException(
-              session,
-              ErrorCode.NETWORK_ERROR.getMessageCode(),
-              SqlState.IO_ERROR,
-              "Error encountered when request a result chunk URL: "
-                  + resultChunk.getUrl()
-                  + " "
-                  + ex.getLocalizedMessage());
-        }
-
-        /*
-         * return error if we don't get a response or the response code
-         * means failure.
-         */
-        if (response == null || response.getStatusLine().getStatusCode() != 200) {
-          logger.error("Error fetching chunk from: {}", resultChunk.getScrubbedUrl());
-
-          SnowflakeUtil.logResponseDetails(response, logger);
-
-          throw new SnowflakeSQLException(
-              SqlState.IO_ERROR,
-              ErrorCode.NETWORK_ERROR.getMessageCode(),
-              "Error encountered when downloading a result chunk: HTTP "
-                  + "status="
-                  + ((response != null)
-                      ? response.getStatusLine().getStatusCode()
-                      : "null response"));
-        }
-
-        InputStream inputStream;
-        final HttpEntity entity = response.getEntity();
-        try {
-          // read the chunk data
-          inputStream = detectContentEncodingAndGetInputStream(response, entity.getContent());
-        } catch (Exception ex) {
-          logger.error("Failed to decompress data: {}", response);
-
-          throw new SnowflakeSQLLoggedException(
-              session,
-              ErrorCode.INTERNAL_ERROR.getMessageCode(),
-              SqlState.INTERNAL_ERROR,
-              "Failed to decompress data: " + response.toString());
-        }
-
-        // trace the response if requested
-        logger.debug("Json response: {}", response);
-
-        return inputStream;
-      }
-
-      private InputStream detectContentEncodingAndGetInputStream(
-          HttpResponse response, InputStream is) throws IOException, SnowflakeSQLException {
-        InputStream inputStream = is; // Determine the format of the response, if it is not
-        // either plain text or gzip, raise an error.
-        Header encoding = response.getFirstHeader("Content-Encoding");
-        if (encoding != null) {
-          if ("gzip".equalsIgnoreCase(encoding.getValue())) {
-            /* specify buffer size for GZIPInputStream */
-            inputStream = new GZIPInputStream(is, STREAM_BUFFER_SIZE);
-          } else {
-            throw new SnowflakeSQLException(
-                SqlState.INTERNAL_ERROR,
-                ErrorCode.INTERNAL_ERROR.getMessageCode(),
-                "Exception: unexpected compression got " + encoding.getValue());
-          }
-        } else {
-          inputStream = detectGzipAndGetStream(is);
-        }
-
-        return inputStream;
-      }
-
-      private InputStream detectGzipAndGetStream(InputStream is) throws IOException {
-        PushbackInputStream pb = new PushbackInputStream(is, 2);
-        byte[] signature = new byte[2];
-        int len = pb.read(signature);
-        pb.unread(signature, 0, len);
-        // https://tools.ietf.org/html/rfc1952
-        if (signature[0] == (byte) 0x1f && signature[1] == (byte) 0x8b) {
-          return new GZIPInputStream(pb);
-        } else {
-          return pb;
-        }
-      }
 
       /**
        * Read the input stream and parse chunk data into memory
@@ -948,7 +855,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
             throw SnowflakeChunkDownloader.injectedDownloaderException;
           }
 
-          InputStream is = getInputStream();
+          InputStream is = downloader.getResultStreamProvider().getInputStream(downloadContext);
           logger.debug(
               "Thread {} start downloading #chunk{}", Thread.currentThread().getId(), chunkIndex);
           downloadAndParseChunk(is);
@@ -980,6 +887,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
           try {
             logger.debug("get lock to set chunk download error");
             resultChunk.setDownloadState(DownloadState.FAILURE);
+            downloader.releaseCurrentMemoryUsage(chunkIndex, Optional.empty());
             StringWriter errors = new StringWriter();
             th.printStackTrace(new PrintWriter(errors));
             resultChunk.setDownloadError(errors.toString());
@@ -1035,58 +943,6 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
             Thread.currentThread().getId(),
             chunkIndex);
         jp.endParsing(session);
-      }
-
-      private HttpResponse getResultChunk(String chunkUrl)
-          throws URISyntaxException, IOException, SnowflakeSQLException {
-        URIBuilder uriBuilder = new URIBuilder(chunkUrl);
-
-        HttpGet httpRequest = new HttpGet(uriBuilder.build());
-
-        if (chunkHeadersMap != null && chunkHeadersMap.size() != 0) {
-          for (Map.Entry<String, String> entry : chunkHeadersMap.entrySet()) {
-            logger.debug("Adding header key={}, value={}", entry.getKey(), entry.getValue());
-            httpRequest.addHeader(entry.getKey(), entry.getValue());
-          }
-        }
-        // Add SSE-C headers
-        else if (qrmk != null) {
-          httpRequest.addHeader(SSE_C_ALGORITHM, SSE_C_AES);
-          httpRequest.addHeader(SSE_C_KEY, qrmk);
-          logger.debug("Adding SSE-C headers");
-        }
-
-        logger.debug(
-            "Thread {} Fetching result #chunk{}: {}",
-            Thread.currentThread().getId(),
-            chunkIndex,
-            resultChunk.getScrubbedUrl());
-
-        // TODO move this s3 request to HttpUtil class. In theory, upper layer
-        // TODO does not need to know about http client
-        CloseableHttpClient httpClient = HttpUtil.getHttpClient(downloader.getOCSPMode());
-
-        // fetch the result chunk
-        HttpResponse response =
-            RestRequest.execute(
-                httpClient,
-                httpRequest,
-                networkTimeoutInMilli / 1000, // retry timeout
-                0, // no socketime injection
-                null, // no canceling
-                false, // no cookie
-                false, // no retry
-                false, // no request_guid
-                true // retry on HTTP403 for AWS S3
-                );
-
-        logger.debug(
-            "Thread {} Call #chunk{} returned for URL: {}, response={}",
-            Thread.currentThread().getId(),
-            chunkIndex,
-            (ArgSupplier) () -> SecretDetector.maskSASToken(chunkUrl),
-            response);
-        return response;
       }
     };
   }
