@@ -1351,9 +1351,11 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
           new SnowflakeFileTransferMetadataV1(
               stageInfo.getPresignedUrl(),
               sourceFileName,
-              encryptionMaterial.get(0).getQueryStageMasterKey(),
-              encryptionMaterial.get(0).getQueryId(),
-              encryptionMaterial.get(0).getSmkId(),
+              encryptionMaterial.get(0) != null
+                  ? encryptionMaterial.get(0).getQueryStageMasterKey()
+                  : null,
+              encryptionMaterial.get(0) != null ? encryptionMaterial.get(0).getQueryId() : null,
+              encryptionMaterial.get(0) != null ? encryptionMaterial.get(0).getSmkId() : null,
               commandType,
               stageInfo));
     }
@@ -1984,6 +1986,11 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
     FileBackedOutputStream fileBackedOutputStream = null;
 
     RemoteStoreFileEncryptionMaterial encMat = metadata.getEncryptionMaterial();
+    if (encMat.getQueryId() == null
+        && encMat.getQueryStageMasterKey() == null
+        && encMat.getSmkId() == null) {
+      encMat = null;
+    }
     // SNOW-16082: we should capture exception if we fail to compress or
     // calculate digest.
     try {
