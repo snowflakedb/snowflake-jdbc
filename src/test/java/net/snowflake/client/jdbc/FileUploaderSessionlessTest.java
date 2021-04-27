@@ -81,105 +81,107 @@ public class FileUploaderSessionlessTest {
           + "  \"success\": true\n"
           + "}";
 
-  private final String exampleAzureJsonString = "{\n" +
-          "  \"data\": {\n" +
-          "    \"uploadInfo\": {\n" +
-          "      \"locationType\": \"AZURE\",\n" +
-          "      \"location\": \"EXAMPLE_LOCATION/\",\n" +
-          "      \"path\": \"EXAMPLE_PATH/\",\n" +
-          "      \"region\": \"westus\",\n" +
-          "      \"storageAccount\": \"sfcdevstage\",\n" +
-          "      \"isClientSideEncrypted\": true,\n" +
-          "      \"creds\": {\n" +
-          "        \"AZURE_SAS_TOKEN\": \"EXAMPLE_AZURE_SAS_TOKEN\"\n" +
-          "      },\n" +
-          "      \"presignedUrl\": null,\n" +
-          "      \"endPoint\": \"blob.core.windows.net\"\n" +
-          "    },\n" +
-          "    \"src_locations\": [\n" +
-          "      \"/foo/orders_100.csv\"\n" +
-          "    ],\n" +
-          "    \"parallel\": 4,\n" +
-          "    \"threshold\": 209715200,\n" +
-          "    \"autoCompress\": true,\n" +
-          "    \"overwrite\": false,\n" +
-          "    \"sourceCompression\": \"auto_detect\",\n" +
-          "    \"clientShowEncryptionParameter\": false,\n" +
-          "    \"queryId\": \"EXAMPLE_QUERY_ID\",\n" +
-          "    \"encryptionMaterial\": {\n" +
-          "      \"queryStageMasterKey\": \"EXAMPLE_QUERY_STAGE_MASTER_KEY\",\n" +
-          "      \"queryId\": \"EXAMPLE_QUERY_ID\",\n" +
-          "      \"smkId\": 123\n" +
-          "    },\n" +
-          "    \"stageInfo\": {\n" +
-          "      \"locationType\": \"AZURE\",\n" +
-          "      \"location\": \"EXAMPLE_LOCATION/\",\n" +
-          "      \"path\": \"EXAMPLE_PATH/\",\n" +
-          "      \"region\": \"westus\",\n" +
-          "      \"storageAccount\": \"EXAMPLE_STORAGE_ACCOUNT\",\n" +
-          "      \"isClientSideEncrypted\": true,\n" +
-          "      \"creds\": {\n" +
-          "        \"AZURE_SAS_TOKEN\": \"EXAMPLE_AZURE_SAS_TOKEN\"\n" +
-          "      },\n" +
-          "      \"presignedUrl\": null,\n" +
-          "      \"endPoint\": \"blob.core.windows.net\"\n" +
-          "    },\n" +
-          "    \"command\": \"UPLOAD\",\n" +
-          "    \"kind\": null,\n" +
-          "    \"operation\": \"Node\"\n" +
-          "  },\n" +
-          "  \"code\": null,\n" +
-          "  \"message\": null,\n" +
-          "  \"success\": true\n" +
-          "}";
+  private final String exampleAzureJsonString =
+      "{\n"
+          + "  \"data\": {\n"
+          + "    \"uploadInfo\": {\n"
+          + "      \"locationType\": \"AZURE\",\n"
+          + "      \"location\": \"EXAMPLE_LOCATION/\",\n"
+          + "      \"path\": \"EXAMPLE_PATH/\",\n"
+          + "      \"region\": \"westus\",\n"
+          + "      \"storageAccount\": \"sfcdevstage\",\n"
+          + "      \"isClientSideEncrypted\": true,\n"
+          + "      \"creds\": {\n"
+          + "        \"AZURE_SAS_TOKEN\": \"EXAMPLE_AZURE_SAS_TOKEN\"\n"
+          + "      },\n"
+          + "      \"presignedUrl\": null,\n"
+          + "      \"endPoint\": \"blob.core.windows.net\"\n"
+          + "    },\n"
+          + "    \"src_locations\": [\n"
+          + "      \"/foo/orders_100.csv\"\n"
+          + "    ],\n"
+          + "    \"parallel\": 4,\n"
+          + "    \"threshold\": 209715200,\n"
+          + "    \"autoCompress\": true,\n"
+          + "    \"overwrite\": false,\n"
+          + "    \"sourceCompression\": \"auto_detect\",\n"
+          + "    \"clientShowEncryptionParameter\": false,\n"
+          + "    \"queryId\": \"EXAMPLE_QUERY_ID\",\n"
+          + "    \"encryptionMaterial\": {\n"
+          + "      \"queryStageMasterKey\": \"EXAMPLE_QUERY_STAGE_MASTER_KEY\",\n"
+          + "      \"queryId\": \"EXAMPLE_QUERY_ID\",\n"
+          + "      \"smkId\": 123\n"
+          + "    },\n"
+          + "    \"stageInfo\": {\n"
+          + "      \"locationType\": \"AZURE\",\n"
+          + "      \"location\": \"EXAMPLE_LOCATION/\",\n"
+          + "      \"path\": \"EXAMPLE_PATH/\",\n"
+          + "      \"region\": \"westus\",\n"
+          + "      \"storageAccount\": \"EXAMPLE_STORAGE_ACCOUNT\",\n"
+          + "      \"isClientSideEncrypted\": true,\n"
+          + "      \"creds\": {\n"
+          + "        \"AZURE_SAS_TOKEN\": \"EXAMPLE_AZURE_SAS_TOKEN\"\n"
+          + "      },\n"
+          + "      \"presignedUrl\": null,\n"
+          + "      \"endPoint\": \"blob.core.windows.net\"\n"
+          + "    },\n"
+          + "    \"command\": \"UPLOAD\",\n"
+          + "    \"kind\": null,\n"
+          + "    \"operation\": \"Node\"\n"
+          + "  },\n"
+          + "  \"code\": null,\n"
+          + "  \"message\": null,\n"
+          + "  \"success\": true\n"
+          + "}";
 
-  private final String exampleGCSJsonString = "{\n" +
-          "  \"data\": {\n" +
-          "    \"uploadInfo\": {\n" +
-          "      \"locationType\": \"GCS\",\n" +
-          "      \"location\": \"foo/tables/9224/\",\n" +
-          "      \"path\": \"tables/9224/\",\n" +
-          "      \"region\": \"US-WEST1\",\n" +
-          "      \"storageAccount\": \"\",\n" +
-          "      \"isClientSideEncrypted\": true,\n" +
-          "      \"creds\": {},\n" +
-          "      \"presignedUrl\": \"EXAMPLE_PRESIGNED_URL\",\n" +
-          "      \"endPoint\": \"\"\n" +
-          "    },\n" +
-          "    \"src_locations\": [\n" +
-          "      \"/foo/bart/orders_100.csv\"\n" +
-          "    ],\n" +
-          "    \"parallel\": 4,\n" +
-          "    \"threshold\": 209715200,\n" +
-          "    \"autoCompress\": true,\n" +
-          "    \"overwrite\": false,\n" +
-          "    \"sourceCompression\": \"auto_detect\",\n" +
-          "    \"clientShowEncryptionParameter\": false,\n" +
-          "    \"queryId\": \"EXAMPLE_QUERY_ID\",\n" +
-          "    \"encryptionMaterial\": {\n" +
-          "      \"queryStageMasterKey\": \"EXAMPLE_QUERY_STAGE_MASTER_KEY\",\n" +
-          "      \"queryId\": \"EXAMPLE_QUERY_ID\",\n" +
-          "      \"smkId\": 123\n" +
-          "    },\n" +
-          "    \"stageInfo\": {\n" +
-          "      \"locationType\": \"GCS\",\n" +
-          "      \"location\": \"foo/tables/9224/\",\n" +
-          "      \"path\": \"tables/9224/\",\n" +
-          "      \"region\": \"US-WEST1\",\n" +
-          "      \"storageAccount\": \"\",\n" +
-          "      \"isClientSideEncrypted\": true,\n" +
-          "      \"creds\": {},\n" +
-          "      \"presignedUrl\": \"EXAMPLE_PRESIGNED_URL\",\n" +
-          "      \"endPoint\": \"\"\n" +
-          "    },\n" +
-          "    \"command\": \"UPLOAD\",\n" +
-          "    \"kind\": null,\n" +
-          "    \"operation\": \"Node\"\n" +
-          "  },\n" +
-          "  \"code\": null,\n" +
-          "  \"message\": null,\n" +
-          "  \"success\": true\n" +
-          "}";
+  private final String exampleGCSJsonString =
+      "{\n"
+          + "  \"data\": {\n"
+          + "    \"uploadInfo\": {\n"
+          + "      \"locationType\": \"GCS\",\n"
+          + "      \"location\": \"foo/tables/9224/\",\n"
+          + "      \"path\": \"tables/9224/\",\n"
+          + "      \"region\": \"US-WEST1\",\n"
+          + "      \"storageAccount\": \"\",\n"
+          + "      \"isClientSideEncrypted\": true,\n"
+          + "      \"creds\": {},\n"
+          + "      \"presignedUrl\": \"EXAMPLE_PRESIGNED_URL\",\n"
+          + "      \"endPoint\": \"\"\n"
+          + "    },\n"
+          + "    \"src_locations\": [\n"
+          + "      \"/foo/bart/orders_100.csv\"\n"
+          + "    ],\n"
+          + "    \"parallel\": 4,\n"
+          + "    \"threshold\": 209715200,\n"
+          + "    \"autoCompress\": true,\n"
+          + "    \"overwrite\": false,\n"
+          + "    \"sourceCompression\": \"auto_detect\",\n"
+          + "    \"clientShowEncryptionParameter\": false,\n"
+          + "    \"queryId\": \"EXAMPLE_QUERY_ID\",\n"
+          + "    \"encryptionMaterial\": {\n"
+          + "      \"queryStageMasterKey\": \"EXAMPLE_QUERY_STAGE_MASTER_KEY\",\n"
+          + "      \"queryId\": \"EXAMPLE_QUERY_ID\",\n"
+          + "      \"smkId\": 123\n"
+          + "    },\n"
+          + "    \"stageInfo\": {\n"
+          + "      \"locationType\": \"GCS\",\n"
+          + "      \"location\": \"foo/tables/9224/\",\n"
+          + "      \"path\": \"tables/9224/\",\n"
+          + "      \"region\": \"US-WEST1\",\n"
+          + "      \"storageAccount\": \"\",\n"
+          + "      \"isClientSideEncrypted\": true,\n"
+          + "      \"creds\": {},\n"
+          + "      \"presignedUrl\": \"EXAMPLE_PRESIGNED_URL\",\n"
+          + "      \"endPoint\": \"\"\n"
+          + "    },\n"
+          + "    \"command\": \"UPLOAD\",\n"
+          + "    \"kind\": null,\n"
+          + "    \"operation\": \"Node\"\n"
+          + "  },\n"
+          + "  \"code\": null,\n"
+          + "  \"message\": null,\n"
+          + "  \"success\": true\n"
+          + "}";
 
   private JsonNode exampleS3JsonNode;
   private JsonNode exampleAzureJsonNode;
@@ -202,15 +204,15 @@ public class FileUploaderSessionlessTest {
             "EXAMPLE_QUERY_STAGE_MASTER_KEY", "EXAMPLE_QUERY_ID", 123L);
     expected.add(content);
 
-    for (JsonNode exampleNode: exampleNodes) {
+    for (JsonNode exampleNode : exampleNodes) {
       List<RemoteStoreFileEncryptionMaterial> encryptionMaterials =
-              SnowflakeFileTransferAgent.getEncryptionMaterial(
-                      SFBaseFileTransferAgent.CommandType.UPLOAD, exampleNode);
+          SnowflakeFileTransferAgent.getEncryptionMaterial(
+              SFBaseFileTransferAgent.CommandType.UPLOAD, exampleNode);
 
       Assert.assertEquals(1, encryptionMaterials.size());
       Assert.assertEquals(
-              expected.get(0).getQueryStageMasterKey(),
-              encryptionMaterials.get(0).getQueryStageMasterKey());
+          expected.get(0).getQueryStageMasterKey(),
+          encryptionMaterials.get(0).getQueryStageMasterKey());
       Assert.assertEquals(expected.get(0).getQueryId(), encryptionMaterials.get(0).getQueryId());
       Assert.assertEquals(expected.get(0).getSmkId(), encryptionMaterials.get(0).getSmkId());
     }
@@ -307,11 +309,11 @@ public class FileUploaderSessionlessTest {
   @Test
   public void testGetFileTransferMetadatasAzure() throws Exception {
     List<SnowflakeFileTransferMetadata> metadataList =
-            SnowflakeFileTransferAgent.getFileTransferMetadatas(exampleAzureJsonNode);
+        SnowflakeFileTransferAgent.getFileTransferMetadatas(exampleAzureJsonNode);
     Assert.assertEquals(1, metadataList.size());
 
     SnowflakeFileTransferMetadataV1 metadata =
-            (SnowflakeFileTransferMetadataV1) metadataList.get(0);
+        (SnowflakeFileTransferMetadataV1) metadataList.get(0);
 
     // StageInfo check
     StageInfo stageInfo = metadata.getStageInfo();
@@ -330,8 +332,8 @@ public class FileUploaderSessionlessTest {
     // EncryptionMaterial check
     Assert.assertEquals("EXAMPLE_QUERY_ID", metadata.getEncryptionMaterial().getQueryId());
     Assert.assertEquals(
-            "EXAMPLE_QUERY_STAGE_MASTER_KEY",
-            metadata.getEncryptionMaterial().getQueryStageMasterKey());
+        "EXAMPLE_QUERY_STAGE_MASTER_KEY",
+        metadata.getEncryptionMaterial().getQueryStageMasterKey());
     Assert.assertEquals(123L, (long) metadata.getEncryptionMaterial().getSmkId());
 
     // Misc check
@@ -343,11 +345,11 @@ public class FileUploaderSessionlessTest {
   @Test
   public void testGetFileTransferMetadatasGCS() throws Exception {
     List<SnowflakeFileTransferMetadata> metadataList =
-            SnowflakeFileTransferAgent.getFileTransferMetadatas(exampleGCSJsonNode);
+        SnowflakeFileTransferAgent.getFileTransferMetadatas(exampleGCSJsonNode);
     Assert.assertEquals(1, metadataList.size());
 
     SnowflakeFileTransferMetadataV1 metadata =
-            (SnowflakeFileTransferMetadataV1) metadataList.get(0);
+        (SnowflakeFileTransferMetadataV1) metadataList.get(0);
 
     // StageInfo check
     StageInfo stageInfo = metadata.getStageInfo();
@@ -365,8 +367,8 @@ public class FileUploaderSessionlessTest {
     // EncryptionMaterial check
     Assert.assertEquals("EXAMPLE_QUERY_ID", metadata.getEncryptionMaterial().getQueryId());
     Assert.assertEquals(
-            "EXAMPLE_QUERY_STAGE_MASTER_KEY",
-            metadata.getEncryptionMaterial().getQueryStageMasterKey());
+        "EXAMPLE_QUERY_STAGE_MASTER_KEY",
+        metadata.getEncryptionMaterial().getQueryStageMasterKey());
     Assert.assertEquals(123L, (long) metadata.getEncryptionMaterial().getSmkId());
 
     // Misc check

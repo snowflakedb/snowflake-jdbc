@@ -146,8 +146,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
   }
 
   /**
-   * Get the encryption information for an UPLOAD or DOWNLOAD given
-   * a PUT command response JsonNode
+   * Get the encryption information for an UPLOAD or DOWNLOAD given a PUT command response JsonNode
    *
    * @param commandType CommandType of action (e.g UPLOAD or DOWNLOAD)
    * @param jsonNode JsonNod of PUT call response
@@ -1298,21 +1297,19 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
    */
   public static List<SnowflakeFileTransferMetadata> getFileTransferMetadatas(JsonNode jsonNode)
       throws SnowflakeSQLException {
-    CommandType commandType = !jsonNode.path("data").path("command").isMissingNode() ?
-            CommandType.valueOf(jsonNode.path("data").path("command").asText()) :
-            CommandType.UPLOAD;
+    CommandType commandType =
+        !jsonNode.path("data").path("command").isMissingNode()
+            ? CommandType.valueOf(jsonNode.path("data").path("command").asText())
+            : CommandType.UPLOAD;
     if (commandType != CommandType.UPLOAD) {
       throw new SnowflakeSQLException(
-          ErrorCode.INTERNAL_ERROR,
-          "This API only supports PUT commands");
+          ErrorCode.INTERNAL_ERROR, "This API only supports PUT commands");
     }
 
     JsonNode locationsNode = jsonNode.path("data").path("src_locations");
 
     if (!locationsNode.isArray()) {
-      throw new SnowflakeSQLException(
-              ErrorCode.INTERNAL_ERROR,
-              "src_locations must be an array");
+      throw new SnowflakeSQLException(ErrorCode.INTERNAL_ERROR, "src_locations must be an array");
     }
 
     final String[] srcLocations;
@@ -1321,16 +1318,15 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
       srcLocations = mapper.readValue(locationsNode.toString(), String[].class);
     } catch (Exception ex) {
       throw new SnowflakeSQLException(
-          ErrorCode.INTERNAL_ERROR,
-          "Failed to parse the locations due to: " + ex.getMessage());
+          ErrorCode.INTERNAL_ERROR, "Failed to parse the locations due to: " + ex.getMessage());
     }
 
     try {
       encryptionMaterial = getEncryptionMaterial(commandType, jsonNode);
     } catch (Exception ex) {
       throw new SnowflakeSQLException(
-              ErrorCode.INTERNAL_ERROR,
-              "Failed to parse encryptionMaterial due to: " + ex.getMessage());
+          ErrorCode.INTERNAL_ERROR,
+          "Failed to parse encryptionMaterial due to: " + ex.getMessage());
     }
 
     // For UPLOAD we expect encryptionMaterial to have length 1
@@ -1346,7 +1342,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
         && stageInfo.getStageType() != StageInfo.StageType.S3) {
       throw new SnowflakeSQLException(
           ErrorCode.INTERNAL_ERROR,
-          "This API only supports S3/AZURE/GCS, received="+stageInfo.getStageType());
+          "This API only supports S3/AZURE/GCS, received=" + stageInfo.getStageType());
     }
 
     for (String sourceFilePath : sourceFiles) {
