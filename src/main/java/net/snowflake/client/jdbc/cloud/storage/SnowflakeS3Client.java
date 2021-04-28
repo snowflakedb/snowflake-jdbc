@@ -735,7 +735,12 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
         if (ex instanceof AmazonS3Exception) {
           AmazonS3Exception s3ex = (AmazonS3Exception) ex;
           if (s3ex.getErrorCode().equalsIgnoreCase(EXPIRED_AWS_TOKEN_ERROR_CODE)) {
-            SnowflakeFileTransferAgent.renewExpiredToken(session, command, s3Client);
+            // If session is null we cannot renew the token so throw the ExpiredToken exception
+            if (session != null) {
+              SnowflakeFileTransferAgent.renewExpiredToken(session, command, s3Client);
+            } else {
+              throw new SnowflakeSQLException(s3ex.getErrorCode(), "S3 credentials have expired");
+            }
           }
         }
       }
