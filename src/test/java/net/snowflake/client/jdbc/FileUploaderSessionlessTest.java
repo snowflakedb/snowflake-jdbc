@@ -202,12 +202,6 @@ public class FileUploaderSessionlessTest {
     ObjectNode foo = (ObjectNode) modifiedNode.path("data");
     foo.remove("encryptionMaterial");
 
-    List<RemoteStoreFileEncryptionMaterial> expected = new ArrayList<>();
-    RemoteStoreFileEncryptionMaterial content =
-        new RemoteStoreFileEncryptionMaterial(
-            "EXAMPLE_QUERY_STAGE_MASTER_KEY", "EXAMPLE_QUERY_ID", 123L);
-    expected.add(content);
-
     List<RemoteStoreFileEncryptionMaterial> encryptionMaterials =
         SnowflakeFileTransferAgent.getEncryptionMaterial(
             SFBaseFileTransferAgent.CommandType.UPLOAD, modifiedNode);
