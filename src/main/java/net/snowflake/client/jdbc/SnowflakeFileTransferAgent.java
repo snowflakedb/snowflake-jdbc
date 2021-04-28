@@ -990,23 +990,21 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
       logger.debug("Command type: {}", commandType);
 
       if (commandType == CommandType.UPLOAD) {
-        logger.debug("autoCompress: {}", autoCompress);
-        logger.debug("source compression: {}", sourceCompression);
+        logger.debug("autoCompress: {}, source compression: {}", autoCompress, sourceCompression);
       } else {
         logger.debug("local download location: {}", localLocation);
       }
 
-      logger.debug("Source files:");
-      for (String srcFile : sourceFiles) {
-        logger.debug("file: {}", srcFile);
-      }
-      logger.debug("stageLocation: {}", stageInfo.getLocation());
-      logger.debug("parallel: {}", parallel);
-      logger.debug("overwrite: {}", overwrite);
-      logger.debug("destLocationType: {}", stageInfo.getStageType());
-      logger.debug("stageRegion: {}", stageInfo.getRegion());
-      logger.debug("endPoint: {}", stageInfo.getEndPoint());
-      logger.debug("storageAccount: {}", stageInfo.getStorageAccount());
+      logger.debug("Source files: {}", String.join(",", sourceFiles));
+      logger.debug(
+          "stageLocation: {}, parallel: {}, overwrite: {}, destLocationType: {}, stageRegion: {}, endPoint: {}, storageAccount: {}",
+          stageInfo.getLocation(),
+          parallel,
+          overwrite,
+          stageInfo.getStageType(),
+          stageInfo.getRegion(),
+          stageInfo.getEndPoint(),
+          stageInfo.getStorageAccount());
     }
   }
 
