@@ -142,7 +142,20 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
 
   private void initEncryptionMaterial(CommandType commandType, JsonNode jsonNode)
       throws SnowflakeSQLException, JsonProcessingException {
-    encryptionMaterial = new ArrayList<>();
+    encryptionMaterial = getEncryptionMaterial(commandType, jsonNode);
+  }
+
+  /**
+   * Get the encryption information for an UPLOAD or DOWNLOAD given a PUT command response JsonNode
+   *
+   * @param commandType CommandType of action (e.g UPLOAD or DOWNLOAD)
+   * @param jsonNode JsonNod of PUT call response
+   * @return List of RemoteStoreFileEncryptionMaterial objects
+   */
+  static List<RemoteStoreFileEncryptionMaterial> getEncryptionMaterial(
+      CommandType commandType, JsonNode jsonNode)
+      throws SnowflakeSQLException, JsonProcessingException {
+    List<RemoteStoreFileEncryptionMaterial> encryptionMaterial = new ArrayList<>();
     JsonNode rootNode = jsonNode.path("data").path("encryptionMaterial");
     if (commandType == CommandType.UPLOAD) {
       logger.debug("initEncryptionMaterial: UPLOAD");
@@ -161,11 +174,17 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
             Arrays.asList(mapper.treeToValue(rootNode, RemoteStoreFileEncryptionMaterial[].class));
       }
     }
+    return encryptionMaterial;
   }
 
   private void initPresignedUrls(CommandType commandType, JsonNode jsonNode)
       throws SnowflakeSQLException, JsonProcessingException, IOException {
-    presignedUrls = new ArrayList<>();
+    presignedUrls = getPresignedUrls(commandType, jsonNode);
+  }
+
+  private static List<String> getPresignedUrls(CommandType commandType, JsonNode jsonNode)
+      throws SnowflakeSQLException, JsonProcessingException, IOException {
+    List<String> presignedUrls = new ArrayList<>();
     JsonNode rootNode = jsonNode.path("data").path("presignedUrls");
     if (commandType == CommandType.DOWNLOAD) {
       logger.debug("initEncryptionMaterial: DOWNLOAD");
@@ -174,6 +193,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
         presignedUrls = Arrays.asList(mapper.readValue(rootNode.toString(), String[].class));
       }
     }
+    return presignedUrls;
   }
 
   private boolean autoCompress = true;
@@ -960,12 +980,38 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
     // SNOW-15153: verify that the value after file:// is not changed by GS
     verifyLocalFilePath(localFilePathFromGS);
 
-    // more parameters common to upload/download
-    String stageLocation = jsonNode.path("data").path("stageInfo").path("location").asText();
-
     parallel = jsonNode.path("data").path("parallel").asInt();
 
     overwrite = jsonNode.path("data").path("overwrite").asBoolean(false);
+
+    stageInfo = getStageInfo(jsonNode);
+
+    if (logger.isDebugEnabled()) {
+      logger.debug("Command type: {}", commandType);
+
+      if (commandType == CommandType.UPLOAD) {
+        logger.debug("autoCompress: {}, source compression: {}", autoCompress, sourceCompression);
+      } else {
+        logger.debug("local download location: {}", localLocation);
+      }
+
+      logger.debug("Source files: {}", String.join(",", sourceFiles));
+      logger.debug(
+          "stageLocation: {}, parallel: {}, overwrite: {}, destLocationType: {}, stageRegion: {}, endPoint: {}, storageAccount: {}",
+          stageInfo.getLocation(),
+          parallel,
+          overwrite,
+          stageInfo.getStageType(),
+          stageInfo.getRegion(),
+          stageInfo.getEndPoint(),
+          stageInfo.getStorageAccount());
+    }
+  }
+
+  static StageInfo getStageInfo(JsonNode jsonNode) throws SnowflakeSQLException {
+
+    // more parameters common to upload/download
+    String stageLocation = jsonNode.path("data").path("stageInfo").path("location").asText();
 
     String stageLocationType =
         jsonNode.path("data").path("stageInfo").path("locationType").asText();
@@ -1024,40 +1070,9 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
       }
     }
 
-    if (logger.isDebugEnabled()) {
-      logger.debug("Command type: {}", commandType);
-
-      if (commandType == CommandType.UPLOAD) {
-        logger.debug("autoCompress: {}", autoCompress);
-
-        logger.debug("source compression: {}", sourceCompression);
-      } else {
-        logger.debug("local download location: {}", localLocation);
-      }
-
-      logger.debug("Source files:");
-      for (String srcFile : sourceFiles) {
-        logger.debug("file: {}", srcFile);
-      }
-
-      logger.debug("stageLocation: {}", stageLocation);
-
-      logger.debug("parallel: {}", parallel);
-
-      logger.debug("overwrite: {}", overwrite);
-
-      logger.debug("destLocationType: {}", stageLocationType);
-
-      logger.debug("stageRegion: {}", stageRegion);
-
-      logger.debug("endPoint: {}", endPoint);
-
-      logger.debug("storageAccount: {}", stgAcct);
-    }
-
     Map<?, ?> stageCredentials = extractStageCreds(jsonNode);
 
-    stageInfo =
+    StageInfo stageInfo =
         StageInfo.createStageInfo(
             stageLocationType,
             stageLocation,
@@ -1077,8 +1092,9 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
         }
       }
     }
-  }
 
+    return stageInfo;
+  }
   /**
    * A helper method to verify if the local file path from GS matches what's parsed locally. This is
    * for security purpose as documented in SNOW-15153.
@@ -1261,6 +1277,83 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
               encryptionMaterial.get(0).getQueryStageMasterKey(),
               encryptionMaterial.get(0).getQueryId(),
               encryptionMaterial.get(0).getSmkId(),
+              commandType,
+              stageInfo));
+    }
+
+    return result;
+  }
+
+  /**
+   * This is API function to parse the File Transfer Metadatas from a supplied PUT call response.
+   *
+   * <p>NOTE: It only supports PUT on S3/AZURE/GCS (i.e. NOT LOCAL_FS)
+   *
+   * @param jsonNode JSON doc returned by GS from PUT call
+   * @return The file transfer metadatas for to-be-transferred files.
+   * @throws SnowflakeSQLException if any error occurs
+   */
+  public static List<SnowflakeFileTransferMetadata> getFileTransferMetadatas(JsonNode jsonNode)
+      throws SnowflakeSQLException {
+    CommandType commandType =
+        !jsonNode.path("data").path("command").isMissingNode()
+            ? CommandType.valueOf(jsonNode.path("data").path("command").asText())
+            : CommandType.UPLOAD;
+    if (commandType != CommandType.UPLOAD) {
+      throw new SnowflakeSQLException(
+          ErrorCode.INTERNAL_ERROR, "This API only supports PUT commands");
+    }
+
+    JsonNode locationsNode = jsonNode.path("data").path("src_locations");
+
+    if (!locationsNode.isArray()) {
+      throw new SnowflakeSQLException(ErrorCode.INTERNAL_ERROR, "src_locations must be an array");
+    }
+
+    final String[] srcLocations;
+    final List<RemoteStoreFileEncryptionMaterial> encryptionMaterial;
+    try {
+      srcLocations = mapper.readValue(locationsNode.toString(), String[].class);
+    } catch (Exception ex) {
+      throw new SnowflakeSQLException(
+          ErrorCode.INTERNAL_ERROR, "Failed to parse the locations due to: " + ex.getMessage());
+    }
+
+    try {
+      encryptionMaterial = getEncryptionMaterial(commandType, jsonNode);
+    } catch (Exception ex) {
+      throw new SnowflakeSQLException(
+          ErrorCode.INTERNAL_ERROR,
+          "Failed to parse encryptionMaterial due to: " + ex.getMessage());
+    }
+
+    // For UPLOAD we expect encryptionMaterial to have length 1
+    assert encryptionMaterial.size() == 1;
+
+    final Set<String> sourceFiles = expandFileNames(srcLocations);
+
+    StageInfo stageInfo = getStageInfo(jsonNode);
+
+    List<SnowflakeFileTransferMetadata> result = new ArrayList<>();
+    if (stageInfo.getStageType() != StageInfo.StageType.GCS
+        && stageInfo.getStageType() != StageInfo.StageType.AZURE
+        && stageInfo.getStageType() != StageInfo.StageType.S3) {
+      throw new SnowflakeSQLException(
+          ErrorCode.INTERNAL_ERROR,
+          "This API only supports S3/AZURE/GCS, received=" + stageInfo.getStageType());
+    }
+
+    for (String sourceFilePath : sourceFiles) {
+      String sourceFileName = sourceFilePath.substring(sourceFilePath.lastIndexOf("/") + 1);
+      result.add(
+          new SnowflakeFileTransferMetadataV1(
+              stageInfo.getPresignedUrl(),
+              sourceFileName,
+              encryptionMaterial.get(0) != null
+                  ? encryptionMaterial.get(0).getQueryStageMasterKey()
+                  : null,
+              encryptionMaterial.get(0) != null ? encryptionMaterial.get(0).getQueryId() : null,
+              encryptionMaterial.get(0) != null ? encryptionMaterial.get(0).getSmkId() : null,
               commandType,
               stageInfo));
     }
@@ -1891,6 +1984,11 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
     FileBackedOutputStream fileBackedOutputStream = null;
 
     RemoteStoreFileEncryptionMaterial encMat = metadata.getEncryptionMaterial();
+    if (encMat.getQueryId() == null
+        && encMat.getQueryStageMasterKey() == null
+        && encMat.getSmkId() == null) {
+      encMat = null;
+    }
     // SNOW-16082: we should capture exception if we fail to compress or
     // calculate digest.
     try {
