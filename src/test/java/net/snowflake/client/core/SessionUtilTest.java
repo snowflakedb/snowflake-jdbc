@@ -7,11 +7,10 @@ package net.snowflake.client.core;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 import com.fasterxml.jackson.databind.node.BooleanNode;
-import net.snowflake.client.jdbc.MockConnectionTest;
-import org.junit.Test;
-
 import java.util.HashMap;
 import java.util.Map;
+import net.snowflake.client.jdbc.MockConnectionTest;
+import org.junit.Test;
 
 public class SessionUtilTest {
 
@@ -58,6 +57,6 @@ public class SessionUtilTest {
     parameterMap.put("other_parameter", BooleanNode.getTrue());
     SFBaseSession session = new MockConnectionTest.MockSnowflakeSFSession();
     SessionUtil.updateSfDriverParamValues(parameterMap, session);
-    assert(((BooleanNode) session.getOtherParameter("other_parameter")).asBoolean());
+    assert (((BooleanNode) session.getOtherParameter("other_parameter")).asBoolean());
   }
 }
