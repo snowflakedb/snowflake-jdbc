@@ -6,7 +6,12 @@ package net.snowflake.client.core;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 
+import com.fasterxml.jackson.databind.node.BooleanNode;
+import net.snowflake.client.jdbc.MockConnectionTest;
 import org.junit.Test;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class SessionUtilTest {
 
@@ -45,5 +50,14 @@ public class SessionUtilTest {
         !SessionUtil.isPrefixEqual(
             "http://testaccount.snowflakecomputing.com/blah",
             "https://testaccount.snowflakecomputing.com/"));
+  }
+
+  @Test
+  public void testParameterParsing() {
+    Map<String, Object> parameterMap = new HashMap<>();
+    parameterMap.put("other_parameter", BooleanNode.getTrue());
+    SFBaseSession session = new MockConnectionTest.MockSnowflakeSFSession();
+    SessionUtil.updateSfDriverParamValues(parameterMap, session);
+    assert(((BooleanNode) session.getOtherParameter("other_parameter")).asBoolean());
   }
 }
