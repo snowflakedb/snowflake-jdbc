@@ -15,7 +15,6 @@ Snowflake provides a JDBC type 4 driver that supports core functionality, allowi
 Prerequisites
 =============
 
-The Snowflake JDBC driver requires Java 1.8 or higher. If the minimum required version of Java is not installed on the client machines where the JDBC driver is installed, you must install either Oracle Java or OpenJDK.
 
 Installation
 ============
