@@ -565,7 +565,7 @@ public class MockConnectionTest extends BaseJDBCTest {
     }
   }
 
-  private static class MockSnowflakeSFSession extends SFBaseSession {
+  public static class MockSnowflakeSFSession extends SFBaseSession {
 
     @Override
     public boolean isSafeToClose() {
