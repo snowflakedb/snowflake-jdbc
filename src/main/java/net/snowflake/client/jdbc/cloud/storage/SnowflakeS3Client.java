@@ -4,6 +4,7 @@
 
 package net.snowflake.client.jdbc.cloud.storage;
 
+import static net.snowflake.client.core.Constants.SESSION_EXPIRED_GS_CODE;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
 import com.amazonaws.AmazonClientException;
@@ -739,7 +740,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
             if (session != null) {
               SnowflakeFileTransferAgent.renewExpiredToken(session, command, s3Client);
             } else {
-              throw new SnowflakeSQLException(s3ex.getErrorCode(), "S3 credentials have expired");
+              throw new SnowflakeSQLException(s3ex.getErrorCode(), SESSION_EXPIRED_GS_CODE, "S3 credentials have expired");
             }
           }
         }
