@@ -657,7 +657,8 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
           SnowflakeFileTransferAgent.renewExpiredToken(session, command, azClient);
         } else {
           // If session is null we cannot renew the token so throw the ExpiredToken exception
-          throw new SnowflakeSQLException(se.getErrorCode(), SESSION_EXPIRED_GS_CODE, "Azure credentials may have expired");
+          throw new SnowflakeSQLException(
+              se.getErrorCode(), SESSION_EXPIRED_GS_CODE, "Azure credentials may have expired");
         }
       }
       // If we have exceeded the max number of retries, propagate the error
