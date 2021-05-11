@@ -3,7 +3,7 @@
  */
 package net.snowflake.client.jdbc.cloud.storage;
 
-import static net.snowflake.client.core.Constants.SESSION_EXPIRED_GS_CODE;
+import static net.snowflake.client.core.Constants.CLOUD_STORAGE_CREDENTIALS_EXPIRED;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
 import com.amazonaws.util.Base64;
@@ -658,7 +658,9 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
         } else {
           // If session is null we cannot renew the token so throw the ExpiredToken exception
           throw new SnowflakeSQLException(
-              se.getErrorCode(), SESSION_EXPIRED_GS_CODE, "Azure credentials may have expired");
+              se.getErrorCode(),
+              CLOUD_STORAGE_CREDENTIALS_EXPIRED,
+              "Azure credentials may have expired");
         }
       }
       // If we have exceeded the max number of retries, propagate the error

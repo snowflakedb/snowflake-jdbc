@@ -13,6 +13,9 @@ public final class Constants {
   // Session expired error code as returned from Snowflake
   public static final int SESSION_EXPIRED_GS_CODE = 390112;
 
+  // Cloud storage credentials expired error code
+  public static final int CLOUD_STORAGE_CREDENTIALS_EXPIRED = 240001;
+
   // Session gone error code as returned from Snowflake
   public static final int SESSION_GONE = 390111;
 
