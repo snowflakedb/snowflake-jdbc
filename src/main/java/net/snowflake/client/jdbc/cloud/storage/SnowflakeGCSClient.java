@@ -911,13 +911,15 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
           // ignore
         }
 
-        if (se.getCode() == 401 && session != null && command != null) {
-          // A 401 indicates that the access token has expired,
-          // we need to refresh the GCS client with the new token
-          SnowflakeFileTransferAgent.renewExpiredToken(session, command, this);
-        } else if (se.getCode() == 401 && command != null) {
-          throw new SnowflakeSQLException(
-              se.getMessage(), CLOUD_STORAGE_CREDENTIALS_EXPIRED, "GCS credentials have expired");
+        if (se.getCode() == 401 && command != null) {
+          if (session != null) {
+            // A 401 indicates that the access token has expired,
+            // we need to refresh the GCS client with the new token
+            SnowflakeFileTransferAgent.renewExpiredToken(session, command, this);
+          } else {
+            throw new SnowflakeSQLException(
+                se.getMessage(), CLOUD_STORAGE_CREDENTIALS_EXPIRED, "GCS credentials have expired");
+          }
         }
       }
     } else if (ex instanceof InterruptedException
