@@ -61,10 +61,7 @@ public class SnowflakeGcsClientHandleExceptionLatestIT extends AbstractDriverIT 
         new StorageException(401, "Unauthenticated"), 0, "upload", sfSession, command);
     Mockito.verify(spyingClient, Mockito.times(1)).renew(Mockito.anyMap());
 
-    // Unauthenticated, session or command null, not renew, renew called remaining 1
-    spyingClient.handleStorageException(
-        new StorageException(401, "Unauthenticated"), 0, "upload", null, command);
-    Mockito.verify(spyingClient, Mockito.times(1)).renew(Mockito.anyMap());
+    // Unauthenticated, command null, not renew, renew called remaining 1
     spyingClient.handleStorageException(
         new StorageException(401, "Unauthenticated"), 0, "upload", sfSession, null);
     Mockito.verify(spyingClient, Mockito.times(1)).renew(Mockito.anyMap());
@@ -145,6 +142,13 @@ public class SnowflakeGcsClientHandleExceptionLatestIT extends AbstractDriverIT 
   public void errorUnknownException() throws SQLException {
     // Unauthenticated, renew is called.
     spyingClient.handleStorageException(new Exception(), 0, "upload", sfSession, command);
+  }
+
+  @Test(expected = SnowflakeSQLException.class)
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void errorWithNullSession() throws SQLException {
+    spyingClient.handleStorageException(
+        new StorageException(401, "Unauthenticated"), 0, "upload", null, command);
   }
 
   @After
