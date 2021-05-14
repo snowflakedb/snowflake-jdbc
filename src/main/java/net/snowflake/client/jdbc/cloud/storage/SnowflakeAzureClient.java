@@ -3,6 +3,7 @@
  */
 package net.snowflake.client.jdbc.cloud.storage;
 
+import static net.snowflake.client.core.Constants.CLOUD_STORAGE_CREDENTIALS_EXPIRED;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
 import com.amazonaws.util.Base64;
@@ -652,7 +653,15 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
       if (((StorageException) ex).getHttpStatusCode() == 403) {
         // A 403 indicates that the SAS token has expired,
         // we need to refresh the Azure client with the new token
-        SnowflakeFileTransferAgent.renewExpiredToken(session, command, azClient);
+        if (session != null) {
+          SnowflakeFileTransferAgent.renewExpiredToken(session, command, azClient);
+        } else {
+          // If session is null we cannot renew the token so throw the ExpiredToken exception
+          throw new SnowflakeSQLException(
+              se.getErrorCode(),
+              CLOUD_STORAGE_CREDENTIALS_EXPIRED,
+              "Azure credentials may have expired");
+        }
       }
       // If we have exceeded the max number of retries, propagate the error
       if (retryCount > azClient.getMaxRetries()) {
