@@ -1,3 +1,8 @@
+**JDBC Driver 3.13.4**
+
+- \| SNOW-330467 | Fix typo in setOtherParameters logic.
+- \| SNOW-348866 | Allows clients to pass in data from a PUT command for file upload without creating a Snowflake session.
+
 **JDBC Driver 3.13.3**
 
 - \| SNOW-346424 | Add snowflakeClientInfo connection parameter for use with Spark connector.
