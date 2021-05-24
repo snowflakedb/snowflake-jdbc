@@ -1,7 +1,7 @@
 **JDBC Driver 3.13.4**
 
-- \| SNOW-330467 | Fix typo in setOtherParameters logic.
-- \| SNOW-348866 | Allows clients to pass in data from a PUT command for file upload without creating a Snowflake session.
+- \| SNOW-330467 | Fixed an issue with the logic for updating the driver parameters.
+- \| SNOW-348866 | Added the ability for clients to pass in data from a PUT command for file upload without creating a Snowflake session.
 
 **JDBC Driver 3.13.3**
 
