@@ -3,21 +3,6 @@
  */
 package net.snowflake.client.jdbc;
 
-import static net.snowflake.client.core.SessionUtil.CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY;
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.*;
-
-import java.io.*;
-import java.security.*;
-import java.sql.*;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.Map;
-import java.util.Properties;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import net.snowflake.client.ConditionalIgnoreRule.ConditionalIgnore;
 import net.snowflake.client.RunningNotOnTestaccount;
 import net.snowflake.client.RunningOnGithubAction;
@@ -33,6 +18,28 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.TemporaryFolder;
 
+import java.io.*;
+import java.security.*;
+import java.sql.*;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.Map;
+import java.util.Properties;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+import static net.snowflake.client.core.SessionUtil.CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.*;
+
 /** Connection integration tests */
 @Category(TestCategoryConnection.class)
 public class ConnectionIT extends BaseJDBCTest {
@@ -46,6 +53,46 @@ public class ConnectionIT extends BaseJDBCTest {
   String errorMessage = null;
 
   @Rule public TemporaryFolder tmpFolder = new TemporaryFolder();
+
+  @Test
+  public void testArrowIssue() throws SQLException {
+    Properties props = new Properties();
+    props.put("user", "USER");
+    props.put("password", "PASSWORD");
+    props.put("role", "accountadmin");
+    props.put("database", "megtestdb");
+    props.put("schema", "megtestschema");
+    props.put("warehouse", "tiny_warehouse");
+    props.put("SHOW_EXTERNAL_TABLE_KIND_AS_TABLE", "true");
+    Connection con = DriverManager.getConnection("jdbc:snowflake://s3testaccount.us-east-1.snowflakecomputing.com", props);
+    Statement statement = con.createStatement();
+    statement.execute("alter session set jdbc_query_result_format = 'arrow'");
+    // 10000 rows should be enough to force result into multiple chunks
+    ResultSet resultSet =
+            statement.executeQuery(
+                    "select seq8(), randstr(1000, random()) from table(generator(rowcount => 10000))");
+    int cnt = 0;
+    while (resultSet.next()) {
+      ++cnt;
+    }
+    assertTrue(cnt >= 0);
+  }
+
+  @Test
+  public void mapFormats() {
+    Date date1 = Date.valueOf("1994-12-27");
+    String baseFormat = "EE MM/dd/YYYY";
+    DateFormat formatter = new SimpleDateFormat(baseFormat);
+    //System.out.println(formatter.format(date1));
+
+    String ldtBaseFormat = "YYYY-MM-dd HH:mm:ss.SSS";
+    DateTimeFormatter formatter2 = DateTimeFormatter.ofPattern(ldtBaseFormat);
+    LocalDateTime ldtTest = LocalDateTime.now();
+    ZonedDateTime zdt = ZonedDateTime.now();
+    ldtTest.atOffset(ZoneOffset.UTC);
+    System.out.println(zdt.format(formatter2));
+    System.out.println(ldtTest.format(formatter2));
+  }
 
   @Test
   public void testSimpleConnection() throws SQLException {

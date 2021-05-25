@@ -25,6 +25,14 @@ public class SnowflakeDateWithTimezone extends Date {
     this.useSessionTimezone = useSessionTimezone;
   }
 
+  public SnowflakeDateWithTimezone(long date) {
+    super(date);
+  }
+
+  public SnowflakeDateWithTimezone(Date date) {
+    super(date.getTime());
+  }
+
   /**
    * Returns a string representation in UTC so as to display "wallclock time"
    *
