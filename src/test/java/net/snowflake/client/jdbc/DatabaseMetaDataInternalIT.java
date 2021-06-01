@@ -405,7 +405,7 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest {
   }
 
   private String getAccountName(Statement stmt) throws SQLException {
-    stmt.execute("select current_account()");
+    stmt.execute("select current_account_locator()");
     resultSet = stmt.getResultSet();
     assertTrue(resultSet.next());
     return resultSet.getString(1);

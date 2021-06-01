@@ -6,12 +6,7 @@ package net.snowflake.client.jdbc;
 import static net.snowflake.client.ConditionalIgnoreRule.ConditionalIgnore;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -665,7 +660,7 @@ public class MultiStatementIT extends BaseJDBCTest {
     Connection connection = getConnection();
     Statement statement = connection.createStatement();
 
-    ResultSet rs = statement.executeQuery("select current_account()");
+    ResultSet rs = statement.executeQuery("select current_account_locator()");
     rs.next();
     String accountName = rs.getString(1);
 
