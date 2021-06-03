@@ -10,7 +10,6 @@ import static org.apache.http.client.config.CookieSpecs.DEFAULT;
 import static org.apache.http.client.config.CookieSpecs.IGNORE_COOKIES;
 
 import com.amazonaws.ClientConfiguration;
-import com.amazonaws.http.apache.SdkProxyRoutePlanner;
 import com.google.common.base.Strings;
 import com.microsoft.azure.storage.OperationContext;
 import com.snowflake.client.jdbc.SnowflakeDriver;
@@ -75,6 +74,8 @@ public class HttpUtil {
    */
   private static CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
 
+  private static SnowflakeProxyRoutePlanner sdkProxyRoutePlanner = null;
+
   /**
    * The unique httpClient shared by all connections. This will benefit long- lived clients. Key =
    * proxy host + proxy port + nonProxyHosts, Value = Map<OCSPMode, HttpClient>
@@ -97,7 +98,7 @@ public class HttpUtil {
    * @return string used as a key to the hashmap
    */
   private static String computeProxySettings() {
-    return useProxy ? proxyHost + proxyPort + nonProxyHosts : "false";
+    return useProxy ? (proxyHost.trim() + proxyPort).toUpperCase() : "FALSE";
   }
 
   /**
@@ -133,14 +134,15 @@ public class HttpUtil {
   static String proxyPassword;
   static String nonProxyHosts;
 
-  private static boolean setProxyCredentials() {
+  private static void setProxyCredentials() {
+    // new credentials only need to be added if there is a proxy user and password given
     if (!Strings.isNullOrEmpty(proxyUser) && !Strings.isNullOrEmpty(proxyPassword)) {
       Credentials credentials = new UsernamePasswordCredentials(proxyUser, proxyPassword);
       AuthScope authScope = new AuthScope(proxyHost, proxyPort);
       credentialsProvider.setCredentials(authScope, credentials);
-      return true;
     }
-    return false;
+    // reset proxyrouteplanner in case nonProxyHosts field has changed
+    sdkProxyRoutePlanner.setNonProxyHosts(nonProxyHosts);
   }
 
   public static long getDownloadedConditionTimeoutInSeconds() {
@@ -284,10 +286,9 @@ public class HttpUtil {
       if (useProxy) {
         // use the custom proxy properties
         HttpHost proxy = new HttpHost(proxyHost, proxyPort);
-        SdkProxyRoutePlanner sdkProxyRoutePlanner =
-            new SdkProxyRoutePlanner(proxyHost, proxyPort, nonProxyHosts);
-        httpClientBuilder = httpClientBuilder.setProxy(proxy).setRoutePlanner(sdkProxyRoutePlanner);
+        sdkProxyRoutePlanner = new SnowflakeProxyRoutePlanner(proxyHost, proxyPort, nonProxyHosts);
         setProxyCredentials();
+        httpClientBuilder = httpClientBuilder.setProxy(proxy).setRoutePlanner(sdkProxyRoutePlanner);
         httpClientBuilder = httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider);
       }
       if (downloadCompressed) {
