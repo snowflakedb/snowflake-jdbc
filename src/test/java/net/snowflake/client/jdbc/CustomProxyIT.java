@@ -15,6 +15,7 @@ import java.net.PasswordAuthentication;
 import java.sql.*;
 import java.util.Properties;
 import net.snowflake.client.category.TestCategoryOthers;
+import net.snowflake.client.core.HttpUtil;
 import net.snowflake.common.core.SqlState;
 import org.junit.Ignore;
 import org.junit.Rule;
@@ -30,6 +31,56 @@ import org.junit.rules.TemporaryFolder;
 @Category(TestCategoryOthers.class)
 public class CustomProxyIT {
   @Rule public TemporaryFolder tmpFolder = new TemporaryFolder();
+
+  /**
+   * Before running this test, change the user and password to appropriate values. Set up 2
+   * different proxy ports that can run simultaneously. This is easy with Burpsuite.
+   *
+   * <p>This tests that separate, successful connections can be made with 2 separate proxies at the
+   * same time.
+   *
+   * @throws SQLException
+   */
+  @Test
+  @Ignore
+  public void test2Proxies() throws SQLException {
+    Properties props = new Properties();
+    props.put("user", "USER");
+    props.put("password", "PASSWORD");
+    props.put("useProxy", true);
+    props.put("proxyHost", "localhost");
+    props.put("proxyPort", "8080");
+    // Set up the first connection and proxy
+    Connection con1 =
+        DriverManager.getConnection(
+            "jdbc:snowflake://s3testaccount.us-east-1.snowflakecomputing.com", props);
+    Statement stmt = con1.createStatement();
+    ResultSet rs = stmt.executeQuery("select 1");
+    rs.next();
+    assertEquals(1, rs.getInt(1));
+    // Change the proxy settings for the 2nd connection, but all other properties can be re-used.
+    // Set up the second connection.
+    props.put("proxyPort", "8081");
+    Connection con2 =
+        DriverManager.getConnection(
+            "jdbc:snowflake://aztestaccount.east-us-2.azure.snowflakecomputing.com", props);
+    rs = con2.createStatement().executeQuery("select 2");
+    rs.next();
+    assertEquals(2, rs.getInt(1));
+    // To ensure that the http client map is functioning properly, make a third connection with the
+    // same properties and proxy as the first connection.
+    props.put("proxyPort", "8080");
+    Connection con3 =
+        DriverManager.getConnection(
+            "jdbc:snowflake://s3testaccount.us-east-1.snowflakecomputing.com", props);
+    stmt = con3.createStatement();
+    rs = stmt.executeQuery("select 1");
+    rs.next();
+    assertEquals(1, rs.getInt(1));
+    // Assert that although there are 3 connections, 2 of them (1st and 3rd) use the same httpclient
+    // object in the map. The total map size should be 2 for the 3 connections.
+    assertEquals(2, HttpUtil.countTotalHttpClientsInMap());
+  }
 
   @Test
   @Ignore

@@ -69,19 +69,49 @@ public class HttpUtil {
 
   public static final String JDBC_TTL = "net.snowflake.jdbc.ttl";
 
-  /** The unique httpClient shared by all connections. This will benefit long- lived clients */
+  /**
+   * Object to provide the proxy user and password credentials for the HTTP Client object when
+   * needed
+   */
+  private static CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
+
+  /**
+   * The unique httpClient shared by all connections. This will benefit long- lived clients. Key =
+   * proxy host + proxy port + nonProxyHosts, Value = Map<OCSPMode, HttpClient>
+   */
   private static Map<String, Map<OCSPMode, CloseableHttpClient>> httpClientWithProxies =
       new ConcurrentHashMap<>();
 
   /**
-   * The unique httpClient shared by all connections that don't want decompression. This will
-   * benefit long-lived clients
+   * The unique httpClient map shared by all connections that don't want decompression. This will
+   * benefit long-lived clients. Key = proxy host + proxy port + nonProxyHosts, Value =
+   * Map<OCSPMode, HttpClient>
    */
   private static Map<String, Map<OCSPMode, CloseableHttpClient>>
       httpClientWithoutDecompressionWithProxies = new ConcurrentHashMap<>();
 
+  /**
+   * Creates a string value that is used as a key for the httpClient hashmaps so that a new
+   * httpClient is created for each new proxy configuration
+   *
+   * @return string used as a key to the hashmap
+   */
   private static String computeProxySettings() {
-    return useProxy ? proxyHost + proxyPort : "false";
+    return useProxy ? proxyHost + proxyPort + nonProxyHosts : "false";
+  }
+
+  /**
+   * Helper function to count the number of HttpClients. For testing purposes only.
+   *
+   * @return
+   */
+  public static int countTotalHttpClientsInMap() {
+    int sizeCounter = 0;
+    for (Map.Entry<String, Map<OCSPMode, CloseableHttpClient>> entry :
+        httpClientWithProxies.entrySet()) {
+      sizeCounter += entry.getValue().size();
+    }
+    return sizeCounter;
   }
 
   /** Handle on the static connection manager, to gather statistics mainly */
@@ -102,6 +132,16 @@ public class HttpUtil {
   static String proxyUser;
   static String proxyPassword;
   static String nonProxyHosts;
+
+  private static boolean setProxyCredentials() {
+    if (!Strings.isNullOrEmpty(proxyUser) && !Strings.isNullOrEmpty(proxyPassword)) {
+      Credentials credentials = new UsernamePasswordCredentials(proxyUser, proxyPassword);
+      AuthScope authScope = new AuthScope(proxyHost, proxyPort);
+      credentialsProvider.setCredentials(authScope, credentials);
+      return true;
+    }
+    return false;
+  }
 
   public static long getDownloadedConditionTimeoutInSeconds() {
     return DEFAULT_DOWNLOADED_CONDITION_TIMEOUT;
@@ -247,13 +287,8 @@ public class HttpUtil {
         SdkProxyRoutePlanner sdkProxyRoutePlanner =
             new SdkProxyRoutePlanner(proxyHost, proxyPort, nonProxyHosts);
         httpClientBuilder = httpClientBuilder.setProxy(proxy).setRoutePlanner(sdkProxyRoutePlanner);
-        if (!Strings.isNullOrEmpty(proxyUser) && !Strings.isNullOrEmpty(proxyPassword)) {
-          Credentials credentials = new UsernamePasswordCredentials(proxyUser, proxyPassword);
-          AuthScope authScope = new AuthScope(proxyHost, proxyPort);
-          CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
-          credentialsProvider.setCredentials(authScope, credentials);
-          httpClientBuilder = httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider);
-        }
+        setProxyCredentials();
+        httpClientBuilder = httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider);
       }
       if (downloadCompressed) {
         httpClientBuilder = httpClientBuilder.disableContentCompression();
@@ -298,6 +333,10 @@ public class HttpUtil {
       httpClientWithoutDecompressionWithProxies.put(
           proxySettings, new ConcurrentHashMap<OCSPMode, CloseableHttpClient>());
     }
+    if (httpClientWithProxies.get(proxySettings).containsKey(ocspMode)) {
+      setProxyCredentials();
+      return httpClientWithoutDecompressionWithProxies.get(proxySettings).get(ocspMode);
+    }
     return httpClientWithoutDecompressionWithProxies
         .get(proxySettings)
         .computeIfAbsent(ocspMode, k -> buildHttpClient(ocspMode, ocspCacheFile, true));
@@ -315,6 +354,10 @@ public class HttpUtil {
     if (!httpClientWithProxies.containsKey(proxySettings)) {
       httpClientWithProxies.put(
           proxySettings, new ConcurrentHashMap<OCSPMode, CloseableHttpClient>());
+    }
+    if (httpClientWithProxies.get(proxySettings).containsKey(ocspMode)) {
+      setProxyCredentials();
+      return httpClientWithProxies.get(proxySettings).get(ocspMode);
     }
     return httpClientWithProxies
         .get(proxySettings)
