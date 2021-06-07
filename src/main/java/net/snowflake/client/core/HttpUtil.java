@@ -73,16 +73,16 @@ public class HttpUtil {
   private static Map<String, Map<OCSPMode, CloseableHttpClient>> httpClientWithProxies =
       new ConcurrentHashMap<>();
 
+  private static String computeProxySettings() {
+    return useProxy ? proxyHost + proxyPort : "false";
+  }
+
   /**
    * The unique httpClient shared by all connections that don't want decompression. This will
    * benefit long-lived clients
    */
-  private static Map<String, Map<OCSPMode, CloseableHttpClient>>
-      httpClientWithoutDecompressionWithProxies = new ConcurrentHashMap<>();
-
-  private static String computeProxySettings() {
-    return useProxy ? proxyHost + proxyPort : "false";
-  }
+  private static Map<OCSPMode, CloseableHttpClient> httpClientWithoutDecompression =
+      new ConcurrentHashMap<>();
 
   /** Handle on the static connection manager, to gather statistics mainly */
   private static PoolingHttpClientConnectionManager connectionManager = null;
@@ -293,14 +293,8 @@ public class HttpUtil {
    */
   public static CloseableHttpClient initHttpClientWithoutDecompression(
       OCSPMode ocspMode, File ocspCacheFile) {
-    String proxySettings = computeProxySettings();
-    if (!httpClientWithoutDecompressionWithProxies.containsKey(proxySettings)) {
-      httpClientWithoutDecompressionWithProxies.put(
-          proxySettings, new ConcurrentHashMap<OCSPMode, CloseableHttpClient>());
-    }
-    return httpClientWithoutDecompressionWithProxies
-        .get(proxySettings)
-        .computeIfAbsent(ocspMode, k -> buildHttpClient(ocspMode, ocspCacheFile, true));
+    return httpClientWithoutDecompression.computeIfAbsent(
+        ocspMode, k -> buildHttpClient(ocspMode, ocspCacheFile, true));
   }
 
   /**
