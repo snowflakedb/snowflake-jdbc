@@ -70,12 +70,7 @@ public class HttpUtil {
   public static final String JDBC_TTL = "net.snowflake.jdbc.ttl";
 
   /** The unique httpClient shared by all connections. This will benefit long- lived clients */
-  private static Map<String, Map<OCSPMode, CloseableHttpClient>> httpClientWithProxies =
-      new ConcurrentHashMap<>();
-
-  private static String computeProxySettings() {
-    return useProxy ? proxyHost + proxyPort : "false";
-  }
+  private static Map<OCSPMode, CloseableHttpClient> httpClient = new ConcurrentHashMap<>();
 
   /**
    * The unique httpClient shared by all connections that don't want decompression. This will
@@ -305,14 +300,8 @@ public class HttpUtil {
    * @return HttpClient object shared across all connections
    */
   public static CloseableHttpClient initHttpClient(OCSPMode ocspMode, File ocspCacheFile) {
-    String proxySettings = computeProxySettings();
-    if (!httpClientWithProxies.containsKey(proxySettings)) {
-      httpClientWithProxies.put(
-          proxySettings, new ConcurrentHashMap<OCSPMode, CloseableHttpClient>());
-    }
-    return httpClientWithProxies
-        .get(proxySettings)
-        .computeIfAbsent(ocspMode, k -> buildHttpClient(ocspMode, ocspCacheFile, false));
+    return httpClient.computeIfAbsent(
+        ocspMode, k -> buildHttpClient(ocspMode, ocspCacheFile, false));
   }
 
   /**
