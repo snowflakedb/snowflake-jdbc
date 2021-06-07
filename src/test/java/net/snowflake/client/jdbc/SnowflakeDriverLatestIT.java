@@ -26,7 +26,6 @@ import net.snowflake.client.core.SFStatement;
 import net.snowflake.common.core.SqlState;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -165,7 +164,6 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
 
   /** Test API for Spark connector for FileTransferMetadata */
   @Test
-  @Ignore
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testGCPFileTransferMetadataWithOneFile() throws Throwable {
     Connection connection = null;

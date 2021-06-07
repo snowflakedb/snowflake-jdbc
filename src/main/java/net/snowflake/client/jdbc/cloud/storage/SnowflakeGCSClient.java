@@ -20,9 +20,15 @@ import java.io.*;
 import java.net.SocketTimeoutException;
 import java.net.URISyntaxException;
 import java.security.InvalidKeyException;
-import java.util.*;
+import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
-import net.snowflake.client.core.*;
+import net.snowflake.client.core.HttpUtil;
+import net.snowflake.client.core.OCSPMode;
+import net.snowflake.client.core.ObjectMapperFactory;
+import net.snowflake.client.core.SFSession;
 import net.snowflake.client.jdbc.*;
 import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
@@ -749,17 +755,23 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
         handleStorageException(ex, 0, "upload", session, null);
       }
     } catch (URISyntaxException e) {
+      StringWriter sw = new StringWriter();
+      e.printStackTrace(new PrintWriter(sw));
+      String exceptionAsString = sw.toString();
       throw new SnowflakeSQLLoggedException(
           session,
           ErrorCode.INTERNAL_ERROR.getMessageCode(),
           SqlState.INTERNAL_ERROR,
-          "Unexpected: upload presigned URL invalid");
+          "Unexpected: upload presigned URL invalid. Stacktrace: " + exceptionAsString);
     } catch (Exception e) {
+      StringWriter sw = new StringWriter();
+      e.printStackTrace(new PrintWriter(sw));
+      String exceptionAsString = sw.toString();
       throw new SnowflakeSQLLoggedException(
           session,
           ErrorCode.INTERNAL_ERROR.getMessageCode(),
           SqlState.INTERNAL_ERROR,
-          "Unexpected: upload with presigned url failed");
+          "Unexpected: upload with presigned url failed. Stacktrace: " + exceptionAsString);
     }
   }
 
