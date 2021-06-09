@@ -63,15 +63,15 @@ public class HttpUtil {
 
   /**
    * The unique httpClient shared by all connections. This will benefit long- lived clients. Key =
-   * proxy host + proxy port + nonProxyHosts, Value = Map<OCSPMode, HttpClient>
+   * proxy host + proxy port + nonProxyHosts, Value = Map of [OCSPMode, HttpClient]
    */
   public static Map<HttpClientSettingsKey, CloseableHttpClient> httpClient =
       new ConcurrentHashMap<>();
 
   /**
    * The unique httpClient map shared by all connections that don't want decompression. This will
-   * benefit long-lived clients. Key = proxy host + proxy port + nonProxyHosts, Value =
-   * Map<OCSPMode, HttpClient>
+   * benefit long-lived clients. Key = proxy host + proxy port + nonProxyHosts, Value = Map
+   * [OCSPMode, HttpClient]
    */
   private static Map<HttpClientSettingsKey, CloseableHttpClient> httpClientWithoutDecompression =
       new ConcurrentHashMap<>();
