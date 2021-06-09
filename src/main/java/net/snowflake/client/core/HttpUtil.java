@@ -10,16 +10,15 @@ import static org.apache.http.client.config.CookieSpecs.DEFAULT;
 import static org.apache.http.client.config.CookieSpecs.IGNORE_COOKIES;
 
 import com.amazonaws.ClientConfiguration;
-import com.google.common.base.Strings;
 import com.microsoft.azure.storage.OperationContext;
 import com.snowflake.client.jdbc.SnowflakeDriver;
 import java.io.*;
-import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.Socket;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -66,7 +65,7 @@ public class HttpUtil {
    * The unique httpClient shared by all connections. This will benefit long- lived clients. Key =
    * proxy host + proxy port + nonProxyHosts, Value = Map<OCSPMode, HttpClient>
    */
-  private static Map<HttpClientSettingsKey, CloseableHttpClient> httpClient =
+  public static Map<HttpClientSettingsKey, CloseableHttpClient> httpClient =
       new ConcurrentHashMap<>();
 
   /**
@@ -86,15 +85,7 @@ public class HttpUtil {
   private static boolean socksProxyDisabled = false;
 
   /** customized proxy properties */
-  static boolean useProxy = false;
-
   static boolean httpUseProxy = false;
-
-  static String proxyHost;
-  static int proxyPort;
-  static String proxyUser;
-  static String proxyPassword;
-  static String nonProxyHosts;
 
   public static long getDownloadedConditionTimeoutInSeconds() {
     return DEFAULT_DOWNLOADED_CONDITION_TIMEOUT;
@@ -108,7 +99,7 @@ public class HttpUtil {
     }
   }
 
-  public static void setProxyForS3(ClientConfiguration clientConfig) {
+  /*public static void setProxyForS3(ClientConfiguration clientConfig) {
     if (useProxy) {
       clientConfig.setProxyHost(proxyHost);
       clientConfig.setProxyPort(proxyPort);
@@ -118,14 +109,24 @@ public class HttpUtil {
         clientConfig.setProxyPassword(proxyPassword);
       }
     }
+  }*/
+
+  public static void setS3ProxyFromProperties(
+      Properties proxyProperties, ClientConfiguration clientConfig) {
+    // do nothing yet
   }
 
-  public static void setProxyForAzure(OperationContext opContext) {
-    if (useProxy) {
+  public static void setS3ProxyFromKey(
+      HttpClientSettingsKey key, ClientConfiguration clientConfig) {
+    // do nothing yet
+  }
+
+  public static void setProxyForAzure(Properties proxyProperties, OperationContext opContext) {
+    /*if (useProxy) {
       // currently, only host and port are supported. Username and password are not supported.
       Proxy azProxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(proxyHost, proxyPort));
       opContext.setProxy(azProxy);
-    }
+    }*/
   }
 
   /**
@@ -199,7 +200,7 @@ public class HttpUtil {
       // care OCSP checks.
       // OCSP FailOpen is ON by default
       try {
-        TrustManager[] tm = {new SFTrustManager(key.getOcspMode(), ocspCacheFile)};
+        TrustManager[] tm = {new SFTrustManager(key, ocspCacheFile)};
         trustManagers = tm;
       } catch (Exception | Error err) {
         // dump error stack
@@ -614,24 +615,6 @@ public class HttpUtil {
   /** configure custom proxy properties from connectionPropertiesMap */
   public static void configureCustomProxyProperties(
       Map<SFSessionProperty, Object> connectionPropertiesMap) throws SnowflakeSQLException {
-    if (connectionPropertiesMap.containsKey(SFSessionProperty.USE_PROXY)) {
-      useProxy = (boolean) connectionPropertiesMap.get(SFSessionProperty.USE_PROXY);
-    }
-
-    if (useProxy) {
-      proxyHost = (String) connectionPropertiesMap.get(SFSessionProperty.PROXY_HOST);
-      try {
-        proxyPort =
-            Integer.parseInt(connectionPropertiesMap.get(SFSessionProperty.PROXY_PORT).toString());
-      } catch (NumberFormatException | NullPointerException e) {
-        throw new SnowflakeSQLException(
-            ErrorCode.INVALID_PROXY_PROPERTIES, "Could not parse port number");
-      }
-
-      proxyUser = (String) connectionPropertiesMap.get(SFSessionProperty.PROXY_USER);
-      proxyPassword = (String) connectionPropertiesMap.get(SFSessionProperty.PROXY_PASSWORD);
-      nonProxyHosts = (String) connectionPropertiesMap.get(SFSessionProperty.NON_PROXY_HOSTS);
-    }
 
     // parse JVM proxy settings. Print them out if JVM proxy is in usage.
     httpUseProxy = Boolean.parseBoolean(systemGetProperty("http.useProxy"));
@@ -654,13 +637,5 @@ public class HttpUtil {
     }
     // Always print off connection string proxy parameters. These override JVM proxy parameters if
     // use_proxy=true.
-    logger.debug(
-        "connection proxy parameters: use_proxy={}, proxy_host={}, proxy_port={}, proxy_user={}, proxy_password={}, non_proxy_hosts={}",
-        useProxy,
-        proxyHost,
-        proxyPort,
-        proxyUser,
-        !Strings.isNullOrEmpty(proxyPassword) ? "***" : "(empty)",
-        nonProxyHosts);
   }
 }

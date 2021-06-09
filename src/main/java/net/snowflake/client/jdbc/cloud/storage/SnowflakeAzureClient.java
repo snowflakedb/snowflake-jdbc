@@ -118,7 +118,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
       }
       this.azStorageClient = new CloudBlobClient(storageEndpoint, azCreds);
       opContext = new OperationContext();
-      HttpUtil.setProxyForAzure(opContext);
+      HttpUtil.setProxyForAzure(stage.getProxyProperties(), opContext);
     } catch (URISyntaxException ex) {
       throw new IllegalArgumentException("invalid_azure_credentials");
     }

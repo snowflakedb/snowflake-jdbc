@@ -7,13 +7,11 @@ package net.snowflake.client.core;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetEnv;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
-import com.amazonaws.http.apache.SdkProxyRoutePlanner;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeType;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.google.common.base.Strings;
 import com.nimbusds.jose.JWSVerifier;
 import com.nimbusds.jose.crypto.RSASSAVerifier;
 import com.nimbusds.jwt.SignedJWT;
@@ -47,10 +45,6 @@ import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpStatus;
-import org.apache.http.auth.AuthScope;
-import org.apache.http.auth.Credentials;
-import org.apache.http.auth.UsernamePasswordCredentials;
-import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -59,7 +53,6 @@ import org.apache.http.config.Registry;
 import org.apache.http.config.RegistryBuilder;
 import org.apache.http.conn.socket.ConnectionSocketFactory;
 import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.DefaultRedirectStrategy;
 import org.apache.http.impl.client.HttpClientBuilder;
@@ -263,14 +256,17 @@ public class SFTrustManager extends X509ExtendedTrustManager {
   /** OCSP mode */
   private OCSPMode ocspMode;
 
+  private static HttpClientSettingsKey proxySettingsKey;
+
   /**
    * Constructor with the cache file. If not specified, the default cachefile is used.
    *
    * @param ocspMode OCSP mode
    * @param cacheFile cache file.
    */
-  SFTrustManager(OCSPMode ocspMode, File cacheFile) {
-    this.ocspMode = ocspMode;
+  SFTrustManager(HttpClientSettingsKey key, File cacheFile) {
+    this.ocspMode = key.getOcspMode();
+    this.proxySettingsKey = key;
     this.trustManager = getTrustManager(KeyManagerFactory.getDefaultAlgorithm());
 
     this.exTrustManager =
@@ -583,23 +579,19 @@ public class SFTrustManager extends X509ExtendedTrustManager {
             .setRedirectStrategy(new DefaultRedirectStrategy())
             .disableCookieManagement();
 
-    if (HttpUtil.useProxy) {
+    if (proxySettingsKey.usesProxy()) {
       // use the custom proxy properties
-      HttpHost proxy = new HttpHost(HttpUtil.proxyHost, HttpUtil.proxyPort);
-      SdkProxyRoutePlanner sdkProxyRoutePlanner =
-          new SdkProxyRoutePlanner(HttpUtil.proxyHost, HttpUtil.proxyPort, HttpUtil.nonProxyHosts);
-      httpClientBuilder = httpClientBuilder.setProxy(proxy).setRoutePlanner(sdkProxyRoutePlanner);
-      if (!Strings.isNullOrEmpty(HttpUtil.proxyUser)
-          && !Strings.isNullOrEmpty(HttpUtil.proxyPassword)) {
-        Credentials credentials =
-            new UsernamePasswordCredentials(HttpUtil.proxyUser, HttpUtil.proxyPassword);
-        AuthScope authScope = new AuthScope(HttpUtil.proxyHost, HttpUtil.proxyPort);
-        CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
-        credentialsProvider.setCredentials(authScope, credentials);
-        httpClientBuilder = httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider);
+      HttpHost proxy = proxySettingsKey.getProxy();
+      httpClientBuilder =
+          httpClientBuilder
+              .setProxy(proxy)
+              .setRoutePlanner(proxySettingsKey.getProxyRoutePlanner());
+      if (proxySettingsKey.getProxyCredentialsProvider() != null) {
+        httpClientBuilder =
+            httpClientBuilder.setDefaultCredentialsProvider(
+                proxySettingsKey.getProxyCredentialsProvider());
       }
     }
-
     // using the default HTTP client
     return httpClientBuilder.build();
   }

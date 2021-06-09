@@ -44,8 +44,8 @@ public class CustomProxyIT {
   @Ignore
   public void test2Proxies() throws SQLException {
     Properties props = new Properties();
-    props.put("user", "USER");
-    props.put("password", "PASSWORD");
+    props.put("user", "mknister");
+    props.put("password", "Argumentc1inicspam!");
     props.put("useProxy", true);
     props.put("proxyHost", "localhost");
     props.put("proxyPort", "8080");
@@ -78,6 +78,7 @@ public class CustomProxyIT {
     assertEquals(1, rs.getInt(1));
     // Assert that although there are 3 connections, 2 of them (1st and 3rd) use the same httpclient
     // object in the map. The total map size should be 2 for the 3 connections.
+    // assertEquals(2, HttpUtil.httpClient.size());
   }
 
   @Test

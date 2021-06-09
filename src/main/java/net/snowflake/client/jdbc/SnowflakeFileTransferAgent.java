@@ -1973,6 +1973,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
         SnowflakeUtil.convertProxyPropertiesToHttpClientKey(ocspMode, proxyProperties);
 
     StageInfo stageInfo = metadata.getStageInfo();
+    stageInfo.setProxyProperties(proxyProperties);
     String destFileName = metadata.getPresignedUrlFileName();
 
     logger.debug("Begin upload data for " + destFileName);
