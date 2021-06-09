@@ -166,7 +166,7 @@ public interface SnowflakeStorageClient {
    * <p>NOTE: This function is only supported when pre-signed URL is used.
    *
    * @param networkTimeoutInMilli Network timeout for the upload
-   * @param ocspMode OCSP mode for the upload.
+   * @param ocspModeAndProxyKey OCSP mode and proxy settings for the upload.
    * @param parallelism number of threads do parallel uploading
    * @param uploadFromStream true if upload source is stream
    * @param remoteStorageLocation s3 bucket name
