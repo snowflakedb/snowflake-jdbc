@@ -15,7 +15,6 @@ import java.net.PasswordAuthentication;
 import java.sql.*;
 import java.util.Properties;
 import net.snowflake.client.category.TestCategoryOthers;
-import net.snowflake.client.core.HttpUtil;
 import net.snowflake.common.core.SqlState;
 import org.junit.Ignore;
 import org.junit.Rule;
@@ -79,7 +78,6 @@ public class CustomProxyIT {
     assertEquals(1, rs.getInt(1));
     // Assert that although there are 3 connections, 2 of them (1st and 3rd) use the same httpclient
     // object in the map. The total map size should be 2 for the 3 connections.
-    assertEquals(2, HttpUtil.countTotalHttpClientsInMap());
   }
 
   @Test

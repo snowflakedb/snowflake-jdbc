@@ -4,10 +4,26 @@
 
 package net.snowflake.client.core;
 
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetEnv;
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
+import static org.apache.http.client.config.CookieSpecs.DEFAULT;
+import static org.apache.http.client.config.CookieSpecs.IGNORE_COOKIES;
+
 import com.amazonaws.ClientConfiguration;
 import com.google.common.base.Strings;
 import com.microsoft.azure.storage.OperationContext;
 import com.snowflake.client.jdbc.SnowflakeDriver;
+import java.io.*;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
+import java.net.Socket;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import javax.net.ssl.TrustManager;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.RestRequest;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
@@ -32,23 +48,6 @@ import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.ssl.SSLInitializationException;
 import org.apache.http.util.EntityUtils;
-
-import javax.net.ssl.TrustManager;
-import java.io.*;
-import java.net.InetSocketAddress;
-import java.net.Proxy;
-import java.net.Socket;
-import java.security.KeyManagementException;
-import java.security.NoSuchAlgorithmException;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetEnv;
-import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
-import static org.apache.http.client.config.CookieSpecs.DEFAULT;
-import static org.apache.http.client.config.CookieSpecs.IGNORE_COOKIES;
 
 public class HttpUtil {
   static final SFLogger logger = SFLoggerFactory.getLogger(HttpUtil.class);
@@ -75,8 +74,8 @@ public class HttpUtil {
    * benefit long-lived clients. Key = proxy host + proxy port + nonProxyHosts, Value =
    * Map<OCSPMode, HttpClient>
    */
-  private static Map<HttpClientSettingsKey, CloseableHttpClient>
-          httpClientWithoutDecompression = new ConcurrentHashMap<>();
+  private static Map<HttpClientSettingsKey, CloseableHttpClient> httpClientWithoutDecompression =
+      new ConcurrentHashMap<>();
 
   /** Handle on the static connection manager, to gather statistics mainly */
   private static PoolingHttpClientConnectionManager connectionManager = null;
@@ -238,9 +237,11 @@ public class HttpUtil {
       if (key.usesProxy()) {
         // use the custom proxy properties
         if (key.getProxyCredentialsProvider() != null) {
-          httpClientBuilder = httpClientBuilder.setDefaultCredentialsProvider(key.getProxyCredentialsProvider());
+          httpClientBuilder =
+              httpClientBuilder.setDefaultCredentialsProvider(key.getProxyCredentialsProvider());
         }
-        httpClientBuilder = httpClientBuilder.setProxy(key.getProxy()).setRoutePlanner(key.getProxyRoutePlanner());
+        httpClientBuilder =
+            httpClientBuilder.setProxy(key.getProxy()).setRoutePlanner(key.getProxyRoutePlanner());
       }
       if (downloadCompressed) {
         httpClientBuilder = httpClientBuilder.disableContentCompression();
@@ -267,7 +268,8 @@ public class HttpUtil {
    * @param ocspAndProxyKey OCSP mode and proxy settings for httpclient
    * @return HttpClient object shared across all connections
    */
-  public static CloseableHttpClient getHttpClientWithoutDecompression(HttpClientSettingsKey ocspAndProxyKey) {
+  public static CloseableHttpClient getHttpClientWithoutDecompression(
+      HttpClientSettingsKey ocspAndProxyKey) {
     return initHttpClientWithoutDecompression(ocspAndProxyKey, null);
   }
 
@@ -279,8 +281,9 @@ public class HttpUtil {
    * @return HttpClient object shared across all connections
    */
   public static CloseableHttpClient initHttpClientWithoutDecompression(
-          HttpClientSettingsKey key, File ocspCacheFile) {
-    return httpClientWithoutDecompression.computeIfAbsent(key, k -> buildHttpClient(key, ocspCacheFile, true));
+      HttpClientSettingsKey key, File ocspCacheFile) {
+    return httpClientWithoutDecompression.computeIfAbsent(
+        key, k -> buildHttpClient(key, ocspCacheFile, true));
   }
 
   /**

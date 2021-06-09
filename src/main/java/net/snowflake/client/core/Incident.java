@@ -214,7 +214,10 @@ public class Incident extends Event {
     postRequest.addHeader("content-encoding", "gzip");
 
     try {
-      String response = HttpUtil.executeGeneralRequest(postRequest, 1000, OCSPMode.FAIL_OPEN);
+      // TODO: figure out if proxy settings are ever used
+      String response =
+          HttpUtil.executeGeneralRequest(
+              postRequest, 1000, new HttpClientSettingsKey(OCSPMode.FAIL_OPEN));
       logger.debug("Incident registration was successful. Response: '{}'", response);
     } catch (Exception ex) {
       // No much we can do here besides complain.

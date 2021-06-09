@@ -4,17 +4,16 @@
 
 package net.snowflake.client.core;
 
-import jdk.internal.joptsimple.internal.Strings;
+import com.google.common.base.Strings;
+import java.sql.DriverPropertyInfo;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeConnectString;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.jdbc.SnowflakeType;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
-
-import java.sql.DriverPropertyInfo;
-import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Snowflake session implementation base. The methods and fields contained within this class are
@@ -285,21 +284,23 @@ public abstract class SFBaseSession {
       int proxyPort;
       try {
         proxyPort =
-                Integer.parseInt(connectionPropertiesMap.get(SFSessionProperty.PROXY_PORT).toString());
+            Integer.parseInt(connectionPropertiesMap.get(SFSessionProperty.PROXY_PORT).toString());
       } catch (NumberFormatException | NullPointerException e) {
         throw new SnowflakeSQLException(
-                ErrorCode.INVALID_PROXY_PROPERTIES, "Could not parse port number");
+            ErrorCode.INVALID_PROXY_PROPERTIES, "Could not parse port number");
       }
       String proxyHost = (String) connectionPropertiesMap.get(SFSessionProperty.PROXY_HOST);
       String proxyUser = (String) connectionPropertiesMap.get(SFSessionProperty.PROXY_USER);
       String proxyPassword = (String) connectionPropertiesMap.get(SFSessionProperty.PROXY_PASSWORD);
-      String nonProxyHosts = (String) connectionPropertiesMap.get(SFSessionProperty.NON_PROXY_HOSTS);
-      return new HttpClientSettingsKey(getOCSPMode(),
-              proxyHost,
-              proxyPort,
-              !Strings.isNullOrEmpty(nonProxyHosts) ? nonProxyHosts: "",
-              !Strings.isNullOrEmpty(proxyUser) ? proxyUser: "",
-              !Strings.isNullOrEmpty(proxyPassword) ? proxyPassword: "");
+      String nonProxyHosts =
+          (String) connectionPropertiesMap.get(SFSessionProperty.NON_PROXY_HOSTS);
+      return new HttpClientSettingsKey(
+          getOCSPMode(),
+          proxyHost,
+          proxyPort,
+          !Strings.isNullOrEmpty(nonProxyHosts) ? nonProxyHosts : "",
+          !Strings.isNullOrEmpty(proxyUser) ? proxyUser : "",
+          !Strings.isNullOrEmpty(proxyPassword) ? proxyPassword : "");
     }
     // If no proxy is used, no need for setting parameters
     return new HttpClientSettingsKey(getOCSPMode());

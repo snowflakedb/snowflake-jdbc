@@ -5,6 +5,15 @@
 package net.snowflake.client.jdbc;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.google.common.base.Strings;
+import java.io.*;
+import java.lang.reflect.Field;
+import java.sql.Types;
+import java.util.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
+import net.snowflake.client.core.HttpClientSettingsKey;
 import net.snowflake.client.core.OCSPMode;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFSessionProperty;
@@ -16,14 +25,6 @@ import net.snowflake.common.util.FixedViewColumn;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.Header;
 import org.apache.http.HttpResponse;
-
-import java.io.*;
-import java.lang.reflect.Field;
-import java.sql.Types;
-import java.util.*;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.ThreadPoolExecutor;
 
 /** @author jhuang */
 public class SnowflakeUtil {
@@ -528,44 +529,42 @@ public class SnowflakeUtil {
    * @param mode OCSP mode
    * @param info proxy server properties.
    */
-  public static void setupProxyPropertiesIfNecessary(OCSPMode mode, Properties info) throws SnowflakeSQLException {
+  public static HttpClientSettingsKey convertProxyPropertiesToHttpClientKey(
+      OCSPMode mode, Properties info) throws SnowflakeSQLException {
     // Setup proxy properties.
     if (info != null
         && info.size() > 0
         && info.getProperty(SFSessionProperty.USE_PROXY.getPropertyKey()) != null) {
-      Map<SFSessionProperty, Object> connectionPropertiesMap = new HashMap<>(info.size());
       Boolean useProxy =
           Boolean.valueOf(info.getProperty(SFSessionProperty.USE_PROXY.getPropertyKey()));
       if (useProxy) {
-        connectionPropertiesMap.put(SFSessionProperty.USE_PROXY, true);
-
         // set up other proxy related values.
         String propValue = null;
-        if ((propValue = info.getProperty(SFSessionProperty.PROXY_HOST.getPropertyKey())) != null) {
-          connectionPropertiesMap.put(SFSessionProperty.PROXY_HOST, propValue);
+        String proxyHost = info.getProperty(SFSessionProperty.PROXY_HOST.getPropertyKey());
+        int proxyPort;
+        try {
+          proxyPort = Integer.parseInt(SFSessionProperty.PROXY_PORT.getPropertyKey());
+        } catch (NumberFormatException | NullPointerException e) {
+          throw new SnowflakeSQLException(
+              ErrorCode.INVALID_PROXY_PROPERTIES, "Could not parse port number");
         }
-        if ((propValue = info.getProperty(SFSessionProperty.PROXY_PORT.getPropertyKey())) != null) {
-          connectionPropertiesMap.put(SFSessionProperty.PROXY_PORT, propValue);
-        }
-        if ((propValue = info.getProperty(SFSessionProperty.PROXY_USER.getPropertyKey())) != null) {
-          connectionPropertiesMap.put(SFSessionProperty.PROXY_USER, propValue);
-        }
-        if ((propValue = info.getProperty(SFSessionProperty.PROXY_PASSWORD.getPropertyKey()))
-            != null) {
-          connectionPropertiesMap.put(SFSessionProperty.PROXY_PASSWORD, propValue);
-        }
-        if ((propValue = info.getProperty(SFSessionProperty.NON_PROXY_HOSTS.getPropertyKey()))
-            != null) {
-          connectionPropertiesMap.put(SFSessionProperty.NON_PROXY_HOSTS, propValue);
-        }
+        String proxyUser = info.getProperty(SFSessionProperty.PROXY_USER.getPropertyKey());
+        String proxyPassword = info.getProperty(SFSessionProperty.PROXY_PASSWORD.getPropertyKey());
+        String nonProxyHosts = info.getProperty(SFSessionProperty.NON_PROXY_HOSTS.getPropertyKey());
 
-        // Setup proxy properties into HttpUtil static cache
-        // TODO: add these properties to a key and insert the key in a static map.
+        // create key for proxy properties
+        return new HttpClientSettingsKey(
+            mode,
+            proxyHost,
+            proxyPort,
+            !Strings.isNullOrEmpty(nonProxyHosts) ? nonProxyHosts : "",
+            !Strings.isNullOrEmpty(proxyUser) ? proxyUser : "",
+            !Strings.isNullOrEmpty(proxyPassword) ? proxyPassword : "");
       }
     }
+    // if no proxy properties, return key with only OCSP mode
+    return new HttpClientSettingsKey(mode);
   }
-
-
 
   /**
    * Round the time value from milliseconds to seconds so the seconds can be used to create

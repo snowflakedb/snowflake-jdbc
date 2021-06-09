@@ -98,6 +98,8 @@ public class StmtUtil {
 
     OCSPMode ocspMode;
 
+    HttpClientSettingsKey httpClientSettingsKey;
+
     StmtInput() {}
 
     public StmtInput setSql(String sql) {
@@ -202,6 +204,11 @@ public class StmtUtil {
 
     public StmtInput setOCSPMode(OCSPMode ocspMode) {
       this.ocspMode = ocspMode;
+      return this;
+    }
+
+    public StmtInput setHttpClientSettingsKey(HttpClientSettingsKey key) {
+      this.httpClientSettingsKey = key;
       return this;
     }
 
@@ -332,7 +339,7 @@ public class StmtUtil {
                 stmtInput.canceling,
                 true, // include retry parameters
                 false, // no retry on HTTP 403
-                stmtInput.ocspMode);
+                stmtInput.httpClientSettingsKey);
       }
 
       return pollForOutput(resultAsString, stmtInput, httpRequest);
@@ -569,7 +576,7 @@ public class StmtUtil {
           stmtInput.canceling,
           false, // no retry parameter
           false, // no retry on HTTP 403
-          stmtInput.ocspMode);
+          stmtInput.httpClientSettingsKey);
     } catch (URISyntaxException | IOException ex) {
       logger.error("Exception encountered when getting result for " + httpRequest, ex);
 
@@ -599,7 +606,8 @@ public class StmtUtil {
             .setNetworkTimeoutInMillis(session.getNetworkTimeoutInMilli())
             .setMediaType(SF_MEDIA_TYPE)
             .setServiceName(session.getServiceName())
-            .setOCSPMode(session.getOCSPMode());
+            .setOCSPMode(session.getOCSPMode())
+            .setHttpClientSettingsKey(session.getHttpClientKey());
 
     String resultAsString = getQueryResult(getResultPath, stmtInput);
 
@@ -680,7 +688,7 @@ public class StmtUtil {
               null,
               false, // no retry parameter
               false, // no retry on HTTP 403
-              stmtInput.ocspMode);
+              stmtInput.httpClientSettingsKey);
 
       // trace the response if requested
       logger.debug("Json response: {}", jsonString);
