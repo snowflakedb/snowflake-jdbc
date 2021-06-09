@@ -4,11 +4,12 @@
 
 package net.snowflake.client.core;
 
+import net.snowflake.client.jdbc.ErrorCode;
+
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.PrivateKey;
 import java.util.Map;
-import net.snowflake.client.jdbc.ErrorCode;
 
 /** A class for holding all information required for login */
 public class SFLoginInput {
@@ -43,6 +44,7 @@ public class SFLoginInput {
   private String mfaToken;
   private String serviceName;
   private OCSPMode ocspMode;
+  private HttpClientSettingsKey httpClientKey;
   private String privateKeyFile;
   private String privateKeyFilePwd;
 
@@ -315,6 +317,15 @@ public class SFLoginInput {
 
   SFLoginInput setOCSPMode(OCSPMode ocspMode) {
     this.ocspMode = ocspMode;
+    return this;
+  }
+
+  HttpClientSettingsKey getHttpClientSettingsKey() {
+    return httpClientKey;
+  }
+
+  SFLoginInput setHttpClientSettingsKey(HttpClientSettingsKey key) {
+    this.httpClientKey = key;
     return this;
   }
 

@@ -1,13 +1,5 @@
 package net.snowflake.client.jdbc;
 
-import static net.snowflake.client.core.Constants.MB;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.PushbackInputStream;
-import java.net.URISyntaxException;
-import java.util.Map;
-import java.util.zip.GZIPInputStream;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.util.SecretDetector;
@@ -18,6 +10,15 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.PushbackInputStream;
+import java.net.URISyntaxException;
+import java.util.Map;
+import java.util.zip.GZIPInputStream;
+
+import static net.snowflake.client.core.Constants.MB;
 
 public class DefaultResultStreamProvider implements ResultStreamProvider {
   // SSE-C algorithm header
@@ -114,7 +115,7 @@ public class DefaultResultStreamProvider implements ResultStreamProvider {
     // TODO move this s3 request to HttpUtil class. In theory, upper layer
     // TODO does not need to know about http client
     CloseableHttpClient httpClient =
-        HttpUtil.getHttpClient(context.getChunkDownloader().getOCSPMode());
+        HttpUtil.getHttpClient(context.getChunkDownloader().getHttpClientSettingsKey());
 
     // fetch the result chunk
     HttpResponse response =

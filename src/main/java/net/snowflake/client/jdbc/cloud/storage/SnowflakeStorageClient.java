@@ -3,13 +3,14 @@
  */
 package net.snowflake.client.jdbc.cloud.storage;
 
-import java.io.File;
-import java.io.InputStream;
-import java.util.Map;
-import net.snowflake.client.core.OCSPMode;
+import net.snowflake.client.core.HttpClientSettingsKey;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.jdbc.*;
 import net.snowflake.common.core.SqlState;
+
+import java.io.File;
+import java.io.InputStream;
+import java.util.Map;
 
 /**
  * Interface for storage client provider implementations
@@ -181,7 +182,7 @@ public interface SnowflakeStorageClient {
    */
   default void uploadWithPresignedUrlWithoutConnection(
       int networkTimeoutInMilli,
-      OCSPMode ocspMode,
+      HttpClientSettingsKey ocspModeAndProxyKey,
       int parallelism,
       boolean uploadFromStream,
       String remoteStorageLocation,

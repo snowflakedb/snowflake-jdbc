@@ -4,18 +4,8 @@
 
 package net.snowflake.client.jdbc;
 
-import static net.snowflake.client.core.Constants.GB;
-import static net.snowflake.client.core.Constants.MB;
-import static net.snowflake.client.core.SessionUtil.*;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.Serializable;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.*;
 import net.snowflake.client.core.*;
 import net.snowflake.client.jdbc.telemetry.NoOpTelemetryClient;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
@@ -27,6 +17,17 @@ import net.snowflake.common.core.SnowflakeDateTimeFormat;
 import org.apache.arrow.memory.RootAllocator;
 import org.apache.arrow.vector.VectorSchemaRoot;
 import org.apache.arrow.vector.ipc.ArrowStreamReader;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.Serializable;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.*;
+
+import static net.snowflake.client.core.Constants.GB;
+import static net.snowflake.client.core.Constants.MB;
+import static net.snowflake.client.core.SessionUtil.*;
 
 /**
  * This object is an intermediate object between result JSON from GS and ResultSet. Originally, it
@@ -113,6 +114,7 @@ public class SnowflakeResultSetSerializableV1
   // Below fields are from session or statement
   SnowflakeConnectString snowflakeConnectionString;
   OCSPMode ocspMode;
+  HttpClientSettingsKey httpClientKey;
   int networkTimeoutInMilli;
   boolean isResultColumnCaseInsensitive;
   int resultSetType;
@@ -184,6 +186,7 @@ public class SnowflakeResultSetSerializableV1
     // Below fields are from session or statement
     this.snowflakeConnectionString = toCopy.snowflakeConnectionString;
     this.ocspMode = toCopy.ocspMode;
+    this.httpClientKey = toCopy.httpClientKey;
     this.networkTimeoutInMilli = toCopy.networkTimeoutInMilli;
     this.isResultColumnCaseInsensitive = toCopy.isResultColumnCaseInsensitive;
     this.resultSetType = toCopy.resultSetType;
@@ -281,6 +284,11 @@ public class SnowflakeResultSetSerializableV1
 
   public OCSPMode getOCSPMode() {
     return ocspMode;
+  }
+
+  public HttpClientSettingsKey getHttpClientKey()
+  {
+    return httpClientKey;
   }
 
   public String getQrmk() {
@@ -607,6 +615,7 @@ public class SnowflakeResultSetSerializableV1
 
     // setup fields from sessions.
     resultSetSerializable.ocspMode = sfSession.getOCSPMode();
+    resultSetSerializable.httpClientKey = sfSession.getHttpClientKey();
     resultSetSerializable.snowflakeConnectionString = sfSession.getSnowflakeConnectionString();
     resultSetSerializable.networkTimeoutInMilli = sfSession.getNetworkTimeoutInMilli();
     resultSetSerializable.isResultColumnCaseInsensitive = sfSession.isResultColumnCaseInsensitive();
@@ -989,7 +998,8 @@ public class SnowflakeResultSetSerializableV1
    */
   private ResultSet getResultSetInternal(Properties info) throws SQLException {
     // Setup proxy info if necessary
-    SnowflakeUtil.setupProxyPropertiesIfNecessary(info);
+    SnowflakeUtil.setupProxyPropertiesIfNecessary(ocspMode, info);
+    // TODO: add key to map
 
     // Setup transient fields
     setupTransientFields();

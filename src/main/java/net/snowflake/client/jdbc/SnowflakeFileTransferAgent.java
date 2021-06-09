@@ -1968,8 +1968,8 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
     OCSPMode ocspMode = config.getOcspMode();
     Properties proxyProperties = config.getProxyProperties();
 
-    // Setup proxy info if necessary
-    SnowflakeUtil.setupProxyPropertiesIfNecessary(proxyProperties);
+    // Create HttpClient key
+    SnowflakeUtil.setupProxyPropertiesIfNecessary(ocspMode, proxyProperties);
 
     StageInfo stageInfo = metadata.getStageInfo();
     String destFileName = metadata.getPresignedUrlFileName();
@@ -2064,7 +2064,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
               (requireCompress ? FileCompressionType.GZIP : null),
               initialClient,
               networkTimeoutInMilli,
-              ocspMode,
+              key,
               1,
               null,
               true,
@@ -2102,7 +2102,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
       FileCompressionType compressionType,
       SnowflakeStorageClient initialClient,
       int networkTimeoutInMilli,
-      OCSPMode ocspMode,
+      HttpClientSettingsKey ocspModeAndProxyKey,
       int parallel,
       File srcFile,
       boolean uploadFromStream,
@@ -2138,7 +2138,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
     try {
       initialClient.uploadWithPresignedUrlWithoutConnection(
           networkTimeoutInMilli,
-          ocspMode,
+          ocspModeAndProxyKey,
           parallel,
           uploadFromStream,
           remoteLocation.location,

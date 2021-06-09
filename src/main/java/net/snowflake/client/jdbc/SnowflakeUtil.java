@@ -5,14 +5,7 @@
 package net.snowflake.client.jdbc;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import java.io.*;
-import java.lang.reflect.Field;
-import java.sql.Types;
-import java.util.*;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.ThreadPoolExecutor;
-import net.snowflake.client.core.HttpUtil;
+import net.snowflake.client.core.OCSPMode;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFSessionProperty;
 import net.snowflake.client.log.SFLogger;
@@ -23,6 +16,14 @@ import net.snowflake.common.util.FixedViewColumn;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.Header;
 import org.apache.http.HttpResponse;
+
+import java.io.*;
+import java.lang.reflect.Field;
+import java.sql.Types;
+import java.util.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
 
 /** @author jhuang */
 public class SnowflakeUtil {
@@ -524,9 +525,10 @@ public class SnowflakeUtil {
   /**
    * Setup JDBC proxy properties if necessary.
    *
+   * @param mode OCSP mode
    * @param info proxy server properties.
    */
-  public static void setupProxyPropertiesIfNecessary(Properties info) throws SnowflakeSQLException {
+  public static void setupProxyPropertiesIfNecessary(OCSPMode mode, Properties info) throws SnowflakeSQLException {
     // Setup proxy properties.
     if (info != null
         && info.size() > 0
@@ -558,10 +560,12 @@ public class SnowflakeUtil {
         }
 
         // Setup proxy properties into HttpUtil static cache
-        HttpUtil.configureCustomProxyProperties(connectionPropertiesMap);
+        // TODO: add these properties to a key and insert the key in a static map.
       }
     }
   }
+
+
 
   /**
    * Round the time value from milliseconds to seconds so the seconds can be used to create

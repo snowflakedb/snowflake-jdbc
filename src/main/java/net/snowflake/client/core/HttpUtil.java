@@ -4,26 +4,10 @@
 
 package net.snowflake.client.core;
 
-import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetEnv;
-import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
-import static org.apache.http.client.config.CookieSpecs.DEFAULT;
-import static org.apache.http.client.config.CookieSpecs.IGNORE_COOKIES;
-
 import com.amazonaws.ClientConfiguration;
 import com.google.common.base.Strings;
 import com.microsoft.azure.storage.OperationContext;
 import com.snowflake.client.jdbc.SnowflakeDriver;
-import java.io.*;
-import java.net.InetSocketAddress;
-import java.net.Proxy;
-import java.net.Socket;
-import java.security.KeyManagementException;
-import java.security.NoSuchAlgorithmException;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import javax.net.ssl.TrustManager;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.RestRequest;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
@@ -34,11 +18,6 @@ import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.util.SecretDetector;
 import net.snowflake.common.core.SqlState;
 import org.apache.commons.io.IOUtils;
-import org.apache.http.HttpHost;
-import org.apache.http.auth.AuthScope;
-import org.apache.http.auth.Credentials;
-import org.apache.http.auth.UsernamePasswordCredentials;
-import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpRequestBase;
@@ -46,7 +25,6 @@ import org.apache.http.config.Registry;
 import org.apache.http.config.RegistryBuilder;
 import org.apache.http.conn.socket.ConnectionSocketFactory;
 import org.apache.http.conn.socket.PlainConnectionSocketFactory;
-import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.DefaultRedirectStrategy;
 import org.apache.http.impl.client.HttpClientBuilder;
@@ -54,6 +32,23 @@ import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.ssl.SSLInitializationException;
 import org.apache.http.util.EntityUtils;
+
+import javax.net.ssl.TrustManager;
+import java.io.*;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
+import java.net.Socket;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetEnv;
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
+import static org.apache.http.client.config.CookieSpecs.DEFAULT;
+import static org.apache.http.client.config.CookieSpecs.IGNORE_COOKIES;
 
 public class HttpUtil {
   static final SFLogger logger = SFLoggerFactory.getLogger(HttpUtil.class);
@@ -69,18 +64,10 @@ public class HttpUtil {
   public static final String JDBC_TTL = "net.snowflake.jdbc.ttl";
 
   /**
-   * Object to provide the proxy user and password credentials for the HTTP Client object when
-   * needed
-   */
-  private static CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
-
-  private static SnowflakeProxyRoutePlanner sdkProxyRoutePlanner = null;
-
-  /**
    * The unique httpClient shared by all connections. This will benefit long- lived clients. Key =
    * proxy host + proxy port + nonProxyHosts, Value = Map<OCSPMode, HttpClient>
    */
-  private static Map<String, Map<OCSPMode, CloseableHttpClient>> httpClientWithProxies =
+  private static Map<HttpClientSettingsKey, CloseableHttpClient> httpClient =
       new ConcurrentHashMap<>();
 
   /**
@@ -88,32 +75,8 @@ public class HttpUtil {
    * benefit long-lived clients. Key = proxy host + proxy port + nonProxyHosts, Value =
    * Map<OCSPMode, HttpClient>
    */
-  private static Map<String, Map<OCSPMode, CloseableHttpClient>>
-      httpClientWithoutDecompressionWithProxies = new ConcurrentHashMap<>();
-
-  /**
-   * Creates a string value that is used as a key for the httpClient hashmaps so that a new
-   * httpClient is created for each new proxy configuration
-   *
-   * @return string used as a key to the hashmap
-   */
-  private static String computeProxySettings() {
-    return useProxy ? (proxyHost.trim() + proxyPort).toUpperCase() : "FALSE";
-  }
-
-  /**
-   * Helper function to count the number of HttpClients. For testing purposes only.
-   *
-   * @return
-   */
-  public static int countTotalHttpClientsInMap() {
-    int sizeCounter = 0;
-    for (Map.Entry<String, Map<OCSPMode, CloseableHttpClient>> entry :
-        httpClientWithProxies.entrySet()) {
-      sizeCounter += entry.getValue().size();
-    }
-    return sizeCounter;
-  }
+  private static Map<HttpClientSettingsKey, CloseableHttpClient>
+          httpClientWithoutDecompression = new ConcurrentHashMap<>();
 
   /** Handle on the static connection manager, to gather statistics mainly */
   private static PoolingHttpClientConnectionManager connectionManager = null;
@@ -133,17 +96,6 @@ public class HttpUtil {
   static String proxyUser;
   static String proxyPassword;
   static String nonProxyHosts;
-
-  private static void setProxyCredentials() {
-    // new credentials only need to be added if there is a proxy user and password given
-    if (!Strings.isNullOrEmpty(proxyUser) && !Strings.isNullOrEmpty(proxyPassword)) {
-      Credentials credentials = new UsernamePasswordCredentials(proxyUser, proxyPassword);
-      AuthScope authScope = new AuthScope(proxyHost, proxyPort);
-      credentialsProvider.setCredentials(authScope, credentials);
-    }
-    // reset proxyrouteplanner in case nonProxyHosts field has changed
-    sdkProxyRoutePlanner.setNonProxyHosts(nonProxyHosts);
-  }
 
   public static long getDownloadedConditionTimeoutInSeconds() {
     return DEFAULT_DOWNLOADED_CONDITION_TIMEOUT;
@@ -210,14 +162,14 @@ public class HttpUtil {
   /**
    * Build an Http client using our set of default.
    *
-   * @param ocspMode OCSP mode
+   * @param key Key to HttpClient hashap containing OCSP mode and proxy information
    * @param ocspCacheFile OCSP response cache file. If null, the default OCSP response file will be
    *     used.
    * @param downloadCompressed Whether the HTTP client should be built requesting no decompression
    * @return HttpClient object
    */
   static CloseableHttpClient buildHttpClient(
-      OCSPMode ocspMode, File ocspCacheFile, boolean downloadCompressed) {
+      HttpClientSettingsKey key, File ocspCacheFile, boolean downloadCompressed) {
     // set timeout so that we don't wait forever.
     // Setup the default configuration for all requests on this client
 
@@ -241,14 +193,14 @@ public class HttpUtil {
     }
 
     TrustManager[] trustManagers = null;
-    if (ocspMode != OCSPMode.INSECURE) {
+    if (key.getOcspMode() != OCSPMode.INSECURE) {
       // A custom TrustManager is required only if insecureMode is disabled,
       // which is by default in the production. insecureMode can be enabled
       // 1) OCSP service is down for reasons, 2) PowerMock test tht doesn't
       // care OCSP checks.
       // OCSP FailOpen is ON by default
       try {
-        TrustManager[] tm = {new SFTrustManager(ocspMode, ocspCacheFile)};
+        TrustManager[] tm = {new SFTrustManager(key.getOcspMode(), ocspCacheFile)};
         trustManagers = tm;
       } catch (Exception | Error err) {
         // dump error stack
@@ -283,13 +235,12 @@ public class HttpUtil {
               .setUserAgent(buildUserAgent()) // needed for Okta
               .disableCookieManagement(); // SNOW-39748
 
-      if (useProxy) {
+      if (key.usesProxy()) {
         // use the custom proxy properties
-        HttpHost proxy = new HttpHost(proxyHost, proxyPort);
-        sdkProxyRoutePlanner = new SnowflakeProxyRoutePlanner(proxyHost, proxyPort, nonProxyHosts);
-        setProxyCredentials();
-        httpClientBuilder = httpClientBuilder.setProxy(proxy).setRoutePlanner(sdkProxyRoutePlanner);
-        httpClientBuilder = httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider);
+        if (key.getProxyCredentialsProvider() != null) {
+          httpClientBuilder = httpClientBuilder.setDefaultCredentialsProvider(key.getProxyCredentialsProvider());
+        }
+        httpClientBuilder = httpClientBuilder.setProxy(key.getProxy()).setRoutePlanner(key.getProxyRoutePlanner());
       }
       if (downloadCompressed) {
         httpClientBuilder = httpClientBuilder.disableContentCompression();
@@ -303,66 +254,44 @@ public class HttpUtil {
   /**
    * Gets HttpClient with insecureMode false
    *
-   * @param ocspMode OCSP mode
+   * @param ocspAndProxyKey OCSP mode and proxy settings for httpclient
    * @return HttpClient object shared across all connections
    */
-  public static CloseableHttpClient getHttpClient(OCSPMode ocspMode) {
-    return initHttpClient(ocspMode != null ? ocspMode : OCSPMode.FAIL_OPEN, null);
+  public static CloseableHttpClient getHttpClient(HttpClientSettingsKey ocspAndProxyKey) {
+    return initHttpClient(ocspAndProxyKey, null);
   }
 
   /**
    * Gets HttpClient with insecureMode false and disabling decompression
    *
-   * @param ocspMode OCSP mode
+   * @param ocspAndProxyKey OCSP mode and proxy settings for httpclient
    * @return HttpClient object shared across all connections
    */
-  public static CloseableHttpClient getHttpClientWithoutDecompression(OCSPMode ocspMode) {
-    return initHttpClientWithoutDecompression(ocspMode, null);
+  public static CloseableHttpClient getHttpClientWithoutDecompression(HttpClientSettingsKey ocspAndProxyKey) {
+    return initHttpClientWithoutDecompression(ocspAndProxyKey, null);
   }
 
   /**
    * Accessor for the HTTP client singleton.
    *
-   * @param ocspMode OCSP mode
+   * @param key contains information needed to build specific HttpClient
    * @param ocspCacheFile OCSP response cache file name. if null, the default file will be used.
    * @return HttpClient object shared across all connections
    */
   public static CloseableHttpClient initHttpClientWithoutDecompression(
-      OCSPMode ocspMode, File ocspCacheFile) {
-    String proxySettings = computeProxySettings();
-    if (!httpClientWithoutDecompressionWithProxies.containsKey(proxySettings)) {
-      httpClientWithoutDecompressionWithProxies.put(
-          proxySettings, new ConcurrentHashMap<OCSPMode, CloseableHttpClient>());
-    }
-    if (httpClientWithProxies.get(proxySettings).containsKey(ocspMode)) {
-      setProxyCredentials();
-      return httpClientWithoutDecompressionWithProxies.get(proxySettings).get(ocspMode);
-    }
-    return httpClientWithoutDecompressionWithProxies
-        .get(proxySettings)
-        .computeIfAbsent(ocspMode, k -> buildHttpClient(ocspMode, ocspCacheFile, true));
+          HttpClientSettingsKey key, File ocspCacheFile) {
+    return httpClientWithoutDecompression.computeIfAbsent(key, k -> buildHttpClient(key, ocspCacheFile, true));
   }
 
   /**
    * Accessor for the HTTP client singleton.
    *
-   * @param ocspMode OCSP mode
+   * @param key contains information needed to build specific HttpClient
    * @param ocspCacheFile OCSP response cache file name. if null, the default file will be used.
    * @return HttpClient object shared across all connections
    */
-  public static CloseableHttpClient initHttpClient(OCSPMode ocspMode, File ocspCacheFile) {
-    String proxySettings = computeProxySettings();
-    if (!httpClientWithProxies.containsKey(proxySettings)) {
-      httpClientWithProxies.put(
-          proxySettings, new ConcurrentHashMap<OCSPMode, CloseableHttpClient>());
-    }
-    if (httpClientWithProxies.get(proxySettings).containsKey(ocspMode)) {
-      setProxyCredentials();
-      return httpClientWithProxies.get(proxySettings).get(ocspMode);
-    }
-    return httpClientWithProxies
-        .get(proxySettings)
-        .computeIfAbsent(ocspMode, k -> buildHttpClient(ocspMode, ocspCacheFile, false));
+  public static CloseableHttpClient initHttpClient(HttpClientSettingsKey key, File ocspCacheFile) {
+    return httpClient.computeIfAbsent(key, k -> buildHttpClient(key, ocspCacheFile, false));
   }
 
   /**
@@ -430,6 +359,7 @@ public class HttpUtil {
    * @param retryTimeout retry timeout
    * @param injectSocketTimeout injecting socket timeout
    * @param canceling canceling?
+   * @param ocspAndProxyKey OCSP mode and proxy settings for httpclient
    * @return response
    * @throws SnowflakeSQLException if Snowflake error occurs
    * @throws IOException raises if a general IO error occurs
@@ -439,7 +369,7 @@ public class HttpUtil {
       int retryTimeout,
       int injectSocketTimeout,
       AtomicBoolean canceling,
-      OCSPMode ocspMode)
+      HttpClientSettingsKey ocspAndProxyKey)
       throws SnowflakeSQLException, IOException {
     return executeRequestInternal(
         httpRequest,
@@ -450,7 +380,7 @@ public class HttpUtil {
         false, // no retry parameter
         true, // guid? (do we need this?)
         false, // no retry on HTTP 403
-        ocspMode);
+        ocspAndProxyKey);
   }
 
   /**
@@ -458,13 +388,13 @@ public class HttpUtil {
    *
    * @param httpRequest HttpRequestBase
    * @param retryTimeout retry timeout
-   * @param ocspMode OCSP mode
+   * @param ocspAndProxyKey OCSP mode and proxy settings for httpclient
    * @return response
    * @throws SnowflakeSQLException if Snowflake error occurs
    * @throws IOException raises if a general IO error occurs
    */
   public static String executeGeneralRequest(
-      HttpRequestBase httpRequest, int retryTimeout, OCSPMode ocspMode)
+      HttpRequestBase httpRequest, int retryTimeout, HttpClientSettingsKey ocspAndProxyKey)
       throws SnowflakeSQLException, IOException {
     return executeRequest(
         httpRequest,
@@ -473,7 +403,7 @@ public class HttpUtil {
         null, // no canceling
         false, // no retry parameter
         false, // no retry on HTTP 403
-        ocspMode);
+        ocspAndProxyKey);
   }
 
   /**
@@ -485,7 +415,7 @@ public class HttpUtil {
    * @param canceling canceling?
    * @param includeRetryParameters whether to include retry parameters in retried requests
    * @param retryOnHTTP403 whether to retry on HTTP 403 or not
-   * @param ocspMode OCSP mode
+   * @param ocspAndProxyKey OCSP mode and proxy settings for httpclient
    * @return response
    * @throws SnowflakeSQLException if Snowflake error occurs
    * @throws IOException raises if a general IO error occurs
@@ -497,7 +427,7 @@ public class HttpUtil {
       AtomicBoolean canceling,
       boolean includeRetryParameters,
       boolean retryOnHTTP403,
-      OCSPMode ocspMode)
+      HttpClientSettingsKey ocspAndProxyKey)
       throws SnowflakeSQLException, IOException {
     return executeRequestInternal(
         httpRequest,
@@ -508,7 +438,7 @@ public class HttpUtil {
         includeRetryParameters,
         true, // include request GUID
         retryOnHTTP403,
-        ocspMode);
+        ocspAndProxyKey);
   }
 
   /**
@@ -526,7 +456,7 @@ public class HttpUtil {
    * @param includeRetryParameters whether to include retry parameters in retried requests
    * @param includeRequestGuid whether to include request_guid
    * @param retryOnHTTP403 whether to retry on HTTP 403
-   * @param ocspMode OCSPMode
+   * @param ocspAndProxyKey OCSPMode and proxy settings for httpclient
    * @return response in String
    * @throws SnowflakeSQLException if Snowflake error occurs
    * @throws IOException raises if a general IO error occurs
@@ -540,7 +470,7 @@ public class HttpUtil {
       boolean includeRetryParameters,
       boolean includeRequestGuid,
       boolean retryOnHTTP403,
-      OCSPMode ocspMode)
+      HttpClientSettingsKey ocspAndProxyKey)
       throws SnowflakeSQLException, IOException {
     // HttpRequest.toString() contains request URI. Scrub any credentials, if
     // present, before logging
@@ -555,7 +485,7 @@ public class HttpUtil {
     try {
       response =
           RestRequest.execute(
-              getHttpClient(ocspMode),
+              getHttpClient(ocspAndProxyKey),
               httpRequest,
               retryTimeout,
               injectSocketTimeout,
