@@ -22,7 +22,7 @@ import org.junit.rules.TemporaryFolder;
 import org.mockito.MockedStatic;
 
 @Category(TestCategoryCore.class)
-public class SFTrustManagerMockitoMockIT {
+public class SFTrustManagerMockitoMockLatestIT {
 
   @Rule public TemporaryFolder tmpFolder = new TemporaryFolder();
 

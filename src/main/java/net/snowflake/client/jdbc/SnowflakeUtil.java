@@ -539,7 +539,6 @@ public class SnowflakeUtil {
           Boolean.valueOf(info.getProperty(SFSessionProperty.USE_PROXY.getPropertyKey()));
       if (useProxy) {
         // set up other proxy related values.
-        String propValue = null;
         String proxyHost = info.getProperty(SFSessionProperty.PROXY_HOST.getPropertyKey());
         int proxyPort;
         try {

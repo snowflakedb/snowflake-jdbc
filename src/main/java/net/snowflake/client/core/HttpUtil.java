@@ -10,9 +10,11 @@ import static org.apache.http.client.config.CookieSpecs.DEFAULT;
 import static org.apache.http.client.config.CookieSpecs.IGNORE_COOKIES;
 
 import com.amazonaws.ClientConfiguration;
+import com.google.common.base.Strings;
 import com.microsoft.azure.storage.OperationContext;
 import com.snowflake.client.jdbc.SnowflakeDriver;
 import java.io.*;
+import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.Socket;
 import java.security.KeyManagementException;
@@ -112,21 +114,68 @@ public class HttpUtil {
   }*/
 
   public static void setS3ProxyFromProperties(
-      Properties proxyProperties, ClientConfiguration clientConfig) {
+      Properties proxyProperties, ClientConfiguration clientConfig) throws SnowflakeSQLException {
     // do nothing yet
+    if (proxyProperties != null
+        && proxyProperties.size() > 0
+        && proxyProperties.getProperty(SFSessionProperty.USE_PROXY.getPropertyKey()) != null) {
+      Boolean useProxy =
+          Boolean.valueOf(
+              proxyProperties.getProperty(SFSessionProperty.USE_PROXY.getPropertyKey()));
+      if (useProxy) {
+        // set up other proxy related values.
+        String proxyHost =
+            proxyProperties.getProperty(SFSessionProperty.PROXY_HOST.getPropertyKey());
+        int proxyPort;
+        try {
+          proxyPort =
+              Integer.parseInt(
+                  proxyProperties.getProperty(SFSessionProperty.PROXY_PORT.getPropertyKey()));
+        } catch (NumberFormatException | NullPointerException e) {
+          throw new SnowflakeSQLException(
+              ErrorCode.INVALID_PROXY_PROPERTIES, "Could not parse port number");
+        }
+        String proxyUser =
+            proxyProperties.getProperty(SFSessionProperty.PROXY_USER.getPropertyKey());
+        String proxyPassword =
+            proxyProperties.getProperty(SFSessionProperty.PROXY_PASSWORD.getPropertyKey());
+        String nonProxyHosts =
+            proxyProperties.getProperty(SFSessionProperty.NON_PROXY_HOSTS.getPropertyKey());
+        clientConfig.setProxyHost(proxyHost);
+        clientConfig.setProxyPort(proxyPort);
+        clientConfig.setNonProxyHosts(nonProxyHosts);
+        if (!Strings.isNullOrEmpty(proxyUser) && !Strings.isNullOrEmpty(proxyPassword)) {
+          clientConfig.setProxyUsername(proxyUser);
+          clientConfig.setProxyPassword(proxyPassword);
+        }
+      }
+    }
   }
 
-  public static void setS3ProxyFromKey(
-      HttpClientSettingsKey key, ClientConfiguration clientConfig) {
-    // do nothing yet
-  }
-
-  public static void setProxyForAzure(Properties proxyProperties, OperationContext opContext) {
-    /*if (useProxy) {
-      // currently, only host and port are supported. Username and password are not supported.
-      Proxy azProxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(proxyHost, proxyPort));
-      opContext.setProxy(azProxy);
-    }*/
+  public static void setProxyForAzure(Properties proxyProperties, OperationContext opContext)
+      throws SnowflakeSQLException {
+    if (proxyProperties != null
+        && proxyProperties.size() > 0
+        && proxyProperties.getProperty(SFSessionProperty.USE_PROXY.getPropertyKey()) != null) {
+      Boolean useProxy =
+          Boolean.valueOf(
+              proxyProperties.getProperty(SFSessionProperty.USE_PROXY.getPropertyKey()));
+      if (useProxy) {
+        String proxyHost =
+            proxyProperties.getProperty(SFSessionProperty.PROXY_HOST.getPropertyKey());
+        int proxyPort;
+        try {
+          proxyPort =
+              Integer.parseInt(
+                  proxyProperties.getProperty(SFSessionProperty.PROXY_PORT.getPropertyKey()));
+        } catch (NumberFormatException | NullPointerException e) {
+          throw new SnowflakeSQLException(
+              ErrorCode.INVALID_PROXY_PROPERTIES, "Could not parse port number");
+        }
+        Proxy azProxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(proxyHost, proxyPort));
+        opContext.setProxy(azProxy);
+      }
+    }
   }
 
   /**

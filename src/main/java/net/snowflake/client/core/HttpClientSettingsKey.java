@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2012-2021 Snowflake Computing Inc. All rights reserved.
+ */
+
 package net.snowflake.client.core;
 
 import com.google.common.base.Strings;
@@ -9,6 +13,10 @@ import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.CredentialsProvider;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 
+/**
+ * This class defines all non-static parameters needed to create an HttpClient object. It is used as
+ * the key for the static hashmap of reusable http clients.
+ */
 public class HttpClientSettingsKey implements Serializable {
 
   private OCSPMode ocspMode;
@@ -23,11 +31,11 @@ public class HttpClientSettingsKey implements Serializable {
       OCSPMode mode, String host, int port, String nonProxyHosts, String user, String password) {
     this.useProxy = true;
     this.ocspMode = mode;
-    this.proxyHost = host;
+    this.proxyHost = host.trim();
     this.proxyPort = port;
-    this.nonProxyHosts = nonProxyHosts;
-    this.proxyUser = user;
-    this.proxyPassword = password;
+    this.nonProxyHosts = nonProxyHosts.trim();
+    this.proxyUser = user.trim();
+    this.proxyPassword = password.trim();
   }
 
   public HttpClientSettingsKey(OCSPMode mode) {
@@ -38,13 +46,13 @@ public class HttpClientSettingsKey implements Serializable {
   @Override
   public boolean equals(final Object O) {
     if (O instanceof HttpClientSettingsKey) {
-      if (((HttpClientSettingsKey) O).ocspMode.getValue() == this.ocspMode.getValue()) {
-        if (!((HttpClientSettingsKey) O).useProxy) {
+      HttpClientSettingsKey comparisonKey = (HttpClientSettingsKey) O;
+      if (comparisonKey.ocspMode.getValue() == this.ocspMode.getValue()) {
+        if (!comparisonKey.useProxy) {
           return true;
-        } else if (((HttpClientSettingsKey) O).proxyHost.trim().equalsIgnoreCase(this.proxyHost)) {
-          if (((HttpClientSettingsKey) O).proxyPort == this.proxyPort) {
-            return true;
-          }
+        } else if (comparisonKey.proxyHost.equalsIgnoreCase(this.proxyHost)
+            && comparisonKey.proxyPort == this.proxyPort) {
+          return true;
         }
       }
     }
