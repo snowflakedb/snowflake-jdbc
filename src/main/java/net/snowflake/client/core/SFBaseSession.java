@@ -97,6 +97,7 @@ public abstract class SFBaseSession {
   private boolean useRegionalS3EndpointsForPresignedURL = false;
   // Stores other parameters sent by server
   private final Map<String, Object> otherParameters = new HashMap<>();
+  private HttpClientSettingsKey ocspAndProxyKey = null;
 
   /**
    * Part of the JDBC API, where client applications may fetch a Map of Properties to set various
@@ -275,11 +276,13 @@ public abstract class SFBaseSession {
   }
 
   public HttpClientSettingsKey getHttpClientKey() throws SnowflakeSQLException {
+    if (ocspAndProxyKey != null) {
+      return ocspAndProxyKey;
+    }
     boolean useProxy = false;
     if (connectionPropertiesMap.containsKey(SFSessionProperty.USE_PROXY)) {
       useProxy = (boolean) connectionPropertiesMap.get(SFSessionProperty.USE_PROXY);
     }
-
     if (useProxy) {
       int proxyPort;
       try {
@@ -294,16 +297,19 @@ public abstract class SFBaseSession {
       String proxyPassword = (String) connectionPropertiesMap.get(SFSessionProperty.PROXY_PASSWORD);
       String nonProxyHosts =
           (String) connectionPropertiesMap.get(SFSessionProperty.NON_PROXY_HOSTS);
-      return new HttpClientSettingsKey(
-          getOCSPMode(),
-          proxyHost,
-          proxyPort,
-          !Strings.isNullOrEmpty(nonProxyHosts) ? nonProxyHosts : "",
-          !Strings.isNullOrEmpty(proxyUser) ? proxyUser : "",
-          !Strings.isNullOrEmpty(proxyPassword) ? proxyPassword : "");
+      ocspAndProxyKey =
+          new HttpClientSettingsKey(
+              getOCSPMode(),
+              proxyHost,
+              proxyPort,
+              !Strings.isNullOrEmpty(nonProxyHosts) ? nonProxyHosts : "",
+              !Strings.isNullOrEmpty(proxyUser) ? proxyUser : "",
+              !Strings.isNullOrEmpty(proxyPassword) ? proxyPassword : "");
+      return ocspAndProxyKey;
     }
     // If no proxy is used, no need for setting parameters
-    return new HttpClientSettingsKey(getOCSPMode());
+    ocspAndProxyKey = new HttpClientSettingsKey(getOCSPMode());
+    return ocspAndProxyKey;
   }
 
   public OCSPMode getOCSPMode() {
