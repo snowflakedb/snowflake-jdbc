@@ -996,8 +996,8 @@ public class SnowflakeResultSetSerializableV1
    */
   private ResultSet getResultSetInternal(Properties info) throws SQLException {
     // Setup proxy info if necessary
-    HttpClientSettingsKey key = SnowflakeUtil.convertProxyPropertiesToHttpClientKey(ocspMode, info);
-    HttpUtil.initHttpClient(key, null);
+    this.httpClientKey = SnowflakeUtil.convertProxyPropertiesToHttpClientKey(ocspMode, info);
+
     // TODO: add key to map
 
     // Setup transient fields

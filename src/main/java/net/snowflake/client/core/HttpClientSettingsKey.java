@@ -1,6 +1,7 @@
 package net.snowflake.client.core;
 
 import com.google.common.base.Strings;
+import java.io.Serializable;
 import org.apache.http.HttpHost;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.Credentials;
@@ -8,7 +9,7 @@ import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.CredentialsProvider;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 
-public class HttpClientSettingsKey {
+public class HttpClientSettingsKey implements Serializable {
 
   private OCSPMode ocspMode;
   private boolean useProxy;
