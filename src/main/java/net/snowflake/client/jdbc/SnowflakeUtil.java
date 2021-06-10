@@ -6,6 +6,13 @@ package net.snowflake.client.jdbc;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Strings;
+import java.io.*;
+import java.lang.reflect.Field;
+import java.sql.Types;
+import java.util.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
 import net.snowflake.client.core.HttpClientSettingsKey;
 import net.snowflake.client.core.OCSPMode;
 import net.snowflake.client.core.SFBaseSession;
@@ -18,14 +25,6 @@ import net.snowflake.common.util.FixedViewColumn;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.Header;
 import org.apache.http.HttpResponse;
-
-import java.io.*;
-import java.lang.reflect.Field;
-import java.sql.Types;
-import java.util.*;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.ThreadPoolExecutor;
 
 /** @author jhuang */
 public class SnowflakeUtil {
@@ -544,7 +543,8 @@ public class SnowflakeUtil {
         String proxyHost = info.getProperty(SFSessionProperty.PROXY_HOST.getPropertyKey());
         int proxyPort;
         try {
-          proxyPort = Integer.parseInt(info.getProperty(SFSessionProperty.PROXY_PORT.getPropertyKey()));
+          proxyPort =
+              Integer.parseInt(info.getProperty(SFSessionProperty.PROXY_PORT.getPropertyKey()));
         } catch (NumberFormatException | NullPointerException e) {
           throw new SnowflakeSQLException(
               ErrorCode.INVALID_PROXY_PROPERTIES, "Could not parse port number");
