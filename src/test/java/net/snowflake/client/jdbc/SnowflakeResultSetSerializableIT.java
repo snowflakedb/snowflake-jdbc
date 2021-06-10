@@ -11,6 +11,7 @@ import java.util.Properties;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryResultSet;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -692,11 +693,11 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
    * @throws Throwable
    */
   @Test
-  // @Ignore
+  @Ignore
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testCustomProxyWithFiles() throws Throwable {
     boolean generateFiles = false;
-    boolean correctProxy = true;
+    boolean correctProxy = false;
 
     if (generateFiles) {
       generateTestFiles();
@@ -708,12 +709,12 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
     props.put("useProxy", "true");
     props.put("proxyHost", "localhost");
     props.put("proxyPort", "8080");
-    /*props.put("proxyUser", "testuser1");
+    props.put("proxyUser", "testuser1");
     if (correctProxy) {
       props.put("proxyPassword", "test");
     } else {
       props.put("proxyPassword", "wrongPasswd");
-    }*/
+    }
     props.put("nonProxyHosts", "*.foo.com");
 
     // Setup files to deserialize SnowflakeResultSetSerializable objects.
