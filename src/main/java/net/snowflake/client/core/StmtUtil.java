@@ -423,6 +423,7 @@ public class StmtUtil {
               IncidentUtil.generateIncidentV2WithException(
                   stmtInput.serverUrl,
                   stmtInput.sessionToken,
+                  stmtInput.httpClientSettingsKey,
                   new SFException(ErrorCode.BAD_RESPONSE, resultAsString),
                   null,
                   stmtInput.requestId);

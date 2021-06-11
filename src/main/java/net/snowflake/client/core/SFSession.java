@@ -353,9 +353,6 @@ public class SFSession extends SFBaseSession {
   public synchronized void open() throws SFException, SnowflakeSQLException {
     performSanityCheckOnProperties();
     Map<SFSessionProperty, Object> connectionPropertiesMap = getConnectionPropertiesMap();
-
-    HttpUtil.configureCustomProxyProperties(connectionPropertiesMap);
-
     logger.debug(
         "input: server={}, account={}, user={}, password={}, role={}, "
             + "database={}, schema={}, warehouse={}, validate_default_parameters={}, authenticator={}, ocsp_mode={}, "
@@ -399,6 +396,16 @@ public class SFSession extends SFBaseSession {
         sessionParametersMap.get(CLIENT_STORE_TEMPORARY_CREDENTIAL));
 
     HttpClientSettingsKey httpClientSettingsKey = getHttpClientKey();
+    logger.debug(
+        "connection proxy parameters: use_proxy={}, proxy_host={}, proxy_port={}, proxy_user={}, proxy_password={}, non_proxy_hosts={}",
+        httpClientSettingsKey.usesProxy(),
+        httpClientSettingsKey.getProxyHost(),
+        httpClientSettingsKey.getProxyPort(),
+        httpClientSettingsKey.getProxyUser(),
+        !Strings.isNullOrEmpty(httpClientSettingsKey.getProxyPassword()) ? "***" : "(empty)",
+        httpClientSettingsKey.getNonProxyHosts());
+    HttpUtil.logJVMProxyProperties();
+
     // TODO: temporarily hardcode sessionParameter debug info. will be changed in the future
     SFLoginInput loginInput = new SFLoginInput();
 

@@ -26,11 +26,13 @@ public class HttpClientSettingsKey implements Serializable {
   private String nonProxyHosts = "";
   private String proxyUser = "";
   private String proxyPassword = "";
+  private SnowflakeProxyRoutePlanner routePlanner = null;
+  private CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
 
   public HttpClientSettingsKey(
       OCSPMode mode, String host, int port, String nonProxyHosts, String user, String password) {
     this.useProxy = true;
-    this.ocspMode = mode;
+    this.ocspMode = mode != null ? mode : OCSPMode.FAIL_OPEN;
     this.proxyHost = host.trim();
     this.proxyPort = port;
     this.nonProxyHosts = nonProxyHosts.trim();
@@ -40,7 +42,8 @@ public class HttpClientSettingsKey implements Serializable {
 
   public HttpClientSettingsKey(OCSPMode mode) {
     this.useProxy = false;
-    this.ocspMode = mode;
+    this.ocspMode = mode != null ? mode : OCSPMode.FAIL_OPEN;
+    ;
   }
 
   @Override
@@ -51,7 +54,10 @@ public class HttpClientSettingsKey implements Serializable {
         if (!comparisonKey.useProxy) {
           return true;
         } else if (comparisonKey.proxyHost.equalsIgnoreCase(this.proxyHost)
-            && comparisonKey.proxyPort == this.proxyPort) {
+            && comparisonKey.proxyPort == this.proxyPort
+            && comparisonKey.proxyUser.equalsIgnoreCase(this.proxyUser)) {
+          // update nonProxyHost and password if changed
+          updateMutableFields(comparisonKey.proxyPassword, comparisonKey.nonProxyHosts);
           return true;
         }
       }
@@ -61,7 +67,7 @@ public class HttpClientSettingsKey implements Serializable {
 
   @Override
   public int hashCode() {
-    return this.ocspMode.getValue() + (this.proxyHost + this.proxyPort).hashCode();
+    return this.ocspMode.getValue() + (this.proxyHost + this.proxyPort + this.proxyUser).hashCode();
   }
 
   public OCSPMode getOcspMode() {
@@ -72,23 +78,59 @@ public class HttpClientSettingsKey implements Serializable {
     return this.useProxy;
   }
 
+  public String getProxyHost() {
+    return this.proxyHost;
+  }
+
+  public int getProxyPort() {
+    return this.proxyPort;
+  }
+
+  public String getProxyUser() {
+    return this.proxyUser;
+  }
+
+  /** Be careful of using this! Should only be called when password is later masked. */
+  public String getProxyPassword() {
+    return this.proxyPassword;
+  }
+
+  public String getNonProxyHosts() {
+    return this.nonProxyHosts;
+  }
+
   public HttpHost getProxy() {
     HttpHost proxy = new HttpHost(this.proxyHost, this.proxyPort);
     return proxy;
   }
 
+  public void updateMutableFields(String proxyPassword, String nonProxyHosts) {
+    if (!this.nonProxyHosts.equalsIgnoreCase(nonProxyHosts)) {
+      this.nonProxyHosts = nonProxyHosts;
+      if (routePlanner != null) {
+        routePlanner.setNonProxyHosts(nonProxyHosts);
+      }
+    }
+    if (!this.proxyPassword.equalsIgnoreCase(proxyPassword)) {
+      this.proxyPassword = proxyPassword;
+      credentialsProvider.setCredentials(
+          new AuthScope(this.proxyHost, this.proxyPort),
+          new UsernamePasswordCredentials(this.proxyUser, this.proxyPassword));
+    }
+  }
+
   public SnowflakeProxyRoutePlanner getProxyRoutePlanner() {
-    SnowflakeProxyRoutePlanner sdkProxyRoutePlanner =
-        new SnowflakeProxyRoutePlanner(this.proxyHost, this.proxyPort, this.nonProxyHosts);
-    sdkProxyRoutePlanner.setNonProxyHosts(nonProxyHosts);
-    return sdkProxyRoutePlanner;
+    if (routePlanner == null) {
+      routePlanner =
+          new SnowflakeProxyRoutePlanner(this.proxyHost, this.proxyPort, this.nonProxyHosts);
+    }
+    return routePlanner;
   }
 
   public CredentialsProvider getProxyCredentialsProvider() {
     if (!Strings.isNullOrEmpty(this.proxyUser) && !Strings.isNullOrEmpty(this.proxyPassword)) {
       Credentials credentials = new UsernamePasswordCredentials(this.proxyUser, this.proxyPassword);
       AuthScope authScope = new AuthScope(this.proxyHost, this.proxyPort);
-      CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
       credentialsProvider.setCredentials(authScope, credentials);
       return credentialsProvider;
     }

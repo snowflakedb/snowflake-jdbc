@@ -276,9 +276,11 @@ public abstract class SFBaseSession {
   }
 
   public HttpClientSettingsKey getHttpClientKey() throws SnowflakeSQLException {
+    // if key is already created, return it without making a new one
     if (ocspAndProxyKey != null) {
       return ocspAndProxyKey;
     }
+    // if not, create a new key
     boolean useProxy = false;
     if (connectionPropertiesMap.containsKey(SFSessionProperty.USE_PROXY)) {
       useProxy = (boolean) connectionPropertiesMap.get(SFSessionProperty.USE_PROXY);
@@ -305,6 +307,7 @@ public abstract class SFBaseSession {
               !Strings.isNullOrEmpty(nonProxyHosts) ? nonProxyHosts : "",
               !Strings.isNullOrEmpty(proxyUser) ? proxyUser : "",
               !Strings.isNullOrEmpty(proxyPassword) ? proxyPassword : "");
+
       return ocspAndProxyKey;
     }
     // If no proxy is used, no need for setting parameters

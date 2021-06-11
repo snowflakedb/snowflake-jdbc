@@ -261,8 +261,13 @@ public class IncidentUtil {
    * @return the given Exception object
    */
   public static Throwable generateIncidentV2WithException(
-      String serverUrl, String sessionToken, Throwable exc, String jobId, String requestId) {
-    new Incident(serverUrl, sessionToken, exc, jobId, requestId).trigger();
+      String serverUrl,
+      String sessionToken,
+      HttpClientSettingsKey key,
+      Throwable exc,
+      String jobId,
+      String requestId) {
+    new Incident(serverUrl, sessionToken, key, exc, jobId, requestId).trigger();
     return exc;
   }
 }

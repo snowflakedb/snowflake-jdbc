@@ -101,18 +101,6 @@ public class HttpUtil {
     }
   }
 
-  /*public static void setProxyForS3(ClientConfiguration clientConfig) {
-    if (useProxy) {
-      clientConfig.setProxyHost(proxyHost);
-      clientConfig.setProxyPort(proxyPort);
-      clientConfig.setNonProxyHosts(nonProxyHosts);
-      if (!Strings.isNullOrEmpty(proxyUser) && !Strings.isNullOrEmpty(proxyPassword)) {
-        clientConfig.setProxyUsername(proxyUser);
-        clientConfig.setProxyPassword(proxyPassword);
-      }
-    }
-  }*/
-
   public static void setS3ProxyFromProperties(
       Properties proxyProperties, ClientConfiguration clientConfig) throws SnowflakeSQLException {
     // do nothing yet
@@ -661,10 +649,8 @@ public class HttpUtil {
     }
   }
 
-  /** configure custom proxy properties from connectionPropertiesMap */
-  public static void configureCustomProxyProperties(
-      Map<SFSessionProperty, Object> connectionPropertiesMap) throws SnowflakeSQLException {
-
+  /** print off JVM proxy parameters if they are in usage */
+  public static void logJVMProxyProperties() {
     // parse JVM proxy settings. Print them out if JVM proxy is in usage.
     httpUseProxy = Boolean.parseBoolean(systemGetProperty("http.useProxy"));
     if (httpUseProxy) {
@@ -684,7 +670,5 @@ public class HttpUtil {
     } else {
       logger.debug("http.useProxy={}. JVM proxy not used.", httpUseProxy);
     }
-    // Always print off connection string proxy parameters. These override JVM proxy parameters if
-    // use_proxy=true.
   }
 }
