@@ -336,6 +336,18 @@ public class HttpUtil {
   }
 
   /**
+   * Remove instance of HttpClient so as to reduce size of hashmap after it's no longer in use
+   *
+   * @param key the key to the given HttpClient instance
+   */
+  public static void closeHttpClient(HttpClientSettingsKey key) {
+    if (key != null) {
+      httpClient.remove(key);
+      httpClientWithoutDecompression.remove(key);
+    }
+  }
+
+  /**
    * Return a request configuration inheriting from the default request configuration of the shared
    * HttpClient with a different socket timeout.
    *
