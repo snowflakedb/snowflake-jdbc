@@ -15,6 +15,7 @@ import java.net.PasswordAuthentication;
 import java.sql.*;
 import java.util.Properties;
 import net.snowflake.client.category.TestCategoryOthers;
+import net.snowflake.client.core.HttpUtil;
 import net.snowflake.common.core.SqlState;
 import org.junit.Ignore;
 import org.junit.Rule;
@@ -28,7 +29,7 @@ import org.junit.rules.TemporaryFolder;
 // 3.) Adjust parameters like role, database, schema, etc to match with account accordingly
 
 @Category(TestCategoryOthers.class)
-public class CustomProxyIT {
+public class CustomProxyLatestIT {
   @Rule public TemporaryFolder tmpFolder = new TemporaryFolder();
 
   /**
@@ -42,10 +43,10 @@ public class CustomProxyIT {
    */
   @Test
   @Ignore
-  public void test2Proxies() throws SQLException {
+  public void test2ProxiesWithSameJVM() throws SQLException {
     Properties props = new Properties();
-    props.put("user", "mknister");
-    props.put("password", "Argumentc1inicspam!");
+    props.put("user", "USER");
+    props.put("password", "PASSWORD");
     props.put("useProxy", true);
     props.put("proxyHost", "localhost");
     props.put("proxyPort", "8080");
@@ -78,7 +79,62 @@ public class CustomProxyIT {
     assertEquals(1, rs.getInt(1));
     // Assert that although there are 3 connections, 2 of them (1st and 3rd) use the same httpclient
     // object in the map. The total map size should be 2 for the 3 connections.
-    // assertEquals(2, HttpUtil.httpClient.size());
+    assertEquals(2, HttpUtil.httpClient.size());
+    con2.close();
+    con1.close();
+    con3.close();
+  }
+
+  /**
+   * Before running this test, change the user and password to appropriate values. Set up a proxy
+   * with Burpsuite so you can see what POST and GET requests are going through the proxy.
+   *
+   * <p>This tests that the NonProxyHosts field is sucessfully updated for the same HttpClient
+   * object.
+   *
+   * @throws SQLException
+   */
+  @Test
+  @Ignore
+  public void testNonProxyHostAltering() throws SQLException {
+    Properties props = new Properties();
+    props.put("user", "USER");
+    props.put("password", "PASSWORD");
+    props.put("useProxy", true);
+    props.put("proxyHost", "localhost");
+    props.put("proxyPort", "8080");
+    props.put("nonProxyHosts", ".foo.com|.baz.com");
+    // Set up the first connection and proxy
+    Connection con1 =
+        DriverManager.getConnection(
+            "jdbc:snowflake://s3testaccount.us-east-1.snowflakecomputing.com", props);
+    Statement stmt = con1.createStatement();
+    ResultSet rs = stmt.executeQuery("select 1");
+    rs.next();
+    assertEquals(1, rs.getInt(1));
+    // Assert that nonProxyHosts string is correct for initial value
+    HttpUtil.httpClient
+        .entrySet()
+        .forEach((entry) -> assertEquals(".foo.com|.baz.com", entry.getKey().getNonProxyHosts()));
+    // Now make 2nd connection with all the same settings except different nonProxyHosts field
+    props.put("nonProxyHosts", "*.snowflakecomputing.com");
+    // Manually check here that nonProxyHost setting works by checking that nothing else goes
+    // through proxy from this point onward. *.snowflakecomputing.com should ensure that proxy is
+    // skipped.
+    Connection con2 =
+        DriverManager.getConnection(
+            "jdbc:snowflake://s3testaccount.us-east-1.snowflakecomputing.com", props);
+    rs = stmt.executeQuery("select 2");
+    rs.next();
+    assertEquals(2, rs.getInt(1));
+    assertEquals(1, HttpUtil.httpClient.size());
+    // Assert that the entry contains the correct updated value for nonProxyHosts string
+    HttpUtil.httpClient
+        .entrySet()
+        .forEach(
+            (entry) -> assertEquals("*.snowflakecomputing.com", entry.getKey().getNonProxyHosts()));
+    con1.close();
+    con2.close();
   }
 
   @Test

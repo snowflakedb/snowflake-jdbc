@@ -4,14 +4,8 @@
 
 package net.snowflake.client.core;
 
-import com.google.common.base.Strings;
 import java.io.Serializable;
 import org.apache.http.HttpHost;
-import org.apache.http.auth.AuthScope;
-import org.apache.http.auth.Credentials;
-import org.apache.http.auth.UsernamePasswordCredentials;
-import org.apache.http.client.CredentialsProvider;
-import org.apache.http.impl.client.BasicCredentialsProvider;
 
 /**
  * This class defines all non-static parameters needed to create an HttpClient object. It is used as
@@ -26,7 +20,6 @@ public class HttpClientSettingsKey implements Serializable {
   private String nonProxyHosts = "";
   private String proxyUser = "";
   private String proxyPassword = "";
-  private SnowflakeMutableProxyRoutePlanner routePlanner = null;
 
   public HttpClientSettingsKey(
       OCSPMode mode, String host, int port, String nonProxyHosts, String user, String password) {
@@ -42,7 +35,6 @@ public class HttpClientSettingsKey implements Serializable {
   public HttpClientSettingsKey(OCSPMode mode) {
     this.useProxy = false;
     this.ocspMode = mode != null ? mode : OCSPMode.FAIL_OPEN;
-    ;
   }
 
   @Override
@@ -57,7 +49,9 @@ public class HttpClientSettingsKey implements Serializable {
             && comparisonKey.proxyUser.equalsIgnoreCase(this.proxyUser)
             && comparisonKey.proxyPassword.equalsIgnoreCase(this.proxyPassword)) {
           // update nonProxyHost if changed
-          updateNonProxyHostIfNecessary(comparisonKey.nonProxyHosts);
+          if (!this.nonProxyHosts.equalsIgnoreCase(comparisonKey.nonProxyHosts)) {
+            comparisonKey.nonProxyHosts = this.nonProxyHosts;
+          }
           return true;
         }
       }
@@ -103,33 +97,5 @@ public class HttpClientSettingsKey implements Serializable {
   public HttpHost getProxy() {
     HttpHost proxy = new HttpHost(this.proxyHost, this.proxyPort);
     return proxy;
-  }
-
-  public void updateNonProxyHostIfNecessary(String nonProxyHosts) {
-    if (!this.nonProxyHosts.equalsIgnoreCase(nonProxyHosts)) {
-      this.nonProxyHosts = nonProxyHosts;
-      if (routePlanner != null) {
-        routePlanner.setNonProxyHosts(nonProxyHosts);
-      }
-    }
-  }
-
-  public SnowflakeMutableProxyRoutePlanner getProxyRoutePlanner() {
-    if (routePlanner == null) {
-      routePlanner =
-          new SnowflakeMutableProxyRoutePlanner(this.proxyHost, this.proxyPort, this.nonProxyHosts);
-    }
-    return routePlanner;
-  }
-
-  public CredentialsProvider getProxyCredentialsProvider() {
-    if (!Strings.isNullOrEmpty(this.proxyUser) && !Strings.isNullOrEmpty(this.proxyPassword)) {
-      Credentials credentials = new UsernamePasswordCredentials(this.proxyUser, this.proxyPassword);
-      AuthScope authScope = new AuthScope(this.proxyHost, this.proxyPort);
-      CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
-      credentialsProvider.setCredentials(authScope, credentials);
-      return credentialsProvider;
-    }
-    return null;
   }
 }

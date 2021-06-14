@@ -35,6 +35,11 @@ import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.util.SecretDetector;
 import net.snowflake.common.core.SqlState;
 import org.apache.commons.io.IOUtils;
+import org.apache.http.HttpHost;
+import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.Credentials;
+import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpRequestBase;
@@ -42,6 +47,7 @@ import org.apache.http.config.Registry;
 import org.apache.http.config.RegistryBuilder;
 import org.apache.http.conn.socket.ConnectionSocketFactory;
 import org.apache.http.conn.socket.PlainConnectionSocketFactory;
+import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.DefaultRedirectStrategy;
 import org.apache.http.impl.client.HttpClientBuilder;
@@ -77,6 +83,10 @@ public class HttpUtil {
    */
   private static Map<HttpClientSettingsKey, CloseableHttpClient> httpClientWithoutDecompression =
       new ConcurrentHashMap<>();
+
+  /** The map of snowflake route planners */
+  private static Map<HttpClientSettingsKey, SnowflakeMutableProxyRoutePlanner>
+      httpClientRoutePlanner = new ConcurrentHashMap<>();
 
   /** Handle on the static connection manager, to gather statistics mainly */
   private static PoolingHttpClientConnectionManager connectionManager = null;
@@ -274,12 +284,23 @@ public class HttpUtil {
 
       if (key.usesProxy()) {
         // use the custom proxy properties
-        if (key.getProxyCredentialsProvider() != null) {
-          httpClientBuilder =
-              httpClientBuilder.setDefaultCredentialsProvider(key.getProxyCredentialsProvider());
+        HttpHost proxy = new HttpHost(key.getProxyHost(), key.getProxyPort());
+        SnowflakeMutableProxyRoutePlanner sdkProxyRoutePlanner =
+            httpClientRoutePlanner.computeIfAbsent(
+                key,
+                k ->
+                    new SnowflakeMutableProxyRoutePlanner(
+                        key.getProxyHost(), key.getProxyPort(), key.getNonProxyHosts()));
+        httpClientBuilder = httpClientBuilder.setProxy(proxy).setRoutePlanner(sdkProxyRoutePlanner);
+        if (!Strings.isNullOrEmpty(key.getProxyUser())
+            && !Strings.isNullOrEmpty(key.getProxyPassword())) {
+          Credentials credentials =
+              new UsernamePasswordCredentials(key.getProxyUser(), key.getProxyPassword());
+          AuthScope authScope = new AuthScope(key.getProxyHost(), key.getProxyPort());
+          CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
+          credentialsProvider.setCredentials(authScope, credentials);
+          httpClientBuilder = httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider);
         }
-        httpClientBuilder =
-            httpClientBuilder.setProxy(key.getProxy()).setRoutePlanner(key.getProxyRoutePlanner());
       }
       if (downloadCompressed) {
         httpClientBuilder = httpClientBuilder.disableContentCompression();
@@ -287,6 +308,16 @@ public class HttpUtil {
       return httpClientBuilder.build();
     } catch (NoSuchAlgorithmException | KeyManagementException ex) {
       throw new SSLInitializationException(ex.getMessage(), ex);
+    }
+  }
+
+  public static void updateRoutePlanner(HttpClientSettingsKey key) {
+    if (httpClientRoutePlanner.containsKey(key)
+        && !httpClientRoutePlanner
+            .get(key)
+            .getNonProxyHosts()
+            .equalsIgnoreCase(key.getNonProxyHosts())) {
+      httpClientRoutePlanner.get(key).setNonProxyHosts(key.getNonProxyHosts());
     }
   }
 
@@ -320,6 +351,7 @@ public class HttpUtil {
    */
   public static CloseableHttpClient initHttpClientWithoutDecompression(
       HttpClientSettingsKey key, File ocspCacheFile) {
+    updateRoutePlanner(key);
     return httpClientWithoutDecompression.computeIfAbsent(
         key, k -> buildHttpClient(key, ocspCacheFile, true));
   }
@@ -332,19 +364,8 @@ public class HttpUtil {
    * @return HttpClient object shared across all connections
    */
   public static CloseableHttpClient initHttpClient(HttpClientSettingsKey key, File ocspCacheFile) {
+    updateRoutePlanner(key);
     return httpClient.computeIfAbsent(key, k -> buildHttpClient(key, ocspCacheFile, false));
-  }
-
-  /**
-   * Remove instance of HttpClient so as to reduce size of hashmap after it's no longer in use
-   *
-   * @param key the key to the given HttpClient instance
-   */
-  public static void closeHttpClient(HttpClientSettingsKey key) {
-    if (key != null) {
-      httpClient.remove(key);
-      httpClientWithoutDecompression.remove(key);
-    }
   }
 
   /**

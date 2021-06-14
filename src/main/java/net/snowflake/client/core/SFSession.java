@@ -627,7 +627,6 @@ public class SFSession extends SFBaseSession {
     SessionUtil.closeSession(loginInput);
     closeTelemetryClient();
     getClientInfo().clear();
-    HttpUtil.closeHttpClient(getHttpClientKey());
     isClosed = true;
   }
 

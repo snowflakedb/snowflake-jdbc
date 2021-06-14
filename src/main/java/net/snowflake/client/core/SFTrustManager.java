@@ -7,11 +7,13 @@ package net.snowflake.client.core;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetEnv;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
+import com.amazonaws.http.apache.SdkProxyRoutePlanner;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeType;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.common.base.Strings;
 import com.nimbusds.jose.JWSVerifier;
 import com.nimbusds.jose.crypto.RSASSAVerifier;
 import com.nimbusds.jwt.SignedJWT;
@@ -45,6 +47,10 @@ import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpStatus;
+import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.Credentials;
+import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -53,6 +59,7 @@ import org.apache.http.config.Registry;
 import org.apache.http.config.RegistryBuilder;
 import org.apache.http.conn.socket.ConnectionSocketFactory;
 import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.DefaultRedirectStrategy;
 import org.apache.http.impl.client.HttpClientBuilder;
@@ -581,15 +588,24 @@ public class SFTrustManager extends X509ExtendedTrustManager {
 
     if (proxySettingsKey.usesProxy()) {
       // use the custom proxy properties
-      HttpHost proxy = proxySettingsKey.getProxy();
-      httpClientBuilder =
-          httpClientBuilder
-              .setProxy(proxy)
-              .setRoutePlanner(proxySettingsKey.getProxyRoutePlanner());
-      if (proxySettingsKey.getProxyCredentialsProvider() != null) {
-        httpClientBuilder =
-            httpClientBuilder.setDefaultCredentialsProvider(
-                proxySettingsKey.getProxyCredentialsProvider());
+      HttpHost proxy =
+          new HttpHost(proxySettingsKey.getProxyHost(), proxySettingsKey.getProxyPort());
+      SdkProxyRoutePlanner sdkProxyRoutePlanner =
+          new SdkProxyRoutePlanner(
+              proxySettingsKey.getProxyHost(),
+              proxySettingsKey.getProxyPort(),
+              proxySettingsKey.getNonProxyHosts());
+      httpClientBuilder = httpClientBuilder.setProxy(proxy).setRoutePlanner(sdkProxyRoutePlanner);
+      if (!Strings.isNullOrEmpty(proxySettingsKey.getProxyUser())
+          && !Strings.isNullOrEmpty(proxySettingsKey.getProxyPassword())) {
+        Credentials credentials =
+            new UsernamePasswordCredentials(
+                proxySettingsKey.getProxyUser(), proxySettingsKey.getProxyPassword());
+        AuthScope authScope =
+            new AuthScope(proxySettingsKey.getProxyHost(), proxySettingsKey.getProxyPort());
+        CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
+        credentialsProvider.setCredentials(authScope, credentials);
+        httpClientBuilder = httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider);
       }
     }
     // using the default HTTP client
