@@ -4,6 +4,8 @@
 
 package net.snowflake.client.core;
 
+import com.google.common.base.Strings;
+
 import java.io.Serializable;
 
 /**
@@ -24,11 +26,11 @@ public class HttpClientSettingsKey implements Serializable {
       OCSPMode mode, String host, int port, String nonProxyHosts, String user, String password) {
     this.useProxy = true;
     this.ocspMode = mode != null ? mode : OCSPMode.FAIL_OPEN;
-    this.proxyHost = host.trim();
+    this.proxyHost = !Strings.isNullOrEmpty(host) ? host.trim() : "";
     this.proxyPort = port;
-    this.nonProxyHosts = nonProxyHosts.trim();
-    this.proxyUser = user.trim();
-    this.proxyPassword = password.trim();
+    this.nonProxyHosts = !Strings.isNullOrEmpty(nonProxyHosts) ? nonProxyHosts.trim() : "";
+    this.proxyUser = !Strings.isNullOrEmpty(user) ? user.trim() : "";
+    this.proxyPassword = !Strings.isNullOrEmpty(password)? password.trim() : "";
   }
 
   public HttpClientSettingsKey(OCSPMode mode) {
@@ -85,7 +87,7 @@ public class HttpClientSettingsKey implements Serializable {
   }
 
   /** Be careful of using this! Should only be called when password is later masked. */
-  public String getProxyPassword() {
+  String getProxyPassword() {
     return this.proxyPassword;
   }
 
