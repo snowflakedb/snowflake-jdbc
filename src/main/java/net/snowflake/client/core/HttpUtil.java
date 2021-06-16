@@ -111,7 +111,34 @@ public class HttpUtil {
     }
   }
 
-  public static void setS3ProxyFromProperties(
+  /**
+   * A static function to set S3 proxy params when there is a valid session
+   *
+   * @param key key to HttpClient map containing OCSP and proxy info
+   * @param clientConfig the configuration needed by S3 to set the proxy
+   */
+  public static void setProxyForS3(HttpClientSettingsKey key, ClientConfiguration clientConfig) {
+    if (key != null && key.usesProxy()) {
+      clientConfig.setProxyHost(key.getProxyHost());
+      clientConfig.setProxyPort(key.getProxyPort());
+      clientConfig.setNonProxyHosts(key.getNonProxyHosts());
+      if (!Strings.isNullOrEmpty(key.getProxyUser())
+          && !Strings.isNullOrEmpty(key.getProxyPassword())) {
+        clientConfig.setProxyUsername(key.getProxyUser());
+        clientConfig.setProxyPassword(key.getProxyPassword());
+      }
+    }
+  }
+
+  /**
+   * A static function to set S3 proxy params for sessionless connections using the proxy params
+   * from the StageInfo
+   *
+   * @param proxyProperties proxy properties
+   * @param clientConfig the configuration needed by S3 to set the proxy
+   * @throws SnowflakeSQLException
+   */
+  public static void setSessionlessProxyForS3(
       Properties proxyProperties, ClientConfiguration clientConfig) throws SnowflakeSQLException {
     // do nothing yet
     if (proxyProperties != null
@@ -150,8 +177,16 @@ public class HttpUtil {
     }
   }
 
-  public static void setProxyForAzure(Properties proxyProperties, OperationContext opContext)
-      throws SnowflakeSQLException {
+  /**
+   * A static function to set Azure proxy params for sessionless connections using the proxy params
+   * from the StageInfo
+   *
+   * @param proxyProperties proxy properties
+   * @param opContext the configuration needed by Azure to set the proxy
+   * @throws SnowflakeSQLException
+   */
+  public static void setSessionlessProxyForAzure(
+      Properties proxyProperties, OperationContext opContext) throws SnowflakeSQLException {
     if (proxyProperties != null
         && proxyProperties.size() > 0
         && proxyProperties.getProperty(SFSessionProperty.USE_PROXY.getPropertyKey()) != null) {
@@ -173,6 +208,20 @@ public class HttpUtil {
         Proxy azProxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(proxyHost, proxyPort));
         opContext.setProxy(azProxy);
       }
+    }
+  }
+
+  /**
+   * A static function to set Azure proxy params when there is a valid session
+   *
+   * @param key key to HttpClient map containing OCSP and proxy info
+   * @param opContext the configuration needed by Azure to set the proxy
+   */
+  public static void setProxyForAzure(HttpClientSettingsKey key, OperationContext opContext) {
+    if (key != null && key.usesProxy()) {
+      Proxy azProxy =
+          new Proxy(Proxy.Type.HTTP, new InetSocketAddress(key.getProxyHost(), key.getProxyPort()));
+      opContext.setProxy(azProxy);
     }
   }
 

@@ -4,16 +4,15 @@
 
 package net.snowflake.client.core;
 
+import java.sql.DriverPropertyInfo;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeConnectString;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.jdbc.SnowflakeType;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
-
-import java.sql.DriverPropertyInfo;
-import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Snowflake session implementation base. The methods and fields contained within this class are
@@ -301,12 +300,7 @@ public abstract class SFBaseSession {
           (String) connectionPropertiesMap.get(SFSessionProperty.NON_PROXY_HOSTS);
       ocspAndProxyKey =
           new HttpClientSettingsKey(
-              getOCSPMode(),
-              proxyHost,
-              proxyPort,
-              nonProxyHosts,
-              proxyUser,
-              proxyPassword);
+              getOCSPMode(), proxyHost, proxyPort, nonProxyHosts, proxyUser, proxyPassword);
 
       return ocspAndProxyKey;
     }

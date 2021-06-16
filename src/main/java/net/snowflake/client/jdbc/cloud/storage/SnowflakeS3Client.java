@@ -143,7 +143,11 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
 
     clientConfig.withSignerOverride("AWSS3V4SignerType");
     clientConfig.getApacheHttpClientConfig().setSslSocketFactory(getSSLConnectionSocketFactory());
-    HttpUtil.setS3ProxyFromProperties(proxyProperties, clientConfig);
+    if (session != null) {
+      HttpUtil.setProxyForS3(session.getHttpClientKey(), clientConfig);
+    } else {
+      HttpUtil.setSessionlessProxyForS3(proxyProperties, clientConfig);
+    }
     AmazonS3Builder<?, ?> amazonS3Builder = AmazonS3Client.builder();
     if (encMat != null) {
       byte[] decodedKey = Base64.decode(encMat.getQueryStageMasterKey());

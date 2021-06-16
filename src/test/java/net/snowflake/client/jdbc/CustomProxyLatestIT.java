@@ -137,11 +137,44 @@ public class CustomProxyLatestIT {
     con2.close();
   }
 
+  /**
+   * This tests that the HttpClient object is re-used when no proxies are present.
+   *
+   * @throws SQLException
+   */
+  @Test
+  @Ignore
+  public void testSizeOfHttpClientNoProxies() throws SQLException {
+    Properties props = new Properties();
+    props.put("user", "USER");
+    props.put("password", "PASSWORD");
+    // Set up the first connection and proxy
+    Connection con1 =
+        DriverManager.getConnection(
+            "jdbc:snowflake://s3testaccount.us-east-1.snowflakecomputing.com", props);
+    Statement stmt = con1.createStatement();
+    ResultSet rs = stmt.executeQuery("select 1");
+    rs.next();
+    assertEquals(1, rs.getInt(1));
+    // put in some fake properties that won't get picked up because useProxy=false
+    props.put("useProxy", false);
+    props.put("proxyHost", "localhost");
+    props.put("proxyPort", "8080");
+    Connection con2 =
+        DriverManager.getConnection(
+            "jdbc:snowflake://s3testaccount.us-east-1.snowflakecomputing.com", props);
+    assertEquals(1, HttpUtil.httpClient.size());
+    props.put("ocspFailOpen", "false");
+    Connection con3 =
+        DriverManager.getConnection(
+            "jdbc:snowflake://s3testaccount.us-east-1.snowflakecomputing.com", props);
+    assertEquals(2, HttpUtil.httpClient.size());
+  }
+
   @Test
   @Ignore
   public void testCorrectProxySettingFromConnectionString()
       throws ClassNotFoundException, SQLException {
-
     String connectionUrl =
         "jdbc:snowflake://s3testaccount.us-east-1.snowflakecomputing.com/?tracing=ALL"
             + "&proxyHost=localhost&proxyPort=8080"
@@ -151,7 +184,7 @@ public class CustomProxyLatestIT {
 
     connectionUrl =
         "jdbc:snowflake://s3testaccount.us-east-1.snowflakecomputing.com/?tracing=ALL"
-            + "&proxyHost=localhost&proxyPort=3128"
+            + "&proxyHost=localhost&proxyPort=8080"
             + "&proxyUser=testuser1&proxyPassword=test"
             + "&useProxy=true";
     // should finish correctly
@@ -302,7 +335,7 @@ public class CustomProxyLatestIT {
       throws ClassNotFoundException, SQLException {
     String connectionUrl =
         "jdbc:snowflake://aztestaccount.east-us-2.azure.snowflakecomputing.com/?tracing=ALL"
-            + "&proxyHost=localhost&proxyPort=3128"
+            + "&proxyHost=localhost&proxyPort=8080"
             + "&proxyUser=testuser1&proxyPassword=test"
             + "&useProxy=true";
     runAzureProxyConnection(connectionUrl, false);
@@ -418,7 +451,7 @@ public class CustomProxyLatestIT {
     if (usesProperties) {
       _connectionProperties.put("useProxy", true);
       _connectionProperties.put("proxyHost", "localhost");
-      _connectionProperties.put("proxyPort", "3128");
+      _connectionProperties.put("proxyPort", "8080");
       _connectionProperties.put("proxyUser", "testuser1");
       _connectionProperties.put("proxyPassword", "test");
     }
