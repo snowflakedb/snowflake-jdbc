@@ -37,11 +37,11 @@ public class HttpClientSettingsKey implements Serializable {
   }
 
   @Override
-  public boolean equals(final Object O) {
-    if (O instanceof HttpClientSettingsKey) {
-      HttpClientSettingsKey comparisonKey = (HttpClientSettingsKey) O;
+  public boolean equals(final Object obj) {
+    if (obj instanceof HttpClientSettingsKey) {
+      HttpClientSettingsKey comparisonKey = (HttpClientSettingsKey) obj;
       if (comparisonKey.ocspMode.getValue() == this.ocspMode.getValue()) {
-        if (!comparisonKey.useProxy) {
+        if (!comparisonKey.useProxy && !this.useProxy) {
           return true;
         } else if (comparisonKey.proxyHost.equalsIgnoreCase(this.proxyHost)
             && comparisonKey.proxyPort == this.proxyPort
