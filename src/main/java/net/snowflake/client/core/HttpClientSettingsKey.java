@@ -5,7 +5,6 @@
 package net.snowflake.client.core;
 
 import java.io.Serializable;
-import org.apache.http.HttpHost;
 
 /**
  * This class defines all non-static parameters needed to create an HttpClient object. It is used as
@@ -92,10 +91,5 @@ public class HttpClientSettingsKey implements Serializable {
 
   public String getNonProxyHosts() {
     return this.nonProxyHosts;
-  }
-
-  public HttpHost getProxy() {
-    HttpHost proxy = new HttpHost(this.proxyHost, this.proxyPort);
-    return proxy;
   }
 }

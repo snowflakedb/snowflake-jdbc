@@ -998,8 +998,6 @@ public class SnowflakeResultSetSerializableV1
     // Setup proxy info if necessary
     this.httpClientKey = SnowflakeUtil.convertProxyPropertiesToHttpClientKey(ocspMode, info);
 
-    // TODO: add key to map
-
     // Setup transient fields
     setupTransientFields();
 
