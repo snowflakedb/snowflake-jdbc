@@ -163,12 +163,17 @@ public class CustomProxyLatestIT {
     Connection con2 =
         DriverManager.getConnection(
             "jdbc:snowflake://s3testaccount.us-east-1.snowflakecomputing.com", props);
+    // Assert that the HttpClient table has only 1 entry for both non-proxy entries
     assertEquals(1, HttpUtil.httpClient.size());
     props.put("ocspFailOpen", "false");
     Connection con3 =
         DriverManager.getConnection(
             "jdbc:snowflake://s3testaccount.us-east-1.snowflakecomputing.com", props);
+    // Table should grow in size by 1 when OCSP mode changes
     assertEquals(2, HttpUtil.httpClient.size());
+    con1.close();
+    con2.close();
+    con3.close();
   }
 
   @Test
