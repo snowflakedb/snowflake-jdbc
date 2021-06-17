@@ -5,6 +5,7 @@ package net.snowflake.client.jdbc.cloud.storage;
 
 import com.amazonaws.ClientConfiguration;
 import java.util.Map;
+import java.util.Properties;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFSession;
@@ -63,6 +64,7 @@ public class StorageClientFactory {
             stage.getCredentials(),
             parallel,
             encMat,
+            stage.getProxyProperties(),
             stage.getRegion(),
             stage.getEndPoint(),
             stage.getIsClientSideEncrypted(),
@@ -102,6 +104,7 @@ public class StorageClientFactory {
       Map<?, ?> stageCredentials,
       int parallel,
       RemoteStoreFileEncryptionMaterial encMat,
+      Properties proxyProperties,
       String stageRegion,
       String stageEndPoint,
       boolean isClientSideEncrypted,
@@ -133,6 +136,7 @@ public class StorageClientFactory {
               stageCredentials,
               clientConfig,
               encMat,
+              proxyProperties,
               stageRegion,
               stageEndPoint,
               isClientSideEncrypted,

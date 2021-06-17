@@ -22,7 +22,7 @@ import org.junit.rules.TemporaryFolder;
 import org.mockito.MockedStatic;
 
 @Category(TestCategoryCore.class)
-public class SFTrustManagerMockitoMockIT {
+public class SFTrustManagerMockitoMockLatestIT {
 
   @Rule public TemporaryFolder tmpFolder = new TemporaryFolder();
 
@@ -49,7 +49,8 @@ public class SFTrustManagerMockitoMockIT {
           .when(() -> TrustManagerFactory.getInstance("SunX509"))
           .thenReturn(tested);
 
-      new SFTrustManager(OCSPMode.FAIL_CLOSED, null); // cache file location
+      new SFTrustManager(
+          new HttpClientSettingsKey(OCSPMode.FAIL_CLOSED), null); // cache file location
 
       // The goal is to check if the cache file location is changed to the specified
       // directory, so it doesn't need to do OCSP check in this test.

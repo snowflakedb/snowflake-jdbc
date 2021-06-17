@@ -263,14 +263,17 @@ public class SFTrustManager extends X509ExtendedTrustManager {
   /** OCSP mode */
   private OCSPMode ocspMode;
 
+  private static HttpClientSettingsKey proxySettingsKey;
+
   /**
    * Constructor with the cache file. If not specified, the default cachefile is used.
    *
    * @param ocspMode OCSP mode
    * @param cacheFile cache file.
    */
-  SFTrustManager(OCSPMode ocspMode, File cacheFile) {
-    this.ocspMode = ocspMode;
+  SFTrustManager(HttpClientSettingsKey key, File cacheFile) {
+    this.ocspMode = key.getOcspMode();
+    this.proxySettingsKey = key;
     this.trustManager = getTrustManager(KeyManagerFactory.getDefaultAlgorithm());
 
     this.exTrustManager =
@@ -583,23 +586,28 @@ public class SFTrustManager extends X509ExtendedTrustManager {
             .setRedirectStrategy(new DefaultRedirectStrategy())
             .disableCookieManagement();
 
-    if (HttpUtil.useProxy) {
+    if (proxySettingsKey.usesProxy()) {
       // use the custom proxy properties
-      HttpHost proxy = new HttpHost(HttpUtil.proxyHost, HttpUtil.proxyPort);
+      HttpHost proxy =
+          new HttpHost(proxySettingsKey.getProxyHost(), proxySettingsKey.getProxyPort());
       SdkProxyRoutePlanner sdkProxyRoutePlanner =
-          new SdkProxyRoutePlanner(HttpUtil.proxyHost, HttpUtil.proxyPort, HttpUtil.nonProxyHosts);
+          new SdkProxyRoutePlanner(
+              proxySettingsKey.getProxyHost(),
+              proxySettingsKey.getProxyPort(),
+              proxySettingsKey.getNonProxyHosts());
       httpClientBuilder = httpClientBuilder.setProxy(proxy).setRoutePlanner(sdkProxyRoutePlanner);
-      if (!Strings.isNullOrEmpty(HttpUtil.proxyUser)
-          && !Strings.isNullOrEmpty(HttpUtil.proxyPassword)) {
+      if (!Strings.isNullOrEmpty(proxySettingsKey.getProxyUser())
+          && !Strings.isNullOrEmpty(proxySettingsKey.getProxyPassword())) {
         Credentials credentials =
-            new UsernamePasswordCredentials(HttpUtil.proxyUser, HttpUtil.proxyPassword);
-        AuthScope authScope = new AuthScope(HttpUtil.proxyHost, HttpUtil.proxyPort);
+            new UsernamePasswordCredentials(
+                proxySettingsKey.getProxyUser(), proxySettingsKey.getProxyPassword());
+        AuthScope authScope =
+            new AuthScope(proxySettingsKey.getProxyHost(), proxySettingsKey.getProxyPort());
         CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
         credentialsProvider.setCredentials(authScope, credentials);
         httpClientBuilder = httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider);
       }
     }
-
     // using the default HTTP client
     return httpClientBuilder.build();
   }

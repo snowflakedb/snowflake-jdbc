@@ -15,6 +15,7 @@ import java.net.PasswordAuthentication;
 import java.sql.*;
 import java.util.Properties;
 import net.snowflake.client.category.TestCategoryOthers;
+import net.snowflake.client.core.HttpUtil;
 import net.snowflake.common.core.SqlState;
 import org.junit.Ignore;
 import org.junit.Rule;
@@ -28,14 +29,157 @@ import org.junit.rules.TemporaryFolder;
 // 3.) Adjust parameters like role, database, schema, etc to match with account accordingly
 
 @Category(TestCategoryOthers.class)
-public class CustomProxyIT {
+public class CustomProxyLatestIT {
   @Rule public TemporaryFolder tmpFolder = new TemporaryFolder();
+
+  /**
+   * Before running this test, change the user and password to appropriate values. Set up 2
+   * different proxy ports that can run simultaneously. This is easy with Burpsuite.
+   *
+   * <p>This tests that separate, successful connections can be made with 2 separate proxies at the
+   * same time.
+   *
+   * @throws SQLException
+   */
+  @Test
+  @Ignore
+  public void test2ProxiesWithSameJVM() throws SQLException {
+    Properties props = new Properties();
+    props.put("user", "USER");
+    props.put("password", "PASSWORD");
+    props.put("useProxy", true);
+    props.put("proxyHost", "localhost");
+    props.put("proxyPort", "8080");
+    // Set up the first connection and proxy
+    Connection con1 =
+        DriverManager.getConnection(
+            "jdbc:snowflake://s3testaccount.us-east-1.snowflakecomputing.com", props);
+    Statement stmt = con1.createStatement();
+    ResultSet rs = stmt.executeQuery("select 1");
+    rs.next();
+    assertEquals(1, rs.getInt(1));
+    // Change the proxy settings for the 2nd connection, but all other properties can be re-used.
+    // Set up the second connection.
+    props.put("proxyPort", "8081");
+    Connection con2 =
+        DriverManager.getConnection(
+            "jdbc:snowflake://aztestaccount.east-us-2.azure.snowflakecomputing.com", props);
+    rs = con2.createStatement().executeQuery("select 2");
+    rs.next();
+    assertEquals(2, rs.getInt(1));
+    // To ensure that the http client map is functioning properly, make a third connection with the
+    // same properties and proxy as the first connection.
+    props.put("proxyPort", "8080");
+    Connection con3 =
+        DriverManager.getConnection(
+            "jdbc:snowflake://s3testaccount.us-east-1.snowflakecomputing.com", props);
+    stmt = con3.createStatement();
+    rs = stmt.executeQuery("select 1");
+    rs.next();
+    assertEquals(1, rs.getInt(1));
+    // Assert that although there are 3 connections, 2 of them (1st and 3rd) use the same httpclient
+    // object in the map. The total map size should be 2 for the 3 connections.
+    assertEquals(2, HttpUtil.httpClient.size());
+    con2.close();
+    con1.close();
+    con3.close();
+  }
+
+  /**
+   * Before running this test, change the user and password to appropriate values. Set up a proxy
+   * with Burpsuite so you can see what POST and GET requests are going through the proxy.
+   *
+   * <p>This tests that the NonProxyHosts field is sucessfully updated for the same HttpClient
+   * object.
+   *
+   * @throws SQLException
+   */
+  @Test
+  @Ignore
+  public void testNonProxyHostAltering() throws SQLException {
+    Properties props = new Properties();
+    props.put("user", "USER");
+    props.put("password", "PASSWORD");
+    props.put("useProxy", true);
+    props.put("proxyHost", "localhost");
+    props.put("proxyPort", "8080");
+    props.put("nonProxyHosts", ".foo.com|.baz.com");
+    // Set up the first connection and proxy
+    Connection con1 =
+        DriverManager.getConnection(
+            "jdbc:snowflake://s3testaccount.us-east-1.snowflakecomputing.com", props);
+    Statement stmt = con1.createStatement();
+    ResultSet rs = stmt.executeQuery("select 1");
+    rs.next();
+    assertEquals(1, rs.getInt(1));
+    // Assert that nonProxyHosts string is correct for initial value
+    HttpUtil.httpClient
+        .entrySet()
+        .forEach((entry) -> assertEquals(".foo.com|.baz.com", entry.getKey().getNonProxyHosts()));
+    // Now make 2nd connection with all the same settings except different nonProxyHosts field
+    props.put("nonProxyHosts", "*.snowflakecomputing.com");
+    // Manually check here that nonProxyHost setting works by checking that nothing else goes
+    // through proxy from this point onward. *.snowflakecomputing.com should ensure that proxy is
+    // skipped.
+    Connection con2 =
+        DriverManager.getConnection(
+            "jdbc:snowflake://s3testaccount.us-east-1.snowflakecomputing.com", props);
+    rs = stmt.executeQuery("select 2");
+    rs.next();
+    assertEquals(2, rs.getInt(1));
+    assertEquals(1, HttpUtil.httpClient.size());
+    // Assert that the entry contains the correct updated value for nonProxyHosts string
+    HttpUtil.httpClient
+        .entrySet()
+        .forEach(
+            (entry) -> assertEquals("*.snowflakecomputing.com", entry.getKey().getNonProxyHosts()));
+    con1.close();
+    con2.close();
+  }
+
+  /**
+   * This tests that the HttpClient object is re-used when no proxies are present.
+   *
+   * @throws SQLException
+   */
+  @Test
+  @Ignore
+  public void testSizeOfHttpClientNoProxies() throws SQLException {
+    Properties props = new Properties();
+    props.put("user", "USER");
+    props.put("password", "PASSWORD");
+    // Set up the first connection and proxy
+    Connection con1 =
+        DriverManager.getConnection(
+            "jdbc:snowflake://s3testaccount.us-east-1.snowflakecomputing.com", props);
+    Statement stmt = con1.createStatement();
+    ResultSet rs = stmt.executeQuery("select 1");
+    rs.next();
+    assertEquals(1, rs.getInt(1));
+    // put in some fake properties that won't get picked up because useProxy=false
+    props.put("useProxy", false);
+    props.put("proxyHost", "localhost");
+    props.put("proxyPort", "8080");
+    Connection con2 =
+        DriverManager.getConnection(
+            "jdbc:snowflake://s3testaccount.us-east-1.snowflakecomputing.com", props);
+    // Assert that the HttpClient table has only 1 entry for both non-proxy entries
+    assertEquals(1, HttpUtil.httpClient.size());
+    props.put("ocspFailOpen", "false");
+    Connection con3 =
+        DriverManager.getConnection(
+            "jdbc:snowflake://s3testaccount.us-east-1.snowflakecomputing.com", props);
+    // Table should grow in size by 1 when OCSP mode changes
+    assertEquals(2, HttpUtil.httpClient.size());
+    con1.close();
+    con2.close();
+    con3.close();
+  }
 
   @Test
   @Ignore
   public void testCorrectProxySettingFromConnectionString()
       throws ClassNotFoundException, SQLException {
-
     String connectionUrl =
         "jdbc:snowflake://s3testaccount.us-east-1.snowflakecomputing.com/?tracing=ALL"
             + "&proxyHost=localhost&proxyPort=8080"
@@ -45,7 +189,7 @@ public class CustomProxyIT {
 
     connectionUrl =
         "jdbc:snowflake://s3testaccount.us-east-1.snowflakecomputing.com/?tracing=ALL"
-            + "&proxyHost=localhost&proxyPort=3128"
+            + "&proxyHost=localhost&proxyPort=8080"
             + "&proxyUser=testuser1&proxyPassword=test"
             + "&useProxy=true";
     // should finish correctly
@@ -196,7 +340,7 @@ public class CustomProxyIT {
       throws ClassNotFoundException, SQLException {
     String connectionUrl =
         "jdbc:snowflake://aztestaccount.east-us-2.azure.snowflakecomputing.com/?tracing=ALL"
-            + "&proxyHost=localhost&proxyPort=3128"
+            + "&proxyHost=localhost&proxyPort=8080"
             + "&proxyUser=testuser1&proxyPassword=test"
             + "&useProxy=true";
     runAzureProxyConnection(connectionUrl, false);
@@ -312,7 +456,7 @@ public class CustomProxyIT {
     if (usesProperties) {
       _connectionProperties.put("useProxy", true);
       _connectionProperties.put("proxyHost", "localhost");
-      _connectionProperties.put("proxyPort", "3128");
+      _connectionProperties.put("proxyPort", "8080");
       _connectionProperties.put("proxyUser", "testuser1");
       _connectionProperties.put("proxyPassword", "test");
     }

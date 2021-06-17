@@ -113,6 +113,7 @@ public class SnowflakeResultSetSerializableV1
   // Below fields are from session or statement
   SnowflakeConnectString snowflakeConnectionString;
   OCSPMode ocspMode;
+  HttpClientSettingsKey httpClientKey;
   int networkTimeoutInMilli;
   boolean isResultColumnCaseInsensitive;
   int resultSetType;
@@ -184,6 +185,7 @@ public class SnowflakeResultSetSerializableV1
     // Below fields are from session or statement
     this.snowflakeConnectionString = toCopy.snowflakeConnectionString;
     this.ocspMode = toCopy.ocspMode;
+    this.httpClientKey = toCopy.httpClientKey;
     this.networkTimeoutInMilli = toCopy.networkTimeoutInMilli;
     this.isResultColumnCaseInsensitive = toCopy.isResultColumnCaseInsensitive;
     this.resultSetType = toCopy.resultSetType;
@@ -281,6 +283,10 @@ public class SnowflakeResultSetSerializableV1
 
   public OCSPMode getOCSPMode() {
     return ocspMode;
+  }
+
+  public HttpClientSettingsKey getHttpClientKey() {
+    return httpClientKey;
   }
 
   public String getQrmk() {
@@ -607,6 +613,7 @@ public class SnowflakeResultSetSerializableV1
 
     // setup fields from sessions.
     resultSetSerializable.ocspMode = sfSession.getOCSPMode();
+    resultSetSerializable.httpClientKey = sfSession.getHttpClientKey();
     resultSetSerializable.snowflakeConnectionString = sfSession.getSnowflakeConnectionString();
     resultSetSerializable.networkTimeoutInMilli = sfSession.getNetworkTimeoutInMilli();
     resultSetSerializable.isResultColumnCaseInsensitive = sfSession.isResultColumnCaseInsensitive();
@@ -989,7 +996,7 @@ public class SnowflakeResultSetSerializableV1
    */
   private ResultSet getResultSetInternal(Properties info) throws SQLException {
     // Setup proxy info if necessary
-    SnowflakeUtil.setupProxyPropertiesIfNecessary(info);
+    this.httpClientKey = SnowflakeUtil.convertProxyPropertiesToHttpClientKey(ocspMode, info);
 
     // Setup transient fields
     setupTransientFields();
