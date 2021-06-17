@@ -36,6 +36,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
@@ -72,6 +73,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
   private AmazonS3 amazonClient = null;
   private RemoteStoreFileEncryptionMaterial encMat = null;
   private ClientConfiguration clientConfig = null;
+  private Properties proxyProperties = null;
   private String stageRegion = null;
   private String stageEndPoint = null; // FIPS endpoint, if needed
   private SFBaseSession session = null;
@@ -85,6 +87,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
       Map<?, ?> stageCredentials,
       ClientConfiguration clientConfig,
       RemoteStoreFileEncryptionMaterial encMat,
+      Properties proxyProperties,
       String stageRegion,
       String stageEndPoint,
       boolean isClientSideEncrypted,
@@ -97,6 +100,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
         stageCredentials,
         clientConfig,
         encMat,
+        proxyProperties,
         stageRegion,
         stageEndPoint,
         isClientSideEncrypted,
@@ -107,6 +111,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
       Map<?, ?> stageCredentials,
       ClientConfiguration clientConfig,
       RemoteStoreFileEncryptionMaterial encMat,
+      Properties proxyProperties,
       String stageRegion,
       String stageEndPoint,
       boolean isClientSideEncrypted,
@@ -118,6 +123,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
     this.clientConfig = clientConfig;
     this.stageRegion = stageRegion;
     this.encMat = encMat;
+    this.proxyProperties = proxyProperties;
     this.stageEndPoint = stageEndPoint; // FIPS endpoint, if needed
     this.session = session;
     this.isClientSideEncrypted = isClientSideEncrypted;
@@ -137,7 +143,11 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
 
     clientConfig.withSignerOverride("AWSS3V4SignerType");
     clientConfig.getApacheHttpClientConfig().setSslSocketFactory(getSSLConnectionSocketFactory());
-    HttpUtil.setProxyForS3(clientConfig);
+    if (session != null) {
+      HttpUtil.setProxyForS3(session.getHttpClientKey(), clientConfig);
+    } else {
+      HttpUtil.setSessionlessProxyForS3(proxyProperties, clientConfig);
+    }
     AmazonS3Builder<?, ?> amazonS3Builder = AmazonS3Client.builder();
     if (encMat != null) {
       byte[] decodedKey = Base64.decode(encMat.getQueryStageMasterKey());
@@ -243,6 +253,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
         stageCredentials,
         this.clientConfig,
         this.encMat,
+        this.proxyProperties,
         this.stageRegion,
         this.stageEndPoint,
         this.isClientSideEncrypted,

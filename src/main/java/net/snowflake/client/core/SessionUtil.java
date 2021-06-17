@@ -584,7 +584,7 @@ public class SessionUtil {
 
       String theString =
           HttpUtil.executeGeneralRequest(
-              postRequest, loginInput.getLoginTimeout(), loginInput.getOCSPMode());
+              postRequest, loginInput.getLoginTimeout(), loginInput.getHttpClientSettingsKey());
 
       // general method, same as with data binding
       JsonNode jsonNode = mapper.readTree(theString);
@@ -847,7 +847,7 @@ public class SessionUtil {
 
       String theString =
           HttpUtil.executeGeneralRequest(
-              postRequest, loginInput.getLoginTimeout(), loginInput.getOCSPMode());
+              postRequest, loginInput.getLoginTimeout(), loginInput.getHttpClientSettingsKey());
 
       // general method, same as with data binding
       JsonNode jsonNode = mapper.readTree(theString);
@@ -931,7 +931,7 @@ public class SessionUtil {
 
       String theString =
           HttpUtil.executeGeneralRequest(
-              postRequest, loginInput.getLoginTimeout(), loginInput.getOCSPMode());
+              postRequest, loginInput.getLoginTimeout(), loginInput.getHttpClientSettingsKey());
 
       JsonNode rootNode;
 
@@ -992,7 +992,7 @@ public class SessionUtil {
 
       responseHtml =
           HttpUtil.executeGeneralRequest(
-              httpGet, loginInput.getLoginTimeout(), loginInput.getOCSPMode());
+              httpGet, loginInput.getLoginTimeout(), loginInput.getHttpClientSettingsKey());
 
       // step 5
       String postBackUrl = getPostBackUrlFromHTML(responseHtml);
@@ -1055,7 +1055,11 @@ public class SessionUtil {
 
       final String idpResponse =
           HttpUtil.executeRequestWithoutCookies(
-              postRequest, loginInput.getLoginTimeout(), 0, null, loginInput.getOCSPMode());
+              postRequest,
+              loginInput.getLoginTimeout(),
+              0,
+              null,
+              loginInput.getHttpClientSettingsKey());
 
       logger.debug("user is authenticated against {}.", loginInput.getAuthenticator());
 
@@ -1132,7 +1136,7 @@ public class SessionUtil {
 
       final String gsResponse =
           HttpUtil.executeGeneralRequest(
-              postRequest, loginInput.getLoginTimeout(), loginInput.getOCSPMode());
+              postRequest, loginInput.getLoginTimeout(), loginInput.getHttpClientSettingsKey());
       logger.debug("authenticator-request response: {}", gsResponse);
       JsonNode jsonNode = mapper.readTree(gsResponse);
 

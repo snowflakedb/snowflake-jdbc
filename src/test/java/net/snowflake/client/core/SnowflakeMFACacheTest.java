@@ -101,7 +101,7 @@ public class SnowflakeMFACacheTest {
           .when(
               () ->
                   HttpUtil.executeGeneralRequest(
-                      any(HttpPost.class), anyInt(), any(OCSPMode.class)))
+                      any(HttpPost.class), anyInt(), any(HttpClientSettingsKey.class)))
           .thenAnswer(
               new Answer<String>() {
                 int callCount = 0;
@@ -245,7 +245,7 @@ public class SnowflakeMFACacheTest {
           .when(
               () ->
                   HttpUtil.executeGeneralRequest(
-                      any(HttpPost.class), anyInt(), any(OCSPMode.class)))
+                      any(HttpPost.class), anyInt(), any(HttpClientSettingsKey.class)))
           .thenAnswer(
               new Answer<String>() {
                 int callCount = 0;

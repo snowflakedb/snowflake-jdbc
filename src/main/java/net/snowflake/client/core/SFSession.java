@@ -61,6 +61,7 @@ public class SFSession extends SFBaseSession {
   private String privateKeyFileLocation;
   private String privateKeyPassword;
   private PrivateKey privateKey;
+
   /**
    * Amount of seconds a user is willing to tolerate for establishing the connection with database.
    * In our case, it means the first login request to get authorization token.
@@ -155,7 +156,7 @@ public class SFSession extends SFBaseSession {
       try {
         get.setHeader("Content-type", "application/json");
         get.setHeader("Authorization", "Snowflake Token=\"" + this.sessionToken + "\"");
-        response = HttpUtil.executeGeneralRequest(get, loginTimeout, getOCSPMode());
+        response = HttpUtil.executeGeneralRequest(get, loginTimeout, getHttpClientKey());
         jsonNode = OBJECT_MAPPER.readTree(response);
       } catch (Exception e) {
         throw new SnowflakeSQLLoggedException(
@@ -352,9 +353,6 @@ public class SFSession extends SFBaseSession {
   public synchronized void open() throws SFException, SnowflakeSQLException {
     performSanityCheckOnProperties();
     Map<SFSessionProperty, Object> connectionPropertiesMap = getConnectionPropertiesMap();
-
-    HttpUtil.configureCustomProxyProperties(connectionPropertiesMap);
-
     logger.debug(
         "input: server={}, account={}, user={}, password={}, role={}, "
             + "database={}, schema={}, warehouse={}, validate_default_parameters={}, authenticator={}, ocsp_mode={}, "
@@ -396,6 +394,18 @@ public class SFSession extends SFBaseSession {
             ? "***"
             : "(empty)",
         sessionParametersMap.get(CLIENT_STORE_TEMPORARY_CREDENTIAL));
+
+    HttpClientSettingsKey httpClientSettingsKey = getHttpClientKey();
+    logger.debug(
+        "connection proxy parameters: use_proxy={}, proxy_host={}, proxy_port={}, proxy_user={}, proxy_password={}, non_proxy_hosts={}",
+        httpClientSettingsKey.usesProxy(),
+        httpClientSettingsKey.getProxyHost(),
+        httpClientSettingsKey.getProxyPort(),
+        httpClientSettingsKey.getProxyUser(),
+        !Strings.isNullOrEmpty(httpClientSettingsKey.getProxyPassword()) ? "***" : "(empty)",
+        httpClientSettingsKey.getNonProxyHosts());
+    HttpUtil.logJVMProxyProperties();
+
     // TODO: temporarily hardcode sessionParameter debug info. will be changed in the future
     SFLoginInput loginInput = new SFLoginInput();
 
@@ -427,10 +437,11 @@ public class SFSession extends SFBaseSession {
             (String) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_FILE_PWD))
         .setApplication((String) connectionPropertiesMap.get(SFSessionProperty.APPLICATION))
         .setServiceName(getServiceName())
-        .setOCSPMode(getOCSPMode());
+        .setOCSPMode(getOCSPMode())
+        .setHttpClientSettingsKey(httpClientSettingsKey);
 
     // propagate OCSP mode to SFTrustManager. Note OCSP setting is global on JVM.
-    HttpUtil.initHttpClient(loginInput.getOCSPMode(), null);
+    HttpUtil.initHttpClient(httpClientSettingsKey, null);
     SFLoginOutput loginOutput =
         SessionUtil.openSession(loginInput, connectionPropertiesMap, tracingLevel.toString());
     isClosed = false;
@@ -570,7 +581,8 @@ public class SFSession extends SFBaseSession {
         .setSchemaName(getSchema())
         .setRole(getRole())
         .setWarehouse(getWarehouse())
-        .setOCSPMode(getOCSPMode());
+        .setOCSPMode(getOCSPMode())
+        .setHttpClientSettingsKey(getHttpClientKey());
 
     SFLoginOutput loginOutput = SessionUtil.renewSession(loginInput);
 
@@ -609,7 +621,8 @@ public class SFSession extends SFBaseSession {
         .setServerUrl(getServerUrl())
         .setSessionToken(sessionToken)
         .setLoginTimeout(loginTimeout)
-        .setOCSPMode(getOCSPMode());
+        .setOCSPMode(getOCSPMode())
+        .setHttpClientSettingsKey(getHttpClientKey());
 
     SessionUtil.closeSession(loginInput);
     closeTelemetryClient();
@@ -692,7 +705,7 @@ public class SFSession extends SFBaseSession {
         // per https://support-snowflake.zendesk.com/agent/tickets/6629
         int SF_HEARTBEAT_TIMEOUT = 300;
         String theResponse =
-            HttpUtil.executeGeneralRequest(postRequest, SF_HEARTBEAT_TIMEOUT, getOCSPMode());
+            HttpUtil.executeGeneralRequest(postRequest, SF_HEARTBEAT_TIMEOUT, getHttpClientKey());
 
         JsonNode rootNode;
 
