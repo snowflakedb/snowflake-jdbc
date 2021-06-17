@@ -96,6 +96,7 @@ public abstract class SFBaseSession {
   private boolean useRegionalS3EndpointsForPresignedURL = false;
   // Stores other parameters sent by server
   private final Map<String, Object> otherParameters = new HashMap<>();
+  private HttpClientSettingsKey ocspAndProxyKey = null;
 
   /**
    * Part of the JDBC API, where client applications may fetch a Map of Properties to set various
@@ -271,6 +272,41 @@ public abstract class SFBaseSession {
 
   public Map<SFSessionProperty, Object> getConnectionPropertiesMap() {
     return connectionPropertiesMap;
+  }
+
+  public HttpClientSettingsKey getHttpClientKey() throws SnowflakeSQLException {
+    // if key is already created, return it without making a new one
+    if (ocspAndProxyKey != null) {
+      return ocspAndProxyKey;
+    }
+    // if not, create a new key
+    boolean useProxy = false;
+    if (connectionPropertiesMap.containsKey(SFSessionProperty.USE_PROXY)) {
+      useProxy = (boolean) connectionPropertiesMap.get(SFSessionProperty.USE_PROXY);
+    }
+    if (useProxy) {
+      int proxyPort;
+      try {
+        proxyPort =
+            Integer.parseInt(connectionPropertiesMap.get(SFSessionProperty.PROXY_PORT).toString());
+      } catch (NumberFormatException | NullPointerException e) {
+        throw new SnowflakeSQLException(
+            ErrorCode.INVALID_PROXY_PROPERTIES, "Could not parse port number");
+      }
+      String proxyHost = (String) connectionPropertiesMap.get(SFSessionProperty.PROXY_HOST);
+      String proxyUser = (String) connectionPropertiesMap.get(SFSessionProperty.PROXY_USER);
+      String proxyPassword = (String) connectionPropertiesMap.get(SFSessionProperty.PROXY_PASSWORD);
+      String nonProxyHosts =
+          (String) connectionPropertiesMap.get(SFSessionProperty.NON_PROXY_HOSTS);
+      ocspAndProxyKey =
+          new HttpClientSettingsKey(
+              getOCSPMode(), proxyHost, proxyPort, nonProxyHosts, proxyUser, proxyPassword);
+
+      return ocspAndProxyKey;
+    }
+    // If no proxy is used, no need for setting parameters
+    ocspAndProxyKey = new HttpClientSettingsKey(getOCSPMode());
+    return ocspAndProxyKey;
   }
 
   public OCSPMode getOCSPMode() {

@@ -248,7 +248,7 @@ public class TelemetryClient implements Telemetry {
       String response = null;
 
       try {
-        response = HttpUtil.executeGeneralRequest(post, 1000, this.session.getOCSPMode());
+        response = HttpUtil.executeGeneralRequest(post, 1000, this.session.getHttpClientKey());
       } catch (SnowflakeSQLException e) {
         disableTelemetry(); // when got error like 404 or bad request, disable telemetry in this
         // telemetry instance

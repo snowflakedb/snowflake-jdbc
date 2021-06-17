@@ -20,9 +20,15 @@ import java.io.*;
 import java.net.SocketTimeoutException;
 import java.net.URISyntaxException;
 import java.security.InvalidKeyException;
-import java.util.*;
+import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
-import net.snowflake.client.core.*;
+import net.snowflake.client.core.HttpClientSettingsKey;
+import net.snowflake.client.core.HttpUtil;
+import net.snowflake.client.core.ObjectMapperFactory;
+import net.snowflake.client.core.SFSession;
 import net.snowflake.client.jdbc.*;
 import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
@@ -217,7 +223,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
           logger.debug("Fetching result: {}", scrubPresignedUrl(presignedUrl));
 
           CloseableHttpClient httpClient =
-              HttpUtil.getHttpClientWithoutDecompression(session.getOCSPMode());
+              HttpUtil.getHttpClientWithoutDecompression(session.getHttpClientKey());
 
           // Put the file on storage using the presigned url
           HttpResponse response =
@@ -379,7 +385,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
           logger.debug("Fetching result: {}", scrubPresignedUrl(presignedUrl));
 
           CloseableHttpClient httpClient =
-              HttpUtil.getHttpClientWithoutDecompression(session.getOCSPMode());
+              HttpUtil.getHttpClientWithoutDecompression(session.getHttpClientKey());
 
           // Put the file on storage using the presigned url
           HttpResponse response =
@@ -491,7 +497,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
    * Upload a file (-stream) to remote storage with Pre-signed URL without JDBC session.
    *
    * @param networkTimeoutInMilli Network timeout for the upload
-   * @param ocspMode OCSP mode for the upload.
+   * @param ocspModeAndProxyKey OCSP mode and proxy settings for the upload.
    * @param parallelism number of threads do parallel uploading
    * @param uploadFromStream true if upload source is stream
    * @param remoteStorageLocation s3 bucket name
@@ -507,7 +513,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
   @Override
   public void uploadWithPresignedUrlWithoutConnection(
       int networkTimeoutInMilli,
-      OCSPMode ocspMode,
+      HttpClientSettingsKey ocspModeAndProxyKey,
       int parallelism,
       boolean uploadFromStream,
       String remoteStorageLocation,
@@ -547,7 +553,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
         meta.getUserMetadata(),
         uploadStreamInfo.left,
         presignedUrl,
-        ocspMode);
+        ocspModeAndProxyKey);
     logger.debug("Upload successful");
 
     // close any open streams in the "toClose" list and return
@@ -613,7 +619,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
           meta.getUserMetadata(),
           uploadStreamInfo.left,
           presignedUrl,
-          session.getOCSPMode());
+          session.getHttpClientKey());
       logger.debug("Upload successful");
 
       // close any open streams in the "toClose" list and return
@@ -687,7 +693,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
    * @param metadata Custom metadata to be uploaded with the object
    * @param content File content
    * @param presignedUrl Credential to upload the object
-   * @param ocspMode OCSP mode
+   * @param ocspAndProxyKey OCSP mode and proxy settings for httpclient
    * @throws SnowflakeSQLException
    */
   private void uploadWithPresignedUrl(
@@ -696,7 +702,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
       Map<String, String> metadata,
       InputStream content,
       String presignedUrl,
-      OCSPMode ocspMode)
+      HttpClientSettingsKey ocspAndProxyKey)
       throws SnowflakeSQLException {
     try {
       URIBuilder uriBuilder = new URIBuilder(presignedUrl);
@@ -721,7 +727,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
       InputStreamEntity contentEntity = new InputStreamEntity(content, -1);
       httpRequest.setEntity(contentEntity);
 
-      CloseableHttpClient httpClient = HttpUtil.getHttpClient(ocspMode);
+      CloseableHttpClient httpClient = HttpUtil.getHttpClient(ocspAndProxyKey);
 
       // Put the file on storage using the presigned url
       HttpResponse response =

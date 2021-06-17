@@ -6,7 +6,7 @@ package net.snowflake.client.jdbc.cloud.storage;
 import java.io.File;
 import java.io.InputStream;
 import java.util.Map;
-import net.snowflake.client.core.OCSPMode;
+import net.snowflake.client.core.HttpClientSettingsKey;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.jdbc.*;
 import net.snowflake.common.core.SqlState;
@@ -166,7 +166,7 @@ public interface SnowflakeStorageClient {
    * <p>NOTE: This function is only supported when pre-signed URL is used.
    *
    * @param networkTimeoutInMilli Network timeout for the upload
-   * @param ocspMode OCSP mode for the upload.
+   * @param ocspModeAndProxyKey OCSP mode and proxy settings for the upload.
    * @param parallelism number of threads do parallel uploading
    * @param uploadFromStream true if upload source is stream
    * @param remoteStorageLocation s3 bucket name
@@ -181,7 +181,7 @@ public interface SnowflakeStorageClient {
    */
   default void uploadWithPresignedUrlWithoutConnection(
       int networkTimeoutInMilli,
-      OCSPMode ocspMode,
+      HttpClientSettingsKey ocspModeAndProxyKey,
       int parallelism,
       boolean uploadFromStream,
       String remoteStorageLocation,

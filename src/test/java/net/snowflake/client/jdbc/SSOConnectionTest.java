@@ -217,7 +217,7 @@ public class SSOConnectionTest {
         .when(
             () ->
                 HttpUtil.executeGeneralRequest(
-                    any(HttpPost.class), anyInt(), nullable(OCSPMode.class)))
+                    any(HttpPost.class), anyInt(), nullable(HttpClientSettingsKey.class)))
         .thenAnswer(
             new Answer<String>() {
               int callCount = 0;

@@ -9,7 +9,10 @@ import static net.snowflake.client.core.Constants.MB;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.databind.MappingJsonFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.concurrent.*;
@@ -41,6 +44,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
   private static final long SHUTDOWN_TIME = 3;
   private final SnowflakeConnectString snowflakeConnectionString;
   private final OCSPMode ocspMode;
+  private final HttpClientSettingsKey ocspModeAndProxyKey;
 
   // Session object, used solely for throwing exceptions. CAUTION: MAY BE NULL!
   private SFBaseSession session;
@@ -129,6 +133,10 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
     return ocspMode;
   }
 
+  public HttpClientSettingsKey getHttpClientSettingsKey() {
+    return ocspModeAndProxyKey;
+  }
+
   public ResultStreamProvider getResultStreamProvider() {
     return resultStreamProvider;
   }
@@ -175,6 +183,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
       throws SnowflakeSQLException {
     this.snowflakeConnectionString = resultSetSerializable.getSnowflakeConnectString();
     this.ocspMode = resultSetSerializable.getOCSPMode();
+    this.ocspModeAndProxyKey = resultSetSerializable.getHttpClientKey();
     this.qrmk = resultSetSerializable.getQrmk();
     this.networkTimeoutInMilli = resultSetSerializable.getNetworkTimeoutInMilli();
     this.prefetchSlots = resultSetSerializable.getResultPrefetchThreads() * 2;

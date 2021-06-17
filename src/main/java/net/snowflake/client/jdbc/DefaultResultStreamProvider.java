@@ -114,7 +114,7 @@ public class DefaultResultStreamProvider implements ResultStreamProvider {
     // TODO move this s3 request to HttpUtil class. In theory, upper layer
     // TODO does not need to know about http client
     CloseableHttpClient httpClient =
-        HttpUtil.getHttpClient(context.getChunkDownloader().getOCSPMode());
+        HttpUtil.getHttpClient(context.getChunkDownloader().getHttpClientSettingsKey());
 
     // fetch the result chunk
     HttpResponse response =

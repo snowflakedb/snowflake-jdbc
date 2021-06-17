@@ -8,8 +8,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
+import net.snowflake.client.core.HttpClientSettingsKey;
 import net.snowflake.client.core.HttpUtil;
-import net.snowflake.client.core.OCSPMode;
 import net.snowflake.client.core.SFSessionProperty;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.junit.Test;
@@ -99,7 +99,7 @@ public class ServiceNameTest {
                   HttpUtil.executeGeneralRequest(
                       Mockito.any(HttpRequestBase.class),
                       Mockito.anyInt(),
-                      Mockito.any(OCSPMode.class)))
+                      Mockito.any(HttpClientSettingsKey.class)))
           .thenReturn(responseLogin());
       mockedHttpUtil
           .when(
@@ -111,7 +111,7 @@ public class ServiceNameTest {
                       Mockito.any(AtomicBoolean.class),
                       Mockito.anyBoolean(),
                       Mockito.anyBoolean(),
-                      Mockito.any(OCSPMode.class)))
+                      Mockito.any(HttpClientSettingsKey.class)))
           .thenReturn(responseQuery());
 
       Properties props = new Properties();

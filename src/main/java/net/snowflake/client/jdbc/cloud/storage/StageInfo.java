@@ -2,6 +2,7 @@ package net.snowflake.client.jdbc.cloud.storage;
 
 import java.io.Serializable;
 import java.util.Map;
+import java.util.Properties;
 
 /** Encapsulates all the required stage properties used by GET/PUT for Azure and S3 stages */
 public class StageInfo implements Serializable {
@@ -22,6 +23,7 @@ public class StageInfo implements Serializable {
   private String presignedUrl; // GCS gives us back a presigned URL instead of a cred
   private boolean isClientSideEncrypted; // whether to encrypt/decrypt files on the stage
   private boolean useS3RegionalUrl; // whether to use s3 regional URL (AWS Only)
+  private Properties proxyProperties;
 
   /*
    * Creates a StageInfo object
@@ -166,5 +168,14 @@ public class StageInfo implements Serializable {
 
   private static boolean isSpecified(String arg) {
     return !(arg == null || arg.equalsIgnoreCase(""));
+  }
+
+  public void setProxyProperties(Properties proxyProperties) {
+    this.proxyProperties = proxyProperties;
+  }
+  ;
+
+  public Properties getProxyProperties() {
+    return proxyProperties;
   }
 }

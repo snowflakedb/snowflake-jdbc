@@ -16,6 +16,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 import java.util.zip.GZIPOutputStream;
 import net.snowflake.client.jdbc.SnowflakeDriver;
+import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import org.apache.commons.io.output.ByteArrayOutputStream;
@@ -42,6 +43,7 @@ public class Incident extends Event {
   final String requestId;
   final String timestamp = getUTCNow() + ".000";
   final String uuid = UUID.randomUUID().toString();
+  HttpClientSettingsKey ocspAndProxyKey = null;
 
   /**
    * Submit an exception to GS from a Throwable, this is the only constructor that should be used to
@@ -67,12 +69,18 @@ public class Incident extends Event {
    *
    * @param serverUrl GS's url
    * @param sessionToken GS's session token
+   * @param key OCSP mode and proxy settings
    * @param exc an Throwable we want to report
    * @param jobId job id String
    * @param requestId request id string
    */
   public Incident(
-      String serverUrl, String sessionToken, Throwable exc, String jobId, String requestId) {
+      String serverUrl,
+      String sessionToken,
+      HttpClientSettingsKey key,
+      Throwable exc,
+      String jobId,
+      String requestId) {
     this(
         serverUrl,
         sessionToken,
@@ -81,6 +89,7 @@ public class Incident extends Event {
         exc.getMessage(),
         ExceptionUtils.getStackTrace(exc),
         String.valueOf(exc.getStackTrace()[0]));
+    this.ocspAndProxyKey = key;
   }
 
   /**
@@ -108,6 +117,11 @@ public class Incident extends Event {
         errorMessage,
         errorStackTrace,
         raiser);
+    try {
+      this.ocspAndProxyKey = session.getHttpClientKey();
+    } catch (SnowflakeSQLException e) {
+      // do nothing
+    }
   }
 
   /**
@@ -214,7 +228,13 @@ public class Incident extends Event {
     postRequest.addHeader("content-encoding", "gzip");
 
     try {
-      String response = HttpUtil.executeGeneralRequest(postRequest, 1000, OCSPMode.FAIL_OPEN);
+      String response =
+          HttpUtil.executeGeneralRequest(
+              postRequest,
+              1000,
+              ocspAndProxyKey != null
+                  ? ocspAndProxyKey
+                  : new HttpClientSettingsKey(OCSPMode.FAIL_OPEN));
       logger.debug("Incident registration was successful. Response: '{}'", response);
     } catch (Exception ex) {
       // No much we can do here besides complain.
