@@ -1,3 +1,8 @@
+**JDBC Driver 3.13.5**
+
+- \| SNOW-363333 | Add ability to use Multiple proxies in the same JVM.
+- \| SNOW-364253 | Update  json-smart library from 2.4.2 to 2.4.5 to remove security vulnerability.
+
 **JDBC Driver 3.13.4**
 
 - \| SNOW-330467 | Fixed an issue with the logic for updating the driver parameters.
