@@ -98,10 +98,9 @@ timestamps {
         'Test JDBC 3': { build job: 'RT-LanguageJDBC3-PC',parameters: params
             },
         'Test JDBC 4': { build job: 'RT-LanguageJDBC4-PC',parameters: params
+            },
+        'CodeCoverage JDBC': { build job: 'RT-LanguageJDBC-CodeCoverage-PC',parameters: params
             }
-        //     ,
-        // 'CodeCoverage JDBC': { build job: 'RT-LanguageJDBC-CodeCoverage-PC',parameters: params
-        //     }
       )
     }
   }
