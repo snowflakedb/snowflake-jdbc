@@ -27,21 +27,21 @@ timestamps {
       string(name: 'timeout_value', value: '420'),
       string(name: 'PR_Key', value: scmInfo.GIT_BRANCH.substring(3))
     ]
-    stage('Test') {
-      parallel (
-        'Test JDBC 1': { build job: 'RT-LanguageJDBC1-PC',parameters: params
-            },
-        'Test JDBC 2': { build job: 'RT-LanguageJDBC2-PC',parameters: params
-            },
-        'Test JDBC 3': { build job: 'RT-LanguageJDBC3-PC',parameters: params
-            },
-        'Test JDBC 4': { build job: 'RT-LanguageJDBC4-PC',parameters: params
-            }
-        //     ,
-        // 'CodeCoverage JDBC': { build job: 'RT-LanguageJDBC-CodeCoverage-PC',parameters: params
-        //     }
-      )
-    }
+    // stage('Test') {
+    //   parallel (
+    //     'Test JDBC 1': { build job: 'RT-LanguageJDBC1-PC',parameters: params
+    //         },
+    //     'Test JDBC 2': { build job: 'RT-LanguageJDBC2-PC',parameters: params
+    //         },
+    //     'Test JDBC 3': { build job: 'RT-LanguageJDBC3-PC',parameters: params
+    //         },
+    //     'Test JDBC 4': { build job: 'RT-LanguageJDBC4-PC',parameters: params
+    //         }
+    //     //     ,
+    //     // 'CodeCoverage JDBC': { build job: 'RT-LanguageJDBC-CodeCoverage-PC',parameters: params
+    //     //     }
+    //   )
+    // }
   }
 }
 
