@@ -765,7 +765,7 @@ public class HttpUtil {
    * @param defaultValue default value used
    * @return the value of the system property, else the default value
    */
-  private static int convertSystemPropertyToIntValue(String systemProperty, int defaultValue) {
+  static int convertSystemPropertyToIntValue(String systemProperty, int defaultValue) {
     String systemPropertyValue = systemGetProperty(systemProperty);
     int returnVal = defaultValue;
     if (systemPropertyValue != null) {
