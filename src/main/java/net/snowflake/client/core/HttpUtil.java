@@ -68,6 +68,9 @@ public class HttpUtil {
   static final int DEFAULT_DOWNLOADED_CONDITION_TIMEOUT = 3600; // secs
 
   public static final String JDBC_TTL = "net.snowflake.jdbc.ttl";
+  public static final String JDBC_MAX_CONNECTIONS_PROPERTY = "net.snowflake.jdbc.max_connections";
+  public static final String JDBC_MAX_CONNECTIONS_PER_ROUTE_PROPERTY =
+      "net.snowflake.jdbc.max_connections_per_route";
 
   /**
    * The unique httpClient shared by all connections. This will benefit long- lived clients. Key =
@@ -269,15 +272,7 @@ public class HttpUtil {
     // set timeout so that we don't wait forever.
     // Setup the default configuration for all requests on this client
 
-    String ttlSystemProperty = systemGetProperty(JDBC_TTL);
-    int timeToLive = DEFAULT_TTL;
-    if (ttlSystemProperty != null) {
-      try {
-        timeToLive = Integer.parseInt(ttlSystemProperty);
-      } catch (NumberFormatException ex) {
-        logger.info("Failed to parse the system parameter {}", JDBC_TTL, ttlSystemProperty);
-      }
-    }
+    int timeToLive = convertSystemPropertyToIntValue(JDBC_TTL, DEFAULT_TTL);
     logger.debug("time to live in connection pooling manager: {}", timeToLive);
     if (DefaultRequestConfig == null) {
       DefaultRequestConfig =
@@ -318,8 +313,17 @@ public class HttpUtil {
       connectionManager =
           new PoolingHttpClientConnectionManager(
               registry, null, null, null, timeToLive, TimeUnit.SECONDS);
-      connectionManager.setMaxTotal(DEFAULT_MAX_CONNECTIONS);
-      connectionManager.setDefaultMaxPerRoute(DEFAULT_MAX_CONNECTIONS_PER_ROUTE);
+      int maxConnections =
+          convertSystemPropertyToIntValue(JDBC_MAX_CONNECTIONS_PROPERTY, DEFAULT_MAX_CONNECTIONS);
+      int maxConnectionsPerRoute =
+          convertSystemPropertyToIntValue(
+              JDBC_MAX_CONNECTIONS_PER_ROUTE_PROPERTY, DEFAULT_MAX_CONNECTIONS_PER_ROUTE);
+      logger.debug(
+          "Max connections total in connection pooling manager: {}; max connections per route: {}",
+          maxConnections,
+          maxConnectionsPerRoute);
+      connectionManager.setMaxTotal(maxConnections);
+      connectionManager.setDefaultMaxPerRoute(maxConnectionsPerRoute);
 
       HttpClientBuilder httpClientBuilder =
           HttpClientBuilder.create()
@@ -752,5 +756,28 @@ public class HttpUtil {
     } else {
       logger.debug("http.useProxy={}. JVM proxy not used.", httpUseProxy);
     }
+  }
+
+  /**
+   * Helper function to convert system properties to integers
+   *
+   * @param systemProperty name of the system property
+   * @param defaultValue default value used
+   * @return the value of the system property, else the default value
+   */
+  static int convertSystemPropertyToIntValue(String systemProperty, int defaultValue) {
+    String systemPropertyValue = systemGetProperty(systemProperty);
+    int returnVal = defaultValue;
+    if (systemPropertyValue != null) {
+      try {
+        returnVal = Integer.parseInt(systemPropertyValue);
+      } catch (NumberFormatException ex) {
+        logger.info(
+            "Failed to parse the system parameter {} with value {}",
+            systemProperty,
+            systemPropertyValue);
+      }
+    }
+    return returnVal;
   }
 }
