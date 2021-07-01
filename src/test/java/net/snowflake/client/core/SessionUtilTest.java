@@ -5,6 +5,7 @@
 package net.snowflake.client.core;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertEquals;
 
 import com.fasterxml.jackson.databind.node.BooleanNode;
 import java.util.HashMap;
@@ -58,5 +59,28 @@ public class SessionUtilTest {
     SFBaseSession session = new MockConnectionTest.MockSnowflakeSFSession();
     SessionUtil.updateSfDriverParamValues(parameterMap, session);
     assert (((BooleanNode) session.getOtherParameter("other_parameter")).asBoolean());
+  }
+
+  @Test
+  public void testConvertSystemPropertyToIntValue() {
+    // Test that setting real value works
+    System.setProperty("net.snowflake.jdbc.max_connections", "500");
+    assertEquals(
+        500,
+        HttpUtil.convertSystemPropertyToIntValue(
+            HttpUtil.JDBC_MAX_CONNECTIONS_PROPERTY, HttpUtil.DEFAULT_MAX_CONNECTIONS));
+    // Test that entering a non-int sets the value to the default
+    System.setProperty("net.snowflake.jdbc.max_connections", "notAnInteger");
+    assertEquals(
+        HttpUtil.DEFAULT_MAX_CONNECTIONS,
+        HttpUtil.convertSystemPropertyToIntValue(
+            HttpUtil.JDBC_MAX_CONNECTIONS_PROPERTY, HttpUtil.DEFAULT_MAX_CONNECTIONS));
+    // Test another system property
+    System.setProperty("net.snowflake.jdbc.max_connections_per_route", "30");
+    assertEquals(
+        30,
+        HttpUtil.convertSystemPropertyToIntValue(
+            HttpUtil.JDBC_MAX_CONNECTIONS_PER_ROUTE_PROPERTY,
+            HttpUtil.DEFAULT_MAX_CONNECTIONS_PER_ROUTE));
   }
 }
