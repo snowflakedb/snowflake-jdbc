@@ -198,7 +198,7 @@ public class StatementIT extends BaseJDBCTest {
   public void testExecuteInsert() throws SQLException {
     Connection connection = getConnection();
     Statement statement = connection.createStatement();
-    statement.execute("create or replace tables test_insert(cola number)");
+    statement.execute("create or replace table test_insert(cola number)");
 
     String insertSQL = "insert into test_insert values(2),(3)";
     int updateCount;
