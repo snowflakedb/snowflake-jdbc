@@ -750,6 +750,10 @@ public class SFSession extends SFBaseSession {
     new Incident(this, exc, jobId, requestId).trigger();
   }
 
+  // Do nothing here, for now.
+  @Override
+  public void maybeHandleError(Throwable exc, String SQlState) {}
+
   void injectedDelay() {
 
     AtomicInteger injectedDelay = getInjectedDelay();
