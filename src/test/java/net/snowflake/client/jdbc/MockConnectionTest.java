@@ -12,12 +12,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.sql.*;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import net.snowflake.client.category.TestCategoryConnection;
 import net.snowflake.client.core.*;
-import net.snowflake.client.jdbc.telemetry.NoOpTelemetryClient;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
+import net.snowflake.client.jdbc.telemetry.TelemetryData;
 import net.snowflake.common.core.SnowflakeDateTimeFormat;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -658,15 +660,32 @@ public class MockConnectionTest extends BaseJDBCTest {
     @Override
     public void raiseError(Throwable exc, String jobId, String requestId) {}
 
-    // For this test, we simply write the message to the list of errors seen using a string.
-    @Override
-    public void maybeHandleError(Throwable exc, String SQLState) {
-      errorsEncountered.add(exc.getMessage() + "_" + SQLState);
-    }
-
     @Override
     public Telemetry getTelemetryClient() {
-      return new NoOpTelemetryClient();
+      return new Telemetry() {
+        @Override
+        public void addLogToBatch(TelemetryData log) {}
+
+        @Override
+        public void close() {}
+
+        @Override
+        public Future<Boolean> sendBatchAsync() {
+          return null;
+        }
+
+        @Override
+        public void postProcess(
+            ExecutorService threadExecutor,
+            String queryId,
+            String sqlState,
+            int vendorCode,
+            Throwable ex) {
+          threadExecutor.shutdown();
+          // For this test, we simply write the message to the list of errors seen using a string.
+          errorsEncountered.add(ex.getMessage() + "_" + sqlState);
+        }
+      };
     }
 
     @Override

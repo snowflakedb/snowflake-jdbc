@@ -622,13 +622,6 @@ public abstract class SFBaseSession {
   public abstract void raiseError(Throwable exc, String jobId, String requestId);
 
   /**
-   * An extra hook for additional error handling, if necessary/desired in the SFBaseSession.
-   * Currently, for SFSession, this is a no-op, and this is invoked only by
-   * SnowflakeSQLLoggedException.
-   */
-  public abstract void maybeHandleError(Throwable exc, String SQLState);
-
-  /**
    * Returns the telemetry client, if supported, by this session. If not, should return a
    * NoOpTelemetryClient.
    */
