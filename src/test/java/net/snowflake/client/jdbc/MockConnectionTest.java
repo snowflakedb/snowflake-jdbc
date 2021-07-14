@@ -12,6 +12,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.sql.*;
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import net.snowflake.client.category.TestCategoryConnection;
 import net.snowflake.client.core.*;
 import net.snowflake.client.jdbc.telemetry.NoOpTelemetryClient;
@@ -27,6 +29,17 @@ import org.junit.experimental.categories.Category;
  */
 @Category(TestCategoryConnection.class)
 public class MockConnectionTest extends BaseJDBCTest {
+
+  // Simple pair class container for the error test.
+  private static class Pair {
+    String first;
+    String second;
+
+    Pair(String first, String second) {
+      this.first = first;
+      this.second = second;
+    }
+  }
 
   private static final String testTableName = "test_custom_conn_table";
 
@@ -232,6 +245,63 @@ public class MockConnectionTest extends BaseJDBCTest {
     fakeResultSet.next();
     String val = fakeResultSet.getString(1);
     assertEquals("colA value from the mock connection was not what was expected", "rowOne", val);
+
+    mockConnection.close();
+  }
+
+  @Test
+  public void testErrorHandlingWithLoggedExceptions() throws SQLException, JsonProcessingException {
+    ObjectMapper mapper = new ObjectMapper();
+    JsonNode ignoredResponse = mapper.readTree("{}");
+
+    SFConnectionHandler mockImpl = new MockSnowflakeConnectionImpl(ignoredResponse);
+    Connection mockConnection = initMockConnection(mockImpl);
+
+    MockSnowflakeSFSession mockSession =
+        (MockSnowflakeSFSession) ((SnowflakeConnectionV1) mockConnection).getSFBaseSession();
+
+    List<Pair> errors = new ArrayList<>();
+    // First part is the error code, second is the reason/message
+    // Create a bunch of exceptions with code and message
+    errors.add(new Pair("12345", "message1"));
+    errors.add(new Pair("56789", "message2"));
+    errors.add(new Pair("43", "foo"));
+    errors.add(new Pair("9", "bar"));
+
+    for (Pair err : errors) {
+      try {
+        throw new SnowflakeSQLLoggedException(mockSession, err.first, err.second);
+      } catch (SQLException e) {
+        // Do nothing here, we just don't want this to crash. We will check the errors list later to
+        // verify
+        // handler operation.
+      }
+    }
+
+    // Grab the errors logged by the session. Our session handler code
+    // will simply append the errors to this list.
+    List<String> loggedErrors = mockSession.getErrorsEncountered();
+    assertEquals(loggedErrors.size(), errors.size());
+
+    // Craft what we expect
+    List<String> expectedErrorMessages =
+        errors.stream()
+            .map(
+                err -> {
+                  return err.second + "_" + err.first;
+                })
+            .collect(Collectors.toList());
+
+    List<Pair> zippedList =
+        IntStream.range(0, Math.min(loggedErrors.size(), expectedErrorMessages.size()))
+            .mapToObj(i -> new Pair(expectedErrorMessages.get(i), loggedErrors.get(i)))
+            .collect(Collectors.toList());
+
+    // Check equality of strings in the logged messages.
+    zippedList.forEach(
+        err -> {
+          assertEquals(err.first, err.second);
+        });
 
     mockConnection.close();
   }
@@ -566,6 +636,11 @@ public class MockConnectionTest extends BaseJDBCTest {
   }
 
   public static class MockSnowflakeSFSession extends SFBaseSession {
+    private final List<String> errorsEncountered = new ArrayList<>();
+
+    public List<String> getErrorsEncountered() {
+      return errorsEncountered;
+    }
 
     @Override
     public boolean isSafeToClose() {
@@ -582,6 +657,12 @@ public class MockConnectionTest extends BaseJDBCTest {
 
     @Override
     public void raiseError(Throwable exc, String jobId, String requestId) {}
+
+    // For this test, we simply write the message to the list of errors seen using a string.
+    @Override
+    public void maybeHandleError(Throwable exc, String SQLState) {
+      errorsEncountered.add(exc.getMessage() + "_" + SQLState);
+    }
 
     @Override
     public Telemetry getTelemetryClient() {
