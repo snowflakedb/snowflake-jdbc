@@ -205,6 +205,9 @@ public class SnowflakeSQLLoggedException extends SnowflakeSQLException {
               sendOutOfBandTelemetryMessage(oobValue, ex, TelemetryService.getInstance());
             }
           });
+
+      // Add an extra hook in the telemetry client, if extra error handling is needed
+      ibInstance.postProcess(threadExecutor, queryId, SQLState, vendorCode, ex);
     }
     // In-band is not possible so send OOB telemetry instead
     else {
