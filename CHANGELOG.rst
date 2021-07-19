@@ -1,3 +1,7 @@
+**JDBC Driver 3.13.6**
+
+- \| SNOW-369447 | Make MAX_CONNECTIONS and MAX_CONNECTIONS_PER_ROUTE changeable with jvm parameters. 
+
 **JDBC Driver 3.13.5**
 
 - \| SNOW-363333 | Add ability to use Multiple proxies in the same JVM.
