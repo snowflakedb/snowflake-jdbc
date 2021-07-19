@@ -1058,7 +1058,7 @@ public class SnowflakeResultSetSerializableV1
         throw new SnowflakeSQLLoggedException(
             possibleSession.orElse(/* session = */ null),
             ErrorCode.INTERNAL_ERROR,
-            "Fail to retrieve row count for first arrow chunk: " + ex.getCause());
+            "Fail to retrieve row count for first arrow chunk: " + ex.getMessage());
       } finally {
         if (root != null) {
           root.clear();
