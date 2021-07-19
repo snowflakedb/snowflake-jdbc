@@ -43,7 +43,7 @@
     <tika.version>1.22</tika.version>
     <jackson.version>2.11.0</jackson.version>
     <jacksondatabind.version>2.11.0</jacksondatabind.version>
-    <httpclient.version>4.5.5</httpclient.version>
+    <httpclient.version>4.5.13</httpclient.version>
     <jacoco.version>0.8.4</jacoco.version>
     <jacoco.skip.instrument>true</jacoco.skip.instrument>
     <awssdk.version>1.11.364</awssdk.version>
