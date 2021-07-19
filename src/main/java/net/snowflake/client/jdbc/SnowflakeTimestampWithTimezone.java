@@ -8,6 +8,7 @@ import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.TimeZone;
 
@@ -32,6 +33,24 @@ public class SnowflakeTimestampWithTimezone extends Timestamp {
 
   public SnowflakeTimestampWithTimezone(Timestamp ts) {
     this(ts.getTime(), ts.getNanos(), TimeZone.getTimeZone("UTC"));
+  }
+
+  /**
+   * Gets the timezone.
+   *
+   * @return the timezone.
+   */
+  public TimeZone getTimezone() {
+    return this.timezone;
+  }
+
+  /**
+   * Converts this timestamp to a zoned date time.
+   *
+   * @return the zoned date time corresponding to this timestamp.
+   */
+  public ZonedDateTime toZonedDateTime() {
+    return ZonedDateTime.ofInstant(toInstant(), this.timezone.toZoneId());
   }
 
   /**
