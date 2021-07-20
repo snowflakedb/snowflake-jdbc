@@ -23,5 +23,14 @@ public interface Telemetry {
    */
   Future<Boolean> sendBatchAsync();
 
+  /**
+   * A hook for post-processing after sending telemetry data. Can be used, for example, for
+   * additional error handling.
+   *
+   * @param queryId The query id
+   * @param sqlState The SQL state as defined in net.snowflake.common.core.SqlState
+   * @param vendorCode The vendor code for localized messages
+   * @param ex The throwable that caused this.
+   */
   void postProcess(String queryId, String sqlState, int vendorCode, Throwable ex);
 }
