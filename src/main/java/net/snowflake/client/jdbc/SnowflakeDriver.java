@@ -23,7 +23,7 @@ public class SnowflakeDriver implements Driver {
   static SnowflakeDriver INSTANCE;
 
   public static final Properties EMPTY_PROPERTIES = new Properties();
-  public static String implementVersion = null;
+  public static String implementVersion = "3.13.6";
 
   static int majorVersion = 0;
   static int minorVersion = 0;
@@ -90,11 +90,9 @@ public class SnowflakeDriver implements Driver {
 
   private static void initializeClientVersionFromManifest() {
     /*
-     * Get JDBC version numbers from version.properties in snowflake-jdbc
+     * Get JDBC version numbers from static string in snowflake-jdbc
      */
     try {
-      implementVersion = versionResourceBundleManager.getLocalizedMessage("version");
-
       // parse implementation version major.minor.change
       if (implementVersion != null) {
         String[] versionBreakdown = implementVersion.split("\\.");
@@ -115,10 +113,20 @@ public class SnowflakeDriver implements Driver {
             SqlState.INTERNAL_ERROR,
             ErrorCode.INTERNAL_ERROR.getMessageCode(),
             /*session = */ null,
-            "Snowflake JDBC Version is not set. " + "Ensure version.properties is included.");
+            "Snowflake JDBC Version is not set. "
+                + "Ensure static version string was initialized.");
       }
     } catch (Throwable ex) {
     }
+  }
+
+  /**
+   * For testing purposes only- used to compare that JDBC version in pom.xml matches static string
+   *
+   * @return String with version from pom.xml file
+   */
+  static String getClientVersionStringFromManifest() {
+    return versionResourceBundleManager.getLocalizedMessage("version");
   }
 
   public static boolean isDisableArrowResultFormat() {
