@@ -120,6 +120,15 @@ public class SnowflakeDriver implements Driver {
     }
   }
 
+  /**
+   * For testing purposes only- used to compare that JDBC version in pom.xml matches static string
+   *
+   * @return String with version from pom.xml file
+   */
+  static String getClientVersionStringFromManifest() {
+    return versionResourceBundleManager.getLocalizedMessage("version");
+  }
+
   public static boolean isDisableArrowResultFormat() {
     return disableArrowResultFormat;
   }
