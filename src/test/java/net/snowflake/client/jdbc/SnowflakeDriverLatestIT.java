@@ -3,6 +3,8 @@
  */
 package net.snowflake.client.jdbc;
 
+import static net.snowflake.client.jdbc.SnowflakeDriver.getClientVersionStringFromManifest;
+import static net.snowflake.client.jdbc.SnowflakeDriver.implementVersion;
 import static net.snowflake.client.jdbc.SnowflakeDriverIT.findFile;
 import static net.snowflake.client.jdbc.SnowflakeResultSetSerializableV1.mapper;
 import static org.junit.Assert.*;
@@ -11,10 +13,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import java.io.*;
 import java.nio.channels.FileChannel;
 import java.sql.*;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Properties;
-import java.util.UUID;
+import java.util.*;
 import java.util.zip.GZIPInputStream;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
@@ -65,6 +64,11 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
       inputStream1.close();
       inputStream2.close();
     }
+  }
+
+  @Test
+  public void testStaticVersionMatchesManifest() {
+    assertEquals(implementVersion, getClientVersionStringFromManifest());
   }
 
   @Test
