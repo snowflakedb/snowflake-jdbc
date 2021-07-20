@@ -3,7 +3,6 @@
  */
 package net.snowflake.client.jdbc.telemetry;
 
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
 public interface Telemetry {
@@ -24,10 +23,5 @@ public interface Telemetry {
    */
   Future<Boolean> sendBatchAsync();
 
-  void postProcess(
-      ExecutorService threadExecutor,
-      String queryId,
-      String sqlState,
-      int vendorCode,
-      Throwable ex);
+  void postProcess(String queryId, String sqlState, int vendorCode, Throwable ex);
 }
