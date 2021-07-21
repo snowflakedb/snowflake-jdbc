@@ -12,7 +12,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.sql.*;
 import java.util.*;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -675,13 +674,7 @@ public class MockConnectionTest extends BaseJDBCTest {
         }
 
         @Override
-        public void postProcess(
-            ExecutorService threadExecutor,
-            String queryId,
-            String sqlState,
-            int vendorCode,
-            Throwable ex) {
-          threadExecutor.shutdown();
+        public void postProcess(String queryId, String sqlState, int vendorCode, Throwable ex) {
           // For this test, we simply write the message to the list of errors seen using a string.
           errorsEncountered.add(ex.getMessage() + "_" + sqlState);
         }

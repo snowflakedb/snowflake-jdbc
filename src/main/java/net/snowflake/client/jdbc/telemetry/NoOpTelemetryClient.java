@@ -4,7 +4,6 @@
 package net.snowflake.client.jdbc.telemetry;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
 /** Telemetry client that is doing nothing. Mainly used in testing code */
@@ -21,10 +20,5 @@ public class NoOpTelemetryClient implements Telemetry {
   }
 
   @Override
-  public void postProcess(
-      ExecutorService threadExecutor,
-      String queryId,
-      String sqlState,
-      int vendorCode,
-      Throwable ex) {}
+  public void postProcess(String queryId, String sqlState, int vendorCode, Throwable ex) {}
 }

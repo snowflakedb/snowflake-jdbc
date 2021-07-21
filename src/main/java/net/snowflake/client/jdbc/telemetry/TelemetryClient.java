@@ -11,7 +11,6 @@ import java.rmi.UnexpectedException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.LinkedList;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.ObjectMapperFactory;
@@ -211,12 +210,7 @@ public class TelemetryClient implements Telemetry {
   }
 
   @Override
-  public void postProcess(
-      ExecutorService threadExecutor,
-      String queryId,
-      String sqlState,
-      int vendorCode,
-      Throwable ex) {
+  public void postProcess(String queryId, String sqlState, int vendorCode, Throwable ex) {
     // This is a no-op.
   }
 
