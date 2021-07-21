@@ -187,27 +187,32 @@ public class SnowflakeSQLLoggedException extends SnowflakeSQLException {
       // try  to send in-band data asynchronously
       ExecutorService threadExecutor = Executors.newSingleThreadExecutor();
       Telemetry finalIbInstance = ibInstance;
-      threadExecutor.submit(
-          () -> {
-            boolean inBandSuccess;
-            Future<Boolean> sendInBand = sendInBandTelemetryMessage(ibValue, ex, finalIbInstance);
-            // record whether in band telemetry message sent with boolean value inBandSuccess
-            try {
-              inBandSuccess = sendInBand.get(10, TimeUnit.SECONDS);
-            } catch (Exception e) {
-              inBandSuccess = false;
-            }
-            // In-band failed so send OOB telemetry instead
-            if (!inBandSuccess) {
-              logger.debug(
-                  "In-band telemetry message failed to send. Sending out-of-band message instead");
-              JSONObject oobValue = createOOBValue(queryId, SQLState, vendorCode);
-              sendOutOfBandTelemetryMessage(oobValue, ex, TelemetryService.getInstance());
-            }
-          });
+      try {
+        threadExecutor.submit(
+            () -> {
+              boolean inBandSuccess;
+              Future<Boolean> sendInBand = sendInBandTelemetryMessage(ibValue, ex, finalIbInstance);
+              // record whether in band telemetry message sent with boolean value inBandSuccess
+              try {
+                inBandSuccess = sendInBand.get(10, TimeUnit.SECONDS);
+              } catch (Exception e) {
+                inBandSuccess = false;
+              }
+              // In-band failed so send OOB telemetry instead
+              if (!inBandSuccess) {
+                logger.debug(
+                    "In-band telemetry message failed to send. Sending out-of-band message instead");
+                JSONObject oobValue = createOOBValue(queryId, SQLState, vendorCode);
+                sendOutOfBandTelemetryMessage(oobValue, ex, TelemetryService.getInstance());
+              }
+            });
+      } finally {
+        // Send the shutdown signal to the executor service
+        threadExecutor.shutdown();
 
-      // Add an extra hook in the telemetry client, if extra error handling is needed
-      ibInstance.postProcess(threadExecutor, queryId, SQLState, vendorCode, ex);
+        // Add an extra hook in the telemetry client, if extra error handling is needed
+        ibInstance.postProcess(queryId, SQLState, vendorCode, ex);
+      }
     }
     // In-band is not possible so send OOB telemetry instead
     else {
