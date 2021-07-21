@@ -330,6 +330,19 @@ public class ResultUtil {
   }
 
   /**
+   * Convert a date value into a string
+   *
+   * @param date date will be converted
+   * @param dateFormatter date format
+   * @param timezone timezone that the date should be formatted in
+   * @return date in string
+   */
+  public static String getDateAsString(
+      Date date, SnowflakeDateTimeFormat dateFormatter, TimeZone timezone) {
+    return dateFormatter.format(date, timezone);
+  }
+
+  /**
    * Adjust date for before 1582-10-05
    *
    * @param date date before 1582-10-05

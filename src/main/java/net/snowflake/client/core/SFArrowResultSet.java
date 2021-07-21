@@ -450,6 +450,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     wasNull = converter.isNull(index);
     converter.setSessionTimeZone(timeZone);
     converter.setUseSessionTimezone(useSessionTimezone);
+    converter.setDateFormatter(dateFormatter);
     return converter.toDate(index, tz, resultSetSerializable.getFormatDateWithTimeZone());
   }
 

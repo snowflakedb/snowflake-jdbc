@@ -9,6 +9,7 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.TimeZone;
 import net.snowflake.client.core.SFException;
+import net.snowflake.common.core.SnowflakeDateTimeFormat;
 
 /** Interface to convert from arrow vector values into java data types. */
 public interface ArrowVectorConverter {
@@ -21,6 +22,8 @@ public interface ArrowVectorConverter {
   void setUseSessionTimezone(boolean useSessionTimezone);
 
   void setSessionTimeZone(TimeZone tz);
+
+  void setDateFormatter(SnowflakeDateTimeFormat dateFormatter);
 
   /**
    * Determine whether source value in arrow vector is null value or not

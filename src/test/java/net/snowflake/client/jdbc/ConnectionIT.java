@@ -3,20 +3,11 @@
  */
 package net.snowflake.client.jdbc;
 
-import net.snowflake.client.ConditionalIgnoreRule.ConditionalIgnore;
-import net.snowflake.client.RunningNotOnTestaccount;
-import net.snowflake.client.RunningOnGithubAction;
-import net.snowflake.client.TestUtil;
-import net.snowflake.client.category.TestCategoryConnection;
-import net.snowflake.client.core.SFSession;
-import net.snowflake.common.core.SqlState;
-import org.apache.commons.codec.binary.Base64;
-import org.junit.Assert;
-import org.junit.Ignore;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.rules.TemporaryFolder;
+import static net.snowflake.client.core.SessionUtil.CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.*;
 
 import java.io.*;
 import java.security.*;
@@ -33,12 +24,20 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-
-import static net.snowflake.client.core.SessionUtil.CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY;
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.*;
+import net.snowflake.client.ConditionalIgnoreRule.ConditionalIgnore;
+import net.snowflake.client.RunningNotOnTestaccount;
+import net.snowflake.client.RunningOnGithubAction;
+import net.snowflake.client.TestUtil;
+import net.snowflake.client.category.TestCategoryConnection;
+import net.snowflake.client.core.SFSession;
+import net.snowflake.common.core.SqlState;
+import org.apache.commons.codec.binary.Base64;
+import org.junit.Assert;
+import org.junit.Ignore;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.rules.TemporaryFolder;
 
 /** Connection integration tests */
 @Category(TestCategoryConnection.class)
@@ -64,13 +63,15 @@ public class ConnectionIT extends BaseJDBCTest {
     props.put("schema", "megtestschema");
     props.put("warehouse", "tiny_warehouse");
     props.put("SHOW_EXTERNAL_TABLE_KIND_AS_TABLE", "true");
-    Connection con = DriverManager.getConnection("jdbc:snowflake://s3testaccount.us-east-1.snowflakecomputing.com", props);
+    Connection con =
+        DriverManager.getConnection(
+            "jdbc:snowflake://s3testaccount.us-east-1.snowflakecomputing.com", props);
     Statement statement = con.createStatement();
     statement.execute("alter session set jdbc_query_result_format = 'arrow'");
     // 10000 rows should be enough to force result into multiple chunks
     ResultSet resultSet =
-            statement.executeQuery(
-                    "select seq8(), randstr(1000, random()) from table(generator(rowcount => 10000))");
+        statement.executeQuery(
+            "select seq8(), randstr(1000, random()) from table(generator(rowcount => 10000))");
     int cnt = 0;
     while (resultSet.next()) {
       ++cnt;
@@ -83,7 +84,7 @@ public class ConnectionIT extends BaseJDBCTest {
     Date date1 = Date.valueOf("1994-12-27");
     String baseFormat = "EE MM/dd/YYYY";
     DateFormat formatter = new SimpleDateFormat(baseFormat);
-    //System.out.println(formatter.format(date1));
+    // System.out.println(formatter.format(date1));
 
     String ldtBaseFormat = "YYYY-MM-dd HH:mm:ss.SSS";
     DateTimeFormatter formatter2 = DateTimeFormatter.ofPattern(ldtBaseFormat);
@@ -92,6 +93,18 @@ public class ConnectionIT extends BaseJDBCTest {
     ldtTest.atOffset(ZoneOffset.UTC);
     System.out.println(zdt.format(formatter2));
     System.out.println(ldtTest.format(formatter2));
+  }
+
+  @Test
+  public void testDateFormat() throws SQLException {
+    Connection con = getConnection();
+    Statement statement = con.createStatement();
+    statement.execute("alter session set DATE_OUTPUT_FORMAT='DD-MON-YYYY'");
+    statement.execute("create or replace table datetable (d1 date)");
+    statement.execute("insert into datetable values ('2021-07-21')");
+    ResultSet rs = statement.executeQuery("select * from datetable");
+    rs.next();
+    System.out.println(rs.getDate(1));
   }
 
   @Test

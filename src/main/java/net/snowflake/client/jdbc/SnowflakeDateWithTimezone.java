@@ -5,9 +5,9 @@
 package net.snowflake.client.jdbc;
 
 import java.sql.Date;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.TimeZone;
+import net.snowflake.client.core.ResultUtil;
+import net.snowflake.common.core.SnowflakeDateTimeFormat;
 
 /**
  * Date with toString() overridden to display date values in session timezone. Only relevant for
@@ -18,19 +18,27 @@ public class SnowflakeDateWithTimezone extends Date {
 
   TimeZone timezone = TimeZone.getDefault();
   boolean useSessionTimezone = false;
+  SnowflakeDateTimeFormat dateFormatter = SnowflakeDateTimeFormat.fromSqlFormat("YYYY-MM-DD");
 
-  public SnowflakeDateWithTimezone(long date, TimeZone timezone, boolean useSessionTimezone) {
+  public SnowflakeDateWithTimezone(
+      long date,
+      TimeZone timezone,
+      boolean useSessionTimezone,
+      SnowflakeDateTimeFormat dateFormatter) {
     super(date);
-    this.timezone = timezone;
+    this.timezone = useSessionTimezone ? timezone : TimeZone.getDefault();
     this.useSessionTimezone = useSessionTimezone;
+    this.dateFormatter = dateFormatter;
   }
 
-  public SnowflakeDateWithTimezone(long date) {
+  public SnowflakeDateWithTimezone(long date, SnowflakeDateTimeFormat dateFormatter) {
     super(date);
+    this.dateFormatter = dateFormatter;
   }
 
-  public SnowflakeDateWithTimezone(Date date) {
+  public SnowflakeDateWithTimezone(Date date, SnowflakeDateTimeFormat dateFormatter) {
     super(date.getTime());
+    this.dateFormatter = dateFormatter;
   }
 
   /**
@@ -39,12 +47,6 @@ public class SnowflakeDateWithTimezone extends Date {
    * @return a string representation of the object
    */
   public synchronized String toString() {
-    if (!useSessionTimezone) {
-      return super.toString();
-    }
-    String baseFormat = "yyyy-MM-dd";
-    DateFormat formatter = new SimpleDateFormat(baseFormat);
-    formatter.setTimeZone(this.timezone);
-    return formatter.format(this);
+    return ResultUtil.getDateAsString(this, dateFormatter, timezone);
   }
 }

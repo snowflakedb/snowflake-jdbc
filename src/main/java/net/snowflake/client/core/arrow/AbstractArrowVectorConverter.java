@@ -12,6 +12,7 @@ import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeUtil;
+import net.snowflake.common.core.SnowflakeDateTimeFormat;
 import org.apache.arrow.vector.ValueVector;
 
 /**
@@ -37,6 +38,8 @@ abstract class AbstractArrowVectorConverter implements ArrowVectorConverter {
   protected boolean useSessionTimezone;
 
   protected TimeZone sessionTimeZone;
+
+  protected SnowflakeDateTimeFormat dateFormatter;
 
   /** Field names of the struct vectors used by timestamp */
   public static final String FIELD_NAME_EPOCH = "epoch"; // seconds since epoch
@@ -159,6 +162,11 @@ abstract class AbstractArrowVectorConverter implements ArrowVectorConverter {
   @Override
   public void setSessionTimeZone(TimeZone tz) {
     this.sessionTimeZone = tz;
+  }
+
+  @Override
+  public void setDateFormatter(SnowflakeDateTimeFormat dateFormatter) {
+    this.dateFormatter = dateFormatter;
   }
 
   @Override
