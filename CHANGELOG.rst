@@ -93,7 +93,6 @@
 
 **JDBC Driver 3.12.8**
 
-- \| SNOW-159743 | Unable to return query results on AIX using JDBC driver
 - \| SNOW-164084 | Reverted a fix that broke OOB telemetry for the driver.
 - \| SNOW-163938 | Resolve telemetry response failures in JDBC driver
 - \| SNOW-163587 | DatabaseMetaData getFunctionColumns(null, "%", "%", "%") throws SQL compilation error
