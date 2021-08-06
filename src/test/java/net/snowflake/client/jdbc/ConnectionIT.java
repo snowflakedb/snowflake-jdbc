@@ -905,6 +905,71 @@ public class ConnectionIT extends BaseJDBCTest {
     }
   }
 
+  /**
+   * This is a manual test to check that making connections with the new regionless URL setup
+   * (org-account.snowflake.com) works correctly in the driver. Currently dev/reg do not support
+   * this format so the test must be manually run with a qa account.
+   *
+   * @throws SQLException
+   */
+  @Ignore
+  @Test
+  public void testOrgAccountUrl() throws SQLException {
+    Properties props = new Properties();
+    props.put("user", "admin");
+    props.put("password", "Password1");
+    props.put("role", "accountadmin");
+    props.put("timezone", "UTC");
+    Connection con =
+        DriverManager.getConnection(
+            "jdbc:snowflake://amoghorgurl-keypairauth_test_alias.testdns.snowflakecomputing.com",
+            props);
+    con.createStatement().execute("select 1");
+    con.close();
+  }
+
+  /**
+   * * This is a manual test to check that making connections with the new regionless URL setup
+   * (org-account.snowflake.com) works correctly with key/pair authentication in the driver.
+   * Currently dev/reg do not support this format so the test must be manually run with a qa
+   * account.
+   *
+   * @throws SQLException
+   * @throws NoSuchAlgorithmException
+   */
+  @Ignore
+  @Test
+  public void testOrgAccountUrlWithKeyPair() throws SQLException, NoSuchAlgorithmException {
+
+    String uri =
+        "jdbc:snowflake://amoghorgurl-keypairauth_test_alias.testdns.snowflakecomputing.com";
+    KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
+    SecureRandom random = SecureRandom.getInstance("SHA1PRNG");
+    keyPairGenerator.initialize(2048, random);
+
+    KeyPair keyPair = keyPairGenerator.generateKeyPair();
+    PublicKey publicKey = keyPair.getPublic();
+    PrivateKey privateKey = keyPair.getPrivate();
+
+    Properties props = new Properties();
+    props.put("user", "admin");
+    props.put("password", "Password1");
+    props.put("role", "accountadmin");
+    props.put("timezone", "UTC");
+    Connection connection = DriverManager.getConnection(uri, props);
+    Statement statement = connection.createStatement();
+    String encodePublicKey = Base64.encodeBase64String(publicKey.getEncoded());
+    statement.execute(
+        String.format("alter user %s set rsa_public_key='%s'", "admin", encodePublicKey));
+    connection.close();
+
+    props.remove("password");
+    // test correct private key one
+    props.put("privateKey", privateKey);
+    connection = DriverManager.getConnection(uri, props);
+    connection.close();
+  }
+
   private Properties setCommonConnectionParameters(boolean validateDefaultParameters) {
     Map<String, String> params = getConnectionParameters();
     Properties props = new Properties();
