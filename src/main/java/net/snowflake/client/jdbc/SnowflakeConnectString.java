@@ -122,7 +122,7 @@ public class SnowflakeConnectString implements Serializable {
           account = account.substring(0, account.lastIndexOf('-'));
         }
         if (account.contains("_")) {
-          account.replaceAll("_", "-");
+          account = account.replaceAll("_", "-");
         }
         parameters.put("ACCOUNT", account);
       }
