@@ -9,11 +9,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 
@@ -124,6 +120,9 @@ public class SnowflakeConnectString implements Serializable {
         // If this is a global URL, then extract out the external ID part
         if (host.contains(".global.")) {
           account = account.substring(0, account.lastIndexOf('-'));
+        }
+        if (account.contains("_")) {
+          account = account.replaceAll("_", "-");
         }
         parameters.put("ACCOUNT", account);
       }
