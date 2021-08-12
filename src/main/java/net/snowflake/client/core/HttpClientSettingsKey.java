@@ -20,9 +20,16 @@ public class HttpClientSettingsKey implements Serializable {
   private String nonProxyHosts = "";
   private String proxyUser = "";
   private String proxyPassword = "";
+  private String proxyScheme = "http";
 
   public HttpClientSettingsKey(
-      OCSPMode mode, String host, int port, String nonProxyHosts, String user, String password) {
+      OCSPMode mode,
+      String host,
+      int port,
+      String nonProxyHosts,
+      String user,
+      String password,
+      String scheme) {
     this.useProxy = true;
     this.ocspMode = mode != null ? mode : OCSPMode.FAIL_OPEN;
     this.proxyHost = !Strings.isNullOrEmpty(host) ? host.trim() : "";
@@ -30,6 +37,7 @@ public class HttpClientSettingsKey implements Serializable {
     this.nonProxyHosts = !Strings.isNullOrEmpty(nonProxyHosts) ? nonProxyHosts.trim() : "";
     this.proxyUser = !Strings.isNullOrEmpty(user) ? user.trim() : "";
     this.proxyPassword = !Strings.isNullOrEmpty(password) ? password.trim() : "";
+    this.proxyScheme = !Strings.isNullOrEmpty(scheme) ? scheme.trim() : "http";
   }
 
   public HttpClientSettingsKey(OCSPMode mode) {
@@ -47,7 +55,8 @@ public class HttpClientSettingsKey implements Serializable {
         } else if (comparisonKey.proxyHost.equalsIgnoreCase(this.proxyHost)
             && comparisonKey.proxyPort == this.proxyPort
             && comparisonKey.proxyUser.equalsIgnoreCase(this.proxyUser)
-            && comparisonKey.proxyPassword.equalsIgnoreCase(this.proxyPassword)) {
+            && comparisonKey.proxyPassword.equalsIgnoreCase(this.proxyPassword)
+            && comparisonKey.proxyScheme.equalsIgnoreCase(this.proxyScheme)) {
           // update nonProxyHost if changed
           if (!this.nonProxyHosts.equalsIgnoreCase(comparisonKey.nonProxyHosts)) {
             comparisonKey.nonProxyHosts = this.nonProxyHosts;
@@ -62,7 +71,8 @@ public class HttpClientSettingsKey implements Serializable {
   @Override
   public int hashCode() {
     return this.ocspMode.getValue()
-        + (this.proxyHost + this.proxyPort + this.proxyUser + this.proxyPassword).hashCode();
+        + (this.proxyHost + this.proxyPort + this.proxyUser + this.proxyPassword + this.proxyScheme)
+            .hashCode();
   }
 
   public OCSPMode getOcspMode() {
@@ -92,5 +102,9 @@ public class HttpClientSettingsKey implements Serializable {
 
   public String getNonProxyHosts() {
     return this.nonProxyHosts;
+  }
+
+  public String getProxyScheme() {
+    return this.proxyScheme;
   }
 }

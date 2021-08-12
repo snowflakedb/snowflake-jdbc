@@ -4,6 +4,11 @@
 
 package net.snowflake.client.core.arrow;
 
+import java.sql.Date;
+import java.sql.Timestamp;
+import java.time.LocalDate;
+import java.util.Calendar;
+import java.util.TimeZone;
 import net.snowflake.client.core.IncidentUtil;
 import net.snowflake.client.core.ResultUtil;
 import net.snowflake.client.core.SFException;
@@ -13,12 +18,6 @@ import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.CalendarCache;
-
-import java.sql.Date;
-import java.sql.Timestamp;
-import java.time.LocalDate;
-import java.util.Calendar;
-import java.util.TimeZone;
 
 /** Result utility methods specifically for Arrow format */
 public class ArrowResultUtil {

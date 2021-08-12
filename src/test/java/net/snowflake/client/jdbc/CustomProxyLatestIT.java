@@ -50,6 +50,7 @@ public class CustomProxyLatestIT {
     props.put("useProxy", true);
     props.put("proxyHost", "localhost");
     props.put("proxyPort", "8080");
+    props.put("tracing", "all");
     // Set up the first connection and proxy
     Connection con1 =
         DriverManager.getConnection(
@@ -83,6 +84,34 @@ public class CustomProxyLatestIT {
     con2.close();
     con1.close();
     con3.close();
+  }
+
+  /**
+   * This requires a TLS proxy connection. This can be done by configuring the squid.conf file (with
+   * squid proxy) and adding certs to the keystore. For info on setup, see
+   * https://snowflakecomputing.atlassian.net/wiki/spaces/EN/pages/65438343/How+to+setup+Proxy+Server+for+Client+tests.
+   *
+   * @throws SQLException
+   */
+  @Test
+  @Ignore
+  public void testTLSIssue() throws SQLException {
+    Properties props = new Properties();
+    props.put("user", "USER");
+    props.put("password", "PASSWORD");
+    props.put("useProxy", true);
+    props.put("proxyHost", "localhost");
+    props.put("proxyPort", "3128");
+    props.put("proxyScheme", "https");
+    props.put("tracing", "all");
+    // Set up the first connection and proxy
+    Connection con1 =
+        DriverManager.getConnection(
+            "jdbc:snowflake://s3testaccount.us-east-1.snowflakecomputing.com", props);
+    Statement stmt = con1.createStatement();
+    ResultSet rs = stmt.executeQuery("select 1");
+    rs.next();
+    assertEquals(1, rs.getInt(1));
   }
 
   /**

@@ -274,13 +274,22 @@ public class HttpUtil {
 
     int timeToLive = convertSystemPropertyToIntValue(JDBC_TTL, DEFAULT_TTL);
     logger.debug("time to live in connection pooling manager: {}", timeToLive);
-    if (DefaultRequestConfig == null) {
-      DefaultRequestConfig =
+
+    HttpHost proxy =
+        key.usesProxy()
+            ? new HttpHost(key.getProxyHost(), key.getProxyPort(), key.getProxyScheme())
+            : null;
+    if (DefaultRequestConfig == null
+        || !(DefaultRequestConfig.getProxy() == null
+            ? proxy == null
+            : DefaultRequestConfig.getProxy().equals(proxy))) {
+      RequestConfig.Builder builder =
           RequestConfig.custom()
               .setConnectTimeout(DEFAULT_CONNECTION_TIMEOUT)
               .setConnectionRequestTimeout(DEFAULT_CONNECTION_TIMEOUT)
-              .setSocketTimeout(DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT)
-              .build();
+              .setSocketTimeout(DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT);
+      if (proxy != null) builder.setProxy(proxy);
+      DefaultRequestConfig = builder.build();
     }
 
     TrustManager[] trustManagers = null;
@@ -327,7 +336,6 @@ public class HttpUtil {
 
       HttpClientBuilder httpClientBuilder =
           HttpClientBuilder.create()
-              .setDefaultRequestConfig(DefaultRequestConfig)
               .setConnectionManager(connectionManager)
               // Support JVM proxy settings
               .useSystemProperties()
@@ -337,7 +345,6 @@ public class HttpUtil {
 
       if (key.usesProxy()) {
         // use the custom proxy properties
-        HttpHost proxy = new HttpHost(key.getProxyHost(), key.getProxyPort());
         SnowflakeMutableProxyRoutePlanner sdkProxyRoutePlanner =
             httpClientRoutePlanner.computeIfAbsent(
                 key,
@@ -355,6 +362,7 @@ public class HttpUtil {
           httpClientBuilder = httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider);
         }
       }
+      httpClientBuilder.setDefaultRequestConfig(DefaultRequestConfig);
       if (downloadCompressed) {
         httpClientBuilder = httpClientBuilder.disableContentCompression();
       }

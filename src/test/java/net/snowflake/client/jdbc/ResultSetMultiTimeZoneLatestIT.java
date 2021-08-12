@@ -1,5 +1,11 @@
 package net.snowflake.client.jdbc;
 
+import static org.junit.Assert.assertEquals;
+
+import java.sql.*;
+import java.sql.Date;
+import java.text.SimpleDateFormat;
+import java.util.*;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryResultSet;
@@ -7,13 +13,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
-
-import java.sql.Date;
-import java.sql.*;
-import java.text.SimpleDateFormat;
-import java.util.*;
-
-import static org.junit.Assert.assertEquals;
 
 /**
  * ResultSet multi timezone tests for the latest JDBC driver. This cannot run for the old driver.
@@ -127,12 +126,11 @@ public class ResultSetMultiTimeZoneLatestIT extends BaseJDBCTest {
     Connection connection = init();
     Statement statement = connection.createStatement();
     statement.execute(
-        "alter session set TIMESTAMP_TYPE_MAPPING='TIMESTAMP_NTZ',"
-            + "TIMEZONE='Europe/London'");
+        "alter session set TIMESTAMP_TYPE_MAPPING='TIMESTAMP_NTZ'," + "TIMEZONE='Europe/London'");
     ResultSet rs =
-            statement.executeQuery(
-                    "select TIMESTAMP '2021-03-14 02:05:00' as timestamp," +
-                            "TIMESTAMP '2021-11-07 02:05:00'");
+        statement.executeQuery(
+            "select TIMESTAMP '2021-03-14 02:05:00' as timestamp,"
+                + "TIMESTAMP '2021-11-07 02:05:00'");
 
     rs.next();
     System.out.println(rs.getTimestamp(1));
