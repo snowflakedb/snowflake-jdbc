@@ -107,10 +107,12 @@ public class HttpUtil {
   }
 
   public static void closeExpiredAndIdleConnections() {
-    synchronized (connectionManager) {
-      logger.debug("connection pool stats: {}", connectionManager.getTotalStats());
-      connectionManager.closeExpiredConnections();
-      connectionManager.closeIdleConnections(DEFAULT_IDLE_CONNECTION_TIMEOUT, TimeUnit.SECONDS);
+    if (connectionManager != null) {
+      synchronized (connectionManager) {
+        logger.debug("connection pool stats: {}", connectionManager.getTotalStats());
+        connectionManager.closeExpiredConnections();
+        connectionManager.closeIdleConnections(DEFAULT_IDLE_CONNECTION_TIMEOUT, TimeUnit.SECONDS);
+      }
     }
   }
 
