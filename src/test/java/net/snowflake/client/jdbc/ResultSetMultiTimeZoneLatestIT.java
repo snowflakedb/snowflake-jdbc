@@ -120,23 +120,6 @@ public class ResultSetMultiTimeZoneLatestIT extends BaseJDBCTest {
     connection.close();
   }
 
-  @Test
-  public void testTimestampNTZWithDaylightSavings() throws SQLException {
-    System.setProperty("user.timezone", "Europe/London");
-    Connection connection = init();
-    Statement statement = connection.createStatement();
-    statement.execute(
-        "alter session set TIMESTAMP_TYPE_MAPPING='TIMESTAMP_NTZ'," + "TIMEZONE='Europe/London'");
-    ResultSet rs =
-        statement.executeQuery(
-            "select TIMESTAMP '2021-03-14 02:05:00' as timestamp,"
-                + "TIMESTAMP '2021-11-07 02:05:00'");
-
-    rs.next();
-    System.out.println(rs.getTimestamp(1));
-    System.out.println(rs.getTimestamp(2));
-  }
-
   /**
    * Tests that formats are correct when JDBC_USE_SESSION_TIMEZONE=true and other related time/date
    * formatting parameters are at their default values
