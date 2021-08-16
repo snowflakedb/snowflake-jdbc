@@ -298,7 +298,7 @@ public abstract class SFBaseSession {
       String proxyPassword = (String) connectionPropertiesMap.get(SFSessionProperty.PROXY_PASSWORD);
       String nonProxyHosts =
           (String) connectionPropertiesMap.get(SFSessionProperty.NON_PROXY_HOSTS);
-      String proxyScheme = (String) connectionPropertiesMap.get(SFSessionProperty.PROXY_SCHEME);
+      String proxyProtocol = (String) connectionPropertiesMap.get(SFSessionProperty.PROXY_PROTOCOL);
       ocspAndProxyKey =
           new HttpClientSettingsKey(
               getOCSPMode(),
@@ -307,7 +307,7 @@ public abstract class SFBaseSession {
               nonProxyHosts,
               proxyUser,
               proxyPassword,
-              proxyScheme);
+              proxyProtocol);
 
       return ocspAndProxyKey;
     }

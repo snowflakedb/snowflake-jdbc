@@ -275,10 +275,16 @@ public class HttpUtil {
     int timeToLive = convertSystemPropertyToIntValue(JDBC_TTL, DEFAULT_TTL);
     logger.debug("time to live in connection pooling manager: {}", timeToLive);
 
+    // Set proxy settings for DefaultRequestConfig. If current proxy settings are the same as for
+    // the last request, keep the current DefaultRequestConfig. If not, build a new
+    // DefaultRequestConfig and set the new proxy settings for it
     HttpHost proxy =
         key.usesProxy()
-            ? new HttpHost(key.getProxyHost(), key.getProxyPort(), key.getProxyScheme())
+            ? new HttpHost(key.getProxyHost(), key.getProxyPort(), key.getProxyProtocol())
             : null;
+    // If defaultrequestconfig is not initialized or its proxy settings do not match current proxy
+    // settings, re-build it (current or old proxy settings could be null, so null check is
+    // included)
     if (DefaultRequestConfig == null
         || !(DefaultRequestConfig.getProxy() == null
             ? proxy == null
@@ -288,6 +294,7 @@ public class HttpUtil {
               .setConnectTimeout(DEFAULT_CONNECTION_TIMEOUT)
               .setConnectionRequestTimeout(DEFAULT_CONNECTION_TIMEOUT)
               .setSocketTimeout(DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT);
+      // only set the proxy settings if they are not null
       if (proxy != null) builder.setProxy(proxy);
       DefaultRequestConfig = builder.build();
     }

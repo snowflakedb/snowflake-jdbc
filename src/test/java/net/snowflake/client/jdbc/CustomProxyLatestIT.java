@@ -102,7 +102,7 @@ public class CustomProxyLatestIT {
     props.put("useProxy", true);
     props.put("proxyHost", "localhost");
     props.put("proxyPort", "3128");
-    props.put("proxyScheme", "https");
+    props.put("proxyProtocol", "https");
     props.put("tracing", "all");
     // Set up the first connection and proxy
     Connection con1 =

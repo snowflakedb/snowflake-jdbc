@@ -20,7 +20,7 @@ public class HttpClientSettingsKey implements Serializable {
   private String nonProxyHosts = "";
   private String proxyUser = "";
   private String proxyPassword = "";
-  private String proxyScheme = "http";
+  private String proxyProtocol = "http";
 
   public HttpClientSettingsKey(
       OCSPMode mode,
@@ -37,7 +37,7 @@ public class HttpClientSettingsKey implements Serializable {
     this.nonProxyHosts = !Strings.isNullOrEmpty(nonProxyHosts) ? nonProxyHosts.trim() : "";
     this.proxyUser = !Strings.isNullOrEmpty(user) ? user.trim() : "";
     this.proxyPassword = !Strings.isNullOrEmpty(password) ? password.trim() : "";
-    this.proxyScheme = !Strings.isNullOrEmpty(scheme) ? scheme.trim() : "http";
+    this.proxyProtocol = !Strings.isNullOrEmpty(scheme) ? scheme.trim() : "http";
   }
 
   public HttpClientSettingsKey(OCSPMode mode) {
@@ -56,7 +56,7 @@ public class HttpClientSettingsKey implements Serializable {
             && comparisonKey.proxyPort == this.proxyPort
             && comparisonKey.proxyUser.equalsIgnoreCase(this.proxyUser)
             && comparisonKey.proxyPassword.equalsIgnoreCase(this.proxyPassword)
-            && comparisonKey.proxyScheme.equalsIgnoreCase(this.proxyScheme)) {
+            && comparisonKey.proxyProtocol.equalsIgnoreCase(this.proxyProtocol)) {
           // update nonProxyHost if changed
           if (!this.nonProxyHosts.equalsIgnoreCase(comparisonKey.nonProxyHosts)) {
             comparisonKey.nonProxyHosts = this.nonProxyHosts;
@@ -71,7 +71,11 @@ public class HttpClientSettingsKey implements Serializable {
   @Override
   public int hashCode() {
     return this.ocspMode.getValue()
-        + (this.proxyHost + this.proxyPort + this.proxyUser + this.proxyPassword + this.proxyScheme)
+        + (this.proxyHost
+                + this.proxyPort
+                + this.proxyUser
+                + this.proxyPassword
+                + this.proxyProtocol)
             .hashCode();
   }
 
@@ -104,7 +108,7 @@ public class HttpClientSettingsKey implements Serializable {
     return this.nonProxyHosts;
   }
 
-  public String getProxyScheme() {
-    return this.proxyScheme;
+  public String getProxyProtocol() {
+    return this.proxyProtocol;
   }
 }
