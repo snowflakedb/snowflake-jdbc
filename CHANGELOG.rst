@@ -1,3 +1,8 @@
+**JDBC Driver 3.13.7**
+
+- \| SNOW-394504 | Fix issue with JDBC rejecting accounts with underscores in them.
+- \| SNOW-373633 | Fix issue with JDBC not loading the version properly in all cases.
+
 **JDBC Driver 3.13.6**
 
 - \| SNOW-369447 | Make MAX_CONNECTIONS and MAX_CONNECTIONS_PER_ROUTE changeable with jvm parameters. 
