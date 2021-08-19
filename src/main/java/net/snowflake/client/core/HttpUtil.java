@@ -4,12 +4,12 @@
 
 package net.snowflake.client.core;
 
-import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetEnv;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 import static org.apache.http.client.config.CookieSpecs.DEFAULT;
 import static org.apache.http.client.config.CookieSpecs.IGNORE_COOKIES;
 
 import com.amazonaws.ClientConfiguration;
+import com.amazonaws.Protocol;
 import com.google.common.base.Strings;
 import com.microsoft.azure.storage.OperationContext;
 import com.snowflake.client.jdbc.SnowflakeDriver;
@@ -122,6 +122,7 @@ public class HttpUtil {
    */
   public static void setProxyForS3(HttpClientSettingsKey key, ClientConfiguration clientConfig) {
     if (key != null && key.usesProxy()) {
+      clientConfig.setProxyProtocol(key.getProxyProtocol());
       clientConfig.setProxyHost(key.getProxyHost());
       clientConfig.setProxyPort(key.getProxyPort());
       clientConfig.setNonProxyHosts(key.getNonProxyHosts());
@@ -169,9 +170,16 @@ public class HttpUtil {
             proxyProperties.getProperty(SFSessionProperty.PROXY_PASSWORD.getPropertyKey());
         String nonProxyHosts =
             proxyProperties.getProperty(SFSessionProperty.NON_PROXY_HOSTS.getPropertyKey());
+        String proxyProtocol =
+            proxyProperties.getProperty(SFSessionProperty.PROXY_PROTOCOL.getPropertyKey());
+        Protocol protocolEnum =
+            (!Strings.isNullOrEmpty(proxyProtocol) && proxyProtocol.equalsIgnoreCase("https"))
+                ? Protocol.HTTPS
+                : Protocol.HTTP;
         clientConfig.setProxyHost(proxyHost);
         clientConfig.setProxyPort(proxyPort);
         clientConfig.setNonProxyHosts(nonProxyHosts);
+        clientConfig.setProxyProtocol(protocolEnum);
         if (!Strings.isNullOrEmpty(proxyUser) && !Strings.isNullOrEmpty(proxyPassword)) {
           clientConfig.setProxyUsername(proxyUser);
           clientConfig.setProxyPassword(proxyPassword);
@@ -280,7 +288,8 @@ public class HttpUtil {
     // DefaultRequestConfig and set the new proxy settings for it
     HttpHost proxy =
         key.usesProxy()
-            ? new HttpHost(key.getProxyHost(), key.getProxyPort(), key.getProxyProtocol())
+            ? new HttpHost(
+                key.getProxyHost(), key.getProxyPort(), key.getProxyProtocol().toString())
             : null;
     // If defaultrequestconfig is not initialized or its proxy settings do not match current proxy
     // settings, re-build it (current or old proxy settings could be null, so null check is
@@ -747,29 +756,6 @@ public class HttpUtil {
         return new Socket(Proxy.NO_PROXY);
       }
       return super.createSocket(ctx);
-    }
-  }
-
-  /** print off JVM proxy parameters if they are in usage */
-  public static void logJVMProxyProperties() {
-    // parse JVM proxy settings. Print them out if JVM proxy is in usage.
-    httpUseProxy = Boolean.parseBoolean(systemGetProperty("http.useProxy"));
-    if (httpUseProxy) {
-      String httpProxyHost = systemGetProperty("http.proxyHost");
-      String httpProxyPort = systemGetProperty("http.proxyPort");
-      String httpsProxyHost = systemGetProperty("https.proxyHost");
-      String httpsProxyPort = systemGetProperty("https.proxyPort");
-      String noProxy = systemGetEnv("NO_PROXY");
-      logger.debug(
-          "http.useProxy={}, http.proxyHost={}, http.proxyPort={}, https.proxyHost={}, https.proxyPort={}, NO_PROXY={}",
-          httpUseProxy,
-          httpProxyHost,
-          httpProxyPort,
-          httpsProxyHost,
-          httpsProxyPort,
-          noProxy);
-    } else {
-      logger.debug("http.useProxy={}. JVM proxy not used.", httpUseProxy);
     }
   }
 

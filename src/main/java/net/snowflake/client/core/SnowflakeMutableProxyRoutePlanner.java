@@ -4,6 +4,7 @@
 
 package net.snowflake.client.core;
 
+import com.amazonaws.Protocol;
 import com.amazonaws.http.apache.SdkProxyRoutePlanner;
 import java.io.Serializable;
 import org.apache.http.HttpException;
@@ -25,7 +26,7 @@ public class SnowflakeMutableProxyRoutePlanner implements HttpRoutePlanner, Seri
   private String nonProxyHosts;
 
   public SnowflakeMutableProxyRoutePlanner(String host, int proxyPort, String nonProxyHosts) {
-    proxyRoutePlanner = new SdkProxyRoutePlanner(host, proxyPort, nonProxyHosts);
+    proxyRoutePlanner = new SdkProxyRoutePlanner(host, proxyPort, Protocol.HTTPS, nonProxyHosts);
     this.host = host;
     this.proxyPort = proxyPort;
     this.nonProxyHosts = nonProxyHosts;
@@ -33,7 +34,7 @@ public class SnowflakeMutableProxyRoutePlanner implements HttpRoutePlanner, Seri
 
   public void setNonProxyHosts(String nonProxyHosts) {
     this.nonProxyHosts = nonProxyHosts;
-    proxyRoutePlanner = new SdkProxyRoutePlanner(host, proxyPort, nonProxyHosts);
+    proxyRoutePlanner = new SdkProxyRoutePlanner(host, proxyPort, Protocol.HTTPS, nonProxyHosts);
   }
 
   public String getNonProxyHosts() {

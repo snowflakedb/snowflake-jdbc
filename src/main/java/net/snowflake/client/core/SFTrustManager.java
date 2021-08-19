@@ -559,12 +559,21 @@ public class SFTrustManager extends X509ExtendedTrustManager {
    * @return HttpClient
    */
   private static CloseableHttpClient getHttpClient(int timeout) {
-    RequestConfig config =
+    RequestConfig.Builder configBuilder =
         RequestConfig.custom()
             .setConnectTimeout(timeout)
             .setConnectionRequestTimeout(timeout)
-            .setSocketTimeout(timeout)
-            .build();
+            .setSocketTimeout(timeout);
+    HttpHost proxy = null;
+    if (proxySettingsKey.usesProxy()) {
+      proxy =
+          new HttpHost(
+              proxySettingsKey.getProxyHost(),
+              proxySettingsKey.getProxyPort(),
+              proxySettingsKey.getProxyProtocol().toString());
+      configBuilder.setProxy(proxy);
+    }
+    RequestConfig config = configBuilder.build();
 
     Registry<ConnectionSocketFactory> registry =
         RegistryBuilder.<ConnectionSocketFactory>create()
@@ -588,12 +597,11 @@ public class SFTrustManager extends X509ExtendedTrustManager {
 
     if (proxySettingsKey.usesProxy()) {
       // use the custom proxy properties
-      HttpHost proxy =
-          new HttpHost(proxySettingsKey.getProxyHost(), proxySettingsKey.getProxyPort());
       SdkProxyRoutePlanner sdkProxyRoutePlanner =
           new SdkProxyRoutePlanner(
               proxySettingsKey.getProxyHost(),
               proxySettingsKey.getProxyPort(),
+              proxySettingsKey.getProxyProtocol(),
               proxySettingsKey.getNonProxyHosts());
       httpClientBuilder = httpClientBuilder.setProxy(proxy).setRoutePlanner(sdkProxyRoutePlanner);
       if (!Strings.isNullOrEmpty(proxySettingsKey.getProxyUser())

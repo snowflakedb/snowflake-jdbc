@@ -4,6 +4,7 @@
 
 package net.snowflake.client.core;
 
+import com.amazonaws.Protocol;
 import com.google.common.base.Strings;
 import java.io.Serializable;
 
@@ -108,7 +109,7 @@ public class HttpClientSettingsKey implements Serializable {
     return this.nonProxyHosts;
   }
 
-  public String getProxyProtocol() {
-    return this.proxyProtocol;
+  public Protocol getProxyProtocol() {
+    return this.proxyProtocol.equalsIgnoreCase("https") ? Protocol.HTTPS : Protocol.HTTP;
   }
 }

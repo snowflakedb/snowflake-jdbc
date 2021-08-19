@@ -50,7 +50,6 @@ public class CustomProxyLatestIT {
     props.put("useProxy", true);
     props.put("proxyHost", "localhost");
     props.put("proxyPort", "8080");
-    props.put("tracing", "all");
     // Set up the first connection and proxy
     Connection con1 =
         DriverManager.getConnection(
@@ -99,12 +98,12 @@ public class CustomProxyLatestIT {
     Properties props = new Properties();
     props.put("user", "USER");
     props.put("password", "PASSWORD");
+    props.put("tracing", "ALL");
     props.put("useProxy", true);
     props.put("proxyHost", "localhost");
     props.put("proxyPort", "3128");
+    // protocol must be specified for https (default is http)
     props.put("proxyProtocol", "https");
-    props.put("tracing", "all");
-    // Set up the first connection and proxy
     Connection con1 =
         DriverManager.getConnection(
             "jdbc:snowflake://s3testaccount.us-east-1.snowflakecomputing.com", props);
@@ -112,6 +111,32 @@ public class CustomProxyLatestIT {
     ResultSet rs = stmt.executeQuery("select 1");
     rs.next();
     assertEquals(1, rs.getInt(1));
+
+    // Test with jvm properties instead
+    props.put("useProxy", false);
+    System.setProperty("http.useProxy", "true");
+    System.setProperty("http.proxyHost", "localhost");
+    System.setProperty("http.proxyPort", "3128");
+    con1 =
+        DriverManager.getConnection(
+            "jdbc:snowflake://s3testaccount.us-east-1.snowflakecomputing.com", props);
+    stmt = con1.createStatement();
+    rs = stmt.executeQuery("select 1");
+    rs.next();
+    assertEquals(1, rs.getInt(1));
+  }
+
+  /** Test TLS issue against S3 client to ensure proxy works with PUT/GET statements */
+  @Test
+  @Ignore
+  public void testTLSIssueWithConnectionStringAgainstS3()
+      throws ClassNotFoundException, SQLException {
+
+    String connectionUrl =
+        "jdbc:snowflake://s3testaccount.us-east-1.snowflakecomputing.com/?tracing=ALL"
+            + "&proxyHost=localhost&proxyPort=3128&useProxy=true&proxyProtocol=https";
+    // should finish correctly
+    runProxyConnection(connectionUrl);
   }
 
   /**
@@ -321,6 +346,10 @@ public class CustomProxyLatestIT {
                 systemGetProperty("http.proxyPassword").toCharArray());
           }
         });
+
+    System.setProperty("http.useProxy", "true");
+    System.setProperty("https.proxyHost", "localhost");
+    System.setProperty("https.proxyPort", "3128");
 
     // SET USER AND PASSWORD FIRST
     String user = "USER";
