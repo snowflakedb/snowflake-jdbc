@@ -9,8 +9,11 @@ import com.google.cloud.storage.Blob;
 import com.microsoft.azure.storage.StorageException;
 import com.microsoft.azure.storage.blob.BlobProperties;
 import com.microsoft.azure.storage.blob.CloudBlob;
+import com.microsoft.azure.storage.blob.CloudBlobContainer;
 import com.microsoft.azure.storage.blob.ListBlobItem;
 import java.net.URISyntaxException;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
 
 /**
  * Storage platform agnostic class that encapsulates remote storage object properties
@@ -18,6 +21,7 @@ import java.net.URISyntaxException;
  * @author lgiakoumakis
  */
 public class StorageObjectSummary {
+  private static final SFLogger logger = SFLoggerFactory.getLogger(StorageObjectSummary.class);
   private String location; // location translates to "bucket" for S3
   private String key;
   private String md5;
@@ -67,6 +71,7 @@ public class StorageObjectSummary {
       throws StorageProviderException {
     String location, key, md5;
     long size;
+    CloudBlobContainer container;
 
     // Retrieve the BLOB properties that we need for the Summary
     // Azure Storage stores metadata inside each BLOB, therefore the listBlobItem
@@ -74,24 +79,24 @@ public class StorageObjectSummary {
     // During the process the Storage Client could fail, hence we need to wrap the
     // get calls in try/catch and handle possible exceptions
     try {
-      location = listBlobItem.getContainer().getName();
-
-      CloudBlob cloudBlob = (CloudBlob) listBlobItem;
-      key = cloudBlob.getName();
-
-      BlobProperties blobProperties = cloudBlob.getProperties();
-      // the content md5 property is not always the actual md5 of the file. But for here, it's only
-      // used for skipping file on PUT command, hense is ok.
-      md5 = convertBase64ToHex(blobProperties.getContentMD5());
-      size = blobProperties.getLength();
+      container = listBlobItem.getContainer();
     } catch (URISyntaxException | StorageException ex) {
       // This should only happen if somehow we got here with and invalid URI (it should never
       // happen)
       // ...or there is a Storage service error. Unlike S3, Azure fetches metadata from the BLOB
       // itself,
-      // and its a lazy operation
+      // and it is a lazy operation
+      logger.debug("Failed to get container from ListBlobItem: {}", ex);
       throw new StorageProviderException(ex);
     }
+    location = container.getName();
+    CloudBlob cloudBlob = (CloudBlob) listBlobItem;
+    key = cloudBlob.getName();
+    BlobProperties blobProperties = cloudBlob.getProperties();
+    // the content md5 property is not always the actual md5 of the file. But for here, it's only
+    // used for skipping file on PUT command, hense is ok.
+    md5 = convertBase64ToHex(blobProperties.getContentMD5());
+    size = blobProperties.getLength();
     return new StorageObjectSummary(location, key, md5, size);
   }
 

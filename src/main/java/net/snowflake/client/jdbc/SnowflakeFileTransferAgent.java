@@ -858,7 +858,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
     // we're uploading or downloading. This call gets our src_location and
     // encryption material, which we'll use for all the subsequent calls to GS
     // for creds for each file. Those calls are made from pushFileToRemoteStore
-    // and pullFileFromRemoteStore if the storage slient requires a presigned
+    // and pullFileFromRemoteStore if the storage client requires a presigned
     // URL.
     JsonNode jsonNode = parseCommandInGS(statement, command);
 
@@ -2318,167 +2318,172 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
         }
       } while (retryCount <= storageClient.getMaxRetries());
 
-      for (StorageObjectSummary obj : objectSummaries) {
-        logger.debug(
-            "Existing object: key={} size={} md5={}", obj.getKey(), obj.getSize(), obj.getMD5());
+      Iterator<StorageObjectSummary> objectSummariesIterator = objectSummaries.iterator();
+      if (objectSummariesIterator != null) {
+        while (objectSummariesIterator.hasNext()) {
+          StorageObjectSummary obj = getNext(objectSummariesIterator);
+          logger.debug(
+              "Existing object: key={} size={} md5={}", obj.getKey(), obj.getSize(), obj.getMD5());
 
-        int idxOfLastFileSep = obj.getKey().lastIndexOf("/");
-        String objFileName = obj.getKey().substring(idxOfLastFileSep + 1);
+          int idxOfLastFileSep = obj.getKey().lastIndexOf("/");
+          String objFileName = obj.getKey().substring(idxOfLastFileSep + 1);
 
-        // get the path to the local file so that we can calculate digest
-        String mappedSrcFile = destFileNameToSrcFileMap.get(objFileName);
+          // get the path to the local file so that we can calculate digest
+          String mappedSrcFile = destFileNameToSrcFileMap.get(objFileName);
 
-        // skip objects that don't have a corresponding file to be uploaded
-        if (mappedSrcFile == null) {
-          continue;
-        }
-
-        logger.debug(
-            "Next compare digest for {} against {} on the remote store",
-            mappedSrcFile,
-            objFileName);
-
-        String localFile = null;
-        final boolean remoteEncrypted;
-
-        try {
-          localFile =
-              (commandType == CommandType.UPLOAD) ? mappedSrcFile : (localLocation + objFileName);
-
-          if (commandType == CommandType.DOWNLOAD && !(new File(localFile)).exists()) {
-            logger.debug("File does not exist locally, will download {}", mappedSrcFile);
+          // skip objects that don't have a corresponding file to be uploaded
+          if (mappedSrcFile == null) {
             continue;
           }
 
-          // if it's an upload and there's already a file existing remotely with the same name, skip
-          // uploading it
-          if (commandType == CommandType.UPLOAD
-              && objFileName.equals(fileMetadataMap.get(mappedSrcFile).destFileName)) {
-            skipFile(mappedSrcFile, objFileName);
-            continue;
-          }
+          logger.debug(
+              "Next compare digest for {} against {} on the remote store",
+              mappedSrcFile,
+              objFileName);
 
-          // Check file size first, if their difference is bigger than the block
-          // size, we don't need to compare digests
-          if (!fileMetadataMap.get(mappedSrcFile).requireCompress
-              && Math.abs(obj.getSize() - (new File(localFile)).length()) > 16) {
-            logger.debug(
-                "Size diff between remote and local, will {} {}",
-                commandType.name().toLowerCase(),
-                mappedSrcFile);
-            continue;
-          }
-
-          // Get object metadata from remote storage
-          //
-          StorageObjectMetadata meta;
+          String localFile = null;
+          final boolean remoteEncrypted;
 
           try {
-            meta = storageClient.getObjectMetadata(obj.getLocation(), obj.getKey());
-          } catch (StorageProviderException spEx) {
-            // SNOW-14521: when file is not found, ok to upload
-            if (spEx.isServiceException404()) {
-              // log it
-              logger.debug(
-                  "File returned from listing but found missing {} when getting its"
-                      + " metadata. Location={}, key={}",
-                  obj.getLocation(),
-                  obj.getKey());
+            localFile =
+                (commandType == CommandType.UPLOAD) ? mappedSrcFile : (localLocation + objFileName);
 
-              // the file is not found, ok to upload
+            if (commandType == CommandType.DOWNLOAD && !(new File(localFile)).exists()) {
+              logger.debug("File does not exist locally, will download {}", mappedSrcFile);
               continue;
             }
 
-            // for any other exception, log an error
-            logger.error("Fetching object metadata encountered exception: {}", spEx.getMessage());
-
-            throw spEx;
-          }
-
-          String objDigest = storageClient.getDigestMetadata(meta);
-
-          remoteEncrypted =
-              MatDesc.parse(meta.getUserMetadata().get(storageClient.getMatdescKey())) != null;
-
-          // calculate the digest hash of the local file
-          InputStream fileStream = null;
-          String hashText = null;
-
-          // Streams (potentially with temp files) to clean up
-          final List<FileBackedOutputStream> fileBackedOutputStreams = new ArrayList<>();
-          try {
-            fileStream = new FileInputStream(localFile);
-            if (fileMetadataMap.get(mappedSrcFile).requireCompress) {
-              logger.debug("Compressing stream for digest check");
-
-              InputStreamWithMetadata res = compressStreamWithGZIP(fileStream, session);
-
-              fileStream = res.fileBackedOutputStream.asByteSource().openStream();
-              fileBackedOutputStreams.add(res.fileBackedOutputStream);
+            // if it's an upload and there's already a file existing remotely with the same name,
+            // skip
+            // uploading it
+            if (commandType == CommandType.UPLOAD
+                && objFileName.equals(fileMetadataMap.get(mappedSrcFile).destFileName)) {
+              skipFile(mappedSrcFile, objFileName);
+              continue;
             }
 
-            // If the remote file has our digest, compute the SHA-256
-            // for the local file
-            // If the remote file does not have our digest but is unencrypted,
-            // we compare the MD5 of the unencrypted local file to the ETag
-            // of the S3 file.
-            // Otherwise (remote file is encrypted, but has no sfc-digest),
-            // no comparison is performed
-            if (objDigest != null) {
-              InputStreamWithMetadata res = computeDigest(fileStream, false);
-              hashText = res.digest;
-              fileBackedOutputStreams.add(res.fileBackedOutputStream);
-
-            } else if (!remoteEncrypted) {
-              hashText = DigestUtils.md5Hex(fileStream);
-            }
-          } finally {
-            if (fileStream != null) {
-              fileStream.close();
+            // Check file size first, if their difference is bigger than the block
+            // size, we don't need to compare digests
+            if (!fileMetadataMap.get(mappedSrcFile).requireCompress
+                && Math.abs(obj.getSize() - (new File(localFile)).length()) > 16) {
+              logger.debug(
+                  "Size diff between remote and local, will {} {}",
+                  commandType.name().toLowerCase(),
+                  mappedSrcFile);
+              continue;
             }
 
-            for (FileBackedOutputStream stream : fileBackedOutputStreams) {
-              if (stream != null) {
-                try {
-                  stream.reset();
-                } catch (IOException ex) {
-                  logger.debug("failed to clean up temp file: {}", ex);
+            // Get object metadata from remote storage
+            //
+            StorageObjectMetadata meta;
+
+            try {
+              meta = storageClient.getObjectMetadata(obj.getLocation(), obj.getKey());
+            } catch (StorageProviderException spEx) {
+              // SNOW-14521: when file is not found, ok to upload
+              if (spEx.isServiceException404()) {
+                // log it
+                logger.debug(
+                    "File returned from listing but found missing {} when getting its"
+                        + " metadata. Location={}, key={}",
+                    obj.getLocation(),
+                    obj.getKey());
+
+                // the file is not found, ok to upload
+                continue;
+              }
+
+              // for any other exception, log an error
+              logger.error("Fetching object metadata encountered exception: {}", spEx.getMessage());
+
+              throw spEx;
+            }
+
+            String objDigest = storageClient.getDigestMetadata(meta);
+
+            remoteEncrypted =
+                MatDesc.parse(meta.getUserMetadata().get(storageClient.getMatdescKey())) != null;
+
+            // calculate the digest hash of the local file
+            InputStream fileStream = null;
+            String hashText = null;
+
+            // Streams (potentially with temp files) to clean up
+            final List<FileBackedOutputStream> fileBackedOutputStreams = new ArrayList<>();
+            try {
+              fileStream = new FileInputStream(localFile);
+              if (fileMetadataMap.get(mappedSrcFile).requireCompress) {
+                logger.debug("Compressing stream for digest check");
+
+                InputStreamWithMetadata res = compressStreamWithGZIP(fileStream, session);
+
+                fileStream = res.fileBackedOutputStream.asByteSource().openStream();
+                fileBackedOutputStreams.add(res.fileBackedOutputStream);
+              }
+
+              // If the remote file has our digest, compute the SHA-256
+              // for the local file
+              // If the remote file does not have our digest but is unencrypted,
+              // we compare the MD5 of the unencrypted local file to the ETag
+              // of the S3 file.
+              // Otherwise (remote file is encrypted, but has no sfc-digest),
+              // no comparison is performed
+              if (objDigest != null) {
+                InputStreamWithMetadata res = computeDigest(fileStream, false);
+                hashText = res.digest;
+                fileBackedOutputStreams.add(res.fileBackedOutputStream);
+
+              } else if (!remoteEncrypted) {
+                hashText = DigestUtils.md5Hex(fileStream);
+              }
+            } finally {
+              if (fileStream != null) {
+                fileStream.close();
+              }
+
+              for (FileBackedOutputStream stream : fileBackedOutputStreams) {
+                if (stream != null) {
+                  try {
+                    stream.reset();
+                  } catch (IOException ex) {
+                    logger.debug("failed to clean up temp file: {}", ex);
+                  }
                 }
               }
             }
+
+            // continue so that we will upload the file
+            if (hashText == null
+                || // remote is encrypted & has no digest
+                (objDigest != null && !hashText.equals(objDigest))
+                || // digest mismatch
+                (objDigest == null && !hashText.equals(obj.getMD5()))) // ETag/MD5 mismatch
+            {
+              logger.debug(
+                  "digest diff between remote store and local, will {} {}, "
+                      + "local digest: {}, remote store md5: {}",
+                  commandType.name().toLowerCase(),
+                  mappedSrcFile,
+                  hashText,
+                  obj.getMD5());
+              continue;
+            }
+          } catch (IOException | NoSuchAlgorithmException ex) {
+            throw new SnowflakeSQLLoggedException(
+                session,
+                SqlState.INTERNAL_ERROR,
+                ErrorCode.INTERNAL_ERROR.getMessageCode(),
+                ex,
+                "Error reading: " + localFile);
           }
 
-          // continue so that we will upload the file
-          if (hashText == null
-              || // remote is encrypted & has no digest
-              (objDigest != null && !hashText.equals(objDigest))
-              || // digest mismatch
-              (objDigest == null && !hashText.equals(obj.getMD5()))) // ETag/MD5 mismatch
-          {
-            logger.debug(
-                "digest diff between remote store and local, will {} {}, "
-                    + "local digest: {}, remote store md5: {}",
-                commandType.name().toLowerCase(),
-                mappedSrcFile,
-                hashText,
-                obj.getMD5());
-            continue;
-          }
-        } catch (IOException | NoSuchAlgorithmException ex) {
-          throw new SnowflakeSQLLoggedException(
-              session,
-              SqlState.INTERNAL_ERROR,
-              ErrorCode.INTERNAL_ERROR.getMessageCode(),
-              ex,
-              "Error reading: " + localFile);
+          logger.debug(
+              "digest same between remote store and local, will not upload {} {}",
+              commandType.name().toLowerCase(),
+              mappedSrcFile);
+
+          skipFile(mappedSrcFile, objFileName);
         }
-
-        logger.debug(
-            "digest same between remote store and local, will not upload {} {}",
-            commandType.name().toLowerCase(),
-            mappedSrcFile);
-
-        skipFile(mappedSrcFile, objFileName);
       }
     } else if (stageInfo.getStageType() == StageInfo.StageType.LOCAL_FS) {
       for (String stageFileName : stageFileNames) {
@@ -2609,6 +2614,37 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
         }
       }
     }
+  }
+
+  /**
+   * Helper function to get next element in the Iterator\<StorageObjectSummary\>. In particular,
+   * this is only needed by Azure because azure_iterator.next() may throw exception. But that's not
+   * the case for AWS and GCP. Note: please check iterator.hasNext() before calling this function.
+   *
+   * @param iterator
+   * @return
+   * @throws SnowflakeSQLException
+   */
+  private StorageObjectSummary getNext(Iterator<StorageObjectSummary> iterator)
+      throws SnowflakeSQLException {
+    StorageObjectSummary res = null;
+    int retryCount = 0;
+    do {
+      try {
+        res = iterator.next();
+      } catch (Exception ex) {
+        logger.debug(
+            "Iterator<StorageObjectSummary>.next() encountered exception: {}", ex.getMessage());
+        // Need to unwrap StorageProviderException since handleStorageException only handle base
+        // cause.
+        if (ex instanceof StorageProviderException) {
+          ex =
+              (Exception) ex.getCause(); // Cause of StorageProviderException is always an Exception
+        }
+        storageClient.handleStorageException(ex, ++retryCount, "next", session, command);
+      }
+    } while (retryCount <= storageClient.getMaxRetries());
+    return res;
   }
 
   private void skipFile(String srcFilePath, String destFileName) {
