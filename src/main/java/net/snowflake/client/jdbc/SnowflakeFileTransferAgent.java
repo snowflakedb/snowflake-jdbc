@@ -2622,7 +2622,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
    * the case for AWS and GCP. Note: please check iterator.hasNext() before calling this function.
    *
    * @param iterator
-   * @return
+   * @return StorageOBjectSummery next element in the iterator.
    * @throws SnowflakeSQLException
    */
   private StorageObjectSummary getNext(Iterator<StorageObjectSummary> iterator)
