@@ -11,6 +11,8 @@ import com.microsoft.azure.storage.blob.BlobProperties;
 import com.microsoft.azure.storage.blob.CloudBlob;
 import com.microsoft.azure.storage.blob.ListBlobItem;
 import java.net.URISyntaxException;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
 
 /**
  * Storage platform agnostic class that encapsulates remote storage object properties
@@ -18,6 +20,7 @@ import java.net.URISyntaxException;
  * @author lgiakoumakis
  */
 public class StorageObjectSummary {
+  private static final SFLogger logger = SFLoggerFactory.getLogger(StorageObjectSummary.class);
   private String location; // location translates to "bucket" for S3
   private String key;
   private String md5;
@@ -90,6 +93,7 @@ public class StorageObjectSummary {
       // ...or there is a Storage service error. Unlike S3, Azure fetches metadata from the BLOB
       // itself,
       // and its a lazy operation
+      logger.debug("Failed to create StorageObjectSummary from Azure ListBlobItem: {}", ex);
       throw new StorageProviderException(ex);
     }
     return new StorageObjectSummary(location, key, md5, size);
