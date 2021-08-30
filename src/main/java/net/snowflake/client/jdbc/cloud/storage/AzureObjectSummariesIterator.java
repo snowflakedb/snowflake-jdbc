@@ -8,6 +8,8 @@ import com.amazonaws.services.kms.model.UnsupportedOperationException;
 import com.microsoft.azure.storage.blob.CloudBlob;
 import com.microsoft.azure.storage.blob.ListBlobItem;
 import java.util.Iterator;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
 
 /**
  * Iterator class for ObjectSummary objects on Azure Returns platform-independent instances
@@ -16,6 +18,8 @@ import java.util.Iterator;
  * @author lgiakoumakis
  */
 public class AzureObjectSummariesIterator implements Iterator<StorageObjectSummary> {
+  private static final SFLogger logger =
+      SFLoggerFactory.getLogger(AzureObjectSummariesIterator.class);
   Iterator<ListBlobItem> itemIterator;
 
   /*
@@ -37,7 +41,8 @@ public class AzureObjectSummariesIterator implements Iterator<StorageObjectSumma
     if (!(listBlobItem instanceof CloudBlob)) {
       // The only other possible type would a CloudDirectory
       // This should never happen since we are listing items as a flat list
-      throw new IllegalArgumentException("Unexpected listBlobItem instace type");
+      logger.debug("Unexpected listBlobItem instance type: {}", listBlobItem.getClass());
+      throw new IllegalArgumentException("Unexpected listBlobItem instance type");
     }
 
     return StorageObjectSummary.createFromAzureListBlobItem(listBlobItem);
