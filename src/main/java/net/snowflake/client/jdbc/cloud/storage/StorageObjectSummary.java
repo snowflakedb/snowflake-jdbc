@@ -95,6 +95,9 @@ public class StorageObjectSummary {
       // and its a lazy operation
       logger.debug("Failed to create StorageObjectSummary from Azure ListBlobItem: {}", ex);
       throw new StorageProviderException(ex);
+    } catch (Throwable th) {
+      logger.debug("Failed to create StorageObjectSummary from Azure ListBlobItem: {}", th);
+      throw th;
     }
     return new StorageObjectSummary(location, key, md5, size);
   }
