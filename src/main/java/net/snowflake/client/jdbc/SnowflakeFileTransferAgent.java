@@ -1384,6 +1384,8 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
         logger.debug("Start filtering");
 
         filterExistingFiles();
+
+        logger.debug("filtering done");
       }
 
       synchronized (canceled) {
@@ -1414,6 +1416,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
         // separate files to big files list and small files list
         // big files will be uploaded in serial, while small files will be
         // uploaded concurrently.
+        logger.debug("start segregate files by size");
         segregateFilesBySize();
 
         if (bigSourceFiles != null) {
@@ -2295,6 +2298,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
 
       int retryCount = 0;
 
+      logger.debug("start dragging object summaries from remote storage");
       do {
         try {
           objectSummaries =
@@ -2317,6 +2321,8 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
           storageClient.handleStorageException(ex, ++retryCount, "listObjects", session, command);
         }
       } while (retryCount <= storageClient.getMaxRetries());
+
+      logger.debug("received object summaries from remote storage");
 
       for (StorageObjectSummary obj : objectSummaries) {
         logger.debug(
