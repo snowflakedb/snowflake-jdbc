@@ -7,6 +7,7 @@ package net.snowflake.client.core;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetEnv;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
+import com.amazonaws.Protocol;
 import com.amazonaws.http.apache.SdkProxyRoutePlanner;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -559,21 +560,12 @@ public class SFTrustManager extends X509ExtendedTrustManager {
    * @return HttpClient
    */
   private static CloseableHttpClient getHttpClient(int timeout) {
-    RequestConfig.Builder configBuilder =
+    RequestConfig config =
         RequestConfig.custom()
             .setConnectTimeout(timeout)
             .setConnectionRequestTimeout(timeout)
-            .setSocketTimeout(timeout);
-    HttpHost proxy = null;
-    if (proxySettingsKey.usesProxy()) {
-      proxy =
-          new HttpHost(
-              proxySettingsKey.getProxyHost(),
-              proxySettingsKey.getProxyPort(),
-              proxySettingsKey.getProxyProtocol().toString());
-      configBuilder.setProxy(proxy);
-    }
-    RequestConfig config = configBuilder.build();
+            .setSocketTimeout(timeout)
+            .build();
 
     Registry<ConnectionSocketFactory> registry =
         RegistryBuilder.<ConnectionSocketFactory>create()
@@ -597,11 +589,13 @@ public class SFTrustManager extends X509ExtendedTrustManager {
 
     if (proxySettingsKey.usesProxy()) {
       // use the custom proxy properties
+      HttpHost proxy =
+          new HttpHost(proxySettingsKey.getProxyHost(), proxySettingsKey.getProxyPort());
       SdkProxyRoutePlanner sdkProxyRoutePlanner =
           new SdkProxyRoutePlanner(
               proxySettingsKey.getProxyHost(),
               proxySettingsKey.getProxyPort(),
-              proxySettingsKey.getProxyProtocol(),
+              Protocol.HTTP,
               proxySettingsKey.getNonProxyHosts());
       httpClientBuilder = httpClientBuilder.setProxy(proxy).setRoutePlanner(sdkProxyRoutePlanner);
       if (!Strings.isNullOrEmpty(proxySettingsKey.getProxyUser())

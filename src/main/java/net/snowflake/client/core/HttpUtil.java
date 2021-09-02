@@ -294,10 +294,9 @@ public class HttpUtil {
     // If defaultrequestconfig is not initialized or its proxy settings do not match current proxy
     // settings, re-build it (current or old proxy settings could be null, so null check is
     // included)
-    if (DefaultRequestConfig == null
-        || !(DefaultRequestConfig.getProxy() == null
-            ? proxy == null
-            : DefaultRequestConfig.getProxy().equals(proxy))) {
+    boolean noDefaultRequestConfig =
+        DefaultRequestConfig == null || DefaultRequestConfig.getProxy() == null;
+    if (noDefaultRequestConfig || !DefaultRequestConfig.getProxy().equals(proxy)) {
       RequestConfig.Builder builder =
           RequestConfig.custom()
               .setConnectTimeout(DEFAULT_CONNECTION_TIMEOUT)
