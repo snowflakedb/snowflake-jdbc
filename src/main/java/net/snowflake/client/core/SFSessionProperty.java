@@ -50,6 +50,7 @@ public enum SFSessionProperty {
   PROXY_USER("proxyUser", false, String.class),
   PROXY_PASSWORD("proxyPassword", false, String.class),
   NON_PROXY_HOSTS("nonProxyHosts", false, String.class),
+  PROXY_PROTOCOL("proxyProtocol", false, String.class),
   VALIDATE_DEFAULT_PARAMETERS("validateDefaultParameters", false, Boolean.class),
   INJECT_WAIT_IN_PUT("inject_wait_in_put", false, Integer.class),
   PRIVATE_KEY_FILE("private_key_file", false, String.class),
