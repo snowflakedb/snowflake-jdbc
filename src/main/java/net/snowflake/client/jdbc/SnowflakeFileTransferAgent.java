@@ -2329,6 +2329,10 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
         objectSummariesIterator = objectSummaries.iterator();
       } catch (Exception ex) {
         logger.debug("Failed to get objectSummariesIterator. Exception: {}", ex.getMessage());
+        StringWriter sw = new StringWriter();
+        PrintWriter pw = new PrintWriter(sw);
+        ex.printStackTrace(pw);
+        logger.debug("objectSummariesIterator exception stacktrace: {}", pw.toString());
         throw ex;
       }
       while (true) {
@@ -2340,6 +2344,10 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
           obj = objectSummariesIterator.next();
         } catch (Exception ex) {
           logger.debug("Iterator<StorageObjectSummary> encountered exception: {}", ex.getMessage());
+          StringWriter sw = new StringWriter();
+          PrintWriter pw = new PrintWriter(sw);
+          ex.printStackTrace(pw);
+          logger.debug("Iterator<StorageObjectSummary> exception stacktrace: {}", pw.toString());
           throw ex;
         }
         logger.debug(
