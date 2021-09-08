@@ -83,4 +83,21 @@ public class HeartbeatAsyncLatestIT extends HeartbeatIT {
   public void testAsynchronousQueryFailure() throws Exception {
     testFailure();
   }
+
+  /** Test that isValid() function returns false when session is expired */
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testIsValidWithInvalidSession() throws Exception {
+    Connection connection = null;
+    try {
+      connection = getConnection();
+      // assert that connection starts out valid
+      assertTrue(connection.isValid(5));
+      Thread.sleep(61000); // sleep 61 seconds to await session expiration time
+      // assert that connection is no longer valid after session has expired
+      assertFalse(connection.isValid(5));
+    } finally {
+      connection.close();
+    }
+  }
 }
