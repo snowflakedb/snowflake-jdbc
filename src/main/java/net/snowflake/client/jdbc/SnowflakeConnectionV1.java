@@ -567,11 +567,21 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
 
   @Override
   public boolean isValid(int timeout) throws SQLException {
-    // TODO: run query here or ping
     if (timeout < 0) {
       throw new SQLException("timeout is less than 0");
+    } else if (isClosed) {
+      return false;
+    } else {
+      try {
+        Statement statement = this.createStatement();
+        statement.setQueryTimeout(timeout);
+        statement.execute("select 1");
+        statement.close();
+      } catch (SQLException ex) {
+        return false;
+      }
+      return true;
     }
-    return !isClosed; // no exception is raised
   }
 
   @Override
