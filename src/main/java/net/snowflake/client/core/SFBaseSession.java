@@ -4,6 +4,10 @@
 
 package net.snowflake.client.core;
 
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetEnv;
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
+
+import com.google.common.base.Strings;
 import java.sql.DriverPropertyInfo;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -13,6 +17,8 @@ import net.snowflake.client.jdbc.SnowflakeConnectString;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.jdbc.SnowflakeType;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
 
 /**
  * Snowflake session implementation base. The methods and fields contained within this class are
@@ -33,6 +39,8 @@ import net.snowflake.client.jdbc.telemetry.Telemetry;
  * which signals whether to enable client telemetry
  */
 public abstract class SFBaseSession {
+  static final SFLogger logger = SFLoggerFactory.getLogger(SFBaseSession.class);
+
   private final Properties clientInfo = new Properties();
   private final AtomicBoolean autoCommit = new AtomicBoolean(true);
   // Injected delay for the purpose of connection timeout testing
@@ -298,14 +306,67 @@ public abstract class SFBaseSession {
       String proxyPassword = (String) connectionPropertiesMap.get(SFSessionProperty.PROXY_PASSWORD);
       String nonProxyHosts =
           (String) connectionPropertiesMap.get(SFSessionProperty.NON_PROXY_HOSTS);
+      String proxyProtocol = (String) connectionPropertiesMap.get(SFSessionProperty.PROXY_PROTOCOL);
       ocspAndProxyKey =
           new HttpClientSettingsKey(
-              getOCSPMode(), proxyHost, proxyPort, nonProxyHosts, proxyUser, proxyPassword);
+              getOCSPMode(),
+              proxyHost,
+              proxyPort,
+              nonProxyHosts,
+              proxyUser,
+              proxyPassword,
+              proxyProtocol);
 
       return ocspAndProxyKey;
     }
-    // If no proxy is used, no need for setting parameters
-    ocspAndProxyKey = new HttpClientSettingsKey(getOCSPMode());
+    // If JVM proxy parameters are specified, https proxies need to go through the JDBC driver's
+    // HttpClientSettingsKey logic in order to work properly.
+    else {
+      boolean httpUseProxy = Boolean.parseBoolean(systemGetProperty("http.useProxy"));
+      String httpProxyHost = systemGetProperty("http.proxyHost");
+      String httpProxyPort = systemGetProperty("http.proxyPort");
+      String httpsProxyHost = systemGetProperty("https.proxyHost");
+      String httpsProxyPort = systemGetProperty("https.proxyPort");
+      String noProxy = systemGetEnv("NO_PROXY");
+      // log the JVM parameters that are being used
+      if (httpUseProxy) {
+        logger.debug(
+            "http.useProxy={}, http.proxyHost={}, http.proxyPort={}, https.proxyHost={}, https.proxyPort={}, NO_PROXY={}",
+            httpUseProxy,
+            httpProxyHost,
+            httpProxyPort,
+            httpsProxyHost,
+            httpsProxyPort,
+            noProxy);
+      } else {
+        logger.debug("http.useProxy={}. JVM proxy not used.", httpUseProxy);
+      }
+      // Set a new HttpClientSettingsKey with the https params. If the proxy is http, the native
+      // Java implementation will work.
+      if (httpUseProxy
+          && !Strings.isNullOrEmpty(httpsProxyHost)
+          && !Strings.isNullOrEmpty(httpsProxyPort)) {
+        int proxyPort;
+        try {
+          proxyPort = Integer.parseInt(httpsProxyPort);
+        } catch (NumberFormatException | NullPointerException e) {
+          throw new SnowflakeSQLException(
+              ErrorCode.INVALID_PROXY_PROPERTIES, "Could not parse port number");
+        }
+        ocspAndProxyKey =
+            new HttpClientSettingsKey(
+                getOCSPMode(),
+                httpsProxyHost,
+                proxyPort,
+                noProxy,
+                "", /* user = empty */
+                "", /* password = empty */
+                "https");
+      } else {
+        // If no proxy is used or JVM http proxy is used, no need for setting parameters
+        ocspAndProxyKey = new HttpClientSettingsKey(getOCSPMode());
+      }
+    }
     return ocspAndProxyKey;
   }
 

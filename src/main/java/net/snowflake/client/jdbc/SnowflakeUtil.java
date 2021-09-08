@@ -550,10 +550,11 @@ public class SnowflakeUtil {
         String proxyUser = info.getProperty(SFSessionProperty.PROXY_USER.getPropertyKey());
         String proxyPassword = info.getProperty(SFSessionProperty.PROXY_PASSWORD.getPropertyKey());
         String nonProxyHosts = info.getProperty(SFSessionProperty.NON_PROXY_HOSTS.getPropertyKey());
+        String proxyProtocol = info.getProperty(SFSessionProperty.PROXY_PROTOCOL.getPropertyKey());
 
         // create key for proxy properties
         return new HttpClientSettingsKey(
-            mode, proxyHost, proxyPort, nonProxyHosts, proxyUser, proxyPassword);
+            mode, proxyHost, proxyPort, nonProxyHosts, proxyUser, proxyPassword, proxyProtocol);
       }
     }
     // if no proxy properties, return key with only OCSP mode
