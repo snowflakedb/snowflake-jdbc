@@ -397,14 +397,14 @@ public class SFSession extends SFBaseSession {
 
     HttpClientSettingsKey httpClientSettingsKey = getHttpClientKey();
     logger.debug(
-        "connection proxy parameters: use_proxy={}, proxy_host={}, proxy_port={}, proxy_user={}, proxy_password={}, non_proxy_hosts={}",
+        "connection proxy parameters: use_proxy={}, proxy_host={}, proxy_port={}, proxy_user={}, proxy_password={}, non_proxy_hosts={}, proxy_protocol={}",
         httpClientSettingsKey.usesProxy(),
         httpClientSettingsKey.getProxyHost(),
         httpClientSettingsKey.getProxyPort(),
         httpClientSettingsKey.getProxyUser(),
         !Strings.isNullOrEmpty(httpClientSettingsKey.getProxyPassword()) ? "***" : "(empty)",
-        httpClientSettingsKey.getNonProxyHosts());
-    HttpUtil.logJVMProxyProperties();
+        httpClientSettingsKey.getNonProxyHosts(),
+        httpClientSettingsKey.getProxyProtocol());
 
     // TODO: temporarily hardcode sessionParameter debug info. will be changed in the future
     SFLoginInput loginInput = new SFLoginInput();

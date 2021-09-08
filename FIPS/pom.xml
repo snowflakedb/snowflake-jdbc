@@ -46,7 +46,7 @@
     <httpclient.version>4.5.5</httpclient.version>
     <jacoco.version>0.8.4</jacoco.version>
     <jacoco.skip.instrument>true</jacoco.skip.instrument>
-    <awssdk.version>1.11.364</awssdk.version>
+    <awssdk.version>1.11.394</awssdk.version>
     <google.api.client.version>1.30.10</google.api.client.version>
     <google.http.client.version>1.36.0</google.http.client.version>
     <jna.version>5.5.0</jna.version>
