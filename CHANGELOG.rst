@@ -1,3 +1,9 @@
+**JDBC Driver 3.13.8**
+
+- \| SNOW-443760 | Bumped jsoup library from 1.11.3 to 1.14.2
+- \| SNOW-148296 | Introduce new connection parameter to enable JDBC https proxying.
+- \| SNOW-449297 | Fully implemented Connection.IsValid() function.
+
 **JDBC Driver 3.13.7**
 
 - \| SNOW-394504 | Fix issue with JDBC rejecting accounts with underscores in them.
