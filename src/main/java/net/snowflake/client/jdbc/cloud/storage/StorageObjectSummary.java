@@ -9,6 +9,7 @@ import com.google.cloud.storage.Blob;
 import com.microsoft.azure.storage.StorageException;
 import com.microsoft.azure.storage.blob.BlobProperties;
 import com.microsoft.azure.storage.blob.CloudBlob;
+import com.microsoft.azure.storage.blob.CloudBlobContainer;
 import com.microsoft.azure.storage.blob.ListBlobItem;
 import java.net.URISyntaxException;
 import net.snowflake.client.log.SFLogger;
@@ -70,6 +71,7 @@ public class StorageObjectSummary {
       throws StorageProviderException {
     String location, key, md5;
     long size;
+    CloudBlobContainer container;
 
     // Retrieve the BLOB properties that we need for the Summary
     // Azure Storage stores metadata inside each BLOB, therefore the listBlobItem
@@ -77,11 +79,10 @@ public class StorageObjectSummary {
     // During the process the Storage Client could fail, hence we need to wrap the
     // get calls in try/catch and handle possible exceptions
     try {
-      location = listBlobItem.getContainer().getName();
-
+      container = listBlobItem.getContainer();
+      location = container.getName();
       CloudBlob cloudBlob = (CloudBlob) listBlobItem;
       key = cloudBlob.getName();
-
       BlobProperties blobProperties = cloudBlob.getProperties();
       // the content md5 property is not always the actual md5 of the file. But for here, it's only
       // used for skipping file on PUT command, hense is ok.

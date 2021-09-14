@@ -858,7 +858,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
     // we're uploading or downloading. This call gets our src_location and
     // encryption material, which we'll use for all the subsequent calls to GS
     // for creds for each file. Those calls are made from pushFileToRemoteStore
-    // and pullFileFromRemoteStore if the storage slient requires a presigned
+    // and pullFileFromRemoteStore if the storage client requires a presigned
     // URL.
     JsonNode jsonNode = parseCommandInGS(statement, command);
 
@@ -2324,7 +2324,32 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
 
       logger.debug("received object summaries from remote storage");
 
-      for (StorageObjectSummary obj : objectSummaries) {
+      Iterator<StorageObjectSummary> objectSummariesIterator;
+      try {
+        objectSummariesIterator = objectSummaries.iterator();
+      } catch (Exception ex) {
+        logger.debug("Failed to get objectSummariesIterator. Exception: {}", ex.getMessage());
+        StringWriter sw = new StringWriter();
+        PrintWriter pw = new PrintWriter(sw);
+        ex.printStackTrace(pw);
+        logger.debug("objectSummariesIterator exception stacktrace: {}", pw.toString());
+        throw ex;
+      }
+      while (true) {
+        StorageObjectSummary obj;
+        try {
+          if (!objectSummariesIterator.hasNext()) {
+            break;
+          }
+          obj = objectSummariesIterator.next();
+        } catch (Exception ex) {
+          logger.debug("Iterator<StorageObjectSummary> encountered exception: {}", ex.getMessage());
+          StringWriter sw = new StringWriter();
+          PrintWriter pw = new PrintWriter(sw);
+          ex.printStackTrace(pw);
+          logger.debug("Iterator<StorageObjectSummary> exception stacktrace: {}", pw.toString());
+          throw ex;
+        }
         logger.debug(
             "Existing object: key={} size={} md5={}", obj.getKey(), obj.getSize(), obj.getMD5());
 
@@ -2356,7 +2381,8 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
             continue;
           }
 
-          // if it's an upload and there's already a file existing remotely with the same name, skip
+          // if it's an upload and there's already a file existing remotely with the same name,
+          // skip
           // uploading it
           if (commandType == CommandType.UPLOAD
               && objFileName.equals(fileMetadataMap.get(mappedSrcFile).destFileName)) {
