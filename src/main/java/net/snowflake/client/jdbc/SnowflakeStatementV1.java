@@ -145,6 +145,67 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
     return executeQueryInternal(sql, true, null);
   }
 
+  private void waitForQueryDone(String queryID) throws SQLException {
+    SFSession session = (SFSession) this.connection.getSFBaseSession();
+    QueryStatus qs = session.getQueryStatus(queryID);
+    int noDataRetry = 0;
+    final int noDataMaxRetries = 30;
+    final int[] retryPattern = {1, 1, 2, 3, 4, 8, 10};
+    final int maxIndex = retryPattern.length - 1;
+    int retry = 0;
+    while (QueryStatus.isStillRunning(qs)) {
+      // if query is not running due to a failure (Aborted, failed with error, etc), generate
+      // exception
+//      if (!QueryStatus.isStillRunning(qs) && qs.getValue() != QueryStatus.SUCCESS.getValue()) {
+//        throw new SQLException(
+//                "Status of query associated with resultSet is "
+//                        + qs.getDescription()
+//                        + ". Results not generated.");
+//      }
+      // if no data about the query is returned after about 2 minutes, give up
+      if (qs == QueryStatus.NO_DATA) {
+        noDataRetry++;
+        if (noDataRetry >= noDataMaxRetries) {
+          throw new SQLException(
+                  "Cannot retrieve data on the status of this query. No information returned from server for queryID={}.",
+                  queryID);
+        }
+      }
+      try {
+        // Sleep for an amount before trying again. Exponential backoff up to 5 seconds
+        // implemented.
+        Thread.sleep(500 * retryPattern[retry]);
+      } catch (InterruptedException e) {
+        e.printStackTrace();
+      }
+      if (retry < maxIndex) {
+        retry++;
+      }
+      qs = session.getQueryStatus(queryID);
+    }
+  }
+
+  public ResultSet getAsyncQueryResult(String queryID) throws SQLException {
+    // TODO do we need timeout for long run query?
+    waitForQueryDone(queryID);
+    SFBaseResultSet sfResultSet;
+    try {
+      sfResultSet = ((SFStatement) sfBaseStatement).getAsyncResults(queryID);
+      sfResultSet.setSession(this.connection.getSFBaseSession());
+    } catch (SFException ex) {
+      throw new SnowflakeSQLException(
+              ex.getCause(), ex.getSqlState(), ex.getVendorCode(), ex.getParams());
+    }
+
+    if (resultSet != null) {
+      openResultSets.add(resultSet);
+    }
+
+    resultSet = connection.getHandler().createResultSet(sfResultSet, this);
+
+    return getResultSet();
+  }
+
   /**
    * Execute an update statement
    *
