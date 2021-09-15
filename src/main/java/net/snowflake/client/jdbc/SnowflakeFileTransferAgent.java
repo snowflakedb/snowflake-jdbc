@@ -2332,7 +2332,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
         StringWriter sw = new StringWriter();
         PrintWriter pw = new PrintWriter(sw);
         ex.printStackTrace(pw);
-        logger.debug("objectSummariesIterator exception stacktrace: {}", pw.toString());
+        logger.debug("objectSummariesIterator exception stacktrace: {}", sw.toString());
         throw ex;
       }
       while (true) {
@@ -2347,7 +2347,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
           StringWriter sw = new StringWriter();
           PrintWriter pw = new PrintWriter(sw);
           ex.printStackTrace(pw);
-          logger.debug("Iterator<StorageObjectSummary> exception stacktrace: {}", pw.toString());
+          logger.debug("Iterator<StorageObjectSummary> exception stacktrace: {}", sw.toString());
           throw ex;
         }
         logger.debug(
