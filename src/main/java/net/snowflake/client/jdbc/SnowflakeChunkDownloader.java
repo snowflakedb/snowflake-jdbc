@@ -307,8 +307,9 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
       // try to reserve the needed memory
       long curMem = currentMemoryUsage.addAndGet(neededChunkMemory);
       // no memory allocate when memory is not enough for prefetch
-      if (curMem > memoryLimit && nextChunkToDownload - nextChunkToConsume > 0) {
+      if (curMem > memoryLimit && nextChunkToDownload - nextChunkToConsume >= 0) {
         // cancel the reserved memory and this downloader too
+        logger.debug("Not enough memory available for prefetch. Cancel reserved memory");
         currentMemoryUsage.addAndGet(-neededChunkMemory);
         break;
       }
@@ -352,6 +353,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
         continue;
       } else {
         // cancel the reserved memory
+        logger.debug("cancel the reserved memory.");
         curMem = currentMemoryUsage.addAndGet(-neededChunkMemory);
       }
 

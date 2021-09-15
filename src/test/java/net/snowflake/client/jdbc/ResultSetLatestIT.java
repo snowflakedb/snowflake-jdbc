@@ -21,6 +21,7 @@ import net.snowflake.client.category.TestCategoryResultSet;
 import net.snowflake.client.jdbc.telemetry.*;
 import net.snowflake.common.core.SFBinary;
 import org.apache.arrow.vector.Float8Vector;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -77,6 +78,21 @@ public class ResultSetLatestIT extends ResultSet0IT {
     // Unset the exception injection so statement and connection can close without exceptions
     SnowflakeChunkDownloader.setInjectedDownloaderException(null);
     closeSQLObjects(resultSet, statement, connection);
+  }
+
+  @Ignore
+  @Test
+  public void testConcurrencyIssue() throws SQLException {
+    int stmtCount = 150;
+    int rowCount = 170000;
+    Connection connection = getConnection();
+    for (int i = 0; i < stmtCount; ++i) {
+      Statement stmt = connection.createStatement();
+      ResultSet resultSet =
+          stmt.executeQuery(
+              "select randstr(100, random()) from table(generator(rowcount => " + rowCount + "))");
+    }
+    System.out.println("Completed successfully");
   }
 
   /**
