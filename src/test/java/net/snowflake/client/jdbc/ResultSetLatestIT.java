@@ -13,6 +13,7 @@ import java.math.BigInteger;
 import java.math.RoundingMode;
 import java.nio.ByteBuffer;
 import java.sql.*;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -80,19 +81,30 @@ public class ResultSetLatestIT extends ResultSet0IT {
     closeSQLObjects(resultSet, statement, connection);
   }
 
+  /**
+   * This test should only be run manually because it takes between 3 and 5 minutes to run. If it's
+   * successful, it will end between 3 and 5 minutes. This tests that when there is high statement
+   * concurrency, the downloader no longer hangs while fetching prefetch chunks.
+   */
   @Ignore
   @Test
-  public void testConcurrencyIssue() throws SQLException {
-    int stmtCount = 150;
+  public void testNoTestHangWithTooManyStatements() throws SQLException {
+    int stmtCount = 200;
     int rowCount = 170000;
     Connection connection = getConnection();
+    List<ResultSet> rsList = new ArrayList<>();
     for (int i = 0; i < stmtCount; ++i) {
       Statement stmt = connection.createStatement();
       ResultSet resultSet =
           stmt.executeQuery(
               "select randstr(100, random()) from table(generator(rowcount => " + rowCount + "))");
+      rsList.add(resultSet);
     }
-    System.out.println("Completed successfully");
+    System.out.println("Successfully created resultSets");
+    for (int i = 0; i < stmtCount; i++) {
+      rsList.get(i).next();
+    }
+    System.out.println("Result.next() called successfully on all resultSets.");
   }
 
   /**
