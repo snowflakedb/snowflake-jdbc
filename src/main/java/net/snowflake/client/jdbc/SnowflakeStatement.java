@@ -32,4 +32,6 @@ public interface SnowflakeStatement {
    * @throws SQLException if @link{#executeQueryInternal(String, Map)} throws an exception
    */
   ResultSet executeAsyncQuery(String sql) throws SQLException;
+
+  public ResultSet getAsyncQueryResult(String queryID) throws SQLException;
 }

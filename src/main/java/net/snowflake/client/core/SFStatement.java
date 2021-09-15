@@ -261,6 +261,84 @@ public class SFStatement extends SFBaseStatement {
     return resultSet;
   }
 
+  public SFBaseResultSet getAsyncResults(String queryID)
+          throws SQLException, SFException {
+    resetState();
+
+//    logger.debug("executeQuery: {}", (ArgSupplier) () -> SecretDetector.maskSecrets(sql));
+//
+//    if (session == null || session.isClosed()) {
+//      throw new SQLException("connection is closed");
+//    }
+//
+//    Object result =
+//            executeHelper(
+//                    sql, StmtUtil.SF_MEDIA_TYPE, parameterBindings, describeOnly, internal, asyncExec);
+//
+//    if (result == null) {
+//      throw new SnowflakeSQLLoggedException(
+//              session,
+//              ErrorCode.INTERNAL_ERROR.getMessageCode(),
+//              SqlState.INTERNAL_ERROR,
+//              "got null result");
+//    }
+
+    /*
+     * we sort the result if the connection is in sorting mode
+     */
+    Object sortProperty = session.getSessionPropertyByKey("sort");
+
+    boolean sortResult = sortProperty != null && (Boolean) sortProperty;
+
+    logger.debug("Creating result set");
+
+    try {
+      JsonNode jsonResult = StmtUtil.getQueryResultJSON(queryID, this.session);
+      resultSet = SFResultSetFactory.getResultSet(jsonResult, this, sortResult);
+      childResults = ResultUtil.getChildResults(session, requestId, jsonResult);
+
+      // if child results are available, skip over this result set and set the
+      // current result to the first child's result.
+      // we still construct the first result set for its side effects.
+      if (!childResults.isEmpty()) {
+        SFStatementType type = childResults.get(0).type;
+
+//        // ensure first query type matches the calling JDBC method, if exists
+//        if (caller == CallingMethod.EXECUTE_QUERY && !type.isGenerateResultSet()) {
+//          throw new SnowflakeSQLLoggedException(
+//                  session, ErrorCode.QUERY_FIRST_RESULT_NOT_RESULT_SET);
+//        } else if (caller == CallingMethod.EXECUTE_UPDATE && type.isGenerateResultSet()) {
+//          throw new SnowflakeSQLLoggedException(
+//                  session, ErrorCode.UPDATE_FIRST_RESULT_NOT_UPDATE_COUNT);
+//        }
+
+        // this will update resultSet to point to the first child result before we return it
+        getMoreResults();
+      }
+    } catch (SnowflakeSQLException | OutOfMemoryError ex) {
+      // snow-24428: no need to generate incident for exceptions we generate
+      // snow-29403: or client OOM
+      throw ex;
+//    } catch (Throwable ex) {
+//      // SNOW-22813 log exception
+//      logger.error("Exception creating result", ex);
+//
+//      throw (SFException)
+//              IncidentUtil.generateIncidentV2WithException(
+//                      session,
+//                      new SFException(
+//                              ErrorCode.INTERNAL_ERROR, IncidentUtil.oneLiner("exception creating result", ex)),
+//                      null,
+//                      null);
+    }
+    logger.debug("Done creating result set");
+
+//    if (asyncExec) {
+//      session.activeAsyncQueries.add(resultSet.getQueryId());
+//    }
+    return resultSet;
+  }
+
   /**
    * Set a time bomb to cancel the outstanding query when timeout is reached.
    *
