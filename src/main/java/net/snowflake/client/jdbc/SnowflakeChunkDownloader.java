@@ -4,18 +4,11 @@
 
 package net.snowflake.client.jdbc;
 
+import static net.snowflake.client.core.Constants.MB;
+
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.databind.MappingJsonFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import net.snowflake.client.core.*;
-import net.snowflake.client.jdbc.SnowflakeResultChunk.DownloadState;
-import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
-import net.snowflake.client.log.ArgSupplier;
-import net.snowflake.client.log.SFLogger;
-import net.snowflake.client.log.SFLoggerFactory;
-import net.snowflake.common.core.SqlState;
-import org.apache.arrow.memory.RootAllocator;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
@@ -25,8 +18,14 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
-
-import static net.snowflake.client.core.Constants.MB;
+import net.snowflake.client.core.*;
+import net.snowflake.client.jdbc.SnowflakeResultChunk.DownloadState;
+import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
+import net.snowflake.client.log.ArgSupplier;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
+import net.snowflake.common.core.SqlState;
+import org.apache.arrow.memory.RootAllocator;
 
 /**
  * Class for managing async download of offline result chunks
@@ -503,7 +502,6 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
     }
 
     SnowflakeResultChunk currentChunk = this.chunks.get(nextChunkToConsume);
-    logger.debug("getNextChunkToConsume() current chunk state: {}", currentChunk.getDownloadState());
 
     if (currentChunk.getDownloadState() == DownloadState.SUCCESS) {
       logger.debug("chunk #{} is ready to consume", nextChunkToConsume);
@@ -514,7 +512,6 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
       }
       return currentChunk;
     } else {
-      logger.debug("getNextChunkToConsume() has entered else block");
       // the chunk we want to consume is not ready yet, wait for it
       currentChunk.getLock().lock();
       try {
@@ -584,8 +581,10 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
           currentChunk.getDownloadState(),
           retry);
 
-      if (currentChunk.getDownloadState() != DownloadState.FAILURE) {
-        // if the state is not failure, we should keep waiting; otherwise, we skip waiting
+      if (currentChunk.getDownloadState() != DownloadState.NOT_STARTED
+          && currentChunk.getDownloadState() != DownloadState.FAILURE) {
+        // if the state is in progress but not failure, we should keep waiting; otherwise, we skip
+        // waiting
         if (!currentChunk
             .getDownloadCondition()
             .await(downloadedConditionTimeoutInSeconds, TimeUnit.SECONDS)) {
@@ -608,8 +607,12 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
       }
 
       if (currentChunk.getDownloadState() != DownloadState.SUCCESS) {
+        // if this is the first attempt to download this chunk (due to cancelled prefetch), don't
+        // increment retry
+        if (currentChunk.getDownloadState() != DownloadState.NOT_STARTED) {
+          retry++;
+        }
         // timeout or failed
-        retry++;
         logger.debug(
             "Since downloadState is {} Thread {} decides to retry {} time(s) for #chunk{}",
             currentChunk.getDownloadState(),
