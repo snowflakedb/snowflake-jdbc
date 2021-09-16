@@ -4,13 +4,14 @@
 
 package net.snowflake.client.core;
 
-import java.sql.SQLException;
-import java.util.List;
 import net.snowflake.client.jdbc.*;
 import net.snowflake.client.jdbc.SFBaseFileTransferAgent.CommandType;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SqlState;
+
+import java.sql.SQLException;
+import java.util.List;
 
 /**
  * Fixed view result set. This class iterates through any fixed view implementation and return the
@@ -22,11 +23,13 @@ public class SFFixedViewResultSet extends SFJsonResultSet {
   private SnowflakeFixedView fixedView;
   private Object[] nextRow = null;
   private final CommandType commandType;
+  private final String queryID;
 
-  public SFFixedViewResultSet(SnowflakeFixedView fixedView, CommandType commandType)
+  public SFFixedViewResultSet(SnowflakeFixedView fixedView, CommandType commandType, String queryID)
       throws SnowflakeSQLException {
     this.fixedView = fixedView;
     this.commandType = commandType;
+    this.queryID = queryID;
 
     try {
       resultSetMetaData =
@@ -140,6 +143,6 @@ public class SFFixedViewResultSet extends SFJsonResultSet {
 
   @Override
   public String getQueryId() {
-    return "";
+    return queryID;
   }
 }
