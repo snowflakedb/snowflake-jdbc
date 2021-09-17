@@ -2324,7 +2324,26 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
 
       logger.debug("received object summaries from remote storage");
 
-      compareAndSkipRemoteFiles(objectSummaries, destFileNameToSrcFileMap);
+      retryCount = 0;
+      do {
+        try {
+          compareAndSkipRemoteFiles(objectSummaries, destFileNameToSrcFileMap);
+          break;
+        } catch (Exception ex) {
+          // This retry logic is mainly for Azure iterator. Since Azure iterator is a lazy iterator,
+          // it can throw exceptions during the for-each calls. To be more specific, iterator apis,
+          // e.g. hasNext(), may throw Storage service error.
+          logger.debug(
+              "Comparison with existing files in remote storage encountered exception.", ex);
+          if (ex instanceof StorageProviderException) {
+            ex =
+                (Exception)
+                    ex.getCause(); // Cause of StorageProviderException is always an Exception
+          }
+          storageClient.handleStorageException(
+              ex, ++retryCount, "compareRemoteFiles", session, command);
+        }
+      } while (retryCount <= storageClient.getMaxRetries());
     } else if (stageInfo.getStageType() == StageInfo.StageType.LOCAL_FS) {
       for (String stageFileName : stageFileNames) {
         String stageFilePath =
