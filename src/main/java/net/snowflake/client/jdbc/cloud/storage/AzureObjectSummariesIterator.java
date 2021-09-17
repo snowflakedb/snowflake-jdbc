@@ -8,6 +8,7 @@ import com.amazonaws.services.kms.model.UnsupportedOperationException;
 import com.microsoft.azure.storage.blob.CloudBlob;
 import com.microsoft.azure.storage.blob.ListBlobItem;
 import java.util.Iterator;
+import java.util.NoSuchElementException;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 
@@ -32,7 +33,16 @@ public class AzureObjectSummariesIterator implements Iterator<StorageObjectSumma
   }
 
   public boolean hasNext() {
-    return itemIterator.hasNext();
+    // SNOW-442579 azure itemIterator.hasNext() is a lazy operation, which may cause
+    // StorageException. And it seems Azure wraps the StorageException within the
+    // NoSuchElementException.
+    try {
+      return itemIterator.hasNext();
+    } catch (NoSuchElementException ex) {
+      logger.debug("Failed to run azure iterator.hasNext().", ex);
+      throw new StorageProviderException(
+          (Exception) ex.getCause()); // ex.getCause() should be StorageException
+    }
   }
 
   public StorageObjectSummary next() {
