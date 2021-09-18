@@ -102,10 +102,6 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
     return this.stageInfo;
   }
 
-  public String getQueryID() {
-    return this.queryID;
-  }
-
   /**
    * Get value of big file threshold. For testing purposes.
    *
