@@ -3,6 +3,8 @@
  */
 package net.snowflake.client.log;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -11,6 +13,7 @@ import java.util.logging.Formatter;
 import java.util.logging.Handler;
 import java.util.logging.LogRecord;
 import net.snowflake.client.jdbc.SnowflakeDriver;
+import net.snowflake.client.util.SecretDetector;
 
 /** SFFormatter */
 public class SFFormatter extends Formatter {
@@ -46,6 +49,16 @@ public class SFFormatter extends Formatter {
       className = "c.s" + className.substring(INFORMATICA_V1_CLASS_NAME_PREFIX.length());
     }
 
+    String throwable = "";
+    if (record.getThrown() != null) {
+      StringWriter sw = new StringWriter();
+      PrintWriter pw = new PrintWriter(sw);
+      pw.println();
+      record.getThrown().printStackTrace(pw);
+      pw.close();
+      throwable = SecretDetector.maskSecrets(sw.toString());
+    }
+
     StringBuilder builder = new StringBuilder(1000);
     builder.append(df.format(new Date(record.getMillis()))).append(" ");
     builder.append(className).append(" ");
@@ -53,6 +66,7 @@ public class SFFormatter extends Formatter {
     builder.append(methodName).append(":");
     builder.append(lineNumber).append(" - ");
     builder.append(formatMessage(record));
+    builder.append(throwable);
     builder.append("\n");
     return builder.toString();
   }
