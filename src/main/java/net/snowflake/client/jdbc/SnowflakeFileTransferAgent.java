@@ -2310,9 +2310,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
               storageClient.listObjects(
                   storeLocation.location,
                   SnowflakeUtil.concatFilePathNames(storeLocation.path, greatestCommonPrefix, "/"));
-
-          // exit retry loop
-          break;
+          logger.debug("received object summaries from remote storage");
         } catch (Exception ex) {
           logger.debug("Listing objects for filtering encountered exception: {}", ex.getMessage());
 
@@ -2324,18 +2322,15 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
                     ex.getCause(); // Cause of StorageProviderException is always an Exception
           }
           storageClient.handleStorageException(ex, ++retryCount, "listObjects", session, command);
+          continue;
         }
-      } while (retryCount <= storageClient.getMaxRetries());
 
-      logger.debug("received object summaries from remote storage");
-
-      retryCount = 0;
-      do {
         try {
           compareAndSkipRemoteFiles(objectSummaries, destFileNameToSrcFileMap);
-          break;
+          break; // exit retry loop
         } catch (Exception ex) {
-          // This retry logic is mainly for Azure iterator. Since Azure iterator is a lazy iterator,
+          // This exception retry logic is mainly for Azure iterator. Since Azure iterator is a lazy
+          // iterator,
           // it can throw exceptions during the for-each calls. To be more specific, iterator apis,
           // e.g. hasNext(), may throw Storage service error.
           logger.debug(
