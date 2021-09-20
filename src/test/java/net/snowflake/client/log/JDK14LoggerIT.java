@@ -3,16 +3,9 @@
  */
 package net.snowflake.client.log;
 
-import java.util.logging.Formatter;
-import java.util.logging.Handler;
-import java.util.logging.Level;
-import java.util.logging.LogRecord;
-import java.util.logging.Logger;
+import java.util.logging.*;
 import net.snowflake.client.category.TestCategoryCore;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
+import org.junit.*;
 import org.junit.experimental.categories.Category;
 
 /** A class for testing {@link JDK14Logger} */
@@ -48,6 +41,9 @@ public class JDK14LoggerIT extends AbstractLoggerIT {
 
   /** Message last logged using JDK14Logger. */
   private String lastLogMessage = null;
+
+  /** Output string logged by Formatter.format function */
+  private String lastLogOutput = null;
 
   /** Level at which last message was logged using JDK14Logger. */
   private Level lastLogMessageLevel = null;
@@ -108,6 +104,10 @@ public class JDK14LoggerIT extends AbstractLoggerIT {
     return this.lastLogMessage;
   }
 
+  String getLoggedOutput() {
+    return this.lastLogOutput;
+  }
+
   @Override
   LogLevel getLoggedMessageLevel() {
     return fromJavaCoreLoggerLevel(this.lastLogMessageLevel);
@@ -116,6 +116,7 @@ public class JDK14LoggerIT extends AbstractLoggerIT {
   @Override
   void clearLastLoggedMessageAndLevel() {
     this.lastLogMessage = null;
+    this.lastLogOutput = null;
     this.lastLogMessageLevel = null;
   }
 
@@ -174,9 +175,10 @@ public class JDK14LoggerIT extends AbstractLoggerIT {
 
     @Override
     public void publish(LogRecord record) {
-      // Assign the log message and it's level to the outer class instance
+      // Assign the log message, log output and it's level to the outer class instance
       // variables so that it can see the messages logged
       lastLogMessage = getFormatter().formatMessage(record);
+      lastLogOutput = getFormatter().format(record);
       lastLogMessageLevel = record.getLevel();
     }
 
@@ -185,5 +187,21 @@ public class JDK14LoggerIT extends AbstractLoggerIT {
 
     @Override
     public void close() {}
+  }
+
+  /**
+   * This test intends to check if the exception stack trace will be generated in JDK14Logger with
+   * SFFormatter.
+   */
+  @Test
+  public void testLogException() {
+    final String exceptionStr = "FakeExceptionInStack";
+    clearLastLoggedMessageAndLevel();
+
+    LOGGER.debug("test exception", new Exception(exceptionStr));
+
+    String loggedMsg = getLoggedOutput();
+    Assert.assertTrue(
+        "Log output should contain stack trace for exception", loggedMsg.contains(exceptionStr));
   }
 }

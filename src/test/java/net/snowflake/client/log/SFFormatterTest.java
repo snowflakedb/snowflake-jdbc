@@ -63,6 +63,18 @@ public class SFFormatterTest {
     }
   }
 
+  /** This test intends to check if the exception stack trace will be generated in SFFormatter */
+  @Test
+  public void testOutputStackTrace() {
+    final String exceptionStr = "FakeExceptionInStack";
+    String record =
+        recordGenerator.generateLogRecordString(
+            Level.FINE, "TestMessage", new Exception(exceptionStr));
+    assertTrue(
+        "SFFormatter output should contain stack trace for exception",
+        record.contains(exceptionStr));
+  }
+
   /**
    * The bulk version test of testUTCTimeStampSimple()
    *
@@ -80,7 +92,7 @@ public class SFFormatterTest {
    * constructor
    */
   private class LRGenerator {
-    // Required by SFFormatter as a log record without these fiels would cause NullPointerException
+    // Required by SFFormatter as a log record without these fields would cause NullPointerException
     // in
     // our SF formatter
     // add more fields to plug in the log record if required for testing
@@ -103,9 +115,15 @@ public class SFFormatterTest {
      * @return A LogRecord instance
      */
     public LogRecord generateLogRecord(Level level, String message) {
-      LogRecord record = new LogRecord(Level.INFO, "null");
+      LogRecord record = new LogRecord(level, message);
       record.setSourceClassName(this.srcClassName);
       record.setSourceMethodName(this.srcMethodName);
+      return record;
+    }
+
+    public LogRecord generateLogRecord(Level level, String message, Exception ex) {
+      LogRecord record = generateLogRecord(level, message);
+      record.setThrown(ex);
       return record;
     }
 
@@ -118,6 +136,10 @@ public class SFFormatterTest {
      */
     public String generateLogRecordString(Level level, String message) {
       return formatter.format(this.generateLogRecord(level, message));
+    }
+
+    public String generateLogRecordString(Level level, String message, Exception ex) {
+      return formatter.format(this.generateLogRecord(level, message, ex));
     }
 
     /**
