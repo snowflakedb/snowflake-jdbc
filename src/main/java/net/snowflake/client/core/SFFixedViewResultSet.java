@@ -22,11 +22,13 @@ public class SFFixedViewResultSet extends SFJsonResultSet {
   private SnowflakeFixedView fixedView;
   private Object[] nextRow = null;
   private final CommandType commandType;
+  private final String queryID;
 
-  public SFFixedViewResultSet(SnowflakeFixedView fixedView, CommandType commandType)
+  public SFFixedViewResultSet(SnowflakeFixedView fixedView, CommandType commandType, String queryID)
       throws SnowflakeSQLException {
     this.fixedView = fixedView;
     this.commandType = commandType;
+    this.queryID = queryID;
 
     try {
       resultSetMetaData =
@@ -140,6 +142,6 @@ public class SFFixedViewResultSet extends SFJsonResultSet {
 
   @Override
   public String getQueryId() {
-    return "";
+    return queryID;
   }
 }

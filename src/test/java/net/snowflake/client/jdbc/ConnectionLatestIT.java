@@ -18,6 +18,7 @@ import java.util.Enumeration;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryConnection;
@@ -116,6 +117,38 @@ public class ConnectionLatestIT extends BaseJDBCTest {
 
     SFSession session = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
     assertEquals(900, session.getHeartbeatFrequency());
+  }
+
+  /**
+   * Test that PUT/GET statements can return query IDs. If there is a group of files
+   * uploaded/downloaded, the getResultSet() function will return the query ID of the last PUT or
+   * GET statement in the batch.
+   *
+   * @throws Throwable
+   */
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void putStatementNullQueryID() throws Throwable {
+    Connection con = getConnection();
+    Statement statement = con.createStatement();
+    String sourceFilePath = getFullPathFileInResource(TEST_DATA_FILE);
+    File destFolder = tmpFolder.newFolder();
+    String destFolderCanonicalPath = destFolder.getCanonicalPath();
+    statement.execute("CREATE OR REPLACE STAGE testPutGet_stage");
+    String putStatement = "PUT file://" + sourceFilePath + " @testPutGet_stage";
+    ResultSet resultSet =
+        statement.unwrap(SnowflakeStatement.class).executeAsyncQuery(putStatement);
+    String queryID = resultSet.unwrap(SnowflakeResultSet.class).getQueryID();
+    assertTrue(
+        Pattern.matches("[a-z0-9]{8}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{12}", queryID));
+    resultSet =
+        statement
+            .unwrap(SnowflakeStatement.class)
+            .executeAsyncQuery(
+                "GET @testPutGet_stage 'file://" + destFolderCanonicalPath + "' parallel=8");
+    queryID = resultSet.unwrap(SnowflakeResultSet.class).getQueryID();
+    assertTrue(
+        Pattern.matches("[a-z0-9]{8}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{12}", queryID));
   }
 
   @Test
