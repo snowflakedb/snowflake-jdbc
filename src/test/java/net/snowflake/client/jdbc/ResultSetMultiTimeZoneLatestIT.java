@@ -23,6 +23,8 @@ public class ResultSetMultiTimeZoneLatestIT extends BaseJDBCTest {
   @Parameterized.Parameters(name = "format={0}, tz={1}")
   public static Collection<Object[]> data() {
     // all tests in this class need to run for both query result formats json and arrow
+    // UTC and Europe/London have different offsets during daylight savings time so it is important
+    // to test both to ensure daylight savings time is correct
     String[] timeZones = new String[] {"UTC", "Asia/Singapore", "MEZ", "Europe/London"};
     String[] queryFormats = new String[] {"json", "arrow"};
     List<Object[]> ret = new ArrayList<>();
