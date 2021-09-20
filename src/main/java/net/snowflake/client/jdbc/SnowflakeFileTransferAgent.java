@@ -89,6 +89,9 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
   // local location for where to download files to
   private String localLocation;
 
+  // Query ID of PUT or GET statement
+  private String queryID = "";
+
   // default parallelism
   private int parallel = DEFAULT_PARALLEL;
 
@@ -869,6 +872,8 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
 
     // get source file locations as array (apply to both upload and download)
     JsonNode locationsNode = jsonNode.path("data").path("src_locations");
+
+    queryID = jsonNode.path("data").path("queryId").asText();
 
     assert locationsNode.isArray();
 
@@ -3043,7 +3048,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
   }
 
   public Object getResultSet() throws SnowflakeSQLException {
-    return new SFFixedViewResultSet(this, this.commandType);
+    return new SFFixedViewResultSet(this, this.commandType, this.queryID);
   }
 
   public CommandType getCommandType() {
