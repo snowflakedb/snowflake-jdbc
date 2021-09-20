@@ -4,6 +4,8 @@
 
 package net.snowflake.client.jdbc;
 
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
+
 import com.amazonaws.util.Base64;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -12,6 +14,19 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.CountingOutputStream;
+import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.security.DigestOutputStream;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.sql.SQLException;
+import java.util.*;
+import java.util.Map.Entry;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.zip.GZIPOutputStream;
 import net.snowflake.client.core.*;
 import net.snowflake.client.jdbc.cloud.storage.*;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
@@ -26,22 +41,6 @@ import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.filefilter.WildcardFileFilter;
-
-import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.security.DigestOutputStream;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.sql.SQLException;
-import java.util.*;
-import java.util.Map.Entry;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.TimeUnit;
-import java.util.zip.GZIPOutputStream;
-
-import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
 /**
  * Class for uploading/downloading files
@@ -2323,20 +2322,21 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
 
         try {
           compareAndSkipRemoteFiles(objectSummaries, destFileNameToSrcFileMap);
-          break;  // exit retry loop
+          break; // exit retry loop
         } catch (Exception ex) {
-          // This exception retry logic is mainly for Azure iterator. Since Azure iterator is a lazy iterator,
+          // This exception retry logic is mainly for Azure iterator. Since Azure iterator is a lazy
+          // iterator,
           // it can throw exceptions during the for-each calls. To be more specific, iterator apis,
           // e.g. hasNext(), may throw Storage service error.
           logger.debug(
-                  "Comparison with existing files in remote storage encountered exception.", ex);
+              "Comparison with existing files in remote storage encountered exception.", ex);
           if (ex instanceof StorageProviderException) {
             ex =
-                    (Exception)
-                            ex.getCause(); // Cause of StorageProviderException is always an Exception
+                (Exception)
+                    ex.getCause(); // Cause of StorageProviderException is always an Exception
           }
           storageClient.handleStorageException(
-                  ex, ++retryCount, "compareRemoteFiles", session, command);
+              ex, ++retryCount, "compareRemoteFiles", session, command);
         }
       } while (retryCount <= storageClient.getMaxRetries());
     } else if (stageInfo.getStageType() == StageInfo.StageType.LOCAL_FS) {
