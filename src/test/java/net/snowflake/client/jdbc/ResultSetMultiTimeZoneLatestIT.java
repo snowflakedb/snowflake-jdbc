@@ -23,7 +23,9 @@ public class ResultSetMultiTimeZoneLatestIT extends BaseJDBCTest {
   @Parameterized.Parameters(name = "format={0}, tz={1}")
   public static Collection<Object[]> data() {
     // all tests in this class need to run for both query result formats json and arrow
-    String[] timeZones = new String[] {"UTC", "Asia/Singapore", "MEZ"};
+    // UTC and Europe/London have different offsets during daylight savings time so it is important
+    // to test both to ensure daylight savings time is correct
+    String[] timeZones = new String[] {"UTC", "Asia/Singapore", "MEZ", "Europe/London"};
     String[] queryFormats = new String[] {"json", "arrow"};
     List<Object[]> ret = new ArrayList<>();
     for (String queryFormat : queryFormats) {
@@ -58,6 +60,29 @@ public class ResultSetMultiTimeZoneLatestIT extends BaseJDBCTest {
         .createStatement()
         .execute("alter session set jdbc_query_result_format = '" + queryResultFormat + "'");
     return connection;
+  }
+
+  /**
+   * This test is for SNOW-366563 where the timestamp was returning an incorrect value for daylight
+   * savings time due to the fact that UTC and Europe/London time have the same offset until
+   * daylight savings comes into effect. This tests that the timestamp value is accurate during
+   * daylight savings time.
+   *
+   * @throws SQLException
+   */
+  @Test
+  public void testTimestampNTZWithDaylightSavings() throws SQLException {
+    Connection connection = init();
+    Statement statement = connection.createStatement();
+    statement.execute(
+        "alter session set TIMESTAMP_TYPE_MAPPING='TIMESTAMP_NTZ'," + "TIMEZONE='Europe/London'");
+    ResultSet rs = statement.executeQuery("select TIMESTAMP '2011-09-04 00:00:00'");
+    rs.next();
+    Timestamp expected = Timestamp.valueOf("2011-09-04 00:00:00");
+    assertEquals(expected, rs.getTimestamp(1));
+    rs.close();
+    statement.close();
+    connection.close();
   }
 
   /**
