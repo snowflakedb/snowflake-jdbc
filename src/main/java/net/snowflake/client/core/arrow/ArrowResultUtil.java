@@ -102,7 +102,7 @@ public class ArrowResultUtil {
    */
   private static long moveToTimeZoneOffset(
       long milliSecsSinceEpoch, TimeZone oldTZ, TimeZone newTZ) {
-    if (oldTZ.getRawOffset() == newTZ.getRawOffset() && oldTZ.hasSameRules(newTZ)) {
+    if (oldTZ.hasSameRules(newTZ)) {
       // same time zone
       return 0;
     }
