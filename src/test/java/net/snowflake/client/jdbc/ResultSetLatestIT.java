@@ -91,10 +91,12 @@ public class ResultSetLatestIT extends ResultSet0IT {
     int rowCount = 170000;
     Connection connection = getConnection();
     List<ResultSet> rsList = new ArrayList<>();
+    // Set memory limit to low number
     connection
         .unwrap(SnowflakeConnectionV1.class)
         .getSFBaseSession()
         .setMemoryLimitForTesting(2000000);
+    // open multiple statements concurrently to overwhelm current memory allocation
     for (int i = 0; i < stmtCount; ++i) {
       Statement stmt = connection.createStatement();
       ResultSet resultSet =
@@ -102,6 +104,8 @@ public class ResultSetLatestIT extends ResultSet0IT {
               "select randstr(100, random()) from table(generator(rowcount => " + rowCount + "))");
       rsList.add(resultSet);
     }
+    // Assert that all resultSets exist and can successfully download the needed chunks without
+    // hanging
     for (int i = 0; i < stmtCount; i++) {
       rsList.get(i).next();
       assertTrue(Pattern.matches("[a-zA-Z0-9]{100}", rsList.get(i).getString(1)));
