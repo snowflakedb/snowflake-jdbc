@@ -105,6 +105,8 @@ public abstract class SFBaseSession {
   // Stores other parameters sent by server
   private final Map<String, Object> otherParameters = new HashMap<>();
   private HttpClientSettingsKey ocspAndProxyKey = null;
+  // Memory limit for SnowflakeChunkDownloader. This gets set from SFBaseSession for testing
+  // purposes only.
   private long memoryLimitForTesting = -1;
 
   public void setMemoryLimitForTesting(long memLimit) {
