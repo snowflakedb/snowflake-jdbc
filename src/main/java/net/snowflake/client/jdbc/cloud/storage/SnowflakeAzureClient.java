@@ -758,9 +758,10 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
       sb.append(", AdditionalDetails= { ");
       for (Map.Entry<String, String[]> detail : details.entrySet()) {
         sb.append(detail.getKey());
-        sb.append("= ");
+        sb.append("=");
 
         for (String value : detail.getValue()) {
+          sb.append(" ");
           sb.append(value);
         }
         sb.append(",");

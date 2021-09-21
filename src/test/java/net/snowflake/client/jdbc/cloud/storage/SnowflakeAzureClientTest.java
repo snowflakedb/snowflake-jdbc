@@ -18,8 +18,8 @@ public class SnowflakeAzureClientTest {
             + " to authorize the request, AdditionalDetails= {}}";
     String expectedStr1 =
         "StorageExceptionExtendedErrorInformation: {ErrorCode= 403, ErrorMessage= Server refuses"
-            + " to authorize the request, AdditionalDetails= { key1= helloworld,key2= ,key3="
-            + " fakemessage}}";
+            + " to authorize the request, AdditionalDetails= { key1= hello world,key2=,key3="
+            + " fake message}}";
     StorageExtendedErrorInformation info = new StorageExtendedErrorInformation();
     info.setErrorCode("403");
     info.setErrorMessage("Server refuses to authorize the request");
