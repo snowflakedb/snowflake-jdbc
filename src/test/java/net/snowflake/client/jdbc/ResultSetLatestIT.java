@@ -22,7 +22,6 @@ import net.snowflake.client.category.TestCategoryResultSet;
 import net.snowflake.client.jdbc.telemetry.*;
 import net.snowflake.common.core.SFBinary;
 import org.apache.arrow.vector.Float8Vector;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -82,17 +81,20 @@ public class ResultSetLatestIT extends ResultSet0IT {
   }
 
   /**
-   * This test should only be run manually because it takes between 3 and 5 minutes to run. If it's
-   * successful, it will end between 3 and 5 minutes. This tests that when there is high statement
-   * concurrency, the downloader no longer hangs while fetching prefetch chunks.
+   * This tests that the SnowflakeChunkDownloader doesn't hang when memory limits are low. Opening
+   * multiple statements concurrently uses a lot of memory. This checks that chunks download even
+   * when there is not enough memory available for concurrent prefetching.
    */
-  @Ignore
   @Test
-  public void testNoTestHangWithTooManyStatements() throws SQLException {
-    int stmtCount = 200;
+  public void testChunkDownloaderNoHang() throws SQLException {
+    int stmtCount = 30;
     int rowCount = 170000;
     Connection connection = getConnection();
     List<ResultSet> rsList = new ArrayList<>();
+    connection
+        .unwrap(SnowflakeConnectionV1.class)
+        .getSFBaseSession()
+        .setMemoryLimitForTesting(2000000);
     for (int i = 0; i < stmtCount; ++i) {
       Statement stmt = connection.createStatement();
       ResultSet resultSet =
@@ -100,11 +102,14 @@ public class ResultSetLatestIT extends ResultSet0IT {
               "select randstr(100, random()) from table(generator(rowcount => " + rowCount + "))");
       rsList.add(resultSet);
     }
-    System.out.println("Successfully created resultSets");
     for (int i = 0; i < stmtCount; i++) {
       rsList.get(i).next();
+      assertTrue(Pattern.matches("[a-zA-Z0-9]{100}", rsList.get(i).getString(1)));
+      rsList.get(i).close();
     }
-    System.out.println("Result.next() called successfully on all resultSets.");
+    // set memory limit back to default invalid value so it does not get used
+    connection.unwrap(SnowflakeConnectionV1.class).getSFBaseSession().setMemoryLimitForTesting(-1);
+    connection.close();
   }
 
   /**

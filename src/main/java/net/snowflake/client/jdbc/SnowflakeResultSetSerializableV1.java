@@ -799,6 +799,10 @@ public class SnowflakeResultSetSerializableV1
           Runtime.getRuntime().maxMemory(),
           maxChunkSize);
     }
+    if (sfStatement.getSFBaseSession().getMemoryLimitForTesting() > -1) {
+      memoryLimit = sfStatement.getSFBaseSession().getMemoryLimitForTesting();
+      logger.debug("memoryLimit changed for testing purposes to {}", memoryLimit);
+    }
   }
 
   /**

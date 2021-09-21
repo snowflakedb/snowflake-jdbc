@@ -105,6 +105,15 @@ public abstract class SFBaseSession {
   // Stores other parameters sent by server
   private final Map<String, Object> otherParameters = new HashMap<>();
   private HttpClientSettingsKey ocspAndProxyKey = null;
+  private long memoryLimitForTesting = -1;
+
+  public void setMemoryLimitForTesting(long memLimit) {
+    this.memoryLimitForTesting = memLimit;
+  }
+
+  public long getMemoryLimitForTesting() {
+    return this.memoryLimitForTesting;
+  }
 
   /**
    * Part of the JDBC API, where client applications may fetch a Map of Properties to set various

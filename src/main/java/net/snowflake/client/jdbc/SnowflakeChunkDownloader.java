@@ -187,7 +187,6 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
     this.qrmk = resultSetSerializable.getQrmk();
     this.networkTimeoutInMilli = resultSetSerializable.getNetworkTimeoutInMilli();
     this.prefetchSlots = resultSetSerializable.getResultPrefetchThreads() * 2;
-    this.memoryLimit = resultSetSerializable.getMemoryLimit();
     this.queryResultFormat = resultSetSerializable.getQueryResultFormat();
     logger.debug("qrmk = {}", this.qrmk);
     this.chunkHeadersMap = resultSetSerializable.getChunkHeadersMap();
@@ -196,6 +195,10 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
         (resultSetSerializable.getSession() != null)
             ? resultSetSerializable.getSession().orElse(null)
             : null;
+    this.memoryLimit = resultSetSerializable.getMemoryLimit();
+    if (this.session != null && session.getMemoryLimitForTesting() > -1) {
+      this.memoryLimit = session.getMemoryLimitForTesting();
+    }
 
     // create the chunks array
     this.chunks = new ArrayList<>(resultSetSerializable.getChunkFileCount());
@@ -284,7 +287,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
   /** Submit download chunk tasks to executor. Number depends on thread and memory limit */
   private void startNextDownloaders() throws SnowflakeSQLException {
     long waitingTime = BASE_WAITING_MS;
-    long retry = 0;
+    long getPrefetchMemRetry = 0;
 
     // submit the chunks to be downloaded up to the prefetch slot capacity
     // and limited by memory
@@ -307,18 +310,24 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
 
       // try to reserve the needed memory
       long curMem = currentMemoryUsage.addAndGet(neededChunkMemory);
-      logger.debug(
-          "memoryLimit: {}, curMem: {}, retry: {}, maxRetry: {}",
-          memoryLimit,
-          curMem,
-          retry,
-          MAX_NUM_OF_RETRY);
-      // no memory allocate when memory is not enough for prefetch
+      // If there is not enough memory available for prefetch, cancel the memory allocation. It's
+      // cancelled when:
+      // 1. We haven't consumed enough chunks to download next chunk (nextChunkToDownload >
+      // nextChunkToConsume)
+      // 2. There is not enough memory for prefetching to begin with (nextChunkToDownload=0 &&
+      // nextChunkToConsume=0)
+      // In all other cases, don't cancel but wait until memory frees up.
       if (curMem > memoryLimit
           && (nextChunkToDownload - nextChunkToConsume > 0
               || (nextChunkToDownload == 0 && nextChunkToConsume == 0))) {
         // cancel the reserved memory and this downloader too
-        logger.debug("Not enough memory available for prefetch. Cancel reserved memory");
+        logger.debug(
+            "Not enough memory available for prefetch. Cancel reserved memory. MemoryLimit: {}, curMem: {}, nextChunkToDownload: {}, nextChunkToConsume: {}, retry: {}",
+            memoryLimit,
+            curMem,
+            nextChunkToDownload,
+            nextChunkToConsume,
+            getPrefetchMemRetry);
         currentMemoryUsage.addAndGet(-neededChunkMemory);
         break;
       }
@@ -364,7 +373,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
         // cancel the reserved memory
         logger.debug("cancel the reserved memory.");
         curMem = currentMemoryUsage.addAndGet(-neededChunkMemory);
-        if (retry > MAX_NUM_OF_RETRY) {
+        if (getPrefetchMemRetry > MAX_NUM_OF_RETRY) {
           logger.debug(
               "Retry limit for prefetch has been reached. Cancel reserved memory and prefetch attempt.");
           break;
@@ -377,7 +386,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
         waitingTime = waitingTime > MAX_WAITING_MS ? MAX_WAITING_MS : waitingTime;
         long jitter = ThreadLocalRandom.current().nextLong(0, waitingTime / WAITING_JITTER_RATIO);
         waitingTime += jitter;
-        retry++;
+        getPrefetchMemRetry++;
         if (logger.isDebugEnabled()) {
           logger.debug(
               "Thread {} waiting for {}s: currentMemoryUsage in MB: {}, neededChunkMemory in MB: {}, "
@@ -388,7 +397,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
               neededChunkMemory / MB,
               nextChunkToDownload,
               nextChunkToConsume,
-              retry);
+              getPrefetchMemRetry);
         }
         Thread.sleep(waitingTime);
       } catch (InterruptedException ie) {
@@ -491,7 +500,6 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
 
     // prefetch next chunks
     try {
-
       startNextDownloaders();
     } catch (OutOfMemoryError outOfMemoryError) {
       logOutOfMemoryError();
@@ -608,7 +616,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
 
       if (currentChunk.getDownloadState() != DownloadState.SUCCESS) {
         // if this is the first attempt to download this chunk (due to cancelled prefetch), don't
-        // increment retry
+        // increment retry because it's the first try
         if (currentChunk.getDownloadState() != DownloadState.NOT_STARTED) {
           retry++;
         }
@@ -636,7 +644,6 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
         // random jitter before start next retry
         Thread.sleep(new Random().nextInt(MAX_RETRY_JITTER));
 
-        logger.debug("Submitting next chunk for download in main thread (not prefetch)");
         downloaderFuture =
             executor.submit(
                 getDownloadChunkCallable(
