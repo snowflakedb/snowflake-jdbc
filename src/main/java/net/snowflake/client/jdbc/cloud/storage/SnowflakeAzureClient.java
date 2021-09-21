@@ -241,7 +241,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
       logger.debug(
           "Failed to retrieve BLOB metadata: {} - {}",
           ex.getErrorCode(),
-          FormatStorageExceptionExtendedInformation(ex.getExtendedErrorInformation()));
+          FormatStorageExtendedErrorInformation(ex.getExtendedErrorInformation()));
       throw new StorageProviderException(ex);
     } catch (URISyntaxException ex) {
       logger.debug("Cannot retrieve BLOB properties, invalid URI: {}", ex);
@@ -678,7 +678,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
             se.getErrorCode(),
             se.getHttpStatusCode(),
             se.getMessage(),
-            FormatStorageExceptionExtendedInformation(se.getExtendedErrorInformation()));
+            FormatStorageExtendedErrorInformation(se.getExtendedErrorInformation()));
       } else {
         logger.debug(
             "Encountered exception ({}) during {}, retry count: {}",
@@ -742,8 +742,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
    * @param info the StorageExtendedErrorInformation object
    * @return
    */
-  private static String FormatStorageExceptionExtendedInformation(
-      StorageExtendedErrorInformation info) {
+  static String FormatStorageExtendedErrorInformation(StorageExtendedErrorInformation info) {
     if (info == null) {
       return "";
     }
