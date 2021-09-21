@@ -9,6 +9,8 @@ import static net.snowflake.client.jdbc.ErrorCode.FEATURE_UNSUPPORTED;
 import java.sql.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+
+import com.fasterxml.jackson.databind.JsonNode;
 import net.snowflake.client.core.*;
 import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
@@ -204,6 +206,26 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
     resultSet = connection.getHandler().createResultSet(sfResultSet, this);
 
     return getResultSet();
+  }
+
+  private static List<String> getResultIds(JsonNode result) {
+    JsonNode resultIds = result.path("data").path("resultIds");
+    if (resultIds.isNull() || resultIds.isMissingNode() || resultIds.asText().isEmpty()) {
+      return Collections.emptyList();
+    }
+    return new ArrayList<>(Arrays.asList(resultIds.asText().split(",")));
+  }
+
+  public List<String> getMultipleQueryIDs(String multipleStatementQueryID) throws SQLException {
+    SFSession session = (SFSession) this.connection.getSFBaseSession();
+    waitForQueryDone(multipleStatementQueryID);
+    try {
+      JsonNode jsonResult = StmtUtil.getQueryResultJSON(multipleStatementQueryID, session);
+      return getResultIds(jsonResult);
+    } catch (SFException ex) {
+      throw new SnowflakeSQLException(
+              ex.getCause(), ex.getSqlState(), ex.getVendorCode(), ex.getParams());
+    }
   }
 
   /**
