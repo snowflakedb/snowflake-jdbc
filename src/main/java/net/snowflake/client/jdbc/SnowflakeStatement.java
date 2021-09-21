@@ -34,4 +34,6 @@ public interface SnowflakeStatement {
   ResultSet executeAsyncQuery(String sql) throws SQLException;
 
   public ResultSet getAsyncQueryResult(String queryID) throws SQLException;
+
+  public List<String> getMultipleQueryIDs(String multipleStatementQueryID) throws SQLException;
 }
