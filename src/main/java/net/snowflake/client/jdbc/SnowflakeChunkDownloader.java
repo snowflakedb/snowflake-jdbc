@@ -196,7 +196,8 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
             ? resultSetSerializable.getSession().orElse(null)
             : null;
     this.memoryLimit = resultSetSerializable.getMemoryLimit();
-    if (this.session != null && session.getMemoryLimitForTesting() > -1) {
+    if (this.session != null
+        && session.getMemoryLimitForTesting() != SFBaseSession.MEMORY_LIMIT_UNSET) {
       this.memoryLimit = session.getMemoryLimitForTesting();
     }
 

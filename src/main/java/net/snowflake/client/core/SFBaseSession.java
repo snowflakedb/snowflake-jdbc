@@ -105,9 +105,11 @@ public abstract class SFBaseSession {
   // Stores other parameters sent by server
   private final Map<String, Object> otherParameters = new HashMap<>();
   private HttpClientSettingsKey ocspAndProxyKey = null;
+  // Default value for memory limit in SFBaseSession
+  public static long MEMORY_LIMIT_UNSET = -1;
   // Memory limit for SnowflakeChunkDownloader. This gets set from SFBaseSession for testing
   // purposes only.
-  private long memoryLimitForTesting = -1;
+  private long memoryLimitForTesting = MEMORY_LIMIT_UNSET;
 
   public void setMemoryLimitForTesting(long memLimit) {
     this.memoryLimitForTesting = memLimit;

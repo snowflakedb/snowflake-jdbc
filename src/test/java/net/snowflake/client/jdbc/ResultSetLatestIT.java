@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 import net.snowflake.client.category.TestCategoryResultSet;
+import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.jdbc.telemetry.*;
 import net.snowflake.common.core.SFBinary;
 import org.apache.arrow.vector.Float8Vector;
@@ -112,7 +113,10 @@ public class ResultSetLatestIT extends ResultSet0IT {
       rsList.get(i).close();
     }
     // set memory limit back to default invalid value so it does not get used
-    connection.unwrap(SnowflakeConnectionV1.class).getSFBaseSession().setMemoryLimitForTesting(-1);
+    connection
+        .unwrap(SnowflakeConnectionV1.class)
+        .getSFBaseSession()
+        .setMemoryLimitForTesting(SFBaseSession.MEMORY_LIMIT_UNSET);
     connection.close();
   }
 
