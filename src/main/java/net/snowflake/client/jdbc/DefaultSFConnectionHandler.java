@@ -159,9 +159,10 @@ public class DefaultSFConnectionHandler implements SFConnectionHandler {
 
   @Override
   public ResultSet createResultSet(String queryID, Statement statement) throws SQLException {
-    SFAsyncResultSet rs = new SFAsyncResultSet(queryID);
+    SFAsyncResultSet rs = new SFAsyncResultSet(queryID, statement);
     rs.setSession(sfSession);
-    rs.setStatement(statement);
+    // Setup the real ResultSet.
+    rs.getRealResults();
     return rs;
   }
 

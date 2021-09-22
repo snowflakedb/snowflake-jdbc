@@ -130,7 +130,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
   @Override
   public ResultSet executeQuery(String sql) throws SQLException {
     raiseSQLExceptionIfStatementIsClosed();
-    return executeQueryInternal(sql, false, null);
+    return executeQueryInternal(sql, false, null, Optional.empty());
   }
 
   /**
@@ -142,7 +142,23 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
    */
   public ResultSet executeAsyncQuery(String sql) throws SQLException {
     raiseSQLExceptionIfStatementIsClosed();
-    return executeQueryInternal(sql, true, null);
+    return executeQueryInternal(sql, true, null, Optional.empty());
+  }
+
+  /**
+   * Retrieve the ResultSet for a specific query queryId
+   *
+   * @param queryId The query ID
+   * @return ResultSet
+   * @throws SQLException if @link{#executeQueryInternal(String, Map)} throws an exception
+   */
+  public ResultSet getResultSetForQueryId(String queryId) throws SQLException {
+    raiseSQLExceptionIfStatementIsClosed();
+    return executeQueryInternal(
+        "Don't need query text when getting ResultSet for query ID.",
+        false,
+        null,
+        Optional.of(queryId));
   }
 
   /**
@@ -217,11 +233,15 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
    * @param sql sql statement
    * @param asyncExec execute query asynchronously
    * @param parameterBindings parameters bindings
+   * @param queryId parameters bindings
    * @return query result set
    * @throws SQLException if @link{SFStatement.execute(String)} throws exception
    */
   ResultSet executeQueryInternal(
-      String sql, boolean asyncExec, Map<String, ParameterBindingDTO> parameterBindings)
+      String sql,
+      boolean asyncExec,
+      Map<String, ParameterBindingDTO> parameterBindings,
+      Optional<String> queryId)
       throws SQLException {
     SFBaseResultSet sfResultSet;
     try {
@@ -233,6 +253,8 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
         sfResultSet =
             sfBaseStatement.asyncExecute(
                 sql, parameterBindings, SFBaseStatement.CallingMethod.EXECUTE_QUERY);
+      } else if (queryId.isPresent()) {
+        sfResultSet = sfBaseStatement.getResultFromQueryId(queryId.get());
       } else {
         sfResultSet =
             sfBaseStatement.execute(

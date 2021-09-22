@@ -13,6 +13,7 @@ import java.sql.Statement;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
@@ -137,7 +138,8 @@ public class SFStatement extends SFBaseStatement {
         describeOnly,
         describeOnly, // internal query if describeOnly is true
         asyncExec,
-        caller);
+        caller,
+        Optional.empty());
   }
 
   /**
@@ -183,7 +185,8 @@ public class SFStatement extends SFBaseStatement {
       boolean describeOnly,
       boolean internal,
       boolean asyncExec,
-      CallingMethod caller)
+      CallingMethod caller,
+      Optional<String> queryId)
       throws SQLException, SFException {
     resetState();
 
@@ -194,8 +197,10 @@ public class SFStatement extends SFBaseStatement {
     }
 
     Object result =
-        executeHelper(
-            sql, StmtUtil.SF_MEDIA_TYPE, parameterBindings, describeOnly, internal, asyncExec);
+        queryId.isPresent()
+            ? StmtUtil.getQueryResultJSON(queryId.get(), session)
+            : executeHelper(
+                sql, StmtUtil.SF_MEDIA_TYPE, parameterBindings, describeOnly, internal, asyncExec);
 
     if (result == null) {
       throw new SnowflakeSQLLoggedException(
@@ -637,6 +642,26 @@ public class SFStatement extends SFBaseStatement {
       String sql, Map<String, ParameterBindingDTO> parametersBinding, CallingMethod caller)
       throws SQLException, SFException {
     return execute(sql, false, parametersBinding, caller);
+  }
+
+  /**
+   * Executes the given SQL string.
+   *
+   * @param queryId The SQL string to execute, synchronously.
+   * @return whether there is result set or not
+   * @throws SQLException if failed to execute sql
+   * @throws SFException exception raised from Snowflake components
+   * @throws SQLException if SQL error occurs
+   */
+  public SFBaseResultSet getResultFromQueryId(String queryId) throws SQLException, SFException {
+    return executeQueryInternal(
+        "dummy query",
+        null,
+        false,
+        false, // internal query if describeOnly is true
+        false,
+        CallingMethod.EXECUTE,
+        Optional.of(queryId));
   }
 
   private void reauthenticate() throws SFException, SnowflakeSQLException {
