@@ -241,7 +241,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
       logger.debug(
           "Failed to retrieve BLOB metadata: {} - {}",
           ex.getErrorCode(),
-          ex.getExtendedErrorInformation());
+          FormatStorageExtendedErrorInformation(ex.getExtendedErrorInformation()));
       throw new StorageProviderException(ex);
     } catch (URISyntaxException ex) {
       logger.debug("Cannot retrieve BLOB properties, invalid URI: {}", ex);
@@ -678,7 +678,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
             se.getErrorCode(),
             se.getHttpStatusCode(),
             se.getMessage(),
-            se.getExtendedErrorInformation());
+            FormatStorageExtendedErrorInformation(se.getExtendedErrorInformation()));
       } else {
         logger.debug(
             "Encountered exception ({}) during {}, retry count: {}",
@@ -736,8 +736,43 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
     }
   }
 
+  /**
+   * Format the StorageExtendedErrorInformation to a String.
+   *
+   * @param info the StorageExtendedErrorInformation object
+   * @return
+   */
+  static String FormatStorageExtendedErrorInformation(StorageExtendedErrorInformation info) {
+    if (info == null) {
+      return "";
+    }
+
+    StringBuilder sb = new StringBuilder();
+    sb.append("StorageExceptionExtendedErrorInformation: {ErrorCode= ");
+    sb.append(info.getErrorCode());
+    sb.append(", ErrorMessage= ");
+    sb.append(info.getErrorMessage());
+
+    HashMap<String, String[]> details = info.getAdditionalDetails();
+    if (details != null) {
+      sb.append(", AdditionalDetails= { ");
+      for (Map.Entry<String, String[]> detail : details.entrySet()) {
+        sb.append(detail.getKey());
+        sb.append("= ");
+
+        for (String value : detail.getValue()) {
+          sb.append(value);
+        }
+        sb.append(",");
+      }
+      sb.setCharAt(sb.length() - 1, '}'); // overwrite the last comma
+    }
+    sb.append("}");
+    return sb.toString();
+  }
+
   /*
-   * Builds a URI to a Azure Storage account endpoint
+   * Builds a URI to an Azure Storage account endpoint
    *
    *  @param storageEndPoint   the storage endpoint name
    *  @param storageAccount    the storage account name
