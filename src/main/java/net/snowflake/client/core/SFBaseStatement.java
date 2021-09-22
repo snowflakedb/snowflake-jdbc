@@ -77,6 +77,18 @@ public abstract class SFBaseStatement {
       throws SQLException, SFException;
 
   /**
+   * Executes the given SQL string.
+   *
+   * @param queryId The SQL string to execute, synchronously.
+   * @return whether there is result set or not
+   * @throws SQLException if failed to execute sql
+   * @throws SFException exception raised from Snowflake components
+   * @throws SQLException if SQL error occurs
+   */
+  public abstract SFBaseResultSet getResultFromQueryId(String queryId)
+      throws SQLException, SFException;
+
+  /**
    * Execute sql asynchronously. Note that at a minimum, this does not have to be supported; if
    * executeAsyncQuery() is called from SnowflakeStatement and the SFConnectionHandler's
    * supportsAsyncQuery() returns false, an exception is thrown. If this is un-implemented, then

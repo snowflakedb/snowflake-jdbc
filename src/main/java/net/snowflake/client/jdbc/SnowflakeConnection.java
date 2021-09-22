@@ -7,6 +7,7 @@ package net.snowflake.client.jdbc;
 import java.io.InputStream;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 
 /** This interface defines Snowflake specific APIs for Connection */
 public interface SnowflakeConnection {
@@ -61,6 +62,17 @@ public interface SnowflakeConnection {
    * @throws SQLException
    */
   ResultSet createResultSet(String queryID) throws SQLException;
+
+  /**
+   * Create a new instance of a ResultSet object based off query ID. ResultSet will contain results
+   * of corresponding query. Used when original ResultSet object is no longer available, such as
+   * when original connection has been closed.
+   *
+   * @param queryID
+   * @return
+   * @throws SQLException
+   */
+  Statement createStatementForMultipleStatementsQuery(String queryID) throws SQLException;
 
   /** Returns the SnowflakeConnectionImpl from the connection object. */
   SFConnectionHandler getHandler();

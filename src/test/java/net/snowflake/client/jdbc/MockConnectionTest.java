@@ -543,6 +543,11 @@ public class MockConnectionTest extends BaseJDBCTest {
     }
 
     @Override
+    public SFBaseResultSet getResultFromQueryId(String queryId) throws SQLException, SFException {
+      return new MockJsonResultSet(mockedResponse, sfSession);
+    }
+
+    @Override
     public SFBaseResultSet asyncExecute(
         String sql, Map<String, ParameterBindingDTO> parametersBinding, CallingMethod caller)
         throws SQLException, SFException {

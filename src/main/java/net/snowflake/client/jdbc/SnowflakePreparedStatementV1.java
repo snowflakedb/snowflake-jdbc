@@ -114,7 +114,7 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
     } else {
       logger.debug("executeQuery()");
     }
-    return executeQueryInternal(sql, false, parameterBindings);
+    return executeQueryInternal(sql, false, parameterBindings, Optional.empty());
   }
 
   /**
@@ -129,7 +129,7 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
     } else {
       logger.debug("executeAsyncQuery()");
     }
-    return executeQueryInternal(sql, true, parameterBindings);
+    return executeQueryInternal(sql, true, parameterBindings, Optional.empty());
   }
 
   @Override

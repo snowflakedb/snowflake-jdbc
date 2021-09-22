@@ -170,6 +170,13 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
     return rs;
   }
 
+  public Statement createStatementForMultipleStatementsQuery(String queryID) throws SQLException {
+    raiseSQLExceptionIfConnectionIsClosed();
+    Statement stmt = createStatement();
+    sfConnectionHandler.createResultSet(queryID, stmt);
+    return stmt;
+  }
+
   /**
    * Close the connection
    *

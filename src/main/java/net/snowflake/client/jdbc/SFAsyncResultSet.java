@@ -76,7 +76,8 @@ class SFAsyncResultSet extends SnowflakeBaseResultSet implements SnowflakeResult
     }
   }
 
-  public SFAsyncResultSet(String queryID) throws SQLException {
+  public SFAsyncResultSet(String queryID, Statement statement) throws SQLException {
+    super(statement);
     this.sfBaseResultSet = null;
     queryID.trim();
     if (!Pattern.matches("[a-z0-9]{8}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{12}", queryID)) {
@@ -110,7 +111,7 @@ class SFAsyncResultSet extends SnowflakeBaseResultSet implements SnowflakeResult
    *
    * @throws SQLException
    */
-  private void getRealResults() throws SQLException {
+  void getRealResults() throws SQLException {
     if (!resultSetForNextInitialized) {
       QueryStatus qs = this.getStatus();
       int noDataRetry = 0;
@@ -149,7 +150,7 @@ class SFAsyncResultSet extends SnowflakeBaseResultSet implements SnowflakeResult
         qs = this.getStatus();
       }
       resultSetForNext =
-          extraStatement.executeQuery("select * from table(result_scan('" + this.queryID + "'))");
+          this.statement.unwrap(SnowflakeStatementV1.class).getResultSetForQueryId(queryID);
       resultSetForNextInitialized = true;
     }
   }
