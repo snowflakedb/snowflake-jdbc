@@ -13,11 +13,13 @@ import java.math.BigInteger;
 import java.math.RoundingMode;
 import java.nio.ByteBuffer;
 import java.sql.*;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 import net.snowflake.client.category.TestCategoryResultSet;
+import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.jdbc.telemetry.*;
 import net.snowflake.common.core.SFBinary;
 import org.apache.arrow.vector.Float8Vector;
@@ -77,6 +79,45 @@ public class ResultSetLatestIT extends ResultSet0IT {
     // Unset the exception injection so statement and connection can close without exceptions
     SnowflakeChunkDownloader.setInjectedDownloaderException(null);
     closeSQLObjects(resultSet, statement, connection);
+  }
+
+  /**
+   * This tests that the SnowflakeChunkDownloader doesn't hang when memory limits are low. Opening
+   * multiple statements concurrently uses a lot of memory. This checks that chunks download even
+   * when there is not enough memory available for concurrent prefetching.
+   */
+  @Test
+  public void testChunkDownloaderNoHang() throws SQLException {
+    int stmtCount = 30;
+    int rowCount = 170000;
+    Connection connection = getConnection();
+    List<ResultSet> rsList = new ArrayList<>();
+    // Set memory limit to low number
+    connection
+        .unwrap(SnowflakeConnectionV1.class)
+        .getSFBaseSession()
+        .setMemoryLimitForTesting(2000000);
+    // open multiple statements concurrently to overwhelm current memory allocation
+    for (int i = 0; i < stmtCount; ++i) {
+      Statement stmt = connection.createStatement();
+      ResultSet resultSet =
+          stmt.executeQuery(
+              "select randstr(100, random()) from table(generator(rowcount => " + rowCount + "))");
+      rsList.add(resultSet);
+    }
+    // Assert that all resultSets exist and can successfully download the needed chunks without
+    // hanging
+    for (int i = 0; i < stmtCount; i++) {
+      rsList.get(i).next();
+      assertTrue(Pattern.matches("[a-zA-Z0-9]{100}", rsList.get(i).getString(1)));
+      rsList.get(i).close();
+    }
+    // set memory limit back to default invalid value so it does not get used
+    connection
+        .unwrap(SnowflakeConnectionV1.class)
+        .getSFBaseSession()
+        .setMemoryLimitForTesting(SFBaseSession.MEMORY_LIMIT_UNSET);
+    connection.close();
   }
 
   /**
