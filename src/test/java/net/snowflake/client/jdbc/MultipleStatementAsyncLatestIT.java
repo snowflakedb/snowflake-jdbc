@@ -13,7 +13,7 @@ import org.junit.experimental.categories.Category;
 
 /** Multi Statement tests */
 @Category(TestCategoryStatement.class)
-public class MultipleStatementAsyncIT extends BaseJDBCTest {
+public class MultipleStatementAsyncLatestIT extends BaseJDBCTest {
   protected static String queryResultFormat = "json";
   protected static Random random = new Random();
 
@@ -44,10 +44,10 @@ public class MultipleStatementAsyncIT extends BaseJDBCTest {
               + tableName
               + " order by cola asc";
 
-      statement.unwrap(SnowflakeStatement.class).executeAsyncQuery(multiStmtQuery);
-
+      ResultSet mrs = statement.unwrap(SnowflakeStatement.class).executeAsyncQuery(multiStmtQuery);
       // first statement always return a ResultSet
       ResultSet rs = statement.getResultSet();
+      assertTrue(mrs == rs);
       rs.next();
       assertEquals("Table " + tableName + " successfully created.", rs.getString(1));
       assertEquals(-1, statement.getUpdateCount());
