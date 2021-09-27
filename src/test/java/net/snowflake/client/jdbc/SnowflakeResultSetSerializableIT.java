@@ -261,8 +261,8 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
       String sqlSelect = "select * from table_basic " + whereClause;
       ResultSet rs =
           async
-              ? statement.executeQuery(sqlSelect)
-              : statement.unwrap(SnowflakeStatement.class).executeAsyncQuery(sqlSelect);
+              ? statement.unwrap(SnowflakeStatement.class).executeAsyncQuery(sqlSelect)
+              : statement.executeQuery(sqlSelect);
 
       fileNameList = serializeResultSet((SnowflakeResultSet) rs, maxSizeInBytes, "txt");
 
