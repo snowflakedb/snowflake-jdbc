@@ -223,12 +223,26 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
    * @throws Throwable If any error happens.
    */
   private void testBasicTableHarness(
-      int rowCount, long maxSizeInBytes, String whereClause, boolean needSetupTable)
+      int rowCount, long maxSizeInBytes, String whereClause, boolean needSetupTable, boolean async)
       throws Throwable {
     List<String> fileNameList = null;
     String originalResultCSVString = null;
     try (Connection connection = init()) {
       Statement statement = connection.createStatement();
+
+      if (developPrint) {
+        System.out.println(
+            "testBasicTableHarness: rowCount="
+                + rowCount
+                + ", maxSizeInBytes="
+                + maxSizeInBytes
+                + ", whereClause="
+                + whereClause
+                + ", needSetupTable="
+                + needSetupTable
+                + ", async="
+                + async);
+      }
 
       if (needSetupTable) {
         statement.execute(
@@ -245,7 +259,10 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
       }
 
       String sqlSelect = "select * from table_basic " + whereClause;
-      ResultSet rs = statement.executeQuery(sqlSelect);
+      ResultSet rs =
+          async
+              ? statement.unwrap(SnowflakeStatement.class).executeAsyncQuery(sqlSelect)
+              : statement.executeQuery(sqlSelect);
 
       fileNameList = serializeResultSet((SnowflakeResultSet) rs, maxSizeInBytes, "txt");
 
@@ -262,36 +279,52 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
   public void testBasicTableWithEmptyResult() throws Throwable {
     // Use complex WHERE clause in order to test both ARROW and JSON.
     // It looks GS only generates JSON format result.
-    testBasicTableHarness(10, 1024, "where int_c * int_c = 2", true);
+    testBasicTableHarness(10, 1024, "where int_c * int_c = 2", true, false);
+    // Test Async mode
+    testBasicTableHarness(10, 1024, "where int_c * int_c = 2", true, true);
   }
 
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testBasicTableWithOnlyFirstChunk() throws Throwable {
     // Result only includes first data chunk, test maxSize is small.
-    testBasicTableHarness(1, 1, "", true);
+    testBasicTableHarness(1, 1, "", true, false);
+    // Test Async mode
+    testBasicTableHarness(1, 1, "", true, true);
     // Result only includes first data chunk, test maxSize is big.
-    testBasicTableHarness(1, 1024 * 1024, "", false);
+    testBasicTableHarness(1, 1024 * 1024, "", false, false);
+    // Test async mode
+    testBasicTableHarness(1, 1024 * 1024, "", false, true);
   }
 
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testBasicTableWithOneFileChunk() throws Throwable {
     // Result only includes first data chunk, test maxSize is small.
-    testBasicTableHarness(300, 1, "", true);
+    testBasicTableHarness(300, 1, "", true, false);
+    // Test Async mode
+    testBasicTableHarness(300, 1, "", true, true);
     // Result only includes first data chunk, test maxSize is big.
-    testBasicTableHarness(300, 1024 * 1024, "", false);
+    testBasicTableHarness(300, 1024 * 1024, "", false, false);
+    // Test Async mode
+    testBasicTableHarness(300, 1024 * 1024, "", false, true);
   }
 
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testBasicTableWithSomeFileChunks() throws Throwable {
     // Result only includes first data chunk, test maxSize is small.
-    testBasicTableHarness(90000, 1, "", true);
+    testBasicTableHarness(90000, 1, "", true, false);
+    // Test Async mode
+    testBasicTableHarness(90000, 1, "", true, true);
     // Result only includes first data chunk, test maxSize is median.
-    testBasicTableHarness(90000, 3 * 1024 * 1024, "", false);
+    testBasicTableHarness(90000, 3 * 1024 * 1024, "", false, false);
+    // Test Async mode
+    testBasicTableHarness(90000, 3 * 1024 * 1024, "", false, true);
     // Result only includes first data chunk, test maxSize is big.
-    testBasicTableHarness(90000, 100 * 1024 * 1024, "", false);
+    testBasicTableHarness(90000, 100 * 1024 * 1024, "", false, false);
+    // Test Async mode
+    testBasicTableHarness(90000, 100 * 1024 * 1024, "", false, true);
   }
 
   /**
