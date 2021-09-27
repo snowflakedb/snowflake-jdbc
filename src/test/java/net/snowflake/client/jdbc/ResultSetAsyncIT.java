@@ -294,22 +294,6 @@ public class ResultSetAsyncIT extends BaseJDBCTest {
     connection.close();
   }
 
-  /** At the moment, asynchronous result sets cannot be serialized. */
-  @Test
-  public void testIsSerializable() throws SQLException {
-    Connection connection = getConnection();
-    Statement statement = connection.createStatement();
-    ResultSet resultSet =
-        statement.unwrap(SnowflakeStatement.class).executeAsyncQuery("show parameters");
-    try {
-      resultSet.unwrap(SnowflakeResultSet.class).getResultSetSerializables(500);
-      fail(
-          "SFAsyncResultSet.getResultSetSerializables should return SQLFeatureNotSupportedException");
-    } catch (SQLFeatureNotSupportedException e) {
-      // Do nothing. Test passes if we catch this exception.
-    }
-  }
-
   /**
    * This is a corner case for if a user forgets to call one of these functions before attempting to
    * fetch real data. An empty ResultSet is initially returned form executeAsyncQuery() but is
