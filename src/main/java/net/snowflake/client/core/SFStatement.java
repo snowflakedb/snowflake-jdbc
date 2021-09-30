@@ -10,6 +10,7 @@ import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -630,6 +631,43 @@ public class SFStatement extends SFBaseStatement {
   /** @return conservative memory limit before fetching results */
   public long getConservativeMemoryLimit() {
     return conservativeMemoryLimit;
+  }
+
+  /**
+   * Return an array of child query ID for the given query ID.
+   *
+   * <p>If the given query ID is for a multiple statements query, it returns an array of its child
+   * statements, otherwise, it returns an array to include the given query ID.
+   *
+   * @param queryID The given query ID
+   * @return An array of child query IDs
+   * @throws SQLException If the query is running or the corresponding query is FAILED.
+   */
+  @Override
+  public String[] getChildQueryIds(String queryID) throws SQLException {
+    QueryStatus qs = session.getQueryStatus(queryID);
+    if (QueryStatus.isStillRunning(qs)) {
+      throw new SQLException(
+          "Status of query associated with resultSet is "
+              + qs.getDescription()
+              + ". Results not generated.");
+    }
+    try {
+      JsonNode jsonResult = StmtUtil.getQueryResultJSON(queryID, session);
+      List<SFChildResult> childResults = ResultUtil.getChildResults(session, requestId, jsonResult);
+      List<String> resultList = new ArrayList<>();
+      for (int i = 0; i < childResults.size(); i++) {
+        resultList.add(childResults.get(i).id);
+      }
+      if (resultList.isEmpty()) {
+        resultList.add(queryID);
+      }
+      String[] result = new String[resultList.size()];
+      resultList.toArray(result);
+      return result;
+    } catch (SFException ex) {
+      throw new SnowflakeSQLException(ex);
+    }
   }
 
   @Override

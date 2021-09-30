@@ -733,4 +733,157 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     assertThat("select 1", resultSet.getInt(1), equalTo(1));
     con.close();
   }
+
+  // Wait for the async query finish
+  private void waitForAsyncQueryDone(Connection connection, String queryID) throws Exception {
+    SFSession session = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
+    QueryStatus qs = session.getQueryStatus(queryID);
+    while (QueryStatus.isStillRunning(qs)) {
+      Thread.sleep(1000);
+      qs = session.getQueryStatus(queryID);
+    }
+  }
+
+  @Test
+  public void testGetChildQueryIdsForAsyncSingleStatement() throws Exception {
+    Connection connection = getConnection();
+    Connection connection2 = getConnection();
+
+    Statement statement = connection.createStatement();
+    String query0 = "create or replace temporary table test_multi (cola int);";
+    String query1 = "insert into test_multi VALUES (111), (222);";
+    String query2 = "select cola from test_multi order by cola asc";
+
+    // Get ResultSet for first statement
+    ResultSet rs = statement.unwrap(SnowflakeStatement.class).executeAsyncQuery(query0);
+    String queryID = rs.unwrap(SnowflakeResultSet.class).getQueryID();
+    waitForAsyncQueryDone(connection, queryID);
+    String[] queryIDs = connection.unwrap(SnowflakeConnectionV1.class).getChildQueryIds(queryID);
+    assert (queryIDs.length == 1);
+    rs = connection.unwrap(SnowflakeConnection.class).createResultSet(queryIDs[0]);
+    assertTrue(rs.next());
+    assertEquals(rs.getString(1), "Table TEST_MULTI successfully created.");
+    assertFalse(rs.next());
+
+    // Get ResultSet for second statement in another connection
+    rs = statement.unwrap(SnowflakeStatement.class).executeAsyncQuery(query1);
+    queryID = rs.unwrap(SnowflakeResultSet.class).getQueryID();
+    waitForAsyncQueryDone(connection2, queryID);
+    queryIDs = connection2.unwrap(SnowflakeConnectionV1.class).getChildQueryIds(queryID);
+    assert (queryIDs.length == 1);
+    rs = connection2.unwrap(SnowflakeConnection.class).createResultSet(queryIDs[0]);
+    assertTrue(rs.next());
+    assertEquals(rs.getInt(1), 2); // insert 2 rows
+    assertFalse(rs.next());
+
+    // Get ResultSet for third statement in another connection
+    rs = statement.unwrap(SnowflakeStatement.class).executeAsyncQuery(query2);
+    queryID = rs.unwrap(SnowflakeResultSet.class).getQueryID();
+    waitForAsyncQueryDone(connection2, queryID);
+    queryIDs = connection2.unwrap(SnowflakeConnectionV1.class).getChildQueryIds(queryID);
+    assert (queryIDs.length == 1);
+    rs = connection2.unwrap(SnowflakeConnection.class).createResultSet(queryIDs[0]);
+    assertTrue(rs.next());
+    assertEquals(rs.getInt(1), 111);
+    assertTrue(rs.next());
+    assertEquals(rs.getInt(1), 222);
+    assertFalse(rs.next());
+
+    connection.close();
+    connection2.close();
+  }
+
+  @Test
+  public void testGetChildQueryIdsForAsyncMultiStatement() throws Exception {
+    Connection connection = getConnection();
+    Statement statement = connection.createStatement();
+    String multiStmtQuery =
+        "create or replace temporary table test_multi (cola int);"
+            + "insert into test_multi VALUES (111), (222);"
+            + "select cola from test_multi order by cola asc";
+
+    statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 3);
+    ResultSet rs = statement.unwrap(SnowflakeStatement.class).executeAsyncQuery(multiStmtQuery);
+    String queryID = rs.unwrap(SnowflakeResultSet.class).getQueryID();
+    statement.close();
+    connection.close();
+
+    // Get the child query IDs in a new connection
+    connection = getConnection();
+    waitForAsyncQueryDone(connection, queryID);
+    String[] queryIDs = connection.unwrap(SnowflakeConnectionV1.class).getChildQueryIds(queryID);
+    assert (queryIDs.length == 3);
+
+    // First statement ResultSet
+    rs = connection.unwrap(SnowflakeConnection.class).createResultSet(queryIDs[0]);
+    assertTrue(rs.next());
+    assertEquals(rs.getString(1), "Table TEST_MULTI successfully created.");
+    assertFalse(rs.next());
+
+    // Second statement ResultSet
+    rs = connection.unwrap(SnowflakeConnection.class).createResultSet(queryIDs[1]);
+    assertTrue(rs.next());
+    assertEquals(rs.getInt(1), 2);
+    assertFalse(rs.next());
+
+    // Third statement ResultSet
+    rs = connection.unwrap(SnowflakeConnection.class).createResultSet(queryIDs[2]);
+    assertTrue(rs.next());
+    assertEquals(rs.getInt(1), 111);
+    assertTrue(rs.next());
+    assertEquals(rs.getInt(1), 222);
+    assertFalse(rs.next());
+
+    connection.close();
+  }
+
+  @Test
+  public void testGetChildQueryIdsNegativeTestQueryIsRunning() throws Exception {
+    Connection connection = getConnection();
+    Statement statement = connection.createStatement();
+    String multiStmtQuery = "select 1; call system$wait(10); select 2";
+
+    statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 3);
+    ResultSet rs = statement.unwrap(SnowflakeStatement.class).executeAsyncQuery(multiStmtQuery);
+    String queryID = rs.unwrap(SnowflakeResultSet.class).getQueryID();
+
+    try {
+      connection.unwrap(SnowflakeConnectionV1.class).getChildQueryIds(queryID);
+      fail("The getChildQueryIds() should fail because query is running");
+    } catch (SQLException ex) {
+      assertTrue(
+          ex.getMessage()
+              .contains(
+                  "Status of query associated with resultSet is RUNNING. Results not generated."));
+    } finally {
+      connection.createStatement().execute("select system$cancel_query('" + queryID + "')");
+      statement.close();
+      connection.close();
+    }
+  }
+
+  @Test
+  public void testGetChildQueryIdsNegativeTestQueryFailed() throws Exception {
+    Connection connection = getConnection();
+    Statement statement = connection.createStatement();
+    String multiStmtQuery = "select 1; select to_date('not_date'); select 2";
+
+    statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 3);
+    ResultSet rs = statement.unwrap(SnowflakeStatement.class).executeAsyncQuery(multiStmtQuery);
+    String queryID = rs.unwrap(SnowflakeResultSet.class).getQueryID();
+
+    try {
+      waitForAsyncQueryDone(connection, queryID);
+      connection.unwrap(SnowflakeConnectionV1.class).getChildQueryIds(queryID);
+      fail("The getChildQueryIds() should fail because the query fails");
+    } catch (SQLException ex) {
+      assertTrue(
+          ex.getMessage()
+              .contains(
+                  "Uncaught Execution of multiple statements failed on statement \"select to_date('not_date')\""));
+    } finally {
+      statement.close();
+      connection.close();
+    }
+  }
 }

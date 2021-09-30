@@ -171,6 +171,24 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
   }
 
   /**
+   * Return an array of child query ID for the given query ID.
+   *
+   * <p>If the given query ID is for a multiple statements query, it returns an array of its child
+   * statements, otherwise, it returns an array to include the given query ID.
+   *
+   * @param queryID The given query ID
+   * @return An array of child query IDs
+   * @throws SQLException If the query is running or the corresponding query is FAILED.
+   */
+  public String[] getChildQueryIds(String queryID) throws SQLException {
+    raiseSQLExceptionIfConnectionIsClosed();
+    // execute the statement and auto-close it as well
+    try (final Statement statement = this.createStatement()) {
+      return statement.unwrap(SnowflakeStatementV1.class).getChildQueryIds(queryID);
+    }
+  }
+
+  /**
    * Close the connection
    *
    * @throws SQLException failed to close the connection
