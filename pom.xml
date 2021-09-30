@@ -882,6 +882,9 @@
                     <java.util.logging.config.file>
                       ${basedir}/src/test/resources/logging.properties
                     </java.util.logging.config.file>
+                    <net.snowflake.jdbc.log.sfformatter.dump.stacktrace>
+                      true
+                    </net.snowflake.jdbc.log.sfformatter.dump.stacktrace>
                   </systemPropertyVariables>
                 </configuration>
               </execution>

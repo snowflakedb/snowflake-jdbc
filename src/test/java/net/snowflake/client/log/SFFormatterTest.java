@@ -4,6 +4,8 @@
 
 package net.snowflake.client.log;
 
+import static net.snowflake.client.log.SFFormatter.SYS_PROPERTY_SF_FORMATTER_DUMP_STACKTRACE;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.text.DateFormat;
@@ -70,9 +72,20 @@ public class SFFormatterTest {
     String record =
         recordGenerator.generateLogRecordString(
             Level.FINE, "TestMessage", new Exception(exceptionStr));
-    assertTrue(
-        "SFFormatter output should contain stack trace for exception",
+    assertFalse(
+        "SFFormatter output should not contain stack trace for exception",
         record.contains(exceptionStr));
+    try {
+      System.setProperty(SYS_PROPERTY_SF_FORMATTER_DUMP_STACKTRACE, "true");
+      record =
+          recordGenerator.generateLogRecordString(
+              Level.FINE, "TestMessage", new Exception(exceptionStr));
+      assertTrue(
+          "SFFormatter output should contain stack trace for exception",
+          record.contains(exceptionStr));
+    } finally {
+      System.clearProperty(SYS_PROPERTY_SF_FORMATTER_DUMP_STACKTRACE);
+    }
   }
 
   /**

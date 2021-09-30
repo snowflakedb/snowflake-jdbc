@@ -3,6 +3,8 @@
  */
 package net.snowflake.client.log;
 
+import static net.snowflake.client.log.SFFormatter.SYS_PROPERTY_SF_FORMATTER_DUMP_STACKTRACE;
+
 import java.util.logging.*;
 import net.snowflake.client.category.TestCategoryCore;
 import org.junit.*;
@@ -199,10 +201,21 @@ public class JDK14LoggerLatestIT extends AbstractLoggerIT {
     final String exceptionStr = "FakeExceptionInStack";
     clearLastLoggedMessageAndLevel();
 
-    LOGGER.debug("test exception", new Exception(exceptionStr));
-
+    LOGGER.debug("test exception, no stack", new Exception(exceptionStr));
     String loggedMsg = getLoggedOutput();
-    Assert.assertTrue(
-        "Log output should contain stack trace for exception", loggedMsg.contains(exceptionStr));
+    Assert.assertFalse(
+        "Log output should not contain stack trace for exception",
+        loggedMsg.contains(exceptionStr));
+
+    try {
+      System.setProperty(SYS_PROPERTY_SF_FORMATTER_DUMP_STACKTRACE, "true");
+      LOGGER.debug("test exception, dump stack", new Exception(exceptionStr));
+
+      loggedMsg = getLoggedOutput();
+      Assert.assertTrue(
+          "Log output should contain stack trace for exception", loggedMsg.contains(exceptionStr));
+    } finally {
+      System.clearProperty(SYS_PROPERTY_SF_FORMATTER_DUMP_STACKTRACE);
+    }
   }
 }

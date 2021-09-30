@@ -3,6 +3,8 @@
  */
 package net.snowflake.client.log;
 
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
+
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.text.DateFormat;
@@ -31,6 +33,9 @@ public class SFFormatter extends Formatter {
 
   public static final String INFORMATICA_V1_CLASS_NAME_PREFIX = "com.snowflake";
 
+  public static final String SYS_PROPERTY_SF_FORMATTER_DUMP_STACKTRACE =
+      "net.snowflake.jdbc.log.sfformatter.dump.stacktrace";
+
   @Override
   public String format(LogRecord record) {
     int lineNumber = -1;
@@ -50,7 +55,8 @@ public class SFFormatter extends Formatter {
     }
 
     String throwable = "";
-    if (record.getThrown() != null) {
+    String dumpStack = systemGetProperty(SYS_PROPERTY_SF_FORMATTER_DUMP_STACKTRACE);
+    if (dumpStack != null && dumpStack.equals("true") && record.getThrown() != null) {
       StringWriter sw = new StringWriter();
       PrintWriter pw = new PrintWriter(sw);
       pw.println();
