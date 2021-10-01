@@ -39,6 +39,9 @@ public class JDK14LoggerLatestIT extends AbstractLoggerIT {
    */
   private static boolean useParentHandlersToRestore = true;
 
+  /** Used for storing SYS_PROPERTY_SF_FORMATTER_DUMP_STACKTRACE before starting the tests. */
+  private static String dumpStackToRestore = null;
+
   /** This handler will be added to the internal logger to get logged messages. */
   private TestJDK14LogHandler handler = new TestJDK14LogHandler(new SFFormatter());
 
@@ -57,12 +60,18 @@ public class JDK14LoggerLatestIT extends AbstractLoggerIT {
     useParentHandlersToRestore = internalLogger.getUseParentHandlers();
 
     internalLogger.setUseParentHandlers(false);
+
+    dumpStackToRestore = System.getProperty(SYS_PROPERTY_SF_FORMATTER_DUMP_STACKTRACE);
+    System.clearProperty(SYS_PROPERTY_SF_FORMATTER_DUMP_STACKTRACE);
   }
 
   @AfterClass
   public static void oneTimeTearDown() {
     internalLogger.setLevel(logLevelToRestore);
     internalLogger.setUseParentHandlers(useParentHandlersToRestore);
+    if (dumpStackToRestore != null) {
+      System.setProperty(SYS_PROPERTY_SF_FORMATTER_DUMP_STACKTRACE, dumpStackToRestore);
+    }
   }
 
   @Before
