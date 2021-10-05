@@ -585,6 +585,10 @@ public class MockConnectionTest extends BaseJDBCTest {
     public SFBaseResultSet getResultSet() {
       return null;
     }
+
+    public String[] getChildQueryIds(String queryID) throws SQLException {
+      throw new SQLFeatureNotSupportedException("MockedSFBaseStatement.getChildQueryIds");
+    }
   }
 
   private static class MockJsonResultSet extends SFJsonResultSet {

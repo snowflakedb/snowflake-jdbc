@@ -325,6 +325,11 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
     return Collections.unmodifiableList(batchQueryIDs);
   }
 
+  /** @return the child query IDs for the multiple statements query. */
+  public String[] getChildQueryIds(String queryID) throws SQLException {
+    return sfBaseStatement.getChildQueryIds(queryID);
+  }
+
   /**
    * Execute sql
    *
