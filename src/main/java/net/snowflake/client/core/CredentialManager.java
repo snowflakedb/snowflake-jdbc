@@ -35,6 +35,7 @@ public class CredentialManager {
       logger.info(
           "JNA jar files are needed for Secure Local Storage service. Please follow the Snowflake JDBC instruction for Secure Local Storage feature. Fall back to normal process.");
     }
+    logger.info("Credential manager initialized");
   }
 
   /** Helper function for tests to go back to normal settings. */
