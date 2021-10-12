@@ -290,7 +290,8 @@ public class ConnectionLatestIT extends BaseJDBCTest {
       QueryStatus.RESUMING_WAREHOUSE,
       QueryStatus.QUEUED,
       QueryStatus.QUEUED_REPAIRING_WAREHOUSE,
-      QueryStatus.NO_DATA
+      QueryStatus.NO_DATA,
+      QueryStatus.BLOCKED
     };
 
     QueryStatus[] otherStatuses = {
@@ -300,8 +301,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
       QueryStatus.FAILED_WITH_ERROR,
       QueryStatus.FAILED_WITH_INCIDENT,
       QueryStatus.DISCONNECTED,
-      QueryStatus.RESTARTED,
-      QueryStatus.BLOCKED
+      QueryStatus.RESTARTED
     };
 
     for (QueryStatus qs : runningStatuses) {
