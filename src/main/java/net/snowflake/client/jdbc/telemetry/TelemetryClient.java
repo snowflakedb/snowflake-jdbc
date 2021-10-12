@@ -21,8 +21,10 @@ import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryThreadPool;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
+import org.apache.http.HttpHeaders;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
 
 /**
  * Copyright (c) 2018-2019 Snowflake Computing Inc. All rights reserved.
@@ -33,6 +35,7 @@ public class TelemetryClient implements Telemetry {
   private static final SFLogger logger = SFLoggerFactory.getLogger(SFBaseSession.class);
 
   private static final String SF_PATH_TELEMETRY = "/telemetry/send";
+  private static final String SF_PATH_TELEMETRY_SESSIONLESS = "/telemetry/send/sessionless";
 
   // if the number of cached logs is larger than this threshold,
   // the telemetry connector will flush the buffer automatically.
@@ -49,6 +52,12 @@ public class TelemetryClient implements Telemetry {
 
   private boolean isClosed;
 
+  // HTTP client object used to communicate with other machine
+  private final CloseableHttpClient httpClient;
+
+  // JWT token
+  private String token;
+
   private Object locker = new Object();
 
   // false if meet any error when sending metrics
@@ -57,6 +66,7 @@ public class TelemetryClient implements Telemetry {
   private TelemetryClient(SFSession session, int flushSize) {
     this.session = session;
     this.serverUrl = session.getUrl();
+    this.httpClient = null;
 
     if (this.serverUrl.endsWith("/")) {
       this.telemetryUrl =
@@ -71,12 +81,36 @@ public class TelemetryClient implements Telemetry {
   }
 
   /**
+   * Constructor for creating a sessionless telemetry client
+   *
+   * @param serverUrl server url
+   * @param flushSize maximum size of telemetry batch before flush
+   */
+  private TelemetryClient(CloseableHttpClient httpClient, String serverUrl, int flushSize) {
+    this.session = null;
+    this.serverUrl = serverUrl;
+    this.httpClient = httpClient;
+
+    if (this.serverUrl.endsWith("/")) {
+      this.telemetryUrl =
+          this.serverUrl.substring(0, this.serverUrl.length() - 1) + SF_PATH_TELEMETRY_SESSIONLESS;
+    } else {
+      this.telemetryUrl = this.serverUrl + SF_PATH_TELEMETRY_SESSIONLESS;
+    }
+
+    this.logBatch = new LinkedList<>();
+    this.isClosed = false;
+    this.forceFlushSize = flushSize;
+  }
+
+  /**
    * Return whether the client can be used to add/send metrics
    *
    * @return whether client is enabled
    */
   public boolean isTelemetryEnabled() {
-    return this.session.isClientTelemetryEnabled() && this.isTelemetryServiceAvailable;
+    return (this.session == null || this.session.isClientTelemetryEnabled())
+        && this.isTelemetryServiceAvailable;
   }
 
   /** Disable any use of the client to add/send metrics */
@@ -130,6 +164,30 @@ public class TelemetryClient implements Telemetry {
    */
   public static Telemetry createTelemetry(SFSession session, int flushSize) {
     return new TelemetryClient(session, flushSize);
+  }
+
+  /**
+   * Initialize the telemetry connector
+   *
+   * @param httpClient client object used to communicate with other machine
+   * @param serverUrl server url
+   * @return a telemetry connector
+   */
+  public static Telemetry createTelemetry(CloseableHttpClient httpClient, String serverUrl) {
+    return createTelemetry(httpClient, serverUrl, DEFAULT_FORCE_FLUSH_SIZE);
+  }
+
+  /**
+   * Initialize the telemetry connector
+   *
+   * @param httpClient client object used to communicate with other machine
+   * @param serverUrl server url
+   * @param flushSize maximum size of telemetry batch before flush
+   * @return a telemetry connector
+   */
+  public static Telemetry createTelemetry(
+      CloseableHttpClient httpClient, String serverUrl, int flushSize) {
+    return new TelemetryClient(httpClient, serverUrl, flushSize);
   }
 
   /**
@@ -234,13 +292,12 @@ public class TelemetryClient implements Telemetry {
       this.logBatch = new LinkedList<>();
     }
 
-    if (session.isClosed()) {
+    if (this.session != null && this.session.isClosed()) {
       throw new UnexpectedException("Session is closed when sending log");
     }
 
     if (!tmpList.isEmpty()) {
       // session shared with JDBC
-      String sessionToken = this.session.getSessionToken();
       String payload = logsToString(tmpList);
 
       logger.debugNoMask("Payload of telemetry is : " + payload);
@@ -248,12 +305,23 @@ public class TelemetryClient implements Telemetry {
       HttpPost post = new HttpPost(this.telemetryUrl);
       post.setEntity(new StringEntity(payload));
       post.setHeader("Content-type", "application/json");
-      post.setHeader("Authorization", "Snowflake Token=\"" + sessionToken + "\"");
+
+      if (this.session == null) {
+        post.setHeader(HttpHeaders.AUTHORIZATION, "Bearer " + this.token);
+        post.setHeader("X-Snowflake-Authorization-Token-Type", "KEYPAIR_JWT");
+      } else {
+        post.setHeader(
+            HttpHeaders.AUTHORIZATION,
+            "Snowflake Token=\"" + this.session.getSessionToken() + "\"");
+      }
 
       String response = null;
 
       try {
-        response = HttpUtil.executeGeneralRequest(post, 1000, this.session.getHttpClientKey());
+        response =
+            this.session == null
+                ? HttpUtil.executeGeneralRequestWithHttpClient(post, 1000, this.httpClient)
+                : HttpUtil.executeGeneralRequest(post, 1000, this.session.getHttpClientKey());
       } catch (SnowflakeSQLException e) {
         disableTelemetry(); // when got error like 404 or bad request, disable telemetry in this
         // telemetry instance
@@ -332,5 +400,14 @@ public class TelemetryClient implements Telemetry {
    */
   public LinkedList<TelemetryData> logBuffer() {
     return new LinkedList<>(this.logBatch);
+  }
+
+  /**
+   * Refresh the JWT token
+   *
+   * @param token latest JWT token
+   */
+  public void refreshToken(String token) {
+    this.token = token;
   }
 }

@@ -277,7 +277,7 @@ public class HttpUtil {
    * @param downloadCompressed Whether the HTTP client should be built requesting no decompression
    * @return HttpClient object
    */
-  static CloseableHttpClient buildHttpClient(
+  public static CloseableHttpClient buildHttpClient(
       HttpClientSettingsKey key, File ocspCacheFile, boolean downloadCompressed) {
     // set timeout so that we don't wait forever.
     // Setup the default configuration for all requests on this client
@@ -289,7 +289,7 @@ public class HttpUtil {
     // the last request, keep the current DefaultRequestConfig. If not, build a new
     // DefaultRequestConfig and set the new proxy settings for it
     HttpHost proxy =
-        key.usesProxy()
+        (key != null && key.usesProxy())
             ? new HttpHost(
                 key.getProxyHost(), key.getProxyPort(), key.getProxyProtocol().toString())
             : null;
@@ -310,7 +310,7 @@ public class HttpUtil {
     }
 
     TrustManager[] trustManagers = null;
-    if (key.getOcspMode() != OCSPMode.INSECURE) {
+    if (key != null && key.getOcspMode() != OCSPMode.INSECURE) {
       // A custom TrustManager is required only if insecureMode is disabled,
       // which is by default in the production. insecureMode can be enabled
       // 1) OCSP service is down for reasons, 2) PowerMock test tht doesn't
@@ -360,7 +360,7 @@ public class HttpUtil {
               .setUserAgent(buildUserAgent()) // needed for Okta
               .disableCookieManagement(); // SNOW-39748
 
-      if (key.usesProxy()) {
+      if (key != null && key.usesProxy()) {
         // use the custom proxy properties
         SnowflakeMutableProxyRoutePlanner sdkProxyRoutePlanner =
             httpClientRoutePlanner.computeIfAbsent(
@@ -532,7 +532,7 @@ public class HttpUtil {
         false, // no retry parameter
         true, // guid? (do we need this?)
         false, // no retry on HTTP 403
-        ocspAndProxyKey);
+        getHttpClient(ocspAndProxyKey));
   }
 
   /**
@@ -556,6 +556,31 @@ public class HttpUtil {
         false, // no retry parameter
         false, // no retry on HTTP 403
         ocspAndProxyKey);
+  }
+
+  /**
+   * Executes a HTTP request with the cookie spec set to IGNORE_COOKIES
+   *
+   * @param httpRequest HttpRequestBase
+   * @param retryTimeout retry timeout
+   * @param httpClient client object used to communicate with other machine
+   * @return response
+   * @throws SnowflakeSQLException if Snowflake error occurs
+   * @throws IOException raises if a general IO error occurs
+   */
+  public static String executeGeneralRequestWithHttpClient(
+      HttpRequestBase httpRequest, int retryTimeout, CloseableHttpClient httpClient)
+      throws SnowflakeSQLException, IOException {
+    return executeRequestInternal(
+        httpRequest,
+        retryTimeout,
+        0, // no inject socket timeout
+        null, // no canceling
+        false, // with cookie
+        false, // no retry parameter
+        true, // include request GUID
+        false, // no retry on HTTP 403
+        httpClient);
   }
 
   /**
@@ -590,7 +615,7 @@ public class HttpUtil {
         includeRetryParameters,
         true, // include request GUID
         retryOnHTTP403,
-        ocspAndProxyKey);
+        getHttpClient(ocspAndProxyKey));
   }
 
   /**
@@ -608,7 +633,7 @@ public class HttpUtil {
    * @param includeRetryParameters whether to include retry parameters in retried requests
    * @param includeRequestGuid whether to include request_guid
    * @param retryOnHTTP403 whether to retry on HTTP 403
-   * @param ocspAndProxyKey OCSPMode and proxy settings for httpclient
+   * @param httpClient client object used to communicate with other machine
    * @return response in String
    * @throws SnowflakeSQLException if Snowflake error occurs
    * @throws IOException raises if a general IO error occurs
@@ -622,7 +647,7 @@ public class HttpUtil {
       boolean includeRetryParameters,
       boolean includeRequestGuid,
       boolean retryOnHTTP403,
-      HttpClientSettingsKey ocspAndProxyKey)
+      CloseableHttpClient httpClient)
       throws SnowflakeSQLException, IOException {
     // HttpRequest.toString() contains request URI. Scrub any credentials, if
     // present, before logging
@@ -637,7 +662,7 @@ public class HttpUtil {
     try {
       response =
           RestRequest.execute(
-              getHttpClient(ocspAndProxyKey),
+              httpClient,
               httpRequest,
               retryTimeout,
               injectSocketTimeout,

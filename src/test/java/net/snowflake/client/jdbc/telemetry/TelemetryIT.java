@@ -11,8 +11,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.Map;
 import net.snowflake.client.AbstractDriverIT;
 import net.snowflake.client.category.TestCategoryCore;
+import net.snowflake.client.core.HttpUtil;
+import net.snowflake.client.core.SFException;
+import net.snowflake.client.core.SessionUtil;
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -28,8 +33,16 @@ public class TelemetryIT extends AbstractDriverIT {
   }
 
   @Test
-  public void test() throws Exception {
+  public void testTelemetry() throws Exception, SFException {
+    // Test session telemetry
     TelemetryClient telemetry = (TelemetryClient) TelemetryClient.createTelemetry(connection, 100);
+    testTelemetryInternal(telemetry);
+
+    // Test sessionless telemetry
+    testTelemetryInternal(createSessionlessTelemetry());
+  }
+
+  private void testTelemetryInternal(TelemetryClient telemetry) throws Exception {
     ObjectNode node1 = mapper.createObjectNode();
     node1.put("type", "query");
     node1.put("query_id", "sdasdasdasdasds");
@@ -124,5 +137,25 @@ public class TelemetryIT extends AbstractDriverIT {
 
     assertFalse(telemetry.sendLog(new TelemetryData(node2, 22345678)));
     assertEquals(telemetry.bufferSize(), 1);
+  }
+
+  // Helper function to create a sessionless telemetry
+  private TelemetryClient createSessionlessTelemetry() throws SFException {
+    Map<String, String> parameters = getConnectionParameters();
+    String jwtToken =
+        SessionUtil.generateJWTToken(
+            null,
+            parameters.get("privateKeyFile"),
+            null,
+            parameters.get("account"),
+            parameters.get("user"));
+
+    CloseableHttpClient httpClient = HttpUtil.buildHttpClient(null, null, false);
+    TelemetryClient telemetry =
+        (TelemetryClient)
+            TelemetryClient.createTelemetry(
+                httpClient, String.format("%s:%s", parameters.get("host"), parameters.get("port")));
+    telemetry.refreshToken(jwtToken);
+    return telemetry;
   }
 }
