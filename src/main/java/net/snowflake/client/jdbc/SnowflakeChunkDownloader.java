@@ -590,9 +590,8 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
           currentChunk.getDownloadState(),
           retry);
 
-      if (currentChunk.getDownloadState() != DownloadState.NOT_STARTED
-          && currentChunk.getDownloadState() != DownloadState.FAILURE) {
-        // if the state is in progress but not failure, we should keep waiting; otherwise, we skip
+      if (currentChunk.getDownloadState() != DownloadState.FAILURE) {
+        // if the state is not failure, we should keep waiting; otherwise, we skip
         // waiting
         if (!currentChunk
             .getDownloadCondition()
@@ -616,11 +615,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
       }
 
       if (currentChunk.getDownloadState() != DownloadState.SUCCESS) {
-        // if this is the first attempt to download this chunk (due to cancelled prefetch), don't
-        // increment retry because it's the first try
-        if (currentChunk.getDownloadState() != DownloadState.NOT_STARTED) {
-          retry++;
-        }
+        retry++;
         // timeout or failed
         logger.debug(
             "Since downloadState is {} Thread {} decides to retry {} time(s) for #chunk{}",
