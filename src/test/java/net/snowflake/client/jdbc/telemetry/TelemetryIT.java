@@ -13,6 +13,8 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Map;
 import net.snowflake.client.AbstractDriverIT;
+import net.snowflake.client.ConditionalIgnoreRule;
+import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryCore;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.SFException;
@@ -34,12 +36,14 @@ public class TelemetryIT extends AbstractDriverIT {
   }
 
   @Test
-  public void testTelemetry() throws Exception, SFException {
-    // Test session telemetry
+  public void testTelemetry() throws Exception {
     TelemetryClient telemetry = (TelemetryClient) TelemetryClient.createTelemetry(connection, 100);
     testTelemetryInternal(telemetry);
+  }
 
-    // Test sessionless telemetry
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testSessionlessTelemetry() throws Exception, SFException {
     testTelemetryInternal(createSessionlessTelemetry());
   }
 
@@ -112,12 +116,14 @@ public class TelemetryIT extends AbstractDriverIT {
   }
 
   @Test
-  public void testDisableTelemetry() throws Exception, SFException {
-    // Test session telemetry
+  public void testDisableTelemetry() throws Exception {
     TelemetryClient telemetry = (TelemetryClient) TelemetryClient.createTelemetry(connection, 100);
     testDisableTelemetryInternal(telemetry);
+  }
 
-    // Test sessionless telemetry
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testDisableSessionlessTelemetry() throws Exception, SFException {
     testDisableTelemetryInternal(createSessionlessTelemetry());
   }
 
@@ -148,6 +154,7 @@ public class TelemetryIT extends AbstractDriverIT {
   }
 
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testClosedTelemetry() throws Exception, SFException {
     TelemetryClient telemetry = createSessionlessTelemetry();
     telemetry.close();
