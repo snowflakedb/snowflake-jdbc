@@ -83,6 +83,7 @@ public class TelemetryClient implements Telemetry {
   /**
    * Constructor for creating a sessionless telemetry client
    *
+   * @param httpClient client object used to communicate with other machine
    * @param serverUrl server url
    * @param flushSize maximum size of telemetry batch before flush
    */
@@ -320,7 +321,7 @@ public class TelemetryClient implements Telemetry {
       try {
         response =
             this.session == null
-                ? HttpUtil.executeGeneralRequestWithHttpClient(post, 1000, this.httpClient)
+                ? HttpUtil.executeGeneralRequest(post, 1000, this.httpClient)
                 : HttpUtil.executeGeneralRequest(post, 1000, this.session.getHttpClientKey());
       } catch (SnowflakeSQLException e) {
         disableTelemetry(); // when got error like 404 or bad request, disable telemetry in this

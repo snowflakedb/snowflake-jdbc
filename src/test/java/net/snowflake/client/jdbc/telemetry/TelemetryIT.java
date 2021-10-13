@@ -18,6 +18,7 @@ import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SessionUtil;
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -111,9 +112,16 @@ public class TelemetryIT extends AbstractDriverIT {
   }
 
   @Test
-  public void test4() throws Exception {
+  public void testDisableTelemetry() throws Exception, SFException {
+    // Test session telemetry
     TelemetryClient telemetry = (TelemetryClient) TelemetryClient.createTelemetry(connection, 100);
+    testDisableTelemetryInternal(telemetry);
 
+    // Test sessionless telemetry
+    testDisableTelemetryInternal(createSessionlessTelemetry());
+  }
+
+  public void testDisableTelemetryInternal(TelemetryClient telemetry) throws Exception {
     ObjectNode node1 = mapper.createObjectNode();
     node1.put("type", "query");
     node1.put("query_id", "sdasdasdasdasds");
@@ -137,6 +145,17 @@ public class TelemetryIT extends AbstractDriverIT {
 
     assertFalse(telemetry.sendLog(new TelemetryData(node2, 22345678)));
     assertEquals(telemetry.bufferSize(), 1);
+  }
+
+  @Test
+  public void testClosedTelemetry() throws Exception, SFException {
+    TelemetryClient telemetry = createSessionlessTelemetry();
+    telemetry.close();
+    ObjectNode node = mapper.createObjectNode();
+    node.put("type", "query");
+    node.put("query_id", "sdasdasdasdasds");
+    telemetry.addLogToBatch(node, 1234567);
+    Assert.assertFalse(telemetry.sendBatchAsync().get());
   }
 
   // Helper function to create a sessionless telemetry

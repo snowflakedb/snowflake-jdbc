@@ -559,7 +559,7 @@ public class HttpUtil {
   }
 
   /**
-   * Executes a HTTP request with the cookie spec set to IGNORE_COOKIES
+   * Executes a HTTP request for Snowflake
    *
    * @param httpRequest HttpRequestBase
    * @param retryTimeout retry timeout
@@ -568,7 +568,7 @@ public class HttpUtil {
    * @throws SnowflakeSQLException if Snowflake error occurs
    * @throws IOException raises if a general IO error occurs
    */
-  public static String executeGeneralRequestWithHttpClient(
+  public static String executeGeneralRequest(
       HttpRequestBase httpRequest, int retryTimeout, CloseableHttpClient httpClient)
       throws SnowflakeSQLException, IOException {
     return executeRequestInternal(

@@ -1441,6 +1441,17 @@ public class SessionUtil {
     }
   }
 
+  /**
+   * Helper function to generate a JWT token
+   *
+   * @param privateKey private key
+   * @param privateKeyFile path to private key file
+   * @param privateKeyFilePwd password for private key file
+   * @param accountName account name
+   * @param userName user name
+   * @return JWT token
+   * @throws SFException if Snowflake error occurs
+   */
   public static String generateJWTToken(
       PrivateKey privateKey,
       String privateKeyFile,
