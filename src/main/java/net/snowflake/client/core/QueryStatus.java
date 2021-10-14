@@ -56,9 +56,10 @@ public enum QueryStatus {
   public static boolean isStillRunning(QueryStatus status) {
     switch (status.getValue()) {
       case 0: // "RUNNING"
-      case 8: // "RESUMING_WAREHOUSE"
       case 5: // "QUEUED"
+      case 8: // "RESUMING_WAREHOUSE"
       case 9: // "QUEUED_REPAIRING_WAREHOUSE"
+      case 11: // "BLOCKED"
       case 12: // "NO_DATA"
         return true;
       default:
