@@ -290,7 +290,8 @@ public class ConnectionLatestIT extends BaseJDBCTest {
       QueryStatus.RESUMING_WAREHOUSE,
       QueryStatus.QUEUED,
       QueryStatus.QUEUED_REPAIRING_WAREHOUSE,
-      QueryStatus.NO_DATA
+      QueryStatus.NO_DATA,
+      QueryStatus.BLOCKED
     };
 
     QueryStatus[] otherStatuses = {
@@ -300,8 +301,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
       QueryStatus.FAILED_WITH_ERROR,
       QueryStatus.FAILED_WITH_INCIDENT,
       QueryStatus.DISCONNECTED,
-      QueryStatus.RESTARTED,
-      QueryStatus.BLOCKED
+      QueryStatus.RESTARTED
     };
 
     for (QueryStatus qs : runningStatuses) {
@@ -851,10 +851,14 @@ public class ConnectionLatestIT extends BaseJDBCTest {
       connection.unwrap(SnowflakeConnectionV1.class).getChildQueryIds(queryID);
       fail("The getChildQueryIds() should fail because query is running");
     } catch (SQLException ex) {
-      assertTrue(
-          ex.getMessage()
-              .contains(
-                  "Status of query associated with resultSet is RUNNING. Results not generated."));
+      String msg = ex.getMessage();
+      if (!msg.contains("Status of query associated with resultSet is")
+          || !msg.contains("Results not generated.")) {
+        ex.printStackTrace();
+        QueryStatus qs =
+            connection.unwrap(SnowflakeConnectionV1.class).getSfSession().getQueryStatus(queryID);
+        fail("Don't get expected message, query Status: " + qs + " actual message is: " + msg);
+      }
     } finally {
       connection.createStatement().execute("select system$cancel_query('" + queryID + "')");
       statement.close();
