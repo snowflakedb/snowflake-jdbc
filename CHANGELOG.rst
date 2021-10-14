@@ -1,3 +1,13 @@
+**JDBC Driver 3.13.9**
+
+- \| SNOW-411516 | Enhance JDBC to support SFAsyncResultSet.getResultSetSerializables(Long).
+- \| SNOW-366563 | Fix London/Europe daylight savings offset with timestamp_ntz.
+- \| SNOW-412040 | Fix ResultSet.getQueryID() so it returns correct query ID for PUT/GET statements.
+- \| SNOW-472364 | Add API to get query IDs for multiple statements.
+- \| SNOW-441847 | Cancel Prefetch threads to avoid endless ChunkDownloader hanging thread.
+- \| SNOW-464020 | Azure iterator exception bug fix.
+- \| SNOW-224719 | Allow curly bracket syntax in JDBC CallableStatement.prepareCall().
+
 **JDBC Driver 3.13.8**
 
 - \| SNOW-443760 | Bumped jsoup library from 1.11.3 to 1.14.2
