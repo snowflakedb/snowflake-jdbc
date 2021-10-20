@@ -441,6 +441,11 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest {
 
     // set parameter
     stmt.execute("alter session set ENABLE_DRIVER_TERSE_SHOW = true;");
+    // SNOW-487548: disable the key-value feature to hide is_hybrid column
+    // in show tables command. The column is controlled by two parameters:
+    // enable_key_value_table and qa_mode.
+    stmt.execute("alter session set ENABLE_KEY_VALUE_TABLE = false;");
+    stmt.execute("alter session set qa_mode = false;");
 
     databaseMetaData = connection.getMetaData();
 
