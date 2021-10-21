@@ -24,6 +24,7 @@ import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import javax.annotation.Nullable;
 import javax.net.ssl.TrustManager;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.RestRequest;
@@ -271,14 +272,14 @@ public class HttpUtil {
   /**
    * Build an Http client using our set of default.
    *
-   * @param key Key to HttpClient hashap containing OCSP mode and proxy information
+   * @param key Key to HttpClient hashmap containing OCSP mode and proxy information, could be null
    * @param ocspCacheFile OCSP response cache file. If null, the default OCSP response file will be
    *     used.
    * @param downloadCompressed Whether the HTTP client should be built requesting no decompression
    * @return HttpClient object
    */
   public static CloseableHttpClient buildHttpClient(
-      HttpClientSettingsKey key, File ocspCacheFile, boolean downloadCompressed) {
+      @Nullable HttpClientSettingsKey key, File ocspCacheFile, boolean downloadCompressed) {
     // set timeout so that we don't wait forever.
     // Setup the default configuration for all requests on this client
 

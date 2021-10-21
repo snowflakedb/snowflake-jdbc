@@ -63,6 +63,9 @@ public class TelemetryClient implements Telemetry {
   // false if meet any error when sending metrics
   private boolean isTelemetryServiceAvailable = true;
 
+  // Retry timeout for the HTTP request
+  private static final int retryTimeout = 1000;
+
   private TelemetryClient(SFSession session, int flushSize) {
     this.session = session;
     this.serverUrl = session.getUrl();
@@ -168,25 +171,26 @@ public class TelemetryClient implements Telemetry {
   }
 
   /**
-   * Initialize the telemetry connector
+   * Initialize the sessionless telemetry connector
    *
    * @param httpClient client object used to communicate with other machine
    * @param serverUrl server url
    * @return a telemetry connector
    */
-  public static Telemetry createTelemetry(CloseableHttpClient httpClient, String serverUrl) {
-    return createTelemetry(httpClient, serverUrl, DEFAULT_FORCE_FLUSH_SIZE);
+  public static Telemetry createSessionlessTelemetry(
+      CloseableHttpClient httpClient, String serverUrl) {
+    return createSessionlessTelemetry(httpClient, serverUrl, DEFAULT_FORCE_FLUSH_SIZE);
   }
 
   /**
-   * Initialize the telemetry connector
+   * Initialize the sessionless telemetry connector
    *
    * @param httpClient client object used to communicate with other machine
    * @param serverUrl server url
    * @param flushSize maximum size of telemetry batch before flush
    * @return a telemetry connector
    */
-  public static Telemetry createTelemetry(
+  public static Telemetry createSessionlessTelemetry(
       CloseableHttpClient httpClient, String serverUrl, int flushSize) {
     return new TelemetryClient(httpClient, serverUrl, flushSize);
   }
@@ -310,6 +314,7 @@ public class TelemetryClient implements Telemetry {
       if (this.session == null) {
         post.setHeader(HttpHeaders.AUTHORIZATION, "Bearer " + this.token);
         post.setHeader("X-Snowflake-Authorization-Token-Type", "KEYPAIR_JWT");
+        post.setHeader(HttpHeaders.ACCEPT, "application/json");
       } else {
         post.setHeader(
             HttpHeaders.AUTHORIZATION,
@@ -321,8 +326,9 @@ public class TelemetryClient implements Telemetry {
       try {
         response =
             this.session == null
-                ? HttpUtil.executeGeneralRequest(post, 1000, this.httpClient)
-                : HttpUtil.executeGeneralRequest(post, 1000, this.session.getHttpClientKey());
+                ? HttpUtil.executeGeneralRequest(post, retryTimeout, this.httpClient)
+                : HttpUtil.executeGeneralRequest(
+                    post, retryTimeout, this.session.getHttpClientKey());
       } catch (SnowflakeSQLException e) {
         disableTelemetry(); // when got error like 404 or bad request, disable telemetry in this
         // telemetry instance
