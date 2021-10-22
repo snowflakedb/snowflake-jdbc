@@ -64,7 +64,7 @@ public class TelemetryClient implements Telemetry {
   private boolean isTelemetryServiceAvailable = true;
 
   // Retry timeout for the HTTP request
-  private static final int retryTimeout = 1000;
+  private static final int TELEMETRY_HTTP_RETRY_TIMEOUT_IN_SEC = 1000;
 
   private TelemetryClient(SFSession session, int flushSize) {
     this.session = session;
@@ -326,9 +326,10 @@ public class TelemetryClient implements Telemetry {
       try {
         response =
             this.session == null
-                ? HttpUtil.executeGeneralRequest(post, retryTimeout, this.httpClient)
+                ? HttpUtil.executeGeneralRequest(
+                    post, TELEMETRY_HTTP_RETRY_TIMEOUT_IN_SEC, this.httpClient)
                 : HttpUtil.executeGeneralRequest(
-                    post, retryTimeout, this.session.getHttpClientKey());
+                    post, TELEMETRY_HTTP_RETRY_TIMEOUT_IN_SEC, this.session.getHttpClientKey());
       } catch (SnowflakeSQLException e) {
         disableTelemetry(); // when got error like 404 or bad request, disable telemetry in this
         // telemetry instance
