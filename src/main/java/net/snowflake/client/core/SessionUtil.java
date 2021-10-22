@@ -76,6 +76,7 @@ public class SessionUtil {
   private static final String JDBC_TREAT_TIMESTAMP_NTZ_AS_UTC = "JDBC_TREAT_TIMESTAMP_NTZ_AS_UTC";
   private static final String JDBC_FORMAT_DATE_WITH_TIMEZONE = "JDBC_FORMAT_DATE_WITH_TIMEZONE";
   private static final String JDBC_USE_SESSION_TIMEZONE = "JDBC_USE_SESSION_TIMEZONE";
+  public static final String JDBC_CHUNK_DOWNLOADER_MAX_RETRY = "JDBC_CHUNK_DOWNLOADER_MAX_RETRY";
   private static final String CLIENT_RESULT_CHUNK_SIZE_JVM =
       "net.snowflake.jdbc.clientResultChunkSize";
   public static final String CLIENT_RESULT_CHUNK_SIZE = "CLIENT_RESULT_CHUNK_SIZE";
