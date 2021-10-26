@@ -23,11 +23,7 @@ import java.security.NoSuchAlgorithmException;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.Map.Entry;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.zip.GZIPOutputStream;
 import net.snowflake.client.core.*;
 import net.snowflake.client.jdbc.cloud.storage.*;
@@ -1095,6 +1091,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
       JsonNode presignedUrlNode = jsonNode.path("data").path("stageInfo").path("presignedUrl");
       if (!presignedUrlNode.isMissingNode()) {
         String presignedUrl = presignedUrlNode.asText();
+        logger.info("Presigned URL: {}", presignedUrl);
         if (!Strings.isNullOrEmpty(presignedUrl)) {
           stageInfo.setPresignedUrl(presignedUrl);
         }
