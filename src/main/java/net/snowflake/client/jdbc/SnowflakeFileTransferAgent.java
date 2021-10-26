@@ -23,11 +23,7 @@ import java.security.NoSuchAlgorithmException;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.Map.Entry;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.zip.GZIPOutputStream;
 import net.snowflake.client.core.*;
 import net.snowflake.client.jdbc.cloud.storage.*;
@@ -1489,8 +1485,11 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
         throw new SnowflakeSQLLoggedException(
             session, ErrorCode.INTERRUPTED.getMessageCode(), SqlState.QUERY_CANCELED);
       } catch (ExecutionException ex) {
-        throw new SnowflakeSQLException(
-            ex.getCause(), SqlState.INTERNAL_ERROR, ErrorCode.INTERNAL_ERROR.getMessageCode());
+        throw new SnowflakeSQLLoggedException(
+            session,
+            SqlState.INTERNAL_ERROR,
+            ErrorCode.INTERNAL_ERROR.getMessageCode(),
+            ex.getCause());
       }
       logger.debug("Done with uploading from a stream");
     } finally {
@@ -1542,6 +1541,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
     try {
       threadExecutor = SnowflakeUtil.createDefaultExecutorService("sf-file-download-worker-", 1);
 
+      List<Future<Void>> downloadTasks = new ArrayList<>();
       for (String srcFile : sourceFiles) {
         FileMetadata fileMetadata = fileMetadataMap.get(srcFile);
 
@@ -1558,32 +1558,41 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
 
         RemoteStoreFileEncryptionMaterial encMat = srcFileToEncMat.get(srcFile);
         String presignedUrl = srcFileToPresignedUrl.get(srcFile);
-        threadExecutor.submit(
-            getDownloadFileCallable(
-                stageInfo,
-                srcFile,
-                localLocation,
-                fileMetadataMap,
-                (stageInfo.getStageType() == StageInfo.StageType.LOCAL_FS)
-                    ? null
-                    : storageFactory.createClient(stageInfo, parallel, encMat, session),
-                session,
-                command,
-                parallel,
-                encMat,
-                presignedUrl));
-
+        Future<Void> downloadTask =
+            threadExecutor.submit(
+                getDownloadFileCallable(
+                    stageInfo,
+                    srcFile,
+                    localLocation,
+                    fileMetadataMap,
+                    (stageInfo.getStageType() == StageInfo.StageType.LOCAL_FS)
+                        ? null
+                        : storageFactory.createClient(stageInfo, parallel, encMat, session),
+                    session,
+                    command,
+                    parallel,
+                    encMat,
+                    presignedUrl));
+        downloadTasks.add(downloadTask);
         logger.debug("submitted download job for: {}", srcFile);
       }
 
       threadExecutor.shutdown();
 
       try {
-        // wait for all threads to complete without timeout
-        threadExecutor.awaitTermination(Long.MAX_VALUE, TimeUnit.DAYS);
+        // wait for task to complete
+        for (Future<Void> task : downloadTasks) {
+          task.get();
+        }
       } catch (InterruptedException ex) {
         throw new SnowflakeSQLLoggedException(
             session, ErrorCode.INTERRUPTED.getMessageCode(), SqlState.QUERY_CANCELED);
+      } catch (ExecutionException ex) {
+        throw new SnowflakeSQLLoggedException(
+            session,
+            SqlState.INTERNAL_ERROR,
+            ErrorCode.INTERNAL_ERROR.getMessageCode(),
+            ex.getCause());
       }
       logger.debug("Done with downloading");
     } finally {
@@ -1623,6 +1632,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
     try {
       threadExecutor =
           SnowflakeUtil.createDefaultExecutorService("sf-file-upload-worker-", parallel);
+      List<Future<Void>> uploadTasks = new ArrayList<>();
 
       for (String srcFile : fileList) {
         FileMetadata fileMetadata = fileMetadataMap.get(srcFile);
@@ -1651,23 +1661,24 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
         int delay = session.getInjectWaitInPut();
         setUploadDelay(delay);
 
-        threadExecutor.submit(
-            getUploadFileCallable(
-                stageInfo,
-                srcFile,
-                fileMetadata,
-                (stageInfo.getStageType() == StageInfo.StageType.LOCAL_FS)
-                    ? null
-                    : storageFactory.createClient(
-                        stageInfo, parallel, encryptionMaterial.get(0), session),
-                session,
-                command,
-                null,
-                false,
-                (parallel > 1 ? 1 : this.parallel),
-                srcFileObj,
-                encryptionMaterial.get(0)));
-
+        Future<Void> uploadTask =
+            threadExecutor.submit(
+                getUploadFileCallable(
+                    stageInfo,
+                    srcFile,
+                    fileMetadata,
+                    (stageInfo.getStageType() == StageInfo.StageType.LOCAL_FS)
+                        ? null
+                        : storageFactory.createClient(
+                            stageInfo, parallel, encryptionMaterial.get(0), session),
+                    session,
+                    command,
+                    null,
+                    false,
+                    (parallel > 1 ? 1 : this.parallel),
+                    srcFileObj,
+                    encryptionMaterial.get(0)));
+        uploadTasks.add(uploadTask);
         logger.debug("submitted copy job for: {}", srcFile);
       }
 
@@ -1675,11 +1686,19 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
       threadExecutor.shutdown();
 
       try {
-        // wait for all threads to complete without timeout
-        threadExecutor.awaitTermination(Long.MAX_VALUE, TimeUnit.DAYS);
+        // wait for task to complete
+        for (Future<Void> task : uploadTasks) {
+          task.get();
+        }
       } catch (InterruptedException ex) {
         throw new SnowflakeSQLLoggedException(
-            session, ErrorCode.INTERRUPTED.getMessageCode(), SqlState.QUERY_CANCELED);
+            session, ErrorCode.INTERNAL_ERROR.getMessageCode(), SqlState.QUERY_CANCELED);
+      } catch (ExecutionException ex) {
+        throw new SnowflakeSQLLoggedException(
+            session,
+            SqlState.INTERNAL_ERROR,
+            ErrorCode.INTERNAL_ERROR.getMessageCode(),
+            ex.getCause());
       }
       logger.debug("Done with uploading");
 
