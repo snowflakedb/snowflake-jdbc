@@ -1489,7 +1489,8 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
         throw new SnowflakeSQLLoggedException(
             session, ErrorCode.INTERRUPTED.getMessageCode(), SqlState.QUERY_CANCELED);
       } catch (ExecutionException ex) {
-        throw ex.getCause();
+        throw new SnowflakeSQLException(
+            ex.getCause(), SqlState.INTERNAL_ERROR, ErrorCode.INTERNAL_ERROR.getMessageCode());
       }
       logger.debug("Done with uploading from a stream");
     } finally {
