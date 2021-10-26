@@ -1,3 +1,9 @@
+**JDBC Driver 3.13.10**
+
+- \| SNOW-492055 | Handle uncaught exceptions that can occur in PUT statements
+- \| SNOW-477795 | Regard BLOCKED query as running query.
+- \| SNOW-458293 | Added parameter JDBC_CHUNK_DOWNLOADER_MAX_RETRY to make chunk downloader max retry configurable
+
 **JDBC Driver 3.13.9**
 
 - \| SNOW-411516 | Enhance JDBC to support SFAsyncResultSet.getResultSetSerializables(Long).
