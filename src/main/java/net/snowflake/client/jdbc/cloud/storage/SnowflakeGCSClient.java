@@ -209,6 +209,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
     String localFilePath = localLocation + localFileSep + destFileName;
     File localFile = new File(localFilePath);
 
+    Exception lastEx = null;
     do {
       try {
         String key = null;
@@ -333,10 +334,18 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
         }
         return;
       } catch (Exception ex) {
-        logger.debug("Download unsuccessful {}", ex);
-        handleStorageException(ex, ++retryCount, "download", session, command);
+        logger.warn("Download unsuccessful {}", ex.getMessage());
+        lastEx = ex;
+        try {
+          ++retryCount;
+          Thread.sleep(1000);
+        } catch (InterruptedException e) {
+          // do nothing
+        }
+        // handleStorageException(ex, ++retryCount, "download", session, command);
       }
     } while (retryCount <= getMaxRetries());
+    handleStorageException(lastEx, retryCount, "download", session, command);
 
     throw new SnowflakeSQLLoggedException(
         session,
