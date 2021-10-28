@@ -1091,7 +1091,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
       JsonNode presignedUrlNode = jsonNode.path("data").path("stageInfo").path("presignedUrl");
       if (!presignedUrlNode.isMissingNode()) {
         String presignedUrl = presignedUrlNode.asText();
-        logger.info("Presigned URL: {}", presignedUrl);
+        logger.warn("Presigned URL: {}", presignedUrl);
         if (!Strings.isNullOrEmpty(presignedUrl)) {
           stageInfo.setPresignedUrl(presignedUrl);
         }
