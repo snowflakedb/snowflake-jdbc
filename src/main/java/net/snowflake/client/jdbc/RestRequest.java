@@ -4,10 +4,6 @@
 
 package net.snowflake.client.jdbc;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.util.UUID;
-import java.util.concurrent.atomic.AtomicBoolean;
 import net.snowflake.client.core.Event;
 import net.snowflake.client.core.EventUtil;
 import net.snowflake.client.core.HttpUtil;
@@ -17,12 +13,16 @@ import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.util.DecorrelatedJitterBackoff;
-import net.snowflake.client.util.SecretDetector;
 import net.snowflake.common.core.SqlState;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
+
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * This is an abstraction on top of http client.
@@ -77,7 +77,7 @@ public class RestRequest {
       throws SnowflakeSQLException {
     CloseableHttpResponse response = null;
 
-    String requestInfoScrubbed = SecretDetector.maskSASToken(httpRequest.toString());
+    String requestInfoScrubbed = httpRequest.toString();
 
     // time the client started attempting to submit request
     final long startTime = System.currentTimeMillis();

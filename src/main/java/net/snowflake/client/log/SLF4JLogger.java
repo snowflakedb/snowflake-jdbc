@@ -100,7 +100,7 @@ public class SLF4JLogger implements SFLogger {
   public void error(String msg, Object... arguments) {
     if (isErrorEnabled()) {
       FormattingTuple ft = MessageFormatter.arrayFormat(msg, evaluateLambdaArgs(arguments));
-      this.error(SecretDetector.maskSecrets(ft.getMessage()));
+      this.error(ft.getMessage());
     }
   }
 
@@ -169,7 +169,6 @@ public class SLF4JLogger implements SFLogger {
   }
 
   public void warn(String msg) {
-    msg = SecretDetector.maskSecrets(msg);
     if (isLocationAwareLogger) {
       ((LocationAwareLogger) slf4jLogger)
           .log(null, FQCN, LocationAwareLogger.WARN_INT, msg, null, null);
@@ -181,7 +180,7 @@ public class SLF4JLogger implements SFLogger {
   public void warn(String msg, Object... arguments) {
     if (isWarnEnabled()) {
       FormattingTuple ft = MessageFormatter.arrayFormat(msg, evaluateLambdaArgs(arguments));
-      this.warn(SecretDetector.maskSecrets(ft.getMessage()));
+      this.warn(ft.getMessage());
     }
   }
 
