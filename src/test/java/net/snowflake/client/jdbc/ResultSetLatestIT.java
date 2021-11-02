@@ -3,15 +3,11 @@
  */
 package net.snowflake.client.jdbc;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import net.snowflake.client.category.TestCategoryResultSet;
-import net.snowflake.client.core.SFBaseSession;
-import net.snowflake.client.jdbc.telemetry.*;
-import net.snowflake.common.core.SFBinary;
-import org.apache.arrow.vector.Float8Vector;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.*;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
@@ -19,10 +15,13 @@ import java.nio.ByteBuffer;
 import java.sql.*;
 import java.util.*;
 import java.util.regex.Pattern;
-
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.*;
+import net.snowflake.client.category.TestCategoryResultSet;
+import net.snowflake.client.core.SFBaseSession;
+import net.snowflake.client.jdbc.telemetry.*;
+import net.snowflake.common.core.SFBinary;
+import org.apache.arrow.vector.Float8Vector;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 /**
  * ResultSet integration tests for the latest JDBC driver. This doesn't work for the oldest
@@ -47,11 +46,19 @@ public class ResultSetLatestIT extends ResultSet0IT {
     Connection con = getConnection();
     Statement statement = con.createStatement();
     statement.execute("alter session set jdbc_query_result_format = 'arrow'");
-    statement.execute("create or replace table SRC_DATE_TIME (C2_TIME_3 TIME(3), C3_TIME_5 TIME(5), C4_TIME TIME(9))");
-    statement.execute("insert into SRC_DATE_TIME values ('10:30:50.123456789','10:30:50.123456789123456789','10:30:50.123456789')");
+    statement.execute(
+        "create or replace table SRC_DATE_TIME (C2_TIME_3 TIME(3), C3_TIME_5 TIME(5), C4_TIME TIME(9))");
+    statement.execute(
+        "insert into SRC_DATE_TIME values ('10:30:50.123456789','10:30:50.123456789123456789','10:30:50.123456789')");
     ResultSet rs = statement.executeQuery("select * from SRC_DATE_TIME");
     rs.next();
-    System.out.println("Time(3): " + rs.getTimestamp(1) + ", Time(5): " + rs.getTimestamp(2) + ", Time(9): " + rs.getTimestamp(3));
+    System.out.println(
+        "Time(3): "
+            + rs.getTimestamp(1)
+            + ", Time(5): "
+            + rs.getTimestamp(2)
+            + ", Time(9): "
+            + rs.getTimestamp(3));
   }
 
   /**
