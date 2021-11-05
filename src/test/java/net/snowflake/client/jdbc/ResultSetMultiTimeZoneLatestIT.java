@@ -63,6 +63,36 @@ public class ResultSetMultiTimeZoneLatestIT extends BaseJDBCTest {
   }
 
   /**
+   * This tests that all time values (regardless of precision) return the same wallclock value when
+   * getTimestamp() is called.
+   *
+   * @throws SQLException
+   */
+  @Test
+  public void testTimesWithGetTimestamp() throws SQLException {
+    Connection connection = init();
+    Statement statement = connection.createStatement();
+    String timeStringValue = "10:30:50.123456789";
+    String timestampStringValue = "1970-01-01 " + timeStringValue;
+    int length = timestampStringValue.length();
+    statement.execute(
+        "create or replace table SRC_DATE_TIME (C2_TIME_3 TIME(3), C3_TIME_5 TIME(5), C4_TIME TIME(9))");
+    statement.execute(
+        "insert into SRC_DATE_TIME values ('"
+            + timeStringValue
+            + "','"
+            + timeStringValue
+            + "','"
+            + timeStringValue
+            + "')");
+    ResultSet rs = statement.executeQuery("select * from SRC_DATE_TIME");
+    rs.next();
+    assertEquals(timestampStringValue.substring(0, length - 6), rs.getTimestamp(1).toString());
+    assertEquals(timestampStringValue.substring(0, length - 4), rs.getTimestamp(2).toString());
+    assertEquals(timestampStringValue, rs.getTimestamp(3).toString());
+  }
+
+  /**
    * This test is for SNOW-366563 where the timestamp was returning an incorrect value for daylight
    * savings time due to the fact that UTC and Europe/London time have the same offset until
    * daylight savings comes into effect. This tests that the timestamp value is accurate during
