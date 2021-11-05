@@ -13,6 +13,7 @@ import net.snowflake.client.core.ResultUtil;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeTimeWithTimezone;
+import net.snowflake.client.jdbc.SnowflakeTimestampWithTimezone;
 import net.snowflake.client.jdbc.SnowflakeType;
 import net.snowflake.common.core.SFTime;
 import org.apache.arrow.vector.IntVector;
@@ -88,7 +89,17 @@ public class IntToTimeConverter extends AbstractArrowVectorConverter {
 
   @Override
   public Timestamp toTimestamp(int index, TimeZone tz) throws SFException {
-    return isNull(index) ? null : new Timestamp(toTime(index).getTime());
+    if (isNull(index)) {
+      return null;
+    }
+    if (useSessionTimezone) {
+      SFTime sfTime = toSFTime(index);
+      return new SnowflakeTimestampWithTimezone(
+          sfTime.getFractionalSeconds(ResultUtil.DEFAULT_SCALE_OF_SFTIME_FRACTION_SECONDS),
+          sfTime.getNanosecondsWithinSecond(),
+          TimeZone.getTimeZone("UTC"));
+    }
+    return new Timestamp(toTime(index).getTime());
   }
 
   @Override
