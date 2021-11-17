@@ -390,8 +390,9 @@ public class ConnectionLatestIT extends BaseJDBCTest {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testExternalBrowserWithUnderscoreInAccountName() throws SQLException {
-    Map<String, String> params = getConnectionParameters("snowhouse_local");
+    Map<String, String> params = getConnectionParameters();
     Properties properties = new Properties();
+    properties.put("account", "snowhouse-local");
     properties.put("user", "fake_user");
     properties.put("authenticator", "externalbrowser");
     properties.put("ssl", params.get("ssl"));
