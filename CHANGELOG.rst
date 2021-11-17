@@ -1,3 +1,7 @@
+**JDBC Driver 3.13.11**
+
+- \| SNOW-473749 | Fix bug where time(3) objects weren't honoring USE_SESSION_TIMEZONE when called with getTimestamp() in Arrow format 
+
 **JDBC Driver 3.13.10**
 
 - \| SNOW-492055 | Handle uncaught exceptions that can occur in PUT statements
