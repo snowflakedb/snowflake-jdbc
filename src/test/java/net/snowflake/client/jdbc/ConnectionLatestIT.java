@@ -381,6 +381,29 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     assertEquals(QueryStatus.QUEUED, status);
   }
 
+  /**
+   * When 1) there is an underscore in account_name; 2) the account name can only be inferred from
+   * connection string; 3) externalbrowser is used, backend failed to parse the correct account
+   * name. See SNOW-496117 for more details. Don't run on github because the github testing
+   * deployment is likely not having the test account we used here.
+   */
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testExternalBrowserWithUnderscoreInAccountName() throws SQLException {
+    Map<String, String> params = getConnectionParameters("snowhouse_local");
+    Properties properties = new Properties();
+    properties.put("user", "fake_user");
+    properties.put("authenticator", "externalbrowser");
+    properties.put("ssl", params.get("ssl"));
+    try (Connection conn = DriverManager.getConnection(params.get("uri"), properties)) {
+      // the account should not have set up the external browser login.
+      fail("failure in getConnection is expected");
+    } catch (SnowflakeSQLException ex) {
+      // expect a 390190 wrong configuration exception, instead of 390400 bad request exception.
+      assertEquals(390190, ex.getErrorCode());
+    }
+  }
+
   @Test
   public void testHttpsLoginTimeoutWithOutSSL() throws InterruptedException {
     Properties properties = new Properties();
