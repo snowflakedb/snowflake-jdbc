@@ -467,6 +467,7 @@ public class CustomProxyLatestIT {
     System.setProperty("http.useProxy", "true");
     System.setProperty("http.proxyHost", "localhost");
     System.setProperty("http.proxyPort", "8080");
+    System.setProperty("http.nonProxyHosts", "*.snowflake.com");
     runAzureProxyConnection(connectionUrl, false, false);
   }
 

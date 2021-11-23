@@ -341,16 +341,26 @@ public abstract class SFBaseSession {
       String httpsProxyHost = systemGetProperty("https.proxyHost");
       String httpsProxyPort = systemGetProperty("https.proxyPort");
       String noProxy = systemGetEnv("NO_PROXY");
+      String nonProxyHosts = systemGetProperty("http.nonProxyHosts");
       // log the JVM parameters that are being used
       if (httpUseProxy) {
         logger.debug(
-            "http.useProxy={}, http.proxyHost={}, http.proxyPort={}, https.proxyHost={}, https.proxyPort={}, NO_PROXY={}",
+            "http.useProxy={}, http.proxyHost={}, http.proxyPort={}, https.proxyHost={}, https.proxyPort={}, http.nonProxyHosts={}, NO_PROXY={}",
             httpUseProxy,
             httpProxyHost,
             httpProxyPort,
             httpsProxyHost,
             httpsProxyPort,
+            nonProxyHosts,
             noProxy);
+        // There are 2 possible parameters for non proxy hosts that can be combined into 1
+        String combinedNonProxyHosts = Strings.isNullOrEmpty(nonProxyHosts) ? "" : nonProxyHosts;
+        if (!Strings.isNullOrEmpty(noProxy)) {
+          if (!Strings.isNullOrEmpty(combinedNonProxyHosts)) {
+            combinedNonProxyHosts += "|";
+          }
+          combinedNonProxyHosts += noProxy;
+        }
         if (!Strings.isNullOrEmpty(httpsProxyHost) && !Strings.isNullOrEmpty(httpsProxyPort)) {
           int proxyPort;
           try {
@@ -364,7 +374,7 @@ public abstract class SFBaseSession {
                   getOCSPMode(),
                   httpsProxyHost,
                   proxyPort,
-                  noProxy,
+                  combinedNonProxyHosts,
                   "", /* user = empty */
                   "", /* password = empty */
                   "https");
@@ -381,7 +391,7 @@ public abstract class SFBaseSession {
                   getOCSPMode(),
                   httpProxyHost,
                   proxyPort,
-                  noProxy,
+                  combinedNonProxyHosts,
                   "", /* user = empty */
                   "", /* password = empty */
                   "http");
