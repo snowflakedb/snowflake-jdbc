@@ -332,7 +332,7 @@ public abstract class SFBaseSession {
 
       return ocspAndProxyKey;
     }
-    // If JVM proxy parameters are specified, https proxies need to go through the JDBC driver's
+    // If JVM proxy parameters are specified, proxies need to go through the JDBC driver's
     // HttpClientSettingsKey logic in order to work properly.
     else {
       boolean httpUseProxy = Boolean.parseBoolean(systemGetProperty("http.useProxy"));
@@ -351,32 +351,44 @@ public abstract class SFBaseSession {
             httpsProxyHost,
             httpsProxyPort,
             noProxy);
-      } else {
-        logger.debug("http.useProxy={}. JVM proxy not used.", httpUseProxy);
-      }
-      // Set a new HttpClientSettingsKey with the https params. If the proxy is http, the native
-      // Java implementation will work.
-      if (httpUseProxy
-          && !Strings.isNullOrEmpty(httpsProxyHost)
-          && !Strings.isNullOrEmpty(httpsProxyPort)) {
-        int proxyPort;
-        try {
-          proxyPort = Integer.parseInt(httpsProxyPort);
-        } catch (NumberFormatException | NullPointerException e) {
-          throw new SnowflakeSQLException(
-              ErrorCode.INVALID_PROXY_PROPERTIES, "Could not parse port number");
+        if (!Strings.isNullOrEmpty(httpsProxyHost) && !Strings.isNullOrEmpty(httpsProxyPort)) {
+          int proxyPort;
+          try {
+            proxyPort = Integer.parseInt(httpsProxyPort);
+          } catch (NumberFormatException | NullPointerException e) {
+            throw new SnowflakeSQLException(
+                ErrorCode.INVALID_PROXY_PROPERTIES, "Could not parse port number");
+          }
+          ocspAndProxyKey =
+              new HttpClientSettingsKey(
+                  getOCSPMode(),
+                  httpsProxyHost,
+                  proxyPort,
+                  noProxy,
+                  "", /* user = empty */
+                  "", /* password = empty */
+                  "https");
+        } else if (!Strings.isNullOrEmpty(httpProxyHost) && !Strings.isNullOrEmpty(httpProxyPort)) {
+          int proxyPort;
+          try {
+            proxyPort = Integer.parseInt(httpProxyPort);
+          } catch (NumberFormatException | NullPointerException e) {
+            throw new SnowflakeSQLException(
+                ErrorCode.INVALID_PROXY_PROPERTIES, "Could not parse port number");
+          }
+          ocspAndProxyKey =
+              new HttpClientSettingsKey(
+                  getOCSPMode(),
+                  httpProxyHost,
+                  proxyPort,
+                  noProxy,
+                  "", /* user = empty */
+                  "", /* password = empty */
+                  "http");
         }
-        ocspAndProxyKey =
-            new HttpClientSettingsKey(
-                getOCSPMode(),
-                httpsProxyHost,
-                proxyPort,
-                noProxy,
-                "", /* user = empty */
-                "", /* password = empty */
-                "https");
       } else {
         // If no proxy is used or JVM http proxy is used, no need for setting parameters
+        logger.debug("http.useProxy={}. JVM proxy not used.", httpUseProxy);
         ocspAndProxyKey = new HttpClientSettingsKey(getOCSPMode());
       }
     }

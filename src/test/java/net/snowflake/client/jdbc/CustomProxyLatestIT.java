@@ -389,7 +389,7 @@ public class CustomProxyLatestIT {
   public void testProxyConnectionWithAzure() throws ClassNotFoundException, SQLException {
     String connectionUrl =
         "jdbc:snowflake://aztestaccount.east-us-2.azure.snowflakecomputing.com/?tracing=ALL";
-    runAzureProxyConnection(connectionUrl, true);
+    runAzureProxyConnection(connectionUrl, true, true);
   }
 
   @Test
@@ -401,7 +401,7 @@ public class CustomProxyLatestIT {
             + "&proxyHost=localhost&proxyPort=8080"
             + "&proxyUser=testuser1&proxyPassword=test"
             + "&useProxy=true";
-    runAzureProxyConnection(connectionUrl, false);
+    runAzureProxyConnection(connectionUrl, false, true);
   }
 
   @Test
@@ -415,7 +415,7 @@ public class CustomProxyLatestIT {
             + "&proxyUser=testuser1&proxyPassword=test"
             + "&useProxy=true";
     try {
-      runAzureProxyConnection(connectionUrl, false);
+      runAzureProxyConnection(connectionUrl, false, true);
       fail();
     } catch (SQLException e) {
       assertEquals(SqlState.CONNECTION_EXCEPTION, e.getSQLState());
@@ -427,7 +427,7 @@ public class CustomProxyLatestIT {
             + "&proxyUser=testuser1&proxyPassword=test"
             + "&useProxy=true";
     try {
-      runAzureProxyConnection(connectionUrl, false);
+      runAzureProxyConnection(connectionUrl, false, true);
       fail();
     } catch (SQLException e) {
       assertEquals(SqlState.CONNECTION_EXCEPTION, e.getSQLState());
@@ -440,7 +440,7 @@ public class CustomProxyLatestIT {
             + "&proxyUser=testuser1&proxyPassword=test"
             + "&useProxy=true";
     try {
-      runAzureProxyConnection(connectionUrl, false);
+      runAzureProxyConnection(connectionUrl, false, true);
       fail();
     } catch (SQLException e) {
       assertEquals(SqlState.CONNECTION_EXCEPTION, e.getSQLState());
@@ -452,11 +452,22 @@ public class CustomProxyLatestIT {
             + "&proxyUser=testuser1&proxyPassword=test"
             + "&useProxy=true";
     try {
-      runAzureProxyConnection(connectionUrl, false);
+      runAzureProxyConnection(connectionUrl, false, true);
       fail();
     } catch (SQLException e) {
       assertEquals(SqlState.CONNECTION_EXCEPTION, e.getSQLState());
     }
+  }
+
+  @Test
+  @Ignore
+  public void testProxyConnectionWithJVMParameters() throws SQLException, ClassNotFoundException {
+    String connectionUrl =
+        "jdbc:snowflake://aztestaccount.east-us-2.azure.snowflakecomputing.com/?tracing=ALL";
+    System.setProperty("http.useProxy", "true");
+    System.setProperty("http.proxyHost", "localhost");
+    System.setProperty("http.proxyPort", "8080");
+    runAzureProxyConnection(connectionUrl, false, false);
   }
 
   @Test
@@ -470,7 +481,7 @@ public class CustomProxyLatestIT {
             + "&nonProxyHosts=*.foo.com%7Clocalhost&useProxy=true";
 
     try {
-      runAzureProxyConnection(connectionUrl, false);
+      runAzureProxyConnection(connectionUrl, false, true);
     } catch (SQLException e) {
       assertThat(
           "JDBC driver encountered communication error",
@@ -479,7 +490,8 @@ public class CustomProxyLatestIT {
     }
   }
 
-  public void runAzureProxyConnection(String connectionUrl, boolean usesProperties)
+  public void runAzureProxyConnection(
+      String connectionUrl, boolean usesProperties, boolean usesJVMProperties)
       throws ClassNotFoundException, SQLException {
     Authenticator.setDefault(
         new Authenticator() {
@@ -498,11 +510,13 @@ public class CustomProxyLatestIT {
     // Connection parameters override JVM  proxy params, so these incorrect params won't cause
     // failures IF
     // connection proxy params are enabled and working.
-    System.setProperty("http.useProxy", "true");
-    System.setProperty("http.proxyHost", "fakehost");
-    System.setProperty("http.proxyPort", "8081");
-    System.setProperty("https.proxyHost", "fakehost");
-    System.setProperty("https.proxyPort", "8081");
+    if (usesJVMProperties) {
+      System.setProperty("http.useProxy", "true");
+      System.setProperty("http.proxyHost", "fakehost");
+      System.setProperty("http.proxyPort", "8081");
+      System.setProperty("https.proxyHost", "fakehost");
+      System.setProperty("https.proxyPort", "8081");
+    }
 
     // SET USER AND PASSWORD FIRST
     String user = "USER";
@@ -511,6 +525,7 @@ public class CustomProxyLatestIT {
     _connectionProperties.put("user", user);
     _connectionProperties.put("password", passwd);
     _connectionProperties.put("role", "SYSADMIN");
+    _connectionProperties.put("tracing", "ALL");
     if (usesProperties) {
       _connectionProperties.put("useProxy", true);
       _connectionProperties.put("proxyHost", "localhost");
