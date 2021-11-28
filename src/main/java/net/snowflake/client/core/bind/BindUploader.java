@@ -18,11 +18,11 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import net.snowflake.client.core.ParameterBindingDTO;
+import net.snowflake.client.core.SFBaseSession;
+import net.snowflake.client.core.SFBaseStatement;
 import net.snowflake.client.core.SFException;
-import net.snowflake.client.core.SFSession;
-import net.snowflake.client.core.SFStatement;
 import net.snowflake.client.jdbc.ErrorCode;
-import net.snowflake.client.jdbc.SnowflakeFileTransferAgent;
+import net.snowflake.client.jdbc.SFBaseFileTransferAgent;
 import net.snowflake.client.jdbc.SnowflakeSQLLoggedException;
 import net.snowflake.client.jdbc.SnowflakeType;
 import net.snowflake.client.log.SFLogger;
@@ -33,18 +33,8 @@ import net.snowflake.common.core.SqlState;
 public class BindUploader implements Closeable {
   private static final SFLogger logger = SFLoggerFactory.getLogger(BindUploader.class);
 
-  private static final String STAGE_NAME = "SYSTEM$BIND";
-
-  private static final String CREATE_STAGE_STMT =
-      "CREATE TEMPORARY STAGE "
-          + STAGE_NAME
-          + " file_format=("
-          + " type=csv"
-          + " field_optionally_enclosed_by='\"'"
-          + ")";
-
   // session of the uploader
-  private final SFSession session;
+  private final SFBaseSession session;
 
   // fully-qualified stage path to upload binds to
   private final String stagePath;
@@ -78,9 +68,9 @@ public class BindUploader implements Closeable {
    * @param session the session to use for uploading binds
    * @param stageDir the stage path to upload to
    */
-  private BindUploader(SFSession session, String stageDir) {
+  private BindUploader(SFBaseSession session, String stageDir) {
     this.session = session;
-    this.stagePath = "@" + STAGE_NAME + "/" + stageDir;
+    this.stagePath = "@" + session.getSfConnectionHandler().getBindStageName() + "/" + stageDir;
     Calendar calendarUTC = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
     calendarUTC.clear();
 
@@ -161,7 +151,7 @@ public class BindUploader implements Closeable {
    * @param stageDir the stage path to upload to
    * @return BindUploader instance
    */
-  public static synchronized BindUploader newInstance(SFSession session, String stageDir) {
+  public static synchronized BindUploader newInstance(SFBaseSession session, String stageDir) {
     return new BindUploader(session, stageDir);
   }
 
@@ -174,7 +164,7 @@ public class BindUploader implements Closeable {
    * @throws SQLException
    */
   public void upload(Map<String, ParameterBindingDTO> bindValues)
-      throws BindException, SQLException {
+      throws BindException, SQLException, SFException {
     if (!closed) {
       List<ColumnTypeDataPair> columns = getColumnValues(bindValues);
       List<byte[]> bindingRows = buildRowsAsBytes(columns);
@@ -228,7 +218,7 @@ public class BindUploader implements Closeable {
    */
   private void uploadStreamInternal(
       InputStream inputStream, String destFileName, boolean compressData)
-      throws SQLException, BindException {
+      throws SQLException, BindException, SFException {
 
     createStageIfNeeded();
     String stageName = stagePath;
@@ -251,7 +241,7 @@ public class BindUploader implements Closeable {
           "stage name is null");
     }
 
-    SFStatement stmt = new SFStatement(session);
+    SFBaseStatement stmt = session.getSfConnectionHandler().getSFStatement();
 
     StringBuilder putCommand = new StringBuilder();
 
@@ -265,8 +255,8 @@ public class BindUploader implements Closeable {
 
     putCommand.append(" overwrite=true");
 
-    SnowflakeFileTransferAgent transferAgent =
-        new SnowflakeFileTransferAgent(putCommand.toString(), session, stmt);
+    SFBaseFileTransferAgent transferAgent =
+        session.getSfConnectionHandler().getFileTransferAgent(putCommand.toString(), stmt);
 
     transferAgent.setSourceStream(inputStream);
     transferAgent.setDestFileNameForStreamSource(destFileName);
@@ -386,6 +376,15 @@ public class BindUploader implements Closeable {
     return sb.toString().getBytes(UTF_8);
   }
 
+  private String getCreateStageStatement() {
+    return "CREATE STAGE "
+        + session.getSfConnectionHandler().getBindStageName()
+        + " file_format=("
+        + " type=csv"
+        + " field_optionally_enclosed_by='\"'"
+        + ")";
+  }
+
   /**
    * Check whether the session's temporary stage has been created, and create it if not.
    *
@@ -399,9 +398,9 @@ public class BindUploader implements Closeable {
       // another thread may have created the session by the time we enter this block
       if (session.getArrayBindStage() == null) {
         try {
-          SFStatement statement = new SFStatement(session);
-          statement.execute(CREATE_STAGE_STMT, false, null, null);
-          session.setArrayBindStage(STAGE_NAME);
+          SFBaseStatement statement = session.getSfConnectionHandler().getSFStatement();
+          statement.execute(getCreateStageStatement(), null, null);
+          session.setArrayBindStage(session.getSfConnectionHandler().getBindStageName());
         } catch (SFException | SQLException ex) {
           // to avoid repeated failures to create stage, disable array bind stage
           // optimization if we fail to create stage for some reason

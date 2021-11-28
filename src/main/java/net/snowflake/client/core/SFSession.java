@@ -96,8 +96,6 @@ public class SFSession extends SFBaseSession {
   private Level tracingLevel = Level.INFO;
   // client to log session metrics to telemetry in GS
   private Telemetry telemetryClient;
-  // name of temporary stage to upload array binds to; null if none has been created yet
-  private String arrayBindStage = null;
   private SnowflakeConnectString sfConnStr;
 
   /**
@@ -820,14 +818,6 @@ public class SFSession extends SFBaseSession {
     if (telemetryClient != null) {
       telemetryClient.close();
     }
-  }
-
-  public String getArrayBindStage() {
-    return arrayBindStage;
-  }
-
-  public void setArrayBindStage(String arrayBindStage) {
-    this.arrayBindStage = String.format("%s.%s.%s", getDatabase(), getSchema(), arrayBindStage);
   }
 
   public String getIdToken() {
