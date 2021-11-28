@@ -385,7 +385,7 @@ public class BindUploader implements Closeable {
   }
 
   private String getCreateStageStatement() {
-    return "CREATE TEMPORARY STAGE "
+    return "CREATE TEMPORARY STAGE IF NOT EXISTS "
         + session.getSfConnectionHandler().getBindStageName()
         + " file_format=("
         + " type=csv"
