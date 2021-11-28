@@ -58,6 +58,11 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
       Date[] dates = new Date[] {dEpoch, dAfterEpoch, dBeforeEpoch, dNow, dLeapYear, dFuture};
       int[] countResult;
 
+      connection.createStatement().executeQuery("create or replace stage foo");
+      PreparedStatement pSt = connection.prepareStatement("put ? @foo");
+      pSt.setString(1, "file:///home/ema/foo.txt");
+      pSt.executeBatch();
+
       try {
         connection
             .createStatement()

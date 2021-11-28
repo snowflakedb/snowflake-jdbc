@@ -20,6 +20,8 @@ import net.snowflake.common.core.LoginInfoDTO;
  */
 public class DefaultSFConnectionHandler implements SFConnectionHandler {
 
+  private static final String STAGE_NAME = "SYSTEM$BIND";
+
   private static final SFLogger logger =
       SFLoggerFactory.getLogger(DefaultSFConnectionHandler.class);
 
@@ -48,6 +50,7 @@ public class DefaultSFConnectionHandler implements SFConnectionHandler {
    */
   public DefaultSFConnectionHandler(SnowflakeConnectString conStr, boolean skipOpen) {
     this.sfSession = new SFSession();
+    sfSession.setSfConnectionHandler(this);
     this.conStr = conStr;
     this.skipOpen = skipOpen;
     sfSession.setSnowflakeConnectionString(conStr);
@@ -185,5 +188,10 @@ public class DefaultSFConnectionHandler implements SFConnectionHandler {
           "getFileTransferAgent() called with an incompatible SFBaseStatement type. Requires an SFStatement.");
     }
     return new SnowflakeFileTransferAgent(command, sfSession, (SFStatement) statement);
+  }
+
+  @Override
+  public String getBindStageName() {
+    return STAGE_NAME;
   }
 }
