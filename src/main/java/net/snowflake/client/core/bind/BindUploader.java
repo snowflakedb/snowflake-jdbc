@@ -155,15 +155,22 @@ public class BindUploader implements Closeable {
     return new BindUploader(session, stageDir);
   }
 
+  /** Wrapper around upload() with default compression to true. */
+  public void upload(Map<String, ParameterBindingDTO> bindValues)
+      throws BindException, SQLException, SFException {
+    upload(bindValues, true);
+  }
+
   /**
    * Upload bind parameters via streaming. This replaces previous function upload function where
    * binds were written to a file which was then uploaded with a PUT statement.
    *
    * @param bindValues the bind map to upload
+   * @param compressData whether or not to compress data
    * @throws BindException
    * @throws SQLException
    */
-  public void upload(Map<String, ParameterBindingDTO> bindValues)
+  public void upload(Map<String, ParameterBindingDTO> bindValues, boolean compressData)
       throws BindException, SQLException, SFException {
     if (!closed) {
       List<ColumnTypeDataPair> columns = getColumnValues(bindValues);
@@ -188,7 +195,7 @@ public class BindUploader implements Closeable {
         try (ByteArrayInputStream inputStream = new ByteArrayInputStream(finalBytearray)) {
           // do the upload
           String fileName = Integer.toString(++fileCount);
-          uploadStreamInternal(inputStream, fileName, true);
+          uploadStreamInternal(inputStream, fileName, compressData);
           startIndex = rowNum;
           numBytes = 0;
         } catch (IOException ex) {
@@ -258,6 +265,7 @@ public class BindUploader implements Closeable {
     SFBaseFileTransferAgent transferAgent =
         session.getSfConnectionHandler().getFileTransferAgent(putCommand.toString(), stmt);
 
+    transferAgent.setDestStagePath("@" + session.getSfConnectionHandler().getBindStageName());
     transferAgent.setSourceStream(inputStream);
     transferAgent.setDestFileNameForStreamSource(destFileName);
     transferAgent.setCompressSourceFromStream(compressData);
