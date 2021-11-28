@@ -265,7 +265,7 @@ public class BindUploader implements Closeable {
     SFBaseFileTransferAgent transferAgent =
         session.getSfConnectionHandler().getFileTransferAgent(putCommand.toString(), stmt);
 
-    transferAgent.setDestStagePath("@" + session.getSfConnectionHandler().getBindStageName());
+    transferAgent.setDestStagePath(stagePath);
     transferAgent.setSourceStream(inputStream);
     transferAgent.setDestFileNameForStreamSource(destFileName);
     transferAgent.setCompressSourceFromStream(compressData);
@@ -385,7 +385,7 @@ public class BindUploader implements Closeable {
   }
 
   private String getCreateStageStatement() {
-    return "CREATE STAGE "
+    return "CREATE TEMPORARY STAGE "
         + session.getSfConnectionHandler().getBindStageName()
         + " file_format=("
         + " type=csv"
