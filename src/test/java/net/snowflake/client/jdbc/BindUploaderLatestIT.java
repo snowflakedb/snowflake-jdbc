@@ -15,6 +15,7 @@ import java.util.Map;
 import java.util.TimeZone;
 import net.snowflake.client.category.TestCategoryOthers;
 import net.snowflake.client.core.ParameterBindingDTO;
+import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.core.bind.BindUploader;
 import org.junit.*;
@@ -62,7 +63,7 @@ public class BindUploaderLatestIT extends BaseJDBCTest {
   // Test setting the input stream buffer size to be quite small and ensure that 2 files (1
   // corresponding to each input stream) are created in internal stage.
   @Test
-  public void testUploadedResultsMultiple() throws Exception {
+  public void testUploadedResultsMultiple() throws Exception, SFException {
 
     // Get an estimate of how many bytes are in 1 of the rows being uploaded and set this value to
     // be the input stream buffer size. For 2 similarly sized rows, we should now have 2 files.
@@ -85,7 +86,7 @@ public class BindUploaderLatestIT extends BaseJDBCTest {
 
   // Test single csv upload and successful parsing
   @Test
-  public void testUploadedResultsSimple() throws Exception {
+  public void testUploadedResultsSimple() throws Exception, SFException {
     bindUploader.upload(getBindings(conn));
 
     Statement stmt = conn.createStatement();
@@ -100,7 +101,7 @@ public class BindUploaderLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  public void testUploadStreamLargeBatch() throws Exception {
+  public void testUploadStreamLargeBatch() throws Exception, SFException {
     // create large batch so total bytes transferred are about 10 times the size of input stream
     // buffer
     int batchSize = 1024 * 1024;

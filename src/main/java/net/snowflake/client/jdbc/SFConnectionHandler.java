@@ -50,4 +50,6 @@ public interface SFConnectionHandler {
    */
   SFBaseFileTransferAgent getFileTransferAgent(String command, SFBaseStatement statement)
       throws SQLNonTransientConnectionException, SnowflakeSQLException;
+
+  public abstract String getBindStageName();
 }
