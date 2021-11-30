@@ -389,7 +389,8 @@ public class CustomProxyLatestIT {
   public void testProxyConnectionWithAzure() throws ClassNotFoundException, SQLException {
     String connectionUrl =
         "jdbc:snowflake://aztestaccount.east-us-2.azure.snowflakecomputing.com/?tracing=ALL";
-    runAzureProxyConnection(connectionUrl, true, true);
+    runAzureProxyConnection(
+        connectionUrl, /* usesConnectionProperties */ true, /* usesIncorrectJVMParameters */ true);
   }
 
   @Test
@@ -401,7 +402,8 @@ public class CustomProxyLatestIT {
             + "&proxyHost=localhost&proxyPort=8080"
             + "&proxyUser=testuser1&proxyPassword=test"
             + "&useProxy=true";
-    runAzureProxyConnection(connectionUrl, false, true);
+    runAzureProxyConnection(
+        connectionUrl, /* usesConnectionProperties */ false, /* usesIncorrectJVMParameters */ true);
   }
 
   @Test
@@ -415,7 +417,10 @@ public class CustomProxyLatestIT {
             + "&proxyUser=testuser1&proxyPassword=test"
             + "&useProxy=true";
     try {
-      runAzureProxyConnection(connectionUrl, false, true);
+      runAzureProxyConnection(
+          connectionUrl, /* usesConnectionProperties */
+          false, /* usesIncorrectJVMParameters */
+          true);
       fail();
     } catch (SQLException e) {
       assertEquals(SqlState.CONNECTION_EXCEPTION, e.getSQLState());
@@ -427,7 +432,10 @@ public class CustomProxyLatestIT {
             + "&proxyUser=testuser1&proxyPassword=test"
             + "&useProxy=true";
     try {
-      runAzureProxyConnection(connectionUrl, false, true);
+      runAzureProxyConnection(
+          connectionUrl, /* usesConnectionProperties */
+          false, /* usesIncorrectJVMParameters */
+          true);
       fail();
     } catch (SQLException e) {
       assertEquals(SqlState.CONNECTION_EXCEPTION, e.getSQLState());
@@ -440,7 +448,10 @@ public class CustomProxyLatestIT {
             + "&proxyUser=testuser1&proxyPassword=test"
             + "&useProxy=true";
     try {
-      runAzureProxyConnection(connectionUrl, false, true);
+      runAzureProxyConnection(
+          connectionUrl, /* usesConnectionProperties */
+          false, /* usesIncorrectJVMParameters */
+          true);
       fail();
     } catch (SQLException e) {
       assertEquals(SqlState.CONNECTION_EXCEPTION, e.getSQLState());
@@ -452,7 +463,10 @@ public class CustomProxyLatestIT {
             + "&proxyUser=testuser1&proxyPassword=test"
             + "&useProxy=true";
     try {
-      runAzureProxyConnection(connectionUrl, false, true);
+      runAzureProxyConnection(
+          connectionUrl, /* usesConnectionProperties */
+          false, /* usesIncorrectJVMParameters */
+          true);
       fail();
     } catch (SQLException e) {
       assertEquals(SqlState.CONNECTION_EXCEPTION, e.getSQLState());
@@ -464,17 +478,23 @@ public class CustomProxyLatestIT {
   public void testProxyConnectionWithJVMParameters() throws SQLException, ClassNotFoundException {
     String connectionUrl =
         "jdbc:snowflake://aztestaccount.east-us-2.azure.snowflakecomputing.com/?tracing=ALL";
+    // Set valid JVM system properties
     System.setProperty("http.useProxy", "true");
     System.setProperty("http.proxyHost", "localhost");
     System.setProperty("http.proxyPort", "8080");
-    System.setProperty("http.nonProxyHosts", "*.snowflake.com");
-    runAzureProxyConnection(connectionUrl, false, false);
+    System.setProperty("http.nonProxyHosts", "*.snowflakecomputing.com");
+    SnowflakeUtil.systemSetEnv("NO_PROXY", "*.google.com");
+    runAzureProxyConnection(
+        connectionUrl, /* usesConnectionProperties */
+        false, /* usesIncorrectJVMParameters */
+        false);
+    SnowflakeUtil.systemUnsetEnv("NO_PROXY");
   }
 
   @Test
   @Ignore
   public void testProxyConnectionWithAzureWithWrongConnectionString()
-      throws ClassNotFoundException, SQLException {
+      throws ClassNotFoundException {
     String connectionUrl =
         "jdbc:snowflake://aztestaccount.east-us-2.azure.snowflakecomputing.com/?tracing=ALL"
             + "&proxyHost=localhost&proxyPort=31281"
@@ -482,7 +502,10 @@ public class CustomProxyLatestIT {
             + "&nonProxyHosts=*.foo.com%7Clocalhost&useProxy=true";
 
     try {
-      runAzureProxyConnection(connectionUrl, false, true);
+      runAzureProxyConnection(
+          connectionUrl, /* usesConnectionProperties */
+          false, /* usesIncorrectJVMParameters */
+          true);
     } catch (SQLException e) {
       assertThat(
           "JDBC driver encountered communication error",
@@ -492,7 +515,7 @@ public class CustomProxyLatestIT {
   }
 
   public void runAzureProxyConnection(
-      String connectionUrl, boolean usesProperties, boolean usesJVMProperties)
+      String connectionUrl, boolean usesProperties, boolean usesIncorrectJVMProperties)
       throws ClassNotFoundException, SQLException {
     Authenticator.setDefault(
         new Authenticator() {
@@ -509,9 +532,8 @@ public class CustomProxyLatestIT {
     // Enable these parameters to use JVM proxy parameters instead of connection string proxy
     // parameters.
     // Connection parameters override JVM  proxy params, so these incorrect params won't cause
-    // failures IF
-    // connection proxy params are enabled and working.
-    if (usesJVMProperties) {
+    // failures IF connection proxy params are enabled and working.
+    if (usesIncorrectJVMProperties) {
       System.setProperty("http.useProxy", "true");
       System.setProperty("http.proxyHost", "fakehost");
       System.setProperty("http.proxyPort", "8081");
@@ -520,8 +542,8 @@ public class CustomProxyLatestIT {
     }
 
     // SET USER AND PASSWORD FIRST
-    String user = "USER";
-    String passwd = "PASSWORD";
+    String user = "mknister";
+    String passwd = "Argumentc1inicspam!";
     Properties _connectionProperties = new Properties();
     _connectionProperties.put("user", user);
     _connectionProperties.put("password", passwd);

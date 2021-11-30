@@ -356,9 +356,7 @@ public abstract class SFBaseSession {
         // There are 2 possible parameters for non proxy hosts that can be combined into 1
         String combinedNonProxyHosts = Strings.isNullOrEmpty(nonProxyHosts) ? "" : nonProxyHosts;
         if (!Strings.isNullOrEmpty(noProxy)) {
-          if (!Strings.isNullOrEmpty(combinedNonProxyHosts)) {
-            combinedNonProxyHosts += "|";
-          }
+          combinedNonProxyHosts += combinedNonProxyHosts.length() == 0 ? "" : "|";
           combinedNonProxyHosts += noProxy;
         }
         if (!Strings.isNullOrEmpty(httpsProxyHost) && !Strings.isNullOrEmpty(httpsProxyPort)) {
@@ -395,6 +393,12 @@ public abstract class SFBaseSession {
                   "", /* user = empty */
                   "", /* password = empty */
                   "http");
+        } else {
+          // Not enough parameters set to use the proxy.
+          logger.debug(
+              "http.useProxy={} but valid host and port were not provided. No proxy in use.",
+              httpUseProxy);
+          ocspAndProxyKey = new HttpClientSettingsKey(getOCSPMode());
         }
       } else {
         // If no proxy is used or JVM http proxy is used, no need for setting parameters
