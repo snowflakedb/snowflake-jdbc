@@ -157,7 +157,7 @@ public class BindUploader implements Closeable {
 
   /** Wrapper around upload() with default compression to true. */
   public void upload(Map<String, ParameterBindingDTO> bindValues)
-      throws BindException, SQLException, SFException {
+      throws BindException, SQLException {
     upload(bindValues, true);
   }
 
@@ -171,7 +171,7 @@ public class BindUploader implements Closeable {
    * @throws SQLException
    */
   public void upload(Map<String, ParameterBindingDTO> bindValues, boolean compressData)
-      throws BindException, SQLException, SFException {
+      throws BindException, SQLException {
     if (!closed) {
       List<ColumnTypeDataPair> columns = getColumnValues(bindValues);
       List<byte[]> bindingRows = buildRowsAsBytes(columns);
@@ -225,7 +225,7 @@ public class BindUploader implements Closeable {
    */
   private void uploadStreamInternal(
       InputStream inputStream, String destFileName, boolean compressData)
-      throws SQLException, BindException, SFException {
+      throws SQLException, BindException {
 
     createStageIfNeeded();
     String stageName = stagePath;
