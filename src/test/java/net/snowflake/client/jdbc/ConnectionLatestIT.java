@@ -10,10 +10,14 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.*;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.sql.*;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Map;
 import java.util.Properties;
@@ -22,10 +26,14 @@ import java.util.regex.Pattern;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryConnection;
-import net.snowflake.client.core.QueryStatus;
-import net.snowflake.client.core.SFSession;
+import net.snowflake.client.core.*;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
+import net.snowflake.common.core.ClientAuthnDTO;
+import net.snowflake.common.core.ClientAuthnParameter;
 import net.snowflake.common.core.SqlState;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.entity.StringEntity;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -889,5 +897,45 @@ public class ConnectionLatestIT extends BaseJDBCTest {
       statement.close();
       connection.close();
     }
+  }
+
+  /**
+   * See SNOW-496117 for more details. Don't run on github because the github testing deployment is
+   * likely not having the test account we used here.
+   */
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testAuthenticatorEndpointWithDashInAccountName() throws Exception {
+    Map<String, String> params = getConnectionParameters();
+    String serverUrl =
+        String.format(
+            "%s://%s:%s",
+            params.get("ssl").equals("on") ? "https" : "http",
+            params.get("host"),
+            params.get("port"));
+
+    HttpPost postRequest =
+        new HttpPost(
+            new URIBuilder(serverUrl).setPath(SessionUtil.SF_PATH_AUTHENTICATOR_REQUEST).build());
+
+    Map<String, Object> data =
+        Collections.singletonMap(ClientAuthnParameter.ACCOUNT_NAME.name(), "snowhouse-local");
+    ClientAuthnDTO authnData = new ClientAuthnDTO();
+    authnData.setData(data);
+
+    ObjectMapper mapper = ObjectMapperFactory.getObjectMapper();
+    String json = mapper.writeValueAsString(authnData);
+
+    StringEntity input = new StringEntity(json, StandardCharsets.UTF_8);
+    input.setContentType("application/json");
+    postRequest.setEntity(input);
+    postRequest.addHeader("accept", "application/json");
+
+    String theString =
+        HttpUtil.executeGeneralRequest(postRequest, 60, new HttpClientSettingsKey(null));
+
+    JsonNode jsonNode = mapper.readTree(theString);
+    assertEquals(
+        "{\"data\":null,\"code\":null,\"message\":null,\"success\":true}", jsonNode.toString());
   }
 }
