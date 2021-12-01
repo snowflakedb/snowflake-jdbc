@@ -542,8 +542,8 @@ public class CustomProxyLatestIT {
     }
 
     // SET USER AND PASSWORD FIRST
-    String user = "mknister";
-    String passwd = "Argumentc1inicspam!";
+    String user = "USER";
+    String passwd = "PASSWORD";
     Properties _connectionProperties = new Properties();
     _connectionProperties.put("user", user);
     _connectionProperties.put("password", passwd);
