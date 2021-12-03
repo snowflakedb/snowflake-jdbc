@@ -643,6 +643,10 @@ public class MockConnectionTest extends BaseJDBCTest {
   public static class MockSnowflakeSFSession extends SFBaseSession {
     private final List<String> errorsEncountered = new ArrayList<>();
 
+    protected MockSnowflakeSFSession(SFConnectionHandler sfConnectionHandler) {
+      super(sfConnectionHandler);
+    }
+
     public List<String> getErrorsEncountered() {
       return errorsEncountered;
     }
@@ -744,14 +748,14 @@ public class MockConnectionTest extends BaseJDBCTest {
     }
   }
 
-  private static class MockSnowflakeConnectionImpl implements SFConnectionHandler {
+  public static class MockSnowflakeConnectionImpl implements SFConnectionHandler {
     JsonNode jsonResponse;
     MockSnowflakeSFSession session;
     // Map to store the bytes that are "uploaded"
     private Map<String, byte[]> fileMap = new HashMap<>();
 
     public MockSnowflakeConnectionImpl() {
-      this.session = new MockSnowflakeSFSession();
+      this.session = new MockSnowflakeSFSession(this);
     }
 
     public MockSnowflakeConnectionImpl(JsonNode jsonResponse) {

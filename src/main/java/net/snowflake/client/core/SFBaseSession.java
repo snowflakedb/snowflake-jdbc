@@ -114,6 +114,10 @@ public abstract class SFBaseSession {
   // name of temporary stage to upload array binds to; null if none has been created yet
   private String arrayBindStage = null;
 
+  protected SFBaseSession(SFConnectionHandler sfConnectionHandler) {
+    this.sfConnectionHandler = sfConnectionHandler;
+  }
+
   public void setMemoryLimitForTesting(long memLimit) {
     this.memoryLimitForTesting = memLimit;
   }
@@ -730,10 +734,6 @@ public abstract class SFBaseSession {
 
   public SFConnectionHandler getSfConnectionHandler() {
     return sfConnectionHandler;
-  }
-
-  public void setSfConnectionHandler(SFConnectionHandler sfConnectionHandler) {
-    this.sfConnectionHandler = sfConnectionHandler;
   }
 
   public abstract int getNetworkTimeoutInMilli();
