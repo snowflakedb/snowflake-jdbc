@@ -98,6 +98,16 @@ public class SFSession extends SFBaseSession {
   private Telemetry telemetryClient;
   private SnowflakeConnectString sfConnStr;
 
+  // This constructor is used only by tests with no real connection.
+  // For real connections, the other constructor is always used.
+  public SFSession() {
+    this(new DefaultSFConnectionHandler(null));
+  }
+
+  public SFSession(DefaultSFConnectionHandler sfConnectionHandler) {
+    super(sfConnectionHandler);
+  }
+
   /**
    * Function that checks if the active session can be closed when the connection is closed. If
    * there are active asynchronous queries running, the session should stay open even if the
