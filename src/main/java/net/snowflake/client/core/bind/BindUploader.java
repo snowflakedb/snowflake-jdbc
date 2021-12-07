@@ -50,6 +50,7 @@ public class BindUploader implements Closeable {
   private final DateFormat timestampFormat;
   private final DateFormat dateFormat;
   private final SimpleDateFormat timeFormat;
+  private final String createStageSQL;
 
   static class ColumnTypeDataPair {
     public String type;
@@ -71,6 +72,14 @@ public class BindUploader implements Closeable {
   private BindUploader(SFBaseSession session, String stageDir) {
     this.session = session;
     this.stagePath = "@" + session.getSfConnectionHandler().getBindStageName() + "/" + stageDir;
+    this.createStageSQL =
+        "CREATE TEMPORARY STAGE IF NOT EXISTS "
+            + session.getSfConnectionHandler().getBindStageName()
+            + " file_format=("
+            + " type=csv"
+            + " field_optionally_enclosed_by='\"'"
+            + ")";
+
     Calendar calendarUTC = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
     calendarUTC.clear();
 
@@ -384,15 +393,6 @@ public class BindUploader implements Closeable {
     return sb.toString().getBytes(UTF_8);
   }
 
-  private String getCreateStageStatement() {
-    return "CREATE TEMPORARY STAGE IF NOT EXISTS "
-        + session.getSfConnectionHandler().getBindStageName()
-        + " file_format=("
-        + " type=csv"
-        + " field_optionally_enclosed_by='\"'"
-        + ")";
-  }
-
   /**
    * Check whether the session's temporary stage has been created, and create it if not.
    *
@@ -407,7 +407,7 @@ public class BindUploader implements Closeable {
       if (session.getArrayBindStage() == null) {
         try {
           SFBaseStatement statement = session.getSfConnectionHandler().getSFStatement();
-          statement.execute(getCreateStageStatement(), null, null);
+          statement.execute(createStageSQL, null, null);
           session.setArrayBindStage(session.getSfConnectionHandler().getBindStageName());
         } catch (SFException | SQLException ex) {
           // to avoid repeated failures to create stage, disable array bind stage
