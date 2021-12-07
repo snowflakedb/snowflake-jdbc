@@ -807,10 +807,5 @@ public class MockConnectionTest extends BaseJDBCTest {
               : SFBaseFileTransferAgent.CommandType.DOWNLOAD;
       return new MockSFFileTransferAgent(fileMap, "fileName", commandType);
     }
-
-    @Override
-    public String getBindStageName() {
-      return null;
-    }
   }
 }

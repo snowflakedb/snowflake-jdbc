@@ -9,6 +9,7 @@ import static net.snowflake.client.core.QueryStatus.isAnError;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Strings;
 import java.security.PrivateKey;
 import java.sql.DriverPropertyInfo;
@@ -100,6 +101,7 @@ public class SFSession extends SFBaseSession {
 
   // This constructor is used only by tests with no real connection.
   // For real connections, the other constructor is always used.
+  @VisibleForTesting
   public SFSession() {
     this(new DefaultSFConnectionHandler(null));
   }
