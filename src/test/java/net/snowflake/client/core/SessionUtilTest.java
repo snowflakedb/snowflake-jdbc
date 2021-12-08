@@ -56,7 +56,7 @@ public class SessionUtilTest {
   public void testParameterParsing() {
     Map<String, Object> parameterMap = new HashMap<>();
     parameterMap.put("other_parameter", BooleanNode.getTrue());
-    SFBaseSession session = new MockConnectionTest.MockSnowflakeSFSession();
+    SFBaseSession session = new MockConnectionTest.MockSnowflakeConnectionImpl().getSFSession();
     SessionUtil.updateSfDriverParamValues(parameterMap, session);
     assert (((BooleanNode) session.getOtherParameter("other_parameter")).asBoolean());
   }
