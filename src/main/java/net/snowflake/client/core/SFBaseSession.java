@@ -13,6 +13,7 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import net.snowflake.client.jdbc.ErrorCode;
+import net.snowflake.client.jdbc.SFConnectionHandler;
 import net.snowflake.client.jdbc.SnowflakeConnectString;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.jdbc.SnowflakeType;
@@ -40,7 +41,6 @@ import net.snowflake.client.log.SFLoggerFactory;
  */
 public abstract class SFBaseSession {
   static final SFLogger logger = SFLoggerFactory.getLogger(SFBaseSession.class);
-
   private final Properties clientInfo = new Properties();
   private final AtomicBoolean autoCommit = new AtomicBoolean(true);
   // Injected delay for the purpose of connection timeout testing
@@ -51,6 +51,7 @@ public abstract class SFBaseSession {
   // Custom key-value map for other options values *not* defined in SFSessionProperties,
   // i.e., session-implementation specific
   private final Map<String, Object> customSessionProperties = new HashMap<>(1);
+  private SFConnectionHandler sfConnectionHandler;
   protected List<SFException> sqlWarnings = new ArrayList<>();
   // Unique Session ID
   private String sessionId;
@@ -110,6 +111,12 @@ public abstract class SFBaseSession {
   // Memory limit for SnowflakeChunkDownloader. This gets set from SFBaseSession for testing
   // purposes only.
   private long memoryLimitForTesting = MEMORY_LIMIT_UNSET;
+  // name of temporary stage to upload array binds to; null if none has been created yet
+  private String arrayBindStage = null;
+
+  protected SFBaseSession(SFConnectionHandler sfConnectionHandler) {
+    this.sfConnectionHandler = sfConnectionHandler;
+  }
 
   public void setMemoryLimitForTesting(long memLimit) {
     this.memoryLimitForTesting = memLimit;
@@ -646,6 +653,14 @@ public abstract class SFBaseSession {
     return useRegionalS3EndpointsForPresignedURL;
   }
 
+  public String getArrayBindStage() {
+    return arrayBindStage;
+  }
+
+  public void setArrayBindStage(String arrayBindStage) {
+    this.arrayBindStage = String.format("%s.%s.%s", getDatabase(), getSchema(), arrayBindStage);
+  }
+
   /**
    * Enables setting a value in the custom-properties map. This is used for properties that are
    * implementation specific to the session, and not shared by the different implementations.
@@ -715,6 +730,10 @@ public abstract class SFBaseSession {
    */
   public void clearSqlWarnings() {
     sqlWarnings.clear();
+  }
+
+  public SFConnectionHandler getSfConnectionHandler() {
+    return sfConnectionHandler;
   }
 
   public abstract int getNetworkTimeoutInMilli();
