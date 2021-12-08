@@ -50,4 +50,16 @@ public interface SFConnectionHandler {
    */
   SFBaseFileTransferAgent getFileTransferAgent(String command, SFBaseStatement statement)
       throws SQLNonTransientConnectionException, SnowflakeSQLException;
+
+  /**
+   * Overridable method that allows for different connection implementations to use different stage
+   * names for binds uploads. By default, it uses SYSTEM$BIND
+   *
+   * @return The name of the identifier with which a temporary stage is created in the Session for
+   *     uploading array bind values.
+   */
+  default String getBindStageName() {
+    return "SYSTEM$BIND";
+  }
+  ;
 }

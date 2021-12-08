@@ -9,6 +9,7 @@ import static net.snowflake.client.core.QueryStatus.isAnError;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Strings;
 import java.security.PrivateKey;
 import java.sql.DriverPropertyInfo;
@@ -96,9 +97,18 @@ public class SFSession extends SFBaseSession {
   private Level tracingLevel = Level.INFO;
   // client to log session metrics to telemetry in GS
   private Telemetry telemetryClient;
-  // name of temporary stage to upload array binds to; null if none has been created yet
-  private String arrayBindStage = null;
   private SnowflakeConnectString sfConnStr;
+
+  // This constructor is used only by tests with no real connection.
+  // For real connections, the other constructor is always used.
+  @VisibleForTesting
+  public SFSession() {
+    this(new DefaultSFConnectionHandler(null));
+  }
+
+  public SFSession(DefaultSFConnectionHandler sfConnectionHandler) {
+    super(sfConnectionHandler);
+  }
 
   /**
    * Function that checks if the active session can be closed when the connection is closed. If
@@ -820,14 +830,6 @@ public class SFSession extends SFBaseSession {
     if (telemetryClient != null) {
       telemetryClient.close();
     }
-  }
-
-  public String getArrayBindStage() {
-    return arrayBindStage;
-  }
-
-  public void setArrayBindStage(String arrayBindStage) {
-    this.arrayBindStage = String.format("%s.%s.%s", getDatabase(), getSchema(), arrayBindStage);
   }
 
   public String getIdToken() {
