@@ -274,6 +274,12 @@
       <groupId>com.google.cloud</groupId>
       <artifactId>google-cloud-storage</artifactId>
       <version>1.82.0</version>
+      <exclusions>
+        <exclusion>  <!-- Exclude sub-sub dependency gson to avoid whitesource vulnerability -->
+          <groupId>com.google.code.gson</groupId>
+          <artifactId>gson</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>com.google.auth</groupId>
