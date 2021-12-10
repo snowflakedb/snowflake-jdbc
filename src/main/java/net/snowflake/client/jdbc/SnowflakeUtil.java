@@ -522,6 +522,42 @@ public class SnowflakeUtil {
     return null;
   }
 
+  /** System.setEnv function. Can be used for unit tests. */
+  public static void systemSetEnv(String key, String value) {
+    try {
+      Map<String, String> env = System.getenv();
+      Class<?> cl = env.getClass();
+      Field field = cl.getDeclaredField("m");
+      field.setAccessible(true);
+      Map<String, String> writableEnv = (Map<String, String>) field.get(env);
+      writableEnv.put(key, value);
+    } catch (Exception e) {
+      System.out.println("Failed to set value");
+      logger.error(
+          "Failed to set environment variable {}. Exception raised: {}", key, e.getMessage());
+    }
+  }
+
+  /**
+   * System.unsetEnv function to remove a system environment parameter in the map
+   *
+   * @param key
+   */
+  public static void systemUnsetEnv(String key) {
+    try {
+      Map<String, String> env = System.getenv();
+      Class<?> cl = env.getClass();
+      Field field = cl.getDeclaredField("m");
+      field.setAccessible(true);
+      Map<String, String> writableEnv = (Map<String, String>) field.get(env);
+      writableEnv.remove(key);
+    } catch (Exception e) {
+      System.out.println("Failed to unset value");
+      logger.error(
+          "Failed to remove environment variable {}. Exception raised: {}", key, e.getMessage());
+    }
+  }
+
   /**
    * Setup JDBC proxy properties if necessary.
    *
