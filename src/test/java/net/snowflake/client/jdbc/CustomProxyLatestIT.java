@@ -24,7 +24,9 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.TemporaryFolder;
 
 // To run these tests, you must:
-// 1.) Start up a proxy connection. The simplest ways are via Squid or BurpSuite
+// 1.) Start up a proxy connection. The simplest ways are via Squid or BurpSuite. Confluence doc on
+// setup here:
+// https://snowflakecomputing.atlassian.net/wiki/spaces/EN/pages/65438343/How+to+setup+Proxy+Server+for+Client+tests
 // 2.) Enter your own username and password for the account you're connecting to
 // 3.) Adjust parameters like role, database, schema, etc to match with account accordingly
 
@@ -473,6 +475,16 @@ public class CustomProxyLatestIT {
     }
   }
 
+  /**
+   * Before running this test, change the user and password in runAzureProxyConnection() to
+   * appropriate values. Set up a proxy with Burpsuite so you can see what POST and GET requests are
+   * going through the proxy.
+   *
+   * <p>This tests that the NonProxyHosts field is sucessfully updated for the same HttpClient
+   * object.
+   *
+   * @throws SQLException
+   */
   @Test
   @Ignore
   public void testProxyConnectionWithJVMParameters() throws SQLException, ClassNotFoundException {
