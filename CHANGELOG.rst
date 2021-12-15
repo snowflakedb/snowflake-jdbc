@@ -1,12 +1,10 @@
 **JDBC Driver 3.13.12**
 
 - \| SNOW-473749 | Fix bug where time(3) objects weren't honoring USE_SESSION_TIMEZONE when called with getTimestamp() in Arrow format 
-- \| SNOW-499170 | Bringing GH actions up-to-date with Python connectors
 - \| SNOW-500624 | Fix JVM http proxy properties to work with PUT/GET 
 - \| SNOW-513708 | Refactor bind uploader
-- \| | BC FIPS update to latest 
+- \| | Bouncy Castle FIPS update to 1.0.2.1 
 - \SNOW-496117: Add test for backend bug fix 
-- \Merge pull request #648 from snowflakedb/PRODSEC-1177
 
 **JDBC Driver 3.13.11**
 
