@@ -3,19 +3,20 @@
  */
 package net.snowflake.client.jdbc;
 
-import static net.snowflake.client.jdbc.DatabaseMetaDataIT.verifyResultSetMetaDataColumns;
-import static net.snowflake.client.jdbc.SnowflakeDatabaseMetaData.*;
-import static org.hamcrest.Matchers.greaterThanOrEqualTo;
-import static org.junit.Assert.*;
-
-import java.sql.*;
-import java.util.Map;
-import java.util.Properties;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryOthers;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+
+import java.sql.*;
+import java.util.Map;
+import java.util.Properties;
+
+import static net.snowflake.client.jdbc.DatabaseMetaDataIT.verifyResultSetMetaDataColumns;
+import static net.snowflake.client.jdbc.SnowflakeDatabaseMetaData.*;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.junit.Assert.*;
 
 /**
  * DatabaseMetaData test for the latest JDBC driver. This doesn't work for the oldest supported
@@ -137,19 +138,17 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
   public void testDoubleQuotedDatabaseAndSchema() throws SQLException {
     try (Connection con = getConnection()) {
       Statement statement = con.createStatement();
-      String queryDatabase = "TEST_DB_\"\"WITH_QUOTES\"\"";
+      String database = con.getCatalog();
       String querySchema = "TEST\\_SCHEMA\\_\"\"WITH\\_QUOTES\"\"";
-      statement.execute("create or replace database \"TEST_DB_\"\"WITH_QUOTES\"\"\"");
       statement.execute("create or replace schema \"TEST_SCHEMA_\"\"WITH_QUOTES\"\"\"");
       statement.execute(
           "create or replace table \"TESTTABLE_\"\"WITH_QUOTES\"\"\" (amount number)");
-      statement.execute("create table table20 (amount number, name string)");
+      statement.execute("create or replace table table20 (amount number, name string)");
       DatabaseMetaData metaData = con.getMetaData();
-      ResultSet rs = metaData.getTables(queryDatabase, querySchema, null, null);
+      ResultSet rs = metaData.getTables(database, querySchema, null, null);
       assertEquals(2, getSizeOfResultSet(rs));
-      rs = metaData.getColumns(queryDatabase, querySchema, null, "AMOUNT");
+      rs = metaData.getColumns(database, querySchema, null, "AMOUNT");
       assertEquals(2, getSizeOfResultSet(rs));
-      statement.execute("drop database \"" + queryDatabase + "\"");
       rs.close();
       statement.close();
     }
