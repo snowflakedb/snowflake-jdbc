@@ -3,20 +3,19 @@
  */
 package net.snowflake.client.jdbc;
 
+import static net.snowflake.client.jdbc.DatabaseMetaDataIT.verifyResultSetMetaDataColumns;
+import static net.snowflake.client.jdbc.SnowflakeDatabaseMetaData.*;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.junit.Assert.*;
+
+import java.sql.*;
+import java.util.Map;
+import java.util.Properties;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryOthers;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-
-import java.sql.*;
-import java.util.Map;
-import java.util.Properties;
-
-import static net.snowflake.client.jdbc.DatabaseMetaDataIT.verifyResultSetMetaDataColumns;
-import static net.snowflake.client.jdbc.SnowflakeDatabaseMetaData.*;
-import static org.hamcrest.Matchers.greaterThanOrEqualTo;
-import static org.junit.Assert.*;
 
 /**
  * DatabaseMetaData test for the latest JDBC driver. This doesn't work for the oldest supported
