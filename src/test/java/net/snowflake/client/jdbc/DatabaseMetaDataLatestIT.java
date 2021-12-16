@@ -127,6 +127,34 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
     }
   }
 
+  /**
+   * This tests the ability to have quotes inside a schema or database. This fixes a bug where
+   * double-quoted function arguments like schemas, databases, etc were returning empty resultsets.
+   *
+   * @throws SQLException
+   */
+  @Test
+  public void testDoubleQuotedDatabaseAndSchema() throws SQLException {
+    try (Connection con = getConnection()) {
+      Statement statement = con.createStatement();
+      String queryDatabase = "TEST_DB_\"\"WITH_QUOTES\"\"";
+      String querySchema = "TEST\\_SCHEMA\\_\"\"WITH\\_QUOTES\"\"";
+      statement.execute("create or replace database \"TEST_DB_\"\"WITH_QUOTES\"\"\"");
+      statement.execute("create or replace schema \"TEST_SCHEMA_\"\"WITH_QUOTES\"\"\"");
+      statement.execute(
+          "create or replace table \"TESTTABLE_\"\"WITH_QUOTES\"\"\" (amount number)");
+      statement.execute("create table table20 (amount number, name string)");
+      DatabaseMetaData metaData = con.getMetaData();
+      ResultSet rs = metaData.getTables(queryDatabase, querySchema, null, null);
+      assertEquals(2, getSizeOfResultSet(rs));
+      rs = metaData.getColumns(queryDatabase, querySchema, null, "AMOUNT");
+      assertEquals(2, getSizeOfResultSet(rs));
+      statement.execute("drop database \"" + queryDatabase + "\"");
+      rs.close();
+      statement.close();
+    }
+  }
+
   @Test
   public void testGetFunctions() throws SQLException {
     try (Connection connection = getConnection()) {
