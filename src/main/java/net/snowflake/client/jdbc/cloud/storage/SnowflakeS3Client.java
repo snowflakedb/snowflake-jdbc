@@ -837,4 +837,12 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
 
     return s3ConnectionSocketFactory;
   }
+
+  /** Adds streaming ingest metadata to the StorageObjectMetadata object */
+  @Override
+  public void addStreamingIngestMetadata(
+      StorageObjectMetadata meta, String clientName, String clientKey) {
+    meta.addUserMetadata("client-name", clientName);
+    meta.addUserMetadata("client-key", clientKey);
+  }
 }

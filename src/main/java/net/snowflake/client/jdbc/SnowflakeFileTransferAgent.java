@@ -687,7 +687,9 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
                   parallel,
                   fileToUpload,
                   (fileToUpload == null),
-                  encMat);
+                  encMat,
+                  null,
+                  null);
               metadata.isEncrypted = encMat != null;
               break;
           }
@@ -1903,7 +1905,9 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
       int parallel,
       File srcFile,
       boolean uploadFromStream,
-      RemoteStoreFileEncryptionMaterial encMat)
+      RemoteStoreFileEncryptionMaterial encMat,
+      String streamingIngestClientName,
+      String streamingIngestClientKey)
       throws SQLException, IOException {
     remoteLocation remoteLocation = extractLocationAndPath(stage.getLocation());
 
@@ -1929,6 +1933,11 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
 
     if (compressionType != null && compressionType.isSupported()) {
       meta.setContentEncoding(compressionType.name().toLowerCase());
+    }
+
+    if (streamingIngestClientName != null && streamingIngestClientKey != null) {
+      initialClient.addStreamingIngestMetadata(
+          meta, streamingIngestClientName, streamingIngestClientKey);
     }
 
     try {
@@ -1983,6 +1992,8 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
     int networkTimeoutInMilli = config.getNetworkTimeoutInMilli();
     OCSPMode ocspMode = config.getOcspMode();
     Properties proxyProperties = config.getProxyProperties();
+    String streamingIngestClientName = config.getStreamingIngestClientName();
+    String streamingIngestClientKey = config.getStreamingIngestClientKey();
 
     // Create HttpClient key
     HttpClientSettingsKey key =
@@ -2069,7 +2080,9 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
               1,
               fileToUpload,
               (fileToUpload == null),
-              encMat);
+              encMat,
+              streamingIngestClientName,
+              streamingIngestClientKey);
           break;
         case GCS:
           pushFileToRemoteStoreWithPresignedUrl(
@@ -2087,7 +2100,9 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
               null,
               true,
               encMat,
-              metadata.getPresignedUrl());
+              metadata.getPresignedUrl(),
+              streamingIngestClientName,
+              streamingIngestClientKey);
           break;
       }
     } catch (Exception ex) {
@@ -2125,7 +2140,9 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
       File srcFile,
       boolean uploadFromStream,
       RemoteStoreFileEncryptionMaterial encMat,
-      String presignedUrl)
+      String presignedUrl,
+      String streamingIngestClientName,
+      String streamingIngestClientKey)
       throws SQLException, IOException {
     remoteLocation remoteLocation = extractLocationAndPath(stage.getLocation());
 
@@ -2151,6 +2168,11 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
 
     if (compressionType != null && compressionType.isSupported()) {
       meta.setContentEncoding(compressionType.name().toLowerCase());
+    }
+
+    if (streamingIngestClientName != null && streamingIngestClientKey != null) {
+      initialClient.addStreamingIngestMetadata(
+          meta, streamingIngestClientName, streamingIngestClientKey);
     }
 
     try {

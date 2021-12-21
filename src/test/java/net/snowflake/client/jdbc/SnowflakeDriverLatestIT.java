@@ -82,7 +82,9 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
       Properties props = new Properties();
       props.put(
           "snowflakeClientInfo",
-          "{\"spark.version\":\"3.0.0\", \"spark.snowflakedb.version\":\"2.8.5\", \"spark.app.name\":\"SnowflakeSourceSuite\", \"scala.version\":\"2.12.11\", \"java.version\":\"1.8.0_221\", \"snowflakedb.jdbc.version\":\"3.13.2\"}");
+          "{\"spark.version\":\"3.0.0\", \"spark.snowflakedb.version\":\"2.8.5\","
+              + " \"spark.app.name\":\"SnowflakeSourceSuite\", \"scala.version\":\"2.12.11\","
+              + " \"java.version\":\"1.8.0_221\", \"snowflakedb.jdbc.version\":\"3.13.2\"}");
       connection = getConnection(DONT_INJECT_SOCKET_TIMEOUT, props, false, false);
       statement = connection.createStatement();
       res = statement.executeQuery("select current_session_client_info()");
@@ -100,7 +102,9 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
       // Test that when session property is set, connection parameter overrides it
       System.setProperty(
           "snowflake.client.info",
-          "{\"spark.version\":\"fake\", \"spark.snowflakedb.version\":\"fake\", \"spark.app.name\":\"fake\", \"scala.version\":\"fake\", \"java.version\":\"fake\", \"snowflakedb.jdbc.version\":\"fake\"}");
+          "{\"spark.version\":\"fake\", \"spark.snowflakedb.version\":\"fake\","
+              + " \"spark.app.name\":\"fake\", \"scala.version\":\"fake\","
+              + " \"java.version\":\"fake\", \"snowflakedb.jdbc.version\":\"fake\"}");
       connection = getConnection(DONT_INJECT_SOCKET_TIMEOUT, props, false, false);
       statement = connection.createStatement();
       res = statement.executeQuery("select current_session_client_info()");
@@ -1011,8 +1015,8 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
     File destFolder = tmpFolder.newFolder();
     String destFolderCanonicalPath = destFolder.getCanonicalPath();
 
-    List<String> supportedAaccounts = Arrays.asList("s3testaccount", "azureaccount");
-    for (String accountName : supportedAaccounts) {
+    List<String> supportedAccounts = Arrays.asList("s3testaccount", "azureaccount");
+    for (String accountName : supportedAccounts) {
       try {
         connection = getConnection(accountName);
         Statement statement = connection.createStatement();
@@ -1105,6 +1109,66 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
           connection.createStatement().execute("DROP STAGE if exists " + testStageName);
           connection.close();
         }
+      }
+    }
+  }
+
+  /** Test API for Kafka connector for FileTransferMetadata */
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testAzureUploadStreamingIngestFileMetadata() throws Throwable {
+    Connection connection = null;
+    File destFolder = tmpFolder.newFolder();
+    String destFolderCanonicalPath = destFolder.getCanonicalPath();
+    String accountName = "azureaccount";
+    String clientName = "client-name";
+    String clientKey = "client-key";
+
+    try {
+      connection = getConnection(accountName);
+      Statement statement = connection.createStatement();
+
+      // create a stage to put the file in
+      statement.execute("CREATE OR REPLACE STAGE " + testStageName);
+
+      SFSession sfSession = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
+
+      // Test put file with internal compression
+      String putCommand = "put file:///dummy/path/file1.gz @" + testStageName;
+      SnowflakeFileTransferAgent sfAgent =
+          new SnowflakeFileTransferAgent(putCommand, sfSession, new SFStatement(sfSession));
+      List<SnowflakeFileTransferMetadata> metadata = sfAgent.getFileTransferMetadatas();
+
+      String srcPath1 = getFullPathFileInResource(TEST_DATA_FILE);
+      for (SnowflakeFileTransferMetadata oneMetadata : metadata) {
+        InputStream inputStream = new FileInputStream(srcPath1);
+
+        SnowflakeFileTransferAgent.uploadWithoutConnection(
+            SnowflakeFileTransferConfig.Builder.newInstance()
+                .setSnowflakeFileTransferMetadata(oneMetadata)
+                .setUploadStream(inputStream)
+                .setRequireCompress(true)
+                .setNetworkTimeoutInMilli(0)
+                .setOcspMode(OCSPMode.FAIL_OPEN)
+                .setSFSession(sfSession)
+                .setCommand(putCommand)
+                .setStreamingIngestClientName(clientName)
+                .setStreamingIngestClientKey(clientKey)
+                .build());
+      }
+
+      // Download two files and verify their content.
+      assertTrue(
+          "Failed to get files",
+          statement.execute(
+              "GET @" + testStageName + " 'file://" + destFolderCanonicalPath + "/' parallel=8"));
+
+      // Make sure that the downloaded files are EQUAL, they should be gzip compressed
+      assert (isFileContentEqual(srcPath1, false, destFolderCanonicalPath + "/file1.gz", true));
+    } finally {
+      if (connection != null) {
+        connection.createStatement().execute("DROP STAGE if exists " + testStageName);
+        connection.close();
       }
     }
   }

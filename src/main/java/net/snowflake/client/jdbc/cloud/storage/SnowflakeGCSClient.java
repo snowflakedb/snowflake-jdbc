@@ -1092,4 +1092,12 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
   private static boolean isSuccessStatusCode(int code) {
     return code < 300 && code >= 200;
   }
+
+  /** Adds streaming ingest metadata to the StorageObjectMetadata object */
+  @Override
+  public void addStreamingIngestMetadata(
+      StorageObjectMetadata meta, String clientName, String clientKey) {
+    meta.addUserMetadata("client-name", clientName);
+    meta.addUserMetadata("client-key", clientKey);
+  }
 }

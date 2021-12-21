@@ -864,4 +864,12 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
   public String getDigestMetadata(StorageObjectMetadata meta) {
     return meta.getUserMetadata().get("sfcdigest");
   }
+
+  /** Adds streaming ingest metadata to the StorageObjectMetadata object */
+  @Override
+  public void addStreamingIngestMetadata(
+      StorageObjectMetadata meta, String clientName, String clientKey) {
+    meta.addUserMetadata("client-name", clientName);
+    meta.addUserMetadata("client-key", clientKey);
+  }
 }
