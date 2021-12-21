@@ -869,7 +869,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
   @Override
   public void addStreamingIngestMetadata(
       StorageObjectMetadata meta, String clientName, String clientKey) {
-    meta.addUserMetadata("client-name", clientName);
-    meta.addUserMetadata("client-key", clientKey);
+    meta.addUserMetadata("clientname", clientName);
+    meta.addUserMetadata("clientkey", clientKey);
   }
 }
