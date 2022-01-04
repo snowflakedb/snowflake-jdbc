@@ -934,6 +934,48 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
 
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testProcedureColumnsWildcard() throws Throwable {
+    try (Connection connection = getConnection()) {
+      String FLOAT_PROCEDURE =
+          "create or replace procedure %s()\n"
+              + "    returns float not null\n"
+              + "    language javascript\n"
+              + "    as\n"
+              + "    $$\n"
+              + "    return %s;\n"
+              + "    $$\n"
+              + "    ;";
+      String createProc1 = String.format(FLOAT_PROCEDURE, "FLOAT_TEST1", "3.14");
+      String createProc2 = String.format(FLOAT_PROCEDURE, "FLOAT_TEST2", "6.28");
+      connection.createStatement().execute(createProc1);
+      connection.createStatement().execute(createProc2);
+      DatabaseMetaData metaData = connection.getMetaData();
+      assertEquals("procedure", metaData.getProcedureTerm());
+      // no stored procedure support
+      assertTrue(metaData.supportsStoredProcedures());
+      ResultSet resultSet;
+      String dbName = "TESTDB";
+      String schemaName = "TEST%";
+      String procName = "FLOAT_TEST%";
+      resultSet = metaData.getProcedures(dbName, schemaName, procName);
+      assertEquals(2, getSizeOfResultSet(resultSet));
+
+      resultSet = metaData.getProcedureColumns(dbName, schemaName, procName, null);
+      assertEquals(2, getSizeOfResultSet(resultSet));
+      resultSet = metaData.getProcedures(dbName, schemaName, "FLOAT_TEST1");
+      assertEquals(1, getSizeOfResultSet(resultSet));
+      resultSet = metaData.getProcedureColumns(dbName, schemaName, "FLOAT_TEST2", null);
+      assertEquals(1, getSizeOfResultSet(resultSet));
+      resultSet = metaData.getProcedureColumns(dbName, connection.getSchema(), "FLOAT_TEST2", null);
+      assertEquals(1, getSizeOfResultSet(resultSet));
+
+      connection.createStatement().execute("DROP PROCEDURE IF EXISTS FLOAT_TEST1()");
+      connection.createStatement().execute("DROP PROCEDURE IF EXISTS FLOAT_TEST2()");
+    }
+  }
+
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testGetTablePrivileges() throws Exception {
     try (Connection connection = getConnection()) {
       String database = connection.getCatalog();

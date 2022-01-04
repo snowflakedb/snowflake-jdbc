@@ -1127,8 +1127,12 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
     while (resultSetStepOne.next()) {
       String procedureNameUnparsed = resultSetStepOne.getString("arguments").trim();
       String procedureNameNoArgs = resultSetStepOne.getString("name");
+      String schemaName =
+          Wildcard.isWildcardPatternStr(schemaPattern)
+              ? resultSetStepOne.getString("schema_name")
+              : schemaPattern;
       String showProcedureColCommand =
-          getSecondResultSetCommand(catalog, schemaPattern, procedureNameUnparsed, "procedure");
+          getSecondResultSetCommand(catalog, schemaName, procedureNameUnparsed, "procedure");
 
       ResultSet resultSetStepTwo =
           executeAndReturnEmptyResultIfNotFound(
