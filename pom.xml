@@ -42,6 +42,7 @@
     <jsoup.version>1.14.2</jsoup.version>
     <tika.version>1.22</tika.version>
     <jackson.version>2.12.1</jackson.version>
+    <netty.version>4.1.72.Final</netty.version>
     <jacksondatabind.version>2.12.1</jacksondatabind.version>
     <!-- Caution: version 4.5.12 and onward of apache httpclient causes a regression in recognizing S3 certificates (SNOW-259063) -->
     <httpclient.version>4.5.11</httpclient.version>
@@ -78,6 +79,22 @@
       <groupId>com.nimbusds</groupId>
       <artifactId>nimbus-jose-jwt</artifactId>
       <version>8.0</version>
+      <exclusions>
+        <exclusion>  <!-- exclude earlier versions of json-smart due to multiple vulnerabilities -->
+          <groupId>net.minidev</groupId>
+          <artifactId>json-smart</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>io.netty</groupId>
+      <artifactId>netty-buffer</artifactId>
+      <version>${netty.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.netty</groupId>
+      <artifactId>netty-common</artifactId>
+      <version>${netty.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.maven.plugins</groupId>
@@ -189,7 +206,7 @@
     <dependency>
       <groupId>net.minidev</groupId>
       <artifactId>json-smart</artifactId>
-      <version>2.4.5</version>
+      <version>2.4.7</version>
     </dependency>
     <dependency>
       <groupId>org.apache.commons</groupId>
@@ -289,6 +306,14 @@
         <exclusion>  <!-- Exclude early version of commons-codec to avoid whitesource vulnerability -->
           <groupId>commons-codec</groupId>
           <artifactId>commons-codec</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>io.netty</groupId>
+          <artifactId>netty-buffer</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>io.netty</groupId>
+          <artifactId>netty-common</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
