@@ -22,6 +22,9 @@ import net.snowflake.client.category.TestCategoryOthers;
 import net.snowflake.client.core.OCSPMode;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.core.SFStatement;
+import net.snowflake.client.jdbc.cloud.storage.SnowflakeStorageClient;
+import net.snowflake.client.jdbc.cloud.storage.StorageClientFactory;
+import net.snowflake.client.jdbc.cloud.storage.StorageObjectMetadata;
 import net.snowflake.common.core.SqlState;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -262,8 +265,8 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
     File destFolder = tmpFolder.newFolder();
     String destFolderCanonicalPath = destFolder.getCanonicalPath();
 
-    List<String> supportedAaccounts = Arrays.asList("s3testaccount", "azureaccount");
-    for (String accountName : supportedAaccounts) {
+    List<String> supportedAccounts = Arrays.asList("s3testaccount", "azureaccount");
+    for (String accountName : supportedAccounts) {
       try {
         connection = getConnection(accountName);
         Statement statement = connection.createStatement();
@@ -347,7 +350,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
   /** Negative test for FileTransferMetadata. It is only supported for PUT. */
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testGCPFileTransferMetadataNetativeOnlySupportPut() throws Throwable {
+  public void testGCPFileTransferMetadataNegativeOnlySupportPut() throws Throwable {
     Connection connection = null;
     int expectExceptionCount = 1;
     int actualExceptionCount = -1;
@@ -1113,62 +1116,74 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
     }
   }
 
-  /** Test API for Kafka connector for FileTransferMetadata */
+  /**
+   * Test the streaming ingest client name and client key should be part of the file metadata in S3
+   * and Azure
+   */
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testAzureUploadStreamingIngestFileMetadata() throws Throwable {
+  public void testAzureS3UploadStreamingIngestFileMetadata() throws Throwable {
     Connection connection = null;
-    File destFolder = tmpFolder.newFolder();
-    String destFolderCanonicalPath = destFolder.getCanonicalPath();
-    String accountName = "azureaccount";
-    String clientName = "client-name";
-    String clientKey = "client-key";
+    String clientName = "clientName";
+    String clientKey = "clientKey";
+    List<String> supportedAccounts = Arrays.asList("s3testaccount", "azureaccount");
+    for (String accountName : supportedAccounts) {
+      try {
+        connection = getConnection(accountName);
+        Statement statement = connection.createStatement();
 
-    try {
-      connection = getConnection(accountName);
-      Statement statement = connection.createStatement();
+        // create a stage to put the file in
+        statement.execute("CREATE OR REPLACE STAGE " + testStageName);
 
-      // create a stage to put the file in
-      statement.execute("CREATE OR REPLACE STAGE " + testStageName);
+        SFSession sfSession = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
 
-      SFSession sfSession = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
+        // Test put file with internal compression
+        String putCommand = "put file:///dummy/path/file1.gz @" + testStageName;
+        SnowflakeFileTransferAgent sfAgent =
+            new SnowflakeFileTransferAgent(putCommand, sfSession, new SFStatement(sfSession));
+        List<SnowflakeFileTransferMetadata> metadata = sfAgent.getFileTransferMetadatas();
 
-      // Test put file with internal compression
-      String putCommand = "put file:///dummy/path/file1.gz @" + testStageName;
-      SnowflakeFileTransferAgent sfAgent =
-          new SnowflakeFileTransferAgent(putCommand, sfSession, new SFStatement(sfSession));
-      List<SnowflakeFileTransferMetadata> metadata = sfAgent.getFileTransferMetadatas();
+        String srcPath1 = getFullPathFileInResource(TEST_DATA_FILE);
+        for (SnowflakeFileTransferMetadata oneMetadata : metadata) {
+          InputStream inputStream = new FileInputStream(srcPath1);
 
-      String srcPath1 = getFullPathFileInResource(TEST_DATA_FILE);
-      for (SnowflakeFileTransferMetadata oneMetadata : metadata) {
-        InputStream inputStream = new FileInputStream(srcPath1);
+          SnowflakeFileTransferAgent.uploadWithoutConnection(
+              SnowflakeFileTransferConfig.Builder.newInstance()
+                  .setSnowflakeFileTransferMetadata(oneMetadata)
+                  .setUploadStream(inputStream)
+                  .setRequireCompress(true)
+                  .setNetworkTimeoutInMilli(0)
+                  .setOcspMode(OCSPMode.FAIL_OPEN)
+                  .setSFSession(sfSession)
+                  .setCommand(putCommand)
+                  .setStreamingIngestClientName(clientName)
+                  .setStreamingIngestClientKey(clientKey)
+                  .build());
 
-        SnowflakeFileTransferAgent.uploadWithoutConnection(
-            SnowflakeFileTransferConfig.Builder.newInstance()
-                .setSnowflakeFileTransferMetadata(oneMetadata)
-                .setUploadStream(inputStream)
-                .setRequireCompress(true)
-                .setNetworkTimeoutInMilli(0)
-                .setOcspMode(OCSPMode.FAIL_OPEN)
-                .setSFSession(sfSession)
-                .setCommand(putCommand)
-                .setStreamingIngestClientName(clientName)
-                .setStreamingIngestClientKey(clientKey)
-                .build());
-      }
+          SnowflakeStorageClient client =
+              StorageClientFactory.getFactory()
+                  .createClient(
+                      ((SnowflakeFileTransferMetadataV1) oneMetadata).getStageInfo(),
+                      1,
+                      null,
+                      /*session = */ null);
 
-      // Download two files and verify their content.
-      assertTrue(
-          "Failed to get files",
-          statement.execute(
-              "GET @" + testStageName + " 'file://" + destFolderCanonicalPath + "/' parallel=8"));
+          String location =
+              ((SnowflakeFileTransferMetadataV1) oneMetadata).getStageInfo().getLocation();
+          int idx = location.indexOf('/');
+          String remoteStageLocation = location.substring(0, idx);
+          String path = location.substring(idx + 1) + "file1.gz";
+          StorageObjectMetadata meta = client.getObjectMetadata(remoteStageLocation, path);
 
-      // Make sure that the downloaded files are EQUAL, they should be gzip compressed
-      assert (isFileContentEqual(srcPath1, false, destFolderCanonicalPath + "/file1.gz", true));
-    } finally {
-      if (connection != null) {
-        connection.createStatement().execute("DROP STAGE if exists " + testStageName);
-        connection.close();
+          // Verify that we are able to fetch the metadata
+          assertEquals(clientName, client.getStreamingIngestClientName(meta));
+          assertEquals(clientKey, client.getStreamingIngestClientKey(meta));
+        }
+      } finally {
+        if (connection != null) {
+          connection.createStatement().execute("DROP STAGE if exists " + testStageName);
+          connection.close();
+        }
       }
     }
   }

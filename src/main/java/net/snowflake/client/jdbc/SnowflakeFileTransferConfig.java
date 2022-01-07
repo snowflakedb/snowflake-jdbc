@@ -190,11 +190,16 @@ public class SnowflakeFileTransferConfig {
       return this;
     }
 
+    /** Streaming ingest client name, used to calculate streaming ingest billing per client */
     public Builder setStreamingIngestClientName(String streamingIngestClientName) {
       this.streamingIngestClientName = streamingIngestClientName;
       return this;
     }
 
+    /**
+     * Streaming ingest client key provided by Snowflake, used to calculate streaming ingest billing
+     * per client
+     */
     public Builder setStreamingIngestClientKey(String streamingIngestClientKey) {
       this.streamingIngestClientKey = streamingIngestClientKey;
       return this;
