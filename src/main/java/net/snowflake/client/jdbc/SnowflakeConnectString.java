@@ -124,7 +124,7 @@ public class SnowflakeConnectString implements Serializable {
         // if it's a global url
         parameters.put("ACCOUNT", account);
         if (account.contains("_")) {
-          // Update the Host URL to remove underscores if there are any 
+          // Update the Host URL to remove underscores if there are any
           String account_wo_uscores = account.replaceAll("_", "-");
           host = host.replaceFirst(account, account_wo_uscores);
         }
