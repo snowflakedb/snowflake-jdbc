@@ -4,16 +4,10 @@
 
 package net.snowflake.client.jdbc;
 
-import static net.snowflake.client.jdbc.DBMetadataResultSetMetadata.*;
-import static net.snowflake.client.jdbc.SnowflakeType.convertStringToType;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Strings;
-import java.sql.*;
-import java.util.*;
-import java.util.regex.Pattern;
 import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
@@ -26,6 +20,13 @@ import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.util.SFPair;
 import net.snowflake.common.core.SqlState;
 import net.snowflake.common.util.Wildcard;
+
+import java.sql.*;
+import java.util.*;
+import java.util.regex.Pattern;
+
+import static net.snowflake.client.jdbc.DBMetadataResultSetMetadata.*;
+import static net.snowflake.client.jdbc.SnowflakeType.convertStringToType;
 
 public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
 
@@ -195,6 +196,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
   // Quotes must be escaped with another quote when creating an object, but they need to be added
   // back in to compare if returned result matches input argument.
   private String addQuotesBack(String unquotedString) {
+    //String quotedString = unquotedString.replaceAll("^\"|\"$", "");
     return unquotedString.replace("\"", "\"\"");
   }
 
@@ -1066,7 +1068,9 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
         while (showObjectResultSet.next()) {
           String catalogName = showObjectResultSet.getString("catalog_name");
           String schemaName = showObjectResultSet.getString("schema_name");
-          String procedureName = showObjectResultSet.getString("name");
+          System.out.println(schemaName);
+
+          String procedureName = showObjectResultSet.getString("name").replace("\"", "\\\"");
           String remarks = showObjectResultSet.getString("description");
           String specificName = showObjectResultSet.getString("arguments");
           short procedureType = procedureReturnsResult;

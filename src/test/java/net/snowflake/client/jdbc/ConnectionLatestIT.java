@@ -3,26 +3,8 @@
  */
 package net.snowflake.client.jdbc;
 
-import static net.snowflake.client.core.SessionUtil.CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY;
-import static net.snowflake.client.jdbc.ConnectionIT.INVALID_CONNECTION_INFO_CODE;
-import static net.snowflake.client.jdbc.ConnectionIT.WAIT_FOR_TELEMETRY_REPORT_IN_MILLISECS;
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.*;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.*;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.sql.*;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.Map;
-import java.util.Properties;
-import java.util.concurrent.TimeUnit;
-import java.util.regex.Pattern;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryConnection;
@@ -41,6 +23,25 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.TemporaryFolder;
 
+import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.sql.*;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.Map;
+import java.util.Properties;
+import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
+
+import static net.snowflake.client.core.SessionUtil.CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY;
+import static net.snowflake.client.jdbc.ConnectionIT.INVALID_CONNECTION_INFO_CODE;
+import static net.snowflake.client.jdbc.ConnectionIT.WAIT_FOR_TELEMETRY_REPORT_IN_MILLISECS;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.*;
+
 /**
  * Connection integration tests for the latest JDBC driver. This doesn't work for the oldest
  * supported driver. Revisit this tests whenever bumping up the oldest supported driver to examine
@@ -55,11 +56,38 @@ public class ConnectionLatestIT extends BaseJDBCTest {
 
   @Before
   public void setUp() {
-    TelemetryService service = TelemetryService.getInstance();
+    /*TelemetryService service = TelemetryService.getInstance();
     service.updateContextForIT(getConnectionParameters());
     defaultState = service.isEnabled();
     service.setNumOfRetryToTriggerTelemetry(3);
-    TelemetryService.enable();
+    TelemetryService.enable();*/
+  }
+
+  @Test
+  public void testHarshConnection() throws SQLException {
+    // build connection properties
+    Properties properties = new Properties();
+    properties.put("user","snowman"); // replace "" with your user name
+    properties.put("password", "test"); // replace "" with your password
+    properties.put("warehouse", "testwh"); // replace "" with target warehouse name
+    properties.put("db", "testdb"); // replace "" with target database name
+    properties.put("schema", "testschema"); // replace "" with target schema name
+    //properties.put("account", "testaccount_test");
+    properties.put("tracing", "all");
+    properties.put("host", "testaccount_test.snowflakecomputing.com");
+    // optional tracing property
+    // Replace <account> with your account, as provided by Snowflake.
+    // Replace <region_id> with the name of the region where your account is located.
+    // If your platform is AWS and your region ID is US West, you can omit the region ID segment.
+    // Replace <platform> with your platform, for example "azure".
+    // If your platform is AWS, you may omit the platform.
+    // Note that if you omit the region ID or the platform, you should also omit the
+    // corresponding "."  E.g. if your platform is AWS and your region is US West, then your
+    // connectStr will look similar to:
+    // "jdbc:snowflake://xy12345.snowflakecomputing.com";
+    String connectStr = "jdbc:snowflake://testaccount_test.snowflakecomputing.com/?tracing=ALL&useProxy=true&proxyHost=127.0.0.1&proxyPort=8080";
+    Connection con = DriverManager.getConnection(connectStr, properties);
+
   }
 
   @After
