@@ -3,19 +3,21 @@
  */
 package net.snowflake.client.jdbc;
 
-import static net.snowflake.client.jdbc.DatabaseMetaDataIT.verifyResultSetMetaDataColumns;
-import static net.snowflake.client.jdbc.SnowflakeDatabaseMetaData.*;
-import static org.hamcrest.Matchers.greaterThanOrEqualTo;
-import static org.junit.Assert.*;
-
-import java.sql.*;
-import java.util.Map;
-import java.util.Properties;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryOthers;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+
+import java.sql.*;
+import java.util.Map;
+import java.util.Properties;
+
+import static net.snowflake.client.jdbc.DatabaseMetaDataIT.PI_PROCEDURE;
+import static net.snowflake.client.jdbc.DatabaseMetaDataIT.verifyResultSetMetaDataColumns;
+import static net.snowflake.client.jdbc.SnowflakeDatabaseMetaData.*;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.junit.Assert.*;
 
 /**
  * DatabaseMetaData test for the latest JDBC driver. This doesn't work for the oldest supported
@@ -143,11 +145,14 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
       statement.execute(
           "create or replace table \"TESTTABLE_\"\"WITH_QUOTES\"\"\" (amount number)");
       statement.execute("create or replace table table20 (amount number, name string)");
+      statement.execute(PI_PROCEDURE);
       DatabaseMetaData metaData = con.getMetaData();
       ResultSet rs = metaData.getTables(database, querySchema, null, null);
       assertEquals(2, getSizeOfResultSet(rs));
       rs = metaData.getColumns(database, querySchema, null, "AMOUNT");
       assertEquals(2, getSizeOfResultSet(rs));
+      rs = metaData.getProcedures(database, querySchema, null);
+      assertEquals(1, getSizeOfResultSet(rs));
       rs.close();
       statement.close();
     }

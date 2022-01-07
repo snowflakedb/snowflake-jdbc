@@ -3,19 +3,7 @@
  */
 package net.snowflake.client.jdbc;
 
-import static java.sql.DatabaseMetaData.procedureReturnsResult;
-import static java.sql.ResultSetMetaData.columnNullableUnknown;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.greaterThanOrEqualTo;
-import static org.junit.Assert.*;
-
 import com.google.common.base.Strings;
-import java.sql.*;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.TestUtil;
@@ -23,12 +11,25 @@ import net.snowflake.client.category.TestCategoryOthers;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
+import java.sql.*;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import static java.sql.DatabaseMetaData.procedureReturnsResult;
+import static java.sql.ResultSetMetaData.columnNullableUnknown;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.junit.Assert.*;
+
 /** Database Metadata IT */
 @Category(TestCategoryOthers.class)
 public class DatabaseMetaDataIT extends BaseJDBCTest {
   private static final Pattern VERSION_PATTERN =
       Pattern.compile("^(\\d+)\\.(\\d+)(?:\\.\\d+)+\\s*.*");
-  private static final String PI_PROCEDURE =
+  protected static final String PI_PROCEDURE =
       "create or replace procedure GETPI()\n"
           + "    returns float not null\n"
           + "    language javascript\n"
