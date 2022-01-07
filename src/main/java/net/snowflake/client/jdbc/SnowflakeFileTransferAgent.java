@@ -991,7 +991,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
 
     overwrite = jsonNode.path("data").path("overwrite").asBoolean(false);
 
-    stageInfo = getStageInfo(jsonNode);
+    stageInfo = getStageInfo(jsonNode, this.session);
 
     if (logger.isDebugEnabled()) {
       logger.debug("Command type: {}", commandType);
@@ -1014,6 +1014,19 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
           stageInfo.getEndPoint(),
           stageInfo.getStorageAccount());
     }
+  }
+
+  static StageInfo getStageInfo(JsonNode jsonNode, SFSession session) throws SnowflakeSQLException {
+
+    StageInfo stageInfo = getStageInfo(jsonNode);
+
+    // Update StageInfo to reflect use of S3 regional URL.
+    // This is required for connecting to S3 over privatelink when the
+    // target stage is in us-east-1
+    if (stageInfo.getStageType() == StageInfo.StageType.S3)
+      stageInfo.setUseS3RegionalUrl(session.getUseRegionalS3EndpointsForPresignedURL());
+
+    return stageInfo;
   }
 
   static StageInfo getStageInfo(JsonNode jsonNode) throws SnowflakeSQLException {
