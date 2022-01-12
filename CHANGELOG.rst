@@ -1,3 +1,8 @@
+**JDBC Driver 3.13.13**
+
+- \|SNOW-520660 | Fix for S3 Regional URL not being updated in stageInfo
+- \|SNOW-521194 | Fix account name breakage and update host url  
+
 **JDBC Driver 3.13.12**
 
 - \| SNOW-473749 | Fix bug where time(3) objects weren't honoring USE_SESSION_TIMEZONE when called with getTimestamp() in Arrow format 
