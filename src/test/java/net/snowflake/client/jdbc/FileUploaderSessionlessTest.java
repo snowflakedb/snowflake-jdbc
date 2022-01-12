@@ -183,8 +183,8 @@ public class FileUploaderSessionlessTest {
           + "  \"success\": true\n"
           + "}";
 
-  private JsonNode exampleS3JsonNode;
-  private JsonNode exampleAzureJsonNode;
+  protected JsonNode exampleS3JsonNode;
+  protected JsonNode exampleAzureJsonNode;
   private JsonNode exampleGCSJsonNode;
   private List<JsonNode> exampleNodes;
 
