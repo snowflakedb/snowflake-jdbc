@@ -10,6 +10,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.io.Writer;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
@@ -23,7 +26,6 @@ import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.ByteArrayEntity;
-import org.apache.tika.utils.ExceptionUtils;
 
 public class Incident extends Event {
   private static final SFLogger logger = SFLoggerFactory.getLogger(Incident.class);
@@ -59,7 +61,7 @@ public class Incident extends Event {
         jobId,
         requestId,
         exc.getMessage(),
-        ExceptionUtils.getStackTrace(exc),
+        getStackTrace(exc),
         String.valueOf(exc.getStackTrace()[0]));
   }
 
@@ -87,7 +89,7 @@ public class Incident extends Event {
         jobId,
         requestId,
         exc.getMessage(),
-        ExceptionUtils.getStackTrace(exc),
+        getStackTrace(exc),
         String.valueOf(exc.getStackTrace()[0]));
     this.ocspAndProxyKey = key;
   }
@@ -154,6 +156,26 @@ public class Incident extends Event {
     // Generated fields
     this.osName = systemGetProperty("os.name");
     this.osVersion = systemGetProperty("os.version");
+  }
+
+  /**
+   * Get StackTrace from a throwable
+   * @param t the throwable to retrieve stack trace information
+   * @return String of stack trace
+   */
+  public static String getStackTrace(Throwable t) {
+    Writer result = new StringWriter();
+    PrintWriter writer = new PrintWriter(result);
+    t.printStackTrace(writer);
+    try {
+      writer.flush();
+      result.flush();
+      writer.close();
+      result.close();
+    } catch (IOException e) {
+      //swallow
+    }
+    return result.toString();
   }
 
   /**
