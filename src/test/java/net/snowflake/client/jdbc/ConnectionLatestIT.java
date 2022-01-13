@@ -892,7 +892,8 @@ public class ConnectionLatestIT extends BaseJDBCTest {
       assertTrue(
           ex.getMessage()
               .contains(
-                  "Uncaught Execution of multiple statements failed on statement \"select to_date('not_date')\""));
+                  "Uncaught Execution of multiple statements failed on statement \"select"
+                      + " to_date('not_date')\""));
     } finally {
       statement.close();
       connection.close();
