@@ -22,6 +22,9 @@ import net.snowflake.client.category.TestCategoryOthers;
 import net.snowflake.client.core.OCSPMode;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.core.SFStatement;
+import net.snowflake.client.jdbc.cloud.storage.SnowflakeStorageClient;
+import net.snowflake.client.jdbc.cloud.storage.StorageClientFactory;
+import net.snowflake.client.jdbc.cloud.storage.StorageObjectMetadata;
 import net.snowflake.common.core.SqlState;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -82,7 +85,9 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
       Properties props = new Properties();
       props.put(
           "snowflakeClientInfo",
-          "{\"spark.version\":\"3.0.0\", \"spark.snowflakedb.version\":\"2.8.5\", \"spark.app.name\":\"SnowflakeSourceSuite\", \"scala.version\":\"2.12.11\", \"java.version\":\"1.8.0_221\", \"snowflakedb.jdbc.version\":\"3.13.2\"}");
+          "{\"spark.version\":\"3.0.0\", \"spark.snowflakedb.version\":\"2.8.5\","
+              + " \"spark.app.name\":\"SnowflakeSourceSuite\", \"scala.version\":\"2.12.11\","
+              + " \"java.version\":\"1.8.0_221\", \"snowflakedb.jdbc.version\":\"3.13.2\"}");
       connection = getConnection(DONT_INJECT_SOCKET_TIMEOUT, props, false, false);
       statement = connection.createStatement();
       res = statement.executeQuery("select current_session_client_info()");
@@ -100,7 +105,9 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
       // Test that when session property is set, connection parameter overrides it
       System.setProperty(
           "snowflake.client.info",
-          "{\"spark.version\":\"fake\", \"spark.snowflakedb.version\":\"fake\", \"spark.app.name\":\"fake\", \"scala.version\":\"fake\", \"java.version\":\"fake\", \"snowflakedb.jdbc.version\":\"fake\"}");
+          "{\"spark.version\":\"fake\", \"spark.snowflakedb.version\":\"fake\","
+              + " \"spark.app.name\":\"fake\", \"scala.version\":\"fake\","
+              + " \"java.version\":\"fake\", \"snowflakedb.jdbc.version\":\"fake\"}");
       connection = getConnection(DONT_INJECT_SOCKET_TIMEOUT, props, false, false);
       statement = connection.createStatement();
       res = statement.executeQuery("select current_session_client_info()");
@@ -258,8 +265,8 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
     File destFolder = tmpFolder.newFolder();
     String destFolderCanonicalPath = destFolder.getCanonicalPath();
 
-    List<String> supportedAaccounts = Arrays.asList("s3testaccount", "azureaccount");
-    for (String accountName : supportedAaccounts) {
+    List<String> supportedAccounts = Arrays.asList("s3testaccount", "azureaccount");
+    for (String accountName : supportedAccounts) {
       try {
         connection = getConnection(accountName);
         Statement statement = connection.createStatement();
@@ -343,7 +350,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
   /** Negative test for FileTransferMetadata. It is only supported for PUT. */
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testGCPFileTransferMetadataNetativeOnlySupportPut() throws Throwable {
+  public void testGCPFileTransferMetadataNegativeOnlySupportPut() throws Throwable {
     Connection connection = null;
     int expectExceptionCount = 1;
     int actualExceptionCount = -1;
@@ -1011,8 +1018,8 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
     File destFolder = tmpFolder.newFolder();
     String destFolderCanonicalPath = destFolder.getCanonicalPath();
 
-    List<String> supportedAaccounts = Arrays.asList("s3testaccount", "azureaccount");
-    for (String accountName : supportedAaccounts) {
+    List<String> supportedAccounts = Arrays.asList("s3testaccount", "azureaccount");
+    for (String accountName : supportedAccounts) {
       try {
         connection = getConnection(accountName);
         Statement statement = connection.createStatement();
@@ -1100,6 +1107,78 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
         // they should be gzip compressed
         assert (isFileContentEqual(srcPath1, false, destFolderCanonicalPath + "/file1.gz", true));
         assert (isFileContentEqual(srcPath2, false, destFolderCanonicalPath + "/file2.gz", true));
+      } finally {
+        if (connection != null) {
+          connection.createStatement().execute("DROP STAGE if exists " + testStageName);
+          connection.close();
+        }
+      }
+    }
+  }
+
+  /**
+   * Test the streaming ingest client name and client key should be part of the file metadata in S3
+   * and Azure
+   */
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testAzureS3UploadStreamingIngestFileMetadata() throws Throwable {
+    Connection connection = null;
+    String clientName = "clientName";
+    String clientKey = "clientKey";
+    List<String> supportedAccounts = Arrays.asList("s3testaccount", "azureaccount");
+    for (String accountName : supportedAccounts) {
+      try {
+        connection = getConnection(accountName);
+        Statement statement = connection.createStatement();
+
+        // create a stage to put the file in
+        statement.execute("CREATE OR REPLACE STAGE " + testStageName);
+
+        SFSession sfSession = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
+
+        // Test put file with internal compression
+        String putCommand = "put file:///dummy/path/file1.gz @" + testStageName;
+        SnowflakeFileTransferAgent sfAgent =
+            new SnowflakeFileTransferAgent(putCommand, sfSession, new SFStatement(sfSession));
+        List<SnowflakeFileTransferMetadata> metadata = sfAgent.getFileTransferMetadatas();
+
+        String srcPath1 = getFullPathFileInResource(TEST_DATA_FILE);
+        for (SnowflakeFileTransferMetadata oneMetadata : metadata) {
+          InputStream inputStream = new FileInputStream(srcPath1);
+
+          SnowflakeFileTransferAgent.uploadWithoutConnection(
+              SnowflakeFileTransferConfig.Builder.newInstance()
+                  .setSnowflakeFileTransferMetadata(oneMetadata)
+                  .setUploadStream(inputStream)
+                  .setRequireCompress(true)
+                  .setNetworkTimeoutInMilli(0)
+                  .setOcspMode(OCSPMode.FAIL_OPEN)
+                  .setSFSession(sfSession)
+                  .setCommand(putCommand)
+                  .setStreamingIngestClientName(clientName)
+                  .setStreamingIngestClientKey(clientKey)
+                  .build());
+
+          SnowflakeStorageClient client =
+              StorageClientFactory.getFactory()
+                  .createClient(
+                      ((SnowflakeFileTransferMetadataV1) oneMetadata).getStageInfo(),
+                      1,
+                      null,
+                      /*session = */ null);
+
+          String location =
+              ((SnowflakeFileTransferMetadataV1) oneMetadata).getStageInfo().getLocation();
+          int idx = location.indexOf('/');
+          String remoteStageLocation = location.substring(0, idx);
+          String path = location.substring(idx + 1) + "file1.gz";
+          StorageObjectMetadata meta = client.getObjectMetadata(remoteStageLocation, path);
+
+          // Verify that we are able to fetch the metadata
+          assertEquals(clientName, client.getStreamingIngestClientName(meta));
+          assertEquals(clientKey, client.getStreamingIngestClientKey(meta));
+        }
       } finally {
         if (connection != null) {
           connection.createStatement().execute("DROP STAGE if exists " + testStageName);

@@ -352,7 +352,8 @@ public abstract class SFBaseSession {
       // log the JVM parameters that are being used
       if (httpUseProxy) {
         logger.debug(
-            "http.useProxy={}, http.proxyHost={}, http.proxyPort={}, https.proxyHost={}, https.proxyPort={}, http.nonProxyHosts={}, NO_PROXY={}",
+            "http.useProxy={}, http.proxyHost={}, http.proxyPort={}, https.proxyHost={},"
+                + " https.proxyPort={}, http.nonProxyHosts={}, NO_PROXY={}",
             httpUseProxy,
             httpProxyHost,
             httpProxyPort,

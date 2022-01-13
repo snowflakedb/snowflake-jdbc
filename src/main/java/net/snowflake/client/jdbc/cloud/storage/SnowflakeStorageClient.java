@@ -257,4 +257,20 @@ public interface SnowflakeStorageClient {
    * @return the digest metadata value
    */
   String getDigestMetadata(StorageObjectMetadata meta);
+
+  /**
+   * Adds streaming ingest metadata to the StorageObjectMetadata object, used for streaming ingest
+   * per client billing calculation
+   *
+   * @param meta the storage metadata object to add the digest to
+   * @param clientName streaming ingest client name
+   * @param clientKey streaming ingest client key, provided by Snowflake
+   */
+  void addStreamingIngestMetadata(StorageObjectMetadata meta, String clientName, String clientKey);
+
+  /** Gets streaming ingest client name to the StorageObjectMetadata object */
+  String getStreamingIngestClientName(StorageObjectMetadata meta);
+
+  /** Gets streaming ingest client key to the StorageObjectMetadata object */
+  String getStreamingIngestClientKey(StorageObjectMetadata meta);
 }
