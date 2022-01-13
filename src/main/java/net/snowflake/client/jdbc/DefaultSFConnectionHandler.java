@@ -182,7 +182,8 @@ public class DefaultSFConnectionHandler implements SFConnectionHandler {
       throws SQLNonTransientConnectionException, SnowflakeSQLException {
     if (!(statement instanceof SFStatement)) {
       throw new SnowflakeSQLException(
-          "getFileTransferAgent() called with an incompatible SFBaseStatement type. Requires an SFStatement.");
+          "getFileTransferAgent() called with an incompatible SFBaseStatement type. Requires an"
+              + " SFStatement.");
     }
     return new SnowflakeFileTransferAgent(command, sfSession, (SFStatement) statement);
   }

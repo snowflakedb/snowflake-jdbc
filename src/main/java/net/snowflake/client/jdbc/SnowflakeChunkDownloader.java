@@ -334,7 +334,8 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
               || (nextChunkToDownload == 0 && nextChunkToConsume == 0))) {
         // cancel the reserved memory and this downloader too
         logger.debug(
-            "Not enough memory available for prefetch. Cancel reserved memory. MemoryLimit: {}, curMem: {}, nextChunkToDownload: {}, nextChunkToConsume: {}, retry: {}",
+            "Not enough memory available for prefetch. Cancel reserved memory. MemoryLimit: {},"
+                + " curMem: {}, nextChunkToDownload: {}, nextChunkToConsume: {}, retry: {}",
             memoryLimit,
             curMem,
             nextChunkToDownload,
@@ -387,7 +388,8 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
         curMem = currentMemoryUsage.addAndGet(-neededChunkMemory);
         if (getPrefetchMemRetry > prefetchMaxRetry) {
           logger.debug(
-              "Retry limit for prefetch has been reached. Cancel reserved memory and prefetch attempt.");
+              "Retry limit for prefetch has been reached. Cancel reserved memory and prefetch"
+                  + " attempt.");
           break;
         }
       }
@@ -401,8 +403,8 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
         getPrefetchMemRetry++;
         if (logger.isDebugEnabled()) {
           logger.debug(
-              "Thread {} waiting for {}s: currentMemoryUsage in MB: {}, neededChunkMemory in MB: {}, "
-                  + "nextChunkToDownload: {}, nextChunkToConsume: {}, retry: {}",
+              "Thread {} waiting for {}s: currentMemoryUsage in MB: {}, neededChunkMemory in MB:"
+                  + " {}, nextChunkToDownload: {}, nextChunkToConsume: {}, retry: {}",
               (ArgSupplier) () -> Thread.currentThread().getId(),
               waitingTime / 1000.0,
               curMem / MB,
@@ -693,9 +695,10 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
             + "Several suggestions to try to resolve the OOM issue:\n"
             + "1. increase the JVM heap size if you have more space; or \n"
             + "2. use CLIENT_MEMORY_LIMIT to reduce the memory usage by the JDBC driver "
-            + "(https://docs.snowflake.net/manuals/sql-reference/parameters.html#client-memory-limit)"
-            + "3. please make sure 2 * CLIENT_PREFETCH_THREADS * CLIENT_RESULT_CHUNK_SIZE < CLIENT_MEMORY_LIMIT. "
-            + "If not, please reduce CLIENT_PREFETCH_THREADS and CLIENT_RESULT_CHUNK_SIZE too.",
+            + "(https://docs.snowflake.net/manuals/sql-reference/parameters.html#client-memory-limit)3."
+            + " please make sure 2 * CLIENT_PREFETCH_THREADS * CLIENT_RESULT_CHUNK_SIZE <"
+            + " CLIENT_MEMORY_LIMIT. If not, please reduce CLIENT_PREFETCH_THREADS and"
+            + " CLIENT_RESULT_CHUNK_SIZE too.",
         numberMillisWaitingForChunks,
         Runtime.getRuntime().totalMemory(),
         Runtime.getRuntime().maxMemory(),

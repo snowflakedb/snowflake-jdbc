@@ -65,6 +65,8 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
   private static final String AES = "AES";
   private static final String AMZ_KEY = "x-amz-key";
   private static final String AMZ_IV = "x-amz-iv";
+  private static final String S3_STREAMING_INGEST_CLIENT_NAME = "ingestclientname";
+  private static final String S3_STREAMING_INGEST_CLIENT_KEY = "ingestclientkey";
 
   // expired AWS token error code
   private static final String EXPIRED_AWS_TOKEN_ERROR_CODE = "ExpiredToken";
@@ -836,5 +838,28 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
     }
 
     return s3ConnectionSocketFactory;
+  }
+
+  /**
+   * Adds streaming ingest metadata to the StorageObjectMetadata object, used for streaming ingest
+   * per client billing calculation
+   */
+  @Override
+  public void addStreamingIngestMetadata(
+      StorageObjectMetadata meta, String clientName, String clientKey) {
+    meta.addUserMetadata(S3_STREAMING_INGEST_CLIENT_NAME, clientName);
+    meta.addUserMetadata(S3_STREAMING_INGEST_CLIENT_KEY, clientKey);
+  }
+
+  /** Gets streaming ingest client name to the StorageObjectMetadata object */
+  @Override
+  public String getStreamingIngestClientName(StorageObjectMetadata meta) {
+    return meta.getUserMetadata().get(S3_STREAMING_INGEST_CLIENT_NAME);
+  }
+
+  /** Gets streaming ingest client key to the StorageObjectMetadata object */
+  @Override
+  public String getStreamingIngestClientKey(StorageObjectMetadata meta) {
+    return meta.getUserMetadata().get(S3_STREAMING_INGEST_CLIENT_KEY);
   }
 }
