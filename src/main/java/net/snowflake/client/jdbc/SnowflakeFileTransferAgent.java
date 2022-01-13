@@ -24,7 +24,9 @@ import java.sql.SQLException;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.zip.GZIPOutputStream;
 import net.snowflake.client.core.*;
@@ -989,7 +991,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
 
     overwrite = jsonNode.path("data").path("overwrite").asBoolean(false);
 
-    stageInfo = getStageInfo(jsonNode);
+    stageInfo = getStageInfo(jsonNode, this.session);
 
     if (logger.isDebugEnabled()) {
       logger.debug("Command type: {}", commandType);
@@ -1002,7 +1004,8 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
 
       logger.debug("Source files: {}", String.join(",", sourceFiles));
       logger.debug(
-          "stageLocation: {}, parallel: {}, overwrite: {}, destLocationType: {}, stageRegion: {}, endPoint: {}, storageAccount: {}",
+          "stageLocation: {}, parallel: {}, overwrite: {}, destLocationType: {}, stageRegion: {},"
+              + " endPoint: {}, storageAccount: {}",
           stageInfo.getLocation(),
           parallel,
           overwrite,
@@ -1011,6 +1014,19 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
           stageInfo.getEndPoint(),
           stageInfo.getStorageAccount());
     }
+  }
+
+  static StageInfo getStageInfo(JsonNode jsonNode, SFSession session) throws SnowflakeSQLException {
+
+    StageInfo stageInfo = getStageInfo(jsonNode);
+
+    // Update StageInfo to reflect use of S3 regional URL.
+    // This is required for connecting to S3 over privatelink when the
+    // target stage is in us-east-1
+    if (stageInfo.getStageType() == StageInfo.StageType.S3)
+      stageInfo.setUseS3RegionalUrl(session.getUseRegionalS3EndpointsForPresignedURL());
+
+    return stageInfo;
   }
 
   static StageInfo getStageInfo(JsonNode jsonNode) throws SnowflakeSQLException {
@@ -1454,22 +1470,24 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
       threadExecutor = SnowflakeUtil.createDefaultExecutorService("sf-stream-upload-worker-", 1);
 
       RemoteStoreFileEncryptionMaterial encMat = encryptionMaterial.get(0);
+      Future<Void> uploadTask = null;
       if (commandType == CommandType.UPLOAD) {
-        threadExecutor.submit(
-            getUploadFileCallable(
-                stageInfo,
-                SRC_FILE_NAME_FOR_STREAM,
-                fileMetadataMap.get(SRC_FILE_NAME_FOR_STREAM),
-                (stageInfo.getStageType() == StageInfo.StageType.LOCAL_FS)
-                    ? null
-                    : storageFactory.createClient(stageInfo, parallel, encMat, session),
-                session,
-                command,
-                sourceStream,
-                true,
-                parallel,
-                null,
-                encMat));
+        uploadTask =
+            threadExecutor.submit(
+                getUploadFileCallable(
+                    stageInfo,
+                    SRC_FILE_NAME_FOR_STREAM,
+                    fileMetadataMap.get(SRC_FILE_NAME_FOR_STREAM),
+                    (stageInfo.getStageType() == StageInfo.StageType.LOCAL_FS)
+                        ? null
+                        : storageFactory.createClient(stageInfo, parallel, encMat, session),
+                    session,
+                    command,
+                    sourceStream,
+                    true,
+                    parallel,
+                    null,
+                    encMat));
       } else if (commandType == CommandType.DOWNLOAD) {
         throw new SnowflakeSQLLoggedException(
             session, ErrorCode.INTERNAL_ERROR.getMessageCode(), SqlState.INTERNAL_ERROR);
@@ -1478,11 +1496,14 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
       threadExecutor.shutdown();
 
       try {
-        // wait for all threads to complete without timeout
-        threadExecutor.awaitTermination(Long.MAX_VALUE, TimeUnit.DAYS);
+        // wait for the task to complete
+        uploadTask.get();
       } catch (InterruptedException ex) {
         throw new SnowflakeSQLLoggedException(
             session, ErrorCode.INTERRUPTED.getMessageCode(), SqlState.QUERY_CANCELED);
+      } catch (ExecutionException ex) {
+        throw new SnowflakeSQLException(
+            ex.getCause(), SqlState.INTERNAL_ERROR, ErrorCode.INTERNAL_ERROR.getMessageCode());
       }
       logger.debug("Done with uploading from a stream");
     } finally {

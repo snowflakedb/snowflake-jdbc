@@ -1,3 +1,36 @@
+**JDBC Driver 3.13.13**
+
+- \|SNOW-520660 | Fix for S3 Regional URL not being updated in stageInfo
+- \|SNOW-521194 | Fix account name breakage and update host url  
+
+**JDBC Driver 3.13.12**
+
+- \| SNOW-473749 | Fix bug where time(3) objects weren't honoring USE_SESSION_TIMEZONE when called with getTimestamp() in Arrow format 
+- \| SNOW-500624 | Fix JVM http proxy properties to work with PUT/GET 
+- \| SNOW-513708 | Refactor bind uploader
+- \| | Bouncy Castle FIPS update to 1.0.2.1 
+- \SNOW-496117: Add test for backend bug fix 
+
+**JDBC Driver 3.13.11**
+
+- \| SNOW-473749 | Fix bug where time(3) objects weren't honoring USE_SESSION_TIMEZONE when called with getTimestamp() in Arrow format 
+
+**JDBC Driver 3.13.10**
+
+- \| SNOW-492055 | Handle uncaught exceptions that can occur in PUT statements
+- \| SNOW-477795 | Regard BLOCKED query as running query.
+- \| SNOW-458293 | Added parameter JDBC_CHUNK_DOWNLOADER_MAX_RETRY to make chunk downloader max retry configurable
+
+**JDBC Driver 3.13.9**
+
+- \| SNOW-411516 | Enhance JDBC to support SFAsyncResultSet.getResultSetSerializables(Long).
+- \| SNOW-366563 | Fix London/Europe daylight savings offset with timestamp_ntz.
+- \| SNOW-412040 | Fix ResultSet.getQueryID() so it returns correct query ID for PUT/GET statements.
+- \| SNOW-472364 | Add API to get query IDs for multiple statements.
+- \| SNOW-441847 | Cancel Prefetch threads to avoid endless ChunkDownloader hanging thread.
+- \| SNOW-464020 | Azure iterator exception bug fix.
+- \| SNOW-224719 | Allow curly bracket syntax in JDBC CallableStatement.prepareCall().
+
 **JDBC Driver 3.13.8**
 
 - \| SNOW-443760 | Bumped jsoup library from 1.11.3 to 1.14.2

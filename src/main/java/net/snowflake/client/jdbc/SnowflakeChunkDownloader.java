@@ -122,6 +122,10 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
   private static final int MAX_NUM_OF_RETRY = 10;
   private static final int MAX_RETRY_JITTER = 1000; // milliseconds
 
+  // Only controls the max retry number when prefetch runs out of memory
+  // Default value is MAX_NUM_OF_RETRY, which is 10
+  private int prefetchMaxRetry = MAX_NUM_OF_RETRY;
+
   private static Throwable injectedDownloaderException = null; // for testing purpose
 
   // This function should only be used for testing purpose
@@ -195,6 +199,13 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
         (resultSetSerializable.getSession() != null)
             ? resultSetSerializable.getSession().orElse(null)
             : null;
+    if (this.session != null) {
+      Object prefetchMaxRetry =
+          this.session.getOtherParameter(SessionUtil.JDBC_CHUNK_DOWNLOADER_MAX_RETRY);
+      if (prefetchMaxRetry != null) {
+        this.prefetchMaxRetry = (int) prefetchMaxRetry;
+      }
+    }
     this.memoryLimit = resultSetSerializable.getMemoryLimit();
     if (this.session != null
         && session.getMemoryLimitForTesting() != SFBaseSession.MEMORY_LIMIT_UNSET) {
@@ -374,7 +385,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
         // cancel the reserved memory
         logger.debug("cancel the reserved memory.");
         curMem = currentMemoryUsage.addAndGet(-neededChunkMemory);
-        if (getPrefetchMemRetry > MAX_NUM_OF_RETRY) {
+        if (getPrefetchMemRetry > prefetchMaxRetry) {
           logger.debug(
               "Retry limit for prefetch has been reached. Cancel reserved memory and prefetch attempt.");
           break;
@@ -590,9 +601,8 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
           currentChunk.getDownloadState(),
           retry);
 
-      if (currentChunk.getDownloadState() != DownloadState.NOT_STARTED
-          && currentChunk.getDownloadState() != DownloadState.FAILURE) {
-        // if the state is in progress but not failure, we should keep waiting; otherwise, we skip
+      if (currentChunk.getDownloadState() != DownloadState.FAILURE) {
+        // if the state is not failure, we should keep waiting; otherwise, we skip
         // waiting
         if (!currentChunk
             .getDownloadCondition()
@@ -616,11 +626,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
       }
 
       if (currentChunk.getDownloadState() != DownloadState.SUCCESS) {
-        // if this is the first attempt to download this chunk (due to cancelled prefetch), don't
-        // increment retry because it's the first try
-        if (currentChunk.getDownloadState() != DownloadState.NOT_STARTED) {
-          retry++;
-        }
+        retry++;
         // timeout or failed
         logger.debug(
             "Since downloadState is {} Thread {} decides to retry {} time(s) for #chunk{}",

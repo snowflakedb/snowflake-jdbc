@@ -4,7 +4,7 @@
 
   <groupId>net.snowflake</groupId>
   <artifactId>snowflake-jdbc</artifactId>
-  <version>3.13.8</version>
+  <version>3.13.13</version>
   <packaging>jar</packaging>
 
   <name>snowflake-jdbc</name>
@@ -301,6 +301,12 @@
       <groupId>com.google.cloud</groupId>
       <artifactId>google-cloud-storage</artifactId>
       <version>1.82.0</version>
+      <exclusions>
+        <exclusion>  <!-- Exclude sub-sub dependency gson to avoid whitesource vulnerability -->
+          <groupId>com.google.code.gson</groupId>
+          <artifactId>gson</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>com.google.auth</groupId>

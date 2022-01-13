@@ -4,7 +4,7 @@
 
   <groupId>net.snowflake</groupId>
   <artifactId>snowflake-jdbc-fips</artifactId>
-  <version>3.13.8</version>
+  <version>3.13.13</version>
   <packaging>jar</packaging>
 
   <name>snowflake-jdbc-fips</name>
@@ -157,7 +157,7 @@
     <dependency>
       <groupId>net.snowflake</groupId>
       <artifactId>snowflake-common</artifactId>
-      <version>5.1.0</version>
+      <version>5.1.4</version>
       <type>jar</type>
       <scope>compile</scope>
     </dependency>
@@ -171,7 +171,7 @@
     <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-lang3</artifactId>
-      <version>3.7</version>
+      <version>3.11</version>
       <type>jar</type>
       <scope>test</scope>
     </dependency>
@@ -240,13 +240,13 @@
     <dependency>
       <groupId>org.bouncycastle</groupId>
       <artifactId>bc-fips</artifactId>
-      <version>1.0.1</version>
+      <version>1.0.2.1</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.bouncycastle</groupId>
       <artifactId>bcpkix-fips</artifactId>
-      <version>1.0.3</version>
+      <version>1.0.5</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
@@ -274,6 +274,12 @@
       <groupId>com.google.cloud</groupId>
       <artifactId>google-cloud-storage</artifactId>
       <version>1.82.0</version>
+      <exclusions>
+        <exclusion>  <!-- Exclude sub-sub dependency gson to avoid whitesource vulnerability -->
+          <groupId>com.google.code.gson</groupId>
+          <artifactId>gson</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>com.google.auth</groupId>

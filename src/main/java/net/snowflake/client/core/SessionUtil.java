@@ -53,7 +53,7 @@ public class SessionUtil {
   // Request path
   private static final String SF_PATH_LOGIN_REQUEST = "/session/v1/login-request";
   private static final String SF_PATH_TOKEN_REQUEST = "/session/token-request";
-  protected static final String SF_PATH_AUTHENTICATOR_REQUEST = "/session/authenticator-request";
+  public static final String SF_PATH_AUTHENTICATOR_REQUEST = "/session/authenticator-request";
 
   public static final String SF_QUERY_SESSION_DELETE = "delete";
 
@@ -77,6 +77,7 @@ public class SessionUtil {
   private static final String JDBC_TREAT_TIMESTAMP_NTZ_AS_UTC = "JDBC_TREAT_TIMESTAMP_NTZ_AS_UTC";
   private static final String JDBC_FORMAT_DATE_WITH_TIMEZONE = "JDBC_FORMAT_DATE_WITH_TIMEZONE";
   private static final String JDBC_USE_SESSION_TIMEZONE = "JDBC_USE_SESSION_TIMEZONE";
+  public static final String JDBC_CHUNK_DOWNLOADER_MAX_RETRY = "JDBC_CHUNK_DOWNLOADER_MAX_RETRY";
   private static final String CLIENT_RESULT_CHUNK_SIZE_JVM =
       "net.snowflake.jdbc.clientResultChunkSize";
   public static final String CLIENT_RESULT_CHUNK_SIZE = "CLIENT_RESULT_CHUNK_SIZE";

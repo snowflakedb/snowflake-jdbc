@@ -22,5 +22,5 @@ jobs:
     - name: Jira Creation
       uses: ./whitesource-actions/whitesource-issue
       with:
-        jira_token: ${{ secrets.JIRA_TOKEN }}
+        jira_token: ${{ secrets.JIRA_TOKEN_PUBLIC_REPO }}
         gh_token: ${{ secrets.GITHUB_TOKEN }}

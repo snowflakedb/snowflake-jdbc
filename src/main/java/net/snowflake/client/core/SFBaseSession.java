@@ -13,6 +13,7 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import net.snowflake.client.jdbc.ErrorCode;
+import net.snowflake.client.jdbc.SFConnectionHandler;
 import net.snowflake.client.jdbc.SnowflakeConnectString;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.jdbc.SnowflakeType;
@@ -40,7 +41,6 @@ import net.snowflake.client.log.SFLoggerFactory;
  */
 public abstract class SFBaseSession {
   static final SFLogger logger = SFLoggerFactory.getLogger(SFBaseSession.class);
-
   private final Properties clientInfo = new Properties();
   private final AtomicBoolean autoCommit = new AtomicBoolean(true);
   // Injected delay for the purpose of connection timeout testing
@@ -51,6 +51,7 @@ public abstract class SFBaseSession {
   // Custom key-value map for other options values *not* defined in SFSessionProperties,
   // i.e., session-implementation specific
   private final Map<String, Object> customSessionProperties = new HashMap<>(1);
+  private SFConnectionHandler sfConnectionHandler;
   protected List<SFException> sqlWarnings = new ArrayList<>();
   // Unique Session ID
   private String sessionId;
@@ -110,6 +111,12 @@ public abstract class SFBaseSession {
   // Memory limit for SnowflakeChunkDownloader. This gets set from SFBaseSession for testing
   // purposes only.
   private long memoryLimitForTesting = MEMORY_LIMIT_UNSET;
+  // name of temporary stage to upload array binds to; null if none has been created yet
+  private String arrayBindStage = null;
+
+  protected SFBaseSession(SFConnectionHandler sfConnectionHandler) {
+    this.sfConnectionHandler = sfConnectionHandler;
+  }
 
   public void setMemoryLimitForTesting(long memLimit) {
     this.memoryLimitForTesting = memLimit;
@@ -332,7 +339,7 @@ public abstract class SFBaseSession {
 
       return ocspAndProxyKey;
     }
-    // If JVM proxy parameters are specified, https proxies need to go through the JDBC driver's
+    // If JVM proxy parameters are specified, proxies need to go through the JDBC driver's
     // HttpClientSettingsKey logic in order to work properly.
     else {
       boolean httpUseProxy = Boolean.parseBoolean(systemGetProperty("http.useProxy"));
@@ -341,42 +348,68 @@ public abstract class SFBaseSession {
       String httpsProxyHost = systemGetProperty("https.proxyHost");
       String httpsProxyPort = systemGetProperty("https.proxyPort");
       String noProxy = systemGetEnv("NO_PROXY");
+      String nonProxyHosts = systemGetProperty("http.nonProxyHosts");
       // log the JVM parameters that are being used
       if (httpUseProxy) {
         logger.debug(
-            "http.useProxy={}, http.proxyHost={}, http.proxyPort={}, https.proxyHost={}, https.proxyPort={}, NO_PROXY={}",
+            "http.useProxy={}, http.proxyHost={}, http.proxyPort={}, https.proxyHost={}, https.proxyPort={}, http.nonProxyHosts={}, NO_PROXY={}",
             httpUseProxy,
             httpProxyHost,
             httpProxyPort,
             httpsProxyHost,
             httpsProxyPort,
+            nonProxyHosts,
             noProxy);
-      } else {
-        logger.debug("http.useProxy={}. JVM proxy not used.", httpUseProxy);
-      }
-      // Set a new HttpClientSettingsKey with the https params. If the proxy is http, the native
-      // Java implementation will work.
-      if (httpUseProxy
-          && !Strings.isNullOrEmpty(httpsProxyHost)
-          && !Strings.isNullOrEmpty(httpsProxyPort)) {
-        int proxyPort;
-        try {
-          proxyPort = Integer.parseInt(httpsProxyPort);
-        } catch (NumberFormatException | NullPointerException e) {
-          throw new SnowflakeSQLException(
-              ErrorCode.INVALID_PROXY_PROPERTIES, "Could not parse port number");
+        // There are 2 possible parameters for non proxy hosts that can be combined into 1
+        String combinedNonProxyHosts = Strings.isNullOrEmpty(nonProxyHosts) ? "" : nonProxyHosts;
+        if (!Strings.isNullOrEmpty(noProxy)) {
+          combinedNonProxyHosts += combinedNonProxyHosts.length() == 0 ? "" : "|";
+          combinedNonProxyHosts += noProxy;
         }
-        ocspAndProxyKey =
-            new HttpClientSettingsKey(
-                getOCSPMode(),
-                httpsProxyHost,
-                proxyPort,
-                noProxy,
-                "", /* user = empty */
-                "", /* password = empty */
-                "https");
+        if (!Strings.isNullOrEmpty(httpsProxyHost) && !Strings.isNullOrEmpty(httpsProxyPort)) {
+          int proxyPort;
+          try {
+            proxyPort = Integer.parseInt(httpsProxyPort);
+          } catch (NumberFormatException | NullPointerException e) {
+            throw new SnowflakeSQLException(
+                ErrorCode.INVALID_PROXY_PROPERTIES, "Could not parse port number");
+          }
+          ocspAndProxyKey =
+              new HttpClientSettingsKey(
+                  getOCSPMode(),
+                  httpsProxyHost,
+                  proxyPort,
+                  combinedNonProxyHosts,
+                  "", /* user = empty */
+                  "", /* password = empty */
+                  "https");
+        } else if (!Strings.isNullOrEmpty(httpProxyHost) && !Strings.isNullOrEmpty(httpProxyPort)) {
+          int proxyPort;
+          try {
+            proxyPort = Integer.parseInt(httpProxyPort);
+          } catch (NumberFormatException | NullPointerException e) {
+            throw new SnowflakeSQLException(
+                ErrorCode.INVALID_PROXY_PROPERTIES, "Could not parse port number");
+          }
+          ocspAndProxyKey =
+              new HttpClientSettingsKey(
+                  getOCSPMode(),
+                  httpProxyHost,
+                  proxyPort,
+                  combinedNonProxyHosts,
+                  "", /* user = empty */
+                  "", /* password = empty */
+                  "http");
+        } else {
+          // Not enough parameters set to use the proxy.
+          logger.debug(
+              "http.useProxy={} but valid host and port were not provided. No proxy in use.",
+              httpUseProxy);
+          ocspAndProxyKey = new HttpClientSettingsKey(getOCSPMode());
+        }
       } else {
         // If no proxy is used or JVM http proxy is used, no need for setting parameters
+        logger.debug("http.useProxy={}. JVM proxy not used.", httpUseProxy);
         ocspAndProxyKey = new HttpClientSettingsKey(getOCSPMode());
       }
     }
@@ -646,6 +679,14 @@ public abstract class SFBaseSession {
     return useRegionalS3EndpointsForPresignedURL;
   }
 
+  public String getArrayBindStage() {
+    return arrayBindStage;
+  }
+
+  public void setArrayBindStage(String arrayBindStage) {
+    this.arrayBindStage = String.format("%s.%s.%s", getDatabase(), getSchema(), arrayBindStage);
+  }
+
   /**
    * Enables setting a value in the custom-properties map. This is used for properties that are
    * implementation specific to the session, and not shared by the different implementations.
@@ -715,6 +756,10 @@ public abstract class SFBaseSession {
    */
   public void clearSqlWarnings() {
     sqlWarnings.clear();
+  }
+
+  public SFConnectionHandler getSfConnectionHandler() {
+    return sfConnectionHandler;
   }
 
   public abstract int getNetworkTimeoutInMilli();

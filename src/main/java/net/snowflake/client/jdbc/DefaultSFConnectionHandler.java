@@ -47,7 +47,7 @@ public class DefaultSFConnectionHandler implements SFConnectionHandler {
    * @param skipOpen Skip calling open() on the session (for test-use only)
    */
   public DefaultSFConnectionHandler(SnowflakeConnectString conStr, boolean skipOpen) {
-    this.sfSession = new SFSession();
+    this.sfSession = new SFSession(this);
     this.conStr = conStr;
     this.skipOpen = skipOpen;
     sfSession.setSnowflakeConnectionString(conStr);

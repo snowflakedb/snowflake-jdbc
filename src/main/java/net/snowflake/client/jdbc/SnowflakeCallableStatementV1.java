@@ -42,7 +42,29 @@ final class SnowflakeCallableStatementV1 extends SnowflakePreparedStatementV1
       int resultSetConcurrency,
       int resultSetHoldability)
       throws SQLException {
-    super(connection, sql, skipParsing, resultSetType, resultSetConcurrency, resultSetHoldability);
+    super(
+        connection,
+        parseSqlEscapeSyntax(sql),
+        skipParsing,
+        resultSetType,
+        resultSetConcurrency,
+        resultSetHoldability);
+  }
+
+  /**
+   * Helper function to remove curly brackets for CallableStatement procedure calls, since GS parser
+   * does not support escape syntax for curly brackets
+   *
+   * @param originalSql original SQL text, possibly with curly brackets
+   * @return a string of SQL text with curly brackets removed
+   */
+  static String parseSqlEscapeSyntax(String originalSql) {
+    originalSql = originalSql.trim();
+    if (originalSql.startsWith("{") && originalSql.endsWith("}")) {
+      logger.info("Curly brackets {} removed before sending sql to server.");
+      return originalSql.substring(1, originalSql.length() - 1);
+    }
+    return originalSql;
   }
 
   /*
