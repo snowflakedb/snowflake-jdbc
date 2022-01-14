@@ -183,6 +183,8 @@ public class SessionUtil {
               ENABLE_STAGE_S3_PRIVATELINK_FOR_US_EAST_1,
               "SNOWPARK_LAZY_ANALYSIS"));
 
+  private static final int DEFAULT_AUTH_TIMEOUT = 0;
+
   /**
    * Returns Authenticator type
    *
@@ -345,8 +347,8 @@ public class SessionUtil {
     Map<String, Object> commonParams;
 
     try {
-      uriBuilder = new URIBuilder(loginInput.getServerUrl());
 
+      uriBuilder = new URIBuilder(loginInput.getServerUrl());
       // add database name and schema name as query parameters
       if (loginInput.getDatabaseName() != null) {
         uriBuilder.addParameter(SF_QUERY_DATABASE, loginInput.getDatabaseName());
@@ -387,6 +389,7 @@ public class SessionUtil {
                 loginInput.getUserName());
 
         loginInput.setToken(s.issueJwtToken());
+        loginInput.setAuthTimeout(SessionUtilKeyPair.getTimeout());
       }
 
       uriBuilder.addParameter(SFSession.SF_QUERY_REQUEST_ID, UUID.randomUUID().toString());
@@ -583,9 +586,28 @@ public class SessionUtil {
 
       setServiceNameHeader(loginInput, postRequest);
 
-      String theString =
-          HttpUtil.executeGeneralRequest(
-              postRequest, loginInput.getLoginTimeout(), loginInput.getHttpClientSettingsKey());
+      try {
+        String theString =
+                HttpUtil.executeGeneralRequest(
+                        postRequest, loginInput.getLoginTimeout(), loginInput.getAuthTimeout(), loginInput.getHttpClientSettingsKey());
+      } catch (SnowflakeSQLException ex) {
+        if(ex.getMessage().contains("Authenticator Timeout")) {
+          if(authenticatorType == ClientAuthnDTO.AuthenticatorType.SNOWFLAKE_JWT) {
+            SessionUtilKeyPair s =
+                    new SessionUtilKeyPair(
+                            loginInput.getPrivateKey(),
+                            loginInput.getPrivateKeyFile(),
+                            loginInput.getPrivateKeyFilePwd(),
+                            loginInput.getAccountName(),
+                            loginInput.getUserName());
+
+            data.put(ClientAuthnParameter.TOKEN.name(), s.issueJwtToken());
+          }
+          String theString =
+                  HttpUtil.executeGeneralRequest(
+                          postRequest, loginInput.getLoginTimeout(), loginInput.getAuthTimeout(), loginInput.getHttpClientSettingsKey());
+        }
+      }
 
       // general method, same as with data binding
       JsonNode jsonNode = mapper.readTree(theString);
@@ -1439,5 +1461,10 @@ public class SessionUtil {
       logger.debug("OCSP Cache Server for Privatelink: {}", ocspCacheServerUrl);
       resetOCSPResponseCacherServerURL(ocspCacheServerUrl);
     }
+  }
+
+  public static void defaultAuthTimeoutResponse()
+  {
+    logger.debug("Default auth timeout response was triggered. This is a no op");
   }
 }
