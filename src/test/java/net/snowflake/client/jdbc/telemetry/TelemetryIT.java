@@ -30,24 +30,11 @@ import org.junit.experimental.categories.Category;
 @Category(TestCategoryCore.class)
 public class TelemetryIT extends AbstractDriverIT {
   private Connection connection = null;
-  private static ObjectMapper mapper = new ObjectMapper();
+  private static final ObjectMapper mapper = new ObjectMapper();
   private String privateKeyLocation = null;
 
   @Before
   public void init() throws SQLException, IOException {
-    //    Map<String, String> parameters = getConnectionParameters();
-    //    String testUser = parameters.get("user");
-    //    Connection connection = getConnection();
-    //    Statement statement = connection.createStatement();
-    //    statement.execute("use role accountadmin");
-    //    String pathfile = getFullPathFileInResource("rsa_key.pub");
-    //    String pubKey = new String(Files.readAllBytes(Paths.get(pathfile)));
-    //    pubKey = pubKey.replace("-----BEGIN PUBLIC KEY-----", "");
-    //    pubKey = pubKey.replace("-----END PUBLIC KEY-----", "");
-    //    statement.execute(String.format("alter user %s set rsa_public_key='%s'", testUser,
-    // pubKey));
-    //    connection.close();
-
     privateKeyLocation = getFullPathFileInResource("rsa_key.p8");
     Properties properties = new Properties();
     properties.put("privateKeyFile", privateKeyLocation);
