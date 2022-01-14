@@ -23,7 +23,9 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
 
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetEnv;
 /**
  * This is an abstraction on top of http client.
  *
@@ -48,12 +50,16 @@ public class RestRequest {
   // retry at least once even if timeout limit has been reached
   private static final int MIN_RETRY_COUNT = 1;
 
+  // max number of retries
+  private static final int MAX_RETRY_COUNT = 3;
+
   /**
    * Execute an http request with retry logic.
    *
    * @param httpClient client object used to communicate with other machine
    * @param httpRequest request object contains all the request information
    * @param retryTimeout : retry timeout (in seconds)
+   * @param authTimeout : authenticator specific timeout (in seconds)
    * @param injectSocketTimeout : simulate socket timeout
    * @param canceling canceling flag
    * @param withoutCookies whether the cookie spec should be set to IGNORE or not
@@ -68,6 +74,7 @@ public class RestRequest {
       CloseableHttpClient httpClient,
       HttpRequestBase httpRequest,
       long retryTimeout,
+      long authTimeout,
       int injectSocketTimeout,
       AtomicBoolean canceling,
       boolean withoutCookies,
@@ -101,7 +108,7 @@ public class RestRequest {
     DecorrelatedJitterBackoff backoff =
         new DecorrelatedJitterBackoff(backoffInMilli, maxBackoffInMilli);
 
-    int retryCount = 0;
+    static int retryCount = 0;
 
     int origSocketTimeout = 0;
 
@@ -215,6 +222,8 @@ public class RestRequest {
               Event.EventType.NETWORK_ERROR, msg + ", Request: " + httpRequest.toString(), false);
         }
         breakRetryReason = "status code does not need retry";
+        // reset retryCount
+        retryCount = 0;
         break;
       } else {
         if (response != null) {
@@ -259,6 +268,9 @@ public class RestRequest {
                     + "Elapsed: {}(ms), timeout: {}(ms)",
                 elapsedMilliForTransientIssues,
                 retryTimeoutInMilliseconds);
+
+            // check if it's a login request
+            String hostname = httpRequest.getURI().getHost();
             breakRetryReason = "retry timeout";
             TelemetryService.getInstance()
                 .logHttpRequestTelemetryEvent(
@@ -284,6 +296,8 @@ public class RestRequest {
                   "Exception encountered for HTTP request: " + savedEx.getMessage());
             }
             // no more retry
+            // reset state
+            retryCount = 0;
             break;
           }
         }
@@ -303,6 +317,21 @@ public class RestRequest {
         }
 
         retryCount++;
+
+        // Make sure that any authenticator specific info that needs to be
+        // updated get's updated before the next retry. Ex - JWT token
+        if (authTimeout > 0 && elapsedMilliForTransientIssues > authTimeout)
+        {
+          // check if max retry has been reached
+          if (retryCount > getMaxAuthRetryCount()) {
+            logger.debug("Reached max number of auth retries. Aborting");
+            break;
+          }
+          // check if this is a login-request
+          if (httpRequest.getURI().getHost().contains("login-request")) {
+            throw new SnowflakeSQLException(null, "Authenticator Request Timeout", null, ErrorCode.NETWORK_ERROR);
+          }
+        }
         int numOfRetryToTriggerTelemetry =
             TelemetryService.getInstance().getNumOfRetryToTriggerTelemetry();
         if (retryCount == numOfRetryToTriggerTelemetry) {
@@ -383,6 +412,7 @@ public class RestRequest {
       }
     }
 
+
     return response;
   }
 
@@ -415,5 +445,14 @@ public class RestRequest {
       ex0 = ex0.getCause();
     }
     return ex0;
+  }
+
+  private static int getMaxAuthRetryCount() {
+    String maxAuthRetryCountStr = systemGetEnv("MAX_AUTH_RETRY_COUNT");
+    int maxAuthRetryCount = MAX_RETRY_COUNT;
+    if (maxAuthRetryCountStr != null) {
+      maxAuthRetryCount = Integer.parseInt(maxAuthRetryCountStr);
+    }
+    return maxAuthRetryCount;
   }
 }
