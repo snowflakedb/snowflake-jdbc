@@ -1464,7 +1464,6 @@ public class SessionUtil {
     }
   }
 
-<<<<<<< HEAD
   /**
    * Helper function to generate a JWT token
    *
