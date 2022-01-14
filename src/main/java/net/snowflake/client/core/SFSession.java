@@ -364,12 +364,12 @@ public class SFSession extends SFBaseSession {
     performSanityCheckOnProperties();
     Map<SFSessionProperty, Object> connectionPropertiesMap = getConnectionPropertiesMap();
     logger.debug(
-        "input: server={}, account={}, user={}, password={}, role={}, "
-            + "database={}, schema={}, warehouse={}, validate_default_parameters={}, authenticator={}, ocsp_mode={}, "
-            + "passcode_in_password={}, passcode={}, private_key={}, disable_socks_proxy={}, "
-            + "application={}, app_id={}, app_version={}, "
-            + "login_timeout={}, network_timeout={}, query_timeout={}, tracing={}, private_key_file={}, private_key_file_pwd={}. "
-            + "session_parameters: client_store_temporary_credential={}",
+        "input: server={}, account={}, user={}, password={}, role={}, database={}, schema={},"
+            + " warehouse={}, validate_default_parameters={}, authenticator={}, ocsp_mode={},"
+            + " passcode_in_password={}, passcode={}, private_key={}, disable_socks_proxy={},"
+            + " application={}, app_id={}, app_version={}, login_timeout={}, network_timeout={},"
+            + " query_timeout={}, tracing={}, private_key_file={}, private_key_file_pwd={}."
+            + " session_parameters: client_store_temporary_credential={}",
         connectionPropertiesMap.get(SFSessionProperty.SERVER_URL),
         connectionPropertiesMap.get(SFSessionProperty.ACCOUNT),
         connectionPropertiesMap.get(SFSessionProperty.USER),
@@ -407,7 +407,8 @@ public class SFSession extends SFBaseSession {
 
     HttpClientSettingsKey httpClientSettingsKey = getHttpClientKey();
     logger.debug(
-        "connection proxy parameters: use_proxy={}, proxy_host={}, proxy_port={}, proxy_user={}, proxy_password={}, non_proxy_hosts={}, proxy_protocol={}",
+        "connection proxy parameters: use_proxy={}, proxy_host={}, proxy_port={}, proxy_user={},"
+            + " proxy_password={}, non_proxy_hosts={}, proxy_protocol={}",
         httpClientSettingsKey.usesProxy(),
         httpClientSettingsKey.getProxyHost(),
         httpClientSettingsKey.getProxyPort(),

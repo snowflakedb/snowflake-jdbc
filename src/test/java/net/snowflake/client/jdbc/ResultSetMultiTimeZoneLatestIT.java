@@ -76,7 +76,8 @@ public class ResultSetMultiTimeZoneLatestIT extends BaseJDBCTest {
     String timestampStringValue = "1970-01-01 " + timeStringValue;
     int length = timestampStringValue.length();
     statement.execute(
-        "create or replace table SRC_DATE_TIME (C2_TIME_3 TIME(3), C3_TIME_5 TIME(5), C4_TIME TIME(9))");
+        "create or replace table SRC_DATE_TIME (C2_TIME_3 TIME(3), C3_TIME_5 TIME(5), C4_TIME"
+            + " TIME(9))");
     statement.execute(
         "insert into SRC_DATE_TIME values ('"
             + timeStringValue
@@ -220,7 +221,8 @@ public class ResultSetMultiTimeZoneLatestIT extends BaseJDBCTest {
     Statement statement = connection.createStatement();
     // create table with all timestamp types, time, and date
     statement.execute(
-        "create or replace table datetimetypes(colA timestamp_ltz, colB timestamp_ntz, colC timestamp_tz, colD time, colE date)");
+        "create or replace table datetimetypes(colA timestamp_ltz, colB timestamp_ntz, colC"
+            + " timestamp_tz, colD time, colE date)");
     // Enable session parameter JDBC_USE_SESSION_TIMEZONE
     statement.execute("alter session set JDBC_USE_SESSION_TIMEZONE=true");
     if (!useDefaultParamSettings) {

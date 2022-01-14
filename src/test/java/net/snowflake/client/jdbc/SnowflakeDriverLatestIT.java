@@ -82,7 +82,9 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
       Properties props = new Properties();
       props.put(
           "snowflakeClientInfo",
-          "{\"spark.version\":\"3.0.0\", \"spark.snowflakedb.version\":\"2.8.5\", \"spark.app.name\":\"SnowflakeSourceSuite\", \"scala.version\":\"2.12.11\", \"java.version\":\"1.8.0_221\", \"snowflakedb.jdbc.version\":\"3.13.2\"}");
+          "{\"spark.version\":\"3.0.0\", \"spark.snowflakedb.version\":\"2.8.5\","
+              + " \"spark.app.name\":\"SnowflakeSourceSuite\", \"scala.version\":\"2.12.11\","
+              + " \"java.version\":\"1.8.0_221\", \"snowflakedb.jdbc.version\":\"3.13.2\"}");
       connection = getConnection(DONT_INJECT_SOCKET_TIMEOUT, props, false, false);
       statement = connection.createStatement();
       res = statement.executeQuery("select current_session_client_info()");
@@ -100,7 +102,9 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
       // Test that when session property is set, connection parameter overrides it
       System.setProperty(
           "snowflake.client.info",
-          "{\"spark.version\":\"fake\", \"spark.snowflakedb.version\":\"fake\", \"spark.app.name\":\"fake\", \"scala.version\":\"fake\", \"java.version\":\"fake\", \"snowflakedb.jdbc.version\":\"fake\"}");
+          "{\"spark.version\":\"fake\", \"spark.snowflakedb.version\":\"fake\","
+              + " \"spark.app.name\":\"fake\", \"scala.version\":\"fake\","
+              + " \"java.version\":\"fake\", \"snowflakedb.jdbc.version\":\"fake\"}");
       connection = getConnection(DONT_INJECT_SOCKET_TIMEOUT, props, false, false);
       statement = connection.createStatement();
       res = statement.executeQuery("select current_session_client_info()");
