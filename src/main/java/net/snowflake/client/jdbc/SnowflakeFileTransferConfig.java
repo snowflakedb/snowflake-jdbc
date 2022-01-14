@@ -24,6 +24,8 @@ public class SnowflakeFileTransferConfig {
   private SFSession session; // Optional, added for S3 and Azure
   private String command; // Optional, added for S3 and Azure
   private boolean useS3RegionalUrl; // only for S3 us-east-1 private link deployments
+  private String streamingIngestClientName;
+  private String streamingIngestClientKey;
 
   public SnowflakeFileTransferConfig(Builder builder) {
     this.metadata = builder.metadata;
@@ -37,6 +39,8 @@ public class SnowflakeFileTransferConfig {
     this.session = builder.session;
     this.command = builder.command;
     this.useS3RegionalUrl = builder.useS3RegionalUrl;
+    this.streamingIngestClientKey = builder.streamingIngestClientKey;
+    this.streamingIngestClientName = builder.streamingIngestClientName;
   }
 
   public SnowflakeFileTransferMetadata getSnowflakeFileTransferMetadata() {
@@ -83,6 +87,14 @@ public class SnowflakeFileTransferConfig {
     return useS3RegionalUrl;
   }
 
+  public String getStreamingIngestClientName() {
+    return this.streamingIngestClientName;
+  }
+
+  public String getStreamingIngestClientKey() {
+    return this.streamingIngestClientKey;
+  }
+
   // Builder class
   public static class Builder {
     private SnowflakeFileTransferMetadata metadata = null;
@@ -96,6 +108,8 @@ public class SnowflakeFileTransferConfig {
     private SFSession session = null;
     private String command = null;
     private boolean useS3RegionalUrl = false; // only for S3 us-east-1 private link deployments
+    private String streamingIngestClientName;
+    private String streamingIngestClientKey;
 
     public static Builder newInstance() {
       return new Builder();
@@ -173,6 +187,21 @@ public class SnowflakeFileTransferConfig {
 
     public Builder setUseS3RegionalUrl(boolean useS3RegUrl) {
       this.useS3RegionalUrl = useS3RegUrl;
+      return this;
+    }
+
+    /** Streaming ingest client name, used to calculate streaming ingest billing per client */
+    public Builder setStreamingIngestClientName(String streamingIngestClientName) {
+      this.streamingIngestClientName = streamingIngestClientName;
+      return this;
+    }
+
+    /**
+     * Streaming ingest client key provided by Snowflake, used to calculate streaming ingest billing
+     * per client
+     */
+    public Builder setStreamingIngestClientKey(String streamingIngestClientKey) {
+      this.streamingIngestClientKey = streamingIngestClientKey;
       return this;
     }
   }
