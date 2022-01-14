@@ -161,7 +161,7 @@ public class TelemetryIT extends AbstractDriverIT {
 
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testClosedTelemetry() throws Exception, SFException {
+  public void testClosedSessionlessTelemetry() throws Exception, SFException {
     TelemetryClient telemetry = createSessionlessTelemetry();
     telemetry.close();
     ObjectNode node = mapper.createObjectNode();
