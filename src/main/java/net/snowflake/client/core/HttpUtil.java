@@ -548,17 +548,19 @@ public class HttpUtil {
    *
    * @param httpRequest HttpRequestBase
    * @param retryTimeout retry timeout
+   * @param authTimeout authenticator specific timeout
    * @param ocspAndProxyKey OCSP mode and proxy settings for httpclient
    * @return response
    * @throws SnowflakeSQLException if Snowflake error occurs
    * @throws IOException raises if a general IO error occurs
    */
   public static String executeGeneralRequest(
-      HttpRequestBase httpRequest, int retryTimeout, HttpClientSettingsKey ocspAndProxyKey)
+      HttpRequestBase httpRequest, int retryTimeout, int authTimeout, HttpClientSettingsKey ocspAndProxyKey)
       throws SnowflakeSQLException, IOException {
     return executeRequest(
         httpRequest,
         retryTimeout,
+        authTimeout,
         0, // no inject socket timeout
         null, // no canceling
         false, // no retry parameter
@@ -596,6 +598,7 @@ public class HttpUtil {
    *
    * @param httpRequest HttpRequestBase
    * @param retryTimeout retry timeout
+   * @param authTimeout authenticator timeout
    * @param injectSocketTimeout injecting socket timeout
    * @param canceling canceling?
    * @param includeRetryParameters whether to include retry parameters in retried requests
@@ -608,6 +611,7 @@ public class HttpUtil {
   public static String executeRequest(
       HttpRequestBase httpRequest,
       int retryTimeout,
+      int authTimeout,
       int injectSocketTimeout,
       AtomicBoolean canceling,
       boolean includeRetryParameters,
@@ -617,6 +621,7 @@ public class HttpUtil {
     return executeRequestInternal(
         httpRequest,
         retryTimeout,
+        authTimeout,
         injectSocketTimeout,
         canceling,
         false, // with cookie (do we need cookie?)
@@ -635,6 +640,7 @@ public class HttpUtil {
    *
    * @param httpRequest request object contains all the information
    * @param retryTimeout retry timeout (in seconds)
+   * @param authTimeout authenticator specific timeout (in seconds)
    * @param injectSocketTimeout simulate socket timeout
    * @param canceling canceling flag
    * @param withoutCookies whether this request should ignore cookies
@@ -649,6 +655,7 @@ public class HttpUtil {
   private static String executeRequestInternal(
       HttpRequestBase httpRequest,
       int retryTimeout,
+      int authTimeout,
       int injectSocketTimeout,
       AtomicBoolean canceling,
       boolean withoutCookies,
@@ -673,6 +680,7 @@ public class HttpUtil {
               httpClient,
               httpRequest,
               retryTimeout,
+              authTimeout,
               injectSocketTimeout,
               canceling,
               withoutCookies,

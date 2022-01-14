@@ -30,6 +30,8 @@ import net.snowflake.client.log.SFLoggerFactory;
 import org.apache.commons.codec.binary.Base64;
 import org.bouncycastle.util.io.pem.PemReader;
 
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetEnv;
+
 /** Class used to compute jwt token for key pair authentication Created by hyu on 1/16/18. */
 class SessionUtilKeyPair {
 
@@ -54,6 +56,8 @@ class SessionUtilKeyPair {
   private static final String ISSUER_FMT = "%s.%s.%s";
 
   private static final String SUBJECT_FMT = "%s.%s";
+
+  private static final int JWT_DEFAULT_AUTH_TIMEOUT = 10;
 
   SessionUtilKeyPair(
       PrivateKey privateKey,
@@ -103,6 +107,8 @@ class SessionUtilKeyPair {
           "Use java.security.interfaces.RSAPrivateCrtKey.class for the private key");
     }
   }
+
+
 
   private KeyFactory getKeyFactoryInstance() throws NoSuchAlgorithmException {
     if (isFipsMode) {
@@ -201,5 +207,13 @@ class SessionUtilKeyPair {
     } catch (NoSuchAlgorithmException e) {
       throw new SFException(e, ErrorCode.INTERNAL_ERROR, "Error when calculating fingerprint");
     }
+  }
+  public static int getTimeout()  {
+    String jwtAuthTimeoutStr = systemGetEnv("JWT_AUTH_TIMEOUT");
+    int jwtAuthTimeout = JWT_DEFAULT_AUTH_TIMEOUT;
+    if(jwtAuthTimeoutStr != null) {
+      jwtAuthTimeout = Integer.parseInt(jwtAuthTimeoutStr);
+    }
+    return jwtAuthTimeout;
   }
 }
