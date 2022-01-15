@@ -196,8 +196,20 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
   // Quotes must be escaped with another quote when creating an object, but they need to be added
   // back in to compare if returned result matches input argument.
   private String addQuotesBack(String unquotedString) {
-    //String quotedString = unquotedString.replaceAll("^\"|\"$", "");
     return unquotedString.replace("\"", "\"\"");
+  }
+
+  // show procedures command has a bug where schema name comes back with additional quotes around it.
+  // These must be deleted before quotes can be added back in
+  private String addQuotesForProcedures(String original) {
+    if (original.startsWith("\"")) {
+      original = original.substring(1);
+    }
+    if (original.endsWith("\""))
+    {
+      original = original.substring(0, original.length() -1);
+    }
+    return addQuotesBack(original);
   }
 
   @Override
@@ -1068,16 +1080,14 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
         while (showObjectResultSet.next()) {
           String catalogName = showObjectResultSet.getString("catalog_name");
           String schemaName = showObjectResultSet.getString("schema_name");
-          System.out.println(schemaName);
-
-          String procedureName = showObjectResultSet.getString("name").replace("\"", "\\\"");
+          String procedureName = showObjectResultSet.getString("name");
           String remarks = showObjectResultSet.getString("description");
           String specificName = showObjectResultSet.getString("arguments");
           short procedureType = procedureReturnsResult;
           if ((compiledProcedurePattern == null
                   || compiledProcedurePattern.matcher(addQuotesBack(procedureName)).matches())
               && (compiledSchemaPattern == null
-                  || compiledSchemaPattern.matcher(addQuotesBack(schemaName)).matches())) {
+                  || compiledSchemaPattern.matcher(addQuotesForProcedures(schemaName)).matches())) {
             logger.debug("Found a matched function:" + schemaName + "." + procedureName);
 
             nextRow[0] = catalogName;
@@ -1163,7 +1173,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
       for (int i = 0; i < paramNames.length; i++) {
         // if it's the 1st in for loop, it's the result
         if (i == 0
-            || paramNames[i].equalsIgnoreCase(addQuotesBack(columnNamePattern))
+            || paramNames[i].equalsIgnoreCase(columnNamePattern)
             || addAllRows) {
           Object[] nextRow = new Object[20];
           // add a row to resultSet
@@ -1336,9 +1346,9 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
     String showProcedureColCommand;
     if (!Strings.isNullOrEmpty(catalog) && !Strings.isNullOrEmpty(schemaPattern)) {
       showProcedureColCommand =
-          "desc " + type + " " + catalog + "." + schemaPattern + "." + procedureName;
+          "desc " + type + " " + catalog + "." + unescapeChars(schemaPattern) + "." + procedureName;
     } else if (!Strings.isNullOrEmpty(schemaPattern)) {
-      showProcedureColCommand = "desc " + type + " " + schemaPattern + "." + procedureName;
+      showProcedureColCommand = "desc " + type + " " + unescapeChars(schemaPattern) + "." + procedureName;
     } else {
       showProcedureColCommand = "desc " + type + " " + procedureName;
     }
@@ -2001,9 +2011,9 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
           String pk_name = showObjectResultSet.getString(7);
 
           // Post filter based on the input
-          if ((catalogIn == null || catalogIn.equals(addQuotesBack(table_cat)))
-              && (schemaIn == null || schemaIn.equals(addQuotesBack(table_schem)))
-              && (tableIn == null || tableIn.equals(addQuotesBack(table_name)))) {
+          if ((catalogIn == null || catalogIn.equals(table_cat))
+              && (schemaIn == null || schemaIn.equals(table_schem))
+              && (tableIn == null || tableIn.equals(table_name))) {
             nextRow[0] = table_cat;
             nextRow[1] = table_schem;
             nextRow[2] = table_name;
@@ -2127,32 +2137,32 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
           if (client.equals("import")) {
             // For imported dkeys, filter on the foreign key table
             if ((finalParentCatalog == null
-                    || finalParentCatalog.equals(addQuotesBack(fktable_cat)))
+                    || finalParentCatalog.equals(fktable_cat))
                 && (finalParentSchema == null
-                    || finalParentSchema.equals(addQuotesBack(fktable_schem)))
-                && (parentTable == null || parentTable.equals(addQuotesBack(fktable_name)))) {
+                    || finalParentSchema.equals(fktable_schem))
+                && (parentTable == null || parentTable.equals(fktable_name))) {
               passedFilter = true;
             }
           } else if (client.equals("export")) {
             // For exported keys, filter on the primary key table
             if ((finalParentCatalog == null
-                    || finalParentCatalog.equals(addQuotesBack(pktable_cat)))
+                    || finalParentCatalog.equals(pktable_cat))
                 && (finalParentSchema == null
-                    || finalParentSchema.equals(addQuotesBack(pktable_schem)))
-                && (parentTable == null || parentTable.equals(addQuotesBack(pktable_name)))) {
+                    || finalParentSchema.equals(pktable_schem))
+                && (parentTable == null || parentTable.equals(pktable_name))) {
               passedFilter = true;
             }
           } else if (client.equals("cross")) {
             // For cross references, filter on both the primary key and foreign
             // key table
             if ((finalParentCatalog == null
-                    || finalParentCatalog.equals(addQuotesBack(pktable_cat)))
+                    || finalParentCatalog.equals(pktable_cat))
                 && (finalParentSchema == null
-                    || finalParentSchema.equals(addQuotesBack(pktable_schem)))
-                && (parentTable == null || parentTable.equals(addQuotesBack(pktable_name)))
-                && (foreignCatalog == null || foreignCatalog.equals(addQuotesBack(fktable_cat)))
-                && (foreignSchema == null || foreignSchema.equals(addQuotesBack(fktable_schem)))
-                && (foreignTable == null || foreignTable.equals(addQuotesBack(fktable_name)))) {
+                    || finalParentSchema.equals(pktable_schem))
+                && (parentTable == null || parentTable.equals(pktable_name))
+                && (foreignCatalog == null || foreignCatalog.equals(fktable_cat))
+                && (foreignSchema == null || foreignSchema.equals(fktable_schem))
+                && (foreignTable == null || foreignTable.equals(fktable_name))) {
               passedFilter = true;
             }
           }

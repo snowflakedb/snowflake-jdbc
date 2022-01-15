@@ -151,7 +151,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
       assertEquals(2, getSizeOfResultSet(rs));
       rs = metaData.getColumns(database, querySchema, null, "AMOUNT");
       assertEquals(2, getSizeOfResultSet(rs));
-      rs = metaData.getProcedures(database, querySchema, null);
+      rs = metaData.getProcedureColumns(database, querySchema, null, null);
       assertEquals(1, getSizeOfResultSet(rs));
       rs.close();
       statement.close();

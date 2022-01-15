@@ -710,10 +710,13 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
   public void testGetImportedKeys() throws Throwable {
     try (Connection connection = getConnection()) {
       String database = connection.getCatalog();
-      String schema = connection.getSchema();
+      String schema = "TEST\\_SCHEMA\\_\"\"WITH\\_QUOTES\"\"";
       final String targetTable1 = "T0";
       final String targetTable2 = "T1";
 
+      connection
+              .createStatement()
+              .execute("create or replace schema \"TEST_SCHEMA_\"\"WITH_QUOTES\"\"\"");
       connection
           .createStatement()
           .execute("create or replace table " + targetTable1 + "(C1 int primary key, C2 string)");
