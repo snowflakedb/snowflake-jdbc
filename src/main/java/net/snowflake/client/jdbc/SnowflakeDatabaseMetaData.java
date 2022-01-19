@@ -4,10 +4,16 @@
 
 package net.snowflake.client.jdbc;
 
+import static net.snowflake.client.jdbc.DBMetadataResultSetMetadata.*;
+import static net.snowflake.client.jdbc.SnowflakeType.convertStringToType;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Strings;
+import java.sql.*;
+import java.util.*;
+import java.util.regex.Pattern;
 import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
@@ -20,13 +26,6 @@ import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.util.SFPair;
 import net.snowflake.common.core.SqlState;
 import net.snowflake.common.util.Wildcard;
-
-import java.sql.*;
-import java.util.*;
-import java.util.regex.Pattern;
-
-import static net.snowflake.client.jdbc.DBMetadataResultSetMetadata.*;
-import static net.snowflake.client.jdbc.SnowflakeType.convertStringToType;
 
 public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
 
@@ -199,15 +198,15 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
     return unquotedString.replace("\"", "\"\"");
   }
 
-  // show procedures command has a bug where schema name comes back with additional quotes around it.
+  // show procedures command has a bug where schema name comes back with additional quotes around
+  // it.
   // These must be deleted before quotes can be added back in
   private String addQuotesForProcedures(String original) {
     if (original.startsWith("\"")) {
       original = original.substring(1);
     }
-    if (original.endsWith("\""))
-    {
-      original = original.substring(0, original.length() -1);
+    if (original.endsWith("\"")) {
+      original = original.substring(0, original.length() - 1);
     }
     return addQuotesBack(original);
   }
@@ -1172,13 +1171,11 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
       paramTypes[0] = res;
       for (int i = 0; i < paramNames.length; i++) {
         // if it's the 1st in for loop, it's the result
-        if (i == 0
-            || paramNames[i].equalsIgnoreCase(columnNamePattern)
-            || addAllRows) {
+        if (i == 0 || paramNames[i].equalsIgnoreCase(columnNamePattern) || addAllRows) {
           Object[] nextRow = new Object[20];
           // add a row to resultSet
           nextRow[0] = catalog; // catalog. Can be null.
-          nextRow[1] = schemaPattern; // schema. Can be null.
+          nextRow[1] = unescapeChars(schemaPattern); // schema. Can be null.
           nextRow[2] = procedureNameNoArgs; // procedure name
           nextRow[3] = paramNames[i]; // column/parameter name
           // column type
@@ -1346,9 +1343,17 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
     String showProcedureColCommand;
     if (!Strings.isNullOrEmpty(catalog) && !Strings.isNullOrEmpty(schemaPattern)) {
       showProcedureColCommand =
-          "desc " + type + " " + catalog + "." + unescapeChars(schemaPattern) + "." + procedureName;
+          "desc "
+              + type
+              + " "
+              + catalog
+              + ".\""
+              + unescapeChars(schemaPattern)
+              + "\"."
+              + procedureName;
     } else if (!Strings.isNullOrEmpty(schemaPattern)) {
-      showProcedureColCommand = "desc " + type + " " + unescapeChars(schemaPattern) + "." + procedureName;
+      showProcedureColCommand =
+          "desc " + type + " \"" + unescapeChars(schemaPattern) + "\"." + procedureName;
     } else {
       showProcedureColCommand = "desc " + type + " " + procedureName;
     }
@@ -2136,29 +2141,23 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
           // Post filter the results based on the clinet type
           if (client.equals("import")) {
             // For imported dkeys, filter on the foreign key table
-            if ((finalParentCatalog == null
-                    || finalParentCatalog.equals(fktable_cat))
-                && (finalParentSchema == null
-                    || finalParentSchema.equals(fktable_schem))
+            if ((finalParentCatalog == null || finalParentCatalog.equals(fktable_cat))
+                && (finalParentSchema == null || finalParentSchema.equals(fktable_schem))
                 && (parentTable == null || parentTable.equals(fktable_name))) {
               passedFilter = true;
             }
           } else if (client.equals("export")) {
             // For exported keys, filter on the primary key table
-            if ((finalParentCatalog == null
-                    || finalParentCatalog.equals(pktable_cat))
-                && (finalParentSchema == null
-                    || finalParentSchema.equals(pktable_schem))
+            if ((finalParentCatalog == null || finalParentCatalog.equals(pktable_cat))
+                && (finalParentSchema == null || finalParentSchema.equals(pktable_schem))
                 && (parentTable == null || parentTable.equals(pktable_name))) {
               passedFilter = true;
             }
           } else if (client.equals("cross")) {
             // For cross references, filter on both the primary key and foreign
             // key table
-            if ((finalParentCatalog == null
-                    || finalParentCatalog.equals(pktable_cat))
-                && (finalParentSchema == null
-                    || finalParentSchema.equals(pktable_schem))
+            if ((finalParentCatalog == null || finalParentCatalog.equals(pktable_cat))
+                && (finalParentSchema == null || finalParentSchema.equals(pktable_schem))
                 && (parentTable == null || parentTable.equals(pktable_name))
                 && (foreignCatalog == null || foreignCatalog.equals(fktable_cat))
                 && (foreignSchema == null || foreignSchema.equals(fktable_schem))
