@@ -27,7 +27,7 @@ import org.junit.experimental.categories.Category;
 public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
   private static final String TEST_PROC =
       "create or replace procedure testproc(param1 float, param2 string)\n"
-          + "    returns table(retval varchar)\n"
+          + "    returns varchar\n"
           + "    language javascript\n"
           + "    as\n"
           + "    $$\n"
