@@ -25,6 +25,16 @@ import org.junit.experimental.categories.Category;
  */
 @Category(TestCategoryOthers.class)
 public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
+  private static final String TEST_PROC =
+      "create or replace procedure testproc(param1 float, param2 string)\n"
+          + "    returns varchar\n"
+          + "    language javascript\n"
+          + "    as\n"
+          + "    $$\n"
+          + "    var sql_command = \"Hello, world!\"\n"
+          + "    $$\n"
+          + "    ;";
+
   /**
    * Tests for getFunctions
    *
@@ -124,6 +134,73 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
 
       resultSet = databaseMetaData.getCrossReference(null, null, null, null, null, null);
       assertThat(getSizeOfResultSet(resultSet), greaterThanOrEqualTo(2));
+    }
+  }
+
+  /**
+   * This tests the ability to have quotes inside a schema or database. This fixes a bug where
+   * double-quoted function arguments like schemas, databases, etc were returning empty resultsets.
+   *
+   * @throws SQLException
+   */
+  @Test
+  public void testDoubleQuotedDatabaseAndSchema() throws SQLException {
+    try (Connection con = getConnection()) {
+      Statement statement = con.createStatement();
+      String database = con.getCatalog();
+      // To query the schema and table, we can use a normal java escaped quote. Wildcards are also
+      // escaped here
+      String querySchema = "TEST\\_SCHEMA\\_\"WITH\\_QUOTES\"";
+      String queryTable = "TESTTABLE\\_\"WITH\\_QUOTES\"";
+      // Create the schema and table. With SQL commands, double quotes must be escaped with another
+      // quote
+      statement.execute("create or replace schema \"TEST_SCHEMA_\"\"WITH_QUOTES\"\"\"");
+      statement.execute(
+          "create or replace table \"TESTTABLE_\"\"WITH_QUOTES\"\"\" (AMOUNT number, \"COL_\"\"QUOTED\"\"\" string)");
+      DatabaseMetaData metaData = con.getMetaData();
+      ResultSet rs = metaData.getTables(database, querySchema, queryTable, null);
+      // Assert 1 row returned for the testtable_"with_quotes"
+      assertEquals(1, getSizeOfResultSet(rs));
+      rs = metaData.getColumns(database, querySchema, queryTable, null);
+      // Assert 2 rows returned for the 2 rows in testtable_"with_quotes"
+      assertEquals(2, getSizeOfResultSet(rs));
+      rs = metaData.getColumns(database, querySchema, queryTable, "COL\\_\"QUOTED\"");
+      // Assert 1 row returned for the column col_"quoted"
+      assertEquals(1, getSizeOfResultSet(rs));
+      rs = metaData.getSchemas(database, querySchema);
+      // Assert 1 row returned for the schema test_schema_"with_quotes"
+      assertEquals(1, getSizeOfResultSet(rs));
+      rs.close();
+      statement.close();
+    }
+  }
+
+  /**
+   * This tests that wildcards can be used for the schema name for getProcedureColumns().
+   * Previously, only empty resultsets were returned.
+   *
+   * @throws SQLException
+   */
+  @Test
+  public void testGetProcedureColumnsWildcards() throws SQLException {
+    try (Connection con = getConnection()) {
+      Statement statement = con.createStatement();
+      String database = con.getCatalog();
+      String schema1 = "SCH1";
+      String schema2 = "SCH2";
+      // Create 2 schemas, each with the same stored procedure declared in them
+      statement.execute("create or replace schema " + schema1);
+      statement.execute(TEST_PROC);
+      statement.execute("create or replace schema " + schema2);
+      statement.execute(TEST_PROC);
+      DatabaseMetaData metaData = con.getMetaData();
+      ResultSet rs = metaData.getProcedureColumns(database, "SCH_", "TESTPROC", "PARAM1");
+      // Assert 4 rows returned for the param PARAM1 that's present in each of the 2 identical
+      // stored procs in different schemas. A result row is returned for each procedure, making the
+      // total rowcount 4
+      assertEquals(4, getSizeOfResultSet(rs));
+      rs.close();
+      statement.close();
     }
   }
 
