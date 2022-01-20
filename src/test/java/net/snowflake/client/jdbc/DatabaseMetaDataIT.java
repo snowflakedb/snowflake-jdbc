@@ -1133,7 +1133,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
       assertFalse(resultSet.next());
       /* Call getProcedureColumns with specified procedure name and column name. This will return 2 rows: 1 for the
       result values of the procedure, and 1 for the parameter values for the specified parameter. */
-      resultSet = metaData.getProcedureColumns(null, null, "stproc1", "param2");
+      resultSet = metaData.getProcedureColumns(null, null, "STPROC1", "PARAM2");
       assertEquals(20, resultSet.getMetaData().getColumnCount());
       assertEquals(2, getSizeOfResultSet(resultSet));
       connection.createStatement().execute("drop procedure if exists stproc1(float, string)");
