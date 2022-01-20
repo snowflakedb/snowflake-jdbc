@@ -184,6 +184,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
     String unescapedString = escapedString.replace("\\_", "_");
     unescapedString = unescapedString.replace("\\%", "%");
     unescapedString = unescapedString.replace("\\\\", "\\");
+    unescapedString = unescapedString.replace("\"", "\"\"");
     return unescapedString;
   }
 
@@ -1106,6 +1107,9 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
       return SnowflakeDatabaseMetaDataResultSet.getEmptyResultSet(GET_PROCEDURE_COLUMNS, statement);
     }
 
+    final Pattern compiledSchemaPattern = Wildcard.toRegexPattern(schemaPattern, true);
+    final Pattern compiledProcedurePattern = Wildcard.toRegexPattern(procedureNamePattern, true);
+
     if (columnNamePattern == null
         || columnNamePattern.isEmpty()
         || columnNamePattern.trim().equals("%")
@@ -1127,8 +1131,18 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
     while (resultSetStepOne.next()) {
       String procedureNameUnparsed = resultSetStepOne.getString("arguments").trim();
       String procedureNameNoArgs = resultSetStepOne.getString("name");
+      String schemaName = resultSetStepOne.getString("schema_name");
+      // Check that procedure name and schema name match the original input in case wildcards have
+      // been used.
+      // Procedure name column check must occur later when columns are parsed.
+      if ((compiledProcedurePattern != null
+              && !compiledProcedurePattern.matcher(procedureNameNoArgs).matches())
+          || (compiledSchemaPattern != null
+              && !compiledSchemaPattern.matcher(schemaName).matches())) {
+        continue;
+      }
       String showProcedureColCommand =
-          getSecondResultSetCommand(catalog, schemaPattern, procedureNameUnparsed, "procedure");
+          getSecondResultSetCommand(catalog, schemaName, procedureNameUnparsed, "procedure");
 
       ResultSet resultSetStepTwo =
           executeAndReturnEmptyResultIfNotFound(
@@ -1156,7 +1170,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
           Object[] nextRow = new Object[20];
           // add a row to resultSet
           nextRow[0] = catalog; // catalog. Can be null.
-          nextRow[1] = schemaPattern; // schema. Can be null.
+          nextRow[1] = schemaName; // schema. Can be null.
           nextRow[2] = procedureNameNoArgs; // procedure name
           nextRow[3] = paramNames[i]; // column/parameter name
           // column type
