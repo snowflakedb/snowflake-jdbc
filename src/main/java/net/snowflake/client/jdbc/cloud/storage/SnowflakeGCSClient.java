@@ -56,6 +56,8 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
   private static final String GCS_ENCRYPTIONDATAPROP = "encryptiondata";
   private static final String localFileSep = systemGetProperty("file.separator");
   private static final String GCS_METADATA_PREFIX = "x-goog-meta-";
+  private static final String GCS_STREAMING_INGEST_CLIENT_NAME = "ingestclientname";
+  private static final String GCS_STREAMING_INGEST_CLIENT_KEY = "ingestclientkey";
 
   private int encryptionKeySize = 0; // used for PUTs
   private StageInfo stageInfo;
@@ -1091,5 +1093,28 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
 
   private static boolean isSuccessStatusCode(int code) {
     return code < 300 && code >= 200;
+  }
+
+  /**
+   * Adds streaming ingest metadata to the StorageObjectMetadata object, used for streaming ingest
+   * per client billing calculation
+   */
+  @Override
+  public void addStreamingIngestMetadata(
+      StorageObjectMetadata meta, String clientName, String clientKey) {
+    meta.addUserMetadata(GCS_STREAMING_INGEST_CLIENT_NAME, clientName);
+    meta.addUserMetadata(GCS_STREAMING_INGEST_CLIENT_KEY, clientKey);
+  }
+
+  /** Gets streaming ingest client name to the StorageObjectMetadata object */
+  @Override
+  public String getStreamingIngestClientName(StorageObjectMetadata meta) {
+    return meta.getUserMetadata().get(GCS_STREAMING_INGEST_CLIENT_NAME);
+  }
+
+  /** Gets streaming ingest client key to the StorageObjectMetadata object */
+  @Override
+  public String getStreamingIngestClientKey(StorageObjectMetadata meta) {
+    return meta.getUserMetadata().get(GCS_STREAMING_INGEST_CLIENT_KEY);
   }
 }

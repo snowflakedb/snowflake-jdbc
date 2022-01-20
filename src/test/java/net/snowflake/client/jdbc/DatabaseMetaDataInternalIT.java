@@ -46,8 +46,9 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest {
       st.execute("create or replace schema JDBC_SCHEMA12");
       st.execute("create or replace table JDBC_TBL121(colA varchar)");
       st.execute(
-          "create or replace table JDBC_TBL122(colA NUMBER(20, 2) AUTOINCREMENT comment "
-              + "'cmt colA', colB NUMBER(20, 2) DEFAULT(3) NOT NULL, colC NUMBER(20,2) IDENTITY(20, 2))");
+          "create or replace table JDBC_TBL122(colA NUMBER(20, 2) AUTOINCREMENT comment 'cmt"
+              + " colA', colB NUMBER(20, 2) DEFAULT(3) NOT NULL, colC NUMBER(20,2) IDENTITY(20,"
+              + " 2))");
       st.execute("create or replace database JDBC_DB2");
       st.execute("create or replace schema JDBC_SCHEMA21");
       st.execute("create or replace table JDBC_TBL211(colA string)");
@@ -168,8 +169,8 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest {
         "create or replace function JDBC_DB2.JDBC_SCHEMA21.JDBCFUNCTEST211 "
             + "(a number, b number) RETURNS NUMBER COMMENT='mutiply numbers' as 'a*b'");
     statement.execute(
-        "create or replace function JDBC_DB2.JDBC_SCHEMA21.JDBCFUNCTEST212 "
-            + "() RETURNS TABLE(colA varchar) as 'select COLA from JDBC_DB2.JDBC_SCHEMA21.JDBC_TBL211'");
+        "create or replace function JDBC_DB2.JDBC_SCHEMA21.JDBCFUNCTEST212 () RETURNS TABLE(colA"
+            + " varchar) as 'select COLA from JDBC_DB2.JDBC_SCHEMA21.JDBC_TBL211'");
     databaseMetaData = connection.getMetaData();
 
     // test each column return the right value
