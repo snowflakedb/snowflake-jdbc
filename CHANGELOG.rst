@@ -2,6 +2,7 @@
 
 - \| SNOW-532783 | Updating BC FIPS version in public POM 
 - \| SNOW-524708 | Adding streaming ingest related metadata for streaming ingest billing
+- \| SNOW-475617 SNOW-494684 | Fix DatabaseMetadata bugs : double quotes and wildcards
 
 **JDBC Driver 3.13.13**
 
