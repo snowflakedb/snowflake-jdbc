@@ -1,3 +1,8 @@
+**JDBC Driver 3.13.14**
+
+- \| SNOW-532783 | Updating BC FIPS version in public POM 
+- \| SNOW-524708 | Adding streaming ingest related metadata for streaming ingest billing
+
 **JDBC Driver 3.13.13**
 
 - \|SNOW-520660 | Fix for S3 Regional URL not being updated in stageInfo
