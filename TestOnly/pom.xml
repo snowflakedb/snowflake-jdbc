@@ -193,7 +193,7 @@
         <version>3.0.0-M1</version>
         <executions>
           <execution>
-            <id>install-arrow-memory</id>
+            <id>install-arrow-memory-netty</id>
             <phase>validate</phase>
             <goals>
               <goal>install-file</goal>
@@ -201,7 +201,7 @@
             <configuration>
               <file>${project.basedir}/../dependencies/arrow-memory-${arrow.version}.jar</file>
               <groupId>org.apache.arrow</groupId>
-              <artifactId>arrow-memory</artifactId>
+              <artifactId>arrow-memory-netty</artifactId>
               <version>${arrow.version}</version>
               <packaging>jar</packaging>
               <generatePom>true</generatePom>
