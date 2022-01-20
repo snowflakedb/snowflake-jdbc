@@ -15,7 +15,7 @@
       <id>Central</id>
       <name>Internal Central Repo2</name>
       <layout>default</layout>
-      <url>https://repo.maven.apache.org/maven2/</url>
+      <url>https://nexus.int.snowflakecomputing.com/repository/maven-central/</url>
       <snapshots>
         <enabled>false</enabled>
       </snapshots>
