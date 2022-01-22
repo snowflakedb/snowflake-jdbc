@@ -352,7 +352,7 @@
         <version>3.0.0-M1</version>
         <executions>
           <execution>
-            <id>arrow-memory-netty</id>
+            <id>install-arrow-memory-netty</id>
             <phase>validate</phase>
             <goals>
               <goal>install-file</goal>
