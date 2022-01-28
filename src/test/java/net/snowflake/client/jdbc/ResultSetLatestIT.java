@@ -120,6 +120,34 @@ public class ResultSetLatestIT extends ResultSet0IT {
     connection.close();
   }
 
+  /** This tests that the SnowflakeChunkDownloader doesn't hang when memory limits are low. */
+  @Test
+  public void testChunkDownloaderSetRetry() throws SQLException {
+    int stmtCount = 3;
+    int rowCount = 170000;
+    Connection connection = getConnection();
+    connection
+        .unwrap(SnowflakeConnectionV1.class)
+        .getSFBaseSession()
+        .setMemoryLimitForTesting(2000000);
+    // Set memory limit to low number
+    // open multiple statements concurrently to overwhelm current memory allocation
+    for (int i = 0; i < stmtCount; ++i) {
+      long start = System.currentTimeMillis();
+      Statement stmt = connection.createStatement();
+      ResultSet resultSet =
+          stmt.executeQuery(
+              "select randstr(100, random()) from table(generator(rowcount => " + rowCount + "))");
+      // consume half of the results and go to the next statement
+      for (int j = 0; j < rowCount / 2; j++) {
+        resultSet.next();
+      }
+      assertTrue(Pattern.matches("[a-zA-Z0-9]{100}", resultSet.getString(1)));
+      System.out.println(
+          "statement: " + i + " time: " + (System.currentTimeMillis() - start) / 1000 + " s");
+    }
+  }
+
   /**
    * Metadata API metric collection. The old driver didn't collect metrics.
    *
