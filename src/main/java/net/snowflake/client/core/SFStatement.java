@@ -731,20 +731,6 @@ public class SFStatement extends SFBaseStatement {
   }
 
   /**
-   * A method to check if a sql is file upload statement with consideration for potential comments
-   * in front of put keyword.
-   *
-   * <p>
-   *
-   * @param sql sql statement
-   * @return true if the command is upload statement
-   */
-  private boolean isFileTransfer(String sql) {
-    SFStatementType statementType = StmtUtil.checkStageManageCommand(sql);
-    return statementType == SFStatementType.PUT || statementType == SFStatementType.GET;
-  }
-
-  /**
    * Execute sql
    *
    * @param sql sql statement.
