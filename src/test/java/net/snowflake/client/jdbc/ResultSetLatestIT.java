@@ -129,7 +129,7 @@ public class ResultSetLatestIT extends ResultSet0IT {
     connection
         .unwrap(SnowflakeConnectionV1.class)
         .getSFBaseSession()
-        .setMemoryLimitForTesting(2000000);
+        .setMemoryLimitForTesting(2 * 1024 * 1024);
     // Set memory limit to low number
     // open multiple statements concurrently to overwhelm current memory allocation
     for (int i = 0; i < stmtCount; ++i) {
