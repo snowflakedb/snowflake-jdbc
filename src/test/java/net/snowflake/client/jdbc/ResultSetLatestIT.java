@@ -133,7 +133,6 @@ public class ResultSetLatestIT extends ResultSet0IT {
     // Set memory limit to low number
     // open multiple statements concurrently to overwhelm current memory allocation
     for (int i = 0; i < stmtCount; ++i) {
-      long start = System.currentTimeMillis();
       Statement stmt = connection.createStatement();
       ResultSet resultSet =
           stmt.executeQuery(
@@ -143,8 +142,6 @@ public class ResultSetLatestIT extends ResultSet0IT {
         resultSet.next();
       }
       assertTrue(Pattern.matches("[a-zA-Z0-9]{100}", resultSet.getString(1)));
-      System.out.println(
-          "statement: " + i + " time: " + (System.currentTimeMillis() - start) / 1000 + " s");
     }
     // set memory limit back to default invalid value so it does not get used
     connection
