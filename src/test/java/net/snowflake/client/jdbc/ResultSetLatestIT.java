@@ -146,6 +146,12 @@ public class ResultSetLatestIT extends ResultSet0IT {
       System.out.println(
           "statement: " + i + " time: " + (System.currentTimeMillis() - start) / 1000 + " s");
     }
+    // set memory limit back to default invalid value so it does not get used
+    connection
+        .unwrap(SnowflakeConnectionV1.class)
+        .getSFBaseSession()
+        .setMemoryLimitForTesting(SFBaseSession.MEMORY_LIMIT_UNSET);
+    connection.close();
   }
 
   /**
