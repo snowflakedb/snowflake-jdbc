@@ -135,6 +135,20 @@ public abstract class SFBaseStatement {
     }
   }
 
+  /**
+   * A method to check if a sql is file upload statement with consideration for potential comments
+   * in front of put keyword.
+   *
+   * <p>
+   *
+   * @param sql sql statement
+   * @return true if the command is upload statement
+   */
+  public static boolean isFileTransfer(String sql) {
+    SFStatementType statementType = StmtUtil.checkStageManageCommand(sql);
+    return statementType == SFStatementType.PUT || statementType == SFStatementType.GET;
+  }
+
   /** If this is a multi-statement, i.e., has child results. */
   public abstract boolean hasChildren();
 
