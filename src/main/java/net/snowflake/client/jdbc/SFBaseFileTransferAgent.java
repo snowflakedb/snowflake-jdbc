@@ -72,14 +72,14 @@ public abstract class SFBaseFileTransferAgent implements SnowflakeFixedView {
     private String errorDetails;
 
     public UploadCommandFacade(
-            String srcFile,
-            String destFile,
-            String resultStatus,
-            String errorDetails,
-            long srcSize,
-            long destSize,
-            String srcCompressionType,
-            String destCompressionType) {
+        String srcFile,
+        String destFile,
+        String resultStatus,
+        String errorDetails,
+        long srcSize,
+        long destSize,
+        String srcCompressionType,
+        String destCompressionType) {
       this.srcFile = srcFile;
       this.destFile = destFile;
       this.resultStatus = resultStatus;
@@ -100,24 +100,24 @@ public abstract class SFBaseFileTransferAgent implements SnowflakeFixedView {
     private String encryption;
 
     public UploadCommandEncryptionFacade(
-            String srcFile,
-            String destFile,
-            String resultStatus,
-            String errorDetails,
-            long srcSize,
-            long destSize,
-            String srcCompressionType,
-            String destCompressionType,
-            boolean isEncrypted) {
+        String srcFile,
+        String destFile,
+        String resultStatus,
+        String errorDetails,
+        long srcSize,
+        long destSize,
+        String srcCompressionType,
+        String destCompressionType,
+        boolean isEncrypted) {
       super(
-              srcFile,
-              destFile,
-              resultStatus,
-              errorDetails,
-              srcSize,
-              destSize,
-              srcCompressionType,
-              destCompressionType);
+          srcFile,
+          destFile,
+          resultStatus,
+          errorDetails,
+          srcSize,
+          destSize,
+          srcCompressionType,
+          destCompressionType);
       this.encryption = isEncrypted ? "ENCRYPTED" : "";
     }
   }
@@ -153,7 +153,7 @@ public abstract class SFBaseFileTransferAgent implements SnowflakeFixedView {
     private String encryption;
 
     public DownloadCommandEncryptionFacade(
-            String file, String resultStatus, String errorDetails, long size, boolean isEncrypted) {
+        String file, String resultStatus, String errorDetails, long size, boolean isEncrypted) {
       super(file, resultStatus, errorDetails, size);
       this.encryption = isEncrypted ? "DECRYPTED" : "";
     }
