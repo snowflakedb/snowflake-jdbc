@@ -342,6 +342,12 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
             nextChunkToConsume,
             getPrefetchMemRetry);
         currentMemoryUsage.addAndGet(-neededChunkMemory);
+        nextChunk.getLock().lock();
+        try {
+          nextChunk.setDownloadState(DownloadState.FAILURE);
+        } finally {
+          nextChunk.getLock().unlock();
+        }
         break;
       }
 
@@ -390,6 +396,12 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
           logger.debug(
               "Retry limit for prefetch has been reached. Cancel reserved memory and prefetch"
                   + " attempt.");
+          nextChunk.getLock().lock();
+          try {
+            nextChunk.setDownloadState(DownloadState.FAILURE);
+          } finally {
+            nextChunk.getLock().unlock();
+          }
           break;
         }
       }
@@ -663,7 +675,8 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
                     chunkHeadersMap,
                     networkTimeoutInMilli,
                     session));
-        downloaderFutures.put(nextChunkToDownload, downloaderFuture);
+        downloaderFutures.put(nextChunkToConsume, downloaderFuture);
+        nextChunkToDownload = nextChunkToConsume + 1;
       }
     }
     if (currentChunk.getDownloadState() == DownloadState.SUCCESS) {
