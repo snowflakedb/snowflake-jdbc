@@ -675,7 +675,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
                     chunkHeadersMap,
                     networkTimeoutInMilli,
                     session));
-        downloaderFutures.put(nextChunkToConsume, downloaderFuture);
+        downloaderFutures.put(nextChunkToDownload, downloaderFuture);
         nextChunkToDownload = nextChunkToConsume + 1;
       }
     }
