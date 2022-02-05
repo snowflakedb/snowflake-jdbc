@@ -675,8 +675,12 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
                     chunkHeadersMap,
                     networkTimeoutInMilli,
                     session));
-        downloaderFutures.put(nextChunkToConsume, downloaderFuture);
-        nextChunkToDownload = nextChunkToConsume + 1;
+        downloaderFutures.put(nextChunkToDownload, downloaderFuture);
+        // Only when prefetch fails due to internal memory limitation, nextChunkToDownload
+        // equals nextChunkToConsume. In that case we need to increment nextChunkToDownload
+        if (nextChunkToDownload == nextChunkToConsume) {
+          nextChunkToDownload = nextChunkToConsume + 1;
+        }
       }
     }
     if (currentChunk.getDownloadState() == DownloadState.SUCCESS) {
