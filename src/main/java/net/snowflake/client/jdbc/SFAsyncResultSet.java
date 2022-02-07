@@ -13,8 +13,10 @@ import java.util.TimeZone;
 import java.util.regex.Pattern;
 import net.snowflake.client.core.QueryStatus;
 import net.snowflake.client.core.SFBaseResultSet;
+import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.common.core.SqlState;
+// import net.snowflake.client.core.*;
 
 /** SFAsyncResultSet implementation */
 class SFAsyncResultSet extends SnowflakeBaseResultSet implements SnowflakeResultSet, ResultSet {
@@ -22,7 +24,7 @@ class SFAsyncResultSet extends SnowflakeBaseResultSet implements SnowflakeResult
   private ResultSet resultSetForNext = new SnowflakeResultSetV1.EmptyResultSet();
   private boolean resultSetForNextInitialized = false;
   private String queryID;
-  private SFSession session;
+  private SFBaseSession session;
   private Statement extraStatement;
   private QueryStatus lastQueriedStatus = NO_DATA;
 
@@ -41,7 +43,7 @@ class SFAsyncResultSet extends SnowflakeBaseResultSet implements SnowflakeResult
     super(statement);
     this.sfBaseResultSet = sfBaseResultSet;
     this.queryID = sfBaseResultSet.getQueryId();
-    this.session = (SFSession) sfBaseResultSet.getSession();
+    this.session = sfBaseResultSet.getSession();
     this.extraStatement = statement;
     this.resultSetMetaData = new SnowflakeResultSetMetaDataV1(sfBaseResultSet.getMetaData());
     this.resultSetMetaData.setQueryIdForAsyncResults(this.queryID);
