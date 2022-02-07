@@ -144,6 +144,7 @@ public class SFSession extends SFBaseSession {
    * @return enum of type QueryStatus indicating the query's status
    * @throws SQLException
    */
+  @Override
   public QueryStatus getQueryStatus(String queryID) throws SQLException {
     // create the URL to check the query monitoring endpoint
     String statusUrl = "";

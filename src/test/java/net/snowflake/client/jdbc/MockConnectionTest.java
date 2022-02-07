@@ -668,6 +668,11 @@ public class MockConnectionTest extends BaseJDBCTest {
     public void raiseError(Throwable exc, String jobId, String requestId) {}
 
     @Override
+    public QueryStatus getQueryStatus(String queryID) {
+      return null;
+    }
+
+    @Override
     public Telemetry getTelemetryClient() {
       return new Telemetry() {
         @Override
