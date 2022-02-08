@@ -490,4 +490,21 @@ public class TelemetryService {
       this.report(log);
     }
   }
+
+  /** log execution times from various processing slices */
+  public void logExecutionTimeTelemetryEvent(
+          String eventType, JSONObject telemetryData) {
+    if (enabled) {
+      String eventName = "ExecutionTimeRecord";
+      TelemetryEvent.LogBuilder logBuilder = new TelemetryEvent.LogBuilder();
+
+      TelemetryEvent log =
+              logBuilder
+                      .withName(eventName)
+                      .withValue(telemetryData)
+                      .withTag("eventType", eventType)
+                      .build();
+      this.report(log);
+    }
+  }
 }
