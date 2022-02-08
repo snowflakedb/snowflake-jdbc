@@ -17,10 +17,7 @@ import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import net.snowflake.client.core.ParameterBindingDTO;
-import net.snowflake.client.core.SFBaseSession;
-import net.snowflake.client.core.SFBaseStatement;
-import net.snowflake.client.core.SFException;
+import net.snowflake.client.core.*;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SFBaseFileTransferAgent;
 import net.snowflake.client.jdbc.SnowflakeSQLLoggedException;
@@ -407,7 +404,7 @@ public class BindUploader implements Closeable {
       if (session.getArrayBindStage() == null) {
         try {
           SFBaseStatement statement = session.getSfConnectionHandler().getSFStatement();
-          statement.execute(createStageSQL, null, null);
+          statement.execute(createStageSQL, null, null, new ExecTimeTelemetryData());
           session.setArrayBindStage(session.getSfConnectionHandler().getBindStageName());
         } catch (SFException | SQLException ex) {
           // to avoid repeated failures to create stage, disable array bind stage

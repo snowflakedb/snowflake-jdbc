@@ -8,6 +8,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
+import net.snowflake.client.core.ExecTimeTelemetryData;
 import net.snowflake.client.core.HttpClientSettingsKey;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.SFSessionProperty;
@@ -111,7 +112,8 @@ public class ServiceNameTest {
                       Mockito.any(AtomicBoolean.class),
                       Mockito.anyBoolean(),
                       Mockito.anyBoolean(),
-                      Mockito.any(HttpClientSettingsKey.class)))
+                      Mockito.any(HttpClientSettingsKey.class),
+                      Mockito.any(ExecTimeTelemetryData.class)))
           .thenReturn(responseQuery());
 
       Properties props = new Properties();

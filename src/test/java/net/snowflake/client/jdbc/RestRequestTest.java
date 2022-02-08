@@ -3,13 +3,15 @@
  */
 package net.snowflake.client.jdbc;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.*;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
+import net.snowflake.client.core.ExecTimeTelemetryData;
 import org.apache.http.StatusLine;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -52,7 +54,8 @@ public class RestRequestTest {
         false, // without cookie
         includeRetryParameters,
         true,
-        true);
+        true,
+        new ExecTimeTelemetryData());
   }
 
   @Test

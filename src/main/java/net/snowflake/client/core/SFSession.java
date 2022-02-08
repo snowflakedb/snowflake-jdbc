@@ -886,7 +886,8 @@ public class SFSession extends SFBaseSession {
           false, // not describe only
           true, // internal
           false, // asyncExec
-          null // caller isn't a JDBC interface method
+          null, // caller isn't a JDBC interface method
+          new ExecTimeTelemetryData() // Telemetry data- not needed here
           );
     } catch (SFException | SQLException ex) {
       logger.debug("Failed to run a command: {}, err={}", sql, ex);

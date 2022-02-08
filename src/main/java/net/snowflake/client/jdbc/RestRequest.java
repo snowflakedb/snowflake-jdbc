@@ -8,10 +8,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
-import net.snowflake.client.core.Event;
-import net.snowflake.client.core.EventUtil;
-import net.snowflake.client.core.HttpUtil;
-import net.snowflake.client.core.SFOCSPException;
+import net.snowflake.client.core.*;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
@@ -73,7 +70,8 @@ public class RestRequest {
       boolean withoutCookies,
       boolean includeRetryParameters,
       boolean includeRequestGuid,
-      boolean retryHTTP403)
+      boolean retryHTTP403,
+      ExecTimeTelemetryData execTimeData)
       throws SnowflakeSQLException {
     CloseableHttpResponse response = null;
 
@@ -156,8 +154,11 @@ public class RestRequest {
         }
 
         httpRequest.setURI(builder.build());
-
+        long httpClientStart = SnowflakeUtil.getEpochTimeInMicroSeconds();
+        execTimeData.setHttpClientStart(httpClientStart);
         response = httpClient.execute(httpRequest);
+        long httpClientEnd = SnowflakeUtil.getEpochTimeInMicroSeconds();
+        execTimeData.setHttpClientEnd(httpClientEnd);
       } catch (Exception ex) {
         // if exception is caused by illegal state, e.g shutdown of http client
         // because of closing of connection, stop retrying
@@ -303,6 +304,10 @@ public class RestRequest {
         }
 
         retryCount++;
+        execTimeData.incrementRetryCount();
+        String responseCode =
+            response == null ? "null" : String.valueOf(response.getStatusLine().getStatusCode());
+        execTimeData.addRetryLocation("RestRequest StatusCode ".concat(responseCode));
         int numOfRetryToTriggerTelemetry =
             TelemetryService.getInstance().getNumOfRetryToTriggerTelemetry();
         if (retryCount == numOfRetryToTriggerTelemetry) {
