@@ -4,13 +4,14 @@
 
 package net.snowflake.client.jdbc;
 
+import net.snowflake.common.core.ResourceBundleManager;
+import net.snowflake.common.core.SqlState;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.sql.*;
 import java.util.List;
 import java.util.Properties;
-import net.snowflake.common.core.ResourceBundleManager;
-import net.snowflake.common.core.SqlState;
 
 /**
  * JDBC Driver implementation of Snowflake for production. To use this driver, specify the following
@@ -78,10 +79,13 @@ public class SnowflakeDriver implements Driver {
           unsafeClass.getDeclaredMethod(
               "putObjectVolatile", Object.class, long.class, Object.class);
       Method staticFieldOffset = unsafeClass.getDeclaredMethod("staticFieldOffset", Field.class);
+      //Method staticFieldBase = unsafeClass.getDeclaredMethod("staticFieldBase", Field.class);
 
       Class loggerClass = Class.forName("jdk.internal.module.IllegalAccessLogger");
       Field loggerField = loggerClass.getDeclaredField("logger");
       Long offset = (Long) staticFieldOffset.invoke(unsafe, loggerField);
+      //Object loggerBase = staticFieldBase.invoke(unsafe, loggerField);
+      //putObjectVolatile.invoke(unsafe, loggerBase, offset, null);
       putObjectVolatile.invoke(unsafe, loggerClass, offset, null);
     } catch (Throwable ex) {
       // If failed to eliminate warnings, do nothing
