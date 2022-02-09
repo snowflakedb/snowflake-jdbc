@@ -444,7 +444,8 @@ public class ResultSetLatestIT extends ResultSet0IT {
 
     // The generated resultSet must be big enough for triggering result chunk downloader
     String query =
-        "select current_date(), true,2345234, 2343.0, 'testrgint\\n\\t' from table(generator(rowcount=>10000))";
+        "select current_date(), true,2345234, 2343.0, 'testrgint\\n"
+            + "\\t' from table(generator(rowcount=>10000))";
 
     ResultSet resultSet = statement.executeQuery(query);
     resultSet.next(); // should finish successfully
