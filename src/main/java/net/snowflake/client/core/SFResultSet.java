@@ -289,9 +289,7 @@ public class SFResultSet extends SFJsonResultSet {
           || Boolean.TRUE
               .toString()
               .equalsIgnoreCase(systemGetProperty("snowflake.enable_incident_test2"))) {
-        throw (SFException)
-            IncidentUtil.generateIncidentV2WithException(
-                session, new SFException(ErrorCode.MAX_RESULT_LIMIT_EXCEEDED), queryId, null);
+        throw new SFException(ErrorCode.MAX_RESULT_LIMIT_EXCEEDED);
       }
 
       // mark end of result

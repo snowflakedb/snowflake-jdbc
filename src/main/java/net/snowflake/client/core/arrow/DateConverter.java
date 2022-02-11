@@ -8,7 +8,6 @@ import java.sql.Date;
 import java.sql.Timestamp;
 import java.util.TimeZone;
 import net.snowflake.client.core.DataConversionContext;
-import net.snowflake.client.core.IncidentUtil;
 import net.snowflake.client.core.ResultUtil;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.jdbc.ErrorCode;
@@ -102,12 +101,7 @@ public class DateConverter extends AbstractArrowVectorConverter {
   @Override
   public String toString(int index) throws SFException {
     if (context.getDateFormatter() == null) {
-      throw (SFException)
-          IncidentUtil.generateIncidentV2WithException(
-              context.getSession(),
-              new SFException(ErrorCode.INTERNAL_ERROR, "missing date formatter"),
-              null,
-              null);
+      throw new SFException(ErrorCode.INTERNAL_ERROR, "missing date formatter");
     }
     Date date = getDate(index, timeZoneUTC, false);
     return date == null ? null : ResultUtil.getDateAsString(date, context.getDateFormatter());

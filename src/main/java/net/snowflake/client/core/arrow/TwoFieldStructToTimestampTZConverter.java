@@ -8,7 +8,6 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.TimeZone;
 import net.snowflake.client.core.DataConversionContext;
-import net.snowflake.client.core.IncidentUtil;
 import net.snowflake.client.core.ResultUtil;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.jdbc.ErrorCode;
@@ -44,12 +43,7 @@ public class TwoFieldStructToTimestampTZConverter extends AbstractArrowVectorCon
   @Override
   public String toString(int index) throws SFException {
     if (context.getTimestampTZFormatter() == null) {
-      throw (SFException)
-          IncidentUtil.generateIncidentV2WithException(
-              context.getSession(),
-              new SFException(ErrorCode.INTERNAL_ERROR, "missing timestamp LTZ formatter"),
-              null,
-              null);
+      throw new SFException(ErrorCode.INTERNAL_ERROR, "missing timestamp LTZ formatter");
     }
     Timestamp ts = toTimestamp(index, TimeZone.getDefault());
 

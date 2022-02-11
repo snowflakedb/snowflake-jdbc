@@ -9,7 +9,6 @@ import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.util.Calendar;
 import java.util.TimeZone;
-import net.snowflake.client.core.IncidentUtil;
 import net.snowflake.client.core.ResultUtil;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.jdbc.ErrorCode;
@@ -83,12 +82,7 @@ public class ArrowResultUtil {
           (ArgSupplier) newDate::toString);
       return newDate;
     } catch (NumberFormatException ex) {
-      throw (SFException)
-          IncidentUtil.generateIncidentV2WithException(
-              null,
-              new SFException(ErrorCode.INTERNAL_ERROR, "Invalid date value: " + day),
-              null,
-              null);
+      throw new SFException(ErrorCode.INTERNAL_ERROR, "Invalid date value: " + day);
     }
   }
 

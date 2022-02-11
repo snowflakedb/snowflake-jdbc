@@ -5,11 +5,7 @@
 package net.snowflake.client.core;
 
 import com.google.common.base.Preconditions;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.PrintWriter;
+import java.io.*;
 import java.util.zip.GZIPOutputStream;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -29,9 +25,8 @@ public abstract class Event {
   // need to check file size, see if it exceeds maximum (need parameter for this)
 
   public static enum EventType {
-    INCIDENT(1, "INCIDENT", Incident.class),
-    NETWORK_ERROR(2, "NETWORK ERROR", BasicEvent.class),
-    STATE_TRANSITION(3, "STATE TRANSITION", BasicEvent.class),
+    NETWORK_ERROR(1, "NETWORK ERROR", BasicEvent.class),
+    STATE_TRANSITION(2, "STATE TRANSITION", BasicEvent.class),
     NONE(100, "NONE", BasicEvent.class);
 
     public int getId() {

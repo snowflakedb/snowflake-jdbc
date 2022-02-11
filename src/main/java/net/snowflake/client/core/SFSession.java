@@ -805,20 +805,10 @@ public class SFSession extends SFBaseSession {
 
         logger.error("unexpected exception", ex);
 
-        throw (SFException)
-            IncidentUtil.generateIncidentV2WithException(
-                this,
-                new SFException(
-                    ErrorCode.INTERNAL_ERROR, IncidentUtil.oneLiner("unexpected exception", ex)),
-                null,
-                requestId);
+        throw new SFException(
+            ErrorCode.INTERNAL_ERROR, IncidentUtil.oneLiner("unexpected exception", ex));
       }
     } while (retry);
-  }
-
-  @Override
-  public void raiseError(Throwable exc, String jobId, String requestId) {
-    new Incident(this, exc, jobId, requestId).trigger();
   }
 
   void injectedDelay() {
