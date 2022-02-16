@@ -10,6 +10,8 @@ import java.net.URI;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.util.*;
+
+import net.snowflake.client.core.SFSessionProperty;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 
@@ -123,11 +125,12 @@ public class SnowflakeConnectString implements Serializable {
         // Account names should not be altered. Set it to a value without org name
         // if it's a global url
         parameters.put("ACCOUNT", account);
-        if (account.contains("_")) {
-          // Update the Host URL to remove underscores if there are any
-          String account_wo_uscores = account.replaceAll("_", "-");
-          host = host.replaceFirst(account, account_wo_uscores);
-        }
+      }
+      if (account.contains("_") && !((boolean) parameters.get(
+              SFSessionProperty.ALLOW_UNDERSCORES_IN_HOST.getPropertyKey()))) {
+        // Update the Host URL to remove underscores if there are any
+        String account_wo_uscores = account.replaceAll("_", "-");
+        host = host.replaceFirst(account, account_wo_uscores);
       }
 
       return new SnowflakeConnectString(scheme, host, port, parameters, account);
