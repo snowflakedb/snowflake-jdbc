@@ -4,18 +4,19 @@
 
 package net.snowflake.client.jdbc;
 
-import java.io.InputStream;
-import java.io.Reader;
-import java.math.BigDecimal;
-import java.net.URL;
-import java.sql.*;
-import java.sql.Date;
-import java.util.*;
 import net.snowflake.client.core.*;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SFBinary;
 import net.snowflake.common.core.SqlState;
+
+import java.io.InputStream;
+import java.io.Reader;
+import java.math.BigDecimal;
+import java.net.URL;
+import java.sql.Date;
+import java.sql.*;
+import java.util.*;
 
 class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
     implements PreparedStatement, SnowflakePreparedStatement {
@@ -432,8 +433,8 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
   @Override
   public boolean execute() throws SQLException {
     logger.debug("execute: {}", sql);
-
-    return executeInternal(sql, parameterBindings);
+    ExecTimeTelemetryData execTimeData = new ExecTimeTelemetryData(SnowflakeUtil.getEpochTimeInMicroSeconds(), "execute()");
+    return executeInternal(sql, parameterBindings, execTimeData);
   }
 
   @Override

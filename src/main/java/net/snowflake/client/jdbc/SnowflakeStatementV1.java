@@ -4,11 +4,6 @@
 
 package net.snowflake.client.jdbc;
 
-import static net.snowflake.client.jdbc.ErrorCode.FEATURE_UNSUPPORTED;
-
-import java.sql.*;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import net.snowflake.client.core.*;
 import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
@@ -16,6 +11,12 @@ import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.util.SecretDetector;
 import net.snowflake.client.util.VariableTypeArray;
 import net.snowflake.common.core.SqlState;
+
+import java.sql.*;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+
+import static net.snowflake.client.jdbc.ErrorCode.FEATURE_UNSUPPORTED;
 
 /** Snowflake statement */
 class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
@@ -266,7 +267,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
    * @return whether there is result set or not
    * @throws SQLException if @link{#executeQuery(String)} throws exception
    */
-  boolean executeInternal(String sql, Map<String, ParameterBindingDTO> parameterBindings)
+  boolean executeInternal(String sql, Map<String, ParameterBindingDTO> parameterBindings, ExecTimeTelemetryData execData)
       throws SQLException {
     raiseSQLExceptionIfStatementIsClosed();
     connection.injectedDelay();
@@ -339,7 +340,8 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
    */
   @Override
   public boolean execute(String sql) throws SQLException {
-    return executeInternal(sql, null);
+    ExecTimeTelemetryData execTimeData = new ExecTimeTelemetryData(SnowflakeUtil.getEpochTimeInMicroSeconds(), "execute()");
+    return executeInternal(sql, null, execTimeData);
   }
 
   @Override

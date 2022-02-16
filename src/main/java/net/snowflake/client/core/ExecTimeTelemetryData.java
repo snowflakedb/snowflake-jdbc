@@ -3,69 +3,32 @@
  */
 package net.snowflake.client.core;
 
-import java.math.BigDecimal;
-import java.security.cert.CertificateException;
 import net.minidev.json.JSONObject;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 
+import java.security.cert.CertificateException;
+
 public class ExecTimeTelemetryData {
-    private long bindTime;
-    private long encodingTime;
-    private long executeQuery;
-    private long httpRequest;
-    private long beforeHttpLib;
-    private long afterHttpLib;
-    private long end2end;
+    private long queryStart;
+    private long bindStart;
+    private long bindEnd;
+    private long httpClientStart;
+    private long httpClientEnd;
+    private long gzipStart;
+    private long gzipEnd;
+    private long queryEnd;
+    private String batchId;
+    private String queryFunction;
     private Boolean didRetry;
     private Boolean ocspEnabled;
 
-    public ExecTimeTelemetryData(
-            long bindTime,
-            long encodingTime,
-            long executeQuery,
-            long httpRequest,
-            long beforeHttpLib,
-            long afterHttpLib,
-            long end2end,
-            Boolean didRetry,
-            Boolean ocspEnabled) {
-        this.bindTime = bindTime;
-        this.encodingTime = encodingTime;
-        this.executeQuery = executeQuery;
-        this.httpRequest = httpRequest;
-        this.beforeHttpLib = beforeHttpLib;
-        this.afterHttpLib = afterHttpLib;
-        this.end2end = end2end;
-        this.didRetry = didRetry;
-        this.ocspEnabled = ocspEnabled;
+    public ExecTimeTelemetryData(long queryStart, String queryFunction) {
+        this.queryStart = queryStart;
+        this.queryFunction = queryFunction;
     }
 
-    public void setBindTime(long bindTime) {
-        this.bindTime = bindTime;
-    }
-
-    public void setEncodingTime(long encodingTime) {
-        this.encodingTime = encodingTime;
-    }
-
-    public void setExecuteQuery(long executeQuery) {
-        this.executeQuery = executeQuery;
-    }
-
-    public void setHttpRequest(long httpRequest) {
-        this.httpRequest = httpRequest;
-    }
-
-    public void setBeforeHttpLib(long beforeHttpLib) {
-        this.beforeHttpLib = beforeHttpLib;
-    }
-
-    public void setAfterHttpLib(long afterHttpLib) {
-        this.afterHttpLib = afterHttpLib;
-    }
-
-    public void setEnd2end(long end2end) {
-        this.end2end = end2end;
+    public void setBindStart(long bindStart) {
+        this.bindStart = bindStart;
     }
 
     public void setRetry(Boolean didRetry) {
@@ -80,7 +43,7 @@ public class ExecTimeTelemetryData {
         JSONObject value = new JSONObject();
         String valueStr;
         value.put("eventType", eventType);
-        value.put("sfcPeerHost", this.sfcPeerHost);
+        //value.put("sfcPeerHost", this.sfcPeerHost);
         value.put("bindTime", this.bindTime);
         value.put("encodingTime", this.encodingTime);
         value.put("executeQuery", this.executeQuery);
@@ -93,5 +56,37 @@ public class ExecTimeTelemetryData {
         valueStr = value.toString(); // Avoid adding exception stacktrace to user logs.
         TelemetryService.getInstance().logExecutionTimeTelemetryEvent(eventType, value);
         return valueStr;
+    }
+
+    public void setBindEnd(long bindEnd) {
+        this.bindEnd = bindEnd;
+    }
+
+    public void setHttpClientStart(long httpClientStart) {
+        this.httpClientStart = httpClientStart;
+    }
+
+    public void setHttpClientEnd(long httpClientEnd) {
+        this.httpClientEnd = httpClientEnd;
+    }
+
+    public void setGzipStart(long gzipStart) {
+        this.gzipStart = gzipStart;
+    }
+
+    public void setGzipEnd(long gzipEnd) {
+        this.gzipEnd = gzipEnd;
+    }
+
+    public void setQueryEnd(long queryEnd) {
+        this.queryEnd = queryEnd;
+    }
+
+    public void setBatchId(String batchId) {
+        this.batchId = batchId;
+    }
+
+    public void setQueryFunction(String queryFunction) {
+        this.queryFunction = queryFunction;
     }
 }
