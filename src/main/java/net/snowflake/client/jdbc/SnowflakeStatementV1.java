@@ -131,7 +131,8 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
   @Override
   public ResultSet executeQuery(String sql) throws SQLException {
     raiseSQLExceptionIfStatementIsClosed();
-    return executeQueryInternal(sql, false, null);
+    ExecTimeTelemetryData execTimeData = new ExecTimeTelemetryData(SnowflakeUtil.getEpochTimeInMicroSeconds(), "executeQuery()");
+    return executeQueryInternal(sql, false, null, execTimeData);
   }
 
   /**
@@ -143,7 +144,8 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
    */
   public ResultSet executeAsyncQuery(String sql) throws SQLException {
     raiseSQLExceptionIfStatementIsClosed();
-    return executeQueryInternal(sql, true, null);
+    ExecTimeTelemetryData execTimeData = new ExecTimeTelemetryData(SnowflakeUtil.getEpochTimeInMicroSeconds(), "executeAsyncQuery()");
+    return executeQueryInternal(sql, true, null, execTimeData);
   }
 
   /**
@@ -167,11 +169,12 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
    */
   @Override
   public long executeLargeUpdate(String sql) throws SQLException {
-    return executeUpdateInternal(sql, null, true);
+    ExecTimeTelemetryData execTimeData = new ExecTimeTelemetryData(SnowflakeUtil.getEpochTimeInMicroSeconds(), "executeAsyncQuery()");
+    return executeUpdateInternal(sql, null, true, execTimeData);
   }
 
   long executeUpdateInternal(
-      String sql, Map<String, ParameterBindingDTO> parameterBindings, boolean updateQueryRequired)
+      String sql, Map<String, ParameterBindingDTO> parameterBindings, boolean updateQueryRequired, ExecTimeTelemetryData execTimeData)
       throws SQLException {
     raiseSQLExceptionIfStatementIsClosed();
 
@@ -188,7 +191,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
     try {
       sfResultSet =
           sfBaseStatement.execute(
-              sql, parameterBindings, SFBaseStatement.CallingMethod.EXECUTE_UPDATE);
+              sql, parameterBindings, SFBaseStatement.CallingMethod.EXECUTE_UPDATE, execTimeData);
       sfResultSet.setSession(this.connection.getSFBaseSession());
       updateCount = ResultUtil.calculateUpdateCount(sfResultSet);
       queryID = sfResultSet.getQueryId();
@@ -222,7 +225,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
    * @throws SQLException if @link{SFStatement.execute(String)} throws exception
    */
   ResultSet executeQueryInternal(
-      String sql, boolean asyncExec, Map<String, ParameterBindingDTO> parameterBindings)
+      String sql, boolean asyncExec, Map<String, ParameterBindingDTO> parameterBindings, ExecTimeTelemetryData execTimeData)
       throws SQLException {
     SFBaseResultSet sfResultSet;
     try {
@@ -237,7 +240,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
       } else {
         sfResultSet =
             sfBaseStatement.execute(
-                sql, parameterBindings, SFBaseStatement.CallingMethod.EXECUTE_QUERY);
+                sql, parameterBindings, SFBaseStatement.CallingMethod.EXECUTE_QUERY, execTimeData);
       }
 
       sfResultSet.setSession(this.connection.getSFBaseSession());
@@ -267,7 +270,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
    * @return whether there is result set or not
    * @throws SQLException if @link{#executeQuery(String)} throws exception
    */
-  boolean executeInternal(String sql, Map<String, ParameterBindingDTO> parameterBindings, ExecTimeTelemetryData execData)
+  boolean executeInternal(String sql, Map<String, ParameterBindingDTO> parameterBindings, ExecTimeTelemetryData execTimeData)
       throws SQLException {
     raiseSQLExceptionIfStatementIsClosed();
     connection.injectedDelay();
@@ -285,7 +288,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
     SFBaseResultSet sfResultSet;
     try {
       sfResultSet =
-          sfBaseStatement.execute(sql, parameterBindings, SFBaseStatement.CallingMethod.EXECUTE);
+          sfBaseStatement.execute(sql, parameterBindings, SFBaseStatement.CallingMethod.EXECUTE, execTimeData);
       sfResultSet.setSession(this.connection.getSFBaseSession());
       if (resultSet != null) {
         openResultSets.add(resultSet);
@@ -420,9 +423,10 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
     }
     batchQueryIDs.clear();
     for (int i = 0; i < batch.size(); i++) {
+      ExecTimeTelemetryData execTimeData = new ExecTimeTelemetryData(SnowflakeUtil.getEpochTimeInMicroSeconds(), "executeBatch()");
       BatchEntry b = batch.get(i);
       try {
-        long cnt = this.executeUpdateInternal(b.getSql(), b.getParameterBindings(), false);
+        long cnt = this.executeUpdateInternal(b.getSql(), b.getParameterBindings(), false, execTimeData);
         if (cnt == NO_UPDATES) {
           // in executeBatch we set updateCount to SUCCESS_NO_INFO
           // for successful query with no updates

@@ -4,22 +4,7 @@
 
 package net.snowflake.client.core;
 
-import static net.snowflake.client.core.SessionUtil.*;
-import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
-
 import com.fasterxml.jackson.databind.JsonNode;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.Callable;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import net.snowflake.client.core.BasicEvent.QueryState;
 import net.snowflake.client.core.bind.BindException;
 import net.snowflake.client.core.bind.BindUploader;
@@ -34,6 +19,19 @@ import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.util.SecretDetector;
 import net.snowflake.common.core.SqlState;
 import org.apache.http.client.methods.HttpRequestBase;
+
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import static net.snowflake.client.core.SessionUtil.*;
+import static net.snowflake.client.jdbc.SnowflakeUtil.getEpochTimeInMicroSeconds;
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
 /** Snowflake statement */
 public class SFStatement extends SFBaseStatement {
@@ -117,7 +115,8 @@ public class SFStatement extends SFBaseStatement {
       Map<String, ParameterBindingDTO> parametersBinding,
       boolean describeOnly,
       boolean asyncExec,
-      CallingMethod caller)
+      CallingMethod caller,
+      ExecTimeTelemetryData execTimeData)
       throws SQLException, SFException {
     sanityCheckQuery(sql);
 
@@ -138,7 +137,8 @@ public class SFStatement extends SFBaseStatement {
         describeOnly,
         describeOnly, // internal query if describeOnly is true
         asyncExec,
-        caller);
+        caller,
+        execTimeData);
   }
 
   /**
@@ -151,7 +151,7 @@ public class SFStatement extends SFBaseStatement {
    */
   @Override
   public SFStatementMetaData describe(String sql) throws SFException, SQLException {
-    SFBaseResultSet baseResultSet = executeQuery(sql, null, true, false, null);
+    SFBaseResultSet baseResultSet = executeQuery(sql, null, true, false, null, null);
 
     describeJobUUID = baseResultSet.getQueryId();
 
@@ -184,7 +184,8 @@ public class SFStatement extends SFBaseStatement {
       boolean describeOnly,
       boolean internal,
       boolean asyncExec,
-      CallingMethod caller)
+      CallingMethod caller,
+      ExecTimeTelemetryData execTimeData)
       throws SQLException, SFException {
     resetState();
 
@@ -196,7 +197,7 @@ public class SFStatement extends SFBaseStatement {
 
     Object result =
         executeHelper(
-            sql, StmtUtil.SF_MEDIA_TYPE, parameterBindings, describeOnly, internal, asyncExec);
+            sql, StmtUtil.SF_MEDIA_TYPE, parameterBindings, describeOnly, internal, asyncExec, execTimeData);
 
     if (result == null) {
       throw new SnowflakeSQLLoggedException(
@@ -309,7 +310,8 @@ public class SFStatement extends SFBaseStatement {
       Map<String, ParameterBindingDTO> bindValues,
       boolean describeOnly,
       boolean internal,
-      boolean asyncExec)
+      boolean asyncExec,
+      ExecTimeTelemetryData execTimeData)
       throws SnowflakeSQLException, SFException {
     ScheduledExecutorService executor = null;
 
@@ -344,6 +346,8 @@ public class SFStatement extends SFBaseStatement {
 
       // if there are a large number of bind values, we should upload them to stage
       // instead of passing them in the payload (if enabled)
+      long bindStart = SnowflakeUtil.getEpochTimeInMicroSeconds();
+      execTimeData.setBindStart(bindStart);
       int numBinds = BindUploader.arrayBindValueCount(bindValues);
       String bindStagePath = null;
       if (0 < session.getArrayBindStageThreshold()
@@ -463,6 +467,8 @@ public class SFStatement extends SFBaseStatement {
             logger.info("Column {}: {}", entry.getKey(), entry.getValue().getValue());
           }
         }
+        long bindEnd = getEpochTimeInMicroSeconds();
+        execTimeData.setBindEnd(bindEnd);
       }
 
       if (canceling.get()) {
@@ -672,9 +678,9 @@ public class SFStatement extends SFBaseStatement {
 
   @Override
   public SFBaseResultSet execute(
-      String sql, Map<String, ParameterBindingDTO> parametersBinding, CallingMethod caller)
+      String sql, Map<String, ParameterBindingDTO> parametersBinding, CallingMethod caller, ExecTimeTelemetryData execTimeData)
       throws SQLException, SFException {
-    return execute(sql, false, parametersBinding, caller);
+    return execute(sql, false, parametersBinding, caller, execTimeData);
   }
 
   private void reauthenticate() throws SFException, SnowflakeSQLException {
@@ -759,7 +765,8 @@ public class SFStatement extends SFBaseStatement {
       String sql,
       boolean asyncExec,
       Map<String, ParameterBindingDTO> parametersBinding,
-      CallingMethod caller)
+      CallingMethod caller,
+      ExecTimeTelemetryData execTimeData)
       throws SQLException, SFException {
     TelemetryService.getInstance().updateContext(session.getSnowflakeConnectionString());
     sanityCheckQuery(sql);
@@ -778,7 +785,7 @@ public class SFStatement extends SFBaseStatement {
       executeSetProperty(sql);
       return null;
     }
-    return executeQuery(sql, parametersBinding, false, asyncExec, caller);
+    return executeQuery(sql, parametersBinding, false, asyncExec, caller, execTimeData);
   }
 
   private SFBaseResultSet executeFileTransfer(String sql) throws SQLException, SFException {
@@ -944,6 +951,6 @@ public class SFStatement extends SFBaseStatement {
   public SFBaseResultSet asyncExecute(
       String sql, Map<String, ParameterBindingDTO> parametersBinding, CallingMethod caller)
       throws SQLException, SFException {
-    return execute(sql, true, parametersBinding, caller);
+    return execute(sql, true, parametersBinding, caller, /* OOB telemetry data */ null);
   }
 }

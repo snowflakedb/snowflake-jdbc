@@ -4,19 +4,6 @@
 
 package net.snowflake.client.core.bind;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-
-import java.io.ByteArrayInputStream;
-import java.io.Closeable;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.ByteBuffer;
-import java.sql.SQLException;
-import java.sql.Time;
-import java.sql.Timestamp;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.*;
 import net.snowflake.client.core.ParameterBindingDTO;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFBaseStatement;
@@ -29,6 +16,20 @@ import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.util.SFPair;
 import net.snowflake.common.core.SqlState;
+
+import java.io.ByteArrayInputStream;
+import java.io.Closeable;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.ByteBuffer;
+import java.sql.SQLException;
+import java.sql.Time;
+import java.sql.Timestamp;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.*;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class BindUploader implements Closeable {
   private static final SFLogger logger = SFLoggerFactory.getLogger(BindUploader.class);
@@ -407,7 +408,7 @@ public class BindUploader implements Closeable {
       if (session.getArrayBindStage() == null) {
         try {
           SFBaseStatement statement = session.getSfConnectionHandler().getSFStatement();
-          statement.execute(createStageSQL, null, null);
+          statement.execute(createStageSQL, null, null, null);
           session.setArrayBindStage(session.getSfConnectionHandler().getBindStageName());
         } catch (SFException | SQLException ex) {
           // to avoid repeated failures to create stage, disable array bind stage
