@@ -3,9 +3,6 @@
  */
 package net.snowflake.client.jdbc.cloud.storage;
 
-import static net.snowflake.client.core.Constants.CLOUD_STORAGE_CREDENTIALS_EXPIRED;
-import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
-
 import com.amazonaws.util.Base64;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
@@ -16,19 +13,7 @@ import com.google.api.gax.rpc.FixedHeaderProvider;
 import com.google.cloud.storage.*;
 import com.google.cloud.storage.Storage.BlobListOption;
 import com.google.common.base.Strings;
-import java.io.*;
-import java.net.SocketTimeoutException;
-import java.net.URISyntaxException;
-import java.security.InvalidKeyException;
-import java.util.AbstractMap;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import net.snowflake.client.core.HttpClientSettingsKey;
-import net.snowflake.client.core.HttpUtil;
-import net.snowflake.client.core.ObjectMapperFactory;
-import net.snowflake.client.core.SFSession;
+import net.snowflake.client.core.*;
 import net.snowflake.client.jdbc.*;
 import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
@@ -46,6 +31,19 @@ import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.InputStreamEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.util.EntityUtils;
+
+import java.io.*;
+import java.net.SocketTimeoutException;
+import java.net.URISyntaxException;
+import java.security.InvalidKeyException;
+import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+
+import static net.snowflake.client.core.Constants.CLOUD_STORAGE_CREDENTIALS_EXPIRED;
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
 /**
  * Encapsulates the GCS Storage client and all GCS operations and logic
@@ -238,8 +236,8 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
                   false, // no cookie
                   false, // no retry
                   false, // no request_guid
-                  true // retry on HTTP 403
-                  );
+                  true, // retry on HTTP 403
+                  new ExecTimeTelemetryData());
 
           logger.debug(
               "Call returned for URL: {}",
@@ -400,8 +398,8 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
                   false, // no cookie
                   false, // no retry
                   false, // no request_guid
-                  true // retry on HTTP 403
-                  );
+                  true, // retry on HTTP 403
+                  new ExecTimeTelemetryData());
 
           logger.debug(
               "Call returned for URL: {}",
@@ -742,8 +740,8 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
               false, // no cookie
               false, // no retry
               false, // no request_guid
-              true // retry on HTTP 403
-              );
+              true, // retry on HTTP 403
+              new ExecTimeTelemetryData());
 
       logger.debug(
           "Call returned for URL: {}",

@@ -260,6 +260,7 @@ public class SFStatement extends SFBaseStatement {
     if (asyncExec) {
       session.activeAsyncQueries.add(resultSet.getQueryId());
     }
+    execTimeData.setQueryId(resultSet.getQueryId());
     return resultSet;
   }
 

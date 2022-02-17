@@ -258,7 +258,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
     } else {
       resultSet = connection.getHandler().createResultSet(sfResultSet, this);
     }
-
+    // maybe add queryEnd time here? Or maybe set ResultSet object redundantly in SnowflakeStatement class? idk
     return getResultSet();
   }
 

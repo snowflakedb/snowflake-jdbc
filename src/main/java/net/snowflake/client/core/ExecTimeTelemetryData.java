@@ -3,9 +3,6 @@
  */
 package net.snowflake.client.core;
 
-import net.minidev.json.JSONObject;
-import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
-
 import java.security.cert.CertificateException;
 
 public class ExecTimeTelemetryData {
@@ -18,6 +15,7 @@ public class ExecTimeTelemetryData {
     private long gzipEnd;
     private long queryEnd;
     private String batchId;
+    private String queryId;
     private String queryFunction;
     private Boolean didRetry;
     private Boolean ocspEnabled;
@@ -45,7 +43,7 @@ public class ExecTimeTelemetryData {
     }
 
     public String generateTelemetry(String eventType, CertificateException ex) {
-        JSONObject value = new JSONObject();
+        /*JSONObject value = new JSONObject();
         String valueStr;
         value.put("eventType", eventType);
         //value.put("sfcPeerHost", this.sfcPeerHost);
@@ -60,7 +58,8 @@ public class ExecTimeTelemetryData {
         value.put("ocspEnabled", this.ocspEnabled);
         valueStr = value.toString(); // Avoid adding exception stacktrace to user logs.
         TelemetryService.getInstance().logExecutionTimeTelemetryEvent(eventType, value);
-        return valueStr;
+        return valueStr; */
+        return "";
     }
 
     public void setBindEnd(long bindEnd) {
@@ -93,5 +92,9 @@ public class ExecTimeTelemetryData {
 
     public void setQueryFunction(String queryFunction) {
         this.queryFunction = queryFunction;
+    }
+
+    public void setQueryId(String queryId) {
+        this.queryId = queryId;
     }
 }

@@ -1,13 +1,6 @@
 package net.snowflake.client.jdbc;
 
-import static net.snowflake.client.core.Constants.MB;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.PushbackInputStream;
-import java.net.URISyntaxException;
-import java.util.Map;
-import java.util.zip.GZIPInputStream;
+import net.snowflake.client.core.ExecTimeTelemetryData;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.util.SecretDetector;
@@ -18,6 +11,15 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.PushbackInputStream;
+import java.net.URISyntaxException;
+import java.util.Map;
+import java.util.zip.GZIPInputStream;
+
+import static net.snowflake.client.core.Constants.MB;
 
 public class DefaultResultStreamProvider implements ResultStreamProvider {
   // SSE-C algorithm header
@@ -127,8 +129,8 @@ public class DefaultResultStreamProvider implements ResultStreamProvider {
             false, // no cookie
             false, // no retry
             false, // no request_guid
-            true // retry on HTTP403 for AWS S3
-            );
+            true, // retry on HTTP403 for AWS S3
+            new ExecTimeTelemetryData());
 
     SnowflakeResultSetSerializableV1.logger.debug(
         "Thread {} Call #chunk{} returned for URL: {}, response={}",
