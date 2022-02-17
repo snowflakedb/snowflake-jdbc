@@ -21,10 +21,15 @@ public class ExecTimeTelemetryData {
     private String queryFunction;
     private Boolean didRetry;
     private Boolean ocspEnabled;
+    boolean sendData = true;
 
     public ExecTimeTelemetryData(long queryStart, String queryFunction) {
         this.queryStart = queryStart;
         this.queryFunction = queryFunction;
+    }
+
+    public ExecTimeTelemetryData() {
+        this.sendData = false;
     }
 
     public void setBindStart(long bindStart) {

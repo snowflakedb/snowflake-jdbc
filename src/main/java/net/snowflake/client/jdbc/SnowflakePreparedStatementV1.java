@@ -110,7 +110,7 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
 
   @Override
   public ResultSet executeQuery() throws SQLException {
-    ExecTimeTelemetryData execTimeData = new ExecTimeTelemetryData(SnowflakeUtil.getEpochTimeInMicroSeconds(), "executeLargeUpdate()");
+    ExecTimeTelemetryData execTimeData = new ExecTimeTelemetryData(SnowflakeUtil.getEpochTimeInMicroSeconds(), "ResultSet PreparedStatement.executeQuery()");
     if (showStatementParameters) {
       logger.info("executeQuery()");
     } else {
@@ -126,7 +126,7 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
    * @throws SQLException
    */
   public ResultSet executeAsyncQuery() throws SQLException {
-    ExecTimeTelemetryData execTimeData = new ExecTimeTelemetryData(SnowflakeUtil.getEpochTimeInMicroSeconds(), "executeLargeUpdate()");
+    ExecTimeTelemetryData execTimeData = new ExecTimeTelemetryData(SnowflakeUtil.getEpochTimeInMicroSeconds(), "ResultSet PreparedStatement.executeAsyncQuery()");
     if (showStatementParameters) {
       logger.info("executeAsyncQuery()");
     } else {
@@ -137,7 +137,7 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
 
   @Override
   public long executeLargeUpdate() throws SQLException {
-    ExecTimeTelemetryData execTimeData = new ExecTimeTelemetryData(SnowflakeUtil.getEpochTimeInMicroSeconds(), "executeLargeUpdate()");
+    ExecTimeTelemetryData execTimeData = new ExecTimeTelemetryData(SnowflakeUtil.getEpochTimeInMicroSeconds(), "long PreparedStatement.executeLargeUpdate()");
     logger.debug("executeLargeUpdate()");
     return executeUpdateInternal(sql, parameterBindings, true, execTimeData);
   }
@@ -433,8 +433,8 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
 
   @Override
   public boolean execute() throws SQLException {
+    ExecTimeTelemetryData execTimeData = new ExecTimeTelemetryData(SnowflakeUtil.getEpochTimeInMicroSeconds(), "boolean PreparedStatement.execute()");
     logger.debug("execute: {}", sql);
-    ExecTimeTelemetryData execTimeData = new ExecTimeTelemetryData(SnowflakeUtil.getEpochTimeInMicroSeconds(), "execute()");
     return executeInternal(sql, parameterBindings, execTimeData);
   }
 

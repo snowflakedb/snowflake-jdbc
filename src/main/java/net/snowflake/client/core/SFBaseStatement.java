@@ -93,7 +93,7 @@ public abstract class SFBaseStatement {
    * @throws SQLException if SQL error occurs
    */
   public abstract SFBaseResultSet asyncExecute(
-      String sql, Map<String, ParameterBindingDTO> parametersBinding, CallingMethod caller)
+      String sql, Map<String, ParameterBindingDTO> parametersBinding, CallingMethod caller, ExecTimeTelemetryData execTimeData)
       throws SQLException, SFException;
 
 

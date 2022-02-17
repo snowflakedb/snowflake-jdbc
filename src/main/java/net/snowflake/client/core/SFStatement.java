@@ -344,6 +344,7 @@ public class SFStatement extends SFBaseStatement {
           BasicEvent.QueryState.QUERY_STARTED,
           String.format(QueryState.QUERY_STARTED.getArgString(), requestId));
 
+      StmtUtil.StmtInput stmtInput = new StmtUtil.StmtInput();
       // if there are a large number of bind values, we should upload them to stage
       // instead of passing them in the payload (if enabled)
       long bindStart = SnowflakeUtil.getEpochTimeInMicroSeconds();
@@ -388,36 +389,6 @@ public class SFStatement extends SFBaseStatement {
               requestId);
         }
       }
-
-      if (session.isConservativeMemoryUsageEnabled()) {
-        logger.debug("JDBC conservative memory usage is enabled.");
-        calculateConservativeMemoryUsage();
-      }
-
-      StmtUtil.StmtInput stmtInput = new StmtUtil.StmtInput();
-      stmtInput
-          .setSql(sql)
-          .setMediaType(mediaType)
-          .setInternal(internal)
-          .setDescribeOnly(describeOnly)
-          .setAsync(asyncExec)
-          .setServerUrl(session.getServerUrl())
-          .setRequestId(requestId)
-          .setSequenceId(sequenceId)
-          .setParametersMap(statementParametersMap)
-          .setSessionToken(session.getSessionToken())
-          .setNetworkTimeoutInMillis(session.getNetworkTimeoutInMilli())
-          .setInjectSocketTimeout(session.getInjectSocketTimeout())
-          .setInjectClientPause(session.getInjectClientPause())
-          .setCanceling(canceling)
-          .setRetry(false)
-          .setDescribedJobId(describeJobUUID)
-          .setCombineDescribe(session.getEnableCombineDescribe())
-          .setQuerySubmissionTime(System.currentTimeMillis())
-          .setServiceName(session.getServiceName())
-          .setOCSPMode(session.getOCSPMode())
-          .setHttpClientSettingsKey(session.getHttpClientKey());
-
       if (bindStagePath != null) {
         stmtInput.setBindValues(null).setBindStage(bindStagePath);
         // use the new SQL format for this query so dates/timestamps are parsed correctly
@@ -467,9 +438,37 @@ public class SFStatement extends SFBaseStatement {
             logger.info("Column {}: {}", entry.getKey(), entry.getValue().getValue());
           }
         }
-        long bindEnd = getEpochTimeInMicroSeconds();
-        execTimeData.setBindEnd(bindEnd);
       }
+      long bindEnd = getEpochTimeInMicroSeconds();
+      execTimeData.setBindEnd(bindEnd);
+
+      if (session.isConservativeMemoryUsageEnabled()) {
+        logger.debug("JDBC conservative memory usage is enabled.");
+        calculateConservativeMemoryUsage();
+      }
+
+      stmtInput
+              .setSql(sql)
+              .setMediaType(mediaType)
+              .setInternal(internal)
+              .setDescribeOnly(describeOnly)
+              .setAsync(asyncExec)
+              .setServerUrl(session.getServerUrl())
+              .setRequestId(requestId)
+              .setSequenceId(sequenceId)
+              .setParametersMap(statementParametersMap)
+              .setSessionToken(session.getSessionToken())
+              .setNetworkTimeoutInMillis(session.getNetworkTimeoutInMilli())
+              .setInjectSocketTimeout(session.getInjectSocketTimeout())
+              .setInjectClientPause(session.getInjectClientPause())
+              .setCanceling(canceling)
+              .setRetry(false)
+              .setDescribedJobId(describeJobUUID)
+              .setCombineDescribe(session.getEnableCombineDescribe())
+              .setQuerySubmissionTime(System.currentTimeMillis())
+              .setServiceName(session.getServiceName())
+              .setOCSPMode(session.getOCSPMode())
+              .setHttpClientSettingsKey(session.getHttpClientKey());
 
       if (canceling.get()) {
         logger.debug("Query cancelled");
@@ -490,7 +489,7 @@ public class SFStatement extends SFBaseStatement {
       do {
         sessionRenewed = false;
         try {
-          stmtOutput = StmtUtil.execute(stmtInput);
+          stmtOutput = StmtUtil.execute(stmtInput, execTimeData);
           break;
         } catch (SnowflakeSQLException ex) {
           if (ex.getErrorCode() == Constants.SESSION_EXPIRED_GS_CODE) {
@@ -949,8 +948,8 @@ public class SFStatement extends SFBaseStatement {
 
   @Override
   public SFBaseResultSet asyncExecute(
-      String sql, Map<String, ParameterBindingDTO> parametersBinding, CallingMethod caller)
+      String sql, Map<String, ParameterBindingDTO> parametersBinding, CallingMethod caller, ExecTimeTelemetryData execTimeData)
       throws SQLException, SFException {
-    return execute(sql, true, parametersBinding, caller, /* OOB telemetry data */ null);
+    return execute(sql, true, parametersBinding, caller, execTimeData);
   }
 }

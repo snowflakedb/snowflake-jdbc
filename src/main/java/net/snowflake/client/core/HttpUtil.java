@@ -579,7 +579,8 @@ public class HttpUtil {
       AtomicBoolean canceling,
       boolean includeRetryParameters,
       boolean retryOnHTTP403,
-      HttpClientSettingsKey ocspAndProxyKey)
+      HttpClientSettingsKey ocspAndProxyKey,
+      ExecTimeTelemetryData execTimeData)
       throws SnowflakeSQLException, IOException {
     return executeRequestInternal(
         httpRequest,
@@ -590,7 +591,8 @@ public class HttpUtil {
         includeRetryParameters,
         true, // include request GUID
         retryOnHTTP403,
-        ocspAndProxyKey);
+        ocspAndProxyKey,
+        execTimeData);
   }
 
   /**
@@ -622,7 +624,8 @@ public class HttpUtil {
       boolean includeRetryParameters,
       boolean includeRequestGuid,
       boolean retryOnHTTP403,
-      HttpClientSettingsKey ocspAndProxyKey)
+      HttpClientSettingsKey ocspAndProxyKey,
+      ExecTimeTelemetryData execTimeData)
       throws SnowflakeSQLException, IOException {
     // HttpRequest.toString() contains request URI. Scrub any credentials, if
     // present, before logging
@@ -635,6 +638,7 @@ public class HttpUtil {
     StringWriter writer = null;
     CloseableHttpResponse response = null;
     try {
+
       response =
           RestRequest.execute(
               getHttpClient(ocspAndProxyKey),
@@ -645,7 +649,8 @@ public class HttpUtil {
               withoutCookies,
               includeRetryParameters,
               includeRequestGuid,
-              retryOnHTTP403);
+              retryOnHTTP403,
+              execTimeData);
 
       if (response == null || response.getStatusLine().getStatusCode() != 200) {
         logger.error("Error executing request: {}", requestInfoScrubbed);

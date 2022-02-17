@@ -131,7 +131,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
   @Override
   public ResultSet executeQuery(String sql) throws SQLException {
     raiseSQLExceptionIfStatementIsClosed();
-    ExecTimeTelemetryData execTimeData = new ExecTimeTelemetryData(SnowflakeUtil.getEpochTimeInMicroSeconds(), "executeQuery()");
+    ExecTimeTelemetryData execTimeData = new ExecTimeTelemetryData(SnowflakeUtil.getEpochTimeInMicroSeconds(), "ResultSet Statement.executeQuery(String)");
     return executeQueryInternal(sql, false, null, execTimeData);
   }
 
@@ -144,7 +144,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
    */
   public ResultSet executeAsyncQuery(String sql) throws SQLException {
     raiseSQLExceptionIfStatementIsClosed();
-    ExecTimeTelemetryData execTimeData = new ExecTimeTelemetryData(SnowflakeUtil.getEpochTimeInMicroSeconds(), "executeAsyncQuery()");
+    ExecTimeTelemetryData execTimeData = new ExecTimeTelemetryData(SnowflakeUtil.getEpochTimeInMicroSeconds(), "ResultSet Statement.executeAsyncQuery(String)");
     return executeQueryInternal(sql, true, null, execTimeData);
   }
 
@@ -169,7 +169,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
    */
   @Override
   public long executeLargeUpdate(String sql) throws SQLException {
-    ExecTimeTelemetryData execTimeData = new ExecTimeTelemetryData(SnowflakeUtil.getEpochTimeInMicroSeconds(), "executeAsyncQuery()");
+    ExecTimeTelemetryData execTimeData = new ExecTimeTelemetryData(SnowflakeUtil.getEpochTimeInMicroSeconds(), "long Statement.executeLargeUpdate(String)");
     return executeUpdateInternal(sql, null, true, execTimeData);
   }
 
@@ -236,7 +236,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
         }
         sfResultSet =
             sfBaseStatement.asyncExecute(
-                sql, parameterBindings, SFBaseStatement.CallingMethod.EXECUTE_QUERY);
+                sql, parameterBindings, SFBaseStatement.CallingMethod.EXECUTE_QUERY, execTimeData);
       } else {
         sfResultSet =
             sfBaseStatement.execute(
@@ -343,7 +343,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
    */
   @Override
   public boolean execute(String sql) throws SQLException {
-    ExecTimeTelemetryData execTimeData = new ExecTimeTelemetryData(SnowflakeUtil.getEpochTimeInMicroSeconds(), "execute()");
+    ExecTimeTelemetryData execTimeData = new ExecTimeTelemetryData(SnowflakeUtil.getEpochTimeInMicroSeconds(), "boolean Statement.execute(String)");
     return executeInternal(sql, null, execTimeData);
   }
 
@@ -423,10 +423,9 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
     }
     batchQueryIDs.clear();
     for (int i = 0; i < batch.size(); i++) {
-      ExecTimeTelemetryData execTimeData = new ExecTimeTelemetryData(SnowflakeUtil.getEpochTimeInMicroSeconds(), "executeBatch()");
       BatchEntry b = batch.get(i);
       try {
-        long cnt = this.executeUpdateInternal(b.getSql(), b.getParameterBindings(), false, execTimeData);
+        long cnt = this.executeUpdateInternal(b.getSql(), b.getParameterBindings(), false, null);
         if (cnt == NO_UPDATES) {
           // in executeBatch we set updateCount to SUCCESS_NO_INFO
           // for successful query with no updates

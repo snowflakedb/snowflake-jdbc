@@ -3,11 +3,7 @@
  */
 package net.snowflake.client.jdbc;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
-
-import java.util.Properties;
-import java.util.concurrent.atomic.AtomicBoolean;
+import net.snowflake.client.core.ExecTimeTelemetryData;
 import net.snowflake.client.core.HttpClientSettingsKey;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.SFSessionProperty;
@@ -15,6 +11,12 @@ import org.apache.http.client.methods.HttpRequestBase;
 import org.junit.Test;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
+
+import java.util.Properties;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /** Unit test for SERVICE_NAME parameter. */
 public class ServiceNameTest {
@@ -111,7 +113,8 @@ public class ServiceNameTest {
                       Mockito.any(AtomicBoolean.class),
                       Mockito.anyBoolean(),
                       Mockito.anyBoolean(),
-                      Mockito.any(HttpClientSettingsKey.class)))
+                      Mockito.any(HttpClientSettingsKey.class),
+                      Mockito.any(ExecTimeTelemetryData.class)))
           .thenReturn(responseQuery());
 
       Properties props = new Properties();
