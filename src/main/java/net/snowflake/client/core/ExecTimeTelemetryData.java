@@ -13,6 +13,8 @@ public class ExecTimeTelemetryData {
     private long httpClientEnd;
     private long gzipStart;
     private long gzipEnd;
+    private long processResultChunkStart;
+    private long processResultChunkEnd;
     private long queryEnd;
     private String batchId;
     private String queryId;
@@ -21,9 +23,10 @@ public class ExecTimeTelemetryData {
     private Boolean ocspEnabled;
     boolean sendData = true;
 
-    public ExecTimeTelemetryData(long queryStart, String queryFunction) {
+    public ExecTimeTelemetryData(long queryStart, String queryFunction, String batchId) {
         this.queryStart = queryStart;
         this.queryFunction = queryFunction;
+        this.batchId = batchId;
     }
 
     public ExecTimeTelemetryData() {
@@ -96,5 +99,13 @@ public class ExecTimeTelemetryData {
 
     public void setQueryId(String queryId) {
         this.queryId = queryId;
+    }
+
+    public void setProcessResultChunkStart(long processResultChunkStart) {
+        this.processResultChunkStart = processResultChunkStart;
+    }
+
+    public void setProcessResultChunkEnd(long processResultChunkEnd) {
+        this.processResultChunkEnd = processResultChunkEnd;
     }
 }

@@ -29,6 +29,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
   protected final int resultSetType;
   protected final int resultSetConcurrency;
   protected final int resultSetHoldability;
+  protected String batchID = "";
 
   /*
    * The maximum number of rows this statement ( should return (0 => all rows).
@@ -130,9 +131,11 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
    */
   @Override
   public ResultSet executeQuery(String sql) throws SQLException {
+    ExecTimeTelemetryData execTimeData = new ExecTimeTelemetryData(SnowflakeUtil.getEpochTimeInMicroSeconds(), "ResultSet Statement.executeQuery(String)", this.batchID);
     raiseSQLExceptionIfStatementIsClosed();
-    ExecTimeTelemetryData execTimeData = new ExecTimeTelemetryData(SnowflakeUtil.getEpochTimeInMicroSeconds(), "ResultSet Statement.executeQuery(String)");
-    return executeQueryInternal(sql, false, null, execTimeData);
+    ResultSet rs = executeQueryInternal(sql, false, null, execTimeData);
+    execTimeData.setQueryEnd(SnowflakeUtil.getEpochTimeInMicroSeconds());
+    return rs;
   }
 
   /**
@@ -143,9 +146,11 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
    * @throws SQLException if @link{#executeQueryInternal(String, Map)} throws an exception
    */
   public ResultSet executeAsyncQuery(String sql) throws SQLException {
+    ExecTimeTelemetryData execTimeData = new ExecTimeTelemetryData(SnowflakeUtil.getEpochTimeInMicroSeconds(), "ResultSet Statement.executeAsyncQuery(String)", this.batchID);
     raiseSQLExceptionIfStatementIsClosed();
-    ExecTimeTelemetryData execTimeData = new ExecTimeTelemetryData(SnowflakeUtil.getEpochTimeInMicroSeconds(), "ResultSet Statement.executeAsyncQuery(String)");
-    return executeQueryInternal(sql, true, null, execTimeData);
+    ResultSet rs = executeQueryInternal(sql, true, null, execTimeData);
+    execTimeData.setQueryEnd(SnowflakeUtil.getEpochTimeInMicroSeconds());
+    return rs;
   }
 
   /**
@@ -169,8 +174,10 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
    */
   @Override
   public long executeLargeUpdate(String sql) throws SQLException {
-    ExecTimeTelemetryData execTimeData = new ExecTimeTelemetryData(SnowflakeUtil.getEpochTimeInMicroSeconds(), "long Statement.executeLargeUpdate(String)");
-    return executeUpdateInternal(sql, null, true, execTimeData);
+    ExecTimeTelemetryData execTimeData = new ExecTimeTelemetryData(SnowflakeUtil.getEpochTimeInMicroSeconds(), "long Statement.executeLargeUpdate(String)", this.batchID);
+    long res = executeUpdateInternal(sql, null, true, execTimeData);
+    execTimeData.setQueryEnd(SnowflakeUtil.getEpochTimeInMicroSeconds());
+    return res;
   }
 
   long executeUpdateInternal(
@@ -258,7 +265,6 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
     } else {
       resultSet = connection.getHandler().createResultSet(sfResultSet, this);
     }
-    // maybe add queryEnd time here? Or maybe set ResultSet object redundantly in SnowflakeStatement class? idk
     return getResultSet();
   }
 
@@ -343,8 +349,10 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
    */
   @Override
   public boolean execute(String sql) throws SQLException {
-    ExecTimeTelemetryData execTimeData = new ExecTimeTelemetryData(SnowflakeUtil.getEpochTimeInMicroSeconds(), "boolean Statement.execute(String)");
-    return executeInternal(sql, null, execTimeData);
+    ExecTimeTelemetryData execTimeData = new ExecTimeTelemetryData(SnowflakeUtil.getEpochTimeInMicroSeconds(), "boolean Statement.execute(String)", this.batchID);
+    boolean res = executeInternal(sql, null, execTimeData);
+    execTimeData.setQueryEnd(SnowflakeUtil.getEpochTimeInMicroSeconds());
+    return res;
   }
 
   @Override
@@ -768,6 +776,11 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
     } catch (SFException ex) {
       throw new SnowflakeSQLException(ex);
     }
+  }
+
+  @Override
+  public void setBatchID(String batchID) {
+    this.batchID = batchID;
   }
 
   @Override

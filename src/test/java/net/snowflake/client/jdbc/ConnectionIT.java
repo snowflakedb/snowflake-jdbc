@@ -52,7 +52,9 @@ public class ConnectionIT extends BaseJDBCTest {
   public void testSimpleConnection() throws SQLException {
     Connection con = getConnection();
     Statement statement = con.createStatement();
-    ResultSet resultSet = statement.executeQuery("select 1");
+    statement.unwrap(SnowflakeStatement.class).setBatchID("megtestbatch");
+    statement.execute("create or replace table empty_table (c1 string)");
+    ResultSet resultSet = statement.executeQuery("select * from empty_table");
     assertTrue(resultSet.next());
     assertFalse(con.isClosed());
     statement.close();

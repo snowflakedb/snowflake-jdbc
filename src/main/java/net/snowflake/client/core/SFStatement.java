@@ -218,7 +218,7 @@ public class SFStatement extends SFBaseStatement {
 
     try {
       JsonNode jsonResult = (JsonNode) result;
-      resultSet = SFResultSetFactory.getResultSet(jsonResult, this, sortResult);
+      resultSet = SFResultSetFactory.getResultSet(jsonResult, this, sortResult, execTimeData);
       childResults = ResultUtil.getChildResults(session, requestId, jsonResult);
 
       // if child results are available, skip over this result set and set the
@@ -926,7 +926,7 @@ public class SFStatement extends SFBaseStatement {
       JsonNode result = StmtUtil.getQueryResultJSON(nextResult.getId(), session);
       Object sortProperty = session.getSessionPropertyByKey("sort");
       boolean sortResult = sortProperty != null && (Boolean) sortProperty;
-      resultSet = SFResultSetFactory.getResultSet(result, this, sortResult);
+      resultSet = SFResultSetFactory.getResultSet(result, this, sortResult, new ExecTimeTelemetryData());
       // override statement type so we can treat the result set like a result of
       // the original statement called (and not the result scan)
       resultSet.setStatementType(nextResult.getType());
