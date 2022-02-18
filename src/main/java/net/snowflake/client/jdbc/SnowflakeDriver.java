@@ -68,6 +68,8 @@ public class SnowflakeDriver implements Driver {
     // The netty dependency of arrow will cause an illegal reflective access warning
     // This function try to eliminate the warning by setting
     // jdk.internal.module.IllegalAccessLogger's logger as null
+    // Disable this function and manually run arrow tests, e.g. testResultSetMetadata., then
+    // the warning can be found in output.
     try {
       Class unsafeClass = Class.forName("sun.misc.Unsafe");
       Field field = unsafeClass.getDeclaredField("theUnsafe");
@@ -78,11 +80,13 @@ public class SnowflakeDriver implements Driver {
           unsafeClass.getDeclaredMethod(
               "putObjectVolatile", Object.class, long.class, Object.class);
       Method staticFieldOffset = unsafeClass.getDeclaredMethod("staticFieldOffset", Field.class);
+      Method staticFieldBase = unsafeClass.getDeclaredMethod("staticFieldBase", Field.class);
 
       Class loggerClass = Class.forName("jdk.internal.module.IllegalAccessLogger");
       Field loggerField = loggerClass.getDeclaredField("logger");
-      Long offset = (Long) staticFieldOffset.invoke(unsafe, loggerField);
-      putObjectVolatile.invoke(unsafe, loggerClass, offset, null);
+      Long loggerOffset = (Long) staticFieldOffset.invoke(unsafe, loggerField);
+      Object loggerBase = staticFieldBase.invoke(unsafe, loggerField);
+      putObjectVolatile.invoke(unsafe, loggerBase, loggerOffset, null);
     } catch (Throwable ex) {
       // If failed to eliminate warnings, do nothing
     }
