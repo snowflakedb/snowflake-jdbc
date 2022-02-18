@@ -4,11 +4,27 @@
 
 package net.snowflake.client.core;
 
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
+import static org.apache.http.client.config.CookieSpecs.DEFAULT;
+import static org.apache.http.client.config.CookieSpecs.IGNORE_COOKIES;
+
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.Protocol;
 import com.google.common.base.Strings;
 import com.microsoft.azure.storage.OperationContext;
 import com.snowflake.client.jdbc.SnowflakeDriver;
+import java.io.*;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
+import java.net.Socket;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.util.Map;
+import java.util.Properties;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import javax.net.ssl.TrustManager;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.RestRequest;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
@@ -39,23 +55,6 @@ import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.ssl.SSLInitializationException;
 import org.apache.http.util.EntityUtils;
-
-import javax.net.ssl.TrustManager;
-import java.io.*;
-import java.net.InetSocketAddress;
-import java.net.Proxy;
-import java.net.Socket;
-import java.security.KeyManagementException;
-import java.security.NoSuchAlgorithmException;
-import java.util.Map;
-import java.util.Properties;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
-import static org.apache.http.client.config.CookieSpecs.DEFAULT;
-import static org.apache.http.client.config.CookieSpecs.IGNORE_COOKIES;
 
 public class HttpUtil {
   static final SFLogger logger = SFLoggerFactory.getLogger(HttpUtil.class);
@@ -674,12 +673,13 @@ public class HttpUtil {
                     : "null response"));
       }
 
+      execTimeData.setResponseIOStreamStart(SnowflakeUtil.getEpochTimeInMicroSeconds());
       writer = new StringWriter();
       try (InputStream ins = response.getEntity().getContent()) {
         IOUtils.copy(ins, writer, "UTF-8");
       }
-
       theString = writer.toString();
+      execTimeData.setResponseIOStreamEnd(SnowflakeUtil.getEpochTimeInMicroSeconds());
     } finally {
       IOUtils.closeQuietly(writer);
       IOUtils.closeQuietly(response);

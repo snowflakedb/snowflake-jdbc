@@ -7,6 +7,15 @@ package net.snowflake.client.core;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.zip.GZIPOutputStream;
 import net.snowflake.client.core.BasicEvent.QueryState;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
@@ -23,16 +32,6 @@ import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.entity.StringEntity;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.zip.GZIPOutputStream;
 
 /** Statement Util */
 public class StmtUtil {
@@ -244,7 +243,8 @@ public class StmtUtil {
    * @throws SFException exception raised from Snowflake components
    * @throws SnowflakeSQLException exception raised from Snowflake components
    */
-  public static StmtOutput execute(StmtInput stmtInput, ExecTimeTelemetryData execTimeData) throws SFException, SnowflakeSQLException {
+  public static StmtOutput execute(StmtInput stmtInput, ExecTimeTelemetryData execTimeData)
+      throws SFException, SnowflakeSQLException {
     HttpPost httpRequest = null;
 
     AssertUtil.assertTrue(
@@ -347,7 +347,7 @@ public class StmtUtil {
                 execTimeData);
       }
 
-      return pollForOutput(resultAsString, stmtInput, httpRequest);
+      return pollForOutput(resultAsString, stmtInput, httpRequest, execTimeData);
     } catch (Exception ex) {
       if (!(ex instanceof SnowflakeSQLException)) {
         if (ex instanceof IOException) {
@@ -382,7 +382,10 @@ public class StmtUtil {
   }
 
   private static StmtOutput pollForOutput(
-      String resultAsString, StmtInput stmtInput, HttpPost httpRequest)
+      String resultAsString,
+      StmtInput stmtInput,
+      HttpPost httpRequest,
+      ExecTimeTelemetryData execTimeData)
       throws SFException, SnowflakeSQLException {
     /*
      * Check response for error or for ping pong response
@@ -434,7 +437,8 @@ public class StmtUtil {
                   stmtInput.requestId);
         } else {
           logger.debug("Will retry get result. Retry count: {}", retries);
-
+          execTimeData.incrementRetryCount();
+          execTimeData.addRetryLocation("StmtUtil null response");
           retries++;
         }
       } else {
@@ -476,7 +480,8 @@ public class StmtUtil {
             }
           }
         }
-
+        execTimeData.incrementRetryCount();
+        execTimeData.addRetryLocation("StmtUtil queryInProgress");
         resultAsString = getQueryResult(pingPongResponseJson, previousGetResultPath, stmtInput);
 
         // save the previous get result path in case we run into session
@@ -583,7 +588,7 @@ public class StmtUtil {
           false, // no retry parameter
           false, // no retry on HTTP 403
           stmtInput.httpClientSettingsKey,
-              new ExecTimeTelemetryData());
+          new ExecTimeTelemetryData());
     } catch (URISyntaxException | IOException ex) {
       logger.error("Exception encountered when getting result for " + httpRequest, ex);
 
@@ -618,7 +623,8 @@ public class StmtUtil {
 
     String resultAsString = getQueryResult(getResultPath, stmtInput);
 
-    StmtOutput stmtOutput = pollForOutput(resultAsString, stmtInput, null);
+    StmtOutput stmtOutput =
+        pollForOutput(resultAsString, stmtInput, null, new ExecTimeTelemetryData());
     return stmtOutput.getResult();
   }
 
@@ -696,7 +702,7 @@ public class StmtUtil {
               false, // no retry parameter
               false, // no retry on HTTP 403
               stmtInput.httpClientSettingsKey,
-                  new ExecTimeTelemetryData());
+              new ExecTimeTelemetryData());
 
       // trace the response if requested
       logger.debug("Json response: {}", jsonString);

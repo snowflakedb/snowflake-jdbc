@@ -4,6 +4,11 @@
 
 package net.snowflake.client.jdbc;
 
+import static net.snowflake.client.jdbc.ErrorCode.FEATURE_UNSUPPORTED;
+
+import java.sql.*;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import net.snowflake.client.core.*;
 import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
@@ -11,12 +16,6 @@ import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.util.SecretDetector;
 import net.snowflake.client.util.VariableTypeArray;
 import net.snowflake.common.core.SqlState;
-
-import java.sql.*;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-
-import static net.snowflake.client.jdbc.ErrorCode.FEATURE_UNSUPPORTED;
 
 /** Snowflake statement */
 class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
@@ -131,7 +130,11 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
    */
   @Override
   public ResultSet executeQuery(String sql) throws SQLException {
-    ExecTimeTelemetryData execTimeData = new ExecTimeTelemetryData(SnowflakeUtil.getEpochTimeInMicroSeconds(), "ResultSet Statement.executeQuery(String)", this.batchID);
+    ExecTimeTelemetryData execTimeData =
+        new ExecTimeTelemetryData(
+            SnowflakeUtil.getEpochTimeInMicroSeconds(),
+            "ResultSet Statement.executeQuery(String)",
+            this.batchID);
     raiseSQLExceptionIfStatementIsClosed();
     ResultSet rs = executeQueryInternal(sql, false, null, execTimeData);
     execTimeData.setQueryEnd(SnowflakeUtil.getEpochTimeInMicroSeconds());
@@ -147,7 +150,11 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
    * @throws SQLException if @link{#executeQueryInternal(String, Map)} throws an exception
    */
   public ResultSet executeAsyncQuery(String sql) throws SQLException {
-    ExecTimeTelemetryData execTimeData = new ExecTimeTelemetryData(SnowflakeUtil.getEpochTimeInMicroSeconds(), "ResultSet Statement.executeAsyncQuery(String)", this.batchID);
+    ExecTimeTelemetryData execTimeData =
+        new ExecTimeTelemetryData(
+            SnowflakeUtil.getEpochTimeInMicroSeconds(),
+            "ResultSet Statement.executeAsyncQuery(String)",
+            this.batchID);
     raiseSQLExceptionIfStatementIsClosed();
     ResultSet rs = executeQueryInternal(sql, true, null, execTimeData);
     execTimeData.setQueryEnd(SnowflakeUtil.getEpochTimeInMicroSeconds());
@@ -176,7 +183,11 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
    */
   @Override
   public long executeLargeUpdate(String sql) throws SQLException {
-    ExecTimeTelemetryData execTimeData = new ExecTimeTelemetryData(SnowflakeUtil.getEpochTimeInMicroSeconds(), "long Statement.executeLargeUpdate(String)", this.batchID);
+    ExecTimeTelemetryData execTimeData =
+        new ExecTimeTelemetryData(
+            SnowflakeUtil.getEpochTimeInMicroSeconds(),
+            "long Statement.executeLargeUpdate(String)",
+            this.batchID);
     long res = executeUpdateInternal(sql, null, true, execTimeData);
     execTimeData.setQueryEnd(SnowflakeUtil.getEpochTimeInMicroSeconds());
     execTimeData.generateTelemetry();
@@ -184,7 +195,10 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
   }
 
   long executeUpdateInternal(
-      String sql, Map<String, ParameterBindingDTO> parameterBindings, boolean updateQueryRequired, ExecTimeTelemetryData execTimeData)
+      String sql,
+      Map<String, ParameterBindingDTO> parameterBindings,
+      boolean updateQueryRequired,
+      ExecTimeTelemetryData execTimeData)
       throws SQLException {
     raiseSQLExceptionIfStatementIsClosed();
 
@@ -235,7 +249,10 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
    * @throws SQLException if @link{SFStatement.execute(String)} throws exception
    */
   ResultSet executeQueryInternal(
-      String sql, boolean asyncExec, Map<String, ParameterBindingDTO> parameterBindings, ExecTimeTelemetryData execTimeData)
+      String sql,
+      boolean asyncExec,
+      Map<String, ParameterBindingDTO> parameterBindings,
+      ExecTimeTelemetryData execTimeData)
       throws SQLException {
     SFBaseResultSet sfResultSet;
     try {
@@ -279,7 +296,10 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
    * @return whether there is result set or not
    * @throws SQLException if @link{#executeQuery(String)} throws exception
    */
-  boolean executeInternal(String sql, Map<String, ParameterBindingDTO> parameterBindings, ExecTimeTelemetryData execTimeData)
+  boolean executeInternal(
+      String sql,
+      Map<String, ParameterBindingDTO> parameterBindings,
+      ExecTimeTelemetryData execTimeData)
       throws SQLException {
     raiseSQLExceptionIfStatementIsClosed();
     connection.injectedDelay();
@@ -297,7 +317,8 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
     SFBaseResultSet sfResultSet;
     try {
       sfResultSet =
-          sfBaseStatement.execute(sql, parameterBindings, SFBaseStatement.CallingMethod.EXECUTE, execTimeData);
+          sfBaseStatement.execute(
+              sql, parameterBindings, SFBaseStatement.CallingMethod.EXECUTE, execTimeData);
       sfResultSet.setSession(this.connection.getSFBaseSession());
       if (resultSet != null) {
         openResultSets.add(resultSet);
@@ -352,7 +373,11 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
    */
   @Override
   public boolean execute(String sql) throws SQLException {
-    ExecTimeTelemetryData execTimeData = new ExecTimeTelemetryData(SnowflakeUtil.getEpochTimeInMicroSeconds(), "boolean Statement.execute(String)", this.batchID);
+    ExecTimeTelemetryData execTimeData =
+        new ExecTimeTelemetryData(
+            SnowflakeUtil.getEpochTimeInMicroSeconds(),
+            "boolean Statement.execute(String)",
+            this.batchID);
     boolean res = executeInternal(sql, null, execTimeData);
     execTimeData.setQueryEnd(SnowflakeUtil.getEpochTimeInMicroSeconds());
     System.out.println(execTimeData.generateTelemetry());

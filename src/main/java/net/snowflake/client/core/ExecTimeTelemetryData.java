@@ -3,115 +3,144 @@
  */
 package net.snowflake.client.core;
 
+import jdk.internal.joptsimple.internal.Strings;
 import net.minidev.json.JSONObject;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 
 public class ExecTimeTelemetryData {
-    private long queryStart;
-    private long bindStart;
-    private long bindEnd;
-    private long gzipStart;
-    private long gzipEnd;
-    private long httpClientStart;
-    private long httpClientEnd;
-    private long processResultChunkStart;
-    private long processResultChunkEnd;
-    private long queryEnd;
-    private String batchId;
-    private String queryId;
-    private String queryFunction;
-    private Boolean didRetry = false;
-    private Boolean ocspEnabled = false;
-    boolean sendData = true;
+  private long queryStart;
+  private long bindStart;
+  private long bindEnd;
+  private long gzipStart;
+  private long gzipEnd;
+  private long httpClientStart;
+  private long httpClientEnd;
+  private long responseIOStreamStart;
+  private long responseIOStreamEnd;
+  private long processResultChunkStart;
+  private long processResultChunkEnd;
+  private long createResultSetStart;
+  private long createResultSetEnd;
+  private long queryEnd;
+  private String batchId;
+  private String queryId;
+  private String queryFunction;
+  private int retryCount = 0;
+  private String retryLocations = "";
+  private Boolean ocspEnabled = false;
+  boolean sendData = true;
 
-    public ExecTimeTelemetryData(long queryStart, String queryFunction, String batchId) {
-        this.queryStart = queryStart;
-        this.queryFunction = queryFunction;
-        this.batchId = batchId;
-    }
+  public ExecTimeTelemetryData(long queryStart, String queryFunction, String batchId) {
+    this.queryStart = queryStart;
+    this.queryFunction = queryFunction;
+    this.batchId = batchId;
+  }
 
-    public ExecTimeTelemetryData() {
-        this.sendData = false;
-    }
+  public ExecTimeTelemetryData() {
+    this.sendData = false;
+  }
 
-    public void setBindStart(long bindStart) {
-        this.bindStart = bindStart;
-    }
+  public void setBindStart(long bindStart) {
+    this.bindStart = bindStart;
+  }
 
-    public void setRetry(Boolean didRetry) {
-        this.didRetry = didRetry;
-    }
+  public void setOCSPStatus(Boolean ocspEnabled) {
+    this.ocspEnabled = ocspEnabled;
+  }
 
-    public void setOCSPStatus(Boolean ocspEnabled) {
-        this.ocspEnabled = ocspEnabled;
-    }
+  public void setBindEnd(long bindEnd) {
+    this.bindEnd = bindEnd;
+  }
 
-    public String generateTelemetry() {
-        String eventType = "ExecutionTimeRecord";
-        JSONObject value = new JSONObject();
-        String valueStr;
-        value.put("eventType", eventType);
-        value.put("QueryStart", this.queryStart);
-        value.put("BindStart", this.bindStart);
-        value.put("BindEnd", this.bindEnd);
-        value.put("GzipStart", this.gzipStart);
-        value.put("GzipEnd", this.gzipEnd);
-        value.put("HttpClientStart", this.httpClientStart);
-        value.put("HttpClientEnd", this.httpClientEnd);
-        value.put("ProcessResultChunkStart", this.processResultChunkStart);
-        value.put("ProcessResultChunkEnd", this.processResultChunkEnd);
-        value.put("QueryEnd", this.queryEnd);
-        value.put("BatchID", this.batchId);
-        value.put("QueryID", this.queryId);
-        value.put("QueryFunction", this.queryFunction);
-        value.put("DidRetry", this.didRetry);
-        value.put("ocspEnabled", this.ocspEnabled);
-        valueStr = value.toString(); // Avoid adding exception stacktrace to user logs.
-        TelemetryService.getInstance().logExecutionTimeTelemetryEvent(value, eventType);
-        return valueStr;
-    }
+  public void setHttpClientStart(long httpClientStart) {
+    this.httpClientStart = httpClientStart;
+  }
 
-    public void setBindEnd(long bindEnd) {
-        this.bindEnd = bindEnd;
-    }
+  public void setHttpClientEnd(long httpClientEnd) {
+    this.httpClientEnd = httpClientEnd;
+  }
 
-    public void setHttpClientStart(long httpClientStart) {
-        this.httpClientStart = httpClientStart;
-    }
+  public void setGzipStart(long gzipStart) {
+    this.gzipStart = gzipStart;
+  }
 
-    public void setHttpClientEnd(long httpClientEnd) {
-        this.httpClientEnd = httpClientEnd;
-    }
+  public void setGzipEnd(long gzipEnd) {
+    this.gzipEnd = gzipEnd;
+  }
 
-    public void setGzipStart(long gzipStart) {
-        this.gzipStart = gzipStart;
-    }
+  public void setQueryEnd(long queryEnd) {
+    this.queryEnd = queryEnd;
+  }
 
-    public void setGzipEnd(long gzipEnd) {
-        this.gzipEnd = gzipEnd;
-    }
+  public void setQueryId(String queryId) {
+    this.queryId = queryId;
+  }
 
-    public void setQueryEnd(long queryEnd) {
-        this.queryEnd = queryEnd;
-    }
+  public void setProcessResultChunkStart(long processResultChunkStart) {
+    this.processResultChunkStart = processResultChunkStart;
+  }
 
-    public void setBatchId(String batchId) {
-        this.batchId = batchId;
-    }
+  public void setProcessResultChunkEnd(long processResultChunkEnd) {
+    this.processResultChunkEnd = processResultChunkEnd;
+  }
 
-    public void setQueryFunction(String queryFunction) {
-        this.queryFunction = queryFunction;
-    }
+  public void setResponseIOStreamStart(long ioStreamStart) {
+    this.responseIOStreamStart = ioStreamStart;
+  }
 
-    public void setQueryId(String queryId) {
-        this.queryId = queryId;
-    }
+  public void setResponseIOStreamEnd(long ioStreamEnd) {
+    this.responseIOStreamEnd = ioStreamEnd;
+  }
 
-    public void setProcessResultChunkStart(long processResultChunkStart) {
-        this.processResultChunkStart = processResultChunkStart;
-    }
+  public void setCreateResultSetStart(long createResultSetStart) {
+    this.createResultSetStart = createResultSetStart;
+  }
 
-    public void setProcessResultChunkEnd(long processResultChunkEnd) {
-        this.processResultChunkEnd = processResultChunkEnd;
+  public void setCreateResultSetEnd(long createResultSetEnd) {
+    this.createResultSetEnd = createResultSetEnd;
+  }
+
+  public void incrementRetryCount() {
+    this.retryCount++;
+  }
+
+  public void addRetryLocation(String location) {
+    if (Strings.isNullOrEmpty(this.retryLocations)) {
+      this.retryLocations = location;
+    } else {
+      this.retryLocations = this.retryLocations.concat(", ").concat(location);
     }
+  }
+
+  public String generateTelemetry() {
+    String eventType = "ExecutionTimeRecord";
+    JSONObject value = new JSONObject();
+    String valueStr;
+    value.put("eventType", eventType);
+    value.put("QueryStart", this.queryStart);
+    value.put("BindStart", this.bindStart);
+    value.put("BindEnd", this.bindEnd);
+    value.put("GzipStart", this.gzipStart);
+    value.put("GzipEnd", this.gzipEnd);
+    value.put("HttpClientStart", this.httpClientStart);
+    value.put("HttpClientEnd", this.httpClientEnd);
+    value.put("ResponseIOStreamStart", this.responseIOStreamStart);
+    value.put("ResponseIOStreamEnd", this.responseIOStreamEnd);
+    value.put("ProcessResultChunkStart", this.processResultChunkStart);
+    value.put("ProcessResultChunkEnd", this.processResultChunkEnd);
+    value.put("CreateResultSetStart", this.createResultSetStart);
+    value.put("CreatResultSetEnd", this.createResultSetEnd);
+    value.put("QueryEnd", this.queryEnd);
+    value.put("BatchID", this.batchId);
+    value.put("QueryID", this.queryId);
+    value.put("QueryFunction", this.queryFunction);
+    value.put("RetryCount", this.retryCount);
+    value.put("RetryLocations", this.retryLocations);
+    value.put("ocspEnabled", this.ocspEnabled);
+    value.put("ElapsedQueryTime", (this.queryEnd - this.queryStart));
+    value.put("ElapsedResultProcessTime", (this.createResultSetEnd - this.processResultChunkStart));
+    valueStr = value.toString(); // Avoid adding exception stacktrace to user logs.
+    TelemetryService.getInstance().logExecutionTimeTelemetryEvent(value, eventType);
+    return valueStr;
+  }
 }

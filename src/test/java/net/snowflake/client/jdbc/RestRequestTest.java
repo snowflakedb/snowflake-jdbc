@@ -3,6 +3,14 @@
  */
 package net.snowflake.client.jdbc;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.*;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import net.snowflake.client.core.ExecTimeTelemetryData;
 import org.apache.http.StatusLine;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -12,15 +20,6 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.junit.Test;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.*;
 
 /** RestRequest unit tests. */
 public class RestRequestTest {
@@ -56,7 +55,7 @@ public class RestRequestTest {
         includeRetryParameters,
         true,
         true,
-            new ExecTimeTelemetryData());
+        new ExecTimeTelemetryData());
   }
 
   @Test

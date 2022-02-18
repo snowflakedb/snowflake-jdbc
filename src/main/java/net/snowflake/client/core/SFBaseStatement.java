@@ -4,13 +4,12 @@
 
 package net.snowflake.client.core;
 
-import net.snowflake.client.jdbc.ErrorCode;
-import net.snowflake.client.log.SFLogger;
-import net.snowflake.client.log.SFLoggerFactory;
-
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
+import net.snowflake.client.jdbc.ErrorCode;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
 
 /**
  * Base abstract class for an SFStatement implementation. Statements are used in executing queries,
@@ -75,7 +74,10 @@ public abstract class SFBaseStatement {
    * @throws SQLException if SQL error occurs
    */
   public abstract SFBaseResultSet execute(
-      String sql, Map<String, ParameterBindingDTO> parametersBinding, CallingMethod caller, ExecTimeTelemetryData execTimeData)
+      String sql,
+      Map<String, ParameterBindingDTO> parametersBinding,
+      CallingMethod caller,
+      ExecTimeTelemetryData execTimeData)
       throws SQLException, SFException;
 
   /**
@@ -93,9 +95,11 @@ public abstract class SFBaseStatement {
    * @throws SQLException if SQL error occurs
    */
   public abstract SFBaseResultSet asyncExecute(
-      String sql, Map<String, ParameterBindingDTO> parametersBinding, CallingMethod caller, ExecTimeTelemetryData execTimeData)
+      String sql,
+      Map<String, ParameterBindingDTO> parametersBinding,
+      CallingMethod caller,
+      ExecTimeTelemetryData execTimeData)
       throws SQLException, SFException;
-
 
   /**
    * Closes the statement. Open result sets are closed, connections are terminated, state is

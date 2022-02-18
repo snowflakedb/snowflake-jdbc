@@ -5,6 +5,14 @@
 package net.snowflake.client.jdbc;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import java.io.*;
+import java.lang.reflect.Field;
+import java.sql.Types;
+import java.time.Instant;
+import java.util.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
 import net.snowflake.client.core.HttpClientSettingsKey;
 import net.snowflake.client.core.OCSPMode;
 import net.snowflake.client.core.SFBaseSession;
@@ -17,15 +25,6 @@ import net.snowflake.common.util.FixedViewColumn;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.Header;
 import org.apache.http.HttpResponse;
-
-import java.io.*;
-import java.lang.reflect.Field;
-import java.sql.Types;
-import java.time.Instant;
-import java.util.*;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.ThreadPoolExecutor;
 
 /** @author jhuang */
 public class SnowflakeUtil {
@@ -71,7 +70,7 @@ public class SnowflakeUtil {
 
   public static long getEpochTimeInMicroSeconds() {
     Instant timestamp = Instant.now();
-    return timestamp.toEpochMilli()*1000 + timestamp.getNano()/1000;
+    return timestamp.toEpochMilli() * 1000 + timestamp.getNano() / 1000;
   }
 
   /**

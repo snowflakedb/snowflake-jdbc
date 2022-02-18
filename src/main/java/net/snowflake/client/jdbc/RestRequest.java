@@ -4,6 +4,10 @@
 
 package net.snowflake.client.jdbc;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 import net.snowflake.client.core.*;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.client.log.ArgSupplier;
@@ -16,11 +20,6 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
-
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.util.UUID;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * This is an abstraction on top of http client.
@@ -63,16 +62,16 @@ public class RestRequest {
    *     State Exception i.e. connection is already shutdown etc
    */
   public static CloseableHttpResponse execute(
-          CloseableHttpClient httpClient,
-          HttpRequestBase httpRequest,
-          long retryTimeout,
-          int injectSocketTimeout,
-          AtomicBoolean canceling,
-          boolean withoutCookies,
-          boolean includeRetryParameters,
-          boolean includeRequestGuid,
-          boolean retryHTTP403,
-          ExecTimeTelemetryData execTimeData)
+      CloseableHttpClient httpClient,
+      HttpRequestBase httpRequest,
+      long retryTimeout,
+      int injectSocketTimeout,
+      AtomicBoolean canceling,
+      boolean withoutCookies,
+      boolean includeRetryParameters,
+      boolean includeRequestGuid,
+      boolean retryHTTP403,
+      ExecTimeTelemetryData execTimeData)
       throws SnowflakeSQLException {
     CloseableHttpResponse response = null;
 
@@ -305,7 +304,10 @@ public class RestRequest {
         }
 
         retryCount++;
-        execTimeData.setRetry(true);
+        execTimeData.incrementRetryCount();
+        String responseCode =
+            response == null ? "null" : String.valueOf(response.getStatusLine().getStatusCode());
+        execTimeData.addRetryLocation("RestRequest StatusCode ".concat(responseCode));
         int numOfRetryToTriggerTelemetry =
             TelemetryService.getInstance().getNumOfRetryToTriggerTelemetry();
         if (retryCount == numOfRetryToTriggerTelemetry) {
