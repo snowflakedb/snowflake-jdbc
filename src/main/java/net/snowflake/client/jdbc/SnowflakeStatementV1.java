@@ -380,7 +380,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
             this.batchID);
     boolean res = executeInternal(sql, null, execTimeData);
     execTimeData.setQueryEnd(SnowflakeUtil.getEpochTimeInMicroSeconds());
-    System.out.println(execTimeData.generateTelemetry());
+    execTimeData.generateTelemetry();
     return res;
   }
 

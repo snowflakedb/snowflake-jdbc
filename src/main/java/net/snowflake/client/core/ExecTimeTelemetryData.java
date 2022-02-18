@@ -3,7 +3,7 @@
  */
 package net.snowflake.client.core;
 
-import jdk.internal.joptsimple.internal.Strings;
+import com.google.common.base.Strings;
 import net.minidev.json.JSONObject;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 
