@@ -261,7 +261,12 @@ public class SnowflakeDriverTest {
     expectedParameters.put("ACCOUNT", "testaccount");
     testCases.add(
         new TestCase(
-            "jdbc:snowflake://testaccount.com:", "https", "testaccount.com", 443, null, expectedParameters));
+            "jdbc:snowflake://testaccount.com:",
+            "https",
+            "testaccount.com",
+            443,
+            null,
+            expectedParameters));
 
     expectedParameters = new HashMap<>();
     expectedParameters.put(

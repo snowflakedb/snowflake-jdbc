@@ -10,7 +10,6 @@ import java.net.URI;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.util.*;
-
 import net.snowflake.client.core.SFSessionProperty;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -128,10 +127,16 @@ public class SnowflakeConnectString implements Serializable {
       }
 
       if (account.contains("_")
-              && parameters.containsKey(SFSessionProperty.ALLOW_UNDERSCORES_IN_HOST.getPropertyKey().toUpperCase())
-              && "false".equalsIgnoreCase((String) parameters.get(
-                      SFSessionProperty.ALLOW_UNDERSCORES_IN_HOST.getPropertyKey().toUpperCase()))
-              && host.startsWith(account)) {
+          && parameters.containsKey(
+              SFSessionProperty.ALLOW_UNDERSCORES_IN_HOST.getPropertyKey().toUpperCase())
+          && "false"
+              .equalsIgnoreCase(
+                  (String)
+                      parameters.get(
+                          SFSessionProperty.ALLOW_UNDERSCORES_IN_HOST
+                              .getPropertyKey()
+                              .toUpperCase()))
+          && host.startsWith(account)) {
         // The account needs to have underscores in it and the host URL needs to start
         // with the account name. There are cases where the host URL might not have the
         // the account name in it, ex - ip address instead of host name.
