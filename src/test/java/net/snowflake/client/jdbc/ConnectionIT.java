@@ -52,12 +52,32 @@ public class ConnectionIT extends BaseJDBCTest {
   public void testSimpleConnection() throws SQLException {
     Connection con = getConnection();
     Statement statement = con.createStatement();
-    statement.unwrap(SnowflakeStatement.class).setBatchID("megtestbatch");
-    statement.execute("create or replace table empty_table (c1 string)");
-    ResultSet resultSet = statement.executeQuery("select * from empty_table");
+    statement.execute("alter session set CLIENT_OUT_OF_BAND_TELEMETRY_ENABLED=true");
+    statement.unwrap(SnowflakeStatement.class).setBatchID("testbatch5");
+    statement.execute("create or replace table test_table (c1 string)");
+    statement.execute("insert into test_table values('hello')");
+    ResultSet resultSet = statement.executeQuery("select * from test_table");
     assertTrue(resultSet.next());
-    assertFalse(con.isClosed());
+    statement.execute("delete from test_table where c1='hello'");
+    statement.unwrap(SnowflakeStatement.class).setBatchID("testbatch6");
+    statement.execute("create or replace table test_table_2 (c1 int)");
+    statement.execute("insert into test_table_2 values(5)");
+    resultSet = statement.executeQuery("select * from test_table_2");
+    assertTrue(resultSet.next());
+    statement.execute("delete from test_table_2 where c1=5");
     statement.close();
+    PreparedStatement prepSt = con.prepareStatement("create or replace table bind_table (c1 string, c2 int)");
+    prepSt.unwrap(SnowflakeStatement.class).setBatchID("prepstTestBatch3");
+    prepSt.execute();
+    prepSt = con.prepareStatement("insert into bind_table values (?,?)");
+    prepSt.setString(1, "line1");
+    prepSt.setInt(2, 27);
+    prepSt.execute();
+    prepSt = con.prepareStatement("select * from bind_table");
+    resultSet = prepSt.executeQuery();
+    assertTrue(resultSet.next());
+    prepSt = con.prepareStatement("delete from bind_table where c2=27");
+    prepSt.execute();
     con.close();
     assertTrue(con.isClosed());
     con.close(); // ensure no exception

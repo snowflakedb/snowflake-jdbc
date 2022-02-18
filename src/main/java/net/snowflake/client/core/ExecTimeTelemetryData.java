@@ -20,8 +20,8 @@ public class ExecTimeTelemetryData {
     private String batchId;
     private String queryId;
     private String queryFunction;
-    private Boolean didRetry;
-    private Boolean ocspEnabled;
+    private Boolean didRetry = false;
+    private Boolean ocspEnabled = false;
     boolean sendData = true;
 
     public ExecTimeTelemetryData(long queryStart, String queryFunction, String batchId) {
@@ -63,7 +63,7 @@ public class ExecTimeTelemetryData {
         value.put("QueryEnd", this.queryEnd);
         value.put("BatchID", this.batchId);
         value.put("QueryID", this.queryId);
-        value.put("Query Function", this.queryFunction);
+        value.put("QueryFunction", this.queryFunction);
         value.put("DidRetry", this.didRetry);
         value.put("ocspEnabled", this.ocspEnabled);
         valueStr = value.toString(); // Avoid adding exception stacktrace to user logs.
