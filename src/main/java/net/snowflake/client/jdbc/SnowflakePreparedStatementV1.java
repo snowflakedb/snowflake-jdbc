@@ -830,7 +830,9 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
         }
 
         int updateCount =
-            (int) executeUpdateInternal(this.sql, batchParameterBindings, false, null);
+            (int)
+                executeUpdateInternal(
+                    this.sql, batchParameterBindings, false, new ExecTimeTelemetryData());
 
         // when update count is the same as the number of bindings in the batch,
         // expand the update count into an array (SNOW-14034)

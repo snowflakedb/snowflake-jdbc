@@ -150,7 +150,8 @@ public class SFStatement extends SFBaseStatement {
    */
   @Override
   public SFStatementMetaData describe(String sql) throws SFException, SQLException {
-    SFBaseResultSet baseResultSet = executeQuery(sql, null, true, false, null, null);
+    SFBaseResultSet baseResultSet =
+        executeQuery(sql, null, true, false, null, new ExecTimeTelemetryData());
 
     describeJobUUID = baseResultSet.getQueryId();
 

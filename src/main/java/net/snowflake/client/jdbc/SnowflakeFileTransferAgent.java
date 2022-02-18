@@ -1219,7 +1219,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
               false, // describeOnly
               false, // internal
               false, // async
-              null); // OOB telemetry timing queries
+              new ExecTimeTelemetryData()); // OOB telemetry timing queries
     } catch (SFException ex) {
       throw new SnowflakeSQLException(ex, ex.getSqlState(), ex.getVendorCode(), ex.getParams());
     }

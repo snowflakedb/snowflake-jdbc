@@ -462,7 +462,9 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
     for (int i = 0; i < batch.size(); i++) {
       BatchEntry b = batch.get(i);
       try {
-        long cnt = this.executeUpdateInternal(b.getSql(), b.getParameterBindings(), false, null);
+        long cnt =
+            this.executeUpdateInternal(
+                b.getSql(), b.getParameterBindings(), false, new ExecTimeTelemetryData());
         if (cnt == NO_UPDATES) {
           // in executeBatch we set updateCount to SUCCESS_NO_INFO
           // for successful query with no updates
