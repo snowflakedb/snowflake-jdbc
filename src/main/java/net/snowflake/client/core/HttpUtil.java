@@ -640,8 +640,9 @@ public class HttpUtil {
     String theString;
     StringWriter writer = null;
     CloseableHttpResponse response = null;
+    boolean ocspEnabled = !(ocspAndProxyKey.getOcspMode().equals(OCSPMode.INSECURE));
+    execTimeData.setOCSPStatus(ocspEnabled);
     try {
-
       response =
           RestRequest.execute(
               getHttpClient(ocspAndProxyKey),

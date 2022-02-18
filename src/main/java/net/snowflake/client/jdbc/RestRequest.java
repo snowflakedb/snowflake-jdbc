@@ -305,6 +305,7 @@ public class RestRequest {
         }
 
         retryCount++;
+        execTimeData.setRetry(true);
         int numOfRetryToTriggerTelemetry =
             TelemetryService.getInstance().getNumOfRetryToTriggerTelemetry();
         if (retryCount == numOfRetryToTriggerTelemetry) {

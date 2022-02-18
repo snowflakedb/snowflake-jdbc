@@ -118,6 +118,7 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
     }
     ResultSet rs = executeQueryInternal(sql, false, parameterBindings, execTimeData);
     execTimeData.setQueryEnd(SnowflakeUtil.getEpochTimeInMicroSeconds());
+    execTimeData.generateTelemetry();
     return rs;
   }
 
@@ -136,6 +137,7 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
     }
     ResultSet rs = executeQueryInternal(sql, true, parameterBindings, execTimeData);
     execTimeData.setQueryEnd(SnowflakeUtil.getEpochTimeInMicroSeconds());
+    execTimeData.generateTelemetry();
     return rs;
   }
 
@@ -145,6 +147,7 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
     logger.debug("executeLargeUpdate()");
     long res = executeUpdateInternal(sql, parameterBindings, true, execTimeData);
     execTimeData.setQueryEnd(SnowflakeUtil.getEpochTimeInMicroSeconds());
+    execTimeData.generateTelemetry();
     return res;
   }
 
@@ -443,6 +446,7 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
     logger.debug("execute: {}", sql);
     boolean res = executeInternal(sql, parameterBindings, execTimeData);
     execTimeData.setQueryEnd(SnowflakeUtil.getEpochTimeInMicroSeconds());
+    execTimeData.generateTelemetry();
     return res;
   }
 

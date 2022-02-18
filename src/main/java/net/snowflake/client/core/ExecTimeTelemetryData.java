@@ -3,16 +3,17 @@
  */
 package net.snowflake.client.core;
 
-import java.security.cert.CertificateException;
+import net.minidev.json.JSONObject;
+import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 
 public class ExecTimeTelemetryData {
     private long queryStart;
     private long bindStart;
     private long bindEnd;
-    private long httpClientStart;
-    private long httpClientEnd;
     private long gzipStart;
     private long gzipEnd;
+    private long httpClientStart;
+    private long httpClientEnd;
     private long processResultChunkStart;
     private long processResultChunkEnd;
     private long queryEnd;
@@ -45,24 +46,29 @@ public class ExecTimeTelemetryData {
         this.ocspEnabled = ocspEnabled;
     }
 
-    public String generateTelemetry(String eventType, CertificateException ex) {
-        /*JSONObject value = new JSONObject();
+    public String generateTelemetry() {
+        String eventType = "ExecutionTimeRecord";
+        JSONObject value = new JSONObject();
         String valueStr;
         value.put("eventType", eventType);
-        //value.put("sfcPeerHost", this.sfcPeerHost);
-        value.put("bindTime", this.bindTime);
-        value.put("encodingTime", this.encodingTime);
-        value.put("executeQuery", this.executeQuery);
-        value.put("httpRequest", this.httpRequest);
-        value.put("beforeHttpLib", this.beforeHttpLib);
-        value.put("afterHttpLib", this.afterHttpLib);
-        value.put("end2end", this.end2end);
-        value.put("didRetry", this.didRetry);
+        value.put("QueryStart", this.queryStart);
+        value.put("BindStart", this.bindStart);
+        value.put("BindEnd", this.bindEnd);
+        value.put("GzipStart", this.gzipStart);
+        value.put("GzipEnd", this.gzipEnd);
+        value.put("HttpClientStart", this.httpClientStart);
+        value.put("HttpClientEnd", this.httpClientEnd);
+        value.put("ProcessResultChunkStart", this.processResultChunkStart);
+        value.put("ProcessResultChunkEnd", this.processResultChunkEnd);
+        value.put("QueryEnd", this.queryEnd);
+        value.put("BatchID", this.batchId);
+        value.put("QueryID", this.queryId);
+        value.put("Query Function", this.queryFunction);
+        value.put("DidRetry", this.didRetry);
         value.put("ocspEnabled", this.ocspEnabled);
         valueStr = value.toString(); // Avoid adding exception stacktrace to user logs.
-        TelemetryService.getInstance().logExecutionTimeTelemetryEvent(eventType, value);
-        return valueStr; */
-        return "";
+        TelemetryService.getInstance().logExecutionTimeTelemetryEvent(value, eventType);
+        return valueStr;
     }
 
     public void setBindEnd(long bindEnd) {

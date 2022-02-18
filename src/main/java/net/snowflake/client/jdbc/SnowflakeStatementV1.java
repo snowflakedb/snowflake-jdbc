@@ -135,6 +135,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
     raiseSQLExceptionIfStatementIsClosed();
     ResultSet rs = executeQueryInternal(sql, false, null, execTimeData);
     execTimeData.setQueryEnd(SnowflakeUtil.getEpochTimeInMicroSeconds());
+    execTimeData.generateTelemetry();
     return rs;
   }
 
@@ -150,6 +151,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
     raiseSQLExceptionIfStatementIsClosed();
     ResultSet rs = executeQueryInternal(sql, true, null, execTimeData);
     execTimeData.setQueryEnd(SnowflakeUtil.getEpochTimeInMicroSeconds());
+    execTimeData.generateTelemetry();
     return rs;
   }
 
@@ -177,6 +179,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
     ExecTimeTelemetryData execTimeData = new ExecTimeTelemetryData(SnowflakeUtil.getEpochTimeInMicroSeconds(), "long Statement.executeLargeUpdate(String)", this.batchID);
     long res = executeUpdateInternal(sql, null, true, execTimeData);
     execTimeData.setQueryEnd(SnowflakeUtil.getEpochTimeInMicroSeconds());
+    execTimeData.generateTelemetry();
     return res;
   }
 
@@ -352,6 +355,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
     ExecTimeTelemetryData execTimeData = new ExecTimeTelemetryData(SnowflakeUtil.getEpochTimeInMicroSeconds(), "boolean Statement.execute(String)", this.batchID);
     boolean res = executeInternal(sql, null, execTimeData);
     execTimeData.setQueryEnd(SnowflakeUtil.getEpochTimeInMicroSeconds());
+    execTimeData.generateTelemetry();
     return res;
   }
 
