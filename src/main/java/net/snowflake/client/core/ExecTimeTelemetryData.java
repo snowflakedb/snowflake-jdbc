@@ -113,34 +113,38 @@ public class ExecTimeTelemetryData {
   }
 
   public String generateTelemetry() {
-    String eventType = "ExecutionTimeRecord";
-    JSONObject value = new JSONObject();
-    String valueStr;
-    value.put("eventType", eventType);
-    value.put("QueryStart", this.queryStart);
-    value.put("BindStart", this.bindStart);
-    value.put("BindEnd", this.bindEnd);
-    value.put("GzipStart", this.gzipStart);
-    value.put("GzipEnd", this.gzipEnd);
-    value.put("HttpClientStart", this.httpClientStart);
-    value.put("HttpClientEnd", this.httpClientEnd);
-    value.put("ResponseIOStreamStart", this.responseIOStreamStart);
-    value.put("ResponseIOStreamEnd", this.responseIOStreamEnd);
-    value.put("ProcessResultChunkStart", this.processResultChunkStart);
-    value.put("ProcessResultChunkEnd", this.processResultChunkEnd);
-    value.put("CreateResultSetStart", this.createResultSetStart);
-    value.put("CreatResultSetEnd", this.createResultSetEnd);
-    value.put("QueryEnd", this.queryEnd);
-    value.put("BatchID", this.batchId);
-    value.put("QueryID", this.queryId);
-    value.put("QueryFunction", this.queryFunction);
-    value.put("RetryCount", this.retryCount);
-    value.put("RetryLocations", this.retryLocations);
-    value.put("ocspEnabled", this.ocspEnabled);
-    value.put("ElapsedQueryTime", (this.queryEnd - this.queryStart));
-    value.put("ElapsedResultProcessTime", (this.createResultSetEnd - this.processResultChunkStart));
-    valueStr = value.toString(); // Avoid adding exception stacktrace to user logs.
-    TelemetryService.getInstance().logExecutionTimeTelemetryEvent(value, eventType);
-    return valueStr;
+    if (this.sendData) {
+      String eventType = "ExecutionTimeRecord";
+      JSONObject value = new JSONObject();
+      String valueStr;
+      value.put("eventType", eventType);
+      value.put("QueryStart", this.queryStart);
+      value.put("BindStart", this.bindStart);
+      value.put("BindEnd", this.bindEnd);
+      value.put("GzipStart", this.gzipStart);
+      value.put("GzipEnd", this.gzipEnd);
+      value.put("HttpClientStart", this.httpClientStart);
+      value.put("HttpClientEnd", this.httpClientEnd);
+      value.put("ResponseIOStreamStart", this.responseIOStreamStart);
+      value.put("ResponseIOStreamEnd", this.responseIOStreamEnd);
+      value.put("ProcessResultChunkStart", this.processResultChunkStart);
+      value.put("ProcessResultChunkEnd", this.processResultChunkEnd);
+      value.put("CreateResultSetStart", this.createResultSetStart);
+      value.put("CreatResultSetEnd", this.createResultSetEnd);
+      value.put("QueryEnd", this.queryEnd);
+      value.put("BatchID", this.batchId);
+      value.put("QueryID", this.queryId);
+      value.put("QueryFunction", this.queryFunction);
+      value.put("RetryCount", this.retryCount);
+      value.put("RetryLocations", this.retryLocations);
+      value.put("ocspEnabled", this.ocspEnabled);
+      value.put("ElapsedQueryTime", (this.queryEnd - this.queryStart));
+      value.put(
+          "ElapsedResultProcessTime", (this.createResultSetEnd - this.processResultChunkStart));
+      valueStr = value.toString(); // Avoid adding exception stacktrace to user logs.
+      TelemetryService.getInstance().logExecutionTimeTelemetryEvent(value, eventType);
+      return valueStr;
+    }
+    return "";
   }
 }
