@@ -355,7 +355,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
     ExecTimeTelemetryData execTimeData = new ExecTimeTelemetryData(SnowflakeUtil.getEpochTimeInMicroSeconds(), "boolean Statement.execute(String)", this.batchID);
     boolean res = executeInternal(sql, null, execTimeData);
     execTimeData.setQueryEnd(SnowflakeUtil.getEpochTimeInMicroSeconds());
-    execTimeData.generateTelemetry();
+    System.out.println(execTimeData.generateTelemetry());
     return res;
   }
 
