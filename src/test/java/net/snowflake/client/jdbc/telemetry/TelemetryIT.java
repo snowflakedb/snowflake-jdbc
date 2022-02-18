@@ -35,10 +35,10 @@ public class TelemetryIT extends AbstractDriverIT {
 
   @Before
   public void init() throws SQLException, IOException {
-    privateKeyLocation = getFullPathFileInResource("rsa_key.p8");
     Properties properties = new Properties();
-    properties.put("privateKeyFile", privateKeyLocation);
+    properties.put("privateKeyFile", getFullPathFileInResource("rsa_key.p8"));
     this.connection = getConnection(properties);
+    this.privateKeyLocation = getConnectionParameters(null).get("privateKeyFile");
   }
 
   @Test
