@@ -136,6 +136,9 @@ public class AbstractDriverIT {
     String ssoPassword = TestUtil.systemGetEnv("SNOWFLAKE_TEST_SSO_PASSWORD");
     params.put("ssoPassword", ssoPassword);
 
+    String privateKeyFile = TestUtil.systemGetEnv("SNOWFLAKE_TEST_PRIVATE_KEY_FILE");
+    params.put("privateKeyFile", privateKeyFile);
+
     return params;
   }
 

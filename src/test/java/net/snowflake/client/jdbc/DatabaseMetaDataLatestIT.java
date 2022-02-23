@@ -156,7 +156,8 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
       // quote
       statement.execute("create or replace schema \"TEST_SCHEMA_\"\"WITH_QUOTES\"\"\"");
       statement.execute(
-          "create or replace table \"TESTTABLE_\"\"WITH_QUOTES\"\"\" (AMOUNT number, \"COL_\"\"QUOTED\"\"\" string)");
+          "create or replace table \"TESTTABLE_\"\"WITH_QUOTES\"\"\" (AMOUNT number,"
+              + " \"COL_\"\"QUOTED\"\"\" string)");
       DatabaseMetaData metaData = con.getMetaData();
       ResultSet rs = metaData.getTables(database, querySchema, queryTable, null);
       // Assert 1 row returned for the testtable_"with_quotes"
@@ -240,8 +241,9 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
         .execute(
             "create or replace table "
                 + targetTable
-                + "(C1 string, C2 string default '', C3 string default 'apples', C4 string default '\"apples\"', C5 int, C6 "
-                + "int default 5, C7 string default '''', C8 string default '''apples''''', C9  string default '%')");
+                + "(C1 string, C2 string default '', C3 string default 'apples', C4 string default"
+                + " '\"apples\"', C5 int, C6 int default 5, C7 string default '''', C8 string"
+                + " default '''apples''''', C9  string default '%')");
 
     DatabaseMetaData metaData = connection.getMetaData();
 
@@ -278,9 +280,9 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
           .execute(
               "create or replace table "
                   + targetTable
-                  + "(C1 int, C2 varchar(100), C3 string default '', C4 number(18,4), C5 double, C6 boolean, "
-                  + "C7 date not null, C8 time, C9 timestamp_ntz(7), C10 binary,"
-                  + "C11 variant, C12 timestamp_ltz(8), C13 timestamp_tz(3))");
+                  + "(C1 int, C2 varchar(100), C3 string default '', C4 number(18,4), C5 double,"
+                  + " C6 boolean, C7 date not null, C8 time, C9 timestamp_ntz(7), C10 binary,C11"
+                  + " variant, C12 timestamp_ltz(8), C13 timestamp_tz(3))");
 
       DatabaseMetaData metaData = connection.getMetaData();
 
@@ -484,11 +486,10 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
       connection
           .createStatement()
           .execute(
-              "create or replace function FUNC112 "
-                  + "() RETURNS TABLE(colA string, colB decimal, bin2 binary, sharedCol decimal) COMMENT= 'returns "
-                  + "table of 4 columns' as 'select JDBC_TBL111.colA, JDBC_TBL111.colB, "
-                  + "BIN_TABLE.bin2, BIN_TABLE.sharedCol from JDBC_TBL111 inner join BIN_TABLE on JDBC_TBL111"
-                  + ".colB =BIN_TABLE.sharedCol'");
+              "create or replace function FUNC112 () RETURNS TABLE(colA string, colB decimal, bin2"
+                  + " binary, sharedCol decimal) COMMENT= 'returns table of 4 columns' as 'select"
+                  + " JDBC_TBL111.colA, JDBC_TBL111.colB, BIN_TABLE.bin2, BIN_TABLE.sharedCol from"
+                  + " JDBC_TBL111 inner join BIN_TABLE on JDBC_TBL111.colB =BIN_TABLE.sharedCol'");
       DatabaseMetaData metaData = connection.getMetaData();
       /* Call getFunctionColumns on FUNC111 and since there's no parameter name, get all rows back */
       ResultSet resultSet = metaData.getFunctionColumns(database, schema, "FUNC111", "%");
