@@ -64,59 +64,6 @@ public class SnowflakeDriverTest {
     Map<String, String> expectedParameters;
 
     List<TestCase> testCases = new ArrayList<>();
-    /*testCases.add(
-        new TestCase(
-            "jdbc:snowflake://localhost", "https", "localhost", 443, null, EMPTY_PARAMETERS));
-    testCases.add(
-        new TestCase(
-            "jdbc:snowflake://localhost:8081", "https", "localhost", 8081, null, EMPTY_PARAMETERS));
-
-    expectedParameters = new HashMap<>();
-    expectedParameters.put("a", "b");
-    testCases.add(
-        new TestCase(
-            "jdbc:snowflake://localhost8081?a=b",
-            "https",
-            "localhost8081",
-            443,
-            null,
-            expectedParameters));
-
-    expectedParameters = new HashMap<>();
-    expectedParameters.put("a", "b");
-    testCases.add(
-        new TestCase(
-            "jdbc:snowflake://localhost:8081/?a=b",
-            "https",
-            "localhost",
-            8081,
-            null,
-            expectedParameters));
-
-    expectedParameters = new HashMap<>();
-    expectedParameters.put("a", "b");
-    expectedParameters.put("c", "d");
-    testCases.add(
-        new TestCase(
-            "jdbc:snowflake://localhost:8081?a=b&c=d",
-            "https",
-            "localhost",
-            8081,
-            null,
-            expectedParameters));
-
-    expectedParameters = new HashMap<>();
-    expectedParameters.put("a", "b");
-    expectedParameters.put("c", "d");
-    testCases.add(
-        new TestCase(
-            "jdbc:snowflake://localhost:8081/?a=b&c=d",
-            "https",
-            "localhost",
-            8081,
-            null,
-            expectedParameters));  */
-
     expectedParameters = new HashMap<>();
     expectedParameters.put("prop1", "value1");
     expectedParameters.put("ACCOUNT", "testaccount");
