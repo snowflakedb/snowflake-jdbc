@@ -297,7 +297,7 @@ public class TelemetryService {
 
   /** Report the event to the telemetry server in a new thread */
   public void report(TelemetryEvent event) {
-    if (!enabled || event == null || event.isEmpty()) {
+    if (event == null || event.isEmpty()) {
       return;
     }
 
@@ -339,22 +339,6 @@ public class TelemetryService {
     }
 
     public void run() {
-      if (!instance.enabled) {
-        return;
-      }
-
-      if (!instance.isDeploymentEnabled()) {
-        // skip the disabled deployment
-        logger.debug("skip the disabled deployment: ", instance.serverDeployment.name);
-        return;
-      }
-
-      if (!instance.serverDeployment.url.matches(TELEMETRY_SERVER_URL_PATTERN)) {
-        // skip the disabled deployment
-        logger.debug("ignore invalid url: ", instance.serverDeployment.url);
-        return;
-      }
-
       uploadPayload();
     }
 
@@ -379,6 +363,7 @@ public class TelemetryService {
             instance.count();
           } else if (statusCode == 429) {
             logger.debug("telemetry server request hit server cap on response: " + response);
+            System.out.println("telemetry server request hit server cap on response: " + response);
             instance.serverFailureCnt.incrementAndGet();
           } else {
             logger.debug("telemetry server request error: " + response);
@@ -493,15 +478,13 @@ public class TelemetryService {
 
   /** log execution times from various processing slices */
   public void logExecutionTimeTelemetryEvent(JSONObject telemetryData, String eventName) {
-    if (enabled) {
-      TelemetryEvent.LogBuilder logBuilder = new TelemetryEvent.LogBuilder();
-      TelemetryEvent log =
-          logBuilder
-              .withName(eventName)
-              .withValue(telemetryData)
-              .withTag("eventType", eventName)
-              .build();
-      this.report(log);
-    }
+    TelemetryEvent.LogBuilder logBuilder = new TelemetryEvent.LogBuilder();
+    TelemetryEvent log =
+        logBuilder
+            .withName(eventName)
+            .withValue(telemetryData)
+            .withTag("eventType", eventName)
+            .build();
+    this.report(log);
   }
 }
