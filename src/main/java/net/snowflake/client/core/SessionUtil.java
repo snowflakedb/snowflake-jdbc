@@ -16,6 +16,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.security.PrivateKey;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -1439,5 +1440,29 @@ public class SessionUtil {
       logger.debug("OCSP Cache Server for Privatelink: {}", ocspCacheServerUrl);
       resetOCSPResponseCacherServerURL(ocspCacheServerUrl);
     }
+  }
+
+  /**
+   * Helper function to generate a JWT token
+   *
+   * @param privateKey private key
+   * @param privateKeyFile path to private key file
+   * @param privateKeyFilePwd password for private key file
+   * @param accountName account name
+   * @param userName user name
+   * @return JWT token
+   * @throws SFException if Snowflake error occurs
+   */
+  public static String generateJWTToken(
+      PrivateKey privateKey,
+      String privateKeyFile,
+      String privateKeyFilePwd,
+      String accountName,
+      String userName)
+      throws SFException {
+    SessionUtilKeyPair s =
+        new SessionUtilKeyPair(
+            privateKey, privateKeyFile, privateKeyFilePwd, accountName, userName);
+    return s.issueJwtToken();
   }
 }
