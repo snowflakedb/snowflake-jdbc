@@ -10,10 +10,12 @@ import static org.junit.Assert.assertTrue;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.Map;
-import java.util.Properties;
 import net.snowflake.client.AbstractDriverIT;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
@@ -31,14 +33,10 @@ import org.junit.experimental.categories.Category;
 public class TelemetryIT extends AbstractDriverIT {
   private Connection connection = null;
   private static final ObjectMapper mapper = new ObjectMapper();
-  private String privateKeyLocation = null;
 
   @Before
   public void init() throws SQLException, IOException {
-    Properties properties = new Properties();
-    properties.put("privateKeyFile", getFullPathFileInResource("rsa_key.p8"));
-    this.connection = getConnection(properties);
-    this.privateKeyLocation = getConnectionParameters(null).get("privateKeyFile");
+    this.connection = getConnection();
   }
 
   @Test
@@ -172,7 +170,10 @@ public class TelemetryIT extends AbstractDriverIT {
   }
 
   // Helper function to create a sessionless telemetry
-  private TelemetryClient createSessionlessTelemetry() throws SFException {
+  private TelemetryClient createSessionlessTelemetry()
+      throws SFException, SQLException, IOException {
+    setUpPublicKey();
+    String privateKeyLocation = getFullPathFileInResource("rsa_key.p8");
     Map<String, String> parameters = getConnectionParameters();
     String jwtToken =
         SessionUtil.generateJWTToken(
@@ -185,5 +186,20 @@ public class TelemetryIT extends AbstractDriverIT {
                 httpClient, String.format("%s:%s", parameters.get("host"), parameters.get("port")));
     telemetry.refreshToken(jwtToken);
     return telemetry;
+  }
+
+  // Helper function to set up the public key
+  private void setUpPublicKey() throws SQLException, IOException {
+    Map<String, String> parameters = getConnectionParameters();
+    String testUser = parameters.get("user");
+    Connection connection = getConnection();
+    Statement statement = connection.createStatement();
+    statement.execute("use role accountadmin");
+    String pathfile = getFullPathFileInResource("rsa_key.pub");
+    String pubKey = new String(Files.readAllBytes(Paths.get(pathfile)));
+    pubKey = pubKey.replace("-----BEGIN PUBLIC KEY-----", "");
+    pubKey = pubKey.replace("-----END PUBLIC KEY-----", "");
+    statement.execute(String.format("alter user %s set rsa_public_key='%s'", testUser, pubKey));
+    connection.close();
   }
 }
