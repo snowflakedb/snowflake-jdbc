@@ -10,10 +10,12 @@ import static org.junit.Assert.assertTrue;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.Map;
-import java.util.Properties;
 import net.snowflake.client.AbstractDriverIT;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
@@ -35,10 +37,22 @@ public class TelemetryIT extends AbstractDriverIT {
 
   @Before
   public void init() throws SQLException, IOException {
-    Properties properties = new Properties();
-    properties.put("privateKeyFile", getFullPathFileInResource("rsa_key.p8"));
-    this.connection = getConnection(properties);
-    this.privateKeyLocation = getConnectionParameters(null).get("privateKeyFile");
+    // Set up public key
+    Map<String, String> parameters = getConnectionParameters();
+    String testUser = parameters.get("user");
+    Connection connection = getConnection();
+    Statement statement = connection.createStatement();
+    statement.execute("use role accountadmin");
+    String pathfile = getFullPathFileInResource("rsa_key.pub");
+    String pubKey = new String(Files.readAllBytes(Paths.get(pathfile)));
+    pubKey = pubKey.replace("-----BEGIN PUBLIC KEY-----", "");
+    pubKey = pubKey.replace("-----END PUBLIC KEY-----", "");
+    statement.execute(String.format("alter user %s set rsa_public_key='%s'", testUser, pubKey));
+    connection.close();
+
+    // Set up connection and private key path
+    this.connection = getConnection();
+    this.privateKeyLocation = getFullPathFileInResource("rsa_key.p8");
   }
 
   @Test
