@@ -173,6 +173,8 @@ public class TelemetryService {
       deployment = TELEMETRY_SERVER_DEPLOYMENT.QA1;
     } else if (conStr.getHost().contains("preprod3")) {
       deployment = TELEMETRY_SERVER_DEPLOYMENT.PREPROD3;
+    } else if (conStr.getHost().contains("snowflake.temptest")) {
+      deployment = TELEMETRY_SERVER_DEPLOYMENT.QA1;
     }
 
     this.setDeployment(deployment);
