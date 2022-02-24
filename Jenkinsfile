@@ -80,8 +80,8 @@ timestamps {
     params = [
       string(name: 'client_git_branch', value: scmInfo.GIT_BRANCH),
       string(name: 'client_git_commit', value: scmInfo.GIT_COMMIT),
-      string(name: 'svn_revision', value: 'master'),
-      string(name: 'branch', value: 'master'),
+      string(name: 'svn_revision', value: 'main'),
+      string(name: 'branch', value: 'main'),
       string(name: 'TARGET_DOCKER_TEST_IMAGE', value: 'jdbc-centos6-default'),
       string(name: 'parent_job', value: env.JOB_NAME),
       string(name: 'parent_build_number', value: env.BUILD_NUMBER),
