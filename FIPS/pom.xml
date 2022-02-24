@@ -40,7 +40,7 @@
     <arrow.version>0.15.1</arrow.version>
     <slf4j.version>1.7.25</slf4j.version>
     <jsoup.version>1.14.2</jsoup.version>
-    <tika.version>1.22</tika.version>
+    <tika.version>1.25</tika.version>
     <jackson.version>2.11.0</jackson.version>
     <jacksondatabind.version>2.11.0</jacksondatabind.version>
     <httpclient.version>4.5.5</httpclient.version>
