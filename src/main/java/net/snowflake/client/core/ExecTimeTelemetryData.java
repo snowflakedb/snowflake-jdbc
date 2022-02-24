@@ -141,6 +141,7 @@ public class ExecTimeTelemetryData {
       value.put("ElapsedQueryTime", (this.queryEnd - this.queryStart));
       value.put(
           "ElapsedResultProcessTime", (this.createResultSetEnd - this.processResultChunkStart));
+      value.put("Urgent", true);
       valueStr = value.toString(); // Avoid adding exception stacktrace to user logs.
       TelemetryService.getInstance().logExecutionTimeTelemetryEvent(value, eventType);
       return valueStr;
