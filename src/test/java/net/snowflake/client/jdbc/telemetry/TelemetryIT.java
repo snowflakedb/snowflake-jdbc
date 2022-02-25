@@ -26,6 +26,7 @@ import net.snowflake.client.core.SessionUtil;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -45,6 +46,7 @@ public class TelemetryIT extends AbstractDriverIT {
     testTelemetryInternal(telemetry);
   }
 
+  @Ignore
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testSessionlessTelemetry() throws Exception, SFException {
