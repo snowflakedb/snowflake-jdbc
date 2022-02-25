@@ -1,6 +1,8 @@
 **JDBC Driver 3.13.15**
 
 - \| | Refactored the isFileTransfer function into the base class.
+- \| | Updated version for Apache Tika.
+- \| | Allow URLs with underscores by default, add configuration to covert underscores to hyphens.
 - \| | Refactored the FileTransferAgent facade classes into base class
 - \| SNOW-538708 | Fixed a segmentation fault issue within Graal VM Native Image applications.
 - \| SNOW-508017 | Fixed and issue that cause the ChunkDownloader to hang.
