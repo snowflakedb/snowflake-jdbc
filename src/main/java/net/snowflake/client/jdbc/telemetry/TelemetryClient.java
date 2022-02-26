@@ -241,7 +241,7 @@ public class TelemetryClient implements Telemetry {
     try {
       // sendBatch when close is synchronous, otherwise client might be closed
       // before data was sent.
-      sendBatchAsync().get();
+      sendBatch();
     } catch (Throwable e) {
       logger.debug("Error when sending batch data, {}", e);
     } finally {
