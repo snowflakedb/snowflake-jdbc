@@ -305,8 +305,9 @@ public class HttpUtil {
               .setConnectTimeout(DEFAULT_CONNECTION_TIMEOUT)
               .setConnectionRequestTimeout(DEFAULT_CONNECTION_TIMEOUT)
               .setSocketTimeout(DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT);
-      // only set the proxy settings if they are not null
-      if (proxy != null) builder.setProxy(proxy);
+      // but no value has been specified for nonProxyHosts
+      // the route planner will determine whether to use a proxy based on nonProxyHosts value.
+      if (proxy != null && Strings.isNullOrEmpty(key.getNonProxyHosts())) builder.setProxy(proxy);
       DefaultRequestConfig = builder.build();
     }
 
