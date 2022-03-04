@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
+ * Copyright (c) 2012-2022 Snowflake Computing Inc. All rights reserved.
  */
 
 package net.snowflake.client.jdbc;
@@ -23,7 +23,6 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
 
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetEnv;
 /**
@@ -60,6 +59,7 @@ public class RestRequest {
    * @param httpRequest request object contains all the request information
    * @param retryTimeout : retry timeout (in seconds)
    * @param authTimeout : authenticator specific timeout (in seconds)
+   * @param retryCount : retry count for the request
    * @param injectSocketTimeout : simulate socket timeout
    * @param canceling canceling flag
    * @param withoutCookies whether the cookie spec should be set to IGNORE or not
@@ -75,6 +75,7 @@ public class RestRequest {
       HttpRequestBase httpRequest,
       long retryTimeout,
       long authTimeout,
+      int retryCount,
       int injectSocketTimeout,
       AtomicBoolean canceling,
       boolean withoutCookies,
@@ -107,8 +108,6 @@ public class RestRequest {
 
     DecorrelatedJitterBackoff backoff =
         new DecorrelatedJitterBackoff(backoffInMilli, maxBackoffInMilli);
-
-    static int retryCount = 0;
 
     int origSocketTimeout = 0;
 
@@ -328,8 +327,9 @@ public class RestRequest {
             break;
           }
           // check if this is a login-request
-          if (httpRequest.getURI().getHost().contains("login-request")) {
-            throw new SnowflakeSQLException(null, "Authenticator Request Timeout", null, ErrorCode.NETWORK_ERROR);
+          if (String.valueOf(httpRequest.getURI()).contains("login-request")) {
+            throw new SnowflakeSQLException(
+                    ErrorCode.NETWORK_ERROR, retryCount, "Authenticator Request Timeout");
           }
         }
         int numOfRetryToTriggerTelemetry =

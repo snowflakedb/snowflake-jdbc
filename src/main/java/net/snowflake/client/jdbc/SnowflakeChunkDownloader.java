@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
+ * Copyright (c) 2012-2022 Snowflake Computing Inc. All rights reserved.
  */
 
 package net.snowflake.client.jdbc;
@@ -83,6 +83,8 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
   private Map<String, String> chunkHeadersMap;
 
   private final int networkTimeoutInMilli;
+
+  private final int authTimeout;
 
   private long memoryLimit;
 
@@ -190,6 +192,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
     this.ocspModeAndProxyKey = resultSetSerializable.getHttpClientKey();
     this.qrmk = resultSetSerializable.getQrmk();
     this.networkTimeoutInMilli = resultSetSerializable.getNetworkTimeoutInMilli();
+    this.authTimeout = resultSetSerializable.getAuthTimeout();
     this.prefetchSlots = resultSetSerializable.getResultPrefetchThreads() * 2;
     this.queryResultFormat = resultSetSerializable.getQueryResultFormat();
     logger.debug("qrmk = {}", this.qrmk);
@@ -373,6 +376,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
                     nextChunkToDownload,
                     chunkHeadersMap,
                     networkTimeoutInMilli,
+                    authTimeout,
                     this.session));
         downloaderFutures.put(nextChunkToDownload, downloaderFuture);
         // increment next chunk to download
@@ -660,6 +664,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
                     nextChunkToConsume,
                     chunkHeadersMap,
                     networkTimeoutInMilli,
+                    authTimeout,
                     session));
         downloaderFutures.put(nextChunkToDownload, downloaderFuture);
       }
@@ -807,6 +812,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
       final int chunkIndex,
       final Map<String, String> chunkHeadersMap,
       final int networkTimeoutInMilli,
+      final int authTimeout,
       final SFBaseSession session) {
     ChunkDownloadContext downloadContext =
         new ChunkDownloadContext(
@@ -816,6 +822,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
             chunkIndex,
             chunkHeadersMap,
             networkTimeoutInMilli,
+            authTimeout,
             session);
 
     return new Callable<Void>() {

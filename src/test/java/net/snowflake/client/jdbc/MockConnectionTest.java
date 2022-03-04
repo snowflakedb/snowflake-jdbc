@@ -701,6 +701,8 @@ public class MockConnectionTest extends BaseJDBCTest {
       return 0;
     }
 
+    public int getAuthTimeout() { return 0; }
+
     public SnowflakeConnectString getSnowflakeConnectionString() {
       return null;
     }

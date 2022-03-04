@@ -49,7 +49,8 @@ public class RestRequestTest {
         client,
         new HttpGet(uri),
         retryTimeout, // retry timeout
-            authTimeout,
+        authTimeout,
+        0,
         0, // inject socket timeout
         new AtomicBoolean(false), // canceling
         false, // without cookie
@@ -282,8 +283,8 @@ public class RestRequestTest {
     expectedException.expectMessage("Authenticator Request Timeout");
     CloseableHttpClient client = mock(CloseableHttpClient.class);
     when(client.execute(any(HttpUriRequest.class)))
-            .thenAnswer(retryResponse());
+            .thenAnswer((Answer<CloseableHttpResponse>) invocation -> retryResponse());
 
-    execute(client, "login-request.com/?requestId=abcd-1234",0,1, true);
+    execute(client, "login-request.com/?requestId=abcd-1234", 0, 1, true);
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2021 Snowflake Computing Inc. All rights reserved.
+ * Copyright (c) 2012-2022 Snowflake Computing Inc. All rights reserved.
  */
 
 package net.snowflake.client.core;
@@ -737,6 +737,8 @@ public abstract class SFBaseSession {
   }
 
   public abstract int getNetworkTimeoutInMilli();
+
+  public abstract int getAuthTimeout();
 
   public abstract SnowflakeConnectString getSnowflakeConnectionString();
 }
