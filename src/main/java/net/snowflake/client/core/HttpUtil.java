@@ -554,6 +554,7 @@ public class HttpUtil {
    * @throws IOException raises if a general IO error occurs
    */
   public static String executeGeneralRequest(
+
       HttpRequestBase httpRequest, int retryTimeout, int authTimeout, int retryCount, HttpClientSettingsKey ocspAndProxyKey)
       throws SnowflakeSQLException, IOException {
     return executeRequest(

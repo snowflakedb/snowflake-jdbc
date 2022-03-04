@@ -222,7 +222,6 @@ public class SSOConnectionTest {
             new Answer<String>() {
               int callCount = 0;
 
-
               @Override
               public String answer(InvocationOnMock invocation) throws IOException {
                 String resp = "";
