@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
+ * Copyright (c) 2012-2022 Snowflake Computing Inc. All rights reserved.
  */
 
 package net.snowflake.client.core;
@@ -101,7 +101,7 @@ public class SnowflakeMFACacheTest {
           .when(
               () ->
                   HttpUtil.executeGeneralRequest(
-                      any(HttpPost.class), anyInt(), any(HttpClientSettingsKey.class)))
+                      any(HttpPost.class), anyInt(), anyInt(), anyInt(), any(HttpClientSettingsKey.class)))
           .thenAnswer(
               new Answer<String>() {
                 int callCount = 0;
@@ -245,7 +245,7 @@ public class SnowflakeMFACacheTest {
           .when(
               () ->
                   HttpUtil.executeGeneralRequest(
-                      any(HttpPost.class), anyInt(), any(HttpClientSettingsKey.class)))
+                      any(HttpPost.class), anyInt(), anyInt(), anyInt(), any(HttpClientSettingsKey.class)))
           .thenAnswer(
               new Answer<String>() {
                 int callCount = 0;

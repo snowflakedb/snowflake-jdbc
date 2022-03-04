@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2020 Snowflake Computing Inc. All rights reserved.
+ * Copyright (c) 2012-2022 Snowflake Computing Inc. All rights reserved.
  */
 
 package net.snowflake.client.core;
@@ -137,6 +137,8 @@ public class SessionUtilExternalBrowserTest {
                   HttpUtil.executeGeneralRequest(
                       Mockito.any(HttpRequestBase.class),
                       Mockito.anyInt(),
+                      Mockito.anyInt(),
+                      Mockito.anyInt(),
                       Mockito.nullable(HttpClientSettingsKey.class)))
           .thenReturn(
               "{\"success\":\"true\",\"data\":{\"proofKey\":\""
@@ -172,6 +174,8 @@ public class SessionUtilExternalBrowserTest {
               () ->
                   HttpUtil.executeGeneralRequest(
                       Mockito.any(HttpRequestBase.class),
+                      Mockito.anyInt(),
+                      Mockito.anyInt(),
                       Mockito.anyInt(),
                       Mockito.nullable(HttpClientSettingsKey.class)))
           .thenReturn("{\"success\":\"false\",\"code\":\"123456\",\"message\":\"errormes\"}");

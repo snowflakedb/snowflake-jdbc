@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
+ * Copyright (c) 2012-2022 Snowflake Computing Inc. All rights reserved.
  */
 package net.snowflake.client.core;
 
@@ -208,6 +208,7 @@ class SessionUtilKeyPair {
       throw new SFException(e, ErrorCode.INTERNAL_ERROR, "Error when calculating fingerprint");
     }
   }
+
   public static int getTimeout()  {
     String jwtAuthTimeoutStr = systemGetEnv("JWT_AUTH_TIMEOUT");
     int jwtAuthTimeout = JWT_DEFAULT_AUTH_TIMEOUT;

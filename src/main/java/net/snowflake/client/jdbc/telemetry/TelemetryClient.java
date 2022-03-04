@@ -330,6 +330,7 @@ public class TelemetryClient implements Telemetry {
                     post, TELEMETRY_HTTP_RETRY_TIMEOUT_IN_SEC, this.httpClient)
                 : HttpUtil.executeGeneralRequest(
                     post, TELEMETRY_HTTP_RETRY_TIMEOUT_IN_SEC, this.session.getHttpClientKey());
+        response = HttpUtil.executeGeneralRequest(post, 1000, 0, 0, this.session.getHttpClientKey());
       } catch (SnowflakeSQLException e) {
         disableTelemetry(); // when got error like 404 or bad request, disable telemetry in this
         // telemetry instance

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
+ * Copyright (c) 2012-2022 Snowflake Computing Inc. All rights reserved.
  */
 
 package net.snowflake.client.core;
@@ -335,6 +335,8 @@ public class StmtUtil {
             HttpUtil.executeRequest(
                 httpRequest,
                 stmtInput.networkTimeoutInMillis / 1000,
+                0,
+                0,
                 stmtInput.injectSocketTimeout,
                 stmtInput.canceling,
                 true, // include retry parameters
@@ -574,6 +576,8 @@ public class StmtUtil {
           httpRequest,
           stmtInput.networkTimeoutInMillis / 1000,
           0,
+          0,
+          0,
           stmtInput.canceling,
           false, // no retry parameter
           false, // no retry on HTTP 403
@@ -685,6 +689,8 @@ public class StmtUtil {
           HttpUtil.executeRequest(
               httpRequest,
               SF_CANCELING_RETRY_TIMEOUT_IN_MILLIS,
+              0,
+              0,
               0,
               null,
               false, // no retry parameter

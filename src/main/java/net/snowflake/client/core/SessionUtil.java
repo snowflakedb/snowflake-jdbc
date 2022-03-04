@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2020 Snowflake Computing Inc. All rights reserved.
+ * Copyright (c) 2012-2022 Snowflake Computing Inc. All rights reserved.
  */
 
 package net.snowflake.client.core;
@@ -184,7 +184,8 @@ public class SessionUtil {
               ENABLE_STAGE_S3_PRIVATELINK_FOR_US_EAST_1,
               "SNOWPARK_LAZY_ANALYSIS"));
 
-  private static final int DEFAULT_AUTH_TIMEOUT = 0;
+  // The default retryCount value
+  private static int retryCount = 0;
 
   /**
    * Returns Authenticator type
@@ -587,27 +588,38 @@ public class SessionUtil {
 
       setServiceNameHeader(loginInput, postRequest);
 
-      try {
-        String theString =
-                HttpUtil.executeGeneralRequest(
-                        postRequest, loginInput.getLoginTimeout(), loginInput.getAuthTimeout(), loginInput.getHttpClientSettingsKey());
-      } catch (SnowflakeSQLException ex) {
-        if(ex.getMessage().contains("Authenticator Timeout")) {
-          if(authenticatorType == ClientAuthnDTO.AuthenticatorType.SNOWFLAKE_JWT) {
-            SessionUtilKeyPair s =
-                    new SessionUtilKeyPair(
-                            loginInput.getPrivateKey(),
-                            loginInput.getPrivateKeyFile(),
-                            loginInput.getPrivateKeyFilePwd(),
-                            loginInput.getAccountName(),
-                            loginInput.getUserName());
+      String theString = null;
 
-            data.put(ClientAuthnParameter.TOKEN.name(), s.issueJwtToken());
-          }
-          String theString =
+      while (true) {
+        try {
+          theString =
                   HttpUtil.executeGeneralRequest(
-                          postRequest, loginInput.getLoginTimeout(), loginInput.getAuthTimeout(), loginInput.getHttpClientSettingsKey());
+                          postRequest,
+                          loginInput.getLoginTimeout(),
+                          loginInput.getAuthTimeout(),
+                          retryCount,
+                          loginInput.getHttpClientSettingsKey());
+        } catch (SnowflakeSQLException ex) {
+          if (ex.getMessage().contains("Authenticator Request Timeout")) {
+            if (authenticatorType == ClientAuthnDTO.AuthenticatorType.SNOWFLAKE_JWT) {
+              SessionUtilKeyPair s =
+                      new SessionUtilKeyPair(
+                              loginInput.getPrivateKey(),
+                              loginInput.getPrivateKeyFile(),
+                              loginInput.getPrivateKeyFilePwd(),
+                              loginInput.getAccountName(),
+                              loginInput.getUserName());
+
+              data.put(ClientAuthnParameter.TOKEN.name(), s.issueJwtToken());
+              retryCount = ex.getRetryCount();
+              continue;
+            }
+          }
+          else {
+            throw ex;
+          }
         }
+        break;
       }
 
       // general method, same as with data binding
@@ -871,7 +883,7 @@ public class SessionUtil {
 
       String theString =
           HttpUtil.executeGeneralRequest(
-              postRequest, loginInput.getLoginTimeout(), loginInput.getHttpClientSettingsKey());
+              postRequest, loginInput.getLoginTimeout(), loginInput.getAuthTimeout(), retryCount, loginInput.getHttpClientSettingsKey());
 
       // general method, same as with data binding
       JsonNode jsonNode = mapper.readTree(theString);
@@ -955,7 +967,7 @@ public class SessionUtil {
 
       String theString =
           HttpUtil.executeGeneralRequest(
-              postRequest, loginInput.getLoginTimeout(), loginInput.getHttpClientSettingsKey());
+              postRequest, loginInput.getLoginTimeout(), loginInput.getAuthTimeout(), retryCount, loginInput.getHttpClientSettingsKey());
 
       JsonNode rootNode;
 
@@ -1016,7 +1028,7 @@ public class SessionUtil {
 
       responseHtml =
           HttpUtil.executeGeneralRequest(
-              httpGet, loginInput.getLoginTimeout(), loginInput.getHttpClientSettingsKey());
+              httpGet, loginInput.getLoginTimeout(), loginInput.getAuthTimeout(), retryCount, loginInput.getHttpClientSettingsKey());
 
       // step 5
       String postBackUrl = getPostBackUrlFromHTML(responseHtml);
@@ -1081,6 +1093,8 @@ public class SessionUtil {
           HttpUtil.executeRequestWithoutCookies(
               postRequest,
               loginInput.getLoginTimeout(),
+              loginInput.getAuthTimeout(),
+              retryCount,
               0,
               null,
               loginInput.getHttpClientSettingsKey());
@@ -1160,7 +1174,7 @@ public class SessionUtil {
 
       final String gsResponse =
           HttpUtil.executeGeneralRequest(
-              postRequest, loginInput.getLoginTimeout(), loginInput.getHttpClientSettingsKey());
+              postRequest, loginInput.getLoginTimeout(), loginInput.getAuthTimeout(), retryCount, loginInput.getHttpClientSettingsKey());
       logger.debug("authenticator-request response: {}", gsResponse);
       JsonNode jsonNode = mapper.readTree(gsResponse);
 

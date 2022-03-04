@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
+ * Copyright (c) 2012-2022 Snowflake Computing Inc. All rights reserved.
  */
 
 package net.snowflake.client.core;
@@ -517,6 +517,8 @@ public class HttpUtil {
    *
    * @param httpRequest HttpRequestBase
    * @param retryTimeout retry timeout
+   * @param authTimeout authenticator specific timeout
+   * @param retryCount : retry count for the request
    * @param injectSocketTimeout injecting socket timeout
    * @param canceling canceling?
    * @param ocspAndProxyKey OCSP mode and proxy settings for httpclient
@@ -527,6 +529,8 @@ public class HttpUtil {
   static String executeRequestWithoutCookies(
       HttpRequestBase httpRequest,
       int retryTimeout,
+      int authTimeout,
+      int retryCount,
       int injectSocketTimeout,
       AtomicBoolean canceling,
       HttpClientSettingsKey ocspAndProxyKey)
@@ -534,6 +538,8 @@ public class HttpUtil {
     return executeRequestInternal(
         httpRequest,
         retryTimeout,
+        authTimeout,
+        retryCount,
         injectSocketTimeout,
         canceling,
         true, // no cookie
@@ -549,18 +555,20 @@ public class HttpUtil {
    * @param httpRequest HttpRequestBase
    * @param retryTimeout retry timeout
    * @param authTimeout authenticator specific timeout
+   * @param retryCount : retry count for the request
    * @param ocspAndProxyKey OCSP mode and proxy settings for httpclient
    * @return response
    * @throws SnowflakeSQLException if Snowflake error occurs
    * @throws IOException raises if a general IO error occurs
    */
   public static String executeGeneralRequest(
-      HttpRequestBase httpRequest, int retryTimeout, int authTimeout, HttpClientSettingsKey ocspAndProxyKey)
+      HttpRequestBase httpRequest, int retryTimeout, int authTimeout, int retryCount, HttpClientSettingsKey ocspAndProxyKey)
       throws SnowflakeSQLException, IOException {
     return executeRequest(
         httpRequest,
         retryTimeout,
         authTimeout,
+        retryCount,
         0, // no inject socket timeout
         null, // no canceling
         false, // no retry parameter
@@ -599,6 +607,7 @@ public class HttpUtil {
    * @param httpRequest HttpRequestBase
    * @param retryTimeout retry timeout
    * @param authTimeout authenticator timeout
+   * @param retryCount : retry count for the request
    * @param injectSocketTimeout injecting socket timeout
    * @param canceling canceling?
    * @param includeRetryParameters whether to include retry parameters in retried requests
@@ -612,6 +621,7 @@ public class HttpUtil {
       HttpRequestBase httpRequest,
       int retryTimeout,
       int authTimeout,
+      int retryCount,
       int injectSocketTimeout,
       AtomicBoolean canceling,
       boolean includeRetryParameters,
@@ -622,6 +632,7 @@ public class HttpUtil {
         httpRequest,
         retryTimeout,
         authTimeout,
+        retryCount,
         injectSocketTimeout,
         canceling,
         false, // with cookie (do we need cookie?)
@@ -641,6 +652,7 @@ public class HttpUtil {
    * @param httpRequest request object contains all the information
    * @param retryTimeout retry timeout (in seconds)
    * @param authTimeout authenticator specific timeout (in seconds)
+   * @param retryCount : retry count for the request
    * @param injectSocketTimeout simulate socket timeout
    * @param canceling canceling flag
    * @param withoutCookies whether this request should ignore cookies
@@ -656,6 +668,7 @@ public class HttpUtil {
       HttpRequestBase httpRequest,
       int retryTimeout,
       int authTimeout,
+      int retryCount,
       int injectSocketTimeout,
       AtomicBoolean canceling,
       boolean withoutCookies,
@@ -681,6 +694,7 @@ public class HttpUtil {
               httpRequest,
               retryTimeout,
               authTimeout,
+              retryCount,
               injectSocketTimeout,
               canceling,
               withoutCookies,
