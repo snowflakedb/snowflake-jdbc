@@ -3,6 +3,8 @@
  */
 package net.snowflake.client.core;
 
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetEnv;
+
 import com.google.common.base.Strings;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSAlgorithm;
@@ -29,8 +31,6 @@ import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import org.apache.commons.codec.binary.Base64;
 import org.bouncycastle.util.io.pem.PemReader;
-
-import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetEnv;
 
 /** Class used to compute jwt token for key pair authentication Created by hyu on 1/16/18. */
 class SessionUtilKeyPair {
@@ -107,8 +107,6 @@ class SessionUtilKeyPair {
           "Use java.security.interfaces.RSAPrivateCrtKey.class for the private key");
     }
   }
-
-
 
   private KeyFactory getKeyFactoryInstance() throws NoSuchAlgorithmException {
     if (isFipsMode) {
@@ -209,10 +207,10 @@ class SessionUtilKeyPair {
     }
   }
 
-  public static int getTimeout()  {
+  public static int getTimeout() {
     String jwtAuthTimeoutStr = systemGetEnv("JWT_AUTH_TIMEOUT");
     int jwtAuthTimeout = JWT_DEFAULT_AUTH_TIMEOUT;
-    if(jwtAuthTimeoutStr != null) {
+    if (jwtAuthTimeoutStr != null) {
       jwtAuthTimeout = Integer.parseInt(jwtAuthTimeoutStr);
     }
     return jwtAuthTimeout;

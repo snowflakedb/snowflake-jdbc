@@ -167,7 +167,8 @@ public class SFSession extends SFBaseSession {
       try {
         get.setHeader("Content-type", "application/json");
         get.setHeader("Authorization", "Snowflake Token=\"" + this.sessionToken + "\"");
-        response = HttpUtil.executeGeneralRequest(get, loginTimeout, authTimeout, 0, getHttpClientKey());
+        response =
+            HttpUtil.executeGeneralRequest(get, loginTimeout, authTimeout, 0, getHttpClientKey());
         jsonNode = OBJECT_MAPPER.readTree(response);
       } catch (Exception e) {
         throw new SnowflakeSQLLoggedException(
@@ -719,7 +720,8 @@ public class SFSession extends SFBaseSession {
         // per https://support-snowflake.zendesk.com/agent/tickets/6629
         int SF_HEARTBEAT_TIMEOUT = 300;
         String theResponse =
-            HttpUtil.executeGeneralRequest(postRequest, SF_HEARTBEAT_TIMEOUT, authTimeout, 0, getHttpClientKey());
+            HttpUtil.executeGeneralRequest(
+                postRequest, SF_HEARTBEAT_TIMEOUT, authTimeout, 0, getHttpClientKey());
 
         JsonNode rootNode;
 

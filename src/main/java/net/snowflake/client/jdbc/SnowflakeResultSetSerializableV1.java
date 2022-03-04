@@ -299,7 +299,9 @@ public class SnowflakeResultSetSerializableV1
     return networkTimeoutInMilli;
   }
 
-  public int getAuthTimeout() { return authTimeout; }
+  public int getAuthTimeout() {
+    return authTimeout;
+  }
 
   public int getResultPrefetchThreads() {
     return resultPrefetchThreads;

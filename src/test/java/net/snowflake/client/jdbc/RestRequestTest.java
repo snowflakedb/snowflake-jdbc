@@ -43,7 +43,12 @@ public class RestRequestTest {
     return successResponse;
   }
 
-  private void execute(CloseableHttpClient client, String uri, int retryTimeout, int authTimeout, boolean includeRetryParameters)
+  private void execute(
+      CloseableHttpClient client,
+      String uri,
+      int retryTimeout,
+      int authTimeout,
+      boolean includeRetryParameters)
       throws IOException, SnowflakeSQLException {
     RestRequest.execute(
         client,
@@ -91,7 +96,7 @@ public class RestRequestTest {
               }
             });
 
-    execute(client, "fakeurl.com/?requestId=abcd-1234", 0,0, true);
+    execute(client, "fakeurl.com/?requestId=abcd-1234", 0, 0, true);
   }
 
   @Test
@@ -122,7 +127,7 @@ public class RestRequestTest {
               }
             });
 
-    execute(client, "fakeurl.com/?requestId=abcd-1234",0, 0, false);
+    execute(client, "fakeurl.com/?requestId=abcd-1234", 0, 0, false);
   }
 
   private CloseableHttpResponse anyStatusCodeResponse(int statusCode) {
@@ -275,15 +280,15 @@ public class RestRequestTest {
     }
   }
 
-  @Rule
-  public ExpectedException expectedException = ExpectedException.none();
+  @Rule public ExpectedException expectedException = ExpectedException.none();
+
   @Test
   public void testExceptionAuthBasedTimeout() throws IOException, SnowflakeSQLException {
     expectedException.expect(SnowflakeSQLException.class);
     expectedException.expectMessage("Authenticator Request Timeout");
     CloseableHttpClient client = mock(CloseableHttpClient.class);
     when(client.execute(any(HttpUriRequest.class)))
-            .thenAnswer((Answer<CloseableHttpResponse>) invocation -> retryResponse());
+        .thenAnswer((Answer<CloseableHttpResponse>) invocation -> retryResponse());
 
     execute(client, "login-request.com/?requestId=abcd-1234", 0, 1, true);
   }

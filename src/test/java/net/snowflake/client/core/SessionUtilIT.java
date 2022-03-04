@@ -20,70 +20,70 @@ import org.mockito.Mockito;
 
 public class SessionUtilIT {
 
-    /**
-     * Tests the JWT renew functionality when retrying login requests.
-     * To run, update environment variables to use connect with JWT authentication.
-     *
-     * @throws SFException
-     * @throws SnowflakeSQLException
-     */
-    @Ignore
-    @Test
-    public void testJwtAuthTimeoutRetry() throws SFException, SnowflakeSQLException {
-        final SFLoginInput loginInput = initMockLoginInput();
-        Map<SFSessionProperty, Object> connectionPropertiesMap = initConnectionPropertiesMap();
-        MockedStatic<HttpUtil> mockedHttpUtil = mockStatic(HttpUtil.class);
-        SnowflakeSQLException ex =
-                new SnowflakeSQLException(ErrorCode.NETWORK_ERROR, 0, "Authenticator Request Timeout");
+  /**
+   * Tests the JWT renew functionality when retrying login requests. To run, update environment
+   * variables to use connect with JWT authentication.
+   *
+   * @throws SFException
+   * @throws SnowflakeSQLException
+   */
+  @Ignore
+  @Test
+  public void testJwtAuthTimeoutRetry() throws SFException, SnowflakeSQLException {
+    final SFLoginInput loginInput = initMockLoginInput();
+    Map<SFSessionProperty, Object> connectionPropertiesMap = initConnectionPropertiesMap();
+    MockedStatic<HttpUtil> mockedHttpUtil = mockStatic(HttpUtil.class);
+    SnowflakeSQLException ex =
+        new SnowflakeSQLException(ErrorCode.NETWORK_ERROR, 0, "Authenticator Request Timeout");
 
-        mockedHttpUtil
-                .when(
-                        () ->
-                                HttpUtil.executeGeneralRequest(
-                                        Mockito.any(HttpRequestBase.class),
-                                        Mockito.anyInt(),
-                                        Mockito.anyInt(),
-                                        Mockito.anyInt(),
-                                        Mockito.nullable(HttpClientSettingsKey.class)))
-                .thenThrow(ex) // fail first
-                .thenReturn(
-                        "{\"data\":null,\"code\":null,\"message\":null,\"success\":true}"); // succeed on retry
+    mockedHttpUtil
+        .when(
+            () ->
+                HttpUtil.executeGeneralRequest(
+                    Mockito.any(HttpRequestBase.class),
+                    Mockito.anyInt(),
+                    Mockito.anyInt(),
+                    Mockito.anyInt(),
+                    Mockito.nullable(HttpClientSettingsKey.class)))
+        .thenThrow(ex) // fail first
+        .thenReturn(
+            "{\"data\":null,\"code\":null,\"message\":null,\"success\":true}"); // succeed on retry
 
-        SessionUtil.openSession(loginInput, connectionPropertiesMap, "ALL");
-    }
+    SessionUtil.openSession(loginInput, connectionPropertiesMap, "ALL");
+  }
 
-    /**
-     * Mock SFLoginInput
-     *
-     * @return a mock object for SFLoginInput
-     */
-    private SFLoginInput initMockLoginInput() {
-        // mock SFLoginInput
-        SFLoginInput loginInput = mock(SFLoginInput.class);
-        when(loginInput.getServerUrl()).thenReturn(systemGetEnv("SNOWFLAKE_TEST_HOST"));
-        when(loginInput.getAuthenticator())
-                .thenReturn(ClientAuthnDTO.AuthenticatorType.SNOWFLAKE_JWT.name());
-        when(loginInput.getPrivateKeyFile())
-                .thenReturn(systemGetEnv("SNOWFLAKE_TEST_PRIVATE_KEY_FILE"));
-        when(loginInput.getPrivateKeyFilePwd())
-                .thenReturn(systemGetEnv("SNOWFLAKE_TEST_PRIVATE_KEY_FILE_PWD"));
-        when(loginInput.getUserName()).thenReturn(systemGetEnv("SNOWFLAKE_TEST_USER"));
-        when(loginInput.getAccountName()).thenReturn("testaccount");
-        when(loginInput.getAppId()).thenReturn("testid");
-        when(loginInput.getOCSPMode()).thenReturn(OCSPMode.FAIL_OPEN);
-        when(loginInput.getHttpClientSettingsKey())
-                .thenReturn(new HttpClientSettingsKey(OCSPMode.FAIL_OPEN));
-        return loginInput;
-    }
+  /**
+   * Mock SFLoginInput
+   *
+   * @return a mock object for SFLoginInput
+   */
+  private SFLoginInput initMockLoginInput() {
+    // mock SFLoginInput
+    SFLoginInput loginInput = mock(SFLoginInput.class);
+    when(loginInput.getServerUrl()).thenReturn(systemGetEnv("SNOWFLAKE_TEST_HOST"));
+    when(loginInput.getAuthenticator())
+        .thenReturn(ClientAuthnDTO.AuthenticatorType.SNOWFLAKE_JWT.name());
+    when(loginInput.getPrivateKeyFile())
+        .thenReturn(systemGetEnv("SNOWFLAKE_TEST_PRIVATE_KEY_FILE"));
+    when(loginInput.getPrivateKeyFilePwd())
+        .thenReturn(systemGetEnv("SNOWFLAKE_TEST_PRIVATE_KEY_FILE_PWD"));
+    when(loginInput.getUserName()).thenReturn(systemGetEnv("SNOWFLAKE_TEST_USER"));
+    when(loginInput.getAccountName()).thenReturn("testaccount");
+    when(loginInput.getAppId()).thenReturn("testid");
+    when(loginInput.getOCSPMode()).thenReturn(OCSPMode.FAIL_OPEN);
+    when(loginInput.getHttpClientSettingsKey())
+        .thenReturn(new HttpClientSettingsKey(OCSPMode.FAIL_OPEN));
+    return loginInput;
+  }
 
-    /**
-     * Initialize the connection properties map.
-     *
-     * @return connectionPropertiesMap
-     */
-    private Map<SFSessionProperty, Object> initConnectionPropertiesMap() {
-        Map<SFSessionProperty, Object> connectionPropertiesMap = new HashMap<>();
-        connectionPropertiesMap.put(SFSessionProperty.TRACING, "ALL");
-        return connectionPropertiesMap;
-    }
+  /**
+   * Initialize the connection properties map.
+   *
+   * @return connectionPropertiesMap
+   */
+  private Map<SFSessionProperty, Object> initConnectionPropertiesMap() {
+    Map<SFSessionProperty, Object> connectionPropertiesMap = new HashMap<>();
+    connectionPropertiesMap.put(SFSessionProperty.TRACING, "ALL");
+    return connectionPropertiesMap;
+  }
 }

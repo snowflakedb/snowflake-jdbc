@@ -118,10 +118,10 @@ public class SnowflakeSQLException extends SQLException {
 
   public SnowflakeSQLException(ErrorCode errorCode, int retryCount, String reason) {
     super(
-            errorResourceBundleManager.getLocalizedMessage(
-                    String.valueOf(errorCode.getMessageCode()), reason),
-            errorCode.getSqlState(),
-            errorCode.getMessageCode());
+        errorResourceBundleManager.getLocalizedMessage(
+            String.valueOf(errorCode.getMessageCode()), reason),
+        errorCode.getSqlState(),
+        errorCode.getMessageCode());
     this.retryCount = retryCount;
   }
 

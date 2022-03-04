@@ -4,6 +4,8 @@
 
 package net.snowflake.client.jdbc;
 
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetEnv;
+
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.UUID;
@@ -24,7 +26,6 @@ import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
 
-import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetEnv;
 /**
  * This is an abstraction on top of http client.
  *
@@ -317,8 +318,7 @@ public class RestRequest {
 
         // Make sure that any authenticator specific info that needs to be
         // updated get's updated before the next retry. Ex - JWT token
-        if (authTimeout > 0 && elapsedMilliForTransientIssues > authTimeout)
-        {
+        if (authTimeout > 0 && elapsedMilliForTransientIssues > authTimeout) {
           // check if max retry has been reached
           if (retryCount > getMaxAuthRetryCount()) {
             logger.debug("Reached max number of auth retries. Aborting");
@@ -327,7 +327,7 @@ public class RestRequest {
           // check if this is a login-request
           if (String.valueOf(httpRequest.getURI()).contains("login-request")) {
             throw new SnowflakeSQLException(
-                    ErrorCode.NETWORK_ERROR, retryCount, "Authenticator Request Timeout");
+                ErrorCode.NETWORK_ERROR, retryCount, "Authenticator Request Timeout");
           }
         }
         int numOfRetryToTriggerTelemetry =

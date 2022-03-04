@@ -179,7 +179,11 @@ public class SessionUtilExternalBrowser {
 
       String theString =
           HttpUtil.executeGeneralRequest(
-              postRequest, loginInput.getLoginTimeout(), loginInput.getAuthTimeout(), 0, loginInput.getHttpClientSettingsKey());
+              postRequest,
+              loginInput.getLoginTimeout(),
+              loginInput.getAuthTimeout(),
+              0,
+              loginInput.getHttpClientSettingsKey());
 
       logger.debug("authenticator-request response: {}", theString);
 

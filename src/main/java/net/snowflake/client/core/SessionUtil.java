@@ -593,29 +593,28 @@ public class SessionUtil {
       while (true) {
         try {
           theString =
-                  HttpUtil.executeGeneralRequest(
-                          postRequest,
-                          loginInput.getLoginTimeout(),
-                          loginInput.getAuthTimeout(),
-                          retryCount,
-                          loginInput.getHttpClientSettingsKey());
+              HttpUtil.executeGeneralRequest(
+                  postRequest,
+                  loginInput.getLoginTimeout(),
+                  loginInput.getAuthTimeout(),
+                  retryCount,
+                  loginInput.getHttpClientSettingsKey());
         } catch (SnowflakeSQLException ex) {
           if (ex.getMessage().contains("Authenticator Request Timeout")) {
             if (authenticatorType == ClientAuthnDTO.AuthenticatorType.SNOWFLAKE_JWT) {
               SessionUtilKeyPair s =
-                      new SessionUtilKeyPair(
-                              loginInput.getPrivateKey(),
-                              loginInput.getPrivateKeyFile(),
-                              loginInput.getPrivateKeyFilePwd(),
-                              loginInput.getAccountName(),
-                              loginInput.getUserName());
+                  new SessionUtilKeyPair(
+                      loginInput.getPrivateKey(),
+                      loginInput.getPrivateKeyFile(),
+                      loginInput.getPrivateKeyFilePwd(),
+                      loginInput.getAccountName(),
+                      loginInput.getUserName());
 
               data.put(ClientAuthnParameter.TOKEN.name(), s.issueJwtToken());
               retryCount = ex.getRetryCount();
               continue;
             }
-          }
-          else {
+          } else {
             throw ex;
           }
         }
@@ -883,7 +882,11 @@ public class SessionUtil {
 
       String theString =
           HttpUtil.executeGeneralRequest(
-              postRequest, loginInput.getLoginTimeout(), loginInput.getAuthTimeout(), retryCount, loginInput.getHttpClientSettingsKey());
+              postRequest,
+              loginInput.getLoginTimeout(),
+              loginInput.getAuthTimeout(),
+              retryCount,
+              loginInput.getHttpClientSettingsKey());
 
       // general method, same as with data binding
       JsonNode jsonNode = mapper.readTree(theString);
@@ -967,7 +970,11 @@ public class SessionUtil {
 
       String theString =
           HttpUtil.executeGeneralRequest(
-              postRequest, loginInput.getLoginTimeout(), loginInput.getAuthTimeout(), retryCount, loginInput.getHttpClientSettingsKey());
+              postRequest,
+              loginInput.getLoginTimeout(),
+              loginInput.getAuthTimeout(),
+              retryCount,
+              loginInput.getHttpClientSettingsKey());
 
       JsonNode rootNode;
 
@@ -1028,7 +1035,11 @@ public class SessionUtil {
 
       responseHtml =
           HttpUtil.executeGeneralRequest(
-              httpGet, loginInput.getLoginTimeout(), loginInput.getAuthTimeout(), retryCount, loginInput.getHttpClientSettingsKey());
+              httpGet,
+              loginInput.getLoginTimeout(),
+              loginInput.getAuthTimeout(),
+              retryCount,
+              loginInput.getHttpClientSettingsKey());
 
       // step 5
       String postBackUrl = getPostBackUrlFromHTML(responseHtml);
@@ -1174,7 +1185,11 @@ public class SessionUtil {
 
       final String gsResponse =
           HttpUtil.executeGeneralRequest(
-              postRequest, loginInput.getLoginTimeout(), loginInput.getAuthTimeout(), retryCount, loginInput.getHttpClientSettingsKey());
+              postRequest,
+              loginInput.getLoginTimeout(),
+              loginInput.getAuthTimeout(),
+              retryCount,
+              loginInput.getHttpClientSettingsKey());
       logger.debug("authenticator-request response: {}", gsResponse);
       JsonNode jsonNode = mapper.readTree(gsResponse);
 
@@ -1497,13 +1512,12 @@ public class SessionUtil {
       String userName)
       throws SFException {
     SessionUtilKeyPair s =
-            new SessionUtilKeyPair(
-                    privateKey, privateKeyFile, privateKeyFilePwd, accountName, userName);
+        new SessionUtilKeyPair(
+            privateKey, privateKeyFile, privateKeyFilePwd, accountName, userName);
     return s.issueJwtToken();
   }
 
-  public static void defaultAuthTimeoutResponse()
-  {
+  public static void defaultAuthTimeoutResponse() {
     logger.debug("Default auth timeout response was triggered. This is a no op");
   }
 }
