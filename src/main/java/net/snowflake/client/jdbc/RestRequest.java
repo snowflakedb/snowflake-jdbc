@@ -268,8 +268,6 @@ public class RestRequest {
                 elapsedMilliForTransientIssues,
                 retryTimeoutInMilliseconds);
 
-            // check if it's a login request
-            String hostname = httpRequest.getURI().getHost();
             breakRetryReason = "retry timeout";
             TelemetryService.getInstance()
                 .logHttpRequestTelemetryEvent(
@@ -411,7 +409,6 @@ public class RestRequest {
             "Exception encountered for HTTP request: " + savedEx.getMessage());
       }
     }
-
 
     return response;
   }
