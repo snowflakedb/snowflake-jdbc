@@ -581,17 +581,21 @@ public class HttpUtil {
    *
    * @param httpRequest HttpRequestBase
    * @param retryTimeout retry timeout
+   * @param authTimeout authenticator specific timeout
+   * @param retryCount : retry count for the request
    * @param httpClient client object used to communicate with other machine
    * @return response
    * @throws SnowflakeSQLException if Snowflake error occurs
    * @throws IOException raises if a general IO error occurs
    */
   public static String executeGeneralRequest(
-      HttpRequestBase httpRequest, int retryTimeout, CloseableHttpClient httpClient)
+      HttpRequestBase httpRequest, int retryTimeout, int authTimeout, int retryCount, CloseableHttpClient httpClient)
       throws SnowflakeSQLException, IOException {
     return executeRequestInternal(
         httpRequest,
         retryTimeout,
+        authTimeout,
+        retryCount,
         0, // no inject socket timeout
         null, // no canceling
         false, // with cookie
