@@ -18,7 +18,7 @@ import org.junit.Test;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
-public class SessionUtilIT {
+public class SessionUtilLatestIT {
 
   /**
    * Tests the JWT renew functionality when retrying login requests. To run, update environment
