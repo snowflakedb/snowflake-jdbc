@@ -308,7 +308,9 @@ public class HttpUtil {
       // only set the proxy settings if they are not null
       // but no value has been specified for nonProxyHosts
       // the route planner will determine whether to use a proxy based on nonProxyHosts value.
-      if (proxy != null && Strings.isNullOrEmpty(key.getNonProxyHosts())) builder.setProxy(proxy);
+      if (proxy != null && Strings.isNullOrEmpty(key.getNonProxyHosts())) {
+        builder.setProxy(proxy);
+      }
       DefaultRequestConfig = builder.build();
     }
 
@@ -370,7 +372,10 @@ public class HttpUtil {
                 key,
                 k ->
                     new SnowflakeMutableProxyRoutePlanner(
-                        key.getProxyHost(), key.getProxyPort(), key.getNonProxyHosts()));
+                        key.getProxyHost(),
+                        key.getProxyPort(),
+                        key.getProxyProtocol(),
+                        key.getNonProxyHosts()));
         httpClientBuilder = httpClientBuilder.setProxy(proxy).setRoutePlanner(sdkProxyRoutePlanner);
         if (!Strings.isNullOrEmpty(key.getProxyUser())
             && !Strings.isNullOrEmpty(key.getProxyPassword())) {
