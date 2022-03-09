@@ -24,17 +24,20 @@ public class SnowflakeMutableProxyRoutePlanner implements HttpRoutePlanner, Seri
   private String host;
   private int proxyPort;
   private String nonProxyHosts;
+  private Protocol protocol;
 
-  public SnowflakeMutableProxyRoutePlanner(String host, int proxyPort, String nonProxyHosts) {
-    proxyRoutePlanner = new SdkProxyRoutePlanner(host, proxyPort, Protocol.HTTPS, nonProxyHosts);
+  public SnowflakeMutableProxyRoutePlanner(
+      String host, int proxyPort, Protocol proxyProtocol, String nonProxyHosts) {
+    proxyRoutePlanner = new SdkProxyRoutePlanner(host, proxyPort, proxyProtocol, nonProxyHosts);
     this.host = host;
     this.proxyPort = proxyPort;
     this.nonProxyHosts = nonProxyHosts;
+    this.protocol = proxyProtocol;
   }
 
   public void setNonProxyHosts(String nonProxyHosts) {
     this.nonProxyHosts = nonProxyHosts;
-    proxyRoutePlanner = new SdkProxyRoutePlanner(host, proxyPort, Protocol.HTTPS, nonProxyHosts);
+    proxyRoutePlanner = new SdkProxyRoutePlanner(host, proxyPort, protocol, nonProxyHosts);
   }
 
   public String getNonProxyHosts() {
