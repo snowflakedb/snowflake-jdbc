@@ -337,6 +337,7 @@ public class StmtUtil {
                 stmtInput.networkTimeoutInMillis / 1000,
                 0,
                 0,
+                0,
                 stmtInput.injectSocketTimeout,
                 stmtInput.canceling,
                 true, // include retry parameters
@@ -578,6 +579,7 @@ public class StmtUtil {
           0,
           0,
           0,
+          0,
           stmtInput.canceling,
           false, // no retry parameter
           false, // no retry on HTTP 403
@@ -689,6 +691,7 @@ public class StmtUtil {
           HttpUtil.executeRequest(
               httpRequest,
               SF_CANCELING_RETRY_TIMEOUT_IN_MILLIS,
+              0,
               0,
               0,
               0,

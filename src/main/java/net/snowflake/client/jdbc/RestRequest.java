@@ -4,7 +4,6 @@
 
 package net.snowflake.client.jdbc;
 
-import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetEnv;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -50,9 +49,6 @@ public class RestRequest {
   // retry at least once even if timeout limit has been reached
   private static final int MIN_RETRY_COUNT = 1;
 
-  // max number of retries
-  private static final int MAX_RETRY_COUNT = 3;
-
   /**
    * Execute an http request with retry logic.
    *
@@ -60,6 +56,7 @@ public class RestRequest {
    * @param httpRequest request object contains all the request information
    * @param retryTimeout : retry timeout (in seconds)
    * @param authTimeout : authenticator specific timeout (in seconds)
+   * @param curlTimeout curl timeout (in ms)
    * @param retryCount : retry count for the request
    * @param injectSocketTimeout : simulate socket timeout
    * @param canceling canceling flag
@@ -76,6 +73,7 @@ public class RestRequest {
       HttpRequestBase httpRequest,
       long retryTimeout,
       long authTimeout,
+      int curlTimeout,
       int retryCount,
       int injectSocketTimeout,
       AtomicBoolean canceling,
@@ -107,6 +105,9 @@ public class RestRequest {
     // amount of time to wait for backing off before retry
     long backoffInMilli = minBackoffInMilli;
 
+    // auth timeout (ms)
+    long authTimeoutInMilli = authTimeout * 1000;
+
     DecorrelatedJitterBackoff backoff =
         new DecorrelatedJitterBackoff(backoffInMilli, maxBackoffInMilli);
 
@@ -116,6 +117,12 @@ public class RestRequest {
 
     // label the reason to break retry
     String breakRetryReason = "";
+
+    // When the JWT token needs to be renewed, set the socket timeout as the authTimeout
+    // so that it can be renewed in time and pass it to the http request configuration.
+    int curlStateTimeout = authTimeout > 0 ? (int) (authTimeout * 1000) : curlTimeout;
+    httpRequest.setConfig(
+        HttpUtil.getDefaultRequestConfigWithSocketTimeout(curlStateTimeout, withoutCookies));
 
     // try request till we get a good response or retry timeout
     while (true) {
@@ -300,6 +307,24 @@ public class RestRequest {
           }
         }
 
+        // Make sure that any authenticator specific info that needs to be
+        // updated get's updated before the next retry. Ex - JWT token
+        // Check to see if socket timeout has been reached, if not we don't increase the retry count
+        // since JWT renew doesn't count as a retry attempt.
+        if (authTimeout > 0
+            && elapsedMilliForTransientIssues > authTimeoutInMilli
+            && (curlTimeout == 0
+                || elapsedMilliForTransientIssues < curlTimeout)) /* socket timeout not reached */ {
+          // check if this is a login-request
+          if (String.valueOf(httpRequest.getURI()).contains("login-request")) {
+            throw new SnowflakeSQLException(
+                ErrorCode.AUTHENTICATOR_REQUEST_TIMEOUT,
+                retryCount,
+                true,
+                elapsedMilliForTransientIssues);
+          }
+        }
+
         logger.debug("Retrying request: {}", requestInfoScrubbed);
 
         // sleep for backoff - elapsed amount of time
@@ -316,20 +341,18 @@ public class RestRequest {
 
         retryCount++;
 
-        // Make sure that any authenticator specific info that needs to be
-        // updated get's updated before the next retry. Ex - JWT token
-        if (authTimeout > 0 && elapsedMilliForTransientIssues > authTimeout) {
-          // check if max retry has been reached
-          if (retryCount > getMaxAuthRetryCount()) {
-            logger.debug("Reached max number of auth retries. Aborting");
-            break;
-          }
-          // check if this is a login-request
-          if (String.valueOf(httpRequest.getURI()).contains("login-request")) {
+        // If the request failed with any other retry-able error and auth timeout is reached
+        // increase the retry count and throw special exception to renew the token before retrying.
+        if (authTimeout > 0) {
+          if (elapsedMilliForTransientIssues >= authTimeoutInMilli) {
             throw new SnowflakeSQLException(
-                ErrorCode.NETWORK_ERROR, retryCount, "Authenticator Request Timeout");
+                ErrorCode.AUTHENTICATOR_REQUEST_TIMEOUT,
+                retryCount,
+                false,
+                elapsedMilliForTransientIssues);
           }
         }
+
         int numOfRetryToTriggerTelemetry =
             TelemetryService.getInstance().getNumOfRetryToTriggerTelemetry();
         if (retryCount == numOfRetryToTriggerTelemetry) {
@@ -442,14 +465,5 @@ public class RestRequest {
       ex0 = ex0.getCause();
     }
     return ex0;
-  }
-
-  private static int getMaxAuthRetryCount() {
-    String maxAuthRetryCountStr = systemGetEnv("MAX_AUTH_RETRY_COUNT");
-    int maxAuthRetryCount = MAX_RETRY_COUNT;
-    if (maxAuthRetryCountStr != null) {
-      maxAuthRetryCount = Integer.parseInt(maxAuthRetryCountStr);
-    }
-    return maxAuthRetryCount;
   }
 }

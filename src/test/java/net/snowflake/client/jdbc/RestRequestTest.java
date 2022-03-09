@@ -3,6 +3,8 @@
  */
 package net.snowflake.client.jdbc;
 
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
@@ -10,19 +12,23 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
+import net.snowflake.client.core.HttpUtil;
 import org.apache.http.StatusLine;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
 /** RestRequest unit tests. */
 public class RestRequestTest {
+
+  static final int DEFAULT_CONNECTION_TIMEOUT = 60000;
+  static final int DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT = 300000; // ms
+
   private CloseableHttpResponse retryResponse() {
     StatusLine retryStatusLine = mock(StatusLine.class);
     when(retryStatusLine.getStatusCode()).thenReturn(503);
@@ -48,13 +54,25 @@ public class RestRequestTest {
       String uri,
       int retryTimeout,
       int authTimeout,
+      int curlTimeout,
       boolean includeRetryParameters)
       throws IOException, SnowflakeSQLException {
+
+    RequestConfig.Builder builder =
+        RequestConfig.custom()
+            .setConnectTimeout(DEFAULT_CONNECTION_TIMEOUT)
+            .setConnectionRequestTimeout(DEFAULT_CONNECTION_TIMEOUT)
+            .setSocketTimeout(DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT);
+    RequestConfig defaultRequestConfig = builder.build();
+    HttpUtil util = new HttpUtil();
+    util.setRequestConfig(defaultRequestConfig);
+
     RestRequest.execute(
         client,
         new HttpGet(uri),
         retryTimeout, // retry timeout
         authTimeout,
+        curlTimeout,
         0,
         0, // inject socket timeout
         new AtomicBoolean(false), // canceling
@@ -96,7 +114,7 @@ public class RestRequestTest {
               }
             });
 
-    execute(client, "fakeurl.com/?requestId=abcd-1234", 0, 0, true);
+    execute(client, "fakeurl.com/?requestId=abcd-1234", 0, 0, 0, true);
   }
 
   @Test
@@ -127,7 +145,7 @@ public class RestRequestTest {
               }
             });
 
-    execute(client, "fakeurl.com/?requestId=abcd-1234", 0, 0, false);
+    execute(client, "fakeurl.com/?requestId=abcd-1234", 0, 0, 0, false);
   }
 
   private CloseableHttpResponse anyStatusCodeResponse(int statusCode) {
@@ -280,16 +298,17 @@ public class RestRequestTest {
     }
   }
 
-  @Rule public ExpectedException expectedException = ExpectedException.none();
-
   @Test
-  public void testExceptionAuthBasedTimeout() throws IOException, SnowflakeSQLException {
-    expectedException.expect(SnowflakeSQLException.class);
-    expectedException.expectMessage("Authenticator Request Timeout");
+  public void testExceptionAuthBasedTimeout() throws IOException {
     CloseableHttpClient client = mock(CloseableHttpClient.class);
     when(client.execute(any(HttpUriRequest.class)))
         .thenAnswer((Answer<CloseableHttpResponse>) invocation -> retryResponse());
 
-    execute(client, "login-request.com/?requestId=abcd-1234", 0, 1, true);
+    try {
+      execute(client, "login-request.com/?requestId=abcd-1234", 2, 1, 30000, true);
+    } catch (SnowflakeSQLException ex) {
+      assertThat(
+          ex.getErrorCode(), equalTo(ErrorCode.AUTHENTICATOR_REQUEST_TIMEOUT.getMessageCode()));
+    }
   }
 }

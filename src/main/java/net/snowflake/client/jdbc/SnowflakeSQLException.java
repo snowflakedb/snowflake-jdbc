@@ -22,6 +22,9 @@ public class SnowflakeSQLException extends SQLException {
   private String queryId = "unknown";
   private int retryCount = 0;
 
+  boolean isCurlTimeoutNoBackoff;
+  long elapsedSeconds;
+
   /**
    * This constructor should only be used for error from Global service. Since Global service has
    * already built the error message, we use it as is. For any errors local to JDBC driver, we
@@ -116,13 +119,15 @@ public class SnowflakeSQLException extends SQLException {
         errorCode.getMessageCode());
   }
 
-  public SnowflakeSQLException(ErrorCode errorCode, int retryCount, String reason) {
+  public SnowflakeSQLException(
+      ErrorCode errorCode, int retryCount, boolean isCurlTimeoutNoBackoff, long elapsedSeconds) {
     super(
-        errorResourceBundleManager.getLocalizedMessage(
-            String.valueOf(errorCode.getMessageCode()), reason),
+        errorResourceBundleManager.getLocalizedMessage(String.valueOf(errorCode.getMessageCode())),
         errorCode.getSqlState(),
         errorCode.getMessageCode());
     this.retryCount = retryCount;
+    this.isCurlTimeoutNoBackoff = isCurlTimeoutNoBackoff;
+    this.elapsedSeconds = elapsedSeconds;
   }
 
   public SnowflakeSQLException(SFException e) {
@@ -139,5 +144,13 @@ public class SnowflakeSQLException extends SQLException {
 
   public int getRetryCount() {
     return retryCount;
+  }
+
+  public boolean isCurlTimeoutNoBackoff() {
+    return isCurlTimeoutNoBackoff;
+  }
+
+  public long getElapsedSeconds() {
+    return elapsedSeconds;
   }
 }

@@ -518,6 +518,7 @@ public class HttpUtil {
    * @param httpRequest HttpRequestBase
    * @param retryTimeout retry timeout
    * @param authTimeout authenticator specific timeout
+   * @param curlTimeout curl timeout (in ms)
    * @param retryCount : retry count for the request
    * @param injectSocketTimeout injecting socket timeout
    * @param canceling canceling?
@@ -530,6 +531,7 @@ public class HttpUtil {
       HttpRequestBase httpRequest,
       int retryTimeout,
       int authTimeout,
+      int curlTimeout,
       int retryCount,
       int injectSocketTimeout,
       AtomicBoolean canceling,
@@ -539,6 +541,7 @@ public class HttpUtil {
         httpRequest,
         retryTimeout,
         authTimeout,
+        curlTimeout,
         retryCount,
         injectSocketTimeout,
         canceling,
@@ -555,6 +558,7 @@ public class HttpUtil {
    * @param httpRequest HttpRequestBase
    * @param retryTimeout retry timeout
    * @param authTimeout authenticator specific timeout
+   * @param curlTimeout curl timeout (in ms)
    * @param retryCount : retry count for the request
    * @param ocspAndProxyKey OCSP mode and proxy settings for httpclient
    * @return response
@@ -565,6 +569,7 @@ public class HttpUtil {
       HttpRequestBase httpRequest,
       int retryTimeout,
       int authTimeout,
+      int curlTimeout,
       int retryCount,
       HttpClientSettingsKey ocspAndProxyKey)
       throws SnowflakeSQLException, IOException {
@@ -572,6 +577,7 @@ public class HttpUtil {
         httpRequest,
         retryTimeout,
         authTimeout,
+        curlTimeout,
         retryCount,
         0, // no inject socket timeout
         null, // no canceling
@@ -586,6 +592,7 @@ public class HttpUtil {
    * @param httpRequest HttpRequestBase
    * @param retryTimeout retry timeout
    * @param authTimeout authenticator specific timeout
+   * @param curlTimeout curl timeout (in ms)
    * @param retryCount : retry count for the request
    * @param httpClient client object used to communicate with other machine
    * @return response
@@ -596,6 +603,7 @@ public class HttpUtil {
       HttpRequestBase httpRequest,
       int retryTimeout,
       int authTimeout,
+      int curlTimeout,
       int retryCount,
       CloseableHttpClient httpClient)
       throws SnowflakeSQLException, IOException {
@@ -603,6 +611,7 @@ public class HttpUtil {
         httpRequest,
         retryTimeout,
         authTimeout,
+        curlTimeout,
         retryCount,
         0, // no inject socket timeout
         null, // no canceling
@@ -619,6 +628,7 @@ public class HttpUtil {
    * @param httpRequest HttpRequestBase
    * @param retryTimeout retry timeout
    * @param authTimeout authenticator timeout
+   * @param curlTimeout curl timeout (in ms)
    * @param retryCount : retry count for the request
    * @param injectSocketTimeout injecting socket timeout
    * @param canceling canceling?
@@ -633,6 +643,7 @@ public class HttpUtil {
       HttpRequestBase httpRequest,
       int retryTimeout,
       int authTimeout,
+      int curlTimeout,
       int retryCount,
       int injectSocketTimeout,
       AtomicBoolean canceling,
@@ -644,6 +655,7 @@ public class HttpUtil {
         httpRequest,
         retryTimeout,
         authTimeout,
+        curlTimeout,
         retryCount,
         injectSocketTimeout,
         canceling,
@@ -664,6 +676,7 @@ public class HttpUtil {
    * @param httpRequest request object contains all the information
    * @param retryTimeout retry timeout (in seconds)
    * @param authTimeout authenticator specific timeout (in seconds)
+   * @param curlTimeout curl timeout (in ms)
    * @param retryCount : retry count for the request
    * @param injectSocketTimeout simulate socket timeout
    * @param canceling canceling flag
@@ -680,6 +693,7 @@ public class HttpUtil {
       HttpRequestBase httpRequest,
       int retryTimeout,
       int authTimeout,
+      int curlTimeout,
       int retryCount,
       int injectSocketTimeout,
       AtomicBoolean canceling,
@@ -699,6 +713,7 @@ public class HttpUtil {
     String theString;
     StringWriter writer = null;
     CloseableHttpResponse response = null;
+
     try {
       response =
           RestRequest.execute(
@@ -706,6 +721,7 @@ public class HttpUtil {
               httpRequest,
               retryTimeout,
               authTimeout,
+              curlTimeout,
               retryCount,
               injectSocketTimeout,
               canceling,

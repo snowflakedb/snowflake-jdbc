@@ -34,13 +34,14 @@ public class SessionUtilLatestIT {
     Map<SFSessionProperty, Object> connectionPropertiesMap = initConnectionPropertiesMap();
     MockedStatic<HttpUtil> mockedHttpUtil = mockStatic(HttpUtil.class);
     SnowflakeSQLException ex =
-        new SnowflakeSQLException(ErrorCode.NETWORK_ERROR, 0, "Authenticator Request Timeout");
+        new SnowflakeSQLException(ErrorCode.AUTHENTICATOR_REQUEST_TIMEOUT, 0, true, 0);
 
     mockedHttpUtil
         .when(
             () ->
                 HttpUtil.executeGeneralRequest(
                     Mockito.any(HttpRequestBase.class),
+                    Mockito.anyInt(),
                     Mockito.anyInt(),
                     Mockito.anyInt(),
                     Mockito.anyInt(),

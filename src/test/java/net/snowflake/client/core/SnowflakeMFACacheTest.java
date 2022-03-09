@@ -105,6 +105,7 @@ public class SnowflakeMFACacheTest {
                       anyInt(),
                       anyInt(),
                       anyInt(),
+                      anyInt(),
                       any(HttpClientSettingsKey.class)))
           .thenAnswer(
               new Answer<String>() {
@@ -250,6 +251,7 @@ public class SnowflakeMFACacheTest {
               () ->
                   HttpUtil.executeGeneralRequest(
                       any(HttpPost.class),
+                      anyInt(),
                       anyInt(),
                       anyInt(),
                       anyInt(),

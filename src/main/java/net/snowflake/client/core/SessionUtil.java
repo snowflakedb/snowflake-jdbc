@@ -589,18 +589,21 @@ public class SessionUtil {
       setServiceNameHeader(loginInput, postRequest);
 
       String theString = null;
+      int leftRetryTimeout = loginInput.getLoginTimeout();
+      int leftCurlTimeout = loginInput.getSocketTimeout();
 
       while (true) {
         try {
           theString =
               HttpUtil.executeGeneralRequest(
                   postRequest,
-                  loginInput.getLoginTimeout(),
+                  leftRetryTimeout,
                   loginInput.getAuthTimeout(),
+                  leftCurlTimeout,
                   retryCount,
                   loginInput.getHttpClientSettingsKey());
         } catch (SnowflakeSQLException ex) {
-          if (ex.getMessage().contains("Authenticator Request Timeout")) {
+          if (ex.getErrorCode() == ErrorCode.AUTHENTICATOR_REQUEST_TIMEOUT.getMessageCode()) {
             if (authenticatorType == ClientAuthnDTO.AuthenticatorType.SNOWFLAKE_JWT) {
               SessionUtilKeyPair s =
                   new SessionUtilKeyPair(
@@ -611,7 +614,38 @@ public class SessionUtil {
                       loginInput.getUserName());
 
               data.put(ClientAuthnParameter.TOKEN.name(), s.issueJwtToken());
+
+              long elapsedSeconds = ex.getElapsedSeconds();
+
+              if (loginInput.getLoginTimeout() > 0) {
+                if (leftRetryTimeout > elapsedSeconds) {
+                  leftRetryTimeout -= elapsedSeconds;
+                } else {
+                  leftRetryTimeout = 1;
+                }
+              }
+
+              // In RestRequest.execute(), socket timeout is replaced with auth timeout
+              // so we can renew the request within auth timeout.
+              // auth timeout within socket timeout is thrown without backoff,
+              // and we need to update time remained in socket timeout here to control the
+              // the actual socket timeout from customer setting.
+              if (loginInput.getSocketTimeout() > 0) {
+                if (ex.isCurlTimeoutNoBackoff()) {
+                  if (leftCurlTimeout > elapsedSeconds) {
+                    leftCurlTimeout -= elapsedSeconds;
+                  } else {
+                    leftCurlTimeout = 1;
+                  }
+                } else {
+                  // reset curl timeout for retry with backoff.
+                  leftCurlTimeout = loginInput.getSocketTimeout();
+                }
+              }
+
+              // JWT renew should not count as a retry, so we pass back the current retry count.
               retryCount = ex.getRetryCount();
+
               continue;
             }
           } else {
@@ -885,6 +919,7 @@ public class SessionUtil {
               postRequest,
               loginInput.getLoginTimeout(),
               loginInput.getAuthTimeout(),
+              loginInput.getSocketTimeout(),
               retryCount,
               loginInput.getHttpClientSettingsKey());
 
@@ -973,6 +1008,7 @@ public class SessionUtil {
               postRequest,
               loginInput.getLoginTimeout(),
               loginInput.getAuthTimeout(),
+              loginInput.getSocketTimeout(),
               retryCount,
               loginInput.getHttpClientSettingsKey());
 
@@ -1038,6 +1074,7 @@ public class SessionUtil {
               httpGet,
               loginInput.getLoginTimeout(),
               loginInput.getAuthTimeout(),
+              loginInput.getSocketTimeout(),
               retryCount,
               loginInput.getHttpClientSettingsKey());
 
@@ -1105,6 +1142,7 @@ public class SessionUtil {
               postRequest,
               loginInput.getLoginTimeout(),
               loginInput.getAuthTimeout(),
+              loginInput.getSocketTimeout(),
               retryCount,
               0,
               null,
@@ -1188,6 +1226,7 @@ public class SessionUtil {
               postRequest,
               loginInput.getLoginTimeout(),
               loginInput.getAuthTimeout(),
+              loginInput.getSocketTimeout(),
               retryCount,
               loginInput.getHttpClientSettingsKey());
       logger.debug("authenticator-request response: {}", gsResponse);
