@@ -4,7 +4,6 @@
 
 package net.snowflake.client.jdbc;
 
-
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.UUID;
