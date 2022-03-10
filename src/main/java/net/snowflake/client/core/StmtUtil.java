@@ -82,7 +82,6 @@ public class StmtUtil {
     String sessionToken;
     int networkTimeoutInMillis;
     int socketTimeout;
-    int connectTimeout;
     int injectSocketTimeout; // seconds
     int injectClientPause; // seconds
 
@@ -166,11 +165,6 @@ public class StmtUtil {
 
     public StmtInput setSocketTimeout(int socketTimeout) {
       this.socketTimeout = socketTimeout;
-      return this;
-    }
-
-    public StmtInput setConnectTimeout(int connectTimeout) {
-      this.connectTimeout = connectTimeout;
       return this;
     }
 
@@ -348,7 +342,6 @@ public class StmtUtil {
                 httpRequest,
                 stmtInput.networkTimeoutInMillis / 1000,
                 stmtInput.socketTimeout,
-                stmtInput.connectTimeout,
                 0,
                 0,
                 stmtInput.injectSocketTimeout,
@@ -590,7 +583,6 @@ public class StmtUtil {
           httpRequest,
           stmtInput.networkTimeoutInMillis / 1000,
           stmtInput.socketTimeout,
-          stmtInput.connectTimeout,
           0,
           0,
           0,
@@ -626,7 +618,6 @@ public class StmtUtil {
             .setSessionToken(session.getSessionToken())
             .setNetworkTimeoutInMillis(session.getNetworkTimeoutInMilli())
             .setSocketTimeout(session.getHttpClientSocketTimeout())
-            .setConnectTimeout(session.getHttpClientConnectionTimeout())
             .setMediaType(SF_MEDIA_TYPE)
             .setServiceName(session.getServiceName())
             .setOCSPMode(session.getOCSPMode())
@@ -708,8 +699,7 @@ public class StmtUtil {
               httpRequest,
               SF_CANCELING_RETRY_TIMEOUT_IN_MILLIS,
               0,
-              0,
-              0,
+              stmtInput.socketTimeout,
               0,
               0,
               null,

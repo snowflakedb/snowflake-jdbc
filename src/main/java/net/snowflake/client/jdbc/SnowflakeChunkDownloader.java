@@ -88,8 +88,6 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
 
   private final int socketTimeout;
 
-  private final int connectTimeout;
-
   private long memoryLimit;
 
   // the current memory usage across JVM
@@ -198,7 +196,6 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
     this.networkTimeoutInMilli = resultSetSerializable.getNetworkTimeoutInMilli();
     this.authTimeout = resultSetSerializable.getAuthTimeout();
     this.socketTimeout = resultSetSerializable.getSocketTimeout();
-    this.connectTimeout = resultSetSerializable.getConnectTimeout();
     this.prefetchSlots = resultSetSerializable.getResultPrefetchThreads() * 2;
     this.queryResultFormat = resultSetSerializable.getQueryResultFormat();
     logger.debug("qrmk = {}", this.qrmk);
@@ -391,7 +388,6 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
                     networkTimeoutInMilli,
                     authTimeout,
                     socketTimeout,
-                    connectTimeout,
                     this.session));
         downloaderFutures.put(nextChunkToDownload, downloaderFuture);
         // increment next chunk to download
@@ -688,7 +684,6 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
                     networkTimeoutInMilli,
                     authTimeout,
                     socketTimeout,
-                    connectTimeout,
                     session));
         downloaderFutures.put(nextChunkToDownload, downloaderFuture);
         // Only when prefetch fails due to internal memory limitation, nextChunkToDownload
@@ -844,7 +839,6 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
       final int networkTimeoutInMilli,
       final int authTimeout,
       final int socketTimeout,
-      final int connectTimeout,
       final SFBaseSession session) {
     ChunkDownloadContext downloadContext =
         new ChunkDownloadContext(
@@ -856,7 +850,6 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
             networkTimeoutInMilli,
             authTimeout,
             socketTimeout,
-            connectTimeout,
             session);
 
     return new Callable<Void>() {

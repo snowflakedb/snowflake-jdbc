@@ -537,7 +537,6 @@ public class HttpUtil {
    * @param retryTimeout retry timeout
    * @param authTimeout authenticator specific timeout
    * @param socketTimeout socket timeout (in ms)
-   * @param connectTimeout connect timeout (ms)
    * @param retryCount retry count for the request
    * @param injectSocketTimeout injecting socket timeout
    * @param canceling canceling?
@@ -551,7 +550,6 @@ public class HttpUtil {
       int retryTimeout,
       int authTimeout,
       int socketTimeout,
-      int connectTimeout,
       int retryCount,
       int injectSocketTimeout,
       AtomicBoolean canceling,
@@ -562,7 +560,6 @@ public class HttpUtil {
         retryTimeout,
         authTimeout,
         socketTimeout,
-        connectTimeout,
         retryCount,
         injectSocketTimeout,
         canceling,
@@ -580,7 +577,6 @@ public class HttpUtil {
    * @param retryTimeout retry timeout
    * @param authTimeout authenticator specific timeout
    * @param socketTimeout socket timeout (in ms)
-   * @param connectTimeout connect timeout (ms)
    * @param retryCount retry count for the request
    * @param ocspAndProxyKey OCSP mode and proxy settings for httpclient
    * @return response
@@ -592,7 +588,6 @@ public class HttpUtil {
       int retryTimeout,
       int authTimeout,
       int socketTimeout,
-      int connectTimeout,
       int retryCount,
       HttpClientSettingsKey ocspAndProxyKey)
       throws SnowflakeSQLException, IOException {
@@ -601,7 +596,6 @@ public class HttpUtil {
         retryTimeout,
         authTimeout,
         socketTimeout,
-        connectTimeout,
         retryCount,
         0, // no inject socket timeout
         null, // no canceling
@@ -617,7 +611,6 @@ public class HttpUtil {
    * @param retryTimeout retry timeout
    * @param authTimeout authenticator specific timeout
    * @param socketTimeout socket timeout (in ms)
-   * @param connectTimeout connect timeout (ms)
    * @param retryCount retry count for the request
    * @param httpClient client object used to communicate with other machine
    * @return response
@@ -629,7 +622,6 @@ public class HttpUtil {
       int retryTimeout,
       int authTimeout,
       int socketTimeout,
-      int connectTimeout,
       int retryCount,
       CloseableHttpClient httpClient)
       throws SnowflakeSQLException, IOException {
@@ -638,7 +630,6 @@ public class HttpUtil {
         retryTimeout,
         authTimeout,
         socketTimeout,
-        connectTimeout,
         retryCount,
         0, // no inject socket timeout
         null, // no canceling
@@ -656,7 +647,6 @@ public class HttpUtil {
    * @param retryTimeout retry timeout
    * @param authTimeout authenticator timeout
    * @param socketTimeout socket timeout (in ms)
-   * @param connectTimeout connect timeout (ms)
    * @param retryCount retry count for the request
    * @param injectSocketTimeout injecting socket timeout
    * @param canceling canceling?
@@ -672,7 +662,6 @@ public class HttpUtil {
       int retryTimeout,
       int authTimeout,
       int socketTimeout,
-      int connectTimeout,
       int retryCount,
       int injectSocketTimeout,
       AtomicBoolean canceling,
@@ -685,7 +674,6 @@ public class HttpUtil {
         retryTimeout,
         authTimeout,
         socketTimeout,
-        connectTimeout,
         retryCount,
         injectSocketTimeout,
         canceling,
@@ -707,7 +695,6 @@ public class HttpUtil {
    * @param retryTimeout retry timeout (in seconds)
    * @param authTimeout authenticator specific timeout (in seconds)
    * @param socketTimeout socket timeout (in ms)
-   * @param connectTimeout connect timeout (ms)
    * @param retryCount retry count for the request
    * @param injectSocketTimeout simulate socket timeout
    * @param canceling canceling flag
@@ -725,7 +712,6 @@ public class HttpUtil {
       int retryTimeout,
       int authTimeout,
       int socketTimeout,
-      int connectTimeout,
       int retryCount,
       int injectSocketTimeout,
       AtomicBoolean canceling,
@@ -754,7 +740,6 @@ public class HttpUtil {
               retryTimeout,
               authTimeout,
               socketTimeout,
-              connectTimeout,
               retryCount,
               injectSocketTimeout,
               canceling,

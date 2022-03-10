@@ -74,7 +74,6 @@ public class RestRequestTest {
         authTimeout,
         socketTimeout,
         0,
-        0,
         0, // inject socket timeout
         new AtomicBoolean(false), // canceling
         false, // without cookie

@@ -588,7 +588,6 @@ public class SessionUtil {
       String theString = null;
       int leftRetryTimeout = loginInput.getLoginTimeout();
       int leftsocketTimeout = loginInput.getSocketTimeout();
-      int leftConnectTimeout = loginInput.getConnectionTimeout();
       int retryCount = 0;
 
       while (true) {
@@ -599,7 +598,6 @@ public class SessionUtil {
                   leftRetryTimeout,
                   loginInput.getAuthTimeout(),
                   leftsocketTimeout,
-                  leftConnectTimeout,
                   retryCount,
                   loginInput.getHttpClientSettingsKey());
         } catch (SnowflakeSQLException ex) {
@@ -920,7 +918,6 @@ public class SessionUtil {
               loginInput.getLoginTimeout(),
               loginInput.getAuthTimeout(),
               loginInput.getSocketTimeout(),
-              loginInput.getConnectionTimeout(),
               0,
               loginInput.getHttpClientSettingsKey());
 
@@ -1010,7 +1007,6 @@ public class SessionUtil {
               loginInput.getLoginTimeout(),
               loginInput.getAuthTimeout(),
               loginInput.getSocketTimeout(),
-              loginInput.getConnectionTimeout(),
               0,
               loginInput.getHttpClientSettingsKey());
 
@@ -1077,7 +1073,6 @@ public class SessionUtil {
               loginInput.getLoginTimeout(),
               loginInput.getAuthTimeout(),
               loginInput.getSocketTimeout(),
-              loginInput.getConnectionTimeout(),
               0,
               loginInput.getHttpClientSettingsKey());
 
@@ -1146,7 +1141,6 @@ public class SessionUtil {
               loginInput.getLoginTimeout(),
               loginInput.getAuthTimeout(),
               loginInput.getSocketTimeout(),
-              loginInput.getConnectionTimeout(),
               0,
               0,
               null,
@@ -1231,7 +1225,6 @@ public class SessionUtil {
               loginInput.getLoginTimeout(),
               loginInput.getAuthTimeout(),
               loginInput.getSocketTimeout(),
-              loginInput.getConnectionTimeout(),
               0,
               loginInput.getHttpClientSettingsKey());
       logger.debug("authenticator-request response: {}", gsResponse);

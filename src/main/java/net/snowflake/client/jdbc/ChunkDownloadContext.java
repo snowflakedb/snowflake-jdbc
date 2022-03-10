@@ -43,10 +43,6 @@ public class ChunkDownloadContext {
     return socketTimeout;
   }
 
-  public int getConnectTimeout() {
-    return connectTimeout;
-  }
-
   public SFBaseSession getSession() {
     return session;
   }
@@ -58,7 +54,6 @@ public class ChunkDownloadContext {
   private final int networkTimeoutInMilli;
   private final int authTimeout;
   private final int socketTimeout;
-  private final int connectTimeout;
   private final SFBaseSession session;
 
   public ChunkDownloadContext(
@@ -70,7 +65,6 @@ public class ChunkDownloadContext {
       int networkTimeoutInMilli,
       int authTimeout,
       int socketTimeout,
-      int connectTimeout,
       SFBaseSession session) {
     this.chunkDownloader = chunkDownloader;
     this.resultChunk = resultChunk;
@@ -80,7 +74,6 @@ public class ChunkDownloadContext {
     this.networkTimeoutInMilli = networkTimeoutInMilli;
     this.authTimeout = authTimeout;
     this.socketTimeout = socketTimeout;
-    this.connectTimeout = connectTimeout;
     this.session = session;
   }
 }

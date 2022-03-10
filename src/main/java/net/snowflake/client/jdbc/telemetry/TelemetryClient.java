@@ -331,7 +331,6 @@ public class TelemetryClient implements Telemetry {
                     TELEMETRY_HTTP_RETRY_TIMEOUT_IN_SEC,
                     this.session.getAuthTimeout(),
                     this.session.getHttpClientSocketTimeout(),
-                    this.session.getHttpClientConnectionTimeout(),
                     0,
                     this.httpClient)
                 : HttpUtil.executeGeneralRequest(
@@ -339,7 +338,6 @@ public class TelemetryClient implements Telemetry {
                     TELEMETRY_HTTP_RETRY_TIMEOUT_IN_SEC,
                     this.session.getAuthTimeout(),
                     this.session.getHttpClientSocketTimeout(),
-                    this.session.getHttpClientConnectionTimeout(),
                     0,
                     this.session.getHttpClientKey());
       } catch (SnowflakeSQLException e) {

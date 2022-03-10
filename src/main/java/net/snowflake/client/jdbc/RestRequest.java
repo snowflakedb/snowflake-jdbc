@@ -56,7 +56,6 @@ public class RestRequest {
    * @param retryTimeout : retry timeout (in seconds)
    * @param authTimeout : authenticator specific timeout (in seconds)
    * @param socketTimeout : curl timeout (in ms)
-   * @param connectTimeout : connect timeout (ms)
    * @param retryCount : retry count for the request
    * @param injectSocketTimeout : simulate socket timeout
    * @param canceling canceling flag
@@ -74,7 +73,6 @@ public class RestRequest {
       long retryTimeout,
       long authTimeout,
       int socketTimeout,
-      int connectTimeout,
       int retryCount,
       int injectSocketTimeout,
       AtomicBoolean canceling,
@@ -319,8 +317,8 @@ public class RestRequest {
         if (authTimeout > 0
             && elapsedMilliForTransientIssues > authTimeoutInMilli
             && (socketTimeout == 0
-                || elapsedMilliForTransientIssues < socketTimeout) /* socket timeout not reached */
-            && (connectTimeout == 0 || elapsedMilliForTransientIssues < connectTimeout)) {
+                || elapsedMilliForTransientIssues
+                    < socketTimeout)) /* socket timeout not reached */ {
           /* connect timeout not reached */
           // check if this is a login-request
           if (String.valueOf(httpRequest.getURI()).contains("login-request")) {
