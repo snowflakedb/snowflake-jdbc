@@ -332,7 +332,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     QueryStatus[] errorStatuses = {
       QueryStatus.ABORTED, QueryStatus.ABORTING,
       QueryStatus.FAILED_WITH_ERROR, QueryStatus.FAILED_WITH_INCIDENT,
-      QueryStatus.DISCONNECTED, QueryStatus.BLOCKED
+      QueryStatus.DISCONNECTED
     };
 
     for (QueryStatus qs : errorStatuses) {
