@@ -54,13 +54,14 @@ public enum QueryStatus {
   }
 
   public static boolean isStillRunning(QueryStatus status) {
-    switch (status.getValue()) {
-      case 0: // "RUNNING"
-      case 5: // "QUEUED"
-      case 8: // "RESUMING_WAREHOUSE"
-      case 9: // "QUEUED_REPAIRING_WAREHOUSE"
-      case 11: // "BLOCKED"
-      case 12: // "NO_DATA"
+    switch(status) {
+      case RUNNING:
+      case QUEUED:
+      case RESUMING_WAREHOUSE:
+      case QUEUED_REPAIRING_WAREHOUSE:
+      case BLOCKED:
+      case NO_DATA:
+      case RESTARTED:
         return true;
       default:
         return false;
@@ -68,13 +69,12 @@ public enum QueryStatus {
   }
 
   public static boolean isAnError(QueryStatus status) {
-    switch (status.getValue()) {
-      case 1: // Aborting
-      case 3: // Failed with error
-      case 4: // Aborted
-      case 6: // Failed with incident
-      case 7: // disconnected
-      case 11: // blocked
+    switch(status) {
+      case ABORTING:
+      case FAILED_WITH_ERROR:
+      case ABORTED:
+      case FAILED_WITH_INCIDENT:
+      case DISCONNECTED:
         return true;
       default:
         return false;
