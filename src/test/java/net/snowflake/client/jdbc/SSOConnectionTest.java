@@ -222,6 +222,7 @@ public class SSOConnectionTest {
                     anyInt(),
                     anyInt(),
                     anyInt(),
+                    anyInt(),
                     nullable(HttpClientSettingsKey.class)))
         .thenAnswer(
             new Answer<String>() {

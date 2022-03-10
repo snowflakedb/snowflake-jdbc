@@ -233,8 +233,9 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
                   httpClient,
                   httpRequest,
                   session.getNetworkTimeoutInMilli() / 1000, // retry timeout
-                  0,
-                  0,
+                  session.getAuthTimeout(),
+                  session.getHttpClientSocketTimeout(),
+                  session.getHttpClientConnectionTimeout(),
                   0,
                   0, // no socketime injection
                   null, // no canceling
@@ -398,8 +399,9 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
                   httpClient,
                   httpRequest,
                   session.getNetworkTimeoutInMilli() / 1000, // retry timeout
-                  0,
-                  0,
+                  session.getAuthTimeout(),
+                  session.getHttpClientSocketTimeout(),
+                  session.getHttpClientConnectionTimeout(),
                   0,
                   0, // no socketime injection
                   null, // no canceling
@@ -743,8 +745,9 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
               httpClient,
               httpRequest,
               networkTimeoutInMilli / 1000, // retry timeout
-              0,
-              0,
+              session.getAuthTimeout(),
+              session.getHttpClientSocketTimeout(),
+              session.getHttpClientConnectionTimeout(),
               0,
               0, // no socketime injection
               null, // no canceling

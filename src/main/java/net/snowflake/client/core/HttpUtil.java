@@ -473,6 +473,24 @@ public class HttpUtil {
 
   /**
    * Return a request configuration inheriting from the default request configuration of the shared
+   * HttpClient with a different socket and connect timeout.
+   *
+   * @param requestSocketAndConnectTimeout - custom socket and connect timeout in milli-seconds
+   * @param withoutCookies - whether this request should ignore cookies or not
+   * @return RequestConfig object
+   */
+  public static RequestConfig getDefaultRequestConfigWithSocketAndConnectTimeout(
+      int requestSocketAndConnectTimeout, boolean withoutCookies) {
+    final String cookieSpec = withoutCookies ? IGNORE_COOKIES : DEFAULT;
+    return RequestConfig.copy(DefaultRequestConfig)
+        .setSocketTimeout(requestSocketAndConnectTimeout)
+        .setConnectTimeout(requestSocketAndConnectTimeout)
+        .setCookieSpec(cookieSpec)
+        .build();
+  }
+
+  /**
+   * Return a request configuration inheriting from the default request configuration of the shared
    * HttpClient with the coopkie spec set to ignore.
    *
    * @return RequestConfig object
@@ -518,8 +536,9 @@ public class HttpUtil {
    * @param httpRequest HttpRequestBase
    * @param retryTimeout retry timeout
    * @param authTimeout authenticator specific timeout
-   * @param curlTimeout curl timeout (in ms)
-   * @param retryCount : retry count for the request
+   * @param socketTimeout curl timeout (in ms)
+   * @param connectTimeout connect timeout (ms)
+   * @param retryCount retry count for the request
    * @param injectSocketTimeout injecting socket timeout
    * @param canceling canceling?
    * @param ocspAndProxyKey OCSP mode and proxy settings for httpclient
@@ -531,7 +550,8 @@ public class HttpUtil {
       HttpRequestBase httpRequest,
       int retryTimeout,
       int authTimeout,
-      int curlTimeout,
+      int socketTimeout,
+      int connectTimeout,
       int retryCount,
       int injectSocketTimeout,
       AtomicBoolean canceling,
@@ -541,7 +561,8 @@ public class HttpUtil {
         httpRequest,
         retryTimeout,
         authTimeout,
-        curlTimeout,
+        socketTimeout,
+        connectTimeout,
         retryCount,
         injectSocketTimeout,
         canceling,
@@ -558,7 +579,8 @@ public class HttpUtil {
    * @param httpRequest HttpRequestBase
    * @param retryTimeout retry timeout
    * @param authTimeout authenticator specific timeout
-   * @param curlTimeout curl timeout (in ms)
+   * @param connectTimeout : connect timeout (ms)
+   * @param socketTimeout curl timeout (in ms)
    * @param retryCount : retry count for the request
    * @param ocspAndProxyKey OCSP mode and proxy settings for httpclient
    * @return response
@@ -569,7 +591,8 @@ public class HttpUtil {
       HttpRequestBase httpRequest,
       int retryTimeout,
       int authTimeout,
-      int curlTimeout,
+      int socketTimeout,
+      int connectTimeout,
       int retryCount,
       HttpClientSettingsKey ocspAndProxyKey)
       throws SnowflakeSQLException, IOException {
@@ -577,7 +600,8 @@ public class HttpUtil {
         httpRequest,
         retryTimeout,
         authTimeout,
-        curlTimeout,
+        socketTimeout,
+        connectTimeout,
         retryCount,
         0, // no inject socket timeout
         null, // no canceling
@@ -592,7 +616,8 @@ public class HttpUtil {
    * @param httpRequest HttpRequestBase
    * @param retryTimeout retry timeout
    * @param authTimeout authenticator specific timeout
-   * @param curlTimeout curl timeout (in ms)
+   * @param socketTimeout curl timeout (in ms)
+   * @param connectTimeout connect timeout (ms)
    * @param retryCount : retry count for the request
    * @param httpClient client object used to communicate with other machine
    * @return response
@@ -603,7 +628,8 @@ public class HttpUtil {
       HttpRequestBase httpRequest,
       int retryTimeout,
       int authTimeout,
-      int curlTimeout,
+      int socketTimeout,
+      int connectTimeout,
       int retryCount,
       CloseableHttpClient httpClient)
       throws SnowflakeSQLException, IOException {
@@ -611,7 +637,8 @@ public class HttpUtil {
         httpRequest,
         retryTimeout,
         authTimeout,
-        curlTimeout,
+        socketTimeout,
+        connectTimeout,
         retryCount,
         0, // no inject socket timeout
         null, // no canceling
@@ -628,8 +655,9 @@ public class HttpUtil {
    * @param httpRequest HttpRequestBase
    * @param retryTimeout retry timeout
    * @param authTimeout authenticator timeout
-   * @param curlTimeout curl timeout (in ms)
-   * @param retryCount : retry count for the request
+   * @param socketTimeout curl timeout (in ms)
+   * @param connectTimeout connect timeout (ms)
+   * @param retryCount retry count for the request
    * @param injectSocketTimeout injecting socket timeout
    * @param canceling canceling?
    * @param includeRetryParameters whether to include retry parameters in retried requests
@@ -643,7 +671,8 @@ public class HttpUtil {
       HttpRequestBase httpRequest,
       int retryTimeout,
       int authTimeout,
-      int curlTimeout,
+      int socketTimeout,
+      int connectTimeout,
       int retryCount,
       int injectSocketTimeout,
       AtomicBoolean canceling,
@@ -655,7 +684,8 @@ public class HttpUtil {
         httpRequest,
         retryTimeout,
         authTimeout,
-        curlTimeout,
+        socketTimeout,
+        connectTimeout,
         retryCount,
         injectSocketTimeout,
         canceling,
@@ -676,8 +706,9 @@ public class HttpUtil {
    * @param httpRequest request object contains all the information
    * @param retryTimeout retry timeout (in seconds)
    * @param authTimeout authenticator specific timeout (in seconds)
-   * @param curlTimeout curl timeout (in ms)
-   * @param retryCount : retry count for the request
+   * @param socketTimeout curl timeout (in ms)
+   * @param connectTimeout connect timeout (ms)
+   * @param retryCount retry count for the request
    * @param injectSocketTimeout simulate socket timeout
    * @param canceling canceling flag
    * @param withoutCookies whether this request should ignore cookies
@@ -693,7 +724,8 @@ public class HttpUtil {
       HttpRequestBase httpRequest,
       int retryTimeout,
       int authTimeout,
-      int curlTimeout,
+      int socketTimeout,
+      int connectTimeout,
       int retryCount,
       int injectSocketTimeout,
       AtomicBoolean canceling,
@@ -721,7 +753,8 @@ public class HttpUtil {
               httpRequest,
               retryTimeout,
               authTimeout,
-              curlTimeout,
+              socketTimeout,
+              connectTimeout,
               retryCount,
               injectSocketTimeout,
               canceling,

@@ -22,7 +22,7 @@ public class SnowflakeSQLException extends SQLException {
   private String queryId = "unknown";
   private int retryCount = 0;
 
-  boolean isCurlTimeoutNoBackoff;
+  boolean issocketTimeoutNoBackoff;
   long elapsedSeconds;
 
   /**
@@ -120,13 +120,13 @@ public class SnowflakeSQLException extends SQLException {
   }
 
   public SnowflakeSQLException(
-      ErrorCode errorCode, int retryCount, boolean isCurlTimeoutNoBackoff, long elapsedSeconds) {
+      ErrorCode errorCode, int retryCount, boolean issocketTimeoutNoBackoff, long elapsedSeconds) {
     super(
         errorResourceBundleManager.getLocalizedMessage(String.valueOf(errorCode.getMessageCode())),
         errorCode.getSqlState(),
         errorCode.getMessageCode());
     this.retryCount = retryCount;
-    this.isCurlTimeoutNoBackoff = isCurlTimeoutNoBackoff;
+    this.issocketTimeoutNoBackoff = issocketTimeoutNoBackoff;
     this.elapsedSeconds = elapsedSeconds;
   }
 
@@ -146,8 +146,8 @@ public class SnowflakeSQLException extends SQLException {
     return retryCount;
   }
 
-  public boolean isCurlTimeoutNoBackoff() {
-    return isCurlTimeoutNoBackoff;
+  public boolean issocketTimeoutNoBackoff() {
+    return issocketTimeoutNoBackoff;
   }
 
   public long getElapsedSeconds() {

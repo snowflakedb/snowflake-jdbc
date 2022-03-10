@@ -768,4 +768,8 @@ public abstract class SFBaseSession {
   public abstract int getAuthTimeout();
 
   public abstract SnowflakeConnectString getSnowflakeConnectionString();
+
+  public abstract int getHttpClientConnectionTimeout();
+
+  public abstract int getHttpClientSocketTimeout();
 }

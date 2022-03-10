@@ -708,6 +708,16 @@ public class MockConnectionTest extends BaseJDBCTest {
     public SnowflakeConnectString getSnowflakeConnectionString() {
       return null;
     }
+
+    @Override
+    public int getHttpClientConnectionTimeout() {
+      return 0;
+    }
+
+    @Override
+    public int getHttpClientSocketTimeout() {
+      return 0;
+    }
   }
 
   private static class MockSFFileTransferAgent extends SFBaseFileTransferAgent {

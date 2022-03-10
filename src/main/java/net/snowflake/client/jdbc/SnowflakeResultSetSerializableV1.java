@@ -116,6 +116,8 @@ public class SnowflakeResultSetSerializableV1
   HttpClientSettingsKey httpClientKey;
   int networkTimeoutInMilli;
   int authTimeout;
+  int socketTimeout;
+  int connectTimeout;
   boolean isResultColumnCaseInsensitive;
   int resultSetType;
   int resultSetConcurrency;
@@ -189,6 +191,8 @@ public class SnowflakeResultSetSerializableV1
     this.httpClientKey = toCopy.httpClientKey;
     this.networkTimeoutInMilli = toCopy.networkTimeoutInMilli;
     this.authTimeout = toCopy.authTimeout;
+    this.socketTimeout = toCopy.socketTimeout;
+    this.connectTimeout = toCopy.connectTimeout;
     this.isResultColumnCaseInsensitive = toCopy.isResultColumnCaseInsensitive;
     this.resultSetType = toCopy.resultSetType;
     this.resultSetConcurrency = toCopy.resultSetConcurrency;
@@ -301,6 +305,14 @@ public class SnowflakeResultSetSerializableV1
 
   public int getAuthTimeout() {
     return authTimeout;
+  }
+
+  public int getSocketTimeout() {
+    return socketTimeout;
+  }
+
+  public int getConnectTimeout() {
+    return connectTimeout;
   }
 
   public int getResultPrefetchThreads() {
@@ -623,6 +635,8 @@ public class SnowflakeResultSetSerializableV1
     resultSetSerializable.snowflakeConnectionString = sfSession.getSnowflakeConnectionString();
     resultSetSerializable.networkTimeoutInMilli = sfSession.getNetworkTimeoutInMilli();
     resultSetSerializable.authTimeout = sfSession.getAuthTimeout();
+    resultSetSerializable.connectTimeout = sfSession.getHttpClientSocketTimeout();
+    resultSetSerializable.connectTimeout = sfSession.getHttpClientConnectionTimeout();
     resultSetSerializable.isResultColumnCaseInsensitive = sfSession.isResultColumnCaseInsensitive();
     resultSetSerializable.treatNTZAsUTC = sfSession.getTreatNTZAsUTC();
     resultSetSerializable.formatDateWithTimezone = sfSession.getFormatDateWithTimezone();

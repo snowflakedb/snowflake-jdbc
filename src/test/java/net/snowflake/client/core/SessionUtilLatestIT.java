@@ -45,6 +45,7 @@ public class SessionUtilLatestIT {
                     Mockito.anyInt(),
                     Mockito.anyInt(),
                     Mockito.anyInt(),
+                    Mockito.anyInt(),
                     Mockito.nullable(HttpClientSettingsKey.class)))
         .thenThrow(ex) // fail first
         .thenReturn(

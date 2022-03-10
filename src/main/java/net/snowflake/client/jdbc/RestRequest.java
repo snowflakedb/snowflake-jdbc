@@ -55,7 +55,8 @@ public class RestRequest {
    * @param httpRequest request object contains all the request information
    * @param retryTimeout : retry timeout (in seconds)
    * @param authTimeout : authenticator specific timeout (in seconds)
-   * @param curlTimeout curl timeout (in ms)
+   * @param socketTimeout : curl timeout (in ms)
+   * @param connectTimeout : connect timeout (ms)
    * @param retryCount : retry count for the request
    * @param injectSocketTimeout : simulate socket timeout
    * @param canceling canceling flag
@@ -72,7 +73,8 @@ public class RestRequest {
       HttpRequestBase httpRequest,
       long retryTimeout,
       long authTimeout,
-      int curlTimeout,
+      int socketTimeout,
+      int connectTimeout,
       int retryCount,
       int injectSocketTimeout,
       AtomicBoolean canceling,
@@ -117,12 +119,6 @@ public class RestRequest {
     // label the reason to break retry
     String breakRetryReason = "";
 
-    // When the JWT token needs to be renewed, set the socket timeout as the authTimeout
-    // so that it can be renewed in time and pass it to the http request configuration.
-    int curlStateTimeout = authTimeout > 0 ? (int) (authTimeout * 1000) : curlTimeout;
-    httpRequest.setConfig(
-        HttpUtil.getDefaultRequestConfigWithSocketTimeout(curlStateTimeout, withoutCookies));
-
     // try request till we get a good response or retry timeout
     while (true) {
       logger.debug("Retry count: {}", retryCount);
@@ -161,6 +157,15 @@ public class RestRequest {
           if (includeRetryParameters) {
             builder.setParameter("clientStartTime", String.valueOf(startTime));
           }
+        }
+
+        // When the auth timeout is set, set the socket timeout as the authTimeout
+        // so that it can be renewed in time and pass it to the http request configuration.
+        if (authTimeout > 0) {
+          int requestSocketAndConnectTimeout = (int) authTimeout * 1000;
+          httpRequest.setConfig(
+              HttpUtil.getDefaultRequestConfigWithSocketAndConnectTimeout(
+                  requestSocketAndConnectTimeout, withoutCookies));
         }
 
         if (includeRequestGuid) {
@@ -308,19 +313,22 @@ public class RestRequest {
 
         // Make sure that any authenticator specific info that needs to be
         // updated get's updated before the next retry. Ex - JWT token
-        // Check to see if socket timeout has been reached, if not we don't increase the retry count
-        // since JWT renew doesn't count as a retry attempt.
+        // Check to see if customer set socket/connect timeout has been reached,
+        // if not we don't increase the retry count since JWT renew doesn't count as a retry
+        // attempt.
         if (authTimeout > 0
             && elapsedMilliForTransientIssues > authTimeoutInMilli
-            && (curlTimeout == 0
-                || elapsedMilliForTransientIssues < curlTimeout)) /* socket timeout not reached */ {
+            && (socketTimeout == 0
+                || elapsedMilliForTransientIssues < socketTimeout) /* socket timeout not reached */
+            && (connectTimeout == 0 || elapsedMilliForTransientIssues < connectTimeout)) {
+          /* connect timeout not reached */
           // check if this is a login-request
           if (String.valueOf(httpRequest.getURI()).contains("login-request")) {
             throw new SnowflakeSQLException(
                 ErrorCode.AUTHENTICATOR_REQUEST_TIMEOUT,
                 retryCount,
                 true,
-                elapsedMilliForTransientIssues);
+                elapsedMilliForTransientIssues / 1000);
           }
         }
 
@@ -348,7 +356,7 @@ public class RestRequest {
                 ErrorCode.AUTHENTICATOR_REQUEST_TIMEOUT,
                 retryCount,
                 false,
-                elapsedMilliForTransientIssues);
+                elapsedMilliForTransientIssues / 1000);
           }
         }
 

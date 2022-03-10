@@ -184,9 +184,6 @@ public class SessionUtil {
               ENABLE_STAGE_S3_PRIVATELINK_FOR_US_EAST_1,
               "SNOWPARK_LAZY_ANALYSIS"));
 
-  // The default retryCount value
-  private static int retryCount = 0;
-
   /**
    * Returns Authenticator type
    *
@@ -590,7 +587,9 @@ public class SessionUtil {
 
       String theString = null;
       int leftRetryTimeout = loginInput.getLoginTimeout();
-      int leftCurlTimeout = loginInput.getSocketTimeout();
+      int leftsocketTimeout = loginInput.getSocketTimeout();
+      int leftConnectTimeout = loginInput.getConnectionTimeout();
+      int retryCount = 0;
 
       while (true) {
         try {
@@ -599,7 +598,8 @@ public class SessionUtil {
                   postRequest,
                   leftRetryTimeout,
                   loginInput.getAuthTimeout(),
-                  leftCurlTimeout,
+                  leftsocketTimeout,
+                  leftConnectTimeout,
                   retryCount,
                   loginInput.getHttpClientSettingsKey());
         } catch (SnowflakeSQLException ex) {
@@ -631,15 +631,15 @@ public class SessionUtil {
               // and we need to update time remained in socket timeout here to control the
               // the actual socket timeout from customer setting.
               if (loginInput.getSocketTimeout() > 0) {
-                if (ex.isCurlTimeoutNoBackoff()) {
-                  if (leftCurlTimeout > elapsedSeconds) {
-                    leftCurlTimeout -= elapsedSeconds;
+                if (ex.issocketTimeoutNoBackoff()) {
+                  if (leftsocketTimeout > elapsedSeconds) {
+                    leftsocketTimeout -= elapsedSeconds;
                   } else {
-                    leftCurlTimeout = 1;
+                    leftsocketTimeout = 1;
                   }
                 } else {
                   // reset curl timeout for retry with backoff.
-                  leftCurlTimeout = loginInput.getSocketTimeout();
+                  leftsocketTimeout = loginInput.getSocketTimeout();
                 }
               }
 
@@ -920,7 +920,8 @@ public class SessionUtil {
               loginInput.getLoginTimeout(),
               loginInput.getAuthTimeout(),
               loginInput.getSocketTimeout(),
-              retryCount,
+              loginInput.getConnectionTimeout(),
+              0,
               loginInput.getHttpClientSettingsKey());
 
       // general method, same as with data binding
@@ -1009,7 +1010,8 @@ public class SessionUtil {
               loginInput.getLoginTimeout(),
               loginInput.getAuthTimeout(),
               loginInput.getSocketTimeout(),
-              retryCount,
+              loginInput.getConnectionTimeout(),
+              0,
               loginInput.getHttpClientSettingsKey());
 
       JsonNode rootNode;
@@ -1075,7 +1077,8 @@ public class SessionUtil {
               loginInput.getLoginTimeout(),
               loginInput.getAuthTimeout(),
               loginInput.getSocketTimeout(),
-              retryCount,
+              loginInput.getConnectionTimeout(),
+              0,
               loginInput.getHttpClientSettingsKey());
 
       // step 5
@@ -1143,7 +1146,8 @@ public class SessionUtil {
               loginInput.getLoginTimeout(),
               loginInput.getAuthTimeout(),
               loginInput.getSocketTimeout(),
-              retryCount,
+              loginInput.getConnectionTimeout(),
+              0,
               0,
               null,
               loginInput.getHttpClientSettingsKey());
@@ -1227,7 +1231,8 @@ public class SessionUtil {
               loginInput.getLoginTimeout(),
               loginInput.getAuthTimeout(),
               loginInput.getSocketTimeout(),
-              retryCount,
+              loginInput.getConnectionTimeout(),
+              0,
               loginInput.getHttpClientSettingsKey());
       logger.debug("authenticator-request response: {}", gsResponse);
       JsonNode jsonNode = mapper.readTree(gsResponse);

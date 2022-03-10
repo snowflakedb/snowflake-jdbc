@@ -54,7 +54,7 @@ public class RestRequestTest {
       String uri,
       int retryTimeout,
       int authTimeout,
-      int curlTimeout,
+      int socketTimeout,
       boolean includeRetryParameters)
       throws IOException, SnowflakeSQLException {
 
@@ -72,7 +72,8 @@ public class RestRequestTest {
         new HttpGet(uri),
         retryTimeout, // retry timeout
         authTimeout,
-        curlTimeout,
+        socketTimeout,
+        0,
         0,
         0, // inject socket timeout
         new AtomicBoolean(false), // canceling

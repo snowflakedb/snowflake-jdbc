@@ -235,6 +235,7 @@ public class Incident extends Event {
               0,
               0,
               0,
+              0,
               ocspAndProxyKey != null
                   ? ocspAndProxyKey
                   : new HttpClientSettingsKey(OCSPMode.FAIL_OPEN));
