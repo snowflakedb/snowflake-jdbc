@@ -1560,8 +1560,4 @@ public class SessionUtil {
             privateKey, privateKeyFile, privateKeyFilePwd, accountName, userName);
     return s.issueJwtToken();
   }
-
-  public static void defaultAuthTimeoutResponse() {
-    logger.debug("Default auth timeout response was triggered. This is a no op");
-  }
 }

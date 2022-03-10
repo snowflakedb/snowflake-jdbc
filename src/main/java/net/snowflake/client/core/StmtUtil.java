@@ -81,6 +81,8 @@ public class StmtUtil {
     Map<String, Object> parametersMap;
     String sessionToken;
     int networkTimeoutInMillis;
+    int socketTimeout;
+    int connectTimeout;
     int injectSocketTimeout; // seconds
     int injectClientPause; // seconds
 
@@ -159,6 +161,16 @@ public class StmtUtil {
 
     public StmtInput setNetworkTimeoutInMillis(int networkTimeoutInMillis) {
       this.networkTimeoutInMillis = networkTimeoutInMillis;
+      return this;
+    }
+
+    public StmtInput setSocketTimeout(int socketTimeout) {
+      this.socketTimeout = socketTimeout;
+      return this;
+    }
+
+    public StmtInput setConnectTimeout(int connectTimeout) {
+      this.connectTimeout = connectTimeout;
       return this;
     }
 
@@ -335,8 +347,8 @@ public class StmtUtil {
             HttpUtil.executeRequest(
                 httpRequest,
                 stmtInput.networkTimeoutInMillis / 1000,
-                0,
-                0,
+                stmtInput.socketTimeout,
+                stmtInput.connectTimeout,
                 0,
                 0,
                 stmtInput.injectSocketTimeout,
@@ -577,8 +589,8 @@ public class StmtUtil {
       return HttpUtil.executeRequest(
           httpRequest,
           stmtInput.networkTimeoutInMillis / 1000,
-          0,
-          0,
+          stmtInput.socketTimeout,
+          stmtInput.connectTimeout,
           0,
           0,
           0,
@@ -613,6 +625,8 @@ public class StmtUtil {
             .setServerUrl(session.getServerUrl())
             .setSessionToken(session.getSessionToken())
             .setNetworkTimeoutInMillis(session.getNetworkTimeoutInMilli())
+            .setSocketTimeout(session.getHttpClientSocketTimeout())
+            .setConnectTimeout(session.getHttpClientConnectionTimeout())
             .setMediaType(SF_MEDIA_TYPE)
             .setServiceName(session.getServiceName())
             .setOCSPMode(session.getOCSPMode())
