@@ -3,21 +3,6 @@
  */
 package net.snowflake.client.jdbc;
 
-import static net.snowflake.client.core.SessionUtil.CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY;
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.*;
-
-import java.io.*;
-import java.security.*;
-import java.sql.*;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.Map;
-import java.util.Properties;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import net.snowflake.client.ConditionalIgnoreRule.ConditionalIgnore;
 import net.snowflake.client.RunningNotOnTestaccount;
 import net.snowflake.client.RunningOnGithubAction;
@@ -33,6 +18,22 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.TemporaryFolder;
 
+import java.io.*;
+import java.security.*;
+import java.sql.*;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.Map;
+import java.util.Properties;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+import static net.snowflake.client.core.SessionUtil.CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.*;
+
 /** Connection integration tests */
 @Category(TestCategoryConnection.class)
 public class ConnectionIT extends BaseJDBCTest {
@@ -46,19 +47,6 @@ public class ConnectionIT extends BaseJDBCTest {
   String errorMessage = null;
 
   @Rule public TemporaryFolder tmpFolder = new TemporaryFolder();
-
-  @Test
-  public void testSimpleConnection() throws SQLException {
-    Connection con = getConnection();
-    Statement statement = con.createStatement();
-    ResultSet resultSet = statement.executeQuery("show parameters");
-    assertTrue(resultSet.next());
-    assertFalse(con.isClosed());
-    statement.close();
-    con.close();
-    assertTrue(con.isClosed());
-    con.close(); // ensure no exception
-  }
 
   @Test
   @Ignore
