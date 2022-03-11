@@ -48,19 +48,6 @@ public class ConnectionIT extends BaseJDBCTest {
   @Rule public TemporaryFolder tmpFolder = new TemporaryFolder();
 
   @Test
-  public void testSimpleConnection() throws SQLException {
-    Connection con = getConnection();
-    Statement statement = con.createStatement();
-    ResultSet resultSet = statement.executeQuery("show parameters");
-    assertTrue(resultSet.next());
-    assertFalse(con.isClosed());
-    statement.close();
-    con.close();
-    assertTrue(con.isClosed());
-    con.close(); // ensure no exception
-  }
-
-  @Test
   @Ignore
   public void test300ConnectionsWithSingleClientInstance() throws SQLException {
     // concurrent testing
