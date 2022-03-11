@@ -193,6 +193,10 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
     return useSessionSchema ? false : Wildcard.isWildcardPatternStr(inputString);
   }
 
+  private boolean isIdentifierQuoted(String identifier) {
+    return identifier.startsWith("\"") && identifier.endsWith("\"");
+  }
+
   @Override
   public boolean allProceduresAreCallable() throws SQLException {
     logger.debug("public boolean allProceduresAreCallable()");
@@ -2840,7 +2844,12 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
     } else if (catalog.isEmpty()) {
       return SnowflakeDatabaseMetaDataResultSet.getEmptyResultSet(GET_SCHEMAS, statement);
     } else {
-      showSchemas += " in database \"" + catalog + "\"";
+      // only add quotes if the application hasn't added them already.
+      if (isIdentifierQuoted(catalog)) {
+        showSchemas += " in database " + catalog;
+      } else {
+        showSchemas += " in database \"" + catalog + "\"";
+      }
     }
 
     logger.debug("sql command to get schemas metadata: {}", showSchemas);
