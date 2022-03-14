@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2020 Snowflake Computing Inc. All right reserved.
+ * Copyright (c) 2012-2022 Snowflake Computing Inc. All right reserved.
  */
 package net.snowflake.client.jdbc;
 
@@ -933,7 +933,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     postRequest.addHeader("accept", "application/json");
 
     String theString =
-        HttpUtil.executeGeneralRequest(postRequest, 60, new HttpClientSettingsKey(null));
+        HttpUtil.executeGeneralRequest(postRequest, 60, 0, 0, 0, new HttpClientSettingsKey(null));
 
     JsonNode jsonNode = mapper.readTree(theString);
     assertEquals(

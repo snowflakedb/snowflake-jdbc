@@ -701,8 +701,22 @@ public class MockConnectionTest extends BaseJDBCTest {
       return 0;
     }
 
+    public int getAuthTimeout() {
+      return 0;
+    }
+
     public SnowflakeConnectString getSnowflakeConnectionString() {
       return null;
+    }
+
+    @Override
+    public int getHttpClientConnectionTimeout() {
+      return 0;
+    }
+
+    @Override
+    public int getHttpClientSocketTimeout() {
+      return 0;
     }
   }
 

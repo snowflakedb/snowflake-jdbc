@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2020 Snowflake Computing Inc. All rights reserved.
+ * Copyright (c) 2012-2022 Snowflake Computing Inc. All rights reserved.
  */
 
 package net.snowflake.client.core;
@@ -346,8 +346,8 @@ public class SessionUtil {
     Map<String, Object> commonParams;
 
     try {
-      uriBuilder = new URIBuilder(loginInput.getServerUrl());
 
+      uriBuilder = new URIBuilder(loginInput.getServerUrl());
       // add database name and schema name as query parameters
       if (loginInput.getDatabaseName() != null) {
         uriBuilder.addParameter(SF_QUERY_DATABASE, loginInput.getDatabaseName());
@@ -388,6 +388,7 @@ public class SessionUtil {
                 loginInput.getUserName());
 
         loginInput.setToken(s.issueJwtToken());
+        loginInput.setAuthTimeout(SessionUtilKeyPair.getTimeout());
       }
 
       uriBuilder.addParameter(SFSession.SF_QUERY_REQUEST_ID, UUID.randomUUID().toString());
@@ -584,9 +585,73 @@ public class SessionUtil {
 
       setServiceNameHeader(loginInput, postRequest);
 
-      String theString =
-          HttpUtil.executeGeneralRequest(
-              postRequest, loginInput.getLoginTimeout(), loginInput.getHttpClientSettingsKey());
+      String theString = null;
+      int leftRetryTimeout = loginInput.getLoginTimeout();
+      int leftsocketTimeout = loginInput.getSocketTimeout();
+      int retryCount = 0;
+
+      while (true) {
+        try {
+          theString =
+              HttpUtil.executeGeneralRequest(
+                  postRequest,
+                  leftRetryTimeout,
+                  loginInput.getAuthTimeout(),
+                  leftsocketTimeout,
+                  retryCount,
+                  loginInput.getHttpClientSettingsKey());
+        } catch (SnowflakeSQLException ex) {
+          if (ex.getErrorCode() == ErrorCode.AUTHENTICATOR_REQUEST_TIMEOUT.getMessageCode()) {
+            if (authenticatorType == ClientAuthnDTO.AuthenticatorType.SNOWFLAKE_JWT) {
+              SessionUtilKeyPair s =
+                  new SessionUtilKeyPair(
+                      loginInput.getPrivateKey(),
+                      loginInput.getPrivateKeyFile(),
+                      loginInput.getPrivateKeyFilePwd(),
+                      loginInput.getAccountName(),
+                      loginInput.getUserName());
+
+              data.put(ClientAuthnParameter.TOKEN.name(), s.issueJwtToken());
+
+              long elapsedSeconds = ex.getElapsedSeconds();
+
+              if (loginInput.getLoginTimeout() > 0) {
+                if (leftRetryTimeout > elapsedSeconds) {
+                  leftRetryTimeout -= elapsedSeconds;
+                } else {
+                  leftRetryTimeout = 1;
+                }
+              }
+
+              // In RestRequest.execute(), socket timeout is replaced with auth timeout
+              // so we can renew the request within auth timeout.
+              // auth timeout within socket timeout is thrown without backoff,
+              // and we need to update time remained in socket timeout here to control the
+              // the actual socket timeout from customer setting.
+              if (loginInput.getSocketTimeout() > 0) {
+                if (ex.issocketTimeoutNoBackoff()) {
+                  if (leftsocketTimeout > elapsedSeconds) {
+                    leftsocketTimeout -= elapsedSeconds;
+                  } else {
+                    leftsocketTimeout = 1;
+                  }
+                } else {
+                  // reset curl timeout for retry with backoff.
+                  leftsocketTimeout = loginInput.getSocketTimeout();
+                }
+              }
+
+              // JWT renew should not count as a retry, so we pass back the current retry count.
+              retryCount = ex.getRetryCount();
+
+              continue;
+            }
+          } else {
+            throw ex;
+          }
+        }
+        break;
+      }
 
       // general method, same as with data binding
       JsonNode jsonNode = mapper.readTree(theString);
@@ -849,7 +914,12 @@ public class SessionUtil {
 
       String theString =
           HttpUtil.executeGeneralRequest(
-              postRequest, loginInput.getLoginTimeout(), loginInput.getHttpClientSettingsKey());
+              postRequest,
+              loginInput.getLoginTimeout(),
+              loginInput.getAuthTimeout(),
+              loginInput.getSocketTimeout(),
+              0,
+              loginInput.getHttpClientSettingsKey());
 
       // general method, same as with data binding
       JsonNode jsonNode = mapper.readTree(theString);
@@ -933,7 +1003,12 @@ public class SessionUtil {
 
       String theString =
           HttpUtil.executeGeneralRequest(
-              postRequest, loginInput.getLoginTimeout(), loginInput.getHttpClientSettingsKey());
+              postRequest,
+              loginInput.getLoginTimeout(),
+              loginInput.getAuthTimeout(),
+              loginInput.getSocketTimeout(),
+              0,
+              loginInput.getHttpClientSettingsKey());
 
       JsonNode rootNode;
 
@@ -994,7 +1069,12 @@ public class SessionUtil {
 
       responseHtml =
           HttpUtil.executeGeneralRequest(
-              httpGet, loginInput.getLoginTimeout(), loginInput.getHttpClientSettingsKey());
+              httpGet,
+              loginInput.getLoginTimeout(),
+              loginInput.getAuthTimeout(),
+              loginInput.getSocketTimeout(),
+              0,
+              loginInput.getHttpClientSettingsKey());
 
       // step 5
       String postBackUrl = getPostBackUrlFromHTML(responseHtml);
@@ -1059,6 +1139,9 @@ public class SessionUtil {
           HttpUtil.executeRequestWithoutCookies(
               postRequest,
               loginInput.getLoginTimeout(),
+              loginInput.getAuthTimeout(),
+              loginInput.getSocketTimeout(),
+              0,
               0,
               null,
               loginInput.getHttpClientSettingsKey());
@@ -1138,7 +1221,12 @@ public class SessionUtil {
 
       final String gsResponse =
           HttpUtil.executeGeneralRequest(
-              postRequest, loginInput.getLoginTimeout(), loginInput.getHttpClientSettingsKey());
+              postRequest,
+              loginInput.getLoginTimeout(),
+              loginInput.getAuthTimeout(),
+              loginInput.getSocketTimeout(),
+              0,
+              loginInput.getHttpClientSettingsKey());
       logger.debug("authenticator-request response: {}", gsResponse);
       JsonNode jsonNode = mapper.readTree(gsResponse);
 

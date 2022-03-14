@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
+ * Copyright (c) 2012-2022 Snowflake Computing Inc. All rights reserved.
  */
 
 package net.snowflake.client.core;
@@ -81,6 +81,7 @@ public class StmtUtil {
     Map<String, Object> parametersMap;
     String sessionToken;
     int networkTimeoutInMillis;
+    int socketTimeout;
     int injectSocketTimeout; // seconds
     int injectClientPause; // seconds
 
@@ -159,6 +160,11 @@ public class StmtUtil {
 
     public StmtInput setNetworkTimeoutInMillis(int networkTimeoutInMillis) {
       this.networkTimeoutInMillis = networkTimeoutInMillis;
+      return this;
+    }
+
+    public StmtInput setSocketTimeout(int socketTimeout) {
+      this.socketTimeout = socketTimeout;
       return this;
     }
 
@@ -335,6 +341,9 @@ public class StmtUtil {
             HttpUtil.executeRequest(
                 httpRequest,
                 stmtInput.networkTimeoutInMillis / 1000,
+                stmtInput.socketTimeout,
+                0,
+                0,
                 stmtInput.injectSocketTimeout,
                 stmtInput.canceling,
                 true, // include retry parameters
@@ -573,6 +582,9 @@ public class StmtUtil {
       return HttpUtil.executeRequest(
           httpRequest,
           stmtInput.networkTimeoutInMillis / 1000,
+          stmtInput.socketTimeout,
+          0,
+          0,
           0,
           stmtInput.canceling,
           false, // no retry parameter
@@ -605,6 +617,7 @@ public class StmtUtil {
             .setServerUrl(session.getServerUrl())
             .setSessionToken(session.getSessionToken())
             .setNetworkTimeoutInMillis(session.getNetworkTimeoutInMilli())
+            .setSocketTimeout(session.getHttpClientSocketTimeout())
             .setMediaType(SF_MEDIA_TYPE)
             .setServiceName(session.getServiceName())
             .setOCSPMode(session.getOCSPMode())
@@ -685,6 +698,9 @@ public class StmtUtil {
           HttpUtil.executeRequest(
               httpRequest,
               SF_CANCELING_RETRY_TIMEOUT_IN_MILLIS,
+              0,
+              stmtInput.socketTimeout,
+              0,
               0,
               null,
               false, // no retry parameter

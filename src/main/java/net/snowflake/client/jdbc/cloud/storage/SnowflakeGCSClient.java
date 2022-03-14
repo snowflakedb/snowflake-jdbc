@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
+ * Copyright (c) 2012-2022 Snowflake Computing Inc. All rights reserved.
  */
 package net.snowflake.client.jdbc.cloud.storage;
 
@@ -233,6 +233,9 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
                   httpClient,
                   httpRequest,
                   session.getNetworkTimeoutInMilli() / 1000, // retry timeout
+                  session.getAuthTimeout(),
+                  session.getHttpClientSocketTimeout(),
+                  0,
                   0, // no socketime injection
                   null, // no canceling
                   false, // no cookie
@@ -395,6 +398,9 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
                   httpClient,
                   httpRequest,
                   session.getNetworkTimeoutInMilli() / 1000, // retry timeout
+                  session.getAuthTimeout(),
+                  session.getHttpClientSocketTimeout(),
+                  0,
                   0, // no socketime injection
                   null, // no canceling
                   false, // no cookie
@@ -737,6 +743,9 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
               httpClient,
               httpRequest,
               networkTimeoutInMilli / 1000, // retry timeout
+              session.getAuthTimeout(),
+              session.getHttpClientSocketTimeout(),
+              0,
               0, // no socketime injection
               null, // no canceling
               false, // no cookie

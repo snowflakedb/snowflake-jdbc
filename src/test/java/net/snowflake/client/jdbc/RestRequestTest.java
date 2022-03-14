@@ -1,8 +1,10 @@
 /*
- * Copyright (c) 2012-2020 Snowflake Computing Inc. All rights reserved.
+ * Copyright (c) 2012-2022 Snowflake Computing Inc. All rights reserved.
  */
 package net.snowflake.client.jdbc;
 
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
@@ -10,7 +12,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
+import net.snowflake.client.core.HttpUtil;
 import org.apache.http.StatusLine;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpUriRequest;
@@ -21,6 +25,10 @@ import org.mockito.stubbing.Answer;
 
 /** RestRequest unit tests. */
 public class RestRequestTest {
+
+  static final int DEFAULT_CONNECTION_TIMEOUT = 60000;
+  static final int DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT = 300000; // ms
+
   private CloseableHttpResponse retryResponse() {
     StatusLine retryStatusLine = mock(StatusLine.class);
     when(retryStatusLine.getStatusCode()).thenReturn(503);
@@ -41,12 +49,31 @@ public class RestRequestTest {
     return successResponse;
   }
 
-  private void execute(CloseableHttpClient client, String uri, boolean includeRetryParameters)
+  private void execute(
+      CloseableHttpClient client,
+      String uri,
+      int retryTimeout,
+      int authTimeout,
+      int socketTimeout,
+      boolean includeRetryParameters)
       throws IOException, SnowflakeSQLException {
+
+    RequestConfig.Builder builder =
+        RequestConfig.custom()
+            .setConnectTimeout(DEFAULT_CONNECTION_TIMEOUT)
+            .setConnectionRequestTimeout(DEFAULT_CONNECTION_TIMEOUT)
+            .setSocketTimeout(DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT);
+    RequestConfig defaultRequestConfig = builder.build();
+    HttpUtil util = new HttpUtil();
+    util.setRequestConfig(defaultRequestConfig);
+
     RestRequest.execute(
         client,
         new HttpGet(uri),
-        0, // retry timeout
+        retryTimeout, // retry timeout
+        authTimeout,
+        socketTimeout,
+        0,
         0, // inject socket timeout
         new AtomicBoolean(false), // canceling
         false, // without cookie
@@ -87,7 +114,7 @@ public class RestRequestTest {
               }
             });
 
-    execute(client, "fakeurl.com/?requestId=abcd-1234", true);
+    execute(client, "fakeurl.com/?requestId=abcd-1234", 0, 0, 0, true);
   }
 
   @Test
@@ -118,7 +145,7 @@ public class RestRequestTest {
               }
             });
 
-    execute(client, "fakeurl.com/?requestId=abcd-1234", false);
+    execute(client, "fakeurl.com/?requestId=abcd-1234", 0, 0, 0, false);
   }
 
   private CloseableHttpResponse anyStatusCodeResponse(int statusCode) {
@@ -268,6 +295,20 @@ public class RestRequestTest {
             RestRequest.isNonretryableHTTPCode(
                 anyStatusCodeResponse(t.statusCode), t.retryHTTP403));
       }
+    }
+  }
+
+  @Test
+  public void testExceptionAuthBasedTimeout() throws IOException {
+    CloseableHttpClient client = mock(CloseableHttpClient.class);
+    when(client.execute(any(HttpUriRequest.class)))
+        .thenAnswer((Answer<CloseableHttpResponse>) invocation -> retryResponse());
+
+    try {
+      execute(client, "login-request.com/?requestId=abcd-1234", 2, 1, 30000, true);
+    } catch (SnowflakeSQLException ex) {
+      assertThat(
+          ex.getErrorCode(), equalTo(ErrorCode.AUTHENTICATOR_REQUEST_TIMEOUT.getMessageCode()));
     }
   }
 }

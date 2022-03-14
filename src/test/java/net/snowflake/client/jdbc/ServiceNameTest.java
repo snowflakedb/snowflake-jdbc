@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2020 Snowflake Computing Inc. All rights reserved.
+ * Copyright (c) 2012-2022 Snowflake Computing Inc. All rights reserved.
  */
 package net.snowflake.client.jdbc;
 
@@ -99,6 +99,9 @@ public class ServiceNameTest {
                   HttpUtil.executeGeneralRequest(
                       Mockito.any(HttpRequestBase.class),
                       Mockito.anyInt(),
+                      Mockito.anyInt(),
+                      Mockito.anyInt(),
+                      Mockito.anyInt(),
                       Mockito.any(HttpClientSettingsKey.class)))
           .thenReturn(responseLogin());
       mockedHttpUtil
@@ -106,6 +109,9 @@ public class ServiceNameTest {
               () ->
                   HttpUtil.executeRequest(
                       Mockito.any(HttpRequestBase.class),
+                      Mockito.anyInt(),
+                      Mockito.anyInt(),
+                      Mockito.anyInt(),
                       Mockito.anyInt(),
                       Mockito.anyInt(),
                       Mockito.any(AtomicBoolean.class),

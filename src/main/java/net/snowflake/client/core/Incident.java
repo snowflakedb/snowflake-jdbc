@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Snowflake Computing Inc. All rights reserved.
+ * Copyright (c) 2019-2022 Snowflake Computing Inc. All rights reserved.
  */
 package net.snowflake.client.core;
 
@@ -232,6 +232,9 @@ public class Incident extends Event {
           HttpUtil.executeGeneralRequest(
               postRequest,
               1000,
+              0,
+              0,
+              0,
               ocspAndProxyKey != null
                   ? ocspAndProxyKey
                   : new HttpClientSettingsKey(OCSPMode.FAIL_OPEN));

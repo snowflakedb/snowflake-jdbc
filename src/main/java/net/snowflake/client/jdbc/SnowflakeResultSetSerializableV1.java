@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
+ * Copyright (c) 2012-2022 Snowflake Computing Inc. All rights reserved.
  */
 
 package net.snowflake.client.jdbc;
@@ -115,6 +115,8 @@ public class SnowflakeResultSetSerializableV1
   OCSPMode ocspMode;
   HttpClientSettingsKey httpClientKey;
   int networkTimeoutInMilli;
+  int authTimeout;
+  int socketTimeout;
   boolean isResultColumnCaseInsensitive;
   int resultSetType;
   int resultSetConcurrency;
@@ -187,6 +189,8 @@ public class SnowflakeResultSetSerializableV1
     this.ocspMode = toCopy.ocspMode;
     this.httpClientKey = toCopy.httpClientKey;
     this.networkTimeoutInMilli = toCopy.networkTimeoutInMilli;
+    this.authTimeout = toCopy.authTimeout;
+    this.socketTimeout = toCopy.socketTimeout;
     this.isResultColumnCaseInsensitive = toCopy.isResultColumnCaseInsensitive;
     this.resultSetType = toCopy.resultSetType;
     this.resultSetConcurrency = toCopy.resultSetConcurrency;
@@ -295,6 +299,14 @@ public class SnowflakeResultSetSerializableV1
 
   public int getNetworkTimeoutInMilli() {
     return networkTimeoutInMilli;
+  }
+
+  public int getAuthTimeout() {
+    return authTimeout;
+  }
+
+  public int getSocketTimeout() {
+    return socketTimeout;
   }
 
   public int getResultPrefetchThreads() {
@@ -616,6 +628,7 @@ public class SnowflakeResultSetSerializableV1
     resultSetSerializable.httpClientKey = sfSession.getHttpClientKey();
     resultSetSerializable.snowflakeConnectionString = sfSession.getSnowflakeConnectionString();
     resultSetSerializable.networkTimeoutInMilli = sfSession.getNetworkTimeoutInMilli();
+    resultSetSerializable.authTimeout = sfSession.getAuthTimeout();
     resultSetSerializable.isResultColumnCaseInsensitive = sfSession.isResultColumnCaseInsensitive();
     resultSetSerializable.treatNTZAsUTC = sfSession.getTreatNTZAsUTC();
     resultSetSerializable.formatDateWithTimezone = sfSession.getFormatDateWithTimezone();

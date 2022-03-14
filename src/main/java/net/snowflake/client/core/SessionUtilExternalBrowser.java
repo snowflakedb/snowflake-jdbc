@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
+ * Copyright (c) 2012-2022 Snowflake Computing Inc. All rights reserved.
  */
 package net.snowflake.client.core;
 
@@ -179,7 +179,12 @@ public class SessionUtilExternalBrowser {
 
       String theString =
           HttpUtil.executeGeneralRequest(
-              postRequest, loginInput.getLoginTimeout(), loginInput.getHttpClientSettingsKey());
+              postRequest,
+              loginInput.getLoginTimeout(),
+              loginInput.getAuthTimeout(),
+              loginInput.getSocketTimeout(),
+              0,
+              loginInput.getHttpClientSettingsKey());
 
       logger.debug("authenticator-request response: {}", theString);
 
