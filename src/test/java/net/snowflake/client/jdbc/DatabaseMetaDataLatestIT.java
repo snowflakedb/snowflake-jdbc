@@ -721,6 +721,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
    * @throws SQLException
    */
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testGetSchemasWithDoubleQuotedDatabase() throws SQLException {
     try (Connection con = getConnection()) {
       // create the database and two schemas
