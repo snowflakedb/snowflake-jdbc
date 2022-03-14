@@ -1,3 +1,7 @@
+**JDBC Driver 3.13.16**
+
+- \| | nonProxyHosts Parameter is Not Honored
+
 **JDBC Driver 3.13.15**
 
 - \| | Refactored the isFileTransfer function into the base class.
