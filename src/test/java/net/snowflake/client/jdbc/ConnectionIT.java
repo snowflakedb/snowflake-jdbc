@@ -675,9 +675,12 @@ public class ConnectionIT extends BaseJDBCTest {
   public void testReadOnly() throws Throwable {
     try (Connection connection = getConnection()) {
 
-      connection.setReadOnly(true);
-      assertEquals(connection.isReadOnly(), false);
-
+      try {
+        connection.setReadOnly(true);
+        fail("must raise SQLFeatureNotSupportedException");
+      } catch (SQLFeatureNotSupportedException ex) {
+        // nop
+      }
       connection.setReadOnly(false);
       connection.createStatement().execute("create or replace table readonly_test(c1 int)");
       assertFalse(connection.isReadOnly());
