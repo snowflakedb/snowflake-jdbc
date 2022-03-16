@@ -672,23 +672,6 @@ public class ConnectionIT extends BaseJDBCTest {
   }
 
   @Test
-  public void testReadOnly() throws Throwable {
-    try (Connection connection = getConnection()) {
-      try {
-        connection.setReadOnly(true);
-        fail("must raise SQLFeatureNotSupportedException");
-      } catch (SQLFeatureNotSupportedException ex) {
-        // nop
-      }
-
-      connection.setReadOnly(false);
-      connection.createStatement().execute("create or replace table readonly_test(c1 int)");
-      assertFalse(connection.isReadOnly());
-      connection.createStatement().execute("drop table if exists readonly_test");
-    }
-  }
-
-  @Test
   public void testNativeSQL() throws Throwable {
     try (Connection connection = getConnection()) {
       // today returning the source SQL.

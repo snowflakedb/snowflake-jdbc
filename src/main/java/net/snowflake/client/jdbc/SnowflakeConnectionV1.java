@@ -358,8 +358,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
     logger.debug("void setReadOnly(boolean readOnly)");
     raiseSQLExceptionIfConnectionIsClosed();
     if (readOnly) {
-
-      throw new SnowflakeLoggedFeatureNotSupportedException(sfSession);
+      logger.debug("setReadOnly not supported.");
     }
   }
 

@@ -939,4 +939,18 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     assertEquals(
         "{\"data\":null,\"code\":null,\"message\":null,\"success\":true}", jsonNode.toString());
   }
+
+  @Test
+  public void testReadOnly() throws Throwable {
+    try (Connection connection = getConnection()) {
+
+      connection.setReadOnly(true);
+      assertEquals(connection.isReadOnly(), false);
+
+      connection.setReadOnly(false);
+      connection.createStatement().execute("create or replace table readonly_test(c1 int)");
+      assertFalse(connection.isReadOnly());
+      connection.createStatement().execute("drop table if exists readonly_test");
+    }
+  }
 }
