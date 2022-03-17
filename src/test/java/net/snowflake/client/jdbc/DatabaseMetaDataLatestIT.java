@@ -712,4 +712,31 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
     assertTrue(resultSet.next());
     assertEquals("COLA", resultSet.getString("COLUMN_NAME"));
   }
+
+  /**
+   * This tests that the driver doesn't add quotes to the database name if the application has
+   * already added them. This fixes a bug where the show schemas command was returning empty results
+   * since the database name was being double-quoted.
+   *
+   * @throws SQLException
+   */
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testGetSchemasWithDoubleQuotedDatabase() throws SQLException {
+    try (Connection con = getConnection()) {
+      // create the database and two schemas
+      Statement statement = con.createStatement();
+      statement.execute("create or replace database \"lowercasedb\"");
+      String schema1 = "SCH1";
+      String schema2 = "SCH2";
+      statement.execute("create or replace schema \"lowercasedb\"." + schema1);
+      statement.execute("create or replace schema \"lowercasedb\"." + schema2);
+      DatabaseMetaData metaData = con.getMetaData();
+      ResultSet rs = metaData.getSchemas("\"lowercasedb\"", null);
+      // should return 4 schemas including PUBLIC and INFORMATIONSCHEMA.
+      assertEquals(4, getSizeOfResultSet(rs));
+      rs.close();
+      statement.close();
+    }
+  }
 }
