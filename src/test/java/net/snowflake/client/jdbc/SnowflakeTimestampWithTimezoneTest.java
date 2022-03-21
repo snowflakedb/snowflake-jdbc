@@ -5,8 +5,10 @@ package net.snowflake.client.jdbc;
 
 import static org.junit.Assert.assertEquals;
 
+import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -83,5 +85,31 @@ public class SnowflakeTimestampWithTimezoneTest extends BaseJDBCTest {
         new SnowflakeTimestampWithTimezone(
             dt.toEpochSecond(ZoneOffset.UTC) * 1000, dt.getNano(), TimeZone.getTimeZone("UTC"));
     assertEquals(this.outputTimestamp, stn.toString());
+  }
+
+  @Test
+  public void testGetTimezone() {
+    String timezone = "Australia/Sydney";
+    // Create a timestamp from a point in time
+    Long datetime = System.currentTimeMillis();
+    Timestamp currentTimestamp = new Timestamp(datetime);
+    SnowflakeTimestampWithTimezone ts =
+        new SnowflakeTimestampWithTimezone(currentTimestamp, TimeZone.getTimeZone(timezone));
+    // verify timezone was set
+    assertEquals(ts.getTimezone().getID(), timezone);
+  }
+
+  @Test
+  public void testToZonedDateTime() {
+    String timezone = "Australia/Sydney";
+    String zonedDateTime = "2022-03-17T10:10:08+11:00[Australia/Sydney]";
+    // Create a timestamp from a point in time
+    Long datetime = 1647472208000L;
+    Timestamp timestamp = new Timestamp(datetime);
+    SnowflakeTimestampWithTimezone ts =
+        new SnowflakeTimestampWithTimezone(timestamp, TimeZone.getTimeZone(timezone));
+    ZonedDateTime zd = ts.toZonedDateTime();
+    // verify timestamp was converted to zoned datetime
+    assertEquals(zd.toString(), zonedDateTime);
   }
 }
