@@ -190,7 +190,9 @@ public class SecretDetector {
    * @return Masked string
    */
   public static String maskSASToken(String text) {
-    return filterSASTokens(text);
+    // Disable all masking
+    return text;
+    //return filterSASTokens(text);
   }
 
   /**
