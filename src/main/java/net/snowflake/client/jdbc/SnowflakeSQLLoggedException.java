@@ -175,7 +175,7 @@ public class SnowflakeSQLLoggedException extends SnowflakeSQLException {
    */
   public static void sendTelemetryData(
       String queryId, String SQLState, int vendorCode, SFBaseSession session, SQLException ex) {
-    Telemetry ibInstance = null;
+    /*Telemetry ibInstance = null;
     // if session is not null, try sending data using in-band telemetry
     if (session != null) {
       ibInstance = session.getTelemetryClient();
@@ -218,7 +218,8 @@ public class SnowflakeSQLLoggedException extends SnowflakeSQLException {
     else {
       JSONObject oobValue = createOOBValue(queryId, SQLState, vendorCode);
       sendOutOfBandTelemetryMessage(oobValue, ex, TelemetryService.getInstance());
-    }
+    }*/
+    return;
   }
 
   public SnowflakeSQLLoggedException(

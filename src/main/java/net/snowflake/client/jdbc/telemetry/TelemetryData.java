@@ -17,7 +17,7 @@ public class TelemetryData {
 
   // Only allow code in same package to construct TelemetryData
   TelemetryData(ObjectNode message, long timeStamp) {
-    this.message = (ObjectNode) SecretDetector.maskJacksonNode(message);
+    this.message =  message; //(ObjectNode) SecretDetector.maskJacksonNode(message);
     this.timeStamp = timeStamp;
   }
 

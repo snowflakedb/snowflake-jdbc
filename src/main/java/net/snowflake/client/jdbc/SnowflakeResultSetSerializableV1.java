@@ -547,7 +547,14 @@ public class SnowflakeResultSetSerializableV1
           rootNode.path("data").path("rowsetBase64").asText();
       resultSetSerializable.rootAllocator = new RootAllocator(Long.MAX_VALUE);
       // Set first chunk row count from firstChunkStringData
-      resultSetSerializable.setFirstChunkRowCountForArrow();
+      if (resultSetSerializable.firstChunkStringData == null ||
+            resultSetSerializable.firstChunkStringData.isEmpty()) {
+        resultSetSerializable.firstChunkRowCount = 0;
+      } else {
+        resultSetSerializable.firstChunkRowCount =
+                rootNode.path("data").path("total").asInt();
+      }
+      //resultSetSerializable.setFirstChunkRowCountForArrow();
     } else {
       resultSetSerializable.firstChunkRowset = rootNode.path("data").path("rowset");
 

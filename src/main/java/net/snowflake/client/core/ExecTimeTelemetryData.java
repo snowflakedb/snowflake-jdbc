@@ -143,7 +143,7 @@ public class ExecTimeTelemetryData {
           "ElapsedResultProcessTime", (this.createResultSetEnd - this.processResultChunkStart));
       value.put("Urgent", true);
       valueStr = value.toString(); // Avoid adding exception stacktrace to user logs.
-      TelemetryService.getInstance().logExecutionTimeTelemetryEvent(value, eventType);
+      //TelemetryService.getInstance().logExecutionTimeTelemetryEvent(value, eventType);
       return valueStr;
     }
     return "";

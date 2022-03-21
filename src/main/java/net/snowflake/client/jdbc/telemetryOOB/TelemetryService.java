@@ -15,6 +15,7 @@ import net.snowflake.client.jdbc.SnowflakeConnectString;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.util.SecretDetector;
+import org.apache.http.HttpHost;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
@@ -163,7 +164,7 @@ public class TelemetryService {
     String account = conStr.getAccount();
     int port = conStr.getPort();
     // default value
-    TELEMETRY_SERVER_DEPLOYMENT deployment = TELEMETRY_SERVER_DEPLOYMENT.PROD;
+    TELEMETRY_SERVER_DEPLOYMENT deployment = TELEMETRY_SERVER_DEPLOYMENT.QA1;
     if (conStr.getHost().contains("reg") || conStr.getHost().contains("local")) {
       deployment = TELEMETRY_SERVER_DEPLOYMENT.REG;
       if (port == 8080) {
@@ -333,6 +334,7 @@ public class TelemetryService {
             .setConnectionRequestTimeout(TIMEOUT)
             .setSocketTimeout(TIMEOUT)
             .build();
+
 
     public TelemetryUploader(TelemetryService _instance, String _payload, String _payloadLogStr) {
       instance = _instance;
