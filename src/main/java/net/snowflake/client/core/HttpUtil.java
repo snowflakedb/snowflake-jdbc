@@ -339,6 +339,7 @@ public class HttpUtil {
       connectionManager =
           new PoolingHttpClientConnectionManager(
               registry, null, null, null, timeToLive, TimeUnit.SECONDS);
+      connectionManager.setValidateAfterInactivity(-1);
       int maxConnections =
           convertSystemPropertyToIntValue(JDBC_MAX_CONNECTIONS_PROPERTY, DEFAULT_MAX_CONNECTIONS);
       int maxConnectionsPerRoute =
