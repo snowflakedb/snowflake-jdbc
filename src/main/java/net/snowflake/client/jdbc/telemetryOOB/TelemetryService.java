@@ -24,6 +24,9 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
+import com.google.common.base.Strings;
+
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetEnv;
 
 /**
  * Copyright (c) 2018-2019 Snowflake Computing Inc. All rights reserved.
@@ -150,6 +153,23 @@ public class TelemetryService {
     }
   }
 
+  private TELEMETRY_SERVER_DEPLOYMENT manuallyConfigureDeployment(String dep) {
+    switch (dep) {
+      case "REG":
+        return TELEMETRY_SERVER_DEPLOYMENT.REG;
+      case "DEV":
+        return TELEMETRY_SERVER_DEPLOYMENT.DEV;
+      case "QA1":
+        return TELEMETRY_SERVER_DEPLOYMENT.QA1;
+      case "PREPROD":
+        return TELEMETRY_SERVER_DEPLOYMENT.PREPROD3;
+      case "PROD":
+        return TELEMETRY_SERVER_DEPLOYMENT.PROD;
+      default:
+        return null;
+    }
+  }
+
   /**
    * configure telemetry deployment based on connection url and info Note: it is not thread-safe
    * while connecting to different deployments simultaneously.
@@ -165,6 +185,24 @@ public class TelemetryService {
     int port = conStr.getPort();
     // default value
     TELEMETRY_SERVER_DEPLOYMENT deployment = TELEMETRY_SERVER_DEPLOYMENT.QA1;
+    String envDeployment = systemGetEnv("TELEMETRY_DEPLOYMENT");
+    if (!Strings.isNullOrEmpty(envDeployment)) {
+      envDeployment = envDeployment.trim().toUpperCase();
+      deployment = manuallyConfigureDeployment(envDeployment);
+      if (deployment != null) {
+        this.setDeployment(deployment);
+        return;
+      }
+    }
+    Map<String, Object> conParams = conStr.getParameters();
+    if (conParams.containsKey("TELEMETRY_DEPLOYMENT")) {
+      String conDeployment = String.valueOf(conParams.get("TELEMETRY_DEPLOYMENT")).trim().toUpperCase();
+      deployment = manuallyConfigureDeployment(conDeployment);
+      if (deployment != null) {
+        this.setDeployment(deployment);
+        return;
+      }
+    }
     if (conStr.getHost().contains("reg") || conStr.getHost().contains("local")) {
       deployment = TELEMETRY_SERVER_DEPLOYMENT.REG;
       if (port == 8080) {
