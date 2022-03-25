@@ -30,7 +30,7 @@ public class SnowflakeBasicDataSource implements DataSource, Serializable {
 
   private String authenticator;
 
-  private Properties properties = new Properties();
+  protected Properties properties = new Properties();
 
   static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeBasicDataSource.class);
 
