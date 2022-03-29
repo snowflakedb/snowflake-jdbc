@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.regex.Pattern;
 import net.snowflake.client.category.TestCategoryResultSet;
 import net.snowflake.client.core.SFBaseSession;
+import net.snowflake.client.core.SessionUtil;
 import net.snowflake.client.jdbc.telemetry.*;
 import net.snowflake.common.core.SFBinary;
 import org.apache.arrow.vector.Float8Vector;
@@ -112,6 +113,46 @@ public class ResultSetLatestIT extends ResultSet0IT {
       assertTrue(Pattern.matches("[a-zA-Z0-9]{100}", rsList.get(i).getString(1)));
       rsList.get(i).close();
     }
+    // set memory limit back to default invalid value so it does not get used
+    connection
+        .unwrap(SnowflakeConnectionV1.class)
+        .getSFBaseSession()
+        .setMemoryLimitForTesting(SFBaseSession.MEMORY_LIMIT_UNSET);
+    connection.close();
+  }
+
+  /** This tests that the SnowflakeChunkDownloader doesn't hang when memory limits are low. */
+  @Test
+  public void testChunkDownloaderSetRetry() throws SQLException {
+    int stmtCount = 3;
+    int rowCount = 170000;
+    Connection connection = getConnection();
+    connection
+        .unwrap(SnowflakeConnectionV1.class)
+        .getSFBaseSession()
+        .setMemoryLimitForTesting(1 * 1024 * 1024);
+    connection
+        .unwrap(SnowflakeConnectionV1.class)
+        .getSFBaseSession()
+        .setOtherParameter(SessionUtil.JDBC_CHUNK_DOWNLOADER_MAX_RETRY, 1);
+    // Set memory limit to low number
+    // open multiple statements concurrently to overwhelm current memory allocation
+    for (int i = 0; i < stmtCount; ++i) {
+      Statement stmt = connection.createStatement();
+      ResultSet resultSet =
+          stmt.executeQuery(
+              "select randstr(100, random()) from table(generator(rowcount => " + rowCount + "))");
+      // consume half of the results and go to the next statement
+      for (int j = 0; j < rowCount / 2; j++) {
+        resultSet.next();
+      }
+      assertTrue(Pattern.matches("[a-zA-Z0-9]{100}", resultSet.getString(1)));
+    }
+    // reset retry to MAX_NUM_OF_RETRY, which is 10
+    connection
+        .unwrap(SnowflakeConnectionV1.class)
+        .getSFBaseSession()
+        .setOtherParameter(SessionUtil.JDBC_CHUNK_DOWNLOADER_MAX_RETRY, 10);
     // set memory limit back to default invalid value so it does not get used
     connection
         .unwrap(SnowflakeConnectionV1.class)
@@ -403,7 +444,8 @@ public class ResultSetLatestIT extends ResultSet0IT {
 
     // The generated resultSet must be big enough for triggering result chunk downloader
     String query =
-        "select current_date(), true,2345234, 2343.0, 'testrgint\\n\\t' from table(generator(rowcount=>10000))";
+        "select current_date(), true,2345234, 2343.0, 'testrgint\\n"
+            + "\\t' from table(generator(rowcount=>10000))";
 
     ResultSet resultSet = statement.executeQuery(query);
     resultSet.next(); // should finish successfully

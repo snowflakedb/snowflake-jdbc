@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.common.util.ClassUtil;
+import net.snowflake.common.util.FixedViewColumn;
 
 /**
  * Base class for file transfers: given a SnowflakeConnection, files may be uploaded or downloaded
@@ -30,6 +31,134 @@ import net.snowflake.common.util.ClassUtil;
  * default is false).
  */
 public abstract class SFBaseFileTransferAgent implements SnowflakeFixedView {
+
+  /** A class for encapsulating the columns to return for the upload command */
+  public enum UploadColumns {
+    source,
+    target,
+    source_size,
+    target_size,
+    source_compression,
+    target_compression,
+    status,
+    encryption,
+    message
+  };
+
+  public class UploadCommandFacade {
+
+    @FixedViewColumn(name = "source", ordinal = 10)
+    private String srcFile;
+
+    @FixedViewColumn(name = "target", ordinal = 20)
+    private String destFile;
+
+    @FixedViewColumn(name = "source_size", ordinal = 30)
+    private long srcSize;
+
+    @FixedViewColumn(name = "target_size", ordinal = 40)
+    private long destSize = -1;
+
+    @FixedViewColumn(name = "source_compression", ordinal = 50)
+    private String srcCompressionType;
+
+    @FixedViewColumn(name = "target_compression", ordinal = 60)
+    private String destCompressionType;
+
+    @FixedViewColumn(name = "status", ordinal = 70)
+    private String resultStatus;
+
+    @FixedViewColumn(name = "message", ordinal = 80)
+    private String errorDetails;
+
+    public UploadCommandFacade(
+        String srcFile,
+        String destFile,
+        String resultStatus,
+        String errorDetails,
+        long srcSize,
+        long destSize,
+        String srcCompressionType,
+        String destCompressionType) {
+      this.srcFile = srcFile;
+      this.destFile = destFile;
+      this.resultStatus = resultStatus;
+      this.errorDetails = errorDetails;
+      this.srcSize = srcSize;
+      this.destSize = destSize;
+      this.srcCompressionType = srcCompressionType;
+      this.destCompressionType = destCompressionType;
+    }
+
+    public String getSrcFile() {
+      return srcFile;
+    }
+  }
+
+  public class UploadCommandEncryptionFacade extends UploadCommandFacade {
+    @FixedViewColumn(name = "encryption", ordinal = 75)
+    private String encryption;
+
+    public UploadCommandEncryptionFacade(
+        String srcFile,
+        String destFile,
+        String resultStatus,
+        String errorDetails,
+        long srcSize,
+        long destSize,
+        String srcCompressionType,
+        String destCompressionType,
+        boolean isEncrypted) {
+      super(
+          srcFile,
+          destFile,
+          resultStatus,
+          errorDetails,
+          srcSize,
+          destSize,
+          srcCompressionType,
+          destCompressionType);
+      this.encryption = isEncrypted ? "ENCRYPTED" : "";
+    }
+  }
+
+  /** A class for encapsulating the columns to return for the download command */
+  public class DownloadCommandFacade {
+    @FixedViewColumn(name = "file", ordinal = 10)
+    private String file;
+
+    @FixedViewColumn(name = "size", ordinal = 20)
+    private long size;
+
+    @FixedViewColumn(name = "status", ordinal = 30)
+    private String resultStatus;
+
+    @FixedViewColumn(name = "message", ordinal = 40)
+    private String errorDetails;
+
+    public DownloadCommandFacade(String file, String resultStatus, String errorDetails, long size) {
+      this.file = file;
+      this.resultStatus = resultStatus;
+      this.errorDetails = errorDetails;
+      this.size = size;
+    }
+
+    public String getFile() {
+      return file;
+    }
+  }
+
+  public class DownloadCommandEncryptionFacade extends DownloadCommandFacade {
+    @FixedViewColumn(name = "encryption", ordinal = 35)
+    private String encryption;
+
+    public DownloadCommandEncryptionFacade(
+        String file, String resultStatus, String errorDetails, long size, boolean isEncrypted) {
+      super(file, resultStatus, errorDetails, size);
+      this.encryption = isEncrypted ? "DECRYPTED" : "";
+    }
+  }
+
   protected boolean compressSourceFromStream;
   protected String destStagePath;
   protected String destFileNameForStreamSource;
@@ -63,11 +192,11 @@ public abstract class SFBaseFileTransferAgent implements SnowflakeFixedView {
       return ClassUtil.getFixedViewObjectAsRow(
           commandType == CommandType.UPLOAD
               ? (showEncryptionParameter
-                  ? SnowflakeFileTransferAgent.UploadCommandEncryptionFacade.class
-                  : SnowflakeFileTransferAgent.UploadCommandFacade.class)
+                  ? UploadCommandEncryptionFacade.class
+                  : UploadCommandFacade.class)
               : (showEncryptionParameter
-                  ? SnowflakeFileTransferAgent.DownloadCommandEncryptionFacade.class
-                  : SnowflakeFileTransferAgent.DownloadCommandFacade.class),
+                  ? DownloadCommandEncryptionFacade.class
+                  : DownloadCommandFacade.class),
           statusRows.get(currentRowIndex++));
     } else {
       return null;
@@ -85,11 +214,11 @@ public abstract class SFBaseFileTransferAgent implements SnowflakeFixedView {
     return SnowflakeUtil.describeFixedViewColumns(
         commandType == CommandType.UPLOAD
             ? (showEncryptionParameter
-                ? SnowflakeFileTransferAgent.UploadCommandEncryptionFacade.class
-                : SnowflakeFileTransferAgent.UploadCommandFacade.class)
+                ? UploadCommandEncryptionFacade.class
+                : UploadCommandFacade.class)
             : (showEncryptionParameter
-                ? SnowflakeFileTransferAgent.DownloadCommandEncryptionFacade.class
-                : SnowflakeFileTransferAgent.DownloadCommandFacade.class),
+                ? DownloadCommandEncryptionFacade.class
+                : DownloadCommandFacade.class),
         session);
   }
 
