@@ -365,7 +365,7 @@ public class CustomProxyLatestIT {
   }
 
   @Test
-  // @Ignore
+  @Ignore
   public void testUnsetJvmPropertiesForInvalidSettings() throws SQLException {
     Properties props = new Properties();
     props.put("user", "USER");
