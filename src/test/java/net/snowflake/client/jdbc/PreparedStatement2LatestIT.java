@@ -128,7 +128,6 @@ public class PreparedStatement2LatestIT extends PreparedStatement0IT {
                 "SELECT 1 FROM TESTNULL WHERE CREATED_TIME = TO_TIMESTAMP(?, 3) and MID = ?");
         ps.setObject(1, 0);
         ps.setObject(2, null);
-        ps.setObject(1000, null); // this won't raise an exception.
         rs = ps.executeQuery();
         assertFalse(rs.next());
         rs.close();
@@ -140,7 +139,6 @@ public class PreparedStatement2LatestIT extends PreparedStatement0IT {
                 "SELECT 1 FROM TESTNULL WHERE CREATED_TIME = TO_TIMESTAMP(?::NUMBER, 3) and MID = ?");
         ps.setObject(1, 0);
         ps.setObject(2, null);
-        ps.setObject(1000, null); // this won't raise an exception.
 
         rs = ps.executeQuery();
         assertFalse(rs.next());
