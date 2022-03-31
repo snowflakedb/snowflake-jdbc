@@ -406,15 +406,28 @@ public abstract class SFBaseSession {
           logger.debug(
               "http.useProxy={} but valid host and port were not provided. No proxy in use.",
               httpUseProxy);
+          unsetInvalidProxyHostAndPort();
           ocspAndProxyKey = new HttpClientSettingsKey(getOCSPMode());
         }
       } else {
         // If no proxy is used or JVM http proxy is used, no need for setting parameters
         logger.debug("http.useProxy={}. JVM proxy not used.", httpUseProxy);
+        unsetInvalidProxyHostAndPort();
         ocspAndProxyKey = new HttpClientSettingsKey(getOCSPMode());
       }
     }
     return ocspAndProxyKey;
+  }
+
+  public void unsetInvalidProxyHostAndPort() {
+    // If proxyHost and proxyPort are used without http or https unset them, so they are not used
+    // later by the ProxySelector.
+    if (!Strings.isNullOrEmpty(systemGetProperty("proxyHost"))) {
+      System.clearProperty("proxyHost");
+    }
+    if (!Strings.isNullOrEmpty(systemGetProperty("proxyPort"))) {
+      System.clearProperty("proxyPort");
+    }
   }
 
   public OCSPMode getOCSPMode() {
