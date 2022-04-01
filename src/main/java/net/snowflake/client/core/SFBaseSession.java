@@ -55,6 +55,7 @@ public abstract class SFBaseSession {
   protected List<SFException> sqlWarnings = new ArrayList<>();
   // Unique Session ID
   private String sessionId;
+  private String sessionToken;
   // Database versions
   private String databaseVersion = null;
   private int databaseMajorVersion = 0;
@@ -160,6 +161,14 @@ public abstract class SFBaseSession {
    */
   public void setSessionId(String sessionId) {
     this.sessionId = sessionId;
+  }
+
+  public String getSessionToken() {
+    return sessionToken;
+  }
+
+  public void setSessionToken(String sessionToken) {
+    this.sessionToken = sessionToken;
   }
 
   public boolean isSfSQLMode() {

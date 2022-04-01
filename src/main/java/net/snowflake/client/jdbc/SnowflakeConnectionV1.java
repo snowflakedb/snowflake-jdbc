@@ -745,6 +745,13 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
     return sfConnectionHandler;
   }
 
+  public boolean isOpen() {
+    if (isClosed || (sfSession.getSessionToken() == null)) {
+      return false;
+    }
+    return true;
+  }
+
   /**
    * Method to put data from a stream at a stage location. The data will be uploaded as one file. No
    * splitting is done in this method.

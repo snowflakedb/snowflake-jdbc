@@ -616,6 +616,15 @@ public class SFSession extends SFBaseSession {
   }
 
   /**
+   * set the session token
+   *
+   * @param sessionToken
+   */
+  public void setSessionToken(String sessionToken) {
+    this.sessionToken = sessionToken;
+  }
+
+  /**
    * Close the connection
    *
    * @throws SnowflakeSQLException if failed to close the connection

@@ -64,4 +64,5 @@ public interface SnowflakeConnection {
 
   /** Returns the SnowflakeConnectionImpl from the connection object. */
   SFConnectionHandler getHandler();
+
 }

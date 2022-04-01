@@ -953,4 +953,13 @@ public class ConnectionLatestIT extends BaseJDBCTest {
       connection.createStatement().execute("drop table if exists readonly_test");
     }
   }
+
+  @Test
+  public void testIsOpen() throws SQLException {
+    Connection connection = getConnection();
+    SnowflakeConnectionV1 sfConnection = connection.unwrap(SnowflakeConnectionV1.class);
+    assertTrue(sfConnection.isOpen());
+    sfConnection.getSfSession().setSessionToken(null);
+    assertFalse(sfConnection.isOpen());
+  }
 }
