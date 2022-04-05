@@ -7,6 +7,7 @@ import net.snowflake.client.jdbc.SnowflakeConnectString;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.util.SecretDetector;
+import org.apache.http.HttpHost;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
@@ -368,6 +369,7 @@ public class TelemetryService {
             .setConnectionRequestTimeout(TIMEOUT)
             .setConnectionRequestTimeout(TIMEOUT)
             .setSocketTimeout(TIMEOUT)
+                //.setProxy(new HttpHost("127.0.0.1", 9090, "http"))
             .build();
 
     public TelemetryUploader(TelemetryService _instance, String _payload, String _payloadLogStr) {
