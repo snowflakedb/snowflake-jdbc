@@ -41,8 +41,8 @@
     <slf4j.version>1.7.25</slf4j.version>
     <jsoup.version>1.14.2</jsoup.version>
     <tika.version>1.25</tika.version>
-    <jackson.version>2.12.1</jackson.version>
-    <jacksondatabind.version>2.12.1</jacksondatabind.version>
+    <jackson.version>2.13.2</jackson.version>
+    <jacksondatabind.version>2.13.2</jacksondatabind.version>
     <!-- Caution: version 4.5.12 and onward of apache httpclient causes a regression in recognizing S3 certificates (SNOW-259063) -->
     <httpclient.version>4.5.11</httpclient.version>
     <jacoco.version>0.8.4</jacoco.version>
@@ -291,6 +291,16 @@
           <artifactId>commons-codec</artifactId>
         </exclusion>
       </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.arrow</groupId>
+      <artifactId>arrow-memory-netty</artifactId>
+      <version>${arrow.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.arrow</groupId>
+      <artifactId>arrow-memory-unsafe</artifactId>
+      <version>${arrow.version}</version>
     </dependency>
     <dependency>
       <groupId>com.google.auth</groupId>

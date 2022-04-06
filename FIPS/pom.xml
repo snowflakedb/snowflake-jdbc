@@ -37,7 +37,7 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    <arrow.version>0.15.1</arrow.version>
+    <arrow.version>8.0.0-SNAPSHOT</arrow.version>
     <slf4j.version>1.7.25</slf4j.version>
     <jsoup.version>1.14.2</jsoup.version>
     <tika.version>1.25</tika.version>
@@ -263,6 +263,16 @@
     <dependency>
       <groupId>org.apache.arrow</groupId>
       <artifactId>arrow-vector</artifactId>
+      <version>${arrow.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.arrow</groupId>
+      <artifactId>arrow-memory-netty</artifactId>
+      <version>${arrow.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.arrow</groupId>
+      <artifactId>arrow-memory-unsafe</artifactId>
       <version>${arrow.version}</version>
     </dependency>
     <dependency>
