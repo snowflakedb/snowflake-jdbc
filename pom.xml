@@ -17,7 +17,7 @@
       <layout>default</layout>
       <url>https://nexus.int.snowflakecomputing.com/repository/maven-central/</url>
       <snapshots>
-        <enabled>true</enabled>
+        <enabled>false</enabled>
       </snapshots>
     </repository>
   </repositories>
@@ -291,16 +291,6 @@
           <artifactId>commons-codec</artifactId>
         </exclusion>
       </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.arrow</groupId>
-      <artifactId>arrow-memory-netty</artifactId>
-      <version>${arrow.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.arrow</groupId>
-      <artifactId>arrow-memory-unsafe</artifactId>
-      <version>${arrow.version}</version>
     </dependency>
     <dependency>
       <groupId>com.google.auth</groupId>
