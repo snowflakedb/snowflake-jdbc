@@ -33,6 +33,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 @Category(TestCategoryFips.class)
+@ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
 public class ConnectionFipsIT extends AbstractDriverIT {
   private static final String JCE_PROVIDER_BOUNCY_CASTLE_FIPS = "BCFIPS";
   private static final String JCE_PROVIDER_SUN_JCE = "SunJCE";

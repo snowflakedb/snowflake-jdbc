@@ -180,6 +180,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
    * This tests the ability to have quotes inside a database or schema within getSchemas() function.
    */
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testDoubleQuotedDatabaseInGetSchemas() throws SQLException {
     try (Connection con = getConnection()) {
       Statement statement = con.createStatement();
