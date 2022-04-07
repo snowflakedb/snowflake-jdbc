@@ -178,14 +178,19 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
   }
 
   // used to get convert string back to normal after its special characters have been escaped to
-  // send it through
-  // Wildcard regex
+  // send it through Wildcard regex
   private String unescapeChars(String escapedString) {
     String unescapedString = escapedString.replace("\\_", "_");
     unescapedString = unescapedString.replace("\\%", "%");
     unescapedString = unescapedString.replace("\\\\", "\\");
-    unescapedString = unescapedString.replace("\"", "\"\"");
+    unescapedString = escapeSqlQuotes(unescapedString);
     return unescapedString;
+  }
+
+  // In SQL, double quotes must be escaped with an additional pair of double quotes. Add additional
+  // quotes to avoid syntax errors with SQL queries.
+  private String escapeSqlQuotes(String originalString) {
+    return originalString.replace("\"", "\"\"");
   }
 
   private boolean isSchemaNameWildcardPattern(String inputString) {
@@ -2840,7 +2845,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
     } else if (catalog.isEmpty()) {
       return SnowflakeDatabaseMetaDataResultSet.getEmptyResultSet(GET_SCHEMAS, statement);
     } else {
-      showSchemas += " in database \"" + unescapeChars(catalog) + "\"";
+      showSchemas += " in database \"" + escapeSqlQuotes(catalog) + "\"";
     }
 
     logger.debug("sql command to get schemas metadata: {}", showSchemas);
