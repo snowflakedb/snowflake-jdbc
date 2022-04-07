@@ -34,6 +34,7 @@ import org.junit.experimental.categories.Category;
 
 @Category(TestCategoryFips.class)
 public class ConnectionFipsIT extends AbstractDriverIT {
+  /*
   private static final String JCE_PROVIDER_BOUNCY_CASTLE_FIPS = "BCFIPS";
   private static final String JCE_PROVIDER_SUN_JCE = "SunJCE";
   private static final String JCE_PROVIDER_SUN_RSA_SIGN = "SunRsaSign";
@@ -105,7 +106,6 @@ public class ConnectionFipsIT extends AbstractDriverIT {
   private static int JCE_PROVIDER_SUN_RSA_SIGN_PROVIDER_POSITION;
 
   @BeforeClass
-  @Ignore
   public static void setup() throws Exception {
     System.setProperty("javax.net.debug", "ssl");
     // get keystore types for BouncyCastle libraries
@@ -138,7 +138,7 @@ public class ConnectionFipsIT extends AbstractDriverIT {
     System.setProperty(JAVA_SYSTEM_PROPERTY_SSL_CIPHERSUITES, SSL_ENABLED_CIPHERSUITES);
     /*
      * Insert BouncyCastle's FIPS-compliant encryption and SSL providers.
-     */
+     *
     BouncyCastleFipsProvider bcFipsProvider =
         new BouncyCastleFipsProvider(BOUNCY_CASTLE_RNG_HYBRID_MODE);
 
@@ -149,7 +149,7 @@ public class ConnectionFipsIT extends AbstractDriverIT {
      *
      * JavaDoc for insertProviderAt states:
      *   "A provider cannot be added if it is already installed."
-     */
+     *
     Security.removeProvider(JCE_PROVIDER_BOUNCY_CASTLE_FIPS);
     Security.insertProviderAt(bcFipsProvider, 1);
     if (!CryptoServicesRegistrar.isInApprovedOnlyMode()) {
@@ -166,7 +166,6 @@ public class ConnectionFipsIT extends AbstractDriverIT {
   }
 
   @AfterClass
-  @Ignore
   public static void teardown() throws Exception {
     // Remove BouncyCastle FIPS Provider
     Security.removeProvider(JCE_PROVIDER_BOUNCY_CASTLE_FIPS);
@@ -213,7 +212,6 @@ public class ConnectionFipsIT extends AbstractDriverIT {
   }
 
   @Test
-  @Ignore
   public void connectWithFips() throws SQLException {
     Connection con = getConnection();
     Statement statement = con.createStatement();
@@ -227,7 +225,6 @@ public class ConnectionFipsIT extends AbstractDriverIT {
   }
 
   @Test
-  @Ignore
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubActions.class)
   public void connectWithFipsKeyPair() throws Exception {
     Map<String, String> parameters = getConnectionParameters();
@@ -257,7 +254,6 @@ public class ConnectionFipsIT extends AbstractDriverIT {
   }
 
   @Test
-  @Ignore
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubActions.class)
   public void testConnectUsingKeyPair() throws Exception {
     Map<String, String> parameters = getConnectionParameters();
@@ -293,7 +289,6 @@ public class ConnectionFipsIT extends AbstractDriverIT {
   }
 
   @Test
-  @Ignore
   public void connectWithFipsAndQuery() throws SQLException {
     try (Connection con = getConnection()) {
       Statement statement = con.createStatement();
@@ -311,7 +306,6 @@ public class ConnectionFipsIT extends AbstractDriverIT {
   }
 
   @Test
-  @Ignore
   public void connectWithFipsAndPut() throws Exception {
     try (Connection con = getConnection()) {
       // put files
@@ -336,4 +330,6 @@ public class ConnectionFipsIT extends AbstractDriverIT {
 
     System.out.println("Connected to Google successfully");
   }
+  
+   */
 }
