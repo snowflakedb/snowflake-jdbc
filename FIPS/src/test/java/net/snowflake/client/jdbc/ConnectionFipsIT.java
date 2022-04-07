@@ -33,7 +33,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 @Category(TestCategoryFips.class)
-@ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
 public class ConnectionFipsIT extends AbstractDriverIT {
   private static final String JCE_PROVIDER_BOUNCY_CASTLE_FIPS = "BCFIPS";
   private static final String JCE_PROVIDER_SUN_JCE = "SunJCE";
@@ -105,6 +104,7 @@ public class ConnectionFipsIT extends AbstractDriverIT {
   private static int JCE_PROVIDER_SUN_JCE_PROVIDER_POSITION;
   private static int JCE_PROVIDER_SUN_RSA_SIGN_PROVIDER_POSITION;
 
+  @Ignore
   @BeforeClass
   public static void setup() throws Exception {
     System.setProperty("javax.net.debug", "ssl");
@@ -165,6 +165,7 @@ public class ConnectionFipsIT extends AbstractDriverIT {
     connectToGoogle();
   }
 
+  @Ignore
   @AfterClass
   public static void teardown() throws Exception {
     // Remove BouncyCastle FIPS Provider
@@ -211,6 +212,7 @@ public class ConnectionFipsIT extends AbstractDriverIT {
     connectToGoogle();
   }
 
+  @Ignore
   @Test
   public void connectWithFips() throws SQLException {
     Connection con = getConnection();
@@ -224,6 +226,7 @@ public class ConnectionFipsIT extends AbstractDriverIT {
     con.close(); // ensure no exception
   }
 
+  @Ignore
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubActions.class)
   public void connectWithFipsKeyPair() throws Exception {
@@ -253,6 +256,7 @@ public class ConnectionFipsIT extends AbstractDriverIT {
     connection.close();
   }
 
+  @Ignore
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubActions.class)
   public void testConnectUsingKeyPair() throws Exception {
@@ -288,6 +292,7 @@ public class ConnectionFipsIT extends AbstractDriverIT {
     DriverManager.getConnection(uri, properties).close();
   }
 
+  @Ignore
   @Test
   public void connectWithFipsAndQuery() throws SQLException {
     try (Connection con = getConnection()) {
@@ -305,6 +310,7 @@ public class ConnectionFipsIT extends AbstractDriverIT {
     }
   }
 
+  @Ignore
   @Test
   public void connectWithFipsAndPut() throws Exception {
     try (Connection con = getConnection()) {
