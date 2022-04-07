@@ -2840,7 +2840,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
     } else if (catalog.isEmpty()) {
       return SnowflakeDatabaseMetaDataResultSet.getEmptyResultSet(GET_SCHEMAS, statement);
     } else {
-      showSchemas += " in database \"" + catalog + "\"";
+      showSchemas += " in database \"" + unescapeChars(catalog) + "\"";
     }
 
     logger.debug("sql command to get schemas metadata: {}", showSchemas);

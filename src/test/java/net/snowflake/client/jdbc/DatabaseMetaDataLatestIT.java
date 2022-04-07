@@ -177,6 +177,35 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
   }
 
   /**
+   * This tests the ability to have quotes inside a database or schema within getSchemas() function.
+   */
+  @Test
+  public void testDoubleQuotedDatabaseInGetSchemas() throws SQLException {
+    try (Connection con = getConnection()) {
+      Statement statement = con.createStatement();
+      // Create a database with double quotes inside the database name
+      statement.execute("create or replace database \"\"\"quoteddb\"\"\"");
+      // Create a database, lowercase, with no double quotes inside the database name
+      statement.execute("create or replace database \"unquoteddb\"");
+      DatabaseMetaData metaData = con.getMetaData();
+      // Assert 2 rows returned for the PUBLIC and INFORMATION_SCHEMA schemas inside database
+      ResultSet rs = metaData.getSchemas("\"quoteddb\"", null);
+      assertEquals(2, getSizeOfResultSet(rs));
+      // Assert no results are returned when failing to put quotes around quoted database
+      rs = metaData.getSchemas("quoteddb", null);
+      assertEquals(0, getSizeOfResultSet(rs));
+      // Assert 2 rows returned for the PUBLIC and INFORMATION_SCHEMA schemas inside database
+      rs = metaData.getSchemas("unquoteddb", null);
+      assertEquals(2, getSizeOfResultSet(rs));
+      // Assert no rows are returned when erroneously quoting unquoted database
+      rs = metaData.getSchemas("\"unquoteddb\"", null);
+      assertEquals(0, getSizeOfResultSet(rs));
+      rs.close();
+      statement.close();
+    }
+  }
+
+  /**
    * This tests that wildcards can be used for the schema name for getProcedureColumns().
    * Previously, only empty resultsets were returned.
    *
