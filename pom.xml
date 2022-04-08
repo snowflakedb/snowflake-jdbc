@@ -428,7 +428,7 @@
           </execution>
           <execution>
             <id>install-arrow-vector</id>
-            <phase>validate</phase>
+            <phase>clean</phase>
             <goals>
               <goal>install-file</goal>
             </goals>
