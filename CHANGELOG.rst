@@ -1,3 +1,7 @@
+**JDBC Driver 3.13.17**
+
+- \SNOW-571607 | | Create patch for driver release v3.13.16 to fix incorrect behavior for getSchemas() function 
+
 **JDBC Driver 3.13.16**
 
 - \| | nonProxyHosts Parameter is Not Honored
