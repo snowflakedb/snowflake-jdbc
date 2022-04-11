@@ -177,6 +177,36 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
   }
 
   /**
+   * This tests the ability to have quotes inside a database or schema within getSchemas() function.
+   */
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testDoubleQuotedDatabaseInGetSchemas() throws SQLException {
+    try (Connection con = getConnection()) {
+      Statement statement = con.createStatement();
+      // Create a database with double quotes inside the database name
+      statement.execute("create or replace database \"\"\"quoteddb\"\"\"");
+      // Create a database, lowercase, with no double quotes inside the database name
+      statement.execute("create or replace database \"unquoteddb\"");
+      DatabaseMetaData metaData = con.getMetaData();
+      // Assert 2 rows returned for the PUBLIC and INFORMATION_SCHEMA schemas inside database
+      ResultSet rs = metaData.getSchemas("\"quoteddb\"", null);
+      assertEquals(2, getSizeOfResultSet(rs));
+      // Assert no results are returned when failing to put quotes around quoted database
+      rs = metaData.getSchemas("quoteddb", null);
+      assertEquals(0, getSizeOfResultSet(rs));
+      // Assert 2 rows returned for the PUBLIC and INFORMATION_SCHEMA schemas inside database
+      rs = metaData.getSchemas("unquoteddb", null);
+      assertEquals(2, getSizeOfResultSet(rs));
+      // Assert no rows are returned when erroneously quoting unquoted database
+      rs = metaData.getSchemas("\"unquoteddb\"", null);
+      assertEquals(0, getSizeOfResultSet(rs));
+      rs.close();
+      statement.close();
+    }
+  }
+
+  /**
    * This tests that wildcards can be used for the schema name for getProcedureColumns().
    * Previously, only empty resultsets were returned.
    *
@@ -711,32 +741,5 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
     resultSet = metaData.getColumns(database, schema, "special" + escapeChar + "%table", null);
     assertTrue(resultSet.next());
     assertEquals("COLA", resultSet.getString("COLUMN_NAME"));
-  }
-
-  /**
-   * This tests that the driver doesn't add quotes to the database name if the application has
-   * already added them. This fixes a bug where the show schemas command was returning empty results
-   * since the database name was being double-quoted.
-   *
-   * @throws SQLException
-   */
-  @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testGetSchemasWithDoubleQuotedDatabase() throws SQLException {
-    try (Connection con = getConnection()) {
-      // create the database and two schemas
-      Statement statement = con.createStatement();
-      statement.execute("create or replace database \"lowercasedb\"");
-      String schema1 = "SCH1";
-      String schema2 = "SCH2";
-      statement.execute("create or replace schema \"lowercasedb\"." + schema1);
-      statement.execute("create or replace schema \"lowercasedb\"." + schema2);
-      DatabaseMetaData metaData = con.getMetaData();
-      ResultSet rs = metaData.getSchemas("\"lowercasedb\"", null);
-      // should return 4 schemas including PUBLIC and INFORMATIONSCHEMA.
-      assertEquals(4, getSizeOfResultSet(rs));
-      rs.close();
-      statement.close();
-    }
   }
 }
