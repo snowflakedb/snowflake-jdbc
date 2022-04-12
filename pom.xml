@@ -437,6 +437,21 @@
             </configuration>
           </execution>
           <execution>
+            <id>install-arrow-vector-pom</id>
+            <phase>validate</phase>
+            <goals>
+              <goal>install-file</goal>
+            </goals>
+            <configuration>
+              <file>${project.basedir}/dependencies/arrow-vector-${arrow.version}.pom</file>
+              <groupId>org.apache.arrow</groupId>
+              <artifactId>arrow-vector</artifactId>
+              <version>${arrow.version}</version>
+              <packaging>pom</packaging>
+              <generatePom>true</generatePom>
+            </configuration>
+          </execution>
+          <execution>
             <id>install-arrow-vector</id>
             <phase>validate</phase>
             <goals>
