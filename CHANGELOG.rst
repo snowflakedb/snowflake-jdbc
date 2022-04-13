@@ -1,3 +1,9 @@
+**JDBC Driver 3.13.17**
+
+- \SNOW-571607 | | Create patch for driver release v3.13.16 to fix incorrect behavior for getSchemas() function 
+- \| | Fix setting of invalid JVM parameters proxyHost and proxyPort
+- \SNOW-348660 | | Add getters for the timezone and ZonedDateTime for SnowflakeTimestampWithTimezone object
+
 **JDBC Driver 3.13.16**
 
 - \| | nonProxyHosts Parameter is Not Honored
