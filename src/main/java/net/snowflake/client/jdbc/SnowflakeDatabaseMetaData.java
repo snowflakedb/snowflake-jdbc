@@ -2795,8 +2795,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
   @Override
   public boolean locatorsUpdateCopy() throws SQLException {
     logger.debug("public boolean locatorsUpdateCopy()");
-
-    throw new SnowflakeLoggedFeatureNotSupportedException(session);
+    return false;
   }
 
   @Override
