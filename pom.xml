@@ -756,6 +756,10 @@
                        <shadedPattern>${shadeBase}.google.type</shadedPattern>
                      </relocation>
                      <relocation>
+                       <pattern>google.geo</pattern>
+                       <shadedPattern>${shadeBase}.google.geo</shadedPattern>
+                     </relocation>
+                     <relocation>
                        <pattern>google.rpc</pattern>
                        <shadedPattern>${shadeBase}.google.rpc</shadedPattern>
                      </relocation>
