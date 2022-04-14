@@ -81,6 +81,57 @@ public class RestRequest {
       boolean includeRequestGuid,
       boolean retryHTTP403)
       throws SnowflakeSQLException {
+    return execute(
+        httpClient,
+        httpRequest,
+        retryTimeout,
+        authTimeout,
+        socketTimeout,
+        retryCount,
+        injectSocketTimeout,
+        canceling,
+        withoutCookies,
+        includeRetryParameters,
+        includeRequestGuid,
+        true, // includeRetryCount
+        retryHTTP403);
+  }
+
+  /**
+   * Execute an http request with retry logic.
+   *
+   * @param httpClient client object used to communicate with other machine
+   * @param httpRequest request object contains all the request information
+   * @param retryTimeout : retry timeout (in seconds)
+   * @param authTimeout : authenticator specific timeout (in seconds)
+   * @param socketTimeout : curl timeout (in ms)
+   * @param retryCount : retry count for the request
+   * @param injectSocketTimeout : simulate socket timeout
+   * @param canceling canceling flag
+   * @param withoutCookies whether the cookie spec should be set to IGNORE or not
+   * @param includeRetryParameters whether to include retry parameters in retried requests
+   * @param includeRequestGuid whether to include request_guid parameter
+   * @param includeRetryCount whether to include retryCount in URL as query string parameter
+   * @param retryHTTP403 whether to retry on HTTP 403 or not
+   * @return HttpResponse Object get from server
+   * @throws net.snowflake.client.jdbc.SnowflakeSQLException Request timeout Exception or Illegal
+   *     State Exception i.e. connection is already shutdown etc
+   */
+  public static CloseableHttpResponse execute(
+      CloseableHttpClient httpClient,
+      HttpRequestBase httpRequest,
+      long retryTimeout,
+      long authTimeout,
+      int socketTimeout,
+      int retryCount,
+      int injectSocketTimeout,
+      AtomicBoolean canceling,
+      boolean withoutCookies,
+      boolean includeRetryParameters,
+      boolean includeRequestGuid,
+      boolean includeRetryCount,
+      boolean retryHTTP403)
+      throws SnowflakeSQLException {
     CloseableHttpResponse response = null;
 
     String requestInfoScrubbed = SecretDetector.maskSASToken(httpRequest.toString());
@@ -151,7 +202,9 @@ public class RestRequest {
          */
         URIBuilder builder = new URIBuilder(httpRequest.getURI());
         if (retryCount > 0) {
-          builder.setParameter("retryCount", String.valueOf(retryCount));
+          if (includeRetryCount) {
+            builder.setParameter("retryCount", String.valueOf(retryCount));
+          }
           if (includeRetryParameters) {
             builder.setParameter("clientStartTime", String.valueOf(startTime));
           }
