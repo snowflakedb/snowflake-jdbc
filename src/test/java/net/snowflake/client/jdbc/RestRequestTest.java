@@ -5,7 +5,8 @@ package net.snowflake.client.jdbc;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.*;
 
 import java.io.IOException;
@@ -79,6 +80,7 @@ public class RestRequestTest {
         false, // without cookie
         includeRetryParameters,
         true,
+        true, // includeRetryCount
         true);
   }
 

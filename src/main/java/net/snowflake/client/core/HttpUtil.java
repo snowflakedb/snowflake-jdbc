@@ -746,6 +746,7 @@ public class HttpUtil {
               withoutCookies,
               includeRetryParameters,
               includeRequestGuid,
+              true, // includeRetryCount
               retryOnHTTP403);
 
       if (response == null || response.getStatusLine().getStatusCode() != 200) {
