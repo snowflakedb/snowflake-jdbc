@@ -241,7 +241,6 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
                   false, // no cookie
                   false, // no retry
                   false, // no request_guid
-                  true, // includeRetryCount
                   true // retry on HTTP 403
                   );
 
@@ -407,7 +406,6 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
                   false, // no cookie
                   false, // no retry
                   false, // no request_guid
-                  true, // includeRetryCount
                   true // retry on HTTP 403
                   );
 
@@ -753,7 +751,6 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
               false, // no cookie
               false, // no retry
               false, // no request_guid
-              true, // includeRetryCount
               true // retry on HTTP 403
               );
 

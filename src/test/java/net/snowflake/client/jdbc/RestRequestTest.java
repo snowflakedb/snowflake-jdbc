@@ -80,7 +80,6 @@ public class RestRequestTest {
         false, // without cookie
         includeRetryParameters,
         true,
-        true, // includeRetryCount
         true);
   }
 
