@@ -3348,7 +3348,8 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
       resultSet = statement.executeQuery(sql);
     } catch (SnowflakeSQLException e) {
       if (e.getSQLState().equals(SqlState.NO_DATA)
-          || e.getSQLState().equals(SqlState.BASE_TABLE_OR_VIEW_NOT_FOUND)) {
+          || e.getSQLState().equals(SqlState.BASE_TABLE_OR_VIEW_NOT_FOUND)
+          || e.getMessage().contains("Operation is not supported in reader account")) {
         return SnowflakeDatabaseMetaDataResultSet.getEmptyResult(
             metadataType, statement, e.getQueryId());
       }
