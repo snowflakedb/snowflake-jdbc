@@ -131,9 +131,7 @@ public class RestRequestTest {
                 HttpUriRequest arg = (HttpUriRequest) invocation.getArguments()[0];
                 String params = arg.getURI().getQuery();
 
-                if (callCount > 0) {
-                  assertTrue(params.contains("retryCount=" + callCount));
-                }
+                assertFalse(params.contains("retryCount="));
                 assertFalse(params.contains("clientStartTime="));
                 assertTrue(params.contains("request_guid="));
 
