@@ -47,6 +47,7 @@ public class SFLoginInput {
   private HttpClientSettingsKey httpClientKey;
   private String privateKeyFile;
   private String privateKeyFilePwd;
+  private String privateKeySignerClass;
 
   SFLoginInput() {}
 
@@ -294,6 +295,11 @@ public class SFLoginInput {
     return this;
   }
 
+  SFLoginInput setPrivateKeySignerClass(String privateKeySignerClass) {
+    this.privateKeySignerClass = privateKeySignerClass;
+    return this;
+  }
+
   String getPrivateKeyFile() {
     return privateKeyFile;
   }
@@ -301,6 +307,8 @@ public class SFLoginInput {
   String getPrivateKeyFilePwd() {
     return privateKeyFilePwd;
   }
+
+  String getPrivateKeySignerClass() { return privateKeySignerClass; }
 
   public String getApplication() {
     return application;
