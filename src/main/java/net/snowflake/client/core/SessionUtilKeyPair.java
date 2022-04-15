@@ -15,16 +15,6 @@ import com.nimbusds.jose.crypto.impl.RSASSAProvider;
 import com.nimbusds.jose.util.Base64URL;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
-import net.snowflake.client.PrivateKeySigner;
-import net.snowflake.client.jdbc.ErrorCode;
-import net.snowflake.client.log.SFLogger;
-import net.snowflake.client.log.SFLoggerFactory;
-import org.apache.commons.codec.binary.Base64;
-import org.bouncycastle.util.io.pem.PemReader;
-
-import javax.crypto.EncryptedPrivateKeyInfo;
-import javax.crypto.SecretKeyFactory;
-import javax.crypto.spec.PBEKeySpec;
 import java.io.IOException;
 import java.io.StringReader;
 import java.lang.reflect.InvocationTargetException;
@@ -36,6 +26,15 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.RSAPublicKeySpec;
 import java.util.Date;
+import javax.crypto.EncryptedPrivateKeyInfo;
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.PBEKeySpec;
+import net.snowflake.client.PrivateKeySigner;
+import net.snowflake.client.jdbc.ErrorCode;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
+import org.apache.commons.codec.binary.Base64;
+import org.bouncycastle.util.io.pem.PemReader;
 
 /** Class used to compute jwt token for key pair authentication Created by hyu on 1/16/18. */
 class SessionUtilKeyPair {
@@ -99,30 +98,35 @@ class SessionUtilKeyPair {
 
     if (!Strings.isNullOrEmpty(privateKeySignerClass)) {
       try {
-        PrivateKeySigner privateKeySigner = (PrivateKeySigner) Class.forName(privateKeySignerClass).getDeclaredConstructor().newInstance();
+        PrivateKeySigner privateKeySigner =
+            (PrivateKeySigner)
+                Class.forName(privateKeySignerClass).getDeclaredConstructor().newInstance();
         this.signer = new DelegatingJWSSigner(privateKeySigner);
         this.publicKey = privateKeySigner.publicKey();
       } catch (ClassNotFoundException e) {
         throw new SFException(
-                ErrorCode.INVALID_OR_UNSUPPORTED_PRIVATE_KEY,
-                String.format("Could not load class %s.", privateKeySignerClass));
-      } catch (InvocationTargetException | InstantiationException | IllegalAccessException | NoSuchMethodException e) {
+            ErrorCode.INVALID_OR_UNSUPPORTED_PRIVATE_KEY,
+            String.format("Could not load class %s.", privateKeySignerClass));
+      } catch (InvocationTargetException
+          | InstantiationException
+          | IllegalAccessException
+          | NoSuchMethodException e) {
         throw new SFException(
-                ErrorCode.INVALID_OR_UNSUPPORTED_PRIVATE_KEY,
-                String.format("Failed to instantiate class %s.", privateKeySignerClass)
-        );
+            ErrorCode.INVALID_OR_UNSUPPORTED_PRIVATE_KEY,
+            String.format("Failed to instantiate class %s.", privateKeySignerClass));
       } catch (ClassCastException e) {
         throw new SFException(
-                ErrorCode.INVALID_OR_UNSUPPORTED_PRIVATE_KEY,
-                String.format("%s is not an instance of %s", privateKeySignerClass, PrivateKeySigner.class.getName())
-        );
+            ErrorCode.INVALID_OR_UNSUPPORTED_PRIVATE_KEY,
+            String.format(
+                "%s is not an instance of %s",
+                privateKeySignerClass, PrivateKeySigner.class.getName()));
       }
     } else {
       // if there is both a file and a private key, there is a problem
       if (!Strings.isNullOrEmpty(privateKeyFile) && privateKey != null) {
         throw new SFException(
-                ErrorCode.INVALID_OR_UNSUPPORTED_PRIVATE_KEY,
-                "Cannot have both private key value and private key file.");
+            ErrorCode.INVALID_OR_UNSUPPORTED_PRIVATE_KEY,
+            "Cannot have both private key value and private key file.");
       }
       if (!Strings.isNullOrEmpty(privateKeyFile)) {
         privateKey = extractPrivateKeyFromFile(privateKeyFile, privateKeyFilePwd);
@@ -132,7 +136,8 @@ class SessionUtilKeyPair {
         this.signer = new RSASSASigner(privateKey);
         RSAPrivateCrtKey rsaPrivateCrtKey = (RSAPrivateCrtKey) privateKey;
         RSAPublicKeySpec rsaPublicKeySpec =
-                new RSAPublicKeySpec(rsaPrivateCrtKey.getModulus(), rsaPrivateCrtKey.getPublicExponent());
+            new RSAPublicKeySpec(
+                rsaPrivateCrtKey.getModulus(), rsaPrivateCrtKey.getPublicExponent());
 
         try {
           this.publicKey = getKeyFactoryInstance().generatePublic(rsaPublicKeySpec);
@@ -141,8 +146,8 @@ class SessionUtilKeyPair {
         }
       } else {
         throw new SFException(
-                ErrorCode.INVALID_OR_UNSUPPORTED_PRIVATE_KEY,
-                "Use java.security.interfaces.RSAPrivateCrtKey.class for the private key");
+            ErrorCode.INVALID_OR_UNSUPPORTED_PRIVATE_KEY,
+            "Use java.security.interfaces.RSAPrivateCrtKey.class for the private key");
       }
     }
   }

@@ -179,7 +179,12 @@ public class TelemetryIT extends AbstractDriverIT {
     Map<String, String> parameters = getConnectionParameters();
     String jwtToken =
         SessionUtil.generateJWTToken(
-            null, privateKeyLocation, null, null, parameters.get("account"), parameters.get("user"));
+            null,
+            privateKeyLocation,
+            null,
+            null,
+            parameters.get("account"),
+            parameters.get("user"));
 
     CloseableHttpClient httpClient = HttpUtil.buildHttpClient(null, null, false);
     TelemetryClient telemetry =

@@ -457,7 +457,8 @@ public class SFSession extends SFBaseSession {
         .setPrivateKeyFile((String) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_FILE))
         .setPrivateKeyFilePwd(
             (String) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_FILE_PWD))
-            .setPrivateKeySignerClass((String) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_SIGNER_CLASS))
+        .setPrivateKeySignerClass(
+            (String) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_SIGNER_CLASS))
         .setApplication((String) connectionPropertiesMap.get(SFSessionProperty.APPLICATION))
         .setServiceName(getServiceName())
         .setOCSPMode(getOCSPMode())
@@ -540,7 +541,10 @@ public class SFSession extends SFBaseSession {
     Map<SFSessionProperty, Object> connectionPropertiesMap = getConnectionPropertiesMap();
     String authenticator = (String) connectionPropertiesMap.get(SFSessionProperty.AUTHENTICATOR);
     PrivateKey privateKey = (PrivateKey) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY);
-    return (authenticator == null && privateKey == null && privateKeyFileLocation == null && privateKeySignerClass == null)
+    return (authenticator == null
+            && privateKey == null
+            && privateKeyFileLocation == null
+            && privateKeySignerClass == null)
         || ClientAuthnDTO.AuthenticatorType.SNOWFLAKE.name().equalsIgnoreCase(authenticator);
   }
 

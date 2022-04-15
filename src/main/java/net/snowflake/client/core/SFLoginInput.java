@@ -308,7 +308,9 @@ public class SFLoginInput {
     return privateKeyFilePwd;
   }
 
-  String getPrivateKeySignerClass() { return privateKeySignerClass; }
+  String getPrivateKeySignerClass() {
+    return privateKeySignerClass;
+  }
 
   public String getApplication() {
     return application;
