@@ -806,7 +806,7 @@
                      <relocation>
                        <pattern>org.codehaus</pattern>
                        <shadedPattern>${shadeBase}.org.codehaus</shadedPattern>
-                     </relocation>                     
+                     </relocation>
                    </relocations>
                    <filters>
                       <filter>
@@ -824,7 +824,8 @@
                             <exclude>.netbeans_automatic_build</exclude>
                             <exclude>git.properties</exclude>
                             <exclude>google-http-client.properties</exclude>
-                            <exclude>storage.v1.json</exclude> <!-- This is just a documentation file, not needed-->
+                           <exclude>storage.v1.json</exclude> <!-- This is just a documentation file, not needed-->
+                           <exclude>dependencies.properties</exclude>
                          </excludes>
                       </filter>
                       <filter>
