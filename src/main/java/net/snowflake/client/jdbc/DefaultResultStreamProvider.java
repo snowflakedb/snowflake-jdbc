@@ -128,7 +128,7 @@ public class DefaultResultStreamProvider implements ResultStreamProvider {
             0, // no socketime injection
             null, // no canceling
             false, // no cookie
-            false, // no retry
+            false, // no retry parameters in url
             false, // no request_guid
             true // retry on HTTP403 for AWS S3
             );

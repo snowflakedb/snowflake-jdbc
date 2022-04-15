@@ -5,7 +5,8 @@ package net.snowflake.client.jdbc;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.*;
 
 import java.io.IOException;
@@ -130,9 +131,7 @@ public class RestRequestTest {
                 HttpUriRequest arg = (HttpUriRequest) invocation.getArguments()[0];
                 String params = arg.getURI().getQuery();
 
-                if (callCount > 0) {
-                  assertTrue(params.contains("retryCount=" + callCount));
-                }
+                assertFalse(params.contains("retryCount="));
                 assertFalse(params.contains("clientStartTime="));
                 assertTrue(params.contains("request_guid="));
 

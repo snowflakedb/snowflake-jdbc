@@ -150,11 +150,9 @@ public class RestRequest {
          * overhead of looking up in metadata database.
          */
         URIBuilder builder = new URIBuilder(httpRequest.getURI());
-        if (retryCount > 0) {
+        if (includeRetryParameters && retryCount > 0) {
           builder.setParameter("retryCount", String.valueOf(retryCount));
-          if (includeRetryParameters) {
-            builder.setParameter("clientStartTime", String.valueOf(startTime));
-          }
+          builder.setParameter("clientStartTime", String.valueOf(startTime));
         }
 
         // When the auth timeout is set, set the socket timeout as the authTimeout
