@@ -364,6 +364,24 @@ public class CustomProxyLatestIT {
     runProxyConnection(connectionUrl);
   }
 
+  @Test
+  @Ignore
+  public void testUnsetJvmPropertiesForInvalidSettings() throws SQLException {
+    Properties props = new Properties();
+    props.put("user", "USER");
+    props.put("password", "PASSWORD");
+    props.put("tracing", "ALL");
+    // Set JVM properties.
+    System.setProperty("proxyHost", "localhost");
+    System.setProperty("proxyPort", "3128");
+    Connection con =
+        DriverManager.getConnection(
+            "jdbc:snowflake://s3testaccoutn.us-east-1.snowflakecomputing.com", props);
+    assertEquals(System.getProperty("proxyHost"), null);
+    assertEquals(System.getProperty("proxyPort"), null);
+    con.close();
+  }
+
   public void runProxyConnection(String connectionUrl) throws ClassNotFoundException, SQLException {
     Authenticator.setDefault(
         new Authenticator() {
