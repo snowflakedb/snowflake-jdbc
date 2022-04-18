@@ -440,6 +440,7 @@ public class RestRequest {
   }
 
   static boolean isNonretryableHTTPCode(CloseableHttpResponse response, boolean retryHTTP403) {
+    // TODO: this function is wrong
     return response != null
         && (response.getStatusLine().getStatusCode() < 500
             || // service unavailable
@@ -447,7 +448,7 @@ public class RestRequest {
         && // gateway timeout
         response.getStatusLine().getStatusCode() != 408
         && // request timeout
-        (retryHTTP403 || response.getStatusLine().getStatusCode() != 403);
+        (!retryHTTP403 || response.getStatusLine().getStatusCode() != 403);
   }
 
   private static boolean isCertificateRevoked(Exception ex) {
