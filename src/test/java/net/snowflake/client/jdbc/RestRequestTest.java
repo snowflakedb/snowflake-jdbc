@@ -158,13 +158,12 @@ public class RestRequestTest {
   }
 
   @Test
-  public void testIsRetryableHTTPCode() throws Exception {
-    // TODO: this test is wrong
+  public void testIsNonRetryableHTTPCode() throws Exception {
     class TestCase {
       TestCase(int statusCode, boolean retryHTTP403, boolean result) {
         this.statusCode = statusCode;
         this.retryHTTP403 = retryHTTP403;
-        this.result = result; // expected result of calling isNonretryableHTTPCode()
+        this.result = result; // expected result of calling isNonRetryableHTTPCode()
       }
 
       public int statusCode;
@@ -280,24 +279,20 @@ public class RestRequestTest {
     testCases.add(new TestCase(510, true, false));
     testCases.add(new TestCase(511, true, false));
 
-    /*
-    testCases.add(new TestCase(403, false, true)); // no retry on HTTP 403
-    testCases.add(new TestCase(403, true, false)); // do retry on HTTP 403
-*/
     for (TestCase t : testCases) {
       if (t.result) {
         assertTrue(
             String.format(
                 "Result must be true but false: HTTP Code: %d, RetryHTTP403: %s",
                 t.statusCode, t.retryHTTP403),
-            RestRequest.isNonretryableHTTPCode(
+            RestRequest.isNonRetryableHTTPCode(
                 anyStatusCodeResponse(t.statusCode), t.retryHTTP403));
       } else {
         assertFalse(
             String.format(
                 "Result must be false but true: HTTP Code: %d, RetryHTTP403: %s",
                 t.statusCode, t.retryHTTP403),
-            RestRequest.isNonretryableHTTPCode(
+            RestRequest.isNonRetryableHTTPCode(
                 anyStatusCodeResponse(t.statusCode), t.retryHTTP403));
       }
     }
