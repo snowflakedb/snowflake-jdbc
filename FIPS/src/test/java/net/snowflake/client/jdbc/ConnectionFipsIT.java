@@ -27,6 +27,8 @@ import org.apache.commons.codec.binary.Base64;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.fips.FipsStatus;
 import org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -102,8 +104,7 @@ public class ConnectionFipsIT extends AbstractDriverIT {
   private static int JCE_PROVIDER_SUN_JCE_PROVIDER_POSITION;
   private static int JCE_PROVIDER_SUN_RSA_SIGN_PROVIDER_POSITION;
 
-  // TODO: temporarily disable the function to merge an urgent pr
-  // @BeforeClass
+  @BeforeClass
   public static void setup() throws Exception {
     System.setProperty("javax.net.debug", "ssl");
     // get keystore types for BouncyCastle libraries
@@ -163,8 +164,7 @@ public class ConnectionFipsIT extends AbstractDriverIT {
     //connectToGoogle();
   }
 
-  // TODO: temporarily disable the function to merge an urgent pr
-  // @AfterClass
+  @AfterClass
   public static void teardown() throws Exception {
     // Remove BouncyCastle FIPS Provider
     Security.removeProvider(JCE_PROVIDER_BOUNCY_CASTLE_FIPS);
@@ -211,7 +211,6 @@ public class ConnectionFipsIT extends AbstractDriverIT {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubActions.class)
   public void connectWithFips() throws SQLException {
     Connection con = getConnection();
     Statement statement = con.createStatement();
@@ -289,7 +288,6 @@ public class ConnectionFipsIT extends AbstractDriverIT {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubActions.class)
   public void connectWithFipsAndQuery() throws SQLException {
     try (Connection con = getConnection()) {
       Statement statement = con.createStatement();
@@ -307,7 +305,6 @@ public class ConnectionFipsIT extends AbstractDriverIT {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubActions.class)
   public void connectWithFipsAndPut() throws Exception {
     try (Connection con = getConnection()) {
       // put files
