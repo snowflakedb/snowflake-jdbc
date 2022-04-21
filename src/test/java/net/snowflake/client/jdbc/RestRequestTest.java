@@ -158,12 +158,12 @@ public class RestRequestTest {
   }
 
   @Test
-  public void testIsRetryableHTTPCode() throws Exception {
+  public void testIsNonRetryableHTTPCode() throws Exception {
     class TestCase {
       TestCase(int statusCode, boolean retryHTTP403, boolean result) {
         this.statusCode = statusCode;
         this.retryHTTP403 = retryHTTP403;
-        this.result = result;
+        this.result = result; // expected result of calling isNonRetryableHTTPCode()
       }
 
       public int statusCode;
@@ -172,6 +172,7 @@ public class RestRequestTest {
     }
     List<TestCase> testCases = new ArrayList<>();
     // no retry on HTTP 403 option
+
     testCases.add(new TestCase(100, false, true));
     testCases.add(new TestCase(101, false, true));
     testCases.add(new TestCase(103, false, true));
@@ -191,12 +192,12 @@ public class RestRequestTest {
     testCases.add(new TestCase(308, false, true));
     testCases.add(new TestCase(400, false, true));
     testCases.add(new TestCase(401, false, true));
-    testCases.add(new TestCase(403, false, false)); // no retry on HTTP 403
+    testCases.add(new TestCase(403, false, true)); // no retry on HTTP 403
     testCases.add(new TestCase(404, false, true));
     testCases.add(new TestCase(405, false, true));
     testCases.add(new TestCase(406, false, true));
     testCases.add(new TestCase(407, false, true));
-    testCases.add(new TestCase(408, false, false)); // no retry on HTTP 408
+    testCases.add(new TestCase(408, false, false)); // do retry on HTTP 408
     testCases.add(new TestCase(410, false, true));
     testCases.add(new TestCase(411, false, true));
     testCases.add(new TestCase(412, false, true));
@@ -244,12 +245,12 @@ public class RestRequestTest {
     testCases.add(new TestCase(308, true, true));
     testCases.add(new TestCase(400, true, true));
     testCases.add(new TestCase(401, true, true));
-    testCases.add(new TestCase(403, true, true)); // do retry on HTTP 403
+    testCases.add(new TestCase(403, true, false)); // do retry on HTTP 403
     testCases.add(new TestCase(404, true, true));
     testCases.add(new TestCase(405, true, true));
     testCases.add(new TestCase(406, true, true));
     testCases.add(new TestCase(407, true, true));
-    testCases.add(new TestCase(408, true, false)); // no retry on HTTP 408
+    testCases.add(new TestCase(408, true, false)); // do retry on HTTP 408
     testCases.add(new TestCase(410, true, true));
     testCases.add(new TestCase(411, true, true));
     testCases.add(new TestCase(412, true, true));
@@ -284,14 +285,14 @@ public class RestRequestTest {
             String.format(
                 "Result must be true but false: HTTP Code: %d, RetryHTTP403: %s",
                 t.statusCode, t.retryHTTP403),
-            RestRequest.isNonretryableHTTPCode(
+            RestRequest.isNonRetryableHTTPCode(
                 anyStatusCodeResponse(t.statusCode), t.retryHTTP403));
       } else {
         assertFalse(
             String.format(
                 "Result must be false but true: HTTP Code: %d, RetryHTTP403: %s",
                 t.statusCode, t.retryHTTP403),
-            RestRequest.isNonretryableHTTPCode(
+            RestRequest.isNonRetryableHTTPCode(
                 anyStatusCodeResponse(t.statusCode), t.retryHTTP403));
       }
     }

@@ -207,7 +207,7 @@ public class RestRequest {
        * If we got a response and the status code is not one of those
        * transient failures, no more retry
        */
-      if (isCertificateRevoked(savedEx) || isNonretryableHTTPCode(response, retryHTTP403)) {
+      if (isCertificateRevoked(savedEx) || isNonRetryableHTTPCode(response, retryHTTP403)) {
         String msg = "Unknown cause";
         if (response != null) {
           logger.debug("HTTP response code: {}", response.getStatusLine().getStatusCode());
@@ -439,7 +439,7 @@ public class RestRequest {
     return response;
   }
 
-  static boolean isNonretryableHTTPCode(CloseableHttpResponse response, boolean retryHTTP403) {
+  static boolean isNonRetryableHTTPCode(CloseableHttpResponse response, boolean retryHTTP403) {
     return response != null
         && (response.getStatusLine().getStatusCode() < 500
             || // service unavailable
@@ -447,7 +447,7 @@ public class RestRequest {
         && // gateway timeout
         response.getStatusLine().getStatusCode() != 408
         && // request timeout
-        (retryHTTP403 || response.getStatusLine().getStatusCode() != 403);
+        (!retryHTTP403 || response.getStatusLine().getStatusCode() != 403);
   }
 
   private static boolean isCertificateRevoked(Exception ex) {
