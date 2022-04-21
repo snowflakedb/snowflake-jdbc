@@ -632,7 +632,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
   public void testNegativeWithChunkFileNotExist() throws Throwable {
     // This test takes about (download worker retry times * networkTimeout) long to finish
     Properties properties = new Properties();
-    properties.put("networkTimeout", 15000); // 150000 millisec
+    properties.put("networkTimeout", 10000); // 10000 millisec
     try (Connection connection = init(properties)) {
       Statement statement = connection.createStatement();
 
