@@ -3,18 +3,17 @@
  */
 package net.snowflake.client;
 
-import com.google.common.base.Strings;
-import org.junit.Rule;
+import static org.hamcrest.MatcherAssert.assertThat;
 
-import javax.annotation.Nullable;
+import com.google.common.base.Strings;
 import java.net.URL;
-import java.sql.Date;
 import java.sql.*;
+import java.sql.Date;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import static org.hamcrest.MatcherAssert.assertThat;
+import javax.annotation.Nullable;
+import org.junit.Rule;
 
 /** Base test class with common constants, data structures and methods */
 public class AbstractDriverIT {

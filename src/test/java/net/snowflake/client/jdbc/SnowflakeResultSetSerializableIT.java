@@ -1,5 +1,14 @@
 package net.snowflake.client.jdbc;
 
+import static org.hamcrest.Matchers.greaterThan;
+import static org.junit.Assert.*;
+
+import java.io.*;
+import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Properties;
+import javax.annotation.Nullable;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryResultSet;
@@ -8,16 +17,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.TemporaryFolder;
-
-import javax.annotation.Nullable;
-import java.io.*;
-import java.sql.*;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Properties;
-
-import static org.hamcrest.Matchers.greaterThan;
-import static org.junit.Assert.*;
 
 /** SnowflakeResultSetSerializable tests */
 @Category(TestCategoryResultSet.class)
@@ -43,6 +42,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
   public Connection init() throws SQLException {
     return init(null);
   }
+
   public Connection init(@Nullable Properties properties) throws SQLException {
     Connection conn = BaseJDBCTest.getConnection(properties);
     Statement stmt = conn.createStatement();
@@ -628,11 +628,11 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
   }
 
   @Test
-  // TODO: This test is taking longer than expected
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testNegativeWithChunkFileNotExist() throws Throwable {
+    // This test takes about (download worker retry times * networkTimeout) long to finish
     Properties properties = new Properties();
-    properties.put("networkTimeout", 30000); // millisec
+    properties.put("networkTimeout", 15000); // 150000 millisec
     try (Connection connection = init(properties)) {
       Statement statement = connection.createStatement();
 
