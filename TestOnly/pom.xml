@@ -12,7 +12,7 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    <arrow.version>0.15.1</arrow.version>
+    <arrow.version>7.0.0</arrow.version>
     <jacksondatabind.version>2.11.0</jacksondatabind.version>
     <jacoco.version>0.8.4</jacoco.version>
     <jacoco.skip.instrument>true</jacoco.skip.instrument>
@@ -132,6 +132,16 @@
       <version>${arrow.version}</version>
     </dependency>
     <dependency>
+      <groupId>org.apache.arrow</groupId>
+      <artifactId>arrow-memory-unsafe</artifactId>
+      <version>${arrow.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.arrow</groupId>
+      <artifactId>arrow-memory-netty</artifactId>
+      <version>${arrow.version}</version>
+    </dependency>
+    <dependency>
       <groupId>com.zaxxer</groupId>
       <artifactId>HikariCP</artifactId>
       <version>2.4.3</version>
@@ -199,9 +209,54 @@
               <goal>install-file</goal>
             </goals>
             <configuration>
-              <file>${project.basedir}/../dependencies/arrow-memory-${arrow.version}.jar</file>
+              <file>${project.basedir}/../dependencies/arrow-memory-${arrow.version}.pom</file>
               <groupId>org.apache.arrow</groupId>
               <artifactId>arrow-memory</artifactId>
+              <version>${arrow.version}</version>
+              <packaging>pom</packaging>
+              <generatePom>true</generatePom>
+            </configuration>
+          </execution>
+          <execution>
+            <id>install-arrow-memory-core</id>
+            <phase>validate</phase>
+            <goals>
+              <goal>install-file</goal>
+            </goals>
+            <configuration>
+              <file>${project.basedir}/../dependencies/arrow-memory-core-${arrow.version}.jar</file>
+              <groupId>org.apache.arrow</groupId>
+              <artifactId>arrow-memory-core</artifactId>
+              <version>${arrow.version}</version>
+              <packaging>jar</packaging>
+              <generatePom>true</generatePom>
+            </configuration>
+          </execution>
+          <execution>
+            <id>install-arrow-memory-unsafe</id>
+            <phase>validate</phase>
+            <goals>
+              <goal>install-file</goal>
+            </goals>
+            <configuration>
+              <file>${project.basedir}/../dependencies/arrow-memory-unsafe-${arrow.version}.jar</file>
+              <groupId>org.apache.arrow</groupId>
+              <artifactId>arrow-memory-unsafe</artifactId>
+              <version>${arrow.version}</version>
+              <packaging>jar</packaging>
+              <generatePom>true</generatePom>
+            </configuration>
+          </execution>
+          <execution>
+            <id>install-arrow-memory-netty</id>
+            <phase>validate</phase>
+            <goals>
+              <goal>install-file</goal>
+            </goals>
+            <configuration>
+              <file>${project.basedir}/../dependencies/arrow-memory-netty-${arrow.version}.jar</file>
+              <groupId>org.apache.arrow</groupId>
+              <artifactId>arrow-memory-netty</artifactId>
               <version>${arrow.version}</version>
               <packaging>jar</packaging>
               <generatePom>true</generatePom>
