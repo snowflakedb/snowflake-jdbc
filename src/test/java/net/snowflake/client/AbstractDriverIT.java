@@ -12,6 +12,7 @@ import java.sql.Date;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.annotation.Nullable;
 import org.junit.Rule;
 
 /** Base test class with common constants, data structures and methods */
@@ -242,7 +243,7 @@ public class AbstractDriverIT {
    */
   public static Connection getConnection(
       int injectSocketTimeout,
-      Properties paramProperties,
+      @Nullable Properties paramProperties,
       boolean isAdmin,
       boolean usesCom,
       String accountName)
