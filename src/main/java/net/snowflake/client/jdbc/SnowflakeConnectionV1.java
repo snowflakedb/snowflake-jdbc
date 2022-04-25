@@ -590,11 +590,8 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
       return false;
     } else {
       try {
-        Statement statement = this.createStatement();
-        statement.setQueryTimeout(timeout);
-        statement.execute("select 1");
-        statement.close();
-      } catch (SQLException ex) {
+        sfSession.callHeartBeat(timeout);
+      } catch (SFException | Exception ex) {
         return false;
       }
       return true;

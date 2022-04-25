@@ -756,6 +756,9 @@ public abstract class SFBaseSession {
    */
   public abstract Telemetry getTelemetryClient();
 
+  /** Makes a heartbeat call to check for session validity. */
+  public abstract void callHeartBeat(int timeout) throws Exception, SFException;
+
   /**
    * JDBC API. Returns a list of warnings generated since starting this session, or the last time it
    * was cleared.

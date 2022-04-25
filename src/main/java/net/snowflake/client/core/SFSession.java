@@ -15,7 +15,7 @@ import java.security.PrivateKey;
 import java.sql.DriverPropertyInfo;
 import java.sql.SQLException;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import net.snowflake.client.jdbc.*;
@@ -644,6 +644,54 @@ public class SFSession extends SFBaseSession {
     closeTelemetryClient();
     getClientInfo().clear();
     isClosed = true;
+  }
+
+  /**
+   * Makes a heartbeat call to check for session validity.
+   *
+   * @param timeout the query timeout
+   * @throws SFException exception raised from Snowflake
+   * @throws SQLException exception raised from SQL generic layers
+   */
+  public void callHeartBeat(int timeout) throws Exception, SFException {
+    if (timeout > 0) {
+      callHeartBeatWithQueryTimeout(timeout);
+    } else {
+      heartbeat();
+    }
+  }
+
+  /**
+   * Makes a heartbeat call with query timeout to check for session validity.
+   *
+   * @param timeout the query timeout
+   * @throws SnowflakeSQLException exception raised when timeout is reached
+   */
+  private void callHeartBeatWithQueryTimeout(int timeout) throws Exception {
+    class HeartbeatTask implements Callable<Void> {
+
+      @Override
+      public Void call() throws SQLException {
+        try {
+          heartbeat();
+        } catch (SFException e) {
+          throw new SnowflakeSQLException(e, e.getSqlState(), e.getVendorCode(), e.getParams());
+        }
+        return null;
+      }
+    }
+    ExecutorService executor = Executors.newSingleThreadExecutor();
+    Future<Void> future = executor.submit(new HeartbeatTask());
+
+    // Cancel the heartbeat call when timeout is reached
+    try {
+      future.get(timeout, TimeUnit.SECONDS);
+    } catch (TimeoutException e) {
+      future.cancel(true);
+      throw new SnowflakeSQLException("Query timeout reached");
+    } finally {
+      executor.shutdownNow();
+    }
   }
 
   /** Start heartbeat for this session */
