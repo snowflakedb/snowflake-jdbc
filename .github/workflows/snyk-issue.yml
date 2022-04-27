@@ -1,16 +1,15 @@
-
-name: whitesource-issue
+name: Snyk Issue
 
 on:
   issues:
     types: [opened, reopened]
 
-concurrency: whitesource-issue
+concurrency: snyk-issue
 
 jobs:
   whitesource:
     runs-on: ubuntu-latest
-    if: ${{ github.event.issue.user.login == 'whitesource-for-github-com[bot]' }}
+    if: ${{ github.event.issue.user.login == 'sfc-gh-snyk-sca-sa' }}
     steps:
     - name: checkout action
       uses: actions/checkout@v2
@@ -20,7 +19,7 @@ jobs:
         path: whitesource-actions
 
     - name: Jira Creation
-      uses: ./whitesource-actions/whitesource-issue
+      uses: ./whitesource-actions/snyk-issue
       with:
-        jira_token: ${{ secrets.JIRA_TOKEN_PUBLIC_REPO }}
+        jira_token: ${{ secrets.JIRA_TOKEN }}
         gh_token: ${{ secrets.GITHUB_TOKEN }}

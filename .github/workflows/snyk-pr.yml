@@ -1,4 +1,4 @@
-name: whitesource
+name: snyk-pr
 on:
   pull_request:
     branches:
@@ -6,7 +6,7 @@ on:
 jobs:
   whitesource:
     runs-on: ubuntu-latest
-    if: ${{ github.event.pull_request.user.login == 'whitesource-for-github-com[bot]' }}
+    if: ${{ github.event.pull_request.user.login == 'sfc-gh-snyk-sca-sa' }}
     steps:
     - name: checkout
       uses: actions/checkout@v2
@@ -22,8 +22,8 @@ jobs:
         path: whitesource-actions
 
     - name: PR
-      uses: ./whitesource-actions/whitesource-pr
+      uses: ./whitesource-actions/snyk-pr
       with:
-        jira_token: ${{ secrets.JIRA_TOKEN_PUBLIC_REPO }}
+        jira_token: ${{ secrets.JIRA_TOKEN }}
         gh_token: ${{ secrets.GITHUB_TOKEN }}
         amend: false # true if you want the commit to be amended with the JIRA number
