@@ -650,8 +650,8 @@ public class SFSession extends SFBaseSession {
    * Makes a heartbeat call to check for session validity.
    *
    * @param timeout the query timeout
+   * @throws Exception if an error occurs
    * @throws SFException exception raised from Snowflake
-   * @throws SQLException exception raised from SQL generic layers
    */
   public void callHeartBeat(int timeout) throws Exception, SFException {
     if (timeout > 0) {
@@ -665,7 +665,8 @@ public class SFSession extends SFBaseSession {
    * Makes a heartbeat call with query timeout to check for session validity.
    *
    * @param timeout the query timeout
-   * @throws SnowflakeSQLException exception raised when timeout is reached
+   * @throws Exception if an error occurs
+   * @throws SFException exception raised from Snowflake
    */
   private void callHeartBeatWithQueryTimeout(int timeout) throws Exception, SFException {
     class HeartbeatTask implements Callable<Void> {
