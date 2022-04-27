@@ -1,3 +1,8 @@
+**JDBC Driver 3.13.18**
+
+- \ | | Upgrade arrow and jackson versions to fix vulnerabilities
+- \SNOW-576187 | | Don't append retryCount to the scoped URL for chunk downloading
+
 **JDBC Driver 3.13.17**
 
 - \SNOW-571607 | | Create patch for driver release v3.13.16 to fix incorrect behavior for getSchemas() function 
