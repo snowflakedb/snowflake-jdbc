@@ -667,7 +667,7 @@ public class SFSession extends SFBaseSession {
    * @param timeout the query timeout
    * @throws SnowflakeSQLException exception raised when timeout is reached
    */
-  private void callHeartBeatWithQueryTimeout(int timeout) throws Exception {
+  private void callHeartBeatWithQueryTimeout(int timeout) throws Exception, SFException {
     class HeartbeatTask implements Callable<Void> {
 
       @Override
@@ -688,7 +688,7 @@ public class SFSession extends SFBaseSession {
       future.get(timeout, TimeUnit.SECONDS);
     } catch (TimeoutException e) {
       future.cancel(true);
-      throw new SnowflakeSQLException("Query timeout reached");
+      throw new SFException(ErrorCode.QUERY_CANCELED);
     } finally {
       executor.shutdownNow();
     }
