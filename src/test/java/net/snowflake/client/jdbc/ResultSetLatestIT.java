@@ -531,4 +531,16 @@ public class ResultSetLatestIT extends ResultSet0IT {
     assertEquals(bigDecimal.setScale(5, RoundingMode.HALF_UP), resultSet.getBigDecimal(1, 5));
     assertEquals(bigDecimal.setScale(5, RoundingMode.HALF_UP), resultSet.getBigDecimal("COLA", 5));
   }
+
+  @Test
+  public void testGetDataTypeWithTimestampTz() throws SQLException {
+    try (Connection connection = getConnection()) {
+      Statement statement = connection.createStatement();
+      statement.executeQuery("create or replace table ts_test(ts timestamp_tz)");
+      ResultSet resultSet = statement.executeQuery("select * from ts_test");
+      ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
+      // Assert that TIMESTAMP_TZ type matches java.sql.TIMESTAMP_WITH_TIMEZONE
+      assertEquals(resultSetMetaData.getColumnType(1), 2014);
+    }
+  }
 }

@@ -866,4 +866,19 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
       statement.close();
     }
   }
+
+  @Test
+  public void testTimestampWithTimezoneDataType() throws SQLException {
+    try (Connection connection = getConnection()) {
+      Statement statement = connection.createStatement();
+      statement.executeQuery("create or replace table ts_test(ts timestamp_tz)");
+      String database = connection.getCatalog();
+      String schema = connection.getSchema();
+      DatabaseMetaData metaData = connection.getMetaData();
+      ResultSet resultSet = metaData.getColumns(database, schema, "TS_TEST", "TS");
+      resultSet.next();
+      // Assert that TIMESTAMP_TZ type matches java.sql.TIMESTAMP_WITH_TIMEZONE
+      assertEquals(resultSet.getObject("DATA_TYPE"), 2014);
+    }
+  }
 }
