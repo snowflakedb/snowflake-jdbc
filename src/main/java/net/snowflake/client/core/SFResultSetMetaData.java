@@ -349,11 +349,12 @@ public class SFResultSetMetaData {
 
     int externalColumnType = internalColumnType;
 
-    if (internalColumnType == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_LTZ
-        || internalColumnType == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_TZ) {
+    if (internalColumnType == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_LTZ) {
       externalColumnType = Types.TIMESTAMP;
     }
-
+    if (internalColumnType == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_TZ) {
+      externalColumnType = Types.TIMESTAMP_WITH_TIMEZONE;
+    }
     return externalColumnType;
   }
 
