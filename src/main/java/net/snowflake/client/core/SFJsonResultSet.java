@@ -378,7 +378,9 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
     }
     int columnType = resultSetMetaData.getColumnType(columnIndex);
     try {
-      if (columnType != Types.TIME && columnType != Types.TIMESTAMP) {
+      if (columnType != Types.TIME
+          && columnType != Types.TIMESTAMP
+          && columnType != Types.TIMESTAMP_WITH_TIMEZONE) {
         return new BigDecimal(obj.toString());
       }
       throw new SFException(
@@ -453,7 +455,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
           sfTime.getFractionalSeconds(ResultUtil.DEFAULT_SCALE_OF_SFTIME_FRACTION_SECONDS),
           sfTime.getNanosecondsWithinSecond(),
           resultSetSerializable.getUseSessionTimezone());
-    } else if (Types.TIMESTAMP == columnType) {
+    } else if (Types.TIMESTAMP == columnType || Types.TIMESTAMP_WITH_TIMEZONE == columnType) {
       Timestamp ts = getTimestamp(columnIndex);
       if (ts == null) {
         return null;
@@ -477,7 +479,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
   @Override
   public Timestamp getTimestamp(int columnIndex, TimeZone tz) throws SFException {
     int columnType = resultSetMetaData.getColumnType(columnIndex);
-    if (Types.TIMESTAMP == columnType) {
+    if (Types.TIMESTAMP == columnType || Types.TIMESTAMP_WITH_TIMEZONE == columnType) {
       if (tz == null) {
         tz = TimeZone.getDefault();
       }
@@ -561,7 +563,9 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
     int columnType = resultSetMetaData.getColumnType(columnIndex);
     try {
       if (obj instanceof String) {
-        if (columnType != Types.TIME && columnType != Types.TIMESTAMP) {
+        if (columnType != Types.TIME
+            && columnType != Types.TIMESTAMP
+            && columnType != Types.TIMESTAMP_WITH_TIMEZONE) {
           if ("inf".equals(obj)) {
             return Float.POSITIVE_INFINITY;
           } else if ("-inf".equals(obj)) {
@@ -601,7 +605,9 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
     int columnType = resultSetMetaData.getColumnType(columnIndex);
     try {
       if (obj instanceof String) {
-        if (columnType != Types.TIME && columnType != Types.TIMESTAMP) {
+        if (columnType != Types.TIME
+            && columnType != Types.TIMESTAMP
+            && columnType != Types.TIMESTAMP_WITH_TIMEZONE) {
           if ("inf".equals(obj)) {
             return Double.POSITIVE_INFINITY;
           } else if ("-inf".equals(obj)) {
@@ -698,7 +704,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
 
     int columnType = resultSetMetaData.getColumnType(columnIndex);
 
-    if (Types.TIMESTAMP == columnType) {
+    if (Types.TIMESTAMP == columnType || Types.TIMESTAMP_WITH_TIMEZONE == columnType) {
       if (tz == null) {
         tz = TimeZone.getDefault();
       }
