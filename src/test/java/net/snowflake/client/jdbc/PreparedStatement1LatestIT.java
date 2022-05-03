@@ -219,4 +219,22 @@ public class PreparedStatement1LatestIT extends PreparedStatement0IT {
       }
     }
   }
+
+  /**
+   * Tests that VARBINARY columns can be set in setObject() method using byte[]
+   *
+   * @throws SQLException
+   */
+  @Test
+  public void testSetObjectMethodWithVarbinaryColumn() throws SQLException {
+    try (Connection connection = init()) {
+      connection.createStatement().execute("create or replace table test_binary(b VARBINARY)");
+
+      try (PreparedStatement prepStatement =
+          connection.prepareStatement("insert into test_binary(b) values (?)")) {
+        prepStatement.setObject(1, "HELLO WORLD".getBytes());
+        prepStatement.execute(); // shouldn't raise an error.
+      }
+    }
+  }
 }
