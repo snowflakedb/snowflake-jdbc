@@ -690,6 +690,9 @@ public class MockConnectionTest extends BaseJDBCTest {
     }
 
     @Override
+    public void callHeartBeat(int timeout) throws SFException, SQLException {}
+
+    @Override
     public List<SFException> getSqlWarnings() {
       return null;
     }
