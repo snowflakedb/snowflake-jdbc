@@ -420,6 +420,8 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
       setTimestamp(parameterIndex, (Timestamp) x);
     } else if (x instanceof Boolean) {
       setBoolean(parameterIndex, (Boolean) x);
+    } else if (x instanceof byte[]) {
+      setBytes(parameterIndex, (byte[]) x);
     } else {
       throw new SnowflakeSQLLoggedException(
           connection.getSFBaseSession(),
