@@ -141,6 +141,9 @@ public class RestRequest {
          * overhead of looking up in metadata database.
          */
         URIBuilder builder = new URIBuilder(httpRequest.getURI());
+        if (builder.getPathSegments().contains("query-request")) {
+          builder.setParameter("target", "htap_simulation");
+        }
         if (retryCount > 0) {
           builder.setParameter("retryCount", String.valueOf(retryCount));
           if (includeRetryParameters) {
