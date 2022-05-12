@@ -845,4 +845,24 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
     assertTrue(resultSet.next());
     assertEquals("COLA", resultSet.getString("COLUMN_NAME"));
   }
+
+  @Test
+  public void testUnderscoreInSchemaNamePatternForPrimaryAndForeignKeys() throws SQLException {
+    try (Connection con = getConnection()) {
+      Statement statement = con.createStatement();
+      String database = con.getCatalog();
+      statement.execute("create or replace schema TEST_SCHEMA");
+      statement.execute("use schema TEST_SCHEMA");
+      statement.execute("create or replace table PK_TEST (c1 int PRIMARY KEY, c2 VARCHAR(10))");
+      statement.execute(
+          "create or replace table FK_TEST (c1 int REFERENCES PK_TEST(c1), c2 VARCHAR(10))");
+      DatabaseMetaData metaData = con.getMetaData();
+      ResultSet rs = metaData.getPrimaryKeys(database, "TEST\\_SCHEMA", null);
+      assertEquals(1, getSizeOfResultSet(rs));
+      rs = metaData.getImportedKeys(database, "TEST\\_SCHEMA", null);
+      assertEquals(1, getSizeOfResultSet(rs));
+      rs.close();
+      statement.close();
+    }
+  }
 }
