@@ -237,4 +237,29 @@ public class PreparedStatement1LatestIT extends PreparedStatement0IT {
       }
     }
   }
+
+  @Test
+  public void testBatchInsertWithTimestampInputFormatSet() throws SQLException {
+    try (Connection connection = init()) {
+      Statement statement = connection.createStatement();
+      statement.execute("alter session set TIMESTAMP_INPUT_FORMAT='YYYY-MM-DD HH24:MI:SS.FFTZH'");
+      statement.execute(
+          "create or replace table testStageBindTypes (c1 date, c2 datetime, c3 timestamp)");
+      java.util.Date today = new java.util.Date();
+      java.sql.Date sqldate = new java.sql.Date(today.getDate());
+      java.sql.Timestamp todaySQL = new java.sql.Timestamp(today.getTime());
+      PreparedStatement prepSt =
+          connection.prepareStatement("insert into testStageBindTypes values (?, ?, ?)");
+      for (int i = 1; i < 30000; i++) {
+        prepSt.setDate(1, sqldate);
+        prepSt.setDate(2, sqldate);
+        prepSt.setTimestamp(3, todaySQL);
+        prepSt.addBatch();
+      }
+      prepSt.executeBatch(); // should not throw a parsing error.
+      statement.execute("drop table if exists testStageBindTypes");
+      statement.execute("alter session unset TIMESTAMP_INPUT_FORMAT");
+      statement.close();
+    }
+  }
 }
