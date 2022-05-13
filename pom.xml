@@ -50,7 +50,7 @@
     <awssdk.version>1.11.394</awssdk.version>
     <google.api.client.version>1.30.10</google.api.client.version>
     <google.http.client.version>1.36.0</google.http.client.version>
-    <bouncycastle.version>1.64</bouncycastle.version>
+    <bouncycastle.version>1.70</bouncycastle.version>
     <jna.version>5.5.0</jna.version>
     <mockito.version>3.5.6</mockito.version>
     <shadeBase>net.snowflake.client.jdbc.internal</shadeBase>
@@ -657,7 +657,7 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-shade-plugin</artifactId>
-            <version>3.2.1</version>
+            <version>3.2.4</version>
             <configuration>
             </configuration>
             <executions>
