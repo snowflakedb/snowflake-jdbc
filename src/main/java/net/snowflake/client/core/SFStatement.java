@@ -418,6 +418,7 @@ public class SFStatement extends SFBaseStatement {
         stmtInput.setBindValues(null).setBindStage(bindStagePath);
         // use the new SQL format for this query so dates/timestamps are parsed correctly
         setUseNewSqlFormat(true);
+        statementParametersMap.put("TIMESTAMP_INPUT_FORMAT", "AUTO");
       } else {
         stmtInput.setBindValues(bindValues).setBindStage(null);
       }
