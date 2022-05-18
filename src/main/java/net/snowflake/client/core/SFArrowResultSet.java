@@ -14,7 +14,6 @@ import java.sql.Date;
 import java.sql.SQLException;
 import java.sql.Time;
 import java.sql.Timestamp;
-import java.util.Base64;
 import java.util.TimeZone;
 import net.snowflake.client.core.arrow.ArrowVectorConverter;
 import net.snowflake.client.jdbc.*;
@@ -194,11 +193,11 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
         }
 
         this.currentChunkIterator =
-            getSortedFirstResultChunk(resultSetSerializable.getFirstChunkStringData())
+            getSortedFirstResultChunk(resultSetSerializable.getFirstChunkByteData())
                 .getIterator(this);
       } else {
         this.currentChunkIterator =
-            buildFirstChunk(resultSetSerializable.getFirstChunkStringData()).getIterator(this);
+            buildFirstChunk(resultSetSerializable.getFirstChunkByteData()).getIterator(this);
       }
     }
   }
@@ -278,12 +277,11 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
   /**
    * Decode rowset returned in query response the load data into arrow vectors
    *
-   * @param rowsetBase64 first chunk of rowset in arrow format and base64 encoded
+   * @param firstChunk first chunk of rowset in arrow format
    * @return result chunk with arrow data already being loaded
    */
-  private ArrowResultChunk buildFirstChunk(String rowsetBase64) throws SQLException {
-    byte[] bytes = Base64.getDecoder().decode(rowsetBase64);
-    ByteArrayInputStream inputStream = new ByteArrayInputStream(bytes);
+  private ArrowResultChunk buildFirstChunk(byte[] firstChunk) throws SQLException {
+    ByteArrayInputStream inputStream = new ByteArrayInputStream(firstChunk);
 
     // create a result chunk
     ArrowResultChunk resultChunk = new ArrowResultChunk("", 0, 0, 0, rootAllocator, session);
@@ -303,11 +301,11 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
   /**
    * Decode rowset returned in query response the load data into arrow vectors and sort data
    *
-   * @param rowsetBase64 first chunk of rowset in arrow format and base64 encoded
+   * @param firstChunk first chunk of rowset in arrow format
    * @return result chunk with arrow data already being loaded
    */
-  private ArrowResultChunk getSortedFirstResultChunk(String rowsetBase64) throws SQLException {
-    ArrowResultChunk resultChunk = buildFirstChunk(rowsetBase64);
+  private ArrowResultChunk getSortedFirstResultChunk(byte[] firstChunk) throws SQLException {
+    ArrowResultChunk resultChunk = buildFirstChunk(firstChunk);
 
     // enable sorted chunk, the sorting happens when the result chunk is ready to consume
     resultChunk.enableSortFirstResultChunk();
