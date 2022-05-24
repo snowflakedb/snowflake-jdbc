@@ -405,7 +405,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
   }
 
   /**
-   * A callable that can be executed in a separate thread using exeuctor service.
+   * A callable that can be executed in a separate thread using executor service.
    *
    * <p>The callable does compression if needed and upload the result to the table's staging area.
    *
