@@ -234,7 +234,7 @@ public class AbstractDriverIT {
    * @param paramProperties connection properties
    * @param isAdmin is Snowflake admin user?
    * @param usesCom uses com.snowflake instead of net.snowflake?
-   * @return Connectiona database connection
+   * @return Connection database connection
    * @throws SQLException raised if any error occurs
    */
   public static Connection getConnection(
