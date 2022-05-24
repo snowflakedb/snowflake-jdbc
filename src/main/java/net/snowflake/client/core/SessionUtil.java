@@ -270,7 +270,7 @@ public class SessionUtil {
         }
       }
     } else {
-      // TODO: patch for now. We should update mergeProperteis
+      // TODO: patch for now. We should update mergeProperties
       // to normalize all parameters using STRING_PARAMS, INT_PARAMS and
       // BOOLEAN_PARAMS.
       Object value = loginInput.getSessionParameters().get(CLIENT_STORE_TEMPORARY_CREDENTIAL);
