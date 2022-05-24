@@ -76,14 +76,14 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testGetColumn() throws SQLException {
-    String getAllColumsCount = "select count(*) from db.information_schema.columns";
+    String getAllColumnsCount = "select count(*) from db.information_schema.columns";
     connection = getConnection();
     statement = connection.createStatement();
     databaseMetaData = connection.getMetaData();
 
     resultSet = databaseMetaData.getColumns(null, null, null, null);
     assertEquals(
-        getAllObjectCountInDBViaInforSchema(getAllColumsCount), getSizeOfResultSet(resultSet));
+        getAllObjectCountInDBViaInforSchema(getAllColumnsCount), getSizeOfResultSet(resultSet));
 
     resultSet = databaseMetaData.getColumns(null, "JDBC_SCHEMA11", null, null);
     assertEquals(3, getSizeOfResultSet(resultSet));
