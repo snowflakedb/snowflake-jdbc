@@ -1051,7 +1051,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
 
   /*
    * Initializes the GCS client
-   * This method is used during the object contruction, but also to
+   * This method is used during the object construction, but also to
    * reset/recreate the encapsulated CloudBlobClient object with new
    * credentials (after token expiration)
    * @param stage   The stage information that the client will operate on

@@ -72,7 +72,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
 
   /*
    * Initializes the Azure client
-   * This method is used during the object contruction, but also to
+   * This method is used during the object construction, but also to
    * reset/recreate the encapsulated CloudBlobClient object with new
    * credentials (after SAS token expiration)
    * @param stage   The stage information that the client will operate on
