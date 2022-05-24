@@ -48,8 +48,8 @@ public class SLF4JLogger implements SFLogger {
     return this.slf4jLogger.isWarnEnabled();
   }
 
-  public void debug(String msg) {
-    msg = SecretDetector.maskSecrets(msg);
+  public void debug(String msg, boolean isMasked) {
+    msg = isMasked == true ? SecretDetector.maskSecrets(msg) : msg;
     if (isLocationAwareLogger) {
       ((LocationAwareLogger) slf4jLogger)
           .log(null, FQCN, LocationAwareLogger.DEBUG_INT, msg, null, null);

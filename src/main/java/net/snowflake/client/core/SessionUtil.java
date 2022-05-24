@@ -712,7 +712,7 @@ public class SessionUtil {
           databaseVersion = serverVersion;
         }
       } else {
-        logger.debug("server version is null");
+        logger.debug("server version is null", false);
       }
 
       if (databaseVersion != null) {
@@ -729,7 +729,7 @@ public class SessionUtil {
           }
         }
       } else {
-        logger.debug("database version is null");
+        logger.debug("database version is null", false);
       }
 
       if (!jsonNode.path("data").path("newClientForUpgrade").isNull()) {

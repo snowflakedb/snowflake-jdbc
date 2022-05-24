@@ -146,7 +146,7 @@ public class StorageClientFactory {
       logger.debug("Exception creating s3 client", ex);
       throw ex;
     }
-    logger.debug("s3 client created");
+    logger.debug("s3 client created", false);
 
     return s3Client;
   }
@@ -198,7 +198,7 @@ public class StorageClientFactory {
       logger.debug("Exception creating Azure Storage client", ex);
       throw ex;
     }
-    logger.debug("Azure Storage client created");
+    logger.debug("Azure Storage client created", false);
 
     return azureClient;
   }
@@ -223,7 +223,7 @@ public class StorageClientFactory {
       logger.debug("Exception creating GCS Storage client", ex);
       throw ex;
     }
-    logger.debug("GCS Storage client created");
+    logger.debug("GCS Storage client created", false);
 
     return gcsClient;
   }
