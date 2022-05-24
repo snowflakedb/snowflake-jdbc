@@ -702,7 +702,7 @@
 
 **JDBC Driver 3.2.5**
 
-- \|SNOW-33566| Added support for ``ResultSet.isLast()``, ``isBeforeFirsrt()``, and ``isAfterLast()``.
+- \|SNOW-33566| Added support for ``ResultSet.isLast()``, ``isBeforeFirst()``, and ``isAfterLast()``.
 - \|SNOW-30962| Optimized the driver by combining ``describe`` and ``execute`` methods when there is no bind.
 
 **JDBC Driver 3.2.4**
