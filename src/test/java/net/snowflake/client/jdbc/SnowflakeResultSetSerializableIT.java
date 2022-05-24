@@ -432,7 +432,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
       "TZHTZM YYYY-MM-DD HH24:MI:SS.FF3",
       "DY, DD MON YYYY HH24:MI:SS.FF TZHTZM"
     };
-    String[] timezongs = {"America/Los_Angeles", "Europe/London", "GMT"};
+    String[] timezones = {"America/Los_Angeles", "Europe/London", "GMT"};
 
     for (int i = 0; i < dateFormats.length; i++) {
       testTimestampHarness(
@@ -444,7 +444,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
           timestampFormats[i],
           timestampFormats[i],
           timestampFormats[i],
-          timezongs[i]);
+          timezones[i]);
     }
   }
 
