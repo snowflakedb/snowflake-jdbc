@@ -6,7 +6,7 @@ SNOW-XXXXX
 
 Please answer these questions before submitting your pull requests. Thanks!
 
-1. What GitHub issue is this PR adressing? Make sure that there is an accompanying issue to your PR.
+1. What GitHub issue is this PR addressing? Make sure that there is an accompanying issue to your PR.
 
    Fixes #NNNN 
 
