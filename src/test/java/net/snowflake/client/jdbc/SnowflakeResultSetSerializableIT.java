@@ -474,7 +474,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
 
       originalResultCSVString = generateCSVResult(rs);
 
-      // In previous test, the serializable objects are serialzied before
+      // In previous test, the serializable objects are serialized before
       // reading the ResultSet. This test covers the case that serialzizes the
       // object after reading the result set.
       fileNameList = serializeResultSet((SnowflakeResultSet) rs, 1 * 1024 * 1024, "txt");
