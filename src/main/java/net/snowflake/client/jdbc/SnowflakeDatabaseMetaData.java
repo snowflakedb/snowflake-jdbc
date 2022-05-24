@@ -2243,7 +2243,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
    *
    * @param property_name operation type
    * @param property property value
-   * @return metdata property value
+   * @return metadata property value
    */
   private short getForeignKeyConstraintProperty(String property_name, String property) {
     short result = 0;
