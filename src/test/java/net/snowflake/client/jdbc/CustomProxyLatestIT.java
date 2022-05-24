@@ -173,7 +173,7 @@ public class CustomProxyLatestIT {
    * Before running this test, change the user and password to appropriate values. Set up a proxy
    * with Burpsuite so you can see what POST and GET requests are going through the proxy.
    *
-   * <p>This tests that the NonProxyHosts field is sucessfully updated for the same HttpClient
+   * <p>This tests that the NonProxyHosts field is successfully updated for the same HttpClient
    * object.
    *
    * @throws SQLException
@@ -526,7 +526,7 @@ public class CustomProxyLatestIT {
    * appropriate values. Set up a proxy with Burpsuite so you can see what POST and GET requests are
    * going through the proxy.
    *
-   * <p>This tests that the NonProxyHosts field is sucessfully updated for the same HttpClient
+   * <p>This tests that the NonProxyHosts field is successfully updated for the same HttpClient
    * object.
    *
    * @throws SQLException
