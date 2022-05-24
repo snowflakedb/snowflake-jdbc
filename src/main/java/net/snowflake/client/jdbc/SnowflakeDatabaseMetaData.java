@@ -2171,7 +2171,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
 
           // Post filter the results based on the client type
           if (client.equals("import")) {
-            // For imported dkeys, filter on the foreign key table
+            // For imported keys, filter on the foreign key table
             if ((finalParentCatalog == null || finalParentCatalog.equals(fktable_cat))
                 && (compiledSchemaPattern == null
                     || compiledSchemaPattern.equals(fktable_schem)
