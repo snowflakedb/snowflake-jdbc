@@ -1703,7 +1703,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
             try {
               jsonNode = mapper.readTree(dataTypeStr);
             } catch (Exception ex) {
-              logger.error("Exeception when parsing column" + " result", ex);
+              logger.error("Exception when parsing column" + " result", ex);
 
               throw new SnowflakeSQLException(
                   SqlState.INTERNAL_ERROR,
