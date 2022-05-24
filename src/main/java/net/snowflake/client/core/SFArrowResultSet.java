@@ -73,7 +73,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
 
   /**
    * memory allocator for Arrow. Each SFArrowResultSet contains one rootAllocator. This
-   * rootAllocactor will be cleared and closed when the resultSet is closed
+   * rootAllocator will be cleared and closed when the resultSet is closed
    */
   private RootAllocator rootAllocator;
 
