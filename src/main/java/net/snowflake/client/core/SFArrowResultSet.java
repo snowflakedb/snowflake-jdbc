@@ -53,7 +53,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
   /** is array bind supported */
   private final boolean arrayBindSupported;
 
-  /** sesion timezone */
+  /** session timezone */
   private TimeZone timeZone;
 
   /** index of next chunk to consume */
