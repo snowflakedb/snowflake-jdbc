@@ -158,16 +158,16 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest {
     statement = connection.createStatement();
     statement.execute(
         "create or replace function JDBC_DB1.JDBC_SCHEMA11.JDBCFUNCTEST111 "
-            + "(a number, b number) RETURNS NUMBER COMMENT='mutiply numbers' as 'a*b'");
+            + "(a number, b number) RETURNS NUMBER COMMENT='multiply numbers' as 'a*b'");
     statement.execute(
         "create or replace function JDBC_DB1.JDBC_SCHEMA12.JDBCFUNCTEST121 "
-            + "(a number, b number) RETURNS NUMBER COMMENT='mutiply numbers' as 'a*b'");
+            + "(a number, b number) RETURNS NUMBER COMMENT='multiply numbers' as 'a*b'");
     statement.execute(
         "create or replace function JDBC_DB1.JDBC_SCHEMA12.JDBCFUNCTEST122 "
-            + "(a number, b number) RETURNS NUMBER COMMENT='mutiply numbers' as 'a*b'");
+            + "(a number, b number) RETURNS NUMBER COMMENT='multiply numbers' as 'a*b'");
     statement.execute(
         "create or replace function JDBC_DB2.JDBC_SCHEMA21.JDBCFUNCTEST211 "
-            + "(a number, b number) RETURNS NUMBER COMMENT='mutiply numbers' as 'a*b'");
+            + "(a number, b number) RETURNS NUMBER COMMENT='multiply numbers' as 'a*b'");
     statement.execute(
         "create or replace function JDBC_DB2.JDBC_SCHEMA21.JDBCFUNCTEST212 () RETURNS TABLE(colA"
             + " varchar) as 'select COLA from JDBC_DB2.JDBC_SCHEMA21.JDBC_TBL211'");
@@ -181,7 +181,7 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest {
     assertEquals("JDBC_DB1", resultSet.getString("FUNCTION_CAT"));
     assertEquals("JDBC_SCHEMA11", resultSet.getString("FUNCTION_SCHEM"));
     assertEquals("JDBCFUNCTEST111", resultSet.getString("FUNCTION_NAME"));
-    assertEquals("mutiply numbers", resultSet.getString("REMARKS"));
+    assertEquals("multiply numbers", resultSet.getString("REMARKS"));
     assertEquals(DatabaseMetaData.functionNoTable, resultSet.getInt("FUNCTION_TYPE"));
     assertEquals("JDBCFUNCTEST111", resultSet.getString("SPECIFIC_NAME"));
     assertFalse(resultSet.next());
