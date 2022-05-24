@@ -54,7 +54,7 @@ public class AbstractDriverIT {
     } else {
       account = accountName;
       // By default, the test will run against reg deployment.
-      // If developer needs to run in Intellij, you can set this env as ".dev.local"
+      // If developer needs to run in IntelliJ, you can set this env as ".dev.local"
       String deployment = TestUtil.systemGetEnv("SNOWFLAKE_TEST_DEPLOYMENT");
       if (Strings.isNullOrEmpty(deployment)) {
         deployment = ".reg.local";
