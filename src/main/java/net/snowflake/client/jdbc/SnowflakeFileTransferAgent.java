@@ -476,7 +476,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
         // Temp file that needs to be cleaned up when upload was successful
         FileBackedOutputStream fileBackedOutputStream = null;
 
-        // SNOW-16082: we should catpure exception if we fail to compress or
+        // SNOW-16082: we should capture exception if we fail to compress or
         // calculate digest.
         try {
           if (metadata.requireCompress) {
