@@ -119,7 +119,7 @@ public class StreamLoader implements Loader, Runnable {
   private final Connection _putConn;
   private final Connection _processConn;
 
-  // a per-instance bit of random noise to make make filenames more unique
+  // a per-instance bit of random noise to make filenames more unique
   private final String _noise;
 
   // Track fatal errors
