@@ -1509,7 +1509,7 @@ public class SFTrustManager extends X509ExtendedTrustManager {
    * Creates a pair of Issuer and Subject certificates
    *
    * @param bcChain a list of bouncy castle Certificate
-   * @return a list of paif of Issuer and Subject certificates
+   * @return a list of pair of Issuer and Subject certificates
    */
   private List<SFPair<Certificate, Certificate>> getPairIssuerSubject(List<Certificate> bcChain)
       throws CertificateException {
