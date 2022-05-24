@@ -1269,7 +1269,7 @@ public class SessionUtil {
 
   /**
    * Logs an error generated during the federated authentication flow and re-throws it as a
-   * SnowflakeSQLException. Note that we seperate IOExceptions since those tend to be network
+   * SnowflakeSQLException. Note that we separate IOExceptions since those tend to be network
    * related.
    *
    * @param loginInput The login info from the request
