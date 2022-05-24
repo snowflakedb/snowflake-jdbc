@@ -148,7 +148,7 @@ public class CustomProxyLatestIT {
     System.setProperty("http.nonProxyHosts", "*");
     Connection con =
         DriverManager.getConnection(
-            "jdbc:snowflake://s3testaccoutn.us-east-1.snowflakecomputing.com", props);
+            "jdbc:snowflake://s3testaccount.us-east-1.snowflakecomputing.com", props);
     Statement stmt = con.createStatement();
     ResultSet rs = stmt.executeQuery("select 1");
     rs.next();
@@ -376,7 +376,7 @@ public class CustomProxyLatestIT {
     System.setProperty("proxyPort", "3128");
     Connection con =
         DriverManager.getConnection(
-            "jdbc:snowflake://s3testaccoutn.us-east-1.snowflakecomputing.com", props);
+            "jdbc:snowflake://s3testaccount.us-east-1.snowflakecomputing.com", props);
     assertEquals(System.getProperty("proxyHost"), null);
     assertEquals(System.getProperty("proxyPort"), null);
     con.close();
