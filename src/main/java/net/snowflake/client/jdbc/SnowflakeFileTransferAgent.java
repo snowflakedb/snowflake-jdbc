@@ -2982,7 +2982,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
   /*
    * Handles an InvalidKeyException which indicates that the JCE component
    * is not installed properly
-   * @param operation a string indicating the the operation type, e.g. upload/download
+   * @param operation a string indicating the operation type, e.g. upload/download
    * @param ex The exception to be handled
    * @throws throws the error as a SnowflakeSQLException
    */
