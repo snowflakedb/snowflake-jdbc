@@ -477,7 +477,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
         FileBackedOutputStream fileBackedOutputStream = null;
 
         // SNOW-16082: we should catpure exception if we fail to compress or
-        // calcuate digest.
+        // calculate digest.
         try {
           if (metadata.requireCompress) {
             InputStreamWithMetadata compressedSizeAndStream =
