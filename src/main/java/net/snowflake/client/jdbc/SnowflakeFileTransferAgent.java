@@ -2314,7 +2314,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
           continue;
         }
 
-        // stage file eixst and either we will be compressing or
+        // stage file exist and either we will be compressing or
         // the dest file has same size as the source file size we will
         // compare digest values below
         String localFileHashText = null;
