@@ -2169,7 +2169,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
 
           boolean passedFilter = false;
 
-          // Post filter the results based on the clinet type
+          // Post filter the results based on the client type
           if (client.equals("import")) {
             // For imported dkeys, filter on the foreign key table
             if ((finalParentCatalog == null || finalParentCatalog.equals(fktable_cat))
