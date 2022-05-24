@@ -67,7 +67,7 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
    * @param skipParsing true if the applications want to skip parsing to get metadata. false by
    *     default.
    * @param resultSetType result set type: ResultSet.TYPE_FORWARD_ONLY.
-   * @param resultSetConcurrency result set conconcurrency: ResultSet.CONCUR_READ_ONLY.
+   * @param resultSetConcurrency result set concurrency: ResultSet.CONCUR_READ_ONLY.
    * @param resultSetHoldability result set holdability: ResultSet.CLOSE_CURSORS_AT_COMMIT
    * @throws SQLException if any SQL error occurs.
    */
