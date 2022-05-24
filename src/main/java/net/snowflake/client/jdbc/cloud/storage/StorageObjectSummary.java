@@ -85,7 +85,7 @@ public class StorageObjectSummary {
       key = cloudBlob.getName();
       BlobProperties blobProperties = cloudBlob.getProperties();
       // the content md5 property is not always the actual md5 of the file. But for here, it's only
-      // used for skipping file on PUT command, hense is ok.
+      // used for skipping file on PUT command, hence is ok.
       md5 = convertBase64ToHex(blobProperties.getContentMD5());
       size = blobProperties.getLength();
     } catch (URISyntaxException | StorageException ex) {
