@@ -393,7 +393,7 @@ rules:
   message: |
     Detected empty trust manager implementations. This is dangerous because it accepts any
     certificate, enabling man-in-the-middle attacks. Consider using a KeyStore
-    and TrustManagerFactory isntead.
+    and TrustManagerFactory instead.
     For more information, please refer to https://snowflakecomputing.atlassian.net/wiki/spaces/CLO/pages/1127713128/Semgrep+Finding+Remediation#insecure-trust-manager
   severity: WARNING
   languages: [java]
