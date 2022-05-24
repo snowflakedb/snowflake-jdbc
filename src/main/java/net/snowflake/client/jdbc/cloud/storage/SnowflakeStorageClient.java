@@ -229,7 +229,7 @@ public interface SnowflakeStorageClient {
   /**
    * Adds encryption metadata to the StorageObjectMetadata object
    *
-   * @param meta the storage metadata object to add the encyption info to
+   * @param meta the storage metadata object to add the encryption info to
    * @param matDesc the material descriptor
    * @param ivData the initialization vector
    * @param encKeK the key encryption key
