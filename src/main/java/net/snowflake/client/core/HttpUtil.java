@@ -491,7 +491,7 @@ public class HttpUtil {
 
   /**
    * Return a request configuration inheriting from the default request configuration of the shared
-   * HttpClient with the coopkie spec set to ignore.
+   * HttpClient with the cookie spec set to ignore.
    *
    * @return RequestConfig object
    */
