@@ -162,7 +162,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
     List<RemoteStoreFileEncryptionMaterial> encryptionMaterial = new ArrayList<>();
     JsonNode rootNode = jsonNode.path("data").path("encryptionMaterial");
     if (commandType == CommandType.UPLOAD) {
-      logger.debug("initEncryptionMaterial: UPLOAD");
+      logger.debug("initEncryptionMaterial: UPLOAD", false);
 
       RemoteStoreFileEncryptionMaterial encMat = null;
       if (!rootNode.isMissingNode() && !rootNode.isNull()) {
@@ -171,7 +171,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
       encryptionMaterial.add(encMat);
 
     } else {
-      logger.debug("initEncryptionMaterial: DOWNLOAD");
+      logger.debug("initEncryptionMaterial: DOWNLOAD", false);
 
       if (!rootNode.isMissingNode() && !rootNode.isNull()) {
         encryptionMaterial =
@@ -191,7 +191,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
     List<String> presignedUrls = new ArrayList<>();
     JsonNode rootNode = jsonNode.path("data").path("presignedUrls");
     if (commandType == CommandType.DOWNLOAD) {
-      logger.debug("initEncryptionMaterial: DOWNLOAD");
+      logger.debug("initEncryptionMaterial: DOWNLOAD", false);
 
       if (!rootNode.isMissingNode() && !rootNode.isNull()) {
         presignedUrls = Arrays.asList(mapper.readValue(rootNode.toString(), String[].class));
@@ -437,7 +437,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
     return new Callable<Void>() {
       public Void call() throws Exception {
 
-        logger.debug("Entering getUploadFileCallable...");
+        logger.debug("Entering getUploadFileCallable...", false);
 
         // make sure initialize context for the telemetry service for this thread
         TelemetryService.getInstance().updateContext(session.getSnowflakeConnectionString());
@@ -471,7 +471,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
 
         String digest = null;
 
-        logger.debug("Dest file name={}");
+        logger.debug("Dest file name={}", false);
 
         // Temp file that needs to be cleaned up when upload was successful
         FileBackedOutputStream fileBackedOutputStream = null;

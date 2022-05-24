@@ -581,7 +581,7 @@ public class SFSession extends SFBaseSession {
   synchronized void renewSession(String prevSessionToken)
       throws SFException, SnowflakeSQLException {
     if (sessionToken != null && !sessionToken.equals(prevSessionToken)) {
-      logger.debug("not renew session because session token has not been updated.");
+      logger.debug("not renew session because session token has not been updated.", false);
       return;
     }
 
@@ -623,7 +623,7 @@ public class SFSession extends SFBaseSession {
    */
   @Override
   public void close() throws SFException, SnowflakeSQLException {
-    logger.debug(" public void close()");
+    logger.debug(" public void close()", false);
 
     // stop heartbeat for this session
     stopHeartbeatForThisSession();
@@ -703,18 +703,18 @@ public class SFSession extends SFBaseSession {
       HeartbeatBackground.getInstance()
           .addSession(this, masterTokenValidityInSeconds, heartbeatFrequency);
     } else {
-      logger.debug("heartbeat not enabled for the session");
+      logger.debug("heartbeat not enabled for the session", false);
     }
   }
 
   /** Stop heartbeat for this session */
   protected void stopHeartbeatForThisSession() {
     if (getEnableHeartbeat() && !Strings.isNullOrEmpty(masterToken)) {
-      logger.debug("stop heartbeat");
+      logger.debug("stop heartbeat", false);
 
       HeartbeatBackground.getInstance().removeSession(this);
     } else {
-      logger.debug("heartbeat not enabled for the session");
+      logger.debug("heartbeat not enabled for the session", false);
     }
   }
 
@@ -725,7 +725,7 @@ public class SFSession extends SFBaseSession {
    * @throws SQLException exception raised from SQL generic layers
    */
   protected void heartbeat() throws SFException, SQLException {
-    logger.debug(" public void heartbeat()");
+    logger.debug(" public void heartbeat()", false);
 
     if (isClosed) {
       return;
@@ -787,7 +787,7 @@ public class SFSession extends SFBaseSession {
         // check the response to see if it is session expiration response
         if (rootNode != null
             && (Constants.SESSION_EXPIRED_GS_CODE == rootNode.path("code").asInt())) {
-          logger.debug("renew session and retry");
+          logger.debug("renew session and retry", false);
           this.renewSession(prevSessionToken);
           retry = true;
           continue;

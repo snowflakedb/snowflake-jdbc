@@ -122,7 +122,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
 
   @Override
   public String getString(int columnIndex) throws SFException {
-    logger.debug("public String getString(int columnIndex)");
+    logger.debug("public String getString(int columnIndex)", false);
 
     // Column index starts from 1, not 0.
     Object obj = getObjectInternal(columnIndex);
@@ -226,7 +226,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
 
   @Override
   public boolean getBoolean(int columnIndex) throws SFException {
-    logger.debug("public boolean getBoolean(int columnIndex)");
+    logger.debug("public boolean getBoolean(int columnIndex)", false);
     Object obj = getObjectInternal(columnIndex);
     if (obj == null) {
       return false;

@@ -74,7 +74,7 @@ public class SFStatement extends SFBaseStatement {
   private long conservativeMemoryLimit; // in bytes
 
   public SFStatement(SFSession session) {
-    logger.debug(" public SFStatement(SFSession session)");
+    logger.debug(" public SFStatement(SFSession session)", false);
 
     this.session = session;
     Integer queryTimeout = session == null ? null : session.getQueryTimeout();
@@ -188,7 +188,7 @@ public class SFStatement extends SFBaseStatement {
       throws SQLException, SFException {
     resetState();
 
-    logger.debug("executeQuery: {}", (ArgSupplier) () -> SecretDetector.maskSecrets(sql));
+    logger.debug("executeQuery: {}", sql);
 
     if (session == null || session.isClosed()) {
       throw new SQLException("connection is closed");
@@ -213,7 +213,7 @@ public class SFStatement extends SFBaseStatement {
 
     boolean sortResult = sortProperty != null && (Boolean) sortProperty;
 
-    logger.debug("Creating result set");
+    logger.debug("Creating result set", false);
 
     try {
       JsonNode jsonResult = (JsonNode) result;
@@ -254,7 +254,7 @@ public class SFStatement extends SFBaseStatement {
               null,
               null);
     }
-    logger.debug("Done creating result set");
+    logger.debug("Done creating result set", false);
 
     if (asyncExec) {
       session.activeAsyncQueries.add(resultSet.getQueryId());
@@ -386,7 +386,7 @@ public class SFStatement extends SFBaseStatement {
       }
 
       if (session.isConservativeMemoryUsageEnabled()) {
-        logger.debug("JDBC conservative memory usage is enabled.");
+        logger.debug("JDBC conservative memory usage is enabled.", false);
         calculateConservativeMemoryUsage();
       }
 
@@ -468,7 +468,7 @@ public class SFStatement extends SFBaseStatement {
       }
 
       if (canceling.get()) {
-        logger.debug("Query cancelled");
+        logger.debug("Query cancelled", false);
 
         throw new SFException(ErrorCode.QUERY_CANCELED);
       }
@@ -506,7 +506,7 @@ public class SFStatement extends SFBaseStatement {
 
             sessionRenewed = true;
 
-            logger.debug("Session got renewed, will retry");
+            logger.debug("Session got renewed, will retry", false);
           } else {
             throw ex;
           }
@@ -538,7 +538,7 @@ public class SFStatement extends SFBaseStatement {
         throw new SFException(ErrorCode.QUERY_CANCELED);
       }
 
-      logger.debug("Returning from executeHelper");
+      logger.debug("Returning from executeHelper", false);
 
       if (stmtOutput != null) {
         return stmtOutput.getResult();
@@ -755,9 +755,9 @@ public class SFStatement extends SFBaseStatement {
     session.injectedDelay();
 
     if (session.getPreparedStatementLogging()) {
-      logger.info("execute: {}", (ArgSupplier) () -> SecretDetector.maskSecrets(sql));
+      logger.info("execute: {}", sql);
     } else {
-      logger.debug("execute: {}", (ArgSupplier) () -> SecretDetector.maskSecrets(sql));
+      logger.debug("execute: {}", sql);
     }
 
     String trimmedSql = sql.trim();
@@ -774,7 +774,7 @@ public class SFStatement extends SFBaseStatement {
 
     resetState();
 
-    logger.debug("Entering executeFileTransfer");
+    logger.debug("Entering executeFileTransfer",false);
 
     isFileTransfer = true;
     transferAgent = new SnowflakeFileTransferAgent(sql, session, this);
@@ -782,13 +782,13 @@ public class SFStatement extends SFBaseStatement {
     try {
       transferAgent.execute();
 
-      logger.debug("setting result set");
+      logger.debug("setting result set", false);
 
       resultSet = (SFFixedViewResultSet) transferAgent.getResultSet();
       childResults = Collections.emptyList();
 
       logger.debug("Number of cols: {}", resultSet.getMetaData().getColumnCount());
-      logger.debug("Completed transferring data");
+      logger.debug("Completed transferring data", false);
       return resultSet;
     } catch (SQLException ex) {
       logger.debug("Exception: {}", ex.getMessage());
@@ -798,7 +798,7 @@ public class SFStatement extends SFBaseStatement {
 
   @Override
   public void close() {
-    logger.debug("public void close()");
+    logger.debug("public void close()", false);
 
     if (requestId != null) {
       EventUtil.triggerStateTransition(
@@ -811,7 +811,7 @@ public class SFStatement extends SFBaseStatement {
     isClosed = true;
 
     if (httpRequest != null) {
-      logger.debug("releasing connection for the http request");
+      logger.debug("releasing connection for the http request", false);
 
       httpRequest.releaseConnection();
       httpRequest = null;
@@ -825,7 +825,7 @@ public class SFStatement extends SFBaseStatement {
 
   @Override
   public void cancel() throws SFException, SQLException {
-    logger.debug("public void cancel()");
+    logger.debug("public void cancel()", false);
 
     if (canceling.get()) {
       logger.debug("Query is already cancelled");

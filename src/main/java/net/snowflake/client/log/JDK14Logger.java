@@ -55,8 +55,8 @@ public class JDK14Logger implements SFLogger {
     return this.jdkLogger.isLoggable(Level.WARNING);
   }
 
-  public void debug(String msg) {
-    logInternal(Level.FINE, msg, true);
+  public void debug(String msg, boolean isMasked) {
+    logInternal(Level.FINE, msg, isMasked);
   }
 
   // This function is used to display unmasked, potentially sensitive log information for internal

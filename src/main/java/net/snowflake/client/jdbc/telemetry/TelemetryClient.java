@@ -134,7 +134,7 @@ public class TelemetryClient implements Telemetry {
       return createTelemetry(
           (SFSession) conn.unwrap(SnowflakeConnectionV1.class).getSFBaseSession(), flushSize);
     } catch (SQLException ex) {
-      logger.debug("input connection is not a SnowflakeConnection");
+      logger.debug("input connection is not a SnowflakeConnection", false);
       return null;
     }
   }
@@ -203,7 +203,7 @@ public class TelemetryClient implements Telemetry {
   @Override
   public void addLogToBatch(TelemetryData log) {
     if (isClosed) {
-      logger.debug("Telemetry already closed");
+      logger.debug("Telemetry already closed", false);
       return;
     }
 
@@ -234,7 +234,7 @@ public class TelemetryClient implements Telemetry {
   @Override
   public void close() {
     if (isClosed) {
-      logger.debug("Telemetry client already closed");
+      logger.debug("Telemetry client already closed", false);
       return;
     }
 

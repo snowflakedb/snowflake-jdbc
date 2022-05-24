@@ -112,7 +112,7 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
     if (showStatementParameters) {
       logger.info("executeQuery()");
     } else {
-      logger.debug("executeQuery()");
+      logger.debug("executeQuery()", false);
     }
     return executeQueryInternal(sql, false, parameterBindings);
   }
@@ -127,21 +127,21 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
     if (showStatementParameters) {
       logger.info("executeAsyncQuery()");
     } else {
-      logger.debug("executeAsyncQuery()");
+      logger.debug("executeAsyncQuery()", false);
     }
     return executeQueryInternal(sql, true, parameterBindings);
   }
 
   @Override
   public long executeLargeUpdate() throws SQLException {
-    logger.debug("executeLargeUpdate()");
+    logger.debug("executeLargeUpdate()", false);
 
     return executeUpdateInternal(sql, parameterBindings, true);
   }
 
   @Override
   public int executeUpdate() throws SQLException {
-    logger.debug("executeUpdate()");
+    logger.debug("executeUpdate()", false);
 
     return (int) executeLargeUpdate();
   }
@@ -440,7 +440,7 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
 
   @Override
   public void addBatch() throws SQLException {
-    logger.debug("addBatch()");
+    logger.debug("addBatch()", false);
 
     raiseSQLExceptionIfStatementIsClosed();
 
@@ -544,7 +544,7 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
 
   @Override
   public ResultSetMetaData getMetaData() throws SQLException {
-    logger.debug("getMetaData()");
+    logger.debug("getMetaData()", false);
 
     raiseSQLExceptionIfStatementIsClosed();
 
@@ -554,7 +554,7 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
 
   @Override
   public void setDate(int parameterIndex, Date x, Calendar cal) throws SQLException {
-    logger.debug("setDate(int parameterIndex, Date x, Calendar cal)");
+    logger.debug("setDate(int parameterIndex, Date x, Calendar cal)", false);
 
     raiseSQLExceptionIfStatementIsClosed();
     if (x == null) {
@@ -577,14 +577,14 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
 
   @Override
   public void setTime(int parameterIndex, Time x, Calendar cal) throws SQLException {
-    logger.debug("setTime(int parameterIndex, Time x, Calendar cal)");
+    logger.debug("setTime(int parameterIndex, Time x, Calendar cal)", false);
     raiseSQLExceptionIfStatementIsClosed();
     setTime(parameterIndex, x);
   }
 
   @Override
   public void setTimestamp(int parameterIndex, Timestamp x, Calendar cal) throws SQLException {
-    logger.debug("setTimestamp(int parameterIndex, Timestamp x, Calendar cal)");
+    logger.debug("setTimestamp(int parameterIndex, Timestamp x, Calendar cal)", false);
     raiseSQLExceptionIfStatementIsClosed();
 
     // convert the time from being in UTC to be in local time zone
@@ -625,7 +625,7 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
 
   @Override
   public void setNull(int parameterIndex, int sqlType, String typeName) throws SQLException {
-    logger.debug("setNull(int parameterIndex, int sqlType, String typeName)");
+    logger.debug("setNull(int parameterIndex, int sqlType, String typeName)", false);
 
     setNull(parameterIndex, sqlType);
   }
@@ -686,7 +686,7 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
   @Override
   public void setObject(int parameterIndex, Object x, int targetSqlType, int scaleOrLength)
       throws SQLException {
-    logger.debug("setObject(int parameterIndex, Object x, int targetSqlType, int scaleOrLength)");
+    logger.debug("setObject(int parameterIndex, Object x, int targetSqlType, int scaleOrLength)", false);
 
     raiseSQLExceptionIfStatementIsClosed();
     if (x == null) {
@@ -753,7 +753,7 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
 
   @Override
   public int executeUpdate(String sql) throws SQLException {
-    logger.debug("executeUpdate(String sql)");
+    logger.debug("executeUpdate(String sql)", false);
 
     throw new SnowflakeSQLException(
         ErrorCode.UNSUPPORTED_STATEMENT_TYPE_IN_EXECUTION_API, StmtUtil.truncateSQL(sql));
@@ -761,7 +761,7 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
 
   @Override
   public boolean execute(String sql) throws SQLException {
-    logger.debug("execute(String sql)");
+    logger.debug("execute(String sql)", false);
 
     throw new SnowflakeSQLException(
         ErrorCode.UNSUPPORTED_STATEMENT_TYPE_IN_EXECUTION_API, StmtUtil.truncateSQL(sql));

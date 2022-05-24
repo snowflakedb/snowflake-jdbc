@@ -321,7 +321,7 @@ public class StmtUtil {
 
         String json = mapper.writeValueAsString(sqlJsonBody);
 
-        logger.debug("JSON: {}", (ArgSupplier) () -> SecretDetector.maskSecrets(json));
+        logger.debug("JSON: {}", json);
 
         // SNOW-18057: compress the post body in gzip
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -489,7 +489,7 @@ public class StmtUtil {
             try {
               Thread.sleep(stmtInput.injectClientPause * 1000);
             } catch (InterruptedException ex) {
-              logger.debug("exception encountered while injecting pause");
+              logger.debug("exception encountered while injecting pause", false);
             }
           }
         }
@@ -510,7 +510,7 @@ public class StmtUtil {
       }
     } while (queryInProgress);
 
-    logger.debug("Returning result");
+    logger.debug("Returning result", false);
 
     eventHandler.triggerStateTransition(
         BasicEvent.QueryState.PROCESSING_RESULT,
@@ -688,7 +688,7 @@ public class StmtUtil {
       String json = mapper.writeValueAsString(sqlJsonBody);
 
       logger.debug(
-          "JSON for cancel request: {}", (ArgSupplier) () -> SecretDetector.maskSecrets(json));
+          "JSON for cancel request: {}", json);
 
       StringEntity input = new StringEntity(json, StandardCharsets.UTF_8);
       input.setContentType("application/json");
@@ -752,7 +752,7 @@ public class StmtUtil {
     // skip commenting prefixed with //
     while (trimmedSql.startsWith("//")) {
       if (logger.isDebugEnabled()) {
-        logger.debug("skipping // comments in: \n{}", SecretDetector.maskSecrets(trimmedSql));
+        logger.debug("skipping // comments in: \n{}", trimmedSql);
       }
 
       if (trimmedSql.indexOf('\n') > 0) {
@@ -764,14 +764,14 @@ public class StmtUtil {
 
       if (logger.isDebugEnabled()) {
         logger.debug(
-            "New sql after skipping // comments: \n{}", SecretDetector.maskSecrets(trimmedSql));
+            "New sql after skipping // comments: \n{}", trimmedSql);
       }
     }
 
     // skip commenting enclosed with /* */
     while (trimmedSql.startsWith("/*")) {
       if (logger.isDebugEnabled()) {
-        logger.debug("skipping /* */ comments in: \n{}", SecretDetector.maskSecrets(trimmedSql));
+        logger.debug("skipping /* */ comments in: \n{}", trimmedSql);
       }
 
       if (trimmedSql.indexOf("*/") > 0) {

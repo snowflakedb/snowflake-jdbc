@@ -46,7 +46,7 @@ public interface SFLogger {
    */
   boolean isWarnEnabled();
 
-  void debug(String msg);
+  void debug(String msg, boolean isMasked);
 
   void debugNoMask(String msg);
 
