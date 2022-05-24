@@ -313,8 +313,8 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
   }
 
   /**
-   * Fetch next row of first chunkd in sorted order. If the result set huge, then rest of the chunks
-   * are ignored.
+   * Fetch next row of first chunked in sorted order. If the result set huge, then rest of the
+   * chunks are ignored.
    */
   private boolean fetchNextRowSorted() throws SnowflakeSQLException {
     boolean hasNext = currentChunkIterator.next();
