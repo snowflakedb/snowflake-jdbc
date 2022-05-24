@@ -126,7 +126,7 @@ public class ConnectionIT extends BaseJDBCTest {
 
     Properties properties = new Properties();
 
-    properties.put("user", "fakesuer");
+    properties.put("user", "fakeuser");
     properties.put("password", "fakepwd");
     properties.put("account", "fakeaccount");
 
@@ -536,7 +536,7 @@ public class ConnectionIT extends BaseJDBCTest {
 
     Properties properties = new Properties();
 
-    properties.put("user", "fakesuer");
+    properties.put("user", "fakeuser");
     properties.put("password", "fakepwd");
     properties.put("account", "fakeaccount");
     properties.put("insecureMode", true);
@@ -551,7 +551,7 @@ public class ConnectionIT extends BaseJDBCTest {
 
     properties = new Properties();
 
-    properties.put("user", "fakesuer");
+    properties.put("user", "fakeuser");
     properties.put("password", "fakepwd");
     properties.put("account", "fakeaccount");
     try {
