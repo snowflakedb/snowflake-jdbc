@@ -318,7 +318,7 @@ public class HttpUtil {
     if (key != null && key.getOcspMode() != OCSPMode.INSECURE) {
       // A custom TrustManager is required only if insecureMode is disabled,
       // which is by default in the production. insecureMode can be enabled
-      // 1) OCSP service is down for reasons, 2) PowerMock test tht doesn't
+      // 1) OCSP service is down for reasons, 2) PowerMock test that doesn't
       // care OCSP checks.
       // OCSP FailOpen is ON by default
       try {
