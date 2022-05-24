@@ -4,18 +4,16 @@
 package net.snowflake.client.jdbc;
 
 import static net.snowflake.client.jdbc.ErrorCode.NETWORK_ERROR;
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 import java.net.SocketTimeoutException;
 import java.security.cert.CertificateExpiredException;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Properties;
+import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
@@ -413,7 +411,15 @@ public class ConnectionWithOCSPModeIT extends BaseJDBCTest {
       fail("should fail");
     } catch (SQLException ex) {
       assertThat(ex, instanceOf(SnowflakeSQLException.class));
-      assertThat(getCause(ex), instanceOf(SSLPeerUnverifiedException.class));
+
+      // The certificates used by badssl.com expired around 05/17/2022,
+      // https://github.com/chromium/badssl.com/issues/504. After the certificates had been updated,
+      // the exception seems to be changed from SSLPeerUnverifiedException to SSLHandshakeException.
+      assertThat(
+          ex.getCause(),
+          anyOf(
+              instanceOf(SSLPeerUnverifiedException.class),
+              instanceOf(SSLHandshakeException.class)));
     }
   }
 }
