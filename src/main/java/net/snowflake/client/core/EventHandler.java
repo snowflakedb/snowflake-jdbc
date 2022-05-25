@@ -84,16 +84,16 @@ public class EventHandler extends Handler {
   private static final int DEFAULT_MAX_DUMPDIR_SIZE_MB = 128;
 
   void triggerIncident(Incident incident) {
-    logger.debug("New incident V2 triggered, flushing event buffer");
+    logger.debug("New incident V2 triggered, flushing event buffer", false);
 
     if (SnowflakeDriver.isDisableIncidents()) {
-      logger.debug("Incidents disabled by Snowflake, creation failed");
+      logger.debug("Incidents disabled by Snowflake, creation failed", false);
       return;
     }
 
     // Do we need to throttle based on the signature to this incident?
     if (needsToThrottle(incident.signature)) {
-      logger.debug("Incident throttled, not reported");
+      logger.debug("Incident throttled, not reported", false);
       return;
     }
 
@@ -101,7 +101,7 @@ public class EventHandler extends Handler {
     pushEvent(incident, true);
 
     if (systemGetProperty(DISABLE_DUMPS_PROP) == null) {
-      logger.debug("Dumping log buffer to local disk");
+      logger.debug("Dumping log buffer to local disk", false);
 
       // Dump the buffered log contents to disk.
       this.dumpLogBuffer(incident.uuid);
@@ -421,7 +421,7 @@ public class EventHandler extends Handler {
   private void flushEventBuffer() {
     ArrayList<Event> eventBufferCopy;
 
-    logger.debug("Flushing eventBuffer");
+    logger.debug("Flushing eventBuffer", false);
 
     // Copy event buffer because this may be long running
     synchronized (this) {
@@ -481,7 +481,7 @@ public class EventHandler extends Handler {
   /** Flushes all eventBuffer entries. */
   @Override
   public synchronized void flush() {
-    logger.debug("EventHandler flushing loger buffer");
+    logger.debug("EventHandler flushing loger buffer", false);
 
     dumpLogBuffer("");
   }

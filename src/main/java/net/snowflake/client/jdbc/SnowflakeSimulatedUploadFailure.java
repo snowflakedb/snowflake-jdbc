@@ -15,7 +15,7 @@ public class SnowflakeSimulatedUploadFailure extends RuntimeException {
 
   public SnowflakeSimulatedUploadFailure() {
     super();
-    logger.error("This constructor should not be used.");
+    logger.error("This constructor should not be used.", false);
   }
 
   public SnowflakeSimulatedUploadFailure(String filename) {

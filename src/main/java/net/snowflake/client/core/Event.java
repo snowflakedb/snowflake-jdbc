@@ -107,7 +107,8 @@ public abstract class Event {
     } else {
       logger.error(
           "Failed to dump Event because dump file is "
-              + "too large. Delete dump file or increase maximum dump file size.");
+              + "too large. Delete dump file or increase maximum dump file size.",
+          false);
     }
   }
 

@@ -102,7 +102,7 @@ public class DefaultResultStreamProvider implements ResultStreamProvider {
     else if (context.getQrmk() != null) {
       httpRequest.addHeader(SSE_C_ALGORITHM, SSE_C_AES);
       httpRequest.addHeader(SSE_C_KEY, context.getQrmk());
-      SnowflakeResultSetSerializableV1.logger.debug("Adding SSE-C headers");
+      SnowflakeResultSetSerializableV1.logger.debug("Adding SSE-C headers", false);
     }
 
     SnowflakeResultSetSerializableV1.logger.debug(

@@ -95,7 +95,8 @@ class FileCacheManager {
                 ? systemGetEnv(this.cacheDirectoryEnvironmentVariable)
                 : null;
       } catch (Throwable ex) {
-        LOGGER.debug("Cannot get environment variable for cache directory, " + "skip using cache", false);
+        LOGGER.debug(
+            "Cannot get environment variable for cache directory, " + "skip using cache", false);
         // In Boomi cloud, System.getenv is not allowed due to policy,
         // so we catch the exception and skip cache completely
         return this;
@@ -186,7 +187,8 @@ class FileCacheManager {
     LOGGER.debug("Writing cache file. File={}", cacheFile);
     if (cacheFile == null || !tryLockCacheFile()) {
       // no cache file or it failed to lock file
-      LOGGER.debug("No cache file exists or failed to lock the file. Skipping writing the cache", false);
+      LOGGER.debug(
+          "No cache file exists or failed to lock the file. Skipping writing the cache", false);
       return;
     }
     // NOTE: must unlock cache file

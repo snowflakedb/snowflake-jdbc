@@ -34,7 +34,7 @@ public class SecureStorageWindowsManager implements SecureStorageManager {
 
   public SecureStorageStatus setCredential(String host, String user, String type, String token) {
     if (Strings.isNullOrEmpty(token)) {
-      logger.info("No token provided");
+      logger.info("No token provided", false);
       return SecureStorageStatus.SUCCESS;
     }
 
@@ -64,7 +64,7 @@ public class SecureStorageWindowsManager implements SecureStorageManager {
               Native.getLastError()));
       return SecureStorageStatus.FAILURE;
     }
-    logger.info("Wrote to Windows Credential Manager successfully");
+    logger.info("Wrote to Windows Credential Manager successfully", false);
 
     return SecureStorageStatus.SUCCESS;
   }
@@ -92,25 +92,25 @@ public class SecureStorageWindowsManager implements SecureStorageManager {
         return null;
       }
 
-      logger.debug("Found the token from Windows Credential Manager and now copying it");
+      logger.debug("Found the token from Windows Credential Manager and now copying it", false);
 
       SecureStorageWindowsCredential cred =
           new SecureStorageWindowsCredential(pCredential.getValue());
 
       if (SecureStorageWindowsCredentialType.typeOf(cred.Type)
           != SecureStorageWindowsCredentialType.CRED_TYPE_GENERIC) {
-        logger.info("Wrong type of credential. Expected: CRED_TYPE_GENERIC");
+        logger.info("Wrong type of credential. Expected: CRED_TYPE_GENERIC", false);
         return null;
       }
 
       if (cred.CredentialBlobSize == 0) {
-        logger.info("Returned credential is empty");
+        logger.info("Returned credential is empty", false);
         return null;
       }
 
       byte[] credBytes = cred.CredentialBlob.getByteArray(0, cred.CredentialBlobSize);
       String res = new String(credBytes, StandardCharsets.UTF_16LE);
-      logger.debug("Successfully read the token. Will return it as String now");
+      logger.debug("Successfully read the token. Will return it as String now", false);
       return res;
     } finally {
       if (pCredential.getValue() != null) {
@@ -139,7 +139,7 @@ public class SecureStorageWindowsManager implements SecureStorageManager {
       return SecureStorageStatus.FAILURE;
     }
 
-    logger.debug("Deleted target in Windows Credential Manager successfully");
+    logger.debug("Deleted target in Windows Credential Manager successfully", false);
     return SecureStorageStatus.SUCCESS;
   }
 

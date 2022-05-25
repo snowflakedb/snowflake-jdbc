@@ -10,10 +10,8 @@ import java.sql.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import net.snowflake.client.core.*;
-import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
-import net.snowflake.client.util.SecretDetector;
 import net.snowflake.client.util.VariableTypeArray;
 import net.snowflake.common.core.SqlState;
 

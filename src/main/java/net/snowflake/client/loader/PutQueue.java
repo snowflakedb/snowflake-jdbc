@@ -20,7 +20,7 @@ public class PutQueue implements Runnable {
   private final StreamLoader _loader;
 
   public PutQueue(StreamLoader loader) {
-    LOGGER.debug("");
+    LOGGER.debug("", false);
     _loader = loader;
     _thread = new Thread(this);
     _thread.setName("PutQueueThread");

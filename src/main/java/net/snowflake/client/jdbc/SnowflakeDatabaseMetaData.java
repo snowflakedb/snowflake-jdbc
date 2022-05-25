@@ -1005,7 +1005,8 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
 
   @Override
   public boolean supportsDataDefinitionAndDataManipulationTransactions() throws SQLException {
-    logger.debug("public boolean " + "supportsDataDefinitionAndDataManipulationTransactions()", false);
+    logger.debug(
+        "public boolean " + "supportsDataDefinitionAndDataManipulationTransactions()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return true;
   }
@@ -1039,7 +1040,8 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
     Statement statement = connection.createStatement();
     logger.debug(
         "public ResultSet getProcedures(String catalog, "
-            + "String schemaPattern,String procedureNamePattern)" , false);
+            + "String schemaPattern,String procedureNamePattern)",
+        false);
 
     String showProcedureCommand =
         getFirstResultSetCommand(catalog, schemaPattern, procedureNamePattern, "procedures");
@@ -1101,7 +1103,8 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
     logger.debug(
         "public ResultSet getProcedureColumns(String catalog, "
             + "String schemaPattern,String procedureNamePattern,"
-            + "String columnNamePattern)" , false);
+            + "String columnNamePattern)",
+        false);
     raiseSQLExceptionIfConnectionIsClosed();
     Statement statement = connection.createStatement();
     boolean addAllRows = false;
@@ -1801,7 +1804,8 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
       String catalog, String schema, String table, String columnNamePattern) throws SQLException {
     logger.debug(
         "public ResultSet getColumnPrivileges(String catalog, "
-            + "String schema,String table, String columnNamePattern)", false);
+            + "String schema,String table, String columnNamePattern)",
+        false);
     raiseSQLExceptionIfConnectionIsClosed();
 
     Statement statement = connection.createStatement();
@@ -1835,7 +1839,8 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
       throws SQLException {
     logger.debug(
         "public ResultSet getTablePrivileges(String catalog, "
-            + "String schemaPattern,String tableNamePattern)", false);
+            + "String schemaPattern,String tableNamePattern)",
+        false);
     raiseSQLExceptionIfConnectionIsClosed();
 
     Statement statement = connection.createStatement();
@@ -1934,7 +1939,8 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
       throws SQLException {
     logger.debug(
         "public ResultSet getBestRowIdentifier(String catalog, "
-            + "String schema,String table, int scope,boolean nullable)", false);
+            + "String schema,String table, int scope,boolean nullable)",
+        false);
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
@@ -1942,7 +1948,8 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
   public ResultSet getVersionColumns(String catalog, String schema, String table)
       throws SQLException {
     logger.debug(
-        "public ResultSet getVersionColumns(String catalog, " + "String schema, String table)", false);
+        "public ResultSet getVersionColumns(String catalog, " + "String schema, String table)",
+        false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
@@ -2570,7 +2577,8 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
       throws SQLException {
     logger.debug(
         "public ResultSet getIndexInfo(String catalog, String schema, "
-            + "String table,boolean unique, boolean approximate)", false);
+            + "String table,boolean unique, boolean approximate)",
+        false);
     raiseSQLExceptionIfConnectionIsClosed();
 
     Statement statement = connection.createStatement();
@@ -2621,7 +2629,8 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
 
   @Override
   public boolean supportsResultSetConcurrency(int type, int concurrency) throws SQLException {
-    logger.debug("public boolean supportsResultSetConcurrency(int type, " + "int concurrency)", false);
+    logger.debug(
+        "public boolean supportsResultSetConcurrency(int type, " + "int concurrency)", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return (type == ResultSet.TYPE_FORWARD_ONLY && concurrency == ResultSet.CONCUR_READ_ONLY);
   }
@@ -2702,7 +2711,8 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
       throws SQLException {
     logger.debug(
         "public ResultSet getUDTs(String catalog, "
-            + "String schemaPattern,String typeNamePattern, int[] types)", false);
+            + "String schemaPattern,String typeNamePattern, int[] types)",
+        false);
     raiseSQLExceptionIfConnectionIsClosed();
     // We don't user-defined types, so return an empty result set
     Statement statement = connection.createStatement();
@@ -2768,7 +2778,8 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
       throws SQLException {
     logger.debug(
         "public ResultSet getSuperTypes(String catalog, "
-            + "String schemaPattern,String typeNamePattern)", false);
+            + "String schemaPattern,String typeNamePattern)",
+        false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
@@ -2778,7 +2789,8 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
       throws SQLException {
     logger.debug(
         "public ResultSet getSuperTables(String catalog, "
-            + "String schemaPattern,String tableNamePattern)", false);
+            + "String schemaPattern,String tableNamePattern)",
+        false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
@@ -2790,7 +2802,8 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
     logger.debug(
         "public ResultSet getAttributes(String catalog, String "
             + "schemaPattern,"
-            + "String typeNamePattern,String attributeNamePattern)", false);
+            + "String typeNamePattern,String attributeNamePattern)",
+        false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
@@ -3031,7 +3044,8 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
     logger.debug(
         "public ResultSet getFunctionColumns(String catalog, "
             + "String schemaPattern,String functionNamePattern,"
-            + "String columnNamePattern)", false);
+            + "String columnNamePattern)",
+        false);
     raiseSQLExceptionIfConnectionIsClosed();
     Statement statement = connection.createStatement();
     boolean addAllRows = false;
@@ -3177,7 +3191,8 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
     logger.debug(
         "public ResultSet getPseudoColumns(String catalog, "
             + "String schemaPattern,String tableNamePattern,"
-            + "String columnNamePattern)", false);
+            + "String columnNamePattern)",
+        false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }

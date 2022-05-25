@@ -331,7 +331,7 @@ class SFAsyncResultSet extends SnowflakeBaseResultSet implements SnowflakeResult
 
   @Override
   public boolean isWrapperFor(Class<?> iface) throws SQLException {
-    logger.debug("public boolean isWrapperFor(Class<?> iface)");
+    logger.debug("public boolean isWrapperFor(Class<?> iface)", false);
 
     return iface.isInstance(this);
   }
@@ -339,7 +339,7 @@ class SFAsyncResultSet extends SnowflakeBaseResultSet implements SnowflakeResult
   @SuppressWarnings("unchecked")
   @Override
   public <T> T unwrap(Class<T> iface) throws SQLException {
-    logger.debug("public <T> T unwrap(Class<T> iface)");
+    logger.debug("public <T> T unwrap(Class<T> iface)", false);
 
     if (!iface.isInstance(this)) {
       throw new SQLException(

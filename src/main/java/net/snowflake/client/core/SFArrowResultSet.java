@@ -349,7 +349,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
       }
       return true;
     } else {
-      logger.debug("end of result");
+      logger.debug("end of result", false);
 
       /*
        * Here we check if the result has been truncated and throw exception if
@@ -551,7 +551,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
         rootAllocator.close();
       }
     } catch (InterruptedException ie) {
-      logger.debug("interrupted during closing root allocator");
+      logger.debug("interrupted during closing root allocator", false);
     } catch (Exception e) {
       logger.debug("Exception happened when closing rootAllocator: ", e.getLocalizedMessage());
     }
