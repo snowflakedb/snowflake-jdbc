@@ -7,7 +7,6 @@ import net.snowflake.client.jdbc.SnowflakeConnectString;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.util.SecretDetector;
-import org.apache.http.HttpHost;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
@@ -20,7 +19,10 @@ import org.apache.http.util.EntityUtils;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.security.cert.CertificateException;
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -379,6 +381,15 @@ public class TelemetryService {
     }
 
     public void run() {
+      if (!instance.enabled) {
+        return;
+      }
+
+      if (!instance.isDeploymentEnabled()) {
+        // skip the disabled deployment
+        logger.debug("skip the disabled deployment: ", instance.serverDeployment.name);
+        return;
+      }
       uploadPayload();
     }
 
