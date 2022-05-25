@@ -1105,7 +1105,6 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
             + "String schemaPattern,String procedureNamePattern,"
             + "String columnNamePattern)",
         false);
-
     raiseSQLExceptionIfConnectionIsClosed();
     Statement statement = connection.createStatement();
     boolean addAllRows = false;
@@ -2632,7 +2631,6 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
   public boolean supportsResultSetConcurrency(int type, int concurrency) throws SQLException {
     logger.debug(
         "public boolean supportsResultSetConcurrency(int type, " + "int concurrency)", false);
-    logger.debug("public boolean supportsResultSetConcurrency(int type, " + "int concurrency)", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return (type == ResultSet.TYPE_FORWARD_ONLY && concurrency == ResultSet.CONCUR_READ_ONLY);
   }
