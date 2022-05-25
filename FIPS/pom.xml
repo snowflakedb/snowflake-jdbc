@@ -816,6 +816,7 @@
                             <exclude>.netbeans_automatic_build</exclude>
                             <exclude>git.properties</exclude>
                             <exclude>google-http-client.properties</exclude>
+                            <exclude>pipes-fork-server-default-log4j2.xml</exclude>
                          </excludes>
                       </filter>
                       <filter>
