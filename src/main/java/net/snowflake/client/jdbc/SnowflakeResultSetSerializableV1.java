@@ -584,7 +584,7 @@ public class SnowflakeResultSetSerializableV1
           || resultSetSerializable.firstChunkRowset.isMissingNode()) {
         resultSetSerializable.firstChunkRowCount = 0;
         resultSetSerializable.firstChunkStringData = null;
-        resultSetSerializable.firstChunkByteData = null;
+        resultSetSerializable.firstChunkByteData = new byte[0];
       } else {
         resultSetSerializable.firstChunkRowCount = resultSetSerializable.firstChunkRowset.size();
         resultSetSerializable.firstChunkStringData =
@@ -960,7 +960,7 @@ public class SnowflakeResultSetSerializableV1
         curResultSetSerializable.firstChunkStringData = null;
         curResultSetSerializable.firstChunkRowCount = 0;
         curResultSetSerializable.firstChunkRowset = null;
-        curResultSetSerializable.firstChunkByteData = null;
+        curResultSetSerializable.firstChunkByteData = new byte[0];
       }
 
       // Append this chunk file to result serializable object
@@ -1071,11 +1071,11 @@ public class SnowflakeResultSetSerializableV1
   // Set the row count for first result chunk by parsing the chunk data.
   private void setFirstChunkRowCountForArrow() throws SnowflakeSQLException {
     firstChunkRowCount = 0;
-    firstChunkByteData = null;
+    firstChunkByteData = new byte[0];
     // If the first chunk doesn't exist or empty, set it as 0
     if (firstChunkStringData == null || firstChunkStringData.isEmpty()) {
       firstChunkRowCount = 0;
-      firstChunkByteData = null;
+      firstChunkByteData = new byte[0];
     }
     // Parse the Arrow result chunk
     else if (getQueryResultFormat().equals(QueryResultFormat.ARROW)) {
